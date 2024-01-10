@@ -10,6 +10,7 @@ python_sources = [
   'test_deprecation.py',
   'test_import_cycles.py',
   'test_public_api.py',
+  'test_scipy_version.py',
   'test_tmpdirs.py',
   'test_warnings.py',
   'test_array_api.py',

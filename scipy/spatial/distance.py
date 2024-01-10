@@ -222,7 +222,9 @@ def _validate_hamming_kwargs(X, m, n, **kwargs):
     w = kwargs.get('w', np.ones((n,), dtype='double'))
 
     if w.ndim != 1 or w.shape[0] != n:
-        raise ValueError("Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n))
+        raise ValueError(
+            "Weights must have same size as input vector. %d vs. %d" % (w.shape[0], n)
+        )
 
     kwargs['w'] = _validate_weights(w)
     return kwargs
@@ -319,7 +321,7 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None
+    seed : int or None, optional
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
@@ -624,7 +626,7 @@ def correlation(u, v, w=None, centered=True):
     v = _validate_vector(v)
     if w is not None:
         w = _validate_weights(w)
-        w /= w.sum()
+        w = w / w.sum()
     if centered:
         if w is not None:
             umu = np.dot(u, w)
@@ -746,7 +748,7 @@ def hamming(u, v, w=None):
         w = _validate_weights(w)
         if w.shape != u.shape:
             raise ValueError("'w' should have the same length as 'u' and 'v'.")
-        w /= w.sum()
+        w = w / w.sum()
         return np.dot(u_ne_v, w)
     return np.mean(u_ne_v)
 
@@ -1639,32 +1641,6 @@ class CDistMetricWrapper:
 
 
 @dataclasses.dataclass(frozen=True)
-class CDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, XA, XB, *, out=None, **kwargs):
-        XA = np.ascontiguousarray(XA)
-        XB = np.ascontiguousarray(XB)
-        mA, n = XA.shape
-        mB, _ = XB.shape
-        metric_name = self.metric_name
-        XA, XB, typ, kwargs = _validate_cdist_input(
-            XA, XB, mA, mB, n, _METRICS[metric_name], **kwargs)
-        dm = _prepare_out_argument(out, np.float64, (mA, mB))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
-        # get cdist wrapper
-        cdist_fn = getattr(_distance_wrap, f'cdist_{metric_name}_{typ}_wrap')
-        cdist_fn(XA, XB, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
 class PDistMetricWrapper:
     metric_name: str
 
@@ -1683,31 +1659,6 @@ class PDistMetricWrapper:
                 X, metric=metric, out=out, w=w, **kwargs)
 
         dm = _prepare_out_argument(out, np.float64, (out_size,))
-        # get pdist wrapper
-        pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
-        pdist_fn(X, dm, **kwargs)
-        return dm
-
-
-@dataclasses.dataclass(frozen=True)
-class PDistWeightedMetricWrapper:
-    metric_name: str
-    weighted_metric: str
-
-    def __call__(self, X, *, out=None, **kwargs):
-        X = np.ascontiguousarray(X)
-        m, n = X.shape
-        metric_name = self.metric_name
-        X, typ, kwargs = _validate_pdist_input(
-            X, m, n, _METRICS[metric_name], **kwargs)
-        out_size = (m * (m - 1)) // 2
-        dm = _prepare_out_argument(out, np.float64, (out_size,))
-
-        w = kwargs.pop('w', None)
-        if w is not None:
-            metric_name = self.weighted_metric
-            kwargs['w'] = w
-
         # get pdist wrapper
         pdist_fn = getattr(_distance_wrap, f'pdist_{metric_name}_{typ}_wrap')
         pdist_fn(X, dm, **kwargs)
@@ -1930,7 +1881,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
-    out : ndarray
+    out : ndarray, optional
         The output array.
         If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional
@@ -2508,7 +2459,7 @@ def is_valid_dm(D, tol=0.0, throw=False, name="D", warning=False):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 
@@ -2588,7 +2539,7 @@ def is_valid_y(y, warning=False, throw=False, name=None):
         if throw:
             raise
         if warning:
-            warnings.warn(str(e))
+            warnings.warn(str(e), stacklevel=2)
         valid = False
     return valid
 

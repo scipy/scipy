@@ -114,7 +114,8 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
-        raise ValueError(f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"')
+        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
+        raise ValueError(message)
     funcs = (lapack_driver, lapack_driver + '_lwork')
     gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 

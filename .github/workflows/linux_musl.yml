@@ -67,7 +67,7 @@ jobs:
         source test_env/bin/activate
         cd $GITHUB_WORKSPACE
 
-        python -m pip install cython!=3.0.3 numpy
+        python -m pip install cython numpy
         # python -m pip install --upgrade --pre -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
         python -m pip install meson ninja pybind11 pythran pytest hypothesis
         python -m pip install click rich_click doit pydevtool pooch

@@ -100,10 +100,14 @@ def test_indexing(A):
     with pytest.raises(NotImplementedError):
         A[[1, 2], 1]
 
-    assert isinstance(A[[0]], scipy.sparse.sparray), "Expected sparse array, got sparse matrix"
-    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), "Expected sparse array, got something else"
+    assert isinstance(A[[0]], scipy.sparse.sparray), \
+           "Expected sparse array, got sparse matrix"
+    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), \
+           "Expected ndarray, got sparse array"
+    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), \
+           "Expected ndarray, got sparse array"
+    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), \
+           "Expected sparse array, got something else"
 
 
 @parametrize_sparrays

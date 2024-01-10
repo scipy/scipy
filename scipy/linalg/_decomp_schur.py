@@ -120,6 +120,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
+    if numpy.issubdtype(a1.dtype, numpy.integer):
+        a1 = asarray(a, dtype=numpy.dtype("long"))
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     typ = a1.dtype.char
@@ -276,7 +278,8 @@ def rsf2csf(T, Z, check_finite=True):
             raise ValueError("Input '{}' must be square.".format('ZT'[ind]))
 
     if T.shape[0] != Z.shape[0]:
-        raise ValueError(f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}")
+        message = f"Input array shapes must match: Z: {Z.shape} vs. T: {T.shape}"
+        raise ValueError(message)
     N = T.shape[0]
     t = _commonType(Z, T, array([3.0], 'F'))
     Z, T = _castCopy(t, Z, T)

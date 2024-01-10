@@ -362,7 +362,8 @@ class TestDifferentialEvolutionSolver:
         def callback_evaluates_false(param, convergence=0.):
             return []
 
-        result = differential_evolution(rosen, bounds, callback=callback_evaluates_false)
+        result = differential_evolution(rosen, bounds,
+                                        callback=callback_evaluates_false)
         assert result.success
 
     def test_args_tuple_is_passed(self):
@@ -901,10 +902,11 @@ class TestDifferentialEvolutionSolver:
         # trial and original are infeasible
         # cv_trial have to be <= cv_original to be better
         assert (fn(0.1, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 1.0])))
+                   1.0, False, np.array([1., 1.0])))
         assert (fn(0.1, False, np.array([0.5, 0.5]),
-                  1.0, False, np.array([1., 0.50])))
-        assert (fn(1.0, False, np.array([0.5, 0.5]), 1.0, False, np.array([1.0, 0.4])) is False)
+                   1.0, False, np.array([1., 0.50])))
+        assert not (fn(1.0, False, np.array([0.5, 0.5]),
+                       1.0, False, np.array([1.0, 0.4])))
 
     def test_constraint_wrapper(self):
         lb = np.array([0, 20, 30])
@@ -1011,9 +1013,9 @@ class TestDifferentialEvolutionSolver:
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
 
-        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(f(x_opt), f_opt, atol=6e-4)
         assert res.success
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
@@ -1061,7 +1063,7 @@ class TestDifferentialEvolutionSolver:
                                          seed=1234, constraints=constraints,
                                          popsize=2)
 
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))

@@ -92,7 +92,7 @@ of_the_second_derivative
     the default dtype for storing matrix representations.
 
     >>> lap.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.int8'>'
+    <6x6 sparse array of type '<class 'numpy.int8'>'
         with 16 stored elements (3 diagonals) in DIAgonal format>
     >>> lap.toarray()
     array([[-1,  1,  0,  0,  0,  0],

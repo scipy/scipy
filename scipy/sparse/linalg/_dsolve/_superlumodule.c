@@ -528,7 +528,6 @@ PyInit__superlu(void)
         return NULL;
     }
 
-    Py_INCREF(&PyArrayFlags_Type);
     if (PyDict_SetItemString(mdict, "SuperLU", (PyObject *) &SuperLUType)) {
         return NULL;
     }

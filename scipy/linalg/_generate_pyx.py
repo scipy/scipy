@@ -446,6 +446,12 @@ def _test_slamch(cmach):
     # must be passed as a part of the function call.
     cdef char* cmach_char = cmach_bytes
     return slamch(cmach_char)
+
+cpdef double complex _test_zladiv(double complex zx, double complex zy) noexcept nogil:
+    return zladiv(&zx, &zy)
+
+cpdef float complex _test_cladiv(float complex cx, float complex cy) noexcept nogil:
+    return cladiv(&cx, &cy)
 """
 
 

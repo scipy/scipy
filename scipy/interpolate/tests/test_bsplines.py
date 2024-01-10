@@ -1614,12 +1614,12 @@ class TestSmoothingSpline:
 
         """
         # load the data sample
-        data = np.load(data_file('gcvspl.npz'))
-        # data points
-        x = data['x']
-        y = data['y']
+        with np.load(data_file('gcvspl.npz')) as data:
+            # data points
+            x = data['x']
+            y = data['y']
 
-        y_GCVSPL = data['y_GCVSPL']
+            y_GCVSPL = data['y_GCVSPL']
         y_compr = make_smoothing_spline(x, y)(x)
 
         # such tolerance is explained by the fact that the spline is built
