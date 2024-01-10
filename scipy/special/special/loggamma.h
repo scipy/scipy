@@ -105,11 +105,11 @@ SPECFUN_HOST_DEVICE inline std::complex<double> loggamma(std::complex<double> z)
     // Compute the principal branch of log-Gamma
 
     if (std::isnan(z.real()) || std::isnan(z.imag())) {
-        return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+        return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
     }
     if (z.real() <= 0 and z == std::floor(z.real())) {
         set_error("loggamma", SF_ERROR_SINGULAR, NULL);
-        return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+        return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
     }
     if (z.real() > detail::loggamma_SMALLX || std::abs(z.imag()) > detail::loggamma_SMALLY) {
         return detail::loggamma_stirling(z);
@@ -138,7 +138,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> gamma(std::complex<double> z) {
     if (z.real() <= 0 && z == std::floor(z.real())) {
         // Poles
         set_error("gamma", SF_ERROR_SINGULAR, NULL);
-        return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+        return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
     }
     return std::exp(loggamma(z));
 }

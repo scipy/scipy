@@ -23,7 +23,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> Sinpi(std::complex<double> z) {
     double cospix = cephes::Cospi(x);
 
     if (abspiy < 700) {
-        return std::complex<double>(sinpix * std::cosh(piy), cospix * std::sinh(piy));
+        return {sinpix * std::cosh(piy), cospix * std::sinh(piy)};
     }
 
     /* Have to be careful--sinh/cosh could overflow while cos/sin are small.
@@ -50,12 +50,12 @@ SPECFUN_HOST_DEVICE inline std::complex<double> Sinpi(std::complex<double> z) {
         } else {
             sinhfac = std::copysign(std::numeric_limits<double>::infinity(), cospix);
         }
-        return std::complex<double>(coshfac, sinhfac);
+        return {coshfac, sinhfac};
     }
 
     coshfac = 0.5 * sinpix * exphpiy;
     sinhfac = 0.5 * cospix * exphpiy;
-    return std::complex<double>(coshfac * exphpiy, sinhfac * exphpiy);
+    return {coshfac * exphpiy, sinhfac * exphpiy};
 }
 
 SPECFUN_HOST_DEVICE inline std::complex<double> Cospi(std::complex<double> z) {
@@ -66,7 +66,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> Cospi(std::complex<double> z) {
     double cospix = cephes::Cospi(x);
 
     if (abspiy < 700) {
-        return std::complex<double>(cospix * std::cosh(piy), -sinpix * std::sinh(piy));
+        return {cospix * std::cosh(piy), -sinpix * std::sinh(piy)};
     }
 
     // See csinpi(z) for an idea of what's going on here.
@@ -86,12 +86,12 @@ SPECFUN_HOST_DEVICE inline std::complex<double> Cospi(std::complex<double> z) {
         } else {
             sinhfac = std::copysign(std::numeric_limits<double>::infinity(), sinpix);
         }
-        return std::complex<double>(coshfac, sinhfac);
+        return {coshfac, sinhfac};
     }
 
     coshfac = 0.5 * cospix * exphpiy;
     sinhfac = 0.5 * sinpix * exphpiy;
-    return std::complex<double>(coshfac * exphpiy, sinhfac * exphpiy);
+    return {coshfac * exphpiy, sinhfac * exphpiy};
 }
 
 } // namespace special
