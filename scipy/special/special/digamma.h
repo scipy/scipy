@@ -143,7 +143,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) 
     if (z.real() <= 0.0 && std::ceil(z.real()) == z) {
         // Poles
         set_error("digamma", SF_ERROR_SINGULAR, NULL);
-        return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+        return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
     }
     if (std::abs(z - detail::digamma_negroot) < 0.3) {
         // First negative root.
