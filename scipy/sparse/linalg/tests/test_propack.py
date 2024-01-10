@@ -25,7 +25,7 @@ _dtypes = []
 for dtype_flavour in TOLS.keys():
     marks = []
     if is_complex_type(dtype_flavour):
-        marks = [pytest.mark.slow]  # type: ignore[list-item]
+        marks = [pytest.mark.slow]
     _dtypes.append(pytest.param(dtype_flavour, marks=marks,
                                 id=dtype_flavour.__name__))
 _dtypes = tuple(_dtypes)  # type: ignore[assignment]
