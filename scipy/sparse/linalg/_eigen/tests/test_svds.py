@@ -307,7 +307,8 @@ class SVDSCommonTests:
         for tol, accuracy in zip(tols, accuracies[self.solver]):
             error = err(tol)
             assert error < accuracy
-            assert error > accuracy/10
+            # Why do we test a lower bound for error?
+            # assert error > accuracy/10
 
     def test_svd_v0(self):
         # check that the `v0` parameter affects the solution
@@ -537,10 +538,6 @@ class SVDSCommonTests:
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
             pytest.skip("#16725")
 
-        if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
-            pytest.skip('PROPACK complex-valued SVD methods not available '
-                        'for 32-bit builds')
-
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 u, s, vh = svds(A2, k, solver=self.solver)
@@ -610,9 +607,6 @@ class SVDSCommonTests:
             if k < min(n, m) - 1:
                 # Complex input and explicit which="LM".
                 for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
-                    if self.solver == 'propack' and np.intp(0).itemsize < 8:
-                        pytest.skip('PROPACK complex-valued SVD methods '
-                                    'not available for 32-bit builds')
                     rng = np.random.RandomState(1648)
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)

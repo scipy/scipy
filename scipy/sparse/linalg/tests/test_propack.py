@@ -22,10 +22,6 @@ def is_complex_type(dtype):
     return np.dtype(dtype).kind == "c"
 
 
-def is_32bit():
-    return sys.maxsize <= 2**32  # (usually 2**31-1 on 32-bit)
-
-
 def is_windows():
     return 'win32' in sys.platform
 
@@ -34,10 +30,7 @@ _dtypes = []
 for dtype_flavour in TOLS.keys():
     marks = []
     if is_complex_type(dtype_flavour):
-        if is_32bit():
-            # PROPACK has issues w/ complex on 32-bit; see gh-14433
-            marks = [pytest.mark.skip]
-        elif is_windows() and np.dtype(dtype_flavour).itemsize == 16:
+        if is_windows() and np.dtype(dtype_flavour).itemsize == 16:
             # windows crashes for complex128 (so don't xfail); see gh-15108
             marks = [pytest.mark.skip]
         else:
@@ -102,12 +95,7 @@ def test_svdp(ctor, dtype, irl, which):
         with assert_raises(ValueError, match=message):
             check_svdp(n, m, ctor, dtype, k, irl, which)
     else:
-        if is_32bit() and is_complex_type(dtype):
-            message = 'PROPACK complex-valued SVD methods not available '
-            with assert_raises(TypeError, match=message):
-                check_svdp(n, m, ctor, dtype, k, irl, which)
-        else:
-            check_svdp(n, m, ctor, dtype, k, irl, which)
+        check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
 @pytest.mark.parametrize('dtype', _dtypes)

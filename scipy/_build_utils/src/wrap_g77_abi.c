@@ -16,7 +16,7 @@ typedef float _Complex float_complex;
 #endif
 
 float_complex F_FUNC(wcdotc, WCDOTC)(CBLAS_INT *n, float_complex *cx, \
-        BLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){    
+        BLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
     float_complex ret;
     /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_cdotc_sub)(*n, cx, *incx, cy, *incy,&ret);
