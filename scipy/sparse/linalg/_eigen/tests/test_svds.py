@@ -270,7 +270,6 @@ class SVDSCommonTests:
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
-        return  # TODO: needs work, disabling for now
         # check the effect of the `tol` parameter on solver accuracy by solving
         # the same problem with varying `tol` and comparing the eigenvalues
         # against ground truth computed
@@ -752,13 +751,6 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:The problem size")
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
-        if self.solver == 'propack':
-            if dtype == np.float32:
-                pytest.skip("Test failures in CI, see gh-17004")
-            elif dtype == complex:
-                # https://github.com/scipy/scipy/issues/11406
-                pytest.skip("PROPACK unsupported for complex dtype")
-
         rng = np.random.default_rng(179847540)
         # create a 10x10 singular matrix with a 4-dim null space
         dim = 4
