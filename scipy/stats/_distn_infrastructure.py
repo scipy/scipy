@@ -2558,28 +2558,30 @@ class rv_continuous(rv_generic):
         Generate some data to fit: draw random variates from the `beta`
         distribution
 
+        >>> import numpy as np
         >>> from scipy.stats import beta
         >>> a, b = 1., 2.
-        >>> x = beta.rvs(a, b, size=1000, random_state=80)
+        >>> rng = np.random.default_rng(172786373191770012695001057628748821561)
+        >>> x = beta.rvs(a, b, size=1000, random_state=rng)
 
         Now we can fit all four parameters (``a``, ``b``, ``loc`` and
         ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
         >>> a1, b1, loc1, scale1
-        (0.998314523745146, 2.0351090001496326, 0.0004988689720895926, 1.0059326261917274)
+        (1.0198945204435628, 1.9484708982737828, 4.372241314917588e-05, 0.9979078845964814)
 
         The fit can be done also using a custom optimizer:
 
         >>> from scipy.optimize import minimize
         >>> def custom_optimizer(func, x0, args=(), disp=0):
-        ...     res = minimize(func, x0, args, method="COBYLA", options={"disp": disp})
+        ...     res = minimize(func, x0, args, method="slsqp", options={"disp": disp})
         ...     if res.success:
         ...         return res.x
         ...     raise RuntimeError('optimization routine failed')
         >>> a1, b1, loc1, scale1 = beta.fit(x, method="MLE", optimizer=custom_optimizer)
         >>> a1, b1, loc1, scale1
-        (1.0200503867415276, 2.0418189235479125, 0.00037458995003956784, 0.9983744473416487)
+        (1.0198821087258905, 1.948484145914738, 4.3705304486881485e-05, 0.9979104663953395)
 
         We can also use some prior knowledge about the dataset: let's keep
         ``loc`` and ``scale`` fixed:
