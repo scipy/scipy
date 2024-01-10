@@ -1563,7 +1563,7 @@ class TestButtord:
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
     def test_runtime_warnings(self):
-        msg = "Order is zero.*|divide by zero encountered in divide"
+        msg = "Order is zero.*|divide by zero encountered"
         with pytest.warns(RuntimeWarning, match=msg):
             buttord(0.0, 1.0, 3, 60)
 
