@@ -172,7 +172,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) 
         res += detail::digamma_zeta_series(z, detail::digamma_posroot, detail::digamma_posrootval);
     } else if (absz > smallabsz) {
         res += detail::digamma_asymptotic_series(z);
-    } else if (z.real() > 0.0) {
+    } else if (z.real() >= 0.0) {
         double n = std::trunc(smallabsz - absz) + 1;
         std::complex<double> init = detail::digamma_asymptotic_series(z + n);
         res += detail::digamma_backward_recurrence(z + n, init, n);
