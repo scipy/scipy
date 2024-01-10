@@ -67,7 +67,7 @@ class _spbase:
 
     __array_priority__ = 10.1
     _format = 'und'  # undefined
-    
+
     @property
     def ndim(self) -> int:
         return len(self._shape)
@@ -157,7 +157,8 @@ class _spbase:
         """
         # If the shape already matches, don't bother doing an actual reshape
         # Otherwise, the default is to convert to COO and use its reshape
-        shape = check_shape(args, self.shape)
+        is_array = isinstance(self, sparray)
+        shape = check_shape(args, self.shape, allow_1d=is_array)
         order, copy = check_reshape_kwargs(kwargs)
         if shape == self.shape:
             if copy:
@@ -256,7 +257,7 @@ class _spbase:
 
     def __iter__(self):
         for r in range(self.shape[0]):
-            yield self[r, :]
+            yield self[r]
 
     def _getmaxprint(self):
         """Maximum number of elements to display when printed."""
@@ -586,7 +587,10 @@ class _spbase:
             if other.shape == (N,):
                 return self._mul_vector(other)
             elif other.shape == (N, 1):
-                return self._mul_vector(other.ravel()).reshape(M, 1)
+                result = self._mul_vector(other.ravel())
+                if self.ndim == 1:
+                    return result
+                return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
                 return self._mul_multivector(other)
 
@@ -595,7 +599,7 @@ class _spbase:
             return self._mul_scalar(other)
 
         if issparse(other):
-            if self.shape[1] != other.shape[0]:
+            if self.shape[-1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
             if other.ndim == 1:
                 raise ValueError('Cannot yet multiply a 1d sparse array')
@@ -634,7 +638,7 @@ class _spbase:
             ##
             # dense 2D array or matrix ("multivector")
 
-            if other.shape[0] != self.shape[1]:
+            if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
 
             result = self._mul_multivector(np.asarray(other))
@@ -872,29 +876,36 @@ class _spbase:
         # Subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
-        n = self.shape[1]
+        N = self.shape[-1]
         if j < 0:
-            j += n
-        if j < 0 or j >= n:
+            j += N
+        if j < 0 or j >= N:
             raise IndexError("index out of bounds")
         col_selector = self._csc_container(([1], [[j], [0]]),
-                                           shape=(n, 1), dtype=self.dtype)
-        return self @ col_selector
+                                           shape=(N, 1), dtype=self.dtype)
+        result = self @ col_selector
+        if self.ndim == 1:
+            # only here to force col to be 2d ("as an (mx1) sparse array")
+            # should this be 1d? -- hard to know with name "getcol"
+            return result.reshape(1, 1)
+        return result
 
     def _getrow(self, i):
         """Returns a copy of row i of the array, as a (1 x n) sparse
         array (row vector).
         """
+        if self.ndim == 1:
+            raise ValueError("getrow not meaningful for a 1d array")
         # Subclasses should override this method for efficiency.
         # Pre-multiply by a (1 x m) row vector 'a' containing all zeros
         # except for a_i = 1
-        m = self.shape[0]
+        M = self.shape[0]
         if i < 0:
-            i += m
-        if i < 0 or i >= m:
+            i += M
+        if i < 0 or i >= M:
             raise IndexError("index out of bounds")
         row_selector = self._csr_container(([1], [[0], [i]]),
-                                           shape=(1, m), dtype=self.dtype)
+                                           shape=(1, M), dtype=self.dtype)
         return row_selector @ self
 
     # The following dunder methods cannot be implemented.
@@ -1091,18 +1102,29 @@ class _spbase:
         """
         validateaxis(axis)
 
+        # Mimic numpy's casting.
+        res_dtype = get_sum_dtype(self.dtype)
+
+        if self.ndim == 1:
+            if axis not in (None, -1, 0):
+                raise ValueError("axis must be None, -1 or 0")
+            ret = (self @ np.ones(self.shape, dtype=res_dtype)).astype(dtype)
+
+            if out is not None:
+                if np.prod(np.array(out.shape)) != 1:
+                    raise ValueError("dimensions do not match")
+                out[...] = ret
+            return ret
+
         # We use multiplication by a matrix of ones to achieve this.
         # For some sparse array formats more efficient methods are
         # possible -- these should override this function.
-        m, n = self.shape
-
-        # Mimic numpy's casting.
-        res_dtype = get_sum_dtype(self.dtype)
+        M, N = self.shape
 
         if axis is None:
             # sum over rows and columns
             return (
-                self @ self._ascontainer(np.ones((n, 1), dtype=res_dtype))
+                self @ self._ascontainer(np.ones((N, 1), dtype=res_dtype))
             ).sum(dtype=dtype, out=out)
 
         if axis < 0:
@@ -1112,12 +1134,12 @@ class _spbase:
         if axis == 0:
             # sum over columns
             ret = self._ascontainer(
-                np.ones((1, m), dtype=res_dtype)
+                np.ones((1, M), dtype=res_dtype)
             ) @ self
         else:
             # sum over rows
             ret = self @ self._ascontainer(
-                np.ones((n, 1), dtype=res_dtype)
+                np.ones((N, 1), dtype=res_dtype)
             )
 
         if out is not None and out.shape != ret.shape:
@@ -1162,14 +1184,11 @@ class _spbase:
         numpy.matrix.mean : NumPy's implementation of 'mean' for matrices
 
         """
-        def _is_integral(dtype):
-            return (np.issubdtype(dtype, np.integer) or
-                    np.issubdtype(dtype, np.bool_))
-
         validateaxis(axis)
 
         res_dtype = self.dtype.type
-        integral = _is_integral(self.dtype)
+        integral = (np.issubdtype(self.dtype, np.integer) or
+                    np.issubdtype(self.dtype, np.bool_))
 
         # output dtype
         if dtype is None:
@@ -1182,9 +1201,14 @@ class _spbase:
         inter_dtype = np.float64 if integral else res_dtype
         inter_self = self.astype(inter_dtype)
 
+        if self.ndim == 1:
+            if axis not in (None, -1, 0):
+                raise ValueError("axis must be None, -1 or 0")
+            res = inter_self / self.shape[-1]
+            return res.sum(dtype=res_dtype, out=out)
+
         if axis is None:
-            return (inter_self / np.array(
-                self.shape[0] * self.shape[1]))\
+            return (inter_self / (self.shape[0] * self.shape[1]))\
                 .sum(dtype=res_dtype, out=out)
 
         if axis < 0:
