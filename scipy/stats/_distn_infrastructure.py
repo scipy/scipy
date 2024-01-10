@@ -2501,7 +2501,7 @@ class rv_continuous(rv_generic):
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
               function to be optimized) and ``disp``. 
-              The ``fit`` method calls always the optimizer with ``disp=0``.
+              The ``fit`` method calls the optimizer with ``disp=0`` to suppress output.
               The optimizer must return the estimated parameters.
 
             - method : The method to use. The default is "MLE" (Maximum
