@@ -290,7 +290,9 @@ class SVDSCommonTests:
 
         def err(tol):
             if self.solver == 'lobpcg' and tol == 1e-4:
-                with pytest.warns(UserWarning, match="Exited at iteration"):
+                msg = ("Exited at iteration.*|"
+                       "Exited postprocessing with accuracies.*")
+                with pytest.warns(UserWarning, match=msg):
                     _, s2, _ = svds(A, k=k, v0=np.ones(n),
                                     solver=self.solver, tol=tol)
             else:

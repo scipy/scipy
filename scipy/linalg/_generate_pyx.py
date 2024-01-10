@@ -5,7 +5,6 @@ from the files "cython_blas_signatures.txt" and
 all the BLAS/LAPACK routines that should be included in the wrappers.
 """
 
-from collections import defaultdict
 from operator import itemgetter
 import os
 from stat import ST_MTIME
