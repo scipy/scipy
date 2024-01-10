@@ -760,3 +760,384 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
         raise ValueError('`callback` must be callable.')
 
     return f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
+
+
+def _logsumexp(x, axis=0):
+    # logsumexp raises with empty array
+    x = np.asarray(x)
+    shape = list(x.shape)
+    if shape[axis] == 0:
+        shape.pop(axis)
+        return np.full(shape, fill_value=-np.inf, dtype=x.dtype)
+    else:
+        return special.logsumexp(x, axis=axis)
+
+
+def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
+    # Input validation and standardization
+
+    message = '`f` must be callable.'
+    if not callable(f):
+        raise ValueError(message)
+
+    message = 'All elements of `a`, `b`, and `step` must be real numbers.'
+    a, b, step = np.broadcast_arrays(a, b, step)
+    dtype = np.result_type(a.dtype, b.dtype, step.dtype)
+    if not np.issubdtype(dtype, np.number) or np.issubdtype(dtype, np.complexfloating):
+        raise ValueError(message)
+
+    valid_a = np.isfinite(a)
+    valid_b = b >= a  # NaNs will be False
+    valid_step = np.isfinite(step) & (step > 0)
+    valid_abstep = valid_a & valid_b & valid_step
+
+    message = '`log` must be True or False.'
+    if log not in {True, False}:
+        raise ValueError(message)
+
+    if atol is None:
+        atol = -np.inf if log else 0
+
+    rtol_temp = rtol if rtol is not None else 0.
+
+    params = np.asarray([atol, rtol_temp, 0.])
+    message = "`atol` and `rtol` must be real numbers."
+    if not np.issubdtype(params.dtype, np.floating):
+        raise ValueError(message)
+
+    if log:
+        message = '`atol`, `rtol` may not be positive infinity or NaN.'
+        if np.any(np.isposinf(params) | np.isnan(params)):
+            raise ValueError(message)
+    else:
+        message = '`atol`, and `rtol` must be non-negative and finite.'
+        if np.any((params < 0) | (~np.isfinite(params))):
+            raise ValueError(message)
+    atol = params[0]
+    rtol = rtol if rtol is None else params[1]
+
+    maxterms_int = int(maxterms)
+    if maxterms_int != maxterms or maxterms < 0:
+        message = "`maxterms` must be a non-negative integer."
+        raise ValueError(message)
+
+    if not np.iterable(args):
+        args = (args,)
+
+    return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
+
+
+def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
+          rtol=None):
+    r"""Evaluate a convergent sum.
+
+    For finite `b`, this evaluates::
+
+        f(a + np.arange(n)*step).sum()
+
+    where ``n = int((b - a) / step) + 1``. If `f` is smooth, positive, and
+    monotone decreasing, `b` may be infinite, in which case the infinite sum
+    is approximated using integration.
+
+    Parameters
+    ----------
+    f : callable
+        The function that evaluates terms to be summed. The signature must be::
+
+            f(x: ndarray, *args) -> ndarray
+
+         where each element of ``x`` is a finite real and ``args`` is a tuple,
+         which may contain an arbitrary number of arrays that are broadcastable
+         with `x`. `f` must represent a smooth, positive, and monotone decreasing
+         function of `x`; `_nsum` performs no checks to verify that these conditions
+         are met and may return erroneous results if they are violated.
+    a, b : array_like
+        Real lower and upper limits of summed terms. Must be broadcastable.
+        Each element of `a` must be finite and less than the corresponding
+        element in `b`, but elements of `b` may be infinite.
+    step : array_like
+        Finite, positive, real step between summed terms. Must be broadcastable
+        with `a` and `b`.
+    args : tuple, optional
+        Additional positional arguments to be passed to `f`. Must be arrays
+        broadcastable with `a`, `b`, and `step`. If the callable to be summed
+        requires arguments that are not broadcastable with `a`, `b`, and `step`,
+        wrap that callable with `f`. See Examples.
+    log : bool, default: False
+        Setting to True indicates that `f` returns the log of the terms
+        and that `atol` and `rtol` are expressed as the logs of the absolute
+        and relative errors. In this case, the result object will contain the
+        log of the sum and error. This is useful for summands for which
+        numerical underflow or overflow would lead to inaccuracies.
+    maxterms : int, default: 2**32
+        The maximum number of terms to evaluate when summing directly. 
+        Additional function evaluations may be performed for input
+        validation and integral evaluation. 
+    atol, rtol : float, optional
+        Absolute termination tolerance (default: 0) and relative termination
+        tolerance (default: ``eps**0.5``, where ``eps`` is the precision of
+        the result dtype), respectively. Must be non-negative
+        and finite if `log` is False, and must be expressed as the log of a
+        non-negative and finite number if `log` is True.
+
+    Returns
+    -------
+    res : OptimizeResult
+        An instance of `scipy.optimize.OptimizeResult` with the following
+        attributes. (The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+
+        arrays of the same shape.)
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
+        status : int
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm converged to the specified tolerances.
+            ``-1`` : Element(s) of `a`, `b`, or `step` are invalid
+            ``-2`` : Numerical integration reached its iteration limit; the sum may be divergent.
+            ``-3`` : A non-finite value was encountered.
+        sum : float
+            An estimate of the sum.
+        error : float
+            An estimate of the absolute error, assuming all terms are non-negative.
+        nfev : int
+            The number of points at which `func` was evaluated.
+
+    See Also
+    --------
+    tanhsinh
+
+    Notes
+    -----
+    The method implemented for infinite summation is related to the integral
+    test for convergence of an infinite series: assuming `step` size 1 for
+    simplicity of exposition, the sum of a monotone decreasing function is bounded by
+
+    .. math::
+
+        \int_u^\infty f(x) dx \leq \sum_{k=u}^\infty f(k) \leq \int_u^\infty f(x) dx + f(u)
+
+    Let :math:`a` represent  `a`, :math:`n` represent `maxterms`, :math:`\epsilon_a`
+    represent `atol`, and :math:`\epsilon_r` represent `rtol`.
+    The implementation first evaluates the integral :math:`S_l=\int_a^\infty f(x) dx`
+    as a lower bound of the infinite sum. Then, it seeks a value :math:`c > a` such
+    that :math:`f(c) < \epsilon_a + S_l \epsilon_r`, if it exists; otherwise,
+    let :math:`c = a + n`. Then the infinite sum is approximated as
+    
+    .. math::
+
+        \sum_{k=a}^{c-1} f(k) + \int_c^\infty f(x) dx + f(c)/2
+
+    and the reported error is :math:`f(c)/2` plus the error estimate of
+    numerical integration. The approach described above is generalized for non-unit
+    `step` and finite `b` that is too large for direct evaluation of the sum,
+    i.e. ``b - a + 1 > maxterms``.
+
+    References
+    ----------
+    [1] Wikipedia. "Integral test for convergence."
+    https://en.wikipedia.org/wiki/Integral_test_for_convergence
+
+    Examples
+    --------
+    Compute the infinite sum of the reciprocals of squared integers.
+    
+    >>> import numpy as np
+    >>> from scipy.integrate._tanhsinh import _nsum
+    >>> res = _nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
+    >>> ref = np.pi**2/6  # true value
+    >>> res.error  # estimated error
+    4.990014980029223e-07
+    >>> (res.sum - ref)/ref  # true error
+    -1.0101760641302586e-10
+    >>> res.nfev  # number of points at which callable was evaluated
+    1142
+    
+    Compute the infinite sums of the reciprocals of integers raised to powers ``p``.
+    
+    >>> from scipy import special
+    >>> p = np.arange(2, 10)
+    >>> res = _nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
+    >>> ref = special.zeta(p, 1)
+    >>> np.allclose(res.sum, ref)
+    True
+    
+    """ # noqa: E501
+    # Potential future work:
+    # - more careful testing of when `b` is slightly less than `a` plus an
+    #   integer multiple of step (needed before this is public)
+    # - improve error estimate of `_direct` sum
+    # - add other methods for convergence acceleration (Richardson, epsilon)
+    # - support infinite lower limit?
+    # - support negative monotone increasing functions?
+    # - b < a / negative step?
+    # - complex-valued function?
+    # - check for violations of monotonicity?
+
+    # Function-specific input validation / standardization
+    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
+    f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
+
+    # Additional elementwise algorithm input validation / standardization
+    tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
+    xs, fs, args, shape, dtype = tmp
+
+    # Finish preparing `a`, `b`, and `step` arrays
+    a = xs[0]
+    b = np.broadcast_to(b, shape).ravel().astype(dtype)
+    step = np.broadcast_to(step, shape).ravel().astype(dtype)
+    valid_abstep = np.broadcast_to(valid_abstep, shape).ravel()
+    nterms = np.floor((b - a) / step)
+    b = a + nterms*step
+
+    # Define constants
+    eps = np.finfo(dtype).eps
+    zero = np.asarray(-np.inf if log else 0, dtype=dtype)[()]
+    if rtol is None:
+        rtol = 0.5*np.log(eps) if log else eps**0.5
+    constants = (dtype, log, eps, zero, rtol, atol, maxterms)
+
+    # Prepare result arrays
+    S = np.empty_like(a)
+    E = np.empty_like(a)
+    status = np.zeros(len(a), dtype=int)
+    nfev = np.ones(len(a), dtype=int)  # one function evaluation above
+
+    # Branch for direct sum evaluation / integral approximation / invalid input
+    i1 = (nterms + 1 <= maxterms) & valid_abstep
+    i2 = (nterms + 1 > maxterms) & valid_abstep
+    i3 = ~valid_abstep
+
+    if np.any(i1):
+        args_direct = [arg[i1] for arg in args]
+        tmp = _direct(f, a[i1], b[i1], step[i1], args_direct, constants)
+        S[i1], E[i1] = tmp[:-1]
+        nfev[i1] += tmp[-1]
+        status[i1] = -3 * (~np.isfinite(S[i1]))
+
+    if np.any(i2):
+        args_indirect = [arg[i2] for arg in args]
+        tmp = _integral_bound(f, a[i2], b[i2], step[i2], args_indirect, constants)
+        S[i2], E[i2], status[i2] = tmp[:-1]
+        nfev[i2] += tmp[-1]
+
+    if np.any(i3):
+        S[i3], E[i3] = np.nan, np.nan
+        status[i3] = -1
+
+    # Return results
+    S, E = S.reshape(shape)[()], E.reshape(shape)[()]
+    status, nfev = status.reshape(shape)[()], nfev.reshape(shape)[()]
+    return OptimizeResult(sum=S, error=E, status=status, success=status == 0,
+                          nfev=nfev)
+
+
+def _direct(f, a, b, step, args, constants, inclusive=True):
+    # Directly evaluate the sum.
+
+    # When used in the context of distributions, `args` would contain the
+    # distribution parameters. We have broadcasted for simplicity, but we could
+    # reduce function evaluations when distribution parameters are the same but
+    # sum limits differ. Roughly:
+    # - compute the function at all points between min(a) and max(b),
+    # - compute the cumulative sum,
+    # - take the difference between elements of the cumulative sum
+    #   corresponding with b and a.
+    # This is left to future enhancement
+
+    dtype, log, eps, zero, _, _, _ = constants
+
+    # To allow computation in a single vectorized call, find the maximum number
+    # of points (over all slices) at which the function needs to be evaluated.
+    # Note: if `inclusive` is `True`, then we want `1` more term in the sum.
+    # I didn't think it was great style to use `True` as `1` in Python, so I
+    # explicitly converted it to an `int` before using it.
+    inclusive_adjustment = int(inclusive)
+    steps = np.round((b - a) / step) + inclusive_adjustment
+    # Equivalently, steps = np.round((b - a) / step) + inclusive
+    max_steps = int(np.max(steps))
+
+    # In each slice, the function will be evaluated at the same number of points,
+    # but excessive points (those beyond the right sum limit `b`) are replaced
+    # with NaN to (potentially) reduce the time of these unnecessary calculations.
+    # Use a new last axis for these calculations for consistency with other
+    # elementwise algorithms.
+    a2, b2, step2 = a[:, np.newaxis], b[:, np.newaxis], step[:, np.newaxis]
+    args2 = [arg[:, np.newaxis] for arg in args]
+    ks = a2 + np.arange(max_steps, dtype=dtype) * step2
+    i_nan = ks >= (b2 + inclusive_adjustment*step2/2)
+    ks[i_nan] = np.nan
+    fs = f(ks, *args2)
+
+    # The function evaluated at NaN is NaN, and NaNs are zeroed in the sum.
+    # In some cases it may be faster to loop over slices than to vectorize
+    # like this. This is an optimization that can be added later.
+    fs[i_nan] = zero
+    nfev = max_steps - i_nan.sum(axis=-1)
+    S = _logsumexp(fs, axis=-1) if log else np.sum(fs, axis=-1)
+    # Rough, non-conservative error estimate. See gh-19667 for improvement ideas.
+    E = np.real(S) + np.log(eps) if log else eps * abs(S)
+    return S, E, nfev
+
+
+def _integral_bound(f, a, b, step, args, constants):
+    # Estimate the sum with integral approximation
+    dtype, log, _, _, rtol, atol, maxterms = constants
+    log2 = np.log(2, dtype=dtype)
+
+    # Get a lower bound on the sum and compute effective absolute tolerance
+    lb = _tanhsinh(f, a, b, args=args, atol=atol, rtol=rtol, log=log)
+    tol = np.broadcast_to(atol, lb.integral.shape)
+    tol = _logsumexp((tol, rtol + lb.integral)) if log else tol + rtol*lb.integral
+    i_skip = lb.status < 0  # avoid unnecessary f_evals if integral is divergent
+    tol[i_skip] = np.nan
+    status = lb.status
+
+    # As in `_direct`, we'll need a temporary new axis for points
+    # at which to evaluate the function. Append axis at the end for
+    # consistency with other elementwise algorithms.
+    a2 = a[..., np.newaxis]
+    step2 = step[..., np.newaxis]
+    args2 = [arg[..., np.newaxis] for arg in args]
+
+    # Find the location of a term that is less than the tolerance (if possible)
+    nfev = 10
+    with np.errstate(divide='ignore', invalid='ignore'):
+        n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
+    ks = a2 + n_steps * step2
+    fks = f(ks, *args2)
+    nt = np.minimum(np.sum(fks > tol[:, np.newaxis], axis=-1),  n_steps.shape[-1]-1)
+    n_steps = n_steps[nt]
+
+    # Directly evaluate the sum up to this term
+    k = a + n_steps * step
+    left, left_error, left_nfev = _direct(f, a, k, step, args,
+                                          constants, inclusive=False)
+    i_skip |= np.isposinf(left)  # if sum is not finite, no sense in continuing
+    status[np.isposinf(left)] = -3
+    k[i_skip] = np.nan
+
+    # Use integration to estimate the remaining sum
+    # Possible optimization for future work: if there were no terms less than
+    # the tolerance, there is no need to compute the integral to better accuracy.
+    # Something like:
+    # atol = np.maximum(atol, np.minimum(fk/2 - fb/2))
+    # rtol = np.maximum(rtol, np.minimum((fk/2 - fb/2)/left))
+    # where `fk`/`fb` are currently calculated below.
+    right = _tanhsinh(f, k, b, args=args, atol=atol, rtol=rtol, log=log)
+
+    # Calculate the full estimate and error from the pieces
+    fk = fks[np.arange(len(fks)), nt]
+    fb = f(b, *args)
+    nfev += 1
+    if log:
+        log_step = np.log(step)
+        S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
+        S = _logsumexp(S_terms, axis=0)
+        E_terms = (left_error, right.error - log_step, fk-log2, fb-log2+np.pi*1j)
+        E = _logsumexp(E_terms, axis=0).real
+    else:
+        S = left + right.integral/step + fk/2 + fb/2
+        E = left_error + right.error/step + fk/2 - fb/2
+    status[~i_skip] = right.status[~i_skip]
+    return S, E, status, left_nfev + right.nfev + nfev + lb.nfev

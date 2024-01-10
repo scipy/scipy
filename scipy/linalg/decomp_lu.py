@@ -8,8 +8,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'lu', 'lu_solve', 'lu_factor',
     'asarray_chkfinite', 'LinAlgWarning', 'get_lapack_funcs',
-    'get_flinalg_funcs'
-
 ]
 
 

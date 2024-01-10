@@ -1,12 +1,12 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import get_blas_funcs
+from .iterative import _get_atol_rtol
 from .utils import make_system
-from scipy._lib.deprecation import _deprecate_positional_args
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from ._gcrotmk import _fgmres
 
@@ -14,9 +14,9 @@ __all__ = ['lgmres']
 
 
 @_deprecate_positional_args(version="1.14.0")
-def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
+def lgmres(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
            inner_m=30, outer_k=3, outer_v=None, store_outer_Av=True,
-           prepend_outer_v=False, atol=None):
+           prepend_outer_v=False, atol=None, rtol=1e-5):
     """
     Solve a matrix equation using the LGMRES algorithm.
 
@@ -35,14 +35,15 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is `tol`.
+    rtol, atol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``rtol``.
 
         .. warning::
 
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+           The default value for ``atol`` will be changed to ``0.0`` in
+           SciPy 1.14.0.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -76,6 +77,11 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     prepend_outer_v : bool, optional
         Whether to put outer_v augmentation vectors before Krylov iterates.
         In standard LGMRES, prepend_outer_v=False.
+    tol : float, optional, deprecated
+
+        .. deprecated:: 1.12.0
+           `lgmres` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -130,13 +136,6 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     if not np.isfinite(b).all():
         raise ValueError("RHS must contain only finite numbers")
 
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.lgmres called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
-        atol = tol
-
     matvec = A.matvec
     psolve = M.matvec
 
@@ -147,6 +146,10 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     nrm2 = get_blas_funcs('nrm2', [b])
 
     b_norm = nrm2(b)
+
+    # we call this to get the right atol/rtol and raise warnings as necessary
+    atol, rtol = _get_atol_rtol('lgmres', b_norm, tol, atol, rtol)
+
     if b_norm == 0:
         x = b
         return (postprocess(x), 0)
@@ -169,7 +172,7 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # -- check stopping condition
         r_norm = nrm2(r_outer)
-        if r_norm <= max(atol, tol * b_norm):
+        if r_norm <= max(atol, rtol * b_norm):
             break
 
         # -- inner LGMRES iteration
@@ -183,7 +186,7 @@ def lgmres(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         v0 = scal(1.0/inner_res_0, v0)
 
-        ptol = min(ptol_max_factor, max(atol, tol*b_norm)/r_norm)
+        ptol = min(ptol_max_factor, max(atol, rtol*b_norm)/r_norm)
 
         try:
             Q, R, B, vs, zs, y, pres = _fgmres(matvec,
