@@ -2725,9 +2725,9 @@ class TestZmapZscore:
         assert_equal(z, x)
 
     def test_gzscore_normal_array(self):
-        z = stats.gzscore([1, 2, 3, 4])
-        desired = ([-1.526072095151, -0.194700599824, 0.584101799472,
-                    1.136670895503])
+        x = np.array([1, 2, 3, 4])
+        z = stats.gzscore(x)
+        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
     def test_gzscore_masked_array(self):
@@ -4102,9 +4102,9 @@ class TestKSOneSample:
             (32, 1.0 / 64, False, 1.0),  # Ruben-Gambino
 
             # Miller
-            (32, 0.5, True, 0.9999999363163307),  
+            (32, 0.5, True, 0.9999999363163307),
             # Miller 2 * special.smirnov(32, 0.5)
-            (32, 0.5, False, 6.368366937916623e-08),  
+            (32, 0.5, False, 6.368366937916623e-08),
 
             # Check some other paths
             (32, 1.0 / 8, True, 0.34624229979775223),
@@ -7449,7 +7449,7 @@ class TestWassersteinDistance:
         assert_almost_equal(stats.wasserstein_distance(
             [0, 1, 2], [1, 2, 3]),
             1)
-    
+
     def test_published_values(self):
         # Compare against published values and manually computed results.
         # The values and computed result are posted at James D. McCaffrey's blog,
@@ -7459,7 +7459,7 @@ class TestWassersteinDistance:
              (4,2), (6,1), (6,1)]
         v = [(2,1), (2,1), (3,2), (3,2), (3,2), (5,1), (5,1), (5,1), (5,1), (5,1),
              (5,1), (5,1), (7,1)]
-        
+
         res = stats.wasserstein_distance(u, v)
         # In original post, the author kept two decimal places for ease of calculation.
         # This test uses the more precise value of distance to get the precise results.
@@ -7477,7 +7477,7 @@ class TestWassersteinDistance:
             stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
                                        [1, 1, 1, 1], [1, 3]),
             0)
-    
+
     @pytest.mark.parametrize('n_value', (4, 15, 35))
     @pytest.mark.parametrize('ndim', (3, 4, 7))
     @pytest.mark.parametrize('max_repeats', (5, 10))
@@ -7572,7 +7572,7 @@ class TestWassersteinDistance:
         v_weights = rng.random(size=nv)
         ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
 
-        add_row, nrows = rng.integers(0, nu, size=2) 
+        add_row, nrows = rng.integers(0, nu, size=2)
         add_value = rng.random(size=(nrows, ndim))
         u_values = np.insert(u_values, add_row, add_value, axis=0)
         u_weights = np.insert(u_weights, add_row, np.zeros(nrows), axis=0)
@@ -7628,7 +7628,7 @@ class TestWassersteinDistance:
     @pytest.mark.parametrize('nv', (7, 13, 19))
     @pytest.mark.parametrize('ndim', (2, 4, 7))
     def test_orthogonal_nD(self, nu, nv, ndim):
-        # orthogonal transformations do not affect the result of the 
+        # orthogonal transformations do not affect the result of the
         # wasserstein_distance
         rng = np.random.default_rng(34746837464536)
         u_values = rng.random(size=(nu, ndim))
