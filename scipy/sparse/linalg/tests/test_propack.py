@@ -1,6 +1,5 @@
 import os
 import pytest
-import sys
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -22,19 +21,11 @@ def is_complex_type(dtype):
     return np.dtype(dtype).kind == "c"
 
 
-def is_windows():
-    return 'win32' in sys.platform
-
-
 _dtypes = []
 for dtype_flavour in TOLS.keys():
     marks = []
     if is_complex_type(dtype_flavour):
-        if is_windows() and np.dtype(dtype_flavour).itemsize == 16:
-            # windows crashes for complex128 (so don't xfail); see gh-15108
-            marks = [pytest.mark.skip]
-        else:
-            marks = [pytest.mark.slow]  # type: ignore[list-item]
+        marks = [pytest.mark.slow]  # type: ignore[list-item]
     _dtypes.append(pytest.param(dtype_flavour, marks=marks,
                                 id=dtype_flavour.__name__))
 _dtypes = tuple(_dtypes)  # type: ignore[assignment]
