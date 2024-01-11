@@ -85,12 +85,14 @@ quadpack_lib = static_library('quadpack_lib',
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: fortran_ignore_warnings,
+  override_options: ['b_lto=false'],
 )
 
 vode_lib = static_library('vode_lib',
   vode_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: fortran_ignore_warnings,
+  override_options: ['b_lto=false'],
 )
 
 dop_lib = static_library('dop_lib',
