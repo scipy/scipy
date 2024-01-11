@@ -4075,7 +4075,7 @@ def f_oneway(*samples, axis=0):
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis 
+    # ValueError if the dimensions of all the arrays, except the axis
     # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
@@ -9874,7 +9874,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the quantile associated with the probability `p` 
+        * 'two-sided': the quantile associated with the probability `p`
           is not `q`.
         * 'less': the quantile associated with the probability `p` is less
           than `q`.
@@ -10044,7 +10044,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
 
-    When testing data from the standard *normal* distribution, which has a 
+    When testing data from the standard *normal* distribution, which has a
     median of 0, we would expect the null hypothesis to be rejected.
 
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
@@ -10189,7 +10189,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the Wasserstein-1 distance between two discrete distributions.
+    Compute the Wasserstein-1 distance between two discrete distributions
+    with respect to the Euclidean norm.
 
     The Wasserstein distance, also called the Earth mover's distance or the
     optimal transport distance, is a similarity metric between two probability
@@ -10227,18 +10228,16 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     -----
     Given two probability mass functions, :math:`u`
     and :math:`v`, the first Wasserstein distance between the distributions
-    is:
+    using the Euclidean norm is:
 
     .. math::
 
-        l_1 (u, v) = \inf_{\pi \in \Gamma (u, v)} \int_{\mathbb{R} \times
-        \mathbb{R}} |x-y| \mathrm{d} \pi (x, y)
+        l_1 (u, v) = \inf_{\pi \in \Gamma (u, v)} \int \| x-y \|_2 \mathrm{d} \pi (x, y)
 
-    where :math:`\Gamma (u, v)` is the set of (probability) distributions on
-    :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
-    :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
-    :math:`x`, and the same for :math:`v(x)`.
+    where :math:`\Gamma (u, v)` is the set of (probability) distributions whose
+    marginals are :math:`u` and :math:`v` on the first and second factors
+    respectively. For a given value :math:`x`, :math:`u(x)` gives the probability
+    of :math:`u` at position :math:`x`, and the same for :math:`v(x)`.
 
     In the 1-dimensional case, let :math:`U` and :math:`V` denote the
     respective CDFs of :math:`u` and :math:`v`, this distance also equals to:
@@ -10397,7 +10396,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     A = sparse.coo_array(A)
 
     # get cost matrix
-    D = distance_matrix(u_values, v_values, p=1)
+    D = distance_matrix(u_values, v_values, p=2)
     cost = D.ravel()
 
     # create the minimization target
