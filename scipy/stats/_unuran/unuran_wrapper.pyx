@@ -143,7 +143,7 @@ cdef class _URNG:
 
 # Module level lock. This is used to provide thread-safe error reporting.
 # UNU.RAN has a thread-unsafe global FILE streams where errors are logged.
-# To make it thread-safe, one can aquire a lock before calling
+# To make it thread-safe, one can acquire a lock before calling
 # `unur_set_stream` and release once the stream is not needed anymore.
 cdef object _lock = threading.RLock()
 
@@ -385,7 +385,7 @@ cdef class Method:
     * It implements the `rvs` public method for sampling. No child class
       should override this method.
     * Provides a `set_random_state` method to change the seed.
-    * Implements the __dealloc__ method. The child class must not overide
+    * Implements the __dealloc__ method. The child class must not override
       this method.
     * Implements __reduce__ method to allow pickling.
 
@@ -778,7 +778,7 @@ cdef class TransformedDensityRejection(Method):
     ...                                   random_state=urng)
 
     Domain can be very useful to truncate the distribution but to avoid passing
-    it everytime to the constructor, a default domain can be set by providing a
+    it every time to the constructor, a default domain can be set by providing a
     `support` method in the distribution object (`dist`):
 
     >>> class MyDist:
@@ -1080,7 +1080,7 @@ cdef class SimpleRatioUniforms(Method):
 
     >>> rvs = rng.rvs(10)
 
-    If the CDF at mode is avaialble, it can be set to improve the performace of `rvs`:
+    If the CDF at mode is available, it can be set to improve the performance of `rvs`:
 
     >>> from scipy.stats import norm
     >>> rng = SimpleRatioUniforms(dist, mode=0,
@@ -1189,7 +1189,7 @@ cdef class NumericalInversePolynomial(Method):
     distribution. Nevertheless, the maximal tolerated approximation error can be set to
     be the resolution (but, of course, is bounded by the machine precision). We use the
     u-error ``|U - CDF(X)|`` to measure the error where ``X`` is the approximate
-    percentile corressponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
+    percentile corresponding to the quantile ``U`` i.e. ``X = approx_ppf(U)``. We call
     the maximal tolerated u-error the u-resolution of the algorithm.
 
     Both the order of the interpolating polynomial and the u-resolution can be selected.

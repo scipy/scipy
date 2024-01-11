@@ -352,9 +352,9 @@ class PDFPeakMemory(Benchmark):
     def setup(self, dist_name):
         # This benchmark is demanding. Skip it if the env isn't xslow.
         if not is_xslow():
-            raise NotImplementedError("skipped - enviroment is not xslow. "
-                                      "To enable this benchamark, set the "
-                                      "enviroment variable SCIPY_XSLOW=1")
+            raise NotImplementedError("skipped - environment is not xslow. "
+                                      "To enable this benchmark, set the "
+                                      "environment variable SCIPY_XSLOW=1")
 
         if dist_name in self.slow_dists:
             raise NotImplementedError("skipped - dist is too slow.")
@@ -412,7 +412,9 @@ class Distribution(Benchmark):
                 stats.beta.fit(self.x, loc=4, scale=10)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    time_distribution.version = (
+        "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    )
 
 
 class DescriptiveStats(Benchmark):

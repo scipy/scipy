@@ -438,7 +438,8 @@ def test_events():
         assert_(np.all(e < 5))
 
         # Test that the y_event matches solution
-        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0],
+                           rtol=1e-3, atol=1e-6)
 
     # Test in backward direction.
     event_rational_1.direction = 0
@@ -515,8 +516,10 @@ def test_events():
         e = compute_error(yc, yc_true, 1e-3, 1e-6)
         assert_(np.all(e < 5))
 
-        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0], rtol=1e-3, atol=1e-6)
-        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0],
+                           rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0],
+                           rtol=1e-3, atol=1e-6)
 
 
 def test_max_step():

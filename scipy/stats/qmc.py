@@ -232,4 +232,4 @@ References
    30, no. 5: 2635-2654, 2008.
 
 """
-from ._qmc import *
+from ._qmc import *  # noqa: F403

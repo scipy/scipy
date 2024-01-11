@@ -21,19 +21,27 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   test_meson:
     name: Meson build
-    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        python-version: ['3.10', '3.12-dev']
+        python-version: ['3.10', '3.12'] # this run will use python dev versions when available
         maintenance-branch:
           - ${{ contains(github.ref, 'maintenance/') || contains(github.base_ref, 'maintenance/') }}
         exclude:
           - maintenance-branch: true
-            python-version: '3.12-dev'
+            python-version: '3.12'
 
     steps:
     - uses: actions/checkout@v3
@@ -59,11 +67,11 @@ jobs:
         python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
 
     - name: Install Python packages from repositories
-      if: matrix.python-version == '3.12-dev'
+      if: matrix.python-version == '3.12' # this run will use python dev versions when available
       run: |
         python -m pip install git+https://github.com/numpy/numpy.git
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool pooch hypothesis "setuptools<67.3"
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
 
     - name:  Prepare compiler cache
@@ -110,7 +118,7 @@ jobs:
       if: matrix.python-version == '3.10'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install -r mypy_requirements.txt
+        python -m pip install mypy==1.0.0 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
@@ -124,7 +132,10 @@ jobs:
   #################################################################################
   test_venv_install:
     name: Pip install into venv
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
@@ -180,7 +191,10 @@ jobs:
   python_debug:
     # also uses the vcs->sdist->wheel route.
     name: Python-debug & ATLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
       - uses: actions/checkout@v3
@@ -207,7 +221,10 @@ jobs:
   gcc8:
     # Purpose is to examine builds with oldest-supported gcc.
     name: Build with gcc-8
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
     steps:
       - uses: actions/checkout@v3
@@ -230,7 +247,7 @@ jobs:
         run: |
           pip install "numpy==1.22.4" &&
           # build deps
-          pip install build meson-python ninja pythran pybind11 cython wheel
+          pip install build meson-python ninja pythran pybind11 cython
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
 
@@ -255,11 +272,16 @@ jobs:
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
     name: Prerelease deps, coverage, and 64-bit BLAS
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        # Both use numpy 2.0-dev at build time; 3.9 job then downgrades to
+        # lowest supported NumPy version in order to test ABI compatibility.
+        python-version: ['3.9', '3.11']
 
     steps:
     - uses: actions/checkout@v3
@@ -276,10 +298,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
 
-        # Install OpenBLAS a la cibuildwheel.
-        chmod +x tools/wheels/cibw_before_build_linux.sh
-        sudo tools/wheels/cibw_before_build_linux.sh --nightly .       
-
     - name: Caching Python dependencies
       uses: actions/cache@v3
       id: cache
@@ -289,13 +307,16 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install "Cython>=3.0.0b3"
-        python -m pip install ninja meson meson-python wheel click rich_click pydevtool
+        python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
+        # Note: matplotlib not installed here to avoid issues around numpy 2.0
+        # (it can be put back after matplotlib has made a 2.0-compatible
+        # release on PyPI.
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
+        # TODO: once the scipy_ symbol prefix issue is fixed, install
+        # scipy-openblas32 from the pre-releases bucket again (see gh-19640)
+        python -m pip install "scipy-openblas32<=0.3.23.293.2"
+        # Install numpy last, to ensure we get 2.0.0-dev (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-        python -m pip install git+https://github.com/serge-sans-paille/pythran.git@e3babfd
-        # Use pytest-xdist<4.0 due to https://github.com/pytest-dev/pytest-cov/issues/557
-        # can update once pytest-cov>4.0 and remove warning filtering in pytest.ini
-        python -m pip install --pre --upgrade pytest pytest-cov "pytest-xdist<4.0" pybind11 mpmath gmpy2 threadpoolctl pooch matplotlib hypothesis
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -318,23 +339,29 @@ jobs:
 
     - name: Build and install SciPy
       run: |
-        python dev.py build --gcov
+        python dev.py build --gcov --with-scipy-openblas
 
     - name: Ccache performance
       shell: bash -l {0}
       run: ccache -s
 
+    - name: Downgrade NumPy from 2.0-dev to lowest supported
+      if: matrix.python-version == '3.9'
+      run: |
+        python -m pip install "numpy==1.22.4"
+
     - name: Test SciPy
       run: |
-        export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-
         export OPENBLAS_NUM_THREADS=1
-        python dev.py test -j2 --mode full -- --cov --cov-report term-missing 
+        python dev.py --no-build test -j2 --mode full -- --cov --cov-report term-missing
 
   #################################################################################
   linux_32bit:
     name: Linux - 32 bit
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-latest
     # I tried running directly in a container:, using the image: and options:
     # entries. Unfortunately at this time options: does not seem to listen to
@@ -357,6 +384,6 @@ jobs:
         python3.9 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
-        python -m pip install numpy==1.22.4 cython==0.29.35 pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==1.22.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"

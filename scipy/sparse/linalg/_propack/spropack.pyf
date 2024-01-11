@@ -2,7 +2,7 @@
 
 python module __user__routines
     interface
-        function saprod(transa,m,n,x,y,dparm,iparm)
+        subroutine saprod(transa,m,n,x,y,dparm,iparm)
            character*1 :: transa
            integer intent(in) :: m
            integer intent(in) :: n
@@ -10,7 +10,7 @@ python module __user__routines
            real depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
            integer dimension(*) :: iparm
            real dimension(*) :: dparm
-        end function saprod
+        end subroutine saprod
     end interface
 end python module __user__routines
 

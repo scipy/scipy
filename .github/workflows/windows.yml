@@ -17,11 +17,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  get_commit_message:
+    name: Get commit message
+    uses: ./.github/workflows/commit_message.yml
+
   test:
     name: cp310 (meson) fast
+    needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -40,29 +47,15 @@ jobs:
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
-      - name: show-gfortran
-        run: |
-          gcc --version
-          gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.4 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
-      - name: Install OpenBLAS
-        shell: bash
-        run: |
-          # same OpenBLAS install method as cibuildwheel
-          set -xe
-          bash tools/wheels/cibw_before_build_win.sh .
-          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
+          pip install numpy==1.22.4 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+
       - name: Build
         run: |
           echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
-          python dev.py build --win-cp-openblas
-          # Necessary because GitHub Actions checks out the repo to D:\ while OpenBLAS
-          # got installed to C:\ higher up. The copying with `--win-cp-openblas` fails
-          # when things are split over drives.
-          cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
-          python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
+          python dev.py build --with-scipy-openblas
+
       - name: Test
         run: |
           python dev.py test -j2
@@ -71,7 +64,10 @@ jobs:
   #############################################################################
   full_dev_py_min_numpy:
     name: cp39 (meson) full, dev.py, minimum numpy
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -90,25 +86,15 @@ jobs:
           choco install rtools -y --no-progress --force --version=4.0.0.20220206
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
 
-      - name: Install OpenBLAS
-        shell: bash
-        run: |
-          set -xe
-          bash tools/wheels/cibw_before_build_win.sh .
-          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
-
       - name: pip-packages
         run: |
           # 1.22.4 is currently the oldest numpy usable on cp3.9 according
           # to pyproject.toml
-          python -m pip install numpy==1.22.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
+          python -m pip install numpy==1.22.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
 
       - name: Build
         run: |
-          python dev.py build --win-cp-openblas
-          # Copy OpenBLAS DLL, write distributor-init (see first job in this file for why)
-          cp C:\opt\64\bin\*.dll $pwd\build-install\Lib\site-packages\scipy\.libs\
-          python tools\openblas_support.py --write-init $PWD\build-install\Lib\site-packages\scipy\
+          python dev.py build --with-scipy-openblas
 
       - name: Test
         run: |
@@ -119,7 +105,10 @@ jobs:
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
     name: cp311 (build sdist + wheel), full, no pythran
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: windows-2019
     steps:
       - name: Checkout
@@ -142,17 +131,19 @@ jobs:
       - name: Install OpenBLAS
         shell: bash
         run: |
+          # Keep this using the OpenBLAS tarballs for now, as long as we use those for wheel builds
           set -xe
           bash tools/wheels/cibw_before_build_win.sh .
           echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
 
       - name: pip-packages
         run: |
-          python -m pip install build delvewheel numpy cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
+          python -m pip install build delvewheel cython pybind11 meson-python meson ninja pytest pytest-xdist pytest-timeout pooch hypothesis
+          python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
       - name: Build
         run: |
-          python -m build -Csetup-args="-Duse-pythran=false"
+          python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel 
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
@@ -166,64 +157,3 @@ jobs:
           # run full test suite
           pytest --pyargs scipy
 
-
-  #############################################################################
-  fast_setup:
-    name: cp310 (setup.py bdist_wheel)
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: windows-2019
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          submodules: recursive
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-          cache-dependency-path: 'environment.yml'
-
-      - name: Win_amd64 - install rtools
-        run: |
-          # mingw-w64
-          choco install rtools -y --no-progress --force --version=4.0.0.20220206
-          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
-
-      - name: Install OpenBLAS
-        shell: bash
-        run: |
-          set -xe
-          bash tools/wheels/cibw_before_build_win.sh .
-
-          # force static linking
-          pushd /c/opt/64/lib
-          rm *.dev.a *.dll.a *.lib
-          popd
-
-          # site.cfg.template currently distributed with
-          # multibuild-wheels-staging/openblas-libs
-          cp /c/opt/64/site.cfg.template site.cfg
-          sed -i  's/{openblas_root}/c:\\opt/g' site.cfg
-
-      - name: pip-packages
-        run: |
-          # pyproject.toml currently states this numpy minimum version.
-          python -m pip install --upgrade pip "setuptools==59.6.0" wheel
-          python -m pip install "cython<3.0" numpy==1.22.4 pybind11 pythran pytest pooch hypothesis
-
-      - name: Build
-        run: |
-          cp _setup.py setup.py
-          python setup.py bdist_wheel
-
-          # Vendor openblas.dll and the DLL's it depends on into the wheel 
-          $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
-          delvewheel repair --add-path c:\opt\openblas\openblas_dll -w dist $env:wheel_name
-          
-          python -m pip install $env:wheel_name
-
-      - name: Test
-        run: |
-          cd $RUNNER_TEMP
-          pytest --pyargs scipy -m "not slow"

@@ -97,7 +97,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
                 " This problem is known to occur when the distribution"
                 " is degenerate or the statistic is np.min."
             )
-            warnings.warn(DegenerateDataWarning(msg))
+            warnings.warn(DegenerateDataWarning(msg), stacklevel=3)
             percentiles[indices] = np.nan
         else:
             theta_hat_b_i = theta_hat_b[indices]
@@ -1546,7 +1546,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     Indeed, the test statistic is negative, suggesting that the true mean of
     the distribution underlying ``x`` is less than that of the distribution
-    underlying ``y``. To determine the probability of this occuring by chance
+    underlying ``y``. To determine the probability of this occurring by chance
     if the two samples were drawn from the same distribution, we perform
     a permutation test.
 

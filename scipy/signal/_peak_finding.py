@@ -4,7 +4,7 @@ Functions for identifying peaks in signals.
 import math
 import numpy as np
 
-from scipy.signal._wavelets import cwt, ricker
+from scipy.signal._wavelets import _cwt, _ricker
 from scipy.stats import scoreatpercentile
 
 from ._peak_finding_utils import (
@@ -312,12 +312,11 @@ def _arg_wlen_as_expected(value):
         value = -1
     elif 1 < value:
         # Round up to a positive integer
-        if not np.can_cast(value, np.intp, "safe"):
+        if isinstance(value, float):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be larger than 1, was {}'
-                         .format(value))
+        raise ValueError(f'`wlen` must be larger than 1, was {value}')
     return value
 
 
@@ -413,7 +412,7 @@ def peak_prominences(x, peaks, wlen=None):
     >>> from scipy.signal import find_peaks, peak_prominences
     >>> import matplotlib.pyplot as plt
 
-    Create a test signal with two overlayed harmonics
+    Create a test signal with two overlaid harmonics
 
     >>> x = np.linspace(0, 6 * np.pi, 1000)
     >>> x = np.sin(x) + 0.6 * np.sin(2.6 * x)
@@ -558,7 +557,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
     >>> from scipy.signal import chirp, find_peaks, peak_widths
     >>> import matplotlib.pyplot as plt
 
-    Create a test signal with two overlayed harmonics
+    Create a test signal with two overlaid harmonics
 
     >>> x = np.linspace(0, 6 * np.pi, 1000)
     >>> x = np.sin(x) + 0.6 * np.sin(2.6 * x)
@@ -712,7 +711,7 @@ def _select_by_peak_threshold(x, peaks, tmin, tmax):
     .. versionadded:: 1.1.0
     """
     # Stack thresholds on both sides to make min / max operations easier:
-    # tmin is compared with the smaller, and tmax with the greater thresold to
+    # tmin is compared with the smaller, and tmax with the greater threshold to
     # each peak's side
     stacked_thresholds = np.vstack([x[peaks] - x[peaks - 1],
                                     x[peaks] - x[peaks + 1]])
@@ -1300,9 +1299,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if max_distances is None:
         max_distances = widths / 4.0
     if wavelet is None:
-        wavelet = ricker
+        wavelet = _ricker
 
-    cwt_dat = cwt(vector, wavelet, widths)
+    cwt_dat = _cwt(vector, wavelet, widths)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    window_size=window_size, min_snr=min_snr,

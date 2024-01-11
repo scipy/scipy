@@ -139,7 +139,7 @@ def whiten(obs, check_finite=True):
         std_dev[zero_std_mask] = 1.0
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     return obs / std_dev
 
 
@@ -622,7 +622,8 @@ _valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
 def _missing_warn():
     """Print a warning when called."""
     warnings.warn("One of the clusters is empty. "
-                  "Re-run kmeans with a different initialization.")
+                  "Re-run kmeans with a different initialization.",
+                  stacklevel=3)
 
 
 def _missing_raise():
@@ -794,7 +795,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             raise ValueError("Cannot ask kmeans2 for %d clusters"
                              " (k was %s)" % (nc, code_book))
         elif nc != code_book:
-            warnings.warn("k was not an integer, was converted.")
+            warnings.warn("k was not an integer, was converted.", stacklevel=2)
 
         try:
             init_meth = _valid_init_meth[minit]

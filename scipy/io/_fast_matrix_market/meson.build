@@ -29,7 +29,6 @@ py3.extension_module('_fmm_core',
   ],
   override_options: ['cpp_std=c++17'],
   cpp_args: [
-    numpy_nodepr_api,
     '-DFMM_SCIPY_PRUNE',
     '-DFMM_USE_FAST_FLOAT',
     '-DFMM_USE_RYU'

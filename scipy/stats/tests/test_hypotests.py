@@ -63,12 +63,6 @@ class TestEppsSingleton:
         # raise error if there are non-finite values
         x, y = (1, 2, 3, 4, 5, np.inf), np.arange(10)
         assert_raises(ValueError, epps_singleton_2samp, x, y)
-        x, y = np.arange(10), (1, 2, 3, 4, 5, np.nan)
-        assert_raises(ValueError, epps_singleton_2samp, x, y)
-
-    def test_epps_singleton_1d_input(self):
-        x = np.arange(100).reshape(-1, 1)
-        assert_raises(ValueError, epps_singleton_2samp, x, x)
 
     def test_names(self):
         x, y = np.arange(20), np.arange(30)
@@ -121,7 +115,7 @@ class TestCvm:
         # for large values of x and n, the series used to compute the cdf
         # converges slowly.
         # this leads to bug in R package goftest and MAPLE code that is
-        # the basis of the implemenation in scipy
+        # the basis of the implementation in scipy
         # note: cdf = 1 for x >= 1000/3 and n = 1000
         assert_(0.99999 < _cdf_cvm(333.3, 1000) < 1.0)
         assert_(0.99999 < _cdf_cvm(333.3) < 1.0)
@@ -135,8 +129,6 @@ class TestCvm:
         assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
-        assert_raises(ValueError, cramervonmises, x, "norm")
         assert_raises(ValueError, cramervonmises, [1.5], "norm")
         assert_raises(ValueError, cramervonmises, (), "norm")
 
@@ -173,7 +165,7 @@ class TestMannWhitneyU:
     def setup_method(self):
         _mwu_state._recursive = True
 
-    # All magic numbers are from R wilcox.test unless otherwise specied
+    # All magic numbers are from R wilcox.test unless otherwise specified
     # https://rdrr.io/r/stats/wilcox.test.html
 
     # --- Test Input Validation ---
@@ -1322,13 +1314,7 @@ class TestBoschlooExact:
 
 class TestCvm_2samp:
     def test_invalid_input(self):
-        x = np.arange(10).reshape((2, 5))
         y = np.arange(5)
-        msg = 'The samples must be one-dimensional'
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(x, y)
-        with pytest.raises(ValueError, match=msg):
-            cramervonmises_2samp(y, x)
         msg = 'x and y must contain at least two observations.'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp([], y)

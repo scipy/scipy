@@ -16,9 +16,6 @@ from ._solve_toeplitz import levinson
 from ._cythonized_array_utils import find_det_from_lu
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
-# deprecated imports to be removed in SciPy 1.13.0
-from scipy.linalg._flinalg_py import get_flinalg_funcs  # noqa
-
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
@@ -39,8 +36,7 @@ lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
 def _solve_check(n, info, lamch=None, rcond=None):
     """ Check arguments during the different steps of the solution phase """
     if info < 0:
-        raise ValueError('LAPACK reported an illegal value in {}-th argument'
-                         '.'.format(-info))
+        raise ValueError(f'LAPACK reported an illegal value in {-info}-th argument.')
     elif 0 < info:
         raise LinAlgError('Matrix is singular.')
 
@@ -48,8 +44,8 @@ def _solve_check(n, info, lamch=None, rcond=None):
         return
     E = lamch('E')
     if rcond < E:
-        warn('Ill-conditioned matrix (rcond={:.6g}): '
-             'result may not be accurate.'.format(rcond),
+        warn(f'Ill-conditioned matrix (rcond={rcond:.6g}): '
+             'result may not be accurate.',
              LinAlgWarning, stacklevel=3)
 
 
@@ -178,8 +174,7 @@ def solve(a, b, lower=False, overwrite_a=False,
         b_is_1D = True
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
-        raise ValueError('{} is not a recognized matrix structure'
-                         ''.format(assume_a))
+        raise ValueError(f'{assume_a} is not a recognized matrix structure')
 
     # for a real matrix, describe it as "symmetric", not "hermitian"
     # (lapack doesn't know what to do with real hermitian matrices)
@@ -340,8 +335,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     if a1.shape[0] != b1.shape[0]:
-        raise ValueError('shapes of a {} and b {} are incompatible'
-                         .format(a1.shape, b1.shape))
+        raise ValueError(f'shapes of a {a1.shape} and b {b1.shape} are incompatible')
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
@@ -859,8 +853,7 @@ def solve_circulant(c, b, singular='raise', tol=None,
     b = np.atleast_1d(b)
     nb = _get_axis_len("b", b, baxis)
     if nc != nb:
-        raise ValueError('Shapes of c {} and b {} are incompatible'
-                         .format(c.shape, b.shape))
+        raise ValueError(f'Shapes of c {c.shape} and b {b.shape} are incompatible')
 
     fc = np.fft.fft(np.moveaxis(c, caxis, -1), axis=-1)
     abs_fc = np.abs(fc)
@@ -948,15 +941,6 @@ def inv(a, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or _datacopied(a1, a)
-    # XXX: I found no advantage or disadvantage of using finv.
-#     finv, = get_flinalg_funcs(('inv',),(a1,))
-#     if finv is not None:
-#         a_inv,info = finv(a1,overwrite_a=overwrite_a)
-#         if info==0:
-#             return a_inv
-#         if info>0: raise LinAlgError, "singular matrix"
-#         if info<0: raise ValueError('illegal value in %d-th argument of '
-#                                     'internal inv.getrf|getri'%(-info))
     getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',
                                                   'getri_lwork'),
                                                  (a1,))
@@ -1236,7 +1220,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
         nrhs = 1
     if m != b1.shape[0]:
         raise ValueError('Shape mismatch: a and b should have the same number'
-                         ' of rows ({} != {}).'.format(m, b1.shape[0]))
+                         f' of rows ({m} != {b1.shape[0]}).')
     if m == 0 or n == 0:  # Zero-sized problem, confuses LAPACK
         x = np.zeros((n,) + b1.shape[1:], dtype=np.common_type(a1, b1))
         if n == 0:
@@ -1673,9 +1657,8 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     if info < 0:
         raise ValueError('xGEBAL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the xGEBAL error codes.'
-                         ''.format(-info))
+                         f'"illegal value in argument number {-info}.". See '
+                         'LAPACK documentation for the xGEBAL error codes.')
 
     # Separate the permutations from the scalings and then convert to int
     scaling = np.ones_like(ps, dtype=float)

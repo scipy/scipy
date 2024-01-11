@@ -10,7 +10,7 @@ import pytest
 from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,
         splev, splrep, splprep, splder, splantider, sproot, splint, insert,
-        CubicSpline, NdBSpline, make_smoothing_spline
+        CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
 )
 import scipy.linalg as sl
 
@@ -1076,7 +1076,7 @@ class TestInterp:
 
     @pytest.mark.parametrize('k', [2, 3, 4, 5])
     def test_periodic_splev(self, k):
-        # comparision values of periodic b-spline with splev
+        # comparison values of periodic b-spline with splev
         b = make_interp_spline(self.xx, self.yy, k=k, bc_type='periodic')
         tck = splrep(self.xx, self.yy, per=True, k=k)
         spl = splev(self.xx, tck)
@@ -1236,8 +1236,8 @@ class TestInterp:
             assert_allclose(b(xx), yy, atol=1e-14, rtol=1e-14)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
 
         # Cython chokes on "buffer type mismatch" (construction) or
         # "no matching signature found" (evaluation)
@@ -1499,8 +1499,8 @@ class TestLSQ:
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
     def test_int_xy(self):
-        x = np.arange(10).astype(np.int_)
-        y = np.arange(10).astype(np.int_)
+        x = np.arange(10).astype(int)
+        y = np.arange(10).astype(int)
         t = _augknt(x, k=1)
         # Cython chokes on "buffer type mismatch"
         make_lsq_spline(x, y, t, k=1)
@@ -1566,10 +1566,10 @@ class TestSmoothingSpline:
         with assert_raises(ValueError):
             make_smoothing_spline(x_dupl, y)
 
-        # x and y length must be larger than 5
+        # x and y length must be >= 5
         x = np.arange(4)
         y = np.ones(4)
-        exception_message = "``x`` and ``y`` length must be larger than 5"
+        exception_message = "``x`` and ``y`` length must be at least 5"
         with pytest.raises(ValueError, match=exception_message):
             make_smoothing_spline(x, y)
 
@@ -1614,12 +1614,12 @@ class TestSmoothingSpline:
 
         """
         # load the data sample
-        data = np.load(data_file('gcvspl.npz'))
-        # data points
-        x = data['x']
-        y = data['y']
+        with np.load(data_file('gcvspl.npz')) as data:
+            # data points
+            x = data['x']
+            y = data['y']
 
-        y_GCVSPL = data['y_GCVSPL']
+            y_GCVSPL = data['y_GCVSPL']
         y_compr = make_smoothing_spline(x, y)(x)
 
         # such tolerance is explained by the fact that the spline is built
@@ -1944,6 +1944,26 @@ class TestNdBSpline:
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
 
+    def test_tx_neq_ty(self):
+        # 2D separable spline w/ len(tx) != len(ty)
+        x = np.arange(6)
+        y = np.arange(7) + 1.5
+
+        spl_x = make_interp_spline(x, x**3, k=3)
+        spl_y = make_interp_spline(y, y**2 + 2*y, k=3)
+        cc = spl_x.c[:, None] * spl_y.c[None, :]
+        bspl = NdBSpline((spl_x.t, spl_y.t), cc, (spl_x.k, spl_y.k))
+
+        values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
+        rgi = RegularGridInterpolator((x, y), values)
+
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+        bxi = bspl(xi)
+
+        assert not np.isnan(bxi).any()
+        assert_allclose(bxi, rgi(xi), atol=1e-14)
+        assert_allclose(bxi.reshape(values.shape), values, atol=1e-14)
+
     def make_3d_case(self):
         # make a 3D separable spline
         x = np.arange(6)
@@ -2127,7 +2147,6 @@ class TestNdBSpline:
 
         assert_allclose(bspl2(xi),
                         [bspl2_0(xp) for xp in xi], atol=1e-14)
-
 
     def test_readonly(self):
         t3, c3, k = self.make_3d_case()

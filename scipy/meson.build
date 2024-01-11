@@ -70,7 +70,11 @@ else
   _incdir_numpy_abs = incdir_numpy
 endif
 inc_np = include_directories(incdir_numpy)
-np_dep = declare_dependency(include_directories: inc_np)
+# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
+# when NumPy introduces a new deprecation.
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
@@ -120,16 +124,6 @@ cpp_args_pythran = [
   '-DPYTHRAN_BLAS_NONE'
 ]
 
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation. Use in a meson.build file::
-#
-#   py3.extension_module('_name',
-#     'source_fname',
-#     numpy_nodepr_api)
-#
-numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
-
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
   fortranobject_c,
@@ -153,11 +147,21 @@ fortranobject_dep = declare_dependency(
 # https://github.com/mesonbuild/meson/issues/2835
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
+
+# First try scipy-openblas, and if found don't look for cblas or lapack, we
+# know what's inside the scipy-openblas wheels already.
+if blas_name == 'openblas' or blas_name == 'auto'
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
+  if blas.found()
+    blas_name = 'scipy-openblas'
+  endif
+endif
+
 # pkg-config uses a lower-case name while CMake uses a capitalized name, so try
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
   blas = dependency(['openblas', 'OpenBLAS'])
-else
+elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
 if blas_name == 'blas'
@@ -171,7 +175,11 @@ else
   cblas = []
 endif
 
-if lapack_name == 'openblas'
+if 'mkl' in blas.name() or blas.name() == 'accelerate' or blas_name == 'scipy-openblas'
+  # For these libraries we know that they contain LAPACK, and it's desirable to
+  # use that - no need to run the full detection twice.
+  lapack = blas
+elif lapack_name == 'openblas'
   lapack = dependency(['openblas', 'OpenBLAS'])
 else
   lapack = dependency(lapack_name)
@@ -214,7 +222,8 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir
+  install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 python_sources = [
@@ -226,14 +235,13 @@ python_sources = [
   'special.pxd',
 ]
 
+if blas_name == 'scipy-openblas'
+  python_sources += ['_distributor_init_local.py']
+endif
+
 py3.install_sources(
   python_sources,
   subdir: 'scipy'
-)
-
-py3.install_sources(
-  ['_build_utils/tests/test_scipy_version.py'],
-  subdir: 'scipy/_lib/tests'
 )
 
 # Copy the main __init__.py and pxd files to the build dir.
@@ -281,6 +289,7 @@ Wno_implicit_function_declaration = cc.get_supported_arguments('-Wno-implicit-fu
 Wno_parentheses = cc.get_supported_arguments('-Wno-parentheses')
 Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
+Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
@@ -391,10 +400,7 @@ if cc.get_id() != 'msvc'
   endif
 endif
 
-# Suppress warning for deprecated Numpy API.
-# (Suppress warning messages emitted by #warning directives).
-# Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += [_cpp_Wno_cpp, use_math_defines]
+cython_c_args += [use_math_defines]
 cython_cpp_args = cython_c_args
 
 compilers = {
@@ -465,6 +471,7 @@ configure_file(
   output: '__config__.py',
   configuration : conf_data,
   install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 # Ordering of subdirs: special and linalg come first, because other submodules

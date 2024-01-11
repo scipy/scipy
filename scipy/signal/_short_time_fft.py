@@ -22,7 +22,7 @@ from __future__ import annotations
 # Linter does not allow to import ``Generator`` from ``typing`` module:
 from collections.abc import Generator
 from functools import cache, lru_cache, partial
-from typing import Callable, get_args, Literal, Union
+from typing import Callable, get_args, Literal
 
 import numpy as np
 
@@ -97,7 +97,7 @@ class ShortTimeFFT:
     result with the so-called dual window (see `dual_win`). Shift the result by
     p * `delta_t` and add the result to previous shifted results to reconstruct
     the signal. If only the dual window is known and the STFT is invertible,
-    `from_dual` can be used to instanciate this class.
+    `from_dual` can be used to instantiate this class.
 
     Due to the convention of time t = 0 being at the first sample of the input
     signal, the STFT values typically have negative time slots. Hence,
@@ -205,7 +205,7 @@ class ShortTimeFFT:
     >>> np.allclose(x, x1)
     True
 
-    It is possible to calcluate the SFT of signal parts:
+    It is possible to calculate the SFT of signal parts:
 
     >>> p_q = SFT.nearest_k_p(N // 2)
     >>> Sx0 = SFT.stft(x[:p_q])
@@ -349,7 +349,7 @@ class ShortTimeFFT:
         See Also
         --------
         from_window: Create instance by wrapping `get_window`.
-        ShortTimeFFT: Create instance using standard initalizer.
+        ShortTimeFFT: Create instance using standard initializer.
         """
         win = _calc_dual_canonical_window(dual_win, hop)
         return cls(win=win, hop=hop, fs=fs, fft_mode=fft_mode, mfft=mfft,
@@ -357,7 +357,7 @@ class ShortTimeFFT:
                    phase_shift=phase_shift)
 
     @classmethod
-    def from_window(cls, win_param: Union[str, tuple, float],
+    def from_window(cls, win_param: str | tuple | float,
                     fs: float, nperseg: int, noverlap: int, *,
                     symmetric_win: bool = False,
                     fft_mode: FFT_MODE_TYPE = 'onesided',
@@ -387,7 +387,7 @@ class ShortTimeFFT:
             Window overlap in samples. It relates to the `hop` increment by
             ``hop = npsereg - noverlap``.
         symmetric_win: bool
-            If ``True`` then a symetric window is generated, else a periodic
+            If ``True`` then a symmetric window is generated, else a periodic
             window is generated (default). Though symmetric windows seem for
             most applications to be more sensible, the default of a periodic
             windows was chosen to correspond to the default of `get_window`.
@@ -425,7 +425,7 @@ class ShortTimeFFT:
         --------
         scipy.signal.get_window: Return a window of a given length and type.
         from_dual: Create instance using dual window.
-        ShortTimeFFT: Create instance using standard initalizer.
+        ShortTimeFFT: Create instance using standard initializer.
         """
         win = get_window(win_param, nperseg, fftbins=not symmetric_win)
         return cls(win, hop=nperseg-noverlap, fs=fs, fft_mode=fft_mode,
@@ -529,14 +529,14 @@ class ShortTimeFFT:
 
         'twosided':
             Two-sided FFT, where values for the negative frequencies are in
-            upper half of the array. Corresponds to :func:`scipy.fft.fft()`.
+            upper half of the array. Corresponds to :func:`~scipy.fft.fft()`.
         'centered':
             Two-sided FFT with the values being ordered along monotonically
             increasing frequencies. Corresponds to applying
-            :func:`scipy.fft.fftshift()` to :func:`scipy.fft.fft()`.
+            :func:`~scipy.fft.fftshift()` to :func:`~scipy.fft.fft()`.
         'onesided':
             Calculates only values for non-negative frequency values.
-            Corresponds to :func:`scipy.fft.rfft()`.
+            Corresponds to :func:`~scipy.fft.rfft()`.
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
@@ -613,8 +613,8 @@ class ShortTimeFFT:
         If not ``None``, the FFTs can be either interpreted as a magnitude or
         a power spectral density spectrum.
 
-        The window function can be scaled by calling the `scale_to()` method,
-        or it is set by the initializer parameter `scale_to`.
+        The window function can be scaled by calling the `scale_to` method,
+        or it is set by the initializer parameter ``scale_to``.
 
         See Also
         --------
@@ -796,8 +796,7 @@ class ShortTimeFFT:
                                  padding=padding, axis=axis)
 
     def stft_detrend(self, x: np.ndarray,
-                     detr: Union[Callable[[np.ndarray], np.ndarray],
-                                 Literal['linear', 'constant'], None],
+                     detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None,  # noqa: E501
                      p0: int | None = None, p1: int | None = None, *,
                      k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                      axis: int = -1) \
@@ -848,8 +847,8 @@ class ShortTimeFFT:
         return S
 
     def spectrogram(self, x: np.ndarray, y: np.ndarray | None = None,
-                    detr: Union[Callable[[np.ndarray], np.ndarray],
-                                Literal['linear', 'constant'], None] = None, *,
+                    detr: Callable[[np.ndarray], np.ndarray] | Literal['linear', 'constant'] | None = None,  # noqa: E501
+                    *,
                     p0: int | None = None, p1: int | None = None,
                     k_offset: int = 0, padding: PAD_TYPE = 'zeros',
                     axis: int = -1) \
@@ -1629,7 +1628,7 @@ class ShortTimeFFT:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
+        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
         of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.

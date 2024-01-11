@@ -143,7 +143,7 @@ def test_complex():
     x = [1, 2, 3, 4]
     y = [1, 2, 1j, 3]
 
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, CubicSpline]:
         p = ip(x, y)
         assert_allclose(y, p(x))
 

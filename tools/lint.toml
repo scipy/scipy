@@ -1,11 +1,12 @@
 line-length = 88
 
-# Enable Pyflakes `E` and `F` codes by default.
-select = ["E", "F"]
-ignore = ["E501", "E741"]
-exclude = [
-  "scipy/datasets/_registry.py"
-]
+# Enable Pyflakes `E` and `F` and PyUpgrade `UP` codes by default.
+# Also, `PGH004` which checks for blanket (non-specific) `noqa`s
+# and `B028` which checks that warnings include the `stacklevel` keyword.
+# `B028` added in gh-19623.
+select = ["E", "F", "PGH004", "UP", "B028"]
+ignore = ["E741"]
+exclude = ["scipy/datasets/_registry.py"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
@@ -15,16 +16,13 @@ target-version = "py39"
 
 [per-file-ignores]
 "**/__init__.py" = ["E402", "F401", "F403", "F405"]
-"**/test_*.py" = ["D"]
-"scipy/_lib/uarray.py" = ["F403", "F401"]
-"scipy/linalg/blas.py" = ["F403", "E402"]
-"scipy/linalg/lapack.py" = ["F403", "E402", "F405"]
-"scipy/stats/distributions.py" = ["F403", "F405"]
-"scipy/stats/mstats.py" = ["F403", "F401"]
-"scipy/stats/qmc.py" = ["F403"]
-"scipy/optimize/_linprog.py" = ["F401"]
-"scipy/optimize/_linprog_ip.py" = ["F401"]
-"_setup.py" = ["ALL"]
+"scipy/linalg/lapack.py" = ["F405"]
+"scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
+# E501 (line length) ignores
+"scipy/constants/_codata.py" = ["E501"]
+"scipy/linalg/_cython_signature_generator.py" = ["E501"]
+"scipy/linalg/_generate_pyx.py" = ["E501"]
+"scipy/spatial/transform/_rotation.pyi" = ["E501"]
 
 [mccabe]
 # Unlike Flake8, default to a complexity level of 10.

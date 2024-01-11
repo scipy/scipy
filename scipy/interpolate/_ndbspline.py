@@ -133,7 +133,8 @@ class NdBSpline:
             This can be a list or tuple of ndim-dimensional points
             or an array with the shape (num_points, ndim).
         nu : array_like, optional, shape (ndim,)
-            Orders of derivatives to evaluate. Each must be non-negative. Defaults to the zeroth derivivative.
+            Orders of derivatives to evaluate. Each must be non-negative.
+            Defaults to the zeroth derivivative.
         extrapolate : bool, optional
             Whether to exrapolate based on first and last intervals in each
             dimension, or return `nan`. Default is to ``self.extrapolate``.
@@ -166,7 +167,7 @@ class NdBSpline:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
 
         # prepare k & t
-        _k = np.asarray(self.k)
+        _k = np.asarray(self.k, dtype=np.dtype("long"))
 
         # pack the knots into a single array
         len_t = [len(ti) for ti in self.t]
@@ -174,6 +175,7 @@ class NdBSpline:
         _t.fill(np.nan)
         for d in range(ndim):
             _t[d, :len(self.t[d])] = self.t[d]
+        len_t = np.asarray(len_t, dtype=np.dtype("long"))
 
         # tabulate the flat indices for iterating over the (k+1)**ndim subarray
         shape = tuple(kd + 1 for kd in self.k)
@@ -194,6 +196,7 @@ class NdBSpline:
 
         _bspl.evaluate_ndbspline(xi,
                                  _t,
+                                 len_t,
                                  _k,
                                  nu,
                                  extrapolate,

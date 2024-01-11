@@ -493,7 +493,8 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     >>> print(sol.sol(sol.t_events[1][0]))
     [100.   0.]
     >>> print(sol.y_events)
-    [array([[-5.68434189e-14, -1.00000000e+01]]), array([[1.00000000e+02, 1.77635684e-15]])]
+    [array([[-5.68434189e-14, -1.00000000e+01]]),
+     array([[1.00000000e+02, 1.77635684e-15]])]
 
     As an example of a system with additional parameters, we'll implement
     the Lotka-Volterra equations [12]_.
@@ -566,8 +567,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
     """
     if method not in METHODS and not (
             inspect.isclass(method) and issubclass(method, OdeSolver)):
-        raise ValueError("`method` must be one of {} or OdeSolver class."
-                         .format(METHODS))
+        raise ValueError(f"`method` must be one of {METHODS} or OdeSolver class.")
 
     t0, tf = map(float, t_span)
 

@@ -53,6 +53,7 @@ from scipy.conftest import (
     skip_if_array_api_gpu,
     skip_if_array_api_backend,
 )
+from scipy._lib._array_api import xp_assert_close
 
 from . import hierarchy_test_data
 
@@ -71,6 +72,7 @@ except Exception:
 
 
 class TestLinkage:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
@@ -95,7 +97,7 @@ class TestLinkage:
         # Tests linkage(Y, method) on the tdist data set.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), method)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_' + method)
-        assert_allclose(Z, expectedZ, atol=1e-10)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -107,12 +109,12 @@ class TestLinkage:
         # Tests linkage(Y, method) on the Q data set.
         Z = linkage(xp.asarray(hierarchy_test_data.X), method)
         expectedZ = getattr(hierarchy_test_data, 'linkage_X_' + method)
-        assert_allclose(Z, expectedZ, atol=1e-06)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
         y = scipy.spatial.distance.pdist(hierarchy_test_data.X,
                                          metric="euclidean")
         Z = linkage(xp.asarray(y), method)
-        assert_allclose(Z, expectedZ, atol=1e-06)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -125,17 +127,18 @@ class TestLinkage:
         for method, code in _LINKAGE_METHODS.items():
             Z_trivial = _hierarchy.linkage(d, n, code)
             Z = linkage(xp.asarray(d), method)
-            assert_allclose(Z_trivial, Z, rtol=1e-14, atol=1e-15)
+            xp_assert_close(Z, xp.asarray(Z_trivial), rtol=1e-14, atol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_optimal_leaf_ordering(self, xp):
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), optimal_ordering=True)
         expectedZ = getattr(hierarchy_test_data, 'linkage_ytdist_single_olo')
-        assert_allclose(Z, expectedZ, atol=1e-10)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
 
 class TestLinkageTies:
+
     _expectations = {
         'single': np.array([[0, 1, 1.41421356, 2],
                             [2, 3, 1.41421356, 3]]),
@@ -156,17 +159,19 @@ class TestLinkageTies:
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_linkage_ties(self, xp):
-        for method in ['single', 'complete', 'average', 'weighted', 'centroid', 'median', 'ward']:
+        for method in ['single', 'complete', 'average', 'weighted',
+                       'centroid', 'median', 'ward']:
             self.check_linkage_ties(method, xp)
 
     def check_linkage_ties(self, method, xp):
         X = xp.asarray([[-1, -1], [0, 0], [1, 1]])
         Z = linkage(X, method=method)
         expectedZ = self._expectations[method]
-        assert_allclose(Z, expectedZ, atol=1e-06)
+        xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
 class TestInconsistent:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_inconsistent_tdist(self, xp):
@@ -175,11 +180,12 @@ class TestInconsistent:
 
     def check_inconsistent_tdist(self, depth, xp):
         Z = xp.asarray(hierarchy_test_data.linkage_ytdist_single)
-        assert_allclose(inconsistent(Z, depth),
-                        hierarchy_test_data.inconsistent_ytdist[depth])
+        xp_assert_close(inconsistent(Z, depth),
+                        xp.asarray(hierarchy_test_data.inconsistent_ytdist[depth]))
 
 
 class TestCopheneticDistance:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_linkage_cophenet_tdist_Z(self, xp):
@@ -188,7 +194,7 @@ class TestCopheneticDistance:
                                 295, 138, 219, 295, 295])
         Z = xp.asarray(hierarchy_test_data.linkage_ytdist_single)
         M = cophenet(Z)
-        assert_allclose(M, expectedM, atol=1e-10)
+        xp_assert_close(M, xp.asarray(expectedM, dtype=xp.float64), atol=1e-10)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -197,13 +203,14 @@ class TestCopheneticDistance:
         Z = xp.asarray(hierarchy_test_data.linkage_ytdist_single)
         (c, M) = cophenet(Z, xp.asarray(hierarchy_test_data.ytdist))
         expectedM = xp.asarray([268, 295, 255, 255, 295, 295, 268, 268, 295, 295,
-                                295, 138, 219, 295, 295])
-        expectedc = 0.639931296433393415057366837573
-        assert_allclose(c, expectedc, atol=1e-10)
-        assert_allclose(M, expectedM, atol=1e-10)
+                                295, 138, 219, 295, 295], dtype=xp.float64)
+        expectedc = xp.asarray(0.639931296433393415057366837573, dtype=xp.float64)[()]
+        xp_assert_close(c, expectedc, atol=1e-10)
+        xp_assert_close(M, expectedM, atol=1e-10)
 
 
 class TestMLabLinkageConversion:
+
     @skip_if_array_api
     def test_mlab_linkage_conversion_empty(self):
         # Tests from/to_mlab_linkage on empty linkage array.
@@ -217,8 +224,10 @@ class TestMLabLinkageConversion:
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
         Zm = xp.asarray([[1, 2, 3]])
-        assert_allclose(from_mlab_linkage(Zm), Z, rtol=1e-15)
-        assert_allclose(to_mlab_linkage(Z), Zm, rtol=1e-15)
+        xp_assert_close(from_mlab_linkage(Zm), xp.asarray(Z, dtype=xp.float64),
+                        rtol=1e-15)
+        xp_assert_close(to_mlab_linkage(Z), xp.asarray(Zm, dtype=xp.float64),
+                        rtol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -232,11 +241,13 @@ class TestMLabLinkageConversion:
                         [1., 8., 268., 4.],
                         [6., 9., 295., 6.]],
                        dtype=xp.float64)
-        assert_allclose(from_mlab_linkage(Zm), Z, rtol=1e-15)
-        assert_allclose(to_mlab_linkage(Z), Zm, rtol=1e-15)
+        xp_assert_close(from_mlab_linkage(Zm), Z, rtol=1e-15)
+        xp_assert_close(to_mlab_linkage(Z), xp.asarray(Zm, dtype=xp.float64),
+                        rtol=1e-15)
 
 
 class TestFcluster:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_fclusterdata(self, xp):
@@ -248,7 +259,7 @@ class TestFcluster:
             self.check_fclusterdata(t, 'maxclust', xp)
 
     def check_fclusterdata(self, t, criterion, xp):
-        # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set.
+        # Tests fclusterdata(X, criterion=criterion, t=t) on a random 3-cluster data set
         expectedT = xp.asarray(getattr(hierarchy_test_data, 'fcluster_' + criterion)[t])
         X = xp.asarray(hierarchy_test_data.Q_X)
         T = fclusterdata(X, criterion=criterion, t=t)
@@ -293,6 +304,7 @@ class TestFcluster:
 
 
 class TestLeaders:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_leaders_single(self, xp):
@@ -309,6 +321,7 @@ class TestLeaders:
 
 
 class TestIsIsomorphic:
+
     @skip_if_array_api
     def test_is_isomorphic_1(self):
         # Tests is_isomorphic on test case #1 (one flat cluster, different labellings)
@@ -334,7 +347,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4A(self):
-        # Tests is_isomorphic on test case #4A (3 flat clusters, different labelings, isomorphic)
+        # Tests is_isomorphic on test case #4A
+        # (3 flat clusters, different labelings, isomorphic)
         a = np.asarray([1, 2, 3])
         b = np.asarray([1, 3, 2])
         assert_(is_isomorphic(a, b))
@@ -342,7 +356,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4B(self):
-        # Tests is_isomorphic on test case #4B (3 flat clusters, different labelings, nonisomorphic)
+        # Tests is_isomorphic on test case #4B
+        # (3 flat clusters, different labelings, nonisomorphic)
         a = np.asarray([1, 2, 3, 3])
         b = np.asarray([1, 3, 2, 3])
         assert_(is_isomorphic(a, b) is False)
@@ -350,7 +365,8 @@ class TestIsIsomorphic:
 
     @skip_if_array_api
     def test_is_isomorphic_4C(self):
-        # Tests is_isomorphic on test case #4C (3 flat clusters, different labelings, isomorphic)
+        # Tests is_isomorphic on test case #4C
+        # (3 flat clusters, different labelings, isomorphic)
         a = np.asarray([7, 2, 3])
         b = np.asarray([6, 3, 2])
         assert_(is_isomorphic(a, b))
@@ -380,8 +396,8 @@ class TestIsIsomorphic:
 
     def help_is_isomorphic_randperm(self, nobs, nclusters, noniso=False, nerrors=0):
         for k in range(3):
-            a = np.int_(np.random.rand(nobs) * nclusters)
-            b = np.zeros(a.size, dtype=np.int_)
+            a = (np.random.rand(nobs) * nclusters).astype(int)
+            b = np.zeros(a.size, dtype=int)
             P = np.random.permutation(nclusters)
             for i in range(0, a.shape[0]):
                 b[i] = P[a[i]]
@@ -394,6 +410,7 @@ class TestIsIsomorphic:
 
 
 class TestIsValidLinkage:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_valid_linkage_various_size(self, xp):
@@ -402,7 +419,7 @@ class TestIsValidLinkage:
             self.check_is_valid_linkage_various_size(nrow, ncol, valid, xp)
 
     def check_is_valid_linkage_various_size(self, nrow, ncol, valid, xp):
-        # Tests is_valid_linkage(Z) with linkage matrics of various sizes
+        # Tests is_valid_linkage(Z) with linkage matrices of various sizes
         Z = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         Z = Z[:nrow, :ncol]
@@ -492,6 +509,7 @@ class TestIsValidLinkage:
 
 
 class TestIsValidInconsistent:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_valid_im_int_type(self, xp):
@@ -509,7 +527,7 @@ class TestIsValidInconsistent:
             self.check_is_valid_im_various_size(nrow, ncol, valid, xp)
 
     def check_is_valid_im_various_size(self, nrow, ncol, valid, xp):
-        # Tests is_valid_im(R) with linkage matrics of various sizes
+        # Tests is_valid_im(R) with linkage matrices of various sizes
         R = xp.asarray([[0, 1, 3.0, 2, 5],
                         [3, 2, 4.0, 3, 3]], dtype=xp.float64)
         R = R[:nrow, :ncol]
@@ -581,6 +599,7 @@ class TestIsValidInconsistent:
 
 
 class TestNumObsLinkage:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_num_obs_linkage_empty(self, xp):
@@ -614,6 +633,7 @@ class TestNumObsLinkage:
 
 
 class TestLeavesList:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_leaves_list_1x4(self, xp):
@@ -658,6 +678,7 @@ class TestLeavesList:
 
 
 class TestCorrespond:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_correspond_empty(self, xp):
@@ -695,8 +716,8 @@ class TestCorrespond:
             y2 = xp.asarray(y2)
             Z = linkage(y)
             Z2 = linkage(y2)
-            assert_equal(correspond(Z, y2), False)
-            assert_equal(correspond(Z2, y), False)
+            assert not correspond(Z, y2)
+            assert not correspond(Z2, y)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -711,8 +732,8 @@ class TestCorrespond:
             y2 = xp.asarray(y2)
             Z = linkage(y)
             Z2 = linkage(y2)
-            assert_equal(correspond(Z, y2), False)
-            assert_equal(correspond(Z2, y), False)
+            assert not correspond(Z, y2)
+            assert not correspond(Z2, y)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -727,6 +748,7 @@ class TestCorrespond:
 
 
 class TestIsMonotonic:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_is_monotonic_empty(self, xp):
@@ -739,7 +761,7 @@ class TestIsMonotonic:
     def test_is_monotonic_1x4(self, xp):
         # Tests is_monotonic(Z) on 1x4 linkage. Expecting True.
         Z = xp.asarray([[0, 1, 0.3, 2]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), True)
+        assert is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -747,7 +769,7 @@ class TestIsMonotonic:
         # Tests is_monotonic(Z) on 2x4 linkage. Expecting True.
         Z = xp.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 3]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), True)
+        assert is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -755,7 +777,7 @@ class TestIsMonotonic:
         # Tests is_monotonic(Z) on 2x4 linkage. Expecting False.
         Z = xp.asarray([[0, 1, 0.4, 2],
                         [2, 3, 0.3, 3]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), False)
+        assert not is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -764,7 +786,7 @@ class TestIsMonotonic:
         Z = xp.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.6, 4]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), True)
+        assert is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -773,7 +795,7 @@ class TestIsMonotonic:
         Z = xp.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.2, 2],
                         [4, 5, 0.6, 4]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), False)
+        assert not is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -782,7 +804,7 @@ class TestIsMonotonic:
         Z = xp.asarray([[0, 1, 0.8, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.6, 4]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), False)
+        assert not is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -791,7 +813,7 @@ class TestIsMonotonic:
         Z = xp.asarray([[0, 1, 0.3, 2],
                         [2, 3, 0.4, 2],
                         [4, 5, 0.2, 4]], dtype=xp.float64)
-        assert_allclose(is_monotonic(Z), False)
+        assert not is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -799,7 +821,7 @@ class TestIsMonotonic:
         # Tests is_monotonic(Z) on clustering generated by single linkage on
         # tdist data set. Expecting True.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
-        assert_allclose(is_monotonic(Z), True)
+        assert is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -808,7 +830,7 @@ class TestIsMonotonic:
         # tdist data set. Perturbing. Expecting False.
         Z = linkage(xp.asarray(hierarchy_test_data.ytdist), 'single')
         Z[2,2] = 0.0
-        assert_allclose(is_monotonic(Z), False)
+        assert not is_monotonic(Z)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -817,10 +839,11 @@ class TestIsMonotonic:
         # Q data set. Expecting True.
         X = xp.asarray(hierarchy_test_data.Q_X)
         Z = linkage(X, 'single')
-        assert_allclose(is_monotonic(Z), True)
+        assert is_monotonic(Z)
 
 
 class TestMaxDists:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxdists_empty_linkage(self, xp):
@@ -835,7 +858,7 @@ class TestMaxDists:
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z, xp)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -849,10 +872,11 @@ class TestMaxDists:
         Z = linkage(X, method)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z, xp)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
 class TestMaxInconsts:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_maxinconsts_empty_linkage(self, xp):
@@ -878,7 +902,7 @@ class TestMaxInconsts:
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         MD = maxinconsts(Z, R)
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -893,10 +917,11 @@ class TestMaxInconsts:
         R = inconsistent(Z)
         MD = maxinconsts(Z, R)
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
 class TestMaxRStat:
+
     @array_api_compatible
     def test_maxRstat_invalid_index(self, xp):
         for i in [3.3, -1, 4]:
@@ -948,7 +973,7 @@ class TestMaxRStat:
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         MD = maxRstat(Z, R, 1)
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
     @skip_if_array_api_gpu
     @array_api_compatible
@@ -963,11 +988,12 @@ class TestMaxRStat:
         Z = linkage(X, method)
         R = inconsistent(Z)
         MD = maxRstat(Z, R, 1)
-        expectedMD = calculate_maximum_inconsistencies(Z, R, 1)
-        assert_allclose(MD, expectedMD, atol=1e-15)
+        expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
+        xp_assert_close(MD, expectedMD, atol=1e-15)
 
 
 class TestDendrogram:
+
     @skip_if_array_api_gpu
     @array_api_compatible
     def test_dendrogram_single_linkage_tdist(self, xp):
@@ -1058,8 +1084,8 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_rotation(), 90, rtol=1e-15)
-        assert_allclose(testlabel.get_size(), 20, rtol=1e-15)
+        assert_equal(testlabel.get_rotation(), 90)
+        assert_equal(testlabel.get_size(), 20)
         dendrogram(Z, ax=ax, orientation=orientation,
                    leaf_rotation=90)
         testlabel = (
@@ -1067,7 +1093,7 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_rotation(), 90, rtol=1e-15)
+        assert_equal(testlabel.get_rotation(), 90)
         dendrogram(Z, ax=ax, orientation=orientation,
                    leaf_font_size=20)
         testlabel = (
@@ -1075,7 +1101,7 @@ class TestDendrogram:
             if orientation in ['top', 'bottom']
             else ax.get_yticklabels()[0]
         )
-        assert_allclose(testlabel.get_size(), 20, rtol=1e-15)
+        assert_equal(testlabel.get_size(), 20)
         plt.close()
 
         # test plotting to gca (will import pylab)
@@ -1173,7 +1199,7 @@ class TestDendrogram:
 def calculate_maximum_distances(Z, xp):
     # Used for testing correctness of maxdists.
     n = Z.shape[0] + 1
-    B = xp.zeros((n-1,))
+    B = xp.zeros((n-1,), dtype=Z.dtype)
     q = xp.zeros((3,))
     for i in range(0, n - 1):
         q[:] = 0.0
@@ -1191,7 +1217,8 @@ def calculate_maximum_distances(Z, xp):
 def calculate_maximum_inconsistencies(Z, R, k=3, xp=np):
     # Used for testing correctness of maxinconsts.
     n = Z.shape[0] + 1
-    B = xp.zeros((n-1,))
+    dtype = xp.result_type(Z, R)
+    B = xp.zeros((n-1,), dtype=dtype)
     q = xp.zeros((3,))
     for i in range(0, n - 1):
         q[:] = 0.0
@@ -1224,7 +1251,7 @@ def test_euclidean_linkage_value_error(xp):
 def test_2x2_linkage(xp):
     Z1 = linkage(xp.asarray([1]), method='single', metric='euclidean')
     Z2 = linkage(xp.asarray([[0, 1], [0, 0]]), method='single', metric='euclidean')
-    assert_allclose(Z1, Z2, rtol=1e-15)
+    xp_assert_close(Z1, Z2, rtol=1e-15)
 
 
 @skip_if_array_api_gpu
@@ -1253,22 +1280,23 @@ def test_cut_tree(xp):
     Z = scipy.cluster.hierarchy.ward(X)
     cutree = cut_tree(Z)
 
-    assert_allclose(cutree[:, 0], xp.arange(nobs), rtol=1e-15)
-    assert_allclose(cutree[:, -1], xp.zeros(nobs), rtol=1e-15)
+    # cutree.dtype varies between int32 and int64 over platforms
+    xp_assert_close(cutree[:, 0], xp.arange(nobs), rtol=1e-15, check_dtype=False)
+    xp_assert_close(cutree[:, -1], xp.zeros(nobs), rtol=1e-15, check_dtype=False)
     assert_equal(np.asarray(cutree).max(0), np.arange(nobs - 1, -1, -1))
 
-    assert_allclose(cutree[:, [-5]], cut_tree(Z, n_clusters=5), rtol=1e-15)
-    assert_allclose(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]), rtol=1e-15)
-    assert_allclose(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]), rtol=1e-15)
+    xp_assert_close(cutree[:, [-5]], cut_tree(Z, n_clusters=5), rtol=1e-15)
+    xp_assert_close(cutree[:, [-5, -10]], cut_tree(Z, n_clusters=[5, 10]), rtol=1e-15)
+    xp_assert_close(cutree[:, [-10, -5]], cut_tree(Z, n_clusters=[10, 5]), rtol=1e-15)
 
     nodes = _order_cluster_tree(Z)
     heights = xp.asarray([node.dist for node in nodes])
 
-    assert_allclose(cutree[:, np.searchsorted(heights, [5])],
+    xp_assert_close(cutree[:, np.searchsorted(heights, [5])],
                     cut_tree(Z, height=5), rtol=1e-15)
-    assert_allclose(cutree[:, np.searchsorted(heights, [5, 10])],
+    xp_assert_close(cutree[:, np.searchsorted(heights, [5, 10])],
                     cut_tree(Z, height=[5, 10]), rtol=1e-15)
-    assert_allclose(cutree[:, np.searchsorted(heights, [10, 5])],
+    xp_assert_close(cutree[:, np.searchsorted(heights, [10, 5])],
                     cut_tree(Z, height=[10, 5]), rtol=1e-15)
 
 
@@ -1279,13 +1307,13 @@ def test_optimal_leaf_ordering(xp):
     Z = optimal_leaf_ordering(linkage(xp.asarray(hierarchy_test_data.ytdist)),
                               xp.asarray(hierarchy_test_data.ytdist))
     expectedZ = hierarchy_test_data.linkage_ytdist_single_olo
-    assert_allclose(Z, expectedZ, atol=1e-10)
+    xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-10)
 
     # test with the observation matrix X
     Z = optimal_leaf_ordering(linkage(xp.asarray(hierarchy_test_data.X), 'ward'),
                               xp.asarray(hierarchy_test_data.X))
     expectedZ = hierarchy_test_data.linkage_X_ward_olo
-    assert_allclose(Z, expectedZ, atol=1e-06)
+    xp_assert_close(Z, xp.asarray(expectedZ), atol=1e-06)
 
 
 @skip_if_array_api

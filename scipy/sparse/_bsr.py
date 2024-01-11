@@ -83,8 +83,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 self.data = getdata(data, copy=copy, dtype=dtype)
                 if self.data.ndim != 3:
                     raise ValueError(
-                        'BSR data must be 3-dimensional, got shape={}'.format(
-                            self.data.shape,))
+                        f'BSR data must be 3-dimensional, got shape={self.data.shape}'
+                    )
                 if blocksize is not None:
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')
@@ -148,11 +148,11 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype (%s)"
-                    % self.indptr.dtype.name)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=2)
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype (%s)"
-                    % self.indices.dtype.name)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=2)
 
         # check array shapes
         if self.indices.ndim != 1 or self.indptr.ndim != 1:
@@ -180,7 +180,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N//C:
-                    raise ValueError("column index values must be < %d (now max %d)" % (N//C, self.indices.max()))
+                    raise ValueError("column index values must be < %d (now max %d)"
+                                     % (N//C, self.indices.max()))
                 if self.indices.min() < 0:
                     raise ValueError("column index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
@@ -210,11 +211,14 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
     def __repr__(self):
-        format = _formats[self.format][1]
-        return ("<%dx%d sparse matrix of type '%s'\n"
-                "\twith %d stored elements (blocksize = %dx%d) in %s format>" %
-                (self.shape + (self.dtype.type, self.nnz) + self.blocksize +
-                 (format,)))
+        _, fmt = _formats[self.format]
+        sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
+        shape_str = 'x'.join(str(x) for x in self.shape)
+        blksz = 'x'.join(str(x) for x in self.blocksize)
+        return (
+            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
+            f"\twith {self.nnz} stored elements (blocksize = {blksz}) in {fmt} format>"
+        )
 
     def diagonal(self, k=0):
         rows, cols = self.shape
@@ -396,7 +400,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         row += np.tile(np.arange(R, dtype=idx_dtype).reshape(-1,1), (1,C))
         row = row.reshape(-1)
 
-        col = (C * self.indices).astype(idx_dtype, copy=False).repeat(R*C).reshape(-1,R,C)
+        col = ((C * self.indices).astype(idx_dtype, copy=False)
+               .repeat(R*C).reshape(-1,R,C))
         col += np.tile(np.arange(C, dtype=idx_dtype), (R,1))
         col = col.reshape(-1)
 
@@ -594,7 +599,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                                    shape=self.shape,dtype=data.dtype)
 
 #    # these functions are used by the parent class
-#    # to remove redudancy between bsc_matrix and bsr_matrix
+#    # to remove redundancy between bsc_matrix and bsr_matrix
 #    def _swap(self,x):
 #        """swap the members of x if this is a column-oriented matrix
 #        """

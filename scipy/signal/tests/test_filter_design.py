@@ -30,9 +30,11 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    return pytest.mark.skipif(mpmath is None or
-                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
-                              reason="mpmath version >= %s required" % min_ver)
+    return pytest.mark.skipif(
+        mpmath is None
+        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        reason=f"mpmath version >= {min_ver} required",
+    )
 
 
 class TestCplxPair:
@@ -1561,7 +1563,8 @@ class TestButtord:
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
     def test_runtime_warnings(self):
-        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+        msg = "Order is zero.*|divide by zero encountered"
+        with pytest.warns(RuntimeWarning, match=msg):
             buttord(0.0, 1.0, 3, 60)
 
     def test_ellip_butter(self):
@@ -3563,7 +3566,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3579,7 +3582,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3621,7 +3624,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3656,7 +3659,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3671,7 +3674,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3713,7 +3716,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -4124,7 +4127,7 @@ class TestGroupDelay:
 
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
@@ -4162,8 +4165,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            response_max == pytest.approx(1, rel=1e-2)
-            freq_hz == pytest.approx(1000, rel=1e-2)
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using

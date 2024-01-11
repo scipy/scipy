@@ -35,14 +35,6 @@ at the top-level directory.
 #include <stdlib.h>
 #include "slu_cdefs.h"
 
-/* 
- * Function prototypes 
- */
-void cusolve(int, int, singlecomplex*, singlecomplex*);
-void clsolve(int, int, singlecomplex*, singlecomplex*);
-void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
-
-
 
 /*! \brief 
  *
@@ -51,7 +43,7 @@ void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
  * ========
  * Performs numeric block updates (sup-col) in topological order.
  * It features: col-col, 2cols-col, 3cols-col, and sup-col updates.
- * Special processing on the supernodal portion of L\U[*,j]
+ * Special processing on the supernodal portion of L\\U[*,j]
  * Return value:   0 - successful return
  *               > 0 - number of bytes allocated when run out of space
  * </pre>
@@ -86,28 +78,27 @@ ccolumn_bmod (
      * kfnz = first nonz in the k-th supernodal segment
      * no_zeros = no of leading zeros in a supernodal U-segment
      */
-    singlecomplex       ukj, ukj1, ukj2;
-    int          luptr, luptr1, luptr2;
+    singlecomplex      ukj, ukj1, ukj2;
+    int_t        luptr, luptr1, luptr2;
     int          fsupc, nsupc, nsupr, segsze;
     int          nrow;	  /* No of rows in the matrix of matrix-vector */
     int          jcolp1, jsupno, k, ksub, krep, krep_ind, ksupno;
-    register int lptr, kfnz, isub, irow, i;
-    register int no_zeros, new_next; 
-    int          ufirst, nextlu;
+    int_t        lptr, kfnz, isub, irow, i;
+    int_t        no_zeros, new_next, ufirst, nextlu;
     int          fst_col; /* First column within small LU update */
     int          d_fsupc; /* Distance between the first column of the current
 			     panel and the first column of the current snode. */
     int          *xsup, *supno;
-    int          *lsub, *xlsub;
+    int_t        *lsub, *xlsub;
     singlecomplex       *lusup;
-    int          *xlusup;
-    int          nzlumax;
+    int_t        *xlusup;
+    int_t        nzlumax;
     singlecomplex       *tempv1;
     singlecomplex      zero = {0.0, 0.0};
     singlecomplex      one = {1.0, 0.0};
     singlecomplex      none = {-1.0, 0.0};
     singlecomplex	 comp_temp, comp_temp1;
-    int          mem_error;
+    int_t        mem_error;
     flops_t      *ops = stat->ops;
 
     xsup    = Glu->xsup;
@@ -293,8 +284,8 @@ ccolumn_bmod (
     /* Copy the SPA dense into L\U[*,j] */
     new_next = nextlu + xlsub[fsupc+1] - xlsub[fsupc];
     while ( new_next > nzlumax ) {
-	if (mem_error = cLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu))
-	    return (mem_error);
+	mem_error = cLUMemXpand(jcol, nextlu, LUSUP, &nzlumax, Glu);
+	if (mem_error) return (mem_error);
 	lusup = (singlecomplex *) Glu->lusup;
 	lsub = Glu->lsub;
     }

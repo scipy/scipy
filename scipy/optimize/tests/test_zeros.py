@@ -27,7 +27,7 @@ _FLOAT_EPS = finfo(float).eps
 bracket_methods = [zeros.bisect, zeros.ridder, zeros.brentq, zeros.brenth,
                    zeros.toms748]
 gradient_methods = [zeros.newton]
-all_methods = bracket_methods + gradient_methods  # noqa
+all_methods = bracket_methods + gradient_methods
 
 # A few test functions used frequently:
 # # A simple quadratic, (x-1)^2 - 1
@@ -103,7 +103,9 @@ class TestScalarRootFinders:
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+
+        # FullArgSpec with args, varargs, varkw, defaults, ...
+        sig = _getfullargspec(method)
         assert_(not sig.kwonlyargs)
         nDefaults = len(sig.defaults)
         nRequired = len(sig.args) - nDefaults
@@ -762,9 +764,8 @@ class TestNewton(TestScalarRootFinders):
             if derivs == 1:
                 # Check that the correct Exception is raised and
                 # validate the start of the message.
-                with pytest.raises(
-                    RuntimeError,
-                    match='Failed to converge after %d iterations, value is .*' % (iters)):
+                msg = 'Failed to converge after %d iterations, value is .*' % (iters)
+                with pytest.raises(RuntimeError, match=msg):
                     x, r = zeros.newton(f1, x0, maxiter=iters, disp=True, **kwargs)
 
     def test_deriv_zero_warning(self):
@@ -823,6 +824,20 @@ class TestNewton(TestScalarRootFinders):
         assert res.converged
         assert_allclose(res.root, 1)
 
+    @pytest.mark.parametrize('method', ['secant', 'newton'])
+    def test_int_x0_gh19280(self, method):
+        # Originally, `newton` ensured that only floats were passed to the
+        # callable. This was indadvertently changed by gh-17669. Check that
+        # it has been changed back.
+        def f(x):
+            # an integer raised to a negative integer power would fail
+            return x**-2 - 2
+
+        res = optimize.root_scalar(f, x0=1, method=method)
+        assert res.converged
+        assert_allclose(abs(res.root), 2**-0.5)
+        assert res.root.dtype == np.dtype(np.float64)
+
 
 def test_gh_5555():
     root = 0.1
@@ -863,7 +878,7 @@ def test_gh_5557():
 
 
 def test_brent_underflow_in_root_bracketing():
-    # Tetsing if an interval [a,b] brackets a zero of a function
+    # Testing if an interval [a,b] brackets a zero of a function
     # by checking f(a)*f(b) < 0 is not reliable when the product
     # underflows/overflows. (reported in issue# 13737)
 
@@ -1126,7 +1141,8 @@ def test_gh9551_raise_error_if_disp_true():
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
             RuntimeError,
-            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, '
+                  r'value is [+-]?\d*\.\d+\.$'):
         zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))
@@ -1275,7 +1291,7 @@ def test_maxiter_int_check_gh10236(method):
         method(f1, 0.0, 1.0, maxiter=72.45)
 
 
-class TestDifferentiate():
+class TestDifferentiate:
 
     def f(self, x):
         return stats.norm().cdf(x)
@@ -1427,12 +1443,14 @@ class TestDifferentiate():
         # This is a similar test for one-sided difference
         kwargs = dict(order=2, maxiter=1, step_direction=1)
         res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
+                                   **kwargs)
         assert_allclose(res.df, ref.df, rtol=5e-15)
 
         kwargs['step_direction'] = -1
         res = zeros._differentiate(f, x, initial_step=1, step_factor=2, **kwargs)
-        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5, **kwargs)
+        ref = zeros._differentiate(f, x, initial_step=1/np.sqrt(2), step_factor=0.5,
+                                   **kwargs)
         assert_allclose(res.df, ref.df, rtol=5e-15)
 
     def test_step_direction(self):

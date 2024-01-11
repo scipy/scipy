@@ -1,12 +1,12 @@
 # Copyright (C) 2015, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
-import warnings
 import numpy as np
 from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
+from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
-from scipy._lib.deprecation import _deprecate_positional_args
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = ['gcrotmk']
@@ -183,9 +183,9 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
 
 
 @_deprecate_positional_args(version="1.14.0")
-def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
+def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest',
-            atol=None):
+            atol=None, rtol=1e-5):
     """
     Solve a matrix equation using flexible GCROT(m,k) algorithm.
 
@@ -200,14 +200,15 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is `tol`.
+    rtol, atol : float, optional
+        Parameters for the convergence test. For convergence,
+        ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``rtol``.
 
         .. warning::
 
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
+           The default value for ``atol`` will be changed to ``0.0`` in
+           SciPy 1.14.0.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -242,6 +243,11 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
         smallest singular values using the scheme discussed in [1,2].
         See [2]_ for detailed comparison.
         Default: 'oldest'
+    tol : float, optional, deprecated
+
+        .. deprecated:: 1.12.0
+           `gcrotmk` keyword argument ``tol`` is deprecated in favor of
+           ``rtol`` and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -287,13 +293,6 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     if truncate not in ('oldest', 'smallest'):
         raise ValueError(f"Invalid value for 'truncate': {truncate!r}")
 
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
-                      "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
-                      category=DeprecationWarning, stacklevel=2)
-        atol = tol
-
     matvec = A.matvec
     psolve = M.matvec
 
@@ -313,6 +312,10 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
     axpy, dot, scal, nrm2 = get_blas_funcs(['axpy', 'dot', 'scal', 'nrm2'], (x, r))
 
     b_norm = nrm2(b)
+
+    # we call this to get the right atol/rtol and raise warnings as necessary
+    atol, rtol = _get_atol_rtol('gcrotmk', b_norm, tol, atol, rtol)
+
     if b_norm == 0:
         x = b
         return (postprocess(x), 0)
@@ -385,7 +388,7 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        beta_tol = max(atol, tol * b_norm)
+        beta_tol = max(atol, rtol * b_norm)
 
         if beta <= beta_tol and (j_outer > 0 or CU):
             # recompute residual to avoid rounding error
@@ -405,7 +408,7 @@ def gcrotmk(A, b, x0=None, *, tol=1e-5, maxiter=1000, M=None, callback=None,
                                                r/beta,
                                                ml,
                                                rpsolve=psolve,
-                                               atol=max(atol, tol*b_norm)/beta,
+                                               atol=max(atol, rtol*b_norm)/beta,
                                                cs=cs)
             y *= beta
         except LinAlgError:

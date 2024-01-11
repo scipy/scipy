@@ -204,7 +204,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     (1.0, 7, 8)
 
 
-    """  # noqa
+    """  # noqa: E501
     if not isinstance(args, tuple):
         args = (args,)
 
