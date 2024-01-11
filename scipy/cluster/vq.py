@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    as_xparray, array_namespace, size, atleast_nd, copy, cov
+    _asarray, array_namespace, size, atleast_nd, copy, cov
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -132,7 +132,7 @@ def whiten(obs, check_finite=True):
 
     """
     xp = array_namespace(obs)
-    obs = as_xparray(obs, check_finite=check_finite, xp=xp)
+    obs = _asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if xp.any(zero_std_mask):
@@ -202,8 +202,8 @@ def vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
     ct = xp.result_type(obs, code_book)
 
     c_obs = xp.astype(obs, ct, copy=False)
@@ -255,8 +255,8 @@ def py_vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
 
     if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
@@ -463,8 +463,8 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
 
     """
     xp = array_namespace(obs, k_or_guess)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    guess = as_xparray(k_or_guess, xp=xp, check_finite=check_finite)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError("iter must be at least 1, got %s" % iter)
 
@@ -769,7 +769,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
     xp = array_namespace(data, k)
-    data = as_xparray(data, xp=xp, check_finite=check_finite)
+    data = _asarray(data, xp=xp, check_finite=check_finite)
     code_book = copy(k, xp=xp)
     if data.ndim == 1:
         d = 1
