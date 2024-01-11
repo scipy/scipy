@@ -5,6 +5,7 @@ import pytest
 import numpy as np
 
 import scipy as sp
+from scipy.sparse import coo_array, csr_array, dok_array
 from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
 
@@ -13,7 +14,7 @@ sup_complex = np.testing.suppress_warnings()
 sup_complex.filter(ComplexWarning)
 
 
-spcreators = [sp.sparse.coo_array, sp.sparse.dok_array]
+spcreators = [coo_array, csr_array]
 math_dtypes = [np.int64, np.float64, np.complex128]
 
 
@@ -145,11 +146,6 @@ class TestCommon1D:
     def test_mean_invalid_params(self, spcreator):
         out = np.asarray(np.zeros((1, 3)))
         dat = np.array([[0, 1, 2], [3, -4, 5], [-6, 7, 9]])
-
-        if spcreator._format == 'uni':
-            with pytest.raises(ValueError, match='zq'):
-                spcreator(dat)
-            return
 
         datsp = spcreator(dat)
         with pytest.raises(ValueError, match='axis out of range'):
@@ -397,7 +393,7 @@ class TestCommon1D:
         assert np.array_equal(S.toarray(), [1, 0, 3, 0, 0])
 
 
-@pytest.mark.parametrize("spcreator", [sp.sparse.dok_array])
+@pytest.mark.parametrize("spcreator", [csr_array, dok_array])
 class TestGetSet1D:
     def test_getelement(self, spcreator):
         D = np.array([4, 3, 0])
