@@ -20,6 +20,3 @@
 [submodule "scipy/_lib/array_api_compat"]
 	path = scipy/_lib/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
-[submodule "subprojects/libnpymath"]
-	path = subprojects/libnpymath
-	url = https://github.com/lysnikolaou/libnpymath.git
