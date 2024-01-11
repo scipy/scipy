@@ -632,8 +632,8 @@ def correlation(u, v, w=None, centered=True):
     uu = np.average(np.square(u), weights=w)
     vv = np.average(np.square(v), weights=w)
     dist = 1.0 - uv / np.sqrt(uu * vv)
-    # Return absolute value to avoid small negative value due to rounding
-    return np.abs(dist)
+    # Clip the result to avoid rounding error
+    return np.clip(dist, 0.0, 2.0)
 
 
 def cosine(u, v, w=None):
@@ -678,8 +678,7 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    # clamp the result to 0-2
-    return max(0.0, min(correlation(u, v, w=w, centered=False), 2.0))
+    return correlation(u, v, w=w, centered=False)
 
 
 def hamming(u, v, w=None):
