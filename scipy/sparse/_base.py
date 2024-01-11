@@ -800,6 +800,11 @@ class _spbase:
         -------
         p : `self` with the dimensions reversed.
 
+        Notes
+        -----
+        If `self` is a `csr_array` or a `csc_array`, then a `csc_array` or
+        a `csr_array` will be returned, respectively.
+
         See Also
         --------
         numpy.transpose : NumPy's implementation of 'transpose' for ndarrays
