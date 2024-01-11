@@ -135,10 +135,7 @@ tempita = files('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
-  pythran = find_program('pythran', native: true)
-  if not pythran.version().version_compare('>=0.14.0')
-    error('SciPy requires pythran >= 0.14.0')
-  endif
+  pythran = find_program('pythran', native: true, version: '>=0.14.0')
   # xsimd is unvendored from pythran by conda-forge, and due to a compiler
   # activation bug the default <prefix>/include/ may not be visible (see
   # gh-15698). Hence look for xsimd explicitly.
