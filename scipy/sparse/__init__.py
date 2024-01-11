@@ -80,6 +80,9 @@ Building sparse arrays:
    :toctree: generated/
 
    diags_array - Return a sparse array from diagonals
+   eye_array - Sparse MxN array whose k-th diagonal is all ones
+   random_array - Random values in a given shape array
+   block_array - Build a sparse array from sub-blocks
 
 Building sparse matrices:
 
@@ -87,35 +90,45 @@ Building sparse matrices:
    :toctree: generated/
 
    eye - Sparse MxN matrix whose k-th diagonal is all ones
-   identity - Identity matrix in sparse format
-   kron - kronecker product of two sparse matrices
-   kronsum - kronecker sum of sparse matrices
+   identity - Identity matrix in sparse matrix format
    diags - Return a sparse matrix from diagonals
    spdiags - Return a sparse matrix from diagonals
+   bmat - Build a sparse matrix from sparse sub-blocks
+   random - Random values in a given shape matrix
+   rand - Random values in a given shape matrix (old interface)
+
+Building larger structures from smaller (array or matrix)
+
+.. autosummary::
+   :toctree: generated/
+
+   kron - kronecker product of two sparse matrices
+   kronsum - kronecker sum of sparse matrices
    block_diag - Build a block diagonal sparse matrix
    tril - Lower triangular portion of a matrix in sparse format
    triu - Upper triangular portion of a matrix in sparse format
-   block - Build a sparse array from sub-blocks
-   bmat - Build a sparse matrix from sub-blocks
    hstack - Stack sparse matrices horizontally (column wise)
    vstack - Stack sparse matrices vertically (row wise)
-   rand - Random values in a given shape
-   random - Random values in a given shape
 
 Save and load sparse matrices:
 
 .. autosummary::
    :toctree: generated/
 
-   save_npz - Save a sparse matrix to a file using ``.npz`` format.
-   load_npz - Load a sparse matrix from a file using ``.npz`` format.
+   save_npz - Save a sparse matrix/array to a file using ``.npz`` format.
+   load_npz - Load a sparse matrix/array from a file using ``.npz`` format.
 
-Sparse matrix tools:
+Sparse tools:
 
 .. autosummary::
    :toctree: generated/
 
    find
+
+Identifying sparse arrays:
+
+- use `isinstance(A, sp.sparse.sparray)` to check whether an array or matrix.
+- use `A.format == 'csr'` to check the sparse format
 
 Identifying sparse matrices:
 
@@ -303,7 +316,8 @@ from . import (
 __all__ = [s for s in dir() if not s.startswith('_')]
 
 # Filter PendingDeprecationWarning for np.matrix introduced with numpy 1.15
-_warnings.filterwarnings('ignore', message='the matrix subclass is not the recommended way')
+msg = 'the matrix subclass is not the recommended way'
+_warnings.filterwarnings('ignore', message=msg)
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

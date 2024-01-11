@@ -330,8 +330,7 @@ class MatFile5Reader(MatFileReader):
                 res = self.read_var_array(hdr, process)
             except MatReadError as err:
                 warnings.warn(
-                    'Unreadable variable "%s", because "%s"' %
-                    (name, err),
+                    f'Unreadable variable "{name}", because "{err}"',
                     Warning, stacklevel=2)
                 res = "Read error: %s" % err
             self.mat_stream.seek(next_position)
@@ -652,8 +651,7 @@ class VarWriter5:
         # Try to convert things that aren't arrays
         narr = to_writeable(arr)
         if narr is None:
-            raise TypeError('Could not convert %s (type %s) to array'
-                            % (arr, type(arr)))
+            raise TypeError(f'Could not convert {arr} (type {type(arr)}) to array')
         if isinstance(narr, MatlabObject):
             self.write_object(narr)
         elif isinstance(narr, MatlabFunction):
@@ -845,8 +843,8 @@ class MatFile5Writer:
     def write_file_header(self):
         # write header
         hdr = np.zeros((), NDT_FILE_HDR)
-        hdr['description'] = 'MATLAB 5.0 MAT-file Platform: %s, Created on: %s' \
-            % (os.name,time.asctime())
+        hdr['description'] = (f'MATLAB 5.0 MAT-file Platform: {os.name}, '
+                              f'Created on: {time.asctime()}')
         hdr['version'] = 0x0100
         hdr['endian_test'] = np.ndarray(shape=(),
                                       dtype='S2',

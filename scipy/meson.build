@@ -70,7 +70,11 @@ else
   _incdir_numpy_abs = incdir_numpy
 endif
 inc_np = include_directories(incdir_numpy)
-np_dep = declare_dependency(include_directories: inc_np)
+# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
+# when NumPy introduces a new deprecation.
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
@@ -119,16 +123,6 @@ cpp_args_pythran = [
   '-D__PYTHRAN__=3',
   '-DPYTHRAN_BLAS_NONE'
 ]
-
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation. Use in a meson.build file::
-#
-#   py3.extension_module('_name',
-#     'source_fname',
-#     numpy_nodepr_api)
-#
-numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
@@ -228,7 +222,8 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir
+  install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 python_sources = [
@@ -247,11 +242,6 @@ endif
 py3.install_sources(
   python_sources,
   subdir: 'scipy'
-)
-
-py3.install_sources(
-  ['_build_utils/tests/test_scipy_version.py'],
-  subdir: 'scipy/_lib/tests'
 )
 
 # Copy the main __init__.py and pxd files to the build dir.
@@ -410,10 +400,7 @@ if cc.get_id() != 'msvc'
   endif
 endif
 
-# Suppress warning for deprecated Numpy API.
-# (Suppress warning messages emitted by #warning directives).
-# Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += [_cpp_Wno_cpp, use_math_defines]
+cython_c_args += [use_math_defines]
 cython_cpp_args = cython_c_args
 
 compilers = {
@@ -484,6 +471,7 @@ configure_file(
   output: '__config__.py',
   configuration : conf_data,
   install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 # Ordering of subdirs: special and linalg come first, because other submodules

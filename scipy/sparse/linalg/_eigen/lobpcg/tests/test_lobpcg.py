@@ -90,7 +90,8 @@ def test_Small():
 
 def test_ElasticRod():
     A, B = ElasticRod(20)
-    with pytest.warns(UserWarning, match="Exited at iteration"):
+    msg = "Exited at iteration.*|Exited postprocessing with accuracies.*"
+    with pytest.warns(UserWarning, match=msg):
         compare_solutions(A, B, 2)
 
 
@@ -174,7 +175,7 @@ def test_nonhermitian_warning(capsys):
     out, err = capsys.readouterr()  # Capture output
     assert out.startswith("Solving standard eigenvalue")  # Test stdout
     assert err == ''  # Test empty stderr
-    # Make the matrix symmetric and the UserWarning dissappears.
+    # Make the matrix symmetric and the UserWarning disappears.
     A += A.T
     _, _ = lobpcg(A, X, verbosityLevel=1, maxiter=0)
     out, err = capsys.readouterr()  # Capture output
@@ -355,7 +356,8 @@ def test_failure_to_run_iterations_nonsymmetric():
     A = np.zeros((10, 10))
     A[0, 1] = 1
     Q = np.ones((10, 1))
-    with pytest.warns(UserWarning, match="Exited at iteration 2"):
+    msg = "Exited at iteration 2|Exited postprocessing with accuracies.*"
+    with pytest.warns(UserWarning, match=msg):
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
     assert np.max(eigenvalues) > 0
 
@@ -430,7 +432,8 @@ def test_verbosity():
     X = rnd.standard_normal((10, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 1))
-    with pytest.warns(UserWarning, match="Exited at iteration"):
+    msg = "Exited at iteration.*|Exited postprocessing with accuracies.*"
+    with pytest.warns(UserWarning, match=msg):
         _, _ = lobpcg(A, Q, maxiter=3, verbosityLevel=9)
 
 
@@ -506,14 +509,15 @@ def test_maxit():
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float64)
+    msg = "Exited at iteration.*|Exited postprocessing with accuracies.*"
     for maxiter in range(1, 4):
-        with pytest.warns(UserWarning, match="Exited at iteration"):
+        with pytest.warns(UserWarning, match=msg):
             _, _, l_h, r_h = lobpcg(A, X, tol=1e-8, maxiter=maxiter,
                                     retLambdaHistory=True,
                                     retResidualNormsHistory=True)
         assert_allclose(np.shape(l_h)[0], maxiter+3)
         assert_allclose(np.shape(r_h)[0], maxiter+3)
-    with pytest.warns(UserWarning, match="Exited at iteration"):
+    with pytest.warns(UserWarning, match=msg):
         l, _, l_h, r_h = lobpcg(A, X, tol=1e-8,
                                 retLambdaHistory=True,
                                 retResidualNormsHistory=True)

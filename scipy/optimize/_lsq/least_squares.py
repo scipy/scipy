@@ -108,9 +108,9 @@ def check_tolerance(ftol, xtol, gtol, method):
         if tol is None:
             tol = 0
         elif tol < EPS:
-            warn("Setting `{}` below the machine epsilon ({:.2e}) effectively "
-                 "disables the corresponding termination condition."
-                 .format(name, EPS))
+            warn(f"Setting `{name}` below the machine epsilon ({EPS:.2e}) effectively "
+                 f"disables the corresponding termination condition.",
+                 stacklevel=3)
         return tol
 
     ftol = check(ftol, "ftol")
@@ -119,10 +119,10 @@ def check_tolerance(ftol, xtol, gtol, method):
 
     if method == "lm" and (ftol < EPS or xtol < EPS or gtol < EPS):
         raise ValueError("All tolerances must be higher than machine epsilon "
-                         "({:.2e}) for method 'lm'.".format(EPS))
+                         f"({EPS:.2e}) for method 'lm'.")
     elif ftol < EPS and xtol < EPS and gtol < EPS:
         raise ValueError("At least one of the tolerances must be higher than "
-                         "machine epsilon ({:.2e}).".format(EPS))
+                         f"machine epsilon ({EPS:.2e}).")
 
     return ftol, xtol, gtol
 
@@ -833,7 +833,7 @@ def least_squares(
 
     if f0.ndim != 1:
         raise ValueError("`fun` must return at most 1-d array_like. "
-                         "f0.shape: {}".format(f0.shape))
+                         f"f0.shape: {f0.shape}")
 
     if not np.all(np.isfinite(f0)):
         raise ValueError("Residuals are not finite in the initial point.")
@@ -883,8 +883,8 @@ def least_squares(
                                  "`jac_sparsity`.")
 
             if jac != '2-point':
-                warn("jac='{}' works equivalently to '2-point' "
-                     "for method='lm'.".format(jac))
+                warn(f"jac='{jac}' works equivalently to '2-point' for method='lm'.",
+                     stacklevel=2)
 
             J0 = jac_wrapped = None
         else:
@@ -908,8 +908,9 @@ def least_squares(
     if J0 is not None:
         if J0.shape != (m, n):
             raise ValueError(
-                "The return value of `jac` has wrong shape: expected {}, "
-                "actual {}.".format((m, n), J0.shape))
+                f"The return value of `jac` has wrong shape: expected {(m, n)}, "
+                f"actual {J0.shape}."
+            )
 
         if not isinstance(J0, np.ndarray):
             if method == 'lm':
@@ -944,7 +945,8 @@ def least_squares(
     elif method == 'dogbox':
         if tr_solver == 'lsmr' and 'regularize' in tr_options:
             warn("The keyword 'regularize' in `tr_options` is not relevant "
-                 "for 'dogbox' method.")
+                 "for 'dogbox' method.",
+                 stacklevel=2)
             tr_options = tr_options.copy()
             del tr_options['regularize']
 

@@ -136,8 +136,8 @@ def norm(x, ord=None, axis=None):
     if len(axis) == 2:
         row_axis, col_axis = axis
         if not (-nd <= row_axis < nd and -nd <= col_axis < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            message = f'Invalid axis {axis!r} for an array with shape {x.shape!r}'
+            raise ValueError(message)
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
@@ -163,8 +163,8 @@ def norm(x, ord=None, axis=None):
     elif len(axis) == 1:
         a, = axis
         if not (-nd <= a < nd):
-            raise ValueError('Invalid axis %r for an array with shape %r' %
-                             (axis, x.shape))
+            message = f'Invalid axis {axis!r} for an array with shape {x.shape!r}'
+            raise ValueError(message)
         if ord == np.inf:
             M = abs(x).max(axis=a)
         elif ord == -np.inf:

@@ -1365,7 +1365,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [2]_, and only
@@ -1374,7 +1374,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
@@ -1532,7 +1532,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -2078,7 +2078,7 @@ cdef class Rotation:
         ``axis3``). For Euler angles, there is an additional relationship 
         between ``axis1`` or ``axis3``, with two possibilities:
 
-            - ``axis1`` and ``axis3`` are also orthognal (asymmetric sequence)
+            - ``axis1`` and ``axis3`` are also orthogonal (asymmetric sequence)
             - ``axis1 == axis3`` (symmetric sequence)
 
         For Davenport angles, this last relationship is relaxed [1]_, and only
@@ -2098,7 +2098,7 @@ cdef class Rotation:
         Parameters
         ----------
         axes : array_like, shape (3,) or ([1 or 2 or 3], 3)
-            Axis of rotation, if one dimentional. If two dimentional, describes the 
+            Axis of rotation, if one dimensional. If two dimensional, describes the 
             sequence of axes for rotations, where each axes[i, :] is the ith
             axis. If more than one axis is given, then the second axis must be
             orthogonal to both the first and third axes.
@@ -2232,7 +2232,7 @@ cdef class Rotation:
 
         References
         ----------
-        .. [1] Shuster, M. D. "A Survery of Attitude Representations",
+        .. [1] Shuster, M. D. "A Survey of Attitude Representations",
                The Journal of Astronautical Sciences, Vol. 41, No.4, 1993,
                pp. 475-476
 
@@ -2294,7 +2294,10 @@ cdef class Rotation:
     @cython.embedsignature(True)
     @classmethod
     def concatenate(cls, rotations):
-        """Concatenate a sequence of `Rotation` objects.
+        """Concatenate a sequence of `Rotation` objects into a single object.
+
+        This is useful if you want to, for example, take the mean of a set of
+        rotations and need to pack them into a single object to do so.
 
         Parameters
         ----------
@@ -2305,6 +2308,26 @@ cdef class Rotation:
         -------
         concatenated : `Rotation` instance
             The concatenated rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r1 = R.from_rotvec([0, 0, 1])
+        >>> r2 = R.from_rotvec([0, 0, 2])
+        >>> rc = R.concatenate([r1, r2])
+        >>> rc.as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
+        >>> rc.mean().as_rotvec()
+        array([0., 0., 1.5])
+
+        Note that it may be simpler to create the desired rotations by passing
+        in a single list of the data during initialization, rather then by
+        concatenating:
+
+        >>> R.from_rotvec([[0, 0, 1], [0, 0, 2]]).as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
 
         Notes
         -----

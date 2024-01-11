@@ -98,8 +98,8 @@ def check_fpu_mode(request):
     new_mode = get_fpu_mode()
 
     if old_mode != new_mode:
-        warnings.warn("FPU mode changed from {:#x} to {:#x} during "
-                      "the test".format(old_mode, new_mode),
+        warnings.warn(f"FPU mode changed from {old_mode:#x} to {new_mode:#x} during "
+                      "the test",
                       category=FPUModeChangeWarning, stacklevel=0)
 
 

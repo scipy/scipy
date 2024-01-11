@@ -125,6 +125,7 @@ distcont = [
 distdiscrete = [
     ['bernoulli',(0.3,)],
     ['betabinom', (5, 2.3, 0.63)],
+    ['betanbinom', (5, 9.3, 1)],
     ['binom', (5, 0.4)],
     ['boltzmann',(1.4, 19)],
     ['dlaplace', (0.8,)],  # 0.5
@@ -158,6 +159,7 @@ invdistdiscrete = [
     ['bernoulli', (1.5, )],
     ['binom', (10, 1.5)],
     ['betabinom', (10, -0.4, -0.5)],
+    ['betanbinom', (10, -0.4, -0.5)],
     ['boltzmann', (-1, 4)],
     ['dlaplace', (-0.5, )],
     ['geom', (1.5, )],

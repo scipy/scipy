@@ -127,6 +127,11 @@ your system.
 
     .. note::
 
+        ``export PKG_CONFIG_PATH="/opt/homebrew/opt/openblas/lib/pkgconfig"``
+        may need to be used in order for the build system to detect OpenBlas.
+
+    .. note::
+
         As of SciPy >=1.2.0, we do not support compiling against the system
         Accelerate library for BLAS and LAPACK. It does not support a sufficiently
         recent LAPACK interface. This is planned to change in 2023, because macOS
@@ -246,13 +251,14 @@ Building from source to use SciPy
       mamba env create -f environment.yml
 
       # Or, install only the required build dependencies
-      mamba install python numpy cython pythran pybind11 compilers openblas pkg-config
+      mamba install python numpy cython pythran pybind11 compilers openblas meson-python pkg-config
 
       # To build the latest stable release:
       pip install scipy --no-build-isolation --no-binary scipy
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install . --no-build-isolation
 
@@ -266,6 +272,7 @@ Building from source to use SciPy
 
       # To build a development version, you need a local clone of the SciPy git repository:
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
       pip install .
 
@@ -280,6 +287,7 @@ If you want to build from source in order to work on SciPy itself, first clone
 the SciPy repository::
 
       git clone https://github.com/scipy/scipy.git
+      cd scipy
       git submodule update --init
 
 Then you want to do the following:
@@ -349,17 +357,20 @@ virtual environments:
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
 
-       # Build dependencies
-       python -m pip install numpy cython pythran pybind11 meson ninja pydevtool rich-click
+       # All dependencies
+       python -m pip install -r requirements/all.txt
 
-       # Test and optional runtime dependencies
-       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
+       # Alternatively, you can install just the dependencies for certain
+       # development tasks:
 
-       # Doc build dependencies
-       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Dev dependencies (static typing and linting)
-       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       python -m pip install -r requirements/doc.txt
+
+       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 
@@ -371,6 +382,41 @@ drop into IPython (``python dev.py ipython``), or take other development steps
 like build the html documentation or running benchmarks. The ``dev.py``
 interface is self-documenting, so please see ``python dev.py --help`` and
 ``python dev.py <subcommand> --help`` for detailed guidance.
+
+
+.. admonition:: IDE support & editable installs
+
+    While the ``dev.py`` interface is our recommended way of working on SciPy,
+    it has one limitation: because of the custom install location, SciPy
+    installed using ``dev.py`` will not be recognized automatically within an
+    IDE (e.g., for running a script via a "run" button, or setting breakpoints
+    visually). This will work better with an *in-place build* (or "editable
+    install").
+
+    Editable installs are supported. It is important to understand that **you
+    may use either an editable install or dev.py in a given repository clone,
+    but not both**. If you use editable installs, you have to use ``pytest``
+    and other development tools directly instead of using ``dev.py``.
+
+    To use an editable install, ensure you start from a clean repository (run
+    ``git clean -xdf`` if you've built with ``dev.py`` before) and have all
+    dependencies set up correctly as described higher up on this page. Then
+    do::
+
+        # Note: the --no-build-isolation is important! meson-python will
+        # auto-rebuild each time SciPy is imported by the Python interpreter.
+        pip install -e . --no-build-isolation
+
+        # To run the tests for, e.g., the `scipy.linalg` module:
+        pytest scipy/linalg
+
+    When making changes to SciPy code, including to compiled code, there is no
+    need to manually rebuild or reinstall. When you run ``git clean -xdf``,
+    which removes the built extension modules, remember to also uninstall SciPy
+    with ``pip uninstall scipy``.
+
+    See the meson-python_ documentation on editable installs for more details
+    on how things work under the hood.
 
 
 Customizing builds
@@ -397,3 +443,4 @@ Background information
 
 
 .. _Mambaforge: https://github.com/conda-forge/miniforge#mambaforge
+.. _meson-python: https://mesonbuild.com/meson-python/
