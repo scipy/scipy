@@ -529,14 +529,14 @@ class ShortTimeFFT:
 
         'twosided':
             Two-sided FFT, where values for the negative frequencies are in
-            upper half of the array. Corresponds to :func:`scipy.fft.fft()`.
+            upper half of the array. Corresponds to :func:`~scipy.fft.fft()`.
         'centered':
             Two-sided FFT with the values being ordered along monotonically
             increasing frequencies. Corresponds to applying
-            :func:`scipy.fft.fftshift()` to :func:`scipy.fft.fft()`.
+            :func:`~scipy.fft.fftshift()` to :func:`~scipy.fft.fft()`.
         'onesided':
             Calculates only values for non-negative frequency values.
-            Corresponds to :func:`scipy.fft.rfft()`.
+            Corresponds to :func:`~scipy.fft.rfft()`.
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
@@ -613,8 +613,8 @@ class ShortTimeFFT:
         If not ``None``, the FFTs can be either interpreted as a magnitude or
         a power spectral density spectrum.
 
-        The window function can be scaled by calling the `scale_to()` method,
-        or it is set by the initializer parameter `scale_to`.
+        The window function can be scaled by calling the `scale_to` method,
+        or it is set by the initializer parameter ``scale_to``.
 
         See Also
         --------
@@ -1628,7 +1628,7 @@ class ShortTimeFFT:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
+        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
         of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.

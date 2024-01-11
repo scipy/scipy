@@ -23,7 +23,8 @@ cython_linalg = custom_target('cython_linalg',
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg'
+  install_dir: py3.get_install_dir() / 'scipy/linalg',
+  install_tag: 'devel'
 )
 
 # This dummy custom target is only needed to establish a dependency on
@@ -67,7 +68,6 @@ fblas_module = custom_target('fblas_module',
 # LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
   fblas_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
@@ -87,7 +87,7 @@ flapack_module = custom_target('flapack_module',
 # in flapack_other.pyf.src
 py3.extension_module('_flapack',
   flapack_module,
-  c_args: [numpy_nodepr_api, Wno_empty_body],
+  c_args: [Wno_empty_body],
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
   install: true,
@@ -149,7 +149,6 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/prini.f',
     interpolative_module,
   ],
-  c_args: numpy_nodepr_api,
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],

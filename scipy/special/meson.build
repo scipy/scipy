@@ -4,6 +4,8 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
   fs.copyfile('_boxcox.pxd'),
+  fs.copyfile('_cdflib.pxd'),
+  fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_cephes.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
@@ -73,73 +75,6 @@ amos_sources = [
   'amos/zunk2.f',
   'amos/zuoik.f',
   'amos/zwrsk.f'
-]
-
-cdflib_sources = [
-  'cdflib/algdiv.f',
-  'cdflib/alngam.f',
-  'cdflib/alnrel.f',
-  'cdflib/apser.f',
-  'cdflib/basym.f',
-  'cdflib/bcorr.f',
-  'cdflib/betaln.f',
-  'cdflib/bfrac.f',
-  'cdflib/bgrat.f',
-  'cdflib/bpser.f',
-  'cdflib/bratio.f',
-  'cdflib/brcmp1.f',
-  'cdflib/brcomp.f',
-  'cdflib/bup.f',
-  'cdflib/cdfbet.f',
-  'cdflib/cdfbin.f',
-  'cdflib/cdfchi.f',
-  'cdflib/cdfchn.f',
-  'cdflib/cdff.f',
-  'cdflib/cdffnc.f',
-  'cdflib/cdfgam.f',
-  'cdflib/cdfnbn.f',
-  'cdflib/cdfnor.f',
-  'cdflib/cdfpoi.f',
-  'cdflib/cdft.f',
-  'cdflib/cdftnc.f',
-  'cdflib/cumbet.f',
-  'cdflib/cumbin.f',
-  'cdflib/cumchi.f',
-  'cdflib/cumchn.f',
-  'cdflib/cumf.f',
-  'cdflib/cumfnc.f',
-  'cdflib/cumgam.f',
-  'cdflib/cumnbn.f',
-  'cdflib/cumnor.f',
-  'cdflib/cumpoi.f',
-  'cdflib/cumt.f',
-  'cdflib/cumtnc.f',
-  'cdflib/devlpl.f',
-  'cdflib/dinvnr.f',
-  'cdflib/dinvr.f',
-  'cdflib/dt1.f',
-  'cdflib/dzror.f',
-  'cdflib/erf.f',
-  'cdflib/erfc1.f',
-  'cdflib/esum.f',
-  'cdflib/exparg.f',
-  'cdflib/fpser.f',
-  'cdflib/gam1.f',
-  'cdflib/gaminv.f',
-  'cdflib/gamln.f',
-  'cdflib/gamln1.f',
-  'cdflib/gamma_fort.f',
-  'cdflib/grat1.f',
-  'cdflib/gratio.f',
-  'cdflib/gsumln.f',
-  'cdflib/ipmpar.f',
-  'cdflib/psi_fort.f',
-  'cdflib/rcomp.f',
-  'cdflib/rexp.f',
-  'cdflib/rlog.f',
-  'cdflib/rlog1.f',
-  'cdflib/spmpar.f',
-  'cdflib/stvaln.f'
 ]
 
 cephes_sources = [
@@ -220,7 +155,6 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'amos_wrappers.c',
-  'cdf_wrappers.c',
   'specfun_wrappers.c',
   'sf_error.c'
 ]
@@ -247,15 +181,6 @@ amos_lib = static_library('amos',
   fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
-cdflib_lib = static_library('cdflib',
-  cdflib_sources,
-  fortran_args: [
-    _fflag_Wno_maybe_uninitialized,
-    _fflag_Wno_unused_label,
-    _fflag_Wno_intrinsic_shadow
-  ]
-)
-
 mach_lib = static_library('mach',
   mach_sources,
   fortran_args: [_fflag_Wno_unused_dummy_argument, _fflag_Wno_maybe_uninitialized]
@@ -274,11 +199,19 @@ specfun_module = custom_target('specfun_module',
 
 py3.extension_module('_specfun',
   specfun_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
   link_language: 'fortran',
+  install: true,
+  subdir: 'scipy/special'
+)
+
+cdflib_c = cython_gen.process('_cdflib.pyx')
+
+py3.extension_module('_cdflib',
+  cdflib_c,
+  dependencies: [np_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -302,7 +235,8 @@ cython_special = custom_target('cython_special',
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/special'
+  install_dir: py3.get_install_dir() / 'scipy/special',
+  install_tag: 'devel',
 )
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
@@ -335,7 +269,6 @@ py3.extension_module('_ufuncs',
   link_args: version_link_args,
   link_with: [
     amos_lib,
-    cdflib_lib,
     cephes_lib,
     mach_lib,
     specfun_lib
@@ -399,7 +332,6 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.c',
-    'cdf_wrappers.c',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
@@ -409,7 +341,6 @@ py3.extension_module('cython_special',
   dependencies: [np_dep, libnpymath_dep, lapack],
   link_with: [
     amos_lib,
-    cdflib_lib,
     cephes_lib,
     mach_lib,
     specfun_lib
@@ -469,7 +400,8 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
+    install_dir: py3.get_install_dir() / 'scipy/special/tests/data',
+    install_tag: 'python-runtime',
   )
 endforeach
 
@@ -480,12 +412,19 @@ special_sources = [
   'special/config.h',
   'special/error.h',
   'special/evalpoly.h',
-  'special/lambertw.h'
+  'special/lambertw.h',
+  'special/binom.h'
 ]
+
+special_cephes_sources = [
+  'special/cephes/const.h',
+  'special/cephes/polevl.h',
+  'special/cephes/beta.h',
+  'special/cephes/gamma.h'
+]
+
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
-foreach header: special_sources
-  fs.copyfile(header)
-endforeach
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',

@@ -40,7 +40,7 @@ def test_fortranfiles_read():
 def test_fortranfiles_mixed_record():
     filename = path.join(DATA_PATH, "fortran-mixed.dat")
     with FortranFile(filename, 'r', '<u4') as f:
-        record = f.read_record('<i4,<f4,<i8,(2)<f8')
+        record = f.read_record('<i4,<f4,<i8,2<f8')
 
     assert_equal(record['f0'][0], 1)
     assert_allclose(record['f1'][0], 2.3)
