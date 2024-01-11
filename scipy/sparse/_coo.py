@@ -335,8 +335,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csr format")
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
@@ -350,9 +348,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     def _coo_to_compressed(self, swap):
         """convert (shape, coords, data) to (indptr, indices, data, shape)"""
-        M, N = swap(self.shape)
-        major, minor = swap(self.coords)
-        nnz = len(major)
+        M, N = swap(self._shape_as_2d)
+        if self.ndim == 1:
+            minor = self.coords[0]
+            nnz = len(minor)
+            major = np.zeros((nnz,), dtype=minor.dtype)
+        else:
+            major, minor = swap(self.coords)
+            nnz = len(major)
         # convert idx_dtype intc to int32 for pythran.
         # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
