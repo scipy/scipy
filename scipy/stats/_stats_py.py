@@ -10397,7 +10397,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     A = sparse.coo_array(A)
 
     # get cost matrix
-    D = distance_matrix(u_values, v_values, p=2)
+    D = distance_matrix(u_values, v_values, p=1)
     cost = D.ravel()
 
     # create the minimization target
