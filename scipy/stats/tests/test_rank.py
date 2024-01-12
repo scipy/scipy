@@ -78,23 +78,27 @@ class TestRankData:
         """stats.rankdata([]) should return an empty array."""
         a = np.array([], dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, np.array([], dtype=np.float64))
+        assert_array_equal(r, np.array([], dtype=np.float64), strict=True)
         r = rankdata([])
-        assert_array_equal(r, np.array([], dtype=np.float64))
-        b = np.empty((0, 1, 2), dtype=int)
-        r = rankdata(b, axis=None)
-        assert_array_equal(r, np.array([], dtype=np.float64))
-        r = rankdata(b, axis=0)
-        assert_array_equal(r, np.empty_like(b, dtype=np.float64))
+        assert_array_equal(r, np.array([], dtype=np.float64), strict=True)
+
+    @pytest.mark.parametrize("shape", [(0, 1, 2)])
+    @pytest.mark.parametrize("axis", [None, *range(3)])
+    def test_empty_multidim(self, shape, axis):
+        a = np.empty(shape, dtype=int)
+        r = rankdata(a, axis=axis)
+        expected_shape = (0,) if axis is None else shape
+        assert_equal(r.shape, expected_shape)
+        assert_equal(r.dtype, np.float64)
 
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64))
+        assert_array_equal(r, np.array([1.0], dtype=np.float64), strict=True)
         r = rankdata(data)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64))
+        assert_array_equal(r, np.array([1.0], dtype=np.float64), strict=True)
 
     def test_basic(self):
         """Basic tests of stats.rankdata."""
@@ -102,29 +106,29 @@ class TestRankData:
         expected = np.array([3.0, 1.0, 2.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
         r = rankdata(data)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
 
         data = [40, 10, 30, 10, 50]
         expected = np.array([4.0, 1.5, 3.0, 1.5, 5.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
         r = rankdata(data)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
 
         data = [20, 20, 20, 10, 10, 10]
         expected = np.array([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
         r = rankdata(data)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
         # The docstring states explicitly that the argument is flattened.
         a2d = a.reshape(2, 3)
         r = rankdata(a2d)
-        assert_array_equal(r, expected)
+        assert_array_equal(r, expected, strict=True)
 
     def test_rankdata_object_string(self):
 
