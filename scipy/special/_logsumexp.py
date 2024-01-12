@@ -98,10 +98,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
 
-    if np.issubdtype(a.dtype, np.complexfloating):
-      a_max = np.amax(abs(a), axis=axis, keepdims=True)
-    else:
-      a_max = np.amax(a, axis=axis, keepdims=True)
+    # Scale by real part for complex inputs, because this affects
+    # the magnitude of the exponential.
+    a_max = np.amax(a.real, axis=axis, keepdims=True)
 
     if a_max.ndim > 0:
         a_max[~np.isfinite(a_max)] = 0
