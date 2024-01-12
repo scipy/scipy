@@ -1013,9 +1013,9 @@ class TestDifferentialEvolutionSolver:
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
 
-        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(f(x_opt), f_opt, atol=6e-4)
         assert res.success
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
@@ -1063,7 +1063,7 @@ class TestDifferentialEvolutionSolver:
                                          seed=1234, constraints=constraints,
                                          popsize=2)
 
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))

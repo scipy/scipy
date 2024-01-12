@@ -56,3 +56,8 @@ py3.install_sources(
   python_sources,
   subdir: 'scipy/special/tests'
 )
+
+py3.install_sources(
+  'data/__init__.py',
+  subdir: 'scipy/special/tests/data'
+)

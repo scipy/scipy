@@ -201,7 +201,6 @@ superlu_lib = static_library('superlu_lib',
 
 _superlu = py3.extension_module('_superlu',
   ['_superlumodule.c', '_superlu_utils.c', '_superluobject.c'],
-  c_args: numpy_nodepr_api,
   link_with: [superlu_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,

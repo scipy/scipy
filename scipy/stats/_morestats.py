@@ -1131,11 +1131,18 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
 def _boxcox_inv_lmbda(x, y):
     # compute lmbda given x and y for Box-Cox transformation
-    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=1)
+    num = special.lambertw(-(x ** (-1 / y)) * np.log(x) / y, k=-1)
     return np.real(-num / np.log(x) - 1 / y)
 
 
-def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
+class _BigFloat:
+    def __repr__(self):
+        return "BIG_FLOAT"
+
+
+def boxcox_normmax(
+    x, brack=None, method='pearsonr', optimizer=None, *, ymax=_BigFloat()
+):
     """Compute optimal Box-Cox transform parameter for input data.
 
     Parameters
@@ -1179,6 +1186,14 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
         See the example below or the documentation of
         `scipy.optimize.minimize_scalar` for more information.
+    ymax : float, optional
+        The unconstrained optimal transform parameter may cause Box-Cox
+        transformed data to have extreme magnitude or even overflow.
+        This parameter constrains MLE optimization such that the magnitude
+        of the transformed `x` does not exceed `ymax`. The default is
+        the maximum value of the input dtype. If set to infinity,
+        `boxcox_normmax` returns the unconstrained optimal lambda.
+        Ignored when ``method='pearsonr'``.
 
     Returns
     -------
@@ -1235,6 +1250,16 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
     6.000...
     """
+    x = np.asarray(x)
+    end_msg = "exceed specified `ymax`."
+    if isinstance(ymax, _BigFloat):
+        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
+        # 10000 is a safety factor because `special.boxcox` overflows prematurely.
+        ymax = np.finfo(dtype).max / 10000
+        end_msg = f"overflow in {dtype}."
+    elif ymax <= 0:
+        raise ValueError("`ymax` must be strictly positive")
+
     # If optimizer is not given, define default 'brent' optimizer.
     if optimizer is None:
 
@@ -1311,27 +1336,34 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
                    "an object containing the optimal `lmbda` in attribute `x`.")
         raise ValueError(message)
-    else:
-        # Test if the optimal lambda causes overflow
-        x = np.asarray(x)
-        max_x = np.max(x, axis=0)
-        istransinf = np.isinf(special.boxcox(max_x, res))
-        dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
-        if np.any(istransinf):
-            warnings.warn(
-                f"The optimal lambda is {res}, but the returned lambda is "
-                f"the constrained optimum to ensure that the maximum of the "
-                f"transformed data does not cause overflow in {dtype}.",
-                stacklevel=2
+    elif not np.isinf(ymax):  # adjust the final lambda
+        # x > 1, boxcox(x) > 0; x < 1, boxcox(x) < 0
+        xmax, xmin = np.max(x), np.min(x)
+        if xmin >= 1:
+            x_treme = xmax
+        elif xmax <= 1:
+            x_treme = xmin
+        else:  # xmin < 1 < xmax
+            indicator = special.boxcox(xmax, res) > abs(special.boxcox(xmin, res))
+            if isinstance(res, np.ndarray):
+                indicator = indicator[1]  # select corresponds with 'mle'
+            x_treme = xmax if indicator else xmin
+
+        mask = abs(special.boxcox(x_treme, res)) > ymax
+        if np.any(mask):
+            message = (
+                f"The optimal lambda is {res}, but the returned lambda is the "
+                f"constrained optimum to ensure that the maximum or the minimum "
+                f"of the transformed data does not " + end_msg
             )
+            warnings.warn(message, stacklevel=2)
 
             # Return the constrained lambda to ensure the transformation
-            # does not cause overflow
-            ymax = np.finfo(dtype).max / 100  # 100 is the safety factor
-            constrained_res = _boxcox_inv_lmbda(max_x, ymax)
+            # does not cause overflow or exceed specified `ymax`
+            constrained_res = _boxcox_inv_lmbda(x_treme, ymax * np.sign(x_treme - 1))
 
             if isinstance(res, np.ndarray):
-                res[istransinf] = constrained_res
+                res[mask] = constrained_res
             else:
                 res = constrained_res
     return res
@@ -1827,6 +1859,7 @@ def yeojohnson_normplot(x, la, lb, plot=None, N=80):
 ShapiroResult = namedtuple('ShapiroResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(ShapiroResult, n_samples=1, too_small=2, default_axis=None)
 def shapiro(x):
     r"""Perform the Shapiro-Wilk test for normality.
 
@@ -1976,7 +2009,11 @@ def shapiro(x):
                       f"may not be accurate. Current N is {N}.",
                       stacklevel=2)
 
-    return ShapiroResult(w, pw)
+    # `w` and `pw` are always Python floats, which are double precision.
+    # We want to ensure that they are NumPy floats, so until dtypes are
+    # respected, we can explicitly convert each to float64 (faster than
+    # `np.array([w, pw])`).
+    return ShapiroResult(np.float64(w), np.float64(pw))
 
 
 # Values from Stephens, M A, "EDF Statistics for Goodness of Fit and
@@ -3676,6 +3713,15 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     return ((T - E_0_T) / np.sqrt(varM),)
 
 
+def _mood_too_small(samples, kwargs, axis=-1):
+    x, y = samples
+    n = x.shape[axis]
+    m = y.shape[axis]
+    N = m + n
+    return N < 3
+
+
+@_axis_nan_policy_factory(SignificanceResult, n_samples=2, too_small=_mood_too_small)
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -3767,11 +3813,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     """
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
-
-    if axis is None:
-        x = x.flatten()
-        y = y.flatten()
-        axis = 0
 
     if axis < 0:
         axis = x.ndim + axis
