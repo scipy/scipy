@@ -44,7 +44,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     sgn : ndarray
         If return_sign is True, this will be an array of floating-point
         numbers matching res and +1, 0, or -1 depending on the sign
-        of the result. If False, only one result is returned.
+        of the result. For complex input, sgn will be a complex phase.
+        If return_sign is False, only one result is returned.
 
     See Also
     --------
@@ -97,7 +98,10 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
 
-    a_max = np.amax(a, axis=axis, keepdims=True)
+    if np.issubdtype(a.dtype, np.complexfloating):
+      a_max = np.amax(abs(a), axis=axis, keepdims=True)
+    else:
+      a_max = np.amax(a, axis=axis, keepdims=True)
 
     if a_max.ndim > 0:
         a_max[~np.isfinite(a_max)] = 0
@@ -114,8 +118,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     with np.errstate(divide='ignore'):
         s = np.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
-            sgn = np.sign(s)
-            s *= sgn  # /= makes more sense but we need zero -> zero
+            # For complex, use the numpy>=2.0 convention for sign.
+            if np.issubdtype(s, np.complexfloating):
+                sgn = np.where(s == 0, 0, s / abs(s))
+            else:
+                sgn = np.sign(s)
+            s = abs(s).astype(s.dtype)
         out = np.log(s)
 
     if not keepdims:
