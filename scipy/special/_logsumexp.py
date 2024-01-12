@@ -104,19 +104,60 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     elif not np.isfinite(a_max):
         a_max = 0
 
+     # we compute where a = a_max so as to compute the
+     # sumexp separately and decompose as follows, using
+     # m = sum(exp(a_i - a_max) where a_i=a_max)
+     # R = sum( exp(a_i - a_max) where a_i!=a_max ) 
+     # logsum   = log( sum(exp(a_i))) 
+     #          = a_max + log(sum( exp(a_i-a_max) ))
+     #          = a_max + log(m + R )
+     #          = a_max + log(m) + log(1 + (1/m) * R)
+
+    tmp0 = (a == a_max)
     if b is not None:
         b = np.asarray(b)
-        tmp = b * np.exp(a - a_max)
+
+        # sumexp for a != a_max
+        tmp = b * np.exp(a - a_max)  * (~tmp0)
+
+        # sumexp for where a = a_max
+        tmp0 = b*tmp0.astype(float)
     else:
-        tmp = np.exp(a - a_max)
+        tmp = np.exp(a - a_max)  * (~tmp0)
+        tmp0 = tmp0.astype(float)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
         s = np.sum(tmp, axis=axis, keepdims=keepdims)
+        s0 = np.sum(tmp0, axis=axis, keepdims=keepdims)
+        sf = s + s0
         if return_sign:
-            sgn = np.sign(s)
+            sgn = np.sign(sf)
             s *= sgn  # /= makes more sense but we need zero -> zero
-        out = np.log(s)
+            s0*=sgn
+            sf*=sgn
+
+        
+        precise = ((s0>0) & (s>0))
+
+        if s0.ndim == 0:
+            if precise:
+                out = np.log(s0) + np.log1p(s/s0)
+            else:
+                out = np.log(sf)
+        else:
+
+            # make imprecise calculation
+            out = np.log(sf)
+
+            # compute precise calculation where possible
+            if np.any(precise):
+                
+                # replace invalid to avoid difficult calculations
+                s0[~precise] = 1
+                s[~precise] = 1
+                out[precise] = (np.log(s0) + np.log1p(s/s0))[precise]
+                # update with precise valules where appropriate
 
     if not keepdims:
         a_max = np.squeeze(a_max, axis=axis)
