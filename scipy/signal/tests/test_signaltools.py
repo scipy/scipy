@@ -1106,9 +1106,9 @@ class TestMedFilt:
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
-        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
-        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
-            assert_raises(TypeError, signal.medfilt, None)
+        msg = "dtype=object is not supported by medfilt"
+        with assert_raises(ValueError, match=msg):
+            signal.medfilt(None)
 
     def test_odd_strides(self):
         # Avoid a regression with possible contiguous

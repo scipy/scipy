@@ -1546,6 +1546,10 @@ def medfilt(volume, kernel_size=None):
 
     """
     volume = np.atleast_1d(volume)
+    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
+                        np.float16, np.object_, np.longdouble]:
+        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
+
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
     kernel_size = np.asarray(kernel_size)
@@ -1559,10 +1563,6 @@ def medfilt(volume, kernel_size=None):
         warnings.warn('kernel_size exceeds volume extent: the volume will be '
                       'zero-padded.',
                       stacklevel=2)
-
-    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
-                        np.float16, np.object_, np.longdouble]:
-        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
     size = math.prod(kernel_size)
     result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
