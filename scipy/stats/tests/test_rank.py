@@ -81,6 +81,11 @@ class TestRankData:
         assert_array_equal(r, np.array([], dtype=np.float64))
         r = rankdata([])
         assert_array_equal(r, np.array([], dtype=np.float64))
+        b = np.empty((0, 1, 2), dtype=int)
+        r = rankdata(b, axis=None)
+        assert_array_equal(r, np.array([], dtype=np.float64))
+        r = rankdata(b, axis=0)
+        assert_array_equal(r, np.empty_like(b, dtype=np.float64))
 
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
