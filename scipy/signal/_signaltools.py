@@ -1566,7 +1566,7 @@ def medfilt(volume, kernel_size=None):
 
     size = math.prod(kernel_size)
     result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
-                                    mode='constant')
+                                 mode='constant')
 
     return result
 
