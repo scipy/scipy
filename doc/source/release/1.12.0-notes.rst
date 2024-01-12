@@ -361,7 +361,7 @@ Authors
 * Lukas Geiger (9) +
 * Artem Glebov (22) +
 * Caden Gobat (1)
-* Ralf Gommers (125)
+* Ralf Gommers (126)
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
@@ -407,6 +407,7 @@ Authors
 * Nikolay Mayorov (4)
 * Nicholas McKibben (1)
 * Melissa Weber Mendonça (7)
+* Michał Górny (1)
 * Kat Mistberg (2) +
 * mkiffer (1) +
 * mocquin (1) +
@@ -430,7 +431,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (191)
+* Tyler Reddy (201)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -477,7 +478,7 @@ Authors
 * Jinzhe Zeng (1) +
 * JIMMY ZHAO (1) +
 
-A total of 162 people contributed to this release.
+A total of 163 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -606,6 +607,7 @@ Issues closed for 1.12.0
 * `#19448 <https://github.com/scipy/scipy/issues/19448>`__: DOC:fft: next_fast_len signature is empty in docs
 * `#19490 <https://github.com/scipy/scipy/issues/19490>`__: MAINT: lint: fail inventory
 * `#19544 <https://github.com/scipy/scipy/issues/19544>`__: DOC/MAINT: refguide-check errors
+* `#19553 <https://github.com/scipy/scipy/issues/19553>`__: BUG: Test suite leaks file descriptors (\`OSError: [Errno 24]...
 * `#19565 <https://github.com/scipy/scipy/issues/19565>`__: DOC/DX: \`meson-python\` missing from 'required build dependencies'
 * `#19568 <https://github.com/scipy/scipy/issues/19568>`__: DOC/DX: \`cd scipy\` missing from 'Building from source'
 * `#19575 <https://github.com/scipy/scipy/issues/19575>`__: BUG: scipy.ndimage.watershed_ift cost data type is too small...
@@ -616,9 +618,11 @@ Issues closed for 1.12.0
 * `#19620 <https://github.com/scipy/scipy/issues/19620>`__: _lib: Test error in test_warning_calls_filters because of a Python...
 * `#19636 <https://github.com/scipy/scipy/issues/19636>`__: DOC: issue in documentation for the callback argument in scipy.optimize.minimize
 * `#19640 <https://github.com/scipy/scipy/issues/19640>`__: CI, MAINT: pre-release job failures with scipy-openblas32
+* `#19726 <https://github.com/scipy/scipy/issues/19726>`__: BUG: 1.12.0rc1: build failure on windows due to macro collision...
 * `#19747 <https://github.com/scipy/scipy/issues/19747>`__: BUG: Invalid \`IndexError\` from \`scipy.stats.nbinom.logcdf\`
 * `#19795 <https://github.com/scipy/scipy/issues/19795>`__: MAINT: need stable Pythran release for SciPy 1.12.0 RC2
 * `#19804 <https://github.com/scipy/scipy/issues/19804>`__: MAINT/TST: Warnings failing test suite with \`pytest 8\`
+* `#19852 <https://github.com/scipy/scipy/issues/19852>`__: CI, MAINT: Windows 3.11 CI failure with file access issue
 
 ************************
 Pull requests for 1.12.0
@@ -1084,3 +1088,5 @@ Pull requests for 1.12.0
 * `#19800 <https://github.com/scipy/scipy/pull/19800>`__: TST: loosen tolerances for tests that fail otherwise on windows+MKL
 * `#19806 <https://github.com/scipy/scipy/pull/19806>`__: TST: fix compatibility with pytest 8
 * `#19830 <https://github.com/scipy/scipy/pull/19830>`__: REL: bump copyright to 2024
+* `#19842 <https://github.com/scipy/scipy/pull/19842>`__: TST: move reference data for test_real_transforms to a fixture
+* `#19859 <https://github.com/scipy/scipy/pull/19859>`__: BLD: improve scipy-openblas dependency check
