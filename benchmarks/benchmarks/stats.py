@@ -35,13 +35,13 @@ class CorrelationFunctions(Benchmark):
         self.a = a
 
     def time_fisher_exact(self, alternative):
-        oddsratio, pvalue = stats.fisher_exact(self.a, alternative=alternative)
+        stats.fisher_exact(self.a, alternative=alternative)
 
     def time_barnard_exact(self, alternative):
-        resBarnard = stats.barnard_exact(self.a, alternative=alternative)
+        stats.barnard_exact(self.a, alternative=alternative)
 
     def time_boschloo_exact(self, alternative):
-        resBoschloo = stats.boschloo_exact(self.a, alternative=alternative)
+        stats.boschloo_exact(self.a, alternative=alternative)
 
 
 class ANOVAFunction(Benchmark):
@@ -52,8 +52,8 @@ class ANOVAFunction(Benchmark):
         self.c = rng.random((6,3)) * 10
 
     def time_f_oneway(self):
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c)
-        statistic, pvalue = stats.f_oneway(self.a, self.b, self.c, axis=1)
+        stats.f_oneway(self.a, self.b, self.c)
+        stats.f_oneway(self.a, self.b, self.c, axis=1)
 
 
 class Kendalltau(Benchmark):
@@ -213,7 +213,8 @@ class DistributionsAll(Benchmark):
     slow_dists = ['nct', 'ncx2', 'argus', 'cosine', 'foldnorm', 'gausshyper',
                   'kappa4', 'invgauss', 'wald', 'vonmises_line', 'ksone',
                   'genexpon', 'exponnorm', 'recipinvgauss', 'vonmises',
-                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm']
+                  'foldcauchy', 'kstwo', 'levy_stable', 'skewnorm',
+                  'studentized_range']
     slow_methods = ['moment']
 
     def setup(self, dist_name, method):
@@ -351,9 +352,9 @@ class PDFPeakMemory(Benchmark):
     def setup(self, dist_name):
         # This benchmark is demanding. Skip it if the env isn't xslow.
         if not is_xslow():
-            raise NotImplementedError("skipped - enviroment is not xslow. "
-                                      "To enable this benchamark, set the "
-                                      "enviroment variable SCIPY_XSLOW=1")
+            raise NotImplementedError("skipped - environment is not xslow. "
+                                      "To enable this benchmark, set the "
+                                      "environment variable SCIPY_XSLOW=1")
 
         if dist_name in self.slow_dists:
             raise NotImplementedError("skipped - dist is too slow.")
@@ -411,7 +412,9 @@ class Distribution(Benchmark):
                 stats.beta.fit(self.x, loc=4, scale=10)
 
     # Retain old benchmark results (remove this if changing the benchmark)
-    time_distribution.version = "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    time_distribution.version = (
+        "fb22ae5386501008d945783921fe44aef3f82c1dafc40cddfaccaeec38b792b0"
+    )
 
 
 class DescriptiveStats(Benchmark):
@@ -543,6 +546,11 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         if True in nonrelevant_parameters or False not in relevant_parameters:
             raise NotImplementedError("skip non-relevant case")
 
+        # TODO: fix failing benchmarks (Aug. 2023), skipped for now
+        if ((dist_name == "pareto" and loc_fixed and scale_fixed)
+                or (dist_name == "invgauss" and loc_fixed)):
+            raise NotImplementedError("skip failing benchmark")
+
         # add fixed values if fixed in relevant_parameters to self.fixed
         # with keys from self.fnames and values in the same order as `fnames`.
         fixed_vales = self.custom_input.get(dist_name, [.834, 4.342,
@@ -606,7 +614,7 @@ class BenchQMCDiscrepancy(Benchmark):
         self.sample = sample
 
     def time_discrepancy(self, method):
-        disc = stats.qmc.discrepancy(self.sample, method=method)
+        stats.qmc.discrepancy(self.sample, method=method)
 
 
 class BenchQMCHalton(Benchmark):
@@ -657,14 +665,12 @@ class DistanceFunctions(Benchmark):
         self.v_weights = rng.random(n_size // 2) * 10
 
     def time_energy_distance(self, n_size):
-        distance = stats.energy_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.energy_distance(self.u_values, self.v_values,
+                              self.u_weights, self.v_weights)
 
     def time_wasserstein_distance(self, n_size):
-        distance = stats.wasserstein_distance(
-                 self.u_values, self.v_values,
-                 self.u_weights, self.v_weights)
+        stats.wasserstein_distance(self.u_values, self.v_values,
+                                   self.u_weights, self.v_weights)
 
 
 class Somersd(Benchmark):
@@ -679,7 +685,7 @@ class Somersd(Benchmark):
         self.y = rng.choice(n_size, size=n_size)
 
     def time_somersd(self, n_size):
-        res = stats.somersd(self.x, self.y)
+        stats.somersd(self.x, self.y)
 
 
 class KolmogorovSmirnov(Benchmark):

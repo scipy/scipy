@@ -48,8 +48,8 @@ function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
 element holding the estimated value of the integral and the second
-element holding an upper bound on the error. Notice, that in this
-case, the true value of this integral is
+element holding an estimate of the absolute integration error. 
+Notice, that in this case, the true value of this integral is
 
 .. math::
 
@@ -63,7 +63,7 @@ where
 
 is the Fresnel sine integral. Note that the numerically-computed integral is
 within :math:`1.04\times10^{-11}` of the exact result --- well below the
-reported error bound.
+reported error estimate.
 
 
 If the function to integrate takes additional parameters, they can be provided

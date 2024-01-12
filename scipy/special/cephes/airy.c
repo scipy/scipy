@@ -253,8 +253,7 @@ static double APGD[11] = {
     5.79912514929147598821E-9,
 };
 
-int airy(x, ai, aip, bi, bip)
-double x, *ai, *aip, *bi, *bip;
+int airy(double x, double *ai, double *aip, double *bi, double *bip)
 {
     double z, zz, t, f, g, uf, ug, k, zeta, theta;
     int domflg;

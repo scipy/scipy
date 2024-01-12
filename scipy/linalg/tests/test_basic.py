@@ -20,6 +20,7 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
+from scipy._lib.deprecation import _NoValue
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -783,8 +784,8 @@ class TestSolve:
             if assume_a == 'her' and not is_complex:
                 continue
 
-            err_msg = ("Failed for size: {}, assume_a: {},"
-                       "dtype: {}".format(size, assume_a, dtype))
+            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
+                       f"dtype: {dtype}")
 
             a = np.random.randn(size, size).astype(dtype)
             b = np.random.randn(size).astype(dtype)
@@ -929,6 +930,23 @@ class TestInv:
 class TestDet:
     def setup_method(self):
         self.rng = np.random.default_rng(1680305949878959)
+
+    def test_1x1_all_singleton_dims(self):
+        a = np.array([[1]])
+        deta = det(a)
+        assert deta.dtype.char == 'd'
+        assert np.isscalar(deta)
+        assert deta == 1.
+        a = np.array([[[[1]]]], dtype='f')
+        deta = det(a)
+        assert deta.dtype.char == 'd'
+        assert np.isscalar(deta)
+        assert deta == 1.
+        a = np.array([[[1 + 3.j]]], dtype=np.complex64)
+        deta = det(a)
+        assert deta.dtype.char == 'D'
+        assert np.isscalar(deta)
+        assert deta == 1.+3.j
 
     def test_1by1_stacked_input_output(self):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
@@ -1189,8 +1207,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1225,8 +1243,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1260,8 +1278,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1290,8 +1308,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
@@ -1423,6 +1441,21 @@ class TestPinv:
         adiff2 = a_m @ a_p @ a_m - a_m
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
+
+    @pytest.mark.parametrize("cond", [1, None, _NoValue])
+    @pytest.mark.parametrize("rcond", [1, None, _NoValue])
+    def test_cond_rcond_deprecation(self, cond, rcond):
+        if cond is _NoValue and rcond is _NoValue:
+            # the defaults if cond/rcond aren't set -> no warning
+            pinv(np.ones((2,2)), cond=cond, rcond=rcond)
+        else:
+            # at least one of cond/rcond has a user-supplied value -> warn
+            with pytest.deprecated_call(match='"cond" and "rcond"'):
+                pinv(np.ones((2,2)), cond=cond, rcond=rcond)
+
+    def test_positional_deprecation(self):
+        with pytest.deprecated_call(match="use keyword arguments"):
+            pinv(np.ones((2,2)), 0., 1e-10)
 
 
 class TestPinvSymmetric:
@@ -1563,13 +1596,13 @@ class TestMatrixNorms:
         # Not all of these are matrix norms in the most technical sense.
         np.random.seed(1234)
         for n, m in (1, 1), (1, 3), (3, 1), (4, 4), (4, 5), (5, 4):
-            for t in np.single, np.double, np.csingle, np.cdouble, np.int64:
+            for t in np.float32, np.float64, np.complex64, np.complex128, np.int64:
                 A = 10 * np.random.randn(n, m).astype(t)
                 if np.issubdtype(A.dtype, np.complexfloating):
                     A = (A + 10j * np.random.randn(n, m)).astype(t)
-                    t_high = np.cdouble
+                    t_high = np.complex128
                 else:
-                    t_high = np.double
+                    t_high = np.float64
                 for order in (None, 'fro', 1, -1, 2, -2, np.inf, -np.inf):
                     actual = norm(A, ord=order)
                     desired = np.linalg.norm(A, ord=order)

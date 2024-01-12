@@ -1,3 +1,5 @@
+# cython: show_performance_hints=False
+
 from cpython.pycapsule cimport (
     PyCapsule_CheckExact, PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetName, PyCapsule_GetPointer,
     PyCapsule_GetContext
@@ -5,6 +7,7 @@ from cpython.pycapsule cimport (
 from cpython.long cimport PyLong_AsVoidPtr
 from libc.stdlib cimport free
 from libc.string cimport strdup
+from libc.math cimport sin
 
 from .ccallback cimport (ccallback_t, ccallback_prepare, ccallback_release, CCALLBACK_DEFAULTS,
                          ccallback_signature_t)
@@ -58,7 +61,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
     elif context_obj is None:
         context = NULL
     else:
-        context = PyLong_AsVoidPtr(long(context_obj))
+        context = PyLong_AsVoidPtr(int(context_obj))
 
     if PyCapsule_CheckExact(func_obj):
         capsule_name = PyCapsule_GetName(func_obj)
@@ -70,7 +73,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         if name == NULL:
             name = capsule_name
     else:
-        func = PyLong_AsVoidPtr(long(func_obj))
+        func = PyLong_AsVoidPtr(int(func_obj))
 
     if name == NULL:
         name_copy = name
@@ -101,14 +104,6 @@ def check_capsule(item):
         return True
     return False
 
-
-#
-# Test code for src/ccallback.h
-#
-
-DEF ERROR_VALUE = 2
-
-from libc.math cimport sin
 
 sigs = [
     (b"double (double, int *, void *)", 0),
@@ -185,7 +180,8 @@ cdef double plus1_cython(double a, int *error_flag, void *user_data) except * no
     """
     Implementation of a callable in Cython
     """
-    if a == ERROR_VALUE:
+    # 2.0 is ERROR_VALUE in the test code (src/_test_callback.c)
+    if a == 2.0:
         error_flag[0] = 1
         with gil:
             raise ValueError("failure...")

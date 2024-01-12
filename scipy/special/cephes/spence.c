@@ -74,8 +74,7 @@ static double B[8] = {
 
 extern double MACHEP;
 
-double spence(x)
-double x;
+double spence(double x)
 {
     double w, y, z;
     int flag;

@@ -134,7 +134,7 @@ def evaluate_spline(const double[::1] t,
     if nu < 0:
         raise NotImplementedError("Cannot do derivative order %s." % nu)
 
-    cdef double[::1] work = np.empty(2*k+2, dtype=np.float_)
+    cdef double[::1] work = np.empty(2*k+2, dtype=np.float64)
 
     # evaluate
     with nogil:
@@ -217,7 +217,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     >>> plt.show()
 
     """
-    bbb = np.empty(2*k+2, dtype=np.float_)
+    bbb = np.empty(2*k+2, dtype=np.float64)
     cdef double[::1] work = bbb
     _deBoor_D(&t[0], xval, k, m, nu, &work[0])
     return bbb[:k+1]
@@ -265,7 +265,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
     cdef double xval
 
     kl = ku = k
-    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+    cdef double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     # collocation matrix
     with nogil:
@@ -289,7 +289,7 @@ def _colloc(const double[::1] x, const double[::1] t, int k, double[::1, :] ab,
 def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
                             double[::1, :] ab,
                             int kl, int ku,
-                            const cnp.int_t[::1] deriv_ords,
+                            const cnp.npy_long[::1] deriv_ords,
                             int offset=0):
     """ Fill in the entries of the collocation matrix corresponding to known
     derivatives at xval.
@@ -320,7 +320,7 @@ def _handle_lhs_derivatives(const double[::1]t, int k, double xval,
     """
     cdef:
         int left, nu, a, clmn, row
-        double[::1] wrk = np.empty(2*k+2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k+2, dtype=np.float64)
 
     # derivatives @ xval
     with nogil:
@@ -387,7 +387,7 @@ def _norm_eq_lsq(const double[::1] x,
     cdef:
         int j, r, s, row, clmn, left, ci
         double xval, wval
-        double[::1] wrk = np.empty(2*k + 2, dtype=np.float_)
+        double[::1] wrk = np.empty(2*k + 2, dtype=np.float64)
 
     with nogil:
         left = k
@@ -483,6 +483,7 @@ def _make_design_matrix(const double[::1] x,
 @cython.nonecheck(False)
 def evaluate_ndbspline(const double[:, ::1] xi,
                        const double[:, ::1] t,
+                       const long[::1] len_t,
                        long[::1] k,
                        int[::1] nu,
                        bint extrapolate,
@@ -499,8 +500,13 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         xi : ndarray, shape(npoints, ndim)
             ``npoints`` values to evaluate the spline at, each value is
             a point in an ``ndim``-dimensional space.
-        t : tuple, len(ndim)
-            Tuple of knots for each dimension.
+        t : ndarray, shape(ndim, max_len_t)
+            Array of knots for each dimension.
+            This array packs the tuple of knot arrays per dimension into a single
+            2D array. The array is ragged (knot lengths may differ), hence
+            the real knots in dimension ``d`` are ``t[d, :len_t[d]]``.
+        len_t : ndarray, 1D, shape (ndim,)
+            Lengths of the knot arrays, per dimension.
         k : tuple of ints, len(ndim)
             Spline degrees in each dimension.
         nu : ndarray of ints, shape(ndim,)
@@ -612,7 +618,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # For each point, iterate over the dimensions
                 out_of_bounds = 0
                 for d in range(ndim):
-                    td = t[d]
+                    td = t[d, :len_t[d]]
                     xd = xv[d]
                     kd = k[d]
 

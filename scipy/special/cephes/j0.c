@@ -182,8 +182,7 @@ static double RQ[8] = {
 
 extern double SQ2OPI;
 
-double j0(x)
-double x;
+double j0(double x)
 {
     double w, z, p, q, xn;
 
@@ -218,8 +217,7 @@ double x;
  * = 0.073804295108687225.
  */
 
-double y0(x)
-double x;
+double y0(double x)
 {
     double w, z, p, q, xn;
 
