@@ -245,7 +245,7 @@ New features
 - A source of intermediate overflow in `scipy.norminvgauss.pdf` has been eliminated.
 - Added support for masked arrays to `scipy.stats.circmean`, `scipy.stats.circvar`,
   `scipy.stats.circstd`, and `scipy.stats.entropy`.
-- `stats.dirichlet`` has gained a new covariance (``cov``) method.
+- `scipy.stats.dirichlet` has gained a new covariance (``cov``) method.
 - Improved accuracy of ``entropy`` method of `scipy.stats.multivariate_t` for large
   degrees of freedom.
 - `scipy.stats.loggamma` has an improved ``entropy`` method.
