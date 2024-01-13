@@ -2573,10 +2573,29 @@ int amos_binu(
     //
     // ASYMPTOTIC EXPANSION FOR LARGE Z
     //
-    if (az >= rl) {
-        if ((dfnu <= 1.0) || ((dfnu > 1.0) && (az+az >= dfnu*dfnu))) {
+    if (az < rl) {
+        /* 40 */
+        if (dfnu <= 1.0) {
+            /* 70 */
             //
             // MILLER ALGORITHM NORMALIZED BY THE SERIES
+            //
+            nw = amos_mlri(z, fnu, kode, n, cy, tol);
+            if (nw < 0) {
+                nz = -1;
+                if (nw == -2) {
+                    nz = -2;
+                }
+                return nz;
+            }
+            return nz;
+        }
+        /* GO TO 50 */
+    } else {
+        if ((dfnu <= 1.0) || (az+az >= dfnu*dfnu)) {
+            /* 30 */
+            //
+            // ASYMPTOTIC EXPANSION FOR LARGE Z
             //
             nw = amos_asyi(z, fnu, kode, n, cy, rl, tol, elim, alim);
             if (nw < 0) {
@@ -2588,18 +2607,7 @@ int amos_binu(
             }
             return nz;
         }
-    }
-    /* 40 */
-    if ((az < rl) || (az+az >= dfnu*dfnu)) {
-        nw = amos_mlri(z, fnu, kode, n, cy, tol);
-        if (nw < 0) {
-            nz = -1;
-            if (nw == -2) {
-                nz = -2;
-            }
-            return nz;
-        }
-        return nz;
+        /* GO TO 50 */
     }
     /* 50 */
     //
@@ -2636,8 +2644,11 @@ int amos_binu(
     if (az <= rl) {
         /* 70 */
         nw = amos_mlri(z, fnu, kode, n, cy, tol);
-        nz = -1;
-        if (nw == -2) { nz = -2; }
+        if (nw < 0) {
+            nz = -1;
+            if (nw == -2) { nz = -2; }
+            return nz;
+        }
         return nz;
     }
     /* 80 */
