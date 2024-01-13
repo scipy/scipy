@@ -10372,7 +10372,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
     if u_values.ndim != v_values.ndim:
         raise ValueError('Invalid input values. Dimensions of inputs must be '
                          'equal.')
-                         
+
     if u_values.ndim == 1 and v_values.ndim == 1:
         if p == 1:
             return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
@@ -10605,18 +10605,16 @@ def _wasserstein_infty(u_values, v_values, u_weights=None, v_weights=None):
 
     # Calculate the CDFs of u and v using their weights, if specified.
     if u_weights is None:
-        u_cdf = u_values_sorted / u_values.size
+        u_cdf = np.cumsum(np.ones(u_values.size)/u_values.size)
     else:
-        u_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(u_weights[u_sorter])))
-        u_cdf = u_sorted_cumweights[u_sorter] / u_sorted_cumweights[-1]
+        u_sorted_cumweights = np.cumsum(u_weights[u_sorter])
+        u_cdf = u_sorted_cumweights / u_sorted_cumweights[-1]
 
     if v_weights is None:
-        v_cdf = v_values_sorted / v_values.size
+        v_cdf = np.cumsum(np.ones(v_values.size)/v_values.size)
     else:
-        v_sorted_cumweights = np.concatenate(([0],
-                                              np.cumsum(v_weights[v_sorter])))
-        v_cdf = v_sorted_cumweights[v_sorter] / v_sorted_cumweights[-1]
+        v_sorted_cumweights = np.cumsum(v_weights[v_sorter])
+        v_cdf = v_sorted_cumweights / v_sorted_cumweights[-1]
 
     # Initialize the result by comparing the last two values
     # of the sorted arrays
