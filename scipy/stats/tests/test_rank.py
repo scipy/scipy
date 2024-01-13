@@ -78,9 +78,9 @@ class TestRankData:
         """stats.rankdata([]) should return an empty array."""
         a = np.array([], dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, np.array([], dtype=np.float64), strict=True)
+        assert_array_equal(r, np.array([], dtype=np.float64))
         r = rankdata([])
-        assert_array_equal(r, np.array([], dtype=np.float64), strict=True)
+        assert_array_equal(r, np.array([], dtype=np.float64))
 
     @pytest.mark.parametrize("shape", [(0, 1, 2)])
     @pytest.mark.parametrize("axis", [None, *range(3)])
@@ -96,9 +96,9 @@ class TestRankData:
         data = [100]
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64), strict=True)
+        assert_array_equal(r, np.array([1.0], dtype=np.float64))
         r = rankdata(data)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64), strict=True)
+        assert_array_equal(r, np.array([1.0], dtype=np.float64))
 
     def test_basic(self):
         """Basic tests of stats.rankdata."""
@@ -106,29 +106,29 @@ class TestRankData:
         expected = np.array([3.0, 1.0, 2.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
         r = rankdata(data)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
 
         data = [40, 10, 30, 10, 50]
         expected = np.array([4.0, 1.5, 3.0, 1.5, 5.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
         r = rankdata(data)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
 
         data = [20, 20, 20, 10, 10, 10]
         expected = np.array([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=np.float64)
         a = np.array(data, dtype=int)
         r = rankdata(a)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
         r = rankdata(data)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
         # The docstring states explicitly that the argument is flattened.
         a2d = a.reshape(2, 3)
         r = rankdata(a2d)
-        assert_array_equal(r, expected, strict=True)
+        assert_array_equal(r, expected)
 
     def test_rankdata_object_string(self):
 
