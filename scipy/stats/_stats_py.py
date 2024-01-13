@@ -10817,13 +10817,13 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 
     x = np.asarray(a)
 
-    if x.size == 0:
-        dtype = float if method == 'average' else np.dtype("long")
-        return np.empty(x.shape, dtype=dtype)
-
     if axis is None:
         x = x.ravel()
         axis = -1
+
+    if x.size == 0:
+        dtype = float if method == 'average' else np.dtype("long")
+        return np.empty(x.shape, dtype=dtype)
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
