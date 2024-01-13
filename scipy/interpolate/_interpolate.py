@@ -130,9 +130,6 @@ class interp2d:
     def __init__(self, *args, **kwargs):
         raise Exception(dep_mesg)
 
-    def __call__(self, *args, **kwargs):
-        raise Exception(dep_mesg)
-
 
 def _check_broadcast_up_to(arr_from, shape_to, name):
     """Helper to check that arr_from broadcasts up to shape_to"""
