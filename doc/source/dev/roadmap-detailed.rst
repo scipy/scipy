@@ -62,9 +62,13 @@ Making this easier is a priority.
 Use of Cython
 `````````````
 Cython's old syntax for using NumPy arrays should be removed and replaced with
-Cython memoryviews. When Cython 3.0 is released, the last use of the deprecated
-NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
-can define ``NPY_NO_DEPRECATED_API`` unconditionally.
+Cython memoryviews.
+
+Binary sizes of extensions built from Cython code are large, and compile times
+are long. We should aim to combine extension modules where possible (e.g.,
+``stats._boost`` contains many extension modules now), and limit the use of
+Cython to places where it's the best choice. Note that conversion of Cython
+to C++ is ongoing in ``scipy.special``.
 
 
 Use of Pythran

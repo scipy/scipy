@@ -10818,7 +10818,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     x = np.asarray(a)
 
     if x.size == 0:
-        dtype = float if method == 'average' else int
+        dtype = float if method == 'average' else np.dtype("long")
         return np.empty(x.shape, dtype=dtype)
 
     if axis is None:

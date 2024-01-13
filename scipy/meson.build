@@ -70,7 +70,11 @@ else
   _incdir_numpy_abs = incdir_numpy
 endif
 inc_np = include_directories(incdir_numpy)
-np_dep = declare_dependency(include_directories: inc_np)
+# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
+# when NumPy introduces a new deprecation.
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
@@ -120,16 +124,6 @@ cpp_args_pythran = [
   '-DPYTHRAN_BLAS_NONE'
 ]
 
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation. Use in a meson.build file::
-#
-#   py3.extension_module('_name',
-#     'source_fname',
-#     numpy_nodepr_api)
-#
-numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
-
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
   fortranobject_c,
@@ -157,7 +151,7 @@ lapack_name = get_option('lapack')
 # First try scipy-openblas, and if found don't look for cblas or lapack, we
 # know what's inside the scipy-openblas wheels already.
 if blas_name == 'openblas' or blas_name == 'auto'
-  blas = dependency('scipy-openblas', required: false)
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
   endif
@@ -167,7 +161,7 @@ endif
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
   blas = dependency(['openblas', 'OpenBLAS'])
-else
+elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
 if blas_name == 'blas'
@@ -406,10 +400,7 @@ if cc.get_id() != 'msvc'
   endif
 endif
 
-# Suppress warning for deprecated Numpy API.
-# (Suppress warning messages emitted by #warning directives).
-# Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += [_cpp_Wno_cpp, use_math_defines]
+cython_c_args += [use_math_defines]
 cython_cpp_args = cython_c_args
 
 compilers = {

@@ -199,7 +199,6 @@ specfun_module = custom_target('specfun_module',
 
 py3.extension_module('_specfun',
   specfun_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
@@ -212,7 +211,6 @@ cdflib_c = cython_gen.process('_cdflib.pyx')
 
 py3.extension_module('_cdflib',
   cdflib_c,
-  c_args: numpy_nodepr_api,
   dependencies: [np_dep],
   install: true,
   subdir: 'scipy/special'
@@ -428,21 +426,9 @@ special_cephes_sources = [
   'special/cephes/beta.h',
   'special/cephes/gamma.h'
 ]
+
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
-foreach header: special_sources
-  fs.copyfile(header)
-endforeach
-
-
-foreach header: special_cephes_sources
-  configure_file(
-    input: header,
-    output: header.split('/')[-1],
-    copy: true,
-    install: true,
-    install_dir: py3.get_install_dir() / 'scipy/special/special/cephes'
-  )
-endforeach
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',
