@@ -7678,6 +7678,36 @@ class TestWassersteinDistance:
             assert_almost_equal(stats.wasserstein_distance(u_values, v_values),
                     stats.wasserstein_distance(u_values_flat, v_values_flat))
 
+    def test_p_inf(self):
+        rng = np.random.default_rng(2453425234656546)
+        num_tests = 100
+        u_values_len_array = rng.integers(low=1, high=10, size=num_tests)
+        v_values_len_array = rng.integers(low=1, high=10, size=num_tests)
+        successful_tests = 0
+        successful_tests_with_weights = 0
+        for i in range(num_tests):
+            u_values = rng.integers(low=0, high=3, size=u_values_len_array[i])
+            v_values = rng.integers(low=0, high=3, size=v_values_len_array[i])
+            # Ensuring the convergence to p=infinity
+            # p goes to infinity
+            distance_p_large_int = stats.wasserstein_distance(u_values, v_values, p=30)
+            distance_p_inf = stats.wasserstein_distance(u_values, v_values, p='inf')
+            error = np.abs(distance_p_large_int-distance_p_inf)
+            if error < distance_p_inf*0.20:
+                successful_tests += 1
+            u_weights = rng.random(size=u_values_len_array[i])
+            v_weights = rng.random(size=v_values_len_array[i])
+            distance_p_large_int = stats.wasserstein_distance(u_values, v_values,
+                                    u_weights, v_weights, p=30)
+            distance_p_inf = stats.wasserstein_distance(u_values, v_values,
+                                    u_weights, v_weights, p='inf')
+            error = np.abs(distance_p_large_int-distance_p_inf)
+            if error < distance_p_inf*0.20:
+                successful_tests_with_weights += 1
+        assert successful_tests/num_tests > 0.70, 'Too many unsuccessful tests.'
+        assert successful_tests_with_weights/num_tests > 0.70,\
+                'Too many unsuccessful tests.'
+
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
     """

@@ -10187,7 +10187,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 #####################################
 
 
-def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
+def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
+                        p=1):
     r"""
     Compute the Wasserstein-1 distance between two discrete distributions.
 
@@ -10371,9 +10372,15 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     if u_values.ndim != v_values.ndim:
         raise ValueError('Invalid input values. Dimensions of inputs must be '
                          'equal.')
-    # if data is 1D then call the cdf_distance function
+                         
     if u_values.ndim == 1 and v_values.ndim == 1:
-        return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+        if p == 1:
+            return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+        elif p == 'inf':
+            return _wasserstein_infty(u_values, v_values, u_weights, v_weights)
+        else:
+            u_values = np.expand_dims(u_values, axis=1)
+            v_values = np.expand_dims(v_values, axis=1)
 
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -10398,7 +10405,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     # get cost matrix
     D = distance_matrix(u_values, v_values, p=2)
-    cost = D.ravel()
+    cost = np.power(D.ravel(),p)
 
     # create the minimization target
     p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
@@ -10408,7 +10415,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     # solving LP
     constraints = LinearConstraint(A=A.T, ub=cost)
     opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return -opt_res.fun
+    return np.power(-opt_res.fun,1/p)
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
@@ -10583,6 +10590,59 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
                                        deltas)), 1/p)
 
+def _wasserstein_infty(u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Calculate $W_\infty$ distance for two 1-D distributions.
+    """
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+
+    u_sorter = np.argsort(u_values)
+    v_sorter = np.argsort(v_values)
+
+    u_values_sorted = u_values[u_sorter]
+    v_values_sorted = v_values[v_sorter]
+
+    # Calculate the CDFs of u and v using their weights, if specified.
+    if u_weights is None:
+        u_cdf = u_values_sorted / u_values.size
+    else:
+        u_sorted_cumweights = np.concatenate(([0],
+                                              np.cumsum(u_weights[u_sorter])))
+        u_cdf = u_sorted_cumweights[u_sorter] / u_sorted_cumweights[-1]
+
+    if v_weights is None:
+        v_cdf = v_values_sorted / v_values.size
+    else:
+        v_sorted_cumweights = np.concatenate(([0],
+                                              np.cumsum(v_weights[v_sorter])))
+        v_cdf = v_sorted_cumweights[v_sorter] / v_sorted_cumweights[-1]
+
+    # Initialize the result by comparing the last two values
+    # of the sorted arrays
+    res = np.abs(u_values_sorted[-1] - v_values_sorted[-1])
+
+    # Initialize the indices
+    u_idx = 0
+    v_idx = 0
+
+    while u_idx < u_values.size-1 or v_idx < v_values.size-1:
+        # Calculate the absolute difference and compare with
+        # the current result
+        candidate = np.abs(u_values_sorted[u_idx] - v_values_sorted[v_idx])
+        if candidate > res:
+            res = candidate
+        # Update the index for the next iteration
+        if u_idx == u_values.size-1:
+            v_idx += 1
+        elif v_idx == v_values.size-1:
+            u_idx += 1
+        elif u_cdf[u_idx] < v_cdf[v_idx]:
+            u_idx += 1
+        else:
+            v_idx += 1
+
+    return res
 
 def _validate_distribution(values, weights):
     """
