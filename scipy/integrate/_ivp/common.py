@@ -37,7 +37,8 @@ def warn_extraneous(extraneous):
     """
     if extraneous:
         warn("The following arguments have no effect for a chosen solver: {}."
-             .format(", ".join(f"`{x}`" for x in extraneous)))
+             .format(", ".join(f"`{x}`" for x in extraneous)),
+             stacklevel=3)
 
 
 def validate_tol(rtol, atol, n):
@@ -45,7 +46,8 @@ def validate_tol(rtol, atol, n):
 
     if np.any(rtol < 100 * EPS):
         warn("At least one element of `rtol` is too small. "
-             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.")
+             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.",
+             stacklevel=3)
         rtol = np.maximum(rtol, 100 * EPS)
 
     atol = np.asarray(atol)

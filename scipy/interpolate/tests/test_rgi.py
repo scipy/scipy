@@ -12,6 +12,8 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
                                NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
+from scipy._lib._util import ComplexWarning
+
 
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
     "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
@@ -119,6 +121,8 @@ class TestRegularGridInterpolator:
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
         points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
@@ -848,6 +852,9 @@ class TestInterpN:
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
+        if method == "pchip":
+            pytest.skip("pchip does not make sense for complex data")
+
         x, y, values = self._sample_2d_data()
         points = (x, y)
         values = values - 2j*values
@@ -861,6 +868,17 @@ class TestInterpN:
         v2 = v2r + 1j*v2i
         assert_allclose(v1, v2)
 
+    def test_complex_pchip(self):
+        # Complex-valued data deprecated for pchip
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+        values = values - 2j*values
+
+        sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                           [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        with pytest.deprecated_call(match='complex'):
+            interpn(points, values, sample, method='pchip')
+
     def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
         x, y, values = self._sample_2d_data()
@@ -869,7 +887,7 @@ class TestInterpN:
 
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
-        with assert_warns(np.ComplexWarning):
+        with assert_warns(ComplexWarning):
             interpn(points, values, sample, method='splinef2d')
 
     @pytest.mark.parametrize(

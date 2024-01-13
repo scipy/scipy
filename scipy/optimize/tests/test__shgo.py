@@ -1,10 +1,11 @@
 import logging
+import sys
 
 import numpy
 import numpy as np
 import time
 from multiprocessing import Pool
-from numpy.testing import assert_allclose
+from numpy.testing import assert_allclose, IS_PYPY
 import pytest
 from pytest import raises as assert_raises, warns
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
@@ -26,7 +27,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if (type(g) is not tuple) and (type(g) is not list):
+        if not isinstance(g, (tuple, list)):
             g = (g,)
         else:
             pass
@@ -582,7 +583,7 @@ class TestShgoArguments:
 
     @pytest.mark.slow
     def test_4_2_known_f_min(self):
-        """Test Global mode limiting local evalutions"""
+        """Test Global mode limiting local evaluations"""
         options = {  # Specify known function value
             'f_min': test4_1.expected_fun,
             'f_tol': 1e-6,
@@ -690,6 +691,8 @@ class TestShgoArguments:
         """Test single function constraint passing"""
         SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0])
 
+    @pytest.mark.xfail(IS_PYPY and sys.platform == 'win32',
+            reason="Failing and fix in PyPy not planned (see gh-18632)")
     def test_10_finite_time(self):
         """Test single function constraint passing"""
         options = {'maxtime': 1e-15}

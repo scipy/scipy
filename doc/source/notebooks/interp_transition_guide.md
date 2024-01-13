@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore')
 
 ## 1. How to transition away from using  `interp2d`
 
-`interp2d` silently switches between interpolation on a 2D regular grid and interpolatin 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use {class}`scipy.interpolate.RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
+`interp2d` silently switches between interpolation on a 2D regular grid and interpolating 2D scattered data. The switch is based on the lengths of the (raveled) `x`, `y`, and `z` arrays. In short, for regular grid use {class}`scipy.interpolate.RectBivariateSpline`; for scattered interpolation, use the `bisprep/bisplev` combo. Below we give examples of the literal point-for-point transition, which should preserve the `interp2d` results exactly.
 
 +++
 

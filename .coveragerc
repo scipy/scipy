@@ -2,7 +2,5 @@
 branch = True
 include = */scipy/*
 omit =
-    scipy/setup.py
-    scipy/*/setup.py
     scipy/signal/_max_len_seq_inner.py
 disable_warnings = include-ignored

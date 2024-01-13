@@ -50,7 +50,7 @@ class ReferenceDistribution:
     inaccuracy of the reference values (e.g. due to numerical issues that
     mpmath's arbitrary precision arithmetic doesn't handle), then it may be
     appropriate to override a method of the reference distribution rather than
-    relying on the generic implementation. Otherwise, hesistate to override
+    relying on the generic implementation. Otherwise, hesitate to override
     methods: the generic implementations are mathematically correct and easy
     to verify, whereas an override introduces many possibilities of mistakes,
     requires more time to write, and requires more time to review.
@@ -92,15 +92,21 @@ class ReferenceDistribution:
         if ((self._cdf.__func__ is ReferenceDistribution._cdf)
                 and (self._sf.__func__ is not ReferenceDistribution._sf)):
             return mp.one - self._sf(x, **kwargs)
-        a, _ = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (a, x))
+        res = res if res < 0.5 else mp.one - self._sf(x, **kwargs)
+        return res
 
     def _sf(self, x, **kwargs):
         if ((self._sf.__func__ is ReferenceDistribution._sf)
                 and (self._cdf.__func__ is not ReferenceDistribution._cdf)):
             return mp.one - self._cdf(x, **kwargs)
-        _, b = self._support(**kwargs)
-        return mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+
+        a, b = self._support(**kwargs)
+        res = mp.quad(lambda x: self._pdf(x, **kwargs), (x, b))
+        res = res if res < 0.5 else mp.one - self._cdf(x, **kwargs)
+        return res
 
     def _ppf(self, p, guess=0, **kwargs):
         if ((self._ppf.__func__ is ReferenceDistribution._ppf)
@@ -312,6 +318,60 @@ class BetaPrime(ReferenceDistribution):
 
     def _sf(self, x, a, b):
         return 1.0 - mp.betainc(a, b, 0, x/(1+x), regularized=True)
+
+
+class Burr(ReferenceDistribution):
+
+    def __init__(self, *, c, d):
+        super().__init__(c=c, d=d)
+
+    def _support(self, c, d):
+        return 0, mp.inf
+
+    def _pdf(self, x, c, d):
+        return c * d * x ** (-c - 1) * (1 + x ** (-c)) ** (-d - 1)
+
+    def _ppf(self, p, guess, c, d):
+        return (p**(-1.0/d) - 1)**(-1.0/c)
+
+
+class LogLaplace(ReferenceDistribution):
+
+    def __init__(self, *, c):
+        super().__init__(c=c)
+
+    def _support(self, c):
+        return 0, mp.inf
+
+    def _pdf(self, x, c):
+        if x < mp.one:
+            return c / 2 * x**(c - mp.one)
+        else:
+            return c / 2 * x**(-c - mp.one)
+
+    def _ppf(self, q, guess, c):
+        if q < 0.5:
+            return (2.0 * q)**(mp.one / c)
+        else:
+            return (2 * (mp.one - q))**(-mp.one / c)
+
+
+class LogNormal(ReferenceDistribution):
+
+    def __init__(self, *, s):
+        super().__init__(s=s)
+
+    def _support(self, s):
+        return 0, mp.inf
+
+    def _pdf(self, x, s):
+        return (
+            mp.one / (s * x * mp.sqrt(2 * mp.pi))
+            * mp.exp(-mp.one / 2 * (mp.log(x) / s)**2)
+        )
+
+    def _cdf(self, x, s):
+        return mp.ncdf(mp.log(x) / s)
 
 
 class Normal(ReferenceDistribution):

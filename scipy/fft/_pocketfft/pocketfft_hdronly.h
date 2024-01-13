@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #error This file is C++ and requires a C++ compiler.
 #endif
 
-#if !(__cplusplus >= 201103L || _MSVC_LANG+0L >= 201103L)
+#if !(__cplusplus >= 201103L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201103L))
 #error This file requires at least C++11 support.
 #endif
 
@@ -149,7 +149,11 @@ template<> struct VLEN<double> { static constexpr size_t val=2; };
 #endif
 #endif
 
-#if __cplusplus >= 201703L
+// MSVC does not provide the standard aligned allocation functions,
+// yet _still_ sets the feature test macro (__cpp_aligned_new)...
+// While there are replacement functions (_aligned_malloc & _aligned_free),
+// those produce crashes when used here, see GH-19726
+#if __cplusplus >= 201703L && !defined(_MSC_VER)
 inline void *aligned_alloc(size_t align, size_t size)
   {
   void *ptr = ::aligned_alloc(align,size);
@@ -2630,11 +2634,13 @@ template<typename T0> class T_dcst23
         if (!cosine)
           for (size_t k=0, kc=N-1; k<kc; ++k, --kc)
             std::swap(c[k], c[kc]);
-        if (ortho) c[0]*=sqrt2*T0(0.5);
+        if (ortho)
+          cosine ? c[0]*=sqrt2*T0(0.5) : c[N-1]*=sqrt2*T0(0.5);
         }
       else
         {
-        if (ortho) c[0]*=sqrt2;
+        if (ortho)
+          cosine ? c[0]*=sqrt2 : c[N-1]*=sqrt2;
         if (!cosine)
           for (size_t k=0, kc=N-1; k<NS2; ++k, --kc)
             std::swap(c[k], c[kc]);

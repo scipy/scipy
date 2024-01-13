@@ -84,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " ({} <> {})".format(na, nb))
+                         f" ({na} <> {nb})")
     return (a, b, na)
 
 
@@ -108,7 +108,7 @@ def argstoarray(*args):
 
     Notes
     -----
-    `numpy.ma.row_stack` has identical behavior, but is called with a sequence
+    `numpy.ma.vstack` has identical behavior, but is called with a sequence
     of sequences.
 
     Examples
@@ -407,11 +407,11 @@ def pearsonr(x, y):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -635,7 +635,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         if axisout == 0:
             x = ma.column_stack((x, y))
         else:
-            x = ma.row_stack((x, y))
+            x = ma.vstack((x, y))
 
     if axisout == 1:
         # To simplify the code that follow (always use `n_obs, n_vars` shape)
@@ -1604,7 +1604,7 @@ def kruskal(*args):
     >>> b = [6.9, 7.0, 6.1, 7.9]
     >>> c = [7.2, 6.9, 6.1, 6.5]
 
-    Test the hypotesis that the distribution functions for all of the brands'
+    Test the hypothesis that the distribution functions for all of the brands'
     durations are identical. Use 5% level of significance.
 
     >>> kruskal(a, b, c)
@@ -3008,8 +3008,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
             " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
-            np.min(n))
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
+            stacklevel=2,
+        )
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
@@ -3441,9 +3442,17 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
-    Missing values in `x` and/or `y` are discarded.
+    Any missing values in `x` and/or `y` are discarded.
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -3473,6 +3482,15 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     Notes
     -----
     For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
+
+    Examples
+    --------
+    >>> from scipy.stats.mstats import brunnermunzel
+    >>> import numpy as np
+    >>> x1 = [1, 2, np.nan, np.nan, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    >>> x2 = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    >>> brunnermunzel(x1, x2)
+    BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
 
     """
     x = ma.asarray(x).compressed().view(ndarray)

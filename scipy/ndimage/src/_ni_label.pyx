@@ -201,13 +201,13 @@ cpdef _label(np.ndarray input,
              np.ndarray structure,
              np.ndarray output) noexcept:
     # check dimensions
-    # To understand the need for the casts to object, see
-    # http://trac.cython.org/cython_trac/ticket/302
+    # To understand the need for the casts to object in order to use
+    # tuple.__eq__, see https://github.com/cython/cython/issues/863
     assert (<object> input).shape == (<object> output).shape, \
         ("Shapes must match for input and output,"
          "{} != {}".format((<object> input).shape, (<object> output).shape))
 
-    structure = np.asanyarray(structure, dtype=np.int_).copy()
+    structure = np.asanyarray(structure, dtype=np.bool_).copy()
     assert input.ndim == structure.ndim, \
         ("Structuring element must have same "
          "# of dimensions as input, "
@@ -326,9 +326,9 @@ cpdef _label(np.ndarray input,
                 # Take neighbor labels
                 PyArray_ITER_RESET(itstruct)
                 for ni in range(num_neighbors):
-                    neighbor_use_prev = (<np.int_t *> PyArray_ITER_DATA(itstruct))[0]
-                    neighbor_use_adjacent = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
-                    neighbor_use_next = (<np.int_t *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
+                    neighbor_use_prev = (<np.npy_bool *> PyArray_ITER_DATA(itstruct))[0]
+                    neighbor_use_adjacent = (<np.npy_bool *> (<char *> PyArray_ITER_DATA(itstruct) + ss))[0]
+                    neighbor_use_next = (<np.npy_bool *> (<char *> PyArray_ITER_DATA(itstruct) + 2 * ss))[0]
                     if not (neighbor_use_prev or
                             neighbor_use_adjacent or
                             neighbor_use_next):
@@ -422,7 +422,7 @@ cpdef _label(np.ndarray input,
                     # we've compacted every label below this, and the
                     # mergetable has an invariant (from mark_for_merge()) that
                     # it always points downward.  Therefore, we can fetch the
-                    # final lable by two steps of indirection.
+                    # final label by two steps of indirection.
                     mergetable[src_label] = mergetable[mergetable[src_label]]
 
             PyArray_ITER_RESET(ito)

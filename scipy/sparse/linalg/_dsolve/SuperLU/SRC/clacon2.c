@@ -16,7 +16,7 @@ at the top-level directory.
  * -- SuperLU routine (version 5.0) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
  * and Lawrence Berkeley National Lab.
- * July 25, 2015
+ * July 24, 2022
  * </pre>
  */
 #include <math.h>
@@ -87,12 +87,12 @@ at the top-level directory.
  */
 
 int
-clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
+clacon2_(int *n, singlecomplex *v, singlecomplex *x, float *est, int *kase, int isave[3])
 {
     /* Table of constant values */
     int c__1 = 1;
-    complex      zero = {0.0, 0.0};
-    complex      one = {1.0, 0.0};
+    singlecomplex      zero = {0.0, 0.0};
+    singlecomplex      one = {1.0, 0.0};
 
     /* System generated locals */
     float d__1;
@@ -104,15 +104,11 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
     float temp;
     float safmin;
     extern float smach(char *);
-    extern int icmax1_slu(int *, complex *, int *);
-    extern double scsum1_slu(int *, complex *, int *);
-#ifdef _CRAY
-    extern int CCOPY(int *, complex *, int *, complex [], int *);
-#else
-    extern int ccopy_(int *, complex *, int *, complex [], int *);
-#endif
+    extern int icmax1_slu(int *, singlecomplex *, int *);
+    extern double scsum1_slu(int *, singlecomplex *, int *);
+    extern int ccopy_(int *, singlecomplex *, int *, singlecomplex *, int *);
 
-    safmin = smach("Safe minimum");  /* lamch_("Safe minimum"); */
+    safmin = smach("Safe minimum");
     if ( *kase == 0 ) {
 	for (i = 0; i < *n; ++i) {
 	    x[i].r = 1. / (float) (*n);
@@ -131,7 +127,7 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
 	case 5:  goto L140;
     }
 
-    /*     ................ ENTRY   (isave[0] = 1)   
+    /*     ................ ENTRY   (isave[0] == 1)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY A*X. */
   L20:
     if (*n == 1) {
@@ -156,12 +152,12 @@ clacon2_(int *n, complex *v, complex *x, float *est, int *kase, int isave[3])
     isave[0] = 2;  /* jump = 2; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 2)
+    /*     ................ ENTRY   (isave[0] == 2)   
 	   FIRST ITERATION.  X HAS BEEN OVERWRITTEN BY TRANSPOSE(A)*X. */
 L40:
     isave[1] = icmax1_slu(n, &x[0], &c__1);  /* j */
     --isave[1];  /* --j; */
-    isave[2] = 2;  /* iter = 2; */
+    isave[2] = 2; /* iter = 2; */
 
     /*     MAIN LOOP - ITERATIONS 2,3,...,ITMAX. */
 L50:
@@ -171,7 +167,7 @@ L50:
     isave[0] = 3;  /* jump = 3; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 3)   
+    /*     ................ ENTRY   (isave[0] == 3)   
 	   X HAS BEEN OVERWRITTEN BY A*X. */
 L70:
 #ifdef _CRAY
@@ -183,7 +179,7 @@ L70:
     *est = scsum1_slu(n, v, &c__1);
 
 
-L90:
+/* L90: */
     /*     TEST FOR CYCLING. */
     if (*est <= estold) goto L120;
 
@@ -201,11 +197,11 @@ L90:
     isave[0] = 4;  /* jump = 4; */
     return 0;
 
-    /*     ................ ENTRY   (isave[0] = 4)   
+    /*     ................ ENTRY   (isave[0] == 4)
 	   X HAS BEEN OVERWRITTEN BY TRANDPOSE(A)*X. */
 L110:
     jlast = isave[1];  /* j; */
-    isave[1] = icmax1_slu(n, &x[0], &c__1);  /* j */
+    isave[1] = icmax1_slu(n, &x[0], &c__1); /* j */
     isave[1] = isave[1] - 1;  /* --j; */
     if (x[jlast].r != (d__1 = x[isave[1]].r, fabs(d__1)) && isave[2] < 5) {
 	isave[2] = isave[2] + 1;  /* ++iter; */
@@ -241,4 +237,4 @@ L150:
     *kase = 0;
     return 0;
 
-} /* clacon_ */
+} /* clacon2_ */

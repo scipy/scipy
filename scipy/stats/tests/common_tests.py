@@ -7,7 +7,9 @@ from pytest import raises as assert_raises
 
 import numpy.ma.testutils as ma_npt
 
-from scipy._lib._util import getfullargspec_no_self as _getfullargspec
+from scipy._lib._util import (
+    getfullargspec_no_self as _getfullargspec, np_long
+)
 from scipy import stats
 
 
@@ -86,6 +88,19 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
                             err_msg=msg + ' - kurtosis')
     elif not np.isposinf(k):
         npt.assert_(np.isnan(k))
+
+
+def check_munp_expect(dist, args, msg):
+    # If _munp is overridden, test a higher moment. (Before gh-18634, some
+    # distributions had issues with moments 5 and higher.)
+    if dist._munp.__func__ != stats.rv_continuous._munp:
+        res = dist.moment(5, *args)  # shouldn't raise an error
+        ref = dist.expect(lambda x: x ** 5, args, lb=-np.inf, ub=np.inf)
+        if not np.isfinite(res):  # could be valid; automated test can't know
+            return
+        # loose tolerance, mostly to see whether _munp returns *something*
+        assert_allclose(res, ref, atol=1e-10, rtol=1e-4,
+                        err_msg=msg + ' - higher moment / _munp')
 
 
 def check_entropy(distfn, arg, msg):
@@ -220,7 +235,7 @@ def check_random_state_property(distfn, args):
 def check_meth_dtype(distfn, arg, meths):
     q0 = [0.25, 0.5, 0.75]
     x0 = distfn.ppf(q0, *arg)
-    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:
@@ -229,7 +244,7 @@ def check_meth_dtype(distfn, arg, meths):
         x = x[(distfn.a < x) & (x < distfn.b)]
         for meth in meths:
             val = meth(x, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_ppf_dtype(distfn, arg):
@@ -238,7 +253,7 @@ def check_ppf_dtype(distfn, arg):
     for q in q_cast:
         for meth in [distfn.ppf, distfn.isf]:
             val = meth(q, *arg)
-            npt.assert_(val.dtype == np.float_)
+            npt.assert_(val.dtype == np.float64)
 
 
 def check_cmplx_deriv(distfn, arg):
@@ -249,7 +264,7 @@ def check_cmplx_deriv(distfn, arg):
         return (f(x + h*1j, *arg)/h).imag
 
     x0 = distfn.ppf([0.25, 0.51, 0.75], *arg)
-    x_cast = [x0.astype(tp) for tp in (np.int_, np.float16, np.float32,
+    x_cast = [x0.astype(tp) for tp in (np_long, np.float16, np.float32,
                                        np.float64)]
 
     for x in x_cast:

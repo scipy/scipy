@@ -128,8 +128,7 @@ static double B[] = {
     2.44030308206595545468E0
 };
 
-double k0(x)
-double x;
+double k0(double x)
 {
     double y, z;
 
@@ -155,8 +154,7 @@ double x;
 
 
 
-double k0e(x)
-double x;
+double k0e(double x)
 {
     double y;
 
