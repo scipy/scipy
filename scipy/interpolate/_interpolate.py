@@ -1,7 +1,6 @@
 __all__ = ['interp1d', 'interp2d', 'lagrange', 'PPoly', 'BPoly', 'NdPPoly']
 
 from math import prod
-import warnings
 
 import numpy as np
 from numpy import (array, searchsorted, poly1d, asarray, intp)
