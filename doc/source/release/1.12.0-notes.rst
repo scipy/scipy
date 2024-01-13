@@ -102,8 +102,10 @@ New features
 
 `scipy.optimize` improvements
 =============================
+- `scipy.optimize.isotonic_regression` has been added to allow nonparametric isotonic
+  regression.
 - `scipy.optimize.nnls` is rewritten in Python and now implements the so-called
-  fnnls or fast nnls.
+  fnnls or fast nnls, making it more efficient for high-dimensional problems.
 - The result object of `scipy.optimize.root` and `scipy.optimize.root_scalar`
   now reports the method used.
 - The ``callback`` method of `scipy.optimize.differential_evolution` can now be
@@ -111,17 +113,17 @@ New features
   parameter. Also, the evolution ``strategy`` now accepts a callable for
   additional customization. The performance of ``differential_evolution`` has
   also been improved.
-- ``minimize`` method ``Newton-CG`` has been made slightly more efficient.
-- ``minimize`` method ``BFGS`` now accepts an initial estimate for the inverse
-  of the Hessian, which allows for more efficient workflows in some
+- `scipy.optimize.minimize` method ``Newton-CG`` now supports functions that
+  return sparse Hessian matrices/arrays for the ``hess`` parameter and is slightly
+  more efficient.
+- `scipy.optimize.minimize` method ``BFGS`` now accepts an initial estimate for the
+  inverse of the Hessian, which allows for more efficient workflows in some
   circumstances. The new parameter is ``hess_inv0``.
-- ``minimize`` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept parameters
-  ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
+- `scipy.optimize.minimize` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept
+  parameters ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
   parameters, respectively.
-- ``curve_fit`` performance has improved due to more efficient memoization
+- `scipy.optimize.curve_fit` performance has improved due to more efficient memoization
   of the callable function.
-- ``isotonic_regression`` has been added to allow nonparametric isotonic
-  regression.
 
 `scipy.signal` improvements
 ===========================
@@ -182,8 +184,10 @@ New features
   second kind. Both exact calculation and an asymptotic approximation
   (the default) are supported via ``exact=True`` and ``exact=False`` (the
   default) respectively.
--  Added `scipy.special.betaincc` for computation of the complementary incomplete Beta function and `scipy.special.betainccinv` for computation of its inverse.
-- Improved precision of `scipy.special.betainc` and `scipy.special.betaincinv`
+- Added `scipy.special.betaincc` for computation of the complementary
+  incomplete Beta function and `scipy.special.betainccinv` for computation of
+  its inverse.
+- Improved precision of `scipy.special.betainc` and `scipy.special.betaincinv`.
 - Experimental support added for alternative backends: functions
   `scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`, 
   `scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`, 
@@ -225,19 +229,27 @@ New features
   `scipy.stats.kappa3`, `scipy.stats.loglaplace`, `scipy.stats.lognorm`,
   `scipy.stats.lomax`, `scipy.stats.pearson3`, `scipy.stats.rdist`, and
   `scipy.stats.pareto`.
-- The following functions now support parameters ``axis``, ``nan_policy``, and ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`, `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`, `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.cirmean, `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`, `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`, and `scipy.stats.tsem`.
+- The following functions now support parameters ``axis``, ``nan_policy``, and
+  ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`,
+  `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`,
+  `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.circmean`,
+  `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`,
+  `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`,
+  and `scipy.stats.tsem`.
 - The ``logpdf`` and ``fit`` methods of `scipy.stats.skewnorm` have been improved.
 - The beta negative binomial distribution is implemented as `scipy.stats.betanbinom`.
-- The speed of `scipy.stats.invwishart` ``rvs`` and ``logpdf`` have been improved.
-- A source of intermediate overflow in `scipy.stats.boxcox_normmax` with ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is constrained such that the transformed data will not overflow.
+- Improved performance of `scipy.stats.invwishart` ``rvs`` and ``logpdf``.
+- A source of intermediate overflow in `scipy.stats.boxcox_normmax` with
+  ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is
+  constrained such that the transformed data will not overflow.
 - `scipy.stats.nakagami` ``stats`` is more accurate and reliable.
 - A source of intermediate overflow in `scipy.norminvgauss.pdf` has been eliminated.
-- Added support for masked arrays to ``stats.circmean``, ``stats.circvar``,
-  ``stats.circstd``, and ``stats.entropy``.
-- ``dirichlet`` has gained a new covariance (``cov``) method.
-- Improved accuracy of ``multivariate_t`` entropy with large degrees of
-  freedom.
-- ``loggamma`` has an improved ``entropy`` method.
+- Added support for masked arrays to `scipy.stats.circmean`, `scipy.stats.circvar`,
+  `scipy.stats.circstd`, and `scipy.stats.entropy`.
+- `scipy.stats.dirichlet` has gained a new covariance (``cov``) method.
+- Improved accuracy of ``entropy`` method of `scipy.stats.multivariate_t` for large
+  degrees of freedom.
+- `scipy.stats.loggamma` has an improved ``entropy`` method.
 
 
 
