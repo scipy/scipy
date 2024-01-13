@@ -10405,7 +10405,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
 
     # get cost matrix
     D = distance_matrix(u_values, v_values, p=2)
-    cost = np.power(D.ravel(),p)
+    cost = np.power(D.ravel(), p)
 
     # create the minimization target
     p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
@@ -10415,7 +10415,7 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
     # solving LP
     constraints = LinearConstraint(A=A.T, ub=cost)
     opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return np.power(-opt_res.fun,1/p)
+    return np.power(-opt_res.fun, 1/p)
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
