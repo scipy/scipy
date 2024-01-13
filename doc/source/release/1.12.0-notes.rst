@@ -101,6 +101,8 @@ New features
 
 `scipy.optimize` improvements
 =============================
+- `scipy.optimize.isotonic_regression` has been added to allow nonparametric isotonic
+  regression.
 - `scipy.optimize.nnls` is rewritten in Python and now implements the so-called
   fnnls or fast nnls, making it more efficient for high-dimensional problems.
 - The result object of `scipy.optimize.root` and `scipy.optimize.root_scalar`
@@ -110,18 +112,17 @@ New features
   parameter. Also, the evolution ``strategy`` now accepts a callable for
   additional customization. The performance of ``differential_evolution`` has
   also been improved.
-- ``minimize`` method ``Newton-CG`` now supports functions that return sparse
-  Hessian matrices for the ``hess`` parameter and is slightly more efficient.
-- ``minimize`` method ``BFGS`` now accepts an initial estimate for the inverse
-  of the Hessian, which allows for more efficient workflows in some
+- `scipy.optimize.minimize` method ``Newton-CG`` now supports functions that
+  return sparse Hessian matrices/arrays for the ``hess`` parameter and is slightly
+  more efficient.
+- `scipy.optimize.minimize` method ``BFGS`` now accepts an initial estimate for the
+  inverse of the Hessian, which allows for more efficient workflows in some
   circumstances. The new parameter is ``hess_inv0``.
-- ``minimize`` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept parameters
-  ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
+- `scipy.optimize.minimize` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept
+  parameters ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
   parameters, respectively.
-- ``curve_fit`` performance has improved due to more efficient memoization
+- `scipy.optimize.curve_fit` performance has improved due to more efficient memoization
   of the callable function.
-- ``isotonic_regression`` has been added to allow nonparametric isotonic
-  regression.
 
 `scipy.signal` improvements
 ===========================
