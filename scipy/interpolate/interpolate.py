@@ -14,8 +14,6 @@ __all__ = [  # noqa: F822
     'RegularGridInterpolator',
     'array',
     'asarray',
-    'atleast_1d',
-    'atleast_2d',
     'comb',
     'dfitpack',
     'interp1d',
@@ -30,7 +28,6 @@ __all__ = [  # noqa: F822
     'ravel',
     'searchsorted',
     'spec',
-    'transpose',
 ]
 
 
