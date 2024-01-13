@@ -1547,7 +1547,7 @@ def medfilt(volume, kernel_size=None):
     """
     volume = np.atleast_1d(volume)
     if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
-                        np.float16, np.object_, np.longdouble]:
+                        np.float16, np.object_, "float128", "float96"]:
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
     if kernel_size is None:

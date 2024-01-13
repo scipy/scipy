@@ -1098,6 +1098,8 @@ class TestMedFilt:
                                        np.object_])
     def test_invalid_dtypes(self, dtype):
         in_typed = np.array(self.IN, dtype=dtype)
+        if in_typed.dtype is np.float64:
+            pytest.mark.skip("Platform does not support `float128`")
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
 
