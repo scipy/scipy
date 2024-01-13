@@ -4075,7 +4075,7 @@ def f_oneway(*samples, axis=0):
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis
+    # ValueError if the dimensions of all the arrays, except the axis 
     # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
@@ -9874,7 +9874,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the quantile associated with the probability `p`
+        * 'two-sided': the quantile associated with the probability `p` 
           is not `q`.
         * 'less': the quantile associated with the probability `p` is less
           than `q`.
@@ -10044,7 +10044,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
 
-    When testing data from the standard *normal* distribution, which has a
+    When testing data from the standard *normal* distribution, which has a 
     median of 0, we would expect the null hypothesis to be rejected.
 
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
