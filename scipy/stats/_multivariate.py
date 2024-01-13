@@ -4292,7 +4292,7 @@ class unitary_group_frozen(multi_rv_frozen):
 _mvt_doc_default_callparams = """\
 loc : array_like, optional
     Location of the distribution. (default ``0``)
-shape : array_like, optional
+shape : array_like or `Covariance`, optional
     Positive semidefinite matrix of the distribution. (default ``1``)
 df : float, optional
     Degrees of freedom of the distribution; must be greater than zero.
