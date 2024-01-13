@@ -231,7 +231,7 @@ New features
 - The following functions now support parameters ``axis``, ``nan_policy``, and
   ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`,
   `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`,
-  `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.cirmean`,
+  `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.circmean`,
   `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`,
   `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`,
   and `scipy.stats.tsem`.
