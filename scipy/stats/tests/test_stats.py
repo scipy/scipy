@@ -7663,6 +7663,20 @@ class TestWassersteinDistance:
             v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance(u_values, v_values)
 
+    def test_flatten(self):
+        rng = np.random.default_rng(456347456756786)
+        num_tests = 100
+        u_values_len_array = rng.integers(low=1, high=10, size=num_tests)
+        v_values_len_array = rng.integers(low=1, high=10, size=num_tests)
+        for i in range(num_tests):
+            u_values = rng.random(size=(u_values_len_array[i],1))
+            v_values = rng.random(size=(v_values_len_array[i],1))
+            u_values_flat = u_values.flatten()
+            v_values_flat = v_values.flatten()
+            # These two calculations are done using different backends
+            # but they must be equal
+            assert_almost_equal(stats.wasserstein_distance(u_values, v_values),
+                    stats.wasserstein_distance(u_values_flat, v_values_flat))
 
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
