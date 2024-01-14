@@ -7668,8 +7668,8 @@ class TestWassersteinDistance:
     def test_optimization_vs_analytical(self, u_size, v_size):
         rng = np.random.default_rng(45634745675)
         # Test when u_weights = None, v_weights = None
-        u_values = rng.random(size=(u_size,1))
-        v_values = rng.random(size=(v_size,1))
+        u_values = rng.random(size=(u_size, 1))
+        v_values = rng.random(size=(v_size, 1))
         u_values_flat = u_values.ravel()
         v_values_flat = v_values.ravel()
         # These two calculations are done using different backends
@@ -7677,8 +7677,8 @@ class TestWassersteinDistance:
         assert_allclose(stats.wasserstein_distance(u_values, v_values),
                 stats.wasserstein_distance(u_values_flat, v_values_flat))
         # Test with u_weights and v_weights specified.
-        u_weights = rng.random(size = u_size)
-        v_weights = rng.random(size = v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
         assert_allclose(
         stats.wasserstein_distance(u_values, v_values, u_weights, v_weights),
         stats.wasserstein_distance(u_values_flat, v_values_flat, u_weights, v_weights))
