@@ -7664,7 +7664,7 @@ class TestWassersteinDistance:
             _ = stats.wasserstein_distance(u_values, v_values)
 
     @pytest.mark.parametrize('seed', [45634745675678, 67864563474567, 56756786456347]
-    def test_flatten(self):
+    def test_optimization_vs_analytical(self):
         rng = np.random.default_rng(seed)
         u_values_len_array = rng.integers(low=1, high=10, size=num_tests)
         v_values_len_array = rng.integers(low=1, high=10, size=num_tests)
