@@ -7663,20 +7663,26 @@ class TestWassersteinDistance:
             v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance(u_values, v_values)
 
-    @pytest.mark.parametrize('seed', [45634745675678, 67864563474567, 56756786456347]
-    def test_optimization_vs_analytical(self):
-        rng = np.random.default_rng(seed)
-        u_values_len_array = rng.integers(low=1, high=10, size=num_tests)
-        v_values_len_array = rng.integers(low=1, high=10, size=num_tests)
-        for i in range(num_tests):
-            u_values = rng.random(size=(u_values_len_array[i],1))
-            v_values = rng.random(size=(v_values_len_array[i],1))
-            u_values_flat = u_values.flatten()
-            v_values_flat = v_values.flatten()
-            # These two calculations are done using different backends
-            # but they must be equal
-            assert_almost_equal(stats.wasserstein_distance(u_values, v_values),
-                    stats.wasserstein_distance(u_values_flat, v_values_flat))
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_optimization_vs_analytical(self, u_size, v_size):
+        rng = np.random.default_rng(45634745675)
+        # Test when u_weights = None, v_weights = None
+        u_values = rng.random(size=(u_size,1))
+        v_values = rng.random(size=(v_size,1))
+        u_values_flat = u_values.ravel()
+        v_values_flat = v_values.ravel()
+        # These two calculations are done using different backends
+        # but they must be equal
+        assert_allclose(stats.wasserstein_distance(u_values, v_values),
+                stats.wasserstein_distance(u_values_flat, v_values_flat))
+        # Test with u_weights and v_weights specified.
+        u_weights = rng.random(size = u_size)
+        v_weights = rng.random(size = v_size)
+        assert_allclose(
+        stats.wasserstein_distance(u_values, v_values, u_weights, v_weights),
+        stats.wasserstein_distance(u_values_flat, v_values_flat, u_weights, v_weights))
+
 
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
