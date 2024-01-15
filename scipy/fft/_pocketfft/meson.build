@@ -24,11 +24,14 @@ else
   endif
 endif
 
+incdir = include_directories('../../_lib/pocketfft')
+
 py3.extension_module('pypocketfft',
   'pypocketfft.cxx',
   cpp_args: pocketfft_threads,
   dependencies: [fft_deps, pybind11_dep],
   link_args: version_link_args,
+  include_directories: incdir,
   install: true,
   subdir: 'scipy/fft/_pocketfft',
 )
