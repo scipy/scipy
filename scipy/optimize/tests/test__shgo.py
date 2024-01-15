@@ -319,7 +319,7 @@ def run_test(test, args=(), test_atol=1e-5, n=100, iters=None,
                sampling_method=sampling_method, workers=workers)
 
     print(f'res = {res}')
-    logging.info(f'res = {res}')
+    logging.getLogger('scipy.optimize.tests.shgo').info(f'res = {res}')
     if test.expected_x is not None:
         numpy.testing.assert_allclose(res.x, test.expected_x,
                                       rtol=test_atol,
@@ -674,8 +674,9 @@ class TestShgoArguments:
             minimizer_kwargs = {'method': solver,
                                 'jac': jac,
                                 'hess': hess}
-            logging.info(f"Solver = {solver}")
-            logging.info("=" * 100)
+            logger = logging.getLogger('scipy.optimize.tests.shgo')
+            logger.info(f"Solver = {solver}")
+            logger.info("=" * 100)
             run_test(test1_1, n=100, test_atol=1e-3,
                      minimizer_kwargs=minimizer_kwargs,
                      sampling_method='sobol')

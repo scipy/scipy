@@ -420,14 +420,16 @@ class Complex:
                     cbounds[i] = [self.bounds[symmetry[i]][1]]
                     if (self.bounds[symmetry[i]] is not
                             self.bounds[symmetry[j]]):
-                        logging.warning(f"Variable {i} was specified as "
-                                        f"symmetetric to variable {j}, however"
-                                        f", the bounds {i} ="
-                                        f" {self.bounds[symmetry[i]]} and {j}"
-                                        f" ="
-                                        f" {self.bounds[symmetry[j]]} do not "
-                                        f"match, the mismatch was ignored in "
-                                        f"the initial triangulation.")
+                        logging.getLogger('scipy.optimize.shgo').warning(
+                            f"Variable {i} was specified as "
+                            f"symmetetric to variable {j}, however"
+                            f", the bounds {i} ="
+                            f" {self.bounds[symmetry[i]]} and {j}"
+                            f" ="
+                            f" {self.bounds[symmetry[j]]} do not "
+                            f"match, the mismatch was ignored in "
+                            f"the initial triangulation."
+                        )
                         cbounds[i] = self.bounds[symmetry[j]]
 
         if n is None:
