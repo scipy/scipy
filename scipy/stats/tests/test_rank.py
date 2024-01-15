@@ -82,6 +82,15 @@ class TestRankData:
         r = rankdata([])
         assert_array_equal(r, np.array([], dtype=np.float64))
 
+    @pytest.mark.parametrize("shape", [(0, 1, 2)])
+    @pytest.mark.parametrize("axis", [None, *range(3)])
+    def test_empty_multidim(self, shape, axis):
+        a = np.empty(shape, dtype=int)
+        r = rankdata(a, axis=axis)
+        expected_shape = (0,) if axis is None else shape
+        assert_equal(r.shape, expected_shape)
+        assert_equal(r.dtype, np.float64)
+
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
