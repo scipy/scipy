@@ -40,14 +40,14 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned. If ``return_sign`` is True, ``res`` contians the log of
+        is returned. If ``return_sign`` is True, ``res`` contains the log of
         the absolute value of the argument.
     sgn : ndarray
-        If return_sign is True, this will be an array of floating-point
+        If ``return_sign`` is True, this will be an array of floating-point
         numbers matching res containing +1, 0, -1 (for real-valued inputs)
         or a complex phase (for complex inputs). This gives the sign of the
         argument of the logarithm in ``res``.
-        If return_sign is False, only one result is returned.
+        If ``return_sign`` is False, only one result is returned.
 
     See Also
     --------
