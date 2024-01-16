@@ -196,15 +196,15 @@ def copy(x, *, xp=None):
 
 
 def is_numpy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.numpy'
+    return xp.__name__ in ('numpy', 'scipy._lib.array_api_compat.numpy')
 
 
 def is_cupy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.cupy'
+    return xp.__name__ in ('cupy', 'scipy._lib.array_api_compat.cupy')
 
 
 def is_torch(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.torch'
+    return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
 
 def _strict_check(actual, desired, xp,
