@@ -124,7 +124,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
                 sgn = np.where(s == 0, 0, s / abs(s))
             else:
                 sgn = np.sign(s)
-            s = abs(s).astype(s.dtype)
+            s = abs(s)
         out = np.log(s)
 
     if not keepdims:
