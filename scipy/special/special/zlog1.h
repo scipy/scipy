@@ -5,7 +5,6 @@
  */
 
 #include "config.h"
-#include "constants.h"
 
 namespace special {
 namespace detail {
@@ -25,7 +24,7 @@ namespace detail {
         for (int n = 1; n < 17; n++) {
             coeff *= -z;
             res += coeff / static_cast<double>(n);
-            if (std::abs(res / coeff) < MACHEP64) {
+            if (std::abs(res / coeff) < std::numeric_limits<double>::epsilon()) {
                 break;
             }
         }

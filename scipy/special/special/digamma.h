@@ -16,7 +16,6 @@
 #include "cephes/psi.h"
 #include "cephes/zeta.h"
 #include "config.h"
-#include "constants.h"
 #include "error.h"
 #include "trig.h"
 
@@ -43,7 +42,7 @@ namespace detail {
             coeff *= -z;
             term = coeff * cephes::zeta(n + 1, root);
             res += term;
-            if (std::abs(term) < MACHEP64 * std::abs(res)) {
+            if (std::abs(term) < std::numeric_limits<double>::epsilon() * std::abs(res)) {
                 break;
             }
         }
@@ -97,7 +96,7 @@ namespace detail {
             zfac *= rzz;
             term = -bernoulli2k[k - 1] * zfac / (2 * static_cast<double>(k));
             res += term;
-            if (std::abs(term) < MACHEP64 * std::abs(res)) {
+            if (std::abs(term) < std::numeric_limits<double>::epsilon() * std::abs(res)) {
                 break;
             }
         }

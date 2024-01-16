@@ -380,7 +380,6 @@ special_sources = [
   'special/trig.h',
   'special/zlog1.h',
   'special/loggamma.h',
-  'special/constants.h',
   'special/digamma.h'
 ]
 
