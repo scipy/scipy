@@ -212,7 +212,7 @@ class TestRankData:
     @pytest.mark.parametrize('method', methods)
     def test_nan_policy_omit_3d(self, axis, method):
         shape = (20, 21, 22)
-        rng = np.random.default_rng(abs(hash('falafel')))
+        rng = np.random.RandomState(23983242)
 
         a = rng.random(size=shape)
         i = rng.random(size=shape) < 0.4
