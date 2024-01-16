@@ -121,7 +121,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         if return_sign:
             # For complex, use the numpy>=2.0 convention for sign.
             if np.issubdtype(s.dtype, np.complexfloating):
-                sgn = np.where(s == 0, 0, s / abs(s))
+                sgn = s / np.where(s == 0, 1, abs(s))
             else:
                 sgn = np.sign(s)
             s = abs(s)
