@@ -155,6 +155,7 @@ class TestRankData:
             for method in 'min', 'max', 'dense', 'ordinal', 'average':
                 out = rankdata(a, method=method)
                 assert_array_equal(out, rankf[method](a))
+                assert_equal(out.dtype, np.float64)
 
         val = ['foo', 'bar', 'qux', 'xyz', 'abc', 'efg', 'ace', 'qwe', 'qaz']
         check_ranks(np.random.choice(val, 200))
@@ -206,7 +207,7 @@ class TestRankData:
         data = np.zeros(shape)
         r = rankdata(data, method=method, axis=axis)
         assert_equal(r.shape, shape)
-        assert_equal(r.dtype, dtype)
+        assert_equal(r.dtype, np.float64)
 
     @pytest.mark.parametrize('axis', range(3))
     @pytest.mark.parametrize('method', methods)

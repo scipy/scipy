@@ -4075,7 +4075,7 @@ def f_oneway(*samples, axis=0):
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis 
+    # ValueError if the dimensions of all the arrays, except the axis
     # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
@@ -9874,7 +9874,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the quantile associated with the probability `p` 
+        * 'two-sided': the quantile associated with the probability `p`
           is not `q`.
         * 'less': the quantile associated with the probability `p` is less
           than `q`.
@@ -10044,7 +10044,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
 
-    When testing data from the standard *normal* distribution, which has a 
+    When testing data from the standard *normal* distribution, which has a
     median of 0, we would expect the null hypothesis to be rejected.
 
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
@@ -10779,7 +10779,8 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     -------
     ranks : ndarray
          An array of size equal to the size of `a`, containing rank
-         scores.
+         scores. For consistency among all choices of `method` and in the
+         presence of NaNs, the output dtype is always `np.float64`.
 
     References
     ----------
@@ -10792,13 +10793,13 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     >>> rankdata([0, 2, 3, 2])
     array([ 1. ,  2.5,  4. ,  2.5])
     >>> rankdata([0, 2, 3, 2], method='min')
-    array([ 1,  2,  4,  2])
+    array([1., 2., 4., 2.])
     >>> rankdata([0, 2, 3, 2], method='max')
-    array([ 1,  3,  4,  3])
+    array([1., 3., 4., 3.])
     >>> rankdata([0, 2, 3, 2], method='dense')
-    array([ 1,  2,  3,  2])
+    array([1., 2., 3., 2.])
     >>> rankdata([0, 2, 3, 2], method='ordinal')
-    array([ 1,  2,  4,  3])
+    array([1., 2., 4., 3.])
     >>> rankdata([[0, 2], [3, 2]]).reshape(2,2)
     array([[1. , 2.5],
           [4. , 2.5]])
@@ -10822,8 +10823,7 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         axis = -1
 
     if x.size == 0:
-        dtype = float if method == 'average' else np.dtype("long")
-        return np.empty(x.shape, dtype=dtype)
+        return np.empty(x.shape, dtype=np.float64)
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy)
 
@@ -10854,7 +10854,7 @@ def _rankdata(x, method, return_ties=False):
     # Get sort order
     kind = 'mergesort' if method == 'ordinal' else 'quicksort'
     j = np.argsort(x, axis=-1, kind=kind)
-    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
+    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=float), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
@@ -10879,7 +10879,7 @@ def _rankdata(x, method, return_ties=False):
     elif method == 'average':
         ranks = ordinal_ranks[i] + (counts - 1)/2
     elif method == 'dense':
-        ranks = np.cumsum(i, axis=-1)[i]
+        ranks = np.cumsum(i, axis=-1, dtype=np.float64)[i]
 
     ranks = np.repeat(ranks, counts).reshape(shape)
     ranks = _order_ranks(ranks, j)
