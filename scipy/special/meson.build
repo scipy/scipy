@@ -168,11 +168,11 @@ py3.extension_module('_specfun',
   subdir: 'scipy/special'
 )
 
-cdflib_c = cython_gen.process('_cdflib.pyx')
-
 py3.extension_module('_cdflib',
-  cdflib_c,
+  cython_gen.process('_cdflib.pyx'),
+  c_args: cython_c_args,
   dependencies: [np_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
