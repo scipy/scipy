@@ -211,7 +211,6 @@ html_theme_options = {
   "icon_links": [],
   "navbar_start": ["navbar-logo", "version-switcher"],
   "navbar_persistent": [],
-  "navigation_depth": 1,
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,

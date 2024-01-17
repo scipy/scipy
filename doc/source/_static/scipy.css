@@ -185,3 +185,8 @@ div.admonition-legacy {
 .admonition-legacy.admonition > .admonition-title:after {
   background-color: var(--pst-color-warning);
 }
+
+/* extra breathing room for logo image */
+.navbar-brand.logo {
+    margin-right: 0.5rem;
+}
