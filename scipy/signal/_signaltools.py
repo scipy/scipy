@@ -1498,7 +1498,7 @@ def order_filter(a, domain, rank):
     a = np.asarray(a)
     if a.dtype in [object, 'float128']:
         mesg = (f"Using order_filter with arrays of dtype {a.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
+                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
         warnings.warn(mesg, DeprecationWarning, stacklevel=2)
 
         result = _sigtools._order_filterND(a, domain, rank)
@@ -1576,7 +1576,7 @@ def medfilt(volume, kernel_size=None):
 
     if volume.dtype.char in ['O', 'g']:
         mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.13")
+                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
         warnings.warn(mesg, DeprecationWarning, stacklevel=2)
 
         result = _sigtools._order_filterND(volume, domain, order)
@@ -2463,8 +2463,8 @@ def hilbert2(x, N=None):
     return x
 
 
-_msg_cplx_sort="""cmplx_sort is deprecated in SciPy 1.12 and will be removed
-in SciPy 1.14. The exact equivalent for a numpy array argument is
+_msg_cplx_sort="""cmplx_sort was deprecated in SciPy 1.12 and will be removed
+in SciPy 1.15. The exact equivalent for a numpy array argument is
 >>> def cmplx_sort(p):
 ...    idx = np.argsort(abs(p))
 ...    return np.take(p, idx, 0), idx

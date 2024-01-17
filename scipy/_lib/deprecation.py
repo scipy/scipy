@@ -58,7 +58,7 @@ def _sub_module_deprecation(*, sub_package, module, private_modules, all,
             f"`scipy.{sub_package}.{module}.{attribute}` is deprecated along with "
             f"the `scipy.{sub_package}.{module}` namespace. "
             f"`scipy.{sub_package}.{module}.{attribute}` will be removed "
-            f"in SciPy 1.13.0, and the `scipy.{sub_package}.{module}` namespace "
+            f"in SciPy 1.14.0, and the `scipy.{sub_package}.{module}` namespace "
             f"will be removed in SciPy 2.0.0."
         )
 
