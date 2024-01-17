@@ -3567,7 +3567,7 @@ cdef inline (double, double, int, double) cdftnc_which1(
     df = min(df, 1.e10)
     t = max(min(t, spmpar[2]), -spmpar[2])
 
-    if not (-1.e-6 <= pnonc <= 1.e6):
+    if not (-1.e6 <= pnonc <= 1.e6):
         return (0., 0., -3, 1.e6 if pnonc > -1e6 else -1.e6)
 
     p, q = cumtnc(t, df, pnonc)
@@ -3601,14 +3601,14 @@ cdef inline (double, int, double) cdftnc_which2(
         return (0., -3, 0.)
     df = min(df, 1.e10)
 
-    if not (-1.e-6 <= pnonc <= 1.e6):
+    if not (-1.e6 <= pnonc <= 1.e6):
         return (0., -4, 1.e6 if pnonc > -1e6 else -1.e6)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, _ = cumf(DS.x, df, pnonc)
+        cum, _ = cumtnc(DS.x, df, pnonc)
         DS.fx = cum - p
         dinvr(&DS, &DZ)
 
@@ -3644,14 +3644,14 @@ cdef inline (double, int, double) cdftnc_which3(
     t = max(min(t, spmpar[2]), -spmpar[2])
     if not (t == t):
         return (0., -3, 0.)
-    if not (-1.e-6 <= pnonc <= 1.e6):
+    if not (-1.e6 <= pnonc <= 1.e6):
         return (0., -4, 1.e6 if pnonc > -1e6 else -1.e6)
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, _ = cumf(t, DS.x, pnonc)
+        cum, _ = cumtnc(t, DS.x, pnonc)
         DS.fx = cum - p
         dinvr(&DS, &DZ)
 
@@ -3696,7 +3696,7 @@ cdef inline (double, int, double) cdftnc_which4(
 
     dinvr(&DS, &DZ)
     while DS.status == 1:
-        cum, _ = cumf(t, df, DS.x)
+        cum, _ = cumtnc(t, df, DS.x)
         DS.fx = cum - p
         dinvr(&DS, &DZ)
 
@@ -4610,12 +4610,12 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
         s *= omx*(df + twoi - 1.)/(twoi + 1.)
         ss *= omx*(df + twoi)/(twoi + 2.)
         xi += 1.
-        twoi *= xi
+        twoi = 2.0*xi
         if abs(term) <= conv*ccum:
             break
     # Sum Backward
     xi = cent
-    twoi = 2.*xi
+    twoi = 2.0*xi
     d, e, b, bb = dcent, ecent, bcent, bbcent
     s = scent*(1. + twoi)/((df + twoi - 1.)*omx)
     ss = sscent*(2. + twoi)/((df + twoi)*omx)
@@ -4630,7 +4630,7 @@ cdef inline (double, double) cumtnc(double t, double df, double pnonc) noexcept 
         xi -= 1.
         if xi < 0.5:
             break
-        twoi *= xi
+        twoi = 2.0*xi
         s *= (1. + twoi) / ((df + twoi - 1.)*omx)
         ss *= (2. + twoi) / ((df + twoi)*omx)
         if abs(term) <= conv*ccum:
