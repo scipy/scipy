@@ -20,7 +20,7 @@ from scipy._lib.array_api_compat import (
     numpy as np_compat,
 )
 
-__all__ = ['array_namespace', 'as_xparray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size']
 
 
 # To enable array API and strict array-like input validation
@@ -119,7 +119,7 @@ def array_namespace(*arrays):
     return array_api_compat.array_namespace(*arrays)
 
 
-def as_xparray(
+def _asarray(
     array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False
 ):
     """SciPy-specific replacement for `np.asarray` with `order` and `check_finite`.
@@ -192,7 +192,7 @@ def copy(x, *, xp=None):
     if xp is None:
         xp = array_namespace(x)
 
-    return as_xparray(x, copy=True, xp=xp)
+    return _asarray(x, copy=True, xp=xp)
 
 
 def is_numpy(xp):
