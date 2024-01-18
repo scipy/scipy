@@ -4,10 +4,8 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'VarHeader5', 'VarReader5', 'byteswap_u4', 'chars_to_strings',
-    'csc_matrix', 'mio5p', 'pycopy', 'swapped_code', 'squeeze_element'
-]
+__all__: list[str] = []
+
 
 def __dir__():
     return __all__

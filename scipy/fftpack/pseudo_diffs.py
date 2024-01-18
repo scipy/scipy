@@ -8,7 +8,7 @@ __all__ = [  # noqa: F822
     'diff',
     'tilbert', 'itilbert', 'hilbert', 'ihilbert',
     'cs_diff', 'cc_diff', 'sc_diff', 'ss_diff',
-    'shift', 'iscomplexobj', 'convolve'
+    'shift', 'convolve'
 ]
 
 
