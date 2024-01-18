@@ -260,14 +260,14 @@ Deprecated features
   public namespace and warnings sharpened for private attributes that are not
   supposed to be imported at all.
 - `scipy.signal.cmplx_sort` has been deprecated and will be removed in
-  SciPy 1.14. A replacement you can use is provided in the deprecation message.
+  SciPy 1.15. A replacement you can use is provided in the deprecation message.
 - Values the the argument ``initial`` of `scipy.integrate.cumulative_trapezoid`
   other than ``0`` and ``None`` are now deprecated.
 - `scipy.stats.rvs_ratio_uniforms` is deprecated in favour of
   `scipy.stats.sampling.RatioUniforms`
 - `scipy.integrate.quadrature` and `scipy.integrate.romberg` have been
   deprecated due to accuracy issues and interface shortcomings. They will
-  be removed in SciPy 1.14. Please use `scipy.integrate.quad` instead.
+  be removed in SciPy 1.15. Please use `scipy.integrate.quad` instead.
 - Coinciding with upcoming changes to function signatures (e.g. removal of a
   deprecated keyword), we are deprecating positional use of keyword arguments
   for the affected functions, which will raise an error starting with
