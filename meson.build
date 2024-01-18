@@ -1,5 +1,5 @@
 project(
-  'SciPy',
+  'scipy',
   'c', 'cpp', 'cython',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
