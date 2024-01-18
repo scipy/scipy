@@ -10844,7 +10844,7 @@ def _order_ranks(ranks, j):
     # Reorder ascending order `ranks` according to `j`
     ordered_ranks = np.empty(j.shape, dtype=ranks.dtype)
     np.put_along_axis(ordered_ranks, j, ranks, axis=-1)
-    return ordered_ranks
+    return ordered_ranks.astype(np.float64, copy=False)
 
 
 def _rankdata(x, method, return_ties=False):
@@ -10854,7 +10854,7 @@ def _rankdata(x, method, return_ties=False):
     # Get sort order
     kind = 'mergesort' if method == 'ordinal' else 'quicksort'
     j = np.argsort(x, axis=-1, kind=kind)
-    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=float), shape)
+    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
@@ -10879,7 +10879,7 @@ def _rankdata(x, method, return_ties=False):
     elif method == 'average':
         ranks = ordinal_ranks[i] + (counts - 1)/2
     elif method == 'dense':
-        ranks = np.cumsum(i, axis=-1, dtype=np.float64)[i]
+        ranks = np.cumsum(i, axis=-1)[i]
 
     ranks = np.repeat(ranks, counts).reshape(shape)
     ranks = _order_ranks(ranks, j)
