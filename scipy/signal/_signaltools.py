@@ -4702,6 +4702,17 @@ def envelope(x, N=None, method='analytic'):
     >>> plt.plot(t, lower)
     >>> plt.show()
 
+    Use `'peak'` method to calculate the upper and lower envelopes of
+    the electrocardiogram data in SciPy (see `scipy.datasets.electrocardiogram`).
+
+    >>> from scipy.datasets import electrocardiogram
+    >>> signal = electrocardiogram()
+    >>> upper, lower = envelope(signal, N=150, method='peak')
+    >>> plt.plot(signal)
+    >>> plt.plot(upper)
+    >>> plt.plot(lower)
+    >>> plt.show()
+    
     Raises
     ------
     ValueError
@@ -4743,8 +4754,8 @@ def envelope(x, N=None, method='analytic'):
             raise ValueError(msg)
         peaks_upper, _ = find_peaks(x, distance=N)
         peaks_lower, _ = find_peaks(-x, distance=N)
-        upper_spline = UnivariateSpline(peaks_upper, x[peaks_upper])
-        lower_spline = UnivariateSpline(peaks_lower, x[peaks_lower])
+        upper_spline = UnivariateSpline(peaks_upper, x[peaks_upper], s=0)
+        lower_spline = UnivariateSpline(peaks_lower, x[peaks_lower], s=0)
         upper_envelope = upper_spline(np.arange(x.shape[0]))
         lower_envelope = lower_spline(np.arange(x.shape[0]))
         return upper_envelope, lower_envelope
