@@ -2929,7 +2929,9 @@ def _factorialx_approx_core(n, k):
     # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
     # below and thus also avoid evaluating `max(r, 1)`)
     def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
-    for r in range(1, k):
+    for r in np.unique(n_mod_k):
+        if r == 0:
+            continue
         result[n_mod_k == r] *= corr(k, r)
     return result
 
