@@ -4200,7 +4200,7 @@ int amos_seri(
     //***ROUTINES CALLED  DGAMLN,D1MACH,ZUCHK,AZABS,ZDIV,AZLOG,ZMLT
     //***END PROLOGUE  ZSERI
 
-    double complex ak1, ck, coef, crsc, cz, hz, rz, s1, s2, w[2];
+    double complex ak1, ck, coef, crsc, cz, half_z, rz, s1, s2, w[2];
     double aa, acz, ak, arm, ascle, atol, az, dfnu, fnup, rak1,\
            rs, rtr1, s, ss, x;
     int ib, iflag, il, k, l, m, nn;
@@ -4220,12 +4220,12 @@ int amos_seri(
     crsc = 1.0;
     iflag = 0;
     if (az >= arm) {
-        hz = 0.5*z;
+        half_z = 0.5*z;
         cz = 0.0;
-        if (az > rtr1) { cz = hz*hz; }
+        if (az > rtr1) { cz = half_z*half_z; }
         acz = cabs(cz);
         nn = n;
-        ck = clog(hz);
+        ck = clog(half_z);
 L10:
         dfnu = fnu + (nn-1);
         fnup = dfnu + 1.0;
@@ -4291,7 +4291,7 @@ L30:
             }
             m = nn - i + 1;
             y[m-1] = s2 * crsc;
-            if (i != il) { coef *= dfnu / hz; }
+            if (i != il) { coef *= dfnu / half_z; }
         }
         if (nn <= 2) { return nz; }
         k = nn - 2;
