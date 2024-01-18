@@ -70,12 +70,6 @@ from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import array_namespace, is_numpy
 
-# In __all__ but deprecated for removal in SciPy 1.13.0
-from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (  # noqa: F401
-    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
-)
-
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
