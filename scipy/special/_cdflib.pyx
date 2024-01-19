@@ -1180,7 +1180,7 @@ cdef inline (double, double, int, double) cdfbet_which2(
     double p, double q, double a, double b) noexcept nogil:
 
     cdef double ccum, cum, xx, yy
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq
     # Cython doesn't allow for default values in structs
@@ -1233,7 +1233,7 @@ cdef inline (double, double, int, double) cdfbet_which2(
 
 cdef inline (double, int, double) cdfbet_which3(
     double p, double q, double x, double y, double b) noexcept nogil:
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1280,7 +1280,7 @@ cdef inline (double, int, double) cdfbet_which3(
 
 cdef inline (double, int, double) cdfbet_which4(
     double p, double q, double x, double y, double a) noexcept nogil:
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
 
@@ -1436,7 +1436,7 @@ cdef inline (double, double, int, double) cdfbin_which1(
 cdef inline (double, int, double) cdfbin_which2(
     double p, double q, double xn, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1484,7 +1484,7 @@ cdef inline (double, int, double) cdfbin_which2(
 cdef inline (double, int, double) cdfbin_which3(
     double p, double q, double s, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1532,7 +1532,7 @@ cdef inline (double, int, double) cdfbin_which3(
 cdef inline (double, double, int, double) cdfbin_which4(
     double p, double q, double s, double xn) noexcept nogil:
     cdef double ccum, cum, pr, ompr
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     # Cython doesn't allow for default values in structs
@@ -1679,7 +1679,7 @@ cdef inline (double, int, double) cdfchi_which2(
     cdef bint qporq = p <= q
     cdef double porq = p if qporq else q
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1724,7 +1724,7 @@ cdef inline (double, int, double) cdfchi_which3(
     cdef bint qporq = p <= q
     cdef double porq = p if qporq else q
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1875,7 +1875,7 @@ cdef inline (double, double, int, double) cdfchn_which1(
 cdef inline (double, int, double) cdfchn_which2(
     double p, double df, double pnonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1918,7 +1918,7 @@ cdef inline (double, int, double) cdfchn_which2(
 cdef inline (double, int, double) cdfchn_which3(
     double p, double x, double pnonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -1961,7 +1961,7 @@ cdef inline (double, int, double) cdfchn_which3(
 cdef inline (double, int, double) cdfchn_which4(
     double p, double x, double df) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2106,7 +2106,7 @@ cdef inline (double, double, int, double) cdff_which1(
 cdef inline (double, int, double) cdff_which2(
     double p, double q, double dfn, double dfd) noexcept nogil:
     cdef double cum, ccum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2151,7 +2151,7 @@ cdef inline (double, int, double) cdff_which2(
 cdef inline (double, int, double) cdff_which3(
     double p, double q, double f, double dfd) noexcept nogil:
     cdef double cum, ccum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2196,7 +2196,7 @@ cdef inline (double, int, double) cdff_which3(
 cdef inline (double, int, double) cdff_which4(
     double p, double q, double f, double dfn) noexcept nogil:
     cdef double cum, ccum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2364,7 +2364,7 @@ cdef (double, double, int, double) cdffnc_which1(
 cdef (double, int, double) cdffnc_which2(
     double p, double q, double dfn, double dfd, double phonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2409,7 +2409,7 @@ cdef (double, int, double) cdffnc_which2(
 cdef (double, int, double) cdffnc_which3(
     double p, double q, double f, double dfd, double phonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2454,7 +2454,7 @@ cdef (double, int, double) cdffnc_which3(
 cdef (double, int, double) cdffnc_which4(
     double p, double q, double f, double dfn, double phonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2499,7 +2499,7 @@ cdef (double, int, double) cdffnc_which4(
 cdef (double, int, double) cdffnc_which5(
     double p, double q, double f, double dfn, double dfd) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef int ierr
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2681,7 +2681,7 @@ cdef (double, int, double) cdfgam_which3(
     double p, double q, double x, double scale) noexcept nogil:
     cdef double cum, ccum
     cdef double xscale = x*scale
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
 
@@ -2869,7 +2869,7 @@ cdef inline (double, double, int, double) cdfnbn_which1(
 cdef inline (double, int, double) cdfnbn_which2(
     double p, double q, double xn, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2917,7 +2917,7 @@ cdef inline (double, int, double) cdfnbn_which2(
 cdef inline (double, int, double) cdfnbn_which3(
     double p, double q, double s, double pr, double ompr) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -2966,7 +2966,7 @@ cdef inline (double, int, double) cdfnbn_which3(
 cdef inline (double, double, int, double) cdfnbn_which4(
     double p, double q, double s, double xn) noexcept nogil:
     cdef double ccum, cum, pr, ompr
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     # Cython doesn't allow for default values in structs
@@ -3236,7 +3236,7 @@ cdef inline (double, double, int, double) cdfpoi_which1(
 cdef inline (double, int, double) cdfpoi_which2(
     double p, double q, double xlam) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3281,7 +3281,7 @@ cdef inline (double, int, double) cdfpoi_which2(
 cdef inline (double, int, double) cdfpoi_which3(
     double p, double q, double s) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3406,7 +3406,7 @@ cdef inline (double, double, int, double) cdft_which1(
 cdef inline (double, int, double) cdft_which2(
     double p, double q, double df) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3448,7 +3448,7 @@ cdef inline (double, int, double) cdft_which2(
 cdef inline (double, int, double) cdft_which3(
     double p, double q, double t) noexcept nogil:
     cdef double ccum, cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef bint qporq = p <= q
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3577,7 +3577,7 @@ cdef inline (double, double, int, double) cdftnc_which1(
 cdef inline (double, int, double) cdftnc_which2(
     double p, double q, double df, double pnonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3621,7 +3621,7 @@ cdef inline (double, int, double) cdftnc_which2(
 cdef inline (double, int, double) cdftnc_which3(
     double p, double q, double t, double pnonc) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -3664,7 +3664,7 @@ cdef inline (double, int, double) cdftnc_which3(
 cdef inline (double, int, double) cdftnc_which4(
     double p, double q, double t, double df) noexcept nogil:
     cdef double cum
-    cdef double tol = 1e-8
+    cdef double tol = 1e-15
     cdef double atol = 1e-50
     cdef DinvrState DS = DinvrState(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
