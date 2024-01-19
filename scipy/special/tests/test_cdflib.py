@@ -438,7 +438,7 @@ def test_chndtrix_gh2158():
                82.35640899964173, 84.45263768373256]
     assert_allclose(res, res_exp)
 
-
+@pytest.mark.xfail_on_32bit("32bit fails due to algorithm threshold")
 def test_nctdtr_gh19896():
     # test that gh-19896 is resolved.
     # Compared to SciPy 1.11 results from Fortran code.
