@@ -22,4 +22,4 @@
 	url = https://github.com/data-apis/array-api-compat.git
 [submodule "scipy/_lib/pocketfft"]
 	path = scipy/_lib/pocketfft
-	url = https://github.com/mreineck/pocketfft
+	url = https://github.com/scipy/pocketfft
