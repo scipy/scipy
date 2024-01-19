@@ -9,18 +9,18 @@ __all__ = ['daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt']
 
 
 _msg="""scipy.signal.%s is deprecated in SciPy 1.12 and will be removed
-in SciPy 1.14. We recommend using PyWavelets instead.
+in SciPy 1.15. We recommend using PyWavelets instead.
 """
 
 
 def daub(p):
     """
+    The coefficients for the FIR low-pass filter producing Daubechies wavelets.
+
     .. deprecated:: 1.12.0
 
         scipy.signal.daub is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-    The coefficients for the FIR low-pass filter producing Daubechies wavelets.
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     p>=1 gives the order of the zero at f=1/2.
     There are 2p filter coefficients.
@@ -91,13 +91,12 @@ def daub(p):
 
 def qmf(hk):
     """
+    Return high-pass qmf filter from low-pass
+
     .. deprecated:: 1.12.0
 
         scipy.signal.qmf is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-
-    Return high-pass qmf filter from low-pass
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     Parameters
     ----------
@@ -119,13 +118,12 @@ def qmf(hk):
 
 def cascade(hk, J=7):
     """
+    Return (x, phi, psi) at dyadic points ``K/2**J`` from filter coefficients.
+
     .. deprecated:: 1.12.0
 
         scipy.signal.cascade is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-
-    Return (x, phi, psi) at dyadic points ``K/2**J`` from filter coefficients.
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     Parameters
     ----------
@@ -233,12 +231,12 @@ def cascade(hk, J=7):
 
 def morlet(M, w=5.0, s=1.0, complete=True):
     """
+    Complex Morlet wavelet.
+
     .. deprecated:: 1.12.0
 
         scipy.signal.morlet is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-    Complex Morlet wavelet.
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     Parameters
     ----------
@@ -317,13 +315,12 @@ def morlet(M, w=5.0, s=1.0, complete=True):
 
 def ricker(points, a):
     """
+    Return a Ricker wavelet, also known as the "Mexican hat wavelet".
+
     .. deprecated:: 1.12.0
 
         scipy.signal.ricker is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-
-    Return a Ricker wavelet, also known as the "Mexican hat wavelet".
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     It models the function:
 
@@ -375,13 +372,12 @@ def _ricker(points, a):
 
 def morlet2(M, s, w=5):
     """
+    Complex Morlet wavelet, designed to work with `cwt`.
+
     .. deprecated:: 1.12.0
 
         scipy.signal.morlet2 is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-
-    Complex Morlet wavelet, designed to work with `cwt`.
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     Returns the complete version of morlet wavelet, normalised
     according to `s`::
@@ -462,13 +458,12 @@ def morlet2(M, s, w=5):
 
 def cwt(data, wavelet, widths, dtype=None, **kwargs):
     """
+    Continuous wavelet transform.
+
     .. deprecated:: 1.12.0
 
         scipy.signal.cwt is deprecated in SciPy 1.12 and will be removed
-        in SciPy 1.14. We recommend using PyWavelets instead.
-
-
-    Continuous wavelet transform.
+        in SciPy 1.15. We recommend using PyWavelets instead.
 
     Performs a continuous wavelet transform on `data`,
     using the `wavelet` function. A CWT performs a convolution

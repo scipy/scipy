@@ -27,7 +27,6 @@ py3.extension_module('_fmm_core',
     'src/_fmm_core_write_coo_32.cpp',
     'src/_fmm_core_write_coo_64.cpp',
   ],
-  override_options: ['cpp_std=c++17'],
   cpp_args: [
     '-DFMM_SCIPY_PRUNE',
     '-DFMM_USE_FAST_FLOAT',

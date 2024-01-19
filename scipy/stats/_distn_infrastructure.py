@@ -598,8 +598,8 @@ def argsreduce(cond, *args):
 
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
-    if not isinstance(newargs, list):
-        newargs = [newargs, ]
+    if not isinstance(newargs, (list, tuple)):
+        newargs = (newargs,)
 
     if np.all(cond):
         # broadcast arrays with cond

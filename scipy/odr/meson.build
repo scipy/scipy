@@ -6,6 +6,7 @@ odrpack = static_library('odrpack',
     'odrpack/dlunoc.f'
   ],
   fortran_args: _fflag_Wno_conversion,  # silence "conversion from REAL(8) to INTEGER(4)"
+  override_options: ['b_lto=false'],
 )
 
 py3.extension_module('__odrpack',

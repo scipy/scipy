@@ -4404,7 +4404,7 @@ class TestKSTwoSamples:
     def test_warnings_gh_14019(self):
         # Check that RuntimeWarning is raised when method='auto' and exact
         # p-value calculation fails. See gh-14019.
-        rng = np.random.default_rng(abs(hash('test_warnings_gh_14019')))
+        rng = np.random.RandomState(seed=23493549)
         # random samples of the same size as in the issue
         data1 = rng.random(size=881) + 0.5
         data2 = rng.random(size=369)
@@ -5898,7 +5898,7 @@ class TestJarqueBera:
         assert_raises(ValueError, stats.jarque_bera, [])
 
     def test_axis(self):
-        rng = np.random.default_rng(abs(hash('JarqueBera')))
+        rng = np.random.RandomState(seed=122398129)
         x = rng.random(size=(2, 45))
 
         assert_equal(stats.jarque_bera(x, axis=None),

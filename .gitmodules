@@ -23,3 +23,6 @@
 [submodule "subprojects/libnpymath"]
 	path = subprojects/libnpymath
 	url = https://github.com/numpy/libnpymath.git
+[submodule "scipy/_lib/pocketfft"]
+	path = scipy/_lib/pocketfft
+	url = https://github.com/mreineck/pocketfft
