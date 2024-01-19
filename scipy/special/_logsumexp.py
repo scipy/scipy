@@ -416,11 +416,15 @@ def log_softmax(x, axis=None):
 
     x = _asarray_validated(x, check_finite=False)
 
-    x_argmax = np.argmax(x, axis=axis, keepdims=True)
-    # work around https://github.com/numpy/numpy/issues/25622
-    if axis is None:
-        x_argmax = x_argmax.flatten()
-    x_max = np.take_along_axis(x, x_argmax, axis=axis)
+    # work around https://github.com/numpy/numpy/issues/25623
+    if isinstance(axis, tuple):
+        x_max = np.amax(x, axis=axis, keepdims=True)
+    else:
+        x_argmax = np.argmax(x, axis=axis, keepdims=True)
+        # work around https://github.com/numpy/numpy/issues/25622
+        if axis is None:
+            x_argmax = x_argmax.flatten()
+        x_max = np.take_along_axis(x, x_argmax, axis=axis)
 
     finite_max_mask = np.isfinite(x_max)
 
@@ -432,19 +436,27 @@ def log_softmax(x, axis=None):
     tmp = x - x_max
     exp_tmp = np.exp(tmp)
 
-    # we know that exp_tmp at the location of the max is either 1 or infinite,
-    # depending on finite_max_mask, so we can set it to zero and use log1p
-    if exp_tmp.ndim > 0:
-        exp_tmp_max = np.take_along_axis(exp_tmp, x_argmax, axis=axis)
-        exp_tmp_max[finite_max_mask] = 0
-        np.put_along_axis(exp_tmp, x_argmax, exp_tmp_max, axis=axis)
-    elif finite_max_mask:
-        exp_tmp = np.zeros_like(exp_tmp)
+    # work around https://github.com/numpy/numpy/issues/25623
+    if isinstance(axis, tuple):
+        pass
+    else:
+        # we know that exp_tmp at the location of the max is either 1 or infinite,
+        # depending on finite_max_mask, so we can set it to zero and use log1p
+        if exp_tmp.ndim > 0:
+            exp_tmp_max = np.take_along_axis(exp_tmp, x_argmax, axis=axis)
+            exp_tmp_max[finite_max_mask] = 0
+            np.put_along_axis(exp_tmp, x_argmax, exp_tmp_max, axis=axis)
+        elif finite_max_mask:
+            exp_tmp = np.zeros_like(exp_tmp)
 
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
         s = np.sum(exp_tmp, axis=axis, keepdims=True)
-        out = np.log1p(s)
+        # work around https://github.com/numpy/numpy/issues/25623
+        if isinstance(axis, tuple):
+            out = np.log(s)
+        else:
+            out = np.log1p(s)
 
     out = tmp - out
     return out
