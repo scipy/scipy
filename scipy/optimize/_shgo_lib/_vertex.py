@@ -1,3 +1,4 @@
+import logging
 import collections
 from abc import ABC, abstractmethod
 
@@ -237,9 +238,9 @@ class VertexCacheIndex(VertexCacheBase):
         except KeyError:
             self.index += 1
             xval = self.Vertex(x, index=self.index)
-            # logging.info("New generated vertex at x = {}".format(x))
-            # NOTE: Surprisingly high performance increase if logging
-            # is commented out
+            logging.getLogger('scipy.optimize.shgo').info(
+                "New generated vertex at x = %s", x
+            )
             self.cache[x] = xval
             return self.cache[x]
 
@@ -348,7 +349,12 @@ class VertexCacheField(VertexCacheBase):
             self.nfev += 1
         except AttributeError:
             v.f = np.inf
-            # logging.warning(f"Field function not found at x = {self.x_a}")
+            # TODO: logging
+            # Left commented out during rewriting of log statements since the
+            # linter complains that the class has no attribute x_a.
+            # logging.getLogger('scipy.optimize.shgo').warning(
+                # "Field function not found at x = %s", self.x_a
+            # )
         if np.isnan(v.f):
             v.f = np.inf
 
