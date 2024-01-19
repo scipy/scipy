@@ -2,8 +2,6 @@
 SciPy 1.12.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.12.0 is not released yet!
-
 .. contents::
 
 SciPy 1.12.0 is the culmination of 6 months of hard work. It contains
@@ -327,7 +325,7 @@ Authors
 
 * Name (commits)
 * endolith (1)
-* h-vetinari (32)
+* h-vetinari (34)
 * Tom Adamczewski (3) +
 * Anudeep Adiraju (1) +
 * akeemlh (1)
@@ -373,7 +371,7 @@ Authors
 * Lukas Geiger (9) +
 * Artem Glebov (22) +
 * Caden Gobat (1)
-* Ralf Gommers (126)
+* Ralf Gommers (127)
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
@@ -443,7 +441,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (201)
+* Tyler Reddy (212)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -455,7 +453,7 @@ Authors
 * Masahiro Sakai (2) +
 * Omar Salman (14)
 * Andrej Savikin (1) +
-* Daniel Schmitz (54)
+* Daniel Schmitz (55)
 * Dan Schult (19)
 * Scott Shambaugh (9)
 * Sheila-nk (2) +
@@ -635,6 +633,7 @@ Issues closed for 1.12.0
 * `#19795 <https://github.com/scipy/scipy/issues/19795>`__: MAINT: need stable Pythran release for SciPy 1.12.0 RC2
 * `#19804 <https://github.com/scipy/scipy/issues/19804>`__: MAINT/TST: Warnings failing test suite with \`pytest 8\`
 * `#19852 <https://github.com/scipy/scipy/issues/19852>`__: CI, MAINT: Windows 3.11 CI failure with file access issue
+* `#19906 <https://github.com/scipy/scipy/issues/19906>`__: BUG: 1.12.0rc2 SciPy rather than scipy in \`pip list\` output
 
 ************************
 Pull requests for 1.12.0
@@ -1097,8 +1096,13 @@ Pull requests for 1.12.0
 * `#19761 <https://github.com/scipy/scipy/pull/19761>`__: MAINT: Avoid use of aligned_alloc in pocketfft on windows
 * `#19779 <https://github.com/scipy/scipy/pull/19779>`__: BUG: Fix \`nbinom.logcdf\` for invalid input
 * `#19785 <https://github.com/scipy/scipy/pull/19785>`__: BUG: support sparse Hessian in \`Newton-CG\`
+* `#19797 <https://github.com/scipy/scipy/pull/19797>`__: MAINT: 1.12.0rc2 prep
 * `#19800 <https://github.com/scipy/scipy/pull/19800>`__: TST: loosen tolerances for tests that fail otherwise on windows+MKL
 * `#19806 <https://github.com/scipy/scipy/pull/19806>`__: TST: fix compatibility with pytest 8
 * `#19830 <https://github.com/scipy/scipy/pull/19830>`__: REL: bump copyright to 2024
 * `#19842 <https://github.com/scipy/scipy/pull/19842>`__: TST: move reference data for test_real_transforms to a fixture
 * `#19859 <https://github.com/scipy/scipy/pull/19859>`__: BLD: improve scipy-openblas dependency check
+* `#19877 <https://github.com/scipy/scipy/pull/19877>`__: DOC: 1.12 release notes tweaks
+* `#19892 <https://github.com/scipy/scipy/pull/19892>`__: DEP: extend some announced deprecations due to out-of-band 1.13...
+* `#19903 <https://github.com/scipy/scipy/pull/19903>`__: DEP: reflect extended deprecations also in release notes
+* `#19910 <https://github.com/scipy/scipy/pull/19910>`__: BLD: ensure the name of the installed \`scipy\` package is lower-case
