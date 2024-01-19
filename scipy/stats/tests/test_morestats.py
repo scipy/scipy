@@ -1647,9 +1647,9 @@ class TestKstat:
         assert_allclose(moments, expected, rtol=1e-4)
 
         # test equivalence with `stats.moment`
-        m1 = stats.moment(data, moment=1)
-        m2 = stats.moment(data, moment=2)
-        m3 = stats.moment(data, moment=3)
+        m1 = stats.moment(data, order=1)
+        m2 = stats.moment(data, order=2)
+        m3 = stats.moment(data, order=3)
         assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
 
     def test_empty_input(self):

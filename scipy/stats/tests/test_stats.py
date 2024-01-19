@@ -3147,7 +3147,7 @@ class TestMoments:
             self._assert_equal(y, [], shape=(0,), dtype=np.float64)
             y = stats.moment([[]], axis=1)
             self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
-            y = stats.moment([[]], moment=[0, 1], axis=0)
+            y = stats.moment([[]], order=[0, 1], axis=0)
             self._assert_equal(y, [], shape=(2, 0))
 
         x = np.arange(10.)
@@ -3158,21 +3158,21 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex128])
-    @pytest.mark.parametrize('expect, moment', [(0, 1), (1, 0)])
-    def test_constant_moments(self, dtype, expect, moment):
+    @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
+    def test_constant_moments(self, dtype, expect, order):
         x = np.random.rand(5).astype(dtype)
-        y = stats.moment(x, moment=moment)
+        y = stats.moment(x, order=order)
         self._assert_equal(y, expect, dtype=dtype)
 
-        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, moment=moment)
+        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, order=order)
         self._assert_equal(y, expect, shape=(5,), dtype=dtype)
 
         y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
-                         moment=moment)
+                         order=order)
         self._assert_equal(y, expect, shape=(1, 2, 4, 5), dtype=dtype)
 
         y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
-                         moment=moment)
+                         order=order)
         self._assert_equal(y, expect, shape=(), dtype=dtype)
 
     def test_moment_propagate_nan(self):
@@ -3183,11 +3183,19 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
-    def test_moment_empty_moment(self):
-        # tests moment with empty `moment` list
-        with pytest.raises(ValueError, match=r"'moment' must be a scalar or a"
+    def test_moment_empty_order(self):
+        # tests moment with empty `order` list
+        with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
                                              r" non-empty 1D list/array."):
-            stats.moment([1, 2, 3, 4], moment=[])
+            stats.moment([1, 2, 3, 4], order=[])
+
+    def test_rename_moment_order(self):
+        # Parameter 'order' was formerly known as 'moment'. The old name
+        # has not been deprecated, so it must continue to work.
+        x = np.arange(10)
+        res = stats.moment(x, moment=3)
+        ref = stats.moment(x, order=3)
+        np.testing.assert_equal(res, ref)
 
     def test_skewness(self):
         # Scalar test case
@@ -3335,7 +3343,7 @@ def ttest_data_axis_strategy(draw):
         warnings.simplefilter("error")
         for axis in range(len(data.shape)):
             with contextlib.suppress(Exception):
-                var = stats.moment(data, moment=2, axis=axis)
+                var = stats.moment(data, order=2, axis=axis)
                 if np.all(var > 0) and np.all(np.isfinite(var)):
                     ok_axes.append(axis)
     # if there are no valid axes, tell hypothesis to try a different example
