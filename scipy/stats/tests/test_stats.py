@@ -7675,13 +7675,15 @@ class TestWassersteinDistance:
         # These two calculations are done using different backends
         # but they must be equal
         assert_allclose(stats.wasserstein_distance(u_values, v_values),
-                stats.wasserstein_distance(u_values_flat, v_values_flat))
+                        stats.wasserstein_distance(u_values_flat, v_values_flat))
         # Test with u_weights and v_weights specified.
         u_weights = rng.random(size=u_size)
         v_weights = rng.random(size=v_size)
-        assert_allclose(
-        stats.wasserstein_distance(u_values, v_values, u_weights, v_weights),
-        stats.wasserstein_distance(u_values_flat, v_values_flat, u_weights, v_weights))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance(u_values_flat, v_values_flat,
+                                        u_weights, v_weights))
+        assert_allclose(d1, d2)
 
 
 class TestEnergyDistance:
