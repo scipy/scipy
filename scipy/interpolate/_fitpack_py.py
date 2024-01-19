@@ -610,7 +610,12 @@ def insert(x, tck, m=1, per=0):
     Based on algorithms from [1]_ and [2]_.
 
     Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
+    prefer using the `BSpline` objects, in particular `BSpline.insert_knot`
+    method.
+
+    See Also
+    --------
+    BSpline.insert_knot
 
     References
     ----------

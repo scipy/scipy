@@ -859,6 +859,10 @@ class BSpline:
         ``t(k+1)<t(j)<=x`` or at least k interior knots t(j) satisfying
         ``x<=t(j)<t(n-k)``.
 
+        This routine is functionally equivalent to `scipy.interpolate.insert`.
+
+        .. versionadded:: 1.13
+
         References
         ----------
         .. [1] W. Boehm, "Inserting new knots into b-spline curves.",
@@ -867,6 +871,9 @@ class BSpline:
         .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
             Numerical Analysis", Oxford University Press, 1993.
 
+        See Also
+        --------
+        scipy.interpolate.insert
 
         Examples
         --------

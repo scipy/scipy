@@ -236,17 +236,17 @@ def insert(double xval,
 # https://github.com/scipy/scipy/blob/maintenance/1.11.x/scipy/interpolate/fitpack/insert.f
 # which carries the following comment:
 #
-# c  subroutine insert inserts a new knot x into a spline function s(x)
-# c  of degree k and calculates the b-spline representation of s(x) with
-# c  respect to the new set of knots. in addition, if iopt.ne.0, s(x)
-# c  will be considered as a periodic spline with period per=t(n-k)-t(k+1)
-# c  satisfying the boundary constraints
-# c       t(i+n-2*k-1) = t(i)+per  ,i=1,2,...,2*k+1
-# c       c(i+n-2*k-1) = c(i)      ,i=1,2,...,k
-# c  in that case, the knots and b-spline coefficients returned will also
-# c  satisfy these boundary constraints, i.e.
-# c       tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
-# c       cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
+# subroutine insert inserts a new knot x into a spline function s(x)
+# of degree k and calculates the b-spline representation of s(x) with
+# respect to the new set of knots. in addition, if iopt.ne.0, s(x)
+# will be considered as a periodic spline with period per=t(n-k)-t(k+1)
+# satisfying the boundary constraints
+#      t(i+n-2*k-1) = t(i)+per  ,i=1,2,...,2*k+1
+#      c(i+n-2*k-1) = c(i)      ,i=1,2,...,k
+# in that case, the knots and b-spline coefficients returned will also
+# satisfy these boundary constraints, i.e.
+#      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
+#      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
     cdef:
         int interval, i
 
@@ -277,7 +277,7 @@ def insert(double xval,
 
     for i in range(interval, interval-k, -1):
         fac = (xval - tt[i]) / (tt[i+k+1] - tt[i])
-        cc[i] = fac*c[i, ...] + (1. - fac)*c[i-1, ...]
+        cc[i, ...] = fac*c[i, ...] + (1. - fac)*c[i-1, ...]
 
     cc[:interval - k+1, ...] = c[:interval - k+1, ...]
 
