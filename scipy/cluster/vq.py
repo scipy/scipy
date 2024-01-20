@@ -462,7 +462,10 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     >>> plt.show()
 
     """
-    xp = array_namespace(obs, k_or_guess)
+    if isinstance(k_or_guess, int):
+        xp = array_namespace(obs)
+    else:
+        xp = array_namespace(obs, k_or_guess)
     obs = _asarray(obs, xp=xp, check_finite=check_finite)
     guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
@@ -768,7 +771,10 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     except KeyError as e:
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
-    xp = array_namespace(data, k)
+    if isinstance(k, int):
+        xp = array_namespace(data)
+    else:
+        xp = array_namespace(data, k)
     data = _asarray(data, xp=xp, check_finite=check_finite)
     code_book = copy(k, xp=xp)
     if data.ndim == 1:
