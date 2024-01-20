@@ -204,8 +204,6 @@ New features
   hypothesized value is the quantile associated with a specified probability.
   The ``confidence_interval`` method of the result object gives a confidence
   interval of the quantile.
-- `scipy.stats.wasserstein_distance` now computes the Wasserstein distance
-  in the multidimensional case.
 - `scipy.stats.sampling.FastGeneratorInversion` provides a convenient
   interface to fast random sampling via numerical inversion of distribution
   CDFs.
@@ -375,7 +373,7 @@ Authors
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
-* Matt Haberland (243)
+* Matt Haberland (244)
 * Charles Harris (1)
 * harshilkamdar (1) +
 * Alon Hovav (2) +
@@ -441,7 +439,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (212)
+* Tyler Reddy (215)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -1103,6 +1101,7 @@ Pull requests for 1.12.0
 * `#19842 <https://github.com/scipy/scipy/pull/19842>`__: TST: move reference data for test_real_transforms to a fixture
 * `#19859 <https://github.com/scipy/scipy/pull/19859>`__: BLD: improve scipy-openblas dependency check
 * `#19877 <https://github.com/scipy/scipy/pull/19877>`__: DOC: 1.12 release notes tweaks
+* `#19881 <https://github.com/scipy/scipy/pull/19881>`__: Revert "ENH: stats.wasserstein_distance: multivariate Wasserstein...
 * `#19892 <https://github.com/scipy/scipy/pull/19892>`__: DEP: extend some announced deprecations due to out-of-band 1.13...
 * `#19903 <https://github.com/scipy/scipy/pull/19903>`__: DEP: reflect extended deprecations also in release notes
 * `#19910 <https://github.com/scipy/scipy/pull/19910>`__: BLD: ensure the name of the installed \`scipy\` package is lower-case
