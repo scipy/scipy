@@ -114,6 +114,21 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
+def _process_parameters_Covariance(mean, cov):
+    """
+    Input validation if cov is a Covariance object.
+    """
+    dim = cov.shape[-1]
+    mean = np.array([0.]) if mean is None else mean
+    message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
+                f"and so `mean` must be broadcastable to shape {(dim,)}")
+    try:
+        mean = np.broadcast_to(mean, dim)
+    except ValueError as e:
+        raise ValueError(message) from e
+    return dim, mean, cov
+
+
 class _PSD:
     """
     Compute coordinated functions of a symmetric positive semidefinite matrix.
@@ -404,7 +419,7 @@ class multivariate_normal_gen(multi_rv_generic):
         mean and covariance are full vector resp. matrix.
         """
         if isinstance(cov, _covariance.Covariance):
-            return self._process_parameters_Covariance(mean, cov)
+            return _process_parameters_Covariance(mean, cov)
         else:
             # Before `Covariance` classes were introduced,
             # `multivariate_normal` accepted plain arrays as `cov` and used the
@@ -421,17 +436,6 @@ class multivariate_normal_gen(multi_rv_generic):
             psd = _PSD(cov, allow_singular=allow_singular)
             cov_object = _covariance.CovViaPSD(psd)
             return dim, mean, cov_object
-
-    def _process_parameters_Covariance(self, mean, cov):
-        dim = cov.shape[-1]
-        mean = np.array([0.]) if mean is None else mean
-        message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
-                   f"and so `mean` must be broadcastable to shape {(dim,)}")
-        try:
-            mean = np.broadcast_to(mean, dim)
-        except ValueError as e:
-            raise ValueError(message) from e
-        return dim, mean, cov
 
     def _process_parameters_psd(self, dim, mean, cov):
         # Try to infer dimensionality
@@ -4737,6 +4741,22 @@ class multivariate_t_gen(multi_rv_generic):
         Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
         """
+
+        def _process_df(df):
+            # Process degrees of freedom.
+            if df is None:
+                df = 1
+            elif df <= 0:
+                raise ValueError("'df' must be greater than zero.")
+            elif np.isnan(df):
+                raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
+            return df
+        
+        if isinstance(shape, _covariance.Covariance):
+            dim, loc, shape = _process_parameters_Covariance(loc, shape)
+            df = _process_df(df)
+            return dim, loc, shape, df
+
         if loc is None and shape is None:
             loc = np.asarray(0, dtype=float)
             shape = np.asarray(1, dtype=float)
@@ -4782,13 +4802,7 @@ class multivariate_t_gen(multi_rv_generic):
             raise ValueError("Array 'cov' must be at most two-dimensional,"
                              " but cov.ndim = %d" % shape.ndim)
 
-        # Process degrees of freedom.
-        if df is None:
-            df = 1
-        elif df <= 0:
-            raise ValueError("'df' must be greater than zero.")
-        elif np.isnan(df):
-            raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
+        df = _process_df(df)
 
         return dim, loc, shape, df
 
