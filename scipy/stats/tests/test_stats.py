@@ -7663,35 +7663,56 @@ class TestWassersteinDistance:
             v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance(u_values, v_values)
 
-    def test_p_inf(self):
-        rng = np.random.default_rng(56474567867)
-        num_tests = 100
-        u_values_len_array = rng.integers(low=1, high=10, size=num_tests)
-        v_values_len_array = rng.integers(low=1, high=10, size=num_tests)
-        successful_tests = 0
-        successful_tests_with_weights = 0
-        for i in range(num_tests):
-            u_values = rng.integers(low=0, high=3, size=u_values_len_array[i])
-            v_values = rng.integers(low=0, high=3, size=v_values_len_array[i])
-            # Ensuring the convergence to p=infinity
-            # p goes to infinity
-            distance_p_large_int = stats.wasserstein_distance(u_values, v_values, p=30)
-            distance_p_inf = stats.wasserstein_distance(u_values, v_values, p='inf')
-            error = np.abs(distance_p_large_int-distance_p_inf)
-            if error < distance_p_inf*0.10:
-                successful_tests += 1
-            u_weights = rng.integers(low=1, high=3, size=u_values_len_array[i])
-            v_weights = rng.integers(low=1, high=3, size=v_values_len_array[i])
-            distance_p_large_int = stats.wasserstein_distance(u_values, v_values,
-                                    u_weights, v_weights, p=30)
-            distance_p_inf = stats.wasserstein_distance(u_values, v_values,
-                                    u_weights, v_weights, p='inf')
-            error = np.abs(distance_p_large_int-distance_p_inf)
-            if error < distance_p_inf*0.10:
-                successful_tests_with_weights += 1
-        assert successful_tests/num_tests > 0.90, 'Too many unsuccessful tests.'
-        assert successful_tests_with_weights/num_tests > 0.90,\
-                'Too many unsuccessful tests.'
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_cdf_distance_wasserstein_p(self, u_size, v_size):
+        # Test consistency between _cdf_distance and _wasserstein_p backends
+        rng = np.random.default_rng(37658657856)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values),
+                        stats.wasserstein_distance(u_values, v_values, p='1'))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p='1')
+        assert_allclose(d1, d2)
+
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_cdf_distance_optimization(self, u_size, v_size):
+        # Test consistency between _cdf_distance and optimization backends
+        rng = np.random.default_rng(86789786976)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values),
+                        stats.wasserstein_distance(u_values, v_values, p=1))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p=1)
+        assert_allclose(d1, d2)
+
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_optimization_wasserstein_p(self, u_size, v_size):
+        # Test consistency between _wasserstein_p and optimization backends
+        rng = np.random.default_rng(376654786789)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values, p='2'),
+                        stats.wasserstein_distance(u_values, v_values, p=2))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p='2')
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p=2)
+        assert_allclose(d1, d2)
 
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.

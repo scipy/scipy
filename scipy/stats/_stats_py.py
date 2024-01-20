@@ -4075,7 +4075,7 @@ def f_oneway(*samples, axis=0):
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis 
+    # ValueError if the dimensions of all the arrays, except the axis
     # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
@@ -9874,7 +9874,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the quantile associated with the probability `p` 
+        * 'two-sided': the quantile associated with the probability `p`
           is not `q`.
         * 'less': the quantile associated with the probability `p` is less
           than `q`.
@@ -10044,7 +10044,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
 
-    When testing data from the standard *normal* distribution, which has a 
+    When testing data from the standard *normal* distribution, which has a
     median of 0, we would expect the null hypothesis to be rejected.
 
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
@@ -10188,7 +10188,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
-                        p=1):
+                        p=None):
     r"""
     Compute the Wasserstein-1 distance between two discrete distributions.
 
@@ -10374,13 +10374,15 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
                          'equal.')
 
     if u_values.ndim == 1 and v_values.ndim == 1:
-        if p == 1:
+        if p is None:
             return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
-        elif p == 'inf':
-            return _wasserstein_infty(u_values, v_values, u_weights, v_weights)
-        else:
+        elif p == 1 or p == 2:
+            # This is to test the optimization method.
+            # Do not add to the user guide.
             u_values = np.expand_dims(u_values, axis=1)
             v_values = np.expand_dims(v_values, axis=1)
+        else:
+            return _wasserstein_p(p, u_values, v_values, u_weights, v_weights)
 
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -10405,7 +10407,14 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
 
     # get cost matrix
     D = distance_matrix(u_values, v_values, p=2)
-    cost = np.power(D.ravel(), p)
+    D_largest_abs = np.max(np.abs(D))
+    D /= D_largest_abs
+    if p is None or p == 1:
+        cost = D.ravel()
+    elif p == 2:
+        cost = np.power(D.ravel(), 2)
+    else:
+        raise ValueError('Invalid p value: ', p)
 
     # create the minimization target
     p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
@@ -10415,8 +10424,12 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
     # solving LP
     constraints = LinearConstraint(A=A.T, ub=cost)
     opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return np.power(-opt_res.fun, 1/p)
-
+    if p is None or p == 1:
+        return -opt_res.fun*D_largest_abs
+    elif p == 2:
+        return np.sqrt(-opt_res.fun)*D_largest_abs
+    else:
+        raise ValueError('Invalid p value: ', p)
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""Compute the energy distance between two 1D distributions.
@@ -10590,9 +10603,10 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
                                        deltas)), 1/p)
 
-def _wasserstein_infty(u_values, v_values, u_weights=None, v_weights=None):
+def _wasserstein_p(p, u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Calculate $W_\infty$ distance for two 1-D distributions.
+    Calculate $W_p$ distance for two 1-D distributions.
+    p is str{'2','inf'}
     """
     u_values, u_weights = _validate_distribution(u_values, u_weights)
     v_values, v_weights = _validate_distribution(v_values, v_weights)
@@ -10616,31 +10630,34 @@ def _wasserstein_infty(u_values, v_values, u_weights=None, v_weights=None):
         v_sorted_cumweights = np.cumsum(v_weights[v_sorter])
         v_cdf = v_sorted_cumweights / v_sorted_cumweights[-1]
 
-    # Initialize the result by comparing the last two values
-    # of the sorted arrays
-    res = np.abs(u_values_sorted[-1] - v_values_sorted[-1])
+    # Maintainance Note: NumPy does not currently (Jan 2024) support efficient
+    # merging of two already sorted arrays O(N+M). If this is ever supported,
+    # replace the mergesort O((N+M)log(N+M)) here.
+    all_cdf = np.concatenate((u_cdf[:-1], v_cdf[:-1]))
+    all_cdf.sort(kind='mergesort')
+    #all_cdf = np.concatenate((all_cdf))
 
-    # Initialize the indices
-    u_idx = 0
-    v_idx = 0
+    u_quantile_indices = u_cdf.searchsorted(all_cdf, 'left')
+    v_quantile_indices = v_cdf.searchsorted(all_cdf, 'left')
 
-    while u_idx < u_values.size-1 or v_idx < v_values.size-1:
-        # Calculate the absolute difference and compare with
-        # the current result
-        candidate = np.abs(u_values_sorted[u_idx] - v_values_sorted[v_idx])
-        if candidate > res:
-            res = candidate
-        # Update the index for the next iteration
-        if u_idx == u_values.size-1:
-            v_idx += 1
-        elif v_idx == v_values.size-1:
-            u_idx += 1
-        elif u_cdf[u_idx] < v_cdf[v_idx]:
-            u_idx += 1
-        else:
-            v_idx += 1
+    u_quantile_values = np.concatenate((u_values_sorted[u_quantile_indices],
+                                    [u_values_sorted[-1]]))
+    v_quantile_values = np.concatenate((v_values_sorted[v_quantile_indices],
+                                    [v_values_sorted[-1]]))
+    abs_quantile_differences = np.abs(u_quantile_values - v_quantile_values)
 
-    return res
+    if p == 'inf':
+        return np.max(abs_quantile_differences)
+    else:
+        deltas = np.diff(np.concatenate(([0], all_cdf, [1])))
+        if p == '1':
+            # This must give the same result with _cdf_distance
+            return np.sum(np.multiply(abs_quantile_differences, deltas))
+        elif p == '2':
+            integral = np.sum(np.multiply(abs_quantile_differences**2, deltas))
+            return np.sqrt(integral)
+        raise ValueError('Invalid p value: ', p)
+
 
 def _validate_distribution(values, weights):
     """
