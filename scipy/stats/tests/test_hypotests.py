@@ -387,6 +387,7 @@ class TestMannWhitneyU:
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
 
+        _mwu_state.reset()  # for debugging CI failure
         # for large samples, they agree reasonably well
         x = np.random.rand(40)
         y = np.random.rand(40)
@@ -623,7 +624,7 @@ class TestMannWhitneyU:
         shape = _mwu_state.configurations.shape
         assert shape[-1] == min(res.statistic, m*n - res.statistic) + 1
         stats.mannwhitneyu(y, x, method='exact')
-        assert shape == _mwu_state.configurations.shape  # unchanged when sizes are reversed
+        assert shape == _mwu_state.configurations.shape  # same when sizes are reversed
 
         # Also, we weren't exploiting the symmmetry of the null distribution
         # to its full potential. Ensure that the null distribution is not
