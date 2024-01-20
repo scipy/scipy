@@ -2,8 +2,6 @@
 SciPy 1.12.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.12.0 is not released yet!
-
 .. contents::
 
 SciPy 1.12.0 is the culmination of 6 months of hard work. It contains
@@ -102,8 +100,10 @@ New features
 
 `scipy.optimize` improvements
 =============================
+- `scipy.optimize.isotonic_regression` has been added to allow nonparametric isotonic
+  regression.
 - `scipy.optimize.nnls` is rewritten in Python and now implements the so-called
-  fnnls or fast nnls.
+  fnnls or fast nnls, making it more efficient for high-dimensional problems.
 - The result object of `scipy.optimize.root` and `scipy.optimize.root_scalar`
   now reports the method used.
 - The ``callback`` method of `scipy.optimize.differential_evolution` can now be
@@ -111,17 +111,17 @@ New features
   parameter. Also, the evolution ``strategy`` now accepts a callable for
   additional customization. The performance of ``differential_evolution`` has
   also been improved.
-- ``minimize`` method ``Newton-CG`` has been made slightly more efficient.
-- ``minimize`` method ``BFGS`` now accepts an initial estimate for the inverse
-  of the Hessian, which allows for more efficient workflows in some
+- `scipy.optimize.minimize` method ``Newton-CG`` now supports functions that
+  return sparse Hessian matrices/arrays for the ``hess`` parameter and is slightly
+  more efficient.
+- `scipy.optimize.minimize` method ``BFGS`` now accepts an initial estimate for the
+  inverse of the Hessian, which allows for more efficient workflows in some
   circumstances. The new parameter is ``hess_inv0``.
-- ``minimize`` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept parameters
-  ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
+- `scipy.optimize.minimize` methods ``CG``, ``Newton-CG``, and ``BFGS`` now accept
+  parameters ``c1`` and ``c2``, allowing specification of the Armijo and curvature rule
   parameters, respectively.
-- ``curve_fit`` performance has improved due to more efficient memoization
+- `scipy.optimize.curve_fit` performance has improved due to more efficient memoization
   of the callable function.
-- ``isotonic_regression`` has been added to allow nonparametric isotonic
-  regression.
 
 `scipy.signal` improvements
 ===========================
@@ -182,8 +182,10 @@ New features
   second kind. Both exact calculation and an asymptotic approximation
   (the default) are supported via ``exact=True`` and ``exact=False`` (the
   default) respectively.
--  Added `scipy.special.betaincc` for computation of the complementary incomplete Beta function and `scipy.special.betainccinv` for computation of its inverse.
-- Improved precision of `scipy.special.betainc` and `scipy.special.betaincinv`
+- Added `scipy.special.betaincc` for computation of the complementary
+  incomplete Beta function and `scipy.special.betainccinv` for computation of
+  its inverse.
+- Improved precision of `scipy.special.betainc` and `scipy.special.betaincinv`.
 - Experimental support added for alternative backends: functions
   `scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`, 
   `scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`, 
@@ -202,8 +204,6 @@ New features
   hypothesized value is the quantile associated with a specified probability.
   The ``confidence_interval`` method of the result object gives a confidence
   interval of the quantile.
-- `scipy.stats.wasserstein_distance` now computes the Wasserstein distance
-  in the multidimensional case.
 - `scipy.stats.sampling.FastGeneratorInversion` provides a convenient
   interface to fast random sampling via numerical inversion of distribution
   CDFs.
@@ -225,19 +225,27 @@ New features
   `scipy.stats.kappa3`, `scipy.stats.loglaplace`, `scipy.stats.lognorm`,
   `scipy.stats.lomax`, `scipy.stats.pearson3`, `scipy.stats.rdist`, and
   `scipy.stats.pareto`.
-- The following functions now support parameters ``axis``, ``nan_policy``, and ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`, `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`, `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.cirmean, `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`, `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`, and `scipy.stats.tsem`.
+- The following functions now support parameters ``axis``, ``nan_policy``, and
+  ``keep_dims``: `scipy.stats.entropy`, `scipy.stats.differential_entropy`,
+  `scipy.stats.variation`, `scipy.stats.ansari`, `scipy.stats.bartlett`,
+  `scipy.stats.levene`, `scipy.stats.fligner`, `scipy.stats.circmean`,
+  `scipy.stats.circvar`, `scipy.stats.circstd`, `scipy.stats.tmean`,
+  `scipy.stats.tvar`, `scipy.stats.tstd`, `scipy.stats.tmin`, `scipy.stats.tmax`,
+  and `scipy.stats.tsem`.
 - The ``logpdf`` and ``fit`` methods of `scipy.stats.skewnorm` have been improved.
 - The beta negative binomial distribution is implemented as `scipy.stats.betanbinom`.
-- The speed of `scipy.stats.invwishart` ``rvs`` and ``logpdf`` have been improved.
-- A source of intermediate overflow in `scipy.stats.boxcox_normmax` with ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is constrained such that the transformed data will not overflow.
+- Improved performance of `scipy.stats.invwishart` ``rvs`` and ``logpdf``.
+- A source of intermediate overflow in `scipy.stats.boxcox_normmax` with
+  ``method='mle'`` has been eliminated, and the returned value of ``lmbda`` is
+  constrained such that the transformed data will not overflow.
 - `scipy.stats.nakagami` ``stats`` is more accurate and reliable.
 - A source of intermediate overflow in `scipy.norminvgauss.pdf` has been eliminated.
-- Added support for masked arrays to ``stats.circmean``, ``stats.circvar``,
-  ``stats.circstd``, and ``stats.entropy``.
-- ``dirichlet`` has gained a new covariance (``cov``) method.
-- Improved accuracy of ``multivariate_t`` entropy with large degrees of
-  freedom.
-- ``loggamma`` has an improved ``entropy`` method.
+- Added support for masked arrays to `scipy.stats.circmean`, `scipy.stats.circvar`,
+  `scipy.stats.circstd`, and `scipy.stats.entropy`.
+- `scipy.stats.dirichlet` has gained a new covariance (``cov``) method.
+- Improved accuracy of ``entropy`` method of `scipy.stats.multivariate_t` for large
+  degrees of freedom.
+- `scipy.stats.loggamma` has an improved ``entropy`` method.
 
 
 
@@ -249,14 +257,14 @@ Deprecated features
   public namespace and warnings sharpened for private attributes that are not
   supposed to be imported at all.
 - `scipy.signal.cmplx_sort` has been deprecated and will be removed in
-  SciPy 1.14. A replacement you can use is provided in the deprecation message.
+  SciPy 1.15. A replacement you can use is provided in the deprecation message.
 - Values the the argument ``initial`` of `scipy.integrate.cumulative_trapezoid`
   other than ``0`` and ``None`` are now deprecated.
 - `scipy.stats.rvs_ratio_uniforms` is deprecated in favour of
   `scipy.stats.sampling.RatioUniforms`
 - `scipy.integrate.quadrature` and `scipy.integrate.romberg` have been
   deprecated due to accuracy issues and interface shortcomings. They will
-  be removed in SciPy 1.14. Please use `scipy.integrate.quad` instead.
+  be removed in SciPy 1.15. Please use `scipy.integrate.quad` instead.
 - Coinciding with upcoming changes to function signatures (e.g. removal of a
   deprecated keyword), we are deprecating positional use of keyword arguments
   for the affected functions, which will raise an error starting with
@@ -315,7 +323,7 @@ Authors
 
 * Name (commits)
 * endolith (1)
-* h-vetinari (32)
+* h-vetinari (34)
 * Tom Adamczewski (3) +
 * Anudeep Adiraju (1) +
 * akeemlh (1)
@@ -361,11 +369,11 @@ Authors
 * Lukas Geiger (9) +
 * Artem Glebov (22) +
 * Caden Gobat (1)
-* Ralf Gommers (126)
+* Ralf Gommers (127)
 * Alexander Goscinski (2) +
 * Rohit Goswami (2) +
 * Olivier Grisel (1)
-* Matt Haberland (243)
+* Matt Haberland (244)
 * Charles Harris (1)
 * harshilkamdar (1) +
 * Alon Hovav (2) +
@@ -431,7 +439,7 @@ Authors
 * Bharat Raghunathan (1)
 * Chris Rapson (1) +
 * Matteo Raso (4)
-* Tyler Reddy (201)
+* Tyler Reddy (215)
 * Martin Reinecke (1)
 * Tilo Reneau-Cardoso (1) +
 * resting-dove (2) +
@@ -443,7 +451,7 @@ Authors
 * Masahiro Sakai (2) +
 * Omar Salman (14)
 * Andrej Savikin (1) +
-* Daniel Schmitz (54)
+* Daniel Schmitz (55)
 * Dan Schult (19)
 * Scott Shambaugh (9)
 * Sheila-nk (2) +
@@ -623,6 +631,7 @@ Issues closed for 1.12.0
 * `#19795 <https://github.com/scipy/scipy/issues/19795>`__: MAINT: need stable Pythran release for SciPy 1.12.0 RC2
 * `#19804 <https://github.com/scipy/scipy/issues/19804>`__: MAINT/TST: Warnings failing test suite with \`pytest 8\`
 * `#19852 <https://github.com/scipy/scipy/issues/19852>`__: CI, MAINT: Windows 3.11 CI failure with file access issue
+* `#19906 <https://github.com/scipy/scipy/issues/19906>`__: BUG: 1.12.0rc2 SciPy rather than scipy in \`pip list\` output
 
 ************************
 Pull requests for 1.12.0
@@ -1085,8 +1094,14 @@ Pull requests for 1.12.0
 * `#19761 <https://github.com/scipy/scipy/pull/19761>`__: MAINT: Avoid use of aligned_alloc in pocketfft on windows
 * `#19779 <https://github.com/scipy/scipy/pull/19779>`__: BUG: Fix \`nbinom.logcdf\` for invalid input
 * `#19785 <https://github.com/scipy/scipy/pull/19785>`__: BUG: support sparse Hessian in \`Newton-CG\`
+* `#19797 <https://github.com/scipy/scipy/pull/19797>`__: MAINT: 1.12.0rc2 prep
 * `#19800 <https://github.com/scipy/scipy/pull/19800>`__: TST: loosen tolerances for tests that fail otherwise on windows+MKL
 * `#19806 <https://github.com/scipy/scipy/pull/19806>`__: TST: fix compatibility with pytest 8
 * `#19830 <https://github.com/scipy/scipy/pull/19830>`__: REL: bump copyright to 2024
 * `#19842 <https://github.com/scipy/scipy/pull/19842>`__: TST: move reference data for test_real_transforms to a fixture
 * `#19859 <https://github.com/scipy/scipy/pull/19859>`__: BLD: improve scipy-openblas dependency check
+* `#19877 <https://github.com/scipy/scipy/pull/19877>`__: DOC: 1.12 release notes tweaks
+* `#19881 <https://github.com/scipy/scipy/pull/19881>`__: Revert "ENH: stats.wasserstein_distance: multivariate Wasserstein...
+* `#19892 <https://github.com/scipy/scipy/pull/19892>`__: DEP: extend some announced deprecations due to out-of-band 1.13...
+* `#19903 <https://github.com/scipy/scipy/pull/19903>`__: DEP: reflect extended deprecations also in release notes
+* `#19910 <https://github.com/scipy/scipy/pull/19910>`__: BLD: ensure the name of the installed \`scipy\` package is lower-case

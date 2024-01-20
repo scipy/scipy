@@ -1,10 +1,10 @@
 project(
-  'SciPy',
+  'scipy',
   'c', 'cpp', 'cython',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.12.0rc2',
+  version: '1.12.0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
