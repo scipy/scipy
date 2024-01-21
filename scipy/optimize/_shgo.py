@@ -203,48 +203,7 @@ def shgo(
 
         * disp : bool (L)
             Set to True to print convergence messages. This setting applies
-            mainly to compiled subroutines used during optimization. The
-            native Python code is mainly set up to log messages using the
-            standard ``logging`` library to the logger named
-            "scipy.optimize.shgo". By default warnings and errors will be
-            printed to ``sys.stderr`` while information and debug log messages
-            are hidden.
-            To change the logging level from the default
-            ``logging.WARNING`` you may anywhere in your code change the
-            logger through e.g.
-
-            >>> import logging
-            ...
-            >>> logger = logging.getLogger('scipy.optimize.shgo')
-            ...
-            >>> # set the logging level to DEBUG
-            >>> logger.setLevel(logging.DEBUG)
-            ...
-            >>> # Add a handler which outputs log messages to the console.
-            >>> # In order to write log messages to file use
-            >>> # logging.FileHandler instead.
-            >>> ch = logging.StreamHandler()
-            ...
-            >>> # Use the standard format for logging output.
-            >>> # Alternatively specify other desired format.
-            >>> formatter = logging.Formatter(logging.BASIC_FORMAT)
-            ...
-            >>> ch.setFormatter(formatter)
-            >>> logger.addHandler(ch)
-
-            Note that the organization of the loggers is hierachical. The
-            "scipy.optimize.shgo" logger is the child of "scipy.optimize" which
-            is the child of "scipy". Changes made to one logger propagates down
-            the hierarchy, meaning that setting the logging level of "scipy"
-            will affect the logging level of "scipy.optimize.shgo" unless the
-            latter is also explicitly modified.
-            See e.g.
-            https://docs.python.org/3/howto/logging.html#configuring-logging
-            for further information on formats, writing to file, and the
-            available logging levels.
-
-            .. versionchanged:: 1.12.1
-                Using the 'scipy.optimize.shgo' logger instead of root.
+            mainly to compiled subroutines used during optimization.
 
     sampling_method : str or function, optional
         Current built in sampling method options are ``halton``, ``sobol`` and
@@ -322,6 +281,9 @@ def shgo(
 
     The ``halton`` and ``sobol`` method points are generated using
     `scipy.stats.qmc`. Any other QMC method could be used.
+
+    The Python code of this optimizer is set up to log messages using the
+    standard ``logging`` library to the logger named "scipy.optimize.shgo".
 
     References
     ----------
