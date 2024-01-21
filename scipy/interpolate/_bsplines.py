@@ -2124,6 +2124,4 @@ def fpcheck(x, t, k):
             raise ValueError(mesg)
         if x[i] >= tl:
             raise ValueError(mesg)
-        if x[i] >= tl:
-            raise ValueError(mesg)
     return

@@ -2166,6 +2166,18 @@ class TestNdBSpline:
 
 class TestFpchec:
     # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+
+    def test_1D_x_t(self):
+        k = 1
+        t = np.arange(12).reshape(2, 6)
+        x = np.arange(12)
+
+        with pytest.raises(ValueError, match="1D sequence"):
+            _b.fpcheck(x, t, k)
+
+        with pytest.raises(ValueError, match="1D sequence"):
+            _b.fpcheck(t, x, k)
+
     def test_condition_1(self):
         # c      1) k+1 <= n-k-1 <= m
         k = 3
@@ -2304,4 +2316,14 @@ class TestFpchec:
         x = [1.1]*4 + [4, 4]
         assert dfitpack.fpchec(x, t, k) == 0
         assert _b.fpcheck(x, t, k) is None
+
+    def test_condition_5_3(self):
+        # similar to _5_2, covers a different failure branch
+        k = 1
+        t = [0, 0, 2, 3, 4, 5, 6, 7, 7]
+        x = [1, 1, 1, 5.2, 5.2, 5.2, 6.5]
+
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
 
