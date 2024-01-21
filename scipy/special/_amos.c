@@ -4056,9 +4056,8 @@ int amos_kscl(
     nz = n;
     if (ic == n) {
         nz = n-1;
-    } else {
-        nz = kk - 2;
     }
+
     for (int i = 0; i < nz; i++) { y[i] = 0.; }
     return nz;
 }
