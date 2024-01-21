@@ -6,6 +6,8 @@ import numpy as np
 
 from scipy._lib._util import MapWrapper
 
+logger = logging.getLogger('scipy.optimize.shgo')
+
 
 class VertexBase(ABC):
     """
@@ -238,7 +240,7 @@ class VertexCacheIndex(VertexCacheBase):
         except KeyError:
             self.index += 1
             xval = self.Vertex(x, index=self.index)
-            logging.getLogger('scipy.optimize.shgo').info(
+            logger.info(
                 "New generated vertex at x = %s", x
             )
             self.cache[x] = xval
@@ -352,9 +354,7 @@ class VertexCacheField(VertexCacheBase):
             # TODO: logging
             # Left commented out during rewriting of log statements since the
             # linter complains that the class has no attribute x_a.
-            # logging.getLogger('scipy.optimize.shgo').warning(
-                # "Field function not found at x = %s", self.x_a
-            # )
+            # logger.warning("Field function not found at x = %s", self.x_a)
         if np.isnan(v.f):
             v.f = np.inf
 

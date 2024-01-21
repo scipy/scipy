@@ -18,6 +18,8 @@ from scipy.optimize._shgo_lib._complex import Complex
 
 __all__ = ['shgo']
 
+logger = logging.getLogger('scipy.optimize.shgo')
+
 
 def shgo(
     func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
@@ -496,7 +498,7 @@ def shgo(
         shc.iterate_all()
 
     if not shc.break_routine:
-        logging.getLogger('scipy.optimize.shgo').info(
+        logger.info(
             "Successfully completed construction of complex."
         )
 
@@ -530,8 +532,6 @@ class SHGO:
                  iters=None, callback=None, minimizer_kwargs=None,
                  options=None, sampling_method='simplicial', workers=1):
         from scipy.stats import qmc
-
-        self.logger = logging.getLogger('scipy.optimize.shgo')
 
         # Input checks
         methods = ['halton', 'sobol', 'simplicial']
@@ -869,7 +869,7 @@ class SHGO:
         processing time) has been met.
 
         """
-        self.logger.info('Splitting first generation')
+        logger.info('Splitting first generation')
 
         while not self.stop_global:
             if self.break_routine:
@@ -893,7 +893,7 @@ class SHGO:
         Construct the minimizer pool, map the minimizers to local minima
         and sort the results into a global return object.
         """
-        self.logger.info('Searching for minimizer pool...')
+        logger.info('Searching for minimizer pool...')
 
         self.minimizers()
 
@@ -911,7 +911,7 @@ class SHGO:
         else:
             self.find_lowest_vertex()
 
-        self.logger.info("Minimiser pool = SHGO.X_min = %s", self.X_min)
+        logger.info("Minimiser pool = SHGO.X_min = %s", self.X_min)
 
     def find_lowest_vertex(self):
         # Find the lowest objective function value on one of
@@ -919,7 +919,7 @@ class SHGO:
         self.f_lowest = np.inf
         for x in self.HC.V.cache:
             if self.HC.V[x].f < self.f_lowest:
-                self.logger.info('self.HC.V[x].f = %f', self.HC.V[x].f)
+                logger.info('self.HC.V[x].f = %f', self.HC.V[x].f)
                 self.f_lowest = self.HC.V[x].f
                 self.x_lowest = self.HC.V[x].x_a
         for lmc in self.LMC.cache:
@@ -934,7 +934,7 @@ class SHGO:
     # Stopping criteria functions:
     def finite_iterations(self):
         mi = min(x for x in [self.iters, self.maxiter] if x is not None)
-        self.logger.info('Iterations done = %d / %d', self.iters_done, mi)
+        logger.info('Iterations done = %d / %d', self.iters_done, mi)
         if self.iters is not None:
             if self.iters_done >= (self.iters):
                 self.stop_global = True
@@ -946,7 +946,7 @@ class SHGO:
 
     def finite_fev(self):
         # Finite function evals in the feasible domain
-        self.logger.info(
+        logger.info(
             'Function evaluations done = %d / %d', self.fn, self.maxfev
         )
         if self.fn >= self.maxfev:
@@ -955,7 +955,7 @@ class SHGO:
 
     def finite_ev(self):
         # Finite evaluations including infeasible sampling points
-        self.logger.info(
+        logger.info(
             'Sampling evaluations done = %d / %d', self.n_sampled, self.maxev
         )
         if self.n_sampled >= self.maxev:
@@ -963,7 +963,7 @@ class SHGO:
 
     def finite_time(self) -> None:
         elapsed_time: float = time.time() - self.init
-        self.logger.info('Time elapsed = %f / %f', elapsed_time, self.maxtime)
+        logger.info('Time elapsed = %f / %f', elapsed_time, self.maxtime)
         if elapsed_time >= self.maxtime:
             self.stop_global = True
 
@@ -976,8 +976,8 @@ class SHGO:
         """
         # If no minimizer has been found use the lowest sampling value
         self.find_lowest_vertex()
-        self.logger.info('Lowest function evaluation = %f', self.f_lowest)
-        self.logger.info('Specified minimum = %f', self.f_min_true)
+        logger.info('Lowest function evaluation = %f', self.f_lowest)
+        logger.info('Specified minimum = %f', self.f_min_true)
         # If no feasible point was return from test
         if self.f_lowest is None:
             return self.stop_global
@@ -1013,7 +1013,7 @@ class SHGO:
         self.hgr = self.LMC.size
         if self.hgrd <= self.minhgrd:
             self.stop_global = True
-        self.logger.info(
+        logger.info(
             'Current homology growth = %d  (minimum growth = %d)',
             self.hgrd,
             self.minhgrd
@@ -1062,7 +1062,7 @@ class SHGO:
         Note: called with ``self.iterate_complex()`` after class initiation
         """
         # Iterate the complex
-        self.logger.info('Constructing and refining simplicial complex graph '
+        logger.info('Constructing and refining simplicial complex graph '
                          'structure')
         if self.n is None:
             self.HC.refine_all()
@@ -1071,7 +1071,7 @@ class SHGO:
             self.HC.refine(self.n)
             self.n_sampled += self.n
 
-        self.logger.info('Triangulation completed, evaluating all constraints '
+        logger.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Re-add minimisers to complex
@@ -1093,7 +1093,7 @@ class SHGO:
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
-        self.logger.info('Evaluations completed.')
+        logger.info('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
@@ -1109,9 +1109,9 @@ class SHGO:
         self.sampled_surface(infty_cons_sampl=self.infty_cons_sampl)
 
         # Add sampled points to a triangulation, construct self.Tri
-        self.logger.info('self.n = %d', self.n)
-        self.logger.info('self.nc = %d', self.nc)
-        self.logger.info('Constructing and refining simplicial complex graph '
+        logger.info('self.n = %d', self.n)
+        logger.info('self.nc = %d', self.nc)
+        logger.info('Constructing and refining simplicial complex graph '
                          'structure from sampling points.')
 
         if self.dim < 2:
@@ -1131,7 +1131,7 @@ class SHGO:
                 self.delaunay_triangulation(n_prc=self.n_prc)
             self.n_prc = self.C.shape[0]
 
-        self.logger.info('Triangulation completed, evaluating all '
+        logger.info('Triangulation completed, evaluating all '
                          'constraints and objective function values.')
 
         if hasattr(self, 'Tri'):
@@ -1139,12 +1139,12 @@ class SHGO:
 
         # Process all pools
         # Evaluate all constraints and functions
-        self.logger.info('Triangulation completed, evaluating all constraints '
+        logger.info('Triangulation completed, evaluating all constraints '
                          'and objective function values.')
 
         # Evaluate all constraints and functions
         self.HC.V.process_pools()
-        self.logger.info('Evaluations completed.')
+        logger.info('Evaluations completed.')
 
         # feasible sampling points counted by the triangulation.py routines
         self.fn = self.HC.V.nfev
@@ -1168,20 +1168,20 @@ class SHGO:
                 continue
 
             if self.HC.V[x].minimiser():
-                self.logger.info('=' * 60)
-                self.logger.info('v.x = %s is minimizer', self.HC.V[x].x_a)
-                self.logger.info('v.f = %s is minimizer', self.HC.V[x].f)
-                self.logger.info('=' * 30)
+                logger.info('=' * 60)
+                logger.info('v.x = %s is minimizer', self.HC.V[x].x_a)
+                logger.info('v.f = %s is minimizer', self.HC.V[x].f)
+                logger.info('=' * 30)
 
                 if self.HC.V[x] not in self.minimizer_pool:
                     self.minimizer_pool.append(self.HC.V[x])
 
-                self.logger.info('Neighbors:')
-                self.logger.info('=' * 30)
+                logger.info('Neighbors:')
+                logger.info('=' * 30)
                 for vn in self.HC.V[x].nn:
-                    self.logger.info('x = %s || f = %s', vn.x, vn.f)
+                    logger.info('x = %s || f = %s', vn.x, vn.f)
 
-                self.logger.info('=' * 60)
+                logger.info('=' * 60)
         self.minimizer_pool_F = []
         self.X_min = []
         # normalized tuple in the Vertex cache
@@ -1315,8 +1315,8 @@ class SHGO:
                 if (x_i > v_min.x_a[i]) and (x_i < cbounds[i][1]):
                     cbounds[i][1] = x_i
 
-        self.logger.info('cbounds found for v_min.x_a = %s', v_min.x_a)
-        self.logger.info('cbounds = %s', cbounds)
+        logger.info('cbounds found for v_min.x_a = %s', v_min.x_a)
+        logger.info('cbounds = %s', cbounds)
 
         return cbounds
 
@@ -1357,16 +1357,16 @@ class SHGO:
             object.
         """
         # Use minima maps if vertex was already run
-        self.logger.info('Vertex minimiser maps = %s', self.LMC.v_maps)
+        logger.info('Vertex minimiser maps = %s', self.LMC.v_maps)
 
         if self.LMC[x_min].lres is not None:
-            self.logger.info('Found self.LMC[x_min].lres = %s', self.LMC[x_min].lres)
+            logger.info('Found self.LMC[x_min].lres = %s', self.LMC[x_min].lres)
             return self.LMC[x_min].lres
 
         if self.callback is not None:
-            self.logger.info('Callback for minimizer starting at %s:', x_min)
+            logger.info('Callback for minimizer starting at %s:', x_min)
 
-        self.logger.info('Starting minimization at %s...', x_min)
+        logger.info('Starting minimization at %s...', x_min)
 
         if self.sampling_method == 'simplicial':
             x_min_t = tuple(x_min)
@@ -1376,22 +1376,22 @@ class SHGO:
             g_bounds = self.construct_lcb_simplicial(self.HC.V[x_min_t_norm])
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
-                self.logger.info(self.minimizer_kwargs['bounds'])
+                logger.info(self.minimizer_kwargs['bounds'])
 
         else:
             g_bounds = self.construct_lcb_delaunay(x_min, ind=ind)
             if 'bounds' in self.min_solver_args:
                 self.minimizer_kwargs['bounds'] = g_bounds
-                self.logger.info(self.minimizer_kwargs['bounds'])
+                logger.info(self.minimizer_kwargs['bounds'])
 
         if 'bounds' in self.minimizer_kwargs:
-            self.logger.info('bounds in kwarg:')
-            self.logger.info(self.minimizer_kwargs['bounds'])
+            logger.info('bounds in kwarg:')
+            logger.info(self.minimizer_kwargs['bounds'])
 
         # Local minimization using scipy.optimize.minimize:
         lres = minimize(self.func, x_min, **self.minimizer_kwargs)
 
-        self.logger.info('lres = %s', lres)
+        logger.info('lres = %s', lres)
 
         # Local function evals for all minimizers
         self.res.nlfev += lres.nfev
@@ -1452,7 +1452,7 @@ class SHGO:
         requires more objective function evaluations.
         """
         # Generate sampling points
-        self.logger.info('Generating sampling points')
+        logger.info('Generating sampling points')
         self.sampling(self.nc, self.dim)
         if len(self.LMC.xl_maps) > 0:
             self.C = np.vstack((self.C, np.array(self.LMC.xl_maps)))
@@ -1504,7 +1504,7 @@ class SHGO:
                                     + 'feasible set. Increasing sampling '
                                     + 'size.')
                 # sampling correctly for both 1-D and >1-D cases
-                self.logger.info(self.res.message)
+                logger.info(self.res.message)
 
     def sorted_samples(self):  # Validated
         """Find indexes of the sorted sampling points"""
@@ -1524,7 +1524,7 @@ class SHGO:
                                             )
             except spatial.QhullError:
                 if str(sys.exc_info()[1])[:6] == 'QH6239':
-                    self.logger.warning('QH6239 Qhull precision error detected, '
+                    logger.warning('QH6239 Qhull precision error detected, '
                                     'this usually occurs when no bounds are '
                                     'specified, Qhull can only run with '
                                     'handling cocircular/cospherical points'

@@ -9,6 +9,8 @@ import numpy
 
 from ._vertex import (VertexCacheField, VertexCacheIndex)
 
+logger = logging.getLogger('scipy.optimize.shgo')
+
 
 class Complex:
     """
@@ -420,7 +422,7 @@ class Complex:
                     cbounds[i] = [self.bounds[symmetry[i]][1]]
                     if (self.bounds[symmetry[i]] is not
                             self.bounds[symmetry[j]]):
-                        logging.getLogger('scipy.optimize.shgo').warning(
+                        logger.warning(
                             "Variable %d was specified as symmetric to"
                             " variable %d, however, the bounds"
                             " %d = %s and %d = %s do not match,"
