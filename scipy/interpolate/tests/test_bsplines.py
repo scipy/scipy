@@ -20,6 +20,9 @@ from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
 
+from scipy.interpolate import dfitpack
+from scipy.interpolate import _bsplines as _b
+
 
 class TestBSpline:
 
@@ -2159,3 +2162,168 @@ class TestNdBSpline:
         bspl3_ = NdBSpline(t3, c3, k=3)
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
+
+
+class TestFpchec:
+    # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+
+    def test_1D_x_t(self):
+        k = 1
+        t = np.arange(12).reshape(2, 6)
+        x = np.arange(12)
+
+        with pytest.raises(ValueError, match="1D sequence"):
+            _b.fpcheck(x, t, k)
+
+        with pytest.raises(ValueError, match="1D sequence"):
+            _b.fpcheck(t, x, k)
+
+    def test_condition_1(self):
+        # c      1) k+1 <= n-k-1 <= m
+        k = 3
+        n  = 2*(k + 1) - 1    # not OK
+        m = n + 11            # OK
+        t = np.arange(n)
+        x = np.arange(m)
+
+        assert dfitpack.fpchec(x, t, k) == 10
+        with pytest.raises(ValueError, match="Need k+1*"):
+            _b.fpcheck(x, t, k)
+
+        n = 2*(k+1) + 1   # OK
+        m = n - k - 2     # not OK
+        t = np.arange(n)
+        x = np.arange(m)
+
+        assert dfitpack.fpchec(x, t, k) == 10
+        with pytest.raises(ValueError, match="Need k+1*"):
+            _b.fpcheck(x, t, k)
+
+    def test_condition_2(self):
+        # c      2) t(1) <= t(2) <= ... <= t(k+1)
+        # c         t(n-k) <= t(n-k+1) <= ... <= t(n)
+        k = 3
+        t = [0]*(k+1) + [2] + [5]*(k+1)   # this is OK
+        x = [1, 2, 3, 4, 4.5]
+
+        assert dfitpack.fpchec(x, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None    # does not raise
+
+        tt = t.copy()
+        tt[-1] = tt[0]   # not OK
+        assert dfitpack.fpchec(x, tt, k) == 20
+        with pytest.raises(ValueError, match="Last k knots*"):
+            _b.fpcheck(x, tt, k)
+
+        tt = t.copy()
+        tt[0] = tt[-1]   # not OK
+        assert dfitpack.fpchec(x, tt, k) == 20
+        with pytest.raises(ValueError, match="First k knots*"):
+            _b.fpcheck(x, tt, k)
+
+    def test_condition_3(self):
+        # c      3) t(k+1) < t(k+2) < ... < t(n-k)
+        k = 3
+        t = [0]*(k+1) + [2, 3] + [5]*(k+1)   # this is OK
+        x = [1, 2, 3, 3.5, 4, 4.5]
+        assert dfitpack.fpchec(x, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None
+
+        t = [0]*(k+1) + [2, 2] + [5]*(k+1)   # this is not OK
+        assert dfitpack.fpchec(x, t, k) == 30
+        with pytest.raises(ValueError, match="Internal knots*"):
+            _b.fpcheck(x, t, k)
+
+    def test_condition_4(self):
+        # c      4) t(k+1) <= x(i) <= t(n-k)
+        # NB: FITPACK's fpchec only checks x[0] & x[-1], so we follow.
+        k = 3
+        t = [0]*(k+1) + [5]*(k+1)
+        x = [1, 2, 3, 3.5, 4, 4.5]      # this is OK
+        assert dfitpack.fpchec(x, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None
+
+        xx = x.copy()
+        xx[0] = t[0]    # still OK
+        assert dfitpack.fpchec(xx, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None
+
+        xx = x.copy()
+        xx[0] = t[0] - 1    # not OK
+        assert dfitpack.fpchec(xx, t, k) == 40
+        with pytest.raises(ValueError, match="Out of bounds*"):
+            _b.fpcheck(xx, t, k)
+
+        xx = x.copy()
+        xx[-1] = t[-1] + 1    # not OK
+        assert dfitpack.fpchec(xx, t, k) == 40
+        with pytest.raises(ValueError, match="Out of bounds*"):
+            _b.fpcheck(xx, t, k)
+
+    # ### Test the S-W condition (no 5)
+    # c      5) the conditions specified by schoenberg and whitney must hold
+    # c         for at least one subset of data points, i.e. there must be a
+    # c         subset of data points y(j) such that
+    # c             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    def test_condition_5_x1xm(self):
+        # x(1).ge.t(k2) .or. x(m).le.t(nk1)
+        k = 1
+        t = [0, 0, 1, 2, 2]
+        x = [1.1, 1.1, 1.1]
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
+        x = [0.5, 0.5, 0.5]
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
+    def test_condition_5_k1(self):
+        # special case nk3 (== n - k - 2) < 2
+        k = 1
+        t = [0, 0, 1, 1]
+        x = [0.5, 0.6]
+        assert dfitpack.fpchec(x, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None
+
+    def test_condition_5_1(self):
+        # basically, there can't be an interval of t[j]..t[j+k+1] with no x
+        k = 3
+        t = [0]*(k+1) + [2] + [5]*(k+1)
+        x = [3]*5
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
+        t = [0]*(k+1) + [2] + [5]*(k+1)
+        x = [1]*5
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
+    def test_condition_5_2(self):
+        # same as _5_1, only the empty interval is in the middle
+        k = 3
+        t = [0]*(k+1) + [2, 3] + [5]*(k+1)
+        x = [1.1]*5 + [4]
+
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
+        # and this one is OK
+        x = [1.1]*4 + [4, 4]
+        assert dfitpack.fpchec(x, t, k) == 0
+        assert _b.fpcheck(x, t, k) is None
+
+    def test_condition_5_3(self):
+        # similar to _5_2, covers a different failure branch
+        k = 1
+        t = [0, 0, 2, 3, 4, 5, 6, 7, 7]
+        x = [1, 1, 1, 5.2, 5.2, 5.2, 6.5]
+
+        assert dfitpack.fpchec(x, t, k) == 50
+        with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
+            _b.fpcheck(x, t, k)
+
