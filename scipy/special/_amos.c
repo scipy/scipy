@@ -4007,6 +4007,10 @@ int amos_kscl(
     if (n == 2) {
         return nz;
     }
+    if (nz == 0) {
+        return nz;
+    }
+
     fn = fnu + 1.;
     ck = fn*rz;
     s1 = cy[0];
@@ -4052,9 +4056,8 @@ int amos_kscl(
     nz = n;
     if (ic == n) {
         nz = n-1;
-    } else {
-        nz = kk - 2;
     }
+
     for (int i = 0; i < nz; i++) { y[i] = 0.; }
     return nz;
 }
