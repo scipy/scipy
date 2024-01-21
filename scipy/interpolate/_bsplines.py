@@ -2110,7 +2110,6 @@ def fpcheck(x, t, k):
         raise ValueError(mesg)
 
     m = x.shape[0]
-    m = x.shape[0]
     l = k+1
     nk3 = n - k - 3
     if nk3 < 2:
