@@ -121,11 +121,11 @@ class _MWU:
         s_array = self.build_sigma_array(maxu)
 
         # Start working with ints, for maximum precision and efficiency:
-        configurations = np.zeros(maxu + 1, dtype=np.float64)
+        configurations = np.zeros(maxu + 1, dtype=np.int64)
         # How many ways to have U=0? 1
         configurations[0] = 1
 
-        with np.errstate(invalid='raise'):
+        with np.errstate(over='raise'):
             for u in np.arange(1, maxu + 1):
                 coeffs = s_array[u - 1::-1]
                 new_val = np.dot(configurations[:u], coeffs) / u
