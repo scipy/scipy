@@ -1,5 +1,5 @@
 project(
-  'SciPy',
+  'scipy',
   'c', 'cpp', 'cython',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
@@ -11,7 +11,7 @@ project(
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
     'c_std=c99',
-    'cpp_std=c++14',
+    'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
     'lapack=openblas'

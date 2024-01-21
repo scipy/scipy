@@ -648,7 +648,7 @@ class TestCephes:
         y1 = cephes.mathieu_modcem2(m, q, -z)[0]
 
         fr = -cephes.mathieu_modcem2(m, q, 0)[0] / cephes.mathieu_modcem1(m, q, 0)[0]
-        y2 = (-cephes.mathieu_modcem2(m, q, z)[0] 
+        y2 = (-cephes.mathieu_modcem2(m, q, z)[0]
               - 2*fr*cephes.mathieu_modcem1(m, q, z)[0])
 
         assert_allclose(y1, y2, rtol=1e-10)
@@ -3222,7 +3222,7 @@ class TestBessel:
         x = np.random.pareto(0.2, N) * (-1)**np.random.randint(2, size=N)
 
         imsk = (np.random.randint(8, size=N) == 0)
-        v[imsk] = v[imsk].astype(int)
+        v[imsk] = v[imsk].astype(np.int64)
 
         with np.errstate(all='ignore'):
             c1 = special.iv(v, x)

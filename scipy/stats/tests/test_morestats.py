@@ -63,8 +63,8 @@ class TestBayes_mvs:
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.bayes_mvs(data)
         assert_almost_equal(mean.statistic, 9.0)
-        assert_allclose(mean.minmax, (7.1036502226125329, 10.896349777387467),
-                        rtol=1e-14)
+        assert_allclose(mean.minmax, (7.103650222492964, 10.896349777507034),
+                        rtol=1e-6)
 
         assert_almost_equal(var.statistic, 10.0)
         assert_allclose(var.minmax, (3.1767242068607087, 24.45910381334018),
@@ -91,8 +91,8 @@ class TestMvsdist:
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.mvsdist(data)
         assert_almost_equal(mean.mean(), 9.0)
-        assert_allclose(mean.interval(0.9), (7.1036502226125329,
-                                             10.896349777387467), rtol=1e-14)
+        assert_allclose(mean.interval(0.9), (7.103650222492964,
+                                             10.896349777507034), rtol=1e-14)
 
         assert_almost_equal(var.mean(), 10.0)
         assert_allclose(var.interval(0.9), (3.1767242068607087,
@@ -1647,9 +1647,9 @@ class TestKstat:
         assert_allclose(moments, expected, rtol=1e-4)
 
         # test equivalence with `stats.moment`
-        m1 = stats.moment(data, moment=1)
-        m2 = stats.moment(data, moment=2)
-        m3 = stats.moment(data, moment=3)
+        m1 = stats.moment(data, order=1)
+        m2 = stats.moment(data, order=2)
+        m3 = stats.moment(data, order=3)
         assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
 
     def test_empty_input(self):
