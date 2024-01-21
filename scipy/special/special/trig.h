@@ -15,12 +15,12 @@
 
 namespace special {
 
-SPECFUN_HOST_DEVICE inline std::complex<double> Sinpi(std::complex<double> z) {
+SPECFUN_HOST_DEVICE inline std::complex<double> sinpi(std::complex<double> z) {
     double x = z.real();
     double piy = M_PI * z.imag();
     double abspiy = std::abs(piy);
-    double sinpix = cephes::Sinpi(x);
-    double cospix = cephes::Cospi(x);
+    double sinpix = cephes::sinpi(x);
+    double cospix = cephes::cospi(x);
 
     if (abspiy < 700) {
         return {sinpix * std::cosh(piy), cospix * std::sinh(piy)};
@@ -58,12 +58,12 @@ SPECFUN_HOST_DEVICE inline std::complex<double> Sinpi(std::complex<double> z) {
     return {coshfac * exphpiy, sinhfac * exphpiy};
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<double> Cospi(std::complex<double> z) {
+SPECFUN_HOST_DEVICE inline std::complex<double> cospi(std::complex<double> z) {
     double x = z.real();
     double piy = M_PI * z.imag();
     double abspiy = std::abs(piy);
-    double sinpix = cephes::Sinpi(x);
-    double cospix = cephes::Cospi(x);
+    double sinpix = cephes::sinpi(x);
+    double cospix = cephes::cospi(x);
 
     if (abspiy < 700) {
         return {cospix * std::cosh(piy), -sinpix * std::sinh(piy)};

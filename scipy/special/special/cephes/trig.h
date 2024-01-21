@@ -12,7 +12,7 @@ namespace special {
 namespace cephes {
 
     /* Compute sin(pi * x). */
-    SPECFUN_HOST_DEVICE double Sinpi(double x) {
+    SPECFUN_HOST_DEVICE double sinpi(double x) {
         double s = 1.0;
 
         if (x < 0.0) {
@@ -31,7 +31,7 @@ namespace cephes {
     }
 
     /* Compute cos(pi * x) */
-    SPECFUN_HOST_DEVICE double Cospi(double x) {
+    SPECFUN_HOST_DEVICE double cospi(double x) {
         if (x < 0.0) {
             x = -x;
         }

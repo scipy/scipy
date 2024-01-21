@@ -21,14 +21,14 @@ inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
 
 inline npy_cdouble csinpi(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = special::Sinpi(z);
+    std::complex<double> w = special::sinpi(z);
     return npy_cpack(real(w), imag(w));
 }
 
 
 inline npy_cdouble ccospi(npy_cdouble zp) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
-    std::complex<double> w = special::Cospi(z);
+    std::complex<double> w = special::cospi(z);
     return npy_cpack(real(w), imag(w));
 }
 

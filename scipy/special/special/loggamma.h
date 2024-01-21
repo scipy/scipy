@@ -124,7 +124,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> loggamma(std::complex<double> z)
     if (z.real() < 0.1) {
         // Reflection formula; see Proposition 3.1 in [1]
         double tmp = std::copysign(2 * M_PI, z.imag()) * std::floor(0.5 * z.real() + 0.25);
-        return std::complex<double>(detail::loggamma_LOGPI, tmp) - std::log(Sinpi(z)) - loggamma(1.0 - z);
+        return std::complex<double>(detail::loggamma_LOGPI, tmp) - std::log(sinpi(z)) - loggamma(1.0 - z);
     }
     if (std::signbit(z.imag()) == 0) {
         // z.imag() >= 0 but is not -0.0
