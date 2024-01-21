@@ -2076,7 +2076,7 @@ def fpcheck(x, t, k):
 
     # check condition no 1
     # c      1) k+1 <= n-k-1 <= m
-    if (nk1 < k + 1) or (nk1 > m):
+    if not (k + 1 <= nk1 <= m):
         raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
 
     # check condition no 2
@@ -2110,7 +2110,7 @@ def fpcheck(x, t, k):
         raise ValueError(mesg)
 
     m = x.shape[0]
-    i = 0
+    m = x.shape[0]
     l = k+1
     nk3 = n - k - 3
     if nk3 < 2:
@@ -2119,12 +2119,11 @@ def fpcheck(x, t, k):
         tj = t[j]
         l += 1
         tl = t[l]
-        while True:
-            i += 1
-            if i >= m-1:
-                raise ValueError(mesg)
-            if x[i] > tj:
-                break
+        i = np.argmax(x > tj)
+        if i >= m-1:
+            raise ValueError(mesg)
+        if x[i] >= tl:
+            raise ValueError(mesg)
         if x[i] >= tl:
             raise ValueError(mesg)
     return
