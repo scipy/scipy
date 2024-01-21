@@ -425,8 +425,8 @@ namespace detail {
          * K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
          */
         double x_r_a = x * std::pow(r + eps, -a);
-        return std::exp(x_r_a * cephes::Cospi(a)) * std::pow(r + eps, -b) *
-               std::sin(x_r_a * cephes::Sinpi(a) + M_PI * b);
+        return std::exp(x_r_a * cephes::cospi(a)) * std::pow(r + eps, -b) *
+               std::sin(x_r_a * cephes::sinpi(a) + M_PI * b);
     }
 
     SPECFUN_HOST_DEVICE inline double wb_P(double eps, double a, double b, double x, double phi) {
