@@ -2841,8 +2841,9 @@ class TestInvgauss:
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (6.311, 3.225, 4.520)])
     def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
+        rng = np.random.RandomState(1234)
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
-                                  loc=rvs_loc, scale=rvs_scale)
+                                  loc=rvs_loc, scale=rvs_scale, random_state=rng)
 
         super_fit = super(type(stats.invgauss), stats.invgauss).fit
         # fitting without `floc` uses superclass fit method
@@ -2952,7 +2953,9 @@ class TestLaplace:
     def test_fit(self, rvs_loc, rvs_scale):
         # tests that various inputs follow expected behavior
         # for a variety of `loc` and `scale`.
-        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
+        rng = np.random.RandomState(1234)
+        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale,
+                                 random_state=rng)
 
         # MLE estimates are given by
         loc_mle = np.median(data)
@@ -2996,7 +2999,9 @@ class TestLaplace:
                                                    (10, 5),
                                                    (0.5, 0.2)])
     def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
-        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
+        rng = np.random.RandomState(1234)
+        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale,
+                                 random_state=rng)
 
         # the log-likelihood function for laplace is given by
         def ll(loc, scale, data):
