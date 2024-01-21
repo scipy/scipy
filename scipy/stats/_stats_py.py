@@ -10490,7 +10490,6 @@ def _wasserstein_p(p, u_values, v_values, u_weights=None, v_weights=None):
     # replace the mergesort O((N+M)log(N+M)) here.
     all_cdf = np.concatenate((u_cdf[:-1], v_cdf[:-1]))
     all_cdf.sort(kind='mergesort')
-    #all_cdf = np.concatenate((all_cdf))
 
     u_quantile_indices = u_cdf.searchsorted(all_cdf, 'left')
     v_quantile_indices = v_cdf.searchsorted(all_cdf, 'left')
