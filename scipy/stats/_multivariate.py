@@ -4502,7 +4502,7 @@ class multivariate_t_gen(multi_rv_generic):
         return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
                             shape_info.rank)
 
-    def _logpdf(self, x, loc, prec_U, log_pdet, df, dim, rank):
+    def _logpdf(self, x, loc, cov_object):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -4533,8 +4533,12 @@ class multivariate_t_gen(multi_rv_generic):
         if df == np.inf:
             return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
 
-        dev = x - loc
-        maha = np.square(np.dot(dev, prec_U)).sum(axis=-1)
+        log_det_cov, rank = cov_object.log_pdet, cov_object.rank
+        dev = x - mean
+        if dev.ndim > 1:
+            log_det_cov = log_det_cov[..., np.newaxis]
+            rank = rank[..., np.newaxis]
+        maha = np.sum(np.square(cov_object.whiten(dev)), axis=-1)
 
         t = 0.5 * (df + dim)
         A = gammaln(t)
@@ -4736,7 +4740,7 @@ class multivariate_t_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
         return x
 
-    def _process_parameters(self, loc, shape, df):
+    def _process_parameters(self, loc, shape, df, allow_singular=True):
         """
         Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
@@ -4802,7 +4806,13 @@ class multivariate_t_gen(multi_rv_generic):
             raise ValueError("Array 'cov' must be at most two-dimensional,"
                              " but cov.ndim = %d" % shape.ndim)
 
-        df = _process_df(df)
+        # Process degrees of freedom.
+        if df is None:
+            df = 1
+        elif df <= 0:
+            raise ValueError("'df' must be greater than zero.")
+        elif np.isnan(df):
+            raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
 
         return dim, loc, shape, df
 
