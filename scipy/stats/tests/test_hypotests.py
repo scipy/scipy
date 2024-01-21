@@ -387,7 +387,6 @@ class TestMannWhitneyU:
         assert res1.statistic == res2.statistic
         assert np.abs(res1.pvalue - res2.pvalue) > 1e-2
 
-        _mwu_state.reset()  # for debugging CI failure
         # for large samples, they agree reasonably well
         x = np.random.rand(40)
         y = np.random.rand(40)

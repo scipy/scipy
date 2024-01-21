@@ -121,7 +121,7 @@ class _MWU:
         s_array = self.build_sigma_array(maxu)
 
         # Start working with ints, for maximum precision and efficiency:
-        configurations = np.zeros(maxu + 1, dtype=np.uint64)
+        configurations = np.zeros(maxu + 1, dtype=np.float64)
         # How many ways to have U=0? 1
         configurations[0] = 1
 
