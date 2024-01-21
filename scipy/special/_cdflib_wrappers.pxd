@@ -601,7 +601,7 @@ cdef inline double stdtr(double df, double t) noexcept nogil:
     argnames[0] = "t"
     argnames[1] = "df"
 
-    if isinf(df):
+    if isinf(df) and df > 0:
         return NAN if isnan(t) else ndtr(t)
 
     if isnan(df) or isnan(t):
@@ -636,7 +636,7 @@ cdef inline double stdtrit(double df, double p) noexcept nogil:
         int status = 10
         char *argnames[3]
 
-    if isinf(df):
+    if isinf(df) and df > 0:
         return NAN if isnan(p) else ndtri(p)
 
     if isnan(p) or isnan(df):
