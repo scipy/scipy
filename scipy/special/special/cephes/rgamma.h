@@ -80,7 +80,7 @@ namespace cephes {
         }
         if (x < -34.034) {
             w = -x;
-            z = Sinpi(w);
+            z = sinpi(w);
             if (z == 0.0) {
                 return 0.0;
             }
