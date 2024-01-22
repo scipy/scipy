@@ -1115,7 +1115,10 @@ int amos_asyi(
         if (koded == 0) { return nz; }
         ck = cexp(cz);
         for (int i = 0; i < (nn + 1); i++) { y[i] *= ck; }
+        /* 90 */
+        return nz;
     }
+    /* 100 */
     return -1;
 }
 
