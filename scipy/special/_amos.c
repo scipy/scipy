@@ -1020,8 +1020,7 @@ int amos_asyi(
     double complex ak1, ck, cs1, cs2, cz, dk, ez, p1, rz, s2;
     double aa, acz, aez, ak, arg, arm, atol, az, bb, bk, dfnu;
     double dnu2, fdn, rtr1, s, sgn, sqk, x, yy;
-    int ib, il, inu, jl, k, koded, m, nn;
-    int flag_for_break;
+    int ib, il, inu, j, jl, k, koded, m, nn;
     double pi = 3.14159265358979324;
     double rpi = 0.159154943091895336; /* (1 / pi) */
     int nz = 0;
@@ -1077,9 +1076,8 @@ int amos_asyi(
             aa = 1.;
             bb = aez;
             dk = ez;
-
-            flag_for_break = 0;
-            for (int j = 1; j < (jl+1); j++)
+            j = 1;
+            for (j = 1; j < (jl+1); j++)
             {
                 ck *= sqk / dk;
                 cs2 += ck;
@@ -1090,12 +1088,9 @@ int amos_asyi(
                 bb += aez;
                 ak += 8.;
                 sqk -= ak;
-                if (aa <= atol) {
-                    flag_for_break = 1;
-                    break; 
-                }
+                if (aa <= atol) { break; }
             }
-            if (0 == flag_for_break) { return -2; }
+            if ((j == (jl+1)) && (aa > atol)) { return -2; }
 
             /* 50 */
             s2 = cs1;
