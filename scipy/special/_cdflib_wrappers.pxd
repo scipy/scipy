@@ -1,6 +1,6 @@
 from . cimport sf_error
 
-from libc.math cimport NAN, isnan, isinf
+from libc.math cimport NAN, isnan, isinf, isfinite
 cdef extern from "cephes.h" nogil:
     double ndtr(double a)
     double ndtri(double y0)
@@ -126,7 +126,7 @@ cdef inline double bdtrik(double p, double xn, double pr) noexcept nogil:
         int status
         char *argnames[5]
 
-    if isnan(p) or isnan(xn) or isnan(pr):
+    if isnan(p) or not isfinite(xn) or isnan(pr):
       return NAN
 
     argnames[0] = "p"
@@ -330,7 +330,7 @@ cdef inline double nbdtrik(double p, double xn, double pr) noexcept nogil:
         int status = 10
         char *argnames[5]
 
-    if isnan(p) or isnan(xn) or isnan(pr):
+    if isnan(p) or not isfinite(xn) or isnan(pr):
       return NAN
 
     argnames[0] = "p"
