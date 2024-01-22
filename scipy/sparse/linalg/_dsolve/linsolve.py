@@ -710,8 +710,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             f'{A.shape} and the shape of b is {b.shape}.'
         )
 
-    A = A._asfptype()  # upcast to a floating point format
-    result_dtype = np.promote_types(A.dtype, b.dtype)
+    result_dtype = np.promote_types(np.promote_types(A.dtype, np.float32), b.dtype)
     if A.dtype != result_dtype:
         A = A.astype(result_dtype)
     if b.dtype != result_dtype:
