@@ -1077,7 +1077,7 @@ int amos_asyi(
             bb = aez;
             dk = ez;
             j = 1;
-            for (int j = 1; j < (jl+1); j++)
+            for (j = 1; j < (jl+1); j++)
             {
                 ck *= sqk / dk;
                 cs2 += ck;
@@ -1090,7 +1090,7 @@ int amos_asyi(
                 sqk -= ak;
                 if (aa <= atol) { break; }
             }
-            if ((j == jl) && (aa > atol)) { return -2; }
+            if ((j == (jl+1)) && (aa > atol)) { return -2; }
 
             /* 50 */
             s2 = cs1;
@@ -1115,7 +1115,10 @@ int amos_asyi(
         if (koded == 0) { return nz; }
         ck = cexp(cz);
         for (int i = 0; i < (nn + 1); i++) { y[i] *= ck; }
+        /* 90 */
+        return nz;
     }
+    /* 100 */
     return -1;
 }
 
