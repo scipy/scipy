@@ -90,7 +90,7 @@ test = [
     "threadpoolctl",
     "scikit-umfpack",
     "pooch",
-    "hypothesis",
+    "hypothesis>=6.30",
 ]
 doc = [
     "sphinx!=4.1.0",
