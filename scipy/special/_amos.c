@@ -1020,7 +1020,7 @@ int amos_asyi(
     double complex ak1, ck, cs1, cs2, cz, dk, ez, p1, rz, s2;
     double aa, acz, aez, ak, arg, arm, atol, az, bb, bk, dfnu;
     double dnu2, fdn, rtr1, s, sgn, sqk, x, yy;
-    int ib, il, inu, j, jl, k, koded, m, nn;
+    int ib, il, inu, jl, k, koded, m, nn;
     int flag_for_break;
     double pi = 3.14159265358979324;
     double rpi = 0.159154943091895336; /* (1 / pi) */
