@@ -150,6 +150,7 @@ def test_1d_row_and_col():
     assert np.array_equal(res.col, np.array([0, 1, 2]))
     assert np.array_equal(res.row, np.zeros_like(res.col))
     assert res.row.dtype == res.col.dtype
+    assert res.row.flags.writeable is False
 
     res.col = [1, 2, 3]
     assert len(res.indices) == 1
