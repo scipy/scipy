@@ -334,15 +334,14 @@ Construction functions for arrays were added in ``1.12.0``. Support for
 1-D array is expected in ``1.13.0``.
 
 Next steps toward sparse array support:
+
 - Extend sparse array api to 1-D arrays.
     - support for coo, csr and dok formats.
     - csr 1d support (using sparsetools) for min-max, indexing, arithmetic
 - Help other libraries convert to sparse arrays from sparse matrices.
   Create transition guide and helpful scripts to flag code that needs
-  further examination.
-    - networkx is already migrated
-    - sklearn is [in progress 27090](https://github.com/scikit-learn/scikit-learn/issues/27090)
-    - scikit-image [preparation in 6261](https://github.com/scikit-image/scikit-image/pull/6261)
+  further examination. NetworkX, Scikit-learn and scikit-image are in
+  progress or have completed conversion to sparse arrays.
 - After sparse array code is mature (~1 release cycle?) add deprecation
   warnings for sparse matrix.
 - Work with numpy on deprecation/removal of numpy matrix.
@@ -357,9 +356,8 @@ Next steps toward sparse array support:
 
 An alternative (more ambitious, and unclear if it will materialize)
 plan is being worked on in https://github.com/pydata/sparse.
-To support that effort the plan in Scipy is to
-- Further support ``pydata/sparse`` in ``scipy.sparse.linalg`` and
-  add ``scipy.sparse.csgraph`` after that.
+To support that effort the plan in Scipy is to further support ``pydata/sparse``
+in ``scipy.sparse.linalg`` and add ``scipy.sparse.csgraph`` after that.
 
 Regarding the different sparse matrix formats: there are a lot of them.  These
 should be kept, but improvements/optimizations should go into CSR/CSC, which

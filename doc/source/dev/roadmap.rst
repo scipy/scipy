@@ -84,10 +84,10 @@ Sparse arrays have largely been implemented in scipy/sparse at this time. Some
 functionality is still being completed. The future plan is:
 
 - Provide a feature-complete sparse array api (including 1d-array).
-  - Extend sparse array api to 1d arrays:
-    - coo, csr and dok formats.
-    - the csr 1d format uses 2d csr sparsetools to do 1d things:
-      indexing/min-max/arithmetic.
+    - Extend sparse array api to 1d arrays:
+        - coo, csr and dok formats.
+        - the csr 1d format uses 2d csr sparsetools to do 1d things like
+          indexing/min-max/arithmetic.
 - Help other libraries convert to sparse arrays from sparse matrices.
   Create transition guide and helpful scripts to flag code that needs changing.
 - Deprecate and then remove sparse matrix in favor of sparse array.
