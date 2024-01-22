@@ -1021,6 +1021,7 @@ int amos_asyi(
     double aa, acz, aez, ak, arg, arm, atol, az, bb, bk, dfnu;
     double dnu2, fdn, rtr1, s, sgn, sqk, x, yy;
     int ib, il, inu, j, jl, k, koded, m, nn;
+    int flag_for_break;
     double pi = 3.14159265358979324;
     double rpi = 0.159154943091895336; /* (1 / pi) */
     int nz = 0;
@@ -1076,7 +1077,8 @@ int amos_asyi(
             aa = 1.;
             bb = aez;
             dk = ez;
-            j = 1;
+
+            flag_for_break = 0;
             for (int j = 1; j < (jl+1); j++)
             {
                 ck *= sqk / dk;
@@ -1088,9 +1090,12 @@ int amos_asyi(
                 bb += aez;
                 ak += 8.;
                 sqk -= ak;
-                if (aa <= atol) { break; }
+                if (aa <= atol) {
+                    flag_for_break = 1;
+                    break; 
+                }
             }
-            if ((j == jl) && (aa > atol)) { return -2; }
+            if (0 == flag_for_break) { return -2; }
 
             /* 50 */
             s2 = cs1;
