@@ -329,26 +329,42 @@ is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
 some point).
 
 What we want is sparse arrays, that act like ``numpy.ndarray``. In SciPy
-``1.8.0`` a new set of classes (``csr_array`` et al.) has been added - these
-need testing in the real world, as well as a few extra features like 1-D array
-support.
-An alternative (more ambitious, and unclear if it will materialize at this
-point) plan is being worked on in https://github.com/pydata/sparse.  The
-tentative plan for that was/is:
+``1.8.0`` a new set of classes (``csr_array`` et al.) was added.
+Construction functions for arrays were added in ``1.12.0``. Support for
+1-D array is expected in ``1.13.0``.
 
-- Start depending on ``pydata/sparse`` once it's feature-complete enough (it
-  still needs a CSC/CSR equivalent) and okay performance-wise.
-- Add support for ``pydata/sparse`` to ``scipy.sparse.linalg`` (and perhaps to
-  ``scipy.sparse.csgraph`` after that).
-- Indicate in the documentation that for new code users should prefer
-  ``pydata/sparse`` over sparse matrices.
-- When NumPy deprecates ``numpy.matrix``, vendor that or maintain it as a
-  stand-alone package.
+Next steps toward sparse array support:
+- Extend sparse array api to 1-D arrays.
+    - support for coo, csr and dok formats.
+    - csr 1d support (using sparsetools) for min-max, indexing, arithmetic
+- Help other libraries convert to sparse arrays from sparse matrices.
+  Create transition guide and helpful scripts to flag code that needs
+  further examination.
+    - networkx is already migrated
+    - sklearn is [in progress 27090](https://github.com/scikit-learn/scikit-learn/issues/27090)
+    - scikit-image [preparation in 6261](https://github.com/scikit-image/scikit-image/pull/6261)
+- After sparse array code is mature (~1 release cycle?) add deprecation
+  warnings for sparse matrix.
+- Work with numpy on deprecation/removal of numpy matrix.
+- Deprecate and then remove sparse matrix in favor of sparse array.
+- Start api shift of construction function names (`diags`, `block`, etc.)
+    - Note: as a whole, the construction functions undergo two name shifts.
+      Once to move from matrix creation to new functions for array creation
+      (i.e. `eye` -> `eye_array`). Then a second move to change names to match
+      the array_api name (i.e. `eye_array` to `eye`) after sparse matrices are removed.
+- add construction function names matching array_api names.
+- deprecate the transition construction function names.
+
+An alternative (more ambitious, and unclear if it will materialize)
+plan is being worked on in https://github.com/pydata/sparse.
+To support that effort the plan in Scipy is to
+- Further support ``pydata/sparse`` in ``scipy.sparse.linalg`` and
+  add ``scipy.sparse.csgraph`` after that.
 
 Regarding the different sparse matrix formats: there are a lot of them.  These
 should be kept, but improvements/optimizations should go into CSR/CSC, which
-are the preferred formats.  LIL may be the exception, it's inherently
-inefficient.  It could be dropped if DOK is extended to support all the
+are the preferred formats. LIL may be the exception, it's inherently
+inefficient. It could be dropped if DOK is extended to support all the
 operations LIL currently provides.
 
 

@@ -79,13 +79,16 @@ Implement sparse arrays in addition to sparse matrices
 
 The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
-some point).  What we want is sparse *arrays* that act like ``numpy.ndarray``.
-This is being worked on in https://github.com/pydata/sparse, which is quite far
-along.  The tentative plan is:
+some point). What we want is sparse *arrays* that act like ``numpy.ndarray``.
+Sparse arrays have largely been implemented in scipy/sparse at this time. Some
+functionality is still being completed. The future plan is:
 
-- Start depending on ``pydata/sparse`` once it's feature-complete enough (it
-  still needs a CSC/CSR equivalent) and okay performance-wise.
-- Indicate in the documentation that for new code users should prefer
-  ``pydata/sparse`` over sparse matrices.
-- When NumPy deprecates ``numpy.matrix``, vendor that or maintain it as a
-  stand-alone package.
+- Provide a feature-complete sparse array api (including 1d-array).
+  - Extend sparse array api to 1d arrays:
+    - coo, csr and dok formats.
+    - the csr 1d format uses 2d csr sparsetools to do 1d things:
+      indexing/min-max/arithmetic.
+- Help other libraries convert to sparse arrays from sparse matrices.
+  Create transition guide and helpful scripts to flag code that needs changing.
+- Deprecate and then remove sparse matrix in favor of sparse array.
+- Work with numpy on deprecation/removal of numpy matrix.
