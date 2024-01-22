@@ -10,4 +10,4 @@ mpmath
 threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch
-hypothesis
+hypothesis>=6.30
