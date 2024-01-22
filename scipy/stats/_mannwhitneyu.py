@@ -128,8 +128,8 @@ class _MWU:
         with np.errstate(all='raise'):
             for u in np.arange(1, maxu + 1):
                 coeffs = s_array[u - 1::-1]
-                new_val = np.dot(configurations[:u], coeffs) / u
                 try:
+                    new_val = np.dot(configurations[:u], coeffs) / u
                     configurations[u] = new_val
                 except Exception:
                     # OK, we got into numbers too big for uint64.
