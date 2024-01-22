@@ -715,7 +715,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         A = A.astype(result_dtype)
     if b.dtype != result_dtype:
         b = b.astype(result_dtype)
-    if not overwrite_b:
+    elif not overwrite_b:
         b = b.copy()
 
     if lower:
