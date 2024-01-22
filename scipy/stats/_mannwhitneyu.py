@@ -125,13 +125,13 @@ class _MWU:
         # How many ways to have U=0? 1
         configurations[0] = 1
 
-        with np.errstate(invalid='raise', over='raise'):
+        with np.errstate(all='raise'):
             for u in np.arange(1, maxu + 1):
                 coeffs = s_array[u - 1::-1]
                 new_val = np.dot(configurations[:u], coeffs) / u
                 try:
                     configurations[u] = new_val
-                except (FloatingPointError, OverflowError):
+                except Exception:
                     # OK, we got into numbers too big for uint64.
                     # So now we start working with floats.
                     # By doing this since the beginning, we would have lost precision.
