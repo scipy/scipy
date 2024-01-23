@@ -764,6 +764,8 @@ def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
     for iteration in range(maxiter):
         if iteration == 0:
             r = b - matvec(x) if x.any() else b.copy()
+            if np.linalg.norm(r) < atol:  # Are we done?
+                return postprocess(x), 0
 
         v[0, :] = psolve(r)
         tmp = np.linalg.norm(v[0, :])
