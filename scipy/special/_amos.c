@@ -3866,7 +3866,7 @@ int amos_mlri(
                 tst *= sqrt(rho / (rho*rho - 1.0));
                 itime = 2;
             }
-            if (i == 80) {
+            if (k == 80) {
                 /* Exhausted loop without break */
                 return -2;
             }
