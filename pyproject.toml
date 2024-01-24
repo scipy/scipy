@@ -93,10 +93,10 @@ test = [
     "hypothesis>=6.30",
 ]
 doc = [
-    "sphinx!=4.1.0",
-    "pydata-sphinx-theme==0.9.0",
-    "sphinx-design>=0.2.0",
-    "matplotlib>2",
+    "sphinx>=5.0.0",
+    "pydata-sphinx-theme>=0.15.2",
+    "sphinx-design>=0.4.0",
+    "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",
