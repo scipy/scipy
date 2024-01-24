@@ -72,3 +72,9 @@ inline npy_cdouble cdigamma(npy_cdouble zp) {
 inline double wright_bessel_scalar(double a, double b, double x) {
     return special::wright_bessel(a, b, x);
 }
+
+inline double rgamma(double x) {
+    return special::cephes::rgamma(x);
+}
+
+
