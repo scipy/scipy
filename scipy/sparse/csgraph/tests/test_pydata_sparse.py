@@ -41,6 +41,26 @@ def graphs(sparse_cls):
     return A_dense, A_sparse
 
 
+@pytest.mark.parametrize(
+    "func",
+    [
+        spgraph.shortest_path,
+        spgraph.dijkstra,
+        spgraph.floyd_warshall,
+        spgraph.bellman_ford,
+        spgraph.johnson,
+        spgraph.reverse_cuthill_mckee,
+        spgraph.maximum_bipartite_matching,
+        spgraph.structural_rank,
+    ]
+)
+def test_csgraph_equiv(func, graphs):
+    A_dense, A_sparse = graphs
+    actual = func(A_sparse)
+    desired = func(sp.csc_matrix(A_dense))
+    assert_equal(actual, desired)
+
+
 def test_connected_components(graphs):
     A_dense, A_sparse = graphs
     func = spgraph.connected_components
@@ -54,62 +74,15 @@ def test_connected_components(graphs):
 
 def test_laplacian(graphs):
     A_dense, A_sparse = graphs
+    sparse_cls = type(A_sparse)
     func = spgraph.laplacian
 
     actual = func(A_sparse)
     desired = func(sp.csc_matrix(A_dense))
 
-    assert_equal(actual.toarray(), desired.toarray())
+    assert isinstance(actual, sparse_cls)
 
-
-def test_shortest_path(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.shortest_path
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
-
-
-def test_dijkstra(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.dijkstra
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
-
-
-def test_floyd_warshall(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.floyd_warshall
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
-
-
-def test_bellman_ford(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.bellman_ford
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
-
-
-def test_johnson(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.johnson
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
+    assert_equal(actual.todense(), desired.todense())
 
 
 @pytest.mark.parametrize(
@@ -129,52 +102,41 @@ def test_order_search(graphs, func):
 )
 def test_tree_search(graphs, func):
     A_dense, A_sparse = graphs
+    sparse_cls = type(A_sparse)
 
     actual = func(A_sparse, 0)
     desired = func(sp.csc_matrix(A_dense), 0)
 
-    assert_equal(actual.toarray(), desired.toarray())
+    assert isinstance(actual, sparse_cls)
+
+    assert_equal(actual.todense(), desired.todense())
 
 
 def test_minimum_spanning_tree(graphs):
     A_dense, A_sparse = graphs
+    sparse_cls = type(A_sparse)
     func = spgraph.minimum_spanning_tree
 
     actual = func(A_sparse)
     desired = func(sp.csc_matrix(A_dense))
 
-    assert_equal(actual.toarray(), desired.toarray())
+    assert isinstance(actual, sparse_cls)
 
-
-def test_reverse_cuthill_mckee(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.reverse_cuthill_mckee
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
+    assert_equal(actual.todense(), desired.todense())
 
 
 def test_maximum_flow(graphs):
     A_dense, A_sparse = graphs
+    sparse_cls = type(A_sparse)
     func = spgraph.maximum_flow
 
     actual = func(A_sparse, 0, 2)
     desired = func(sp.csr_matrix(A_dense), 0, 2)
 
     assert actual.flow_value == desired.flow_value
-    assert_equal(actual.flow.toarray(), desired.flow.toarray())
+    assert isinstance(actual.flow, sparse_cls)
 
-
-def test_maximum_bipartite_matching(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.maximum_bipartite_matching
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert_equal(actual, desired)
+    assert_equal(actual.flow.todense(), desired.flow.todense())
 
 
 def test_min_weight_full_bipartite_matching(graphs):
@@ -185,13 +147,3 @@ def test_min_weight_full_bipartite_matching(graphs):
     desired = func(sp.csc_matrix(A_dense)[0:2, 1:3])
 
     assert_equal(actual, desired)
-
-
-def test_structural_rank(graphs):
-    A_dense, A_sparse = graphs
-    func = spgraph.structural_rank
-
-    actual = func(A_sparse)
-    desired = func(sp.csc_matrix(A_dense))
-
-    assert actual == desired

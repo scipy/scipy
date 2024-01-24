@@ -158,8 +158,8 @@ def test_spsolve(matrices):
     x0 = splin.spsolve(sp.csc_matrix(A_dense),
                        sp.csc_matrix(A_dense))
     x = splin.spsolve(A_sparse, A_sparse)
-    assert isinstance(x, sp.csc_matrix)
-    assert_allclose(x.toarray(), x0.toarray())
+    assert isinstance(x, type(A_sparse))
+    assert_allclose(x.todense(), x0.todense())
 
 
 def test_splu(matrices):
@@ -172,8 +172,10 @@ def test_splu(matrices):
     assert isinstance(lu.L, sparse_cls)
     assert isinstance(lu.U, sparse_cls)
 
-    Pr = sparse_cls(sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n)))))
-    Pc = sparse_cls(sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c))))
+    _Pr_scipy = sp.csc_matrix((np.ones(n), (lu.perm_r, np.arange(n))))
+    _Pc_scipy = sp.csc_matrix((np.ones(n), (np.arange(n), lu.perm_c)))
+    Pr = sparse_cls.from_scipy_sparse(_Pr_scipy)
+    Pc = sparse_cls.from_scipy_sparse(_Pc_scipy)
     A2 = Pr.T @ lu.L @ lu.U @ Pc.T
 
     assert_allclose(A2.todense(), A_sparse.todense())
@@ -214,14 +216,14 @@ def test_inv(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.inv(sp.csc_matrix(A_dense))
     x = splin.inv(A_sparse)
-    assert_allclose(x.toarray(), x0.toarray())
+    assert_allclose(x.todense(), x0.todense())
 
 
 def test_expm(matrices):
     A_dense, A_sparse, b = matrices
     x0 = splin.expm(sp.csc_matrix(A_dense))
     x = splin.expm(A_sparse)
-    assert_allclose(x.toarray(), x0.toarray())
+    assert_allclose(x.todense(), x0.todense())
 
 
 def test_expm_multiply(matrices):
