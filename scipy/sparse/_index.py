@@ -155,12 +155,19 @@ class IndexMixin:
             row, col = _unpack_index(key)
         M, N = self.shape
 
+        def _validate_bool_idx(idx: np.ndarray[np.bool_], axis_size: int, axis_name: str):
+            if len(idx) != axis_size:
+                raise IndexError(f"boolean {axis_name} index has incorrect length: {len(idx)} instead of {axis_size}")
+            return _boolean_index_to_array(idx)
+
         if isintlike(row):
             row = int(row)
             if row < -M or row >= M:
                 raise IndexError('row index (%d) out of range' % row)
             if row < 0:
                 row += M
+        elif (bool_row := _compatible_boolean_index(row)) is not None:
+            row = _validate_bool_idx(bool_row, M, "row")
         elif not isinstance(row, slice):
             row = self._asindices(row, M)
 
@@ -170,6 +177,8 @@ class IndexMixin:
                 raise IndexError('column index (%d) out of range' % col)
             if col < 0:
                 col += N
+        elif (bool_col := _compatible_boolean_index(col)) is not None:
+            col = _validate_bool_idx(bool_col, N, "column")
         elif not isinstance(col, slice):
             col = self._asindices(col, N)
 
@@ -270,9 +279,9 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _unpack_index(index):
+def _unpack_index(index) -> tuple[int | slice | np.ndarray[np.bool_, np.int_], int | slice | np.ndarray[np.bool_, np.int_]]:
     """ Parse index. Always return a tuple of the form (row, col).
-    Valid type for row/col is integer, slice, or array of integers.
+    Valid type for row/col is integer, slice, array of bool, or array of integers.
     """
     # Parse any ellipses.
     index = _check_ellipsis(index)
@@ -290,7 +299,7 @@ def _unpack_index(index):
         if idx is None:
             row, col = index, slice(None)
         elif idx.ndim < 2:
-            return _boolean_index_to_array(idx), slice(None)
+            return idx, slice(None)
         elif idx.ndim == 2:
             return idx.nonzero()
     # Next, check for validity and transform the index as needed.
@@ -302,12 +311,6 @@ def _unpack_index(index):
             'Indexing with sparse matrices is not supported '
             'except boolean indexing where matrix and index '
             'are equal shapes.')
-    bool_row = _compatible_boolean_index(row)
-    bool_col = _compatible_boolean_index(col)
-    if bool_row is not None:
-        row = _boolean_index_to_array(bool_row)
-    if bool_col is not None:
-        col = _boolean_index_to_array(bool_col)
     return row, col
 
 
