@@ -1,4 +1,4 @@
-from warnings import warn
+from warnings import warn, catch_warnings, simplefilter
 
 import numpy as np
 from numpy import asarray
@@ -681,9 +681,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
             f'A must be a square matrix but its shape is {A.shape}.')
 
     if unit_diagonal:
-        A = A.tolil()
-        A.setdiag(1)
-        A = A.tocsc()
+        with catch_warnings():
+            simplefilter('ignore', SparseEfficiencyWarning)
+            A.setdiag(1)
     else:
         diag = A.diagonal()
         if np.any(diag == 0):
