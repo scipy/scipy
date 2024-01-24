@@ -2983,8 +2983,6 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
     def test_missized_masking(self):
-        rng = np.random.default_rng(1234)
-
         M, N = 5, 10
 
         B = asmatrix(arange(M * N).reshape(M, N))
