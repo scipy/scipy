@@ -2,8 +2,13 @@
 """
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 from ._sputils import isintlike
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 INT_TYPES = (int, np.integer)
 
@@ -158,10 +163,10 @@ class IndexMixin:
         M, N = self.shape
 
         def _validate_bool_idx(
-            idx: np.ndarray[np.bool_],
+            idx: npt.NDArray[np.bool_],
             axis_size: int,
             axis_name: str
-        ) -> np.ndarray[np.int_]:
+        ) -> npt.NDArray[np.int_]:
             if len(idx) != axis_size:
                 raise IndexError(
                     f"boolean {axis_name} index has incorrect length: {len(idx)} "
@@ -289,8 +294,8 @@ class IndexMixin:
 
 
 def _unpack_index(index) -> tuple[
-    int | slice | np.ndarray[np.bool_ | np.int_],
-    int | slice | np.ndarray[np.bool_ | np.int_]
+    int | slice | npt.NDArray[np.bool_ | np.int_],
+    int | slice | npt.NDArray[np.bool_ | np.int_]
 ]:
     """ Parse index. Always return a tuple of the form (row, col).
     Valid type for row/col is integer, slice, array of bool, or array of integers.
