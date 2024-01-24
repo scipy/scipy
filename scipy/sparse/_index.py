@@ -287,8 +287,8 @@ class IndexMixin:
 
 
 def _unpack_index(index) -> tuple[
-    int | slice | np.ndarray[np.bool_, np.int_],
-    int | slice | np.ndarray[np.bool_, np.int_]
+    int | slice | np.ndarray[np.bool_ | np.int_],
+    int | slice | np.ndarray[np.bool_ | np.int_]
 ]:
     """ Parse index. Always return a tuple of the form (row, col).
     Valid type for row/col is integer, slice, array of bool, or array of integers.
