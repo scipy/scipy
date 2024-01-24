@@ -144,8 +144,16 @@ class IndexMixin:
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
+        # First, check if indexing with single boolean matrix.
+        from ._base import _spbase
+        if (isinstance(key, (_spbase, np.ndarray)) and
+                key.ndim == 2 and key.dtype.kind == 'b'):
+            if key.shape != self.shape:
+                raise IndexError('boolean index shape does not match array shape')
+            row, col = key.nonzero()
+        else:
+            row, col = _unpack_index(key)
         M, N = self.shape
-        row, col = _unpack_index(key)
 
         if isintlike(row):
             row = int(row)
@@ -266,12 +274,6 @@ def _unpack_index(index):
     """ Parse index. Always return a tuple of the form (row, col).
     Valid type for row/col is integer, slice, or array of integers.
     """
-    # First, check if indexing with single boolean matrix.
-    from ._base import _spbase, issparse
-    if (isinstance(index, (_spbase, np.ndarray)) and
-            index.ndim == 2 and index.dtype.kind == 'b'):
-        return index.nonzero()
-
     # Parse any ellipses.
     index = _check_ellipsis(index)
 
@@ -292,6 +294,7 @@ def _unpack_index(index):
         elif idx.ndim == 2:
             return idx.nonzero()
     # Next, check for validity and transform the index as needed.
+    from ._base import issparse
     if issparse(row) or issparse(col):
         # Supporting sparse boolean indexing with both row and col does
         # not work because spmatrix.ndim is always 2.

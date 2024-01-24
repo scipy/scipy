@@ -3009,7 +3009,7 @@ class _TestFancyIndexing:
         Z3 = np.zeros((6, 11), dtype=bool)
         Z3[-1,0] = True
 
-        assert_equal(A[Z1], np.array([]))
+        assert_raises(IndexError, A.__getitem__, Z1)
         assert_raises(IndexError, A.__getitem__, Z2)
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))
