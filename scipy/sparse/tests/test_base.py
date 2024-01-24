@@ -2988,15 +2988,11 @@ class _TestFancyIndexing:
         B = asmatrix(arange(M * N).reshape(M, N))
         A = self.spcreator(B)
 
-        def alternating_mask(size: int) -> np.ndarray[np.bool_]:
-            mask = np.zeros(size, dtype=bool)
-            mask[::2] = True
-            return mask
-
-        row_long = alternating_mask(M + 1)
-        row_short = alternating_mask(M - 1)
-        col_long = alternating_mask(N + 2)
-        col_short = alternating_mask(N - 2)
+        # Content of mask shouldn't matter, only its size
+        row_long = np.ones(M + 1, dtype=bool)
+        row_short = np.ones(M - 1, dtype=bool)
+        col_long = np.ones(N + 2, dtype=bool)
+        col_short = np.ones(N - 2, dtype=bool)
 
         assert_raises(IndexError, A.__getitem__, row_long)
         assert_raises(IndexError, A.__getitem__, row_short)
