@@ -2983,16 +2983,22 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
     def test_missized_masking(self):
-        np.random.seed(1234)  # make runs repeatable
         rng = np.random.default_rng(1234)
 
-        B = asmatrix(arange(50).reshape(5,10))
+        M, N = 5, 10
+
+        B = asmatrix(arange(M * N).reshape(M, N))
         A = self.spcreator(B)
 
-        row_long = rng.integers(2, size=6, dtype=bool)
-        row_short = rng.integers(2, size=4, dtype=bool)
-        col_long = rng.integers(2, size=12, dtype=bool)
-        col_short = rng.integers(2, size=8, dtype=bool)
+        def alternating_mask(size: int) -> np.ndarray[np.bool_]:
+            mask = np.zeros(size, dtype=bool)
+            mask[::2] = True
+            return mask
+
+        row_long = alternating_mask(M + 1)
+        row_short = alternating_mask(M - 1)
+        col_long = alternating_mask(N + 2)
+        col_short = alternating_mask(N - 2)
 
         assert_raises(IndexError, A.__getitem__, row_long)
         assert_raises(IndexError, A.__getitem__, row_short)
