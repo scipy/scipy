@@ -591,13 +591,13 @@ def spalde(x, tck):
     
     >>> # The order of derivative must be less or equal to k, the degree of the spline
     >>> # Method 1: spalde()
-    >>> m1_y_bsplin = [spalde(i, tck)[0] for i in x ]  # The B-spline itself
-    >>> m1_y_deriv1 = [spalde(i, tck)[1] for i in x ]  # 1st derivative
-    >>> m1_y_deriv2 = [spalde(i, tck)[2] for i in x ]  # 2nd derivative
-    >>> m1_y_deriv3 = [spalde(i, tck)[3] for i in x ]  # 3rd derivative
+    >>> f1_y_bsplin = [spalde(i, tck)[0] for i in x ]  # The B-spline itself
+    >>> f1_y_deriv1 = [spalde(i, tck)[1] for i in x ]  # 1st derivative
+    >>> f1_y_deriv2 = [spalde(i, tck)[2] for i in x ]  # 2nd derivative
+    >>> f1_y_deriv3 = [spalde(i, tck)[3] for i in x ]  # 3rd derivative
     >>> # You can reach the same result by using `splev`and `splder`
-    >>> m2_y_deriv3 = splev(x, bspl, der=3)
-    >>> m3_y_deriv3 = splder(bspl, n=3)(x)
+    >>> f2_y_deriv3 = splev(x, bspl, der=3)
+    >>> f3_y_deriv3 = splder(bspl, n=3)(x)
     
     >>> # Generate a figure with three axes for graphic comparison
     >>> fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 5))
