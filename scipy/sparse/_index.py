@@ -155,9 +155,16 @@ class IndexMixin:
             row, col = _unpack_index(key)
         M, N = self.shape
 
-        def _validate_bool_idx(idx: np.ndarray[np.bool_], axis_size: int, axis_name: str):
+        def _validate_bool_idx(
+            idx: np.ndarray[np.bool_],
+            axis_size: int,
+            axis_name: str
+        ) -> np.ndarray[np.int_]:
             if len(idx) != axis_size:
-                raise IndexError(f"boolean {axis_name} index has incorrect length: {len(idx)} instead of {axis_size}")
+                raise IndexError(
+                    f"boolean {axis_name} index has incorrect length: {len(idx)} "
+                    f" instead of {axis_size}"
+                )
             return _boolean_index_to_array(idx)
 
         if isintlike(row):
@@ -279,7 +286,10 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _unpack_index(index) -> tuple[int | slice | np.ndarray[np.bool_, np.int_], int | slice | np.ndarray[np.bool_, np.int_]]:
+def _unpack_index(index) -> tuple[
+    int | slice | np.ndarray[np.bool_, np.int_],
+    int | slice | np.ndarray[np.bool_, np.int_]
+]:
     """ Parse index. Always return a tuple of the form (row, col).
     Valid type for row/col is integer, slice, array of bool, or array of integers.
     """
