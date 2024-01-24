@@ -601,19 +601,19 @@ def spalde(x, tck):
     
     >>> # Generate a figure with three axes for graphic comparison
     >>> fig, (ax1, ax2, ax3) = plt.subplots(1, 3, figsize=(16, 5))
-    >>> fig.suptitle(f'Evaluate a B-spline and all derivatives')
+    >>> suptitle = fig.suptitle(f'Evaluate a B-spline and all derivatives')
     >>> # Plot B-spline and all derivatives using the three methods
     >>> orders = range(4)
     >>> linetypes = ['-', '--', '-.', ':']
     >>> labels = ['B-Spline', '1st deriv.', '2nd deriv.', '3rd deriv.']
     >>> functions = ['splev()', 'splder()', 'spalde()']
     >>> for order, linetype, label in zip(orders, linetypes, labels):
-    >>>     ax1.plot(x, splev(x, bspl, der=order), linetype, label=label)
-    >>>     ax2.plot(x, splder(bspl, n=order)(x), linetype, label=label)
-    >>>     ax3.plot(x, [spalde(i, tck)[order] for i in x], linetype, label=label)
+    ...     ax1.plot(x, splev(x, bspl, der=order), linetype, label=label)
+    ...     ax2.plot(x, splder(bspl, n=order)(x), linetype, label=label)
+    ...     ax3.plot(x, [spalde(i, tck)[order] for i in x], linetype, label=label)
     >>> for ax, function in zip((ax1, ax2, ax3), functions):
-    >>>     ax.set_title(function)
-    >>>     ax.legend()
+    ...     ax.set_title(function)
+    ...     ax.legend()
     >>> plt.tight_layout()
     >>> plt.show()
 
