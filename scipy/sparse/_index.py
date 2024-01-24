@@ -170,7 +170,7 @@ class IndexMixin:
             if len(idx) != axis_size:
                 raise IndexError(
                     f"boolean {axis_name} index has incorrect length: {len(idx)} "
-                    f" instead of {axis_size}"
+                    f"instead of {axis_size}"
                 )
             return _boolean_index_to_array(idx)
 

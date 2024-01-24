@@ -2994,8 +2994,16 @@ class _TestFancyIndexing:
         col_long = np.ones(N + 2, dtype=bool)
         col_short = np.ones(N - 2, dtype=bool)
 
-        assert_raises(IndexError, A.__getitem__, row_long)
-        assert_raises(IndexError, A.__getitem__, row_short)
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M + 1} instead of {M}"
+        ):
+            _ = A[row_long, :]
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M - 1} instead of {M}"
+        ):
+            _ = A[row_short, :]
 
         for i, j in itertools.product(
             (row_long, row_short, slice(None)),
@@ -3003,7 +3011,11 @@ class _TestFancyIndexing:
         ):
             if isinstance(i, slice) and isinstance(j, slice):
                 continue
-            assert_raises(IndexError, A.__getitem__, (i, j))
+            with pytest.raises(
+                IndexError,
+                match=r"boolean \w+ index has incorrect length"
+            ):
+                _ = A[i, j]
 
     def test_fancy_indexing_boolean(self):
         np.random.seed(1234)  # make runs repeatable
