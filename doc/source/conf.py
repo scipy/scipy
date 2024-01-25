@@ -199,13 +199,30 @@ html_theme = 'pydata_sphinx_theme'
 html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
+html_sidebars = {
+    "index": "search-button-field",
+    "**": ["search-button-field", "sidebar-nav-bs"]
+}
+
 html_theme_options = {
   "github_url": "https://github.com/scipy/scipy",
   "twitter_url": "https://twitter.com/SciPy_team",
-  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
+  "header_links_before_dropdown": 6,
+  "icon_links": [],
+  "navbar_start": ["navbar-logo", "version-switcher"],
+  "navbar_persistent": [],
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
+  },
+  "secondary_sidebar_items": ["page-toc"],
+  # The service https://plausible.io is used to gather simple
+  # and privacy-friendly analytics for the site. The dashboard can be accessed
+  # at https://analytics.scientific-python.org/docs.scipy.org
+  # The Scientific-Python community is hosting and managing the account.
+  "analytics": {
+      "plausible_analytics_domain": "docs.scipy.org",
+      "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
   }
 }
 

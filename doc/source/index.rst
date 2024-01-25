@@ -1,3 +1,5 @@
+:html_theme.sidebar_secondary.remove: true
+
 .. template taken from Pandas
 
 .. module:: scipy

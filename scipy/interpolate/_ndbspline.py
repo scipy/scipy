@@ -179,7 +179,7 @@ class NdBSpline:
             raise ValueError(f"Shapes: xi.shape={xi_shape} and ndim={ndim}")
 
         # prepare k & t
-        _k = np.asarray(self.k)
+        _k = np.asarray(self.k, dtype=np.dtype("long"))
 
         # pack the knots into a single array
         len_t = [len(ti) for ti in self.t]
@@ -187,7 +187,7 @@ class NdBSpline:
         _t.fill(np.nan)
         for d in range(ndim):
             _t[d, :len(self.t[d])] = self.t[d]
-        len_t = np.asarray(len_t)
+        len_t = np.asarray(len_t, dtype=np.dtype("long"))
 
         # tabulate the flat indices for iterating over the (k+1)**ndim subarray
         shape = tuple(kd + 1 for kd in self.k)

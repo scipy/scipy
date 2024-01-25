@@ -3,7 +3,7 @@
 #include <complex>
 #include <numpy/npy_math.h>
 
-#include "_binom.h"
+#include "special/binom.h"
 #include "special/lambertw.h"
 
 inline double binom(double n, double k) {

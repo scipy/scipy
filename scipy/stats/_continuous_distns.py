@@ -4482,7 +4482,7 @@ class halfnorm_gen(rv_continuous):
         if fscale is not None:
             scale = fscale
         else:
-            scale = stats.moment(data, moment=2, center=loc)**0.5
+            scale = stats.moment(data, order=2, center=loc)**0.5
 
         return loc, scale
 

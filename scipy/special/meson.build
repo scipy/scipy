@@ -38,45 +38,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
-amos_sources = [
-  'amos/dgamln.f',
-  'amos/zabs.f',
-  'amos/zacai.f',
-  'amos/zacon.f',
-  'amos/zairy.f',
-  'amos/zasyi.f',
-  'amos/zbesh.f',
-  'amos/zbesi.f',
-  'amos/zbesj.f',
-  'amos/zbesk.f',
-  'amos/zbesy.f',
-  'amos/zbinu.f',
-  'amos/zbiry.f',
-  'amos/zbknu.f',
-  'amos/zbuni.f',
-  'amos/zbunk.f',
-  'amos/zdiv.f',
-  'amos/zexp.f',
-  'amos/zkscl.f',
-  'amos/zlog.f',
-  'amos/zmlri.f',
-  'amos/zmlt.f',
-  'amos/zrati.f',
-  'amos/zs1s2.f',
-  'amos/zseri.f',
-  'amos/zshch.f',
-  'amos/zsqrt.f',
-  'amos/zuchk.f',
-  'amos/zunhj.f',
-  'amos/zuni1.f',
-  'amos/zuni2.f',
-  'amos/zunik.f',
-  'amos/zunk1.f',
-  'amos/zunk2.f',
-  'amos/zuoik.f',
-  'amos/zwrsk.f'
-]
-
 cephes_sources = [
   'cephes/airy.c',
   'cephes/bdtr.c',
@@ -151,6 +112,12 @@ mach_sources = [
   'mach/xerror.f'
 ]
 
+amos_lib = static_library('_amos',
+  ['_amos.c'],
+  c_args: use_math_defines,
+  include_directories: ['../_lib', '../_build_utils/src'],
+)
+
 ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
@@ -168,17 +135,11 @@ ufuncs_cxx_sources = [
   'wright.cc'
 ]
 
-
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, np_dep],
-)
-
-amos_lib = static_library('amos',
-  amos_sources,
-  fortran_args: _fflag_Wno_maybe_uninitialized
 )
 
 mach_lib = static_library('mach',
@@ -199,7 +160,6 @@ specfun_module = custom_target('specfun_module',
 
 py3.extension_module('_specfun',
   specfun_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   link_with: specfun_lib,
@@ -208,12 +168,11 @@ py3.extension_module('_specfun',
   subdir: 'scipy/special'
 )
 
-cdflib_c = cython_gen.process('_cdflib.pyx')
-
 py3.extension_module('_cdflib',
-  cdflib_c,
-  c_args: numpy_nodepr_api,
+  cython_gen.process('_cdflib.pyx'),
+  c_args: cython_c_args,
   dependencies: [np_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
@@ -418,12 +377,19 @@ special_sources = [
   'special/config.h',
   'special/error.h',
   'special/evalpoly.h',
-  'special/lambertw.h'
+  'special/lambertw.h',
+  'special/binom.h'
 ]
+
+special_cephes_sources = [
+  'special/cephes/const.h',
+  'special/cephes/polevl.h',
+  'special/cephes/beta.h',
+  'special/cephes/gamma.h'
+]
+
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
-foreach header: special_sources
-  fs.copyfile(header)
-endforeach
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',

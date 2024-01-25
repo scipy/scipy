@@ -38,7 +38,7 @@ requires = [
 ]
 
 [project]
-name = "SciPy"
+name = "scipy"
 version = "1.13.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
@@ -90,13 +90,13 @@ test = [
     "threadpoolctl",
     "scikit-umfpack",
     "pooch",
-    "hypothesis",
+    "hypothesis>=6.30",
 ]
 doc = [
-    "sphinx!=4.1.0",
-    "pydata-sphinx-theme==0.9.0",
-    "sphinx-design>=0.2.0",
-    "matplotlib>2",
+    "sphinx>=5.0.0",
+    "pydata-sphinx-theme>=0.15.2",
+    "sphinx-design>=0.4.0",
+    "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",
@@ -130,7 +130,7 @@ skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
-test-requires = ["pytest", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
+test-requires = ["pytest==7.4.3", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
