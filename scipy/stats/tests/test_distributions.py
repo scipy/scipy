@@ -4672,6 +4672,24 @@ class TestGamma:
 
         assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
 
+    @pytest.mark.parametrize(
+        'data, f0, floc, fscale, expected',
+        [([1, 2, 3, 4], 0.5, 1.0, None, (0.5, 1.0, 3.0)),
+         ([1, 2, 3, 4], 0.5, None, 2.5, (0.5, 1.25, 2.5)),
+         ([1, 2, 3, 4], None, 0.5, 2.5, (0.8, 0.5, 2.5)),
+         ([1, 2, 3, 4], 1.0, None, None, (1, 1.3819660, 1.1180339)),
+         ([1, 2, 3, 4], None, 0.5, None, (3.2, 0.5, 0.625)),
+         ([1, 2, 3, 4], None, None, 0.5, (5.0, 0.0, 0.5)),
+         ([1, 2, 3, 5], None, None, None, (21.172839, -4.0555555, 0.32142857)),
+         # The next case shows that the parameter estimated by MM could be
+         # outside the range of allowed parameters (scale < 0 in this case)
+         ([1, 3, 4, 5], None, None, None, (21.172839, 10.055555, -0.32142857)),
+        ])
+    def test_fit_mm(self, data, f0, floc, fscale, expected):
+        actual = stats.gamma.fit(data, f0=f0, floc=floc, fscale=fscale,
+                                 method='mm')
+        assert_allclose(actual, expected)
+
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
     # Reference value from R GeneralizedHyperbolic library
