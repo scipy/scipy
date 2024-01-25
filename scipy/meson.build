@@ -235,7 +235,7 @@ python_sources = [
   'special.pxd',
 ]
 
-if blas_name == 'scipy-openblas'
+if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
 

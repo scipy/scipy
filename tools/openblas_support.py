@@ -13,8 +13,8 @@ from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.21.dev'
-OPENBLAS_LONG = 'v0.3.20-571-g3dec11c6'
+OPENBLAS_V = '0.3.26'
+OPENBLAS_LONG = 'v0.3.26'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 NIGHTLY_BASE_LOC = (
     'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
