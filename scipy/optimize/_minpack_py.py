@@ -852,9 +852,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     The value is small, so it does not raise much concern. If, however, we were
     to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
 
-    >>> def func(x, a, b, c, d):
+    >>> def func2(x, a, b, c, d):
     ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
-    >>> popt, pcov = curve_fit(func, xdata, ydata)
+    >>> popt, pcov = curve_fit(func2, xdata, ydata)
     >>> np.linalg.cond(pcov)
     1.13250718925596e+32  # may vary
 
@@ -869,6 +869,22 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
+    Fit errors can also be caused by scale differences between parameters.
+    An orders of magnitude difference between function parameters can give
+    inaccurate results or entirely fail to find a result.
+
+    >>> ydata = func(xdata, 5000, 0.2, 15)
+    >>> popt, pcov = curve_fit(func, xdata, ydata)
+    RuntimeError: Optimal parameters not found:
+                  Number of calls to function has reached maxfev = 800.
+
+    If parameter scale is roughly known beforehand, it can be defined in
+    ``x_scale`` argument:
+
+    >>> popt, pcov = curve_fit(func, xdata, ydata, method = 'trf',
+    ...                        x_scale = [1000, 1, 1])
+    >>> popt
+    array([5.0e+03, 2.0e-01, 1.5e+01])
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
