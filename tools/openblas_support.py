@@ -15,8 +15,7 @@ from urllib.error import HTTPError
 
 OPENBLAS_V = '0.3.26'
 OPENBLAS_LONG = 'v0.3.26'
-BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
-NIGHTLY_BASE_LOC = (
+BASE_LOC = (
     'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
 )
 
@@ -166,9 +165,8 @@ def setup_openblas(plat=get_plat(), ilp64=get_ilp64(), nightly=False):
     if not plat:
         raise ValueError('unknown platform')
     openblas_version = "HEAD" if nightly else OPENBLAS_LONG
-    base_loc = NIGHTLY_BASE_LOC if nightly else BASE_LOC
     typ = download_openblas(
-        tmp, plat, ilp64, openblas_version=openblas_version, base_loc=base_loc
+        tmp, plat, ilp64, openblas_version=openblas_version, base_loc=BASE_LOC
     )
     if not typ:
         return ''
