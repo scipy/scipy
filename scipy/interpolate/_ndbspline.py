@@ -252,7 +252,8 @@ class NdBSpline:
             )
         # XXX: other consistency checks
 
-        data, indices, indptr, _ = _bspl._colloc_nd(xvals, t, np.asarray(k))
+        kk = np.asarray(k, dtype=np.int32)
+        data, indices, indptr, _ = _bspl._colloc_nd(xvals, t, kk)
         return csr_array((data, indices, indptr))
 
 
