@@ -790,6 +790,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
 
+    Parameters to be fitted should have similar scale. Differences of multiple
+    orders of magnitude can lead to incorrect results. For the 'trf' and
+    'dogbox' methods, the `x_scale` keyword argument can be used to scale
+    the parameters.
+
     References
     ----------
     [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
