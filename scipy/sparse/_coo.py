@@ -366,6 +366,19 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 x.sum_duplicates()
             return x
 
+    def _coo_to_compressed(self, swap):  #major_dim, minor_dim, major, minor, data):
+        """convert (shape, (row, col), data) to (indptr, indices, data)"""
+        M, N = swap(self.shape)
+        major, minor = swap(self.indices)
+        nnz = len(major)
+
+        indptr = np.empty(M + 1, dtype=major.dtype)
+        indices = np.empty_like(minor)
+        data = np.empty_like(self.data, dtype=self.dtype)
+
+        coo_tocsr(M, N, nnz, major, minor, self.data, indptr, indices, data)
+        return indptr, indices, data, self.shape
+
     def tocoo(self, copy=False):
         if copy:
             return self.copy()

@@ -50,10 +50,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    other = self.__class__(
-                        self._coo_container(arg1, shape=shape, dtype=dtype)
-                    )
-                    self._set_self(other)
+                    coo = self._coo_container(arg1, shape=shape, dtype=dtype)
+                    arrays = coo._coo_to_compressed(self._swap)
+                    self.indptr, self.indices, self.data, self._shape = arrays
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -69,8 +68,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
                     if not copy:
                         copy = copy_if_needed
-                    self.indices = np.array(indices, copy=copy,
-                                            dtype=idx_dtype)
+                    self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
@@ -84,9 +82,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 msg = f"unrecognized {self.format}_matrix constructor usage"
                 raise ValueError(msg) from e
-            self._set_self(self.__class__(
-                self._coo_container(arg1, dtype=dtype)
-            ))
+            coo = self._coo_container(arg1, dtype=dtype)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, self._shape = arrays
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -100,8 +98,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except Exception as e:
                     raise ValueError('unable to infer matrix dimensions') from e
                 else:
-                    self._shape = check_shape(self._swap((major_dim,
-                                                          minor_dim)))
+                    self._shape = check_shape(self._swap((major_dim, minor_dim)))
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
@@ -860,31 +857,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if 0 in self.shape:
             return
 
-        M, N = self.shape
-        broadcast = (values.ndim == 0)
-
-        if k < 0:
-            if broadcast:
-                max_index = min(M + k, N)
-            else:
-                max_index = min(M + k, N, len(values))
-            i = np.arange(max_index, dtype=self.indices.dtype)
-            j = np.arange(max_index, dtype=self.indices.dtype)
-            i -= k
-
-        else:
-            if broadcast:
-                max_index = min(M, N - k)
-            else:
-                max_index = min(M, N - k, len(values))
-            i = np.arange(max_index, dtype=self.indices.dtype)
-            j = np.arange(max_index, dtype=self.indices.dtype)
-            j += k
-
-        if not broadcast:
-            values = values[:len(i)]
-
-        self[i, j] = values
+        coo = self.tocoo()
+        coo._setdiag(values, k)
+        arrays = coo._coo_to_compressed(self._swap)
+        self.indptr, self.indices, self.data, _ = arrays
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
