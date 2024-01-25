@@ -213,9 +213,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
-    
+
     def test_bfgs_hess_inv0_neg(self):
-        # Ensure that BFGS does not accept neg. def. initial inverse 
+        # Ensure that BFGS does not accept neg. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -223,9 +223,9 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': -np.eye(5)}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_semipos(self):
-        # Ensure that BFGS does not accept semi pos. def. initial inverse 
+        # Ensure that BFGS does not accept semi pos. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -235,18 +235,18 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': hess_inv0}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_sanity(self):
         # Ensure that BFGS handles `hess_inv0` parameter correctly.
         fun = optimize.rosen
         x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
         opts = {'disp': self.disp, 'hess_inv0': 1e-2 * np.eye(5)}
-        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                 options=opts)
-        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                      options={'disp': self.disp})
         assert_allclose(res.fun, res_true.fun, atol=1e-6)
-            
+
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
@@ -293,7 +293,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         res_mod = optimize.minimize(optimize.rosen,
                                     x0, method='bfgs', options={'c2': 1e-2})
         assert res_default.nit > res_mod.nit
-    
+
     @pytest.mark.parametrize(["c1", "c2"], [[0.5, 2],
                                             [-0.1, 0.1],
                                             [0.2, 0.1]])
@@ -3111,6 +3111,21 @@ def test_approx_fprime():
 
     h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
     assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)
+
+
+def test_approx_fprime_scalar():
+    # test for scalar input (n == 1)
+    J = optimize.approx_fprime(np.array([1.0]), lambda x: x)
+    assert J.shape == (1, 1), "Jacobian should be 2D for scalar input"
+    assert_allclose(J, np.eye(1), err_msg="Jacobian mismatch for scalar input")
+
+
+def test_approx_fprime_vector():
+    # test for vector input (n > 1)
+    for n in [2, 3, 5]:
+        J = optimize.approx_fprime(np.ones(n), lambda x: x)
+        assert J.shape == (n, n), f"Jacobian shape mismatch for input size {n}"
+        assert_allclose(J, np.eye(n), err_msg=f"Jacobian mismatch for input size {n}")
 
 
 def test_gh12594():

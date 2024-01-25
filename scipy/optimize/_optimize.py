@@ -281,8 +281,8 @@ def _check_positive_definite(Hk):
     if Hk is not None:
         if not is_pos_def(Hk):
             raise ValueError("'hess_inv0' matrix isn't positive definite.")
-        
-        
+
+
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -1110,8 +1110,12 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     xk = np.asarray(xk, float)
     f0 = f(xk, *args)
 
-    return approx_derivative(f, xk, method='2-point', abs_step=epsilon,
-                             args=args, f0=f0)
+    J = approx_derivative(f, xk, method='2-point', abs_step=epsilon, args=args, f0=f0)
+
+    if xk.size == 1:
+        J = J.reshape(1, 1)
+
+    return J
 
 
 def check_grad(func, grad, x0, *args, epsilon=_epsilon,
@@ -1267,7 +1271,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9, 
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9,
               hess_inv0=None):
     """
     Minimize a function using the BFGS algorithm.
@@ -1340,7 +1344,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     Optimize the function, `f`, whose gradient is given by `fprime`
     using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
     and Shanno (BFGS).
-    
+
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     See Also
@@ -1412,7 +1416,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, c1=1e-4, c2=0.9, 
+                   xrtol=0, c1=1e-4, c2=0.9,
                    hess_inv0=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
