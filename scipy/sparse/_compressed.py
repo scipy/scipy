@@ -32,7 +32,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.asformat(self.format)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -121,17 +123,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError('axis out of bounds')
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-
-    def _set_self(self, other, copy=False):
-        """take the member variables of other and assign them to self"""
-
-        if copy:
-            other = other.copy()
-
-        self.data = other.data
-        self.indices = other.indices
-        self.indptr = other.indptr
-        self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
         """Check whether the array/matrix respects the CSR or CSC format.
