@@ -4298,8 +4298,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
-                        else len(sample) for sample in samples])
+    lengths = np.array([len(sample) for sample in samples])
     means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4340,19 +4339,12 @@ def _alexandergovern_input_validation(samples, nan_policy):
     if len(samples) < 2:
         raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
-    # input arrays are flattened
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
-    for i, sample in enumerate(samples):
+    for sample in samples:
         if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
         if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(sample,
-                                                 nan_policy=nan_policy)
-        if contains_nan and nan_policy == 'omit':
-            samples[i] = ma.masked_invalid(sample)
     return samples
 
 
