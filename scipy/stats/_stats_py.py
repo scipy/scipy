@@ -3911,7 +3911,7 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-def _create_f_oneway_nan_result(shape, axis):
+def _create_f_oneway_nan_result(shape, axis, samples):
     """
     This is a helper function for f_oneway for creating the return values
     in certain degenerate conditions.  It creates return values that are
@@ -3919,13 +3919,9 @@ def _create_f_oneway_nan_result(shape, axis):
     """
     axis = normalize_axis_index(axis, len(shape))
     shp = shape[:axis] + shape[axis+1:]
-    if shp == ():
-        f = np.nan
-        prob = np.nan
-    else:
-        f = np.full(shp, fill_value=np.nan)
-        prob = f.copy()
-    return F_onewayResult(f, prob)
+    f = np.full(shp, fill_value=_get_nan(*samples))
+    prob = f.copy()
+    return F_onewayResult(f[()], prob[()])
 
 
 def _first(arr, axis):
@@ -3933,6 +3929,23 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
+def _f_oneway_is_too_small(samples, kwargs, axis=-1):
+    if any(sample.shape[axis] == 0 for sample in samples):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+    if all(sample.shape[axis] == 1 for sample in samples):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small
+)
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
@@ -4066,8 +4079,6 @@ def f_oneway(*samples, axis=0):
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
 
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
 
@@ -4083,14 +4094,14 @@ def f_oneway(*samples, axis=0):
     if any(sample.shape[axis] == 0 for sample in samples):
         msg = 'at least one input has length 0'
         warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
+        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
+        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
@@ -4126,7 +4137,7 @@ def f_oneway(*samples, axis=0):
     # to a shift in location, and centering all data around zero vastly
     # improves numerical stability.
     offset = alldata.mean(axis=axis, keepdims=True)
-    alldata -= offset
+    alldata = alldata - offset
 
     normalized_ss = _square_of_sums(alldata, axis=axis) / bign
 
@@ -4134,12 +4145,13 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn += _square_of_sums(sample - offset,
-                                axis=axis) / sample.shape[axis]
+        ssbn = ssbn + _square_of_sums(
+            sample - offset,axis=axis
+        ) / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= normalized_ss
+    ssbn = ssbn - normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
