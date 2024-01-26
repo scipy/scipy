@@ -790,7 +790,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
 
-    Parameters to be fitted should have similar scale. Differences of multiple
+    Parameters to be fitted must have similar scale. Differences of multiple
     orders of magnitude can lead to incorrect results. For the 'trf' and
     'dogbox' methods, the `x_scale` keyword argument can be used to scale
     the parameters.
@@ -869,9 +869,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
-    Fit errors can also be caused by scale differences between parameters.
-    An orders of magnitude difference between function parameters can give
-    inaccurate results or entirely fail to find a result.
+    If the optimal parameters of `f` differ by more than four orders
+    of magnitude, the resulting fit can be inaccurate. 
+    Sometimes, `curve_fit()` can fail to find any results.
 
     >>> ydata = func(xdata, 5000, 0.2, 15)
     >>> popt, pcov = curve_fit(func, xdata, ydata)
