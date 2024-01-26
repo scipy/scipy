@@ -873,10 +873,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     of magnitude, the resulting fit can be inaccurate. 
     Sometimes, `curve_fit()` can fail to find any results.
 
-    >>> ydata = func(xdata, 5000, 0.2, 15)
-    >>> popt, pcov = curve_fit(func, xdata, ydata)
-    RuntimeError: Optimal parameters not found:
-                  Number of calls to function has reached maxfev = 800.
+    >>> ydata = func(xdata, 500000, 0.01, 15)
+    >>> try:
+    ...     popt, pcov = curve_fit(func, xdata, ydata, method = 'trf')
+    ... except RuntimeError as e:
+    ...     print(e)
+    Optimal parameters not found: The maximum number of function evaluations is exceeded.
 
     If parameter scale is roughly known beforehand, it can be defined in
     ``x_scale`` argument:
@@ -884,7 +886,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     >>> popt, pcov = curve_fit(func, xdata, ydata, method = 'trf',
     ...                        x_scale = [1000, 1, 1])
     >>> popt
-    array([5.0e+03, 2.0e-01, 1.5e+01])
+    array([5.00000000e+05, 1.00000000e-02, 1.49999999e+01])
     """
     if p0 is None:
         # determine number of parameters by inspecting the function
