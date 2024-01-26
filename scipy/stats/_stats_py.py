@@ -4180,6 +4180,23 @@ def f_oneway(*samples, axis=0):
     return F_onewayResult(f, prob)
 
 
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
+
+
+def _alexandergovern_is_too_small(samples, kwargs, axis=-1):
+    if any(sample.shape[axis] <= 1 for sample in samples):
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    AlexanderGovernResult, n_samples=None,
+    result_to_tuple=lambda x: (x.statistic, x.pvalue),
+    too_small=_alexandergovern_is_too_small
+)
 def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
 
@@ -4329,8 +4346,6 @@ def _alexandergovern_input_validation(samples, nan_policy):
     for i, sample in enumerate(samples):
         if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if sample.ndim != 1:
-            raise ValueError("Input samples must be one-dimensional")
         if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
@@ -4339,12 +4354,6 @@ def _alexandergovern_input_validation(samples, nan_policy):
         if contains_nan and nan_policy == 'omit':
             samples[i] = ma.masked_invalid(sample)
     return samples
-
-
-@dataclass
-class AlexanderGovernResult:
-    statistic: float
-    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
