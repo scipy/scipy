@@ -302,6 +302,7 @@ autosummary_generate = True
 autosummary_filename_map = {
     "scipy.odr.odr": "odr-function",
     "scipy.signal.czt": "czt-function",
+    "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
 }
 
 
