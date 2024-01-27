@@ -2444,13 +2444,18 @@ class TestMultivariateT:
         assert ((p > P_VAL_MIN).all())
 
     @patch('scipy.stats.multivariate_normal._logpdf')
-    def test_mvt_with_inf_df_calls_normal(self, mock):
+    def test_mvt_frozen_with_inf_df_calls_normal(self, mock):
         dist = multivariate_t(0, 1, df=np.inf, seed=7)
         assert isinstance(dist, multivariate_normal_frozen)
         multivariate_t.pdf(0, df=np.inf)
         assert mock.call_count == 1
         multivariate_t.logpdf(0, df=np.inf)
         assert mock.call_count == 2
+
+    def test_mvt_inf_df_is_mv_normal(self):
+        mvt_logpdf = multivariate_t.logpdf(1, 1, 1, df=np.inf)
+        mvn_logpdf = multivariate_normal.logpdf(1, 1)
+        assert_equal(mvt_logpdf, mvn_logpdf)
 
     def test_shape_correctness(self):
         # pdf and logpdf should return scalar when the
