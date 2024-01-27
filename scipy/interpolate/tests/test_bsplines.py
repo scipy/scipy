@@ -2166,22 +2166,21 @@ class TestNdBSpline:
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
 
+    def test_design_matrix(self):
+        t3, c3, k = self.make_3d_case()
+
+        xi = np.asarray([[1, 2, 3], [4, 5, 6]])
+        dm = NdBSpline(t3, c3, k)(xi)
+        assert dm.shape[0] == xi.shape[0]
+
+        with assert_raises(ValueError):
+            NdBSpline.design_matrix([1, 2, 3], t3, [k]*3)
+
+        with assert_raises(ValueError, match="Data and knots*"):
+            NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
+
 
 class TestMakeND:
-    def make_2d_case(self):
-        # make a 2D separable spline
-        x = np.arange(6)
-        y = x**3
-        spl = make_interp_spline(x, y, k=3)
-
-        y_1 = x**3 + 2*x
-        spl_1 = make_interp_spline(x, y_1, k=3)
-
-        t2 = (spl.t, spl_1.t)
-        c2 = spl.c[:, None] * spl_1.c[None, :]
-
-        return t2, c2, 3
-
     def test_2D_separable_simple(self):
         x = np.arange(6)
         y = np.arange(6) + 0.5
@@ -2315,6 +2314,15 @@ class TestMakeND:
 
         xi = np.random.uniform(low=0.7, high=2.1, size=(11, 3))
         assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_solver_err_not_converged(self):
+        x, y, z = self._get_sample_2d_data()
+        solver_args = {'maxiter': 1}
+        with assert_raises(ValueError, match='solver'):
+            make_ndbspl((x, y), z, k=3, **solver_args)
+
+        with assert_raises(ValueError, match='solver'):
+            make_ndbspl((x, y), np.dstack((z, z)), k=3, **solver_args)
 
 
 class TestFpchec:

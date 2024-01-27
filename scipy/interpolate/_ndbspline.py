@@ -244,6 +244,7 @@ class NdBSpline:
             at this value.
 
         """
+        xvals = np.asarray(xvals, dtype=float)
         ndim = xvals.shape[-1]
         if len(t) != ndim:
             raise ValueError(
@@ -253,7 +254,7 @@ class NdBSpline:
         # XXX: other consistency checks
 
         kk = np.asarray(k, dtype=np.int32)
-        data, indices, indptr, _ = _bspl._colloc_nd(xvals, t, kk)
+        data, indices, indptr = _bspl._colloc_nd(xvals, t, kk)
         return csr_array((data, indices, indptr))
 
 

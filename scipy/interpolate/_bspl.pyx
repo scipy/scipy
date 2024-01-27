@@ -690,7 +690,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
         ``ndim``-dimensional array.
     t : tuple of 1D arrays, length-ndim
         Tuple of knot vectors
-    k : tuple of ints, length-ndim
+    k : ndarray, shape (ndim,)
         Spline degrees
 
     Returns
@@ -700,9 +700,6 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
 
     Notes
     -----
-
-    This routine is in Cython mainly because `find_interval` and `_deBoor_D` are.
-
     Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor
     product spline, i.e. a linear combination of
 
@@ -836,9 +833,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
 
             # Each row of the full matrix has `volume` non-zero elements.
             # Thus the CSR format `indptr` increases in steps of `volume`
-            # (hence pre-constructed above), the current element ends up in the
-            # `j*volume + iflat`-th element of the CSR `indices` and `data` arrays.
             csr_indices[j*volume + iflat] = idx_cflat
             csr_data[j*volume + iflat] = factor
 
-    return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr, 1  #, matr
+    return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
