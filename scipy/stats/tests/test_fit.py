@@ -970,6 +970,20 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.loc, -13.85)
         assert not np.allclose(res3.null_distribution, res1.null_distribution)
 
+    def test_custom_statistic(self):
+        # Test support for custom statistic function
+        def ks_plus(dist, data):
+            x = np.sort(data, axis=-1)
+            n = x.shape[-1]
+            cdfvals = dist.cdf(x)
+            return (np.arange(1.0, n + 1) / n - cdfvals).max(axis=-1)
+
+        rng = np.random.default_rng(9121950977643805391)
+        res = goodness_of_fit(stats.expon,
+                              stats.expon.rvs(size=100, random_state=rng),
+                              statistic=ks_plus,
+                              random_state=rng)
+        assert_allclose(res.statistic, 0.041086274)
 
 class TestFitResult:
     def test_plot_iv(self):
