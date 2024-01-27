@@ -4,162 +4,73 @@ from scipy.optimize import _nnls
 from scipy.linalg.blas import dtrsm, dtrsv
 
 
-def linmin(mode: int, ax: float, bx: float, f: float, tol: float):
-    c = 0.3819660112501051  # (3-sqrt(5))/2
-    e = d = u = 0
-    a, b = ax, bx
-    eps = 1.5e-8
-    x = w = v = (c*(bx - ax) + ax)
-    if mode == 0:
-        return 1, x
+def ldl_update(a, z, sigma):
+    """
+    Updates the LDL' factors of a matrix by a rank-one or dyadic product
+    sigma*(z @ z.T). Arrays are modified in-place.
 
-    # if mode is 2, we need to start from the middle of the loop
-    if mode == 2:
-        jump_to_middle = True
-    else:
-        jump_to_middle = False
+    Parameters
+    ----------
+    a : ndarray
+        1D array, encoding the lower triangle of a positive definite array in
+        LAPACK packed format with UPLO=True. The array is updated in place.
+    z : ndarray
+        1D update vector with compatible size that of 'a'.
+    sigma : float
+        Scalar factor that multiplies the rank-1 update.
 
-    fx = fv = fw = f
-    while True:
-        if not jump_to_middle:
-            m = (a + b)*0.5
-            tol1 = eps*np.abs(x) + tol
-            tol2 = tol1 + tol1
-            print(m, tol1, tol2)
-            if np.abs(x - m) <= (tol2 - (b - a)*0.5):
-                return 3, x
-
-            p = q = r = 0
-
-            # fit parabola
-            if abs(e) > tol1:
-                r = (x - w)*(fx - fv)
-                q = (x - v)*(fx - fw)
-                p = (x - v)*q - (x - w)*r
-                q += (q - r)
-
-                if q > 0:
-                    p = -p
-                if q < 0:
-                    q = -q
-                r = e
-                e = d
-
-            # is parabola acceptable
-            if (np.abs(p) >= 0.5*np.abs(q*r)) or (p <= q*(a-x)) or (
-                    p >= q*(b-x)):
-                # golden section step
-                e = b - x if (x < m) else a - x
-                d = c*e
-            else:
-                # parabolic interpolation step
-                d = p/q
-                # f must not be evaluated too close to a or b
-                if ((u - a) < tol2) or ((b - u) < tol2):
-                    d = -tol1 if (m - x) < 0 else tol1
-                    d = np.copysign(tol1, m - x)
-
-            # f must not be evaluated too close to x
-            if np.abs(d) < tol1:
-                d = np.copysign(tol1, d)
-            u = x + d
-            return 2, u
-
-        # in case we jumped here
-        if jump_to_middle:
-            jump_to_middle = False
-
-        # 55
-        fu = f
-
-        # update a, b, v, w, and x
-        if fu > fx:
-            # 60
-            if u < x:
-                a = u
-            else:
-                b = u
-
-            if (fu <= fw) or (w == x):
-                # 70
-                v = w
-                fv = fw
-                w = u
-                fw = fu
-            else:
-                # 80
-                if (fu <= fv) or (v == x) or (v == w):
-                    v = u
-                    fv = fu
-        else:
-            if u >= x:
-                a = x
-            else:
-                b = x
-            v = w
-            fv = fw
-            w = x
-            fw = fx
-            x = u
-            fx = fu
-
-
-def ldl_update(A, n, sigma, z):
-    """In place update of A <- A + sigma * np.outer(z, z)"""
-    eps = np.spacing(1.)
-    if sigma == 0:
+    """
+    if sigma == 0.0:
         return
 
-    t = 1/sigma
     ij = 0
+    t = 1.0/sigma
+    n = len(z)
 
-    if sigma < 0:
-        w = z.copy()
-        for i in range(n):  # DO - 170
+    w = z.copy()
+    if sigma < 0.0:
+        # Negative update
+        for i in range(n):
             v = w[i]
-            t += v*v/A[ij]
-            for k in range(i+1, n):  # DO - 160
+            t += v*v/a[ij]
+            for j in range(i+1, n):
                 ij += 1
-                w[k] -= v*A[ij]
+                w[j] -= v*a[ij]
             ij += 1
-
-        if t > 0:
-            t = eps/sigma
+        if t >= 0.0:
+            t = np.finfo(a.dtype).eps / sigma
 
         for i in range(n):
-            j = n - i
-            ij -= i
+            j = n - i - 1
+            ij -= i + 1
             u = w[j]
             w[j] = t
-            t -= u*u/A[ij]
+            t -= u*u / a[ij]
 
-    for i in range(n):  # DO - 270
+    for i in range(n):
         v = z[i]
-        delta = v / A[ij]
-        if sigma < 0:
-            tp = w[i]
-        else:
-            tp = t + delta*v
+        delta = v / a[ij]
+        tp = w[i] if sigma < 0.0 else t + delta*v
         alpha = tp / t
-        A[ij] *= alpha
+        a[ij] *= alpha
         if i == n - 1:
             return
-
         beta = delta / tp
-        if alpha <= 4:
+        if alpha <= 4.0:
             for j in range(i+1, n):
                 ij += 1
-                z[j] -= v*A[ij]
+                z[j] -= v*a[ij]
+                a[ij] += beta*z[j]
         else:
-            gamma = t/tp
+            gamma = t / tp
             for j in range(i+1, n):
                 ij += 1
-                u = A[ij]
-                A[ij] = gamma*u + beta*z[j]
+                u = a[ij]
+                a[ij] = gamma*u + beta*z[j]
                 z[j] -= v*u
-
         ij += 1
         t = tp
+    return
 
 
 def ldp(G, h):
