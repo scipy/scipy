@@ -38,7 +38,7 @@ requires = [
 ]
 
 [project]
-name = "SciPy"
+name = "scipy"
 version = "1.13.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
@@ -90,13 +90,13 @@ test = [
     "threadpoolctl",
     "scikit-umfpack",
     "pooch",
-    "hypothesis",
+    "hypothesis>=6.30",
 ]
 doc = [
-    "sphinx!=4.1.0",
-    "pydata-sphinx-theme==0.9.0",
-    "sphinx-design>=0.2.0",
-    "matplotlib>2",
+    "sphinx>=5.0.0",
+    "pydata-sphinx-theme>=0.15.2",
+    "sphinx-design>=0.4.0",
+    "matplotlib>=3.5",
     "numpydoc",
     "jupytext",
     "myst-nb",

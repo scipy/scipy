@@ -1077,7 +1077,7 @@ int amos_asyi(
             bb = aez;
             dk = ez;
             j = 1;
-            for (int j = 1; j < (jl+1); j++)
+            for (j = 1; j < (jl+1); j++)
             {
                 ck *= sqk / dk;
                 cs2 += ck;
@@ -1090,7 +1090,7 @@ int amos_asyi(
                 sqk -= ak;
                 if (aa <= atol) { break; }
             }
-            if ((j == jl) && (aa > atol)) { return -2; }
+            if ((j == (jl+1)) && (aa > atol)) { return -2; }
 
             /* 50 */
             s2 = cs1;
@@ -1115,7 +1115,10 @@ int amos_asyi(
         if (koded == 0) { return nz; }
         ck = cexp(cz);
         for (int i = 0; i < (nn + 1); i++) { y[i] *= ck; }
+        /* 90 */
+        return nz;
     }
+    /* 100 */
     return -1;
 }
 
@@ -3863,7 +3866,7 @@ int amos_mlri(
                 tst *= sqrt(rho / (rho*rho - 1.0));
                 itime = 2;
             }
-            if (i == 80) {
+            if (k == 80) {
                 /* Exhausted loop without break */
                 return -2;
             }
@@ -4007,6 +4010,10 @@ int amos_kscl(
     if (n == 2) {
         return nz;
     }
+    if (nz == 0) {
+        return nz;
+    }
+
     fn = fnu + 1.;
     ck = fn*rz;
     s1 = cy[0];
@@ -4052,9 +4059,8 @@ int amos_kscl(
     nz = n;
     if (ic == n) {
         nz = n-1;
-    } else {
-        nz = kk - 2;
     }
+
     for (int i = 0; i < nz; i++) { y[i] = 0.; }
     return nz;
 }
@@ -4200,7 +4206,7 @@ int amos_seri(
     //***ROUTINES CALLED  DGAMLN,D1MACH,ZUCHK,AZABS,ZDIV,AZLOG,ZMLT
     //***END PROLOGUE  ZSERI
 
-    double complex ak1, ck, coef, crsc, cz, hz, rz, s1, s2, w[2];
+    double complex ak1, ck, coef, crsc, cz, half_z, rz, s1, s2, w[2];
     double aa, acz, ak, arm, ascle, atol, az, dfnu, fnup, rak1,\
            rs, rtr1, s, ss, x;
     int ib, iflag, il, k, l, m, nn;
@@ -4220,12 +4226,12 @@ int amos_seri(
     crsc = 1.0;
     iflag = 0;
     if (az >= arm) {
-        hz = 0.5*z;
+        half_z = 0.5*z;
         cz = 0.0;
-        if (az > rtr1) { cz = hz*hz; }
+        if (az > rtr1) { cz = half_z*half_z; }
         acz = cabs(cz);
         nn = n;
-        ck = clog(hz);
+        ck = clog(half_z);
 L10:
         dfnu = fnu + (nn-1);
         fnup = dfnu + 1.0;
@@ -4291,7 +4297,7 @@ L30:
             }
             m = nn - i + 1;
             y[m-1] = s2 * crsc;
-            if (i != il) { coef *= dfnu / hz; }
+            if (i != il) { coef *= dfnu / half_z; }
         }
         if (nn <= 2) { return nz; }
         k = nn - 2;

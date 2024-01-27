@@ -20,7 +20,7 @@ from scipy._lib.array_api_compat import (
     numpy as np_compat,
 )
 
-__all__ = ['array_namespace', 'as_xparray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size']
 
 
 # To enable array API and strict array-like input validation
@@ -119,7 +119,7 @@ def array_namespace(*arrays):
     return array_api_compat.array_namespace(*arrays)
 
 
-def as_xparray(
+def _asarray(
     array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False
 ):
     """SciPy-specific replacement for `np.asarray` with `order` and `check_finite`.
@@ -192,23 +192,24 @@ def copy(x, *, xp=None):
     if xp is None:
         xp = array_namespace(x)
 
-    return as_xparray(x, copy=True, xp=xp)
+    return _asarray(x, copy=True, xp=xp)
 
 
 def is_numpy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.numpy'
+    return xp.__name__ in ('numpy', 'scipy._lib.array_api_compat.numpy')
 
 
 def is_cupy(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.cupy'
+    return xp.__name__ in ('cupy', 'scipy._lib.array_api_compat.cupy')
 
 
 def is_torch(xp):
-    return xp.__name__ == 'scipy._lib.array_api_compat.torch'
+    return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
+    __tracebackhide__ = True  # Hide traceback for py.test
     if check_namespace:
         _assert_matching_namespace(actual, desired)
 
@@ -228,6 +229,7 @@ def _strict_check(actual, desired, xp,
 
 
 def _assert_matching_namespace(actual, desired):
+    __tracebackhide__ = True  # Hide traceback for py.test
     actual = actual if isinstance(actual, tuple) else (actual,)
     desired_space = array_namespace(desired)
     for arr in actual:
@@ -239,6 +241,7 @@ def _assert_matching_namespace(actual, desired):
 
 
 def _check_scalar(actual, desired, xp):
+    __tracebackhide__ = True  # Hide traceback for py.test
     # Shape check alone is sufficient unless desired.shape == (). Also,
     # only NumPy distinguishes between scalars and arrays.
     if desired.shape != () or not is_numpy(xp):
@@ -264,6 +267,7 @@ def _check_scalar(actual, desired, xp):
 
 def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
                     check_shape=True, err_msg='', xp=None):
+    __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
@@ -281,6 +285,7 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
 
 def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, err_msg='', xp=None):
+    __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
@@ -298,6 +303,7 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
 
 def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
                    check_shape=True, err_msg='', verbose=True, xp=None):
+    __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
