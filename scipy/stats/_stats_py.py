@@ -9571,6 +9571,9 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     return BrunnerMunzelResult(wbfn, p)
 
 
+@_axis_nan_policy_factory(
+    SignificanceResult, paired=True, kwd_samples=["weights"], too_small=-1
+)
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
@@ -9586,7 +9589,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Parameters
     ----------
-    pvalues : array_like, 1-D
+    pvalues : array_like
         Array of p-values assumed to come from independent tests based on
         continuous distributions.
     method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
@@ -9600,7 +9603,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         * 'mudholkar_george': Mudholkar's and George's method
         * 'tippett': Tippett's method
         * 'stouffer': Stouffer's Z-score method
-    weights : array_like, 1-D, optional
+    weights : array_like, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
     Returns
@@ -9691,10 +9694,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
-    pvalues = np.asarray(pvalues)
-    if pvalues.ndim != 1:
-        raise ValueError("pvalues is not 1-D")
-
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
@@ -9702,7 +9701,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = 2 * np.sum(np.log1p(-pvalues))
         pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
-        normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
+        normalizing_factor = np.sqrt(np.divide(3, len(pvalues))) / np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
         nu = 5 * len(pvalues) + 4
         approx_factor = np.sqrt(nu / (nu - 2))
@@ -9716,10 +9715,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             weights = np.ones_like(pvalues)
         elif len(weights) != len(pvalues):
             raise ValueError("pvalues and weights must be of the same size.")
-
-        weights = np.asarray(weights)
-        if weights.ndim != 1:
-            raise ValueError("weights is not 1-D")
 
         Zi = distributions.norm.isf(pvalues)
         statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
