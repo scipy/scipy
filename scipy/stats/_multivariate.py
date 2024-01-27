@@ -4754,7 +4754,8 @@ class multivariate_t_gen(multi_rv_generic):
             elif df <= 0:
                 raise ValueError("'df' must be greater than zero.")
             elif np.isnan(df):
-                raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
+                msg = "'df' is 'nan' but must be greater than zero or 'np.inf'."
+                raise ValueError(msg)
             return df
 
         # quick exit if shape is instance of covariance matrix class
@@ -4808,7 +4809,7 @@ class multivariate_t_gen(multi_rv_generic):
             raise ValueError("Array 'cov' must be at most two-dimensional,"
                              " but cov.ndim = %d" % shape.ndim)
 
-        # convert shape to covariance matrix class
+        # instantiate covariance matrix class from shape matrix
         psd = _PSD(shape, allow_singular=allow_singular)
         cov_object = _covariance.CovViaPSD(psd)
         
@@ -4845,7 +4846,6 @@ class multivariate_t_frozen(multi_rv_frozen):
         params = self._dist._process_parameters(loc, shape, df, allow_singular)
         self.dim, self.loc, self.cov_object, self.df = params
         self.allow_singular = allow_singular or self.cov_object._allow_singular
-        print(self.cov_object)
 
     @property
     def cov(self):
@@ -4861,8 +4861,8 @@ class multivariate_t_frozen(multi_rv_frozen):
 
     def cdf(self, x, *, maxpts=None, lower_limit=None, random_state=None):
         x = self._dist._process_quantiles(x, self.dim)
-        return self._dist._cdf(x, self.loc, self.cov_object.covariance, self.df, self.dim,
-                               maxpts, lower_limit, random_state)
+        return self._dist._cdf(x, self.loc, self.cov_object.covariance, self.df,
+                               self.dim, maxpts, lower_limit, random_state)
 
     def pdf(self, x):
         return np.exp(self.logpdf(x))
