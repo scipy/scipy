@@ -4698,14 +4698,24 @@ class invgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
-                    \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
+        f(x; \mu) = \frac{1}{\sqrt{2 \pi x^3}}
+                    \exp\left(-\frac{(x-\mu)^2}{2 \mu^2 x}\right)
 
-    for :math:`x >= 0` and :math:`\mu > 0`.
+    for :math:`x \ge 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
+
+    An alternative (``mu``, ``lambda``) parameterization of the inverse
+    Gaussian distribution with density
+
+    .. math::
+
+        f(x; \mu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\mu)^2}{2 \mu^2 x}\right)
+
+    is equivalent to ``invgauss(mu/lambda, loc=0, scale=lambda)``.
 
     %(example)s
 
