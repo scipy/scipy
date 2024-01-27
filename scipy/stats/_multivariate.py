@@ -115,9 +115,6 @@ def _pinv_1d(v, eps=1e-5):
 
 
 def _process_parameters_Covariance(mean, cov):
-    """
-    Input validation if cov is a Covariance object.
-    """
     dim = cov.shape[-1]
     mean = np.array([0.]) if mean is None else mean
     message = (f"`cov` represents a covariance matrix in {dim} dimensions,"
@@ -4296,7 +4293,7 @@ class unitary_group_frozen(multi_rv_frozen):
 _mvt_doc_default_callparams = """\
 loc : array_like, optional
     Location of the distribution. (default ``0``)
-shape : array_like or `Covariance`, optional
+shape : array_like, optional
     Positive semidefinite matrix of the distribution. (default ``1``)
 df : float, optional
     Degrees of freedom of the distribution; must be greater than zero.
@@ -4460,11 +4457,11 @@ class multivariate_t_gen(multi_rv_generic):
         0.00075713
 
         """
-        dim, loc, shape, df = self._process_parameters(loc, shape, df)
+        params = self._process_parameters(loc, shape, df,
+                                          allow_singular=allow_singular)
+        dim, loc, cov_object, df = params
         x = self._process_quantiles(x, dim)
-        shape_info = _PSD(shape, allow_singular=allow_singular)
-        logpdf = self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df,
-                              dim, shape_info.rank)
+        logpdf = self._logpdf(x, loc, cov_object, df, dim)
         return np.exp(logpdf)
 
     def logpdf(self, x, loc=None, shape=1, df=1):
@@ -4496,13 +4493,15 @@ class multivariate_t_gen(multi_rv_generic):
         pdf : Probability density function.
 
         """
-        dim, loc, shape, df = self._process_parameters(loc, shape, df)
+        dim, loc, cov_object, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
-        shape_info = _PSD(shape)
-        return self._logpdf(x, loc, shape_info.U, shape_info.log_pdet, df, dim,
-                            shape_info.rank)
+        out = self._logpdf(x, loc, cov_object, df, dim)
+        if np.any(cov_object.rank < dim):
+            out_of_bounds = ~cov_object._support_mask(x - loc)
+            out[out_of_bounds] = -np.inf
+        return _squeeze_output(out)
 
-    def _logpdf(self, x, loc, cov_object):
+    def _logpdf(self, x, loc, cov_object, df, dim):
         """Utility method `pdf`, `logpdf` for parameters.
 
         Parameters
@@ -4530,11 +4529,12 @@ class multivariate_t_gen(multi_rv_generic):
         directly; use 'logpdf' instead.
 
         """
-        if df == np.inf:
-            return multivariate_normal._logpdf(x, loc, prec_U, log_pdet, rank)
+
+        if np.isposinf(df):
+            return multivariate_normal._logpdf(x, loc, cov_object)
 
         log_det_cov, rank = cov_object.log_pdet, cov_object.rank
-        dev = x - mean
+        dev = x - loc
         if dev.ndim > 1:
             log_det_cov = log_det_cov[..., np.newaxis]
             rank = rank[..., np.newaxis]
@@ -4544,7 +4544,7 @@ class multivariate_t_gen(multi_rv_generic):
         A = gammaln(t)
         B = gammaln(0.5 * df)
         C = dim/2. * np.log(df * np.pi)
-        D = 0.5 * log_pdet
+        D = 0.5 * log_det_cov
         E = -t * np.log(1 + (1./df) * maha)
 
         return _squeeze_output(A - B - C - D + E)
@@ -4621,18 +4621,19 @@ class multivariate_t_gen(multi_rv_generic):
         0.64798491
 
         """
-        dim, loc, shape, df = self._process_parameters(loc, shape, df)
-        shape = _PSD(shape, allow_singular=allow_singular)._M
+        params = self._process_parameters(loc, shape, df,
+                                          allow_singular=allow_singular)
+        dim, loc, cov_object, df = params
+        shape = cov_object.covariance
 
         return self._cdf(x, loc, shape, df, dim, maxpts,
                          lower_limit, random_state)
 
-    def _entropy(self, dim, df=1, shape=1):
-        if df == np.inf:
-            return multivariate_normal(None, cov=shape).entropy()
+    def _entropy(self, dim, df, cov_object):
+        if np.isposinf(df):
+            return multivariate_normal(None, cov=cov_object).entropy()
 
-        shape_info = _PSD(shape)
-        shape_term = 0.5 * shape_info.log_pdet
+        shape_term = 0.5 * cov_object.log_pdet
 
         def regular(dim, df):
             halfsum = 0.5 * (dim + df)
@@ -4661,7 +4662,7 @@ class multivariate_t_gen(multi_rv_generic):
         threshold = dim * 100 * 4 / (np.log(dim) + 1)
         return _lazywhere(df >= threshold, (dim, df), f=asymptotic, f2=regular)
 
-    def entropy(self, loc=None, shape=1, df=1):
+    def entropy(self, loc=None, shape=1, df=1, allow_singular=False):
         """Calculate the differential entropy of a multivariate
         t-distribution.
 
@@ -4675,8 +4676,10 @@ class multivariate_t_gen(multi_rv_generic):
             Differential entropy
 
         """
-        dim, loc, shape, df = self._process_parameters(None, shape, df)
-        return self._entropy(dim, df, shape)
+        params = self._process_parameters(None, shape, df,
+                                          allow_singular=allow_singular)
+        dim, loc, cov_object, df = params
+        return self._entropy(dim, df, cov_object)
 
     def rvs(self, loc=None, shape=1, df=1, size=1, random_state=None):
         """Draw random samples from a multivariate t-distribution.
@@ -4710,7 +4713,7 @@ class multivariate_t_gen(multi_rv_generic):
         #    Hofert, "On Sampling from the Multivariatet Distribution", 2013
         #     http://rjournal.github.io/archive/2013-2/hofert.pdf
         #
-        dim, loc, shape, df = self._process_parameters(loc, shape, df)
+        dim, loc, cov_object, df = self._process_parameters(loc, shape, df)
         if random_state is not None:
             rng = check_random_state(random_state)
         else:
@@ -4721,10 +4724,10 @@ class multivariate_t_gen(multi_rv_generic):
         else:
             x = rng.chisquare(df, size=size) / df
 
-        z = rng.multivariate_normal(np.zeros(dim), shape, size=size)
+        z = rng.multivariate_normal(np.zeros(dim), cov_object.covariance, size=size)
         samples = loc + z / np.sqrt(x)[..., None]
         return _squeeze_output(samples)
-
+        
     def _process_quantiles(self, x, dim):
         """
         Adjust quantiles array so that last axis labels the components of
@@ -4740,14 +4743,12 @@ class multivariate_t_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
         return x
 
-    def _process_parameters(self, loc, shape, df, allow_singular=True):
+    def _process_parameters(self, loc, shape, df, allow_singular=False):
         """
         Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
         """
-
         def _process_df(df):
-            # Process degrees of freedom.
             if df is None:
                 df = 1
             elif df <= 0:
@@ -4755,11 +4756,12 @@ class multivariate_t_gen(multi_rv_generic):
             elif np.isnan(df):
                 raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
             return df
-        
+
+        # quick exit if shape is instance of covariance matrix class
         if isinstance(shape, _covariance.Covariance):
-            dim, loc, shape = _process_parameters_Covariance(loc, shape)
+            dim, loc, cov_object = _process_parameters_Covariance(loc, shape)
             df = _process_df(df)
-            return dim, loc, shape, df
+            return dim, loc, cov_object, df
 
         if loc is None and shape is None:
             loc = np.asarray(0, dtype=float)
@@ -4806,15 +4808,13 @@ class multivariate_t_gen(multi_rv_generic):
             raise ValueError("Array 'cov' must be at most two-dimensional,"
                              " but cov.ndim = %d" % shape.ndim)
 
-        # Process degrees of freedom.
-        if df is None:
-            df = 1
-        elif df <= 0:
-            raise ValueError("'df' must be greater than zero.")
-        elif np.isnan(df):
-            raise ValueError("'df' is 'nan' but must be greater than zero or 'np.inf'.")
+        # convert shape to covariance matrix class
+        psd = _PSD(shape, allow_singular=allow_singular)
+        cov_object = _covariance.CovViaPSD(psd)
+        
+        df = _process_df(df)
 
-        return dim, loc, shape, df
+        return dim, loc, cov_object, df
 
 
 class multivariate_t_frozen(multi_rv_frozen):
@@ -4842,20 +4842,26 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         """
         self._dist = multivariate_t_gen(seed)
-        dim, loc, shape, df = self._dist._process_parameters(loc, shape, df)
-        self.dim, self.loc, self.shape, self.df = dim, loc, shape, df
-        self.shape_info = _PSD(shape, allow_singular=allow_singular)
+        params = self._dist._process_parameters(loc, shape, df, allow_singular)
+        self.dim, self.loc, self.cov_object, self.df = params
+        self.allow_singular = allow_singular or self.cov_object._allow_singular
+        print(self.cov_object)
+
+    @property
+    def cov(self):
+        return self.cov_object.covariance
 
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
-        U = self.shape_info.U
-        log_pdet = self.shape_info.log_pdet
-        return self._dist._logpdf(x, self.loc, U, log_pdet, self.df, self.dim,
-                                  self.shape_info.rank)
+        out = self._dist._logpdf(x, self.loc, self.cov_object, self.df, self.dim)
+        if np.any(self.cov_object.rank < self.dim):
+            out_of_bounds = ~self.cov_object._support_mask(x - self.loc)
+            out[out_of_bounds] = -np.inf
+        return _squeeze_output(out)
 
     def cdf(self, x, *, maxpts=None, lower_limit=None, random_state=None):
         x = self._dist._process_quantiles(x, self.dim)
-        return self._dist._cdf(x, self.loc, self.shape, self.df, self.dim,
+        return self._dist._cdf(x, self.loc, self.cov_object.covariance, self.df, self.dim,
                                maxpts, lower_limit, random_state)
 
     def pdf(self, x):
@@ -4863,13 +4869,13 @@ class multivariate_t_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(loc=self.loc,
-                              shape=self.shape,
+                              shape=self.cov_object.covariance,
                               df=self.df,
                               size=size,
                               random_state=random_state)
 
     def entropy(self):
-        return self._dist._entropy(self.dim, self.df, self.shape)
+        return self._dist._entropy(self.dim, self.df, self.cov_object)
 
 
 multivariate_t = multivariate_t_gen()

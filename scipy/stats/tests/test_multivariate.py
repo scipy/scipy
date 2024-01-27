@@ -2487,7 +2487,8 @@ class TestMultivariateT:
     def test_default_arguments(self):
         dist = multivariate_t()
         assert_equal(dist.loc, [0])
-        assert_equal(dist.shape, [[1]])
+        assert isinstance(dist.cov_object, _covariance.CovViaPSD)
+        assert_equal(dist.cov_object.covariance, np.array([[1.]]))
         assert (dist.df == 1)
 
     DEFAULT_ARGS_TESTS = [
@@ -2506,7 +2507,7 @@ class TestMultivariateT:
     def test_default_args(self, loc, shape, df, loc_ans, shape_ans, df_ans):
         dist = multivariate_t(loc=loc, shape=shape, df=df)
         assert_equal(dist.loc, loc_ans)
-        assert_equal(dist.shape, shape_ans)
+        assert_equal(dist.cov_object.covariance, shape_ans)
         assert (dist.df == df_ans)
 
     ARGS_SHAPES_TESTS = [
@@ -2521,7 +2522,7 @@ class TestMultivariateT:
                                                shape_ans, df_ans):
         dist = multivariate_t(loc, shape, df)
         assert_equal(dist.loc, loc_ans)
-        assert_equal(dist.shape, shape_ans)
+        assert_equal(dist.cov_object.covariance, shape_ans)
         assert_equal(dist.df, df_ans)
 
     def test_argument_error_handling(self):
