@@ -4672,23 +4672,40 @@ class TestGamma:
 
         assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
 
-    @pytest.mark.parametrize(
-        'data, f0, floc, fscale, expected',
-        [([1, 2, 3, 4], 0.5, 1.0, None, (0.5, 1.0, 3.0)),
-         ([1, 2, 3, 4], 0.5, None, 2.5, (0.5, 1.25, 2.5)),
-         ([1, 2, 3, 4], None, 0.5, 2.5, (0.8, 0.5, 2.5)),
-         ([1, 2, 3, 4], 1.0, None, None, (1, 1.3819660, 1.1180339)),
-         ([1, 2, 3, 4], None, 0.5, None, (3.2, 0.5, 0.625)),
-         ([1, 2, 3, 4], None, None, 0.5, (5.0, 0.0, 0.5)),
-         ([1, 2, 3, 5], None, None, None, (21.172839, -4.0555555, 0.32142857)),
-         # The next case shows that the parameter estimated by MM could be
-         # outside the range of allowed parameters (scale < 0 in this case)
-         ([1, 3, 4, 5], None, None, None, (21.172839, 10.055555, -0.32142857)),
-        ])
-    def test_fit_mm(self, data, f0, floc, fscale, expected):
-        actual = stats.gamma.fit(data, f0=f0, floc=floc, fscale=fscale,
-                                 method='mm')
-        assert_allclose(actual, expected)
+    @pytest.mark.parametrize("a", [1e-2, 1, 1e2])
+    @pytest.mark.parametrize("loc", [1e-2, 0, 1e2])
+    @pytest.mark.parametrize('scale', [1e-2, 1, 1e2])
+    @pytest.mark.parametrize('fix_a', [True, False])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_mm(self, a, loc, scale, fix_a, fix_loc, fix_scale):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.gamma.rvs(a, loc=loc, scale=scale, size=100,
+                               random_state=rng)
+
+        kwds = {}
+        if fix_a:
+            kwds['fa'] = a
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['fscale'] = scale
+        nfree = 3 - len(kwds)
+
+        if nfree == 0:
+            error_msg = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(ValueError, match=error_msg):
+                stats.halfcauchy.fit(data, method='mm', **kwds)
+            return
+
+        theta = stats.gamma.fit(data, method='mm', **kwds)
+        dist = stats.gamma(*theta)
+        if nfree >= 1:
+            assert_allclose(dist.mean(), np.mean(data))
+        if nfree >= 2:
+            assert_allclose(dist.moment(2), np.mean(data**2))
+        if nfree >= 3:
+            assert_allclose(dist.moment(3), np.mean(data**3))
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
