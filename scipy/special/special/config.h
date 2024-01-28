@@ -82,13 +82,21 @@ SPECFUN_HOST_DEVICE inline double pow(double x, double y) { return cuda::std::po
 
 SPECFUN_HOST_DEVICE inline double sin(double x) { return cuda::std::sin(x); }
 
+SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
+
+SPECFUN_HOST_DEVICE inline double cosh(double x) { return cuda::std::cosh(x); }
+
+SPECFUN_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
+
 // Fallback to global namespace for functions unsupported on NVRTC
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
 SPECFUN_HOST_DEVICE inline double floor(double x) { return cuda::std::floor(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return cuda::std::fma(x, y, z); }
+SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return cuda::std::copysign(x, y); }
 #else
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return ::fma(x, y, z); }
+SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return ::copysign(x, y); }
 #endif
 
 template <typename T>
@@ -121,6 +129,11 @@ SPECFUN_HOST_DEVICE T norm(const complex<T> &z) {
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
     return thrust::sqrt(z);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
+    return thrust::conj(z);
 }
 
 } // namespace std
