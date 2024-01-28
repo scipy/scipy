@@ -4707,15 +4707,17 @@ class invgauss_gen(rv_continuous):
 
     %(after_notes)s
 
-    An alternative (``mu``, ``lambda``) parameterization of the inverse
-    Gaussian distribution with density
+    A common shape-scale parameterization of the inverse Gaussian distribution
+    has density
 
     .. math::
 
-        f(x; \mu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
-                    \exp\left( -\frac{\lambda(x-\mu)^2}{2 \mu^2 x}\right)
+        f(x; \nu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\nu)^2}{2 \nu^2 x}\right)
 
-    is equivalent to ``invgauss(mu/lambda, loc=0, scale=lambda)``.
+    Using ``nu`` for :math:`\nu` and ``lam`` for :math:`\lambda`, this
+    parameterization is equivalent to the one above with ``mu = nu/lam``,
+    ``loc = 0``, and ``scale = lam``.
 
     %(example)s
 
