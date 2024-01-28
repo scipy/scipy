@@ -39,7 +39,9 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
-from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
+from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2, \
+    stirling1
+from scipy._lib.deprecation import _NoValue
 from scipy._lib._util import np_long, np_ulong
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
@@ -4355,3 +4357,122 @@ class TestStirling2:
             denom = stirling2([n], k_entries, exact=True)
             num = denom - stirling2([n], k_entries, exact=False)
             assert np.max(np.abs(num / denom)) < 2e-5
+
+
+class TestStirling1:
+    table = [
+        [1],
+        [0, 1],
+        [0, 1, 1],
+        [0, 2, 3, 1],
+        [0, 6, 11, 6, 1],
+        [0, 24, 50, 35, 10, 1],
+        [0, 120, 274, 225, 85, 15, 1],
+        [0, 720, 1764, 1624, 735, 175, 21, 1],
+        [0, 5040, 13068, 13132, 6769, 1960, 322, 28, 1],
+        [0, 40320, 109584, 118124, 67284, 22449, 4536, 546, 36, 1],
+        [0, 362880, 1026576, 1172700, 723680, 269325, 63273, 9450, 870, 45, 1],
+    ]
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_table_cases(self, is_exact, comp, kwargs):
+        for n in range(1, len(self.table)):
+            k_values = list(range(n+1))
+            row = self.table[n]
+            comp(row, stirling1([n], k_values, exact=is_exact), **kwargs)
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_single_integer_input(self, is_exact, comp, kwargs):
+        comp(self.table[10][5], stirling1(10, 5, exact=is_exact), **kwargs)
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-12})
+    ])
+    def test_negative_integer(self, is_exact, comp, kwargs):
+        comp(0, stirling1(-1, 2, exact=is_exact), **kwargs)
+        comp(0, stirling1(1, -2, exact=is_exact), **kwargs)
+        comp(0, stirling1(-1, -2, exact=is_exact), **kwargs)
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_mixed_values(self, is_exact, comp, kwargs):
+        # negative values-of either n or k-should return 0 for the entry
+        ans = [0, 1, 3, 35, 1960, 9450, 1172700]
+        n = [-1, 0, 3, 5, 8, 10, 10]
+        k = [-2, 0, 2, 3, 5, 7, 3]
+        comp(stirling1(n, k, exact=is_exact), ans, **kwargs)
+
+    def test_big_numbers(self):
+        # via mpmath (bigger than 32bit)
+        ans = asarray([290886679867135, 66951000306085302338993639424000])
+        n = [25, 30]
+        k = [17, 4]
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered in scalar multiply")
+            sup.filter(RuntimeWarning, "overflow encountered in scalar add")
+            assert array_equal(stirling1(n, k, exact=True), ans)
+        # bigger than 64 bit
+        # note mpmath version is signed so the first value will be with a -
+        ans = asarray([5869266601654042890879895074757665990459168,
+                       40206174229950065906142659931071804669])
+        n = [42, 43]
+        k = [17, 23]
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered in scalar multiply")
+            sup.filter(RuntimeWarning, "overflow encountered in scalar add")
+            assert array_equal(stirling1(n, k, exact=True), ans)
+
+    @pytest.mark.parametrize("N", [4.5, 3., 4+1j, "12", np.nan])
+    @pytest.mark.parametrize("K", [3.5, 3, "2", None])
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_unsupported_input_types(self, N, K, is_exact):
+        # object, float, string, complex are not supported and raise TypeError
+        with pytest.raises(TypeError):
+            stirling1(N, K, exact=is_exact)
+
+    @pytest.mark.parametrize("is_exact", [True, False])
+    def test_numpy_array_int_object_dtype(self, is_exact):
+        # python integers with arbitrary precision are *not* allowed as
+        # object type in numpy arrays are inconsistent from api perspective
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=object)
+        k = asarray([1, 2, 3, 4], dtype=object)
+        with pytest.raises(TypeError):
+            array_equal(stirling1(n, k, exact=is_exact), ans)
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_numpy_array_unsigned_int_dtype(self, is_exact, comp, kwargs):
+        # numpy unsigned integers are allowed as dtype in numpy arrays
+        ans = asarray(self.table[4][1:])
+        n = asarray([4, 4, 4, 4], dtype=np_ulong)
+        k = asarray([1, 2, 3, 4], dtype=np_ulong)
+        comp(stirling1(n, k, exact=False), ans, **kwargs)
+
+    @pytest.mark.parametrize("is_exact, comp, kwargs", [
+        (True, assert_equal, {}),
+        (False, assert_allclose, {'rtol': 1e-13})
+    ])
+    def test_broadcasting_arrays_correctly(self, is_exact, comp, kwargs):
+        # broadcasting is handled by stirling1
+        # test leading 1s are replicated
+        ans = asarray([[1, 15, 25, 10], [1, 7, 6, 1]])  # shape (2,4)
+        n = asarray([[5, 5, 5, 5], [4, 4, 4, 4]])  # shape (2,4)
+        k = asarray([1, 2, 3, 4])  # shape (4,)
+        comp(stirling2(n, k, exact=is_exact), ans, **kwargs)
+        # test that dims both mismatch broadcast correctly (5,1) & (6,)
+        n = asarray([[4], [4], [4], [4], [4]])
+        k = asarray([0, 1, 2, 3, 4, 5])
+        ans = asarray([[0, 1, 7, 6, 1, 0] for _ in range(5)])
+        comp(stirling2(n, k, exact=False), ans, **kwargs)

@@ -11838,6 +11838,7 @@ add_newdoc("_stirling2_inexact",
     Internal function, do not use.
     """)
 
+<<<<<<< HEAD
 add_newdoc(
     "_beta_pdf",
     r"""
@@ -12844,4 +12845,9 @@ add_newdoc(
     -------
     scalar or ndarray
 
+    """)
+
+add_newdoc("_stirling1_inexact",
+    r"""
+    Internal function, do not use.
     """)
