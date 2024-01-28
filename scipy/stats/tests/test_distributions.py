@@ -4695,7 +4695,7 @@ class TestGamma:
         if nfree == 0:
             error_msg = "All parameters fixed. There is nothing to optimize."
             with pytest.raises(ValueError, match=error_msg):
-                stats.halfcauchy.fit(data, method='mm', **kwds)
+                stats.gamma.fit(data, method='mm', **kwds)
             return
 
         theta = stats.gamma.fit(data, method='mm', **kwds)
