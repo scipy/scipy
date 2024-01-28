@@ -14479,3 +14479,8 @@ add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
     """)
+
+add_newdoc("_stirling1_inexact",
+    r"""
+    Internal function, do not use.
+    """)

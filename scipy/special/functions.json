@@ -1391,6 +1391,11 @@
             "_stirling2_inexact": "dd->d"
         }
     },
+    "_stirling1_inexact": {
+        "stirling2.h++": {
+            "_stirling1_inexact": "dd->d"
+        }
+    },
     "struve": {
         "cephes.h": {
             "struve_h": "dd->d"
