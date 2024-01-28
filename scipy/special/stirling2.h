@@ -168,6 +168,7 @@ double _stirling1_temme(double n, double k){
   double mu = (double)k / (double)n;
   // TODO: fill this in...
   return 1;
+}
 
 /*
  *  This is the main entrypoint from stirling1 which handles dispatch to each
