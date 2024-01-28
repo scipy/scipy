@@ -371,11 +371,6 @@
 	    "ellipk": "d->d"
 	}
     },
-    "_factorial": {
-	"_factorial.pxd": {
-	    "_factorial": "d->d"
-	}
-    },
     "elliprc": {
 	"ellint_carlson_wrap.hh++": {
 	    "fellint_RC": "dd->d",
