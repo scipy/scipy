@@ -379,7 +379,8 @@ special_sources = [
   'special/binom.h',
   'special/trig.h',
   'special/zlog1.h',
-  'special/loggamma.h'
+  'special/loggamma.h',
+  'special/digamma.h'
 ]
 
 special_cephes_sources = [
@@ -387,7 +388,9 @@ special_cephes_sources = [
   'special/cephes/polevl.h',
   'special/cephes/beta.h',
   'special/cephes/gamma.h',
-  'special/cephes/trig.h'
+  'special/cephes/trig.h',
+  'special/cephes/zeta.h',
+  'special/cephes/psi.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
