@@ -3930,16 +3930,21 @@ def _first(arr, axis):
 
 
 def _f_oneway_is_too_small(samples, kwargs, axis=-1):
+    # Check this after forming alldata, so shape errors are detected
+    # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return True
+
+    # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return True
+
     return False
 
 
@@ -4089,18 +4094,8 @@ def f_oneway(*samples, axis=0):
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
-    # Check this after forming alldata, so shape errors are detected
-    # and reported before checking for 0 length inputs.
-    if any(sample.shape[axis] == 0 for sample in samples):
-        msg = 'at least one input has length 0'
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
-
-    # Must have at least one group with length greater than 1.
-    if all(sample.shape[axis] == 1 for sample in samples):
-        msg = ('all input arrays have length 1.  f_oneway requires that at '
-               'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+    # Check if the inputs are too small
+    if _f_oneway_is_too_small(samples, {}):
         return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Check if all values within each group are identical, and if the common
