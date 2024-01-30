@@ -788,10 +788,10 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         Anderson-Darling ("ad") [1]_, Kolmogorov-Smirnov ("ks") [1]_,
         Cramer-von Mises ("cvm") [1]_, and Filliben ("filliben") [7]_
         statistics are available.  Alternatively, a callable with signature
-        ``(dist, data) ``may be supplied to compute the statistics.  Here
+        ``(dist, data, axis)`` may be supplied to compute the statistics. Here
         ``dist`` is a frozen dist object of one or more fitted distributions,
         and ``data`` is an array containing one or more samples.  The callable
-        must return the statistic along the last axis of ``data``.
+        must return the statistics along the given ``axis`` of ``data``.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
@@ -1140,7 +1140,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         data = np.moveaxis(data, axis, -1)
         rfd_vals = fit_fun(data)
         rfd_dist = dist(*rfd_vals)
-        return compare_fun(rfd_dist, data)
+        return compare_fun(rfd_dist, data, axis=-1)
 
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_mc_samples, axis=-1,
@@ -1217,7 +1217,8 @@ _fit_funs = {stats.norm: _fit_norm}  # type: ignore[attr-defined]
 # a sample.
 
 
-def _anderson_darling(dist, data):
+def _anderson_darling(dist, data, axis):
+    assert axis == -1
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
     i = np.arange(1, n+1)
@@ -1236,7 +1237,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max(axis=-1)
 
 
-def _kolmogorov_smirnov(dist, data):
+def _kolmogorov_smirnov(dist, data, axis):
+    assert axis == -1
     x = np.sort(data, axis=-1)
     cdfvals = dist.cdf(x)
     Dplus = _compute_dplus(cdfvals)  # always works along last axis
@@ -1255,7 +1257,9 @@ def _corr(X, M):
     return num/den
 
 
-def _filliben(dist, data):
+def _filliben(dist, data, axis):
+    assert axis == -1
+
     # [7] Section 8 # 1
     X = np.sort(data, axis=-1)
 
@@ -1280,7 +1284,8 @@ def _filliben(dist, data):
 _filliben.alternative = 'less'  # type: ignore[attr-defined]
 
 
-def _cramer_von_mises(dist, data):
+def _cramer_von_mises(dist, data, axis):
+    assert axis == -1
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
     cdfvals = dist.cdf(x)
