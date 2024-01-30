@@ -213,9 +213,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
-    
+
     def test_bfgs_hess_inv0_neg(self):
-        # Ensure that BFGS does not accept neg. def. initial inverse 
+        # Ensure that BFGS does not accept neg. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -223,9 +223,9 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': -np.eye(5)}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_semipos(self):
-        # Ensure that BFGS does not accept semi pos. def. initial inverse 
+        # Ensure that BFGS does not accept semi pos. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -235,18 +235,18 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': hess_inv0}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_sanity(self):
         # Ensure that BFGS handles `hess_inv0` parameter correctly.
         fun = optimize.rosen
         x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
         opts = {'disp': self.disp, 'hess_inv0': 1e-2 * np.eye(5)}
-        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                 options=opts)
-        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                      options={'disp': self.disp})
         assert_allclose(res.fun, res_true.fun, atol=1e-6)
-            
+
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
@@ -293,7 +293,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         res_mod = optimize.minimize(optimize.rosen,
                                     x0, method='bfgs', options={'c2': 1e-2})
         assert res_default.nit > res_mod.nit
-    
+
     @pytest.mark.parametrize(["c1", "c2"], [[0.5, 2],
                                             [-0.1, 0.1],
                                             [0.2, 0.1]])
@@ -1222,15 +1222,15 @@ class TestOptimizeSimple(CheckOptimize):
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
                        'newton-cg', 'l-bfgs-b', 'tnc',
-                       'cobyla', 'slsqp']:
-            if method in ('nelder-mead', 'powell', 'cobyla'):
+                       'cobyla', 'cobyqa', 'slsqp']:
+            if method in ('nelder-mead', 'powell', 'cobyla', 'cobyqa'):
                 jac = None
             else:
                 jac = dfunc
 
-            sol1 = optimize.minimize(func, [1, 1], jac=jac, tol=1e-10,
+            sol1 = optimize.minimize(func, [2, 2], jac=jac, tol=1e-10,
                                      method=method)
-            sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
+            sol2 = optimize.minimize(func, [2, 2], jac=jac, tol=1.0,
                                      method=method)
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
@@ -1304,7 +1304,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
-                                        'tnc', 'cobyla', 'slsqp'])
+                                        'tnc', 'cobyla', 'cobyqa', 'slsqp'])
     def test_no_increase(self, method):
         # Check that the solver doesn't return a value worse than the
         # initial point.
@@ -1321,7 +1321,7 @@ class TestOptimizeSimple(CheckOptimize):
         f0 = func(x0)
         jac = bad_grad
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
-        if method in ['nelder-mead', 'powell', 'cobyla']:
+        if method in ['nelder-mead', 'powell', 'cobyla', 'cobyqa']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
                                 options=options)
@@ -1504,9 +1504,9 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
+                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -1554,9 +1554,9 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
                                         'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
+                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
     def test_duplicate_evaluations(self, method):
         # check that there are no duplicate evaluations for any methods
         jac = hess = None
@@ -1641,7 +1641,8 @@ class TestOptimizeSimple(CheckOptimize):
             optimize.minimize(lambda x: x, np.ones((2, 1)))
 
     @pytest.mark.parametrize('method', ('nelder-mead', 'l-bfgs-b', 'tnc',
-                                        'powell', 'cobyla', 'trust-constr'))
+                                        'powell', 'cobyla', 'cobyqa',
+                                        'trust-constr'))
     def test_minimize_invalid_bounds(self, method):
         def f(x):
             return np.sum(x**2)
@@ -2688,7 +2689,7 @@ def test_result_x_shape_when_len_x_is_one():
         return np.array([[2.]])
 
     methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'L-BFGS-B', 'TNC',
-               'COBYLA', 'SLSQP']
+               'COBYLA', 'COBYQA', 'SLSQP']
     for method in methods:
         res = optimize.minimize(fun, np.array([0.1]), method=method)
         assert res.x.shape == (1,)

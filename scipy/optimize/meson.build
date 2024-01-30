@@ -250,6 +250,7 @@ py3.install_sources([
   '_basinhopping.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
+  '_cobyqa_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',

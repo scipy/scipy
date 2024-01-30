@@ -11,6 +11,7 @@ py3.install_sources([
     'test__spectral.py',
     'test_chandrupatla.py',
     'test_cobyla.py',
+    'test_cobyqa.py',
     'test_constraint_conversion.py',
     'test_constraints.py',
     'test_cython_optimize.py',
