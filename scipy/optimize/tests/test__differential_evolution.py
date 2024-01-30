@@ -709,7 +709,7 @@ class TestDifferentialEvolutionSolver:
             with warns(UserWarning):
                 with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
                     pass
-            assert_(s._updating == 'deferred')
+            assert s._updating == 'deferred'
 
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
