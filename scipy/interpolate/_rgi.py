@@ -265,7 +265,7 @@ class RegularGridInterpolator:
 
     _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3,
                           "slinear_legacy": 1, "cubic_legacy": 3, "quintic_legacy": 5,}
-    _SPLINE_METHODS_recurive = {"slinear_legacy", "cubic_legacy",
+    _SPLINE_METHODS_recursive = {"slinear_legacy", "cubic_legacy",
                                 "quintic_legacy", "pchip"}
     _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
@@ -434,7 +434,7 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            if method in self._SPLINE_METHODS_recurive:
+            if method in self._SPLINE_METHODS_recursive:
                 result = self._evaluate_spline(xi, method)
             else:
                 result = self._spline(xi, nu=nu)
