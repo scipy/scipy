@@ -897,8 +897,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise IndexError('index (%d) out of range (< -%d)' %
                                  (idx, bound))
 
-        i = np.array(i, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
-        j = np.array(j, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
+        i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
+        j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
         check_bounds(i, M)
         check_bounds(j, N)
         return i, j, M, N
@@ -910,7 +910,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
-        x = np.array(x, dtype=self.dtype, copy=False, ndmin=1).ravel()
+        x = np.atleast_1d(np.asarray(x, dtype=self.dtype)).ravel()
 
         n_samples = x.size
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
