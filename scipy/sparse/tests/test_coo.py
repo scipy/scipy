@@ -153,7 +153,7 @@ def test_1d_row_and_col():
     assert res.row.flags.writeable is False
 
     res.col = [1, 2, 3]
-    assert len(res.indices) == 1
+    assert len(res.coords) == 1
     assert np.array_equal(res.col, np.array([1, 2, 3]))
     assert res.row.dtype == res.col.dtype
 
