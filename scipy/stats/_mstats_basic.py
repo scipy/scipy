@@ -3192,7 +3192,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -3492,7 +3492,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     >>> brunnermunzel(x1, x2)
     BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
 
-    """
+    """  # noqa: E501
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
     nx = len(x)
