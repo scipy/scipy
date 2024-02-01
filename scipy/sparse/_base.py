@@ -885,9 +885,7 @@ class _spbase:
                                            shape=(N, 1), dtype=self.dtype)
         result = self @ col_selector
         if self.ndim == 1:
-            # only here to force col to be 2d ("as an (mx1) sparse array")
-            # should this be 1d? -- hard to know with name "getcol"
-            return result.reshape(1, 1)
+            return result.reshape(-1, 1)
         return result
 
     def _getrow(self, i):
@@ -1111,7 +1109,7 @@ class _spbase:
             ret = (self @ np.ones(self.shape, dtype=res_dtype)).astype(dtype)
 
             if out is not None:
-                if np.prod(np.array(out.shape)) != 1:
+                if any(dim != 1 for dim in out.shape):
                     raise ValueError("dimensions do not match")
                 out[...] = ret
             return ret
