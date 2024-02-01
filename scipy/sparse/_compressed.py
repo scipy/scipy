@@ -848,10 +848,66 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if 0 in self.shape:
             return
 
-        coo = self.tocoo()
-        coo._setdiag(values, k)
-        arrays = coo._coo_to_compressed(self._swap)
-        self.indptr, self.indices, self.data, _ = arrays
+        M, N = self.shape
+        broadcast = (values.ndim == 0)
+
+        if k < 0:
+            if broadcast:
+                max_index = min(M + k, N)
+            else:
+                max_index = min(M + k, N, len(values))
+            i = np.arange(-k, max_index - k, dtype=self.indices.dtype)
+            j = np.arange(max_index, dtype=self.indices.dtype)
+
+        else:
+            if broadcast:
+                max_index = min(M, N - k)
+            else:
+                max_index = min(M, N - k, len(values))
+            i = np.arange(max_index, dtype=self.indices.dtype)
+            j = np.arange(k, k + max_index, dtype=self.indices.dtype)
+
+        if not broadcast:
+            values = values[:len(i)]
+
+        x = np.atleast_1d(np.asarray(values, dtype=self.dtype)).ravel()
+        if x.squeeze().shape != i.squeeze().shape:
+            x = np.broadcast_to(x, i.shape)
+        if x.size == 0:
+            return
+
+        M, N = self._swap((M, N))
+        i, j = self._swap((i, j))
+        n_samples = x.size
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
+        if -1 not in offsets:
+            # only affects existing non-zero cells
+            self.data[offsets] = x
+            return
+
+        mask = (offsets <= -1)
+        # Boundary between csc and convert to coo
+        if mask.sum() < self.nnz * 0.001:
+            # create new entries
+            i = i[mask]
+            j = j[mask]
+            self._insert_many(i, j, x[mask])
+            # replace existing entries
+            mask = ~mask
+            self.data[offsets[mask]] = x[mask]
+        else:
+            # convert to coo for _set_diag
+            coo = self.tocoo()
+            coo._setdiag(values, k)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, _ = arrays
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
