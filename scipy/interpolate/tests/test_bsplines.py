@@ -1934,6 +1934,14 @@ class TestNdBSpline:
         assert_allclose(der,
                         [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
 
+        with assert_raises(ValueError):
+            # all(nu >= 0)
+            der = bspl2(xi, nu=(-1, 0))
+
+        with assert_raises(ValueError):
+            # len(nu) == ndim
+            der = bspl2(xi, nu=(-1, 0, 1))
+
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
         kx, ky = 2, 3
@@ -2170,8 +2178,10 @@ class TestNdBSpline:
         t3, c3, k = self.make_3d_case()
 
         xi = np.asarray([[1, 2, 3], [4, 5, 6]])
-        dm = NdBSpline(t3, c3, k)(xi)
+        dm = NdBSpline(t3, c3, k).design_matrix(xi, t3, k)
+        dm1 = NdBSpline.design_matrix(xi, t3, [k, k, k])
         assert dm.shape[0] == xi.shape[0]
+        assert_allclose(dm.todense(), dm1.todense(), atol=1e-16)
 
         with assert_raises(ValueError):
             NdBSpline.design_matrix([1, 2, 3], t3, [k]*3)
