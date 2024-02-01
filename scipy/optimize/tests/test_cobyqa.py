@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from numpy.testing import assert_allclose, assert_, assert_array_equal
+from numpy.testing import assert_allclose, assert_
 
 from scipy.optimize import minimize, Bounds, NonlinearConstraint
 
@@ -13,8 +13,8 @@ class TestCOBYQA:
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
         self.opts = {
             'disp': False,
-            'radius_init': 1,
-            'tol': 1e-5,
+            'initial_tr_radius': 1,
+            'final_tr_radius': 1e-5,
             'maxfev': 100,
         }
 

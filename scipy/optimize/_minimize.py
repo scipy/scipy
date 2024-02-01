@@ -639,8 +639,10 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         if meth in ('bfgs', 'cg', 'l-bfgs-b', 'tnc', 'dogleg',
                     'trust-ncg', 'trust-exact', 'trust-krylov'):
             options.setdefault('gtol', tol)
-        if meth in ('cobyla', 'cobyqa', '_custom'):
+        if meth in ('cobyla', '_custom'):
             options.setdefault('tol', tol)
+        if meth == 'cobyqa':
+            options.setdefault('final_tr_radius', tol)
         if meth == 'trust-constr':
             options.setdefault('xtol', tol)
             options.setdefault('gtol', tol)
