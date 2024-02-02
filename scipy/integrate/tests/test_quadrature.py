@@ -1257,6 +1257,7 @@ class TestTanhSinh:
     def test_improper_integrals(self):
         # Test handling of infinite limits of integration (mixed with finite limits)
         def f(x):
+            x[np.isinf(x)] = np.nan
             return np.exp(-x**2)
         a = [-np.inf, 0, -np.inf, np.inf, -20, -np.inf, -20]
         b = [np.inf, np.inf, 0, -np.inf, 20, 20, np.inf]
