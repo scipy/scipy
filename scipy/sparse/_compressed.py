@@ -894,6 +894,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         mask = (offsets <= -1)
         # Boundary between csc and convert to coo
+        # The value 0.001 is justified in gh-19962#issuecomment-1920499678
         if mask.sum() < self.nnz * 0.001:
             # create new entries
             i = i[mask]
