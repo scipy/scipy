@@ -1626,12 +1626,12 @@ class TestSomeDistanceFunctions:
         for x, y in self.cases:
             dist = wcosine(x, y)
             assert_almost_equal(dist, 1.0 - 18.0 / (np.sqrt(14) * np.sqrt(27)))
-    
+
     def test_cosine_output_dtype(self):
         # Regression test for gh-19541
-        assert_(isinstance(wcorrelation([1, 1], [1, 1], centered=False), float))
-        assert_(isinstance(wcosine([1, 1], [1, 1]), float))
-      
+        assert isinstance(wcorrelation([1, 1], [1, 1], centered=False), float))
+        assert isinstance(wcosine([1, 1], [1, 1]), float))
+
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
         ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
