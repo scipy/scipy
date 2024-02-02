@@ -531,7 +531,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                     result.ravel('A'), fortran)
         return self._container(result, copy=False)
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         result_shape = self.shape[0] if self.ndim > 1 else 1
         result = np.zeros(result_shape,
                           dtype=upcast_char(self.dtype.char, other.dtype.char))
@@ -552,7 +552,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return result[0]
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         result_dtype = upcast_char(self.dtype.char, other.dtype.char)
         if self.ndim == 2:
             result_shape = (other.shape[1], self.shape[0])

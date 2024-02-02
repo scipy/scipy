@@ -385,37 +385,37 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return other._mul_scalar(self.toarray()[0, 0])
             # A row times a column.
             elif self.shape[1] == 1 and other.shape[0] == 1:
-                return self._mul_sparse_matrix(other.tocsc())
+                return self._matmul_sparse(other.tocsc())
             elif self.shape[0] == 1 and other.shape[1] == 1:
-                return other._mul_sparse_matrix(self.tocsc())
+                return other._matmul_sparse(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[1], other.shape[1])
                 )
-                return self._mul_sparse_matrix(other)
+                return self._matmul_sparse(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[1], self.shape[1])
                 )
-                return other._mul_sparse_matrix(copy)
+                return other._matmul_sparse(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[0], other.shape[0])
                 )
-                return other._mul_sparse_matrix(self)
+                return other._matmul_sparse(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[0], self.shape[0])
                 )
-                return copy._mul_sparse_matrix(other)
+                return copy._matmul_sparse(other)
             else:
                 raise ValueError("inconsistent shapes")
 
@@ -484,7 +484,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Multiplication handlers #
     ###########################
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M, N = self.shape
 
         # output array
@@ -497,7 +497,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         M, N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
 
@@ -511,7 +511,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
