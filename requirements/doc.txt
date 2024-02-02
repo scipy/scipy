@@ -8,3 +8,5 @@ numpydoc
 jupytext
 myst-nb
 pooch
+jupyterlite-sphinx
+jupyterlite-pyodide-kernel
