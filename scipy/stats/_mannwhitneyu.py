@@ -122,23 +122,22 @@ class _MWU:
 
         # Start working with ints, for maximum precision and efficiency:
         configurations = np.zeros(maxu + 1, dtype=np.uint64)
+        configurations_is_uint = True
+        uint_max = np.iinfo(np.uint64).max
         # How many ways to have U=0? 1
         configurations[0] = 1
 
-        with np.errstate(all='raise'):
-            for u in np.arange(1, maxu + 1):
-                coeffs = s_array[u - 1::-1]
-                new_val = np.dot(configurations[:u], coeffs) / u
-                try:
-                    configurations[u] = new_val
-                except Exception as e:
-                    raise Exception("Doesn't happen on some CI platforms") from e  # debug
-                    # OK, we got into numbers too big for uint64.
-                    # So now we start working with floats.
-                    # By doing this since the beginning, we would have lost precision.
-                    # (And working on python long ints would be unbearably slow)
-                    configurations = configurations.astype(float)
-                    configurations[u] = new_val
+        for u in np.arange(1, maxu + 1):
+            coeffs = s_array[u - 1::-1]
+            new_val = np.dot(configurations[:u], coeffs) / u
+            if new_val > uint_max and configurations_is_uint:
+                # OK, we got into numbers too big for uint64.
+                # So now we start working with floats.
+                # By doing this since the beginning, we would have lost precision.
+                # (And working on python long ints would be unbearably slow)
+                configurations = configurations.astype(float)
+                configurations_is_uint = False
+            configurations[u] = new_val
 
         self.configurations = configurations
         return configurations / total
