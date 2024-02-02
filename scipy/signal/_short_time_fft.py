@@ -545,8 +545,10 @@ class ShortTimeFFT:
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
 
-        Note that the frequency values can be obtained by reading the `f`
-        property, and the number of samples by accessing the `f_pts` property.
+        Note that`onesided` and `onesided2X` do not work for complex-valued signals or
+        complex-valued windows. Furthermore, the frequency values can be obtained by
+        reading the `f` property, and the number of samples by accessing the `f_pts`
+        property.
 
         See Also
         --------
@@ -750,7 +752,8 @@ class ShortTimeFFT:
         Parameters
         ----------
         x
-            The input signal as real or complex valued array.
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -821,6 +824,9 @@ class ShortTimeFFT:
                                    (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
+        if self.onesided_fft and np.iscomplexobj(x):
+            raise ValueError(f"Complex-valued `x` not allowed for {self.fft_mode=}'! "
+                             "Set property `fft_mode` to 'twosided' or 'centered'.")
         if isinstance(detr, str):
             detr = partial(detrend, type=detr)
         elif not (detr is None or callable(detr)):
