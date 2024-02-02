@@ -1075,7 +1075,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     # Additional elementwise algorithm input validation / standardization
     tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
-    xs, fs, args, shape, dtype = tmp
+    f, xs, fs, args, shape, dtype = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays
     a = xs[0]
