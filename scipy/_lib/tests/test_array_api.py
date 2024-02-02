@@ -3,9 +3,9 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, as_xparray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
 )
-import scipy._lib.array_api_compat.array_api_compat.numpy as np_compat
+import scipy._lib.array_api_compat.numpy as np_compat
 
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
@@ -24,25 +24,26 @@ class TestArrayAPI:
 
     @array_api_compatible
     def test_asarray(self, xp):
-        x, y = as_xparray([0, 1, 2], xp=xp), as_xparray(np.arange(3), xp=xp)
+        x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
         xp_assert_equal(x, ref)
         xp_assert_equal(y, ref)
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
     def test_raises(self):
-        msg = "'numpy.ma.MaskedArray' are not supported"
+        msg = "of type `numpy.ma.MaskedArray` are not supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace(np.ma.array(1), np.array(1))
 
-        msg = "'numpy.matrix' are not supported"
+        msg = "of type `numpy.matrix` are not supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace(np.array(1), np.matrix(1))
 
-        msg = ("An argument was coerced to an object array, "
-               "but object arrays are not supported.")
+        msg = "only boolean and numerical dtypes are supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace([object()])
+        with pytest.raises(TypeError, match=msg):
+            array_namespace('abc')
 
     def test_array_likes(self):
         # should be no exceptions

@@ -316,8 +316,7 @@ def _arg_wlen_as_expected(value):
             value = math.ceil(value)
         value = np.intp(value)
     else:
-        raise ValueError('`wlen` must be larger than 1, was {}'
-                         .format(value))
+        raise ValueError(f'`wlen` must be larger than 1, was {value}')
     return value
 
 
@@ -1293,7 +1292,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     ([32], array([ 1.6]), array([ 0.9995736]))
 
     """
-    widths = np.array(widths, copy=False, ndmin=1)
+    widths = np.atleast_1d(np.asarray(widths))
 
     if gap_thresh is None:
         gap_thresh = np.ceil(widths[0])

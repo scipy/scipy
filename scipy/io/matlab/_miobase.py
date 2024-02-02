@@ -246,7 +246,7 @@ def _get_matfile_version(fileobj):
     ret = (maj_val, min_val)
     if maj_val in (1, 2):
         return ret
-    raise ValueError('Unknown mat file type, version %s, %s' % ret)
+    raise ValueError('Unknown mat file type, version {}, {}'.format(*ret))
 
 
 def matdims(arr, oned_as='column'):

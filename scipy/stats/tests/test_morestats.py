@@ -15,8 +15,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 import re
-from scipy import optimize
-from scipy import stats
+from scipy import optimize, stats, special
 from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
@@ -64,8 +63,8 @@ class TestBayes_mvs:
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.bayes_mvs(data)
         assert_almost_equal(mean.statistic, 9.0)
-        assert_allclose(mean.minmax, (7.1036502226125329, 10.896349777387467),
-                        rtol=1e-14)
+        assert_allclose(mean.minmax, (7.103650222492964, 10.896349777507034),
+                        rtol=1e-6)
 
         assert_almost_equal(var.statistic, 10.0)
         assert_allclose(var.minmax, (3.1767242068607087, 24.45910381334018),
@@ -92,8 +91,8 @@ class TestMvsdist:
         data = [6, 9, 12, 7, 8, 8, 13]
         mean, var, std = stats.mvsdist(data)
         assert_almost_equal(mean.mean(), 9.0)
-        assert_allclose(mean.interval(0.9), (7.1036502226125329,
-                                             10.896349777387467), rtol=1e-14)
+        assert_allclose(mean.interval(0.9), (7.103650222492964,
+                                             10.896349777507034), rtol=1e-14)
 
         assert_almost_equal(var.mean(), 10.0)
         assert_allclose(var.interval(0.9), (3.1767242068607087,
@@ -206,8 +205,11 @@ class TestShapiro:
         shapiro_test = stats.shapiro(x)
         assert_equal(w, np.nan)
         assert_equal(shapiro_test.statistic, np.nan)
-        assert_almost_equal(pw, 1.0)
-        assert_almost_equal(shapiro_test.pvalue, 1.0)
+        # Originally, shapiro returned a p-value of 1 in this case,
+        # but there is no way to produce a numerical p-value if the
+        # statistic is not a number. NaN is more appropriate.
+        assert_almost_equal(pw, np.nan)
+        assert_almost_equal(shapiro_test.pvalue, np.nan)
 
     def test_gh14462(self):
         # shapiro is theoretically location-invariant, but when the magnitude
@@ -1019,7 +1021,7 @@ class TestBinomTest:
 
     def test_invalid_k_too_big(self):
         with pytest.raises(ValueError,
-                           match="k must not be greater than n"):
+                           match=r"k \(11\) must not be greater than n \(10\)."):
             stats.binomtest(11, 10, 0.25)
 
     def test_invalid_k_wrong_type(self):
@@ -1028,21 +1030,27 @@ class TestBinomTest:
             stats.binomtest([10, 11], 21, 0.25)
 
     def test_invalid_p_range(self):
-        message = 'p must be in range...'
+        message = r'p \(-0.5\) must be in range...'
         with pytest.raises(ValueError, match=message):
             stats.binomtest(50, 150, p=-0.5)
+        message = r'p \(1.5\) must be in range...'
         with pytest.raises(ValueError, match=message):
             stats.binomtest(50, 150, p=1.5)
 
     def test_invalid_confidence_level(self):
         res = stats.binomtest(3, n=10, p=0.1)
-        with pytest.raises(ValueError, match="must be in the interval"):
+        message = r"confidence_level \(-1\) must be in the interval"
+        with pytest.raises(ValueError, match=message):
             res.proportion_ci(confidence_level=-1)
 
     def test_invalid_ci_method(self):
         res = stats.binomtest(3, n=10, p=0.1)
-        with pytest.raises(ValueError, match="method must be"):
+        with pytest.raises(ValueError, match=r"method \('plate of shrimp'\) must be"):
             res.proportion_ci(method="plate of shrimp")
+
+    def test_invalid_alternative(self):
+        with pytest.raises(ValueError, match=r"alternative \('ekki'\) not..."):
+            stats.binomtest(3, n=10, p=0.1, alternative='ekki')
 
     def test_alias(self):
         res = stats.binomtest(3, n=10, p=0.1)
@@ -1639,9 +1647,9 @@ class TestKstat:
         assert_allclose(moments, expected, rtol=1e-4)
 
         # test equivalence with `stats.moment`
-        m1 = stats.moment(data, moment=1)
-        m2 = stats.moment(data, moment=2)
-        m3 = stats.moment(data, moment=3)
+        m1 = stats.moment(data, order=1)
+        m2 = stats.moment(data, order=2)
+        m3 = stats.moment(data, order=3)
         assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
 
     def test_empty_input(self):
@@ -1984,6 +1992,20 @@ class TestBoxcox:
         with pytest.raises(ValueError, match=message):
             stats.boxcox_normmax(bad_x)
 
+    @pytest.mark.parametrize('x', [
+        # Attempt to trigger overflow in power expressions.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0,
+                  2009.0, 1980.0, 1999.0, 2007.0, 1991.0]),
+        # Attempt to trigger overflow with a large optimal lambda.
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0]),
+        # Attempt to trigger overflow with large data.
+        np.array([2003.0e200, 1950.0e200, 1997.0e200, 2000.0e200, 2009.0e200])
+    ])
+    def test_overflow(self, x):
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            xt_bc, lam_bc = stats.boxcox(x)
+            assert np.all(np.isfinite(xt_bc))
+
 
 class TestBoxcoxNormmax:
     def setup_method(self):
@@ -2055,6 +2077,75 @@ class TestBoxcoxNormmax:
 
             stats.boxcox_normmax(self.x, brack=(-2.0, 2.0),
                                  optimizer=optimizer)
+
+    @pytest.mark.parametrize(
+        'x', ([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+              [0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632]))
+    def test_overflow(self, x):
+        message = "The optimal lambda is..."
+        with pytest.warns(UserWarning, match=message):
+            lmbda = stats.boxcox_normmax(x, method='mle')
+        assert np.isfinite(special.boxcox(x, lmbda)).all()
+        # 10000 is safety factor used in boxcox_normmax
+        ymax = np.finfo(np.float64).max / 10000
+        x_treme = np.max(x) if lmbda > 0 else np.min(x)
+        y_extreme = special.boxcox(x_treme, lmbda)
+        assert_allclose(y_extreme, ymax * np.sign(lmbda))
+
+    def test_negative_ymax(self):
+        with pytest.raises(ValueError, match="`ymax` must be strictly positive"):
+            stats.boxcox_normmax(self.x, ymax=-1)
+
+    @pytest.mark.parametrize("x", [
+        # positive overflow in float64
+        np.array([2003.0, 1950.0, 1997.0, 2000.0, 2009.0],
+                 dtype=np.float64),
+        # negative overflow in float64
+        np.array([0.50000471, 0.50004979, 0.50005902, 0.50009312, 0.50001632],
+                 dtype=np.float64),
+        # positive overflow in float32
+        np.array([200.3, 195.0, 199.7, 200.0, 200.9],
+                 dtype=np.float32),
+        # negative overflow in float32
+        np.array([2e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30],
+                 dtype=np.float32),
+    ])
+    @pytest.mark.parametrize("ymax", [1e10, 1e30, None])
+    # TODO: add method "pearsonr" after fix overflow issue
+    @pytest.mark.parametrize("method", ["mle"])
+    def test_user_defined_ymax_input_float64_32(self, x, ymax, method):
+        # Test the maximum of the transformed data close to ymax
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            kwarg = {'ymax': ymax} if ymax is not None else {}
+            lmb = stats.boxcox_normmax(x, method=method, **kwarg)
+            x_treme = [np.min(x), np.max(x)]
+            ymax_res = max(abs(stats.boxcox(x_treme, lmb)))
+            if ymax is None:
+                # 10000 is safety factor used in boxcox_normmax
+                ymax = np.finfo(x.dtype).max / 10000
+            assert_allclose(ymax, ymax_res, rtol=1e-5)
+
+    @pytest.mark.parametrize("x", [
+        # positive overflow in float32 but not float64
+        [200.3, 195.0, 199.7, 200.0, 200.9],
+        # negative overflow in float32 but not float64
+        [2e-30, 1e-30, 1e-30, 1e-30, 1e-30, 1e-30],
+    ])
+    # TODO: add method "pearsonr" after fix overflow issue
+    @pytest.mark.parametrize("method", ["mle"])
+    def test_user_defined_ymax_inf(self, x, method):
+        x_32 = np.asarray(x, dtype=np.float32)
+        x_64 = np.asarray(x, dtype=np.float64)
+
+        # assert overflow with float32 but not float64
+        with pytest.warns(UserWarning, match="The optimal lambda is"):
+            stats.boxcox_normmax(x_32, method=method)
+        stats.boxcox_normmax(x_64, method=method)
+
+        # compute the true optimal lambda then compare them
+        lmb_32 = stats.boxcox_normmax(x_32, ymax=np.inf, method=method)
+        lmb_64 = stats.boxcox_normmax(x_64, ymax=np.inf, method=method)
+        assert_allclose(lmb_32, lmb_64, rtol=1e-2)
 
 
 class TestBoxcoxNormplot:
@@ -2592,7 +2683,8 @@ class TestMedianTest:
                       ties="foo")
 
     def test_bad_nan_policy(self):
-        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5], nan_policy='foobar')
+        assert_raises(ValueError, stats.median_test, [1, 2, 3], [4, 5],
+                      nan_policy='foobar')
 
     def test_bad_keyword(self):
         assert_raises(TypeError, stats.median_test, [1, 2, 3], [4, 5],

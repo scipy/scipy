@@ -79,7 +79,7 @@ logcdf(x, %(shapes)s, loc=0, scale=1)
 _doc_sf = """\
 sf(x, %(shapes)s, loc=0, scale=1)
     Survival function  (also defined as ``1 - cdf``, but `sf` is sometimes more accurate).
-"""
+"""  # noqa: E501
 _doc_logsf = """\
 logsf(x, %(shapes)s, loc=0, scale=1)
     Log of the survival function.
@@ -109,11 +109,11 @@ fit(data)
     Parameter estimates for generic data.
     See `scipy.stats.rv_continuous.fit <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rv_continuous.fit.html#scipy.stats.rv_continuous.fit>`__ for detailed documentation of the
     keyword arguments.
-"""
+"""  # noqa: E501
 _doc_expect = """\
 expect(func, args=(%(shapes_)s), loc=0, scale=1, lb=None, ub=None, conditional=False, **kwds)
     Expected value of a function (of one argument) with respect to the distribution.
-"""
+"""  # noqa: E501
 _doc_expect_discrete = """\
 expect(func, args=(%(shapes_)s), loc=0, lb=None, ub=None, conditional=False)
     Expected value of a function (of one argument) with respect to the distribution.
@@ -598,8 +598,8 @@ def argsreduce(cond, *args):
 
     # np.atleast_1d returns an array if only one argument, or a list of arrays
     # if more than one argument.
-    if not isinstance(newargs, list):
-        newargs = [newargs, ]
+    if not isinstance(newargs, (list, tuple)):
+        newargs = (newargs,)
 
     if np.all(cond):
         # broadcast arrays with cond
@@ -812,8 +812,7 @@ class rv_generic:
                 self.__doc__ = doccer.docformat(self.__doc__, tempdict)
             except TypeError as e:
                 raise Exception("Unable to construct docstring for "
-                                "distribution \"%s\": %s" %
-                                (self.name, repr(e))) from e
+                                f"distribution \"{self.name}\": {repr(e)}") from e
 
         # correct for empty shapes
         self.__doc__ = self.__doc__.replace('(, ', '(').replace(', )', ')')
@@ -2501,8 +2500,9 @@ class rv_continuous(rv_generic):
             - optimizer : The optimizer to use.  The optimizer must take
               ``func`` and starting position as the first two arguments,
               plus ``args`` (for extra arguments to pass to the
-              function to be optimized) and ``disp=0`` to suppress
-              output as keyword arguments.
+              function to be optimized) and ``disp``. 
+              The ``fit`` method calls the optimizer with ``disp=0`` to suppress output.
+              The optimizer must return the estimated parameters.
 
             - method : The method to use. The default is "MLE" (Maximum
               Likelihood Estimate); "MM" (Method of Moments)
@@ -2558,14 +2558,30 @@ class rv_continuous(rv_generic):
         Generate some data to fit: draw random variates from the `beta`
         distribution
 
+        >>> import numpy as np
         >>> from scipy.stats import beta
         >>> a, b = 1., 2.
-        >>> x = beta.rvs(a, b, size=1000)
+        >>> rng = np.random.default_rng(172786373191770012695001057628748821561)
+        >>> x = beta.rvs(a, b, size=1000, random_state=rng)
 
         Now we can fit all four parameters (``a``, ``b``, ``loc`` and
         ``scale``):
 
         >>> a1, b1, loc1, scale1 = beta.fit(x)
+        >>> a1, b1, loc1, scale1
+        (1.0198945204435628, 1.9484708982737828, 4.372241314917588e-05, 0.9979078845964814)
+
+        The fit can be done also using a custom optimizer:
+
+        >>> from scipy.optimize import minimize
+        >>> def custom_optimizer(func, x0, args=(), disp=0):
+        ...     res = minimize(func, x0, args, method="slsqp", options={"disp": disp})
+        ...     if res.success:
+        ...         return res.x
+        ...     raise RuntimeError('optimization routine failed')
+        >>> a1, b1, loc1, scale1 = beta.fit(x, method="MLE", optimizer=custom_optimizer)
+        >>> a1, b1, loc1, scale1
+        (1.0198821087258905, 1.948484145914738, 4.3705304486881485e-05, 0.9979104663953395)
 
         We can also use some prior knowledge about the dataset: let's keep
         ``loc`` and ``scale`` fixed:
@@ -3804,7 +3820,8 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
         if abs(delta) < tolerance * x.size:
             break
         if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            warnings.warn('expect(): sum did not converge',
+                          RuntimeWarning, stacklevel=3)
             return tot
 
     # iterate over [lb, x0)
@@ -3815,7 +3832,8 @@ def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
         if abs(delta) < tolerance * x.size:
             break
         if count > maxcount:
-            warnings.warn('expect(): sum did not converge', RuntimeWarning)
+            warnings.warn('expect(): sum did not converge',
+                          RuntimeWarning, stacklevel=3)
             break
 
     return tot

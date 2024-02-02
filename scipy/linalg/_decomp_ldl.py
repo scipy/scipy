@@ -144,9 +144,9 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
     ldu, piv, info = solver(a, lwork=lwork, lower=lower,
                             overwrite_a=overwrite_a)
     if info < 0:
-        raise ValueError('{} exited with the internal error "illegal value '
-                         'in argument number {}". See LAPACK documentation '
-                         'for the error codes.'.format(s.upper(), -info))
+        raise ValueError(f'{s.upper()} exited with the internal error "illegal value '
+                         f'in argument number {-info}". See LAPACK documentation '
+                         'for the error codes.')
 
     swap_arr, pivot_arr = _ldl_sanitize_ipiv(piv, lower=lower)
     d, lu = _ldl_get_d_and_l(ldu, pivot_arr, lower=lower, hermitian=hermitian)

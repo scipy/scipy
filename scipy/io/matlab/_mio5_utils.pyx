@@ -452,7 +452,7 @@ cdef class VarReader5:
             el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
-            flags = cnp.NPY_WRITEABLE
+            flags = cnp.NPY_ARRAY_WRITEABLE
         Py_INCREF(<object> dt)
         el = PyArray_NewFromDescr(&PyArray_Type,
                                    dt,

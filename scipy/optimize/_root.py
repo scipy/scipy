@@ -208,7 +208,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     if callback is not None and meth in ('hybr', 'lm'):
         warn('Method %s does not accept callback.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
@@ -255,7 +255,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 def _warn_jac_unused(jac, method):
     if jac is not None:
         warn(f'Method {method} does not use the jacobian (jac).',
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,

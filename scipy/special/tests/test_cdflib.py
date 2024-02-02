@@ -39,13 +39,14 @@ except ImportError:
 
 class ProbArg:
     """Generate a set of probabilities on [0, 1]."""
+
     def __init__(self):
         # Include the endpoints for compatibility with Arg et. al.
         self.a = 0
         self.b = 1
 
     def values(self, n):
-        """Return an array containing approximatively n numbers."""
+        """Return an array containing approximately n numbers."""
         m = max(1, n//3)
         v1 = np.logspace(-30, np.log10(0.3), m)
         v2 = np.linspace(0.3, 0.7, m + 1, endpoint=False)[1:]
@@ -140,7 +141,7 @@ class _CDFData:
         param_filter = self.get_param_filter()
         param_columns = tuple(range(args.shape[1]))
         result_columns = args.shape[1]
-        args = np.hstack((args, args[:,self.index].reshape(args.shape[0], 1)))
+        args = np.hstack((args, args[:, self.index].reshape(args.shape[0], 1)))
         FuncData(self.idmap, args,
                  param_columns=param_columns, result_columns=result_columns,
                  rtol=self.rtol, atol=self.atol, vectorized=False,
@@ -235,24 +236,29 @@ class TestCDFlib:
         _assert_inverts(
             sp.btdtrib,
             lambda a, b, x: mpmath.betainc(a, b, x2=x, regularized=True),
-            1, [Arg(0, 1e2, inclusive_a=False), ProbArg(),
+            1,
+            [Arg(0, 1e2, inclusive_a=False), ProbArg(),
              Arg(0, 1, inclusive_a=False, inclusive_b=False)],
-            rtol=1e-7, endpt_atol=[None, 1e-18, 1e-15])
+            rtol=1e-7,
+            endpt_atol=[None, 1e-18, 1e-15])
 
     @pytest.mark.xfail(run=False)
     def test_fdtridfd(self):
         _assert_inverts(
             sp.fdtridfd,
             _f_cdf,
-            1, [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
+            1,
+            [IntArg(1, 100), ProbArg(), Arg(0, 100, inclusive_a=False)],
             rtol=1e-7)
 
     def test_gdtria(self):
         _assert_inverts(
             sp.gdtria,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
-            0, [ProbArg(), Arg(0, 1e3, inclusive_a=False),
-                Arg(0, 1e4, inclusive_a=False)], rtol=1e-7,
+            0,
+            [ProbArg(), Arg(0, 1e3, inclusive_a=False),
+             Arg(0, 1e4, inclusive_a=False)],
+            rtol=1e-7,
             endpt_atol=[None, 1e-7, 1e-10])
 
     def test_gdtrib(self):
@@ -260,15 +266,19 @@ class TestCDFlib:
         _assert_inverts(
             sp.gdtrib,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
-            1, [Arg(0, 1e2, inclusive_a=False), ProbArg(),
-                Arg(0, 1e3, inclusive_a=False)], rtol=1e-5)
+            1,
+            [Arg(0, 1e2, inclusive_a=False), ProbArg(),
+             Arg(0, 1e3, inclusive_a=False)],
+            rtol=1e-5)
 
     def test_gdtrix(self):
         _assert_inverts(
             sp.gdtrix,
             lambda a, b, x: mpmath.gammainc(b, b=a*x, regularized=True),
-            2, [Arg(0, 1e3, inclusive_a=False), Arg(0, 1e3, inclusive_a=False),
-                ProbArg()], rtol=1e-7,
+            2,
+            [Arg(0, 1e3, inclusive_a=False), Arg(0, 1e3, inclusive_a=False),
+             ProbArg()],
+            rtol=1e-7,
             endpt_atol=[None, 1e-7, 1e-10])
 
     def test_stdtr(self):
@@ -357,59 +367,58 @@ class TestCDFlib:
         assert_equal(sp.tklmbda([-bound, bound], lmbda), [0.0, 1.0])
 
 
-def test_nonfinite():
-    funcs = [
-        ("btdtria", 3),
-        ("btdtrib", 3),
-        ("bdtrik", 3),
-        ("bdtrin", 3),
-        ("chdtriv", 2),
-        ("chndtr", 3),
-        ("chndtrix", 3),
-        ("chndtridf", 3),
-        ("chndtrinc", 3),
-        ("fdtridfd", 3),
-        ("ncfdtr", 4),
-        ("ncfdtri", 4),
-        ("ncfdtridfn", 4),
-        ("ncfdtridfd", 4),
-        ("ncfdtrinc", 4),
-        ("gdtrix", 3),
-        ("gdtrib", 3),
-        ("gdtria", 3),
-        ("nbdtrik", 3),
-        ("nbdtrin", 3),
-        ("nrdtrimn", 3),
-        ("nrdtrisd", 3),
-        ("pdtrik", 2),
-        ("stdtr", 2),
-        ("stdtrit", 2),
-        ("stdtridf", 2),
-        ("nctdtr", 3),
-        ("nctdtrit", 3),
-        ("nctdtridf", 3),
-        ("nctdtrinc", 3),
-        ("tklmbda", 2),
-    ]
+funcs = [
+    ("btdtria", 3),
+    ("btdtrib", 3),
+    ("bdtrik", 3),
+    ("bdtrin", 3),
+    ("chdtriv", 2),
+    ("chndtr", 3),
+    ("chndtrix", 3),
+    ("chndtridf", 3),
+    ("chndtrinc", 3),
+    ("fdtridfd", 3),
+    ("ncfdtr", 4),
+    ("ncfdtri", 4),
+    ("ncfdtridfn", 4),
+    ("ncfdtridfd", 4),
+    ("ncfdtrinc", 4),
+    ("gdtrix", 3),
+    ("gdtrib", 3),
+    ("gdtria", 3),
+    ("nbdtrik", 3),
+    ("nbdtrin", 3),
+    ("nrdtrimn", 3),
+    ("nrdtrisd", 3),
+    ("pdtrik", 2),
+    ("stdtr", 2),
+    ("stdtrit", 2),
+    ("stdtridf", 2),
+    ("nctdtr", 3),
+    ("nctdtrit", 3),
+    ("nctdtridf", 3),
+    ("nctdtrinc", 3),
+    ("tklmbda", 2),
+]
 
-    np.random.seed(1)
 
-    for func, numargs in funcs:
-        func = getattr(sp, func)
+@pytest.mark.parametrize('func,numargs', funcs, ids=[x[0] for x in funcs])
+def test_nonfinite(func, numargs):
 
-        args_choices = [(float(x), np.nan, np.inf, -np.inf) for x in
-                        np.random.rand(numargs)]
+    rng = np.random.default_rng(1701299355559735)
+    func = getattr(sp, func)
+    args_choices = [(float(x), np.nan, np.inf, -np.inf) for x in rng.random(numargs)]
 
-        for args in itertools.product(*args_choices):
-            res = func(*args)
+    for args in itertools.product(*args_choices):
+        res = func(*args)
 
-            if any(np.isnan(x) for x in args):
-                # Nan inputs should result to nan output
-                assert_equal(res, np.nan)
-            else:
-                # All other inputs should return something (but not
-                # raise exceptions or cause hangs)
-                pass
+        if any(np.isnan(x) for x in args):
+            # Nan inputs should result to nan output
+            assert_equal(res, np.nan)
+        else:
+            # All other inputs should return something (but not
+            # raise exceptions or cause hangs)
+            pass
 
 
 def test_chndtrix_gh2158():
@@ -428,3 +437,67 @@ def test_chndtrix_gh2158():
                75.87368842650227, 78.06984431185720, 80.22971052389806,
                82.35640899964173, 84.45263768373256]
     assert_allclose(res, res_exp)
+
+@pytest.mark.xfail_on_32bit("32bit fails due to algorithm threshold")
+def test_nctdtr_gh19896():
+    # test that gh-19896 is resolved.
+    # Compared to SciPy 1.11 results from Fortran code.
+    dfarr = [0.98, 9.8, 98, 980]
+    pnoncarr = [-3.8, 0.38, 3.8, 38]
+    tarr = [0.0015, 0.15, 1.5, 15]
+    resarr = [0.9999276519560749, 0.9999276519560749, 0.9999908831755221,
+              0.9999990265452424, 0.3524153312279712, 0.39749697267251416,
+              0.7168629634895805, 0.9656246449259646, 7.234804392512006e-05,
+              7.234804392512006e-05, 0.03538804607509127, 0.795482701508521,
+              0.0, 0.0, 0.0,
+              0.011927908523093889, 0.9999276519560749, 0.9999276519560749,
+              0.9999997441133123, 1.0, 0.3525155979118013,
+              0.4076312014048369, 0.8476794017035086, 0.9999999297116268,
+              7.234804392512006e-05, 7.234804392512006e-05, 0.013477443099785824,
+              0.9998501512331494, 0.0, 0.0,
+              0.0, 6.561112613212572e-07, 0.9999276519560749,
+              0.9999276519560749, 0.9999999313496014, 1.0,
+              0.3525281784865706, 0.40890253001898014, 0.8664672830017024,
+              1.0, 7.234804392512006e-05, 7.234804392512006e-05,
+              0.010990889489704836, 1.0, 0.0,
+              0.0, 0.0, 0.0,
+              0.9999276519560749, 0.9999276519560749, 0.9999999418789304,
+              1.0, 0.35252945487817355, 0.40903153246690993,
+              0.8684247068528264, 1.0, 7.234804392512006e-05,
+              7.234804392512006e-05, 0.01075068918582911, 1.0,
+              0.0, 0.0, 0.0, 0.0]
+    actarr = []
+    for df, p, t in itertools.product(dfarr, pnoncarr, tarr):
+        actarr += [sp.nctdtr(df, p, t)]
+    # The rtol is kept high on purpose to make it pass on 32bit systems
+    assert_allclose(actarr, resarr, rtol=1e-12, atol=0.0)
+
+
+def test_nctdtrinc_gh19896():
+    # test that gh-19896 is resolved.
+    # Compared to SciPy 1.11 results from Fortran code.
+    dfarr = [0.001, 0.98, 9.8, 98, 980, 10000, 98, 9.8, 0.98, 0.001]
+    parr = [0.001, 0.1, 0.3, 0.8, 0.999, 0.001, 0.1, 0.3, 0.8, 0.999]
+    tarr = [0.0015, 0.15, 1.5, 15, 300, 0.0015, 0.15, 1.5, 15, 300]
+    desired = [3.090232306168629, 1.406141304556198, 2.014225177124157,
+               13.727067118283456, 278.9765683871208, 3.090232306168629,
+               1.4312427877936222, 2.014225177124157, 3.712743137978295,
+               -3.086951096691082]
+    actual = sp.nctdtrinc(dfarr, parr, tarr)
+    assert_allclose(actual, desired, rtol=2e-12, atol=0.0)
+
+
+def test_stdtr_stdtrit_neg_inf():
+    # -inf was treated as +inf and values from the normal were returned
+    assert np.all(np.isnan(sp.stdtr(-np.inf, [-np.inf, -1.0, 0.0, 1.0, np.inf])))
+    assert np.all(np.isnan(sp.stdtrit(-np.inf, [0.0, 0.25, 0.5, 0.75, 1.0])))
+
+
+def test_bdtrik_nbdtrik_inf():
+    y = np.array(
+        [np.nan,-np.inf,-10.0, -1.0, 0.0, .00001, .5, 0.9999, 1.0, 10.0, np.inf])
+    y = y[:,None]
+    p = np.atleast_2d(
+        [np.nan, -np.inf, -10.0, -1.0, 0.0, .00001, .5, 1.0, np.inf])
+    assert np.all(np.isnan(sp.bdtrik(y, np.inf, p)))
+    assert np.all(np.isnan(sp.nbdtrik(y, np.inf, p)))

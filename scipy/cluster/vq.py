@@ -68,7 +68,7 @@ import warnings
 import numpy as np
 from collections import deque
 from scipy._lib._array_api import (
-    as_xparray, array_namespace, size, atleast_nd, copy, cov
+    _asarray, array_namespace, size, atleast_nd, copy, cov
 )
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
@@ -132,14 +132,14 @@ def whiten(obs, check_finite=True):
 
     """
     xp = array_namespace(obs)
-    obs = as_xparray(obs, check_finite=check_finite, xp=xp)
+    obs = _asarray(obs, check_finite=check_finite, xp=xp)
     std_dev = xp.std(obs, axis=0)
     zero_std_mask = std_dev == 0
     if xp.any(zero_std_mask):
         std_dev[zero_std_mask] = 1.0
         warnings.warn("Some columns have standard deviation zero. "
                       "The values of these columns will not change.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     return obs / std_dev
 
 
@@ -202,8 +202,8 @@ def vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
     ct = xp.result_type(obs, code_book)
 
     c_obs = xp.astype(obs, ct, copy=False)
@@ -255,8 +255,8 @@ def py_vq(obs, code_book, check_finite=True):
 
     """
     xp = array_namespace(obs, code_book)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    code_book = as_xparray(code_book, xp=xp, check_finite=check_finite)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    code_book = _asarray(code_book, xp=xp, check_finite=check_finite)
 
     if obs.ndim != code_book.ndim:
         raise ValueError("Observation and code_book should have the same rank")
@@ -462,9 +462,12 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     >>> plt.show()
 
     """
-    xp = array_namespace(obs, k_or_guess)
-    obs = as_xparray(obs, xp=xp, check_finite=check_finite)
-    guess = as_xparray(k_or_guess, xp=xp, check_finite=check_finite)
+    if isinstance(k_or_guess, int):
+        xp = array_namespace(obs)
+    else:
+        xp = array_namespace(obs, k_or_guess)
+    obs = _asarray(obs, xp=xp, check_finite=check_finite)
+    guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
         raise ValueError("iter must be at least 1, got %s" % iter)
 
@@ -517,7 +520,9 @@ def _kpoints(data, k, rng, xp):
 
     """
     idx = rng.choice(data.shape[0], size=int(k), replace=False)
-    return data[idx, ...]
+    # convert to array with default integer dtype (avoids numpy#25607)
+    idx = xp.asarray(idx, dtype=xp.asarray([1]).dtype)
+    return xp.take(data, idx, axis=0)
 
 
 def _krandinit(data, k, rng, xp):
@@ -622,7 +627,8 @@ _valid_init_meth = {'random': _krandinit, 'points': _kpoints, '++': _kpp}
 def _missing_warn():
     """Print a warning when called."""
     warnings.warn("One of the clusters is empty. "
-                  "Re-run kmeans with a different initialization.")
+                  "Re-run kmeans with a different initialization.",
+                  stacklevel=3)
 
 
 def _missing_raise():
@@ -767,8 +773,11 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     except KeyError as e:
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
-    xp = array_namespace(data, k)
-    data = as_xparray(data, xp=xp, check_finite=check_finite)
+    if isinstance(k, int):
+        xp = array_namespace(data)
+    else:
+        xp = array_namespace(data, k)
+    data = _asarray(data, xp=xp, check_finite=check_finite)
     code_book = copy(k, xp=xp)
     if data.ndim == 1:
         d = 1
@@ -794,7 +803,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             raise ValueError("Cannot ask kmeans2 for %d clusters"
                              " (k was %s)" % (nc, code_book))
         elif nc != code_book:
-            warnings.warn("k was not an integer, was converted.")
+            warnings.warn("k was not an integer, was converted.", stacklevel=2)
 
         try:
             init_meth = _valid_init_meth[minit]
@@ -804,12 +813,12 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(seed)
             code_book = init_meth(data, code_book, rng, xp)
 
+    data = np.asarray(data)
+    code_book = np.asarray(code_book)
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
-        data = np.asarray(data)
-        label = np.asarray(label)
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
             miss_meth()

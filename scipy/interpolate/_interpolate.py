@@ -17,10 +17,6 @@ from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
 
-# even though this is a stdlib module, it got accidentally exposed in __all__
-# in the past. It is now deprecated and scheduled to be removed in SciPy 1.13.0
-import itertools  # noqa
-
 
 def lagrange(x, w):
     r"""
@@ -97,7 +93,7 @@ def lagrange(x, w):
 
 
 dep_mesg = """\
-`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.13.0.
+`interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy 1.14.0.
 
 For legacy code, nearly bug-for-bug compatible replacements are
 `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -119,7 +115,7 @@ class interp2d:
     .. deprecated:: 1.10.0
 
         `interp2d` is deprecated in SciPy 1.10 and will be removed in SciPy
-        1.13.0.
+        1.14.0.
 
         For legacy code, nearly bug-for-bug compatible replacements are
         `RectBivariateSpline` on regular grids, and `bisplrep`/`bisplev` for
@@ -345,9 +341,10 @@ class interp2d:
             any_out_of_bounds_y = np.any(out_of_bounds_y)
 
         if self.bounds_error and (any_out_of_bounds_x or any_out_of_bounds_y):
-            raise ValueError("Values out of range; x must be in %r, y in %r"
-                             % ((self.x_min, self.x_max),
-                                (self.y_min, self.y_max)))
+            raise ValueError(
+                f"Values out of range; x must be in {(self.x_min, self.x_max)!r}, "
+                f"y in {(self.y_min, self.y_max)!r}"
+            )
 
         z = _fitpack_py.bisplev(x, y, self.tck, dx, dy)
         z = atleast_2d(z)
@@ -376,9 +373,8 @@ def _check_broadcast_up_to(arr_from, shape_to, name):
                 arr_from = np.ones(shape_to, arr_from.dtype) * arr_from
             return arr_from.ravel()
     # at least one check failed
-    raise ValueError('%s argument must be able to broadcast up '
-                     'to shape %s but had shape %s'
-                     % (name, shape_to, shape_from))
+    raise ValueError(f'{name} argument must be able to broadcast up '
+                     f'to shape {shape_to} but had shape {shape_from}')
 
 
 def _do_extrapolate(fill_value):
@@ -424,8 +420,8 @@ class interp1d(_Interpolator1D):
         Axis in the ``y`` array corresponding to the x-coordinate values. Unlike
         other interpolators, defaults to ``axis=-1``.
     copy : bool, optional
-        If True, the class makes internal copies of x and y.
-        If False, references to `x` and `y` are used. The default is to copy.
+        If ``True``, the class makes internal copies of x and y. If ``False``,
+        references to ``x`` and ``y`` are used if possible. The default is to copy.
     bounds_error : bool, optional
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
@@ -503,7 +499,10 @@ class interp1d(_Interpolator1D):
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
         self.bounds_error = bounds_error  # used by fill_value setter
-        self.copy = copy
+
+        # `copy` keyword semantics changed in NumPy 2.0, once that is
+        # the minimum version this can use `copy=None`.
+        self.copy = np._CopyMode.ALWAYS if copy else np._CopyMode.IF_NEEDED
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,
@@ -790,14 +789,12 @@ class interp1d(_Interpolator1D):
 
         if self.bounds_error and below_bounds.any():
             below_bounds_value = x_new[np.argmax(below_bounds)]
-            raise ValueError("A value ({}) in x_new is below "
-                             "the interpolation range's minimum value ({})."
-                             .format(below_bounds_value, self.x[0]))
+            raise ValueError(f"A value ({below_bounds_value}) in x_new is below "
+                             f"the interpolation range's minimum value ({self.x[0]}).")
         if self.bounds_error and above_bounds.any():
             above_bounds_value = x_new[np.argmax(above_bounds)]
-            raise ValueError("A value ({}) in x_new is above "
-                             "the interpolation range's maximum value ({})."
-                             .format(above_bounds_value, self.x[-1]))
+            raise ValueError(f"A value ({above_bounds_value}) in x_new is above "
+                             f"the interpolation range's maximum value ({self.x[-1]}).")
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.
@@ -823,8 +820,7 @@ class _PPolyBase:
                              "2-dimensional.")
 
         if not (0 <= axis < self.c.ndim - 1):
-            raise ValueError("axis=%s must be between 0 and %s" %
-                             (axis, self.c.ndim-1))
+            raise ValueError(f"axis={axis} must be between 0 and {self.c.ndim-1}")
 
         self.axis = axis
         if axis != 0:
@@ -914,8 +910,7 @@ class _PPolyBase:
         if x.ndim != 1:
             raise ValueError("invalid dimensions for x")
         if x.shape[0] != c.shape[1]:
-            raise ValueError("Shapes of x {} and c {} are incompatible"
-                             .format(x.shape, c.shape))
+            raise ValueError(f"Shapes of x {x.shape} and c {c.shape} are incompatible")
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
             raise ValueError("Shapes of c {} and self.c {} are incompatible"
                              .format(c.shape, self.c.shape))
@@ -1568,10 +1563,11 @@ class BPoly(_PPolyBase):
 
     .. math::
 
-        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3 \\times b_{2, 2}(x) \\\\
+        B(x) = 1 \\times b_{0, 2}(x) + 2 \\times b_{1, 2}(x) + 3
+               \\times b_{2, 2}(x) \\\\
              = 1 \\times (1-x)^2 + 2 \\times 2 x (1 - x) + 3 \\times x^2
 
-    """
+    """  # noqa: E501
 
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate_bernstein(

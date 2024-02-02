@@ -102,12 +102,12 @@ def fhtcoeff(n, dln, mu, offset=0.0, bias=0.0, inverse=False):
 
     # check for singular transform or singular inverse transform
     if np.isinf(u[0]) and not inverse:
-        warn('singular transform; consider changing the bias')
+        warn('singular transform; consider changing the bias', stacklevel=3)
         # fix coefficient to obtain (potentially correct) transform anyway
         u = copy(u)
         u[0] = 0
     elif u[0] == 0 and inverse:
-        warn('singular inverse transform; consider changing the bias')
+        warn('singular inverse transform; consider changing the bias', stacklevel=3)
         # fix coefficient to obtain (potentially correct) inverse anyway
         u = copy(u)
         u[0] = np.inf

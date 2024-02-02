@@ -199,8 +199,8 @@ def test_fit_error():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
-                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
+                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined]
+                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined]
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
@@ -355,7 +355,7 @@ class TestFit:
     dist = stats.binom  # type: ignore[attr-defined]
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined] # noqa
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined]  # noqa: E501
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
@@ -461,7 +461,7 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-        message = "Guess for parameter `n` rounded..."
+        message = "Guess for parameter `n` rounded.*|Guess for parameter `p` clipped.*"
         guess = {'n': 4.5, 'p': -0.5}
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
@@ -982,11 +982,15 @@ class TestFitResult:
         bounds = [(0, 30), (0, 1)]
         res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
         try:
-            import matplotlib  # noqa
+            import matplotlib  # noqa: F401
             message = r"`plot_type` must be one of \{'..."
             with pytest.raises(ValueError, match=message):
                 res.plot(plot_type='llama')
         except (ModuleNotFoundError, ImportError):
-            message = r"matplotlib must be installed to use method `plot`."
-            with pytest.raises(ModuleNotFoundError, match=message):
-                res.plot(plot_type='llama')
+            # Avoid trying to call MPL with numpy 2.0-dev, because that fails
+            # too often due to ABI mismatches and is hard to avoid. This test
+            # will work fine again once MPL has done a 2.0-compatible release.
+            if not np.__version__.startswith('2.0.0.dev0'):
+                message = r"matplotlib must be installed to use method `plot`."
+                with pytest.raises(ModuleNotFoundError, match=message):
+                    res.plot(plot_type='llama')

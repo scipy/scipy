@@ -186,14 +186,13 @@ def solve_continuous_lyapunov(a, q):
 
     if info < 0:
         raise ValueError('?TRSYL exited with the internal error '
-                         '"illegal value in argument number {}.". See '
-                         'LAPACK documentation for the ?TRSYL error codes.'
-                         ''.format(-info))
+                         f'"illegal value in argument number {-info}.". See '
+                         'LAPACK documentation for the ?TRSYL error codes.')
     elif info == 1:
         warnings.warn('Input "a" has an eigenvalue pair whose sum is '
                       'very close to or exactly zero. The solution is '
                       'obtained via perturbing the coefficients.',
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
     y *= scale
 
     return u.dot(y).dot(u.conj().T)
@@ -468,7 +467,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -674,7 +673,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):

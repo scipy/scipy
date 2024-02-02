@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdarg.h>
 
-#include "error.h"
+#include "special/error.h"
 // #include "sf_error.h"
 
 extern "C" {
@@ -12,14 +12,14 @@ extern "C" {
 
 
 #ifdef SP_SPECFUN_ERROR
-void scipy::special::set_error(const char *func_name, sf_error_t code,
+void special::set_error(const char *func_name, sf_error_t code,
 			       const char *fmt, ...) {
-    /* Definition of error handling for scipy::special C++ library of special
+    /* Definition of error handling for special C++ library of special
      * functions used in SciPy.
      *
-     * See error.h for info on valid codes in enum sf_error_t.
+     * See special/error.h for info on valid codes in enum sf_error_t.
      *
-     * Other packages making use of this library can supply their own implementation. 
+     * Other packages making use of this library can supply their own implementation.
      */
     va_list ap;
     va_start(ap, fmt);
@@ -28,4 +28,3 @@ void scipy::special::set_error(const char *func_name, sf_error_t code,
     va_end(ap);
 }
 #endif
-

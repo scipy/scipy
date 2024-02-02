@@ -65,7 +65,7 @@ bad_pdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -84,7 +84,7 @@ bad_dpdf_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # signature of dPDF wrong
     (lambda: 1.0, TypeError, r"takes 0 positional arguments but 1 was given")
 ]
@@ -95,7 +95,7 @@ bad_logpdfs_common = [
     # Returning wrong type
     (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
-    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
+    (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa: F821, E501
     # Infinite value returned => Overflow error.
     (lambda x: np.inf, UNURANError, r"..."),
     # NaN value => internal error in UNU.RAN
@@ -674,7 +674,7 @@ class TestDiscreteAliasUrn:
         (lambda x: 0.0, ValueError,
          r"must contain at least one non-zero value"),
         # Undefined name inside the function
-        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa
+        (lambda x: foo, NameError,  # type: ignore[name-defined]  # noqa: F821
          r"name 'foo' is not defined"),
         # Returning wrong type.
         (lambda x: [], ValueError,
