@@ -1489,7 +1489,7 @@ class _TestLinearFilter:
                 y[...] = self.type(x[()])
             return out
         else:
-            return np.array(arr, self.dtype, copy=False)
+            return np.asarray(arr, dtype=self.dtype)
 
     def test_rank_1_IIR(self):
         x = self.generate((6,))

@@ -1,9 +1,16 @@
+import itertools
+import functools
 import operator
 import numpy as np
 
 from math import prod
 
 from . import _bspl  # type: ignore
+
+import scipy.sparse.linalg as ssl
+from scipy.sparse import csr_array
+
+from ._bsplines import _not_a_knot
 
 __all__ = ["NdBSpline"]
 
@@ -59,6 +66,7 @@ class NdBSpline:
     Methods
     -------
     __call__
+    design_matrix
 
     See Also
     --------
@@ -155,7 +163,11 @@ class NdBSpline:
         else:
             nu = np.asarray(nu, dtype=np.intc)
             if nu.ndim != 1 or nu.shape[0] != ndim:
-                raise ValueError("invalid number of derivative orders nu")
+                raise ValueError(
+                    f"invalid number of derivative orders {nu = } for "
+                    f"ndim = {len(self.t)}.")
+            if any(nu < 0):
+                raise ValueError(f"derivatives must be positive, got {nu = }")
 
         # prepare xi : shape (..., m1, ..., md) -> (1, m1, ..., md)
         xi = np.asarray(xi, dtype=float)
@@ -185,7 +197,6 @@ class NdBSpline:
         # prepare the coefficients: flatten the trailing dimensions
         c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
         c1r = c1.ravel()
-        # XXX: is c1r guaranteed to be C-contiguous? Cython code assumes it is.
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
         _strides_c1 = np.asarray([s // c1.dtype.itemsize
@@ -207,3 +218,141 @@ class NdBSpline:
                                  out,)
 
         return out.reshape(xi_shape[:-1] + self.c.shape[ndim:])
+
+    @classmethod
+    def design_matrix(cls, xvals, t, k, extrapolate=True):
+        """Construct the design matrix as a CSR format sparse array.
+
+        Parameters
+        ----------
+        xvals :  ndarray, shape(npts, ndim)
+            Data points. ``xvals[j, :]`` gives the ``j``-th data point as an
+            ``ndim``-dimensional array.
+        t : tuple of 1D ndarrays, length-ndim
+            Knot vectors in directions 1, 2, ... ndim,
+        k : int
+            B-spline degree.
+        extrapolate : bool, optional
+            Whether to extrapolate out-of-bounds values of raise a `ValueError`
+
+        Returns
+        -------
+        design_matrix : a CSR array
+            Each row of the design matrix corresponds to a value in `xvals` and
+            contains values of b-spline basis elements which are non-zero
+            at this value.
+
+        """
+        xvals = np.asarray(xvals, dtype=float)
+        ndim = xvals.shape[-1]
+        if len(t) != ndim:
+            raise ValueError(
+                f"Data and knots are inconsistent: len(t) = {len(t)} for "
+                f" {ndim = }."
+            )
+        try:
+            len(k)
+        except TypeError:
+            # make k a tuple
+            k = (k,)*ndim
+
+        kk = np.asarray(k, dtype=np.int32)
+        data, indices, indptr = _bspl._colloc_nd(xvals, t, kk)
+        return csr_array((data, indices, indptr))
+
+
+def _iter_solve(a, b, solver=ssl.gcrotmk, **solver_args):
+    # work around iterative solvers not accepting multiple r.h.s.
+
+    # also work around a.dtype == float64 and b.dtype == complex128
+    # cf https://github.com/scipy/scipy/issues/19644
+    if np.issubdtype(b.dtype, np.complexfloating):
+        real = _iter_solve(a, b.real, solver, **solver_args)
+        imag = _iter_solve(a, b.imag, solver, **solver_args)
+        return real + 1j*imag
+
+    if b.ndim == 2 and b.shape[1] !=1:
+        res = np.empty_like(b)
+        for j in range(b.shape[1]):
+            res[:, j], info = solver(a, b[:, j], **solver_args)
+            if info != 0:
+                raise ValueError(f"{solver = } returns {info =} for column {j}.")
+        return res
+    else:
+        res, info = solver(a, b, **solver_args)
+        if info != 0:
+            raise ValueError(f"{solver = } returns {info = }.")
+        return res
+
+
+def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
+    """Construct an interpolating NdBspline.
+
+    Parameters
+    ----------
+    points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
+        The points defining the regular grid in N dimensions. The points in
+        each dimension (i.e. every element of the `points` tuple) must be
+        strictly ascending or descending.      
+    values : ndarray of float, shape (m1, ..., mN, ...)
+        The data on the regular grid in n dimensions.
+    k : int, optional
+        The spline degree. Must be odd. Default is cubic, k=3
+    solver : a `scipy.sparse.linalg` solver (iterative or direct), optional.
+        An iterative solver from `scipy.sparse.linalg` or a direct one,
+        `sparse.sparse.linalg.spsolve`.
+        Used to solve the sparse linear system
+        ``design_matrix @ coefficients = rhs`` for the coefficients.
+        Default is `scipy.sparse.linalg.gcrotmk`
+    solver_args : dict, optional
+        Additional arguments for the solver. The call signature is
+        ``solver(csr_array, rhs_vector, **solver_args)``
+
+    Returns
+    -------
+    spl : NdBSpline object
+
+    Notes
+    -----
+    Boundary conditions are not-a-knot in all dimensions.
+    """
+    ndim = len(points)
+    xi_shape = tuple(len(x) for x in points)
+
+    try:
+        len(k)
+    except TypeError:
+        # make k a tuple
+        k = (k,)*ndim
+
+    for d, point in enumerate(points):
+        numpts = len(np.atleast_1d(point))
+        if numpts <= k[d]:
+            raise ValueError(f"There are {numpts} points in dimension {d},"
+                             f" but order {k[d]} requires at least "
+                             f" {k[d]+1} points per dimension.")
+
+    t = tuple(_not_a_knot(np.asarray(points[d], dtype=float), k[d])
+              for d in range(ndim))
+    xvals = np.asarray([xv for xv in itertools.product(*points)], dtype=float)
+
+    # construct the colocation matrix
+    matr = NdBSpline.design_matrix(xvals, t, k)
+
+    # Solve for the coefficients given `values`.
+    # Trailing dimensions: first ndim dimensions are data, the rest are batch
+    # dimensions, so stack `values` into a 2D array for `spsolve` to undestand.
+    v_shape = values.shape
+    vals_shape = (prod(v_shape[:ndim]), prod(v_shape[ndim:]))
+    vals = values.reshape(vals_shape)
+
+    if solver != ssl.spsolve:
+        solver = functools.partial(_iter_solve, solver=solver)
+        if "atol" not in solver_args:
+            # avoid a DeprecationWarning, grumble grumble
+            solver_args["atol"] = 1e-6
+
+    coef = solver(matr, vals, **solver_args)
+    coef = coef.reshape(xi_shape + v_shape[ndim:])
+    return NdBSpline(t, coef, k)
+

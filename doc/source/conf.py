@@ -215,6 +215,7 @@ html_theme_options = {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
   },
+  "show_version_warning_banner": True,
   "secondary_sidebar_items": ["page-toc"],
   # The service https://plausible.io is used to gather simple
   # and privacy-friendly analytics for the site. The dashboard can be accessed
@@ -302,6 +303,7 @@ autosummary_generate = True
 autosummary_filename_map = {
     "scipy.odr.odr": "odr-function",
     "scipy.signal.czt": "czt-function",
+    "scipy.signal.ShortTimeFFT.t": "scipy.signal.ShortTimeFFT.t.lower",
 }
 
 

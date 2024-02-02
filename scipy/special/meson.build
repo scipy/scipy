@@ -14,14 +14,12 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
-  fs.copyfile('_evalpoly.pxd'),
   fs.copyfile('_exprel.pxd'),
   fs.copyfile('_factorial.pxd'),
   fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
-  fs.copyfile('_loggamma.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
@@ -378,14 +376,21 @@ special_sources = [
   'special/error.h',
   'special/evalpoly.h',
   'special/lambertw.h',
-  'special/binom.h'
+  'special/binom.h',
+  'special/trig.h',
+  'special/zlog1.h',
+  'special/loggamma.h',
+  'special/digamma.h'
 ]
 
 special_cephes_sources = [
   'special/cephes/const.h',
   'special/cephes/polevl.h',
   'special/cephes/beta.h',
-  'special/cephes/gamma.h'
+  'special/cephes/gamma.h',
+  'special/cephes/trig.h',
+  'special/cephes/zeta.h',
+  'special/cephes/psi.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
