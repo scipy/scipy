@@ -4460,6 +4460,8 @@ class multivariate_t_gen(multi_rv_generic):
         params = self._process_parameters(loc, shape, df,
                                           allow_singular=allow_singular)
         dim, loc, cov_object, df = params
+        if np.isposinf(df):
+            return _squeeze_output(multivariate_normal.pdf(x, loc, cov_object))
         x = self._process_quantiles(x, dim)
         logpdf = self._logpdf(x, loc, cov_object, df, dim)
         return np.exp(logpdf)
@@ -4495,11 +4497,7 @@ class multivariate_t_gen(multi_rv_generic):
         """
         dim, loc, cov_object, df = self._process_parameters(loc, shape, df)
         x = self._process_quantiles(x, dim)
-        out = self._logpdf(x, loc, cov_object, df, dim)
-        if np.any(cov_object.rank < dim):
-            out_of_bounds = ~cov_object._support_mask(x - loc)
-            out[out_of_bounds] = -np.inf
-        return _squeeze_output(out)
+        return self._logpdf(x, loc, cov_object, df, dim)
 
     def _logpdf(self, x, loc, cov_object, df, dim):
         """Utility method `pdf`, `logpdf` for parameters.
@@ -4531,7 +4529,7 @@ class multivariate_t_gen(multi_rv_generic):
         """
 
         if np.isposinf(df):
-            return multivariate_normal._logpdf(x, loc, cov_object)
+            return _squeeze_output(multivariate_normal._logpdf(x, loc, cov_object))
 
         log_det_cov, rank = cov_object.log_pdet, cov_object.rank
         dev = x - loc
@@ -4714,15 +4712,20 @@ class multivariate_t_gen(multi_rv_generic):
         #     http://rjournal.github.io/archive/2013-2/hofert.pdf
         #
         dim, loc, cov_object, df = self._process_parameters(loc, shape, df)
+        if np.isposinf(df):
+            mvn_samples = multivariate_normal(loc, cov=cov_object).rvs(size=size,
+                                              random_state=random_state)
+            return _squeeze_output(mvn_samples)
+
         if random_state is not None:
             rng = check_random_state(random_state)
         else:
             rng = self._random_state
 
-        if np.isinf(df):
-            x = np.ones(size)
-        else:
-            x = rng.chisquare(df, size=size) / df
+        #if np.isinf(df):
+        #    x = np.ones(size)
+        #else:
+        x = rng.chisquare(df, size=size) / df
 
         z = rng.multivariate_normal(np.zeros(dim), cov_object.covariance, size=size)
         samples = loc + z / np.sqrt(x)[..., None]
@@ -4743,7 +4746,7 @@ class multivariate_t_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
         return x
 
-    def _process_parameters(self, loc, shape, df, allow_singular=False):
+    def _process_parameters(self, loc, shape, df, allow_singular=True):
         """
         Infer dimensionality from location array and shape matrix, handle
         defaults, and ensure compatible dimensions.
@@ -4854,10 +4857,7 @@ class multivariate_t_frozen(multi_rv_frozen):
     def logpdf(self, x):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.loc, self.cov_object, self.df, self.dim)
-        if np.any(self.cov_object.rank < self.dim):
-            out_of_bounds = ~self.cov_object._support_mask(x - self.loc)
-            out[out_of_bounds] = -np.inf
-        return _squeeze_output(out)
+        return out
 
     def cdf(self, x, *, maxpts=None, lower_limit=None, random_state=None):
         x = self._dist._process_quantiles(x, self.dim)

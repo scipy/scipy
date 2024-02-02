@@ -224,6 +224,50 @@ class TestCovariance:
         assert_close(mvn.logcdf(x, mean, cov_object), dist0.logcdf(x))
         assert_close(dist1.logcdf(x), dist0.logcdf(x))
 
+    @pytest.mark.parametrize("df", [None, 1, np.inf])
+    @pytest.mark.parametrize("size", [None, tuple(), 1, (2, 4, 3)])
+    @pytest.mark.parametrize("matrix_type", list(_matrices))
+    @pytest.mark.parametrize("cov_type_name", _all_covariance_types)
+    def test_mvt_with_covariance(self, df, size, matrix_type, cov_type_name):
+        message = (f"CovVia{cov_type_name} does not support {matrix_type} "
+                   "matrices")
+        if cov_type_name not in self._cov_types[matrix_type]:
+            pytest.skip(message)
+
+        A = self._matrices[matrix_type]
+        cov_type = getattr(_covariance, f"CovVia{cov_type_name}")
+        preprocessing = self._covariance_preprocessing[cov_type_name]
+
+        mean = [0.1, 0.2, 0.3]
+        cov_object = cov_type(preprocessing(A))
+        mvt = multivariate_t
+        dist0 = multivariate_t(mean, A, df=df, allow_singular=True)
+        dist1 = multivariate_t(mean, cov_object, df=df, allow_singular=True)
+
+        rng = np.random.default_rng(5292808890472453840)
+        x = mvt.rvs(loc=mean, shape=A, df=df, size=size, random_state=rng)
+        rng = np.random.default_rng(5292808890472453840)
+        x1 = mvt.rvs(mean, cov_object, df=df, size=size, random_state=rng)
+        rng = np.random.default_rng(5292808890472453840)
+        x2 = mvt(mean, cov_object, df=df, seed=rng).rvs(size=size)
+        if isinstance(cov_object, _covariance.CovViaPSD):
+            assert_close(x1, x)  # for backward compatibility
+            assert_close(x2, x)
+        else:
+            x2 = np.squeeze(x2)  # mvn returns 2D array for df = inf
+            assert_equal(x1.shape, x.shape)
+            assert_equal(x2.shape, x.shape)
+            assert_close(x2, x1)
+
+        assert_close(mvt.pdf(x, mean, cov_object, df), dist0.pdf(x))
+        assert_close(dist1.pdf(x), dist0.pdf(x))
+        assert_close(mvt.cdf(x, mean, cov_object, df, random_state=rng), dist0.cdf(x))
+        assert_close(dist1.cdf(x), dist0.cdf(x))
+        assert_close(mvt.logpdf(x, mean, cov_object, df), dist0.logpdf(x))
+        assert_close(dist1.logpdf(x), dist0.logpdf(x))
+        assert_close(mvt.entropy(mean, cov_object, df=df), dist0.entropy())
+        assert_close(dist1.entropy(), dist0.entropy())
+    
     def test_covariance_instantiation(self):
         message = "The `Covariance` class cannot be instantiated directly."
         with pytest.raises(NotImplementedError, match=message):
