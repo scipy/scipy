@@ -993,8 +993,8 @@ class TestGoodnessOfFit:
         rng = np.random.default_rng(9121950977643805391)
         data = stats.expon.rvs(size=5, random_state=rng)
         result = goodness_of_fit(stats.expon, data,
-                                known_params={'loc': 0, 'scale': 1},
-                                statistic=greenwood, random_state=rng)
+                                 known_params={'loc': 0, 'scale': 1},
+                                 statistic=greenwood, random_state=rng)
         p = [.01, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, .95, .99]
         exact_quantiles = [
             .183863, .199403, .210088, .226040, .239947, .253677, .268422,
