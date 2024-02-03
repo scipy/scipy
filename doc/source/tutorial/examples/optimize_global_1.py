@@ -4,9 +4,11 @@ from scipy import optimize
 
 
 def eggholder(x):
-    return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0]/2 + (x[1]  + 47))))
+    return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0] / 2 + (x[1]  + 47))))
             -x[0] * np.sin(np.sqrt(abs(x[0] - (x[1]  + 47)))))
 
+
+x0 = [1, 1]
 bounds = [(-512, 512), (-512, 512)]
 
 x = np.arange(-512, 513)
@@ -18,6 +20,7 @@ results = dict()
 results['shgo'] = optimize.shgo(eggholder, bounds)
 results['DA'] = optimize.dual_annealing(eggholder, bounds)
 results['DE'] = optimize.differential_evolution(eggholder, bounds)
+results['SCE'] = optimize.shuffled_complex_evolution(eggholder, x0, bounds)
 results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=256, iters=5,
                                       sampling_method='sobol')
 
@@ -28,11 +31,14 @@ im = ax.imshow(eggholder(xy), interpolation='bilinear', origin='lower',
 ax.set_xlabel('x')
 ax.set_ylabel('y')
 
-def plot_point(res, marker='o', color=None):
-    ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-plot_point(results['DE'], color='c')  # differential_evolution - cyan
-plot_point(results['DA'], color='w')  # dual_annealing.        - white
+def plot_point(res, marker='o', color=None):
+    ax.plot(512 + res.x[0], 512 + res.x[1], marker=marker, color=color, ms=10)
+
+
+plot_point(results['DE'], color='c')   # differential_evolution     - cyan
+plot_point(results['DA'], color='w')   # dual_annealing             - white
+plot_point(results['SCE'], color='m')  # shuffled_complex_evolution - magenta
 
 # SHGO produces multiple minima, plot them all (with a smaller marker size)
 plot_point(results['shgo'], color='r', marker='+')
@@ -42,10 +48,8 @@ for i in range(results['shgo_sobol'].xl.shape[0]):
             512 + results['shgo_sobol'].xl[i, 1],
             'ro', ms=2)
 
-ax.set_xlim([-4, 514*2])
-ax.set_ylim([-4, 514*2])
+ax.set_xlim([-4, 514 * 2])
+ax.set_ylim([-4, 514 * 2])
 
 fig.tight_layout()
 plt.show()
-
-

@@ -3782,7 +3782,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
 
     See Also
     --------
-    basinhopping, differential_evolution
+    basinhopping, differential_evolution, shuffled_complex_evolution
 
     Notes
     -----

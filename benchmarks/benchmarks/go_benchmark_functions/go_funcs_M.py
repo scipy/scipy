@@ -321,8 +321,8 @@ class Mishra03(Benchmark):
 
         self._bounds = list(zip([-10.0] * self.N, [10.0] * self.N))
 
-        self.global_optimum = [[-9.99378322, -9.99918927]]
-        self.fglob = -0.19990562
+        self.global_optimum = [[-9.99659511, -9.99637811]]
+        self.fglob = -0.19992963
 
     def fun(self, x, *args):
         self.nfev += 1

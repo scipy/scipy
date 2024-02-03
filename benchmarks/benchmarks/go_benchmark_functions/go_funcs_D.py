@@ -443,7 +443,7 @@ class DeVilliersGlasser02(Benchmark):
              * cos(exp(0.507) * t))
 
         return sum((x[0] * (x[1] ** t) * tanh(x[2] * t + sin(x[3] * t))
-                   * cos(t * exp(x[4])) - y) ** 2.0)
+                    * cos(t * exp(x[4])) - y) ** 2.0)
 
 
 class DixonPrice(Benchmark):

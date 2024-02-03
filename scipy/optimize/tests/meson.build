@@ -2,6 +2,7 @@ py3.install_sources([
     '__init__.py',
     'test__basinhopping.py',
     'test__differential_evolution.py',
+    'test__shuffled_complex_evolution.py',
     'test__dual_annealing.py',
     'test__linprog_clean_inputs.py',
     'test__numdiff.py',
