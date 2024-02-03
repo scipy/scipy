@@ -6342,6 +6342,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
