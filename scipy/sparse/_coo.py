@@ -640,7 +640,7 @@ class coo_array(_coo_base, sparray):
         coo_array((data, coords), [shape])
             to construct from existing data and index arrays:
                 1. data[:]       the entries of the sparse array, in any order
-                2. coords[i][:]  the axis-i coords of the data entries
+                2. coords[i][:]  the axis-i coordinates of the data entries
 
             Where ``A[coords] = data``, and coords is a tuple of index arrays.
             When shape is not specified, it is inferred from the index arrays.
@@ -660,7 +660,7 @@ class coo_array(_coo_base, sparray):
     coords
         COO format tuple of index arrays
     has_canonical_format : bool
-        Whether the matrix has sorted coords and no duplicates
+        Whether the matrix has sorted coordinates and no duplicates
     format
     T
 
@@ -689,7 +689,7 @@ class coo_array(_coo_base, sparray):
           construction of finite element matrices and the like. (see example)
 
     Canonical format
-        - Entries and coords sorted by row, then column.
+        - Entries and coordinates sorted by row, then column.
         - There are no duplicate entries (i.e. duplicate (i,j) locations)
         - Data arrays MAY have explicit zeros.
 
@@ -714,12 +714,12 @@ class coo_array(_coo_base, sparray):
            [0, 0, 0, 0],
            [0, 0, 0, 5]])
 
-    >>> # Constructing a sparse array with duplicate coords
+    >>> # Constructing a sparse array with duplicate coordinates
     >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
     >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
     >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
     >>> coo = coo_array((data, (row, col)), shape=(4, 4))
-    >>> # Duplicate coords are maintained until implicitly or explicitly summed
+    >>> # Duplicate coordinates are maintained until implicitly or explicitly summed
     >>> np.max(coo.data)
     1
     >>> coo.toarray()
@@ -751,8 +751,8 @@ class coo_matrix(spmatrix, _coo_base):
         coo_matrix((data, (i, j)), [shape=(M, N)])
             to construct from three arrays:
                 1. data[:]   the entries of the matrix, in any order
-                2. i[:]      the row coords of the matrix entries
-                3. j[:]      the column coords of the matrix entries
+                2. i[:]      the row indices of the matrix entries
+                3. j[:]      the column indices of the matrix entries
 
             Where ``A[i[k], j[k]] = data[k]``.  When shape is not
             specified, it is inferred from the index arrays
@@ -774,7 +774,7 @@ class coo_matrix(spmatrix, _coo_base):
     col
         COO format column index array of the matrix
     has_canonical_format : bool
-        Whether the matrix has sorted coords and no duplicates
+        Whether the matrix has sorted indices and no duplicates
     format
     T
 
@@ -803,7 +803,7 @@ class coo_matrix(spmatrix, _coo_base):
           construction of finite element matrices and the like. (see example)
 
     Canonical format
-        - Entries and coords sorted by row, then column.
+        - Entries and coordinates sorted by row, then column.
         - There are no duplicate entries (i.e. duplicate (i,j) locations)
         - Data arrays MAY have explicit zeros.
 
@@ -828,12 +828,12 @@ class coo_matrix(spmatrix, _coo_base):
            [0, 0, 0, 0],
            [0, 0, 0, 5]])
 
-    >>> # Constructing a matrix with duplicate coords
+    >>> # Constructing a matrix with duplicate coordinates
     >>> row  = np.array([0, 0, 1, 3, 1, 0, 0])
     >>> col  = np.array([0, 2, 1, 3, 1, 0, 0])
     >>> data = np.array([1, 1, 1, 1, 1, 1, 1])
     >>> coo = coo_matrix((data, (row, col)), shape=(4, 4))
-    >>> # Duplicate coords are maintained until implicitly or explicitly summed
+    >>> # Duplicate coordinates are maintained until implicitly or explicitly summed
     >>> np.max(coo.data)
     1
     >>> coo.toarray()
