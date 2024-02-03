@@ -128,10 +128,7 @@ class HighsStatusMapping:
     def get_scipy_status(self, highs_status, highs_message):
         """Converts HiGHS status and message to SciPy-like status and messages"""
         if highs_status is None or highs_message is None:
-            warn(
-                f"Highs Status: {highs_status}, Message: {highs_message}",
-                stacklevel=3
-            )
+            print(f"Highs Status: {highs_status}, Message: {highs_message}")
             return (
                 self.SciPyRC.NUMERICAL.value,
                 "HiGHS did not provide a status code. (HiGHS Status None: None)",
