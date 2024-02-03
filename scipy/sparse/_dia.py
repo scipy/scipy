@@ -212,11 +212,6 @@ class _dia_base(_data_matrix):
 
         return y
 
-    def _matmul_multivector(self, other):
-        if other.size == 0:
-            return np.empty((self.shape[0], other.shape[1]), dtype=self.dtype)
-        return np.hstack([self._matmul_vector(col).reshape(-1,1) for col in other.T])
-
     def _setdiag(self, values, k=0):
         M, N = self.shape
 
