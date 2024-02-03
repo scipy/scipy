@@ -189,21 +189,15 @@ def convert_to_highs_enum(option, option_str, choices_enum, default_value):
     return enum_value.to_highs_enum()
 
 
-def _linprog_highs(
-    lp,
-    solver,
-    time_limit=None,
-    presolve=True,
-    disp=False,
-    maxiter=None,
-    dual_feasibility_tolerance=None,
-    primal_feasibility_tolerance=None,
-    ipm_optimality_tolerance=None,
-    simplex_dual_edge_weight_strategy=None,
-    mip_rel_gap=None,
-    mip_max_nodes=None,
-    **unknown_options,
-):
+def _linprog_highs(lp, solver, time_limit=None, presolve=True,
+                   disp=False, maxiter=None,
+                   dual_feasibility_tolerance=None,
+                   primal_feasibility_tolerance=None,
+                   ipm_optimality_tolerance=None,
+                   simplex_dual_edge_weight_strategy=None,
+                   mip_rel_gap=None,
+                   mip_max_nodes=None,
+                   **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
     solvers:
@@ -393,10 +387,8 @@ def _linprog_highs(
             simplex algorithm." Mathematical Programming 12.1 (1977): 361-371.
     """
     if unknown_options:
-        message = (
-            f"Unrecognized options detected: {unknown_options}. "
-            "These will be passed to HiGHS verbatim."
-        )
+        message = (f"Unrecognized options detected: {unknown_options}. "
+                   "These will be passed to HiGHS verbatim.")
         warn(message, OptimizeWarning, stacklevel=3)
 
     # Map options to HiGHS enum values
@@ -412,7 +404,7 @@ def _linprog_highs(
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
     with np.errstate(invalid="ignore"):
-        lhs_ub = -np.ones_like(b_ub) * np.inf  # LHS of UB constraints is -inf
+        lhs_ub = -np.ones_like(b_ub)*np.inf  # LHS of UB constraints is -inf
     rhs_ub = b_ub  # RHS of UB constraints is b_ub
     lhs_eq = b_eq  # Equality constraint is inequality
     rhs_eq = b_eq  # constraint with LHS=RHS
@@ -426,23 +418,23 @@ def _linprog_highs(
     A = csc_matrix(A)
 
     options = {
-        "presolve": presolve,
-        "sense": _h.ObjSense.kMinimize,
-        "solver": solver,
-        "time_limit": time_limit,
+        'presolve': presolve,
+        'sense': _h.ObjSense.kMinimize,
+        'solver': solver,
+        'time_limit': time_limit,
         # 'highs_debug_level': _h.kHighs, # TODO
-        "dual_feasibility_tolerance": dual_feasibility_tolerance,
-        "ipm_optimality_tolerance": ipm_optimality_tolerance,
-        "log_to_console": disp,
-        "mip_max_nodes": mip_max_nodes,
-        "output_flag": disp,
-        "primal_feasibility_tolerance": primal_feasibility_tolerance,
-        "simplex_dual_edge_weight_strategy": simplex_dual_edge_weight_strategy_enum,
-        "simplex_strategy": simpc.kSimplexStrategyDual.value,
+        'dual_feasibility_tolerance': dual_feasibility_tolerance,
+        'ipm_optimality_tolerance': ipm_optimality_tolerance,
+        'log_to_console': disp,
+        'mip_max_nodes': mip_max_nodes,
+        'output_flag': disp,
+        'primal_feasibility_tolerance': primal_feasibility_tolerance,
+        'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy_enum,
+        'simplex_strategy': simpc.kSimplexStrategyDual.value,
         # 'simplex_crash_strategy': simpc.SimplexCrashStrategy.kSimplexCrashStrategyOff,
-        "ipm_iteration_limit": maxiter,
-        "simplex_iteration_limit": maxiter,
-        "mip_rel_gap": mip_rel_gap,
+        'ipm_iteration_limit': maxiter,
+        'simplex_iteration_limit': maxiter,
+        'mip_rel_gap': mip_rel_gap,
     }
     options.update(unknown_options)
 
@@ -457,36 +449,26 @@ def _linprog_highs(
     else:
         integrality = np.array(integrality)
 
-    res = _highs_wrapper(
-        c,
-        A.indptr,
-        A.indices,
-        A.data,
-        lhs,
-        rhs,
-        lb,
-        ub,
-        integrality.astype(np.uint8),
-        options,
-    )
+    res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
+                         lb, ub, integrality.astype(np.uint8), options)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
     # and we need to split up s by A_ub and A_eq
-    if "slack" in res:
-        slack = res["slack"]
-        con = np.array(slack[len(b_ub) :])
-        slack = np.array(slack[: len(b_ub)])
+    if 'slack' in res:
+        slack = res['slack']
+        con = np.array(slack[len(b_ub):])
+        slack = np.array(slack[:len(b_ub)])
     else:
         slack, con = None, None
 
     # lagrange multipliers for equalities/inequalities and upper/lower bounds
-    if "lambda" in res:
-        lamda = res["lambda"]
-        marg_ineqlin = np.array(lamda[: len(b_ub)])
-        marg_eqlin = np.array(lamda[len(b_ub) :])
-        marg_upper = np.array(res["marg_bnds"][1, :])
-        marg_lower = np.array(res["marg_bnds"][0, :])
+    if 'lambda' in res:
+        lamda = res['lambda']
+        marg_ineqlin = np.array(lamda[:len(b_ub)])
+        marg_eqlin = np.array(lamda[len(b_ub):])
+        marg_upper = np.array(res['marg_bnds'][1, :])
+        marg_lower = np.array(res['marg_bnds'][0, :])
     else:
         marg_ineqlin, marg_eqlin = None, None
         marg_upper, marg_lower = None, None
@@ -507,46 +489,38 @@ def _linprog_highs(
 
     x = np.array(res["x"]) if "x" in res and is_valid_x(res["x"]) else None
 
-    sol = {
-        "x": x,
-        "slack": slack,
-        "con": con,
-        "ineqlin": OptimizeResult(
-            {
-                "residual": slack,
-                "marginals": marg_ineqlin,
-            }
-        ),
-        "eqlin": OptimizeResult(
-            {
-                "residual": con,
-                "marginals": marg_eqlin,
-            }
-        ),
-        "lower": OptimizeResult(
-            {
-                "residual": None if x is None else x - lb,
-                "marginals": marg_lower,
-            }
-        ),
-        "upper": OptimizeResult(
-            {"residual": None if x is None else ub - x, "marginals": marg_upper}
-        ),
-        "fun": res.get("fun"),
-        "status": status,
-        "success": res["status"] == _h.HighsModelStatus.kOptimal,
-        "message": message,
-        "nit": res.get("simplex_nit", 0) or res.get("ipm_nit", 0),
-        "crossover_nit": res.get("crossover_nit"),
-    }
+    sol = {'x': x,
+           'slack': slack,
+           'con': con,
+           'ineqlin': OptimizeResult({
+               'residual': slack,
+               'marginals': marg_ineqlin,
+           }),
+           'eqlin': OptimizeResult({
+               'residual': con,
+               'marginals': marg_eqlin,
+           }),
+           'lower': OptimizeResult({
+               'residual': None if x is None else x - lb,
+               'marginals': marg_lower,
+           }),
+           'upper': OptimizeResult({
+               'residual': None if x is None else ub - x,
+               'marginals': marg_upper
+            }),
+           'fun': res.get('fun'),
+           'status': status,
+           'success': res['status'] == _h.HighsModelStatus.kOptimal,
+           'message': message,
+           'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
+           'crossover_nit': res.get('crossover_nit'),
+           }
 
     if np.any(x) and integrality is not None:
-        sol.update(
-            {
-                "mip_node_count": res.get("mip_node_count", 0),
-                "mip_dual_bound": res.get("mip_dual_bound", 0.0),
-                "mip_gap": res.get("mip_gap", 0.0),
-            }
-        )
+        sol.update({
+            'mip_node_count': res.get('mip_node_count', 0),
+            'mip_dual_bound': res.get('mip_dual_bound', 0.0),
+            'mip_gap': res.get('mip_gap', 0.0),
+        })
 
     return sol
