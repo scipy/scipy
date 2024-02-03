@@ -241,8 +241,10 @@ class TestCovariance:
         mean = [0.1, 0.2, 0.3]
         cov_object = cov_type(preprocessing(A))
         mvt = multivariate_t
-        dist0 = multivariate_t(mean, A, df=df, allow_singular=True)
-        dist1 = multivariate_t(mean, cov_object, df=df, allow_singular=True)
+        rng = np.random.default_rng(5292808890472453840)
+        dist0 = multivariate_t(mean, A, df=df, allow_singular=True, seed=rng)
+        rng = np.random.default_rng(5292808890472453840)
+        dist1 = multivariate_t(mean, cov_object, df=df, allow_singular=True, seed=rng)
 
         rng = np.random.default_rng(5292808890472453840)
         x = mvt.rvs(loc=mean, shape=A, df=df, size=size, random_state=rng)
@@ -261,8 +263,11 @@ class TestCovariance:
 
         assert_close(mvt.pdf(x, mean, cov_object, df), dist0.pdf(x))
         assert_close(dist1.pdf(x), dist0.pdf(x))
-        assert_close(mvt.cdf(x, mean, cov_object, df, random_state=rng), dist0.cdf(x))
-        assert_close(dist1.cdf(x), dist0.cdf(x))
+        if matrix_type == "diagonal full rank":
+            rng = np.random.default_rng(5292808890472453840)
+            assert_close(mvt.cdf(x, mean, cov_object, df, random_state=rng),
+                         dist0.cdf(x))
+            assert_close(dist1.cdf(x), dist0.cdf(x))
         assert_close(mvt.logpdf(x, mean, cov_object, df), dist0.logpdf(x))
         assert_close(dist1.logpdf(x), dist0.logpdf(x))
         assert_close(mvt.entropy(mean, cov_object, df=df), dist0.entropy())

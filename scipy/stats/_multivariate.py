@@ -4623,6 +4623,9 @@ class multivariate_t_gen(multi_rv_generic):
                                           allow_singular=allow_singular)
         dim, loc, cov_object, df = params
         shape = cov_object.covariance
+        if np.isposinf(df):
+            return multivariate_normal.cdf(x, loc, cov=cov_object,
+                                           allow_singular=allow_singular)
 
         return self._cdf(x, loc, shape, df, dim, maxpts,
                          lower_limit, random_state)
@@ -4722,9 +4725,6 @@ class multivariate_t_gen(multi_rv_generic):
         else:
             rng = self._random_state
 
-        #if np.isinf(df):
-        #    x = np.ones(size)
-        #else:
         x = rng.chisquare(df, size=size) / df
 
         z = rng.multivariate_normal(np.zeros(dim), cov_object.covariance, size=size)
