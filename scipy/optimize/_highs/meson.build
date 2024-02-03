@@ -5,7 +5,7 @@ if not fs.exists('../../../subprojects/highs/README.md')
 endif
 highs_proj = subproject('highs',
                       default_options : ['default_library=static',
-                                        'use_zlib=false'])
+                                        'use_zlib=disabled'])
 highs_dep = highs_proj.get_variable('highs_dep')
 highspy_cpp = highs_proj.get_variable('highspy_cpp')
 highsoptions_cpp = highs_proj.get_variable('highsoptions_cpp')
