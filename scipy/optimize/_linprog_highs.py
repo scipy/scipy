@@ -128,7 +128,10 @@ class HighsStatusMapping:
     def get_scipy_status(self, highs_status, highs_message):
         """Converts HiGHS status and message to SciPy-like status and messages"""
         if highs_status is None or highs_message is None:
-            print(f"Highs Status: {highs_status}, Message: {highs_message}")
+            warn(
+                f"Highs Status: {highs_status}, Message: {highs_message}",
+                stacklevel=3
+            )
             return (
                 self.SciPyRC.NUMERICAL.value,
                 "HiGHS did not provide a status code. (HiGHS Status None: None)",
@@ -142,10 +145,10 @@ class HighsStatusMapping:
                 "The HiGHS status code was not recognized.",
             ),
         )
-        full_scipy_message = (
+        full_scipy_msg = (
             f"{scipy_message} (HiGHS Status {int(highs_status)}: {highs_message})"
         )
-        return scipy_status_enum.value, full_scipy_message
+        return scipy_status_enum.value, full_scipy_msg
 
 
 def _replace_inf(x):
@@ -164,10 +167,14 @@ class SimplexStrategy(Enum):
 
     def to_highs_enum(self):
         mapping = {
-            SimplexStrategy.DANTZIG: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig.value,
-            SimplexStrategy.DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex.value,
-            SimplexStrategy.STEEPEST_DEVEX: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose.value,
-            SimplexStrategy.STEEPEST: simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge.value,
+            SimplexStrategy.DANTZIG:
+                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig.value,
+            SimplexStrategy.DEVEX:
+                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex.value,
+            SimplexStrategy.STEEPEST_DEVEX:
+                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose.value,
+            SimplexStrategy.STEEPEST:
+                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge.value,
         }
         return mapping.get(self)
 

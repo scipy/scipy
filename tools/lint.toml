@@ -10,11 +10,12 @@ target-version = "py39"
 # Also, `PGH004` which checks for blanket (non-specific) `noqa`s
 # and `B028` which checks that warnings include the `stacklevel` keyword.
 # `B028` added in gh-19623.
-select = ["E", "F", "PGH004", "UP", "B028"]
-ignore = ["E741"]
+lint.select = ["E", "F", "PGH004", "UP", "B028"]
+lint.ignore = ["E741"]
+exclude = ["scipy/datasets/_registry.py"]
 
 # Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 [lint.per-file-ignores]
 "**/__init__.py" = ["E402", "F401", "F403", "F405"]
