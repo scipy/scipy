@@ -1,4 +1,8 @@
 # Setup the highs library
+fs = import('fs')
+if not fs.exists('../../../subprojects/highs/README.md')
+  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
+endif
 highs_proj = subproject('highs',
                       default_options : ['default_library=static',
                                         'use_zlib=false'])
