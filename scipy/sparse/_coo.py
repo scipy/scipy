@@ -97,7 +97,11 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
     @property
     def row(self):
-        return self.indices[-2] if self.ndim > 1 else np.zeros_like(self.col)
+        if self.ndim > 1:
+            return self.indices[-2]
+        result = np.zeros_like(self.col)
+        result.setflags(write=False)
+        return result
 
 
     @row.setter

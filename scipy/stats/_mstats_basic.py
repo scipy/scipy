@@ -3192,7 +3192,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -3442,9 +3442,17 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
-    Missing values in `x` and/or `y` are discarded.
+    Any missing values in `x` and/or `y` are discarded.
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -3475,7 +3483,16 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     -----
     For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
 
-    """
+    Examples
+    --------
+    >>> from scipy.stats.mstats import brunnermunzel
+    >>> import numpy as np
+    >>> x1 = [1, 2, np.nan, np.nan, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    >>> x2 = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    >>> brunnermunzel(x1, x2)
+    BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
+
+    """  # noqa: E501
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
     nx = len(x)

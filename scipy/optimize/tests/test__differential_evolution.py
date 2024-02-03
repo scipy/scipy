@@ -698,12 +698,18 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
-        # should raise a UserWarning because the updating='immediate'
-        # is being overridden by the workers keyword
-        with warns(UserWarning):
-            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
-                pass
-        assert_(solver._updating == 'deferred')
+        # Safely forking from a multithreaded process is
+        # problematic, and deprecated in Python 3.12, so
+        # we use a slower but portable alternative
+        # see gh-19848
+        ctx = multiprocessing.get_context("spawn")
+        with ctx.Pool(2) as p:
+            # should raise a UserWarning because the updating='immediate'
+            # is being overridden by the workers keyword
+            with warns(UserWarning):
+                with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
+                    pass
+            assert s._updating == 'deferred'
 
     def test_parallel(self):
         # smoke test for parallelization with deferred updating

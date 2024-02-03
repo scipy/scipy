@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
 from scipy import special, stats
+from scipy.integrate import quad_vec
 from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache, _nsum, _ECONVERR
 from scipy.stats._discrete_distns import _gen_harmonic_gt1
 
@@ -158,6 +159,10 @@ class TestTanhSinh:
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, minlevel=-1)
 
+        message = '...must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            _tanhsinh(f, 0, f.b, preserve_shape=2)
+
         message = '...must be callable.'
         with pytest.raises(ValueError, match=message):
             _tanhsinh(f, 0, f.b, callback='elderberry')
@@ -270,6 +275,27 @@ class TestTanhSinh:
         res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, args=args)
         ref_flags = np.array([0, -2, -3])
         assert_equal(res.status, ref_flags)
+
+    def test_flags_preserve_shape(self):
+        # Same test as above but using `preserve_shape` option to simplify.
+        def f(x):
+            return [np.exp(-x[0]**2),  # converges
+                    np.exp(x[1]),  # reaches maxiter due to order=2
+                    np.full_like(x[2], np.nan)[()]]  # stops due to NaN
+
+        res = _tanhsinh(f, [np.inf]*3, [-np.inf]*3, maxlevel=5, preserve_shape=True)
+        ref_flags = np.array([0, -2, -3])
+        assert_equal(res.status, ref_flags)
+
+    def test_preserve_shape(self):
+        # Test `preserve_shape` option
+        def f(x):
+            return np.asarray([[x, np.sin(10 * x)],
+                               [np.cos(30 * x), x * np.sin(100 * x)]])
+
+        ref = quad_vec(f, 0, 1)
+        res = _tanhsinh(f, 0, 1, preserve_shape=True)
+        assert_allclose(res.integral, ref[0])
 
     def test_convergence(self):
         # demonstrate that number of accurate digits doubles each iteration
@@ -471,6 +497,7 @@ class TestTanhSinh:
     def test_improper_integrals(self):
         # Test handling of infinite limits of integration (mixed with finite limits)
         def f(x):
+            x[np.isinf(x)] = np.nan
             return np.exp(-x**2)
         a = [-np.inf, 0, -np.inf, np.inf, -20, -np.inf, -20]
         b = [np.inf, np.inf, 0, -np.inf, 20, 20, np.inf]

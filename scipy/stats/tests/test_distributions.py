@@ -147,7 +147,7 @@ class TestVonMises:
 
     def test_vonmises_rvs_gh4598(self):
         # check that random variates wrap around as discussed in gh-4598
-        seed = abs(hash('von_mises_rvs'))
+        seed = 30899520
         rng1 = np.random.default_rng(seed)
         rng2 = np.random.default_rng(seed)
         rng3 = np.random.default_rng(seed)
@@ -2841,8 +2841,9 @@ class TestInvgauss:
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (6.311, 3.225, 4.520)])
     def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
+        rng = np.random.RandomState(1234)
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
-                                  loc=rvs_loc, scale=rvs_scale)
+                                  loc=rvs_loc, scale=rvs_scale, random_state=rng)
 
         super_fit = super(type(stats.invgauss), stats.invgauss).fit
         # fitting without `floc` uses superclass fit method
@@ -2952,7 +2953,9 @@ class TestLaplace:
     def test_fit(self, rvs_loc, rvs_scale):
         # tests that various inputs follow expected behavior
         # for a variety of `loc` and `scale`.
-        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale)
+        rng = np.random.RandomState(1234)
+        data = stats.laplace.rvs(size=100, loc=rvs_loc, scale=rvs_scale,
+                                 random_state=rng)
 
         # MLE estimates are given by
         loc_mle = np.median(data)
@@ -2996,7 +2999,9 @@ class TestLaplace:
                                                    (10, 5),
                                                    (0.5, 0.2)])
     def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
-        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
+        rng = np.random.RandomState(1234)
+        data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale,
+                                 random_state=rng)
 
         # the log-likelihood function for laplace is given by
         def ll(loc, scale, data):
@@ -4666,6 +4671,41 @@ class TestGamma:
         #     return float(mp.digamma(x) * (mp.one - x) + x + mp.loggamma(x))
 
         assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
+
+    @pytest.mark.parametrize("a", [1e-2, 1, 1e2])
+    @pytest.mark.parametrize("loc", [1e-2, 0, 1e2])
+    @pytest.mark.parametrize('scale', [1e-2, 1, 1e2])
+    @pytest.mark.parametrize('fix_a', [True, False])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_mm(self, a, loc, scale, fix_a, fix_loc, fix_scale):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.gamma.rvs(a, loc=loc, scale=scale, size=100,
+                               random_state=rng)
+
+        kwds = {}
+        if fix_a:
+            kwds['fa'] = a
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['fscale'] = scale
+        nfree = 3 - len(kwds)
+
+        if nfree == 0:
+            error_msg = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(ValueError, match=error_msg):
+                stats.gamma.fit(data, method='mm', **kwds)
+            return
+
+        theta = stats.gamma.fit(data, method='mm', **kwds)
+        dist = stats.gamma(*theta)
+        if nfree >= 1:
+            assert_allclose(dist.mean(), np.mean(data))
+        if nfree >= 2:
+            assert_allclose(dist.moment(2), np.mean(data**2))
+        if nfree >= 3:
+            assert_allclose(dist.moment(3), np.mean(data**3))
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved

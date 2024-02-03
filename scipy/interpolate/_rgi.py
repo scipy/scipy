@@ -5,11 +5,14 @@ import warnings
 
 import numpy as np
 
+import scipy.sparse.linalg as ssl
+
 from .interpnd import _ndim_coords_from_arrays
 from ._cubic import PchipInterpolator
 from ._rgi_cython import evaluate_linear_2d, find_indices
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
+from ._ndbspline import make_ndbspl
 
 
 def _check_points(points):
@@ -90,6 +93,18 @@ class RegularGridInterpolator:
         If None, values outside the domain are extrapolated.
         Default is ``np.nan``.
 
+    solver : callable, optional
+        Only used for methods "slinear", "cubic" and "quintic".
+        Sparse linear algebra solver for construction of the NdBSpline instance.
+        Default is the iterative solver `scipy.sparse.linalg.gcrotmk`.
+
+        .. versionadded:: 1.13
+
+    solver_args: dict, optional
+        Additional arguments to pass to `solver`, if any.
+
+        .. versionadded:: 1.13
+
     Methods
     -------
     __call__
@@ -129,6 +144,22 @@ class RegularGridInterpolator:
     If the input data is such that dimensions have incommensurate
     units and differ by many orders of magnitude, the interpolant may have
     numerical artifacts. Consider rescaling the data before interpolating.
+
+    **Choosing a solver for spline methods**
+
+    Spline methods, "slinear", "cubic" and "quintic" involve solving a
+    large sparse linear system at instantiation time. Depending on data,
+    the default solver may or may not be adequate. When it is not, you may
+    need to experiment with an optional `solver` argument, where you may
+    choose between the direct solver (`scipy.sparse.linalg.spsolve`) or
+    iterative solvers from `scipy.sparse.linalg`. You may need to supply
+    additional parameters via the optional `solver_args` parameter (for instance,
+    you may supply the starting value or target tolerance). See the
+    `scipy.sparse.linalg` documentation for the full list of available options.
+
+    Alternatively, you may instead use the legacy methods, "slinear_legacy",
+    "cubic_legacy" and "quintic_legacy". These methods allow faster construction
+    but evaluations will be much slower.
 
     Examples
     --------
@@ -232,12 +263,16 @@ class RegularGridInterpolator:
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3}
+    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3,
+                          "slinear_legacy": 1, "cubic_legacy": 3, "quintic_legacy": 5,}
+    _SPLINE_METHODS_recursive = {"slinear_legacy", "cubic_legacy",
+                                "quintic_legacy", "pchip"}
+    _SPLINE_METHODS_ndbspl = {"slinear", "cubic", "quintic"}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     def __init__(self, points, values, method="linear", bounds_error=True,
-                 fill_value=np.nan):
+                 fill_value=np.nan, *, solver=None, solver_args=None):
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
         elif method in self._SPLINE_METHODS:
@@ -250,7 +285,6 @@ class RegularGridInterpolator:
         self.fill_value = self._check_fill_value(self.values, fill_value)
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
-        
         if self.method == "pchip" and np.iscomplexobj(self.values):
             msg = ("`PchipInterpolator` only works with real values. Passing "
                    "complex-dtyped `values` with `method='pchip'` is deprecated "
@@ -258,6 +292,25 @@ class RegularGridInterpolator:
                    "use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        if method in self._SPLINE_METHODS_ndbspl:
+            if solver_args is None:
+                solver_args = {}
+            self._spline = self._construct_spline(method, solver, **solver_args)
+        else:
+            if solver is not None or solver_args:
+                raise ValueError(
+                    f"{method =} does not accept the 'solver' argument. Got "
+                    f" {solver = } and with arguments {solver_args}."
+                )
+
+    def _construct_spline(self, method, solver=None, **solver_args):
+        if solver is None:
+            solver = ssl.gcrotmk
+        spl = make_ndbspl(
+                self.grid, self.values, self._SPLINE_DEGREE_MAP[method],
+                solver=solver, **solver_args
+              )
+        return spl
 
     def _check_dimensionality(self, grid, values):
         _check_dimensionality(grid, values)
@@ -286,7 +339,7 @@ class RegularGridInterpolator:
                                  "of a type compatible with values")
         return fill_value
 
-    def __call__(self, xi, method=None):
+    def __call__(self, xi, method=None, *, nu=None):
         """
         Interpolation at coordinates.
 
@@ -299,6 +352,13 @@ class RegularGridInterpolator:
             The method of interpolation to perform. Supported are "linear",
             "nearest", "slinear", "cubic", "quintic" and "pchip". Default is
             the method chosen when the interpolator was created.
+
+        nu : sequence of ints, length ndim, optional
+            If not None, the orders of the derivatives to evaluate.
+            Each entry must be non-negative.
+            Only allowed for methods "slinear", "cubic" and "quintic".
+
+            .. versionadded:: 1.13
 
         Returns
         -------
@@ -340,6 +400,14 @@ class RegularGridInterpolator:
         is_method_changed = self.method != method
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
+        if is_method_changed and method in self._SPLINE_METHODS_ndbspl:
+            self._spline = self._construct_spline(method)
+
+        if nu is not None and method not in self._SPLINE_METHODS_ndbspl:
+            raise ValueError(
+                f"Can only compute derivatives for methods "
+                f"{self._SPLINE_METHODS_ndbspl}, got {method =}."
+            )
 
         xi, xi_shape, ndim, nans, out_of_bounds = self._prepare_xi(xi)
 
@@ -366,7 +434,10 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(xi, method)
+            if method in self._SPLINE_METHODS_recursive:
+                result = self._evaluate_spline(xi, method)
+            else:
+                result = self._spline(xi, nu=nu)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -628,7 +699,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
-                      "splinef2d", "slinear"]:
+                      "splinef2d", "slinear",
+                      "slinear_legacy", "cubic_legacy", "quintic_legacy"]:
         raise ValueError("interpn only understands the methods 'linear', "
                          "'nearest', 'slinear', 'cubic', 'quintic', 'pchip', "
                          f"and 'splinef2d'. You provided {method}.")
@@ -669,7 +741,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                  "in dimension %d" % i)
 
     # perform interpolation
-    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:
+    if method in RegularGridInterpolator._ALL_METHODS:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
@@ -690,3 +762,5 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         result[np.logical_not(idx_valid)] = fill_value
 
         return result.reshape(xi_shape[:-1])
+    else:
+        raise ValueError(f"unknown {method = }")

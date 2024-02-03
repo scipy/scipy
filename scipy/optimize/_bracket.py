@@ -159,7 +159,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
     xs = (a, b)
     temp = _elementwise_algorithm_initialize(func, xs, args)
-    xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
 
     # The approach is to treat the left and right searches as though they were
     # (almost) totally independent one-sided bracket searches. (The interaction

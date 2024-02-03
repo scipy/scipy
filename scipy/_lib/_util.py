@@ -121,7 +121,8 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
         raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
 
     args = xp.broadcast_arrays(cond, *arrays)
-    cond, arrays = xp.astype(args[0], bool, copy=False), args[1:]
+    bool_dtype = xp.asarray([True]).dtype  # numpy 1.xx doesn't have `bool`
+    cond, arrays = xp.astype(args[0], bool_dtype, copy=False), args[1:]
 
     temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
 

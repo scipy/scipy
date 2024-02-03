@@ -1020,7 +1020,10 @@ class TestAkima1DInterpolator:
         x = np.arange(0., 11.)
         y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
         y = y - 2j*y
-        with pytest.deprecated_call(match='complex'):
+        # actually raises ComplexWarning, which subclasses RuntimeWarning, see
+        # https://github.com/numpy/numpy/blob/main/numpy/exceptions.py
+        msg = "Passing an array with a complex.*|Casting complex values to real.*"
+        with pytest.warns((RuntimeWarning, DeprecationWarning), match=msg):
             Akima1DInterpolator(x, y)
 
 

@@ -38,7 +38,6 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           line_search_wolfe2 as line_search,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
-from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
                               _call_callback_maybe_halt)
@@ -2065,11 +2064,9 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
                     Ap = fhess_p(xk, psupi, *args)
                     hcalls += 1
             else:
-                if isinstance(A, HessianUpdateStrategy):
-                    # if hess was supplied as a HessianUpdateStrategy
-                    Ap = A.dot(psupi)
-                else:
-                    Ap = np.dot(A, psupi)
+                # hess was supplied as a callable or hessian update strategy, so
+                # A is a dense numpy array or sparse matrix
+                Ap = A.dot(psupi)
             # check curvature
             Ap = asarray(Ap).squeeze()  # get rid of matrices...
             curv = np.dot(psupi, Ap)

@@ -21,7 +21,8 @@ _ECALLBACK = -4
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
+def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False,
+                                      preserve_shape=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -38,6 +39,12 @@ def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
         Finite real abscissa arrays. Must be broadcastable.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.
+    preserve_shape : bool, default:False
+        When ``preserve_shape=False`` (default), `func` may be passed
+        arguments of any shape; `_scalar_optimization_loop` is permitted
+        to reshape and compress arguments at will. When
+        ``preserve_shape=False``, arguments passed to `func` must have shape
+        `shape` or ``shape + (n,)``, where ``n`` is any integer.
 
     Returns
     -------
@@ -76,9 +83,21 @@ def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
     xs = [x.astype(xat, copy=False)[()] for x in xs]
     fs = [np.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
+    fshape = fs[0].shape
+
+    if preserve_shape:
+        # bind original shape/func now to avoid late-binding gotcha
+        def func(x, *args, shape=shape, func=func,  **kwargs):
+            i = (0,)*(len(fshape) - len(shape))
+            return func(x[i], *args, **kwargs)
+        shape = np.broadcast_shapes(fshape, shape)
+        xs = [np.broadcast_to(x, shape) for x in xs]
+        args = [np.broadcast_to(arg, shape) for arg in args]
 
     message = ("The shape of the array returned by `func` must be the same as "
                "the broadcasted shape of `x` and all other `args`.")
+    if preserve_shape is not None:  # only in tanhsinh for now
+        message = f"When `preserve_shape=False`, {message.lower}"
     shapes_equal = [f.shape == shape for f in fs]
     if not np.all(shapes_equal):
         raise ValueError(message)
@@ -97,13 +116,14 @@ def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False):
     xs = [x.ravel() for x in xs]
     fs = [f.ravel() for f in fs]
     args = [arg.flatten() for arg in args]
-    return xs, fs, args, shape, xfat
+    return func, xs, fs, args, shape, xfat
 
 
 def _elementwise_algorithm_loop(work, callback, shape, maxiter,
                                 func, args, dtype, pre_func_eval, post_func_eval,
                                 check_termination, post_termination_check,
-                                customize_result, res_work_pairs):
+                                customize_result, res_work_pairs,
+                                preserve_shape=False):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -182,11 +202,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
     work.args = args
 
     active = _elementwise_algorithm_check_termination(
-        work, res, res_work_pairs, active, check_termination)
+        work, res, res_work_pairs, active, check_termination, preserve_shape)
 
     if callback is not None:
         temp = _elementwise_algorithm_prepare_result(
-            work, res, res_work_pairs, active, shape, customize_result)
+            work, res, res_work_pairs, active, shape,
+            customize_result, preserve_shape)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
@@ -201,19 +222,26 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
             work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
                          for arg in work.args]
 
+        x_shape = x.shape
+        if preserve_shape:
+            x = x.reshape(shape + (-1,))
         f = func(x, *work.args)
         f = np.asarray(f, dtype=dtype)
+        if preserve_shape:
+            x = x.reshape(x_shape)
+            f = f.reshape(x_shape)
         work.nfev += 1 if x.ndim == 1 else x.shape[-1]
 
         post_func_eval(x, f, work)
 
         work.nit += 1
         active = _elementwise_algorithm_check_termination(
-            work, res, res_work_pairs, active, check_termination)
+            work, res, res_work_pairs, active, check_termination, preserve_shape)
 
         if callback is not None:
             temp = _elementwise_algorithm_prepare_result(
-                work, res, res_work_pairs, active, shape, customize_result)
+                work, res, res_work_pairs, active, shape,
+                customize_result, preserve_shape)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
@@ -224,11 +252,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
 
     work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
     return _elementwise_algorithm_prepare_result(
-        work, res, res_work_pairs, active, shape, customize_result)
+        work, res, res_work_pairs, active, shape,
+        customize_result, preserve_shape)
 
 
 def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
-                                             check_termination):
+                                             check_termination, preserve_shape):
     # Checks termination conditions, updates elements of `res` with
     # corresponding elements of `work`, and compresses `work`.
 
@@ -238,20 +267,25 @@ def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
         _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
-                                             stop)
+                                             stop, preserve_shape)
 
-        # compress the arrays to avoid unnecessary computation
+        if preserve_shape:
+            stop = stop[active]
+
         proceed = ~stop
         active = active[proceed]
-        for key, val in work.items():
-            work[key] = val[proceed] if isinstance(val, np.ndarray) else val
-        work.args = [arg[proceed] for arg in work.args]
+
+        if not preserve_shape:
+            # compress the arrays to avoid unnecessary computation
+            for key, val in work.items():
+                work[key] = val[proceed] if isinstance(val, np.ndarray) else val
+            work.args = [arg[proceed] for arg in work.args]
 
     return active
 
 
 def _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
-                                         mask=None):
+                                         mask, preserve_shape):
     # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
@@ -260,21 +294,32 @@ def _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
     update_dict['success'] = work.status == 0
 
     if mask is not None:
-        active_mask = active[mask]
-        for key, val in update_dict.items():
-            res[key][active_mask] = val[mask] if np.size(val) > 1 else val
+        if preserve_shape:
+            active_mask = np.zeros_like(mask)
+            active_mask[active] = 1
+            active_mask = active_mask & mask
+            for key, val in update_dict.items():
+                res[key][active_mask] = (val[active_mask] if np.size(val) > 1
+                                         else val)
+        else:
+            active_mask = active[mask]
+            for key, val in update_dict.items():
+                res[key][active_mask] = val[mask] if np.size(val) > 1 else val
     else:
         for key, val in update_dict.items():
+            if preserve_shape and not np.isscalar(val):
+                val = val[active]
             res[key][active] = val
 
 
 def _elementwise_algorithm_prepare_result(work, res, res_work_pairs, active,
-                                          shape, customize_result):
+                                          shape, customize_result, preserve_shape):
     # Prepare the result object `res` by creating a copy, copying the latest
     # data from work, running the provided result customization function,
     # and reshaping the data to the original shapes.
     res = res.copy()
-    _elementwise_algorithm_update_active(work, res, res_work_pairs, active)
+    _elementwise_algorithm_update_active(work, res, res_work_pairs,
+                                         active, None, preserve_shape)
 
     shape = customize_result(res, shape)
 

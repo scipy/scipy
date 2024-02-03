@@ -139,15 +139,18 @@ idioms for NumPy usage as well). By following the standard, effectively adding
 support for the array API standard is typically straightforward, and we ideally
 don't need to maintain any customization.
 
-Two helper functions are available:
+Three helper functions are available:
 
-* ``array_namespace``: detect the namespace based on input arrays and do some
+* ``array_namespace``: return the namespace based on input arrays and do some
   input validation (like refusing to work with masked arrays, please see the
   `RFC`_.)
-* ``as_xparray``: a drop-in replacement for ``np.asarray`` with additional
+* ``_asarray``: a drop-in replacement for ``np.asarray`` with additional
   features like ``copy, check_finite``. As stated above, try to limit the use
   of non standard features. In the end we would want to upstream our needs to
-  the compatibility library.
+  the compatibility library. Passing ``xp=xp`` avoids duplicate calls of
+  ``array_namespace`` internally.
+* ``copy``: an alias for ``_asarray(x, copy=True)``. Passing ``xp=xp`` avoids
+  duplicate calls of ``array_namespace`` internally.
 
 To add support to a SciPy function which is defined in a ``.py`` file, what you
 have to change is:
@@ -160,10 +163,6 @@ have to change is:
 Input array validation uses the following pattern::
 
    xp = array_namespace(arr)  # where `arr` is the first input array
-   # Do this for each input array, it applies all the validation steps (reject
-   # matrix, etc.) as well as the conversion to a numpy array if it's a
-   # sequence, or preserve the non-numpy array type:
-   arr = as_xparray(arr, xp=xp)
 
 Note that if one input is a non-numpy array type, all array-like inputs have to
 be of that type; trying to mix non-numpy arrays with lists, Python scalars or
@@ -197,7 +196,7 @@ You would convert this like so::
   def toto(a, b):
       xp = array_namespace(a, b)
       a = xp.asarray(a)
-      b = as_xparray(b, copy=True)  # our custom helper is needed for copy
+      b = copy(b, xp=xp)  # our custom helper is needed for copy
 
       c = xp.sum(a) - xp.prod(b)
 

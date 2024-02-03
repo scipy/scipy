@@ -275,7 +275,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    xs, fs, args, shape, dtype = _elementwise_algorithm_initialize(func, (x,), args)
+    temp = _elementwise_algorithm_initialize(func, (x,), args)
+    func, xs, fs, args, shape, dtype = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
