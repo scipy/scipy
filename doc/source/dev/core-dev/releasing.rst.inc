@@ -73,7 +73,7 @@ information.
 
 - ``doc/source/_static/version_switcher.json``: add the new release,
   the new development version, and transfer ``"preferred": true`` from the old release
-  to the new release .
+  to the new release.
 
 
 Updating upper bounds of dependencies
