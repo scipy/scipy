@@ -6405,15 +6405,16 @@ class loglaplace_gen(rv_continuous):
         # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
         # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
         # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
-        # Therefore, we adapt the formulas from laplace.fit(), transformed
-        # into log-laplace's parameter space.
-
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
         if fscale is None:
-            fscale = np.median(data)
-
+            fscale = np.exp(a)
         if fc is None:
-            fc = 1 / np.mean(np.abs(np.log(data) - np.log(fscale)))
-
+            fc = 1 / b
         return fc, floc, fscale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
