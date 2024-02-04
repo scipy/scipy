@@ -944,7 +944,7 @@ def boxcox_llf(lmb, data):
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
-        # The sign of lmb at the denominator doesn't affect the variance.
+        # Division by lmb can be factored out to enhance numerical stability.
         logx = lmb * logdata
         logvar = _log_var(logx) - 2 * np.log(abs(lmb))
 
