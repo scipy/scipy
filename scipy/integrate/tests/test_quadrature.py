@@ -8,7 +8,7 @@ from hypothesis import given
 import hypothesis.strategies as st
 import hypothesis.extra.numpy as hyp_num
 
-from scipy.integrate import (quadrature, romberg, romb, newton_cotes, quad_vec,
+from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              cumulative_trapezoid, cumtrapz, trapz, trapezoid,
                              quad, simpson, simps, fixed_quad, AccuracyWarning,
                              qmc_quad, cumulative_simpson)
