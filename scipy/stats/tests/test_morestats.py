@@ -1813,6 +1813,12 @@ class TestBoxcox_llf:
         # The expected value was computed with mpmath.
         assert_allclose(llf, -17.93934208579061)
 
+    def test_instability_gh20021(self):
+        data = [2003, 1950, 1997, 2000, 2009]
+        llf = stats.boxcox_llf(1e-8, data)
+        # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        assert_allclose(llf, -15.32401272869016598)
+
 
 # This is the data from github user Qukaiyi, given as an example
 # of a data set that caused boxcox to fail.
