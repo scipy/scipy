@@ -97,12 +97,12 @@ class _Bunch:
         self.__dict__.update(**kwargs)
 
     def __repr__(self):
-        return "_Bunch({})".format(", ".join("{}={}".format(k, repr(self.__dict__[k]))
+        return "_Bunch({})".format(", ".join(f"{k}={repr(self.__dict__[k])}"
                                              for k in self.__keys))
 
 
-def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, limit=10000,
-             workers=1, points=None, quadrature=None, full_output=False,
+def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
+             limit=10000, workers=1, points=None, quadrature=None, full_output=False,
              *, args=()):
     r"""Adaptive integration of a vector-valued function.
 
@@ -271,7 +271,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
         return (res[0]*sgn,) + res[1:]
     elif not (np.isfinite(a) and np.isfinite(b)):
-        raise ValueError("invalid integration bounds a={}, b={}".format(a, b))
+        raise ValueError(f"invalid integration bounds a={a}, b={b}")
 
     norm_funcs = {
         None: _max_norm,
@@ -293,7 +293,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
                        'trapz': _quadrature_trapezoid,  # alias for backcompat
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
-        raise ValueError("unknown quadrature {!r}".format(quadrature)) from e
+        raise ValueError(f"unknown quadrature {quadrature!r}") from e
 
     # Initial interval set
     if points is None:
@@ -377,11 +377,14 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
 
                 neg_old_err, a, b = interval
                 old_int = interval_cache.pop((a, b), None)
-                to_process.append(((-neg_old_err, a, b, old_int), f, norm_func, _quadrature))
+                to_process.append(
+                    ((-neg_old_err, a, b, old_int), f, norm_func, _quadrature)
+                )
                 err_sum += -neg_old_err
 
             # Subdivide intervals
-            for dint, derr, dround_err, subint, dneval in mapwrapper(_subdivide_interval, to_process):
+            for parts in mapwrapper(_subdivide_interval, to_process):
+                dint, derr, dround_err, subint, dneval = parts
                 neval += dneval
                 global_integral += dint
                 global_error += derr

@@ -342,9 +342,9 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(' ')
         print('LSQR            Least-squares solution of  Ax = b')
         str1 = f'The matrix A has {m} rows and {n} columns'
-        str2 = 'damp = %20.14e   calc_var = %8g' % (damp, calc_var)
-        str3 = 'atol = %8.2e                 conlim = %8.2e' % (atol, conlim)
-        str4 = 'btol = %8.2e               iter_lim = %8g' % (btol, iter_lim)
+        str2 = f'damp = {damp:20.14e}   calc_var = {calc_var:8g}'
+        str3 = f'atol = {atol:8.2e}                 conlim = {conlim:8.2e}'
+        str4 = f'btol = {btol:8.2e}               iter_lim = {iter_lim:8g}'
         print(str1)
         print(str2)
         print(str3)
@@ -413,9 +413,9 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print(head1, head2)
         test1 = 1
         test2 = alfa / beta
-        str1 = '%6g %12.5e' % (itn, x[0])
-        str2 = ' %10.3e %10.3e' % (r1norm, r2norm)
-        str3 = '  %8.1e %8.1e' % (test1, test2)
+        str1 = f'{itn:6g} {x[0]:12.5e}'
+        str2 = f' {r1norm:10.3e} {r2norm:10.3e}'
+        str3 = f'  {test1:8.1e} {test2:8.1e}'
         print(str1, str2, str3)
 
     # Main iteration loop.
@@ -560,10 +560,10 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
                 prnt = True
 
             if prnt:
-                str1 = '%6g %12.5e' % (itn, x[0])
-                str2 = ' %10.3e %10.3e' % (r1norm, r2norm)
-                str3 = '  %8.1e %8.1e' % (test1, test2)
-                str4 = ' %8.1e %8.1e' % (anorm, acond)
+                str1 = f'{itn:6g} {x[0]:12.5e}'
+                str2 = f' {r1norm:10.3e} {r2norm:10.3e}'
+                str3 = f'  {test1:8.1e} {test2:8.1e}'
+                str4 = f' {anorm:8.1e} {acond:8.1e}'
                 print(str1, str2, str3, str4)
 
         if istop != 0:
@@ -576,10 +576,10 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
         print('LSQR finished')
         print(msg[istop])
         print(' ')
-        str1 = 'istop =%8g   r1norm =%8.1e' % (istop, r1norm)
-        str2 = 'anorm =%8.1e   arnorm =%8.1e' % (anorm, arnorm)
-        str3 = 'itn   =%8g   r2norm =%8.1e' % (itn, r2norm)
-        str4 = 'acond =%8.1e   xnorm  =%8.1e' % (acond, xnorm)
+        str1 = f'istop ={istop:8g}   r1norm ={r1norm:8.1e}'
+        str2 = f'anorm ={anorm:8.1e}   arnorm ={arnorm:8.1e}'
+        str3 = f'itn   ={itn:8g}   r2norm ={r2norm:8.1e}'
+        str4 = f'acond ={acond:8.1e}   xnorm  ={xnorm:8.1e}'
         print(str1 + '   ' + str2)
         print(str3 + '   ' + str4)
         print(' ')

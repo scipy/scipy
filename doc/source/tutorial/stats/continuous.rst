@@ -254,6 +254,7 @@ Continuous Distributions in `scipy.stats`
    continuous_invgamma
    continuous_invgauss
    continuous_invweibull
+   continuous_jf_skew_t
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
@@ -285,6 +286,7 @@ Continuous Distributions in `scipy.stats`
    continuous_rayleigh
    continuous_rice
    continuous_recipinvgauss
+   continuous_rel_breitwigner
    continuous_semicircular
    continuous_studentized_range
    continuous_t

@@ -26,13 +26,13 @@ int zfill_diag(int n, NCformat *Astore)
    structurally singular. */
 {
     doublecomplex *nzval = (doublecomplex *)Astore->nzval;
-    int *rowind = Astore->rowind;
-    int *colptr = Astore->colptr;
-    int nnz = colptr[n];
+    int_t *rowind = Astore->rowind;
+    int_t *colptr = Astore->colptr;
+    int_t nnz = colptr[n];
     int fill = 0;
     doublecomplex *nzval_new;
     doublecomplex zero = {0.0, 0.0};
-    int *rowind_new;
+    int_t *rowind_new;
     int i, j, diag;
 
     for (i = 0; i < n; i++)
@@ -76,13 +76,13 @@ int zdominate(int n, NCformat *Astore)
 /* make the matrix diagonally dominant */
 {
     doublecomplex *nzval = (doublecomplex *)Astore->nzval;
-    int *rowind = Astore->rowind;
-    int *colptr = Astore->colptr;
-    int nnz = colptr[n];
+    int_t *rowind = Astore->rowind;
+    int_t *colptr = Astore->colptr;
+    int_t nnz = colptr[n];
     int fill = 0;
     doublecomplex *nzval_new;
-    int *rowind_new;
-    int i, j, diag;
+    int_t *rowind_new;
+    int_t i, j, diag;
     double s;
 
     for (i = 0; i < n; i++)

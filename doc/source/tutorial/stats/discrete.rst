@@ -257,6 +257,7 @@ Discrete Distributions in `scipy.stats`
 
    discrete_bernoulli
    discrete_betabinom
+   discrete_betanbinom
    discrete_binom
    discrete_boltzmann
    discrete_planck

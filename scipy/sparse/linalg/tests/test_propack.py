@@ -129,12 +129,11 @@ def test_examples(dtype, irl):
     # PROPACK 2.1: http://sun.stanford.edu/~rmunk/PROPACK/
     relative_path = "propack_test_data.npz"
     filename = os.path.join(path_prefix, relative_path)
-    data = np.load(filename, allow_pickle=True)
-
-    if is_complex_type(dtype):
-        A = data['A_complex'].item().astype(dtype)
-    else:
-        A = data['A_real'].item().astype(dtype)
+    with np.load(filename, allow_pickle=True) as data:
+        if is_complex_type(dtype):
+            A = data['A_complex'].item().astype(dtype)
+        else:
+            A = data['A_real'].item().astype(dtype)
 
     k = 200
     u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
@@ -179,7 +178,7 @@ def test_shifts(shifts, dtype):
 def test_shifts_accuracy():
     np.random.seed(0)
     n, k = 70, 10
-    A = np.random.random((n, n)).astype(np.double)
+    A = np.random.random((n, n)).astype(np.float64)
     u1, s1, vt1, _ = _svdp(A, k, shifts=None, which='SM', irl_mode=True)
     u2, s2, vt2, _ = _svdp(A, k, shifts=32, which='SM', irl_mode=True)
     # shifts <= 32 doesn't agree with shifts > 32

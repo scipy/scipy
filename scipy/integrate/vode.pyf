@@ -54,6 +54,7 @@ python module _vode
        subroutine dvode(f,jac,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,mf,rpar,ipar)
          ! y1,t,istate = dvode(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
          callstatement (*f2py_func)(cb_f_in_dvode__user__routines,&neq,y,&t,&tout,&itol,rtol,atol,&itask,&istate,&iopt,rwork,&lrw,iwork,&liw,cb_jac_in_dvode__user__routines,&mf,&rpar,&ipar)
+         callprotoargument void*,int*,double*,double*,double*,int*,double*,double*,int*,int*,int*,double*,int*,int*,int*,void*,int*,double*,int*
          use dvode__user__routines
          external f
          external jac
@@ -84,6 +85,7 @@ python module _vode
        subroutine zvode(f,jac,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,zwork,lzw,rwork,lrw,iwork,liw,mf,rpar,ipar)
          ! y1,t,istate = zvode(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
          callstatement (*f2py_func)(cb_f_in_zvode__user__routines,&neq,y,&t,&tout,&itol,rtol,atol,&itask,&istate,&iopt,zwork,&lzw,rwork,&lrw,iwork,&liw,cb_jac_in_zvode__user__routines,&mf,&rpar,&ipar)
+         callprotoargument void*,int*,complex_double*,double*,double*,int*,double*,double*,int*,int*,int*,complex_double*,int*,double*,int*,int*,int*,void*,int*,double*,int*
          use zvode__user__routines
          external f
          external jac

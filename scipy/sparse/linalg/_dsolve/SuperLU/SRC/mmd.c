@@ -8,8 +8,9 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
+#include "superlu_config.h"
 
-typedef int shortint;
+typedef int_t shortint;
 
 /* *************************************************************** */
 /* *************************************************************** */
@@ -58,26 +59,30 @@ typedef int shortint;
 
 /* *************************************************************** */
 
-/* Subroutine */ int genmmd_(int *neqns, int *xadj, shortint *adjncy, 
-	shortint *invp, shortint *perm, int *delta, shortint *dhead, 
-	shortint *qsize, shortint *llist, shortint *marker, int *maxint, 
-	int *nofsub)
+/* Subroutine */ int genmmd_(int *neqns, int_t *xadj, shortint *adjncy, 
+	int *invp, int *perm, int_t *delta, shortint *dhead, 
+	shortint *qsize, shortint *llist, shortint *marker, int_t *maxint, 
+	int_t *nofsub)
 {
     /* System generated locals */
     int i__1;
 
     /* Local variables */
-    int mdeg, ehead, i, mdlmt, mdnode;
-    extern /* Subroutine */ int slu_mmdelm_(int *, int *, shortint *, 
-	    shortint *, shortint *, shortint *, shortint *, shortint *, 
-	    shortint *, int *, int *), slu_mmdupd_(int *, int *, 
-	    int *, shortint *, int *, int *, shortint *, shortint 
-	    *, shortint *, shortint *, shortint *, shortint *, int *, 
-	    int *), slu_mmdint_(int *, int *, shortint *, shortint *, 
-	    shortint *, shortint *, shortint *, shortint *, shortint *), 
-	    slu_mmdnum_(int *, shortint *, shortint *, shortint *);
-    int nextmd, tag, num;
+    int_t mdeg, ehead, i, mdlmt, mdnode;
+    extern /* Subroutine */
+	int slu_mmdelm_(int_t *mdnode, int_t *xadj, shortint *adjncy,
+			shortint *dhead, int *dforw, int *dbakw, shortint *qsize, 
+			shortint *llist, shortint *marker, int_t *maxint, int_t *tag),
+	slu_mmdupd_(int_t *ehead, int *neqns, int_t *xadj, 
+		    shortint *adjncy, int_t *delta, int_t *mdeg, shortint *dhead, 
+		    int *dforw, int *dbakw, shortint *qsize, shortint *llist, 
+		    shortint *marker, int_t *maxint, int_t *tag),
+	slu_mmdint_(int *neqns, int_t *xadj, shortint *adjncy, 
+			shortint *dhead, int *dforw, int *dbakw, shortint *qsize, 
+			shortint *llist, shortint *marker),
+	slu_mmdnum_(int *neqns, int *perm, int *invp, shortint *qsize);
 
+    int_t nextmd, tag, num;
 
 /* *************************************************************** */
 
@@ -245,8 +250,8 @@ L1000:
 
 /* *************************************************************** */
 
-/* Subroutine */ int slu_mmdint_(int *neqns, int *xadj, shortint *adjncy, 
-	shortint *dhead, shortint *dforw, shortint *dbakw, shortint *qsize, 
+/* Subroutine */ int slu_mmdint_(int *neqns, int_t *xadj, shortint *adjncy, 
+	shortint *dhead, int *dforw, int *dbakw, shortint *qsize, 
 	shortint *llist, shortint *marker)
 {
     /* System generated locals */
@@ -254,10 +259,6 @@ L1000:
 
     /* Local variables */
     int ndeg, node, fnode;
-
-
-/* *************************************************************** */
-
 
 /* *************************************************************** */
 
@@ -329,15 +330,15 @@ L1000:
 
 /* *************************************************************** */
 
-/* Subroutine */ int slu_mmdelm_(int *mdnode, int *xadj, shortint *adjncy,
-	 shortint *dhead, shortint *dforw, shortint *dbakw, shortint *qsize, 
-	shortint *llist, shortint *marker, int *maxint, int *tag)
+/* Subroutine */ int slu_mmdelm_(int_t *mdnode, int_t *xadj, shortint *adjncy,
+	 shortint *dhead, int *dforw, int *dbakw, shortint *qsize, 
+	shortint *llist, shortint *marker, int_t *maxint, int_t *tag)
 {
     /* System generated locals */
-    int i__1, i__2;
+    int_t i__1, i__2;
 
     /* Local variables */
-    int node, link, rloc, rlmt, i, j, nabor, rnode, elmnt, xqnbr, 
+    int_t node, link, rloc, rlmt, i, j, nabor, rnode, elmnt, xqnbr, 
 	istop, jstop, istrt, jstrt, nxnode, pvnode, nqnbrs, npv;
 
 
@@ -576,16 +577,17 @@ L1800:
 
 /* *************************************************************** */
 
-/* Subroutine */ int slu_mmdupd_(int *ehead, int *neqns, int *xadj, 
-	shortint *adjncy, int *delta, int *mdeg, shortint *dhead, 
-	shortint *dforw, shortint *dbakw, shortint *qsize, shortint *llist, 
-	shortint *marker, int *maxint, int *tag)
+
+/* Subroutine */ int slu_mmdupd_(int_t *ehead, int *neqns, int_t *xadj, 
+	shortint *adjncy, int_t *delta, int_t *mdeg, shortint *dhead, 
+        int *dforw, int *dbakw, shortint *qsize, shortint *llist, 
+	shortint *marker, int_t *maxint, int_t *tag)
 {
     /* System generated locals */
-    int i__1, i__2;
+    int_t i__1, i__2;
 
     /* Local variables */
-    int node, mtag, link, mdeg0, i, j, enode, fnode, nabor, elmnt, 
+    int_t node, mtag, link, mdeg0, i, j, enode, fnode, nabor, elmnt, 
 	    istop, jstop, q2head, istrt, jstrt, qxhead, iq2, deg, deg0;
 
 
@@ -932,14 +934,15 @@ L2300:
 
 /* *************************************************************** */
 
-/* Subroutine */ int slu_mmdnum_(int *neqns, shortint *perm, shortint *invp, 
+/* Subroutine */ int slu_mmdnum_(int *neqns, int *perm, int *invp, 
 	shortint *qsize)
 {
     /* System generated locals */
+
     int i__1;
 
     /* Local variables */
-    int node, root, nextf, father, nqsize, num;
+    int_t node, root, nextf, father, nqsize, num;
 
 
 /* *************************************************************** */

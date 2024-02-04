@@ -15,7 +15,7 @@ at the top-level directory.
  * -- SuperLU routine (version 4.0) --
  * Lawrence Berkeley National Laboratory
  * June 1, 2009
- * <\pre>
+ * </pre>
  */
 #include "slu_ddefs.h"
 
@@ -36,14 +36,15 @@ int mark_relax(
 	int *relax_fsupc,   /* first column in a relaxed supernode.
 			     * relax_fsupc[j] represents the first column of
 			     * j-th supernode. */
-	int *xa_begin,	    /* Astore->colbeg */
-	int *xa_end,	    /* Astore->colend */
-	int *asub,	    /* row index of A */
-	int *marker	    /* marker[j] is the maximum column index if j-th
+	int_t *xa_begin,    /* Astore->colbeg */
+	int_t *xa_end,	    /* Astore->colend */
+	int_t *asub,	    /* row index of A */
+	int   *marker	    /* marker[j] is the maximum column index if j-th
 			     * row belongs to a relaxed supernode. */ )
 {
     register int jcol, kcol;
-    register int i, j, k;
+    register int_t i, j;
+    int_t k;
 
     for (i = 0; i < n && relax_fsupc[i] != EMPTY; i++)
     {

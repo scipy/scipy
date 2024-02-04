@@ -59,7 +59,8 @@ class Rbf:
     A class for radial basis function interpolation of functions from
     N-D scattered data to an M-D domain.
 
-    .. note::
+    .. legacy:: class
+
         `Rbf` is legacy code, for new usage please use `RBFInterpolator`
         instead.
 
@@ -134,6 +135,7 @@ class Rbf:
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.interpolate import Rbf
     >>> rng = np.random.default_rng()
     >>> x, y, z, d = rng.random((4, 50))
@@ -218,7 +220,7 @@ class Rbf:
         # them as a single 2-D array `xi` of shape (n_args-1, array_size),
         # plus a 1-D array `di` for the values.
         # All arrays must have the same number of elements
-        self.xi = np.asarray([np.asarray(a, dtype=np.float_).flatten()
+        self.xi = np.asarray([np.asarray(a, dtype=np.float64).flatten()
                               for a in args[:-1]])
         self.N = self.xi.shape[-1]
 
@@ -283,6 +285,6 @@ class Rbf:
             shp = args[0].shape + (self._target_dim,)
         else:
             shp = args[0].shape
-        xa = np.asarray([a.flatten() for a in args], dtype=np.float_)
+        xa = np.asarray([a.flatten() for a in args], dtype=np.float64)
         r = self._call_norm(xa, self.xi)
         return np.dot(self._function(r), self.nodes).reshape(shp)

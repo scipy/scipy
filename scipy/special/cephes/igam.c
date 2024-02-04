@@ -417,7 +417,7 @@ static double asymptotic_series(double a, double x, int func)
 	absoldterm = absterm;
 	afac /= a;
     }
-    res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * NPY_PI * a);
+    res += sgn * exp(-0.5 * a * eta * eta) * sum / sqrt(2 * M_PI * a);
 
     return res;
 }

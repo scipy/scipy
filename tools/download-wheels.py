@@ -50,7 +50,7 @@ def get_wheel_names(version):
     index_url = f"{STAGING_URL}/files"
     index_html = http.request('GET', index_url)
     soup = BeautifulSoup(index_html.data, 'html.parser')
-    return soup.findAll(text=tmpl)
+    return soup.findAll(string=tmpl)
 
 
 def download_wheels(version, wheelhouse):

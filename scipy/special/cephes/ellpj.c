@@ -100,7 +100,7 @@ int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph)
         phi = 1.0 / b;
         twon = b * sinh(u);
         *sn = t + ai * (twon - u) / (b * b);
-        *ph = 2.0 * atan(exp(u)) - NPY_PI_2 + ai * (twon - u) / b;
+        *ph = 2.0 * atan(exp(u)) - M_PI_2 + ai * (twon - u) / b;
         ai *= t * phi;
         *cn = phi - ai * (twon - u);
         *dn = phi + ai * (twon + u);

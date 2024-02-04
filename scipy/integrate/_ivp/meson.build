@@ -9,7 +9,6 @@ py3.install_sources([
     'radau.py',
     'rk.py'
   ],
-  pure: false,
   subdir: 'scipy/integrate/_ivp'
 )
 

@@ -79,17 +79,17 @@ dpivotL(
     int          fsupc;	    /* first column in the supernode */
     int          nsupc;	    /* no of columns in the supernode */
     int          nsupr;     /* no of rows in the supernode */
-    int          lptr;	    /* points to the starting subscript of the supernode */
+    int_t        lptr;	    /* points to the starting subscript of the supernode */
     int          pivptr, old_pivptr, diag, diagind;
     double       pivmax, rtemp, thresh;
     double       temp;
     double       *lu_sup_ptr; 
     double       *lu_col_ptr;
-    int          *lsub_ptr;
-    int          isub, icol, k, itemp;
-    int          *lsub, *xlsub;
+    int_t        *lsub_ptr;
+    int_t        isub, icol, k, itemp;
+    int_t        *lsub, *xlsub;
     double       *lusup;
-    int          *xlusup;
+    int_t        *xlusup;
     flops_t      *ops = stat->ops;
 
     /* Initialize pointers */
@@ -122,17 +122,21 @@ if ( jcol == MIN_COL ) {
     diag = EMPTY;
     old_pivptr = nsupc;
     for (isub = nsupc; isub < nsupr; ++isub) {
-	rtemp = fabs (lu_col_ptr[isub]);
+	    rtemp = fabs (lu_col_ptr[isub]);
 	if ( rtemp > pivmax ) {
-	    pivmax = rtemp;
-	    pivptr = isub;
-	}
-	if ( *usepr && lsub_ptr[isub] == *pivrow ) old_pivptr = isub;
-	if ( lsub_ptr[isub] == diagind ) diag = isub;
+	        pivmax = rtemp;
+	        pivptr = isub;
+	    }
+    	if ( *usepr && lsub_ptr[isub] == *pivrow ) old_pivptr = isub;
+	    if ( lsub_ptr[isub] == diagind ) diag = isub;
     }
 
     /* Test for singularity */
     if ( pivmax == 0.0 ) {
+#if 0
+        // There is no valid pivot.  
+        // jcol represents the rank of U
+        // report the rank let dgstrf handle the pivot
 #if 1
 #if SCIPY_FIX
 	if (pivptr < nsupr) {
@@ -142,14 +146,15 @@ if ( jcol == MIN_COL ) {
 	    *pivrow = diagind;
 	}
 #else
-	*pivrow = lsub_ptr[pivptr];
+    *pivrow = lsub_ptr[pivptr];
 #endif
-	perm_r[*pivrow] = jcol;
+    perm_r[*pivrow] = jcol;
 #else
-	perm_r[diagind] = jcol;
+    perm_r[diagind] = jcol;
 #endif
-	*usepr = 0;
-	return (jcol+1);
+#endif
+	    *usepr = 0;
+	    return (jcol+1);
     }
 
     thresh = u * pivmax;

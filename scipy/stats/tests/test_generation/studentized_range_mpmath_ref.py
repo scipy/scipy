@@ -15,7 +15,7 @@
 # 1983, pp. 204-210. JSTOR, www.jstor.org/stable/2347300. Accessed 18
 # Feb. 2021.
 
-# Note: I would have prefered to use pickle rather than JSON, but -
+# Note: I would have preferred to use pickle rather than JSON, but -
 # due to security concerns - decided against it.
 import itertools
 from collections import namedtuple
@@ -42,7 +42,7 @@ MomentCase = namedtuple("MomentCase",
 
 # Load previously generated JSON results, or init a new dict if none exist
 if os.path.isfile(results_filepath):
-    res_dict = json.load(open(results_filepath, mode="r"))
+    res_dict = json.load(open(results_filepath))
 else:
     res_dict = dict()
 

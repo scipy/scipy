@@ -51,7 +51,7 @@ at the top-level directory.
    ===================================================================== 
   </pre>
 */
-int icmax1_slu(int *n, complex *cx, int *incx)
+int icmax1_slu(int *n, singlecomplex *cx, int *incx)
 {
 /*
        NEXT LINE IS THE ONLY MODIFICATION.   
@@ -60,7 +60,7 @@ int icmax1_slu(int *n, complex *cx, int *incx)
    Parameter adjustments   
        Function Body */
     /* System generated locals */
-    int ret_val, i__1, i__2;
+    int ret_val;
     float r__1;
     /* Local variables */
     float smax;
@@ -87,14 +87,11 @@ int icmax1_slu(int *n, complex *cx, int *incx)
     ix = 1;
     smax = (r__1 = CX(1).r, fabs(r__1));
     ix += *incx;
-    i__1 = *n;
     for (i = 2; i <= *n; ++i) {
-	i__2 = ix;
 	if ((r__1 = CX(ix).r, fabs(r__1)) <= smax) {
 	    goto L10;
 	}
 	ret_val = i;
-	i__2 = ix;
 	smax = (r__1 = CX(ix).r, fabs(r__1));
 L10:
 	ix += *incx;
@@ -106,14 +103,11 @@ L10:
 
 L30:
     smax = (r__1 = CX(1).r, fabs(r__1));
-    i__1 = *n;
     for (i = 2; i <= *n; ++i) {
-	i__2 = i;
 	if ((r__1 = CX(i).r, fabs(r__1)) <= smax) {
 	    goto L40;
 	}
 	ret_val = i;
-	i__2 = i;
 	smax = (r__1 = CX(i).r, fabs(r__1));
 L40:
 	;

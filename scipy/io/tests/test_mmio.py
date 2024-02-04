@@ -12,10 +12,23 @@ import pytest
 from pytest import raises as assert_raises
 
 import scipy.sparse
-from scipy.io import mminfo, mmread, mmwrite
+import scipy.io._mmio
+import scipy.io._fast_matrix_market as fmm
+
 
 parametrize_args = [('integer', 'int'),
                     ('unsigned-integer', 'uint')]
+
+
+# Run the entire test suite on both _mmio and _fast_matrix_market implementations
+@pytest.fixture(scope='module', params=(scipy.io._mmio, fmm), autouse=True)
+def implementations(request):
+    global mminfo
+    global mmread
+    global mmwrite
+    mminfo = request.param.mminfo
+    mmread = request.param.mmread
+    mmwrite = request.param.mmwrite
 
 
 class TestMMIOArray:
@@ -50,7 +63,7 @@ class TestMMIOArray:
 
     def test_64bit_integer(self):
         a = array([[2**31, 2**32], [2**63-2, 2**63-1]], dtype=np.int64)
-        if (np.intp(0).itemsize < 8):
+        if (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite:
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'array', 'integer', 'general'))
@@ -176,7 +189,7 @@ class TestMMIOSparseCSR(TestMMIOArray):
         a = scipy.sparse.csr_matrix(array([[2**32+1, 2**32+1],
                                            [-2**63+2, 2**63-2]],
                                           dtype=np.int64))
-        if (np.intp(0).itemsize < 8):
+        if (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite:
             assert_raises(OverflowError, mmwrite, self.fn, a)
         else:
             self.check_exact(a, (2, 2, 4, 'coordinate', 'integer', 'general'))
@@ -347,7 +360,8 @@ class TestMMIOReadLargeIntegers:
         with open(self.fn, 'w') as f:
             f.write(example)
         assert_equal(mminfo(self.fn), info)
-        if (over32 and (np.intp(0).itemsize < 8)) or over64:
+        if ((over32 and (np.intp(0).itemsize < 8) and mmwrite == scipy.io._mmio.mmwrite)
+            or over64):
             assert_raises(OverflowError, mmread, self.fn)
         else:
             b = mmread(self.fn)
@@ -757,3 +771,32 @@ def test_gh11389():
     mmread(io.StringIO("%%MatrixMarket matrix coordinate complex symmetric\n"
                        " 1 1 1\n"
                        "1 1 -2.1846000000000e+02  0.0000000000000e+00"))
+
+
+def test_gh18123(tmp_path):
+    lines = [" %%MatrixMarket matrix coordinate real general\n",
+             "5 5 3\n",
+             "2 3 1.0\n",
+             "3 4 2.0\n",
+             "3 5 3.0\n"]
+    test_file = tmp_path / "test.mtx"
+    with open(test_file, "w") as f:
+        f.writelines(lines)
+    mmread(test_file)
+
+
+def test_threadpoolctl():
+    try:
+        import threadpoolctl
+        if not hasattr(threadpoolctl, "register"):
+            pytest.skip("threadpoolctl too old")
+            return
+    except ImportError:
+        pytest.skip("no threadpoolctl")
+        return
+
+    with threadpoolctl.threadpool_limits(limits=4):
+        assert_equal(fmm.PARALLELISM, 4)
+
+    with threadpoolctl.threadpool_limits(limits=2, user_api='scipy'):
+        assert_equal(fmm.PARALLELISM, 2)

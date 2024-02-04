@@ -54,6 +54,11 @@ def general_cosine(M, a, sym=True):
         design.
         When False, generates a periodic window, for use in spectral analysis.
 
+    Returns
+    -------
+    w : ndarray
+        The array of window values.
+
     References
     ----------
     .. [1] A. Nuttall, "Some windows with very good sidelobe behavior," IEEE
@@ -84,6 +89,7 @@ def general_cosine(M, a, sym=True):
     Figure 42 by plotting the window and its frequency response, and confirm
     the sidelobe level in red:
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_cosine
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -338,7 +344,7 @@ def bohman(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
@@ -962,20 +968,32 @@ def general_hamming(M, alpha, sym=True):
         The window, with the maximum value normalized to 1 (though the value 1
         does not appear if `M` is even and `sym` is True).
 
+    See Also
+    --------
+    hamming, hann
+
     Notes
     -----
     The generalized Hamming window is defined as
 
-    .. math:: w(n) = \alpha - \left(1 - \alpha\right) \cos\left(\frac{2\pi{n}}{M-1}\right)
-              \qquad 0 \leq n \leq M-1
+    .. math:: w(n) = \alpha - \left(1 - \alpha\right)
+              \cos\left(\frac{2\pi{n}}{M-1}\right) \qquad 0 \leq n \leq M-1
 
     Both the common Hamming window and Hann window are special cases of the
     generalized Hamming window with :math:`\alpha` = 0.54 and :math:`\alpha` =
     0.5, respectively [2]_.
 
-    See Also
-    --------
-    hamming, hann
+    References
+    ----------
+    .. [1] DSPRelated, "Generalized Hamming Window Family",
+           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
+    .. [2] Wikipedia, "Window function",
+           https://en.wikipedia.org/wiki/Window_function
+    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
+           Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
+    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
+           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
 
     Examples
     --------
@@ -986,6 +1004,7 @@ def general_hamming(M, alpha, sym=True):
     :math:`\alpha` values include 0.75, 0.7 and 0.52 [4]_. As an example, we
     plot these different windows.
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import general_hamming
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1010,17 +1029,6 @@ def general_hamming(M, alpha, sym=True):
     >>> freq_plot.legend(loc="upper right")
     >>> spatial_plot.legend(loc="upper right")
 
-    References
-    ----------
-    .. [1] DSPRelated, "Generalized Hamming Window Family",
-           https://www.dsprelated.com/freebooks/sasp/Generalized_Hamming_Window_Family.html
-    .. [2] Wikipedia, "Window function",
-           https://en.wikipedia.org/wiki/Window_function
-    .. [3] Riccardo Piantanida ESA, "Sentinel-1 Level 1 Detailed Algorithm
-           Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Level-1-Detailed-Algorithm-Definition
-    .. [4] Matthieu Bourbigot ESA, "Sentinel-1 Product Definition",
-           https://sentinel.esa.int/documents/247904/1877131/Sentinel-1-Product-Definition
     """
     return general_cosine(M, [alpha, 1. - alpha], sym)
 
@@ -1270,6 +1278,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Plot the Kaiser-Bessel derived window based on the wikipedia
     reference [2]_:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots()
@@ -1536,7 +1545,8 @@ def chebwin(M, at, sym=True):
                       "the equivalent noise bandwidth of a Chebyshev window "
                       "does not grow monotonically with increasing sidelobe "
                       "attenuation when the attenuation is smaller than "
-                      "about 45 dB.")
+                      "about 45 dB.",
+                      stacklevel=2)
     if _len_guards(M):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
@@ -1611,7 +1621,7 @@ def cosine(M, sym=True):
     >>> plt.xlabel("Sample")
 
     >>> plt.figure()
-    >>> A = fft(window, 2048) / (len(window)/2.0)
+    >>> A = fft(window, 2047) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
     >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
     >>> plt.plot(freq, response)
@@ -1728,7 +1738,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     constant sidelobe level for a parameterized number of near-in sidelobes,
     but then allows a taper beyond [2]_.
 
-    The SAR (synthetic aperature radar) community commonly uses Taylor
+    The SAR (synthetic aperture radar) community commonly uses Taylor
     weighting for image formation processing because it provides strong,
     selectable sidelobe suppression with minimum broadening of the
     mainlobe [1]_.
@@ -1778,6 +1788,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     --------
     Plot the window and its frequency response:
 
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt
@@ -1997,15 +2008,14 @@ def dpss(M, NW, Kmax=None, sym=True, norm=None, return_ratios=False):
     ...                 'Corrected (subsample)'])
     >>> fig.tight_layout()
 
-    """  # noqa: E501
+    """
     if _len_guards(M):
         return np.ones(M)
     if norm is None:
         norm = 'approximate' if Kmax is None else 2
     known_norms = (2, 'approximate', 'subsample')
     if norm not in known_norms:
-        raise ValueError('norm must be one of %s, got %s'
-                         % (known_norms, norm))
+        raise ValueError(f'norm must be one of {known_norms}, got {norm}')
     if Kmax is None:
         singleton = True
         Kmax = 1
@@ -2145,6 +2155,7 @@ def lanczos(M, *, sym=True):
     --------
     Plot the window
 
+    >>> import numpy as np
     >>> from scipy.signal.windows import lanczos
     >>> from scipy.fft import fft, fftshift
     >>> import matplotlib.pyplot as plt

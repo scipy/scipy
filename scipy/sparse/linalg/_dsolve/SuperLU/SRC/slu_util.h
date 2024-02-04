@@ -1,15 +1,15 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 /** @file slu_util.h
- * \brief Utility header file
+ * \brief Utility header file 
  *
  * -- SuperLU routine (version 4.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
@@ -38,18 +38,18 @@ at the top-level directory.
 /***********************************************************************
  * Macros
  ***********************************************************************/
-/*
- * You can support older version of SuperLU.
- * At compile-time, you can catch the new release as:
- *   #ifdef SUPERLU_MAIN_VERSION == 5
- *       use the new interface
- *   #else
- *       use the old interface
- *   #endif
- * Versions 4.x and earlier do not include a #define'd version numbers.
+/*                                                                                           
+ * You can support older version of SuperLU.                                              
+ * At compile-time, you can catch the new release as:                                          
+ *   #ifdef SUPERLU_MAJOR_VERSION == 5
+ *       use the new interface                                                                 
+ *   #else                                                                                     
+ *       use the old interface                                                                 
+ *   #endif                                                                                    
+ * Versions 4.x and earlier do not include a #define'd version numbers.                        
  */
-#define SUPERLU_MAJOR_VERSION     5
-#define SUPERLU_MINOR_VERSION     2
+#define SUPERLU_MAJOR_VERSION     6
+#define SUPERLU_MINOR_VERSION     0
 #define SUPERLU_PATCH_VERSION     1
 
 
@@ -107,17 +107,19 @@ at the top-level directory.
 
 
 /***********************************************************************
- * Constants
+ * Constants 
  ***********************************************************************/
 #define EMPTY	(-1)
 /*#define NO	(-1)*/
 #define FALSE	0
 #define TRUE	1
 
+#if 0 // this was old; new one is 6, defined in superlu_enum_consts.h 
 #define NO_MEMTYPE  4      /* 0: lusup;
 			      1: ucol;
 			      2: lsub;
 			      3: usub */
+#endif
 
 #define GluIntArray(n)   (5 * (n) + 5)
 
@@ -125,7 +127,7 @@ at the top-level directory.
 #define  NODROP	        ( 0x0000 )
 #define	 DROP_BASIC	( 0x0001 )  /* ILU(tau) */
 #define  DROP_PROWS	( 0x0002 )  /* ILUTP: keep p maximum rows */
-#define  DROP_COLUMN	( 0x0004 )  /* ILUTP: for j-th column,
+#define  DROP_COLUMN	( 0x0004 )  /* ILUTP: for j-th column, 
 				              p = gamma * nnz(A(:,j)) */
 #define  DROP_AREA 	( 0x0008 )  /* ILUTP: for j-th column, use
  		 			      nnz(F(:,1:j)) / nnz(A(:,1:j))
@@ -148,7 +150,7 @@ at the top-level directory.
 typedef float    flops_t;
 typedef unsigned char Logical;
 
-/*
+/* 
  *-- This contains the options used to control the solution process.
  *
  * Fact   (fact_t)
@@ -160,7 +162,7 @@ typedef unsigned char Logical;
  *        = SamePattern: The matrix A will be factorized assuming
  *             that a factorization of a matrix with the same sparsity
  *             pattern was performed prior to this one. Therefore, this
- *             factorization will reuse column permutation vector
+ *             factorization will reuse column permutation vector 
  *             ScalePermstruct->perm_c and the column elimination tree
  *             LUstruct->etree.
  *        = SamePattern_SameRowPerm: The matrix A will be factorized
@@ -170,7 +172,7 @@ typedef unsigned char Logical;
  *             both row and column scaling factors R and C, both row and
  *             column permutation vectors perm_r and perm_c, and the
  *             L & U data structures set up from the previous factorization.
- *        = FACTORED: On entry, L, U, perm_r and perm_c contain the
+ *        = FACTORED: On entry, L, U, perm_r and perm_c contain the 
  *              factored form of A. If DiagScale is not NOEQUIL, the matrix
  *              A has been equilibrated with scaling factors R and C.
  *
@@ -180,12 +182,12 @@ typedef unsigned char Logical;
  *
  * ColPerm (colperm_t)
  *        Specifies what type of column permutation to use to reduce fill.
- *        = NATURAL: use the natural ordering
+ *        = NATURAL: use the natural ordering 
  *        = MMD_ATA: use minimum degree ordering on structure of A'*A
  *        = MMD_AT_PLUS_A: use minimum degree ordering on structure of A'+A
  *        = COLAMD: use approximate minimum degree column ordering
  *        = MY_PERMC: use the ordering specified by the user
- *
+ *         
  * Trans  (trans_t)
  *        Specifies the form of the system of equations:
  *        = NOTRANS: A * X = B        (No transpose)
@@ -204,7 +206,7 @@ typedef unsigned char Logical;
  *        acceptable pivot.
  *
  * SymmetricMode (yest_no_t)
- *        Specifies whether to use symmetric mode. Symmetric mode gives
+ *        Specifies whether to use symmetric mode. Symmetric mode gives 
  *        preference to diagonal pivots, and uses an (A'+A)-based column
  *        permutation algorithm.
  *
@@ -245,7 +247,7 @@ typedef unsigned char Logical;
  * ILU_DropTol (double)
  *        numerical threshold for dropping.
  *
- * ILU_FillFactor (double)
+ * ILU_FillFactor (double) 
  *        Gamma in the secondary dropping.
  *
  * ILU_Norm (norm_t)
@@ -258,7 +260,7 @@ typedef unsigned char Logical;
  * ILU_MILU (milu_t)
  *        Specifies which version of MILU to use.
  *
- * ILU_MILU_Dim (double)
+ * ILU_MILU_Dim (double) 
  *        Dimension of the PDE if available.
  *
  * ReplaceTinyPivot (yes_no_t) (only for SuperLU_DIST)
@@ -309,15 +311,15 @@ typedef struct {
 
 /*! \brief Headers for 4 types of dynamatically managed memory */
 typedef struct e_node {
-    int size;      /* length of the memory that has been used */
+    int_t size;    /* length of the memory mem[] that has been used */
     void *mem;     /* pointer to the new malloc'd store */
 } ExpHeader;
 
 typedef struct {
-    int  size;
-    int  used;
-    int  top1;  /* grow upward, relative to &array[0] */
-    int  top2;  /* grow downward */
+    int_t  size;
+    int_t  used;
+    int_t  top1;  /* grow upward, relative to &array[0] */
+    int_t  top2;  /* grow downward */
     void *array;
 } LU_stack_t;
 
@@ -338,24 +340,23 @@ typedef struct {
 
 typedef struct {
     int     *xsup;    /* supernode and column mapping */
-    int     *supno;
-    int     *lsub;    /* compressed L subscripts */
-    int	    *xlsub;
+    int     *supno;   
+    int_t   *lsub;    /* compressed L subscripts */
+    int_t   *xlsub;
     void    *lusup;   /* L supernodes */
-    int     *xlusup;
+    int_t   *xlusup;
     void    *ucol;    /* U columns */
-    int     *usub;
-    int	    *xusub;
-    int     nzlmax;   /* current max size of lsub */
-    int     nzumax;   /*    "    "    "      ucol */
-    int     nzlumax;  /*    "    "    "     lusup */
+    int_t   *usub;
+    int_t   *xusub;
+    int_t   nzlmax;   /* current max size of lsub */
+    int_t   nzumax;   /*    "    "    "      ucol */
+    int_t   nzlumax;  /*    "    "    "     lusup */
     int     n;        /* number of columns in the matrix */
     LU_space_t MemModel; /* 0 - system malloc'd; 1 - user provided */
     int     num_expansions;
     ExpHeader *expanders; /* Array of pointers to 4 types of memory */
     LU_stack_t stack;     /* use user supplied memory */
 } GlobalLU_t;
-
 
 
 /***********************************************************************
@@ -380,15 +381,20 @@ extern void    sp_preorder (superlu_options_t *, SuperMatrix*, int*, int*,
 			    SuperMatrix*);
 extern void    superlu_abort_and_exit(char*);
 extern void    *superlu_malloc (size_t);
-extern int     *intMalloc (int);
-extern int     *intCalloc (int);
+extern int     *int32Malloc (int);
+extern int     *int32Calloc (int);
+extern int_t   *intMalloc (int_t);
+extern int_t   *intCalloc (int_t);
 extern void    superlu_free (void*);
-extern void    SetIWork (int, int, int, int *, int **, int **, int **,
-                         int **, int **, int **, int **);
-extern int     sp_coletree (int *, int *, int *, int, int, int *);
+extern void    SetIWork (int, int, int, int *, int **, int **, int_t **xplore,
+                         int **, int **, int_t **xprune, int **);
+extern int     sp_coletree (int_t *, int_t *, int_t *, int, int, int *);
 extern void    relax_snode (const int, int *, const int, int *, int *);
 extern void    heap_relax_snode (const int, int *, const int, int *, int *);
-extern int     mark_relax(int, int *, int *, int *, int *, int *, int *);
+extern int     mark_relax(int, int *, int *, int_t *, int_t *, int_t *, int *);
+extern void    countnz(const int n, int_t *xprune, int_t *nnzL, int_t *nnzU, GlobalLU_t *);
+extern void    ilu_countnz (const int, int_t *, int_t *, GlobalLU_t *);
+extern void    fixupL (const int, const int *, GlobalLU_t *);
 extern void    ilu_relax_snode (const int, int *, const int, int *,
 				int *, int *);
 extern void    ilu_heap_relax_snode (const int, int *, const int, int *,
@@ -396,7 +402,7 @@ extern void    ilu_heap_relax_snode (const int, int *, const int, int *,
 extern void    resetrep_col (const int, const int *, int *);
 extern int     spcoletree (int *, int *, int *, int, int, int *);
 extern int     *TreePostorder (int, int *);
-extern double  SuperLU_timer_ ();
+extern double  SuperLU_timer_ (void);
 extern int     sp_ienv (int);
 extern int     xerbla_ (char *, int *);
 extern void    ifill (int *, int, int);
@@ -410,7 +416,7 @@ extern void    StatFree(SuperLUStat_t *);
 extern void    print_panel_seg(int, int, int, int, int *, int *);
 extern int     print_int_vec(char *,int, int *);
 extern int     slu_PrintInt10(char *, int, int *);
-extern void    check_read(int);
+extern int     check_perm(char *what, int n, int *perm);
 
 #ifdef __cplusplus
   }

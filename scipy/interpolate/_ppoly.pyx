@@ -1,3 +1,4 @@
+# cython: cpow=True
 """
 Routines for evaluating and manipulating piecewise polynomials in
 local power basis.
@@ -13,12 +14,7 @@ cimport libc.math
 
 from scipy.linalg.cython_lapack cimport dgeev
 
-ctypedef double complex double_complex
-
-ctypedef fused double_or_complex:
-    double
-    double complex
-
+include "_poly_common.pxi"
 
 DEF MAX_DIMS = 64
 
@@ -29,7 +25,7 @@ DEF MAX_DIMS = 64
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate(double_or_complex[:,:,::1] c,
+def evaluate(const double_or_complex[:,:,::1] c,
              const double[::1] x,
              const double[::1] xp,
              int dx,
@@ -106,7 +102,7 @@ def evaluate(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate_nd(double_or_complex[:,:,::1] c,
+def evaluate_nd(const double_or_complex[:,:,::1] c,
                 tuple xs,
                 int[:] ks,
                 double[:,:] xp,
@@ -185,7 +181,6 @@ def evaluate_nd(double_or_complex[:,:,::1] c,
         # grab array pointers
         nxx[ip] = y.shape[0]
         xx[ip] = <double*>&y[0]
-        y = None
 
     if c.shape[1] != ntot:
         raise ValueError("xs and c have incompatible shapes")
@@ -322,7 +317,7 @@ def fix_continuity(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def integrate(double_or_complex[:,:,::1] c,
+def integrate(const double_or_complex[:,:,::1] c,
               const double[::1] x,
               double a,
               double b,
@@ -412,7 +407,7 @@ def integrate(double_or_complex[:,:,::1] c,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
+def real_roots(const double[:,:,::1] c, double[::1] x, double y, bint report_discont,
                bint extrapolate):
     """
     Compute real roots of a real-valued piecewise polynomial function.
@@ -440,7 +435,7 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
     """
     cdef list roots
     cdef list cur_roots
-    cdef int interval, jp, k, i, p
+    cdef int interval, jp, k, i
 
     cdef double *wr
     cdef double *wi
@@ -565,96 +560,11 @@ def real_roots(double[:,:,::1] c, double[::1] x, double y, bint report_discont,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_ascending(const double *x,
-                                 size_t nx,
-                                 double xval,
-                                 int prev_interval=0,
-                                 bint extrapolate=1) nogil:
-    """
-    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
-    that x is sorted in the ascending order.
-    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
-
-    Parameters
-    ----------
-    x : array of double, shape (m,)
-        Piecewise polynomial breakpoints sorted in ascending order.
-    xval : double
-        Point to find.
-    prev_interval : int, optional
-        Interval where a previous point was found.
-    extrapolate : bint, optional
-        Whether to return the last of the first interval if the
-        point is out-of-bounds.
-
-    Returns
-    -------
-    interval : int
-        Suitable interval or -1 if nan.
-
-    """
-    cdef int interval, high, low, mid
-    cdef double a, b
-
-    a = x[0]
-    b = x[nx-1]
-
-    interval = prev_interval
-    if interval < 0 or interval >= nx:
-        interval = 0
-
-    if not (a <= xval <= b):
-        # Out-of-bounds (or nan)
-        if xval < a and extrapolate:
-            # below
-            interval = 0
-        elif xval > b and extrapolate:
-            # above
-            interval = nx - 2
-        else:
-            # nan or no extrapolation
-            interval = -1
-    elif xval == b:
-        # Make the interval closed from the right
-        interval = nx - 2
-    else:
-        # Find the interval the coordinate is in
-        # (binary search with locality)
-        if xval >= x[interval]:
-            low = interval
-            high = nx - 2
-        else:
-            low = 0
-            high = interval
-
-        if xval < x[low+1]:
-            high = low
-
-        while low < high:
-            mid = (high + low)//2
-            if xval < x[mid]:
-                # mid < high
-                high = mid
-            elif xval >= x[mid + 1]:
-                low = mid + 1
-            else:
-                # x[mid] <= xval < x[mid+1]
-                low = mid
-                break
-
-        interval = low
-
-    return interval
-
-
-@cython.wraparound(False)
-@cython.boundscheck(False)
-@cython.cdivision(True)
 cdef int find_interval_descending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
-                                 bint extrapolate=1) nogil:
+                                 bint extrapolate=1) noexcept nogil:
     """
     Find an interval such that x[interval + 1] < xval <= x[interval], assuming
     that x are sorted in the descending order.
@@ -738,7 +648,7 @@ cdef int find_interval_descending(const double *x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, int ci, int cj, int dx) nogil:
+cdef double_or_complex evaluate_poly1(double s, const double_or_complex[:,:,::1] c, int ci, int cj, int dx) noexcept nogil:
     """
     Evaluate polynomial, derivative, or antiderivative in a single interval.
 
@@ -797,7 +707,7 @@ cdef double_or_complex evaluate_poly1(double s, double_or_complex[:,:,::1] c, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
+cdef int croots_poly1(const double[:,:,::1] c, double y, int ci, int cj,
                       double* wr, double* wi, void **workspace) except -10:
     """
     Find all complex roots of a local polynomial.
@@ -956,7 +866,7 @@ cdef int croots_poly1(double[:,:,::1] c, double y, int ci, int cj,
     return order
 
 
-def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
+def _croots_poly1(const double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
     """
     Find roots of polynomials.
 
@@ -1021,8 +931,8 @@ def _croots_poly1(double[:,:,::1] c, double_complex[:,:,::1] w, double y=0):
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cdef double_or_complex evaluate_bpoly1(double_or_complex s,
-                                       double_or_complex[:,:,::1] c,
-                                       int ci, int cj) nogil:
+                                       const double_or_complex[:,:,::1] c,
+                                       int ci, int cj) noexcept nogil:
     """
     Evaluate polynomial in the Bernstein basis in a single interval.
 
@@ -1072,10 +982,10 @@ cdef double_or_complex evaluate_bpoly1(double_or_complex s,
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
-                                             double_or_complex[:,:,::1] c,
+                                             const double_or_complex[:,:,::1] c,
                                              int ci, int cj,
                                              int nu,
-                                             double_or_complex[:,:,::1] wrk) nogil:
+                                             double_or_complex[:,:,::1] wrk) noexcept nogil:
     """
     Evaluate the derivative of a polynomial in the Bernstein basis
     in a single interval.
@@ -1132,7 +1042,7 @@ cdef double_or_complex evaluate_bpoly1_deriv(double_or_complex s,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate_bernstein(double_or_complex[:,:,::1] c,
+def evaluate_bernstein(const double_or_complex[:,:,::1] c,
              double[::1] x,
              double[::1] xp,
              int nu,
@@ -1183,9 +1093,9 @@ def evaluate_bernstein(double_or_complex[:,:,::1] c,
 
     if nu > 0:
         if double_or_complex is double_complex:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.complex128)
         else:
-            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float_)
+            wrk = np.empty((c.shape[0]-nu, 1, 1), dtype=np.float64)
 
 
     interval = 0

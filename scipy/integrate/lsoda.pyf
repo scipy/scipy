@@ -27,6 +27,7 @@ python module _lsoda
        subroutine lsoda(f,neq,y,t,tout,itol,rtol,atol,itask,istate,iopt,rwork,lrw,iwork,liw,jac,jt)
          ! y1,t,istate = lsoda(f,jac,y0,t0,t1,rtol,atol,itask,istate,rwork,iwork,mf)
          callstatement (*f2py_func)(cb_f_in_lsoda__user__routines,&neq,y,&t,&tout,&itol,rtol,atol,&itask,&istate,&iopt,rwork,&lrw,iwork,&liw,cb_jac_in_lsoda__user__routines,&jt)
+         callprotoargument void*,int*,double*,double*,double*,int*,double*,double*,int*,int*,int*,double*,int*,int*,int*,void*,int*
          use lsoda__user__routines
          external f
          external jac

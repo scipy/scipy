@@ -32,9 +32,8 @@ import cython
 
 from . cimport sf_error
 
-from libc.math cimport sqrt, fabs, pow
+from libc.math cimport sqrt, fabs, pow, NAN
 from libc.stdlib cimport malloc, free
-from numpy.math cimport NAN, PI
 
 cdef extern from "lapack_defs.h":
     ctypedef int CBLAS_INT  # actual type defined in the header
@@ -50,7 +49,7 @@ cdef extern from "lapack_defs.h":
 @cython.cdivision(True)
 cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
                                       void **bufferp, double signm,
-                                      double signn) nogil:
+                                      double signn) noexcept nogil:
 
     # Ensure that the caller can safely call free(*bufferp) even if an
     # invalid argument is found in the following validation code.
@@ -183,7 +182,7 @@ cdef inline double* lame_coefficients(double h2, double k2, int n, int p,
 @cython.cdivision(True)
 cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
                                    double s, double *eigv, double signm,
-                                   double signn) nogil:
+                                   double signn) noexcept nogil:
     cdef int size, tp, r, j
     cdef double s2, pp, lambda_romain, psi
     s2 = s*s
@@ -210,7 +209,7 @@ cdef inline double ellip_harm_eval(double h2, double k2, int n, int p,
 
 
 cdef inline double ellip_harmonic(double h2, double k2, int n, int p, double s,
-                                  double signm, double signn) nogil:
+                                  double signm, double signn) noexcept nogil:
     cdef double result
     cdef double *eigv
     cdef void *bufferp

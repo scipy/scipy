@@ -1,15 +1,14 @@
-from numpy import (logical_and, asarray, pi, zeros_like,
-                   piecewise, array, arctan2, tan, zeros, arange, floor)
-from numpy.core.umath import (sqrt, exp, greater, less, cos, add, sin,
-                              less_equal, greater_equal)
+from numpy import (asarray, pi, zeros_like,
+                   array, arctan2, tan, ones, arange, floor,
+                   r_, atleast_1d, sqrt, exp, greater, cos, add, sin)
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
+from ._signaltools import lfilter, sosfilt, lfiltic
 
-from scipy.special import comb
-from scipy._lib._util import float_factorial
+from scipy.interpolate import BSpline
 
-__all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+__all__ = ['spline_filter', 'gauss_spline',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
 
 
@@ -29,11 +28,11 @@ def spline_filter(Iin, lmbda=5.0):
     Returns
     -------
     res : ndarray
-        filterd input data
+        filtered input data
 
     Examples
     --------
-    We can filter an multi dimentional signal (ex: 2D image) using cubic
+    We can filter an multi dimensional signal (ex: 2D image) using cubic
     B-spline filter:
 
     >>> import numpy as np
@@ -70,125 +69,6 @@ def spline_filter(Iin, lmbda=5.0):
 
 
 _splinefunc_cache = {}
-
-
-def _bspline_piecefunctions(order):
-    """Returns the function defined over the left-side pieces for a bspline of
-    a given order.
-
-    The 0th piece is the first one less than 0. The last piece is a function
-    identical to 0 (returned as the constant 0). (There are order//2 + 2 total
-    pieces).
-
-    Also returns the condition functions that when evaluated return boolean
-    arrays for use with `numpy.piecewise`.
-    """
-    try:
-        return _splinefunc_cache[order]
-    except KeyError:
-        pass
-
-    def condfuncgen(num, val1, val2):
-        if num == 0:
-            return lambda x: logical_and(less_equal(x, val1),
-                                         greater_equal(x, val2))
-        elif num == 2:
-            return lambda x: less_equal(x, val2)
-        else:
-            return lambda x: logical_and(less(x, val1),
-                                         greater_equal(x, val2))
-
-    last = order // 2 + 2
-    if order % 2:
-        startbound = -1.0
-    else:
-        startbound = -0.5
-    condfuncs = [condfuncgen(0, 0, startbound)]
-    bound = startbound
-    for num in range(1, last - 1):
-        condfuncs.append(condfuncgen(1, bound, bound - 1))
-        bound = bound - 1
-    condfuncs.append(condfuncgen(2, 0, -(order + 1) / 2.0))
-
-    # final value of bound is used in piecefuncgen below
-
-    # the functions to evaluate are taken from the left-hand side
-    #  in the general expression derived from the central difference
-    #  operator (because they involve fewer terms).
-
-    fval = float_factorial(order)
-
-    def piecefuncgen(num):
-        Mk = order // 2 - num
-        if (Mk < 0):
-            return 0  # final function is 0
-        coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
-                  for k in range(Mk + 1)]
-        shifts = [-bound - k for k in range(Mk + 1)]
-
-        def thefunc(x):
-            res = 0.0
-            for k in range(Mk + 1):
-                res += coeffs[k] * (x + shifts[k]) ** order
-            return res
-        return thefunc
-
-    funclist = [piecefuncgen(k) for k in range(last)]
-
-    _splinefunc_cache[order] = (funclist, condfuncs)
-
-    return funclist, condfuncs
-
-
-def bspline(x, n):
-    """B-spline basis function of order n.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-    n : int
-        The order of the spline. Must be non-negative, i.e., n >= 0
-
-    Returns
-    -------
-    res : ndarray
-        B-spline basis function values
-
-    See Also
-    --------
-    cubic : A cubic B-spline.
-    quadratic : A quadratic B-spline.
-
-    Notes
-    -----
-    Uses numpy.piecewise and automatic function-generator.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    ax = -abs(asarray(x))
-    # number of pieces on the left-side is (n+1)/2
-    funclist, condfuncs = _bspline_piecefunctions(n)
-    condlist = [func(ax) for func in condfuncs]
-    return piecewise(ax, condlist, funclist)
 
 
 def gauss_spline(x, n):
@@ -230,13 +110,10 @@ def gauss_spline(x, n):
     distribution:
 
     >>> import numpy as np
-    >>> from scipy.signal import gauss_spline, bspline
+    >>> from scipy.signal import gauss_spline
     >>> knots = np.array([-1.0, 0.0, -1.0])
     >>> gauss_spline(knots, 3)
     array([0.15418033, 0.6909883, 0.15418033])  # may vary
-
-    >>> bspline(knots, 3)
-    array([0.16666667, 0.66666667, 0.16666667])  # may vary
 
     """
     x = asarray(x)
@@ -244,110 +121,20 @@ def gauss_spline(x, n):
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
 
 
-def cubic(x):
-    """A cubic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Cubic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    quadratic : A quadratic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    ax = abs(asarray(x))
-    res = zeros_like(ax)
-    cond1 = less(ax, 1)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 2.0 / 3 - 1.0 / 2 * ax1 ** 2 * (2 - ax1)
-    cond2 = ~cond1 & less(ax, 2)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = 1.0 / 6 * (2 - ax2) ** 3
-    return res
+def _cubic(x):
+    x = asarray(x, dtype=float)
+    b = BSpline.basis_element([-2, -1, 0, 1, 2], extrapolate=False)
+    out = b(x)
+    out[(x < -2) | (x > 2)] = 0
+    return out
 
 
-def quadratic(x):
-    """A quadratic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Quadratic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    cubic : A cubic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    ax = abs(asarray(x))
-    res = zeros_like(ax)
-    cond1 = less(ax, 0.5)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 0.75 - ax1 ** 2
-    cond2 = ~cond1 & less(ax, 1.5)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = (ax2 - 1.5) ** 2 / 2.0
-    return res
+def _quadratic(x):
+    x = abs(asarray(x, dtype=float))
+    b = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5], extrapolate=False)
+    out = b(x)
+    out[(x < -1.5) | (x > 1.5)] = 0
+    return out
 
 
 def _coeff_smooth(lam):
@@ -375,60 +162,109 @@ def _cubic_smooth_coeff(signal, lamb):
     rho, omega = _coeff_smooth(lamb)
     cs = 1 - 2 * rho * cos(omega) + rho * rho
     K = len(signal)
-    yp = zeros((K,), signal.dtype.char)
     k = arange(K)
-    yp[0] = (_hc(0, cs, rho, omega) * signal[0] +
-             add.reduce(_hc(k + 1, cs, rho, omega) * signal))
 
-    yp[1] = (_hc(0, cs, rho, omega) * signal[0] +
-             _hc(1, cs, rho, omega) * signal[1] +
-             add.reduce(_hc(k + 2, cs, rho, omega) * signal))
+    zi_2 = (_hc(0, cs, rho, omega) * signal[0] +
+            add.reduce(_hc(k + 1, cs, rho, omega) * signal))
+    zi_1 = (_hc(0, cs, rho, omega) * signal[0] +
+            _hc(1, cs, rho, omega) * signal[1] +
+            add.reduce(_hc(k + 2, cs, rho, omega) * signal))
 
-    for n in range(2, K):
-        yp[n] = (cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] -
-                 rho * rho * yp[n - 2])
+    # Forward filter:
+    # for n in range(2, K):
+    #     yp[n] = (cs * signal[n] + 2 * rho * cos(omega) * yp[n - 1] -
+    #              rho * rho * yp[n - 2])
+    zi = lfiltic(cs, r_[1, -2 * rho * cos(omega), rho * rho], r_[zi_1, zi_2])
+    zi = zi.reshape(1, -1)
 
-    y = zeros((K,), signal.dtype.char)
+    sos = r_[cs, 0, 0, 1, -2 * rho * cos(omega), rho * rho]
+    sos = sos.reshape(1, -1)
 
-    y[K - 1] = add.reduce((_hs(k, cs, rho, omega) +
-                           _hs(k + 1, cs, rho, omega)) * signal[::-1])
-    y[K - 2] = add.reduce((_hs(k - 1, cs, rho, omega) +
-                           _hs(k + 2, cs, rho, omega)) * signal[::-1])
+    yp, _ = sosfilt(sos, signal[2:], zi=zi)
+    yp = r_[zi_2, zi_1, yp]
 
-    for n in range(K - 3, -1, -1):
-        y[n] = (cs * yp[n] + 2 * rho * cos(omega) * y[n + 1] -
-                rho * rho * y[n + 2])
+    # Reverse filter:
+    # for n in range(K - 3, -1, -1):
+    #     y[n] = (cs * yp[n] + 2 * rho * cos(omega) * y[n + 1] -
+    #             rho * rho * y[n + 2])
 
+    zi_2 = add.reduce((_hs(k, cs, rho, omega) +
+                       _hs(k + 1, cs, rho, omega)) * signal[::-1])
+    zi_1 = add.reduce((_hs(k - 1, cs, rho, omega) +
+                       _hs(k + 2, cs, rho, omega)) * signal[::-1])
+
+    zi = lfiltic(cs, r_[1, -2 * rho * cos(omega), rho * rho], r_[zi_1, zi_2])
+    zi = zi.reshape(1, -1)
+    y, _ = sosfilt(sos, yp[-3::-1], zi=zi)
+    y = r_[y[::-1], zi_1, zi_2]
     return y
 
 
 def _cubic_coeff(signal):
     zi = -2 + sqrt(3)
     K = len(signal)
-    yplus = zeros((K,), signal.dtype.char)
     powers = zi ** arange(K)
-    yplus[0] = signal[0] + zi * add.reduce(powers * signal)
-    for k in range(1, K):
-        yplus[k] = signal[k] + zi * yplus[k - 1]
-    output = zeros((K,), signal.dtype)
-    output[K - 1] = zi / (zi - 1) * yplus[K - 1]
-    for k in range(K - 2, -1, -1):
-        output[k] = zi * (output[k + 1] - yplus[k])
+
+    if K == 1:
+        yplus = signal[0] + zi * add.reduce(powers * signal)
+        output = zi / (zi - 1) * yplus
+        return atleast_1d(output)
+
+    # Forward filter:
+    # yplus[0] = signal[0] + zi * add.reduce(powers * signal)
+    # for k in range(1, K):
+    #     yplus[k] = signal[k] + zi * yplus[k - 1]
+
+    state = lfiltic(1, r_[1, -zi], atleast_1d(add.reduce(powers * signal)))
+
+    b = ones(1)
+    a = r_[1, -zi]
+    yplus, _ = lfilter(b, a, signal, zi=state)
+
+    # Reverse filter:
+    # output[K - 1] = zi / (zi - 1) * yplus[K - 1]
+    # for k in range(K - 2, -1, -1):
+    #     output[k] = zi * (output[k + 1] - yplus[k])
+    out_last = zi / (zi - 1) * yplus[K - 1]
+    state = lfiltic(-zi, r_[1, -zi], atleast_1d(out_last))
+
+    b = asarray([-zi])
+    output, _ = lfilter(b, a, yplus[-2::-1], zi=state)
+    output = r_[output[::-1], out_last]
     return output * 6.0
 
 
 def _quadratic_coeff(signal):
     zi = -3 + 2 * sqrt(2.0)
     K = len(signal)
-    yplus = zeros((K,), signal.dtype.char)
     powers = zi ** arange(K)
-    yplus[0] = signal[0] + zi * add.reduce(powers * signal)
-    for k in range(1, K):
-        yplus[k] = signal[k] + zi * yplus[k - 1]
-    output = zeros((K,), signal.dtype.char)
-    output[K - 1] = zi / (zi - 1) * yplus[K - 1]
-    for k in range(K - 2, -1, -1):
-        output[k] = zi * (output[k + 1] - yplus[k])
+
+    if K == 1:
+        yplus = signal[0] + zi * add.reduce(powers * signal)
+        output = zi / (zi - 1) * yplus
+        return atleast_1d(output)
+
+    # Forward filter:
+    # yplus[0] = signal[0] + zi * add.reduce(powers * signal)
+    # for k in range(1, K):
+    #     yplus[k] = signal[k] + zi * yplus[k - 1]
+
+    state = lfiltic(1, r_[1, -zi], atleast_1d(add.reduce(powers * signal)))
+
+    b = ones(1)
+    a = r_[1, -zi]
+    yplus, _ = lfilter(b, a, signal, zi=state)
+
+    # Reverse filter:
+    # output[K - 1] = zi / (zi - 1) * yplus[K - 1]
+    # for k in range(K - 2, -1, -1):
+    #     output[k] = zi * (output[k + 1] - yplus[k])
+    out_last = zi / (zi - 1) * yplus[K - 1]
+    state = lfiltic(-zi, r_[1, -zi], atleast_1d(out_last))
+
+    b = asarray([-zi])
+    output, _ = lfilter(b, a, yplus[-2::-1], zi=state)
+    output = r_[output[::-1], out_last]
     return output * 8.0
 
 
@@ -602,7 +438,7 @@ def cspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(4):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * cubic(newx - thisj)
+        result += cj[indj] * _cubic(newx - thisj)
     res[cond3] = result
     return res
 
@@ -678,6 +514,6 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
     for i in range(3):
         thisj = jlower + i
         indj = thisj.clip(0, N - 1)  # handle edge cases
-        result += cj[indj] * quadratic(newx - thisj)
+        result += cj[indj] * _quadratic(newx - thisj)
     res[cond3] = result
     return res

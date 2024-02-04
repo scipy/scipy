@@ -9,7 +9,6 @@ py3.install_sources([
     'test_slerp.py',
     'test_spherical_voronoi.py'
   ],
-  pure: false,
   subdir: 'scipy/spatial/tests'
 )
 
@@ -46,6 +45,5 @@ py3.install_sources([
     'data/random-uint-data.txt',
     'data/selfdual-4d-polytope.txt'
   ],
-  pure: false,
   subdir: 'scipy/spatial/tests/data'
 )

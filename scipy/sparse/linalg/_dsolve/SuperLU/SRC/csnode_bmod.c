@@ -42,8 +42,8 @@ csnode_bmod (
 	    const int  jcol,	  /* in */
 	    const int  jsupno,    /* in */
 	    const int  fsupc,     /* in */
-	    complex     *dense,    /* in */
-	    complex     *tempv,    /* working array */
+	    singlecomplex     *dense,    /* in */
+	    singlecomplex     *tempv,    /* working array */
 	    GlobalLU_t *Glu,      /* modified */
 	    SuperLUStat_t *stat   /* output */
 	    )
@@ -55,21 +55,21 @@ csnode_bmod (
 	 ftcs3 = _cptofcd("U", strlen("U"));
 #endif
     int            incx = 1, incy = 1;
-    complex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
+    singlecomplex         alpha = {-1.0, 0.0},  beta = {1.0, 0.0};
 #endif
 
-    complex   comp_zero = {0.0, 0.0};
-    int            luptr, nsupc, nsupr, nrow;
-    int            isub, irow, i, iptr; 
-    register int   ufirst, nextlu;
-    int            *lsub, *xlsub;
-    complex         *lusup;
-    int            *xlusup;
+    singlecomplex   comp_zero = {0.0, 0.0};
+    int     nsupc, nsupr, nrow;
+    int_t   isub, irow;
+    int_t   ufirst, nextlu;
+    int_t   *lsub, *xlsub;
+    singlecomplex *lusup;
+    int_t   *xlusup, luptr;
     flops_t *ops = stat->ops;
 
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    lusup   = (complex *) Glu->lusup;
+    lusup   = (singlecomplex *) Glu->lusup;
     xlusup  = Glu->xlusup;
 
     nextlu = xlusup[jcol];
@@ -121,6 +121,7 @@ csnode_bmod (
 	cmatvec ( nsupr, nrow, nsupc, &lusup[luptr+nsupc], 
 			&lusup[ufirst], &tempv[0] );
 
+	int_t i, iptr; 
         /* Scatter tempv[*] into lusup[*] */
 	iptr = ufirst + nsupc;
 	for (i = 0; i < nrow; i++) {

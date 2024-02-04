@@ -78,10 +78,17 @@ linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
     if (!b)
         goto cleanup;
 
-    int ret = solve_rectangular_linear_sum_assignment(
-      num_rows, num_cols, cost_matrix, maximize,
-      PyArray_DATA((PyArrayObject*)a),
-      PyArray_DATA((PyArrayObject*)b));
+    int64_t* a_ptr = PyArray_DATA((PyArrayObject*)a);
+    int64_t* b_ptr = PyArray_DATA((PyArrayObject*)b);
+    int ret;
+
+    Py_BEGIN_ALLOW_THREADS
+
+    ret = solve_rectangular_linear_sum_assignment(
+      num_rows, num_cols, cost_matrix, maximize, a_ptr, b_ptr);
+
+    Py_END_ALLOW_THREADS
+
     if (ret == RECTANGULAR_LSAP_INFEASIBLE) {
         PyErr_SetString(PyExc_ValueError, "cost matrix is infeasible");
         goto cleanup;

@@ -1,16 +1,16 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
 /*! @file util.c
  * \brief Utility functions
- *
+ * 
  * <pre>
  * -- SuperLU routine (version 4.1) --
  * Univ. of California Berkeley, Xerox Palo Alto Research Center,
@@ -164,13 +164,13 @@ Destroy_Dense_Matrix(SuperMatrix *A)
     SUPERLU_FREE ( A->Store );
 }
 
-/*! \brief Reset repfnz[] for the current column
+/*! \brief Reset repfnz[] for the current column 
  */
 void
 resetrep_col (const int nseg, const int *segrep, int *repfnz)
 {
-    int i, irep;
-
+    int_t i, irep;
+    
     for (i = 0; i < nseg; i++) {
 	irep = segrep[i];
 	repfnz[irep] = EMPTY;
@@ -178,25 +178,28 @@ resetrep_col (const int nseg, const int *segrep, int *repfnz)
 }
 
 
-/*! \brief Count the total number of nonzeros in factors L and U,  and in the symmetrically reduced L.
+/*! \brief Count the total number of nonzeros in factors L and U,  and in the symmetrically reduced L. 
  */
 void
-countnz(const int n, int *xprune, int *nnzL, int *nnzU, GlobalLU_t *Glu)
+countnz(const int n, int_t *xprune, int_t *nnzL, int_t *nnzU, GlobalLU_t *Glu)
 {
     int          nsuper, fsupc, i, j;
-    int          nnzL0, jlen, irep;
-    int          *xsup, *xlsub;
+    int_t        jlen;
+#if ( DEBUGlevel>=1 )
+    int_t        irep = 0, nnzL0 = 0;
+#endif
+    int          *xsup;
+    int_t        *xlsub;
 
     xsup   = Glu->xsup;
     xlsub  = Glu->xlsub;
     *nnzL  = 0;
     *nnzU  = (Glu->xusub)[n];
-    nnzL0  = 0;
     nsuper = (Glu->supno)[n];
 
     if ( n <= 0 ) return;
 
-    /*
+    /* 
      * For each supernode
      */
     for (i = 0; i <= nsuper; i++) {
@@ -208,21 +211,26 @@ countnz(const int n, int *xprune, int *nnzL, int *nnzU, GlobalLU_t *Glu)
 	    *nnzU += j - fsupc + 1;
 	    jlen--;
 	}
-	irep = xsup[i+1] - 1;
-	nnzL0 += xprune[irep] - xlsub[irep];
+#if ( DEBUGlevel>=1 )
+        irep = xsup[i+1] - 1;
+        nnzL0 += xprune[irep] - xlsub[irep];
+#endif
     }
 
-    /* printf("\tNo of nonzeros in symm-reduced L = %d\n", nnzL0);*/
+#if ( DEBUGlevel>=1 )
+    printf("\tNo of nonzeros in symm-reduced L = %lld\n", (long long) nnzL0); fflush(stdout);
+#endif
 }
 
 /*! \brief Count the total number of nonzeros in factors L and U.
  */
 void
-ilu_countnz(const int n, int *nnzL, int *nnzU, GlobalLU_t *Glu)
+ilu_countnz(const int n, int_t *nnzL, int_t *nnzU, GlobalLU_t *Glu)
 {
     int          nsuper, fsupc, i, j;
-    int          jlen, irep;
-    int          *xsup, *xlsub;
+    int          jlen;
+    int          *xsup;
+    int_t        *xlsub;
 
     xsup   = Glu->xsup;
     xlsub  = Glu->xlsub;
@@ -244,7 +252,7 @@ ilu_countnz(const int n, int *nnzL, int *nnzU, GlobalLU_t *Glu)
 	    *nnzU += j - fsupc + 1;
 	    jlen--;
 	}
-	irep = xsup[i+1] - 1;
+	//irep = xsup[i+1] - 1;
     }
 }
 
@@ -254,8 +262,10 @@ ilu_countnz(const int n, int *nnzL, int *nnzU, GlobalLU_t *Glu)
 void
 fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
 {
-    register int nsuper, fsupc, nextl, i, j, k, jstrt;
-    int          *xsup, *lsub, *xlsub;
+    int nsuper, fsupc, i, k;
+    int_t nextl, j, jstrt;
+    int   *xsup;
+    int_t *lsub, *xlsub;
 
     if ( n <= 1 ) return;
 
@@ -264,8 +274,8 @@ fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
     xlsub  = Glu->xlsub;
     nextl  = 0;
     nsuper = (Glu->supno)[n];
-
-    /*
+    
+    /* 
      * For each supernode ...
      */
     for (i = 0; i <= nsuper; i++) {
@@ -276,7 +286,7 @@ fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
 	    lsub[nextl] = perm_r[lsub[j]]; /* Now indexed into P*A */
 	    nextl++;
   	}
-	for (k = fsupc+1; k < xsup[i+1]; k++)
+	for (k = fsupc+1; k < xsup[i+1]; k++) 
 	    	xlsub[k] = nextl;	/* Other columns in supernode i */
 
     }
@@ -287,15 +297,15 @@ fixupL(const int n, const int *perm_r, GlobalLU_t *Glu)
 
 /*! \brief Diagnostic print of segment info after panel_dfs().
  */
-void print_panel_seg(int n, int w, int jcol, int nseg,
+void print_panel_seg(int n, int w, int jcol, int nseg, 
 		     int *segrep, int *repfnz)
 {
     int j, k;
-
+    
     for (j = jcol; j < jcol+w; j++) {
 	printf("\tcol %d:\n", j);
 	for (k = 0; k < nseg; k++)
-	    printf("\t\tseg %d, segrep %d, repfnz %d\n", k,
+	    printf("\t\tseg %d, segrep %d, repfnz %d\n", k, 
 			segrep[k], repfnz[(j-jcol)*n + segrep[k]]);
     }
 
@@ -310,7 +320,7 @@ StatInit(SuperLUStat_t *stat)
     panel_size = sp_ienv(1);
     relax = sp_ienv(2);
     w = SUPERLU_MAX(panel_size, relax);
-    stat->panel_histo = intCalloc(w+1);
+    stat->panel_histo = int32Calloc(w+1);
     stat->utime = (double *) SUPERLU_MALLOC(NPHASES * sizeof(double));
     if (!stat->utime) ABORT("SUPERLU_MALLOC fails for stat->utime");
     stat->ops = (flops_t *) SUPERLU_MALLOC(NPHASES * sizeof(flops_t));
@@ -330,7 +340,7 @@ StatInit(SuperLUStat_t *stat)
            "\t 4: row-dim 2D \t %4d \n"
            "\t 5: col-dim 2D \t %4d \n"
            "\t 6: fill ratio \t %4d \n",
-	   sp_ienv(1), sp_ienv(2), sp_ienv(3),
+	   sp_ienv(1), sp_ienv(2), sp_ienv(3), 
 	   sp_ienv(4), sp_ienv(5), sp_ienv(6));
 #endif
 }
@@ -394,7 +404,7 @@ void ifill(int *a, int alen, int ival)
 
 
 
-/*! \brief Get the statistics of the supernodes
+/*! \brief Get the statistics of the supernodes 
  */
 #define NBUCKS 10
 
@@ -408,7 +418,7 @@ void super_stats(int nsuper, int *xsup)
     for (i = 0; i <= nsuper; i++) {
 	isize = xsup[i+1] - xsup[i];
 	if ( isize == 1 ) nsup1++;
-	if ( max_sup_size < isize ) max_sup_size = isize;
+	if ( max_sup_size < isize ) max_sup_size = isize;	
     }
 
     printf("    Supernode statistics:\n\tno of super = %d\n", nsuper+1);
@@ -424,7 +434,7 @@ void super_stats(int nsuper, int *xsup)
         if (whichb >= NBUCKS) whichb = NBUCKS - 1;
         bucket[whichb]++;
     }
-
+    
     printf("\tHistogram of supernode sizes:\n");
     for (i = 0; i < NBUCKS; i++) {
         bl = (float) i * max_sup_size / NBUCKS;
@@ -453,7 +463,7 @@ void check_repfnz(int n, int w, int jcol, int *repfnz)
 {
     int jj, k;
 
-    for (jj = jcol; jj < jcol+w; jj++)
+    for (jj = jcol; jj < jcol+w; jj++) 
 	for (k = 0; k < n; k++)
 	    if ( repfnz[(jj-jcol)*n + k] != EMPTY ) {
 		fprintf(stderr, "col %d, repfnz_col[%d] = %d\n", jj,
@@ -489,7 +499,7 @@ int print_int_vec(char *what, int n, int *vec)
 int slu_PrintInt10(char *name, int len, int *x)
 {
     register int i;
-
+    
     printf("%10s:", name);
     for (i = 0; i < len; ++i)
     {
@@ -500,8 +510,24 @@ int slu_PrintInt10(char *name, int len, int *x)
     return 0;
 }
 
-void check_read(int read_count)
+int check_perm(char *what, int n, int *perm)
 {
-    if(read_count == 0)
-        ABORT("Unable to read the input");
+    register int i;
+    int          *marker;
+    /*marker = (int *) calloc(n, sizeof(int));*/
+    marker = int32Malloc(n);
+    for (i = 0; i < n; ++i) marker[i] = 0;
+
+    for (i = 0; i < n; ++i) {
+	if ( marker[perm[i]] == 1 || perm[i] >= n ) {
+	    printf("%s: Not a valid PERM[%d] = %d\n", what, i, perm[i]);
+	    ABORT("check_perm");
+	} else {
+	    marker[perm[i]] = 1;
+	}
+    }
+
+    SUPERLU_FREE(marker);
+    printf("check_perm: %s: n %d\n", what, n);
+    return 0;
 }

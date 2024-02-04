@@ -13,7 +13,8 @@ class BenchSVDS(Benchmark):
         [25],
         ["abb313", "illc1033", "illc1850", "qh1484", "rbs480a", "tols4000",
          "well1033", "well1850", "west0479", "west2021"],
-        ['arpack', 'lobpcg', 'propack']
+        # TODO: re-include propack
+        ['arpack', 'lobpcg']  # 'propack' failing (Aug. 2023)
     ]
     param_names = ['k', 'problem', 'solver']
 

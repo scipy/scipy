@@ -89,9 +89,7 @@
 
 extern double MACHEP;
 
-double stdtr(k, t)
-int k;
-double t;
+double stdtr(int k, double t)
 {
     double x, rk, z, f, tz, p, xsqk;
     int j;
@@ -139,7 +137,7 @@ double t;
 	    }
 	    p += f * xsqk / z;
 	}
-	p *= 2.0 / NPY_PI;
+	p *= 2.0 / M_PI;
     }
 
 
@@ -169,9 +167,7 @@ double t;
     return (p);
 }
 
-double stdtri(k, p)
-int k;
-double p;
+double stdtri(int k, double p)
 {
     double t, rk, z;
     int rflg;

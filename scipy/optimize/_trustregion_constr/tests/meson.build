@@ -5,6 +5,5 @@ py3.install_sources([
     'test_qp_subproblem.py',
     'test_report.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_trustregion_constr/tests'
 )

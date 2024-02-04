@@ -30,7 +30,7 @@ def _comb_int(N, k):
     return numerator // denominator
 
 
-cdef unsigned long _comb_int_long(unsigned long N, unsigned long k):
+cdef unsigned long _comb_int_long(unsigned long N, unsigned long k) noexcept:
     """
     Compute binom(N, k) for integers.
     Returns 0 if error/overflow encountered.

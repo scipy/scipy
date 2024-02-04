@@ -1,0 +1,23 @@
+name: "Issue Labeler"
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  label_issue:
+    # Permissions needed for labelling issues automatically
+    # https://docs.github.com/en/actions/security-guides/automatic-token-authentication
+    permissions:
+      contents: read
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+    # label based on issue title
+    - uses: github/issue-labeler@v3.3
+      if: github.repository == 'scipy/scipy'
+      with:
+        configuration-path: .github/labeler.yml
+        include-title: 1
+        include-body: 0
+        enable-versioned-regex: 0
+        repo-token: ${{ secrets.GITHUB_TOKEN }}

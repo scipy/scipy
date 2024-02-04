@@ -1,7 +1,7 @@
 import sys
 import math
 import numpy as np
-from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
+from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
@@ -117,7 +117,7 @@ class TestMultivariateCtypesQuad:
 
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, np.inf),
                     0.577215664901532860606512)
 
     def test_threadsafety(self):
@@ -138,7 +138,7 @@ class TestQuad:
         # 2) Infinite integration limits --- Euler's constant
         def myfunc(x):           # Euler's constant integrand
             return -exp(-x)*log(x)
-        assert_quad(quad(myfunc, 0, Inf), 0.577215664901532860606512)
+        assert_quad(quad(myfunc, 0, np.inf), 0.577215664901532860606512)
 
     def test_singular(self):
         # 3) Singular points in region of integration.
@@ -169,7 +169,7 @@ class TestQuad:
 
         a = 4.0
         ome = 3.0
-        assert_quad(quad(myfunc, 0, Inf, args=a, weight='sin', wvar=ome),
+        assert_quad(quad(myfunc, 0, np.inf, args=a, weight='sin', wvar=ome),
                     ome/(a**2 + ome**2))
 
     def test_cosine_weighted_infinite(self):
@@ -179,7 +179,7 @@ class TestQuad:
 
         a = 2.5
         ome = 2.3
-        assert_quad(quad(myfunc, -Inf, 0, args=a, weight='cos', wvar=ome),
+        assert_quad(quad(myfunc, -np.inf, 0, args=a, weight='cos', wvar=ome),
                     a/(a**2 + ome**2))
 
     def test_algebraic_log_weight(self):
@@ -251,8 +251,10 @@ class TestQuad:
     def test_double_integral2(self):
         def func(x0, x1, t0, t1):
             return x0 + x1 + t0 + t1
-        g = lambda x: x
-        h = lambda x: 2 * x
+        def g(x):
+            return x
+        def h(x):
+            return 2 * x
         args = 1, 2
         assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
 
@@ -503,6 +505,39 @@ class TestQuad:
             error_tolerance=6e-8
         )
 
+    def test_complex(self):
+        def tfunc(x):
+            return np.exp(1j*x)
+
+        assert np.allclose(
+                    quad(tfunc, 0, np.pi/2, complex_func=True)[0],
+                    1+1j)
+
+        # We consider a divergent case in order to force quadpack
+        # to return an error message.  The output is compared
+        # against what is returned by explicit integration
+        # of the parts.
+        kwargs = {'a': 0, 'b': np.inf, 'full_output': True,
+                  'weight': 'cos', 'wvar': 1}
+        res_c = quad(tfunc, complex_func=True, **kwargs)
+        res_r = quad(lambda x: np.real(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+        res_i = quad(lambda x: np.imag(np.exp(1j*x)),
+                     complex_func=False,
+                     **kwargs)
+
+        np.testing.assert_equal(res_c[0], res_r[0] + 1j*res_i[0])
+        np.testing.assert_equal(res_c[1], res_r[1] + 1j*res_i[1])
+
+        assert len(res_c[2]['real']) == len(res_r[2:]) == 3
+        assert res_c[2]['real'][2] == res_r[4]
+        assert res_c[2]['real'][1] == res_r[3]
+        assert res_c[2]['real'][0]['lst'] == res_r[2]['lst']
+
+        assert len(res_c[2]['imag']) == len(res_i[2:]) == 1
+        assert res_c[2]['imag'][0]['lst'] == res_i[2]['lst']
+
 
 class TestNQuad:
     def test_fixed_limits(self):
@@ -517,8 +552,8 @@ class TestNQuad:
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
                     opts=[opts_basic, {}, {}, {}], full_output=True)
         assert_quad(res[:-1], 1.5267454070738635)
-        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
-        
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
+
     def test_variable_limits(self):
         scale = .1
 
@@ -637,6 +672,6 @@ class TestNQuad:
     def test_dict_as_opts(self):
         try:
             nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
-        except(TypeError):
+        except TypeError:
             assert False
 

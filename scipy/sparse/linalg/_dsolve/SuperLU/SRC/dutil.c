@@ -36,8 +36,8 @@ at the top-level directory.
 #include "slu_ddefs.h"
 
 void
-dCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz, 
-		       double *nzval, int *rowind, int *colptr,
+dCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int_t nnz, 
+		       double *nzval, int_t *rowind, int_t *colptr,
 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     NCformat *Astore;
@@ -57,8 +57,8 @@ dCreate_CompCol_Matrix(SuperMatrix *A, int m, int n, int nnz,
 }
 
 void
-dCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int nnz, 
-		       double *nzval, int *colind, int *rowptr,
+dCreate_CompRow_Matrix(SuperMatrix *A, int m, int n, int_t nnz, 
+		       double *nzval, int_t *colind, int_t *rowptr,
 		       Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     NRformat *Astore;
@@ -131,9 +131,9 @@ dCopy_Dense_Matrix(int M, int N, double *X, int ldx,
 }
 
 void
-dCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz, 
-			double *nzval, int *nzval_colptr, int *rowind,
-			int *rowind_colptr, int *col_to_sup, int *sup_to_col,
+dCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int_t nnz, 
+			double *nzval, int_t *nzval_colptr, int_t *rowind,
+			int_t *rowind_colptr, int *col_to_sup, int *sup_to_col,
 			Stype_t stype, Dtype_t dtype, Mtype_t mtype)
 {
     SCformat *Lstore;
@@ -161,18 +161,18 @@ dCreate_SuperNode_Matrix(SuperMatrix *L, int m, int n, int nnz,
 /*! \brief Convert a row compressed storage into a column compressed storage.
  */
 void
-dCompRow_to_CompCol(int m, int n, int nnz, 
-		    double *a, int *colind, int *rowptr,
-		    double **at, int **rowind, int **colptr)
+dCompRow_to_CompCol(int m, int n, int_t nnz, 
+		    double *a, int_t *colind, int_t *rowptr,
+		    double **at, int_t **rowind, int_t **colptr)
 {
     register int i, j, col, relpos;
-    int *marker;
+    int_t *marker;
 
     /* Allocate storage for another copy of the matrix. */
     *at = (double *) doubleMalloc(nnz);
-    *rowind = (int *) intMalloc(nnz);
-    *colptr = (int *) intMalloc(n+1);
-    marker = (int *) intCalloc(n);
+    *rowind = (int_t *) intMalloc(nnz);
+    *colptr = (int_t *) intMalloc(n+1);
+    marker = (int_t *) intCalloc(n);
     
     /* Get counts of each column of A, and set up column pointers */
     for (i = 0; i < m; ++i)
@@ -202,7 +202,8 @@ void
 dPrint_CompCol_Matrix(char *what, SuperMatrix *A)
 {
     NCformat     *Astore;
-    register int i,n;
+    register int_t i;
+    register int n;
     double       *dp;
     
     printf("\nCompCol matrix %s:\n", what);
@@ -210,13 +211,13 @@ dPrint_CompCol_Matrix(char *what, SuperMatrix *A)
     n = A->ncol;
     Astore = (NCformat *) A->Store;
     dp = (double *) Astore->nzval;
-    printf("nrow %d, ncol %d, nnz %d\n", A->nrow,A->ncol,Astore->nnz);
+    printf("nrow %d, ncol %d, nnz %ld\n", (int)A->nrow, (int)A->ncol, (long)Astore->nnz);
     printf("nzval: ");
     for (i = 0; i < Astore->colptr[n]; ++i) printf("%f  ", dp[i]);
     printf("\nrowind: ");
-    for (i = 0; i < Astore->colptr[n]; ++i) printf("%d  ", Astore->rowind[i]);
+    for (i = 0; i < Astore->colptr[n]; ++i) printf("%ld  ", (long)Astore->rowind[i]);
     printf("\ncolptr: ");
-    for (i = 0; i <= n; ++i) printf("%d  ", Astore->colptr[i]);
+    for (i = 0; i <= n; ++i) printf("%ld  ", (long)Astore->colptr[i]);
     printf("\n");
     fflush(stdout);
 }
@@ -225,9 +226,10 @@ void
 dPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
 {
     SCformat     *Astore;
-    register int i, j, k, c, d, n, nsup;
+    register int_t i, j, k, c, d, n, nsup;
     double       *dp;
-    int *col_to_sup, *sup_to_col, *rowind, *rowind_colptr;
+    int *col_to_sup, *sup_to_col;
+    int_t *rowind, *rowind_colptr;
     
     printf("\nSuperNode matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
@@ -238,8 +240,8 @@ dPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
     sup_to_col = Astore->sup_to_col;
     rowind_colptr = Astore->rowind_colptr;
     rowind = Astore->rowind;
-    printf("nrow %d, ncol %d, nnz %d, nsuper %d\n", 
-	   A->nrow,A->ncol,Astore->nnz,Astore->nsuper);
+    printf("nrow %d, ncol %d, nnz %lld, nsuper %d\n", 
+	   (int)A->nrow, (int)A->ncol, (long long) Astore->nnz, (int)Astore->nsuper);
     printf("nzval:\n");
     for (k = 0; k <= Astore->nsuper; ++k) {
       c = sup_to_col[k];
@@ -247,7 +249,7 @@ dPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
       for (j = c; j < c + nsup; ++j) {
 	d = Astore->nzval_colptr[j];
 	for (i = rowind_colptr[c]; i < rowind_colptr[c+1]; ++i) {
-	  printf("%d\t%d\t%e\n", rowind[i], j, dp[d++]);
+	  printf("%d\t%d\t%e\n", (int)rowind[i], (int)j, dp[d++]);
 	}
       }
     }
@@ -255,12 +257,12 @@ dPrint_SuperNode_Matrix(char *what, SuperMatrix *A)
     for (i = 0; i < Astore->nzval_colptr[n]; ++i) printf("%f  ", dp[i]);
 #endif
     printf("\nnzval_colptr: ");
-    for (i = 0; i <= n; ++i) printf("%d  ", Astore->nzval_colptr[i]);
+    for (i = 0; i <= n; ++i) printf("%lld  ", (long long)Astore->nzval_colptr[i]);
     printf("\nrowind: ");
     for (i = 0; i < Astore->rowind_colptr[n]; ++i) 
-        printf("%d  ", Astore->rowind[i]);
+        printf("%lld  ", (long long)Astore->rowind[i]);
     printf("\nrowind_colptr: ");
-    for (i = 0; i <= n; ++i) printf("%d  ", Astore->rowind_colptr[i]);
+    for (i = 0; i <= n; ++i) printf("%lld  ", (long long)Astore->rowind_colptr[i]);
     printf("\ncol_to_sup: ");
     for (i = 0; i < n; ++i) printf("%d  ", col_to_sup[i]);
     printf("\nsup_to_col: ");
@@ -280,7 +282,7 @@ dPrint_Dense_Matrix(char *what, SuperMatrix *A)
     printf("\nDense matrix %s:\n", what);
     printf("Stype %d, Dtype %d, Mtype %d\n", A->Stype,A->Dtype,A->Mtype);
     dp = (double *) Astore->nzval;
-    printf("nrow %d, ncol %d, lda %d\n", A->nrow,A->ncol,lda);
+    printf("nrow %d, ncol %d, lda %d\n", (int)A->nrow, (int)A->ncol, lda);
     printf("\nnzval: ");
     for (j = 0; j < A->ncol; ++j) {
         for (i = 0; i < A->nrow; ++i) printf("%f  ", dp[i + j*lda]);
@@ -293,15 +295,15 @@ dPrint_Dense_Matrix(char *what, SuperMatrix *A)
 /*! \brief Diagnostic print of column "jcol" in the U/L factor.
  */
 void
-dprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
+dprint_lu_col(char *msg, int jcol, int pivrow, int_t *xprune, GlobalLU_t *Glu)
 {
-    int     i, k, fsupc;
-    int     *xsup, *supno;
-    int     *xlsub, *lsub;
+    int_t    i, k;
+    int     *xsup, *supno, fsupc;
+    int_t   *xlsub, *lsub;
     double  *lusup;
-    int     *xlusup;
+    int_t   *xlusup;
     double  *ucol;
-    int     *usub, *xusub;
+    int_t   *usub, *xusub;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -314,18 +316,18 @@ dprint_lu_col(char *msg, int jcol, int pivrow, int *xprune, GlobalLU_t *Glu)
     xusub   = Glu->xusub;
     
     printf("%s", msg);
-    printf("col %d: pivrow %d, supno %d, xprune %d\n", 
-	   jcol, pivrow, supno[jcol], xprune[jcol]);
+    printf("col %d: pivrow %d, supno %d, xprune %lld\n", 
+	   jcol, pivrow, supno[jcol], (long long) xprune[jcol]);
     
     printf("\tU-col:\n");
     for (i = xusub[jcol]; i < xusub[jcol+1]; i++)
-	printf("\t%d%10.4f\n", usub[i], ucol[i]);
+	printf("\t%d%10.4f\n", (int)usub[i], ucol[i]);
     printf("\tL-col in rectangular snode:\n");
     fsupc = xsup[supno[jcol]];	/* first col of the snode */
     i = xlsub[fsupc];
     k = xlusup[jcol];
     while ( i < xlsub[fsupc+1] && k < xlusup[jcol+1] ) {
-	printf("\t%d\t%10.4f\n", lsub[i], lusup[k]);
+	printf("\t%d\t%10.4f\n", (int)lsub[i], lusup[k]);
 	i++; k++;
     }
     fflush(stdout);
@@ -364,8 +366,6 @@ void
 dFillRHS(trans_t trans, int nrhs, double *x, int ldx,
          SuperMatrix *A, SuperMatrix *B)
 {
-    NCformat *Astore;
-    double   *Aval;
     DNformat *Bstore;
     double   *rhs;
     double one = 1.0;
@@ -373,8 +373,8 @@ dFillRHS(trans_t trans, int nrhs, double *x, int ldx,
     int      ldc;
     char transc[1];
 
-    Astore = A->Store;
-    Aval   = (double *) Astore->nzval;
+    //Astore = A->Store;
+    //Aval   = (double *) Astore->nzval;
     Bstore = B->Store;
     rhs    = Bstore->nzval;
     ldc    = Bstore->lda;
@@ -448,9 +448,9 @@ dPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
     
     Lstore = (SCformat *) L->Store;
     Ustore = (NCformat *) U->Store;
-    printf("\tNo of nonzeros in factor L = %d\n", Lstore->nnz);
-    printf("\tNo of nonzeros in factor U = %d\n", Ustore->nnz);
-    printf("\tNo of nonzeros in L+U = %d\n", Lstore->nnz + Ustore->nnz);
+    printf("\tNo of nonzeros in factor L = %lld\n", (long long) Lstore->nnz);
+    printf("\tNo of nonzeros in factor U = %lld\n", (long long) Ustore->nnz);
+    printf("\tNo of nonzeros in L+U = %lld\n", (long long) Lstore->nnz + Ustore->nnz);
 	
     printf("L\\U MB %.3f\ttotal MB needed %.3f\n",
 	   mem_usage->for_lu/1e6, mem_usage->total_needed/1e6);
@@ -467,7 +467,6 @@ dPrintPerf(SuperMatrix *L, SuperMatrix *U, mem_usage_t *mem_usage,
 	   rpg, rcond, ferr[0], berr[0], equed);
     
 }
-
 
 
 int

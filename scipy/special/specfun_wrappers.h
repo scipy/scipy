@@ -13,20 +13,18 @@
 #include <numpy/npy_math.h>
 #include <math.h>
 
+#include "npy_2_complexcompat.h"
 #include "sf_error.h"
 
-#define REAL(z) (z).real
-#define IMAG(z) (z).imag
-#define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
 #define ZCONVINF(func,z)                                                \
     do {                                                                \
-        if ((double)REAL((z)) == (double)1.0e300) {                     \
+        if ((double)npy_creal(z) == (double)1.0e300) {    \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            REAL((z)) = INFINITY;                                       \
+            NPY_CSETREAL(&(z), INFINITY);                       \
         }                                                               \
-        if ((double)REAL((z)) == (double)-1.0e300) {                    \
+        if ((double)npy_creal(z) == (double)-1.0e300) {   \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            REAL((z)) = -INFINITY;                                      \
+            NPY_CSETREAL(&(z), -INFINITY);                      \
         }                                                               \
     } while (0)
 #define CONVINF(func, x)                                                \

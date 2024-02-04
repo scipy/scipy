@@ -55,8 +55,8 @@ __all__ = [
     'nautical_mile', 'neutron_mass', 'nu2lambda',
     'ounce', 'oz', 'parsec', 'pebi', 'peta',
     'pi', 'pico', 'point', 'pound', 'pound_force',
-    'proton_mass', 'psi', 'pt', 'short_ton',
-    'sigma', 'slinch', 'slug', 'speed_of_light',
+    'proton_mass', 'psi', 'pt', 'quecto', 'quetta', 'ronna', 'ronto',
+    'short_ton', 'sigma', 'slinch', 'slug', 'speed_of_light',
     'speed_of_sound', 'stone', 'survey_foot',
     'survey_mile', 'tebi', 'tera', 'ton_TNT',
     'torr', 'troy_ounce', 'troy_pound', 'u',
@@ -70,6 +70,8 @@ pi = _math.pi
 golden = golden_ratio = (1 + _math.sqrt(5)) / 2
 
 # SI prefixes
+quetta = 1e30
+ronna = 1e27
 yotta = 1e24
 zetta = 1e21
 exa = 1e18
@@ -90,6 +92,8 @@ femto = 1e-15
 atto = 1e-18
 zepto = 1e-21
 yocto = 1e-24
+ronto = 1e-27
+quecto = 1e-30
 
 # binary prefixes
 kibi = 2**10
@@ -192,7 +196,8 @@ fluid_ounce_imp = gallon_imp / 160
 # speed in meter per second
 kmh = 1e3 / hour
 mph = mile / hour
-mach = speed_of_sound = 340.5  # approx value at 15 degrees in 1 atm. Is this a common value?
+# approx value of mach at 15 degrees in 1 atm. Is this a common value?
+mach = speed_of_sound = 340.5
 knot = nautical_mile / hour
 
 # temperature in kelvin

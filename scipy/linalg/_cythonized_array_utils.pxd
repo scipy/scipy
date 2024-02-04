@@ -34,7 +34,7 @@ ctypedef fused np_complex_numeric_t:
     cnp.complex128_t
 
 
-cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c, int n) nogil
-cdef (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) nogil
-cdef bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) nogil
-cdef bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) nogil
+cdef void swap_c_and_f_layout(lapack_t *a, lapack_t *b, int r, int c) noexcept nogil
+cdef (int, int) band_check_internal_c(np_numeric_t[:, ::1]A) noexcept nogil
+cdef bint is_sym_her_real_c_internal(np_numeric_t[:, ::1]A) noexcept nogil
+cdef bint is_sym_her_complex_c_internal(np_complex_numeric_t[:, ::1]A) noexcept nogil

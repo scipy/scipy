@@ -1,4 +1,3 @@
-
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 # avoid new uses of the following; prefer assert/np.testing.assert_allclose
@@ -101,7 +100,7 @@ class TestEntropy:
     def test_entropy_shape_mismatch(self):
         x = np.random.rand(10, 1, 12)
         y = np.random.rand(11, 2)
-        message = "shape mismatch: objects cannot be broadcast"
+        message = "Array shapes are incompatible for broadcasting."
         with pytest.raises(ValueError, match=message):
             stats.entropy(x, y)
 

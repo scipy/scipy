@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import abs, sin, cos, exp, floor, log, arange, prod, sqrt, sum
 

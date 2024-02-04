@@ -12,7 +12,7 @@ ctypedef double complex double_complex
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
 
-cdef public int wrap_PyUFunc_getfperr() nogil:
+cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
     """
     Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
     this avoids messing with the UNIQUE_SYMBOL #defines
@@ -27,5 +27,5 @@ np.import_array()
 np.import_ufunc()
 
 cdef void _set_action(sf_error.sf_error_t code,
-                      sf_error.sf_action_t action) nogil:
+                      sf_error.sf_action_t action) noexcept nogil:
     sf_error.set_action(code, action)

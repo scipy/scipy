@@ -94,8 +94,7 @@ static double C1 = 1.3862943611198906188E0;	/* log(4) */
 
 extern double MACHEP;
 
-double ellpk(x)
-double x;
+double ellpk(double x)
 {
 
     if (x < 0.0) {

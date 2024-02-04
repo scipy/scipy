@@ -36,7 +36,7 @@ class TestBinnedStatistic:
         # comparison
         x = self.x
         v = self.v
-        statistics = [u'mean', u'median', u'count', u'sum']
+        statistics = ['mean', 'median', 'count', 'sum']
         for statistic in statistics:
             binned_statistic(x, v, statistic, bins=10)
 
@@ -480,7 +480,7 @@ class TestBinnedStatistic:
     def test_dd_binned_statistic_result(self):
         # NOTE: tests the reuse of bin_edges from previous call
         x = np.random.random((10000, 3))
-        v = np.random.random((10000))
+        v = np.random.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = (bins, bins, bins)
 
@@ -495,7 +495,7 @@ class TestBinnedStatistic:
 
     def test_dd_zero_dedges(self):
         x = np.random.random((10000, 3))
-        v = np.random.random((10000))
+        v = np.random.random(10000)
         bins = np.linspace(0, 1, 10)
         bins = np.append(bins, 1)
         bins = (bins, bins, bins)

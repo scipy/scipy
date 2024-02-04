@@ -83,4 +83,3 @@ def test_tukeylambda_stats_invalid():
     lam = [-1.0, -0.25]
     kurt = tukeylambda_kurtosis(lam)
     assert_equal(kurt, np.array([np.nan, np.inf]))
-

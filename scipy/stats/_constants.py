@@ -15,8 +15,13 @@ _XMAX = np.finfo(float).max
 # when exp(something) will overflow
 _LOGXMAX = np.log(_XMAX)
 
-# The smallest [in magnitude] usable floating value.
+# The smallest [in magnitude] usable (i.e. not subnormal) double precision
+# floating value.
 _XMIN = np.finfo(float).tiny
+
+# The log of the smallest [in magnitude] usable (i.e not subnormal)
+# double precision floating value.
+_LOGXMIN = np.log(_XMIN)
 
 # -special.psi(1)
 _EULER = 0.577215664901532860606512090082402431042

@@ -8,7 +8,6 @@ import numpy as np
 from math import pow
 
 from scipy import optimize
-from scipy.sparse._sputils import matrix
 
 
 class TestTnc:
@@ -128,13 +127,11 @@ class TestTnc:
         assert_equal(len(iterx), res.nit)
 
     def test_minimize_tnc1b(self):
-        x0, bnds = matrix([-2, 1]), ([-np.inf, None],[-1.5, None])
+        x0, bnds = np.array([-2, 1]), ([-np.inf, None], [-1.5, None])
         xopt = [1, 1]
-        message = 'Use of `minimize` with `x0.ndim != 1` is deprecated.'
-        with pytest.warns(DeprecationWarning, match=message):
-            x = optimize.minimize(self.f1, x0, method='TNC',
-                                  bounds=bnds, options=self.opts).x
-            assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4)
+        x = optimize.minimize(self.f1, x0, method='TNC',
+                              bounds=bnds, options=self.opts).x
+        assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4)
 
     def test_minimize_tnc1c(self):
         x0, bnds = [-2, 1], ([-np.inf, None],[-1.5, None])
@@ -346,10 +343,3 @@ class TestTnc:
         assert_allclose(res2.x, res.x)
         assert_allclose(res2.fun, res.fun)
         assert_equal(res2.nfev, res.nfev)
-
-    def test_maxiter_depreciations(self):
-        msg = "'maxiter' has been deprecated in favor of 'maxfun'"
-        with pytest.warns(DeprecationWarning, match=msg):
-            optimize.minimize(
-                self.f1, [1, 3], method="TNC", options={"maxiter": 1}
-            )

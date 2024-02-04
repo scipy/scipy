@@ -169,7 +169,7 @@ double psi(double x)
 	    sf_error("psi", SF_ERROR_SINGULAR, NULL);
 	    return NAN;
 	}
-	y = -NPY_PI / tan(NPY_PI * r);
+	y = -M_PI / tan(M_PI * r);
 	x = 1.0 - x;
     }
 
@@ -179,7 +179,7 @@ double psi(double x)
 	for (i = 1; i < n; i++) {
 	    y += 1.0 / i;
 	}
-	y -= NPY_EULER;
+	y -= SCIPY_EULER;
 	return y;
     }
 

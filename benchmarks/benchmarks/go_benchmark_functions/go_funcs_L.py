@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import sum, cos, exp, pi, arange, sin
 from .go_benchmark import Benchmark
 
@@ -204,7 +203,8 @@ class Levy03(Benchmark):
 
     .. math::
 
-        f_{\text{Levy03}}(\mathbf{x}) = \sin^2(\pi y_1)+\sum_{i=1}^{n-1}(y_i-1)^2[1+10\sin^2(\pi y_{i+1})]+(y_n-1)^2
+        f_{\text{Levy03}}(\mathbf{x}) =
+        \sin^2(\pi y_1)+\sum_{i=1}^{n-1}(y_i-1)^2[1+10\sin^2(\pi y_{i+1})]+(y_n-1)^2
 
     Where, in this exercise:
 
@@ -213,7 +213,8 @@ class Levy03(Benchmark):
         y_i=1+\frac{x_i-1}{4}
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i=1,...,n`.
 
     *Global optimum*: :math:`f(x_i) = 0` for :math:`x_i = 1` for :math:`i=1,...,n`
 
@@ -255,11 +256,15 @@ class Levy05(Benchmark):
 
     .. math::
 
-        f_{\text{Levy05}}(\mathbf{x}) = \sum_{i=1}^{5} i \cos \left[(i-1)x_1 + i \right] \times \sum_{j=1}^{5} j \cos \left[(j+1)x_2 + j \right] + (x_1 + 1.42513)^2 + (x_2 + 0.80032)^2
+        f_{\text{Levy05}}(\mathbf{x}) =
+        \sum_{i=1}^{5} i \cos \left[(i-1)x_1 + i \right] \times \sum_{j=1}^{5} j
+        \cos \left[(j+1)x_2 + j \right] + (x_1 + 1.42513)^2 + (x_2 + 0.80032)^2
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]` for :math:`i=1,...,n`.
+    Here, :math:`n` represents the number of dimensions and
+    :math:`x_i \in [-10, 10]` for :math:`i=1,...,n`.
 
-    *Global optimum*: :math:`f(x_i) = -176.1375779` for :math:`\mathbf{x} = [-1.30685, -1.42485]`.
+    *Global optimum*: :math:`f(x_i) = -176.1375779` for
+    :math:`\mathbf{x} = [-1.30685, -1.42485]`.
 
     .. [1] Mishra, S. Global Optimization by Differential Evolution and
     Particle Swarm Methods: Evaluation on Some Benchmark Functions.

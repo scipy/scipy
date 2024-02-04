@@ -8,6 +8,10 @@ PYTHON = python3
 SPHINXOPTS    =
 SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 
+# Environment variables needed for notebooks (see gh-17322):
+export SQLALCHEMY_SILENCE_UBER_WARNING?=1
+export JUPYTER_PLATFORM_DIRS?=1
+
 FILES=
 
 # Internal variables.
@@ -71,7 +75,7 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install -r ../doc_requirements.txt
+	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 

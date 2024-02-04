@@ -67,26 +67,26 @@ ilu_dpanel_dfs(
    int	      *repfnz,	   /* out */
    int	      *marker,	   /* out */
    int	      *parent,	   /* working array */
-   int	      *xplore,	   /* working array */
+   int_t      *xplore,	   /* working array */
    GlobalLU_t *Glu	   /* modified */
 )
 {
 
     NCPformat *Astore;
     double    *a;
-    int       *asub;
-    int       *xa_begin, *xa_end;
+    int_t     *asub;
+    int_t     *xa_begin, *xa_end;
     int       krep, chperm, chmark, chrep, oldrep, kchild, myfnz;
-    int       k, krow, kmark, kperm;
-    int       xdfs, maxdfs, kpar;
+    int       krow, kmark, kperm, kpar;
+    int_t     xdfs, maxdfs, k;
     int       jj;	   /* index through each column in the panel */
     int       *marker1;    /* marker1[jj] >= jcol if vertex jj was visited
 			      by a previous column within this panel. */
     int       *repfnz_col; /* start of each column in the panel */
     double    *dense_col;  /* start of each column in the panel */
-    int       nextl_col;   /* next available position in panel_lsub[*,jj] */
+    int_t     nextl_col;   /* next available position in panel_lsub[*,jj] */
     int       *xsup, *supno;
-    int       *lsub, *xlsub;
+    int_t     *lsub, *xlsub;
     double    *amax_col;
     register double tmp;
 

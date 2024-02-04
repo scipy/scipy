@@ -1,5 +1,5 @@
 fs = import('fs')
-if not fs.exists('boost/README.rst')
+if not fs.exists('boost_math/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
 if not fs.exists('highs/README.md')
@@ -8,26 +8,23 @@ endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('array_api_compat/README.md')
+  error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('pocketfft/README.md')
+  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
 
-_lib_pxd = custom_target('_lib_pxd',
-  output: [
-    '__init__.py',
-    '_ccallback_c.pxd',
-    'ccallback.pxd',
-    'messagestream.pxd',
-  ],
-  input: [
-    '__init__.py',
-    '_ccallback_c.pxd',
-    'ccallback.pxd',
-    'messagestream.pxd',
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_lib_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_ccallback_c.pxd'),
+  fs.copyfile('ccallback.pxd'),
+  fs.copyfile('messagestream.pxd'),
+]
 
 # Cython pyx -> c generator with _lib_pxd dependency
-lib_cython_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+lib_cython_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
   depends : [_cython_tree, _lib_pxd])
 
@@ -107,6 +104,7 @@ py3.extension_module('messagestream',
 
 python_sources = [
   '__init__.py',
+  '_array_api.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
@@ -126,8 +124,58 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,          # Will be installed next to binaries
-  subdir: 'scipy/_lib'  # Folder relative to site-packages to install to
+  subdir: 'scipy/_lib'
+)
+
+# `array_api_compat` install to simplify import path;
+# should be updated whenever new files are added to `array_api_compat`
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/__init__.py',
+    'array_api_compat/array_api_compat/_internal.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat',
+)
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/common/__init__.py',
+    'array_api_compat/array_api_compat/common/_aliases.py',
+    'array_api_compat/array_api_compat/common/_helpers.py',
+    'array_api_compat/array_api_compat/common/_linalg.py',
+    'array_api_compat/array_api_compat/common/_typing.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/common',
+)
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/cupy/__init__.py',
+    'array_api_compat/array_api_compat/cupy/_aliases.py',
+    'array_api_compat/array_api_compat/cupy/_typing.py',
+    'array_api_compat/array_api_compat/cupy/linalg.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/cupy',
+)
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/numpy/__init__.py',
+    'array_api_compat/array_api_compat/numpy/_aliases.py',
+    'array_api_compat/array_api_compat/numpy/_typing.py',
+    'array_api_compat/array_api_compat/numpy/linalg.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/numpy',
+)
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/torch/__init__.py',
+    'array_api_compat/array_api_compat/torch/_aliases.py',
+    'array_api_compat/array_api_compat/torch/linalg.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/torch',
 )
 
 subdir('_uarray')

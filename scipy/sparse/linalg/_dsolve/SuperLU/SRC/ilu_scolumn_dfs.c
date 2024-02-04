@@ -69,23 +69,24 @@ ilu_scolumn_dfs(
 	   int	      *repfnz,	 /* modified */
 	   int	      *marker,	 /* modified */
 	   int	      *parent,	 /* working array */
-	   int	      *xplore,	 /* working array */
+	   int_t      *xplore,	 /* working array */
 	   GlobalLU_t *Glu	 /* modified */
 	   )
 {
 
-    int     jcolp1, jcolm1, jsuper, nsuper, nextl;
+    int     jcolp1, jcolm1, jsuper, nsuper;
     int     k, krep, krow, kmark, kperm;
     int     *marker2;		/* Used for small panel LU */
     int     fsupc;		/* First column of a snode */
     int     myfnz;		/* First nonz column of a U-segment */
-    int     chperm, chmark, chrep, kchild;
-    int     xdfs, maxdfs, kpar, oldrep;
-    int     jptr, jm1ptr;
-    int     ito, ifrom; 	/* Used to compress row subscripts */
-    int     mem_error;
-    int     *xsup, *supno, *lsub, *xlsub;
-    int     nzlmax;
+    int     chperm, chmark, chrep, kchild, kpar, oldrep;
+    int_t   xdfs, maxdfs; 
+    int_t   jptr, jm1ptr;
+    int_t   ito, ifrom; 	/* Used to compress row subscripts */
+    int_t   mem_error, nextl;
+    int     *xsup, *supno;
+    int_t   *lsub, *xlsub;
+    int_t   nzlmax;
     int     maxsuper;
 
     xsup    = Glu->xsup;

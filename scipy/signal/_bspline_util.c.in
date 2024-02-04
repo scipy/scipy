@@ -23,10 +23,7 @@
 #endif
 
 void
-compute_root_from_lambda(lambda, r, omega)
-     double lambda;
-     double *r;
-     double *omega;
+compute_root_from_lambda(double lambda, double *r, double *omega)
 {
     double xi;
     double tmp, tmp2;

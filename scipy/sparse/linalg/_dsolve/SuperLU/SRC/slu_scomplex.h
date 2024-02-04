@@ -28,7 +28,7 @@ at the top-level directory.
 #ifndef SCOMPLEX_INCLUDE
 #define SCOMPLEX_INCLUDE
 
-typedef struct { float r, i; } complex;
+typedef struct { float r, i; } singlecomplex;
 
 
 /* Macro definitions */
@@ -68,14 +68,14 @@ extern "C" {
 #endif
 
 /* Prototypes for functions in scomplex.c */
-void c_div(complex *, complex *, complex *);
-double c_abs(complex *);     /* exact */
-double c_abs1(complex *);    /* approximate */
-void c_exp(complex *, complex *);
-void r_cnjg(complex *, complex *);
-double r_imag(complex *);
-complex c_sgn(complex *);
-complex c_sqrt(complex *);
+void c_div(singlecomplex *, singlecomplex *, singlecomplex *);
+double c_abs(singlecomplex *);     /* exact */
+double c_abs1(singlecomplex *);    /* approximate */
+void c_exp(singlecomplex *, singlecomplex *);
+void r_cnjg(singlecomplex *, singlecomplex *);
+double r_imag(singlecomplex *);
+singlecomplex c_sgn(singlecomplex *);
+singlecomplex c_sqrt(singlecomplex *);
 
 
 

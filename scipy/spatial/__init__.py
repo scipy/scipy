@@ -5,6 +5,11 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 .. currentmodule:: scipy.spatial
 
+.. toctree::
+   :hidden:
+
+   spatial.distance
+
 Spatial transformations
 =======================
 
@@ -100,7 +105,7 @@ Warnings / Errors used in :mod:`scipy.spatial`
    :toctree: generated/
 
    QhullError
-"""
+"""  # noqa: E501
 
 from ._kdtree import *
 from ._ckdtree import *

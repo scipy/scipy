@@ -212,6 +212,9 @@ Raw statistical functions
 
 .. seealso:: :mod:`scipy.stats`: Friendly versions of these functions.
 
+Binomial distribution
+^^^^^^^^^^^^^^^^^^^^^
+
 .. autosummary::
    :toctree: generated/
 
@@ -220,66 +223,172 @@ Raw statistical functions
    bdtri        -- Inverse function to `bdtr` with respect to `p`.
    bdtrik       -- Inverse function to `bdtr` with respect to `k`.
    bdtrin       -- Inverse function to `bdtr` with respect to `n`.
+
+Beta distribution
+^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    btdtr        -- Cumulative distribution function of the beta distribution.
    btdtri       -- The `p`-th quantile of the beta distribution.
    btdtria      -- Inverse of `btdtr` with respect to `a`.
    btdtrib      -- btdtria(a, p, x).
+
+F distribution
+^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    fdtr         -- F cumulative distribution function.
    fdtrc        -- F survival function.
    fdtri        -- The `p`-th quantile of the F-distribution.
    fdtridfd     -- Inverse to `fdtr` vs dfd.
+
+Gamma distribution
+^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    gdtr         -- Gamma distribution cumulative distribution function.
    gdtrc        -- Gamma distribution survival function.
    gdtria       -- Inverse of `gdtr` vs a.
    gdtrib       -- Inverse of `gdtr` vs b.
    gdtrix       -- Inverse of `gdtr` vs x.
+
+Negative binomial distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nbdtr        -- Negative binomial cumulative distribution function.
    nbdtrc       -- Negative binomial survival function.
    nbdtri       -- Inverse of `nbdtr` vs `p`.
    nbdtrik      -- Inverse of `nbdtr` vs `k`.
    nbdtrin      -- Inverse of `nbdtr` vs `n`.
+
+Noncentral F distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    ncfdtr       -- Cumulative distribution function of the non-central F distribution.
    ncfdtridfd   -- Calculate degrees of freedom (denominator) for the noncentral F-distribution.
    ncfdtridfn   -- Calculate degrees of freedom (numerator) for the noncentral F-distribution.
    ncfdtri      -- Inverse cumulative distribution function of the non-central F distribution.
    ncfdtrinc    -- Calculate non-centrality parameter for non-central F distribution.
+
+Noncentral t distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nctdtr       -- Cumulative distribution function of the non-central `t` distribution.
    nctdtridf    -- Calculate degrees of freedom for non-central t distribution.
    nctdtrit     -- Inverse cumulative distribution function of the non-central t distribution.
    nctdtrinc    -- Calculate non-centrality parameter for non-central t distribution.
+
+Normal distribution
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    nrdtrimn     -- Calculate mean of normal distribution given other params.
    nrdtrisd     -- Calculate standard deviation of normal distribution given other params.
+   ndtr         -- Normal cumulative distribution function.
+   log_ndtr     -- Logarithm of normal cumulative distribution function.
+   ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Poisson distribution
+^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    pdtr         -- Poisson cumulative distribution function.
    pdtrc        -- Poisson survival function.
    pdtri        -- Inverse to `pdtr` vs m.
    pdtrik       -- Inverse to `pdtr` vs k.
+
+Student t distribution
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    stdtr        -- Student t distribution cumulative distribution function.
    stdtridf     -- Inverse of `stdtr` vs df.
    stdtrit      -- Inverse of `stdtr` vs `t`.
+
+Chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chdtr        -- Chi square cumulative distribution function.
    chdtrc       -- Chi square survival function.
    chdtri       -- Inverse to `chdtrc`.
    chdtriv      -- Inverse to `chdtr` vs `v`.
-   ndtr         -- Gaussian cumulative distribution function.
-   log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
-   ndtri        -- Inverse of `ndtr` vs x.
-   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+
+Non-central chi square distribution
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
    chndtrix     -- Inverse to `chndtr` vs `x`.
+
+Kolmogorov distribution
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function.
    smirnovi     -- Inverse to `smirnov`.
    kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution.
    kolmogi      -- Inverse function to `kolmogorov`.
-   tklmbda      -- Tukey-Lambda cumulative distribution function.
-   logit        -- Logit ufunc for ndarrays.
-   expit        -- Logistic sigmoid function.
-   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Box-Cox transformation
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
    inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+
+
+Sigmoidal functions
+^^^^^^^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   logit        -- Logit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
+
+Miscellaneous
+^^^^^^^^^^^^^
+
+.. autosummary::
+   :toctree: generated/
+
+   tklmbda      -- Tukey-Lambda cumulative distribution function.
    owens_t      -- Owen's T Function.
 
 
@@ -313,7 +422,9 @@ Gamma and related functions
    beta         -- Beta function.
    betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
+   betaincc     -- Complemented incomplete beta integral.
    betaincinv   -- Inverse function to beta integral.
+   betainccinv  -- Inverse of the complemented incomplete beta integral.
    psi          -- The digamma function.
    rgamma       -- Gamma function inverted.
    polygamma    -- Polygamma function n.
@@ -535,7 +646,7 @@ Spheroidal wave functions
 
    pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
    pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
-   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the second kind and its derivative.
    obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
    obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
    obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.
@@ -596,6 +707,7 @@ Combinatorics
 
    comb -- The number of combinations of N things taken k at a time.
    perm -- Permutations of N things taken k at a time, i.e., k-permutations of N.
+   stirling2 -- Stirling numbers of the second kind.
 
 Lambert W and related functions
 -------------------------------
@@ -656,12 +768,19 @@ Convenience functions
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
 
-"""
+"""  # noqa: E501
+
+import warnings
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
+
+# Replace some function definitions from _ufuncs to add Array API support
+from ._support_alternative_backends import (
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,
+    gammaln, gammainc, gammaincc, logit, expit)
 
 from . import _basic
 from ._basic import *
@@ -688,7 +807,11 @@ from ._spherical_bessel import (
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
+# We replace some function definitions from _ufuncs with those from
+# _support_alternative_backends above, but those are all listed in _ufuncs.__all__,
+# so there is no need to consider _support_alternative_backends.__all__ here.
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__
+__all__ += [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',
@@ -708,3 +831,33 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)
 del PytestTester
+
+_depr_msg = ('\nThis function was deprecated in SciPy 1.12.0, and will be '
+             'removed in SciPy 1.14.0.  Use scipy.special.{} instead.')
+
+
+def btdtr(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betainc'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtr(*args, **kwargs)
+
+
+btdtr.__doc__ = _ufuncs.btdtr.__doc__  # type: ignore [misc]
+
+
+def btdtri(*args, **kwargs):  # type: ignore [no-redef]
+    warnings.warn(_depr_msg.format('betaincinv'), category=DeprecationWarning,
+                  stacklevel=2)
+    return _ufuncs.btdtri(*args, **kwargs)
+
+
+btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    return os.path.dirname(__file__)

@@ -74,8 +74,7 @@ static char name[] = "rgamma";
 extern double MAXLOG;
 
 
-double rgamma(x)
-double x;
+double rgamma(double x)
 {
     double w, y, z;
     int sign;
@@ -97,7 +96,7 @@ double x;
 	    sign = -1;
 	}
 
-	y = log(w * z) - log(NPY_PI) + lgam(w);
+	y = log(w * z) - log(M_PI) + lgam(w);
 	if (y < -MAXLOG) {
 	    sf_error(name, SF_ERROR_UNDERFLOW, NULL);
 	    return (sign * 0.0);

@@ -1,4 +1,4 @@
-		SuperLU (Version 5.2.x)
+		SuperLU (Version 6.0.1)
 		=======================
 
 SuperLU contains a set of subroutines to solve a sparse linear system 
@@ -39,11 +39,61 @@ There are two ways to install the package. One uses CMake build system,
 the other requires users to edit makefile manually.  The procedures
 are described below.
 
-1. Manual installation with makefile.      
+1. Using CMake build system. 
+   You will need to create a build tree from which to invoke CMake.
+
+   From the top level directory, do:
+     	mkdir build ; cd build
+   	cmake ..
+
+     or with more options, e.g.,
+        cmake \
+	      -DCMAKE_INSTALL_PREFIX=../build \
+	      -DCMAKE_INSTALL_INCLUDEDIR=/my/custom/path \
+	      ..
+   
+   You should link with a fast BLAS library by specifying the following:
+              -DTPL_BLAS_LIBRARIES=<blas_library_name>
+	      
+   If you do not have a BLAS library, you may use the internal CBLAS/ distribution, which can be very slow:
+              -Denable_internal_blaslib=YES
+
+   For very large problems, you need to use 64-bit indexing, by the following cmake option:
+              -DXSDK_INDEX_SIZE=64
+
+   Also, METIS ordering is often better for large problems. you need to install METIS package
+   and define the two environment variables: METIS_ROOT and METIS_BUILD_DIR
+
+       export METIS_ROOT=<Prefix directory of the METIS installation>
+       export METIS_BUILD_DIR=${METIS_ROOT}/build/Linux-x86_64
+
+   Then, in cmake command, add the following definitions:
+       -DTPL_ENABLE_METISLIB=ON \
+       -DTPL_METIS_INCLUDE_DIRS="${METIS_ROOT}/metis/include" \
+       -DTPL_METIS_LIBRARIES="${METIS_BUILD_DIR}/libmetis/libmetis.a" \
+
+   
+   To actually build, type:
+   	make
+
+   To install the library, type:
+        make install
+
+   To run the installation test, type:
+   	make test (or: ctest)
+
+   	The test results are in the files below:
+       	    build/TESTING/s_test.out   # single precision, real
+       	    build/TESTING/d_test.out   # double precision, real
+       	    build/TESTING/c_test.out   # single precision, complex
+       	    build/TESTING/z_test.out   # double precision, complex
+
+
+2. Manual installation with makefile.      
    Before installing the package, please examine the three things dependent 
    on your system setup:
 
-   1.1 Edit the make.inc include file.
+   2.1 Edit the make.inc include file.
        This make include file is referenced inside each of the Makefiles
        in the various subdirectories. As a result, there is no need to 
        edit the Makefiles in the subdirectories. All information that is
@@ -62,7 +112,7 @@ are described below.
 	For the systems other than listed above, slight modifications to the 
    	make.inc file will need to be made.
    
-   1.2. The BLAS library.
+   2.2. The BLAS library.
        	If there is BLAS library available on your machine, you may define
        	the following in the file SuperLU/make.inc:
             BLASDEF = -DUSE_VENDOR_BLAS
@@ -81,7 +131,7 @@ are described below.
        	   to make the BLAS library from the routines in the	
 	   CBLAS/ subdirectory.
 
-   1.3. C preprocessor definition CDEFS.
+   2.3. C preprocessor definition CDEFS.
    	In the header file SRC/slu_Cnames.h, we use macros to determine how
    	C routines should be named so that they are callable by Fortran.
    	(Some vendor-supplied BLAS libraries do not have C interface. So the 
@@ -95,7 +145,7 @@ are described below.
 		     that compiled by C;
         o -DUpCase: Fortran expects a C routine name to be all uppercase.
    
-   1.4. The Matlab MEX-file interface.
+   2.4. The Matlab MEX-file interface.
    	The MATLAB/ subdirectory includes Matlab C MEX-files, so that 
    	our factor and solve routines can be called as alternatives to those
     	built into Matlab. In the file SuperLU/make.inc, define MATLAB to be
@@ -119,34 +169,6 @@ are described below.
        TESTING/ztest.out   # double precision, complex
 
 
-2. Using CMake build system. 
-   You will need to create a build tree from which to invoke CMake.
-
-   From the top level directory, do:
-     	mkdir build ; cd build
-   	cmake ..
-
-     or with more options, e.g.,
-        cmake .. \
-	      -DCMAKE_INSTALL_PREFIX=../build
-	      -DCMAKE_INSTALL_INCLUDEDIR=/my/custom/path
-
-   To actually build, type:
-   	make
-
-   To install the library, type:
-        make install
-
-   To run the installation test, type:
-   	make test (or: ctest)
-
-   	The test results are in the files below:
-       	    build/TESTING/s_test.out   # single precision, real
-       	    build/TESTING/d_test.out   # double precision, real
-       	    build/TESTING/c_test.out   # single precision, complex
-       	    build/TESTING/z_test.out   # double precision, complex
-
-
 --------------------
 | RELEASE VERSIONS |
 --------------------
@@ -162,3 +184,7 @@ are described below.
     July 26,     2015  Version 5.0
     December 3,  2015  Version 5.1
     April 8,     2016  Version 5.2.0
+    May 22,      2016  Version 5.2.1
+    October 17,  2020  Version 5.2.2
+    April 5,     2023  Version 6.0.0
+    August 5,    2023  Version 6.0.1

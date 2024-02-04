@@ -29,7 +29,7 @@ at the top-level directory.
 
 
 /*! \brief Complex Division c = a/b */
-void c_div(complex *c, complex *a, complex *b)
+void c_div(singlecomplex *c, singlecomplex *a, singlecomplex *b)
 {
     float ratio, den;
     float abr, abi, cr, ci;
@@ -59,7 +59,7 @@ void c_div(complex *c, complex *a, complex *b)
 
 
 /*! \brief Returns sqrt(z.r^2 + z.i^2) */
-double c_abs(complex *z)
+double c_abs(singlecomplex *z)
 {
     float temp;
     float real = z->r;
@@ -81,7 +81,7 @@ double c_abs(complex *z)
 
 
 /*! \brief Approximates the abs. Returns abs(z.r) + abs(z.i) */
-double c_abs1(complex *z)
+double c_abs1(singlecomplex *z)
 {
     float real = z->r;
     float imag = z->i;
@@ -93,7 +93,7 @@ double c_abs1(complex *z)
 }
 
 /*! \brief Return the exponentiation */
-void c_exp(complex *r, complex *z)
+void c_exp(singlecomplex *r, singlecomplex *z)
 {
     float expx;
 
@@ -103,24 +103,24 @@ void c_exp(complex *r, complex *z)
 }
 
 /*! \brief Return the complex conjugate */
-void r_cnjg(complex *r, complex *z)
+void r_cnjg(singlecomplex *r, singlecomplex *z)
 {
     r->r = z->r;
     r->i = -z->i;
 }
 
 /*! \brief Return the imaginary part */
-double r_imag(complex *z)
+double r_imag(singlecomplex *z)
 {
     return (z->i);
 }
 
 
 /*! \brief SIGN functions for complex number. Returns z/abs(z) */
-complex c_sgn(complex *z)
+singlecomplex c_sgn(singlecomplex *z)
 {
     register float t = c_abs(z);
-    register complex retval;
+    register singlecomplex retval;
 
     if (t == 0.0) {
 	retval.r = 1.0, retval.i = 0.0;
@@ -132,9 +132,9 @@ complex c_sgn(complex *z)
 }
 
 /*! \brief Square-root of a complex number. */
-complex c_sqrt(complex *z)
+singlecomplex c_sqrt(singlecomplex *z)
 {
-    complex retval;
+    singlecomplex retval;
     register float cr, ci, real, imag;
 
     real = z->r;

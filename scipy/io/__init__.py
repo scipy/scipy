@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-u"""
+"""
 ==================================
 Input and output (:mod:`scipy.io`)
 ==================================
@@ -103,7 +102,7 @@ from ._netcdf import netcdf_file, netcdf_variable
 # Fortran file support
 from ._fortran import FortranFile, FortranEOFError, FortranFormattingError
 
-from ._mmio import mminfo, mmread, mmwrite
+from ._fast_matrix_market import mminfo, mmread, mmwrite
 from ._idl import readsav
 from ._harwell_boeing import hb_read, hb_write
 

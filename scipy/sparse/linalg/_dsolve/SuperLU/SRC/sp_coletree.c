@@ -167,8 +167,8 @@ void finalize_disjoint_sets (
  */
 int
 sp_coletree(
-	    int *acolst, int *acolend, /* column start and end past 1 */
-	    int *arow,                 /* row indices of A */
+	    int_t *acolst, int_t *acolend, /* column start and end past 1 */
+	    int_t *arow,                 /* row indices of A */
 	    int nr, int nc,            /* dimension of A */
 	    int *parent	               /* parent in elim tree */
 	    )
@@ -246,6 +246,7 @@ sp_coletree(
  *  Based on code written by John Gilbert at CMI in 1987.
  */
 
+#if 0  // replaced by a non-recursive version 
 static
 /*
  * Depth-first search from vertex v.
@@ -266,7 +267,7 @@ void etdfs (
 	/* post[postnum++] = v; in Matlab */
 	post[v] = (*postnum)++;    /* Modified by X. Li on 08/10/07 */
 }
-
+#endif
 
 static
 /*

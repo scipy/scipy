@@ -57,9 +57,11 @@ def do_plot(is_h=True):
 
     mpmath.mp.dps = 50
     if is_h:
-        sh = lambda v, z: float(mpmath.struveh(mpmath.mpf(v), mpmath.mpf(z)))
+        def sh(v, z):
+            return float(mpmath.struveh(mpmath.mpf(v), mpmath.mpf(z)))
     else:
-        sh = lambda v, z: float(mpmath.struvel(mpmath.mpf(v), mpmath.mpf(z)))
+        def sh(v, z):
+            return float(mpmath.struvel(mpmath.mpf(v), mpmath.mpf(z)))
     ex = np.vectorize(sh, otypes='d')(vs[:,None], zs[None,:])
 
     err_a = err_metric(ra[0], ex) + 1e-300
@@ -77,17 +79,26 @@ def do_plot(is_h=True):
     plt.cla()
 
     plt.hold(1)
-    plt.contourf(vs, zs, np.log10(err_p).T, levels=levels, colors=['r', 'r'], alpha=0.1)
-    plt.contourf(vs, zs, np.log10(err_a).T, levels=levels, colors=['b', 'b'], alpha=0.1)
-    plt.contourf(vs, zs, np.log10(err_b).T, levels=levels, colors=['g', 'g'], alpha=0.1)
+    plt.contourf(vs, zs, np.log10(err_p).T,
+                 levels=levels, colors=['r', 'r'], alpha=0.1)
+    plt.contourf(vs, zs, np.log10(err_a).T,
+                 levels=levels, colors=['b', 'b'], alpha=0.1)
+    plt.contourf(vs, zs, np.log10(err_b).T,
+                 levels=levels, colors=['g', 'g'], alpha=0.1)
 
-    plt.contour(vs, zs, np.log10(err_p).T, levels=levels, colors=['r', 'r'], linestyles=[':', ':'])
-    plt.contour(vs, zs, np.log10(err_a).T, levels=levels, colors=['b', 'b'], linestyles=[':', ':'])
-    plt.contour(vs, zs, np.log10(err_b).T, levels=levels, colors=['g', 'g'], linestyles=[':', ':'])
+    plt.contour(vs, zs, np.log10(err_p).T,
+                levels=levels, colors=['r', 'r'], linestyles=[':', ':'])
+    plt.contour(vs, zs, np.log10(err_a).T,
+                levels=levels, colors=['b', 'b'], linestyles=[':', ':'])
+    plt.contour(vs, zs, np.log10(err_b).T,
+                levels=levels, colors=['g', 'g'], linestyles=[':', ':'])
 
-    lp = plt.contour(vs, zs, np.log10(err_est_p).T, levels=levels, colors=['r', 'r'], linestyles=['-', '-'])
-    la = plt.contour(vs, zs, np.log10(err_est_a).T, levels=levels, colors=['b', 'b'], linestyles=['-', '-'])
-    lb = plt.contour(vs, zs, np.log10(err_est_b).T, levels=levels, colors=['g', 'g'], linestyles=['-', '-'])
+    lp = plt.contour(vs, zs, np.log10(err_est_p).T,
+                     levels=levels, colors=['r', 'r'], linestyles=['-', '-'])
+    la = plt.contour(vs, zs, np.log10(err_est_a).T,
+                     levels=levels, colors=['b', 'b'], linestyles=['-', '-'])
+    lb = plt.contour(vs, zs, np.log10(err_est_b).T,
+                     levels=levels, colors=['g', 'g'], linestyles=['-', '-'])
 
     plt.clabel(lp, fmt={-1000: 'P', -12: 'P'})
     plt.clabel(la, fmt={-1000: 'A', -12: 'A'})

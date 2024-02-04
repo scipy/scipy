@@ -13,7 +13,7 @@ ctypedef struct _ellip_data_t:
     double h2, k2
     int n, p
 
-cdef double _F_integrand(double t, void *user_data) nogil:
+cdef double _F_integrand(double t, void *user_data) noexcept nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
     cdef double h2, k2, t2, i, result
     cdef int n, p
@@ -28,7 +28,7 @@ cdef double _F_integrand(double t, void *user_data) nogil:
     result = 1/(i*i*sqrt(1 - t2*k2)*sqrt(1 - t2*h2))
     return result
 
-cdef double _F_integrand1(double t, void *user_data) nogil:
+cdef double _F_integrand1(double t, void *user_data) noexcept nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
     cdef double h2, k2, i, h, result
     cdef int n, p
@@ -45,7 +45,7 @@ cdef double _F_integrand1(double t, void *user_data) nogil:
     result = i*i/sqrt((t + h)*(t + k))
     return result
 
-cdef double _F_integrand2(double t, void *user_data) nogil:
+cdef double _F_integrand2(double t, void *user_data) noexcept nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
     cdef double h2, k2, t2, i, h, result
     cdef int n, p
@@ -63,7 +63,7 @@ cdef double _F_integrand2(double t, void *user_data) nogil:
     result = t2*i*i/sqrt((t + h)*(t + k))
     return result
 
-cdef double _F_integrand3(double t, void *user_data) nogil:
+cdef double _F_integrand3(double t, void *user_data) noexcept nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
     cdef double h2, k2, t2, i, h, result
     cdef int n, p
@@ -80,7 +80,7 @@ cdef double _F_integrand3(double t, void *user_data) nogil:
     result = i*i/sqrt((t + h)*(k2 - t2))
     return result
 
-cdef double _F_integrand4(double t, void *user_data) nogil:
+cdef double _F_integrand4(double t, void *user_data) noexcept nogil:
     cdef _ellip_data_t *data = <_ellip_data_t *>user_data
     cdef double h2, k2, t2, i, h, result
     cdef int n, p
@@ -136,7 +136,6 @@ def _ellipsoid_norm(double h2, double k2, int n, int p):
 
     cdef _ellip_data_t data
 
-    cdef double *eigv
     cdef void *bufferp
     eval = lame_coefficients(h2, k2, n, p, &bufferp, 1, 1)
     if not eval:
@@ -192,7 +191,7 @@ np.import_ufunc()
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
 
-cdef public int wrap_PyUFunc_getfperr() nogil:
+cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
     """
     Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
     this avoids messing with the UNIQUE_SYMBOL #defines

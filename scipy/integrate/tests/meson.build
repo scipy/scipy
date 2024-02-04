@@ -8,6 +8,5 @@ py3.install_sources([
     'test_quadpack.py',
     'test_quadrature.py'
   ],
-  pure: false,
   subdir: 'scipy/integrate/tests'
 )

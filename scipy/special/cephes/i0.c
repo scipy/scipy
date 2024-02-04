@@ -146,8 +146,7 @@ static double B[] = {
     8.04490411014108831608E-1
 };
 
-double i0(x)
-double x;
+double i0(double x)
 {
     double y;
 
@@ -165,8 +164,7 @@ double x;
 
 
 
-double i0e(x)
-double x;
+double i0e(double x)
 {
     double y;
 

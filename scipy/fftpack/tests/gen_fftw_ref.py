@@ -10,7 +10,7 @@ def gen_data(dt):
 
     if dt == np.float128:
         pg = './fftw_longdouble'
-    elif dt == np.double:
+    elif dt == np.float64:
         pg = './fftw_double'
     elif dt == np.float32:
         pg = './fftw_single'

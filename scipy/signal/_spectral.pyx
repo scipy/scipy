@@ -1,6 +1,8 @@
 # Author: Pim Schellart
 # 2010 - 2011
 
+# cython: cpow=True
+
 """Tools for spectral analysis of unequally sampled signals."""
 
 import numpy as np

@@ -1,65 +1,66 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
+#include "slu_ddefs.h"
+
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "slu_ddefs.h"
 
 double dmach(char *cmach)
 {
-/*  -- SuperLU auxiliary routine (version 5.0) --
+/*  -- SuperLU auxiliary routine (version 5.0) --   
     This uses C99 standard constants, and is thread safe.
 
     Must be compiled with -std=c99 flag.
 
 
-    Purpose
-    =======
+    Purpose   
+    =======   
 
-    DMACH returns double precision machine parameters.
+    DMACH returns double precision machine parameters.   
 
-    Arguments
-    =========
+    Arguments   
+    =========   
 
-    CMACH   (input) CHARACTER*1
-            Specifies the value to be returned by DMACH:
-            = 'E' or 'e',   DMACH := eps
-            = 'S' or 's ,   DMACH := sfmin
-            = 'B' or 'b',   DMACH := base
-            = 'P' or 'p',   DMACH := eps*base
-            = 'N' or 'n',   DMACH := t
-            = 'R' or 'r',   DMACH := rnd
-            = 'M' or 'm',   DMACH := emin
-            = 'U' or 'u',   DMACH := rmin
-            = 'L' or 'l',   DMACH := emax
-            = 'O' or 'o',   DMACH := rmax
+    CMACH   (input) CHARACTER*1   
+            Specifies the value to be returned by DMACH:   
+            = 'E' or 'e',   DMACH := eps   
+            = 'S' or 's ,   DMACH := sfmin   
+            = 'B' or 'b',   DMACH := base   
+            = 'P' or 'p',   DMACH := eps*base   
+            = 'N' or 'n',   DMACH := t   
+            = 'R' or 'r',   DMACH := rnd   
+            = 'M' or 'm',   DMACH := emin   
+            = 'U' or 'u',   DMACH := rmin   
+            = 'L' or 'l',   DMACH := emax   
+            = 'O' or 'o',   DMACH := rmax   
 
-            where
+            where   
 
-            eps   = relative machine precision
-            sfmin = safe minimum, such that 1/sfmin does not overflow
-            base  = base of the machine
-            prec  = eps*base
-            t     = number of (base) digits in the mantissa
-            rnd   = 1.0 when rounding occurs in addition, 0.0 otherwise
-            emin  = minimum exponent before (gradual) underflow
-            rmin  = underflow threshold - base**(emin-1)
-            emax  = largest exponent before overflow
-            rmax  = overflow threshold  - (base**emax)*(1-eps)
+            eps   = relative machine precision   
+            sfmin = safe minimum, such that 1/sfmin does not overflow   
+            base  = base of the machine   
+            prec  = eps*base   
+            t     = number of (base) digits in the mantissa   
+            rnd   = 1.0 when rounding occurs in addition, 0.0 otherwise   
+            emin  = minimum exponent before (gradual) underflow   
+            rmin  = underflow threshold - base**(emin-1)   
+            emax  = largest exponent before overflow   
+            rmax  = overflow threshold  - (base**emax)*(1-eps)   
 
-   =====================================================================
+   ===================================================================== 
 */
 
-    double sfmin, small, rmach = 0.;
+    double sfmin, small, rmach;
 
     if (strncmp(cmach, "E", 1)==0) {
 	rmach = DBL_EPSILON * 0.5;
@@ -67,7 +68,7 @@ double dmach(char *cmach)
 	sfmin = DBL_MIN;
 	small = 1. / DBL_MAX;
 	if (small >= sfmin) {
-	    /* Use SMALL plus a bit, to avoid the possibility of rounding
+	    /* Use SMALL plus a bit, to avoid the possibility of rounding   
 	       causing overflow when computing  1/sfmin. */
 	    sfmin = small * (DBL_EPSILON*0.5 + 1.);
 	}
@@ -89,7 +90,9 @@ double dmach(char *cmach)
     } else if (strncmp(cmach, "O", 1)==0) {
 	rmach = DBL_MAX;
     } else {
-  ABORT("Not implemented.");
+        int argument = 0;
+        input_error("dmach", &argument);
+        rmach = 0;
     }
 
     return rmach;

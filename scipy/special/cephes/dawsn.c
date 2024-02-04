@@ -124,8 +124,7 @@ static double CD[5] = {
 
 extern double MACHEP;
 
-double dawsn(xx)
-double xx;
+double dawsn(double xx)
 {
     double x, y;
     int sign;

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import cos, sqrt, sin, abs
 from .go_benchmark import Benchmark
 

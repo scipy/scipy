@@ -184,12 +184,12 @@ double Gamma(double x)
 		p += 1.0;
 		z = q - p;
 	    }
-	    z = q * sin(NPY_PI * z);
+	    z = q * sin(M_PI * z);
 	    if (z == 0.0) {
 		return (sgngam * INFINITY);
 	    }
 	    z = fabs(z);
-	    z = NPY_PI / (z * stirf(q));
+	    z = M_PI / (z * stirf(q));
 	}
 	else {
 	    z = stirf(x);
@@ -307,10 +307,10 @@ double lgam_sgn(double x, int *sign)
 	    p += 1.0;
 	    z = p - q;
 	}
-	z = q * sin(NPY_PI * z);
+	z = q * sin(M_PI * z);
 	if (z == 0.0)
 	    goto lgsing;
-	/*     z = log(NPY_PI) - log( z ) - w; */
+	/*     z = log(M_PI) - log( z ) - w; */
 	z = LOGPI - log(z) - w;
 	return (z);
     }

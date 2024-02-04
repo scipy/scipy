@@ -228,7 +228,7 @@ def _read_into(GenericStream st, size_t n):
 def _read_string(GenericStream st, size_t n):
     # for testing only.  Use st.read instead
     cdef void *d_ptr
-    cdef object obj = st.read_string(n, &d_ptr, True)
+    _obj = st.read_string(n, &d_ptr, True)
     # use bytearray because bytes() is immutable
     my_str = bytearray(b'A' * n)
     cdef char *mys_ptr = my_str
@@ -236,7 +236,7 @@ def _read_string(GenericStream st, size_t n):
     return bytes(my_str)
 
 
-cpdef GenericStream make_stream(object fobj):
+cpdef GenericStream make_stream(object fobj) noexcept:
     """ Make stream of correct type for file-like `fobj`
     """
     if isinstance(fobj, GenericStream):

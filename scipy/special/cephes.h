@@ -34,7 +34,6 @@ extern double ellpe(double x);
 extern int ellpj(double u, double m, double *sn, double *cn, double *dn, double *ph);
 extern double ellpk(double x);
 extern double exp10(double x);
-extern double exp1m(double x);
 extern double exp2(double x);
 
 extern double expn(int n, double x);
@@ -156,6 +155,8 @@ extern double kolmogci(double p);
 extern double lanczos_sum_expg_scaled(double x);
 
 extern double owens_t(double h, double a);
+
+extern double tukeylambdacdf(double x, double lambda);
 
 #ifdef __cplusplus
 }

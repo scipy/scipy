@@ -125,7 +125,7 @@ class TestNdimageFourier:
         # arrays with ndim > 3 raise NotImplementedError
         x = numpy.ones((4, 6, 8, 10), dtype=numpy.complex128)
         with pytest.raises(NotImplementedError):
-            a = ndimage.fourier_ellipsoid(x, 3)
+            ndimage.fourier_ellipsoid(x, 3)
 
     def test_fourier_ellipsoid_1d_complex(self):
         # expected result of 1d ellipsoid is the same as for fourier_uniform

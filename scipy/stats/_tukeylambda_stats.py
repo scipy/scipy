@@ -95,7 +95,7 @@ def tukeylambda_variance(lam):
         v[small_mask] = _tukeylambda_var_p(small) / _tukeylambda_var_q(small)
     if reg.size > 0:
         v[reg_mask] = (2.0 / reg**2) * (1.0 / (1.0 + 2 * reg) -
-                                      beta(reg + 1, reg + 1))
+                                        beta(reg + 1, reg + 1))
     v.shape = shp
     return v
 

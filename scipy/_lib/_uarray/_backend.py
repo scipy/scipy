@@ -7,11 +7,6 @@ import copyreg
 import pickle
 import contextlib
 
-ArgumentExtractorType = typing.Callable[..., typing.Tuple["Dispatchable", ...]]
-ArgumentReplacerType = typing.Callable[
-    [typing.Tuple, typing.Dict, typing.Tuple], typing.Tuple[typing.Tuple, typing.Dict]
-]
-
 from ._uarray import (  # type: ignore
     BackendNotImplementedError,
     _Function,
@@ -45,6 +40,10 @@ __all__ = [
     "_SetBackendContext",
 ]
 
+ArgumentExtractorType = typing.Callable[..., tuple["Dispatchable", ...]]
+ArgumentReplacerType = typing.Callable[
+    [tuple, dict, tuple], tuple[tuple, dict]
+]
 
 def unpickle_function(mod_name, qname, self_):
     import importlib
@@ -78,7 +77,7 @@ def pickle_function(func):
 
     if test is not func:
         raise pickle.PicklingError(
-            "Can't pickle {}: it's not the same object as {}".format(func, test)
+            f"Can't pickle {func}: it's not the same object as {test}"
         )
 
     return unpickle_function, (mod_name, qname, self_)
@@ -141,7 +140,7 @@ def set_state(state):
     --------
     get_state
         Gets a state to be set by this context manager.
-    """
+    """  # noqa: E501
     old_state = get_state()
     _uarray.set_state(state)
     try:
@@ -188,23 +187,25 @@ def generate_multimethod(
         as the desired multimethod.
     argument_replacer : ArgumentReplacerType
         A callable with the signature (args, kwargs, dispatchables), which should also
-        return an (args, kwargs) pair with the dispatchables replaced inside the args/kwargs.
+        return an (args, kwargs) pair with the dispatchables replaced inside the
+        args/kwargs.
     domain : str
         A string value indicating the domain of this multimethod.
     default: Optional[Callable], optional
-        The default implementation of this multimethod, where ``None`` (the default) specifies
-        there is no default implementation.
+        The default implementation of this multimethod, where ``None`` (the default)
+        specifies there is no default implementation.
 
     Examples
     --------
-    In this example, ``a`` is to be dispatched over, so we return it, while marking it as an ``int``.
+    In this example, ``a`` is to be dispatched over, so we return it, while marking it
+    as an ``int``.
     The trailing comma is needed because the args have to be returned as an iterable.
 
     >>> def override_me(a, b):
     ...   return Dispatchable(a, int),
 
-    Next, we define the argument replacer that replaces the dispatchables inside args/kwargs with the
-    supplied ones.
+    Next, we define the argument replacer that replaces the dispatchables inside
+    args/kwargs with the supplied ones.
 
     >>> def override_replacer(args, kwargs, dispatchables):
     ...     return (dispatchables[0], args[1]), {}
@@ -231,7 +232,8 @@ def generate_multimethod(
     See Also
     --------
     uarray
-        See the module documentation for how to override the method by creating backends.
+        See the module documentation for how to override the method by creating
+        backends.
     """
     kw_defaults, arg_defaults, opts = get_defaults(argument_extractor)
     ua_func = _Function(
@@ -441,9 +443,7 @@ class Dispatchable:
         return (self.type, self.value)[index]
 
     def __str__(self):
-        return "<{0}: type={1!r}, value={2!r}>".format(
-            type(self).__name__, self.type, self.value
-        )
+        return f"<{type(self).__name__}: type={self.type!r}, value={self.value!r}>"
 
     __repr__ = __str__
 
@@ -471,7 +471,8 @@ def all_of_type(arg_type):
     ... def f(a, b):
     ...     return a, Dispatchable(b, int)
     >>> f('a', 1)
-    (<Dispatchable: type=<class 'str'>, value='a'>, <Dispatchable: type=<class 'int'>, value=1>)
+    (<Dispatchable: type=<class 'str'>, value='a'>,
+     <Dispatchable: type=<class 'int'>, value=1>)
     """
 
     def outer(func):
@@ -696,7 +697,7 @@ def determine_backend_multi(
             raise TypeError("dispatchables must be instances of uarray.Dispatchable")
 
     if len(kwargs) != 0:
-        raise TypeError("Received unexpected keyword arguments: {}".format(kwargs))
+        raise TypeError(f"Received unexpected keyword arguments: {kwargs}")
 
     backend = _uarray.determine_backend(domain, dispatchables, coerce)
 

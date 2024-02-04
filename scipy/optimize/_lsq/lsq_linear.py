@@ -4,6 +4,7 @@ from numpy.linalg import norm
 from scipy.sparse import issparse, csr_matrix
 from scipy.sparse.linalg import LinearOperator, lsmr
 from scipy.optimize import OptimizeResult
+from scipy.optimize._minimize import Bounds
 
 from .common import in_bounds, compute_grad
 from .trf_linear import trf_linear
@@ -11,7 +12,9 @@ from .bvls import bvls
 
 
 def prepare_bounds(bounds, n):
-    lb, ub = [np.asarray(b, dtype=float) for b in bounds]
+    if len(bounds) != 2:
+        raise ValueError("`bounds` must contain 2 elements.")
+    lb, ub = (np.asarray(b, dtype=float) for b in bounds)
 
     if lb.ndim == 0:
         lb = np.resize(lb, n)
@@ -51,11 +54,18 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Design matrix. Can be `scipy.sparse.linalg.LinearOperator`.
     b : array_like, shape (m,)
         Target vector.
-    bounds : 2-tuple of array_like, optional
-        Lower and upper bounds on independent variables. Defaults to no bounds.
-        Each array must have shape (n,) or be a scalar, in the latter
-        case a bound will be the same for all variables. Use ``np.inf`` with
-        an appropriate sign to disable bounds on all or some variables.
+    bounds : 2-tuple of array_like or `Bounds`, optional
+        Lower and upper bounds on parameters. Defaults to no bounds.
+        There are two ways to specify the bounds:
+
+            - Instance of `Bounds` class.
+
+            - 2-tuple of array_like: Each element of the tuple must be either
+              an array with the length equal to the number of parameters, or a
+              scalar (in which case the bound is taken to be the same for all
+              parameters). Use ``np.inf`` with an appropriate sign to disable
+              bounds on all or some parameters.
+
     method : 'trf' or 'bvls', optional
         Method to perform minimization.
 
@@ -270,9 +280,6 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if len(A.shape) != 2:  # No ndim for LinearOperator.
         raise ValueError("`A` must have at most 2 dimensions.")
 
-    if len(bounds) != 2:
-        raise ValueError("`bounds` must contain 2 elements.")
-
     if max_iter is not None and max_iter <= 0:
         raise ValueError("`max_iter` must be None or positive integer.")
 
@@ -285,7 +292,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if b.size != m:
         raise ValueError("Inconsistent shapes between `A` and `b`.")
 
-    lb, ub = prepare_bounds(bounds, n)
+    if isinstance(bounds, Bounds):
+        lb = bounds.lb
+        ub = bounds.ub
+    else:
+        lb, ub = prepare_bounds(bounds, n)
 
     if lb.shape != (n,) and ub.shape != (n,):
         raise ValueError("Bounds have wrong shape.")
@@ -321,8 +332,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         if verbose > 0:
             print(termination_message)
-            print("Final cost {0:.4e}, first-order optimality {1:.2e}"
-                  .format(cost, g_norm))
+            print(f"Final cost {cost:.4e}, first-order optimality {g_norm:.2e}")
 
         return OptimizeResult(
             x=x_lsq, fun=r, cost=cost, optimality=g_norm,
@@ -342,9 +352,10 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if verbose > 0:
         print(res.message)
-        print("Number of iterations {0}, initial cost {1:.4e}, "
-              "final cost {2:.4e}, first-order optimality {3:.2e}."
-              .format(res.nit, res.initial_cost, res.cost, res.optimality))
+        print(
+            f"Number of iterations {res.nit}, initial cost {res.initial_cost:.4e}, "
+            f"final cost {res.cost:.4e}, first-order optimality {res.optimality:.2e}."
+        )
 
     del res.initial_cost
 

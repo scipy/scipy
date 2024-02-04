@@ -7,6 +7,7 @@ CrosstabResult = _make_tuple_bunch(
     "CrosstabResult", ["elements", "count"]
 )
 
+
 def crosstab(*args, levels=None, sparse=False):
     """
     Return table of counts for each possible unique combination in ``*args``.

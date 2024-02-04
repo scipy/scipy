@@ -9,6 +9,7 @@ Functions
 import numpy as np
 
 from . import _zeros_py as optzeros
+from ._numdiff import approx_derivative
 
 __all__ = ['root_scalar']
 
@@ -153,9 +154,9 @@ def root_scalar(f, args=(), method=None, bracket=None,
     +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
     | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
     +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   x    |         |  o   |  o   |    o    |   o     |
+    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | o  |        |         |  o   |  o   |    o    |   o     |
     +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
-    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | x  |        |         |  o   |  o   |    o    |   o     |
+    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   o    |         |  o   |  o   |    o    |   o     |
     +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
     | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |   x    |    x    |  o   |  o   |    o    |   o     |
     +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
@@ -203,7 +204,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     (1.0, 7, 8)
 
 
-    """
+    """  # noqa: E501
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -253,8 +254,10 @@ def root_scalar(f, args=(), method=None, bracket=None,
                     method = 'halley'
                 else:
                     method = 'newton'
-            else:
+            elif x1 is not None:
                 method = 'secant'
+            else:
+                method = 'newton'
     if not method:
         raise ValueError('Unable to select a solver as neither bracket '
                          'nor starting point provided.')
@@ -272,12 +275,24 @@ def root_scalar(f, args=(), method=None, bracket=None,
             raise ValueError('Bracket needed for %s' % method)
 
         a, b = bracket[:2]
-        r, sol = methodc(f, a, b, args=args, **kwargs)
+        try:
+            r, sol = methodc(f, a, b, args=args, **kwargs)
+        except ValueError as e:
+            # gh-17622 fixed some bugs in low-level solvers by raising an error
+            # (rather than returning incorrect results) when the callable
+            # returns a NaN. It did so by wrapping the callable rather than
+            # modifying compiled code, so the iteration count is not available.
+            if hasattr(e, "_x"):
+                sol = optzeros.RootResults(root=e._x,
+                                           iterations=np.nan,
+                                           function_calls=e._function_calls,
+                                           flag=str(e), method=method)
+            else:
+                raise
+
     elif meth in ['secant']:
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
-        if x1 is None:
-            raise ValueError('x1 must not be None for %s' % method)
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=None, fprime2=None,
@@ -286,7 +301,15 @@ def root_scalar(f, args=(), method=None, bracket=None,
         if x0 is None:
             raise ValueError('x0 must not be None for %s' % method)
         if not fprime:
-            raise ValueError('fprime must be specified for %s' % method)
+            # approximate fprime with finite differences
+
+            def fprime(x, *args):
+                # `root_scalar` doesn't actually seem to support vectorized
+                # use of `newton`. In that case, `approx_derivative` will
+                # always get scalar input. Nonetheless, it always returns an
+                # array, so we extract the element to produce scalar output.
+                return approx_derivative(f, x, method='2-point', args=args)[0]
+
         if 'xtol' in kwargs:
             kwargs['tol'] = kwargs.pop('xtol')
         r, sol = methodc(f, x0, args=args, fprime=fprime, fprime2=None,

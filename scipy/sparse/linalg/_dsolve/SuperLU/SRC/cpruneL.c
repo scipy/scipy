@@ -52,25 +52,25 @@ cpruneL(
        const int  nseg,	     /* in */
        const int  *segrep,   /* in */
        const int  *repfnz,   /* in */
-       int        *xprune,   /* out */
+       int_t      *xprune,   /* out */
        GlobalLU_t *Glu       /* modified - global LU data structures */
        )
 {
 
-    complex     utemp;
+    singlecomplex     utemp;
     int        jsupno, irep, irep1, kmin, kmax, krow, movnum;
-    int        i, ktemp, minloc, maxloc;
+    int_t      i, ktemp, minloc, maxloc;
     int        do_prune; /* logical variable */
     int        *xsup, *supno;
-    int        *lsub, *xlsub;
-    complex     *lusup;
-    int        *xlusup;
+    int_t      *lsub, *xlsub;
+    singlecomplex     *lusup;
+    int_t      *xlusup;
 
     xsup       = Glu->xsup;
     supno      = Glu->supno;
     lsub       = Glu->lsub;
     xlsub      = Glu->xlsub;
-    lusup      = (complex *) Glu->lusup;
+    lusup      = (singlecomplex *) Glu->lusup;
     xlusup     = Glu->xlusup;
     
     /*

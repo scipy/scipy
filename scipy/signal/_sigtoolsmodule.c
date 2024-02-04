@@ -444,7 +444,7 @@ static int remez(double *dev, double des[], double grid[], double edge[],
 	if (kkk != 1) {
 	    xt = (xt-bb)/aa;
 #if 0
-	    /*XX* ckeck up !! */
+	    /*XX* check up !! */
 	    xt1 = sqrt(1.0-xt*xt);
 	    ft = atan2(xt1,xt)/TWOPI;
 #else
@@ -558,7 +558,7 @@ static double wate(double freq, double *fx, double *wtx, int lband, int jtype)
 /*  This routine accepts basic input information and puts it in
  *  the form expected by remez.
 
- *  Adpated from main() by Travis Oliphant
+ *  Adapted from main() by Travis Oliphant
  */
 
 static int pre_remez(double *h2, int numtaps, int numbands, double *bands,

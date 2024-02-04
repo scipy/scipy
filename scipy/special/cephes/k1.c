@@ -130,8 +130,7 @@ static double B[] = {
 
 extern double MINLOG;
 
-double k1(x)
-double x;
+double k1(double x)
 {
     double y, z;
 
@@ -157,8 +156,7 @@ double x;
 
 
 
-double k1e(x)
-double x;
+double k1e(double x)
 {
     double y;
 

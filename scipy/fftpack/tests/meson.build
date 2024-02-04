@@ -16,6 +16,5 @@ test_sources = [
 
 py3.install_sources(
   [python_sources, test_sources],
-  pure: false,
   subdir: 'scipy/fftpack/tests'
 )

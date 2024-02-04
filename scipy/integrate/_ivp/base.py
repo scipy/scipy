@@ -16,6 +16,9 @@ def check_arguments(fun, y0, support_complex):
     if y0.ndim != 1:
         raise ValueError("`y0` must be 1-dimensional.")
 
+    if not np.isfinite(y0).all():
+        raise ValueError("All components of the initial state `y0` must be finite.")
+
     def fun_wrapped(t, y):
         return np.asarray(fun(t, y), dtype=dtype)
 
@@ -64,13 +67,11 @@ class OdeSolver:
     Parameters
     ----------
     fun : callable
-        Right-hand side of the system. The calling signature is ``fun(t, y)``.
-        Here ``t`` is a scalar and there are two options for ndarray ``y``.
-        It can either have shape (n,), then ``fun`` must return array_like with
-        shape (n,). Or, alternatively, it can have shape (n, n_points), then
-        ``fun`` must return array_like with shape (n, n_points) (each column
-        corresponds to a single column in ``y``). The choice between the two
-        options is determined by `vectorized` argument (see below).
+        Right-hand side of the system: the time derivative of the state ``y``
+        at time ``t``. The calling signature is ``fun(t, y)``, where ``t`` is a
+        scalar and ``y`` is an ndarray with ``len(y) = len(y0)``. ``fun`` must
+        return an array of the same shape as ``y``. See `vectorized` for more
+        information.
     t0 : float
         Initial time.
     y0 : array_like, shape (n,)
@@ -79,7 +80,22 @@ class OdeSolver:
         Boundary time --- the integration won't continue beyond it. It also
         determines the direction of the integration.
     vectorized : bool
-        Whether `fun` is implemented in a vectorized fashion.
+        Whether `fun` can be called in a vectorized fashion. Default is False.
+
+        If ``vectorized`` is False, `fun` will always be called with ``y`` of
+        shape ``(n,)``, where ``n = len(y0)``.
+
+        If ``vectorized`` is True, `fun` may be called with ``y`` of shape
+        ``(n, k)``, where ``k`` is an integer. In this case, `fun` must behave
+        such that ``fun(t, y)[:, i] == fun(t, y[:, i])`` (i.e. each column of
+        the returned array is the time derivative of the state corresponding
+        with a column of ``y``).
+
+        Setting ``vectorized=True`` allows for faster finite difference
+        approximation of the Jacobian by methods 'Radau' and 'BDF', but
+        will result in slower execution for other methods. It can also
+        result in slower overall execution for 'Radau' and 'BDF' in some
+        circumstances (e.g. small ``len(y0)``).
     support_complex : bool, optional
         Whether integration in a complex domain should be supported.
         Generally determined by a derived solver class capabilities.

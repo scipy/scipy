@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import sin, sum
 from .go_benchmark import Benchmark
 

@@ -54,6 +54,7 @@ from ._stats_mstats_common import (
         siegelslopes as stats_siegelslopes
         )
 
+
 def _chk_asarray(a, axis):
     # Always returns a masked array, raveled for axis=None
     a = ma.asanyarray(a)
@@ -83,7 +84,7 @@ def _chk_size(a, b):
     (na, nb) = (a.size, b.size)
     if na != nb:
         raise ValueError("The size of the input array should match!"
-                         " (%s <> %s)" % (na, nb))
+                         f" ({na} <> {nb})")
     return (a, b, na)
 
 
@@ -107,7 +108,7 @@ def argstoarray(*args):
 
     Notes
     -----
-    `numpy.ma.row_stack` has identical behavior, but is called with a sequence
+    `numpy.ma.vstack` has identical behavior, but is called with a sequence
     of sequences.
 
     Examples
@@ -166,6 +167,19 @@ def find_repeats(arr):
         Array of repeated values.
     counts : ndarray
         Array of counts.
+
+    Examples
+    --------
+    >>> from scipy.stats import mstats
+    >>> mstats.find_repeats([2, 1, 2, 3, 2, 2, 5])
+    (array([2.]), array([4]))
+
+    In the above example, 2 repeats 4 times.
+
+    >>> mstats.find_repeats([[10, 20, 1, 2], [5, 5, 4, 4]])
+    (array([4., 5.]), array([2, 2]))
+
+    In the above example, both 4 and 5 repeat 2 times.
 
     """
     # Make sure we get a copy. ma.compressed promises a "new array", but can
@@ -393,11 +407,11 @@ def pearsonr(x, y):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -532,8 +546,9 @@ def pearsonr(x, y):
     if df < 0:
         return (masked, masked)
 
-    return scipy.stats._stats_py.pearsonr(ma.masked_array(x, mask=m).compressed(),
-                                      ma.masked_array(y, mask=m).compressed())
+    return scipy.stats._stats_py.pearsonr(
+                ma.masked_array(x, mask=m).compressed(),
+                ma.masked_array(y, mask=m).compressed())
 
 
 def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
@@ -620,7 +635,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
         if axisout == 0:
             x = ma.column_stack((x, y))
         else:
-            x = ma.row_stack((x, y))
+            x = ma.vstack((x, y))
 
     if axisout == 1:
         # To simplify the code that follow (always use `n_obs, n_vars` shape)
@@ -858,8 +873,8 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         if use_ties:
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in xties.items()])
             var_s -= np.sum([v*k*(k-1)*(2*k+5)*1. for (k,v) in yties.items()])
-            v1 = np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *\
-                 np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float)
+            v1 = (np.sum([v*k*(k-1) for (k, v) in xties.items()], dtype=float) *
+                  np.sum([v*k*(k-1) for (k, v) in yties.items()], dtype=float))
             v1 /= 2.*n*(n-1)
             if n > 2:
                 v2 = np.sum([v*k*(k-1)*(k-2) for (k,v) in xties.items()],
@@ -917,7 +932,7 @@ def kendalltau_seasonal(x):
         cmb = n_p[j]*(n_p[j]-1)
         for k in range(j,m,1):
             K[j,k] = sum(msign((x[i:,j]-x[i,j])*(x[i:,k]-x[i,k])).sum()
-                               for i in range(n))
+                         for i in range(n))
             covmat[j,k] = (K[j,k] + 4*(R[:,j]*R[:,k]).sum() -
                            n*(n_p[j]+1)*(n_p[k]+1))/3.
             K[k,j] = K[j,k]
@@ -1110,7 +1125,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     else:
         x = ma.asarray(x).flatten()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y),len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -1167,7 +1182,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = ma.asarray(x).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" % (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     m = ma.mask_or(ma.getmask(x), ma.getmask(y))
     y._mask = x._mask = m
@@ -1589,7 +1604,7 @@ def kruskal(*args):
     >>> b = [6.9, 7.0, 6.1, 7.9]
     >>> c = [7.2, 6.9, 6.1, 6.5]
 
-    Test the hypotesis that the distribution functions for all of the brands'
+    Test the hypothesis that the distribution functions for all of the brands'
     durations are identical. Use 5% level of significance.
 
     >>> kruskal(a, b, c)
@@ -2569,7 +2584,7 @@ def moment(a, moment=1, axis=0):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -2582,6 +2597,7 @@ def moment(a, moment=1, axis=0):
         return ma.array(mmnt)
     else:
         return _moment(a, moment, axis)
+
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, moment, axis, *, mean=None):
@@ -2992,8 +3008,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
             " were given." % np.min(n))
     if np.min(n) < 20:
         warnings.warn(
-            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" %
-            np.min(n))
+            "kurtosistest only valid for n>=20 ... continuing anyway, n=%i" % np.min(n),
+            stacklevel=2,
+        )
 
     b2 = kurtosis(a, axis, fisher=False)
     E = 3.0*(n-1) / (n+1)
@@ -3175,7 +3192,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -3425,9 +3442,17 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult', ('statistic', 'pvalue'))
 
 def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     """
-    Computes the Brunner-Munzel test on samples x and y
+    Compute the Brunner-Munzel test on samples x and y.
 
-    Missing values in `x` and/or `y` are discarded.
+    Any missing values in `x` and/or `y` are discarded.
+
+    The Brunner-Munzel test is a nonparametric test of the null hypothesis that
+    when values are taken one by one from each group, the probabilities of
+    getting large values in both groups are equal.
+    Unlike the Wilcoxon-Mann-Whitney's U test, this does not require the
+    assumption of equivariance of two groups. Note that this does not assume
+    the distributions are same. This test works on two independent samples,
+    which may have different sizes.
 
     Parameters
     ----------
@@ -3458,7 +3483,16 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     -----
     For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
 
-    """
+    Examples
+    --------
+    >>> from scipy.stats.mstats import brunnermunzel
+    >>> import numpy as np
+    >>> x1 = [1, 2, np.nan, np.nan, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1]
+    >>> x2 = [3, 3, 4, 3, 1, 2, 3, 1, 1, 5, 4]
+    >>> brunnermunzel(x1, x2)
+    BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
+
+    """  # noqa: E501
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
     nx = len(x)

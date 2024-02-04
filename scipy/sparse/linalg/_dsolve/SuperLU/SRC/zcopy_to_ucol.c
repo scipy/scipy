@@ -48,14 +48,13 @@ zcopy_to_ucol(
  */
     int ksub, krep, ksupno;
     int i, k, kfnz, segsze;
-    int fsupc, isub, irow;
-    int jsupno, nextu;
-    int new_next, mem_error;
+    int fsupc, irow, jsupno;
+    int_t isub, nextu, new_next, mem_error;
     int       *xsup, *supno;
-    int       *lsub, *xlsub;
+    int_t     *lsub, *xlsub;
     doublecomplex    *ucol;
-    int       *usub, *xusub;
-    int       nzumax;
+    int_t     *usub, *xusub;
+    int_t       nzumax;
     doublecomplex zero = {0.0, 0.0};
 
     xsup    = Glu->xsup;
@@ -84,11 +83,11 @@ zcopy_to_ucol(
 
 		new_next = nextu + segsze;
 		while ( new_next > nzumax ) {
-		    if (mem_error = zLUMemXpand(jcol, nextu, UCOL, &nzumax, Glu))
-			return (mem_error);
+		    mem_error = zLUMemXpand(jcol, nextu, UCOL, &nzumax, Glu);
+		    if (mem_error) return (mem_error);
 		    ucol = (doublecomplex *) Glu->ucol;
-		    if (mem_error = zLUMemXpand(jcol, nextu, USUB, &nzumax, Glu))
-			return (mem_error);
+		    mem_error = zLUMemXpand(jcol, nextu, USUB, &nzumax, Glu);
+		    if (mem_error) return (mem_error);
 		    usub = Glu->usub;
 		    lsub = Glu->lsub;
 		}

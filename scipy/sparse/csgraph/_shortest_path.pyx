@@ -14,17 +14,20 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix
+from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.csgraph._validation import validate_graph
 
 cimport cython
 
 from libc.stdlib cimport malloc, free
-from numpy.math cimport INFINITY
+from libc.math cimport INFINITY
 
 np.import_array()
 
 include 'parameters.pxi'
+
+# EPS is the precision of DTYPE (float64, from parameters.pxi)
+DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
@@ -57,27 +60,27 @@ def shortest_path(csgraph, method='auto',
            'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
                      based on the input data.
 
-           'FW'   -- Floyd-Warshall algorithm.  Computational cost is
-                     approximately ``O[N^3]``.  The input csgraph will be
-                     converted to a dense representation.
+           'FW'   -- Floyd-Warshall algorithm.
+                     Computational cost is approximately ``O[N^3]``.
+                     The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[N(N*k + N*log(N))]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr
-                     representation.
+           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
+                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
+                     where ``k`` is the average number of connected edges per node.
+                     The input csgraph will be converted to a csr representation.
 
-           'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
-                     weights are negative.  If a negative cycle is encountered,
-                     an error will be raised.  Computational cost is
-                     approximately ``O[N(N^2 k)]``, where ``k`` is the average
-                     number of connected edges per node. The input csgraph will
-                     be converted to a csr representation.
+           'BF'   -- Bellman-Ford algorithm.
+                     This algorithm can be used when weights are negative.
+                     If a negative cycle is encountered, an error will be raised.
+                     Computational cost is approximately ``O[N(N^2 k)]``, where 
+                     ``k`` is the average number of connected edges per node. 
+                     The input csgraph will be converted to a csr representation.
 
-           'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
-                     Johnson's algorithm is designed for use when the weights
-                     are negative.  It combines the Bellman-Ford algorithm
-                     with Dijkstra's algorithm for faster computation.
+           'J'    -- Johnson's algorithm.
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
+                     designed for use when the weights are negative. It combines 
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -86,7 +89,7 @@ def shortest_path(csgraph, method='auto',
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -125,6 +128,9 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
@@ -157,14 +163,14 @@ def shortest_path(csgraph, method='auto',
                    copy_if_dense=(not overwrite),
                    copy_if_sparse=(not overwrite))
 
-    cdef bint issparse
+    cdef bint is_sparse
     cdef ssize_t N      # XXX cdef ssize_t Nk fails in Python 3 (?)
 
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
         N = csgraph.shape[0]
-        issparse = isspmatrix(csgraph)
-        if issparse:
+        is_sparse = issparse(csgraph)
+        if is_sparse:
             Nk = csgraph.nnz
             if csgraph.format in ('csr', 'csc', 'coo'):
                 edges = csgraph.data
@@ -236,7 +242,7 @@ def floyd_warshall(csgraph, directed=True,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -264,6 +270,11 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Notes
+    -----
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -301,7 +312,7 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-    if not isspmatrix(csgraph):
+    if not issparse(csgraph):
         # for dense array input, zero entries represent non-edge
         dist_matrix[dist_matrix == 0] = INFINITY
 
@@ -332,7 +343,7 @@ def floyd_warshall(csgraph, directed=True,
 cdef void _floyd_warshall(
                np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
                np.ndarray[ITYPE_t, ndim=2, mode='c'] predecessor_matrix,
-               int directed=0):
+               int directed=0) noexcept:
     # dist_matrix : in/out
     #    on input, the graph
     #    on output, the matrix of shortest paths
@@ -426,7 +437,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -486,6 +497,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -937,7 +951,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -968,6 +982,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -1002,7 +1019,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     N = csgraph.shape[0]
 
     # ------------------------------
-    # intitialize/validate indices
+    # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
     else:
@@ -1059,7 +1076,7 @@ cdef int _bellman_ford_directed(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
-            int[:, :] pred):
+            int[:, :] pred) noexcept:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1100,7 +1117,7 @@ cdef int _bellman_ford_undirected(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
-            int[:, :] pred):
+            int[:, :] pred) noexcept:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1171,7 +1188,7 @@ def johnson(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -1202,6 +1219,9 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -1322,7 +1342,7 @@ cdef void _johnson_add_weights(
             double[:] csr_weights,
             int[:] csr_indices,
             int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
 
@@ -1336,7 +1356,8 @@ cdef int _johnson_directed(
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, count
@@ -1344,10 +1365,6 @@ cdef int _johnson_directed(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1372,7 +1389,8 @@ cdef int _johnson_undirected(
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
         unsigned int j, k, ind_k, count
@@ -1380,10 +1398,6 @@ cdef int _johnson_undirected(
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1432,7 +1446,7 @@ cdef struct FibonacciNode:
 
 cdef void initialize_node(FibonacciNode* node,
                           unsigned int index,
-                          DTYPE_t val=0):
+                          DTYPE_t val=0) noexcept:
     # Assumptions: - node is a valid pointer
     #              - node is not currently part of a heap
     node.index = index
@@ -1447,15 +1461,7 @@ cdef void initialize_node(FibonacciNode* node,
     node.children = NULL
 
 
-cdef FibonacciNode* rightmost_sibling(FibonacciNode* node):
-    # Assumptions: - node is a valid pointer
-    cdef FibonacciNode* temp = node
-    while(temp.right_sibling):
-        temp = temp.right_sibling
-    return temp
-
-
-cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
+cdef FibonacciNode* leftmost_sibling(FibonacciNode* node) noexcept:
     # Assumptions: - node is a valid pointer
     cdef FibonacciNode* temp = node
     while(temp.left_sibling):
@@ -1463,7 +1469,7 @@ cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
     return temp
 
 
-cdef void add_child(FibonacciNode* node, FibonacciNode* new_child):
+cdef void add_child(FibonacciNode* node, FibonacciNode* new_child) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_child is a valid pointer
     #              - new_child is not the sibling or child of another node
@@ -1479,29 +1485,29 @@ cdef void add_child(FibonacciNode* node, FibonacciNode* new_child):
         node.rank = 1
 
 
-cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling):
+cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
-    cdef FibonacciNode* temp = rightmost_sibling(node)
-    temp.right_sibling = new_sibling
-    new_sibling.left_sibling = temp
-    new_sibling.right_sibling = NULL
+    
+    # Insert new_sibling between node and node.right_sibling
+    if node.right_sibling:
+        node.right_sibling.left_sibling = new_sibling
+    new_sibling.right_sibling = node.right_sibling
+    new_sibling.left_sibling = node
+    node.right_sibling = new_sibling
+
     new_sibling.parent = node.parent
     if new_sibling.parent:
         new_sibling.parent.rank += 1
 
 
-cdef void remove(FibonacciNode* node):
+cdef void remove(FibonacciNode* node) noexcept:
     # Assumptions: - node is a valid pointer
     if node.parent:
         node.parent.rank -= 1
-        if node.left_sibling:
-            node.parent.children = node.left_sibling
-        elif node.right_sibling:
+        if node.parent.children == node:  # node is the leftmost sibling.
             node.parent.children = node.right_sibling
-        else:
-            node.parent.children = NULL
 
     if node.left_sibling:
         node.left_sibling.right_sibling = node.right_sibling
@@ -1522,26 +1528,34 @@ ctypedef FibonacciNode* pFibonacciNode
 
 
 cdef struct FibonacciHeap:
+    # In this representation, min_node is always at the leftmost end
+    # of the linked-list, hence min_node.left_sibling is always NULL.
     FibonacciNode* min_node
     pFibonacciNode[100] roots_by_rank  # maximum number of nodes is ~2^100.
 
 
 cdef void insert_node(FibonacciHeap* heap,
-                      FibonacciNode* node):
+                      FibonacciNode* node) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - node is a valid pointer
     #              - node is not the child or sibling of another node
     if heap.min_node:
-        add_sibling(heap.min_node, node)
         if node.val < heap.min_node.val:
+            # Replace heap.min_node with node, which is always 
+            # at the leftmost end of the roots' linked-list.
+            node.left_sibling = NULL
+            node.right_sibling = heap.min_node
+            heap.min_node.left_sibling = node
             heap.min_node = node
+        else:
+            add_sibling(heap.min_node, node)
     else:
         heap.min_node = node
 
 
 cdef void decrease_val(FibonacciHeap* heap,
                        FibonacciNode* node,
-                       DTYPE_t newval):
+                       DTYPE_t newval) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - newval <= node.val
     #              - node is a valid pointer
@@ -1552,10 +1566,15 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
+        # Replace heap.min_node with node, which is always 
+        # at the leftmost end of the roots' linked-list.
+        remove(node)
+        node.right_sibling = heap.min_node
+        heap.min_node.left_sibling = node
         heap.min_node = node
 
 
-cdef void link(FibonacciHeap* heap, FibonacciNode* node):
+cdef void link(FibonacciHeap* heap, FibonacciNode* node) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - node is a valid pointer
     #              - node is already within heap
@@ -1578,7 +1597,7 @@ cdef void link(FibonacciHeap* heap, FibonacciNode* node):
             link(heap, linknode)
 
 
-cdef FibonacciNode* remove_min(FibonacciHeap* heap):
+cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - heap.min_node is a valid pointer
     cdef:
@@ -1588,32 +1607,24 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         unsigned int i
 
     # make all min_node children into root nodes
-    if heap.min_node.children:
-        temp = leftmost_sibling(heap.min_node.children)
-        temp_right = NULL
+    temp = heap.min_node.children
 
-        while temp:
-            temp_right = temp.right_sibling
-            remove(temp)
-            add_sibling(heap.min_node, temp)
-            temp = temp_right
+    while temp:
+        temp_right = temp.right_sibling
+        remove(temp)
+        add_sibling(heap.min_node, temp)
+        temp = temp_right
 
-        heap.min_node.children = NULL
-
-    # choose a root node other than min_node
-    temp = leftmost_sibling(heap.min_node)
-    if temp == heap.min_node:
-        if heap.min_node.right_sibling:
-            temp = heap.min_node.right_sibling
-        else:
-            out = heap.min_node
-            heap.min_node = NULL
-            return out
-
-    # remove min_node, and point heap to the new min
+    # remove min_root and choose another root as a preliminary min_root
     out = heap.min_node
+    temp = heap.min_node.right_sibling
     remove(heap.min_node)
     heap.min_node = temp
+    
+    if temp == NULL:
+        # There is a unique root in the tree, hence a unique node
+        # which is the minimum that we return here.
+        return out
 
     # re-link the heap
     for i in range(100):
@@ -1625,6 +1636,13 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         temp_right = temp.right_sibling
         link(heap, temp)
         temp = temp_right
+    
+    # move heap.min_node to the leftmost end of the linked-list of roots
+    temp = leftmost_sibling(heap.min_node)
+    if heap.min_node != temp:
+        remove(heap.min_node)
+        heap.min_node.right_sibling = temp
+        temp.left_sibling = heap.min_node
 
     return out
 
@@ -1632,18 +1650,18 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
 ######################################################################
 # Debugging: Functions for printing the Fibonacci heap
 #
-#cdef void print_node(FibonacciNode* node, int level=0):
-#    print '%s(%i,%i) %i' % (level*'   ', node.index, node.val, node.rank)
+#cdef void print_node(FibonacciNode* node, int level=0) noexcept:
+#    print('%s(%i,%i) %i' % (level*' ', node.index, node.val, node.rank))
 #    if node.children:
-#        print_node(leftmost_sibling(node.children), level+1)
+#        print_node(node.children, level+1)
 #    if node.right_sibling:
 #        print_node(node.right_sibling, level)
 #
 #
-#cdef void print_heap(FibonacciHeap* heap):
-#    print "---------------------------------"
-#    print "min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val)
+#cdef void print_heap(FibonacciHeap* heap) noexcept:
+#    print("---------------------------------")
 #    if heap.min_node:
-#        print_node(leftmost_sibling(heap.min_node))
+#        print("min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val))
+#        print_node(heap.min_node)
 #    else:
-#        print "[empty heap]"
+#        print("[empty heap]")

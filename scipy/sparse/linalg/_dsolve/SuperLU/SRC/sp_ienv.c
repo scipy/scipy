@@ -8,7 +8,7 @@ All rights reserved.
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
 */
-/*! @file sp_ienv.c
+/*! @file SRC/sp_ienv.c
  * \brief Chooses machine-dependent parameters for the local environment.
  *
  * <pre>
@@ -24,7 +24,6 @@ at the top-level directory.
  * History:             Modified from lapack routine ILAENV
  */
 #include "slu_Cnames.h"
-extern int input_error(char *, int *);
 
 /*! \brief
 
@@ -70,6 +69,7 @@ int
 sp_ienv(int ispec)
 {
     int i;
+    extern int input_error(char *, int *);
 
     switch (ispec) {
 	case 1: return (20);

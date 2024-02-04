@@ -22,7 +22,7 @@ from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
 from ._linprog_simplex import _linprog_simplex
 from ._linprog_rs import _linprog_rs
-from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,
+from ._linprog_doc import (_linprog_highs_doc, _linprog_ip_doc,  # noqa: F401
                            _linprog_rs_doc, _linprog_simplex_doc,
                            _linprog_highs_ipm_doc, _linprog_highs_ds_doc)
 from ._linprog_util import (
@@ -34,7 +34,9 @@ __all__ = ['linprog', 'linprog_verbose_callback', 'linprog_terse_callback']
 
 __docformat__ = "restructuredtext en"
 
-LINPROG_METHODS = ['simplex', 'revised simplex', 'interior-point', 'highs', 'highs-ds', 'highs-ipm']
+LINPROG_METHODS = [
+    'simplex', 'revised simplex', 'interior-point', 'highs', 'highs-ds', 'highs-ipm'
+]
 
 
 def linprog_verbose_callback(res):
@@ -89,16 +91,16 @@ def linprog_verbose_callback(res):
 
     saved_printoptions = np.get_printoptions()
     np.set_printoptions(linewidth=500,
-                        formatter={'float': lambda x: "{0: 12.4f}".format(x)})
+                        formatter={'float': lambda x: f"{x: 12.4f}"})
     if status:
         print('--------- Simplex Early Exit -------\n')
-        print('The simplex method exited early with status {0:d}'.format(status))
+        print(f'The simplex method exited early with status {status:d}')
         print(message)
     elif complete:
         print('--------- Simplex Complete --------\n')
-        print('Iterations required: {}'.format(nit))
+        print(f'Iterations required: {nit}')
     else:
-        print('--------- Iteration {0:d}  ---------\n'.format(nit))
+        print(f'--------- Iteration {nit:d}  ---------\n')
 
     if nit > 0:
         if phase == 1:
@@ -161,12 +163,12 @@ def linprog_terse_callback(res):
 
     if nit == 0:
         print("Iter:   X:")
-    print("{0: <5d}   ".format(nit), end="")
+    print(f"{nit: <5d}   ", end="")
     print(x)
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='highs', callback=None,
+            bounds=(0, None), method='highs', callback=None,
             options=None, x0=None, integrality=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -187,18 +189,18 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     Alternatively, that's:
 
-    minimize::
+        - minimize ::
 
-        c @ x
+            c @ x
 
-    such that::
+        - such that ::
 
-        A_ub @ x <= b_ub
-        A_eq @ x == b_eq
-        lb <= x <= ub
+            A_ub @ x <= b_ub
+            A_eq @ x == b_eq
+            lb <= x <= ub
 
-    Note that by default ``lb = 0`` and ``ub = None`` unless specified with
-    ``bounds``.
+    Note that by default ``lb = 0`` and ``ub = None``. Other bounds can be
+    specified with ``bounds``.
 
     Parameters
     ----------
@@ -218,11 +220,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         the corresponding element of ``b_eq``.
     bounds : sequence, optional
         A sequence of ``(min, max)`` pairs for each element in ``x``, defining
-        the minimum and maximum values of that decision variable. Use ``None``
-        to indicate that there is no bound. By default, bounds are
-        ``(0, None)`` (all decision variables are non-negative).
-        If a single tuple ``(min, max)`` is provided, then ``min`` and
-        ``max`` will serve as bounds for all decision variables.
+        the minimum and maximum values of that decision variable.
+        If a single tuple ``(min, max)`` is provided, then ``min`` and ``max``
+        will serve as bounds for all decision variables.
+        Use ``None`` to indicate that there is no bound. For instance, the
+        default bound ``(0, None)`` means that all decision variables are
+        non-negative, and the pair ``(None, None)`` means no bounds at all,
+        i.e. all variables are allowed to be any real.
     method : str, optional
         The algorithm used to solve the standard form problem.
         :ref:`'highs' <optimize.linprog-highs>` (default),
@@ -535,7 +539,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             Mathematical Programming Study 4 (1975): 146-166.
     .. [13] Huangfu, Q., Galabova, I., Feldmeier, M., and Hall, J. A. J.
             "HiGHS - high performance software for linear optimization."
-            Accessed 4/16/2020 at https://www.maths.ed.ac.uk/hall/HiGHS/#guide
+            https://highs.dev/
     .. [14] Huangfu, Q. and Hall, J. A. J. "Parallelizing the dual revised
             simplex method." Mathematical Programming Computation, 10 (1),
             119-142, 2018. DOI: 10.1007/s12532-017-0130-5
@@ -612,15 +616,15 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     if x0 is not None and meth != "revised simplex":
         warning_message = "x0 is used only when method is 'revised simplex'. "
-        warn(warning_message, OptimizeWarning)
+        warn(warning_message, OptimizeWarning, stacklevel=2)
 
     if np.any(integrality) and not meth == "highs":
         integrality = None
         warning_message = ("Only `method='highs'` supports integer "
                            "constraints. Ignoring `integrality`.")
-        warn(warning_message, OptimizeWarning)
+        warn(warning_message, OptimizeWarning, stacklevel=2)
     elif np.any(integrality):
-        integrality = np.broadcast_to(integrality, c.shape)
+        integrality = np.broadcast_to(integrality, np.shape(c))
 
     lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)
@@ -638,7 +642,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                              **solver_options)
         sol['status'], sol['message'] = (
             _check_result(sol['x'], sol['fun'], sol['status'], sol['slack'],
-                          sol['con'], lp.bounds, tol, sol['message']))
+                          sol['con'], lp.bounds, tol, sol['message'],
+                          integrality))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
@@ -690,7 +695,8 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     x, fun, slack, con = _postsolve(x, postsolve_args, complete)
 
-    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds, tol, message)
+    status, message = _check_result(x, fun, status, slack, con, lp_o.bounds,
+                                    tol, message, integrality)
 
     if disp:
         _display_summary(message, status, fun, iteration)

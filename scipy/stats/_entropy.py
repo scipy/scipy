@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Created on Fri Apr  2 09:06:05 2021
 
@@ -9,16 +8,25 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
-from typing import Optional, Union
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
-            qk: Optional[np.typing.ArrayLike] = None,
-            base: Optional[float] = None,
+            qk: np.typing.ArrayLike | None = None,
+            base: float | None = None,
             axis: int = 0
-            ) -> Union[np.number, np.ndarray]:
+            ) -> np.number | np.ndarray:
     """
     Calculate the Shannon entropy/relative entropy of given distribution(s).
 
@@ -132,13 +140,15 @@ def entropy(pk: np.typing.ArrayLike,
         raise ValueError("`base` must be a positive number or `None`.")
 
     pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
     if qk is None:
         vec = special.entr(pk)
     else:
         qk = np.asarray(qk)
-        pk, qk = np.broadcast_arrays(pk, qk)
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None)  # don't ignore any axes
+        sum_kwargs = dict(axis=axis, keepdims=True)
+        qk = 1.0*qk / np.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
     S = np.sum(vec, axis=axis)
     if base is not None:
@@ -146,14 +156,28 @@ def entropy(pk: np.typing.ArrayLike,
     return S
 
 
+def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
+    values = samples[0]
+    n = values.shape[axis]
+    window_length = kwargs.get("window_length",
+                               math.floor(math.sqrt(n) + 0.5))
+    if not 2 <= 2 * window_length < n:
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    too_small=_differential_entropy_is_too_small
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,
-    window_length: Optional[int] = None,
-    base: Optional[float] = None,
+    window_length: int | None = None,
+    base: float | None = None,
     axis: int = 0,
     method: str = "auto",
-) -> Union[np.number, np.ndarray]:
+) -> np.number | np.ndarray:
     r"""Given a sample of a distribution, estimate the differential entropy.
 
     Several estimation methods are available using the `method` parameter. By

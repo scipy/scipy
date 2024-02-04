@@ -9,16 +9,17 @@ __all__ = ['root']
 
 import numpy as np
 
-ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
-                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
-                'df-sane']
-
 from warnings import warn
 
 from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import _nonlin as nonlin
+
+
+ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
+                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
+                'df-sane']
 
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
@@ -207,7 +208,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     if callback is not None and meth in ('hybr', 'lm'):
         warn('Method %s does not accept callback.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
@@ -253,8 +254,8 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
 def _warn_jac_unused(jac, method):
     if jac is not None:
-        warn('Method %s does not use the jacobian (jac).' % (method,),
-             RuntimeWarning)
+        warn(f'Method {method} does not use the jacobian (jac).',
+             RuntimeWarning, stacklevel=2)
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,
@@ -300,7 +301,7 @@ def _root_leastsq(fun, x0, args=(), jac=None,
                                        factor=factor, diag=diag)
     sol = OptimizeResult(x=x, message=msg, status=ier,
                          success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                         fun=info.pop('fvec'))
+                         fun=info.pop('fvec'), method="lm")
     sol.update(info)
     return sol
 
@@ -331,7 +332,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                 }[_method]
 
     if args:
-        if jac:
+        if jac is True:
             def f(x):
                 return fun(x, *args)[0]
         else:
@@ -348,7 +349,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                                   line_search=line_search,
                                   callback=_callback, full_output=True,
                                   raise_exception=False)
-    sol = OptimizeResult(x=x)
+    sol = OptimizeResult(x=x, method=_method)
     sol.update(info)
     return sol
 

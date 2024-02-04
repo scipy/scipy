@@ -57,7 +57,7 @@ cdef inline int init(setlist_t *setlist, size_t n, size_t size_guess) except -1:
 
     return 0
 
-cdef inline void free(setlist_t *setlist):
+cdef inline void free(setlist_t *setlist) noexcept:
     """
     Free the set list
     """
@@ -73,7 +73,7 @@ cdef inline void free(setlist_t *setlist):
     setlist.alloc_sizes = NULL
     setlist.n = 0
 
-cdef inline int add(setlist_t *setlist, int n, int value) nogil:
+cdef inline int add(setlist_t *setlist, int n, int value) noexcept nogil:
     """
     Add a value to set `n`
     """

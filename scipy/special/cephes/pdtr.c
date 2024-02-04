@@ -159,9 +159,7 @@ double pdtr(double k, double m)
 }
 
 
-double pdtri(k, y)
-int k;
-double y;
+double pdtri(int k, double y)
 {
     double v;
 

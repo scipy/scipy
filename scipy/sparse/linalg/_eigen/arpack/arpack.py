@@ -2,7 +2,7 @@
 Find a few eigenvectors and eigenvalues of a matrix.
 
 
-Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
+Uses ARPACK: https://github.com/opencollab/arpack-ng
 
 """
 # Wrapper implementation notes
@@ -35,22 +35,22 @@ Uses ARPACK: http://www.caam.rice.edu/software/ARPACK/
 # ARPACK and handle shifted and shift-inverse computations
 # for eigenvalues by providing a shift (sigma) and a solver.
 
-__docformat__ = "restructuredtext en"
-
-__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
-
-from . import _arpack
-arpack_int = _arpack.timing.nbx.dtype
-
 import numpy as np
 import warnings
 from scipy.sparse.linalg._interface import aslinearoperator, LinearOperator
-from scipy.sparse import eye, issparse, isspmatrix, isspmatrix_csr
+from scipy.sparse import eye, issparse
 from scipy.linalg import eig, eigh, lu_factor, lu_solve
 from scipy.sparse._sputils import isdense, is_pydata_spmatrix
 from scipy.sparse.linalg import gmres, splu
 from scipy._lib._util import _aligned_zeros
 from scipy._lib._threadsafety import ReentrancyLock
+
+from . import _arpack
+arpack_int = _arpack.timing.nbx.dtype
+
+__docformat__ = "restructuredtext en"
+
+__all__ = ['eigs', 'eigsh', 'ArpackError', 'ArpackNoConvergence']
 
 
 _type_conv = {'f': 's', 'd': 'd', 'F': 'c', 'D': 'z'}
@@ -370,7 +370,7 @@ class _ArpackParams:
         try:
             ev, vec = self.extract(True)
         except ArpackError as err:
-            msg = "%s [%s]" % (msg, err)
+            msg = f"{msg} [{err}]"
             ev = np.zeros((0,))
             vec = np.zeros((self.n, 0))
             k_ok = 0
@@ -720,17 +720,20 @@ class _UnsymmetricArpackParams(_ArpackParams):
 
     def iterate(self):
         if self.tp in 'fd':
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
         else:
-            self.ido, self.tol, self.resid, self.v, self.iparam, self.ipntr, self.info =\
-                self._arpack_solver(self.ido, self.bmat, self.which, self.k,
-                                    self.tol, self.resid, self.v, self.iparam,
-                                    self.ipntr, self.workd, self.workl,
-                                    self.rwork, self.info)
+            results = self._arpack_solver(self.ido, self.bmat, self.which, self.k,
+                                          self.tol, self.resid, self.v, self.iparam,
+                                          self.ipntr, self.workd, self.workl,
+                                          self.rwork, self.info)
+            self.ido, self.tol, self.resid, self.v, \
+                self.iparam, self.ipntr, self.info = results
+                
 
         xslice = slice(self.ipntr[0] - 1, self.ipntr[0] - 1 + self.n)
         yslice = slice(self.ipntr[1] - 1, self.ipntr[1] - 1 + self.n)
@@ -950,7 +953,7 @@ def gmres_loose(A, b, tol):
     """
     b = np.asarray(b)
     min_tol = 1000 * np.sqrt(b.size) * np.finfo(b.dtype).eps
-    return gmres(A, b, tol=max(tol, min_tol), atol=0)
+    return gmres(A, b, rtol=max(tol, min_tol), atol=0)
 
 
 class IterInv(LinearOperator):
@@ -1038,7 +1041,7 @@ class IterOpInv(LinearOperator):
 
 def _fast_spmatrix_to_csc(A, hermitian=False):
     """Convert sparse matrix to CSC (by transposing, if possible)"""
-    if (isspmatrix_csr(A) and hermitian
+    if (A.format == "csr" and hermitian
             and not np.issubdtype(A.dtype, np.complexfloating)):
         return A.T
     elif is_pydata_spmatrix(A):
@@ -1051,7 +1054,7 @@ def _fast_spmatrix_to_csc(A, hermitian=False):
 def get_inv_matvec(M, hermitian=False, tol=0):
     if isdense(M):
         return LuInv(M).matvec
-    elif isspmatrix(M) or is_pydata_spmatrix(M):
+    elif issparse(M) or is_pydata_spmatrix(M):
         M = _fast_spmatrix_to_csc(M, hermitian=hermitian)
         return SpLuInv(M).matvec
     else:
@@ -1072,7 +1075,7 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
                 A = A + 0j
             A.flat[::A.shape[1] + 1] -= sigma
             return LuInv(A).matvec
-        elif isspmatrix(A) or is_pydata_spmatrix(A):
+        elif issparse(A) or is_pydata_spmatrix(A):
             A = A - sigma * eye(A.shape[0])
             A = _fast_spmatrix_to_csc(A, hermitian=hermitian)
             return SpLuInv(A).matvec
@@ -1080,8 +1083,8 @@ def get_OPinv_matvec(A, M, sigma, hermitian=False, tol=0):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              M, sigma, tol=tol).matvec
     else:
-        if ((not isdense(A) and not isspmatrix(A) and not is_pydata_spmatrix(A)) or
-                (not isdense(M) and not isspmatrix(M) and not is_pydata_spmatrix(A))):
+        if ((not isdense(A) and not issparse(A) and not is_pydata_spmatrix(A)) or
+                (not isdense(M) and not issparse(M) and not is_pydata_spmatrix(A))):
             return IterOpInv(_aslinearoperator_with_dtype(A),
                              _aslinearoperator_with_dtype(M),
                              sigma, tol=tol).matvec
@@ -1234,7 +1237,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     References
     ----------
-    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [1] ARPACK Software, https://github.com/opencollab/arpack-ng
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
@@ -1254,14 +1257,14 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     """
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1271,7 +1274,7 @@ def eigs(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n - 1:
         warnings.warn("k >= N - 1 for N * N square matrix. "
                       "Attempting to use scipy.linalg.eig instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eig for sparse A with "
@@ -1543,7 +1546,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
 
     References
     ----------
-    .. [1] ARPACK Software, http://www.caam.rice.edu/software/ARPACK/
+    .. [1] ARPACK Software, https://github.com/opencollab/arpack-ng
     .. [2] R. B. Lehoucq, D. C. Sorensen, and C. Yang,  ARPACK USERS GUIDE:
        Solution of Large Scale Eigenvalue Problems by Implicitly Restarted
        Arnoldi Methods. SIAM, Philadelphia, PA, 1998.
@@ -1582,14 +1585,14 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
             return ret.real
 
     if A.shape[0] != A.shape[1]:
-        raise ValueError('expected square matrix (shape=%s)' % (A.shape,))
+        raise ValueError(f'expected square matrix (shape={A.shape})')
     if M is not None:
         if M.shape != A.shape:
-            raise ValueError('wrong M dimensions %s, should be %s'
-                             % (M.shape, A.shape))
+            raise ValueError(f'wrong M dimensions {M.shape}, should be {A.shape}')
         if np.dtype(M.dtype).char.lower() != np.dtype(A.dtype).char.lower():
             warnings.warn('M does not have the same type precision as A. '
-                          'This may adversely affect ARPACK convergence')
+                          'This may adversely affect ARPACK convergence',
+                          stacklevel=2)
 
     n = A.shape[0]
 
@@ -1599,7 +1602,7 @@ def eigsh(A, k=6, M=None, sigma=None, which='LM', v0=None,
     if k >= n:
         warnings.warn("k >= N for N * N square matrix. "
                       "Attempting to use scipy.linalg.eigh instead.",
-                      RuntimeWarning)
+                      RuntimeWarning, stacklevel=2)
 
         if issparse(A):
             raise TypeError("Cannot use scipy.linalg.eigh for sparse A with "

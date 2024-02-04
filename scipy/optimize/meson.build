@@ -1,5 +1,3 @@
-include_dirs = [inc_np, '../_lib/src']
-
 _direct = py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
    '_direct/direct-internal.h',
@@ -9,8 +7,8 @@ _direct = py3.extension_module('_direct',
    '_directmodule.h',
    '_directmodule.c'
   ],
-  c_args: [numpy_nodepr_api],
-  include_directories: include_dirs,
+  include_directories: '../_lib/src',
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -47,8 +45,8 @@ minpack_lib = static_library('minpack',
 _minpack = py3.extension_module('_minpack',
   ['minpack.h', '__minpack.h', '_minpackmodule.c'],
   link_with: minpack_lib,
-  c_args: numpy_nodepr_api,
-  include_directories: include_dirs,
+  include_directories: '../_lib/src',
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   link_language: 'fortran',
@@ -65,8 +63,8 @@ rectangular_lsap = static_library('rectangular_lsap',
 py3.extension_module('_lsap',
   ['_lsap.c'],
   link_with: rectangular_lsap,
-  c_args: numpy_nodepr_api,
-  include_directories: include_dirs,
+  include_directories: '../_lib/src',
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -85,8 +83,7 @@ rootfind_lib = static_library('rootfind',
 py3.extension_module('_zeros',
   'zeros.c',
   link_with: rootfind_lib,
-  c_args: numpy_nodepr_api,
-  include_directories: inc_np,
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -105,11 +102,10 @@ _lbfgsb = py3.extension_module('_lbfgsb',
     'lbfgsb_src/timer.f',
     lbfgsb_module,
   ],
-  c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack, blas, fortranobject_dep],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -120,7 +116,8 @@ moduleTNC = py3.extension_module('_moduleTNC',
     cython_gen.process('tnc/_moduleTNC.pyx'),
     'tnc/tnc.c'],
   c_args: cython_c_args,
-  include_directories: [inc_np, inc_f2py, 'tnc'],
+  include_directories: 'tnc',
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -134,9 +131,8 @@ cobyla_module = custom_target('cobyla_module',
 
 _cobyla = py3.extension_module('_cobyla',
   [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
@@ -152,11 +148,10 @@ minpack2_module = custom_target('minpack2_module',
 
 minpack2 = py3.extension_module('_minpack2',
   [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
-  c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -170,9 +165,7 @@ slsqp_module = custom_target('slsqp_module',
 
 _slsqp = py3.extension_module('_slsqp',
   [slsqp_module, 'slsqp/slsqp_optmz.f'],
-  c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, inc_f2py],
   link_args: version_link_args,
   dependencies: [fortranobject_dep],
   install: true,
@@ -180,27 +173,12 @@ _slsqp = py3.extension_module('_slsqp',
   subdir: 'scipy/optimize'
 )
 
-__nnls_module = custom_target('__nnls_module',
-  output: ['__nnlsmodule.c'],
-  input: '__nnls/nnls.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.install_sources(
-  ['__nnls.pyi'],
-  pure: false,
-  subdir: 'scipy/optimize'
-)
-
-__nnls = py3.extension_module('__nnls',
-  ['__nnls/nnls.f', __nnls_module],
-  c_args: numpy_nodepr_api,
-  fortran_args: fortran_ignore_warnings,
-  include_directories: [inc_np, inc_f2py],
+_pava_pybind = py3.extension_module('_pava_pybind',
+  ['_pava/pava_pybind.cpp'],
+  include_directories: '_pava',
+  dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
-  dependencies: [fortranobject_dep],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/optimize'
 )
 
@@ -214,7 +192,7 @@ if use_pythran
   _group_columns = py3.extension_module('_group_columns',
     [_group_columns_cpp],
     cpp_args: cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
+    dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/optimize'
@@ -223,32 +201,32 @@ else
   _group_columns = py3.extension_module('_group_columns',
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
-    include_directories: [inc_np],
+    dependencies: np_dep,
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/optimize'
   )
 endif
 
-# Needed to trick Cython, it won't do a relative import outside a
-# package
-_dummy_init_optimize = custom_target('_dummy_init_optimize',
-  output: '__init__.py',
-  input: '__init__.py',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_dummy_init_optimize = fs.copyfile('__init__.py')
 
-opt_gen = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
+# Copying this .pxd file is only needed because of a Cython bug, see
+# discussion on SciPy PR gh-18810.
+cython_optimize_pxd = [
+  fs.copyfile('cython_optimize.pxd'),
+]
+
+opt_gen = generator(cython,
+  arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, cython_linalg, _dummy_init_optimize])
+  depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
 _bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
 
 py3.extension_module('_bglu_dense',
   _bglu_dense_c,
   c_args: cython_c_args,
-  include_directories: [inc_np],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize'
@@ -264,20 +242,22 @@ subdir('tests')
 
 py3.install_sources(
   ['lbfgsb_src/README'],
-  pure: false,
   subdir: 'scipy/optimize'
 )
 
 py3.install_sources([
   '__init__.py',
   '_basinhopping.py',
+  '_chandrupatla.py',
   '_cobyla_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
   '_direct_py.py',
+  '_dcsrch.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
+  '_isotonic.py',
   '_lbfgsb_py.py',
   '_linesearch.py',
   '_linprog.py',
@@ -322,6 +302,5 @@ py3.install_sources([
   'tnc.py',
   'zeros.py'
 ],
-  pure: false,
   subdir: 'scipy/optimize'
 )

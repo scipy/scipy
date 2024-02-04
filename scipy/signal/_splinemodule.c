@@ -1,5 +1,7 @@
 #include "_splinemodule.h"
 
+#define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
+
 static void
 convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 {

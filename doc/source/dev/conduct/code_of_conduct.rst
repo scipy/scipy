@@ -1,3 +1,5 @@
+.. _scipy-coc:
+
 SciPy Code of Conduct
 =====================
 

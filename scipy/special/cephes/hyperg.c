@@ -50,9 +50,6 @@
  * self-estimated relative error is greater than 1.0e-12.
  *
  */
-
-/*                                                     hyperg.c */
-
 
 /*
  * Cephes Math Library Release 2.8:  June, 2000
@@ -64,226 +61,9 @@
 
 extern double MACHEP;
 
-static double hy1f1p(double a, double b, double x, double *acanc);
-static double hy1f1a(double a, double b, double x, double *acanc);
-static double hyp2f0(double a, double b, double x, int type, double *err);
 
-double hyperg(a, b, x)
-double a, b, x;
-{
-    double asum, psum, acanc, pcanc, temp;
-
-    /* See if a Kummer transformation will help */
-    temp = b - a;
-    if (fabs(temp) < 0.001 * fabs(a))
-	return (exp(x) * hyperg(temp, b, -x));
-
-
-    /* Try power & asymptotic series, starting from the one that is likely OK */
-    if (fabs(x) < 10 + fabs(a) + fabs(b)) {
-	psum = hy1f1p(a, b, x, &pcanc);
-	if (pcanc < 1.0e-15)
-	    goto done;
-	asum = hy1f1a(a, b, x, &acanc);
-    }
-    else {
-	psum = hy1f1a(a, b, x, &pcanc);
-	if (pcanc < 1.0e-15)
-	    goto done;
-	asum = hy1f1p(a, b, x, &acanc);
-    }
-
-    /* Pick the result with less estimated error */
-
-    if (acanc < pcanc) {
-	pcanc = acanc;
-	psum = asum;
-    }
-
-  done:
-    if (pcanc > 1.0e-12)
-	sf_error("hyperg", SF_ERROR_LOSS, NULL);
-
-    return (psum);
-}
-
-
-
-
-/* Power series summation for confluent hypergeometric function                */
-
-
-static double hy1f1p(a, b, x, err)
-double a, b, x;
-double *err;
-{
-    double n, a0, sum, t, u, temp, maxn;
-    double an, bn, maxt;
-    double y, c, sumc;
-
-
-    /* set up for power series summation */
-    an = a;
-    bn = b;
-    a0 = 1.0;
-    sum = 1.0;
-    c = 0.0;
-    n = 1.0;
-    t = 1.0;
-    maxt = 0.0;
-    *err = 1.0;
-
-    maxn = 200.0 + 2 * fabs(a) + 2 * fabs(b);
-
-    while (t > MACHEP) {
-	if (bn == 0) {		/* check bn first since if both   */
-	    sf_error("hyperg", SF_ERROR_SINGULAR, NULL);
-	    return (INFINITY);	/* an and bn are zero it is     */
-	}
-	if (an == 0)		/* a singularity            */
-	    return (sum);
-	if (n > maxn) {
-	    /* too many terms; take the last one as error estimate */
-	    c = fabs(c) + fabs(t) * 50.0;
-	    goto pdone;
-	}
-	u = x * (an / (bn * n));
-
-	/* check for blowup */
-	temp = fabs(u);
-	if ((temp > 1.0) && (maxt > (DBL_MAX / temp))) {
-	    *err = 1.0;		/* blowup: estimate 100% error */
-	    return sum;
-	}
-
-	a0 *= u;
-
-	y = a0 - c;
-	sumc = sum + y;
-	c = (sumc - sum) - y;
-	sum = sumc;
-
-	t = fabs(a0);
-
-	an += 1.0;
-	bn += 1.0;
-	n += 1.0;
-    }
-
-  pdone:
-
-    /* estimate error due to roundoff and cancellation */
-    if (sum != 0.0) {
-	*err = fabs(c / sum);
-    }
-    else {
-	*err = fabs(c);
-    }
-
-    if (*err != *err) {
-	/* nan */
-	*err = 1.0;
-    }
-
-    return (sum);
-}
-
-
-/*                                                     hy1f1a()        */
-/* asymptotic formula for hypergeometric function:
- *
- *        (    -a
- *  --    ( |z|
- * |  (b) ( -------- 2f0( a, 1+a-b, -1/x )
- *        (  --
- *        ( |  (b-a)
- *
- *
- *                                x    a-b                     )
- *                               e  |x|                        )
- *                             + -------- 2f0( b-a, 1-a, 1/x ) )
- *                                --                           )
- *                               |  (a)                        )
- */
-
-static double hy1f1a(a, b, x, err)
-double a, b, x;
-double *err;
-{
-    double h1, h2, t, u, temp, acanc, asum, err1, err2;
-
-    if (x == 0) {
-	acanc = 1.0;
-	asum = INFINITY;
-	goto adone;
-    }
-    temp = log(fabs(x));
-    t = x + temp * (a - b);
-    u = -temp * a;
-
-    if (b > 0) {
-	temp = lgam(b);
-	t += temp;
-	u += temp;
-    }
-
-    h1 = hyp2f0(a, a - b + 1, -1.0 / x, 1, &err1);
-
-    temp = exp(u) / gamma(b - a);
-    h1 *= temp;
-    err1 *= temp;
-
-    h2 = hyp2f0(b - a, 1.0 - a, 1.0 / x, 2, &err2);
-
-    if (a < 0)
-	temp = exp(t) / gamma(a);
-    else
-	temp = exp(t - lgam(a));
-
-    h2 *= temp;
-    err2 *= temp;
-
-    if (x < 0.0)
-	asum = h1;
-    else
-	asum = h2;
-
-    acanc = fabs(err1) + fabs(err2);
-
-    if (b < 0) {
-	temp = gamma(b);
-	asum *= temp;
-	acanc *= fabs(temp);
-    }
-
-
-    if (asum != 0.0)
-	acanc /= fabs(asum);
-
-    if (acanc != acanc)
-	/* nan */
-	acanc = 1.0;
-
-    if (asum == INFINITY || asum == -INFINITY)
-	/* infinity */
-	acanc = 0;
-
-    acanc *= 30.0;		/* fudge factor, since error of asymptotic formula
-				 * often seems this much larger than advertised */
-
-  adone:
-
-
-    *err = acanc;
-    return (asum);
-}
-
-/*                                                     hyp2f0()        */
-
-double hyp2f0(a, b, x, type, err)
-double a, b, x;
-int type;			/* determines what converging factor to use */
-double *err;
+/* the `type` parameter determines what converging factor to use */
+static double hyp2f0(double a, double b, double x, int type, double *err)
 {
     double a0, alast, t, tlast, maxt;
     double n, an, bn, u, sum, temp;
@@ -379,4 +159,204 @@ double *err;
     *err = INFINITY;
     sf_error("hyperg", SF_ERROR_NO_RESULT, NULL);
     return (sum);
+}
+
+
+/* asymptotic formula for hypergeometric function:
+ *
+ *        (    -a
+ *  --    ( |z|
+ * |  (b) ( -------- 2f0( a, 1+a-b, -1/x )
+ *        (  --
+ *        ( |  (b-a)
+ *
+ *
+ *                                x    a-b                     )
+ *                               e  |x|                        )
+ *                             + -------- 2f0( b-a, 1-a, 1/x ) )
+ *                                --                           )
+ *                               |  (a)                        )
+ */
+
+static double hy1f1a(double a, double b, double x, double *err)
+{
+    double h1, h2, t, u, temp, acanc, asum, err1, err2;
+
+    if (x == 0) {
+	acanc = 1.0;
+	asum = INFINITY;
+	goto adone;
+    }
+    temp = log(fabs(x));
+    t = x + temp * (a - b);
+    u = -temp * a;
+
+    if (b > 0) {
+	temp = lgam(b);
+	t += temp;
+	u += temp;
+    }
+
+    h1 = hyp2f0(a, a - b + 1, -1.0 / x, 1, &err1);
+
+    temp = exp(u) / gamma(b - a);
+    h1 *= temp;
+    err1 *= temp;
+
+    h2 = hyp2f0(b - a, 1.0 - a, 1.0 / x, 2, &err2);
+
+    if (a < 0)
+	temp = exp(t) / gamma(a);
+    else
+	temp = exp(t - lgam(a));
+
+    h2 *= temp;
+    err2 *= temp;
+
+    if (x < 0.0)
+	asum = h1;
+    else
+	asum = h2;
+
+    acanc = fabs(err1) + fabs(err2);
+
+    if (b < 0) {
+	temp = gamma(b);
+	asum *= temp;
+	acanc *= fabs(temp);
+    }
+
+
+    if (asum != 0.0)
+	acanc /= fabs(asum);
+
+    if (acanc != acanc)
+	/* nan */
+	acanc = 1.0;
+
+    if (asum == INFINITY || asum == -INFINITY)
+	/* infinity */
+	acanc = 0;
+
+    acanc *= 30.0;		/* fudge factor, since error of asymptotic formula
+				 * often seems this much larger than advertised */
+
+  adone:
+    *err = acanc;
+    return (asum);
+}
+
+
+/* Power series summation for confluent hypergeometric function */
+static double hy1f1p(double a, double b, double x, double *err)
+{
+    double n, a0, sum, t, u, temp, maxn;
+    double an, bn, maxt;
+    double y, c, sumc;
+
+
+    /* set up for power series summation */
+    an = a;
+    bn = b;
+    a0 = 1.0;
+    sum = 1.0;
+    c = 0.0;
+    n = 1.0;
+    t = 1.0;
+    maxt = 0.0;
+    *err = 1.0;
+
+    maxn = 200.0 + 2 * fabs(a) + 2 * fabs(b);
+
+    while (t > MACHEP) {
+	if (bn == 0) {		/* check bn first since if both   */
+	    sf_error("hyperg", SF_ERROR_SINGULAR, NULL);
+	    return (INFINITY);	/* an and bn are zero it is     */
+	}
+	if (an == 0)		/* a singularity            */
+	    return (sum);
+	if (n > maxn) {
+	    /* too many terms; take the last one as error estimate */
+	    c = fabs(c) + fabs(t) * 50.0;
+	    goto pdone;
+	}
+	u = x * (an / (bn * n));
+
+	/* check for blowup */
+	temp = fabs(u);
+	if ((temp > 1.0) && (maxt > (DBL_MAX / temp))) {
+	    *err = 1.0;		/* blowup: estimate 100% error */
+	    return sum;
+	}
+
+	a0 *= u;
+
+	y = a0 - c;
+	sumc = sum + y;
+	c = (sumc - sum) - y;
+	sum = sumc;
+
+	t = fabs(a0);
+
+	an += 1.0;
+	bn += 1.0;
+	n += 1.0;
+    }
+
+  pdone:
+
+    /* estimate error due to roundoff and cancellation */
+    if (sum != 0.0) {
+	*err = fabs(c / sum);
+    }
+    else {
+	*err = fabs(c);
+    }
+
+    if (*err != *err) {
+	/* nan */
+	*err = 1.0;
+    }
+
+    return (sum);
+}
+
+
+
+double hyperg(double a, double b, double x)
+{
+    double asum, psum, acanc, pcanc, temp;
+
+    /* See if a Kummer transformation will help */
+    temp = b - a;
+    if (fabs(temp) < 0.001 * fabs(a))
+	return (exp(x) * hyperg(temp, b, -x));
+
+
+    /* Try power & asymptotic series, starting from the one that is likely OK */
+    if (fabs(x) < 10 + fabs(a) + fabs(b)) {
+	psum = hy1f1p(a, b, x, &pcanc);
+	if (pcanc < 1.0e-15)
+	    goto done;
+	asum = hy1f1a(a, b, x, &acanc);
+    }
+    else {
+	psum = hy1f1a(a, b, x, &pcanc);
+	if (pcanc < 1.0e-15)
+	    goto done;
+	asum = hy1f1p(a, b, x, &acanc);
+    }
+
+    /* Pick the result with less estimated error */
+
+    if (acanc < pcanc) {
+	pcanc = acanc;
+	psum = asum;
+    }
+
+  done:
+    if (pcanc > 1.0e-12)
+	sf_error("hyperg", SF_ERROR_LOSS, NULL);
+
+    return (psum);
 }

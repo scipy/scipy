@@ -187,6 +187,7 @@ class CZT:
     Compute multiple prime-length FFTs:
 
     >>> from scipy.signal import CZT
+    >>> import numpy as np
     >>> a = np.random.rand(7)
     >>> b = np.random.rand(7)
     >>> c = np.random.rand(7)

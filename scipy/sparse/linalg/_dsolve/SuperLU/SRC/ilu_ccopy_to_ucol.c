@@ -1,9 +1,9 @@
 /*! \file
 Copyright (c) 2003, The Regents of the University of California, through
-Lawrence Berkeley National Laboratory (subject to receipt of any required
-approvals from U.S. Dept. of Energy)
+Lawrence Berkeley National Laboratory (subject to receipt of any required 
+approvals from U.S. Dept. of Energy) 
 
-All rights reserved.
+All rights reserved. 
 
 The source code is distributed under BSD license, see the file License.txt
 at the top-level directory.
@@ -26,10 +26,10 @@ at the top-level directory.
 int num_drop_U;
 #endif
 
-extern void ccopy_(int *, complex [], int *, complex [], int *);
+extern void ccopy_(int *, singlecomplex [], int *, singlecomplex [], int *);
 
 #if 0
-static complex *A;  /* used in _compare_ only */
+static singlecomplex *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
     register int *x = (int *)a, *y = (int *)b;
@@ -47,12 +47,12 @@ ilu_ccopy_to_ucol(
 	      int	 *segrep,  /* in */
 	      int	 *repfnz,  /* in */
 	      int	 *perm_r,  /* in */
-	      complex	 *dense,   /* modified - reset to zero on return */
+	      singlecomplex	 *dense,   /* modified - reset to zero on return */
 	      int  	 drop_rule,/* in */
 	      milu_t	 milu,	   /* in */
 	      double	 drop_tol, /* in */
 	      int	 quota,    /* maximum nonzero entries allowed */
-	      complex	 *sum,	   /* out - the sum of dropped entries */
+	      singlecomplex	 *sum,	   /* out - the sum of dropped entries */
 	      int	 *nnzUj,   /* in - out */
 	      GlobalLU_t *Glu,	   /* modified */
 	      float	 *work	   /* working space with minimum size n,
@@ -62,27 +62,27 @@ ilu_ccopy_to_ucol(
 /*
  * Gather from SPA dense[*] to global ucol[*].
  */
-    int       ksub, krep, ksupno;
-    int       i, k, kfnz, segsze;
+    int       ksub, krep, ksupno, kfnz, segsze;
+    int       i, k; 
     int       fsupc, isub, irow;
-    int       jsupno, nextu;
-    int       new_next, mem_error;
+    int       jsupno;
+    int_t     new_next, nextu, mem_error;
     int       *xsup, *supno;
-    int       *lsub, *xlsub;
-    complex    *ucol;
-    int       *usub, *xusub;
-    int       nzumax;
+    int_t     *lsub, *xlsub;
+    singlecomplex    *ucol;
+    int_t     *usub, *xusub;
+    int_t     nzumax;
     int       m; /* number of entries in the nonzero U-segments */
     register float d_max = 0.0, d_min = 1.0 / smach("Safe minimum");
-    register double tmp = 0.0;
-    complex zero = {0.0, 0.0};
+    register double tmp;
+    singlecomplex zero = {0.0, 0.0};
     int i_1 = 1;
 
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     lsub    = Glu->lsub;
     xlsub   = Glu->xlsub;
-    ucol    = (complex *) Glu->ucol;
+    ucol    = (singlecomplex *) Glu->ucol;
     usub    = Glu->usub;
     xusub   = Glu->xusub;
     nzumax  = Glu->nzumax;

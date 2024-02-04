@@ -1,3 +1,5 @@
+# cython: cpow=True
+
 # Implement Spence's function, a.k.a. the dilogarithm, for complex
 # arguments. Note that our definition differs from that in the sources
 # by the mapping z -> 1 - z.
@@ -20,7 +22,7 @@ DEF PISQ_6 = 1.6449340668482264365
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence(double complex z) nogil:
+cdef inline double complex cspence(double complex z) noexcept nogil:
     """
     Compute Spence's function for complex arguments. The strategy is:
     - If z is close to 0, use a series centered at 0.
@@ -42,7 +44,7 @@ cdef inline double complex cspence(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence_series0(double complex z) nogil:
+cdef inline double complex cspence_series0(double complex z) noexcept nogil:
     """
     A series centered at z = 0; see
 
@@ -71,7 +73,7 @@ cdef inline double complex cspence_series0(double complex z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex cspence_series1(double complex z) nogil:
+cdef inline double complex cspence_series1(double complex z) noexcept nogil:
     """
     A series centered at z = 1 which enjoys faster convergence than
     the Taylor series. See [3]. The number of terms used comes from

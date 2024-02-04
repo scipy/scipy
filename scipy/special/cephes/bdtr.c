@@ -147,7 +147,6 @@
  */
 
 #include "mconf.h"
-#include <numpy/npy_math.h>
 
 double bdtrc(double k, int n, double p)
 {

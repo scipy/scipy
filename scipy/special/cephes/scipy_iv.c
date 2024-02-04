@@ -148,7 +148,7 @@ static double iv_asymptotic(double v, double x)
     double sum, term, prefactor, factor;
     int k;
 
-    prefactor = exp(x) / sqrt(2 * NPY_PI * x);
+    prefactor = exp(x) / sqrt(2 * M_PI * x);
 
     if (prefactor == INFINITY) {
 	return prefactor;
@@ -266,10 +266,10 @@ static void ikv_asymptotic_uniform(double v, double x,
     t2 = t * t;
     eta = sqrt(1 + z * z) + log(z / (1 + 1 / t));
 
-    i_prefactor = sqrt(t / (2 * NPY_PI * v)) * exp(v * eta);
+    i_prefactor = sqrt(t / (2 * M_PI * v)) * exp(v * eta);
     i_sum = 1.0;
 
-    k_prefactor = sqrt(NPY_PI * t / (2 * v)) * exp(-v * eta);
+    k_prefactor = sqrt(M_PI * t / (2 * v)) * exp(-v * eta);
     k_sum = 1.0;
 
     divisor = v;
@@ -325,7 +325,7 @@ static void ikv_asymptotic_uniform(double v, double x,
 	else {
 	    /* (AMS 9.6.2) */
 	    *i_value = (i_prefactor * i_sum
-			+ (2 / NPY_PI) * sin(NPY_PI * v) * k_prefactor * k_sum);
+			+ (2 / M_PI) * sin(M_PI * v) * k_prefactor * k_sum);
 	}
     }
 }
@@ -371,9 +371,9 @@ static int temme_ik_series(double v, double x, double *K, double *K1)
     a = log(x / 2);
     b = exp(v * a);
     sigma = -a * v;
-    c = fabs(v) < MACHEP ? 1 : sin(NPY_PI * v) / (v * NPY_PI);
+    c = fabs(v) < MACHEP ? 1 : sin(M_PI * v) / (v * M_PI);
     d = fabs(sigma) < MACHEP ? 1 : sinh(sigma) / sigma;
-    gamma1 = fabs(v) < MACHEP ? -NPY_EULER : (0.5f / v) * (gp - gm) * c;
+    gamma1 = fabs(v) < MACHEP ? -SCIPY_EULER : (0.5f / v) * (gp - gm) * c;
     gamma2 = (2 + gp + gm) * c / 2;
 
     /* initial values */
@@ -513,7 +513,7 @@ static int CF2_ik(double v, double x, double *Kv, double *Kv1)
 	sf_error("ikv_temme(CF2_ik)", SF_ERROR_NO_RESULT, NULL);
     }
 
-    *Kv = sqrt(NPY_PI / (2 * x)) * exp(-x) / S;
+    *Kv = sqrt(M_PI / (2 * x)) * exp(-x) / S;
     *Kv1 = *Kv * (0.5f + v + x + (v * v - 0.25f) * f) / x;
 
     return 0;
@@ -576,7 +576,7 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	if (reflect && (kind & need_i)) {
 	    double z = (u + n % 2);
 
-	    Iv = sin((double)NPY_PI * z) == 0 ? Iv : INFINITY;
+	    Iv = sin((double)M_PI * z) == 0 ? Iv : INFINITY;
 	    if (Iv == INFINITY || Iv == -INFINITY) {
 		sf_error("ikv_temme", SF_ERROR_OVERFLOW, NULL);
 	    }
@@ -636,7 +636,7 @@ static void ikv_temme(double v, double x, double *Iv_p, double *Kv_p)
 	double z = (u + n % 2);
 
 	if (Iv_p != NULL) {
-	    *Iv_p = Iv + (2 / NPY_PI) * sin(NPY_PI * z) * Kv;	/* reflection formula */
+	    *Iv_p = Iv + (2 / M_PI) * sin(M_PI * z) * Kv;	/* reflection formula */
 	}
 	if (Kv_p != NULL) {
 	    *Kv_p = Kv;

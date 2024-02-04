@@ -51,24 +51,24 @@ at the top-level directory.
  * </pre>
  */
 
-int
+int_t
 zsnode_dfs (
-	   const int  jcol,	    /* in - start of the supernode */
-	   const int  kcol, 	    /* in - end of the supernode */
-	   const int  *asub,        /* in */
-	   const int  *xa_begin,    /* in */
-	   const int  *xa_end,      /* in */
-	   int        *xprune,      /* out */
+	   const int   jcol,	    /* in - start of the supernode */
+	   const int   kcol, 	    /* in - end of the supernode */
+	   const int_t *asub,        /* in */
+	   const int_t *xa_begin,    /* in */
+	   const int_t *xa_end,      /* in */
+	   int_t      *xprune,      /* out */
 	   int        *marker,      /* modified */
 	   GlobalLU_t *Glu          /* modified */
 	   )
 {
 
-    register int i, k, ifrom, ito, nextl, new_next;
-    int          nsuper, krow, kmark, mem_error;
-    int          *xsup, *supno;
-    int          *lsub, *xlsub;
-    int          nzlmax;
+    int_t i, k, ifrom, ito, nextl, new_next, nzlmax;
+    int   nsuper, krow, kmark;
+    int_t mem_error;
+    int   *xsup, *supno;
+    int_t *lsub, *xlsub;
     
     xsup    = Glu->xsup;
     supno   = Glu->supno;
@@ -88,8 +88,8 @@ zsnode_dfs (
 		marker[krow] = kcol;
 		lsub[nextl++] = krow;
 		if ( nextl >= nzlmax ) {
-		    if ( mem_error = zLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu) )
-			return (mem_error);
+		    mem_error = zLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu);
+		    if ( mem_error ) return (mem_error);
 		    lsub = Glu->lsub;
 		}
 	    }
@@ -101,8 +101,8 @@ zsnode_dfs (
     if ( jcol < kcol ) {
 	new_next = nextl + (nextl - xlsub[jcol]);
 	while ( new_next > nzlmax ) {
-	    if ( mem_error = zLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu) )
-		return (mem_error);
+	    mem_error = zLUMemXpand(jcol, nextl, LSUB, &nzlmax, Glu);
+	    if ( mem_error ) return (mem_error);
 	    lsub = Glu->lsub;
 	}
 	ito = nextl;

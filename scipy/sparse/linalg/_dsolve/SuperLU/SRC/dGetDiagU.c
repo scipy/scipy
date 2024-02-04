@@ -29,7 +29,7 @@
  * data structures.
  * </pre> 
 */
-#include <slu_ddefs.h>
+#include "slu_ddefs.h"
 
 void dGetDiagU(SuperMatrix *L, double *diagU)
 {

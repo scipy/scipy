@@ -508,8 +508,8 @@ static double hankel(double n, double x)
     }
 
   hank1:
-    u = x - (0.5 * n + 0.25) * NPY_PI;
-    t = sqrt(2.0 / (NPY_PI * x)) * (pp * cos(u) - qq * sin(u));
+    u = x - (0.5 * n + 0.25) * M_PI;
+    t = sqrt(2.0 / (M_PI * x)) * (pp * cos(u) - qq * sin(u));
 #if CEPHES_DEBUG
     printf("hank: %.6e\n", t);
 #endif

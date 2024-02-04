@@ -8,6 +8,7 @@ python_sources = [
   'test_cosine_distr.py',
   'test_cython_special.py',
   'test_data.py',
+  'test_dd.py',
   'test_digamma.py',
   'test_ellip_harm.py',
   'test_erfinv.py',
@@ -43,6 +44,7 @@ python_sources = [
   'test_spfun_stats.py',
   'test_sph_harm.py',
   'test_spherical_bessel.py',
+  'test_support_alternative_backends.py',
   'test_trig.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
@@ -52,6 +54,10 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/special/tests'
+)
+
+py3.install_sources(
+  'data/__init__.py',
+  subdir: 'scipy/special/tests/data'
 )

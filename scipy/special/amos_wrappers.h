@@ -9,7 +9,8 @@
 #define _AMOS_WRAPPERS_H
 #include "Python.h"
 #include "sf_error.h"
-
+#include "npy_2_complexcompat.h"
+#include "_amos.h"
 #include <numpy/npy_math.h>
 
 #define DO_SFERR(name, varp)                          \

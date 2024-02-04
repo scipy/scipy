@@ -27,8 +27,8 @@
  * coef[0] = C  , ..., coef[N] = C  .
  *            N                   0
  *
- *  The function p1evl() assumes that coef[N] = 1.0 and is
- * omitted from the array.  Its calling arguments are
+ * The function p1evl() assumes that c_N = 1.0 so that coefficent
+ * is omitted from the array.  Its calling arguments are
  * otherwise the same as polevl().
  *
  *
@@ -41,7 +41,6 @@
  * program in microcode or assembly language.
  *
  */
-
 
 /*
  * Cephes Math Library Release 2.1:  December, 1988
@@ -83,6 +82,15 @@ static inline double polevl(double x, const double coef[], int N)
 /*                                                     p1evl() */
 /*                                          N
  * Evaluate polynomial when coefficient of x  is 1.0.
+ * That is, C_{N} is assumed to be 1, and that coefficient
+ * is not included in the input array coef.
+ * coef must have length N and contain the polynomial coefficients
+ * stored as
+ *     coef[0] = C_{N-1}
+ *     coef[1] = C_{N-2}
+ *          ...
+ *     coef[N-2] = C_1
+ *     coef[N-1] = C_0
  * Otherwise same as polevl.
  */
 

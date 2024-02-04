@@ -90,13 +90,14 @@ fitpack_src = [
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized
+  fortran_args: _fflag_Wno_maybe_uninitialized,
+  override_options: ['b_lto=false'],
 )
 
 interpnd = py3.extension_module('interpnd',
   spt_cython_gen.process('interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
-  include_directories: [incdir_numpy],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
@@ -105,8 +106,16 @@ interpnd = py3.extension_module('interpnd',
 py3.extension_module('_ppoly',
   linalg_cython_gen.process('_ppoly.pyx'),
   c_args: cython_c_args,
-  include_directories: [incdir_numpy],
+  dependencies: np_dep,
   link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/interpolate'
+)
+
+py3.extension_module('_rgi_cython',
+  linalg_cython_gen.process('_rgi_cython.pyx'),
+  c_args: cython_c_args,
+  dependencies: np_dep,
   install: true,
   subdir: 'scipy/interpolate'
 )
@@ -114,7 +123,8 @@ py3.extension_module('_ppoly',
 _bspl = py3.extension_module('_bspl',
   cython_gen.process('_bspl.pyx'),
   c_args: cython_c_args,
-  include_directories: ['src/', incdir_numpy],
+  include_directories: 'src/',
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
@@ -123,9 +133,9 @@ _bspl = py3.extension_module('_bspl',
 # TODO: Add flags for 64 bit ints
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: numpy_nodepr_api,
   link_with: [fitpack_lib],
-  include_directories: ['src/', incdir_numpy],
+  include_directories: 'src/',
+  dependencies: np_dep,
   link_args: version_link_args,
   link_language: 'fortran',
   install: true,
@@ -141,11 +151,11 @@ dfitpack_module = custom_target('dfitpack_module',
 # TODO: Add flags for 64 bit ints
 dfitpack = py3.extension_module('dfitpack',
   dfitpack_module,
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
-  include_directories: [incdir_numpy, incdir_f2py],
+  c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   link_with: [fitpack_lib],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/interpolate'
@@ -161,7 +171,7 @@ if use_pythran
   _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
     _rbfinterp_pythran,
     cpp_args: cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
+    dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
     install: true,
     subdir: 'scipy/interpolate'
@@ -169,7 +179,6 @@ if use_pythran
 else
   py3.install_sources(
     ['_rbfinterp_pythran.py'],
-    pure: false,
     subdir: 'scipy/interpolate'
   )
 endif
@@ -189,6 +198,7 @@ py3.install_sources([
     '_rbf.py',
     '_rbfinterp.py',
     '_rgi.py',
+    '_ndbspline.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',
@@ -196,7 +206,6 @@ py3.install_sources([
     'polyint.py',
     'rbf.py'
   ],
-  pure: false,
   subdir: 'scipy/interpolate'
 )
 

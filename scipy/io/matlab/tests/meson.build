@@ -9,7 +9,6 @@ py3.install_sources([
     'test_pathological.py',
     'test_streams.py'
   ],
-  pure: false,
   subdir: 'scipy/io/matlab/tests'
 )
 
@@ -125,6 +124,5 @@ py3.install_sources([
     'data/testunicode_7.4_GLNX86.mat',
     'data/testvec_4_GLNX86.mat'
   ],
-  pure: false,
   subdir: 'scipy/io/matlab/tests/data'
 )

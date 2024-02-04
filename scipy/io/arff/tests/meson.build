@@ -2,7 +2,6 @@ py3.install_sources([
     '__init__.py',
     'test_arffread.py'
   ],
-  pure: false,
   subdir: 'scipy/io/arff/tests'
 )
 
@@ -24,6 +23,5 @@ py3.install_sources([
     'data/test8.arff',
     'data/test9.arff'
   ],
-  pure: false,
   subdir: 'scipy/io/arff/tests/data'
 )

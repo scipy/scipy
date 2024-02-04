@@ -11,7 +11,7 @@ from ._cephes cimport sinpi as dsinpi, cospi as dcospi
 from ._complexstuff cimport number_t, double_complex, zpack
 
 
-cdef inline double complex csinpi(double complex z) nogil:
+cdef inline double complex csinpi(double complex z) noexcept nogil:
     """Compute sin(pi*z) for complex arguments."""
     cdef:
         double x = z.real
@@ -50,7 +50,7 @@ cdef inline double complex csinpi(double complex z) nogil:
     return zpack(coshfac*exphpiy, sinhfac*exphpiy)
 
 
-cdef inline double complex ccospi(double complex z) nogil:
+cdef inline double complex ccospi(double complex z) noexcept nogil:
     """Compute cos(pi*z) for complex arguments."""
     cdef:
         double x = z.real
@@ -81,14 +81,14 @@ cdef inline double complex ccospi(double complex z) nogil:
     return zpack(coshfac*exphpiy, sinhfac*exphpiy)
 
 
-cdef inline number_t sinpi(number_t z) nogil:
+cdef inline number_t sinpi(number_t z) noexcept nogil:
     if number_t is double:
         return dsinpi(z)
     else:
         return csinpi(z)
 
 
-cdef inline number_t cospi(number_t z) nogil:
+cdef inline number_t cospi(number_t z) noexcept nogil:
     if number_t is double:
         return dcospi(z)
     else:

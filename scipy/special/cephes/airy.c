@@ -253,8 +253,7 @@ static double APGD[11] = {
     5.79912514929147598821E-9,
 };
 
-int airy(x, ai, aip, bi, bip)
-double x, *ai, *aip, *bi, *bip;
+int airy(double x, double *ai, double *aip, double *bi, double *bip)
 {
     double z, zz, t, f, g, uf, ug, k, zeta, theta;
     int domflg;
@@ -278,7 +277,7 @@ double x, *ai, *aip, *bi, *bip;
 	zz = z * z;
 	uf = 1.0 + zz * polevl(zz, AFN, 8) / p1evl(zz, AFD, 9);
 	ug = z * polevl(zz, AGN, 10) / p1evl(zz, AGD, 10);
-	theta = zeta + 0.25 * NPY_PI;
+	theta = zeta + 0.25 * M_PI;
 	f = sin(theta);
 	g = cos(theta);
 	*ai = k * (f * uf - g * ug);

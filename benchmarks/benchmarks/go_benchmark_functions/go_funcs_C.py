@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import numpy as np
 from numpy import (abs, asarray, cos, exp, floor, pi, sign, sin, sqrt, sum,
                    size, tril, isnan, atleast_2d, repeat)
@@ -214,7 +213,7 @@ class Cola(Benchmark):
         yj = repeat(yi, size(yi, 1), axis=0)
         yi = yi.T
 
-        inner = (sqrt(((xi - xj) ** 2 + (yi - yj) ** 2)) - self.d) ** 2
+        inner = (sqrt((xi - xj) ** 2 + (yi - yj) ** 2) - self.d) ** 2
         inner = tril(inner, -1)
         return sum(sum(inner, axis=1))
 
@@ -552,7 +551,8 @@ class Cube(Benchmark):
         f_{\text{Cube}}(x) = 100(x_2 - x_1^3)^2 + (1 - x1)^2
 
 
-    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]` for :math:`i=1,...,N`.
+    Here, :math:`n` represents the number of dimensions and :math:`x_i \in [-10, 10]`
+    for :math:`i=1,...,N`.
 
     *Global optimum*: :math:`f(x_i) = 0.0` for :math:`x = [1, 1]`
 

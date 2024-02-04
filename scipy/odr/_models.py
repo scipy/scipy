@@ -95,6 +95,7 @@ class _MultilinearModel(Model):
     dimensional linear model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 10.0 + 5.0 * x
     >>> data = odr.Data(x, y)
@@ -188,6 +189,7 @@ class _ExponentialModel(Model):
     We can calculate orthogonal distance regression with an exponential model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = -10.0 + np.exp(0.5*x)
     >>> data = odr.Data(x, y)
@@ -258,6 +260,7 @@ class _UnilinearModel(Model):
     We can calculate orthogonal distance regression with an unilinear model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 1.0 * x + 2.0
     >>> data = odr.Data(x, y)
@@ -290,6 +293,7 @@ class _QuadraticModel(Model):
     We can calculate orthogonal distance regression with a quadratic model:
 
     >>> from scipy import odr
+    >>> import numpy as np
     >>> x = np.linspace(0.0, 5.0)
     >>> y = 1.0 * x ** 2 + 2.0 * x + 3.0
     >>> data = odr.Data(x, y)

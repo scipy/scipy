@@ -4,7 +4,7 @@
 
 #define UNURAN_THUNK(CAST_FUNC, FUNCNAME, LEN)                                              \
     PyGILState_STATE gstate = PyGILState_Ensure();                                          \
-    /* If an error has occured, return INFINITY. */                                         \
+    /* If an error has occurred, return INFINITY. */                                        \
     if (PyErr_Occurred()) return UNUR_INFINITY;                                             \
     ccallback_t *callback = ccallback_obtain();                                             \
                                                                                             \

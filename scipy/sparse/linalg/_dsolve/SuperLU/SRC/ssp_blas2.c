@@ -28,13 +28,6 @@ at the top-level directory.
 
 #include "slu_sdefs.h"
 
-/* 
- * Function prototypes 
- */
-void susolve(int, int, float*, float*);
-void slsolve(int, int, float*, float*);
-void smatvec(int, int, int, float*, float*, float*);
-
 /*! \brief Solves one of the systems of equations A*x = b,   or   A'*x = b
  * 
  * <pre>
@@ -103,9 +96,9 @@ sp_strsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     float   *Lval, *Uval;
     int incx = 1, incy = 1;
     float alpha = 1.0, beta = 1.0;
-    int nrow;
-    int fsupc, nsupr, nsupc, luptr, istart, irow;
-    int i, k, iptr, jcol;
+    int nrow, irow, jcol;
+    int fsupc, nsupr, nsupc;
+    int_t luptr, istart, i, k, iptr;
     float *work;
     flops_t solve_ops;
 
@@ -119,8 +112,8 @@ sp_strsv(char *uplo, char *trans, char *diag, SuperMatrix *L,
     else if ( L->nrow != L->ncol || L->nrow < 0 ) *info = -4;
     else if ( U->nrow != U->ncol || U->nrow < 0 ) *info = -5;
     if ( *info ) {
-	i = -(*info);
-	input_error("sp_strsv", &i);
+	int ii = -(*info);
+	input_error("sp_strsv", &ii);
 	return 0;
     }
 
@@ -386,8 +379,9 @@ sp_sgemv(char *trans, float alpha, SuperMatrix *A, float *x,
     float   *Aval;
     int info;
     float temp;
-    int lenx, leny, i, j, irow;
-    int iy, jx, jy, kx, ky;
+    int lenx, leny;
+    int iy, jx, jy, kx, ky, irow;
+    int_t i, j;
     int notran;
 
     notran = ( strncmp(trans, "N", 1)==0 || strncmp(trans, "n", 1)==0 );
