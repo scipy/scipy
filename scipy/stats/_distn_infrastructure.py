@@ -2608,7 +2608,7 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1 = norm.fit(x)
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
-        """
+        """ # noqa: E501
         method = kwds.get('method', "mle").lower()
 
         censored = isinstance(data, CensoredData)
