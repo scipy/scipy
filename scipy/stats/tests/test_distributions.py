@@ -3078,6 +3078,17 @@ class TestLogLaplace:
                1151387.578354072, 1640845512466.0906]
         assert_allclose(stats.loglaplace.isf(q, c), ref, rtol=1e-14)
 
+    @pytest.mark.parametrize('r', [1, 2, 3, 4])
+    def test_moments_stats(self, r):
+        mom = 'mvsk'[r - 1]
+        c = np.arange(0.5, r + 0.5, 0.5)
+
+        # r-th non-central moment is infinite if |r| >= c.
+        assert_allclose(stats.loglaplace.moment(r, c), np.inf)
+
+        # r-th non-central moment is non-finite (inf or nan) if r >= c.
+        assert not np.any(np.isfinite(stats.loglaplace.stats(c, moments=mom)))
+
 
 class TestPowerlaw:
 

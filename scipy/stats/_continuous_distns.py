@@ -6377,7 +6377,9 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
