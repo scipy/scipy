@@ -945,8 +945,8 @@ def boxcox_llf(lmb, data):
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
         # The sign of lmb at the denominator doesn't affect the variance.
-        logx = lmb * logdata - np.log(abs(lmb))
-        logvar = _log_var(logx)
+        logx = lmb * logdata
+        logvar = _log_var(logx) - 2 * np.log(abs(lmb))
 
     return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
 
