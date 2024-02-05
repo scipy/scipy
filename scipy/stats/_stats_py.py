@@ -9313,6 +9313,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples):
     """Compute the Friedman test for repeated samples.
 
@@ -9411,6 +9412,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.
@@ -9487,27 +9489,12 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    # check both x and y
-    cnx, npx = _contains_nan(x, nan_policy)
-    cny, npy = _contains_nan(y, nan_policy)
-    contains_nan = cnx or cny
-    if npx == "omit" or npy == "omit":
-        nan_policy = "omit"
-
-    if contains_nan and nan_policy == "propagate":
-        return BrunnerMunzelResult(np.nan, np.nan)
-    elif contains_nan and nan_policy == "omit":
-        x = ma.masked_invalid(x)
-        y = ma.masked_invalid(y)
-        return mstats_basic.brunnermunzel(x, y, alternative, distribution)
 
     nx = len(x)
     ny = len(y)
     if nx == 0 or ny == 0:
-        return BrunnerMunzelResult(np.nan, np.nan)
+        NaN = _get_nan(x, y)
+        return BrunnerMunzelResult(NaN, NaN)
     rankc = rankdata(np.concatenate((x, y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
