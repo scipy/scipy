@@ -4,9 +4,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
+import scipy._lib._elementwise_iterative_method as eim
 from scipy import special, stats
 from scipy.integrate import quad_vec
-from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache, _nsum, _ECONVERR
+from scipy.integrate._tanhsinh import _tanhsinh, _pair_cache, _nsum
 from scipy.stats._discrete_distns import _gen_harmonic_gt1
 
 class TestTanhSinh:
@@ -345,7 +346,7 @@ class TestTanhSinh:
         assert res.nfev == f.feval < ref.nfev
         assert f.calls == ref.calls - 1
         assert not res.success
-        assert res.status == _ECONVERR
+        assert res.status == eim._ECONVERR
 
         # `maxfun` is currently not enforced
 

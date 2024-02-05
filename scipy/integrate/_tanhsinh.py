@@ -1,9 +1,8 @@
 # mypy: disable-error-code="attr-defined"
 import numpy as np
 from scipy import special
-from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
-    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import _RichResult
 
 # todo:
 #  figure out warning situation
@@ -308,7 +307,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         rtol, args, preserve_shape, callback)
 
     # Initialization
-    # `_elementwise_algorithm_initialize` does several important jobs, including
+    # `eim._initialize` does several important jobs, including
     # ensuring that limits, each of the `args`, and the output of `f`
     # broadcast correctly and are of consistent types. To save a function
     # evaluation, I pass the midpoint of the integration interval. This comes
@@ -321,8 +320,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         c[inf_a] = b[inf_a]  # takes care of infinite a
         c[inf_b] = a[inf_b]  # takes care of infinite b
         c[inf_a & inf_b] = 0  # takes care of infinite a and b
-        temp = _elementwise_algorithm_initialize(f, (c,), args, complex_ok=True,
-                                                 preserve_shape=preserve_shape)
+        temp = eim._initialize(f, (c,), args, complex_ok=True,
+                               preserve_shape=preserve_shape)
     f, xs, fs, args, shape, dtype = temp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
     b = np.broadcast_to(b, shape).astype(dtype).ravel()
@@ -343,7 +342,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Sn[np.isnan(a) | np.isnan(b) | np.isnan(fs[0])] = np.nan
     Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
-    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
+    status = np.full(shape, eim._EINPROGRESS, dtype=int).ravel()
     h0 = np.real(_get_base_step(dtype=dtype))  # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
@@ -415,14 +414,14 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             zero = -np.inf if log else 0
             work.Sn[i] = zero
             work.aerr[i] = zero
-            work.status[i] = _ECONVERGED
+            work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
             # Terminate if convergence criterion is met
             work.rerr, work.aerr = _estimate_error(work)
             i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
                  else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
-            work.status[i] = _ECONVERGED
+            work.status[i] = eim._ECONVERGED
             stop[i] = True
 
         # Terminate if integral estimate becomes invalid
@@ -430,7 +429,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             i = (np.isposinf(np.real(work.Sn)) | np.isnan(work.Sn)) & ~stop
         else:
             i = ~np.isfinite(work.Sn) & ~stop
-        work.status[i] = _EVALUEERR
+        work.status[i] = eim._EVALUEERR
         stop[i] = True
 
         return stop
@@ -460,12 +459,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # Suppress all warnings initially, since there are many places in the code
     # for which this is expected behavior.
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        res = _elementwise_algorithm_loop(work, callback, shape, maxiter, f,
-                                          args, dtype, pre_func_eval,
-                                          post_func_eval, check_termination,
-                                          post_termination_check,
-                                          customize_result, res_work_pairs,
-                                          preserve_shape)
+        res = eim._loop(work, callback, shape, maxiter, f, args, dtype, pre_func_eval,
+                        post_func_eval, check_termination, post_termination_check,
+                        customize_result, res_work_pairs, preserve_shape)
     return res
 
 
@@ -1071,7 +1067,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
-    tmp = _elementwise_algorithm_initialize(f, (a,), args, complex_ok=False)
+    tmp = eim._initialize(f, (a,), args, complex_ok=False)
     f, xs, fs, args, shape, dtype = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays

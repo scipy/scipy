@@ -3,9 +3,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
-from scipy.optimize._differentiate import _differentiate as differentiate
-from scipy.optimize import _differentiate
+import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
+from scipy.optimize._differentiate import (_differentiate as differentiate,
+                                           _EERRORINCREASE)
 
 class TestDifferentiate:
 
@@ -105,10 +106,10 @@ class TestDifferentiate:
         args = (np.arange(4, dtype=np.int64),)
         res = differentiate(f, [1]*4, rtol=1e-14, order=2, args=args)
 
-        ref_flags = np.array([_differentiate._ECONVERGED,
-                              _differentiate._EERRORINCREASE,
-                              _differentiate._ECONVERR,
-                              _differentiate._EVALUEERR])
+        ref_flags = np.array([eim._ECONVERGED,
+                              _EERRORINCREASE,
+                              eim._ECONVERR,
+                              eim._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
     def test_convergence(self):
@@ -222,7 +223,7 @@ class TestDifferentiate:
             assert hasattr(res, 'x')
             assert res.df not in callback.dfs
             callback.dfs.add(res.df)
-            assert res.status == _differentiate._EINPROGRESS
+            assert res.status == eim._EINPROGRESS
             if callback.iter == maxiter:
                 raise StopIteration
         callback.iter = -1  # callback called once before first iteration
@@ -234,9 +235,9 @@ class TestDifferentiate:
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                assert res[key] == _differentiate._ECONVERR
-                assert callback.res[key] == _differentiate._EINPROGRESS
-                assert res2[key] == _differentiate._ECALLBACK
+                assert res[key] == eim._ECONVERR
+                assert callback.res[key] == eim._EINPROGRESS
+                assert res2[key] == eim._ECALLBACK
             else:
                 assert res2[key] == callback.res[key] == res[key]
 

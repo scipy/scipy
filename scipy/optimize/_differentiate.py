@@ -1,8 +1,7 @@
 # mypy: disable-error-code="attr-defined"
 import numpy as np
-from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
-    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import _RichResult
 
 _EERRORINCREASE = -1  # used in _differentiate
 
@@ -275,7 +274,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    temp = _elementwise_algorithm_initialize(func, (x,), args)
+    temp = eim._initialize(func, (x,), args)
     func, xs, fs, args, shape, dtype = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
@@ -285,7 +284,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # that `hdir` can be broadcasted to the final shape.
     hdir = np.broadcast_to(hdir, shape).flatten()
 
-    status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
+    status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluations performed above
     # Boolean indices of left, central, right, and (all) one-sided steps
     il = hdir < 0
@@ -429,12 +428,12 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         stop = np.zeros_like(work.df).astype(bool)
 
         i = work.error < work.atol + work.rtol*abs(work.df)
-        work.status[i] = _ECONVERGED
+        work.status[i] = eim._ECONVERGED
         stop[i] = True
 
         if work.nit > 0:
             i = ~((np.isfinite(work.x) & np.isfinite(work.df)) | stop)
-            work.df[i], work.status[i] = np.nan, _EVALUEERR
+            work.df[i], work.status[i] = np.nan, eim._EVALUEERR
             stop[i] = True
 
         # With infinite precision, there is a step size below which
@@ -456,11 +455,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     def customize_result(res, shape):
         return shape
 
-    return _elementwise_algorithm_loop(work, callback, shape,
-                                       maxiter, func, args, dtype,
-                                       pre_func_eval, post_func_eval,
-                                       check_termination, post_termination_check,
-                                       customize_result, res_work_pairs)
+    return eim._loop(work, callback, shape, maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval, check_termination,
+                     post_termination_check, customize_result, res_work_pairs)
 
 
 def _differentiate_weights(work, n):

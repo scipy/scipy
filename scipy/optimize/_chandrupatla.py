@@ -1,9 +1,7 @@
 import numpy as np
 from ._zeros_py import _xtol, _rtol, _iter
-from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
-    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
-
+import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import _RichResult
 
 def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
                   fatol=None, frtol=0, maxiter=_iter, callback=None):
@@ -124,11 +122,11 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     func, args, xatol, xrtol, fatol, frtol, maxiter, callback = res
 
     # Initialization
-    temp = _elementwise_algorithm_initialize(func, (a, b), args)
+    temp = eim._initialize(func, (a, b), args)
     func, xs, fs, args, shape, dtype = temp
     x1, x2 = xs
     f1, f2 = fs
-    status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
+    status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
     xatol = _xtol if xatol is None else xatol
     xrtol = _rtol if xrtol is None else xrtol
@@ -176,16 +174,16 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         # where `f1` and `f2` are the function evaluated at the original ends of
         # the bracket.
         i |= np.abs(work.fmin) <= work.fatol + work.frtol
-        work.status[i] = _ECONVERGED
+        work.status[i] = eim._ECONVERGED
         stop[i] = True
 
         i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _ESIGNERR
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._ESIGNERR
         stop[i] = True
 
         i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
                & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, _EVALUEERR
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._EVALUEERR
         stop[i] = True
 
         return stop
@@ -216,11 +214,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         res['fr'] = np.choose(i, (fl, fr))
         return shape
 
-    return _elementwise_algorithm_loop(work, callback, shape,
-                                       maxiter, func, args, dtype,
-                                       pre_func_eval, post_func_eval,
-                                       check_termination, post_termination_check,
-                                       customize_result, res_work_pairs)
+    return eim._loop(work, callback, shape, maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval, check_termination,
+                     post_termination_check, customize_result, res_work_pairs)
 
 
 def _chandrupatla_iv(func, args, xatol, xrtol,
@@ -374,12 +370,12 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     # Initialization
     xs = (x1, x2, x3)
-    temp = _elementwise_algorithm_initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args)
     func, xs, fs, args, shape, dtype = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio
-    status = np.full_like(x1, _EINPROGRESS, dtype=int)  # in progress
+    status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 3  # three function evaluations performed above
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = np.finfo(dtype).tiny if frtol is None else frtol
@@ -472,13 +468,13 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # Bracket is invalid; stop and don't return minimizer/minimum
         i = ((work.f2 > work.f1) | (work.f2 > work.f3))
         work.x2[i], work.f2[i] = np.nan, np.nan
-        stop[i], work.status[i] = True, _ESIGNERR
+        stop[i], work.status[i] = True, eim._ESIGNERR
 
         # Non-finite values; stop and don't return minimizer/minimum
         finite = np.isfinite(work.x1+work.x2+work.x3+work.f1+work.f2+work.f3)
         i = ~(finite | stop)
         work.x2[i], work.f2[i] = np.nan, np.nan
-        stop[i], work.status[i] = True, _EVALUEERR
+        stop[i], work.status[i] = True, eim._EVALUEERR
 
         # [1] Section 3 "Points 1 and 3 are interchanged if necessary to make
         # the (x2, x3) the larger interval."
@@ -507,7 +503,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         # Note 2: factor of 2 is not in the text; see QBASIC start of DO loop
         i |= (work.f1 - 2 * work.f2 + work.f3) <= 2*ftol  # [1] (11)
         i &= ~stop
-        stop[i], work.status[i] = True, _ECONVERGED
+        stop[i], work.status[i] = True, eim._ECONVERGED
 
         return stop
 
@@ -523,8 +519,6 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
         res['fr'] = np.choose(i, (fl, fr))
         return shape
 
-    return _elementwise_algorithm_loop(work, callback, shape,
-                                       maxiter, func, args, dtype,
-                                       pre_func_eval, post_func_eval,
-                                       check_termination, post_termination_check,
-                                       customize_result, res_work_pairs)
+    return eim._loop(work, callback, shape, maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval, check_termination,
+                     post_termination_check, customize_result, res_work_pairs)

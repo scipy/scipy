@@ -1,9 +1,9 @@
-# `_elementwise_algorithm.py` includes tools for writing functions that
+# `_elementwise_iterative_method.py` includes tools for writing functions that
 # - are vectorized to work elementwise on arrays,
 # - implement non-trivial, iterative algorithms with a callback interface, and
 # - return rich objects with iteration count, termination status, etc.
 #
-# Excamples include:
+# Examples include:
 # `scipy.optimize._chandrupatla._chandrupatla for scalar rootfinding,
 # `scipy.optimize._chandrupatla._chandrupatla_minimize for scalar minimization,
 # `scipy.optimize._differentiate._differentiate for numerical differentiation,
@@ -21,8 +21,7 @@ _ECALLBACK = -4
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
-def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False,
-                                      preserve_shape=None):
+def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     """Initialize abscissa, function, and args arrays for elementwise function
 
     Parameters
@@ -119,11 +118,9 @@ def _elementwise_algorithm_initialize(func, xs, args, complex_ok=False,
     return func, xs, fs, args, shape, xfat
 
 
-def _elementwise_algorithm_loop(work, callback, shape, maxiter,
-                                func, args, dtype, pre_func_eval, post_func_eval,
-                                check_termination, post_termination_check,
-                                customize_result, res_work_pairs,
-                                preserve_shape=False):
+def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
+          post_func_eval, check_termination, post_termination_check,
+          customize_result, res_work_pairs, preserve_shape=False):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -201,13 +198,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
     res = _RichResult(res_dict)
     work.args = args
 
-    active = _elementwise_algorithm_check_termination(
-        work, res, res_work_pairs, active, check_termination, preserve_shape)
+    active = _check_termination(work, res, res_work_pairs, active,
+                                check_termination, preserve_shape)
 
     if callback is not None:
-        temp = _elementwise_algorithm_prepare_result(
-            work, res, res_work_pairs, active, shape,
-            customize_result, preserve_shape)
+        temp = _prepare_result(work, res, res_work_pairs, active, shape,
+                               customize_result, preserve_shape)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
@@ -216,7 +212,7 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
 
         if work.args and work.args[0].ndim != x.ndim:
             # `x` always starts as 1D. If the SciPy function that uses
-            # _elementwise_algorithm_loop added dimensions to `x`, we need to
+            # _loop added dimensions to `x`, we need to
             # add them to the elements of `args`.
             dims = np.arange(x.ndim, dtype=np.int64)
             work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
@@ -235,13 +231,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
         post_func_eval(x, f, work)
 
         work.nit += 1
-        active = _elementwise_algorithm_check_termination(
-            work, res, res_work_pairs, active, check_termination, preserve_shape)
+        active = _check_termination(work, res, res_work_pairs, active,
+                                    check_termination, preserve_shape)
 
         if callback is not None:
-            temp = _elementwise_algorithm_prepare_result(
-                work, res, res_work_pairs, active, shape,
-                customize_result, preserve_shape)
+            temp = _prepare_result(work, res, res_work_pairs, active, shape,
+                                   customize_result, preserve_shape)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
@@ -251,13 +246,12 @@ def _elementwise_algorithm_loop(work, callback, shape, maxiter,
         post_termination_check(work)
 
     work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
-    return _elementwise_algorithm_prepare_result(
-        work, res, res_work_pairs, active, shape,
-        customize_result, preserve_shape)
+    return _prepare_result(work, res, res_work_pairs, active, shape,
+                           customize_result, preserve_shape)
 
 
-def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
-                                             check_termination, preserve_shape):
+def _check_termination(work, res, res_work_pairs, active, check_termination,
+                       preserve_shape):
     # Checks termination conditions, updates elements of `res` with
     # corresponding elements of `work`, and compresses `work`.
 
@@ -266,8 +260,7 @@ def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
     if np.any(stop):
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
-        _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
-                                             stop, preserve_shape)
+        _update_active(work, res, res_work_pairs, active, stop, preserve_shape)
 
         if preserve_shape:
             stop = stop[active]
@@ -284,8 +277,7 @@ def _elementwise_algorithm_check_termination(work, res, res_work_pairs, active,
     return active
 
 
-def _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
-                                         mask, preserve_shape):
+def _update_active(work, res, res_work_pairs, active, mask, preserve_shape):
     # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
@@ -312,14 +304,13 @@ def _elementwise_algorithm_update_active(work, res, res_work_pairs, active,
             res[key][active] = val
 
 
-def _elementwise_algorithm_prepare_result(work, res, res_work_pairs, active,
-                                          shape, customize_result, preserve_shape):
+def _prepare_result(work, res, res_work_pairs, active, shape, customize_result,
+                    preserve_shape):
     # Prepare the result object `res` by creating a copy, copying the latest
     # data from work, running the provided result customization function,
     # and reshaping the data to the original shapes.
     res = res.copy()
-    _elementwise_algorithm_update_active(work, res, res_work_pairs,
-                                         active, None, preserve_shape)
+    _update_active(work, res, res_work_pairs, active, None, preserve_shape)
 
     shape = customize_result(res, shape)
 

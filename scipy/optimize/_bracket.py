@@ -1,7 +1,6 @@
 import numpy as np
-from scipy._lib._elementwise_algorithm import (  # noqa: F401
-    _elementwise_algorithm_initialize, _elementwise_algorithm_loop, _RichResult,
-    _ECONVERGED, _ESIGNERR, _ECONVERR, _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import _RichResult
 
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
@@ -158,7 +157,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     func, a, b, min, max, factor, args, maxiter = temp
 
     xs = (a, b)
-    temp = _elementwise_algorithm_initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args)
     func, xs, fs, args, shape, dtype = temp  # line split for PEP8
 
     # The approach is to treat the left and right searches as though they were
@@ -191,7 +190,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     active = np.arange(2*n)
     args = [np.concatenate((arg, arg)) for arg in args]
 
-    # This is needed due to inner workings of `_elementwise_algorithm_loop`.
+    # This is needed due to inner workings of `eim._loop`.
     # We're abusing it a tiny bit.
     shape = shape + (2,)
 
@@ -206,7 +205,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     d[i] = x[i] - x0[i]
     d[ni] = limit[ni] - x[ni]
 
-    status = np.full_like(x, _EINPROGRESS, dtype=int)  # in progress
+    status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 1  # one function evaluation per side performed above
 
     work = _RichResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
@@ -252,7 +251,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
         sf = np.sign(work.f)
         sf_last = np.sign(work.f_last)
         i = (sf_last == -sf) | (sf_last == 0) | (sf == 0)
-        work.status[i] = _ECONVERGED
+        work.status[i] = eim._ECONVERGED
         stop[i] = True
 
         # Condition 2: the other side's search found a valid bracket.
@@ -294,7 +293,7 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
         # Condition 4: non-finite value encountered
         i = ~(np.isfinite(work.x) & np.isfinite(work.f)) & ~stop
-        work.status[i] = _EVALUEERR
+        work.status[i] = eim._EVALUEERR
         stop[i] = True
 
         return stop
@@ -376,8 +375,6 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
 
         return shape[:-1]
 
-    return _elementwise_algorithm_loop(work, callback, shape,
-                                       maxiter, func, args, dtype,
-                                       pre_func_eval, post_func_eval,
-                                       check_termination, post_termination_check,
-                                       customize_result, res_work_pairs)
+    return eim._loop(work, callback, shape, maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval, check_termination,
+                     post_termination_check, customize_result, res_work_pairs)

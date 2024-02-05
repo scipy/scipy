@@ -3,8 +3,9 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
-from scipy.optimize._bracket import _bracket_root
-from scipy.optimize import _bracket, _chandrupatla
+from scipy.optimize._bracket import _bracket_root, _ELIMITS
+import scipy._lib._elementwise_iterative_method as eim
+from scipy.optimize import _chandrupatla
 from scipy import stats
 
 class TestBracketRoot:
@@ -165,10 +166,10 @@ class TestBracketRoot:
                                   max=[np.inf, 1, np.inf, np.inf],
                                   args=args, maxiter=3)
 
-        ref_flags = np.array([_bracket._ECONVERGED,
-                              _bracket._ELIMITS,
-                              _bracket._ECONVERR,
-                              _bracket._EVALUEERR])
+        ref_flags = np.array([eim._ECONVERGED,
+                              _ELIMITS,
+                              eim._ECONVERR,
+                              eim._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))

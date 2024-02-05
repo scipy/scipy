@@ -3,7 +3,8 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_less
 
 from scipy import stats
-import scipy.optimize._chandrupatla as _chandrupatla
+import scipy._lib._elementwise_iterative_method as eim
+
 from scipy.optimize._chandrupatla import (_chandrupatla_minimize,
                                           _chandrupatla as _chandrupatla_root)
 from scipy.optimize._tstutils import _CHANDRUPATLA_TESTS
@@ -219,10 +220,10 @@ class TestChandrupatlaMinimize:
         res = _chandrupatla_minimize(f, [0]*4, [2]*4, [np.pi]*4, args=args,
                                      maxiter=10)
 
-        ref_flags = np.array([_chandrupatla._ECONVERGED,
-                              _chandrupatla._ESIGNERR,
-                              _chandrupatla._ECONVERR,
-                              _chandrupatla._EVALUEERR])
+        ref_flags = np.array([eim._ECONVERGED,
+                              eim._ESIGNERR,
+                              eim._ECONVERR,
+                              eim._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
     def test_convergence(self):
@@ -303,7 +304,7 @@ class TestChandrupatlaMinimize:
 
             callback.xl = res.xl
             callback.xr = res.xr
-            assert res.status == _chandrupatla._EINPROGRESS
+            assert res.status == eim._EINPROGRESS
             assert_equal(self.f(res.xl, loc), res.fl)
             assert_equal(self.f(res.xm, loc), res.fm)
             assert_equal(self.f(res.xr, loc), res.fr)
@@ -323,9 +324,9 @@ class TestChandrupatlaMinimize:
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                assert res[key] == _chandrupatla._ECONVERR
-                assert callback.res[key] == _chandrupatla._EINPROGRESS
-                assert res2[key] == _chandrupatla._ECALLBACK
+                assert res[key] == eim._ECONVERR
+                assert callback.res[key] == eim._EINPROGRESS
+                assert res2[key] == eim._ECALLBACK
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
@@ -576,10 +577,10 @@ class TestChandrupatla(TestScalarRootFinders):
         args = (np.arange(4, dtype=np.int64),)
         res = _chandrupatla_root(f, [0]*4, [np.pi]*4, args=args, maxiter=2)
 
-        ref_flags = np.array([_chandrupatla._ECONVERGED,
-                              _chandrupatla._ESIGNERR,
-                              _chandrupatla._ECONVERR,
-                              _chandrupatla._EVALUEERR])
+        ref_flags = np.array([eim._ECONVERGED,
+                              eim._ESIGNERR,
+                              eim._ECONVERR,
+                              eim._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
     def test_convergence(self):
@@ -662,7 +663,7 @@ class TestChandrupatla(TestScalarRootFinders):
 
             callback.xl = res.xl
             callback.xr = res.xr
-            assert res.status == _chandrupatla._EINPROGRESS
+            assert res.status == eim._EINPROGRESS
             assert_equal(self.f(res.xl, p), res.fl)
             assert_equal(self.f(res.xr, p), res.fr)
             assert_equal(self.f(res.x, p), res.fun)
@@ -680,9 +681,9 @@ class TestChandrupatla(TestScalarRootFinders):
         # (except for `status`)
         for key in res.keys():
             if key == 'status':
-                assert res[key] == _chandrupatla._ECONVERR
-                assert callback.res[key] == _chandrupatla._EINPROGRESS
-                assert res2[key] == _chandrupatla._ECALLBACK
+                assert res[key] == eim._ECONVERR
+                assert callback.res[key] == eim._EINPROGRESS
+                assert res2[key] == eim._ECALLBACK
             else:
                 assert res2[key] == callback.res[key] == res[key]
 
