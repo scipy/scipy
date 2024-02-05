@@ -873,6 +873,8 @@ class _spbase:
         """Returns a copy of column j of the array, as an (m x 1) sparse
         array (column vector).
         """
+        if self.ndim == 1:
+            raise ValueError("getcol not provided for 1d arrays. Use indexing A[j]")
         # Subclasses should override this method for efficiency.
         # Post-multiply by a (n x 1) column vector 'a' containing all zeros
         # except for a_j = 1
@@ -884,8 +886,6 @@ class _spbase:
         col_selector = self._csc_container(([1], [[j], [0]]),
                                            shape=(N, 1), dtype=self.dtype)
         result = self @ col_selector
-        if self.ndim == 1:
-            return result.reshape(-1, 1)
         return result
 
     def _getrow(self, i):
