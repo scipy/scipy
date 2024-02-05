@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     psi.c
  *
  *     Psi (digamma) function

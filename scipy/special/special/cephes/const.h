@@ -5,7 +5,6 @@
  * supporting other arithmetic types has been removed.
  */
 
-
 /*
  *
  *

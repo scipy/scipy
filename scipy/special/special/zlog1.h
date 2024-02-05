@@ -3,7 +3,6 @@
  * Original author: Josh Wilson, 2016.
  */
 
-
 #pragma once
 
 #include "config.h"

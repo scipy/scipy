@@ -3,7 +3,6 @@
  * Original authors: Pauli Virtanen, Eric Moore
  */
 
-
 // Binomial coefficient
 
 #pragma once

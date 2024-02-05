@@ -3,7 +3,6 @@
  * Original author: Josh Wilson, 2020.
  */
 
-
 /*
  * Implement sin(pi * x) and cos(pi * x) for real x. Since the periods
  * of these functions are integral (and thus representable in double

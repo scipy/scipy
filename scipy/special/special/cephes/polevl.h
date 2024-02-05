@@ -2,8 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
-
 /*                                                     polevl.c
  *                                                     p1evl.c
  *

@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /* Implementation of the Lambert W function [1]. Based on MPMath
  *  Implementation [2], and documentation [3].
  *

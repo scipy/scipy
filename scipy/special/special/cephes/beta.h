@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     beta.c
  *
  *     Beta function

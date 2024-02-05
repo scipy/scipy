@@ -19,7 +19,6 @@
  *     https://github.com/JuliaLang/julia/blob/master/base/special/gamma.jl
  */
 
-
 #pragma once
 
 #include "cephes/gamma.h"

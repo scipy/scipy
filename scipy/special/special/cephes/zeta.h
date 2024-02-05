@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     zeta.c
  *
  *     Riemann zeta function of two arguments
