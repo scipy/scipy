@@ -87,12 +87,12 @@ class TestChirp:
         # complex conversion operation
         err = w_pwr_r - np.real(w_pwr_c)
 
-        assert_(err < 1e-6)
+        assert(err < 1e-6)
 
     def test_linear_complex_at_zero(self):
         w = waveforms.chirp(t=0, f0=-10.0, f1=1.0, t1=1.0, method='linear',
                             complex=True)
-        assert_almost_equal(w, 1.0)
+        assert_allclose(w, 1.0)
 
     def test_quadratic_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='quadratic')
@@ -106,7 +106,7 @@ class TestChirp:
     def test_quadratic_complex_at_zero(self):
         w = waveforms.chirp(t=0, f0=-1.0, f1=2.0, t1=1.0, method='quadratic',
                             complex=True)
-        assert_almost_equal(w, 1.0+0j)
+        assert_allclose(w, 1.0+0j)
 
     def test_quadratic_freq_01(self):
         method = 'quadratic'
