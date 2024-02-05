@@ -1186,6 +1186,7 @@ class Test_HalfspaceIntersection:
 
         assert_allclose(hs.dual_points, qhalf_points)
 
+
     @pytest.mark.parametrize("k", range(1,4))
     def test_halfspace_batch(self, k):
         # Test that we can add halfspaces a few at a time
@@ -1219,6 +1220,34 @@ class Test_HalfspaceIntersection:
         ind1 = np.lexsort((actual_intersections[:, 1], actual_intersections[:, 0]))
         ind2 = np.lexsort((expected_intersections[:, 1], expected_intersections[:, 0]))
         assert_allclose(actual_intersections[ind1], expected_intersections[ind2])
+
+
+    @pytest.mark.parametrize("halfspaces", [
+    (np.array([-0.70613882, -0.45589431, 0.04178256])),
+    (np.array([[-0.70613882, -0.45589431,  0.04178256],
+               [0.70807342, -0.45464871, -0.45969769],
+               [0.,  0.76515026, -0.35614825]])),
+    ])
+    def test_gh_19865(self, halfspaces):
+        # starting off with a feasible interior point and
+        # adding halfspaces for which it is no longer feasible
+        # should result in an error rather than a problematic
+        # intersection polytope
+        initial_square =  np.array(
+                    [[1, 0, -1], [0, 1, -1], [-1, 0, -1], [0, -1, -1]]
+                )
+        incremental_intersector = qhull.HalfspaceIntersection(initial_square,
+                                                              np.zeros(2),
+                                                              incremental=True)
+        with pytest.raises(qhull.QhullError, match="feasible"):
+            if halfspaces.ndim == 2:
+                # add a few 2d half spaces
+                for h in halfspaces:
+                    incremental_intersector.add_halfspaces(h[np.newaxis])
+            else:
+                # add a 1d half space
+                incremental_intersector.add_halfspaces(halfspaces)
+
 
 @pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
 def test_gh_20623(diagram_type):
