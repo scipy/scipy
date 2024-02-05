@@ -1043,11 +1043,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         minor_indices = self.indices
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
-        row, col = self._swap((major_indices, minor_indices))
+        coords = self._swap((major_indices, minor_indices))
 
         return self._coo_container(
-            (self.data, (row, col)), self.shape, copy=copy,
-            dtype=self.dtype
+            (self.data, coords), self.shape, copy=copy, dtype=self.dtype
         )
 
     tocoo.__doc__ = _spbase.tocoo.__doc__
