@@ -117,3 +117,52 @@ class TestCOBYQA:
         assert sol.maxcv < 1e-8, sol
         assert sol.nfev <= 100, sol
         assert sol.fun < self.fun(solution, 2.0) + 1e-3, sol
+
+    def test_minimize_maxfev(self):
+        constraints = NonlinearConstraint(self.con, 0.0, 0.0)
+        options = {'maxfev': 2}
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            constraints=constraints,
+            options=options,
+        )
+        assert not sol.success, sol.message
+        assert sol.nfev <= 2, sol
+
+    def test_minimize_maxiter(self):
+        constraints = NonlinearConstraint(self.con, 0.0, 0.0)
+        options = {'maxiter': 2}
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            constraints=constraints,
+            options=options,
+        )
+        assert not sol.success, sol.message
+        assert sol.nit <= 2, sol
+
+    def test_minimize_target(self):
+        constraints = NonlinearConstraint(self.con, 0.0, 0.0)
+        sol_ref = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            constraints=constraints,
+            options=self.options,
+        )
+        options = dict(self.options)
+        options['target'] = sol_ref.fun
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            constraints=constraints,
+            options=options,
+        )
+        assert sol.success, sol.message
+        assert sol.maxcv < 1e-8, sol
+        assert sol.nfev <= sol_ref.nfev, sol
+        assert sol.fun <= sol_ref.fun, sol

@@ -6,7 +6,7 @@ __all__ = []
 
 
 def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
-                     callback=None, disp=False, maxfev=1000, maxiter=1000,
+                     callback=None, disp=False, maxfev=None, maxiter=None,
                      target=-np.inf, feasibility_tol=1e-8,
                      initial_tr_radius=1.0, final_tr_radius=1e-6, scale=False,
                      **unknown_options):
@@ -42,8 +42,8 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
     _check_unknown_options(unknown_options)
     options = {
         'disp': bool(disp),
-        'maxfev': int(maxfev),
-        'maxiter': int(maxiter),
+        'maxfev': int(maxfev) if maxfev is not None else 500 * len(x0),
+        'maxiter': int(maxiter) if maxiter is not None else 1000 * len(x0),
         'target': float(target),
         'feasibility_tol': float(feasibility_tol),
         'radius_init': float(initial_tr_radius),
