@@ -32,11 +32,10 @@ def datsp_math_dtypes(dat1d):
 
 
 @pytest.mark.parametrize("spcreator", spcreators)
-class TestCommon1D:  # skip name check
+class TestCommon1D:
     """test common functionality shared by 1D sparse formats"""
 
-    def test_empty(self, spcreator):
-        # create empty matrices
+    def test_create_empty(self, spcreator):
         assert np.array_equal(spcreator((3,)).toarray(), np.zeros(3))
         assert np.array_equal(spcreator((3,)).nnz, 0)
         assert np.array_equal(spcreator((3,)).count_nonzero(), 0)
@@ -56,20 +55,20 @@ class TestCommon1D:  # skip name check
         assert np.array_equal(-A, (-spcreator(A)).toarray())
 
     def test_reshape_1d_tofrom_row_or_column(self, spcreator):
-        # add a dimension
+        # add a dimension 1d->2d
         x = spcreator([1, 0, 7, 0, 0, 0, 0, -3, 0, 0, 0, 5])
         y = x.reshape(1, 12)
         desired = [[1, 0, 7, 0, 0, 0, 0, -3, 0, 0, 0, 5]]
         assert np.array_equal(y.toarray(), desired)
 
-        # remove a size-1 dimension
+        # remove a size-1 dimension 2d->1d
         x = spcreator(desired)
         y = x.reshape(12)
         assert np.array_equal(y.toarray(), desired[0])
         y2 = x.reshape((12,))
         assert y.shape == y2.shape
 
-        # make a column 1d
+        # make a 2d column into 1d. 2d->1d
         y = x.T.reshape(12)
         assert np.array_equal(y.toarray(), desired[0])
 
@@ -102,7 +101,7 @@ class TestCommon1D:  # skip name check
                 assert np.allclose(dat.sum(axis=0), datsp.sum(axis=0))
                 assert np.allclose(dat.sum(axis=-1), datsp.sum(axis=-1))
 
-        # test out parameter
+        # test `out` parameter
         datsp.sum(axis=0, out=np.zeros(()))
 
     def test_sum_invalid_params(self, spcreator):
@@ -357,7 +356,7 @@ class TestCommon1D:  # skip name check
         dot_result = np.dot(Asp.toarray(), [1, 2, 3])
         assert np.allclose(Asp @ np.array([1, 2, 3]), dot_result)
         assert np.allclose(Asp @ [[1], [2], [3]], dot_result.T)
-        # Note that the result of Asp * x is dense if x has a singleton dimension.
+        # Note that the result of Asp @ x is dense if x has a singleton dimension.
 
     def test_rmatvec(self, spcreator, dat1d):
         M = spcreator(dat1d)
@@ -372,16 +371,15 @@ class TestCommon1D:  # skip name check
             assert np.array_equal(B.transpose().toarray(), A)
             assert np.array_equal(B.dtype, A.dtype)
 
-    def test_add_dense(self, spcreator, datsp_math_dtypes):
+    def test_add_dense_to_sparse(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
-            # adding a dense matrix to a sparse matrix
             sum1 = dat + datsp
             assert np.array_equal(sum1, dat + dat)
             sum2 = datsp + dat
             assert np.array_equal(sum2, dat + dat)
 
-    # test that __iter__ is compatible with NumPy
     def test_iterator(self, spcreator):
+        # test that __iter__ is compatible with NumPy
         B = np.arange(5)
         A = spcreator(B)
 
