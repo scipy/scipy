@@ -5,7 +5,6 @@ from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
 from scipy.optimize._bracket import _bracket_root, _ELIMITS
 import scipy._lib._elementwise_iterative_method as eim
-from scipy.optimize import _chandrupatla
 from scipy import stats
 
 class TestBracketRoot:
@@ -232,9 +231,9 @@ class TestBracketRoot:
 
         message = '`maxiter` must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
-            _chandrupatla._chandrupatla(lambda x: x, -4, 4, maxiter=1.5)
+            _bracket_root(lambda x: x, -4, 4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
-            _chandrupatla._chandrupatla(lambda x: x, -4, 4, maxiter=-1)
+            _bracket_root(lambda x: x, -4, 4, maxiter=-1)
 
     def test_special_cases(self):
         # Test edge cases and other special cases
