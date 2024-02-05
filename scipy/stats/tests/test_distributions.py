@@ -3092,43 +3092,29 @@ class TestLogLaplace:
     @pytest.mark.parametrize("c", [0.5, 1.0, 2.0])
     @pytest.mark.parametrize("loc, scale", [(-1.2, 3.45)])
     @pytest.mark.parametrize("fix_c", [True, False])
-    @pytest.mark.parametrize("fix_loc", [True])
     @pytest.mark.parametrize("fix_scale", [True, False])
-    def test_fit_analytic_mle(self, c, loc, scale, fix_c, fix_loc, fix_scale):
-        # Test that the analytic MLE produces the same result as the generic
-        # (numerical) MLE.
+    def test_fit_analytic_mle(self, c, loc, scale, fix_c, fix_scale):
+        # Test that the analytical MLE produces no worse result than the
+        # generic (numerical) MLE.
 
         rng = np.random.default_rng(6762668991392531563)
         data = stats.loglaplace.rvs(c, loc=loc, scale=scale, size=100,
                                     random_state=rng)
 
-        kwds = {}
+        kwds = {'method': 'mle', 'floc': loc}
         if fix_c:
             kwds['fc'] = c
-        if fix_loc:
-            kwds['floc'] = loc
         if fix_scale:
             kwds['fscale'] = scale
-        nfree = 3 - len(kwds)
+        nfree = 4 - len(kwds)
 
         if nfree == 0:
             error_msg = "All parameters fixed. There is nothing to optimize."
             with pytest.raises((RuntimeError, ValueError), match=error_msg):
-                stats.loglaplace.fit(data, method='mle', **kwds)
+                stats.loglaplace.fit(data, **kwds)
             return
 
-        generic_args = super(type(stats.loglaplace),
-                             stats.loglaplace).fit(data, **kwds, method='mle')
-        analytic_args = stats.loglaplace.fit(data, **kwds, method='mle')
-
-        # Sanity check that the specialized MLE is actually executed.
-        # Due to floating point arithmetic, the generic MLE is unlikely
-        # to produce the exact same result as the analytic MLE.
-        assert np.any(generic_args != analytic_args)
-
-        generic_ll = -stats.loglaplace.nnlf(generic_args, data)
-        analytic_ll = -stats.loglaplace.nnlf(analytic_args, data)
-        assert np.allclose(analytic_ll, generic_ll)
+        _assert_less_or_close_loglike(stats.loglaplace, data, **kwds)
 
 class TestPowerlaw:
 
