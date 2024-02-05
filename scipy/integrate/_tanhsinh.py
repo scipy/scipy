@@ -317,8 +317,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
         inf_a, inf_b = np.isinf(a), np.isinf(b)
-        c[inf_a] = b[inf_a]  # takes care of infinite a
-        c[inf_b] = a[inf_b]  # takes care of infinite b
+        c[inf_a] = b[inf_a] - 1  # takes care of infinite a
+        c[inf_b] = a[inf_b] + 1  # takes care of infinite b
         c[inf_a & inf_b] = 0  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, complex_ok=True,
                                preserve_shape=preserve_shape)
