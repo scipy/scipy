@@ -81,8 +81,8 @@ The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
 some point). What we want is sparse *arrays* that act like ``numpy.ndarray``
 (See discussion at `gh-18915 <https://github.com/scipy/scipy/issues/18915>`_).
-Sparse arrays have largely been implemented in scipy/sparse at this time. Some
-functionality is still being completed. The future plan is:
+Sparse arrays have largely been implemented in ``scipy/sparse`` at this time.
+Some functionality is still being completed. The future plan is:
 
 - Provide a feature-complete sparse array API (including 1D-array).
     - Extend sparse array API to 1D arrays:
@@ -92,4 +92,4 @@ functionality is still being completed. The future plan is:
 - Help other libraries convert to sparse arrays from sparse matrices.
   Create transition guide and helpful scripts to flag code that needs changing.
 - Deprecate and then remove "sparse matrix" in favor of "sparse array".
-- Work with Numpy on deprecation/removal of ``numpy.matrix``.
+- Work with NumPy on deprecation/removal of ``numpy.matrix``.

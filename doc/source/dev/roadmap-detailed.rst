@@ -328,7 +328,7 @@ The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
 some point).
 
-What we want is sparse arrays, that act like ``numpy.ndarray``. Initial
+What we want is sparse arrays that act like ``numpy.ndarray``. Initial
 support for a new set of classes (``csr_array`` et al.) was added in SciPy
 ``1.8.0`` and stabilized in ``1.12.0`` when construction functions for
 arrays were added. Support for 1-D array is expected in ``1.13.0``.
@@ -344,7 +344,7 @@ Next steps toward sparse array support:
   progress or have completed conversion to sparse arrays.
 - After sparse array code is mature (~1 release cycle?) add deprecation
   warnings for sparse matrix.
-- Work with Numpy on deprecation/removal of ``numpy.matrix``.
+- Work with NumPy on deprecation/removal of ``numpy.matrix``.
 - Deprecate and then remove sparse matrix in favor of sparse array.
 - Start API shift of construction function names (``diags``, ``block``, etc.)
     - Note: as a whole, the construction functions undergo two name shifts.
@@ -358,9 +358,9 @@ Next steps toward sparse array support:
 
 An alternative (more ambitious, and unclear if it will materialize)
 plan is being worked on in https://github.com/pydata/sparse.
-To support that effort the plan in Scipy is that support for ``pydata/sparse``
-in ``scipy.sparse.linalg`` and ``scipy.sparse.csgraph`` is mostly complete.
-We aim to support PyData Sparse in all functions that accept sparse arrays.
+To support that effort we aim to support PyData Sparse in all functions that
+accept sparse arrays.  Support for ``pydata/sparse`` in ``scipy.sparse.linalg``
+and ``scipy.sparse.csgraph`` is mostly complete.
 
 Regarding the different sparse matrix formats: there are a lot of them.  These
 should be kept, but improvements/optimizations should go into CSR/CSC, which
@@ -478,7 +478,7 @@ improvements will help SciPy better serve this role.
 - Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in scipy.special with Boost implementations as in
+  used in ``scipy.special`` with Boost implementations as in
   `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
 
 In addition, we should:
