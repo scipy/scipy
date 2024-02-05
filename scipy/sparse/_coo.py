@@ -353,9 +353,14 @@ class _coo_base(_data_matrix, _minmax_mixin):
         M, N = swap(self.shape)
         major, minor = swap(self.coords)
         nnz = len(major)
+        # convert idx_dtype intc to int32 for pythran.
+        # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, M, N))
+        major = major.astype(idx_dtype, copy=False)
+        minor = minor.astype(idx_dtype, copy=False)
 
-        indptr = np.empty(M + 1, dtype=major.dtype)
-        indices = np.empty_like(minor)
+        indptr = np.empty(M + 1, dtype=idx_dtype)
+        indices = np.empty_like(minor, dtype=idx_dtype)
         data = np.empty_like(self.data, dtype=self.dtype)
 
         coo_tocsr(M, N, nnz, major, minor, self.data, indptr, indices, data)
