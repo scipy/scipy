@@ -3929,7 +3929,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def _f_oneway_is_too_small(samples, kwargs, axis=-1):
+def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
@@ -4095,7 +4095,7 @@ def f_oneway(*samples, axis=0):
     bign = alldata.shape[axis]
 
     # Check if the inputs are too small
-    if _f_oneway_is_too_small(samples, {}):
+    if _f_oneway_is_too_small(samples):
         return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Check if all values within each group are identical, and if the common
@@ -4140,9 +4140,8 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn = ssbn + _square_of_sums(
-            sample - offset,axis=axis
-        ) / sample.shape[axis]
+        smo_ss = _square_of_sums(sample - offset, axis=axis)
+        ssbn = ssbn + smo_ss / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -4181,16 +4180,10 @@ class AlexanderGovernResult:
     pvalue: float
 
 
-def _alexandergovern_is_too_small(samples, kwargs, axis=-1):
-    if any(sample.shape[axis] <= 1 for sample in samples):
-        return True
-    return False
-
-
 @_axis_nan_policy_factory(
     AlexanderGovernResult, n_samples=None,
     result_to_tuple=lambda x: (x.statistic, x.pvalue),
-    too_small=_alexandergovern_is_too_small
+    too_small=1
 )
 def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
