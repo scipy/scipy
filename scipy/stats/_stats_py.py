@@ -3911,7 +3911,7 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-def _create_f_oneway_nan_result(shape, axis):
+def _create_f_oneway_nan_result(shape, axis, samples):
     """
     This is a helper function for f_oneway for creating the return values
     in certain degenerate conditions.  It creates return values that are
@@ -3919,13 +3919,9 @@ def _create_f_oneway_nan_result(shape, axis):
     """
     axis = normalize_axis_index(axis, len(shape))
     shp = shape[:axis] + shape[axis+1:]
-    if shp == ():
-        f = np.nan
-        prob = np.nan
-    else:
-        f = np.full(shp, fill_value=np.nan)
-        prob = f.copy()
-    return F_onewayResult(f, prob)
+    f = np.full(shp, fill_value=_get_nan(*samples))
+    prob = f.copy()
+    return F_onewayResult(f[()], prob[()])
 
 
 def _first(arr, axis):
@@ -3933,6 +3929,27 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
+def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+    # Check this after forming alldata, so shape errors are detected
+    # and reported before checking for 0 length inputs.
+    if any(sample.shape[axis] == 0 for sample in samples):
+        msg = 'at least one input has length 0'
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+
+    # Must have at least one group with length greater than 1.
+    if all(sample.shape[axis] == 1 for sample in samples):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+
+    return False
+
+
+@_axis_nan_policy_factory(
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small
+)
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
@@ -4066,8 +4083,6 @@ def f_oneway(*samples, axis=0):
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
 
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
 
@@ -4078,19 +4093,9 @@ def f_oneway(*samples, axis=0):
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
-    # Check this after forming alldata, so shape errors are detected
-    # and reported before checking for 0 length inputs.
-    if any(sample.shape[axis] == 0 for sample in samples):
-        msg = 'at least one input has length 0'
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
-
-    # Must have at least one group with length greater than 1.
-    if all(sample.shape[axis] == 1 for sample in samples):
-        msg = ('all input arrays have length 1.  f_oneway requires that at '
-               'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
+    # Check if the inputs are too small
+    if _f_oneway_is_too_small(samples):
+        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
@@ -4126,7 +4131,7 @@ def f_oneway(*samples, axis=0):
     # to a shift in location, and centering all data around zero vastly
     # improves numerical stability.
     offset = alldata.mean(axis=axis, keepdims=True)
-    alldata -= offset
+    alldata = alldata - offset
 
     normalized_ss = _square_of_sums(alldata, axis=axis) / bign
 
@@ -4134,12 +4139,12 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn += _square_of_sums(sample - offset,
-                                axis=axis) / sample.shape[axis]
+        smo_ss = _square_of_sums(sample - offset, axis=axis)
+        ssbn = ssbn + smo_ss / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= normalized_ss
+    ssbn = ssbn - normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
@@ -4168,6 +4173,17 @@ def f_oneway(*samples, axis=0):
     return F_onewayResult(f, prob)
 
 
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
+
+
+@_axis_nan_policy_factory(
+    AlexanderGovernResult, n_samples=None,
+    result_to_tuple=lambda x: (x.statistic, x.pvalue),
+    too_small=1
+)
 def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
 
@@ -4269,8 +4285,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
-                        else len(sample) for sample in samples])
+    lengths = np.array([len(sample) for sample in samples])
     means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4311,28 +4326,13 @@ def _alexandergovern_input_validation(samples, nan_policy):
     if len(samples) < 2:
         raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
-    # input arrays are flattened
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
-    for i, sample in enumerate(samples):
+    for sample in samples:
         if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if sample.ndim != 1:
-            raise ValueError("Input samples must be one-dimensional")
         if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(sample,
-                                                 nan_policy=nan_policy)
-        if contains_nan and nan_policy == 'omit':
-            samples[i] = ma.masked_invalid(sample)
     return samples
-
-
-@dataclass
-class AlexanderGovernResult:
-    statistic: float
-    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
