@@ -335,7 +335,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             else:  # elif self.ndim == 1:
                 # this works for 2d too, but maybe subtle differences?
                 o_coo = other.tocoo()
-                o_coo_data = zip(zip(*o_coo.indices), o_coo.data)
+                o_coo_data = zip(zip(*o_coo.coords), o_coo.data)
                 if self.ndim == 1:
                     o_coo_data = ((k[0], v) for k, v in o_coo_data)
                 with np.errstate(over='ignore'):
@@ -374,14 +374,14 @@ class _dok_base(_spbase, IndexMixin, dict):
     def _matmul_vector(self, other):
         res_dtype = upcast(self.dtype, other.dtype)
 
-        # vector * vector
+        # vector @ vector
         if self.ndim == 1:
             if issparse(other):
                 if other.format == "dok":
                     shared_keys = self.keys() & other.keys()
                 else:
                     o_coo = other.tocoo()
-                    shared_keys = self.keys() & o_coo.indices[0]
+                    shared_keys = self.keys() & o_coo.coords[0]
                 arr = np.array([self._dict[k] * other._dict[k] for k in shared_keys])
                 return arr.sum(dtype=res_dtype)
             elif isdense(other):
@@ -513,8 +513,8 @@ class _dok_base(_spbase, IndexMixin, dict):
         data = np.fromiter(self.values(), dtype=self.dtype, count=nnz)
         # handle 1d keys specially b/c not a tuple
         inds = zip(*self.keys()) if self.ndim > 1 else (self.keys(),)
-        indices = tuple(np.fromiter(ix, dtype=idx_dtype, count=nnz) for ix in inds)
-        A = self._coo_container((data, indices), shape=self.shape, dtype=self.dtype)
+        coords = tuple(np.fromiter(ix, dtype=idx_dtype, count=nnz) for ix in inds)
+        A = self._coo_container((data, coords), shape=self.shape, dtype=self.dtype)
         A.has_canonical_format = True
         return A
 

@@ -401,13 +401,13 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def todok(self, copy=False):
         self.sum_duplicates()
         dok = self._dok_container(self.shape, dtype=self.dtype)
-        # ensure that 1d indices are not tuples
+        # ensure that 1d coordinates are not tuples
         if self.ndim == 1:
-            indices = self.indices[0]
+            coords = self.coords[0]
         else:
-            indices = zip(*self.indices)
+            coords = zip(*self.coords)
 
-        dok._update(zip(indices, self.data))
+        dok._update(zip(coords, self.data))
         return dok
 
     todok.__doc__ = _spbase.todok.__doc__
