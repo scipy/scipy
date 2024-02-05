@@ -3393,8 +3393,8 @@ class gamma_gen(rv_continuous):
         floc = kwds.get('floc', None)
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or floc is None
-                or method.lower() == 'mm'):
+        if (isinstance(data, CensoredData) or
+                floc is None and method.lower() != 'mm'):
             # loc is not fixed or we're not doing standard MLE.
             # Use the default fit method.
             return super().fit(data, *args, **kwds)
@@ -3407,9 +3407,7 @@ class gamma_gen(rv_continuous):
 
         _remove_optimizer_parameters(kwds)
 
-        # Special case: loc is fixed.
-
-        if f0 is not None and fscale is not None:
+        if f0 is not None and floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
             # Without this check, this function would just return the
             # parameters that were given.
@@ -3422,6 +3420,34 @@ class gamma_gen(rv_continuous):
         if not np.isfinite(data).all():
             raise ValueError("The data contains non-finite values.")
 
+        # Use explicit formulas for mm (gh-19884)
+        if method.lower() == 'mm':
+            m1 = np.mean(data)
+            m2 = np.var(data)
+            m3 = np.mean((data - m1) ** 3)
+            a, loc, scale = f0, floc, fscale
+            # Three unknowns
+            if a is None and loc is None and scale is None:
+                scale = m3 / (2 * m2)
+            # Two unknowns
+            if loc is None and scale is None:
+                scale = np.sqrt(m2 / a)
+            if a is None and scale is None:
+                scale = m2 / (m1 - loc)
+            if a is None and loc is None:
+                a = m2 / (scale ** 2)
+            # One unknown
+            if a is None:
+                a = (m1 - loc) / scale
+            if loc is None:
+                loc = m1 - a * scale
+            if scale is None:
+                scale = (m1 - loc) / a
+            return a, loc, scale
+
+        # Special case: loc is fixed.
+
+        # NB: data == loc is ok if a >= 1; the below check is more strict.
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
 
@@ -4482,7 +4508,7 @@ class halfnorm_gen(rv_continuous):
         if fscale is not None:
             scale = fscale
         else:
-            scale = stats.moment(data, moment=2, center=loc)**0.5
+            scale = stats.moment(data, order=2, center=loc)**0.5
 
         return loc, scale
 
@@ -4698,14 +4724,26 @@ class invgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
-                    \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
+        f(x; \mu) = \frac{1}{\sqrt{2 \pi x^3}}
+                    \exp\left(-\frac{(x-\mu)^2}{2 \mu^2 x}\right)
 
-    for :math:`x >= 0` and :math:`\mu > 0`.
+    for :math:`x \ge 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
+
+    A common shape-scale parameterization of the inverse Gaussian distribution
+    has density
+
+    .. math::
+
+        f(x; \nu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\nu)^2}{2 \nu^2 x}\right)
+
+    Using ``nu`` for :math:`\nu` and ``lam`` for :math:`\lambda`, this
+    parameterization is equivalent to the one above with ``mu = nu/lam``,
+    ``loc = 0``, and ``scale = lam``.
 
     %(example)s
 
@@ -6304,6 +6342,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
@@ -6335,7 +6377,9 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
@@ -7545,29 +7589,15 @@ class t_gen(rv_continuous):
 
     def _logpdf(self, x, df):
 
-        def regular_formula(x, df):
-            return (sc.gammaln((df + 1)/2) - sc.gammaln(df/2)
-                    - (0.5 * np.log(df*np.pi))
+        def t_logpdf(x, df):
+            return (np.log(sc.poch(0.5 * df, 0.5))
+                    - 0.5 * (np.log(df) + np.log(np.pi))
                     - (df + 1)/2*np.log1p(x * x/df))
-
-        def asymptotic_formula(x, df):
-            return (- 0.5 * (1 + np.log(2 * np.pi)) + df/2 * np.log1p(1/df)
-                    + 1/6 * (df + 1)**-1. - 1/45*(df + 1)**-3.
-                    - 1/6 * df**-1. + 1/45*df**-3.
-                    - (df + 1)/2 * np.log1p(x*x/df))
 
         def norm_logpdf(x, df):
             return norm._logpdf(x)
 
-        return _lazyselect(
-            ((df == np.inf),
-             (df >= 200) & np.isfinite(df),
-             (df < 200)),
-            (norm_logpdf,
-             asymptotic_formula,
-             regular_formula),
-            (x, df, )
-        )
+        return _lazywhere(df == np.inf, (x, df, ), f=norm_logpdf, f2=t_logpdf)
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -10946,14 +10976,14 @@ class crystalball_gen(rv_continuous):
     from a power-law to a Gaussian distribution.  :math:`m` is the power
     of the power-law tail.
 
+    %(after_notes)s
+
+    .. versionadded:: 0.19.0
+
     References
     ----------
     .. [1] "Crystal Ball Function",
            https://en.wikipedia.org/wiki/Crystal_Ball_function
-
-    %(after_notes)s
-
-    .. versionadded:: 0.19.0
 
     %(example)s
     """

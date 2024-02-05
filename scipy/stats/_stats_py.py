@@ -34,12 +34,8 @@ from collections import namedtuple
 import numpy as np
 from numpy import array, asarray, ma
 
-from scipy import sparse
 from scipy.spatial.distance import cdist
-from scipy.spatial import distance_matrix
-
 from scipy.ndimage import _measurements
-from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan,
                               AxisError)
@@ -887,9 +883,9 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def _moment_outputs(kwds):
-    moment = np.atleast_1d(kwds.get('moment', 1))
+    moment = np.atleast_1d(kwds.get('order', 1))
     if moment.size == 0:
-        raise ValueError("'moment' must be a scalar or a non-empty 1D "
+        raise ValueError("'order' must be a scalar or a non-empty 1D "
                          "list/array.")
     return len(moment)
 
@@ -920,13 +916,14 @@ def _moment_result_object(*args):
 #   returns it.
 # Currently this leads to a slight inconsistency: when the input array is
 # empty, there is no distinction between the `moment` function being called
-# with parameter `moments=1` and `moments=[1]`; the latter *should* produce
+# with parameter `order=1` and `order=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
+@_rename_parameter('moment', 'order')
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
-def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
+def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     r"""Calculate the nth moment about the mean for a sample.
 
     A moment is a specific quantitative measure of the shape of a set of
@@ -937,7 +934,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     ----------
     a : array_like
        Input array.
-    moment : int or array_like of ints, optional
+    order : int or array_like of ints, optional
        Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -989,12 +986,13 @@ def moment(a, moment=1, axis=0, nan_policy='propagate', *, center=None):
     Examples
     --------
     >>> from scipy.stats import moment
-    >>> moment([1, 2, 3, 4, 5], moment=1)
+    >>> moment([1, 2, 3, 4, 5], order=1)
     0.0
-    >>> moment([1, 2, 3, 4, 5], moment=2)
+    >>> moment([1, 2, 3, 4, 5], order=2)
     2.0
 
     """
+    moment = order  # parameter was renamed
     a, axis = _chk_asarray(a, axis)
 
     # for array_like moment input, return a value for each.
@@ -3827,22 +3825,22 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
 
 def trim_mean(a, proportiontocut, axis=0):
-    """Return mean of array after trimming distribution from both tails.
+    """Return mean of array after trimming a specified fraction of extreme values
 
-    If `proportiontocut` = 0.1, slices off 'leftmost' and 'rightmost' 10% of
-    scores. The input is sorted before slicing. Slices off less if proportion
-    results in a non-integer slice index (i.e., conservatively slices off
-    `proportiontocut` ).
+    Removes the specified proportion of elements from *each* end of the
+    sorted array, then computes the mean of the remaining elements.
 
     Parameters
     ----------
     a : array_like
         Input array.
     proportiontocut : float
-        Fraction to cut off of both tails of the distribution.
-    axis : int or None, optional
-        Axis along which the trimmed means are computed. Default is 0.
-        If None, compute over the whole array `a`.
+        Fraction of the most positive and most negative elements to remove.
+        When the specified proportion does not result in an integer number of
+        elements, the number of elements to trim is rounded down.
+    axis : int or None, default: 0
+        Axis along which the trimmed means are computed.
+        If None, compute over the raveled array.
 
     Returns
     -------
@@ -3851,27 +3849,41 @@ def trim_mean(a, proportiontocut, axis=0):
 
     See Also
     --------
-    trimboth
-    tmean : Compute the trimmed mean ignoring values outside given `limits`.
+    trimboth : Remove a proportion of elements from each end of an array.
+    tmean : Compute the mean after trimming values outside specified limits.
+
+    Notes
+    -----
+    For 1-D array `a`, `trim_mean` is approximately equivalent to the following
+    calculation::
+
+        import numpy as np
+        a = np.sort(a)
+        m = int(proportiontocut * len(a))
+        np.mean(a[m: len(a) - m])
 
     Examples
     --------
     >>> import numpy as np
     >>> from scipy import stats
-    >>> x = np.arange(20)
-    >>> stats.trim_mean(x, 0.1)
-    9.5
-    >>> x2 = x.reshape(5, 4)
-    >>> x2
-    array([[ 0,  1,  2,  3],
-           [ 4,  5,  6,  7],
-           [ 8,  9, 10, 11],
-           [12, 13, 14, 15],
-           [16, 17, 18, 19]])
+    >>> x = [1, 2, 3, 5]
+    >>> stats.trim_mean(x, 0.25)
+    2.5
+
+    When the specified proportion does not result in an integer number of
+    elements, the number of elements to trim is rounded down.
+
+    >>> stats.trim_mean(x, 0.24999) == np.mean(x)
+    True
+
+    Use `axis` to specify the axis along which the calculation is performed.
+
+    >>> x2 = [[1, 2, 3, 5],
+    ...       [10, 20, 30, 50]]
     >>> stats.trim_mean(x2, 0.25)
-    array([  8.,   9.,  10.,  11.])
+    array([ 5.5, 11. , 16.5, 27.5])
     >>> stats.trim_mean(x2, 0.25, axis=1)
-    array([  1.5,   5.5,   9.5,  13.5,  17.5])
+    array([ 2.5, 25. ])
 
     """
     a = np.asarray(a)
@@ -3899,7 +3911,7 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-def _create_f_oneway_nan_result(shape, axis):
+def _create_f_oneway_nan_result(shape, axis, samples):
     """
     This is a helper function for f_oneway for creating the return values
     in certain degenerate conditions.  It creates return values that are
@@ -3907,13 +3919,9 @@ def _create_f_oneway_nan_result(shape, axis):
     """
     axis = normalize_axis_index(axis, len(shape))
     shp = shape[:axis] + shape[axis+1:]
-    if shp == ():
-        f = np.nan
-        prob = np.nan
-    else:
-        f = np.full(shp, fill_value=np.nan)
-        prob = f.copy()
-    return F_onewayResult(f, prob)
+    f = np.full(shp, fill_value=_get_nan(*samples))
+    prob = f.copy()
+    return F_onewayResult(f[()], prob[()])
 
 
 def _first(arr, axis):
@@ -3921,6 +3929,27 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
+def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+    # Check this after forming alldata, so shape errors are detected
+    # and reported before checking for 0 length inputs.
+    if any(sample.shape[axis] == 0 for sample in samples):
+        msg = 'at least one input has length 0'
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+
+    # Must have at least one group with length greater than 1.
+    if all(sample.shape[axis] == 1 for sample in samples):
+        msg = ('all input arrays have length 1.  f_oneway requires that at '
+               'least one input has length greater than 1.')
+        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        return True
+
+    return False
+
+
+@_axis_nan_policy_factory(
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small
+)
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
@@ -4054,31 +4083,19 @@ def f_oneway(*samples, axis=0):
         raise TypeError('at least two inputs are required;'
                         f' got {len(samples)}.')
 
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
     # ANOVA on N groups, each in its own array
     num_groups = len(samples)
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.exceptions.AxisError. The call will raise
-    # ValueError if the dimensions of all the arrays, except the axis 
+    # ValueError if the dimensions of all the arrays, except the axis
     # dimension, are not the same.
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
-    # Check this after forming alldata, so shape errors are detected
-    # and reported before checking for 0 length inputs.
-    if any(sample.shape[axis] == 0 for sample in samples):
-        msg = 'at least one input has length 0'
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
-
-    # Must have at least one group with length greater than 1.
-    if all(sample.shape[axis] == 1 for sample in samples):
-        msg = ('all input arrays have length 1.  f_oneway requires that at '
-               'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
-        return _create_f_oneway_nan_result(alldata.shape, axis)
+    # Check if the inputs are too small
+    if _f_oneway_is_too_small(samples):
+        return _create_f_oneway_nan_result(alldata.shape, axis, samples)
 
     # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
@@ -4114,7 +4131,7 @@ def f_oneway(*samples, axis=0):
     # to a shift in location, and centering all data around zero vastly
     # improves numerical stability.
     offset = alldata.mean(axis=axis, keepdims=True)
-    alldata -= offset
+    alldata = alldata - offset
 
     normalized_ss = _square_of_sums(alldata, axis=axis) / bign
 
@@ -4122,12 +4139,12 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn += _square_of_sums(sample - offset,
-                                axis=axis) / sample.shape[axis]
+        smo_ss = _square_of_sums(sample - offset, axis=axis)
+        ssbn = ssbn + smo_ss / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
-    ssbn -= normalized_ss
+    ssbn = ssbn - normalized_ss
     sswn = sstot - ssbn
     dfbn = num_groups - 1
     dfwn = bign - num_groups
@@ -4156,6 +4173,17 @@ def f_oneway(*samples, axis=0):
     return F_onewayResult(f, prob)
 
 
+@dataclass
+class AlexanderGovernResult:
+    statistic: float
+    pvalue: float
+
+
+@_axis_nan_policy_factory(
+    AlexanderGovernResult, n_samples=None,
+    result_to_tuple=lambda x: (x.statistic, x.pvalue),
+    too_small=1
+)
 def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
 
@@ -4257,8 +4285,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
-                        else len(sample) for sample in samples])
+    lengths = np.array([len(sample) for sample in samples])
     means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -4299,28 +4326,13 @@ def _alexandergovern_input_validation(samples, nan_policy):
     if len(samples) < 2:
         raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
-    # input arrays are flattened
-    samples = [np.asarray(sample, dtype=float) for sample in samples]
-
-    for i, sample in enumerate(samples):
+    for sample in samples:
         if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if sample.ndim != 1:
-            raise ValueError("Input samples must be one-dimensional")
         if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(sample,
-                                                 nan_policy=nan_policy)
-        if contains_nan and nan_policy == 'omit':
-            samples[i] = ma.masked_invalid(sample)
     return samples
-
-
-@dataclass
-class AlexanderGovernResult:
-    statistic: float
-    pvalue: float
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
@@ -9860,7 +9872,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided': the quantile associated with the probability `p` 
+        * 'two-sided': the quantile associated with the probability `p`
           is not `q`.
         * 'less': the quantile associated with the probability `p` is less
           than `q`.
@@ -10030,7 +10042,7 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
     As expected, the p-value is not below our threshold of 0.01, so
     we cannot reject the null hypothesis.
 
-    When testing data from the standard *normal* distribution, which has a 
+    When testing data from the standard *normal* distribution, which has a
     median of 0, we would expect the null hypothesis to be rejected.
 
     >>> rvs = stats.norm.rvs(size=100, random_state=rng)
@@ -10175,34 +10187,26 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
-    Compute the Wasserstein-1 distance between two discrete distributions.
+    Compute the first Wasserstein distance between two 1D distributions.
 
-    The Wasserstein distance, also called the Earth mover's distance or the
-    optimal transport distance, is a similarity metric between two probability
-    distributions. In the discrete case, the Wasserstein distance can be
-    understood as the cost of an optimal transport plan to convert one
-    distribution into the other. The cost is calculated as the product of the
-    amount of probability mass being moved and the distance it is being moved.
-    A brief and intuitive introduction can be found at [2]_.
+    This distance is also known as the earth mover's distance, since it can be
+    seen as the minimum amount of "work" required to transform :math:`u` into
+    :math:`v`, where "work" is measured as the amount of distribution weight
+    that must be moved, multiplied by the distance it has to be moved.
 
     .. versionadded:: 1.0.0
 
     Parameters
     ----------
-    u_values : 1d or 2d array_like
-        A sample from a probability distribution or the support (set of all
-        possible values) of a probability distribution. Each element along
-        axis 0 is an observation or possible value. If two-dimensional, axis
-        1 represents the dimensionality of the distribution; i.e., each row is
-        a vector observation or possible value.
-
-    v_values : 1d or 2d array_like
-        A sample from or the support of a second distribution.
-
-    u_weights, v_weights : 1d array_like, optional
-        Weights or counts corresponding with the sample or probability masses
-        corresponding with the support values. Sum of elements must be positive
-        and finite. If unspecified, each value is assigned the same weight.
+    u_values, v_values : array_like
+        Values observed in the (empirical) distribution.
+    u_weights, v_weights : array_like, optional
+        Weight for each value. If unspecified, each value is assigned the same
+        weight.
+        `u_weights` (resp. `v_weights`) must have the same length as
+        `u_values` (resp. `v_values`). If the weight sum differs from 1, it
+        must still be positive and finite so that the weights can be normalized
+        to sum to 1.
 
     Returns
     -------
@@ -10211,9 +10215,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Notes
     -----
-    Given two probability mass functions, :math:`u`
-    and :math:`v`, the first Wasserstein distance between the distributions
-    is:
+    The first Wasserstein distance between the distributions :math:`u` and
+    :math:`v` is:
 
     .. math::
 
@@ -10222,83 +10225,16 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     where :math:`\Gamma (u, v)` is the set of (probability) distributions on
     :math:`\mathbb{R} \times \mathbb{R}` whose marginals are :math:`u` and
-    :math:`v` on the first and second factors respectively. For a given value
-    :math:`x`, :math:`u(x)` gives the probability of :math:`u` at position
-    :math:`x`, and the same for :math:`v(x)`.
+    :math:`v` on the first and second factors respectively.
 
-    In the 1-dimensional case, let :math:`U` and :math:`V` denote the
-    respective CDFs of :math:`u` and :math:`v`, this distance also equals to:
+    If :math:`U` and :math:`V` are the respective CDFs of :math:`u` and
+    :math:`v`, this distance also equals to:
 
     .. math::
 
         l_1(u, v) = \int_{-\infty}^{+\infty} |U-V|
 
-    See [3]_ for a proof of the equivalence of both definitions.
-
-    In the more general (higher dimensional) and discrete case, it is also
-    called the optimal transport problem or the Monge problem.
-    Let the finite point sets :math:`\{x_i\}` and :math:`\{y_j\}` denote
-    the support set of probability mass function :math:`u` and :math:`v`
-    respectively. The Monge problem can be expressed as follows,
-
-    Let :math:`\Gamma` denote the transport plan, :math:`D` denote the
-    distance matrix and,
-
-    .. math::
-
-        x = \text{vec}(\Gamma)          \\
-        c = \text{vec}(D)               \\
-        b = \begin{bmatrix}
-                u\\
-                v\\
-            \end{bmatrix}
-
-    The :math:`\text{vec}()` function denotes the Vectorization function
-    that transforms a matrix into a column vector by vertically stacking
-    the columns of the matrix.
-    The transport plan :math:`\Gamma` is a matrix :math:`[\gamma_{ij}]` in
-    which :math:`\gamma_{ij}` is a positive value representing the amount of
-    probability mass transported from :math:`u(x_i)` to :math:`v(y_i)`.
-    Summing over the rows of :math:`\Gamma` should give the source distribution
-    :math:`u` : :math:`\sum_j \gamma_{ij} = u(x_i)` holds for all :math:`i`
-    and summing over the columns of :math:`\Gamma` should give the target
-    distribution :math:`v`: :math:`\sum_i \gamma_{ij} = v(y_j)` holds for all
-    :math:`j`.
-    The distance matrix :math:`D` is a matrix :math:`[d_{ij}]`, in which
-    :math:`d_{ij} = d(x_i, y_j)`.
-
-    Given :math:`\Gamma`, :math:`D`, :math:`b`, the Monge problem can be
-    transformed into a linear programming problem by
-    taking :math:`A x = b` as constraints and :math:`z = c^T x` as minimization
-    target (sum of costs) , where matrix :math:`A` has the form
-
-    .. math::
-
-        \begin{array} {rrrr|rrrr|r|rrrr}
-            1 & 1 & \dots & 1 & 0 & 0 & \dots & 0 & \dots & 0 & 0 & \dots &
-                0 \cr
-            0 & 0 & \dots & 0 & 1 & 1 & \dots & 1 & \dots & 0 & 0 &\dots &
-                0 \cr
-            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots
-                & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots  \cr
-            0 & 0 & \dots & 0 & 0 & 0 & \dots & 0 & \dots & 1 & 1 & \dots &
-                1 \cr \hline
-
-            1 & 0 & \dots & 0 & 1 & 0 & \dots & \dots & \dots & 1 & 0 & \dots &
-                0 \cr
-            0 & 1 & \dots & 0 & 0 & 1 & \dots & \dots & \dots & 0 & 1 & \dots &
-                0 \cr
-            \vdots & \vdots & \ddots & \vdots & \vdots & \vdots & \ddots &
-                \vdots & \vdots & \vdots & \vdots & \ddots & \vdots \cr
-            0 & 0 & \dots & 1 & 0 & 0 & \dots & 1 & \dots & 0 & 0 & \dots & 1
-        \end{array}
-
-    By solving the dual form of the above linear programming problem (with
-    solution :math:`y^*`), the Wasserstein distance :math:`l_1 (u, v)` can
-    be computed as :math:`b^T y^*`.
-
-    The above solution is inspired by Vincent Herrmann's blog [5]_ . For a
-    more thorough explanation, see [4]_ .
+    See [2]_ for a proof of the equivalence of both definitions.
 
     The input distributions can be empirical, therefore coming from samples
     whose values are effectively inputs of the function, or they can be seen as
@@ -10307,19 +10243,9 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Wasserstein metric",
-           https://en.wikipedia.org/wiki/Wasserstein_metric
-    .. [2] Lili Weng, "What is Wasserstein distance?", Lil'log,
-           https://lilianweng.github.io/posts/2017-08-20-gan/#what-is-
-           wasserstein-distance.
-    .. [3] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and
-           Related Families of Nonparametric Tests" (2015).
-           :arXiv:`1509.02237`.
-    .. [4] Peyré, Gabriel, and Marco Cuturi. "Computational optimal
-           transport." Center for Research in Economics and Statistics
-           Working Papers 2017-86 (2017).
-    .. [5] Hermann, Vincent. "Wasserstein GAN and the Kantorovich-Rubinstein
-           Duality". https://vincentherrmann.github.io/blog/wasserstein/.
+    .. [1] "Wasserstein metric", https://en.wikipedia.org/wiki/Wasserstein_metric
+    .. [2] Ramdas, Garcia, Cuturi "On Wasserstein Two Sample Testing and Related
+           Families of Nonparametric Tests" (2015). :arXiv:`1509.02237`.
 
     Examples
     --------
@@ -10332,69 +10258,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     ...                      [1.4, 0.9, 3.1, 7.2], [3.2, 3.5])
     4.0781331438047861
 
-    Compute the Wasserstein distance between two three-dimensional samples,
-    each with two observations.
-
-    >>> wasserstein_distance([[0, 2, 3], [1, 2, 5]], [[3, 2, 3], [4, 2, 5]])
-    3.0
-
-    Compute the Wasserstein distance between two two-dimensional distributions
-    with three and two weighted observations, respectively.
-
-    >>> wasserstein_distance([[0, 2.75], [2, 209.3], [0, 0]],
-    ...                      [[0.2, 0.322], [4.5, 25.1808]],
-    ...                      [0.4, 5.2, 0.114], [0.8, 1.5])
-    174.15840245217169
     """
-    m, n = len(u_values), len(v_values)
-    u_values = asarray(u_values)
-    v_values = asarray(v_values)
-
-    if u_values.ndim > 2 or v_values.ndim > 2:
-        raise ValueError('Invalid input values. The inputs must have either '
-                         'one or two dimensions.')
-    # if dimensions are not equal throw error
-    if u_values.ndim != v_values.ndim:
-        raise ValueError('Invalid input values. Dimensions of inputs must be '
-                         'equal.')
-    # if data is 1D then call the cdf_distance function
-    if u_values.ndim == 1 and v_values.ndim == 1:
-        return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
-
-    u_values, u_weights = _validate_distribution(u_values, u_weights)
-    v_values, v_weights = _validate_distribution(v_values, v_weights)
-    # if number of columns is not equal throw error
-    if u_values.shape[1] != v_values.shape[1]:
-        raise ValueError('Invalid input values. If two-dimensional, '
-                         '`u_values` and `v_values` must have the same '
-                         'number of columns.')
-
-    # if data contains np.inf then return inf or nan
-    if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
-        return np.inf
-    elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
-        return np.nan
-
-    # create constraints
-    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
-    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
-    # sparse constraint matrix of size (m + n)*(m * n)
-    A = sparse.vstack((A_upper_part, A_lower_part))
-    A = sparse.coo_array(A)
-
-    # get cost matrix
-    D = distance_matrix(u_values, v_values, p=2)
-    cost = D.ravel()
-
-    # create the minimization target
-    p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
-    p_v = np.full(n, 1/n) if v_weights is None else v_weights/np.sum(v_weights)
-    b = np.concatenate((p_u, p_v), axis=0)
-
-    # solving LP
-    constraints = LinearConstraint(A=A.T, ub=cost)
-    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
-    return -opt_res.fun
+    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
@@ -10797,66 +10662,100 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     array([ 2.,  3.,  4., nan,  1., nan])
 
     """
-    if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
+    methods = ('average', 'min', 'max', 'dense', 'ordinal')
+    if method not in methods:
         raise ValueError(f'unknown method "{method}"')
 
-    a = np.asarray(a)
+    x = np.asarray(a)
 
-    if axis is not None:
-        if a.size == 0:
-            # The return values of `normalize_axis_index` are ignored.  The
-            # call validates `axis`, even though we won't use it.
-            normalize_axis_index(axis, a.ndim)
-            if method == 'average':
-                dt = np.dtype(np.float64)
-            else:
-                dt = np.dtype(int)
-            return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method,
-                                   nan_policy=nan_policy)
+    if axis is None:
+        x = x.ravel()
+        axis = -1
 
-    arr = np.ravel(a)
-    contains_nan, nan_policy = _contains_nan(arr, nan_policy)
-    nan_indexes = None
+    if x.size == 0:
+        dtype = float if method == 'average' else np.dtype("long")
+        return np.empty(x.shape, dtype=dtype)
+
+    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+
+    x = np.swapaxes(x, axis, -1)
+    ranks = _rankdata(x, method)
+
     if contains_nan:
-        if nan_policy == 'omit':
-            nan_indexes = np.isnan(arr)
-        if nan_policy == 'propagate':
-            return np.full_like(arr, np.nan)
+        i_nan = (np.isnan(x) if nan_policy == 'omit'
+                 else np.isnan(x).any(axis=-1))
+        ranks = ranks.astype(float, copy=False)
+        ranks[i_nan] = np.nan
 
-    algo = 'mergesort' if method == 'ordinal' else 'quicksort'
-    sorter = np.argsort(arr, kind=algo)
+    ranks = np.swapaxes(ranks, axis, -1)
+    return ranks
 
-    inv = np.empty(sorter.size, dtype=np.intp)
-    inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
+def _order_ranks(ranks, j):
+    # Reorder ascending order `ranks` according to `j`
+    ordered_ranks = np.empty(j.shape, dtype=ranks.dtype)
+    np.put_along_axis(ordered_ranks, j, ranks, axis=-1)
+    return ordered_ranks
+
+
+def _rankdata(x, method, return_ties=False):
+    # Rank data `x` by desired `method`; `return_ties` if desired
+    shape = x.shape
+
+    # Get sort order
+    kind = 'mergesort' if method == 'ordinal' else 'quicksort'
+    j = np.argsort(x, axis=-1, kind=kind)
+    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
+
+    # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        result = inv + 1
-    else:
-        arr = arr[sorter]
-        obs = np.r_[True, arr[1:] != arr[:-1]]
-        dense = obs.cumsum()[inv]
+        return _order_ranks(ordinal_ranks, j)  # never return ties
 
-        if method == 'dense':
-            result = dense
-        else:
-            # cumulative counts of each unique value
-            count = np.r_[np.nonzero(obs)[0], len(obs)]
+    # Sort array
+    y = np.take_along_axis(x, j, axis=-1)
+    # Logical indices of unique elements
+    i = np.concatenate([np.ones(shape[:-1] + (1,), dtype=np.bool_),
+                       y[..., :-1] != y[..., 1:]], axis=-1)
 
-            if method == 'max':
-                result = count[dense]
+    # Integer indices of unique elements
+    indices = np.arange(y.size)[i.ravel()]
+    # Counts of unique elements
+    counts = np.diff(indices, append=y.size)
 
-            if method == 'min':
-                result = count[dense - 1] + 1
+    # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
+    if method == 'min':
+        ranks = ordinal_ranks[i]
+    elif method == 'max':
+        ranks = ordinal_ranks[i] + counts - 1
+    elif method == 'average':
+        ranks = ordinal_ranks[i] + (counts - 1)/2
+    elif method == 'dense':
+        ranks = np.cumsum(i, axis=-1)[i]
 
-            if method == 'average':
-                result = .5 * (count[dense] + count[dense - 1] + 1)
+    ranks = np.repeat(ranks, counts).reshape(shape)
+    ranks = _order_ranks(ranks, j)
 
-    if nan_indexes is not None:
-        result = result.astype('float64')
-        result[nan_indexes] = np.nan
-
-    return result
+    if return_ties:
+        # Tie information is returned in a format that is useful to functions that
+        # rely on this (private) function. Example:
+        # >>> x = np.asarray([3, 2, 1, 2, 2, 2, 1])
+        # >>> _, t = _rankdata(x, 'average', return_ties=True)
+        # >>> t  # array([2., 0., 4., 0., 0., 0., 1.])  # two 1s, four 2s, and one 3
+        # Unlike ranks, tie counts are *not* reordered to correspond with the order of
+        # the input; e.g. the number of appearances of the lowest rank element comes
+        # first. This is a useful format because:
+        # - The shape of the result is the shape of the input. Different slices can
+        #   have different numbers of tied elements but not result in a ragged array.
+        # - Functions that use `t` usually don't need to which each element of the
+        #   original array is associated with each tie count; they perform a reduction
+        #   over the tie counts onnly. The tie counts are naturally computed in a
+        #   sorted order, so this does not unnecesarily reorder them.
+        # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
+        #   have the lowest rank, so it is easy to find them at the zeroth index.
+        t = np.zeros(shape, dtype=float)
+        t[i] = counts
+        return ranks, t
+    return ranks
 
 
 def expectile(a, alpha=0.5, *, weights=None):

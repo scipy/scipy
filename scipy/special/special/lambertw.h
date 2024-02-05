@@ -134,7 +134,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z,
     }
 
     set_error("lambertw", SF_ERROR_SLOW, "iteration failed to converge: %g + %gj", z.real(), z.imag());
-    return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 }
 
 } // namespace special

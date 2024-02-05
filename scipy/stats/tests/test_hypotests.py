@@ -609,6 +609,43 @@ class TestMannWhitneyU:
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
 
+    def test_gh19692_smaller_table(self):
+        # In gh-19692, we noted that the shape of the cache used in calculating
+        # p-values was dependent on the order of the inputs because the sample
+        # sizes n1 and n2 changed. This was indicative of unnecessary cache
+        # growth and redundant calculation. Check that this is resolved.
+        rng = np.random.default_rng(7600451795963068007)
+        x = rng.random(size=5)
+        y = rng.random(size=11)
+        _mwu_state._fmnks = -np.ones((1, 1, 1))  # reset cache
+        stats.mannwhitneyu(x, y, method='exact')
+        shape = _mwu_state._fmnks.shape
+        assert shape[0] <= 6 and shape[1] <= 12  # one more than sizes
+        stats.mannwhitneyu(y, x, method='exact')
+        assert shape == _mwu_state._fmnks.shape  # unchanged when sizes are reversed
+
+        # Also, we weren't exploiting the symmmetry of the null distribution
+        # to its full potential. Ensure that the null distribution is not
+        # evaluated explicitly for `k > m*n/2`.
+        _mwu_state._fmnks = -np.ones((1, 1, 1))  # reset cache
+        stats.mannwhitneyu(x, 0*y, method='exact', alternative='greater')
+        shape = _mwu_state._fmnks.shape
+        assert shape[-1] == 1  # k is smallest possible
+        stats.mannwhitneyu(0*x, y, method='exact', alternative='greater')
+        assert shape == _mwu_state._fmnks.shape
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_permutation_method(self, alternative):
+        rng = np.random.default_rng(7600451795963068007)
+        x = rng.random(size=(2, 5))
+        y = rng.random(size=(2, 6))
+        res = stats.mannwhitneyu(x, y, method=stats.PermutationMethod(),
+                                 alternative=alternative, axis=1)
+        res2 = stats.mannwhitneyu(x, y, method='exact',
+                                  alternative=alternative, axis=1)
+        assert_allclose(res.statistic, res2.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, res2.pvalue, rtol=1e-15)
+
     def teardown_method(self):
         _mwu_state._recursive = None
 

@@ -615,7 +615,7 @@ def logrank(
     >>> ecdf_x = stats.ecdf(x)
     >>> ecdf_x.sf.plot(ax, label='Astrocytoma')
     >>> ecdf_y = stats.ecdf(y)
-    >>> ecdf_x.sf.plot(ax, label='Glioblastoma')
+    >>> ecdf_y.sf.plot(ax, label='Glioblastoma')
     >>> ax.set_xlabel('Time to death (weeks)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.legend()

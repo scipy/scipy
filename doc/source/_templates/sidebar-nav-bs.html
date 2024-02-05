@@ -1,9 +1,11 @@
-<nav class="bd-links" id="bd-docs-nav" aria-label="Main navigation">
-  <div class="bd-toc-item active">
+{# Displays the TOC-subtree for pages nested under the currently active top-level TOCtree element. #}
+<nav class="bd-docs-nav bd-links" aria-label="{{ _('Section Navigation') }}">
+  <p class="bd-links__title" role="heading" aria-level="1">{{ _("Section Navigation") }}</p>
+  <div class="bd-toc-item navbar-nav">
     {% if pagename.startswith("reference") %}
-    {{ generate_nav_html("sidebar", maxdepth=1, collapse=True, includehidden=True, titles_only=True) }}
+      {{- generate_toctree_html("sidebar", maxdepth=1, collapse=True, includehidden=True, titles_only=True) -}}
     {% else %}
-    {{ generate_nav_html("sidebar", maxdepth=2, collapse=True, titles_only=True) }}
+      {{- generate_toctree_html("sidebar", maxdepth=2, collapse=True, includehidden=False, titles_only=True) -}}
     {% endif %}
   </div>
 </nav>

@@ -1,12 +1,8 @@
 # mypy: disable-error-code="attr-defined"
 import numpy as np
 from scipy import special
-from scipy.optimize import OptimizeResult
-from scipy.optimize._zeros_py import (  # noqa: F401
-    _scalar_optimization_initialize,
-    _scalar_optimization_loop,
-    _ECONVERGED, _ESIGNERR, _ECONVERR,
-    _EVALUEERR, _ECALLBACK, _EINPROGRESS)
+import scipy._lib._elementwise_iterative_method as eim
+from scipy._lib._util import _RichResult
 
 # todo:
 #  figure out warning situation
@@ -25,7 +21,8 @@ from scipy.optimize._zeros_py import (  # noqa: F401
 
 
 def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
-               minlevel=2, atol=None, rtol=None, callback=None):
+              minlevel=2, atol=None, rtol=None, preserve_shape=False,
+              callback=None):
     """Evaluate a convergent integral numerically using tanh-sinh quadrature.
 
     In practice, tanh-sinh quadrature achieves quadratic convergence for
@@ -42,11 +39,11 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ----------
     f : callable
         The function to be integrated. The signature must be::
-            func(x: ndarray, *args) -> ndarray
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
+            func(x: ndarray, *fargs) -> ndarray
+         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
-         with `x`. ``func`` must be an elementwise function: each element
-         ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
+         with `x`. ``func`` must be an elementwise-scalar function; see
+         documentation of parameter `preserve_shape` for details.
          If ``func`` returns a value with complex dtype when evaluated at
          either endpoint, subsequent arguments ``x`` will have complex dtype
          (but zero imaginary part).
@@ -95,10 +92,30 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         conservative, it is said to work well in practice. Must be non-negative
         and finite if `log` is False, and must be expressed as the log of a
         non-negative and finite number if `log` is True.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `f`" refers to the array ``x`` and
+        any arrays within ``fargs``. Let ``shape`` be the broadcasted shape
+        of `a`, `b`, and all elements of `args` (which is conceptually
+        distinct from ``fargs`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
+          abscissae at which the function is being evaluated.
+
+        In either case, for each scalar element ``xi`` within `x`, the array
+        returned by `f` must include the scalar ``f(xi)`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``x``.
+
+        See Examples.
+
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
-        Called as ``callback(res)``, where ``res`` is an ``OptimizeResult``
+        Called as ``callback(res)``, where ``res`` is a ``_RichResult``
         similar to that returned by `_differentiate` (but containing the
         current iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
@@ -106,8 +123,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
         arrays of the same shape.)
@@ -126,8 +143,8 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         error : float
             An estimate of the error. Only available if level two or higher
             has been completed; otherwise NaN.
-        nit : int
-            The number of iterations performed.
+        maxlevel : int
+            The maximum refinement level used.
         nfev : int
             The number of points at which `func` was evaluated.
 
@@ -141,7 +158,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     finite-precision arithmetic, including some described by [2]_ and [3]_. The
     tanh-sinh scheme was originally introduced in [4]_.
 
-    Due floating-point error in the abscissae, the function may be evaluated
+    Due to floating-point error in the abscissae, the function may be evaluated
     at the endpoints of the interval during iterations. The values returned by
     the function at the endpoints will be ignored.
 
@@ -218,13 +235,79 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     >>> ref = dist.cdf(x)
     >>> np.allclose(res.integral, ref)
 
+    By default, `preserve_shape` is False, and therefore the callable
+    `f` may be called with arrays of any broadcastable shapes.
+    For example:
+
+    >>> shapes = []
+    >>> def f(x, c):
+    ...    shape = np.broadcast_shapes(x.shape, c.shape)
+    ...    shapes.append(shape)
+    ...    return np.sin(c*x)
+    >>>
+    >>> c = [1, 10, 30, 100]
+    >>> res = _tanhsinh(f, 0, 1, args=(c,), minlevel=1)
+    >>> shapes
+    [(4,), (4, 66), (3, 64), (2, 128), (1, 256)]
+
+    To understand where these shapes are coming from - and to better
+    understand how `_tanhsinh` computes accurate results - note that
+    higher values of ``c`` correspond with higher frequency sinusoids.
+    The higher frequency sinusoids make the integrand more complicated,
+    so more function evaluations are required to achieve the target
+    accuracy:
+
+    >>> res.nfev
+    array([ 67, 131, 259, 515])
+
+    The initial ``shape``, ``(4,)``, corresponds with evaluating the
+    integrand at a single abscissa and all four frequencies; this is used
+    for input validation and to determine the size and dtype of the arrays
+    that store results. The next shape corresponds with evaluating the
+    integrand at an initial grid of abscissae and all four frequencies.
+    Successive calls to the function double the total number of abscissae at
+    which the function has been evaluated. However, in later function
+    evaluations, the integrand is evaluated at fewer frequencies because
+    the corresponding integral has already converged to the required
+    tolerance. This saves function evaluations to improve performance, but
+    it requires the function to accept arguments of any shape.
+
+    "Vector-valued" integrands, such as those written for use with
+    `scipy.integrate.quad_vec`, are unlikely to satisfy this requirement.
+    For example, consider
+
+    >>> def f(x):
+    ...    return [x, np.sin(10*x), np.cos(30*x), x*np.sin(100*x)**2]
+
+    This integrand is not compatible with `_tanhsinh` as written; for instance,
+    the shape of the output will not be the same as the shape of ``x``. Such a
+    function *could* be converted to a compatible form with the introduction of
+    additional parameters, but this would be inconvenient. In such cases,
+    a simpler solution would be to use `preserve_shape`.
+
+    >>> shapes = []
+    >>> def f(x):
+    ...     shapes.append(x.shape)
+    ...     x0, x1, x2, x3 = x
+    ...     return [x0, np.sin(10*x1), np.cos(30*x2), x3*np.sin(100*x3)]
+    >>>
+    >>> a = np.zeros(4)
+    >>> res = _tanhsinh(f, a, 1, preserve_shape=True)
+    >>> shapes
+    [(4,), (4, 66), (4, 64), (4, 128), (4, 256)]
+
+    Here, the broadcasted shape of `a` and `b` is ``(4,)``. With
+    ``preserve_shape=True``, the function may be called with argument
+    ``x`` of shape ``(4,)`` or ``(4, n)``, and this is what we observe.
+
     """
-    tmp = f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
-    tmp = _tanhsinh_iv(*tmp)
-    f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback = tmp
+    (f, a, b, log, maxfun, maxlevel, minlevel,
+     atol, rtol, args, preserve_shape, callback) = _tanhsinh_iv(
+        f, a, b, log, maxfun, maxlevel, minlevel, atol,
+        rtol, args, preserve_shape, callback)
 
     # Initialization
-    # `_scalar_optimization_initialize` does several important jobs, including
+    # `eim._initialize` does several important jobs, including
     # ensuring that limits, each of the `args`, and the output of `f`
     # broadcast correctly and are of consistent types. To save a function
     # evaluation, I pass the midpoint of the integration interval. This comes
@@ -233,11 +316,13 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # type promotion rules?
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         c = ((a.ravel() + b.ravel())/2).reshape(a.shape)
-        c[np.isinf(a)] = b[np.isinf(a)]  # takes care of infinite a
-        c[np.isinf(b)] = a[np.isinf(b)]  # takes care of infinite b
-        c[np.isnan(c)] = 0  # takes care of infinite a and b
-        tmp = _scalar_optimization_initialize(f, (c,), args, complex_ok=True)
-    xs, fs, args, shape, dtype = tmp
+        inf_a, inf_b = np.isinf(a), np.isinf(b)
+        c[inf_a] = b[inf_a] - 1  # takes care of infinite a
+        c[inf_b] = a[inf_b] + 1  # takes care of infinite b
+        c[inf_a & inf_b] = 0  # takes care of infinite a and b
+        temp = eim._initialize(f, (c,), args, complex_ok=True,
+                               preserve_shape=preserve_shape)
+    f, xs, fs, args, shape, dtype = temp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
     b = np.broadcast_to(b, shape).astype(dtype).ravel()
 
@@ -257,7 +342,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     Sn[np.isnan(a) | np.isnan(b) | np.isnan(fs[0])] = np.nan
     Sk = np.empty_like(Sn).reshape(-1, 1)[:, 0:0]  # all integral estimates
     aerr = np.full(shape, np.nan, dtype=dtype).ravel()  # absolute error
-    status = np.full(shape, _EINPROGRESS, dtype=int).ravel()
+    status = np.full(shape, eim._EINPROGRESS, dtype=int).ravel()
     h0 = np.real(_get_base_step(dtype=dtype))  # base step
 
     # For term `d4` of error estimate ([1] Section 5), we need to keep the
@@ -271,7 +356,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     wl0 = np.zeros(shape, dtype=dtype).ravel()
     d4 = np.zeros(shape, dtype=dtype).ravel()
 
-    work = OptimizeResult(
+    work = _RichResult(
         Sn=Sn, Sk=Sk, aerr=aerr, h=h0, log=log, dtype=dtype, pi=pi, eps=eps,
         a=a.reshape(-1, 1), b=b.reshape(-1, 1),  # integration limits
         n=minlevel, nit=nit, nfev=nfev, status=status,  # iter/eval counts
@@ -329,14 +414,14 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             zero = -np.inf if log else 0
             work.Sn[i] = zero
             work.aerr[i] = zero
-            work.status[i] = _ECONVERGED
+            work.status[i] = eim._ECONVERGED
             stop[i] = True
         else:
             # Terminate if convergence criterion is met
             work.rerr, work.aerr = _estimate_error(work)
             i = ((work.rerr < rtol) | (work.rerr + np.real(work.Sn) < atol) if log
                  else (work.rerr < rtol) | (work.rerr * abs(work.Sn) < atol))
-            work.status[i] = _ECONVERGED
+            work.status[i] = eim._ECONVERGED
             stop[i] = True
 
         # Terminate if integral estimate becomes invalid
@@ -344,7 +429,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
             i = (np.isposinf(np.real(work.Sn)) | np.isnan(work.Sn)) & ~stop
         else:
             i = ~np.isfinite(work.Sn) & ~stop
-        work.status[i] = _EVALUEERR
+        work.status[i] = eim._EVALUEERR
         stop[i] = True
 
         return stop
@@ -374,11 +459,9 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     # Suppress all warnings initially, since there are many places in the code
     # for which this is expected behavior.
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
-        res = _scalar_optimization_loop(work, callback, shape, maxiter, f,
-                                        args, dtype, pre_func_eval,
-                                        post_func_eval, check_termination,
-                                        post_termination_check,
-                                        customize_result, res_work_pairs)
+        res = eim._loop(work, callback, shape, maxiter, f, args, dtype, pre_func_eval,
+                        post_func_eval, check_termination, post_termination_check,
+                        customize_result, res_work_pairs, preserve_shape)
     return res
 
 
@@ -696,7 +779,7 @@ def _transform_integrals(a, b):
 
 
 def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
-                 atol, rtol, args, callback):
+                 atol, rtol, args, preserve_shape, callback):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -756,10 +839,15 @@ def _tanhsinh_iv(f, a, b, log, maxfun, maxlevel, minlevel,
     if not np.iterable(args):
         args = (args,)
 
+    message = '`preserve_shape` must be True or False.'
+    if preserve_shape not in {True, False}:
+        raise ValueError(message)
+
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
-    return f, a, b, log, maxfun, maxlevel, minlevel, atol, rtol, args, callback
+    return (f, a, b, log, maxfun, maxlevel, minlevel,
+            atol, rtol, args, preserve_shape, callback)
 
 
 def _logsumexp(x, axis=0):
@@ -882,8 +970,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     Returns
     -------
-    res : OptimizeResult
-        An instance of `scipy.optimize.OptimizeResult` with the following
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
         attributes. (The descriptions are written as though the values will be
         scalars; however, if `func` returns an array, the outputs will be
 
@@ -979,8 +1067,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
-    tmp = _scalar_optimization_initialize(f, (a,), args, complex_ok=False)
-    xs, fs, args, shape, dtype = tmp
+    tmp = eim._initialize(f, (a,), args, complex_ok=False)
+    f, xs, fs, args, shape, dtype = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays
     a = xs[0]
@@ -1028,8 +1116,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     # Return results
     S, E = S.reshape(shape)[()], E.reshape(shape)[()]
     status, nfev = status.reshape(shape)[()], nfev.reshape(shape)[()]
-    return OptimizeResult(sum=S, error=E, status=status, success=status == 0,
-                          nfev=nfev)
+    return _RichResult(sum=S, error=E, status=status, success=status == 0,
+                       nfev=nfev)
 
 
 def _direct(f, a, b, step, args, constants, inclusive=True):
