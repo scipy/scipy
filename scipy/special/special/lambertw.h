@@ -1,3 +1,8 @@
+/* Translated from Cython into C++ by SciPy developers in 2023.
+ * Original header with Copyright information appears below.
+ */
+
+
 /* Implementation of the Lambert W function [1]. Based on MPMath
  *  Implementation [2], and documentation [3].
  *
@@ -5,7 +10,7 @@
  * Author email: mellerf@netvision.net.il
  *
  * Distributed under the same license as SciPy
- * Translated into C++ by SciPy developers, 2023.
+ *
  *
  * References:
  * [1] On the Lambert W function, Adv. Comp. Math. 5 (1996) 329-359,

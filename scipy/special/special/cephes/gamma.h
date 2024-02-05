@@ -1,3 +1,8 @@
+/* Translated into C++ by SciPy developers in 2024.
+ * Original header with Copyright information appears below.
+ */
+
+
 /*
  *     Gamma function
  *
