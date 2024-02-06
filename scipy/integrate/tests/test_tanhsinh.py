@@ -898,17 +898,33 @@ class TestNSum:
         assert res.status.shape == shape
         assert res.nfev.shape == shape
 
-        # # Test NaNs
+        # Test maxterms=0
+        def f(x):
+            with np.errstate(divide='ignore'):
+                return 1 / x
+
+        res = _nsum(f, 0, 10, maxterms=0)
+        assert np.isnan(res.sum)
+        assert np.isnan(res.error)
+        assert res.status == -2
+
+        res = _nsum(f, 0, 10, maxterms=1)
+        assert np.isnan(res.sum)
+        assert np.isnan(res.error)
+        assert res.status == -3
+
+        # Test NaNs
         # should skip both direct and integral methods if there are NaNs
-        # a = [np.nan, 1, 1, 1]
-        # b = [np.inf, np.nan, np.inf, np.inf]
-        # p = [2, 2, np.nan, 2]
-        # res = _nsum(self.f2, a, b, args=(p,))
-        # assert_allclose(res.sum, [np.nan, np.nan, np.nan, self.f1.ref])
-        # assert_allclose(res.error[:3], np.nan)
-        # assert_equal(res.status, [-3, -3, -3, 0])
-        # assert_equal(res.success, [False, False, False, True])
-        # assert_equal(res.nfev[:3], 1)
+        a = [np.nan, 1, 1, 1]
+        b = [np.inf, np.nan, np.inf, np.inf]
+        p = [2, 2, np.nan, 2]
+        res = _nsum(self.f2, a, b, args=(p,))
+        assert_allclose(res.sum, [np.nan, np.nan, np.nan, self.f1.ref])
+        assert_allclose(res.error[:3], np.nan)
+        assert_equal(res.status, [-1, -1, -3, 0])
+        assert_equal(res.success, [False, False, False, True])
+        # Ideally res.nfev[2] would be 1, but `tanhsinh` has some function evals
+        assert_equal(res.nfev[:2], 1)
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_dtype(self, dtype):
