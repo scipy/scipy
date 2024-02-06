@@ -3099,6 +3099,12 @@ class TestPowerlaw:
     def test_sf(self, x, a, sf):
         assert_allclose(stats.powerlaw.sf(x, a), sf, rtol=1e-15)
 
+    @pytest.mark.parametrize('r', [1, 5, 10])
+    @pytest.mark.parametrize('a', [0.1, 1, 2.5])
+    def test_moment(self, r, a):
+        assert_allclose(stats.powerlaw.moment(r, a),
+                        stats.powerlaw.expect((lambda x: x ** r), (a,)))
+
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
