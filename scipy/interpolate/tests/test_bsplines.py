@@ -1450,6 +1450,8 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
+parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
+
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -1460,12 +1462,13 @@ class TestLSQ:
     y = np.random.random(n)
     t = _augknt(np.linspace(x[0], x[-1], 7), k)
 
-    def test_lstsq(self):
+    @parametrize_lsq_methods
+    def test_lstsq(self, method):
         # check LSQ construction vs a full matrix version
         x, y, t, k = self.x, self.y, self.t, self.k
 
         c0, AY = make_lsq_full_matrix(x, y, t, k)
-        b = make_lsq_spline(x, y, t, k)
+        b = make_lsq_spline(x, y, t, k, method=method)
 
         assert_allclose(b.c, c0)
         assert_equal(b.c.shape, (t.size - k - 1,))
@@ -1475,53 +1478,108 @@ class TestLSQ:
         c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
         assert_allclose(b.c, c1)
 
-    def test_weights(self):
+    @parametrize_lsq_methods
+    def test_weights(self, method):
         # weights = 1 is same as None
         x, y, t, k = self.x, self.y, self.t, self.k
         w = np.ones_like(x)
 
-        b = make_lsq_spline(x, y, t, k)
-        b_w = make_lsq_spline(x, y, t, k, w=w)
+        b = make_lsq_spline(x, y, t, k, method=method)
+        b_w = make_lsq_spline(x, y, t, k, w=w, method=method)
 
         assert_allclose(b.t, b_w.t, atol=1e-14)
         assert_allclose(b.c, b_w.c, atol=1e-14)
         assert_equal(b.k, b_w.k)
 
-    def test_multiple_rhs(self):
+    def test_weights_same(self):
+        # both methods treat weights 
+        x, y, t, k = self.x, self.y, self.t, self.k
+        w = np.random.default_rng(1234).uniform(size=x.shape[0])
+
+        b_ne = make_lsq_spline(x, y, t, k, w=w, method="norm-eq")
+        b_qr = make_lsq_spline(x, y, t, k, w=w, method="qr")
+        b_no_w = make_lsq_spline(x, y, t, k, method="qr")
+
+        assert_allclose(b_ne.c, b_qr.c, atol=1e-14)
+        assert not np.allclose(b_no_w.c, b_qr.c, atol=1e-14)
+
+    @parametrize_lsq_methods
+    def test_multiple_rhs(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
 
-        b = make_lsq_spline(x, y, t, k)
+        b = make_lsq_spline(x, y, t, k, method=method)
         assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
 
-    def test_complex(self):
+    @parametrize_lsq_methods
+    def test_multiple_rhs_2(self, method):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b = make_lsq_spline(x, y, t, k, method=method)
+
+        bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
+              for i in range(nrhs)]
+        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+
+        assert_allclose(coefs, b.c, atol=1e-15)
+
+    def test_multiple_rhs_3(self):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b_qr = make_lsq_spline(x, y, t, k, method="qr")
+        b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
+        assert_allclose(b_qr.c, b_neq.c, atol=1e-15)
+
+    @parametrize_lsq_methods
+    def test_complex(self, method):
+        if method == "qr":
+            pytest.xfail("method='qr' does not handle complex-valued `y` yet.")
+
         # cmplx-valued `y`
         x, t, k = self.x, self.t, self.k
         yc = self.y * (1. + 2.j)
 
-        b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b = make_lsq_spline(x, yc, t, k, method=method)
+        b_re = make_lsq_spline(x, yc.real, t, k, method=method)
+        b_im = make_lsq_spline(x, yc.imag, t, k, method=method)
 
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
-    def test_int_xy(self):
+    @parametrize_lsq_methods
+    def test_int_xy(self, method):
         x = np.arange(10).astype(int)
         y = np.arange(10).astype(int)
         t = _augknt(x, k=1)
         # Cython chokes on "buffer type mismatch"
-        make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1, method=method)
 
-    def test_sliced_input(self):
+    @parametrize_lsq_methods
+    def test_f32_xy(self, method):
+        x = np.arange(10, dtype=np.float32)
+        y = np.arange(10, dtype=np.float32)
+        t = _augknt(x, k=1)
+        spl_f32 = make_lsq_spline(x, y, t, k=1, method=method)
+        spl_f64 = make_lsq_spline(
+            x.astype(float), y.astype(float), t.astype(float), k=1, method=method
+        )
+
+        x2 = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_f32(x2), spl_f64(x2), atol=1e-15)
+
+    @parametrize_lsq_methods
+    def test_sliced_input(self, method):
         # Cython code chokes on non C contiguous arrays
         xx = np.linspace(-1, 1, 100)
 
         x = xx[::3]
         y = xx[::3]
         t = _augknt(x, 1)
-        make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1, method=method)
 
-    def test_checkfinite(self):
+    @parametrize_lsq_methods
+    def test_checkfinite(self, method):
         # check_finite defaults to True; nans and such trigger a ValueError
         x = np.arange(12).astype(float)
         y = x**2
@@ -1529,15 +1587,215 @@ class TestLSQ:
 
         for z in [np.nan, np.inf, -np.inf]:
             y[-1] = z
-            assert_raises(ValueError, make_lsq_spline, x, y, t)
+            assert_raises(ValueError, make_lsq_spline, x, y, t, method=method)
 
-    def test_read_only(self):
+    @parametrize_lsq_methods
+    def test_read_only(self, method):
         # Check that make_lsq_spline works with read only arrays
         x, y, t = self.x, self.y, self.t
         x.setflags(write=False)
         y.setflags(write=False)
         t.setflags(write=False)
-        make_lsq_spline(x=x, y=y, t=t)
+        make_lsq_spline(x=x, y=y, t=t, method=method)
+
+    @pytest.mark.parametrize('k', list(range(1, 7)))
+    def test_qr_vs_norm_eq(self, k):
+        # check that QR and normal eq solutions match
+        x, y = self.x, self.y
+        t = _augknt(np.linspace(x[0], x[-1], 7), k)
+        spl_norm_eq = make_lsq_spline(x, y, t, k=k, method='norm-eq')
+        spl_qr = make_lsq_spline(x, y, t, k=k, method='qr')
+
+        xx = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_norm_eq(xx), spl_qr(xx), atol=1e-15)
+
+    def test_duplicates(self):
+        # method="qr" can handle duplicated data points
+        x = np.repeat(self.x, 2)
+        y = np.repeat(self.y, 2)
+        spl_1 = make_lsq_spline(self.x, self.y, self.t, k=3, method='qr')
+        spl_2 = make_lsq_spline(x, y, self.t, k=3, method='qr')
+
+        xx = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_1(xx), spl_2(xx), atol=1e-15)
+
+
+def _qr_reduce_py(a_p, y, startrow=1):
+    """This is a python counterpart of the `_qr_reduce` routine,
+    defined in interpolate/src/__fitpack.h
+    """
+    from scipy.linalg.lapack import dlartg
+
+    # unpack the packed format
+    a = a_p.a
+    offset = a_p.offset
+    nc = a_p.nc
+
+    m, nz = a.shape
+
+    assert y.shape[0] == m
+    R = a.copy()
+    y1 = y.copy()
+
+    for i in range(startrow, m):
+        oi = offset[i]
+        for j in range(oi, nc):
+            # rotate only the lower diagonal
+            if j >= min(i, nc):
+                break
+
+            # In dense format: diag a1[j, j] vs a1[i, j]
+            c, s, r = dlartg(R[j, 0], R[i, 0])
+
+            # rotate l.h.s.
+            R[j, 0] = r
+            for l in range(1, nz):
+                R[j, l], R[i, l-1] = fprota(c, s, R[j, l], R[i, l])
+            R[i, -1] = 0.0
+
+            # rotate r.h.s.
+            for l in range(y1.shape[1]):
+                y1[j, l], y1[i, l] = fprota(c, s, y1[j, l], y1[i, l])
+
+    # convert to packed
+    offs = list(range(R.shape[0]))
+    R_p = _b.PackedMatrix(R, np.array(offs), nc)
+
+    return R_p, y1
+
+
+def fprota(c, s, a, b):
+    """Givens rotate [a, b].
+
+    [aa] = [ c s] @ [a]
+    [bb]   [-s c]   [b]
+
+    """
+    aa =  c*a + s*b
+    bb = -s*a + c*b
+    return aa, bb
+
+
+def fpback(R_p, y):
+    """Backsubsitution solve upper triangular banded `R @ c = y.`
+
+    `R` is in the "packed" format: `R[i, :]` is `a[i, i:i+k+1]`
+    """
+    R = R_p.a
+    _, nz = R.shape
+    nc = R_p.nc
+    assert y.shape[0] == R.shape[0]
+
+    c = np.zeros_like(y[:nc])
+    c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
+    for i in range(nc-2, -1, -1):
+        nel = min(nz, nc-i)
+        # NB: broadcast R across trailing dimensions of `c`.
+        summ = (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0)
+        c[i, ...] = ( y[i] - summ ) / R[i, 0]
+    return c
+
+
+class TestGivensQR:
+    # Test row-by-row QR factorization, used for the LSQ spline construction.
+    # This is implementation detail; still test it separately.
+    def _get_xyt(self, n):
+        k = 3
+        x = np.arange(n, dtype=float)
+        y = x**3 + 1/(1+x)
+        t = _not_a_knot(x, k)
+        return x, y, t, k
+
+    def test_vs_full(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+
+        # design matrix
+        a_csr = BSpline.design_matrix(x, t, k)
+
+        # dense QR
+        q, r = sl.qr(a_csr.todense())
+        qTy = q.T @ y
+
+        # prepare the PackedMatrix to factorize
+        # convert to "packed" format
+        m, nc = a_csr.shape
+        assert nc == t.shape[0] - k - 1
+
+        offset = a_csr.indices[::(k+1)]
+        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        A = a_csr.data.reshape(m, k+1)
+
+        R = _b.PackedMatrix(A, offset, nc)
+        y_ = y[:, None]     # _qr_reduce requires `y` a 2D array
+        _bspl._qr_reduce(R, y_)         # modifies arguments in-place        
+
+        # signs may differ
+        assert_allclose(np.minimum(R.todense() + r,
+                                   R.todense() - r), 0, atol=1e-15)
+        assert_allclose(np.minimum(abs(qTy - y_[:, 0]),
+                                   abs(qTy + y_[:, 0])), 0, atol=2e-13)
+
+        # sign changes are consistent between Q and R:
+        c_full = sl.solve(r, qTy)
+        c_banded = _b.fpback(R, y_)
+        assert_allclose(c_full, c_banded[:, 0], atol=5e-13)
+
+    def test_py_vs_compiled(self):
+        # test _qr_reduce vs a python implementation
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+
+        # design matrix
+        a_csr = BSpline.design_matrix(x, t, k)
+        m, nc = a_csr.shape
+        assert nc == t.shape[0] - k - 1
+
+        offset = a_csr.indices[::(k+1)]
+        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        A = a_csr.data.reshape(m, k+1)
+
+        R = _b.PackedMatrix(A, offset, nc)
+        y_ = y[:, None]
+
+        RR, yy = _qr_reduce_py(R, y_)
+        _bspl._qr_reduce(R, y_)   # in-place
+
+        assert_allclose(RR.a, R.a, atol=1e-15)
+        assert_equal(RR.offset, R.offset)
+        assert RR.nc == R.nc
+        assert_allclose(yy, y_, atol=1e-15)
+
+    # Test C-level construction of the design matrix
+
+    def test_data_matrix(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+        w = np.arange(1, n+1, dtype=float)
+        A, offset, nc = _bspl._data_matrix(x, t, k, w)
+
+        m = x.shape[0]
+        a_csr = BSpline.design_matrix(x, t, k)
+        a_w = (a_csr * w[:, None]).tocsr()
+        A_ = a_w.data.reshape((m, k+1))
+        offset_ = a_w.indices[::(k+1)]
+
+        assert_allclose(A, A_, atol=1e-15)
+        assert_equal(offset, offset_)
+        assert nc == t.shape[0] - k - 1
+
+    def test_fpback(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+        y = np.c_[y, y**2]
+        A, offset, nc = _bspl._data_matrix(x, t, k, w=np.ones_like(x))
+        R = _b.PackedMatrix(A, offset, nc)
+        _bspl._qr_reduce(R, y)
+
+        c = fpback(R, y)
+        cc = _bspl._fpback(R, y)
+
+        assert_allclose(cc, c, atol=1e-14)
 
 
 def data_file(basename):

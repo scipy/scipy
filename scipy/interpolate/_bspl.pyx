@@ -13,8 +13,34 @@ from libc.math cimport NAN
 
 cnp.import_array()
 
-cdef extern from "src/__fitpack.h":
+cdef extern from "src/__fitpack.h" namespace "fitpack":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
+    void qr_reduce(double *aptr, const ssize_t m, const ssize_t nz,    # a
+                     ssize_t *offset,
+                     const ssize_t nc,
+                     double *yptr, const ssize_t ydim1,                  # y
+                     const ssize_t startrow
+    ) nogil except+
+    ssize_t _find_interval(const double *tptr, ssize_t len_t,
+                          int k,
+                          double xval,
+                          ssize_t prev_l,
+                          int extrapolate) noexcept nogil
+
+    void data_matrix(const double *xptr, ssize_t m,
+                       const double *tptr, ssize_t len_t,
+                       int k,
+                       const double *wptr,   # NB: len(w) == len(x), not checked
+                       double *Aptr,    # outputs
+                       ssize_t *offset_ptr,
+                       Py_ssize_t *nc,
+                       double *wrk) except+ nogil
+
+    void fpback(const double *Rptr, ssize_t m, ssize_t nz,
+                  ssize_t nc,
+                  const double *yptr, ssize_t ydim2,
+                  double *cptr)
+
 
 ctypedef double complex double_complex
 
@@ -63,30 +89,7 @@ cdef inline int find_interval(const double[::1] t,
         Suitable interval or -1 if xval was nan.
 
     """
-    cdef:
-        int l
-        int n = t.shape[0] - k - 1
-        double tb = t[k]
-        double te = t[n]
-
-    if xval != xval:
-        # nan
-        return -1
-
-    if ((xval < tb) or (xval > te)) and not extrapolate:
-        return -1
-
-    l = prev_l if k < prev_l < n else k
-
-    # xval is in support, search for interval s.t. t[interval] <= xval < t[l+1]
-    while(xval < t[l] and l != k):
-        l -= 1
-
-    l += 1
-    while(xval >= t[l] and l != n):
-        l += 1
-
-    return l-1
+    return _find_interval(&t[0], t.shape[0], k, xval, prev_l, extrapolate)
 
 
 @cython.wraparound(False)
@@ -421,7 +424,8 @@ def _make_design_matrix(const double[::1] x,
                         const double[::1] t,
                         int k,
                         bint extrapolate,
-                        int32_or_int64[::1] indices):
+                        int32_or_int64[::1] indices,
+                        int nu=0):
     """
     Returns a design matrix in CSR format.
 
@@ -465,7 +469,7 @@ def _make_design_matrix(const double[::1] x,
         # extrapolate=False and out of bound values are already dealt with in
         # design_matrix
         ind = find_interval(t, k, xval, ind, extrapolate)
-        _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
+        _deBoor_D(&t[0], xval, k, ind, nu, &work[0])
 
         # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
         # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
@@ -837,3 +841,70 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
             csr_data[j*volume + iflat] = factor
 
     return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
+
+
+# ---------------------------
+# wrappers for fitpack repro
+# ---------------------------
+def _qr_reduce(A, y, startrow=1):
+    # A is a PackedMatrix instance, unpack
+    # _trampoline is to check contiguity etc
+    return _qr_reduce_trampoline(A.a, A.offset, A.nc, y, startrow)
+
+
+cdef void _qr_reduce_trampoline(double[:, ::1] a, ssize_t[::1] offset, ssize_t nc,
+                                double[:, ::1] y,
+                                ssize_t startrow=1) nogil:
+    qr_reduce(&a[0, 0], a.shape[0], a.shape[1],
+              &offset[0],
+              nc,
+              &y[0, 0], y.shape[1],
+              startrow)
+
+def _data_matrix(const double[::1] x,
+                const double[::1] t,
+                int k,
+                const double[::1] w):
+    cdef:
+         ssize_t m = x.shape[0]
+         double[:, ::1] A = np.empty((m, k+1), dtype=float)
+         ssize_t[::1] offset = np.zeros(m, dtype=np.intp)
+         double[::1] wrk = np.empty(2*k+2, dtype=float)
+         ssize_t nc
+
+    data_matrix(&x[0], m,
+                &t[0], t.shape[0],
+                k,
+                &w[0],       # NB: len(w) == len(x), not checked
+                &A[0, 0],    # outputs
+                &offset[0],
+                &nc,
+                &wrk[0],     # work array
+    )
+    return np.asarray(A), np.asarray(offset), int(nc)
+
+
+def _fpback(R, y):
+    # R is a PackedMatrix instance, unpack
+    return _fpback_trampoline(R.a, R.nc, y)
+
+
+cdef object _fpback_trampoline(const double[:, ::1] R, ssize_t nc,
+                               const double[:, ::1] y):
+    cdef:
+        ssize_t m = R.shape[0]
+        ssize_t nz = R.shape[1]
+
+    if y.shape[0] != m:
+        raise ValueError(f"{y.shape = } != {m =}.")
+    if nc > m:
+        raise ValueError(f"{nc = } > {m = }.")
+
+    cdef double[:, ::1] c = np.empty_like(y[:nc, :])
+
+    fpback(&R[0, 0], m, nz,
+           nc,
+           &y[0, 0], y.shape[1],
+           &c[0, 0])
+
+    return np.asarray(c)

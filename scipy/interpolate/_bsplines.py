@@ -13,6 +13,8 @@ from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
+fpback = _bspl._fpback    # FIXME: remove
+
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
            "make_smoothing_spline"]
 
@@ -335,7 +337,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
-    def design_matrix(cls, x, t, k, extrapolate=False):
+    def design_matrix(cls, x, t, k, extrapolate=False, nu=0):
         """
         Returns a design matrix as a CSR format sparse array.
 
@@ -454,7 +456,7 @@ class BSpline:
 
         # indptr is not passed to Cython as it is already fully computed
         data, indices = _bspl._make_design_matrix(
-            x, t, k, extrapolate, indices
+            x, t, k, extrapolate, indices, nu
         )
         return csr_array(
             (data, indices, indptr),
@@ -1414,7 +1416,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
-def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, *, method="qr"):
     r"""Compute the (coefficients of) an LSQ (Least SQuared) based
     fitting B-spline.
 
@@ -1452,6 +1454,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
         Default is True.
+    method : str, optional
+        Method for solving the linear LSQ problem. Allowed values are "norm-eq"
+        (Explicitly construct and solve the normal system of equations), and
+        "qr" (Use the QR factorization of the design matrix).
+        Default is "qr".
 
     Returns
     -------
@@ -1534,44 +1541,111 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
-    if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
+    if x.ndim != 1:
+        raise ValueError("Expect x to be a 1-D sequence.")
     if x.shape[0] < k+1:
         raise ValueError("Need more x points.")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
-        raise ValueError("Expect t to be a 1-D sorted array_like.")
+        raise ValueError("Expect t to be a 1D strictly increasing sequence.")
     if x.size != y.shape[0]:
         raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
+    if method == "norm-eq" and np.any(x[1:] - x[:-1] <= 0):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
+    if method == "qr" and any(x[1:] - x[:-1] < 0):
+        raise ValueError("Expect x to be a 1D non-decreasing sequence.")
 
     # number of coefficients
     n = t.size - k - 1
 
-    # construct A.T @ A and rhs with A the collocation matrix, and
-    # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
-    lower = True
+    # multiple r.h.s
     extradim = prod(y.shape[1:])
-    ab = np.zeros((k+1, n), dtype=np.float64, order='F')
-    rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
-    _bspl._norm_eq_lsq(x, t, k,
-                       y.reshape(-1, extradim),
-                       w,
-                       ab, rhs)
-    rhs = rhs.reshape((n,) + y.shape[1:])
+    yy = y.reshape(-1, extradim)
 
-    # have observation matrix & rhs, can solve the LSQ problem
-    cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
-                                 check_finite=check_finite)
-    c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
-                         check_finite=check_finite)
+    if method == "norm-eq":
+        # construct A.T @ A and rhs with A the collocation matrix, and
+        # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
+        lower = True
+        ab = np.zeros((k+1, n), dtype=np.float64, order='F')
+        rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
+        _bspl._norm_eq_lsq(x, t, k,
+                           yy,
+                           w,
+                           ab, rhs)
+        # have observation matrix & rhs, can solve the LSQ problem
+        cho_decomp = cholesky_banded(ab, overwrite_ab=True, lower=lower,
+                                     check_finite=check_finite)
+        c = cho_solve_banded((cho_decomp, lower), rhs, overwrite_b=True,
+                             check_finite=check_finite)
+    elif method == "qr":
+        _, _, c = _lsq_solve_qr(x, yy, t, k, w)
+    else:
+        raise ValueError(f"Unknown {method =}.")
 
+    # restore the shape of `c` for both single and multiple r.h.s.
+    c = c.reshape((n,) + y.shape[1:])
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
+
+
+######################
+# LSQ spline helpers #
+######################
+
+class PackedMatrix:
+    """A simplified CSR format for when non-zeros in each row are consecutive.
+
+    Assuming that each row of an `(m, nc)` matrix 1) only has `nz` non-zeros, and
+    2) these non-zeros are consecutive, we only store an `(m, nz)` matrix of
+    non-zeros and a 1D array of row offsets. This way, a row `i` of the original
+    matrix A is ``A[i, offset[i]: offset[i] + nz]``.
+
+    """
+    def __init__(self, a, offset, nc):
+        self.a = a
+        self.offset = offset
+        self.nc = nc
+
+        assert a.ndim == 2
+        assert offset.ndim == 1
+        assert a.shape[0] == offset.shape[0]
+
+    @property
+    def shape(self):
+        return self.a.shape[0], self.nc
+
+    def todense(self):
+        out = np.zeros(self.shape)
+        nelem = self.a.shape[1]
+        for i in range(out.shape[0]):
+            nel = min(self.nc - self.offset[i], nelem)
+            out[i, self.offset[i]:self.offset[i] + nel] = self.a[i, :nel]
+        return out
+
+
+
+def _lsq_solve_qr(x, y, t, k, w):
+    """Solve for the LSQ spline coeffs given x, y and knots.
+
+    `y` is always 2D: for 1D data, the shape is ``(m, 1)``.
+
+    """
+    assert y.ndim == 2
+
+    A, offset, nc = _bspl._data_matrix(x, t, k, w)
+    y_w = y * w[:, None]
+    R = PackedMatrix(A, offset, nc)
+    _bspl._qr_reduce(R, y_w)         # modifies arguments in-place
+    c = _bspl._fpback(R, y_w)
+
+    assert y_w.ndim == 2
+
+    return R, y_w, c
 
 
 #############################
