@@ -1,6 +1,7 @@
 import os
 import operator
 import itertools
+import warnings
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
@@ -18,6 +19,11 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
+
+# XXX: decide on how to expose these
+from scipy.interpolate import generate_knots, make_splrep
+from scipy.interpolate._fitpack_repro import disc, disc_naive
+
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
 
@@ -1015,7 +1021,7 @@ class TestInterp:
             make_interp_spline(x, y, k=k)
 
     def test_not_a_knot(self):
-        for k in [3, 5]:
+        for k in [2, 3, 4, 5, 6, 7]:
             b = make_interp_spline(self.xx, self.yy, k)
             assert_allclose(b(self.xx), self.yy, atol=1e-14, rtol=1e-14)
 
@@ -1450,6 +1456,8 @@ def make_lsq_full_matrix(x, y, t, k=3):
     return c, (A, Y)
 
 
+parametrize_lsq_methods = pytest.mark.parametrize("method", ["norm-eq", "qr"])
+
 class TestLSQ:
     #
     # Test make_lsq_spline
@@ -1460,12 +1468,13 @@ class TestLSQ:
     y = np.random.random(n)
     t = _augknt(np.linspace(x[0], x[-1], 7), k)
 
-    def test_lstsq(self):
+    @parametrize_lsq_methods
+    def test_lstsq(self, method):
         # check LSQ construction vs a full matrix version
         x, y, t, k = self.x, self.y, self.t, self.k
 
         c0, AY = make_lsq_full_matrix(x, y, t, k)
-        b = make_lsq_spline(x, y, t, k)
+        b = make_lsq_spline(x, y, t, k, method=method)
 
         assert_allclose(b.c, c0)
         assert_equal(b.c.shape, (t.size - k - 1,))
@@ -1475,53 +1484,108 @@ class TestLSQ:
         c1, _, _, _ = np.linalg.lstsq(aa, y, rcond=-1)
         assert_allclose(b.c, c1)
 
-    def test_weights(self):
+    @parametrize_lsq_methods
+    def test_weights(self, method):
         # weights = 1 is same as None
         x, y, t, k = self.x, self.y, self.t, self.k
         w = np.ones_like(x)
 
-        b = make_lsq_spline(x, y, t, k)
-        b_w = make_lsq_spline(x, y, t, k, w=w)
+        b = make_lsq_spline(x, y, t, k, method=method)
+        b_w = make_lsq_spline(x, y, t, k, w=w, method=method)
 
         assert_allclose(b.t, b_w.t, atol=1e-14)
         assert_allclose(b.c, b_w.c, atol=1e-14)
         assert_equal(b.k, b_w.k)
 
-    def test_multiple_rhs(self):
+    def test_weights_same(self):
+        # both methods treat weights 
+        x, y, t, k = self.x, self.y, self.t, self.k
+        w = np.random.default_rng(1234).uniform(size=x.shape[0])
+
+        b_ne = make_lsq_spline(x, y, t, k, w=w, method="norm-eq")
+        b_qr = make_lsq_spline(x, y, t, k, w=w, method="qr")
+        b_no_w = make_lsq_spline(x, y, t, k, method="qr")
+
+        assert_allclose(b_ne.c, b_qr.c, atol=1e-14)
+        assert not np.allclose(b_no_w.c, b_qr.c, atol=1e-14)
+
+    @parametrize_lsq_methods
+    def test_multiple_rhs(self, method):
         x, t, k, n = self.x, self.t, self.k, self.n
         y = np.random.random(size=(n, 5, 6, 7))
 
-        b = make_lsq_spline(x, y, t, k)
+        b = make_lsq_spline(x, y, t, k, method=method)
         assert_equal(b.c.shape, (t.size-k-1, 5, 6, 7))
 
-    def test_complex(self):
+    @parametrize_lsq_methods
+    def test_multiple_rhs_2(self, method):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b = make_lsq_spline(x, y, t, k, method=method)
+
+        bb = [make_lsq_spline(x, y[:, i], t, k, method=method)
+              for i in range(nrhs)]
+        coefs = np.vstack([bb[i].c for i in range(nrhs)]).T
+
+        assert_allclose(coefs, b.c, atol=1e-15)
+
+    def test_multiple_rhs_3(self):
+        x, t, k, n = self.x, self.t, self.k, self.n
+        nrhs = 3
+        y = np.random.random(size=(n, nrhs))
+        b_qr = make_lsq_spline(x, y, t, k, method="qr")
+        b_neq = make_lsq_spline(x, y, t, k, method="norm-eq")
+        assert_allclose(b_qr.c, b_neq.c, atol=1e-15)
+
+    @parametrize_lsq_methods
+    def test_complex(self, method):
+        if method == "qr":
+            pytest.xfail("method='qr' does not handle complex-valued `y` yet.")
+
         # cmplx-valued `y`
         x, t, k = self.x, self.t, self.k
         yc = self.y * (1. + 2.j)
 
-        b = make_lsq_spline(x, yc, t, k)
-        b_re = make_lsq_spline(x, yc.real, t, k)
-        b_im = make_lsq_spline(x, yc.imag, t, k)
+        b = make_lsq_spline(x, yc, t, k, method=method)
+        b_re = make_lsq_spline(x, yc.real, t, k, method=method)
+        b_im = make_lsq_spline(x, yc.imag, t, k, method=method)
 
         assert_allclose(b(x), b_re(x) + 1.j*b_im(x), atol=1e-15, rtol=1e-15)
 
-    def test_int_xy(self):
+    @parametrize_lsq_methods
+    def test_int_xy(self, method):
         x = np.arange(10).astype(int)
         y = np.arange(10).astype(int)
         t = _augknt(x, k=1)
         # Cython chokes on "buffer type mismatch"
-        make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1, method=method)
 
-    def test_sliced_input(self):
+    @parametrize_lsq_methods
+    def test_f32_xy(self, method):
+        x = np.arange(10, dtype=np.float32)
+        y = np.arange(10, dtype=np.float32)
+        t = _augknt(x, k=1)
+        spl_f32 = make_lsq_spline(x, y, t, k=1, method=method)
+        spl_f64 = make_lsq_spline(
+            x.astype(float), y.astype(float), t.astype(float), k=1, method=method
+        )
+
+        x2 = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_f32(x2), spl_f64(x2), atol=1e-15)
+
+    @parametrize_lsq_methods
+    def test_sliced_input(self, method):
         # Cython code chokes on non C contiguous arrays
         xx = np.linspace(-1, 1, 100)
 
         x = xx[::3]
         y = xx[::3]
         t = _augknt(x, 1)
-        make_lsq_spline(x, y, t, k=1)
+        make_lsq_spline(x, y, t, k=1, method=method)
 
-    def test_checkfinite(self):
+    @parametrize_lsq_methods
+    def test_checkfinite(self, method):
         # check_finite defaults to True; nans and such trigger a ValueError
         x = np.arange(12).astype(float)
         y = x**2
@@ -1529,15 +1593,215 @@ class TestLSQ:
 
         for z in [np.nan, np.inf, -np.inf]:
             y[-1] = z
-            assert_raises(ValueError, make_lsq_spline, x, y, t)
+            assert_raises(ValueError, make_lsq_spline, x, y, t, method=method)
 
-    def test_read_only(self):
+    @parametrize_lsq_methods
+    def test_read_only(self, method):
         # Check that make_lsq_spline works with read only arrays
         x, y, t = self.x, self.y, self.t
         x.setflags(write=False)
         y.setflags(write=False)
         t.setflags(write=False)
-        make_lsq_spline(x=x, y=y, t=t)
+        make_lsq_spline(x=x, y=y, t=t, method=method)
+
+    @pytest.mark.parametrize('k', list(range(1, 7)))
+    def test_qr_vs_norm_eq(self, k):
+        # check that QR and normal eq solutions match
+        x, y = self.x, self.y
+        t = _augknt(np.linspace(x[0], x[-1], 7), k)
+        spl_norm_eq = make_lsq_spline(x, y, t, k=k, method='norm-eq')
+        spl_qr = make_lsq_spline(x, y, t, k=k, method='qr')
+
+        xx = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_norm_eq(xx), spl_qr(xx), atol=1e-15)
+
+    def test_duplicates(self):
+        # method="qr" can handle duplicated data points
+        x = np.repeat(self.x, 2)
+        y = np.repeat(self.y, 2)
+        spl_1 = make_lsq_spline(self.x, self.y, self.t, k=3, method='qr')
+        spl_2 = make_lsq_spline(x, y, self.t, k=3, method='qr')
+
+        xx = (x[1:] + x[:-1]) / 2.0
+        assert_allclose(spl_1(xx), spl_2(xx), atol=1e-15)
+
+
+def _qr_reduce_py(a_p, y, startrow=1):
+    """This is a python counterpart of the `_qr_reduce` routine,
+    defined in interpolate/src/__fitpack.h
+    """
+    from scipy.linalg.lapack import dlartg
+
+    # unpack the packed format
+    a = a_p.a
+    offset = a_p.offset
+    nc = a_p.nc
+
+    m, nz = a.shape
+
+    assert y.shape[0] == m
+    R = a.copy()
+    y1 = y.copy()
+
+    for i in range(startrow, m):
+        oi = offset[i]
+        for j in range(oi, nc):
+            # rotate only the lower diagonal
+            if j >= min(i, nc):
+                break
+
+            # In dense format: diag a1[j, j] vs a1[i, j]
+            c, s, r = dlartg(R[j, 0], R[i, 0])
+
+            # rotate l.h.s.
+            R[j, 0] = r
+            for l in range(1, nz):
+                R[j, l], R[i, l-1] = fprota(c, s, R[j, l], R[i, l])
+            R[i, -1] = 0.0
+
+            # rotate r.h.s.
+            for l in range(y1.shape[1]):
+                y1[j, l], y1[i, l] = fprota(c, s, y1[j, l], y1[i, l])
+
+    # convert to packed
+    offs = list(range(R.shape[0]))
+    R_p = _b.PackedMatrix(R, np.array(offs), nc)
+
+    return R_p, y1
+
+
+def fprota(c, s, a, b):
+    """Givens rotate [a, b].
+
+    [aa] = [ c s] @ [a]
+    [bb]   [-s c]   [b]
+
+    """
+    aa =  c*a + s*b
+    bb = -s*a + c*b
+    return aa, bb
+
+
+def fpback(R_p, y):
+    """Backsubsitution solve upper triangular banded `R @ c = y.`
+
+    `R` is in the "packed" format: `R[i, :]` is `a[i, i:i+k+1]`
+    """
+    R = R_p.a
+    _, nz = R.shape
+    nc = R_p.nc
+    assert y.shape[0] == R.shape[0]
+
+    c = np.zeros_like(y[:nc])
+    c[nc-1, ...] = y[nc-1] / R[nc-1, 0]
+    for i in range(nc-2, -1, -1):
+        nel = min(nz, nc-i)
+        # NB: broadcast R across trailing dimensions of `c`.
+        summ = (R[i, 1:nel, None] * c[i+1:i+nel, ...]).sum(axis=0)
+        c[i, ...] = ( y[i] - summ ) / R[i, 0]
+    return c
+
+
+class TestGivensQR:
+    # Test row-by-row QR factorization, used for the LSQ spline construction.
+    # This is implementation detail; still test it separately.
+    def _get_xyt(self, n):
+        k = 3
+        x = np.arange(n, dtype=float)
+        y = x**3 + 1/(1+x)
+        t = _not_a_knot(x, k)
+        return x, y, t, k
+
+    def test_vs_full(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+
+        # design matrix
+        a_csr = BSpline.design_matrix(x, t, k)
+
+        # dense QR
+        q, r = sl.qr(a_csr.todense())
+        qTy = q.T @ y
+
+        # prepare the PackedMatrix to factorize
+        # convert to "packed" format
+        m, nc = a_csr.shape
+        assert nc == t.shape[0] - k - 1
+
+        offset = a_csr.indices[::(k+1)]
+        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        A = a_csr.data.reshape(m, k+1)
+
+        R = _b.PackedMatrix(A, offset, nc)
+        y_ = y[:, None]     # _qr_reduce requires `y` a 2D array
+        _bspl._qr_reduce(R, y_)         # modifies arguments in-place        
+
+        # signs may differ
+        assert_allclose(np.minimum(R.todense() + r,
+                                   R.todense() - r), 0, atol=1e-15)
+        assert_allclose(np.minimum(abs(qTy - y_[:, 0]),
+                                   abs(qTy + y_[:, 0])), 0, atol=2e-13)
+
+        # sign changes are consistent between Q and R:
+        c_full = sl.solve(r, qTy)
+        c_banded = _b.fpback(R, y_)
+        assert_allclose(c_full, c_banded[:, 0], atol=5e-13)
+
+    def test_py_vs_compiled(self):
+        # test _qr_reduce vs a python implementation
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+
+        # design matrix
+        a_csr = BSpline.design_matrix(x, t, k)
+        m, nc = a_csr.shape
+        assert nc == t.shape[0] - k - 1
+
+        offset = a_csr.indices[::(k+1)]
+        offset = np.ascontiguousarray(offset, dtype=np.intp)
+        A = a_csr.data.reshape(m, k+1)
+
+        R = _b.PackedMatrix(A, offset, nc)
+        y_ = y[:, None]
+
+        RR, yy = _qr_reduce_py(R, y_)
+        _bspl._qr_reduce(R, y_)   # in-place
+
+        assert_allclose(RR.a, R.a, atol=1e-15)
+        assert_equal(RR.offset, R.offset)
+        assert RR.nc == R.nc
+        assert_allclose(yy, y_, atol=1e-15)
+
+    # Test C-level construction of the design matrix
+
+    def test_data_matrix(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+        w = np.arange(1, n+1, dtype=float)
+        A, offset, nc = _bspl._data_matrix(x, t, k, w)
+
+        m = x.shape[0]
+        a_csr = BSpline.design_matrix(x, t, k)
+        a_w = (a_csr * w[:, None]).tocsr()
+        A_ = a_w.data.reshape((m, k+1))
+        offset_ = a_w.indices[::(k+1)]
+
+        assert_allclose(A, A_, atol=1e-15)
+        assert_equal(offset, offset_)
+        assert nc == t.shape[0] - k - 1
+
+    def test_fpback(self):
+        n = 10
+        x, y, t, k = self._get_xyt(n)
+        y = np.c_[y, y**2]
+        A, offset, nc = _bspl._data_matrix(x, t, k, w=np.ones_like(x))
+        R = _b.PackedMatrix(A, offset, nc)
+        _bspl._qr_reduce(R, y)
+
+        c = fpback(R, y)
+        cc = _bspl._fpback(R, y)
+
+        assert_allclose(cc, c, atol=1e-14)
 
 
 def data_file(basename):
@@ -2498,3 +2762,250 @@ class TestFpchec:
         with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
             _b.fpcheck(x, t, k)
 
+
+class TestGenerateKnots:
+    @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
+    def test_s0(self, k):
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        t = list(generate_knots(x, y, k=k, s=0))[-1]
+
+        tt = splrep(x, y, k=k, s=0)[0]
+        assert_allclose(t, tt, atol=1e-15)
+
+    def test_s0_1(self):
+        # with these data, naive algorithm tries to insert >= nmax knots
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
+        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+
+    def test_s0_n20(self):
+        n = 20
+        x = np.arange(n)
+        y = x**3
+        knots = list(generate_knots(x, y, k=3, s=0))
+        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+
+    def test_s0_nest(self):
+        # s=0 and non-default nest: not implemented, errors out
+        x = np.arange(10)
+        y = x**3
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, k=3, s=0, nest=10))
+
+    def test_s_switch(self):
+        # test the process switching to interpolating knots when len(t) == m + k + 1
+        """
+        To generate the `wanted` list below apply the following diff and rerun
+        the test. The stdout will contain successive iterations of the `t`
+        array.
+
+$ git diff scipy/interpolate/fitpack/fpcurf.f
+diff --git a/scipy/interpolate/fitpack/fpcurf.f b/scipy/interpolate/fitpack/fpcurf.f
+index 1afb1900f1..d817e51ad8 100644
+--- a/scipy/interpolate/fitpack/fpcurf.f
++++ b/scipy/interpolate/fitpack/fpcurf.f
+@@ -216,6 +216,9 @@ c  t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+         do 190 l=1,nplus
+ c  add a new knot.
+           call fpknot(x,m,t,n,fpint,nrdata,nrint,nest,1)
++          print*, l, nest, ': ', t
++          print*, "n, nmax = ", n, nmax
++
+ c  if n=nmax we locate the knots as for interpolation.
+           if(n.eq.nmax) go to 10
+ c  test whether we cannot further increase the number of knots.
+        """
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        k = 3
+
+        knots = list(generate_knots(x, y, k=k, s=1e-7))
+        wanted = [[0., 0., 0., 0., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 4., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], 
+                  [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
+        ]
+
+        assert len(knots) == len(wanted)
+        for t, tt in zip(knots, wanted):
+            assert_allclose(t, tt, atol=1e-15)
+
+        # also check that the last knot vector matches FITPACK
+        t, _, _ = splrep(x, y, k=k, s=1e-7)
+        assert_allclose(knots[-1], t, atol=1e-15)
+
+    def test_nest(self):
+        # test that nest < nmax stops the process early (and we get 10 knots not 12)
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        s = 1e-7
+
+        knots = list(generate_knots(x, y, k=3, s=s, nest=10))
+        assert_allclose(knots[-1],
+                        [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
+
+        with assert_raises(ValueError):
+            # nest < 2*(k+1)
+            list(generate_knots(x, y, k=3, nest=4))
+
+    def test_weights(self):
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, w=np.arange(11)))   # len(w) != len(x)
+
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, w=-np.ones(8)))    # w < 0
+
+    @pytest.mark.parametrize("npts", [30, 50, 100])
+    @pytest.mark.parametrize("s", [0.1, 1e-2, 0])
+    def test_vs_splrep(self, s, npts):
+        # XXX this test is brittle: differences start apearing for k=3 and s=1e-6,
+        # also for k != 3. Might be worth investigating at some point.
+        # I think we do not really guarantee exact agreement with splrep. Instead,
+        # we guarantee it is the same *in most cases*; otherwise slight differences
+        # are allowed. There is no theorem, it is al heuristics by P. Dierckx.
+        # The best we can do it to best-effort reproduce it.
+        rndm = np.random.RandomState(12345)
+        x = 10*np.sort(rndm.uniform(size=npts))
+        y = np.sin(x*np.pi/10) + np.exp(-(x-6)**2)
+
+        k = 3
+        t = splrep(x, y, k=k, s=s)[0]
+        tt = list(generate_knots(x, y, k=k, s=s))[-1]
+
+        assert_allclose(tt, t, atol=1e-15)
+
+    def test_s_too_small(self):
+        n = 14
+        x = np.arange(n)
+        y = x**3
+
+        # XXX splrep warns that "s too small": ier=2
+        knots = list(generate_knots(x, y, k=3, s=1e-50))
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore')
+            tck = splrep(x, y, k=3, s=1e-50)
+        assert_equal(knots[-1], tck[0])
+
+
+class TestMakeSplrep:
+    def _get_xykt(self):
+        x = np.linspace(0, 5, 11)
+        y  = np.sin(x*3.14 / 5)**2
+        k = 3
+        s = 1.7e-4
+        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+
+        return x, y, k, s, tt
+
+    def test_fitpack_F(self):
+        # test an implementation detail: banded/packed linalg vs full matrices
+        from scipy.interpolate._fitpack_repro import F, F_dense
+
+        x, y, k, s, t = self._get_xykt()
+        f = F(x, y, t, k, s)
+        f_d = F_dense(x, y, t, k, s)
+        for p in [1, 10, 100]:
+            assert_allclose(f(p), f_d(p), atol=1e-15)
+
+    def test_fitpack_F_with_weights(self):
+        # repeat test_fitpack_F, with weights
+        from scipy.interpolate._fitpack_repro import F, F_dense
+
+        x, y, k, s, t = self._get_xykt()
+        w = np.arange(x.shape[0], dtype=float)
+        fw = F(x, y, t, k, s, w=w)
+        fw_d = F_dense(x, y, t, k, s, w=w)
+
+        f_d = F_dense(x, y, t, k, s)   # no weights
+
+        for p in [1, 10, 100]:
+            assert_allclose(fw(p), fw_d(p), atol=1e-15)
+            assert not np.allclose(f_d(p), fw_d(p), atol=1e-15)
+
+    def test_disc_matrix(self):
+        # test an implementation detail: discontinuity matrix
+        # (jumps of k-th derivative at knots)
+        rng = np.random.default_rng(12345)
+        t = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7))*5, 5, 5, 5, 5]
+
+        n, k = len(t), 3
+        D = disc(t, k).todense()
+        D_dense = disc_naive(t, k)
+        assert D.shape[0] == n - 2*k - 2   # number of internal knots
+        assert_allclose(D, D_dense, atol=1e-15)
+
+    def test_simple_vs_splrep(self):
+        x, y, k, s, tt = self._get_xykt()
+        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+
+        t,c,k = splrep(x, y, k=k, s=s)
+        assert all(t == tt)
+ 
+        spl = make_splrep(x, y, k=k, s=s)
+        assert_allclose(c[:spl.c.size], spl.c, atol=1e-15)
+
+    def test_with_knots(self):
+        x, y, k, s, _ = self._get_xykt()
+
+        t = list(generate_knots(x, y, k=k, s=s))[-1]
+
+        spl_auto = make_splrep(x, y, k=k, s=s)
+        spl_t = make_splrep(x, y, t=t, k=k, s=s)
+
+        assert_allclose(spl_auto.t, spl_t.t, atol=1e-15)
+        assert_allclose(spl_auto.c, spl_t.c, atol=1e-15)
+        assert_allclose(spl_auto.k, spl_t.k, atol=1e-15)
+
+    def test_no_internal_knots(self):
+        # should not fail if there are no internal knots
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        k = 3
+        spl = make_splrep(x, y, k=k, s=1)
+        assert spl.t.shape[0] == 2*(k+1)
+
+    def test_default_s(self):
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        spl = make_splrep(x, y, k=3)
+        spl_i = make_interp_spline(x, y, k=3)
+
+        assert_allclose(spl.c, spl_i.c, atol=1e-15)
+
+    def test_s_too_small(self):
+        n, k = 14, 3
+        x = np.arange(n)
+        y = x**3
+
+        with pytest.warns(RuntimeWarning):
+            spl = make_splrep(x, y, k=k, s=1e-50)
+            t, c, k = splrep(x, y, k=k, s=1e-50)
+
+        assert_allclose(spl.c, c[:n], atol=1e-13)
+        assert_allclose(spl.t, t, atol=1e-15)
+
+    def test_shape(self):
+        # make sure coefficients have the right shape (not extra dims)
+        n, k = 10, 3
+        x = np.arange(n)
+        y = x**3
+
+        spl = make_splrep(x, y, k=k)
+        spl_1 = make_splrep(x, y, k=k, s=1e-5)
+
+        assert spl.c.ndim == 1
+        assert spl_1.c.ndim == 1
+
+        # force the general code path, not shortcuts
+        spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5)
+        assert spl_2.c.ndim == 1

@@ -121,10 +121,10 @@ py3.extension_module('_rgi_cython',
 )
 
 _bspl = py3.extension_module('_bspl',
-  cython_gen.process('_bspl.pyx'),
-  c_args: cython_c_args,
+  cython_gen_cpp.process('_bspl.pyx'),
+  cpp_args: cython_cpp_args,
   include_directories: 'src/',
-  dependencies: np_dep,
+  dependencies: [lapack, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
@@ -190,6 +190,7 @@ py3.install_sources([
     '_fitpack_impl.py',
     '_fitpack_py.py',
     '_fitpack2.py',
+    '_fitpack_repro.py',
     '_interpnd_info.py',
     '_interpolate.py',
     '_ndgriddata.py',
