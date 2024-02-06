@@ -296,7 +296,7 @@ class TestCorr:
 
         assert stat1 == stat2 == stat3
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             mstats.spearmanr(x, y, alternative="ekki-ekki")
 
     @pytest.mark.skipif(platform.machine() == 'ppc64le',
@@ -1308,7 +1308,7 @@ class TestTtest_rel:
             assert_array_equal(p, np.array([np.nan, np.nan]))
 
     def test_bad_alternative(self):
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be 'less', 'greater', or 'two-sided'."
         with pytest.raises(ValueError, match=msg):
             mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
 
@@ -1403,7 +1403,7 @@ class TestTtest_ind:
                                             equal_var=False), (np.nan, np.nan))
 
     def test_bad_alternative(self):
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be 'less', 'greater', or 'two-sided'."
         with pytest.raises(ValueError, match=msg):
             mstats.ttest_ind([1, 2, 3], [4, 5, 6], alternative='foo')
 
@@ -1473,7 +1473,7 @@ class TestTtest_1samp:
             assert_array_equal(p, (np.nan, np.nan))
 
     def test_bad_alternative(self):
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be 'less', 'greater', or 'two-sided'."
         with pytest.raises(ValueError, match=msg):
             mstats.ttest_1samp([1, 2, 3], 4, alternative='foo')
 
