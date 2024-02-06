@@ -1106,6 +1106,182 @@ For example, to find the minimum of :math:`J_{1}\left( x \right)` near
     5.33144184241
 
 
+Optimization Solvers Reference Tables
+-------------------------------------
+
+Provide an overview of various optimization solvers,which are tools 
+used to find the minimum or maximum of an objective function subject 
+to constraints. These solvers are divided into two main categories: 
+Local Optimization and Global Optimization.Each category has a set of 
+solvers with unique characteristics and capabilities.
+
+
+Local Optimization Solvers
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Local optimization solvers are algorithms that search for a local minimum, 
+starting from an initial point. These solvers are particularly useful 
+when the problem is presumed to have a smooth landscape around the initial guess.
+
+**Local Optimization Solvers Table:**
+
+.. list-table::
+   :widths: 15 15 15 20 20 15
+   :header-rows: 1
+
+   * - Solver
+     - Uses Gradient
+     - Uses Hessian
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Utilizes Sparsity
+   * - Nelder-Mead
+     - 
+     - 
+     - ✓
+     - 
+     - 
+   * - Powell
+     - 
+     - 
+     - ✓
+     - 
+     - 
+   * - COBYLA
+     - 
+     - 
+     - ✓
+     - 
+     - 
+   * - CG
+     - ✓
+     - 
+     - 
+     - 
+     - 
+   * - BFGS
+     - ✓
+     - 
+     - 
+     - 
+     - 
+   * - Newton-CG
+     - ✓
+     - ✓
+     - 
+     - 
+     - ✓
+   * - dogleg
+     - ✓
+     - must be pos. def.
+     - 
+     - 
+     - 
+   * - trust-ncg
+     - ✓
+     - ✓
+     - 
+     - 
+     - 
+   * - trust-krylov
+     - ✓
+     - ✓
+     - 
+     - 
+     - 
+   * - trust-exact
+     - ✓
+     - ✓
+     - 
+     - 
+     - 
+   * - L-BFGS-B
+     - ✓
+     - 
+     - ✓
+     - 
+     - 
+   * - TNC
+     - ✓
+     - 
+     - ✓
+     - 
+     - 
+   * - trust-constr
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+     - ✓
+   * - SLSQP
+     - ✓
+     - 
+     - ✓
+     - ✓
+     - 
+
+
+Global Optimization Solvers
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Global optimization solvers aim to find the global minimum over the entire search space,
+which is especially important when the objective function has multiple local minima.
+
+**Global Optimization Solvers Table:**
+
+.. list-table::
+   :widths: 20 15 15 20 20 15
+   :header-rows: 1
+
+   * - Solver
+     - Uses Gradient
+     - Uses Hessian
+     - Bounds Constraints
+     - Nonlinear Constraints
+     - Utilizes Sparsity
+   * - dual_annealing
+     - (✓)
+     - (✓)
+     - ✓
+     - 
+     - 
+   * - differential_evolution
+     - 
+     - 
+     - ✓
+     - ✓
+     - 
+   * - shgo
+     - (✓)
+     - (✓)
+     - ✓
+     - ✓
+     - 
+   * - direct
+     - 
+     - 
+     - ✓
+     - 
+     - 
+   * - basinhopping
+     - (✓)
+     - (✓)
+     - 
+     - 
+     - 
+
+
+Selection Criteria
+^^^^^^^^^^^^^^^^^^
+
+The selection of an appropriate solver depends on the specific characteristics
+of the optimization problem, such as the smoothness of the objective function, 
+the presence of constraints, and the need for global versus local optimization.
+Additionally, computational considerations such as the availability of 
+derivative information and the size and sparsity of the problem should 
+guide the choice of the solver.
+
+
 Custom minimizers
 -----------------
 
