@@ -10,21 +10,21 @@
 #ifndef _SPEC_WRAPPERS_H
 #define _SPEC_WRAPPERS_H
 #include "Python.h"
-#include <numpy/npy_math.h>
 #include <math.h>
 
-#include "npy_2_complexcompat.h"
+#include "npy_2_npymathcompat.h"
+
 #include "sf_error.h"
 
 #define ZCONVINF(func,z)                                                \
     do {                                                                \
-        if ((double)npy_creal(z) == (double)1.0e300) {    \
+        if ((double)npymath_creal(z) == (double)1.0e300) {    \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            NPY_CSETREAL(&(z), INFINITY);                       \
+            npymath_csetreal(&(z), INFINITY);                       \
         }                                                               \
-        if ((double)npy_creal(z) == (double)-1.0e300) {   \
+        if ((double)npymath_creal(z) == (double)-1.0e300) {   \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            NPY_CSETREAL(&(z), -INFINITY);                      \
+            npymath_csetreal(&(z), -INFINITY);                      \
         }                                                               \
     } while (0)
 #define CONVINF(func, x)                                                \

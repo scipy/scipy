@@ -139,7 +139,7 @@ cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
   include_directories: ['../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, np_dep],
+  dependencies: [py3_dep, np_dep, libnpymath_dep],
 )
 
 mach_lib = static_library('mach',
@@ -272,7 +272,7 @@ py3.extension_module('_ufuncs_cxx',
                         '../_build_utils/src'],
   link_args: version_link_args,
     link_with: [cephes_lib],
-  dependencies: [np_dep, ellint_dep],
+  dependencies: [np_dep, libnpymath_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -299,7 +299,7 @@ py3.extension_module('cython_special',
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
   link_args: version_link_args,
-  dependencies: [np_dep, libnpymath_dep, lapack],
+  dependencies: [lapack, np_dep, libnpymath_dep],
   link_with: [
     amos_lib,
     cephes_lib,

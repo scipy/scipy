@@ -1,7 +1,7 @@
 #pragma once
 
 #include <complex>
-#include <numpy/npy_math.h>
+#include "npy_2_npymathcompat.h"
 
 #include "special/binom.h"
 #include "special/lambertw.h"
@@ -11,7 +11,7 @@ inline double binom(double n, double k) {
 }
 
 inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
-    std::complex<double> z(npy_creal(zp), npy_cimag(zp));
+    std::complex<double> z(npymath_creal(zp), npymath_cimag(zp));
     std::complex<double> w = special::lambertw(z, k, tol);
-    return npy_cpack(real(w), imag(w));
+    return npymath_cpack(real(w), imag(w));
 }

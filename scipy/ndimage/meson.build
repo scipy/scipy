@@ -10,7 +10,7 @@ py3.extension_module('_nd_image',
     'src/ni_support.c'
   ],
   include_directories: ['../_lib/src', '../_build_utils/src'],
-  dependencies: np_dep,
+  dependencies: [np_dep, libnpymath_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/ndimage'

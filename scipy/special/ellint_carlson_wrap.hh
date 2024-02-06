@@ -19,8 +19,7 @@
 
 _BEGIN_EXTERN_C
 
-
-#include <numpy/npy_math.h>
+#include "npy_2_npymathcompat.h"
 
 
 extern double fellint_RC(double x, double y);

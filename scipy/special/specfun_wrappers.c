@@ -73,24 +73,24 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
 
 
   l0 = ((c == floor(c)) && (c < 0));
-  l1 = ((fabs(1-npy_creal(z)) < 1e-15) && (npy_cimag(z) == 0) && (c-a-b <= 0));
+  l1 = ((fabs(1-npymath_creal(z)) < 1e-15) && (npymath_cimag(z) == 0) && (c-a-b <= 0));
   if (l0 || l1) {
     sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
-    NPY_CSETREAL(&outz, INFINITY);
-    NPY_CSETIMAG(&outz, 0.0);
+    npymath_csetreal(&outz, INFINITY);
+    npymath_csetimag(&outz, 0.0);
     return outz;
   }
   F_FUNC(hygfz, HYGFZ)(&a, &b, &c, &z, &outz, &isfer);
   if (isfer == 3) {
     sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
-    NPY_CSETREAL(&outz, INFINITY);
-    NPY_CSETIMAG(&outz, 0.0);
+    npymath_csetreal(&outz, INFINITY);
+    npymath_csetimag(&outz, 0.0);
   } else if (isfer == 5) {
     sf_error("chyp2f1", SF_ERROR_LOSS, NULL);
   } else if (isfer != 0) {
     sf_error("chyp2f1", isfer, NULL);
-    NPY_CSETREAL(&outz, NAN);
-    NPY_CSETIMAG(&outz, NAN);
+    npymath_csetreal(&outz, NAN);
+    npymath_csetimag(&outz, NAN);
   }
   return outz;
 }
@@ -99,9 +99,9 @@ npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
   npy_cdouble outz;
 
   F_FUNC(cchg,CCHG)(&a, &b, &z, &outz);
-  if (npy_creal(outz) == 1e300) {
+  if (npymath_creal(outz) == 1e300) {
     sf_error("chyp1f1", SF_ERROR_OVERFLOW, NULL);
-    NPY_CSETREAL(&outz, INFINITY);
+    npymath_csetreal(&outz, INFINITY);
   }
   return outz;
 }
@@ -233,7 +233,7 @@ double ber_wrap(double x)
   if (x<0) x=-x;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("ber", Be);
-  return npy_creal(Be);
+  return npymath_creal(Be);
 }
 
 double bei_wrap(double x)
@@ -243,7 +243,7 @@ double bei_wrap(double x)
   if (x<0) x=-x;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("bei", Be);
-  return npy_cimag(Be);
+  return npymath_cimag(Be);
 }
 
 double ker_wrap(double x)
@@ -253,7 +253,7 @@ double ker_wrap(double x)
   if (x<0) return NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("ker", Ke);
-  return npy_creal(Ke);
+  return npymath_creal(Ke);
 }
 
 double kei_wrap(double x)
@@ -263,7 +263,7 @@ double kei_wrap(double x)
   if (x<0) return NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("kei", Ke);
-  return npy_cimag(Ke);
+  return npymath_cimag(Ke);
 }
 
 double berp_wrap(double x)
@@ -274,8 +274,8 @@ double berp_wrap(double x)
   if (x<0) {x=-x; flag=1;}
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("berp", Bep);
-  if (flag) return -npy_creal(Bep);
-  return npy_creal(Bep);
+  if (flag) return -npymath_creal(Bep);
+  return npymath_creal(Bep);
 }
 
 double beip_wrap(double x)
@@ -286,8 +286,8 @@ double beip_wrap(double x)
   if (x<0) {x=-x; flag=1;}
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("beip", Bep);
-  if (flag) return -npy_cimag(Bep);
-  return npy_cimag(Bep);
+  if (flag) return -npymath_cimag(Bep);
+  return npymath_cimag(Bep);
 }
 
 double kerp_wrap(double x)
@@ -297,7 +297,7 @@ double kerp_wrap(double x)
   if (x<0) return NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("kerp", Kep);
-  return npy_creal(Kep);
+  return npymath_creal(Kep);
 }
 
 double keip_wrap(double x)
@@ -307,7 +307,7 @@ double keip_wrap(double x)
   if (x<0) return NAN;
   F_FUNC(klvna,KLVNA)(&x, CADDR(Be), CADDR(Ke), CADDR(Bep), CADDR(Kep));
   ZCONVINF("keip", Kep);
-  return npy_cimag(Kep);
+  return npymath_cimag(Kep);
 }
 
 
@@ -321,12 +321,12 @@ int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, np
   ZCONVINF("klvna", *Bep);
   ZCONVINF("klvna", *Kep);
   if (flag) {
-    NPY_CSETREAL(Bep, -npy_creal(*Bep));
-    NPY_CSETIMAG(Bep, -npy_cimag(*Bep));
-    NPY_CSETREAL(Ke, NAN);
-    NPY_CSETIMAG(Ke, NAN);
-    NPY_CSETREAL(Kep, NAN);
-    NPY_CSETIMAG(Kep, NAN);
+    npymath_csetreal(Bep, -npymath_creal(*Bep));
+    npymath_csetimag(Bep, -npymath_cimag(*Bep));
+    npymath_csetreal(Ke, NAN);
+    npymath_csetimag(Ke, NAN);
+    npymath_csetreal(Kep, NAN);
+    npymath_csetimag(Kep, NAN);
   }
   return 0;
 }
