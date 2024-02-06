@@ -1,11 +1,12 @@
-#pragma once
+/* Translated from Cython into C++ by SciPy developers in 2024.
+ * Original header comment appears below.
+ */
 
 /* An implementation of the principal branch of the logarithm of
  * Gamma. Also contains implementations of Gamma and 1/Gamma which are
  * easily computed from log-Gamma.
  *
  * Author: Josh Wilson
- * Translated from Cython to C++ in 2023 by SciPy developers.
  *
  * Distributed under the same license as Scipy.
  *
@@ -17,6 +18,8 @@
  * [2] Julia,
  *     https://github.com/JuliaLang/julia/blob/master/base/special/gamma.jl
  */
+
+#pragma once
 
 #include "cephes/gamma.h"
 #include "config.h"

@@ -1,9 +1,10 @@
-#pragma once
+/* Translated from Cython into C++ by SciPy developers in 2024.
+ * Original header comment appears below.
+ */
 
 /* An implementation of the digamma function for complex arguments.
  *
  * Author: Josh Wilson
- * Translated from Cython to C++ by SciPy developers 2023.
  *
  * Distributed under the same license as Scipy.
  *
@@ -12,6 +13,8 @@
  *
  * [2] mpmath (version 0.19), http://mpmath.org
  */
+
+#pragma once
 
 #include "cephes/psi.h"
 #include "cephes/zeta.h"
