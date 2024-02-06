@@ -6411,11 +6411,10 @@ class loglaplace_gen(rv_continuous):
                            floc=np.log(fscale) if fscale is not None else None,
                            fscale=1/fc if fc is not None else None,
                            method='mle')
-        if fscale is None:
-            fscale = np.exp(a)
-        if fc is None:
-            fc = 1 / b
-        return fc, floc, fscale
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 

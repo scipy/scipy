@@ -3115,12 +3115,12 @@ class TestLogLaplace:
         data = stats.loglaplace.rvs(c, loc=loc, scale=scale, size=100,
                                     random_state=rng)
 
-        kwds = {'method': 'mle', 'floc': loc}
+        kwds = {'floc': loc}
         if fix_c:
             kwds['fc'] = c
         if fix_scale:
             kwds['fscale'] = scale
-        nfree = 4 - len(kwds)
+        nfree = 3 - len(kwds)
 
         if nfree == 0:
             error_msg = "All parameters fixed. There is nothing to optimize."
