@@ -89,11 +89,25 @@ def _chk_size(a, b):
 
 
 def _ttest_finish(df, t, alternative):
-    # Light wrapper around _get_pvalue to preserve array masks
-    p = scipy.stats._stats_py._get_pvalue(t, distributions.t(df), alternative)
-    dft = df + t  # compute result mask, if there is one
-    p = np.ma.masked_array(p, mask=dft.mask) if hasattr(dft, 'mask') else p
-    return t[()], p[()]
+    """Common code between all 3 t-test functions."""
+    # We use ``stdtr`` directly here to preserve masked arrays
+
+    if alternative == 'less':
+        pval = special.stdtr(df, t)
+    elif alternative == 'greater':
+        pval = special.stdtr(df, -t)
+    elif alternative == 'two-sided':
+        pval = special.stdtr(df, -np.abs(t))*2
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+
+    if t.ndim == 0:
+        t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
+
+    return t, pval
 
 
 def argstoarray(*args):
