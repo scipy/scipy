@@ -80,6 +80,7 @@ Tensor product polynomials:
    make_interp_spline
    make_lsq_spline
    make_smoothing_spline
+   generate_knots
 
 Functional interface to FITPACK routines:
 
@@ -181,6 +182,7 @@ from ._cubic import *
 from ._ndgriddata import *
 
 from ._bsplines import *
+from ._fitpack_repro import generate_knots
 
 from ._pade import *
 
