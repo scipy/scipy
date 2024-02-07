@@ -1,4 +1,6 @@
-#pragma once
+/* Translated from Cython into C++ by SciPy developers in 2023.
+ * Original header with Copyright information appears below.
+ */
 
 /* Implementation of Wright's generalized Bessel function Phi, see
  * https://dlmf.nist.gov/10.46.E1
@@ -15,6 +17,8 @@
  * Finally they are put together in wright_bessel. See the docstring of
  * that function for more details.
  */
+
+#pragma once
 
 #include "cephes/lanczos.h"
 #include "cephes/polevl.h"
