@@ -165,6 +165,7 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
     return thrust::conj(z);
 }
 
+<<<<<<< HEAD
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const complex<T> &y) {
     return thrust::pow(x, y);
@@ -179,6 +180,13 @@ SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
 template <typename T>
 using is_floating_point = cuda::std::is_floating_point<T>;
 using uint64_t = cuda::std::uint64_t;
+=======
+// Other types and utilities
+using cuda::std::is_floating_point;
+using cuda::std::pair;
+using cuda::std::uint64_t;
+using swap = thrust::swap;
+>>>>>>> 7a21e3304b (Add new functions to config.h)
 
 } // namespace std
 
