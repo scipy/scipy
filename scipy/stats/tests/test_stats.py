@@ -1131,7 +1131,7 @@ class TestCorrSpearmanr2:
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1] / 2)
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.spearmanr(x1, x2, alternative="ekki-ekki")
 
     @pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
@@ -1483,7 +1483,7 @@ class TestKendallTauAlternative:
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], expected[1] / 2)
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.kendalltau(x1, x2, alternative="ekki-ekki")
 
     # There are a lot of special cases considered in the calculation of the
@@ -5862,7 +5862,7 @@ class TestRankSums:
         check_named_results(res, ('statistic', 'pvalue'))
 
     def test_input_validation(self):
-        with assert_raises(ValueError, match="alternative must be 'less'"):
+        with assert_raises(ValueError, match="`alternative` must be 'less'"):
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
