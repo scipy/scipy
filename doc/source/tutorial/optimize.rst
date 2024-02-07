@@ -1269,7 +1269,7 @@ which is especially important when the objective function has multiple local min
      - 
      - 
      - 
-
+(✓): Depending on the chosen local minimizer
 
 Selection Criteria
 ^^^^^^^^^^^^^^^^^^
