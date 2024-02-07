@@ -673,7 +673,7 @@
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
-        "_hyp2f1.pxd": {
+        "_special.h++": {
             "hyp2f1_complex": "dddD->D"
         }
     },
