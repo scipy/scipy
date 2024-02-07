@@ -2762,7 +2762,76 @@ class TestFpchec:
             _b.fpcheck(x, t, k)
 
 
+# ### python replicas of generate_knots(...) implementation details, for testing.
+# ### see TestGenerateKnots::test_split_and_add_knot
+def _split(x, t, k, residuals):
+    """Split the knot interval into "runs".
+    """
+    ix = np.searchsorted(x, t[k:-k])
+    # sum half-open intervals
+    fparts = [residuals[ix[i]:ix[i+1]].sum() for i in range(len(ix)-1)]
+    carries = residuals[ix[1:-1]]
+
+    for i in range(len(carries)):     # split residuals at internal knots
+        carry = carries[i] / 2
+        fparts[i] += carry
+        fparts[i+1] -= carry
+
+    fparts[-1] += residuals[-1]       # add the contribution of the last knot
+
+    assert_allclose(sum(fparts), sum(residuals), atol=1e-15)
+
+    return fparts, ix
+
+
+def _add_knot(x, t, k, residuals):
+    """Insert a new knot given reduals."""
+    fparts, ix = _split(x, t, k, residuals)
+
+    # find the interval with max fparts and non-zero number of x values inside
+    idx_max = -101
+    fpart_max = -1e100
+    for i in range(len(fparts)):
+        if ix[i+1] - ix[i] > 1 and fparts[i] > fpart_max:
+            idx_max = i
+            fpart_max = fparts[i]
+
+    if idx_max == -101:
+        raise ValueError("Internal error, please report it to SciPy developers.")
+
+    # round up, like Dierckx does? This is really arbitrary though.
+    idx_newknot = (ix[idx_max] + ix[idx_max+1] + 1) // 2
+    new_knot = x[idx_newknot]
+    idx_t = np.searchsorted(t, new_knot)
+    t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
+    return t_new
+
+
 class TestGenerateKnots:
+    def test_split_add_knot(self):
+        # smoke test implementation details: insert a new knot given residuals
+        x = np.arange(8, dtype=float)
+        y = x**3 + 1./(1 + x)
+        k = 3
+        t = np.array([0.]*(k+1) + [7.]*(k+1))
+        spl = make_lsq_spline(x, y, k=k, t=t)
+        residuals = (spl(x) - y)**2
+
+        from scipy.interpolate import _fitpack_repro as _fr
+        new_t = _fr.add_knot(x, t, k, residuals)
+        new_t_py = _add_knot(x, t, k, residuals)
+
+        assert_allclose(new_t, new_t_py, atol=1e-15)
+
+        # redo with new knots
+        spl2 = make_lsq_spline(x, y, k=k, t=new_t)
+        residuals2 = (spl2(x) - y)**2
+
+        new_t2 = _fr.add_knot(x, new_t, k, residuals2)
+        new_t2_py = _add_knot(x, new_t, k, residuals2)
+
+        assert_allclose(new_t2, new_t2_py, atol=1e-15)
+
     @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
     def test_s0(self, k):
         x = np.arange(8)

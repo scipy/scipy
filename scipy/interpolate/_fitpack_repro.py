@@ -9,6 +9,7 @@ from scipy.interpolate._bsplines import (
     _not_a_knot,  BSpline,
     _lsq_solve_qr
 )
+from scipy.interpolate import _bspl
 
 #    cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 #    c  part 1: determination of the number of knots and their position     c
@@ -38,7 +39,7 @@ def _get_residuals(x, y, t, k, w):
     return residuals
 
 
-def _add_knot(x, t, k, residuals):
+def add_knot(x, t, k, residuals):
     """Add a new knot.
 
     (Approximately) replicate FITPACK's logic:
@@ -55,91 +56,11 @@ def _add_knot(x, t, k, residuals):
 
     and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
     """
-    fparts, ix = _split(x, t, k, residuals)
-
-    ### redo
-    assert all(ix == np.searchsorted(x, t[k:-k]))
-
-    # find the interval with max fparts and non-zero number of x values inside
-    idx_max = -101
-    fpart_max = -1e100
-    for i in range(len(fparts)):
-        if ix[i+1] - ix[i] > 1 and fparts[i] > fpart_max:
-            idx_max = i
-            fpart_max = fparts[i]
-
-    if idx_max == -101:
-        raise ValueError("Internal error, please report it to SciPy developers.")
-
-    # round up, like Dierckx does? This is really arbitrary though.
-    idx_newknot = (ix[idx_max] + ix[idx_max+1] + 1) // 2
-    new_knot = x[idx_newknot]
+    new_knot = _bspl.add_knot(x, t, k, residuals)
 
     idx_t = np.searchsorted(t, new_knot)
     t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
-
     return t_new
-
-
-def _split(x, t, k, residuals):
-    """Split the `x` array into knot intervals and compute the residuals.
-
-    The intervals are `t(j+k) <= x(i) <= t(j+k+1)`. Return the arrays of
-    the start and end `x` indices of the intervals and the sums of residuals:
-    `fparts[i]` corresponds to the interval
-    `x_intervals[i] <= xvalue <= x_intervals[i+1]]`.
-
-    This routine is a (best-effort) translation of
-    https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpcurf.f#L190-L215
-    """
-# c  search for knot interval t(number+k) <= x <= t(number+k+1) where
-# c  fpint(number) is maximal on the condition that nrdata(number)
-# c  not equals zero.
-   # residuals = _get_residuals(x, y, t, k, w)
-
-    interval = k+1
-    x_intervals = [0]
-    fparts = []
-    fpart = 0.0
-    for it in range(len(x)):
-        xv, rv = x[it], residuals[it]
-        fpart += rv
-
-        if (xv >= t[interval]) and interval < len(t) - k - 1:
-            # end of the current t interval: split the weight at xv by 1/2
-            # between two intervals
-            carry = rv / 2.0
-            fpart -= carry
-            fparts.append(fpart)
-
-            fpart = carry
-            interval += 1
-
-            x_intervals.append(it)
-
-    x_intervals.append(len(x)-1)
-    fparts.append(fpart)
-
-    return fparts, x_intervals
-
-    '''
-    The whole _split routine is basically this:
-
-    ix = np.searchsorted(x, t[k:-k])
-    # sum half-open intervals
-    fparts = [residuals[ix[i]:ix[i+1]].sum() for i in range(len(ix)-1)]
-    carries = residuals[x[ix[1:-1]]]
-
-    for i in range(len(carries)):     # split residuals at internal knots
-        carry = carries[i] / 2
-        fparts[i] += carry
-        fparts[i+1] -= carry
-
-    fparts[-1] += residuals[-1]       # add the contribution of the last knot
-
-    assert sum(fparts) == sum(residuals)
-    '''
-
 
 
 def _validate_inputs(x, y, w, k, s, xb, xe):
@@ -309,7 +230,7 @@ def generate_knots(x, y, k=3, *, s=0, w=None, nest=None, xb=None, xe=None):
 
         # actually add knots
         for j in range(nplus):
-            t = _add_knot(x, t, k, residuals)
+            t = add_knot(x, t, k, residuals)
 
             # check if we have enough knots already
 

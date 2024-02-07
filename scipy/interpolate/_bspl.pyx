@@ -41,6 +41,10 @@ cdef extern from "src/__fitpack.h" namespace "fitpack":
                   const double *yptr, ssize_t ydim2,
                   double *cptr)
 
+    double _add_knot(const double *x_ptr, ssize_t m,
+                     const double *t_ptr, ssize_t len_t,
+                     int k,
+                     const double *residuals_ptr) except+
 
 ctypedef double complex double_complex
 
@@ -908,3 +912,17 @@ cdef object _fpback_trampoline(const double[:, ::1] R, ssize_t nc,
            &c[0, 0])
 
     return np.asarray(c)
+
+
+def add_knot(const double[::1] x,
+             const double[::1] t,
+             int k,
+             const double[::1] residuals):
+    if x.shape[0] != residuals.shape[0]:
+        raise ValueError(f"{len(x) = } != {len(residuals) =}")
+
+    return _add_knot(&x[0], x.shape[0],
+                     &t[0], t.shape[0],
+                     k,
+                     &residuals[0])
+

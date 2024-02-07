@@ -1,5 +1,6 @@
 #include <iostream>
 #include <tuple>
+#include <vector>
 #include "../linalg/fortran_defs.h"
 
 #define DLARTG F_FUNC(dlartg, DLARTG)
@@ -396,6 +397,122 @@ void fpback( /* inputs*/
             c(i, l) = ssum;
         }
     }
+}
+
+
+
+/*
+ * A helper for _add_knot, below.
+ *
+ * Split the `x` array into knot "runs" and sum the residuals per "run".
+ *
+ * Here a "run" is a set of `x` values which lie between consecutive knots:
+ * these are `x(i)` which for a given `j` satisfy `t(j+k) <= x(i) <= t(j+k+1)`.
+ *
+ * The _split routine returns two vectors: a vector of indices into `x`, `ix`,
+ * and a vector of partial sums of residuals, `fparts`.
+ * The i-th entry is the i-th "run". IOW the pair (fparts, ix) means that 
+ * `fparts[i]` is the sum of residuals over the "run" x[ix[i]] <= xvalue <= x[ix[i+1]]. 
+ *
+ * This routine is a (best-effort) translation of
+ * https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpcurf.f#L190-L215
+ *
+ */
+typedef std::tuple<std::vector<double>, std::vector<ssize_t>> pair_t;
+
+inline pair_t
+_split(ConstRealArray1D x, ConstRealArray1D t, int k, ConstRealArray1D residuals)
+{
+    /* 
+     * c  search for knot interval t(number+k) <= x <= t(number+k+1) where
+     * c  fpint(number) is maximal on the condition that nrdata(number)
+     * c  not equals zero.
+     */
+    ssize_t interval = k+1;
+    ssize_t nc = t.nelem - k - 1;
+
+    std::vector<ssize_t> ix;
+    ix.push_back(0.0);
+
+    std::vector<double> fparts;
+    double fpart = 0.0;
+
+    for(ssize_t i=0; i < x.nelem; i++) {
+        double xv = x(i);
+        double rv = residuals(i);
+        fpart += rv;
+
+        if ((xv >= t(interval)) && (interval < nc)) {
+            // end of the current interval: split the weight at xv by 1/2
+            // between two intervals
+            double carry = rv / 2.0;
+            fpart -= carry;
+            fparts.push_back(fpart);
+
+            fpart = carry;
+            interval++;
+
+            ix.push_back(i);
+        }
+    } // for i
+
+    // the last interval
+    ix.push_back(x.nelem - 1);
+    fparts.push_back(fpart);
+
+    return std::make_tuple(fparts, ix);
+}
+
+
+/*
+ * Find a position for a new knot, a la FITPACK
+ *
+ *   (Approximately) replicate FITPACK's logic:
+ *     1. split the `x` array into knot intervals, ``t(j+k) <= x(i) <= t(j+k+1)``
+ *     2. find the interval with the maximum sum of residuals
+ *     3. insert a new knot into the middle of that interval.
+ *
+ *   NB: a new knot is in fact an `x` value at the middle of the interval.
+ *   So *the knots are a subset of `x`*.
+ *
+ *   This routine is an analog of
+ *   https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpcurf.f#L190-L215
+ *   (cf _split function)
+ *
+ *   and https://github.com/scipy/scipy/blob/v1.11.4/scipy/interpolate/fitpack/fpknot.f
+ */
+inline double
+_add_knot(const double *x_ptr, ssize_t m,
+          const double *t_ptr, ssize_t len_t,
+          int k,
+          const double *residuals_ptr)
+{
+    auto x = ConstRealArray1D(x_ptr, m);
+    auto t = ConstRealArray1D(t_ptr, len_t);
+    auto residuals = ConstRealArray1D(residuals_ptr, m);
+
+    std::vector<double> fparts;
+    std::vector<ssize_t> ix;
+    std::tie(fparts, ix) = _split(x, t, k, residuals);
+
+    ssize_t idx_max = -101;
+    double fpart_max = -1e100;
+    for (size_t i=0; i < fparts.size(); i++) {
+        bool is_better = (ix[i+1] - ix[i] > 1) && (fparts[i] > fpart_max);
+        if(is_better) {
+            idx_max = i;
+            fpart_max = fparts[i];
+        }
+    }
+
+    if (idx_max == -101) {
+        throw std::runtime_error("Internal error. Please report it to SciPy developers.");
+    }
+
+    // round up, like Dierckx does? This is really arbitrary though.
+    ssize_t idx_newknot = (ix[idx_max] + ix[idx_max+1] + 1) / 2;
+
+    return x(idx_newknot);
 }
 
 
