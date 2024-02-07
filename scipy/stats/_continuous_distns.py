@@ -6385,6 +6385,7 @@ class loglaplace_gen(rv_continuous):
         return np.log(2.0/c) + 1.0
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, fc, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
