@@ -357,7 +357,9 @@ special_sources = [
   'special/zlog1.h',
   'special/loggamma.h',
   'special/digamma.h',
-  'special/wright_bessel.h'
+  'special/wright_bessel.h',
+  'special/hyp2f1.h',
+  'special/tools.h'
 ]
 
 special_cephes_sources = [

@@ -16,13 +16,13 @@
 #pragma once
 
 #include "config.h"
-#inclue "error.h"
+#include "error.h"
 
 namespace special {
 namespace detail {
 
     template <typename Generator>
-    SPECFUN_HOST_DEVICE double continued_fraction_eval(Generator &g, double tol, std::uintmax_t max_terms) {
+    SPECFUN_HOST_DEVICE double continued_fraction_eval(Generator &g, double tol, std::uint64_t max_terms) {
         constexpr double tiny_value = 16.0 * std::numeric_limits<double>::min();
 
         std::pair<double, double> v = g();
@@ -34,7 +34,7 @@ namespace detail {
         double D = 0.0;
         double delta;
 
-        std::uintmax_t counter = max_terms;
+        std::uint64_t counter = max_terms;
         do {
             v = g();
             D = v.second + v.first * D;
@@ -48,31 +48,39 @@ namespace detail {
             D = 1.0 / D;
             delta = C * D;
             f *= delta;
-        } while ((std::abs(delta - 1.0) > tolerance) && --counter);
+        } while ((std::abs(delta - 1.0) > tol) && --counter);
 
         return f;
     }
 
-    template <typename Generator>
-    SPECFUN_HOST_DEVICE double series_eval(Generator &g, double tol, std::uintmax_t max_term) {
-        std::uintmax_t counter = max_terms;
-        double result = 0.0 double term;
-        do {
+    template <typename Generator, typename Number>
+    SPECFUN_HOST_DEVICE Number series_eval(Generator &g, Number init_val, double tol, std::uint64_t max_terms,
+                                           const char *func_name) {
+        Number result = init_val;
+        Number term, previous;
+        for (std::uint64_t i = 0; i < max_terms; ++i) {
             term = g();
             result += term;
-        } while ((std::abs(tol * result) < std::abs(term)) && --counter);
-
-        return result;
+            if (std::abs(term) < std::abs(result) * tol) {
+                return result;
+            }
+        }
+        // Exceeded max terms without converging. Return NaN.
+        set_error(func_name, SF_ERROR_NO_RESULT, NULL);
+        if constexpr (std::is_floating_point<Number>::value) {
+            return std::numeric_limits<Number>::quiet_NaN();
+        }
+        // If result type is not a floating point type, assume it is complex.
+        using FloatingType = typename Number::value_type;
+        return Number(std::numeric_limits<FloatingType>::quiet_NaN(), std::numeric_limits<FloatingType>::quiet_NaN());
     }
 
-    template <typename Generator>
-    SPECFUN_HOST_DEVICE double series_eval_fixed_length(Generator &g, double init_value, std::uintmax_t num_terms) {
-        double result = 0.0;
-
-        for (std::uintmax_t i = 0; i < num_terms; i++) {
+    template <typename Generator, typename Number>
+    SPECFUN_HOST_DEVICE Number series_eval_fixed_length(Generator &g, Number init_val, std::uint64_t num_terms) {
+        Number result = init_val;
+        for (std::uint64_t i = 0; i < num_terms; ++i) {
             result += g();
         }
-
         return result;
     }
 

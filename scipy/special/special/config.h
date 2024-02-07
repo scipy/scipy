@@ -59,6 +59,7 @@
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
 #include <cuda/std/limits>
+#include <cuda/std/type_traits>
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -162,6 +163,7 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
 // Other types and utilities
 using cuda::std::is_floating_point;
 using cuda::std::pair;
+using cuda::std::is_floating_point;
 using cuda::std::uint64_t;
 using swap = thrust::swap;
 
@@ -176,5 +178,6 @@ using swap = thrust::swap;
 #include <cstdint>
 #include <limits>
 #include <math.h>
+#include <type_traits>
 
 #endif
