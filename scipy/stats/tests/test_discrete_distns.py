@@ -237,6 +237,13 @@ def test_issue_6682():
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
 
 
+def test_issue_19747():
+    # test that negative k does not raise an error in nbinom.logcdf
+    result = nbinom.logcdf([5, -1, 1], 5, 0.5)
+    reference = [-0.47313352, -np.inf, -2.21297293]
+    assert_allclose(result, reference)
+
+
 def test_boost_divide_by_zero_issue_15101():
     n = 1000
     p = 0.01

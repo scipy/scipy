@@ -291,6 +291,47 @@ class RegularGridInterpolator(Benchmark):
         self.interp(self.xi)
 
 
+class RGI_Cubic(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="cubic".
+    """
+    param_names = ['ndim', 'n_samples', 'method']
+    params = [
+        [2],
+        [10, 40, 100, 200, 400],
+        ['cubic', 'cubic_legacy']
+    ]
+
+    def setup(self, ndim, n_samples, method):
+        rng = np.random.default_rng(314159)
+
+        self.points = [np.sort(rng.random(size=n_samples))
+                       for _ in range(ndim)]
+        self.values = rng.random(size=[n_samples]*ndim)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, n_samples, method):
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi(self, ndim, n_samples, method):
+        self.interp(self.xi)
+
+
 class RegularGridInterpolatorValues(interpolate.RegularGridInterpolator):
     def __init__(self, points, xi, **kwargs):
         # create fake values for initialization

@@ -121,8 +121,8 @@ def _get_umf_family(A):
     # but that didn't always fix the issue.
     family = family[0] + "l"
     A_new = copy.copy(A)
-    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
-    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+    A_new.indptr = np.asarray(A.indptr, dtype=np.int64)
+    A_new.indices = np.asarray(A.indices, dtype=np.int64)
 
     return family, A_new
 

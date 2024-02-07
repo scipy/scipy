@@ -10,6 +10,7 @@ from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
@@ -394,6 +395,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     """
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
+    fs = _validate_fs(fs, allow_none=True)
 
     nyq = 0.5 * _get_fs(fs, nyq)
 
@@ -599,6 +601,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming', nyq=_NoValue,
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     nyq = 0.5 * _get_fs(fs, nyq)
 
     if len(freq) != len(gain):
@@ -852,6 +855,7 @@ def remez(numtaps, bands, desired, *, weight=None, Hz=_NoValue, type='bandpass',
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     if Hz is _NoValue and fs is None:
         fs = 1.0
     elif Hz is not _NoValue:
@@ -996,6 +1000,7 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     nyq = 0.5 * _get_fs(fs, nyq)
 
     numtaps = int(numtaps)

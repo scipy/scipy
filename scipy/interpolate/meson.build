@@ -90,7 +90,8 @@ fitpack_src = [
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized
+  fortran_args: _fflag_Wno_maybe_uninitialized,
+  override_options: ['b_lto=false'],
 )
 
 interpnd = py3.extension_module('interpnd',
@@ -132,7 +133,6 @@ _bspl = py3.extension_module('_bspl',
 # TODO: Add flags for 64 bit ints
 _fitpack = py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
-  c_args: numpy_nodepr_api,
   link_with: [fitpack_lib],
   include_directories: 'src/',
   dependencies: np_dep,
@@ -151,10 +151,11 @@ dfitpack_module = custom_target('dfitpack_module',
 # TODO: Add flags for 64 bit ints
 dfitpack = py3.extension_module('dfitpack',
   dfitpack_module,
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   link_with: [fitpack_lib],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/interpolate'

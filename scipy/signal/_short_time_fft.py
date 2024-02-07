@@ -529,14 +529,14 @@ class ShortTimeFFT:
 
         'twosided':
             Two-sided FFT, where values for the negative frequencies are in
-            upper half of the array. Corresponds to :func:`scipy.fft.fft()`.
+            upper half of the array. Corresponds to :func:`~scipy.fft.fft()`.
         'centered':
             Two-sided FFT with the values being ordered along monotonically
             increasing frequencies. Corresponds to applying
-            :func:`scipy.fft.fftshift()` to :func:`scipy.fft.fft()`.
+            :func:`~scipy.fft.fftshift()` to :func:`~scipy.fft.fft()`.
         'onesided':
             Calculates only values for non-negative frequency values.
-            Corresponds to :func:`scipy.fft.rfft()`.
+            Corresponds to :func:`~scipy.fft.rfft()`.
         'onesided2X':
             Like `onesided`, but the non-zero frequencies are doubled if
             `scaling` is set to 'magnitude' or multiplied by ``sqrt(2)`` if
@@ -545,8 +545,10 @@ class ShortTimeFFT:
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
 
-        Note that the frequency values can be obtained by reading the `f`
-        property, and the number of samples by accessing the `f_pts` property.
+        Note that`onesided` and `onesided2X` do not work for complex-valued signals or
+        complex-valued windows. Furthermore, the frequency values can be obtained by
+        reading the `f` property, and the number of samples by accessing the `f_pts`
+        property.
 
         See Also
         --------
@@ -613,8 +615,8 @@ class ShortTimeFFT:
         If not ``None``, the FFTs can be either interpreted as a magnitude or
         a power spectral density spectrum.
 
-        The window function can be scaled by calling the `scale_to()` method,
-        or it is set by the initializer parameter `scale_to`.
+        The window function can be scaled by calling the `scale_to` method,
+        or it is set by the initializer parameter ``scale_to``.
 
         See Also
         --------
@@ -750,7 +752,8 @@ class ShortTimeFFT:
         Parameters
         ----------
         x
-            The input signal as real or complex valued array.
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -821,6 +824,9 @@ class ShortTimeFFT:
                                    (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
+        if self.onesided_fft and np.iscomplexobj(x):
+            raise ValueError(f"Complex-valued `x` not allowed for {self.fft_mode=}'! "
+                             "Set property `fft_mode` to 'twosided' or 'centered'.")
         if isinstance(detr, str):
             detr = partial(detrend, type=detr)
         elif not (detr is None or callable(detr)):
@@ -1628,7 +1634,7 @@ class ShortTimeFFT:
         """Return minimum and maximum values time-frequency values.
 
         A tuple with four floats  ``(t0, t1, f0, f1)`` for 'tf' and
-        ``(f0, f1, t0, t1)`` for 'ft') is returned describing the corners
+        ``(f0, f1, t0, t1)`` for 'ft' is returned describing the corners
         of the time-frequency domain of the `~ShortTimeFFT.stft`.
         That tuple can be passed to `matplotlib.pyplot.imshow` as a parameter
         with the same name.

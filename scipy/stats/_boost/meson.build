@@ -5,9 +5,6 @@ cpp_args = [
   '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error',
   '-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false'
 ]
-if meson.get_compiler('cpp').sizeof('void*') > 4
-  cpp_args += [numpy_nodepr_api]
-endif
 
 pyx_files = [
   ['binom_ufunc', binom_ufunc_pyx],

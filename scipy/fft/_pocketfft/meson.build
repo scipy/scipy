@@ -23,12 +23,16 @@ else
     pocketfft_threads += ['-DPOCKETFFT_PTHREADS']
   endif
 endif
+pocketfft_args = pocketfft_threads + ['-DPOCKETFFT_CACHE_SIZE=16']
+
+incdir = include_directories('../../_lib/pocketfft')
 
 py3.extension_module('pypocketfft',
   'pypocketfft.cxx',
-  cpp_args: pocketfft_threads,
+  cpp_args: pocketfft_args,
   dependencies: [fft_deps, pybind11_dep],
   link_args: version_link_args,
+  include_directories: incdir,
   install: true,
   subdir: 'scipy/fft/_pocketfft',
 )

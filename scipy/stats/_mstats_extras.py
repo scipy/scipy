@@ -108,7 +108,7 @@ def hdquantiles(data, prob=list([.25,.5,.75]), axis=None, var=False,):
         return hd[0]
     # Initialization & checks
     data = ma.array(data, copy=False, dtype=float64)
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None) or (data.ndim == 1):
         result = _hd_1D(data, p, var)
@@ -197,7 +197,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
 
     # Initialization & checks
     data = ma.array(data, copy=False, dtype=float64)
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         result = _hdsd_1D(data, p)
@@ -298,7 +298,7 @@ def mjci(data, prob=[0.25,0.5,0.75], axis=None):
         raise ValueError("Array 'data' must be at most two dimensional, "
                          "but got data.ndim = %d" % data.ndim)
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     # Computes quantiles along axis (or globally)
     if (axis is None):
         return _mjci_1D(data, p)
@@ -508,7 +508,7 @@ def rsh(data, points=None):
     if points is None:
         points = data
     else:
-        points = np.array(points, copy=False, ndmin=1)
+        points = np.atleast_1d(np.asarray(points))
 
     if data.ndim != 1:
         raise AttributeError("The input array should be 1D only !")

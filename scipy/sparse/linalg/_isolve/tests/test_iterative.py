@@ -521,6 +521,17 @@ def test_x0_equals_Mb(case):
     assert norm(A @ x - b) <= rtol * norm(b)
 
 
+@pytest.mark.parametrize('solver', _SOLVERS)
+def test_x0_solves_problem_exactly(solver):
+    # See gh-19948
+    mat = np.eye(2)
+    rhs = np.array([-1., -1.])
+
+    sol, info = solver(mat, rhs, x0=rhs)
+    assert_allclose(sol, rhs)
+    assert info == 0
+
+
 # Specific tfqmr test
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):
@@ -551,7 +562,11 @@ def test_positional_deprecation(solver):
     A = A @ A.T
     b = rng.random(n)
     x0 = rng.random(n)
-    with pytest.deprecated_call(match="use keyword arguments"):
+    with pytest.deprecated_call(
+        # due to the use of the _deprecate_positional_args decorator, it's not possible
+        # to separate the two warnings (1 for positional use, 1 for `tol` deprecation).
+        match="use keyword arguments.*|argument `tol` is deprecated.*"
+    ):
         solver(A, b, x0, 1e-5)
 
 

@@ -71,8 +71,9 @@ Updating the version switcher
 The version switcher dropdown needs to be updated with the new release
 information.
 
-- ``doc/source/_static/version_switcher.json``: add the new release as well
-  as the new development version.
+- ``doc/source/_static/version_switcher.json``: add the new release,
+  the new development version, and transfer ``"preferred": true`` from the old release
+  to the new release.
 
 
 Updating upper bounds of dependencies

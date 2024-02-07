@@ -110,5 +110,6 @@
 #define kolmogc cephes_kolmogc
 #define kolmogci cephes_kolmogci
 #define owens_t cephes_owens_t
+#define tukeylambdacdf cephes_tukeylambdacdf
 
 #endif

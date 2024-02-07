@@ -657,6 +657,7 @@ def _stats(input, labels=None, index=None, centered=False):
         # be 1-D, but it should be interpreted as the flattened N-D array of
         # label indices.
         unique_labels, new_labels = numpy.unique(labels, return_inverse=True)
+        new_labels = np.reshape(new_labels, (-1,))  # flatten, since it may be >1-D
         counts = numpy.bincount(new_labels)
         sums = numpy.bincount(new_labels, weights=input.ravel())
         if centered:

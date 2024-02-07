@@ -129,12 +129,11 @@ def test_examples(dtype, irl):
     # PROPACK 2.1: http://sun.stanford.edu/~rmunk/PROPACK/
     relative_path = "propack_test_data.npz"
     filename = os.path.join(path_prefix, relative_path)
-    data = np.load(filename, allow_pickle=True)
-
-    if is_complex_type(dtype):
-        A = data['A_complex'].item().astype(dtype)
-    else:
-        A = data['A_real'].item().astype(dtype)
+    with np.load(filename, allow_pickle=True) as data:
+        if is_complex_type(dtype):
+            A = data['A_complex'].item().astype(dtype)
+        else:
+            A = data['A_real'].item().astype(dtype)
 
     k = 200
     u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)

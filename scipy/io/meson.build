@@ -9,7 +9,7 @@ _test_fortran = py3.extension_module('_test_fortran',
     _test_fortran_module,
     '_test_fortran.f'
   ],
-  c_args: [numpy_nodepr_api, Wno_unused_variable],
+  c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],

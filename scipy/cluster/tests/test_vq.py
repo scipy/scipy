@@ -1,5 +1,6 @@
 import warnings
 import sys
+from copy import deepcopy
 
 import numpy as np
 from numpy.testing import (
@@ -396,21 +397,25 @@ class TestKMean:
         xp_assert_close(res[0], xp.asarray([-0.4,  8.], dtype=xp.float64))
         xp_assert_close(res[1], xp.asarray(1.0666666666666667, dtype=xp.float64)[()])
 
-    @skip_if_array_api
-    def test_kmeans_and_kmeans2_random_seed(self):
+    @skip_if_array_api_gpu
+    @array_api_compatible
+    def test_kmeans_and_kmeans2_random_seed(self, xp):
 
         seed_list = [
             1234, np.random.RandomState(1234), np.random.default_rng(1234)
         ]
 
         for seed in seed_list:
+            seed1 = deepcopy(seed)
+            seed2 = deepcopy(seed)
+            data = xp.asarray(TESTDATA_2D)
             # test for kmeans
-            res1, _ = kmeans(TESTDATA_2D, 2, seed=seed)
-            res2, _ = kmeans(TESTDATA_2D, 2, seed=seed)
-            assert_allclose(res1, res1)  # should be same results
+            res1, _ = kmeans(data, 2, seed=seed1)
+            res2, _ = kmeans(data, 2, seed=seed2)
+            assert_allclose(res1, res2)  # should be same results
 
             # test for kmeans2
             for minit in ["random", "points", "++"]:
-                res1, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
-                res2, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
-                assert_allclose(res1, res1)  # should be same results
+                res1, _ = kmeans2(data, 2, minit=minit, seed=seed1)
+                res2, _ = kmeans2(data, 2, minit=minit, seed=seed2)
+                assert_allclose(res1, res2)  # should be same results

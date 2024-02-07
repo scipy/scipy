@@ -12,7 +12,6 @@ py3.extension_module('_nd_image',
   include_directories: ['../_lib/src', '../_build_utils/src'],
   dependencies: np_dep,
   link_args: version_link_args,
-  c_args: numpy_nodepr_api,
   install: true,
   subdir: 'scipy/ndimage'
 )
@@ -29,7 +28,6 @@ py3.extension_module('_ni_label',
 py3.extension_module('_ctest',
   'src/_ctest.c',
   dependencies: np_dep,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/ndimage'

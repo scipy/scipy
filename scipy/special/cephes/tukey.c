@@ -8,8 +8,7 @@
  * Author:  Travis Oliphant 
  */
 
-#include <Python.h>
-#include <math.h>
+#include "mconf.h"
 
 #define SMALLVAL 1e-4
 #define EPS 1.0e-14

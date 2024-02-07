@@ -17,7 +17,7 @@ def test_dispatch_to_unrecognize_library():
     x = [1, 2, 3]
     res = f(xp.asarray(x))
     ref = xp.asarray(special.ndtr(np.asarray(x)))
-    xp_assert_close(res, ref)
+    xp_assert_close(res, ref, xp=xp)
 
 
 @array_api_compatible

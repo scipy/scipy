@@ -11,6 +11,9 @@ endif
 if not fs.exists('array_api_compat/README.md')
   error('Missing the `array_api_compat` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('pocketfft/README.md')
+  error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),
@@ -106,6 +109,7 @@ python_sources = [
   '_ccallback.py',
   '_disjoint_set.py',
   '_docscrape.py',
+  '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
   '_pep440.py',

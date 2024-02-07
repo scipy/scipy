@@ -973,7 +973,8 @@ class TestTheilslopes:
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
-        with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+        msg = "All `x` coordinates.*|Mean of empty slice.|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))
         with suppress_warnings() as sup:
@@ -1164,7 +1165,7 @@ class TestNormalitytests:
 
     def test_bad_alternative(self):
         x = stats.norm.rvs(size=20, random_state=123)
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be..."
 
         with pytest.raises(ValueError, match=msg):
             mstats.skewtest(x, alternative='error')
