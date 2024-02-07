@@ -1279,8 +1279,8 @@ The selection of an appropriate solver depends on the specific characteristics
 of the optimization problem, such as the smoothness of the objective function, 
 the presence of constraints, and the need for global versus local optimization.
 Additionally, computational considerations such as the availability of 
-derivative information and the size and sparsity of the problem should 
-guide the choice of the solver.
+derivative information and the size and sparsity of the problem should guide 
+the choice of the solver.
 
 
 Custom minimizers
