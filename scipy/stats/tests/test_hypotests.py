@@ -996,7 +996,7 @@ class TestSomersD(_TestPythranFunc):
         assert_equal(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue / 2)
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.somersd(x1, x2, alternative="ekki-ekki")
 
     @pytest.mark.parametrize("positive_correlation", (False, True))

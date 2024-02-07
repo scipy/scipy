@@ -197,7 +197,7 @@ class _dia_base(_data_matrix):
                 m.setdiag(other.diagonal(d), d)
         return m
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         x = other
 
         y = np.zeros(self.shape[0], dtype=upcast_char(self.dtype.char,
@@ -211,9 +211,6 @@ class _dia_base(_data_matrix):
                    x.ravel(), y.ravel())
 
         return y
-
-    def _mul_multimatrix(self, other):
-        return np.hstack([self._mul_vector(col).reshape(-1,1) for col in other.T])
 
     def _setdiag(self, values, k=0):
         M, N = self.shape

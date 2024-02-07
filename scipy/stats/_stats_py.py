@@ -1392,22 +1392,22 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 
 
-def _normtest_finish(z, alternative):
-    """Common code between all the normality-test functions."""
+def _get_pvalue(statistic, distribution, alternative, symmetric=True):
+    """Get p-value given the statistic, (continuous) distribution, and alternative"""
+
     if alternative == 'less':
-        prob = distributions.norm.cdf(z)
+        pvalue = distribution.cdf(statistic)
     elif alternative == 'greater':
-        prob = distributions.norm.sf(z)
+        pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
-        prob = 2 * distributions.norm.sf(np.abs(z))
+        pvalue = 2 * (distribution.sf(np.abs(statistic)) if symmetric
+                      else np.minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic)))
     else:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
+        message = "`alternative` must be 'less', 'greater', or 'two-sided'."
+        raise ValueError(message)
 
-    if z.ndim == 0:
-        z = z[()]
-
-    return z, prob
+    return pvalue
 
 
 SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
@@ -1588,7 +1588,8 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     y = np.where(y == 0, 1, y)
     Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
 
-    return SkewtestResult(*_normtest_finish(Z, alternative))
+    pvalue = _get_pvalue(Z, distributions.norm, alternative)
+    return SkewtestResult(Z[()], pvalue[()])
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -1789,8 +1790,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
 
-    # zprob uses upper tail, so Z needs to be positive
-    return KurtosistestResult(*_normtest_finish(Z, alternative))
+    pvalue = _get_pvalue(Z, distributions.norm, alternative)
+    return KurtosistestResult(Z[()], pvalue[()])
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -4807,17 +4808,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
     ab = n/2 - 1
     dist = stats.beta(ab, ab, loc=-1, scale=2)
-    if alternative == 'two-sided':
-        prob = 2*dist.sf(abs(r))
-    elif alternative == 'less':
-        prob = dist.cdf(r)
-    elif alternative == 'greater':
-        prob = dist.sf(r)
-    else:
-        raise ValueError('alternative must be one of '
-                         '["two-sided", "less", "greater"]')
+    pvalue = _get_pvalue(r, dist, alternative)
 
-    return PearsonRResult(statistic=r, pvalue=prob, n=n,
+    return PearsonRResult(statistic=r, pvalue=pvalue, n=n,
                           alternative=alternative, x=x, y=y)
 
 
@@ -5432,7 +5425,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    t, prob = _ttest_finish(dof, t, alternative)
+    prob = _get_pvalue(t, distributions.t(dof), alternative)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
@@ -5442,7 +5435,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     else:
         rs[variable_has_nan, :] = np.nan
         rs[:, variable_has_nan] = np.nan
-        res = SignificanceResult(rs, prob)
+        res = SignificanceResult(rs[()], prob[()])
         res.correlation = rs
         return res
 
@@ -5868,7 +5861,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
                          "variant must be 'b' or 'c'.")
 
     # Limit range to fix computational errors
-    tau = min(1., max(-1., tau))
+    tau = np.minimum(1., max(-1., tau))
 
     # The p-value calculation is the same for all variants since the p-value
     # depends only on con_minus_dis.
@@ -5890,14 +5883,14 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
         z = con_minus_dis / np.sqrt(var)
-        _, pvalue = _normtest_finish(z, alternative)
+        pvalue = _get_pvalue(z, distributions.norm, alternative)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
 
     # create result object with alias for backward compatibility
-    res = SignificanceResult(tau, pvalue)
-    res.correlation = tau
+    res = SignificanceResult(tau[()], pvalue[()])
+    res.correlation = tau[()]
     return res
 
 
@@ -6882,8 +6875,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t, alternative)
+        t = np.divide(d, denom)[()]
+    prob = _get_pvalue(t, distributions.t(df), alternative)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = np.broadcast_to(df, t.shape)[()]
@@ -6918,38 +6911,12 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
 
     return low[()], high[()]
 
-
-def _ttest_finish(df, t, alternative):
-    """Common code between all 3 t-test functions."""
-    # We use ``stdtr`` directly here as it handles the case when ``nan``
-    # values are present in the data and masked arrays are passed
-    # while ``t.cdf`` emits runtime warnings. This way ``_ttest_finish``
-    # can be shared between the ``stats`` and ``mstats`` versions.
-
-    if alternative == 'less':
-        pval = special.stdtr(df, t)
-    elif alternative == 'greater':
-        pval = special.stdtr(df, -t)
-    elif alternative == 'two-sided':
-        pval = special.stdtr(df, -np.abs(t))*2
-    else:
-        raise ValueError("alternative must be "
-                         "'less', 'greater' or 'two-sided'")
-
-    if t.ndim == 0:
-        t = t[()]
-    if pval.ndim == 0:
-        pval = pval[()]
-
-    return t, pval
-
-
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)
-    t, prob = _ttest_finish(df, t, alternative)
+        t = np.divide(d, denom)[()]
+    prob = _get_pvalue(t, distributions.t(df), alternative)
 
     return (t, prob)
 
@@ -7750,8 +7717,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(dm, denom)
-    t, prob = _ttest_finish(df, t, alternative)
+        t = np.divide(dm, denom)[()]
+    prob = _get_pvalue(t, distributions.t(df), alternative)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = np.broadcast_to(df, t.shape)[()]
@@ -9181,9 +9148,9 @@ def ranksums(x, y, alternative='two-sided'):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    z, prob = _normtest_finish(z, alternative)
+    pvalue = _get_pvalue(z, distributions.norm, alternative)
 
-    return RanksumsResult(z, prob)
+    return RanksumsResult(z[()], pvalue[()])
 
 
 KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
@@ -9313,6 +9280,7 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(FriedmanchisquareResult, n_samples=None, paired=True)
 def friedmanchisquare(*samples):
     """Compute the Friedman test for repeated samples.
 
@@ -9411,6 +9379,7 @@ BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
                                  ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(BrunnerMunzelResult, n_samples=2)
 def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                   nan_policy='propagate'):
     """Compute the Brunner-Munzel test on samples x and y.
@@ -9487,27 +9456,12 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
-
-    # check both x and y
-    cnx, npx = _contains_nan(x, nan_policy)
-    cny, npy = _contains_nan(y, nan_policy)
-    contains_nan = cnx or cny
-    if npx == "omit" or npy == "omit":
-        nan_policy = "omit"
-
-    if contains_nan and nan_policy == "propagate":
-        return BrunnerMunzelResult(np.nan, np.nan)
-    elif contains_nan and nan_policy == "omit":
-        x = ma.masked_invalid(x)
-        y = ma.masked_invalid(y)
-        return mstats_basic.brunnermunzel(x, y, alternative, distribution)
 
     nx = len(x)
     ny = len(y)
     if nx == 0 or ny == 0:
-        return BrunnerMunzelResult(np.nan, np.nan)
+        NaN = _get_nan(x, y)
+        return BrunnerMunzelResult(NaN, NaN)
     rankc = rankdata(np.concatenate((x, y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
@@ -9538,22 +9492,14 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                        "(0/0). Try using `distribution='normal'")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        p = distributions.t.cdf(wbfn, df)
+        distribution = distributions.t(df)
     elif distribution == "normal":
-        p = distributions.norm.cdf(wbfn)
+        distribution = distributions.norm()
     else:
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    if alternative == "greater":
-        pass
-    elif alternative == "less":
-        p = 1 - p
-    elif alternative == "two-sided":
-        p = 2 * np.min([p, 1-p])
-    else:
-        raise ValueError(
-            "alternative should be 'less', 'greater' or 'two-sided'")
+    p = _get_pvalue(-wbfn, distribution, alternative)
 
     return BrunnerMunzelResult(wbfn, p)
 

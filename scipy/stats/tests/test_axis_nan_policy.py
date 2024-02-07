@@ -66,6 +66,8 @@ axis_nan_policy_cases = [
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.friedmanchisquare, tuple(), dict(), 3, 2, True, None),
+    (stats.brunnermunzel, tuple(), dict(), 2, 2, False, None),
     (stats.mood, tuple(), {}, 2, 2, False, None),
     (stats.shapiro, tuple(), {}, 1, 2, False, None),
     (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,

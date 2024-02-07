@@ -565,14 +565,14 @@ class _spbase:
         else:
             return NotImplemented
 
-    def _mul_dispatch(self, other):
-        """`np.matrix`-compatible mul, i.e. `dot` or `NotImplemented`
+    def _matmul_dispatch(self, other):
+        """np.array-like matmul & `np.matrix`-like mul, i.e. `dot` or `NotImplemented`
 
         interpret other and call one of the following
         self._mul_scalar()
-        self._mul_vector()
-        self._mul_multivector()
-        self._mul_sparse_matrix()
+        self._matmul_vector()
+        self._matmul_multivector()
+        self._matmul_sparse()
         """
         # This method has to be different from `__matmul__` because it is also
         # called by sparse matrix classes.
@@ -585,14 +585,14 @@ class _spbase:
         if other.__class__ is np.ndarray:
             # Fast path for the most common case
             if other.shape == (N,):
-                return self._mul_vector(other)
+                return self._matmul_vector(other)
             elif other.shape == (N, 1):
-                result = self._mul_vector(other.ravel())
+                result = self._matmul_vector(other.ravel())
                 if self.ndim == 1:
                     return result
                 return result.reshape(M, 1)
             elif other.ndim == 2 and other.shape[0] == N:
-                return self._mul_multivector(other)
+                return self._matmul_multivector(other)
 
         if isscalarlike(other):
             # scalar value
@@ -603,14 +603,14 @@ class _spbase:
                 raise ValueError('dimension mismatch')
             if other.ndim == 1:
                 raise ValueError('Cannot yet multiply a 1d sparse array')
-            return self._mul_sparse_matrix(other)
+            return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
         other_a = np.asanyarray(other)
 
         if other_a.ndim == 0 and other_a.dtype == np.object_:
             # Not interpretable as an array; return NotImplemented so that
-            # other's __rmul__ can kick in if that's implemented.
+            # other's __rmatmul__ can kick in if that's implemented.
             return NotImplemented
 
         try:
@@ -623,7 +623,7 @@ class _spbase:
             if other.shape != (N,) and other.shape != (N, 1):
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_vector(np.ravel(other))
+            result = self._matmul_vector(np.ravel(other))
 
             if isinstance(other, np.matrix):
                 result = self._ascontainer(result)
@@ -641,7 +641,7 @@ class _spbase:
             if other.shape[0] != N:
                 raise ValueError('dimension mismatch')
 
-            result = self._mul_multivector(np.asarray(other))
+            result = self._matmul_multivector(np.asarray(other))
 
             if isinstance(other, np.matrix):
                 result = self._ascontainer(result)
@@ -654,20 +654,23 @@ class _spbase:
     def __mul__(self, *args, **kwargs):
         return self.multiply(*args, **kwargs)
 
+    def __rmul__(self, *args, **kwargs):  # other * self
+        return self.multiply(*args, **kwargs)
+
     # by default, use CSR for __mul__ handlers
     def _mul_scalar(self, other):
         return self.tocsr()._mul_scalar(other)
 
-    def _mul_vector(self, other):
-        return self.tocsr()._mul_vector(other)
+    def _matmul_vector(self, other):
+        return self.tocsr()._matmul_vector(other)
 
-    def _mul_multivector(self, other):
-        return self.tocsr()._mul_multivector(other)
+    def _matmul_multivector(self, other):
+        return self.tocsr()._matmul_multivector(other)
 
-    def _mul_sparse_matrix(self, other):
-        return self.tocsr()._mul_sparse_matrix(other)
+    def _matmul_sparse(self, other):
+        return self.tocsr()._matmul_sparse(other)
 
-    def _rmul_dispatch(self, other):
+    def _rmatmul_dispatch(self, other):
         if isscalarlike(other):
             return self._mul_scalar(other)
         else:
@@ -676,13 +679,10 @@ class _spbase:
                 tr = other.transpose()
             except AttributeError:
                 tr = np.asarray(other).transpose()
-            ret = self.transpose()._mul_dispatch(tr)
+            ret = self.transpose()._matmul_dispatch(tr)
             if ret is NotImplemented:
                 return NotImplemented
             return ret.transpose()
-
-    def __rmul__(self, *args, **kwargs):  # other * self
-        return self.multiply(*args, **kwargs)
 
     #######################
     # matmul (@) operator #
@@ -692,13 +692,13 @@ class _spbase:
         if isscalarlike(other):
             raise ValueError("Scalar operands are not allowed, "
                              "use '*' instead")
-        return self._mul_dispatch(other)
+        return self._matmul_dispatch(other)
 
     def __rmatmul__(self, other):
         if isscalarlike(other):
             raise ValueError("Scalar operands are not allowed, "
                              "use '*' instead")
-        return self._rmul_dispatch(other)
+        return self._rmatmul_dispatch(other)
 
     ####################
     # Other Arithmetic #

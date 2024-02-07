@@ -1189,9 +1189,9 @@ def _integral_bound(f, a, b, step, args, constants):
     args2 = [arg[..., np.newaxis] for arg in args]
 
     # Find the location of a term that is less than the tolerance (if possible)
-    nfev = 10
-    with np.errstate(divide='ignore', invalid='ignore'):
-        n_steps = np.round(np.logspace(0, np.log10(maxterms), nfev, dtype=dtype))
+    log2maxterms = np.floor(np.log2(maxterms)) if maxterms else 0
+    n_steps = np.concatenate([2**np.arange(0, log2maxterms), [maxterms]], dtype=dtype)
+    nfev = len(n_steps)
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
     nt = np.minimum(np.sum(fks > tol[:, np.newaxis], axis=-1),  n_steps.shape[-1]-1)
