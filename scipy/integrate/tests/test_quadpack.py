@@ -6,6 +6,7 @@ from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
+from scipy import __version__ as scipy_version
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
@@ -263,6 +264,20 @@ class TestQuad:
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
 
+    @pytest.mark.parametrize('kwarg', ['epsrel', 'epsabs'])
+    def test_double_integral_warns_with_deprecated_input(self, kwarg):
+
+        if scipy_version.startswith("1.12"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
+        def func(x0, x1):
+            return x0 + x1 + 1 + 2
+
+        msg = f"The '{kwarg}' argument is deprecated and will be removed"
+        kwargs = {kwarg: 0.1}
+        with pytest.warns(DeprecationWarning, match=msg):
+            dblquad(func, 1, 2, 1, 2, **kwargs)
+
     @pytest.mark.parametrize(
         "x_lower, x_upper, y_lower, y_upper, expected",
         [
@@ -341,6 +356,25 @@ class TestQuad:
                             lambda x, y: x - y, lambda x, y: x + y,
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
+
+    @pytest.mark.parametrize('kwarg', ['epsabs', 'epsrel'])
+    def test_triple_integral_warns_with_deprecated_input(self, kwarg):
+
+        if scipy_version.startswith("1.12"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
+        def simpfunc(z, y, x, t):
+            return (x+y+z)*t
+
+        msg = f"The '{kwarg}' argument is deprecated and will be removed"
+        kwargs = {kwarg: 0.1}
+        a, b = 1.0, 2.0
+        with pytest.warns(DeprecationWarning, match=msg):
+            tplquad(simpfunc, a, b,
+                    lambda x: x, lambda x: 2 * x,
+                    lambda x, y: x - y, lambda x, y: x + y,
+                    (2.,),
+                    **kwargs)
 
     @pytest.mark.parametrize(
         "x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, expected",

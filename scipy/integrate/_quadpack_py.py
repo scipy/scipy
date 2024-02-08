@@ -293,9 +293,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
@@ -310,7 +310,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
@@ -680,7 +680,8 @@ def _quad_weight(func, a, b, args, full_output, epsabs, epsrel,
                                     epsabs, epsrel, limit)
 
 
-def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
+def dblquad(func, a, b, gfun, hfun, args=(), epsabs=None, epsrel=None,
+            opts=None):
     """
     Compute a double integral.
 
@@ -702,17 +703,45 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         The upper boundary curve in y (same requirements as `gfun`).
     args : sequence, optional
         Extra arguments to pass to `func`.
-    epsabs : float, optional
+    epsabs : float, optional, deprecated
         Absolute tolerance passed directly to the inner 1-D quadrature
         integration. Default is 1.49e-8. ``dblquad`` tries to obtain
         an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.
         See `epsrel` below.
-    epsrel : float, optional
+
+        .. deprecated:: 1.10.0
+            This argument is deprecated and will be removed in SciPy 1.12.0.
+            Please use the `opts` argument instead.
+
+    epsrel : float, optional, deprecated
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
         If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
         and ``50 * (machine epsilon)``. See `epsabs` above.
+
+        .. deprecated:: 1.10.0
+            This argument is deprecated and will be removed in SciPy 1.12.0.
+            Please use the `opts` argument instead.
+
+    opts : iterable object or dict, optional
+        Options to be passed to `quad`. May be empty, a dict, or
+        a sequence of dicts. If empty, the
+        default options from scipy.integrate.quad are used. If a dict, the same
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on.
+        The available options together with their default values are:
+
+        - epsabs = 1.49e-08
+        - epsrel = 1.49e-08
+        - limit  = 50
+        - points = None
+        - weight = None
+        - wvar   = None
+        - wopts  = None
+
+        For more information on these options, see `quad`.
 
     Returns
     -------
@@ -742,11 +771,24 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     **Details of QUADPACK level routines**
 
-    `quad` calls routines from the FORTRAN library QUADPACK. This section
+    `dblquad` calls routines from the FORTRAN library QUADPACK. This section
     provides details on the conditions for each routine to be called and a
-    short description of each routine. For each level of integration, ``qagse``
-    is used for finite limits or ``qagie`` is used if either limit (or both!)
-    are infinite. The following provides a short description from [1]_ for each
+    short description of each routine. The routine called depends on
+    `weight`, `points` and the integration limits `a` and `b`.
+
+    ================  ==============  ==========  =====================
+    QUADPACK routine  `weight`        `points`    infinite bounds
+    ================  ==============  ==========  =====================
+    qagse             None            No          No
+    qagie             None            No          Yes
+    qagpe             None            Yes         No
+    qawoe             'sin', 'cos'    No          No
+    qawfe             'sin', 'cos'    No          either `a` or `b`
+    qawse             'alg*'          No          No
+    qawce             'cauchy'        No          No
+    ================  ==============  ==========  =====================
+
+    The following provides a short desciption from [1]_ for each
     routine.
 
     qagse
@@ -757,7 +799,50 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
+    qagpe
+        serves the same purposes as ``QAGSE``, but also allows the
+        user to provide explicit information about the location
+        and type of trouble-spots i.e. the abscissae of internal
+        singularities, discontinuities and other difficulties of
+        the integrand function.
+    qawoe
+        is an integrator for the evaluation of
+        :math:`\\int^b_a \\cos(\\omega x)f(x)dx` or
+        :math:`\\int^b_a \\sin(\\omega x)f(x)dx`
+        over a finite interval [a,b], where :math:`\\omega` and :math:`f`
+        are specified by the user. The rule evaluation component is based
+        on the modified Clenshaw-Curtis technique
+
+        An adaptive subdivision scheme is used in connection
+        with an extrapolation procedure, which is a modification
+        of that in ``QAGSE`` and allows the algorithm to deal with
+        singularities in :math:`f(x)`.
+    qawfe
+        calculates the Fourier transform
+        :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
+        :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
+        for user-provided :math:`\\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
+        acceleration by means of the :math:`\\varepsilon`-algorithm is applied
+        to the series of integral approximations.
+    qawse
+        approximate :math:`\\int^b_a w(x)f(x)dx`, with :math:`a < b` where
+        :math:`w(x) = (x-a)^{\\alpha}(b-x)^{\\beta}v(x)` with
+        :math:`\\alpha,\\beta > -1`, where :math:`v(x)` may be one of the
+        following functions: :math:`1`, :math:`\\log(x-a)`, :math:`\\log(b-x)`,
+        :math:`\\log(x-a)\\log(b-x)`.
+
+        The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
+        function :math:`v`. A globally adaptive subdivision strategy is
+        applied, with modified Clenshaw-Curtis integration on those
+        subintervals which contain `a` or `b`.
+    qawce
+        compute :math:`\\int^b_a f(x) / (x-c)dx` where the integral must be
+        interpreted as a Cauchy principal value integral, for user specified
+        :math:`c` and :math:`f`. The strategy is globally adaptive. Modified
+        Clenshaw-Curtis integration is used on those intervals containing the
+        point :math:`x = c`.
 
     References
     ----------
@@ -807,16 +892,37 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     """
 
+    if epsabs is not None:
+        msg = ("The 'epsabs' argument is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument "
+               "instead. If both are passed, the argument is ignored.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    if epsrel is not None:
+        msg = ("The 'epsrel' argument is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument "
+               "instead. If both are passed, the argument is ignored.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    opts = opts or {}
+    if isinstance(opts, dict):
+        opts = [opts]*2
+    opts = [opt.copy() for opt in opts]
+    for opt in opts:
+        if epsabs is not None and opt.get('epsabs', None) is None:
+            opt['epsabs'] = epsabs
+        if epsrel is not None and opt.get('epsrel', None) is None:
+            opt['epsrel'] = epsrel
+
     def temp_ranges(*args):
         return [gfun(args[0]) if callable(gfun) else gfun,
                 hfun(args[0]) if callable(hfun) else hfun]
 
-    return nquad(func, [temp_ranges, [a, b]], args=args,
-            opts={"epsabs": epsabs, "epsrel": epsrel})
+    return nquad(func, [temp_ranges, [a, b]], args=args, opts=opts)
 
 
-def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
-            epsrel=1.49e-8):
+def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=None,
+            epsrel=None, opts=None):
     """
     Compute a triple (definite) integral.
 
@@ -844,11 +950,39 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         The upper boundary surface in z. (Same requirements as `qfun`.)
     args : tuple, optional
         Extra arguments to pass to `func`.
-    epsabs : float, optional
+    epsabs : float, optional, deprecated
         Absolute tolerance passed directly to the innermost 1-D quadrature
         integration. Default is 1.49e-8.
-    epsrel : float, optional
+
+        .. deprecated:: 1.10.0
+            This argument is deprecated and will be removed in SciPy 1.12.0.
+            Please use the `opts` argument instead.
+
+    epsrel : float, optional, deprecated
         Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
+
+        .. deprecated:: 1.10.0
+            This argument is deprecated and will be removed in SciPy 1.12.0.
+            Please use the `opts` argument instead.
+
+    opts : iterable object or dict, optional
+        Options to be passed to `quad`. May be empty, a dict, or
+        a sequence of dicts. If empty, the
+        default options from scipy.integrate.quad are used. If a dict, the same
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on.
+        The available options together with their default values are:
+
+        - epsabs = 1.49e-08
+        - epsrel = 1.49e-08
+        - limit  = 50
+        - points = None
+        - weight = None
+        - wvar   = None
+        - wopts  = None
+
+        For more information on these options, see `quad`.
 
     Returns
     -------
@@ -877,11 +1011,24 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     **Details of QUADPACK level routines**
 
-    `quad` calls routines from the FORTRAN library QUADPACK. This section
+    `tplquad` calls routines from the FORTRAN library QUADPACK. This section
     provides details on the conditions for each routine to be called and a
-    short description of each routine. For each level of integration, ``qagse``
-    is used for finite limits or ``qagie`` is used, if either limit (or both!)
-    are infinite. The following provides a short description from [1]_ for each
+    short description of each routine. The routine called depends on
+    `weight`, `points` and the integration limits `a` and `b`.
+
+    ================  ==============  ==========  =====================
+    QUADPACK routine  `weight`        `points`    infinite bounds
+    ================  ==============  ==========  =====================
+    qagse             None            No          No
+    qagie             None            No          Yes
+    qagpe             None            Yes         No
+    qawoe             'sin', 'cos'    No          No
+    qawfe             'sin', 'cos'    No          either `a` or `b`
+    qawse             'alg*'          No          No
+    qawce             'cauchy'        No          No
+    ================  ==============  ==========  =====================
+
+    The following provides a short desciption from [1]_ for each
     routine.
 
     qagse
@@ -892,7 +1039,50 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
+    qagpe
+        serves the same purposes as ``QAGSE``, but also allows the
+        user to provide explicit information about the location
+        and type of trouble-spots i.e. the abscissae of internal
+        singularities, discontinuities and other difficulties of
+        the integrand function.
+    qawoe
+        is an integrator for the evaluation of
+        :math:`\\int^b_a \\cos(\\omega x)f(x)dx` or
+        :math:`\\int^b_a \\sin(\\omega x)f(x)dx`
+        over a finite interval [a,b], where :math:`\\omega` and :math:`f`
+        are specified by the user. The rule evaluation component is based
+        on the modified Clenshaw-Curtis technique
+
+        An adaptive subdivision scheme is used in connection
+        with an extrapolation procedure, which is a modification
+        of that in ``QAGSE`` and allows the algorithm to deal with
+        singularities in :math:`f(x)`.
+    qawfe
+        calculates the Fourier transform
+        :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
+        :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
+        for user-provided :math:`\\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
+        acceleration by means of the :math:`\\varepsilon`-algorithm is applied
+        to the series of integral approximations.
+    qawse
+        approximate :math:`\\int^b_a w(x)f(x)dx`, with :math:`a < b` where
+        :math:`w(x) = (x-a)^{\\alpha}(b-x)^{\\beta}v(x)` with
+        :math:`\\alpha,\\beta > -1`, where :math:`v(x)` may be one of the
+        following functions: :math:`1`, :math:`\\log(x-a)`, :math:`\\log(b-x)`,
+        :math:`\\log(x-a)\\log(b-x)`.
+
+        The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
+        function :math:`v`. A globally adaptive subdivision strategy is
+        applied, with modified Clenshaw-Curtis integration on those
+        subintervals which contain `a` or `b`.
+    qawce
+        compute :math:`\\int^b_a f(x) / (x-c)dx` where the integral must be
+        interpreted as a Cauchy principal value integral, for user specified
+        :math:`c` and :math:`f`. The strategy is globally adaptive. Modified
+        Clenshaw-Curtis integration is used on those intervals containing the
+        point :math:`x = c`.
 
     References
     ----------
@@ -952,6 +1142,32 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # nquad will hand (x, t0, ...) to ranges1
     # Only qfun / rfun is different API...
 
+    if epsabs is None:
+        epsabs = 1.49e-8
+    else:
+        msg = ("The 'epsabs' argument is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument "
+               "instead. If both are passed, the argument is ignored.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    if epsrel is None:
+        epsrel = 1.49e-8
+    else:
+        msg = ("The 'epsrel' argument is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument "
+               "instead. If both are passed, the argument is ignored.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
+    opts = opts or {}
+    if isinstance(opts, dict):
+        opts = [opts]*3
+    opts = [opt.copy() for opt in opts]
+    for opt in opts:
+        if epsabs is not None and opt.get('epsabs', None) is None:
+            opt['epsabs'] = epsabs
+        if epsrel is not None and opt.get('epsrel', None) is None:
+            opt['epsrel'] = epsrel
+
     def ranges0(*args):
         return [qfun(args[1], args[0]) if callable(qfun) else qfun,
                 rfun(args[1], args[0]) if callable(rfun) else rfun]
@@ -961,8 +1177,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
                 hfun(args[0]) if callable(hfun) else hfun]
 
     ranges = [ranges0, ranges1, [a, b]]
-    return nquad(func, ranges, args=args,
-            opts={"epsabs": epsabs, "epsrel": epsrel})
+    return nquad(func, ranges, args=args, opts=opts)
 
 
 def nquad(func, ranges, args=None, opts=None, full_output=False):
@@ -1009,19 +1224,19 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
-        options are used for all levels of integraion. If a sequence, then each
-        element of the sequence corresponds to a particular integration. e.g.,
-        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
-        callable, the signature must be the same as for ``ranges``. The
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on.
+        If a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - epsabs = 1.49e-08
+        - epsrel = 1.49e-08
+        - limit  = 50
+        - points = None
+        - weight = None
+        - wvar   = None
+        - wopts  = None
 
         For more information on these options, see `quad`.
 
@@ -1082,9 +1297,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
@@ -1099,7 +1314,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
