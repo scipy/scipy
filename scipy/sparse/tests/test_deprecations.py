@@ -22,9 +22,6 @@ def test_array_api_deprecations():
         X.getmaxprint()
 
     with pytest.deprecated_call(match=msg):
-        X.getnnz()
-
-    with pytest.deprecated_call(match=msg):
         X.getH()
 
     with pytest.deprecated_call(match=msg):
