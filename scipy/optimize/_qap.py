@@ -598,6 +598,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_match[i, 0]`` of `A` is matched to node
         ``partial_match[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+        .. note:: It is important to sort `partial_match` by the first column before passing it to the function.
     partial_guess : 2-D array of integers, optional (default: None)
         A guess for the matching between the two matrices. Unlike
         `partial_match`, `partial_guess` does not fix the indices; they are
@@ -607,6 +608,7 @@ def _quadratic_assignment_2opt(A, B, maximize=False, rng=None,
         ``partial_guess[i, 0]`` of `A` is matched to node
         ``partial_guess[i, 1]`` of `B`. The array has shape ``(m, 2)``,
         where ``m`` is not greater than the number of nodes, :math:`n`.
+        .. note:: It is important to sort `partial_guess` by the first column before passing it to the function.
 
     Returns
     -------
