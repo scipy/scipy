@@ -355,7 +355,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         nnz = len(major)
         # convert idx_dtype intc to int32 for pythran.
         # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
-        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, M, N))
         major = major.astype(idx_dtype, copy=False)
         minor = minor.astype(idx_dtype, copy=False)
 

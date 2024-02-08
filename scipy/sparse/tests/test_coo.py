@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scipy.sparse import coo_array
+from scipy.sparse import coo_array, dok_array
 
 
 def test_shape_constructor():
@@ -168,6 +168,32 @@ def test_1d_toformats():
             f()
     for f in [res.tocoo, res.todok]:
         assert np.array_equal(f().toarray(), res.toarray())
+
+
+@pytest.mark.slow
+def test_idx_dtype_tocsr_csc():
+    bigI = 2**33
+
+    Adok = dok_array((bigI, 2))
+    Adok[(5, 0)] = 2.1
+    Adok[(8, 1)] = 3.1
+    A = Adok.tocoo()
+    idx_dtype = A.coords[0].dtype
+    assert A.shape == (bigI, 2)
+
+    # tocsr() raises ValueError in coo_tocsr for int32 idx_dtype
+    # test that all shape values are considered for idx_dtype
+    Acsr = A.tocsr()
+    assert(Acsr.indptr.dtype == idx_dtype)
+    assert(Acsr.indices.dtype == idx_dtype)
+
+    # csc version
+    A = A.T.tocoo()
+    assert A.shape == (2, bigI)
+    # Same as above: raises ValueError if idxtype is int32
+    Acsc = A.tocsc()
+    assert(Acsc.indptr.dtype == idx_dtype)
+    assert(Acsc.indices.dtype == idx_dtype)
 
 
 @pytest.mark.parametrize('arg', [1, 2, 4, 5, 8])
