@@ -29,7 +29,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         is_array = isinstance(self, sparray)
 
         if issparse(arg1):
-            self._shape = arg1.shape
             if arg1.format == self.format and copy:
                 arg1 = arg1.copy()
             else:
@@ -94,13 +93,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif self.shape is None:
             # shape not already set, try to infer dimensions
             try:
-                major_dim = len(self.indptr) - 1
-                minor_dim = self.indices.max() + 1
+                major_d = len(self.indptr) - 1
+                minor_d = self.indices.max() + 1
             except Exception as e:
                 raise ValueError('unable to infer matrix dimensions') from e
-            else:
-                new_shape = (major_dim, minor_dim)
-                self._shape = check_shape(self._swap(new_shape), allow_1d=is_array)
+
+            self._shape = check_shape(self._swap((major_d, minor_d)), allow_1d=is_array)
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
@@ -157,8 +155,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M, N = self._swap(self._shape_as_2d)
 
         if (len(self.indptr) != M + 1):
-            msg = f"index pointer size ({len(self.indptr)}) should be ({M + 1})"
-            raise ValueError(msg)
+            raise ValueError(f"index pointer size {len(self.indptr)} should be {M + 1}")
         if (self.indptr[0] != 0):
             raise ValueError("index pointer should start with 0")
 
@@ -175,12 +172,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= N:
-                    raise ValueError(f"index values must be < {N}")
+                    raise ValueError(f"indices must be < {N}")
                 if self.indices.min() < 0:
-                    raise ValueError("index values must be >= 0")
+                    raise ValueError("indices must be >= 0")
                 if np.diff(self.indptr).min() < 0:
-                    raise ValueError("index pointer values must form a "
-                                     "non-decreasing sequence")
+                    raise ValueError("indptr must be a non-decreasing sequence")
 
             idx_dtype = self._get_index_dtype((self.indptr, self.indices))
             self.indptr = np.asarray(self.indptr, dtype=idx_dtype)
@@ -653,7 +649,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
             return ret.sum(axis=(), dtype=dtype, out=out)
         else:
-            # _spbase handles the situations when axis is in {None, -1, 0, 1}
+            # _spbase handles the situations when axis is in {None, -2, -1, 0, 1}
             return _spbase.sum(self, axis=axis, dtype=dtype, out=out)
 
     sum.__doc__ = _spbase.sum.__doc__
