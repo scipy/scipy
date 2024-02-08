@@ -792,7 +792,7 @@ class CubicSpline(CubicHermiteSpline):
             elif n == 3 and bc[0] == 'periodic':
                 # In case when number of points is 3 we compute the derivatives
                 # manually
-                t = (slope / dxr).sum(axis) / (1. / dxr).sum(axis)
+                t = (slope / dxr).sum(0) / (1. / dxr).sum(0)
                 s = np.broadcast_to(t, (n,) + y.shape[1:])
             else:
                 # Find derivative values at each x[i] by solving a tridiagonal
