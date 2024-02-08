@@ -188,15 +188,35 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             return
         if self.first_iteration:
             # Get user specific scale
-            if self.init_scale == "auto":
+            if isinstance(self.init_scale, str) and self.init_scale == "auto":
                 scale = self._auto_scale(delta_x, delta_grad)
             else:
-                scale = float(self.init_scale)
+                scale = self.init_scale
+
+            # Check for complex: numpy will silently cast a complex array to
+            # a real one but not so for scalar as it raises a TypeError.
+            # Checking here brings a consistent behavior.
+            if np.size(scale) == 1:
+                # to account for the legacy behavior having the exact same cast
+                scale = float(scale)
+            elif np.iscomplexobj(scale):
+                raise TypeError("scale contains complex elements, "
+                                "must be real.")
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
-                self.B *= scale
+                dtype = self.B.dtype
+                scale = np.array(scale, dtype=dtype)
+                if scale.shape == np.shape(self.B):
+                    self.B = scale.copy()
+                else:
+                    self.B *= scale
             else:
-                self.H *= scale
+                dtype = self.H.dtype
+                scale = np.array(scale, dtype=dtype)
+                if scale.shape == np.shape(self.H):
+                    self.H = scale.copy()
+                else:
+                    self.H *= scale
             self.first_iteration = False
         self._update_implementation(delta_x, delta_grad)
 
@@ -254,10 +274,13 @@ class BFGS(FullHessianUpdateStrategy):
         unaffected by the exception strategy. By default is equal to
         1e-8 when ``exception_strategy = 'skip_update'`` and equal
         to 0.2 when ``exception_strategy = 'damp_update'``.
-    init_scale : {float, 'auto'}
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+    init_scale : {float, np.array, 'auto'}
+        At the first iteration the Hessian matrix or its inverse will
+        be initialized with the scale. In case the dimensionality of
+        the scale is ``(n, n)``, the scale itself will be used as
+        the initial matrix.
+        Otherwise the matrix will be initialized with
+        ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.
@@ -309,7 +332,7 @@ class BFGS(FullHessianUpdateStrategy):
                Second Edition (2006).
         """
         self.H = self._syr2(-1.0 / ys, s, Hy, a=self.H)
-        self.H = self._syr((ys+yHy)/ys**2, s, a=self.H)
+        self.H = self._syr((ys + yHy) / ys ** 2, s, a=self.H)
 
     def _update_hessian(self, ys, Bs, sBs, y):
         """Update the Hessian matrix.
@@ -385,10 +408,13 @@ class SR1(FullHessianUpdateStrategy):
         defines the minimum denominator magnitude allowed
         in the update. When the condition is violated we skip
         the update. By default uses ``1e-8``.
-    init_scale : {float, 'auto'}, optional
-        Matrix scale at first iteration. At the first
-        iteration the Hessian matrix or its inverse will be initialized
-        with ``init_scale*np.eye(n)``, where ``n`` is the problem dimension.
+    init_scale : {float, np.array, 'auto'}, optional
+        At the first iteration the Hessian matrix or its inverse will
+        be initialized with the scale. In case the dimensionality of
+        the scale is ``(n, n)``, the scale itself will be used as
+        the initial matrix.
+        Otherwise the matrix will be initialized with
+        ``np.eye(n) * init_scale``, where ``n`` is the problem dimension.
         Set it to 'auto' in order to use an automatic heuristic for choosing
         the initial scale. The heuristic is described in [1]_, p.143.
         By default uses 'auto'.

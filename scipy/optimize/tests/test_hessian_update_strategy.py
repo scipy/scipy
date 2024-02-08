@@ -2,7 +2,8 @@ import numpy as np
 from copy import deepcopy
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less)
+                           assert_array_equal, assert_array_less,
+                           assert_raises)
 from scipy.optimize import (BFGS, SR1)
 
 
@@ -50,18 +51,66 @@ class Rosenbrock:
 class TestHessianUpdateStrategy(TestCase):
 
     def test_hessian_initialization(self):
-        quasi_newton = (BFGS(), SR1())
 
-        for qn in quasi_newton:
-            qn.initialize(5, 'hess')
-            B = qn.get_matrix()
+        ndims = 5
+        symmetric_matrix = np.array([[43, 24, 33, 34, 49],
+                                     [24, 36, 44, 15, 44],
+                                     [33, 44, 37, 1, 30],
+                                     [34, 15, 1, 5, 46],
+                                     [49, 44, 30, 46, 22]])
+        init_scales = (
+            ('auto', np.eye(ndims)),
+            (2, np.eye(ndims) * 2),
+            (np.arange(1, ndims + 1), np.arange(1, ndims + 1) * np.eye(ndims)),
+            (symmetric_matrix, symmetric_matrix),)
+        for approx_type in ['hess', 'inv_hess']:
+            for init_scale, true_matrix in init_scales:
+                # large min_{denominator,curvatur} makes them skip an update,
+                # so we can have our initial matrix
+                quasi_newton = (BFGS(init_scale=init_scale,
+                                     min_curvature=1e50,
+                                     exception_strategy='skip_update'),
+                                SR1(init_scale=init_scale,
+                                    min_denominator=1e50))
 
-            assert_array_equal(B, np.eye(5))
+                for qn in quasi_newton:
+                    qn.initialize(ndims, approx_type)
+                    B = qn.get_matrix()
+
+                    assert_array_equal(B, np.eye(ndims))
+                    # don't test the auto init scale
+                    if isinstance(init_scale, str) and init_scale == 'auto':
+                        continue
+
+                    qn.update(np.ones(ndims) * 1e-5, np.arange(ndims) + 0.2)
+                    B = qn.get_matrix()
+                    assert_array_equal(B, true_matrix)
 
     # For this list of points, it is known
     # that no exception occur during the
     # Hessian update. Hence no update is
-    # skipped or damped.
+    # skiped or damped.
+
+    def test_initialize_catch_complex(self):
+        ndims = 3
+        init_scales = (complex(3.14),
+                       np.array([3.2, 2.3, 1.2]).astype(np.complex128),
+                       np.array([[43, 24, 33],
+                                 [24, 36, 44, ],
+                                 [33, 44, 37, ]]).astype(np.complex128)
+                       )
+        for approx_type in ['hess', 'inv_hess']:
+            for init_scale in init_scales:
+                # large min_{denominator,curvatur} makes them skip an update,
+                # so we can have our initial matrix
+                quasi_newton = (BFGS(init_scale=init_scale),
+                                SR1(init_scale=init_scale))
+
+                for qn in quasi_newton:
+                    qn.initialize(ndims, approx_type)
+                    with assert_raises(TypeError):
+                        qn.update(np.ones(ndims), np.arange(ndims))
+
     def test_rosenbrock_with_no_exception(self):
         # Define auxiliary problem
         prob = Rosenbrock(n=5)
