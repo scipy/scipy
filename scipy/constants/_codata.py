@@ -96,7 +96,7 @@ for k in _physical_constants_2018:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
-## CODATA 2018: renamed and no longer exact; use as aliases
+# CODATA 2018: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
 _aliases['electric constant'] = 'vacuum electric permittivity'
 
@@ -112,7 +112,7 @@ def _check_obsolete(key: str) -> None:
             key, _current_codata), ConstantWarning)
 
 
-#def value(key: str) -> float:
+def value(key: str) -> float:
     """
     Value in physical_constants indexed by key
 
@@ -133,8 +133,8 @@ def _check_obsolete(key: str) -> None:
     1.602176634e-19
 
     """
-#    _check_obsolete(key)
-#    return physical_constants[key][0]
+    _check_obsolete(key)
+    return physical_constants[key][0]
 
 
 def unit(key: str) -> str:
