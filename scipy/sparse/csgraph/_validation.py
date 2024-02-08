@@ -22,13 +22,13 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
 
     if issparse(csgraph):
         if csr_output:
-            csgraph = csr_matrix(csgraph, dtype=DTYPE, copy=copy_if_sparse)
+            csgraph = csr_matrix(csgraph, dtype=dtype, copy=copy_if_sparse)
         else:
             csgraph = csgraph_to_dense(csgraph, null_value=null_value_out)
     elif np.ma.isMaskedArray(csgraph):
         if dense_output:
             mask = csgraph.mask
-            csgraph = np.array(csgraph.data, dtype=DTYPE, copy=copy_if_dense)
+            csgraph = np.array(csgraph.data, dtype=dtype, copy=copy_if_dense)
             csgraph[mask] = null_value_out
         else:
             csgraph = csgraph_from_masked(csgraph)
@@ -40,7 +40,7 @@ def validate_graph(csgraph, directed, dtype=DTYPE,
                                                 nan_null=nan_null,
                                                 infinity_null=infinity_null)
             mask = csgraph.mask
-            csgraph = np.asarray(csgraph.data, dtype=DTYPE)
+            csgraph = np.asarray(csgraph.data, dtype=dtype)
             csgraph[mask] = null_value_out
         else:
             csgraph = csgraph_from_dense(csgraph, null_value=null_value_in,

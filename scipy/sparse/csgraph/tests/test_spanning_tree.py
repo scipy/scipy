@@ -40,6 +40,22 @@ def test_minimum_spanning_tree():
     npt.assert_array_equal(mintree.toarray(), expected,
         'Graph was not properly modified to contain MST.')
 
+    # Ensure results are correct for all data types
+    for t in (np.int8, np.float32, np.float64):
+        csgraph = csr_matrix(graph, dtype=t)
+
+        mintree = minimum_spanning_tree(csgraph, overwrite=False)
+        npt.assert_equal(mintree.dtype, t,
+            'Incorrect dtype (overwrite=False)')
+        npt.assert_array_equal(mintree.todense(), expected,
+            'Incorrect spanning tree for dtype {} (overwrite=False)'.format(t))
+
+        mintree = minimum_spanning_tree(csgraph, overwrite=True)
+        npt.assert_equal(mintree.dtype, t,
+            'Incorrect dtype (overwrite=True)')
+        npt.assert_array_equal(mintree.todense(), expected,
+            'Incorrect spanning tree for dtype {} (overwrite=True)'.format(t))
+
     np.random.seed(1234)
     for N in (5, 10, 15, 20):
 
