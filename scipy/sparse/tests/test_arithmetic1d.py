@@ -289,8 +289,7 @@ class TestArithmetic1D:
             assert np.array_equal(sum2, dat + dat)
 
     def test_size_zero_matrix_arithmetic(self, spcreator):
-        # Test basic matrix arithmetic with shapes like 0, (1, 0),
-        # (0, 3), etc.
+        # Test basic matrix arithmetic with shapes like 0, (1, 0), (0, 3), etc.
         mat = np.array([])
         a = mat.reshape(0)
         d = mat.reshape((1, 0))
@@ -322,5 +321,3 @@ class TestArithmetic1D:
 
         # Addition
         assert np.array_equal(asp.__add__(asp).toarray(), a.__add__(a))
-
-

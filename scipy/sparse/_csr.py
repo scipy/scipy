@@ -94,7 +94,9 @@ class _csr_base(_cs_matrix):
     tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
-        M, N = self._shape_as_2d
+        if self.ndim != 2:
+            raise ValueError("Cannot convert a 1d sparse array to csc format")
+        M, N = self.shape
         idx_dtype = self._get_index_dtype((self.indptr, self.indices),
                                     maxval=max(self.nnz, M))
         indptr = np.empty(N + 1, dtype=idx_dtype)
@@ -177,9 +179,8 @@ class _csr_base(_cs_matrix):
         indptr = np.zeros(2, dtype=self.indptr.dtype)
         # return 1d (sparray) or 2drow (spmatrix)
         shape = self.shape[1:] if isinstance(self, sparray) else (1, self.shape[1])
-        idxiter = iter(self.indptr)
-        i0 = next(idxiter)
-        for i1 in idxiter:
+        i0 = 0
+        for i1 in self.indptr[1:]:
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
@@ -207,10 +208,11 @@ class _csr_base(_cs_matrix):
                               dtype=self.dtype, copy=False)
 
     def _getcol(self, i):
-        """Returns a copy of column i of the matrix, as a (m x 1)
-        CSR matrix (column vector).
+        """Returns a copy of column i. A (m x 1) sparse array (column vector).
         """
-        M, N = self._shape_as_2d
+        if self.ndim == 1:
+            raise ValueError("getcol not provided for 1d arrays. Use indexing A[j]")
+        M, N = self.shape
         i = int(i)
         if i < 0:
             i += N
