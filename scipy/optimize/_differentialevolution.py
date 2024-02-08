@@ -1824,6 +1824,8 @@ class _ConstraintWrapper:
                 # x either has shape (N, S) or (N)
                 # (M, N) x (N, S) --> (M, S)
                 # (M, N) x (N,)   --> (M,)
+                # However, if (M, N) is a matrix then:
+                # (M, N) * (N,)   --> (M, 1), we need this to be (M,)
                 if x.ndim == 1 and res.ndim == 2:
                     # deal with case that constraint.A is an np.matrix
                     # see gh20041
