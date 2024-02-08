@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from math import pi, sqrt
 from typing import Any
-import _constants_ascii
+import _codata_ascii
 
 __all__ = ['physical_constants', 'value', 'unit', 'uncertainty',
            'precision', 'find', 'ConstantWarning']
@@ -11,7 +11,11 @@ __all__ = ['physical_constants', 'value', 'unit', 'uncertainty',
 def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
-        if line[0] == " " or "-":
+        if line == "":
+            continue
+        if line[0] == " ":
+            continue
+        if line[0] == "-":
             continue
         name = line[:55].rstrip()
         val = float(line[55:77].replace(' ', '').replace('...', ''))
@@ -24,8 +28,12 @@ def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
 def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
-        if line[0] == " " or "-":
-            continue        
+        if line == "":
+            continue
+        if line[0] == " ":
+            continue
+        if line[0] == "-":
+            continue
         name = line[:60].rstrip()
         val = float(line[60:85].replace(' ', '').replace('...', ''))
         uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
@@ -33,24 +41,25 @@ def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
         constants[name] = (val, units, uncert)
     return constants
 
+
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
-with open('_constants_ascii._allasci_2002.txt') as f:
+with open('_codata_ascii/_allascii_2002.txt') as f:
     txt2002 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
-with open('_constants_ascii._allasci_2006.txt') as f:
+with open('_codata_ascii/_allascii_2006.txt') as f:
     txt2006 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
-with open('_constants_ascii._allasci_2010.txt') as f:
+with open('_codata_ascii/_allascii_2010.txt') as f:
     txt2010 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
-with open('_constants_ascii._allasci_2014.txt') as f:
+with open('_codata_ascii/_allascii_2014.txt') as f:
     txt2014 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/Table/allascii.txt
-with open('_constants_ascii._allasci_2018.txt') as f:
+with open('_codata_ascii/_allascii_2018.txt') as f:
     txt2018 = f.read()
 
 physical_constants: dict[str, tuple[float, str, float]] = {}
@@ -60,7 +69,6 @@ _physical_constants_2010 = parse_constants_2002to2014(txt2010)
 _physical_constants_2014 = parse_constants_2002to2014(txt2014)
 _physical_constants_2018 = parse_constants_2018toXXXX(txt2018)
 
-
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
 physical_constants.update(_physical_constants_2010)
@@ -68,6 +76,7 @@ physical_constants.update(_physical_constants_2014)
 physical_constants.update(_physical_constants_2018)
 _current_constants = _physical_constants_2018
 _current_codata = "CODATA 2018"
+print(_current_constants)
 
 # check obsolete values
 _obsolete_constants = {}
@@ -87,7 +96,7 @@ for k in _physical_constants_2018:
     if 'momentum' in k:
         _aliases[k] = k.replace('momentum', 'mom.um')
 
-# CODATA 2018: renamed and no longer exact; use as aliases
+## CODATA 2018: renamed and no longer exact; use as aliases
 _aliases['mag. constant'] = 'vacuum mag. permeability'
 _aliases['electric constant'] = 'vacuum electric permittivity'
 
@@ -103,7 +112,7 @@ def _check_obsolete(key: str) -> None:
             key, _current_codata), ConstantWarning)
 
 
-def value(key: str) -> float:
+#def value(key: str) -> float:
     """
     Value in physical_constants indexed by key
 
@@ -124,8 +133,8 @@ def value(key: str) -> float:
     1.602176634e-19
 
     """
-    _check_obsolete(key)
-    return physical_constants[key][0]
+#    _check_obsolete(key)
+#    return physical_constants[key][0]
 
 
 def unit(key: str) -> str:
@@ -167,7 +176,7 @@ def uncertainty(key: str) -> float:
         Absolute uncertainty in `physical_constants` corresponding to `key`
     """
     _check_obsolete(key)
-    return physical_constants[key][2]    
+    return physical_constants[key][2]
 
 
 def precision(key: str) -> float:
@@ -266,7 +275,8 @@ exact_values = {
     'joule-kilogram relationship': (1 / (c * c), 'kg', 0.0),
     'kilogram-joule relationship': (c * c, 'J', 0.0),
     'hertz-inverse meter relationship': (1 / c, 'm^-1', 0.0),
-}
+    }
+
 
 # sanity check
 for key in exact_values:
