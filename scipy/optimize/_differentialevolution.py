@@ -1829,7 +1829,7 @@ class _ConstraintWrapper:
                 if x.ndim == 1 and res.ndim == 2:
                     # deal with case that constraint.A is an np.matrix
                     # see gh20041
-                    res = np.squeeze(np.asarray(res[:, 0]))
+                    res = np.asarray(res)[:, 0]
 
                 return res
         elif isinstance(constraint, Bounds):

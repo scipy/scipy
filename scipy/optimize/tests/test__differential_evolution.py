@@ -1001,6 +1001,11 @@ class TestDifferentialEvolutionSolver:
         # of constraints applied.
         assert cw.violation(x0).shape == (2,)
 
+        # let's try a vectorised violation call.
+        xtrial = np.arange(4 * 5).reshape(4, 5)
+        assert cw.violation(xtrial).shape == (2, 5)
+
+
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 
