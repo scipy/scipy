@@ -87,7 +87,7 @@ def _get_output(output, input, shape=None, complex_output=False):
             output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        output = np.dtype(output)
+        output = numpy.dtype(output)
         if complex_output and output.kind != 'c':
             raise RuntimeError("output must have complex dtype")
         output = numpy.zeros(shape, dtype=output)
