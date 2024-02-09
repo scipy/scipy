@@ -96,7 +96,7 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     message = ("The shape of the array returned by `func` must be the same as "
                "the broadcasted shape of `x` and all other `args`.")
     if preserve_shape is not None:  # only in tanhsinh for now
-        message = f"When `preserve_shape=False`, {message.lower}"
+        message = f"When `preserve_shape=False`, {message.lower()}"
     shapes_equal = [f.shape == shape for f in fs]
     if not np.all(shapes_equal):
         raise ValueError(message)
