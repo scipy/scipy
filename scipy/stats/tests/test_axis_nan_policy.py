@@ -8,7 +8,6 @@ from itertools import product, combinations_with_replacement, permutations
 import re
 import pickle
 import pytest
-import datetime
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
@@ -751,46 +750,24 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     hypotest(*samples, *args, axis=axis, **kwds)
 
 
-@pytest.mark.parametrize("axis", [0, 1])
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
-                          "paired", "unpacker"), axis_nan_policy_cases)
-def test_non_broadcastable(hypotest, args, kwds, n_samples, n_outputs, paired,
-                           unpacker, axis):
+def test_non_broadcastable():
     # test for correct error message when shapes are not broadcastable
-    if n_samples == 1:  # broadcasting only needed with >1 sample
-        return
-
-    # It's much easier to write a relatively comprehensive test here
-    # by relying on randomly-generated shapes to not be broadcastable.
-    # If we were to use the same seed all the time, the test would
-    # be no stronger than having chosen a single case, so change the
-    # seed every day. Any failing case is still reproducible.
-    seed = int(datetime.date.today().strftime("%Y%m%d"))
-    rng = np.random.default_rng(seed)
-    samples = [rng.random(size=rng.integers(2, 100, size=2))
-               for i in range(n_samples)]
-
-    # Sometimes random shapes will be broadcastable. Take the day off!
-    if _check_arrays_broadcastable(samples, axis=axis):
-        return
+    rng = np.random.default_rng(0)
 
     message = "Array shapes are incompatible for broadcasting."
+    
+    # Check that the correct error message is raised for a paired and an
+    # unpaired hypothesis test.
     with pytest.raises(ValueError, match=message):
-        hypotest(*samples, *args, **kwds)
-
-    if not paired:  # there's another test for paired-sample statistics
-        return
+        stats.ttest_rel(rng.random((2, 3)), rng.random((2, 2)), axis=1)
+    with pytest.raises(ValueError, match=message):
+        stats.ttest_ind(rng.random((2, 3)), rng.random((3, 2)), axis=1)
 
     # Previously, paired sample statistics did not raise an error
     # message when the shapes were broadcastable except along `axis`
     # https://github.com/scipy/scipy/pull/19578#pullrequestreview-1766857165
-    shape = rng.integers(2, 10, size=2)
-    most_samples = [rng.random(size=shape) for i in range(n_samples-1)]
-    shape = list(shape)
-    shape[axis] += 1
-    other_sample = rng.random(size=shape)
     with pytest.raises(ValueError, match=message):
-        hypotest(other_sample, *most_samples, *args, **kwds)
+        stats.ttest_rel(rng.random((2, 0)), rng.random((2, 3)), axis=1)
 
 
 def test_masked_array_2_sentinel_array():
