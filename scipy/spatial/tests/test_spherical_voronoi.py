@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import itertools
 from numpy.testing import (assert_equal,
@@ -8,7 +9,6 @@ import pytest
 from pytest import raises as assert_raises
 from scipy.spatial import SphericalVoronoi, distance
 from scipy.optimize import linear_sum_assignment
-from scipy.constants import golden as phi
 from scipy.special import gamma
 
 
@@ -29,7 +29,7 @@ def _generate_octahedron():
 
 
 def _generate_dodecahedron():
-
+    phi = (1 + _math.sqrt(5)) / 2
     x1 = _generate_cube()
     x2 = np.array([[0, -phi, -1 / phi],
                    [0, -phi, +1 / phi],
@@ -47,6 +47,7 @@ def _generate_dodecahedron():
 
 
 def _generate_icosahedron():
+    phi = (1 + _math.sqrt(5)) / 2
     x = np.array([[0, -1, -phi],
                   [0, -1, +phi],
                   [0, +1, -phi],
