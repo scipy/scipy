@@ -1,5 +1,6 @@
 import pytest
 
+import math
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform import Rotation
