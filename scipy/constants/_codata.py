@@ -109,24 +109,7 @@ physical_constants: dict[str, tuple[float, str, float]] = {}
 #    return constants
 
 
-def parse_constants_2010to2014(d: str) -> dict[str, tuple[float, str, float]]:
-    constants = {}
-    for line in d.split('\n'):
-        if line == "":
-            continue
-        if line[0] == " ":
-            continue
-        if line[0] == "-":
-            continue        
-        name = line[:55].rstrip()
-        val = float(line[55:77].replace(' ', '').replace('...', ''))
-        uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
-        units = line[99:].rstrip()
-        constants[name] = (val, units, uncert)
-    return constants
-
-
-def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
+def parse_constants_2010toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         if line == "":
@@ -144,9 +127,9 @@ def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
 
 #_physical_constants_2002 = parse_constants_2002to2006(txt2002)
 #_physical_constants_2006 = parse_constants_2002to2006(txt2006)
-_physical_constants_2010 = parse_constants_2010to2014(txt2010)
-_physical_constants_2014 = parse_constants_2010to2014(txt2014)
-_physical_constants_2018 = parse_constants_2018toXXXX(txt2018)
+_physical_constants_2010 = parse_constants_2010toXXXX(txt2010)
+_physical_constants_2014 = parse_constants_2010toXXXX(txt2014)
+_physical_constants_2018 = parse_constants_2010toXXXX(txt2018)
 
 #physical_constants.update(_physical_constants_2002)
 #physical_constants.update(_physical_constants_2006)
