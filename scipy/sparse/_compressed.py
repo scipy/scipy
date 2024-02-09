@@ -523,7 +523,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _matmul_sparse(self, other):
         M, K1 = self._shape_as_2d
         # if other is 1d, treat as a **column**
-        K2, N = other._shape_as_2d
+        K2, N = other._shape if other.ndim == 2 else (other.shape[0], 1)
 
         # find new_shape
         if self.ndim == 2:
@@ -534,9 +534,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif other.ndim == 2:
             new_shape = (N,)
         else:
-            new_shape = (1,)
+            new_shape = ()
 
-        major_axis = self._swap((M, N))[0]
+        major_dim = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
@@ -549,13 +549,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                  np.asarray(other.indptr, dtype=idx_dtype),
                  np.asarray(other.indices, dtype=idx_dtype))
         if nnz == 0:
+            if new_shape == ():
+                return np.array(0, dtype=upcast(self.dtype, other.dtype))
             return self.__class__(new_shape, dtype=upcast(self.dtype, other.dtype))
 
         idx_dtype = self._get_index_dtype((self.indptr, self.indices,
                                      other.indptr, other.indices),
                                     maxval=nnz)
 
-        indptr = np.empty(major_axis + 1, dtype=idx_dtype)
+        indptr = np.empty(major_dim + 1, dtype=idx_dtype)
         indices = np.empty(nnz, dtype=idx_dtype)
         data = np.empty(nnz, dtype=upcast(self.dtype, other.dtype))
 
@@ -568,6 +570,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            other.data,
            indptr, indices, data)
 
+        if new_shape == ():
+            return data[0]
         return self.__class__((data, indices, indptr), shape=new_shape)
 
     def diagonal(self, k=0):
@@ -688,6 +692,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return self.data.dtype.type(0)
         raise IndexError(f'index ({idx}) out of range')
 
+#    For now, 1d only has integer indexing. Soon we will add get_slice/array
 #    def _get_slice(self, idx):
 #        if idx == slice(None):
 #            return self.copy()
