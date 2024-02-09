@@ -131,117 +131,117 @@ subroutine <prefix2c>tgexc(wantq,wantz,n,a,lda,b,ldb,q,ldq,z,ldz,ifst,ilst,info)
 
 end subroutine <prefix2c>tgexc
 
-subroutine <prefix2>trsen(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
+! subroutine <prefix2>trsen(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
 
-    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,wr,wi,&m,&s,&sep,work,&lwork,iwork,&liwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+!     callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,wr,wi,&m,&s,&sep,work,&lwork,iwork,&liwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
-    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
-    logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
-    logical intent(in),dimension(n),depend(n) :: select
-    integer intent(hide),depend(t) :: n=shape(t,0)
-    <ftype2> intent(in,out,copy,out=ts),dimension(n,n) :: t
-    integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
-    <ftype2> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
-    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
-    <ftype2> intent(out),dimension(n),depend(n) :: wr
-    <ftype2> intent(out),dimension(n),depend(n) :: wi
-    integer intent(out) :: m
-    <ftype2> intent(out) :: s
-    <ftype2> intent(out) :: sep
-    <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! These lwork and liwork values are bare minimum estiamates only for the case job == "N".
-    ! A separate lwork query is a prerequisite due to m dependence.
-    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
-    ! possible to give a minimal value without a potential excessive memory waste.
-    integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
-    integer intent(hide),dimension(MAX(1,liwork)) :: iwork
-    integer optional,intent(in),check(liwork == -1 || liwork >= 1) :: liwork=1
-    integer intent(out) :: info
+!     character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+!     logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
+!     logical intent(in),dimension(n),depend(n) :: select
+!     integer intent(hide),depend(t) :: n=shape(t,0)
+!     <ftype2> intent(in,out,copy,out=ts),dimension(n,n) :: t
+!     integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
+!     <ftype2> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
+!     integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+!     <ftype2> intent(out),dimension(n),depend(n) :: wr
+!     <ftype2> intent(out),dimension(n),depend(n) :: wi
+!     integer intent(out) :: m
+!     <ftype2> intent(out) :: s
+!     <ftype2> intent(out) :: sep
+!     <ftype2> intent(hide),dimension(MAX(lwork,1)) :: work
+!     ! These lwork and liwork values are bare minimum estiamates only for the case job == "N".
+!     ! A separate lwork query is a prerequisite due to m dependence.
+!     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
+!     ! possible to give a minimal value without a potential excessive memory waste.
+!     integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
+!     integer intent(hide),dimension(MAX(1,liwork)) :: iwork
+!     integer optional,intent(in),check(liwork == -1 || liwork >= 1) :: liwork=1
+!     integer intent(out) :: info
 
-end subroutine <prefix2>trsen
+! end subroutine <prefix2>trsen
 
-subroutine <prefix2>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
+! subroutine <prefix2>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,wr,wi,m,s,sep,work,lwork,iwork,liwork,info)
 
-    fortranname <prefix2>trsen
-    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&wr,&wi,&m,&s,&sep,&work,&lwork,&iwork,&liwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
+!     fortranname <prefix2>trsen
+!     callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&wr,&wi,&m,&s,&sep,&work,&lwork,&iwork,&liwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
-    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
-    logical intent(in),dimension(n),depend(n) :: select
-    <ftype2> intent(in),dimension(n,n) :: t
+!     character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+!     logical intent(in),dimension(n),depend(n) :: select
+!     <ftype2> intent(in),dimension(n,n) :: t
 
-    logical intent(hide) :: wantq = 0
-    integer intent(hide),depend(t) :: n = shape(t,0)
-    integer intent(hide),depend(n) :: ldt = MAX(1, n)
-    <ftype2> intent(hide) :: q
-    integer intent(hide),depend(n) :: ldq = MAX(1, n)
-    <ftype2> intent(hide) :: wr
-    <ftype2> intent(hide) :: wi
-    integer intent(hide) :: m
-    <ftype2> intent(hide) :: s
-    <ftype2> intent(hide) :: sep
-    integer intent(hide):: lwork=-1
-    integer intent(hide) :: liwork=-1
+!     logical intent(hide) :: wantq = 0
+!     integer intent(hide),depend(t) :: n = shape(t,0)
+!     integer intent(hide),depend(n) :: ldt = MAX(1, n)
+!     <ftype2> intent(hide) :: q
+!     integer intent(hide),depend(n) :: ldq = MAX(1, n)
+!     <ftype2> intent(hide) :: wr
+!     <ftype2> intent(hide) :: wi
+!     integer intent(hide) :: m
+!     <ftype2> intent(hide) :: s
+!     <ftype2> intent(hide) :: sep
+!     integer intent(hide):: lwork=-1
+!     integer intent(hide) :: liwork=-1
 
-    <ftype2> intent(out) :: work
-    integer intent(out) :: iwork
-    integer intent(out) :: info
+!     <ftype2> intent(out) :: work
+!     integer intent(out) :: iwork
+!     integer intent(out) :: info
 
-end subroutine <prefix2>trsen_lwork
+! end subroutine <prefix2>trsen_lwork
 
-subroutine <prefix2c>trsen(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
+! subroutine <prefix2c>trsen(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
 
-    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,w,&m,&s,&sep,work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
+!     callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,q,&ldq,w,&m,&s,&sep,work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
 
-    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
-    logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
-    logical intent(in),dimension(n),depend(n) :: select
-    integer intent(hide),depend(t) :: n=shape(t,0)
-    <ftype2c> intent(in,out,copy,out=ts),dimension(n,n) :: t
-    integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
-    <ftype2c> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
-    integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
-    <ftype2c> intent(out),dimension(n),depend(n) :: w
-    integer intent(out) :: m
-    <ftype2> intent(out) :: s
-    <ftype2> intent(out) :: sep
-    <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
-    ! This lwork values is a bare minimum estiamate only for the case job == "N".
-    ! A separate lwork query is a prerequisite due to m dependence.
-    ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
-    ! possible to give a minimal value without a potential excessive memory waste.
-    integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
-    integer intent(out) :: info
+!     character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+!     logical optional, intent(in),check(wantq==0||wantq==1) :: wantq=1
+!     logical intent(in),dimension(n),depend(n) :: select
+!     integer intent(hide),depend(t) :: n=shape(t,0)
+!     <ftype2c> intent(in,out,copy,out=ts),dimension(n,n) :: t
+!     integer intent(hide),depend(t) :: ldt=MAX(1,shape(t,0))
+!     <ftype2c> intent(in,out,copy,out=qs),dimension(n,n),depend(n) :: q
+!     integer intent(hide),depend(q) :: ldq=MAX(1,shape(q,0))
+!     <ftype2c> intent(out),dimension(n),depend(n) :: w
+!     integer intent(out) :: m
+!     <ftype2> intent(out) :: s
+!     <ftype2> intent(out) :: sep
+!     <ftype2c> intent(hide),dimension(MAX(lwork,1)) :: work
+!     ! This lwork values is a bare minimum estiamate only for the case job == "N".
+!     ! A separate lwork query is a prerequisite due to m dependence.
+!     ! Depending on the m value lwork can go up to n**2 / 2 for n = 2m hence it is not
+!     ! possible to give a minimal value without a potential excessive memory waste.
+!     integer optional,intent(in),depend(n),check(lwork == -1 || lwork >= 1) :: lwork=MAX(1,n)
+!     integer intent(out) :: info
 
-end subroutine <prefix2c>trsen
+! end subroutine <prefix2c>trsen
 
-subroutine <prefix2c>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
+! subroutine <prefix2c>trsen_lwork(job,wantq,select,n,t,ldt,q,ldq,w,m,s,sep,work,lwork,info)
 
-    fortranname <prefix2c>trsen
-    callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&w,&m,&s,&sep,&work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
+!     fortranname <prefix2c>trsen
+!     callstatement (*f2py_func)(job,(wantq?"V":"N"),select,&n,t,&ldt,&q,&ldq,&w,&m,&s,&sep,&work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2c>*,F_INT*,F_INT*
 
-    character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
-    logical intent(in),dimension(n),depend(n) :: select
-    <ftype2c> intent(in),dimension(n,n) :: t
+!     character optional,intent(in),check(*job=='N'||*job=='E'||*job=='V'||*job=='B'):: job = 'B'
+!     logical intent(in),dimension(n),depend(n) :: select
+!     <ftype2c> intent(in),dimension(n,n) :: t
 
-    logical intent(hide) :: wantq = 0
-    integer intent(hide),depend(t) :: n = shape(t,0)
-    integer intent(hide),depend(n) :: ldt = MAX(1, n)
-    <ftype2c> intent(hide) :: q
-    integer intent(hide),depend(n) :: ldq = MAX(1, n)
-    <ftype2c> intent(hide) :: w
-    integer intent(hide) :: m
-    <ftype2> intent(hide) :: s
-    <ftype2> intent(hide) :: sep
-    integer intent(hide):: lwork=-1
+!     logical intent(hide) :: wantq = 0
+!     integer intent(hide),depend(t) :: n = shape(t,0)
+!     integer intent(hide),depend(n) :: ldt = MAX(1, n)
+!     <ftype2c> intent(hide) :: q
+!     integer intent(hide),depend(n) :: ldq = MAX(1, n)
+!     <ftype2c> intent(hide) :: w
+!     integer intent(hide) :: m
+!     <ftype2> intent(hide) :: s
+!     <ftype2> intent(hide) :: sep
+!     integer intent(hide):: lwork=-1
 
-    <ftype2c> intent(out) :: work
-    integer intent(out) :: info
+!     <ftype2c> intent(out) :: work
+!     integer intent(out) :: info
 
-end subroutine <prefix2c>trsen_lwork
+! end subroutine <prefix2c>trsen_lwork
 
 subroutine <prefix2>tgsen(ijob,wantq,wantz,select,n,a,lda,b,ldb,alphar,alphai,beta,q,ldq,z,ldz,m,pl,pr,dif,work,lwork,iwork,liwork,info)
 
@@ -386,53 +386,53 @@ subroutine <prefix2c>tgsen_lwork(ijob,wantq,wantz,select,n,a,lda,b,ldb,alpha,bet
 
 end subroutine <prefix2c>tgsen_lwork
 
-subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,scale,dif,work,lwork,iwork,info)
+! subroutine <prefix2>tgsyl(trans,ijob,m,n,a,lda,b,ldb,c,ldc,d,ldd,e,lde,f,ldf,scale,dif,work,lwork,iwork,info)
 
-    ! Solves the generalized Sylvester equation:
-    ! A * R - L * B = scale * C                
-    ! D * R - L * E = scale * F
-    ! where R and L are unknown m-by-n matrices, (A, D), (B, E) and
-    ! (C, F) are given matrix pairs of size m-by-m, n-by-n and m-by-n,
-    ! respectively, with real entries. (A, D) and (B, E) must be in
-    ! generalized (real) Schur canonical form, i.e. A, B are upper quasi
-    ! triangular and D, E are upper triangular.
-    ! The solution (R, L) overwrites (C, F). 0 <= SCALE <= 1 is an output
-    ! scaling factor chosen to avoid overflow.
-    
-    callstatement (*f2py_func)(trans,&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,work,&lwork,iwork,&info)
-    callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
+!     ! Solves the generalized Sylvester equation:
+!     ! A * R - L * B = scale * C
+!     ! D * R - L * E = scale * F
+!     ! where R and L are unknown m-by-n matrices, (A, D), (B, E) and
+!     ! (C, F) are given matrix pairs of size m-by-m, n-by-n and m-by-n,
+!     ! respectively, with real entries. (A, D) and (B, E) must be in
+!     ! generalized (real) Schur canonical form, i.e. A, B are upper quasi
+!     ! triangular and D, E are upper triangular.
+!     ! The solution (R, L) overwrites (C, F). 0 <= SCALE <= 1 is an output
+!     ! scaling factor chosen to avoid overflow.
 
-    character optional,intent(in),check((*trans=='N')||(*trans=='T')) :: trans = 'N'
-    integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 0
-    integer intent(hide),depend(a):: m = shape(a,1)
-    integer intent(hide),depend(b):: n = shape(b,1)
-     
-    <ftype2> intent(in),dimension(m,m):: a
-    integer intent(hide),depend(a):: lda = max(shape(a,0),1)
-     
-    <ftype2> intent(in),dimension(n,n):: b
-    integer intent(hide),depend(b):: ldb = max(shape(b,0),1)
+!     callstatement (*f2py_func)(trans,&ijob,&m,&n,a,&lda,b,&ldb,c,&ldc,d,&ldd,e,&lde,f,&ldf,&scale,&dif,work,&lwork,iwork,&info)
+!     callprotoargument char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,F_INT*
 
-    <ftype2> intent(in,copy,out,out=r),dimension(m,n):: c
-    integer intent(hide),depend(c) :: ldc = max(shape(c,0),1)
+!     character optional,intent(in),check((*trans=='N')||(*trans=='T')) :: trans = 'N'
+!     integer optional,intent(in),check(ijob>=0 && ijob<=4):: ijob = 0
+!     integer intent(hide),depend(a):: m = shape(a,1)
+!     integer intent(hide),depend(b):: n = shape(b,1)
 
-    <ftype2> intent(in),dimension(m,m):: d
-    integer intent(hide),depend(d):: ldd = max(shape(d,0),1)
-     
-    <ftype2> intent(in),dimension(n,n):: e
-    integer intent(hide),depend(e):: lde = max(shape(e,0),1)
+!     <ftype2> intent(in),dimension(m,m):: a
+!     integer intent(hide),depend(a):: lda = max(shape(a,0),1)
 
-    <ftype2> intent(in,copy,out,out=l),dimension(m,n):: f
-    integer intent(hide),depend(f):: ldf = max(shape(f,0),1)
-    
-    <ftype2> intent(out):: scale
-    <ftype2> intent(out):: dif
-    <ftype2> intent(hide),depend(lwork),dimension(max(1,lwork)):: work 
-    integer optional,intent(in),depend(ijob,trans,m,n),check ( ((ijob==1||ijob==2) && (*trans=='N')) ? lwork>=max(1,2*m*n):(lwork>=n||lwork==-1)):: lwork = max(1,2*m*n)
-    integer intent(hide),depend(m,n),dimension(m+n+6):: iwork
-    integer intent(out):: info
+!     <ftype2> intent(in),dimension(n,n):: b
+!     integer intent(hide),depend(b):: ldb = max(shape(b,0),1)
 
-end subroutine <prefix2>tgsyl
+!     <ftype2> intent(in,copy,out,out=r),dimension(m,n):: c
+!     integer intent(hide),depend(c) :: ldc = max(shape(c,0),1)
+
+!     <ftype2> intent(in),dimension(m,m):: d
+!     integer intent(hide),depend(d):: ldd = max(shape(d,0),1)
+
+!     <ftype2> intent(in),dimension(n,n):: e
+!     integer intent(hide),depend(e):: lde = max(shape(e,0),1)
+
+!     <ftype2> intent(in,copy,out,out=l),dimension(m,n):: f
+!     integer intent(hide),depend(f):: ldf = max(shape(f,0),1)
+
+!     <ftype2> intent(out):: scale
+!     <ftype2> intent(out):: dif
+!     <ftype2> intent(hide),depend(lwork),dimension(max(1,lwork)):: work
+!     integer optional,intent(in),depend(ijob,trans,m,n),check ( ((ijob==1||ijob==2) && (*trans=='N')) ? lwork>=max(1,2*m*n):(lwork>=n||lwork==-1)):: lwork = max(1,2*m*n)
+!     integer intent(hide),depend(m,n),dimension(m+n+6):: iwork
+!     integer intent(out):: info
+
+! end subroutine <prefix2>tgsyl
 
 subroutine <prefix2>pbtrf(lower,n,kd,ab,ldab,info)
     ! Compute Cholesky decomposition of banded symmetric positive definite
@@ -546,35 +546,35 @@ subroutine <prefix>trtrs(lower, trans, unitdiag, n, nrhs, a, lda, b, ldb, info)
 end subroutine <prefix>trtrs
 
 
-subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
-    ! x, info  = tbtrs(ab, b, uplo="U", trans="N", diag="N", overwrite_b=0)
-    ! ?TBTRS solves a triangular system of the form
-    !
-    !     A * X = B  or  A**T * X = B,
-    !
-    ! where:
-    !   * A is a triangular band matrix of order N,
-    !   * B is an N-by NRHS matrix.
-    ! A check is made to verify that A is nonsingular.
+! subroutine <prefix>tbtrs(uplo,trans,diag,n,kd,nrhs,ab,ldab,b,ldb,info)
+!     ! x, info  = tbtrs(ab, b, uplo="U", trans="N", diag="N", overwrite_b=0)
+!     ! ?TBTRS solves a triangular system of the form
+!     !
+!     !     A * X = B  or  A**T * X = B,
+!     !
+!     ! where:
+!     !   * A is a triangular band matrix of order N,
+!     !   * B is an N-by NRHS matrix.
+!     ! A check is made to verify that A is nonsingular.
 
-    callstatement (*f2py_func)(uplo,trans,diag,&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info)
-    callprotoargument char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
+!     callstatement (*f2py_func)(uplo,trans,diag,&n,&kd,&nrhs,ab,&ldab,b,&ldb,&info)
+!     callprotoargument char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
 
-    <ftype> intent(in), dimension(ldab, n) :: ab
-    <ftype> intent(in,out,copy,out=x), dimension(ldb, nrhs) :: b
-    integer intent(out) :: info
+!     <ftype> intent(in), dimension(ldab, n) :: ab
+!     <ftype> intent(in,out,copy,out=x), dimension(ldb, nrhs) :: b
+!     integer intent(out) :: info
 
-    character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
-    character optional intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = 'N'
-    character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
+!     character optional intent(in), check(*uplo=='U'||*uplo=='L') :: uplo = 'U'
+!     character optional intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = 'N'
+!     character optional intent(in), check(*diag=='N'||*diag=='U') :: diag = 'N'
 
-    integer intent(hide), depend(ab) :: ldab = MAX(1, shape(ab, 0))
-    integer intent(hide), depend(ab) :: n = MAX(1, shape(ab, 1))
-    integer intent(hide), depend(ldab) :: kd = ldab - 1
-    integer intent(hide), depend(b, n), check(ldb >= n) :: ldb = MAX(1, shape(b, 0))
-    integer intent(hide), depend(b) :: nrhs = MAX(1, shape(b, 1))
+!     integer intent(hide), depend(ab) :: ldab = MAX(1, shape(ab, 0))
+!     integer intent(hide), depend(ab) :: n = MAX(1, shape(ab, 1))
+!     integer intent(hide), depend(ldab) :: kd = ldab - 1
+!     integer intent(hide), depend(b, n), check(ldb >= n) :: ldb = MAX(1, shape(b, 0))
+!     integer intent(hide), depend(b) :: nrhs = MAX(1, shape(b, 1))
 
-end subroutine <prefix>tbtrs
+! end subroutine <prefix>tbtrs
 
 subroutine <prefix2>pbsv(lower,n,kd,nrhs,ab,ldab,b,ldb,info)
     !
@@ -965,57 +965,57 @@ subroutine <prefix2c>ungqr(m,n,k,a,tau,work,lwork,info)
 
 end subroutine <prefix2c>ungqr
 
-subroutine <prefix2>ormqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
-    ! cq,work,info = ormqr(side,trans,a,tau,c,lwork)
-    ! multiplies the real matrix C with the real orthogonal matrix Q,
-    ! which is defined as the first N columns of a product of K elementary
-    ! reflectors of order M (e.g. output of geqrf)
+! subroutine <prefix2>ormqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+!     ! cq,work,info = ormqr(side,trans,a,tau,c,lwork)
+!     ! multiplies the real matrix C with the real orthogonal matrix Q,
+!     ! which is defined as the first N columns of a product of K elementary
+!     ! reflectors of order M (e.g. output of geqrf)
 
-    threadsafe
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
+!     threadsafe
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
-    character intent(in),check(*side=='L'||*side=='R'):: side
-    character intent(in),check(*trans=='N'||*trans=='T'):: trans
-    integer intent(hide),depend(c):: m = shape(c,0)
-    integer intent(hide),depend(c):: n = shape(c,1)
-    integer intent(hide),depend(a):: k = shape(a,1)
-    <ftype2> dimension(lda,k),intent(in):: a
-    integer intent(hide),depend(a):: lda = shape(a, 0)
-    <ftype2> dimension(k),intent(in):: tau
-    <ftype2> dimension(ldc,n),intent(in,out,copy,out=cq):: c
-    integer intent(hide),depend(c):: ldc = shape(c, 0)
-    <ftype2> dimension(MAX(lwork,1)),intent(out):: work
-    integer intent(in):: lwork
-    integer intent(out) :: info
+!     character intent(in),check(*side=='L'||*side=='R'):: side
+!     character intent(in),check(*trans=='N'||*trans=='T'):: trans
+!     integer intent(hide),depend(c):: m = shape(c,0)
+!     integer intent(hide),depend(c):: n = shape(c,1)
+!     integer intent(hide),depend(a):: k = shape(a,1)
+!     <ftype2> dimension(lda,k),intent(in):: a
+!     integer intent(hide),depend(a):: lda = shape(a, 0)
+!     <ftype2> dimension(k),intent(in):: tau
+!     <ftype2> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+!     integer intent(hide),depend(c):: ldc = shape(c, 0)
+!     <ftype2> dimension(MAX(lwork,1)),intent(out):: work
+!     integer intent(in):: lwork
+!     integer intent(out) :: info
 
-end subroutine <prefix2>ormqr
+! end subroutine <prefix2>ormqr
 
-subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
-    ! cq,work,info = unmqr(side,trans,a,tau,c,lwork)
-    ! multiplies the complex matrix C with the complex unitary matrix Q,
-    ! which is defined as the first N columns of a product of K elementary
-    ! reflectors of order M (e.g. output of geqrf)
+! subroutine <prefix2c>unmqr(side,trans,m,n,k,a,lda,tau,c,ldc,work,lwork,info)
+!     ! cq,work,info = unmqr(side,trans,a,tau,c,lwork)
+!     ! multiplies the complex matrix C with the complex unitary matrix Q,
+!     ! which is defined as the first N columns of a product of K elementary
+!     ! reflectors of order M (e.g. output of geqrf)
 
-    threadsafe
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
+!     threadsafe
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,a,&lda,tau,c,&ldc,work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,F_INT*
 
-    character intent(in),check(*side=='L'||*side=='R'):: side
-    character intent(in),check(*trans=='N'||*trans=='C'):: trans
-    integer intent(hide),depend(c):: m = shape(c,0)
-    integer intent(hide),depend(c):: n = shape(c,1)
-    integer intent(hide),depend(a):: k = shape(a,1)
-    <ftype2c> dimension(lda,k),intent(in):: a
-    integer intent(hide),depend(a):: lda = shape(a, 0)
-    <ftype2c> dimension(k),intent(in):: tau
-    <ftype2c> dimension(ldc,n),intent(in,out,copy,out=cq):: c
-    integer intent(hide),depend(c):: ldc = shape(c, 0)
-    <ftype2c> dimension(MAX(lwork,1)),intent(out):: work
-    integer intent(in):: lwork
-    integer intent(out) :: info
+!     character intent(in),check(*side=='L'||*side=='R'):: side
+!     character intent(in),check(*trans=='N'||*trans=='C'):: trans
+!     integer intent(hide),depend(c):: m = shape(c,0)
+!     integer intent(hide),depend(c):: n = shape(c,1)
+!     integer intent(hide),depend(a):: k = shape(a,1)
+!     <ftype2c> dimension(lda,k),intent(in):: a
+!     integer intent(hide),depend(a):: lda = shape(a, 0)
+!     <ftype2c> dimension(k),intent(in):: tau
+!     <ftype2c> dimension(ldc,n),intent(in,out,copy,out=cq):: c
+!     integer intent(hide),depend(c):: ldc = shape(c, 0)
+!     <ftype2c> dimension(MAX(lwork,1)),intent(out):: work
+!     integer intent(in):: lwork
+!     integer intent(out) :: info
 
-end subroutine <prefix2c>unmqr
+! end subroutine <prefix2c>unmqr
 
 subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
     ! a,t,info = geqrt(nb,a,[overwrite_a=0])
@@ -1039,33 +1039,33 @@ subroutine <prefix>geqrt(m,n,nb,a,lda,t,ldt,work,info)
 
 end subroutine <prefix>geqrt
 
-subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
-    ! c,info = gemqrt(side,trans,v,t,c,[overwrite_c=0])
-    !
-    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
-    ! elementary reflectors stored in matrix V and the upper triangular block
-    ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
-    ! matrices), or its adjoint (for complex matrices) from the left or right.
+! subroutine <prefix>gemqrt(side,trans,m,n,k,nb,v,ldv,t,ldt,c,ldc,work,info)
+!     ! c,info = gemqrt(side,trans,v,t,c,[overwrite_c=0])
+!     !
+!     ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+!     ! elementary reflectors stored in matrix V and the upper triangular block
+!     ! reflectors in matrix T. C may be multiplied by Q, its transpose (for real
+!     ! matrices), or its adjoint (for complex matrices) from the left or right.
 
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,&nb,v,&ldv,t,&ldt,c,&ldc,work,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
-    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    integer intent(hide),depend(c):: m = shape(c,0)
-    integer intent(hide),depend(c):: n = shape(c,1)
-    integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
-    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
-    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
-    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
-    <ftype> dimension(nb,k),intent(in):: t
-    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
-    <ftype> dimension(m,n),intent(in,out,copy):: c
-    integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
-    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
-    integer intent(out):: info
+!     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+!     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+!     integer intent(hide),depend(c):: m = shape(c,0)
+!     integer intent(hide),depend(c):: n = shape(c,1)
+!     integer intent(hide),depend(m,n,v),check((*side=='L'?m:n)>=k&&k>=0):: k = shape(v,1)
+!     integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+!     <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+!     integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+!     <ftype> dimension(nb,k),intent(in):: t
+!     integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+!     <ftype> dimension(m,n),intent(in,out,copy):: c
+!     integer intent(hide),depend(c):: ldc = MAX(1,shape(c,0))
+!     <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+!     integer intent(out):: info
 
-end subroutine <prefix>gemqrt
+! end subroutine <prefix>gemqrt
 
 subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
     ! a,b,t,info = tpqrt(l,nb,a,b,[overwrite_a=0,overwrite_b=0])
@@ -1094,112 +1094,112 @@ subroutine <prefix>tpqrt(m,n,l,nb,a,lda,b,ldb,t,ldt,work,info)
 
 end subroutine <prefix>tpqrt
 
-subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
-    ! a,b,info = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
-    !
-    ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
-    ! elementary reflectors stored in the pentagonal matrix V and the upper
-    ! triangular block reflectors in matrix T. L is the order of the trapezoidal
-    ! part of matrix V. Matrix C consists of blocks A and B, and may be
-    ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
-    ! complex matrices) from the left or right.
+! subroutine <prefix>tpmqrt(side,trans,m,n,k,l,nb,v,ldv,t,ldt,a,lda,b,ldb,work,info)
+!     ! a,b,info = tpmqrt(side,trans,l,v,t,a,b,[overwrite_a=0,overwrite_b=0])
+!     !
+!     ! Multiplies a general matrix C by the orthogonal matrix Q defined by the
+!     ! elementary reflectors stored in the pentagonal matrix V and the upper
+!     ! triangular block reflectors in matrix T. L is the order of the trapezoidal
+!     ! part of matrix V. Matrix C consists of blocks A and B, and may be
+!     ! multiplied by Q, its transpose (for real matrices), or its adjoint (for
+!     ! complex matrices) from the left or right.
 
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&nb,v,&ldv,t,&ldt,a,&lda,b,&ldb,work,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
-    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    integer intent(hide),depend(b):: m = shape(b,0)
-    integer intent(hide),depend(b):: n = shape(b,1)
-    integer intent(hide),depend(t):: k = shape(t,1)
-    integer intent(in),depend(k),check(k>=l&&l>=0):: l
-    integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
-    <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
-    integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
-    <ftype> dimension(nb,k),intent(in):: t
-    integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
-    <ftype> dimension((side[0]=='L'?k:m),(side[0]=='L'?n:k)),intent(in,out,copy):: a
-    integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
-    <ftype> dimension(m,n),intent(in,out,copy):: b
-    integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
-    <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
-    integer intent(out):: info
+!     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+!     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+!     integer intent(hide),depend(b):: m = shape(b,0)
+!     integer intent(hide),depend(b):: n = shape(b,1)
+!     integer intent(hide),depend(t):: k = shape(t,1)
+!     integer intent(in),depend(k),check(k>=l&&l>=0):: l
+!     integer intent(hide),depend(k,t),check(k>=nb&&nb>=1):: nb = shape(t,0)
+!     <ftype> dimension((side[0]=='L'?m:n),k),intent(in):: v
+!     integer intent(hide),depend(v):: ldv = MAX(1,shape(v,0))
+!     <ftype> dimension(nb,k),intent(in):: t
+!     integer intent(hide),depend(t):: ldt = MAX(1,shape(t,0))
+!     <ftype> dimension((side[0]=='L'?k:m),(side[0]=='L'?n:k)),intent(in,out,copy):: a
+!     integer intent(hide),depend(a):: lda = MAX(1,shape(a,0))
+!     <ftype> dimension(m,n),intent(in,out,copy):: b
+!     integer intent(hide),depend(b):: ldb = MAX(1,shape(b,0))
+!     <ftype> dimension((side[0]=='L'?n:m)*nb),intent(hide,cache):: work
+!     integer intent(out):: info
 
-end subroutine <prefix>tpmqrt
+! end subroutine <prefix>tpmqrt
 
-subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,lwork,info)
-    !
-    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
-    !
-    !                 SIDE = 'L'     SIDE = 'R'
-    ! TRANS = 'N':      Q * C          C * Q
-    ! TRANS = 'C':      Q**H * C       C * Q**H
-    !
-    ! where Q is a complex unitary matrix defined as the product of k
-    ! elementary reflectors
-    !
-    !       Q = H(1) H(2) . . . H(k)
-    !
-    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
-    ! if SIDE = 'R'.
-    !
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
+! subroutine <prefix><or,or,un,un>mrz(side,trans,m,n,k,l,a,lda,nt,tau,c,ldc,work,lwork,info)
+!     !
+!     ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+!     !
+!     !                 SIDE = 'L'     SIDE = 'R'
+!     ! TRANS = 'N':      Q * C          C * Q
+!     ! TRANS = 'C':      Q**H * C       C * Q**H
+!     !
+!     ! where Q is a complex unitary matrix defined as the product of k
+!     ! elementary reflectors
+!     !
+!     !       Q = H(1) H(2) . . . H(k)
+!     !
+!     ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+!     ! if SIDE = 'R'.
+!     !
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,a,&lda,tau,c,&ldc,work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
+!
+!     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+!     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+!     integer intent(hide),depend(c),check(m>=0):: m=shape(c,0)
+!     integer intent(hide),depend(c),check(n>=0):: n=shape(c,1)
+!     integer intent(hide),depend(a):: k=shape(a,0)
+!     integer intent(hide),depend(a):: l=shape(a,1)-shape(a,0)
+!     <ftype> dimension(k,nt),intent(in),check(shape(a,1)>=shape(a,0)):: a
+!     integer intent(hide),depend(a,side,n,m),check((*side=='L'?m:n)==nt):: nt=shape(a,1)
+!     integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
+!     <ftype> dimension(k),depend(k),check(rank(tau)==1),intent(in):: tau
+!     <ftype> dimension(m,n),intent(in,out,copy,out=cq):: c
+!     integer intent(hide),depend(c):: ldc = MAX(shape(c,0),1)
+!     <ftype> dimension(lwork),depend(lwork),intent(hide,cache):: work
+!     integer optional,intent(in),depend(side,m,n),check(lwork>=(*side=='L'?n:m)||lwork==-1):: lwork=MAX((side[0]=='L'?n:m),1)
+!     integer intent(out):: info
+!
+! end subroutine <prefix><or,or,un,un>mrz
 
-    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    integer intent(hide),depend(c),check(m>=0):: m=shape(c,0)
-    integer intent(hide),depend(c),check(n>=0):: n=shape(c,1)
-    integer intent(hide),depend(a):: k=shape(a,0)
-    integer intent(hide),depend(a):: l=shape(a,1)-shape(a,0)
-    <ftype> dimension(k,nt),intent(in),check(shape(a,1)>=shape(a,0)):: a
-    integer intent(hide),depend(a,side,n,m),check((*side=='L'?m:n)==nt):: nt=shape(a,1)
-    integer intent(hide),depend(a):: lda=MAX(shape(a,0),1)
-    <ftype> dimension(k),depend(k),check(rank(tau)==1),intent(in):: tau
-    <ftype> dimension(m,n),intent(in,out,copy,out=cq):: c
-    integer intent(hide),depend(c):: ldc = MAX(shape(c,0),1)
-    <ftype> dimension(lwork),depend(lwork),intent(hide,cache):: work
-    integer optional,intent(in),depend(side,m,n),check(lwork>=(*side=='L'?n:m)||lwork==-1):: lwork=MAX((side[0]=='L'?n:m),1)
-    integer intent(out):: info
-
-end subroutine <prefix><or,or,un,un>mrz
-
-subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,work,lwork,info)
-    !
-    ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
-    !
-    !                 SIDE = 'L'     SIDE = 'R'
-    ! TRANS = 'N':      Q * C          C * Q
-    ! TRANS = 'C':      Q**H * C       C * Q**H
-    !
-    ! where Q is a complex unitary matrix defined as the product of k
-    ! elementary reflectors
-    !
-    !       Q = H(1) H(2) . . . H(k)
-    !
-    ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
-    ! if SIDE = 'R'.
-    !
-    fortranname <prefix><or,or,un,un>mrz
-    callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
-
-    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    integer intent(in):: m
-    integer intent(in):: n
-    integer intent(hide),depend(side,m,n):: k=(*side=='L'?m:n)
-    integer intent(hide):: l
-    <ftype> intent(hide):: a
-    integer intent(hide),depend(k):: lda=k
-    <ftype> intent(hide):: c
-    integer intent(hide),depend(m):: ldc=m
-    <ftype> intent(hide):: tau
-    <ftype> intent(out):: work
-    integer intent(hide):: lwork=-1
-    integer intent(out):: info
-
-end subroutine <prefix><or,or,un,un>mrz_lwork
+! subroutine <prefix><or,or,un,un>mrz_lwork(side,trans,m,n,k,l,a,lda,tau,c,ldc,work,lwork,info)
+!     !
+!     ! ?OR/UNMRZ overwrites the general complex M-by-N matrix C with
+!     !
+!     !                 SIDE = 'L'     SIDE = 'R'
+!     ! TRANS = 'N':      Q * C          C * Q
+!     ! TRANS = 'C':      Q**H * C       C * Q**H
+!     !
+!     ! where Q is a complex unitary matrix defined as the product of k
+!     ! elementary reflectors
+!     !
+!     !       Q = H(1) H(2) . . . H(k)
+!     !
+!     ! as returned by ?TZRZF. Q is of order M if SIDE = 'L' and of order N
+!     ! if SIDE = 'R'.
+!     !
+!     fortranname <prefix><or,or,un,un>mrz
+!     callstatement (*f2py_func)(side,trans,&m,&n,&k,&l,&a,&lda,&tau,&c,&ldc,&work,&lwork,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*,F_INT*
+!
+!     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+!     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+!     integer intent(in):: m
+!     integer intent(in):: n
+!     integer intent(hide),depend(side,m,n):: k=(*side=='L'?m:n)
+!     integer intent(hide):: l
+!     <ftype> intent(hide):: a
+!     integer intent(hide),depend(k):: lda=k
+!     <ftype> intent(hide):: c
+!     integer intent(hide),depend(m):: ldc=m
+!     <ftype> intent(hide):: tau
+!     <ftype> intent(out):: work
+!     integer intent(hide):: lwork=-1
+!     integer intent(out):: info
+!
+! end subroutine <prefix><or,or,un,un>mrz_lwork
 
 subroutine <prefix2>orgrq(m,n,k,a,tau,work,lwork,info)
     ! q,work,info = orgrq(a,lwork=3*n,overwrite_a=0)
@@ -1267,56 +1267,56 @@ subroutine <prefix>trtri(n,c,info,lower,unitdiag)
 
 end subroutine <prefix>trtri
 
-subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale, info)
-    ! x,scale,info = trsyl(trana='N', tranb='N', isgn, a, b, c)
-    !
-    ! Solves the real Sylvester matrix equation:
-    !
-    !    op(A)*X + X*op(B) = scale*C or op(A)*X - X*op(B) = scale*C
-    !
-    ! where A and B are both quasi-triangular matrices.  A and B must be in
-    ! Schur canonical form.  op(A) and op(B) are specified via trana and tranb
-    ! respectively, and may take the forms 'N' (no transpose), 'T' (transpose),
-    ! or 'C' (conjugate transpose, where applicable) to indicate the operation
-    ! to be performed.  The value of isgn (1 or -1) specifies the sign of the
-    ! X*op(B) term in the equation.
-    !
-    ! Upon exit, x contains the solution, scale represents scale factor, set
-    ! <= 1 to avoid overflow in the solution, and info contains the exit
-    ! status:
-    !
-    !      0: success
-    !      < 0: if info = -i, the i-th argument had an illegal value
-    !      1: A and B have common or very close eigenvalues; perturbed values
-    !         were used to solve the equation
-
-    callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
-    callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,F_INT*
-
-    character optional,intent(in),check(*trana=='N'||*trana=='T'||*trana=='C'):: trana='N'
-    character optional,intent(in),check(*tranb=='N'||*tranb=='T'||*tranb=='C'):: tranb='N'
-
-    integer optional,intent(in),check(isgn==1||isgn==-1)::isgn=1
-
-    integer depend(a),intent(hide):: m = shape(a,0)
-    integer depend(b),intent(hide):: n = shape(b,0)
-
-    <ftype> dimension(m,m),intent(in) :: a
-    check(shape(a,0)==shape(a,1)) :: a
-    integer depend(a),intent(hide):: lda = shape(a,0)
-
-    <ftype> dimension(n,n),intent(in) :: b
-    check(shape(b,0)==shape(b,1)) :: b
-    integer depend(b),intent(hide):: ldb = shape(b,0)
-
-    <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
-    integer depend(c),intent(hide):: ldc = shape(c,0)
-
-    <ftypereal> intent(out) :: scale
-
-    integer intent(out) :: info
-
-end subroutine <prefix>trsyl
+! subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale, info)
+!     ! x,scale,info = trsyl(trana='N', tranb='N', isgn, a, b, c)
+!     !
+!     ! Solves the real Sylvester matrix equation:
+!     !
+!     !    op(A)*X + X*op(B) = scale*C or op(A)*X - X*op(B) = scale*C
+!     !
+!     ! where A and B are both quasi-triangular matrices.  A and B must be in
+!     ! Schur canonical form.  op(A) and op(B) are specified via trana and tranb
+!     ! respectively, and may take the forms 'N' (no transpose), 'T' (transpose),
+!     ! or 'C' (conjugate transpose, where applicable) to indicate the operation
+!     ! to be performed.  The value of isgn (1 or -1) specifies the sign of the
+!     ! X*op(B) term in the equation.
+!     !
+!     ! Upon exit, x contains the solution, scale represents scale factor, set
+!     ! <= 1 to avoid overflow in the solution, and info contains the exit
+!     ! status:
+!     !
+!     !      0: success
+!     !      < 0: if info = -i, the i-th argument had an illegal value
+!     !      1: A and B have common or very close eigenvalues; perturbed values
+!     !         were used to solve the equation
+!
+!     callstatement (*f2py_func)(trana,tranb,&isgn,&m,&n,a,&lda,b,&ldb,c,&ldc,&scale,&info)
+!     callprotoargument char*,char*,F_INT*,F_INT*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,F_INT*
+!
+!     character optional,intent(in),check(*trana=='N'||*trana=='T'||*trana=='C'):: trana='N'
+!     character optional,intent(in),check(*tranb=='N'||*tranb=='T'||*tranb=='C'):: tranb='N'
+!
+!     integer optional,intent(in),check(isgn==1||isgn==-1)::isgn=1
+!
+!     integer depend(a),intent(hide):: m = shape(a,0)
+!     integer depend(b),intent(hide):: n = shape(b,0)
+!
+!     <ftype> dimension(m,m),intent(in) :: a
+!     check(shape(a,0)==shape(a,1)) :: a
+!     integer depend(a),intent(hide):: lda = shape(a,0)
+!
+!     <ftype> dimension(n,n),intent(in) :: b
+!     check(shape(b,0)==shape(b,1)) :: b
+!     integer depend(b),intent(hide):: ldb = shape(b,0)
+!
+!     <ftype> dimension(m,n),intent(in,out,copy,out=x) :: c
+!     integer depend(c),intent(hide):: ldc = shape(c,0)
+!
+!     <ftypereal> intent(out) :: scale
+!
+!     integer intent(out) :: info
+!
+! end subroutine <prefix>trsyl
 
 subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork,lrwork,iwork,liwork,info)
     ! in :Band:zubevd.f
@@ -1749,7 +1749,7 @@ subroutine <prefix2>stebz(d,e,range,vl,vu,il,iu,tol,order,n,work,iwork,m,nsplit,
     ! computes all or selected eigenvalues of a real, symmetric tridiagonal
     ! matrix.
 
-    callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
+    callstatement (*f2py_func)((range>0?(range==1?"V":"I"):"A"),&order,&n,&vl,&vu,&il,&iu,&tol,d,e,&m,&nsplit,w,iblock,isplit,work,iwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,F_INT*
 
     <ftype2> dimension(n),intent(in) :: d
@@ -1897,168 +1897,168 @@ subroutine <prefix><s,s,h,h>frk(transr,uplo,trans,n,k,nt,ka,alpha,a,lda,beta,c)
     ! matrix and A is an n--by--k matrix in the first case and a k--by--n
     ! matrix in the second case.
 
-    callstatement (*f2py_func)(transr,uplo,trans,&n,&k,&alpha,a,&lda,&beta,c)
+    callstatement (*f2py_func)(&transr,&uplo,&trans,&n,&k,&alpha,a,&lda,&beta,c)
     callprotoargument char*,char*,char*,F_INT*,F_INT*,<ctypereal>*,<ctype>*,F_INT*,<ctypereal>*,<ctype>*
 
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+    character optional,intent(in),check(transr=='N'||transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(uplo=='U'||uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(trans=='N'||trans==<'T','T','C','C'>):: trans = 'N'
     integer intent(in), check(n>=0):: n
     integer intent(in), check(k>=0):: k
     <ftypereal> intent(in):: alpha
     <ftypereal> intent(in):: beta
     <ftype> dimension(lda,ka),intent(in):: a
-    integer intent(hide),depend(a,trans,n,k),check(ka==(*trans=='N'?k:n)):: ka=shape(a,1)
-    integer intent(hide),depend(trans,a,n,k):: lda = MAX((*trans=='N'?n:k),1)
+    integer intent(hide),depend(a,trans,n,k),check(ka==(trans=='N'?k:n)):: ka=shape(a,1)
+    integer intent(hide),depend(trans,a,n,k):: lda = MAX((trans=='N'?n:k),1)
     <ftype> dimension(nt),intent(in,out,copy,out=cout):: c
     integer intent(hide),depend(c),check(nt==(n*(n+1)/2)):: nt=shape(c,0)
 
 end subroutine <prefix><s,s,h,h>frk
 
-subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
-    !
-    ! copies a triangular matrix from the standard packed format (TP) to the
-    ! rectangular full packed format (TF).
-    !
+! subroutine <prefix>tpttf(transr,uplo,n,nt,ap,arf,info)
+!     !
+!     ! copies a triangular matrix from the standard packed format (TP) to the
+!     ! rectangular full packed format (TF).
+!     !
+!
+!     callstatement (*f2py_func)(transr,uplo,&n,ap,arf,&info)
+!     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
+!
+!     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(in), check(n>=0):: n
+!     <ftype> dimension(nt),intent(in):: ap
+!     integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
+!     <ftype> dimension(nt),intent(out),depend(nt):: arf
+!     integer intent(out):: info
+!
+! end subroutine <prefix>tpttf
+!
+! subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
+!     !
+!     ! TPTTR copies a triangular matrix from the standard packed format (TP)
+!     ! to the standard full format (TR).
+!     !
+!
+!     callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
+!     callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+!
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(in), check(n>=0):: n
+!     <ftype> dimension(nt),intent(in):: ap
+!     integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
+!     <ftype> dimension(n,n),intent(out),depend(n):: a
+!     integer intent(hide),depend(n):: lda=MAX(n,1)
+!     integer intent(out):: info
+!
+! end subroutine <prefix>tpttr
 
-    callstatement (*f2py_func)(transr,uplo,&n,ap,arf,&info)
-    callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
+! subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
+!     !
+!     ! copies a triangular matrix from the standard packed format (TP) to the
+!     ! rectangular full packed format (TF).
+!     !
+!
+!     callstatement (*f2py_func)(transr,uplo,&n,arf,ap,&info)
+!     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
+!
+!     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(in), check(n>=0):: n
+!     <ftype> dimension(nt),intent(in):: arf
+!     integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
+!     <ftype> dimension(nt),intent(out),depend(nt):: ap
+!     integer intent(out):: info
+!
+! end subroutine <prefix>tfttp
 
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(in), check(n>=0):: n
-    <ftype> dimension(nt),intent(in):: ap
-    integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
-    <ftype> dimension(nt),intent(out),depend(nt):: arf
-    integer intent(out):: info
+! subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
+!     !
+!     ! TFTTR copies a triangular matrix from the rectangular full packed
+!     ! format (TF) to the standard full format (TR).
+!     !
+!     callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
+!     callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
+!
+!     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(in), check(n>=0):: n
+!     <ftype> dimension(nt),intent(in):: arf
+!     integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
+!     <ftype> dimension(lda,n),depend(lda,n),intent(out):: a
+!     integer intent(hide),depend(n):: lda = MAX(n,1)
+!     integer intent(out):: info
+!
+! end subroutine <prefix>tfttr
 
-end subroutine <prefix>tpttf
+! subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
+!     !
+!     ! TRTTF copies a triangular matrix A from standard full format (TR)
+!     ! to rectangular full packed format (TF).
+!     !
+!     callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
+!     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+!
+!     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(hide),depend(a):: n = shape(a,1)
+!     integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+!     <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+!     <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: arf
+!     integer intent(out):: info
+!
+! end subroutine <prefix>trttf
 
-subroutine <prefix>tpttr(uplo,n,nt,ap,a,lda,info)
-    !
-    ! TPTTR copies a triangular matrix from the standard packed format (TP)
-    ! to the standard full format (TR).
-    !
+! subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
+!     !
+!     ! TRTTP copies a triangular matrix from the standard full format (TR) to
+!     ! the standard packed format (TP).
+!     !
+!     callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
+!     callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
+!
+!     character optional, intent(F_INT),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     integer intent(hide),depend(a):: n = shape(a,1)
+!     integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
+!     <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
+!     <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: ap
+!     integer intent(out):: info
+!
+! end subroutine <prefix>trttp
 
-    callstatement (*f2py_func)(uplo,&n,ap,a,&lda,&info)
-    callprotoargument char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(in), check(n>=0):: n
-    <ftype> dimension(nt),intent(in):: ap
-    integer intent(hide),depend(ap,n),check(nt==(n*(n+1)/2)):: nt=shape(ap,0)
-    <ftype> dimension(n,n),intent(out),depend(n):: a
-    integer intent(hide),depend(n):: lda=MAX(n,1)
-    integer intent(out):: info
-
-end subroutine <prefix>tpttr
-
-subroutine <prefix>tfttp(transr,uplo,n,nt,ap,arf,info)
-    !
-    ! copies a triangular matrix from the standard packed format (TP) to the
-    ! rectangular full packed format (TF).
-    !
-
-    callstatement (*f2py_func)(transr,uplo,&n,arf,ap,&info)
-    callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*
-
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(in), check(n>=0):: n
-    <ftype> dimension(nt),intent(in):: arf
-    integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
-    <ftype> dimension(nt),intent(out),depend(nt):: ap
-    integer intent(out):: info
-
-end subroutine <prefix>tfttp
-
-subroutine <prefix>tfttr(transr,uplo,n,nt,arf,a,lda,info)
-    !
-    ! TFTTR copies a triangular matrix from the rectangular full packed
-    ! format (TF) to the standard full format (TR).
-    !
-    callstatement (*f2py_func)(transr,uplo,&n,arf,a,&lda,&info)
-    callprotoargument char*,char*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(in), check(n>=0):: n
-    <ftype> dimension(nt),intent(in):: arf
-    integer intent(hide),depend(arf,n),check(nt==(n*(n+1)/2)):: nt=shape(arf,0)
-    <ftype> dimension(lda,n),depend(lda,n),intent(out):: a
-    integer intent(hide),depend(n):: lda = MAX(n,1)
-    integer intent(out):: info
-
-end subroutine <prefix>tfttr
-
-subroutine <prefix>trttf(transr,uplo,n,a,lda,arf,info)
-    !
-    ! TRTTF copies a triangular matrix A from standard full format (TR)
-    ! to rectangular full packed format (TF).
-    !
-    callstatement (*f2py_func)(transr,uplo,&n,a,&lda,arf,&info)
-    callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
-
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(hide),depend(a):: n = shape(a,1)
-    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
-    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
-    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: arf
-    integer intent(out):: info
-
-end subroutine <prefix>trttf
-
-subroutine <prefix>trttp(uplo,n,a,lda,ap,info)
-    !
-    ! TRTTP copies a triangular matrix from the standard full format (TR) to
-    ! the standard packed format (TP).
-    !
-    callstatement (*f2py_func)(uplo,&n,a,&lda,ap,&info)
-    callprotoargument char*,F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
-
-    character optional, intent(F_INT),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    integer intent(hide),depend(a):: n = shape(a,1)
-    integer intent(hide),depend(a):: lda = MAX(shape(a,0),1)
-    <ftype> dimension(lda,n),intent(in),check(shape(a,0)==shape(a,1)):: a
-    <ftype> dimension(n*(n+1)/2),intent(out),depend(n):: ap
-    integer intent(out):: info
-
-end subroutine <prefix>trttp
-
-subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
-    !
-    ! Level 3 BLAS like routine for A in RFP Format.
-    !
-    ! TFSM  solves the matrix equation
-    !
-    !        op( A )*X = alpha*B  or  X*op( A ) = alpha*B
-    !
-    ! where alpha is a scalar, X and B are m by n matrices, A is a unit, or
-    ! non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
-    !
-    !    op( A ) = A   or   op( A ) = A**H.
-    !
-    ! A is in Rectangular Full Packed (RFP) Format. The matrix X is overwritten on B.
-    !
-
-    callstatement (*f2py_func)(transr,side,uplo,trans,diag,&m,&n,&alpha,a,b,&ldb)
-    callprotoargument char*,char*,char*,char*,char*,F_INT*,F_INT*,<ctype>*,<ctype>*,<ctype>*,F_INT*
-
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
-    character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
-    character optional,intent(in),check(*diag=='U'||*diag=='N'):: diag = 'N'
-    integer intent(hide),depend(b):: m=shape(b,0)
-    integer intent(hide),depend(b):: n=shape(b,1)
-    <ftype> intent(in):: alpha
-    <ftype> dimension(nt),intent(in):: a
-    integer intent(hide),depend(a,m,n,side),check(*side=='L'?nt==(m*(m+1)/2):nt==(n*(n+1)/2)):: nt=shape(a,0)
-    <ftype> dimension(m,n),intent(in,out,copy,out=x):: b
-    integer intent(hide),depend(b):: ldb=MAX(shape(b,0),1)
-
-end subroutine <prefix>tfsm
+! subroutine <prefix>tfsm(transr,side,uplo,trans,diag,m,n,nt,alpha,a,b,ldb)
+!     !
+!     ! Level 3 BLAS like routine for A in RFP Format.
+!     !
+!     ! TFSM  solves the matrix equation
+!     !
+!     !        op( A )*X = alpha*B  or  X*op( A ) = alpha*B
+!     !
+!     ! where alpha is a scalar, X and B are m by n matrices, A is a unit, or
+!     ! non-unit,  upper or lower triangular matrix  and  op( A )  is one  of
+!     !
+!     !    op( A ) = A   or   op( A ) = A**H.
+!     !
+!     ! A is in Rectangular Full Packed (RFP) Format. The matrix X is overwritten on B.
+!     !
+!
+!     callstatement (*f2py_func)(transr,side,uplo,trans,diag,&m,&n,&alpha,a,b,&ldb)
+!     callprotoargument char*,char*,char*,char*,char*,F_INT*,F_INT*,<ctype>*,<ctype>*,<ctype>*,F_INT*
+!
+!     character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
+!     character optional,intent(in),check(*side=='L'||*side=='R'):: side = 'L'
+!     character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+!     character optional,intent(in),check(*trans=='N'||*trans==<'T','T','C','C'>):: trans = 'N'
+!     character optional,intent(in),check(*diag=='U'||*diag=='N'):: diag = 'N'
+!     integer intent(hide),depend(b):: m=shape(b,0)
+!     integer intent(hide),depend(b):: n=shape(b,1)
+!     <ftype> intent(in):: alpha
+!     <ftype> dimension(nt),intent(in):: a
+!     integer intent(hide),depend(a,m,n,side),check(*side=='L'?nt==(m*(m+1)/2):nt==(n*(n+1)/2)):: nt=shape(a,0)
+!     <ftype> dimension(m,n),intent(in,out,copy,out=x):: b
+!     integer intent(hide),depend(b):: ldb=MAX(shape(b,0),1)
+!
+! end subroutine <prefix>tfsm
 
 subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
     !
@@ -2070,11 +2070,11 @@ subroutine <prefix>pftrf(transr,uplo,n,nt,a,info)
     ! where U is an upper triangular matrix and L is lower triangular.
     ! This is the block version of the algorithm, calling Level 3 BLAS.
     !
-    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callstatement (*f2py_func)(&transr,&uplo,&n,a,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*
 
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(transr=='N'||transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(uplo=='U'||uplo=='L'):: uplo = 'U'
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in,out,copy,out=achol):: a
     integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
@@ -2089,11 +2089,11 @@ subroutine <prefix>pftri(transr,uplo,n,nt,a,info)
     ! computed by ?PFTRF.
     !
 
-    callstatement (*f2py_func)(transr,uplo,&n,a,&info)
+    callstatement (*f2py_func)(&transr,&uplo,&n,a,&info)
     callprotoargument char*,char*,F_INT*,<ctype>*,F_INT*
 
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(transr=='N'||transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(uplo=='U'||uplo=='L'):: uplo = 'U'
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in,out,copy,out=ainv):: a
     integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
@@ -2107,11 +2107,11 @@ subroutine <prefix>pftrs(transr,uplo,n,nhrs,nt,a,b,ldb,info)
     ! positive definite matrix A using the Cholesky factorization
     ! A = U**H*U or A = L*L**H computed by ?PFTRF.
     !
-    callstatement (*f2py_func)(transr,uplo,&n,&nhrs,a,b,&ldb,&info)
+    callstatement (*f2py_func)(&transr,&uplo,&n,&nhrs,a,b,&ldb,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
 
-    character optional,intent(in),check(*transr=='N'||*transr==<'T','T','C','C'>):: transr = 'N'
-    character optional,intent(in),check(*uplo=='U'||*uplo=='L'):: uplo = 'U'
+    character optional,intent(in),check(transr=='N'||transr==<'T','T','C','C'>):: transr = 'N'
+    character optional,intent(in),check(uplo=='U'||uplo=='L'):: uplo = 'U'
     integer intent(in), check(n>=0):: n
     <ftype> dimension(nt),intent(in):: a
     integer intent(hide),depend(a,n),check(nt==(n*(n+1)/2)):: nt=shape(a,0)
@@ -2272,10 +2272,10 @@ function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a real matrix A.
     <ftype2> <prefix2>lange, n2
-    callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
+    callstatement (*f2py_func)(&<prefix2>lange,&norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
 
-    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
+    character intent(in),check(norm=='M'||norm=='m'||norm=='1'||norm=='O'||norm=='o'||norm=='I'||norm=='i'||norm=='F'||norm=='f'||norm=='E'||norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)
     integer intent(hide),depend(m) :: lda = max(1,m)
     integer intent(hide),depend(a) :: n = shape(a,1)
@@ -2287,10 +2287,10 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a complex matrix A.
     <ftype2> <prefix2c>lange, n2
-    callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
+    callstatement (*f2py_func)(&<prefix2c>lange,&norm,&m,&n,a,&lda,work)
     callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*
 
-    character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
+    character intent(in),check(norm=='M'||norm=='m'||norm=='1'||norm=='O'||norm=='o'||norm=='I'||norm=='i'||norm=='F'||norm=='f'||norm=='E'||norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)
     integer intent(hide),depend(m) :: lda = max(1,m)
     integer intent(hide),depend(a) :: n = shape(a,1)
@@ -2308,17 +2308,17 @@ subroutine <prefix>larfg(n, alpha, x, incx, tau, lx)
 end subroutine <prefix>larfg
 
 subroutine <prefix>larf(side,m,n,v,incv,tau,c,ldc,work,lwork)
-    character intent(in), check(side[0]=='L'||side[0]=='R') :: side = 'L'
+    character intent(in), check(side=='L'||side=='R') :: side = 'L'
     integer intent(in,hide), depend(c) :: m = shape(c,0)
     integer intent(in,hide), depend(c) :: n = shape(c,1)
-    <ftype> intent(in),dimension((side[0]=='L'?(1 + (m-1)*abs(incv)):(1 + (n-1)*abs(incv)))),depend(n,m,side,incv) :: v
+    <ftype> intent(in),dimension((side=='L'?(1 + (m-1)*abs(incv)):(1 + (n-1)*abs(incv)))),depend(n,m,side,incv) :: v
     integer intent(in), check(incv>0||incv<0) :: incv = 1
     <ftype> intent(in) :: tau
     <ftype> dimension(m,n), intent(in,copy,out) :: c
     integer intent(in,hide) :: ldc = max(1,shape(c,0))
     ! FIXME: work should not have been an input argument but kept here for backwards compatibility!
     <ftype> intent(in),dimension(lwork),depend(side,m,n) :: work
-    integer intent(hide),depend(work),check(lwork >= (side[0]=='L'?n:m)) :: lwork = len(work)
+    integer intent(hide),depend(work),check(lwork >= (side=='L'?n:m)) :: lwork = len(work)
 end subroutine <prefix>larf
 
 subroutine <prefix>lartg(f,g,cs,sn,r)
