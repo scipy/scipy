@@ -1,6 +1,5 @@
 import pytest
 
-import math
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.spatial.transform import Rotation
@@ -41,7 +40,7 @@ def _generate_prism(n, axis):
 
 
 def _generate_icosahedron():
-    phi = (1 + _math.sqrt(5)) / 2
+    phi = (1 + np.sqrt(5)) / 2
     x = np.array([[0, -1, -phi],
                   [0, -1, +phi],
                   [0, +1, -phi],
