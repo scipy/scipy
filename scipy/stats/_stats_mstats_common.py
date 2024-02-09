@@ -1,9 +1,9 @@
 import warnings
 import numpy as np
-import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
+from . import _mstats_basic
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -194,7 +194,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+        t, prob = _mstats_basic._ttest_finish(df, t, alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 

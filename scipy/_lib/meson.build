@@ -109,6 +109,7 @@ python_sources = [
   '_ccallback.py',
   '_disjoint_set.py',
   '_docscrape.py',
+  '_elementwise_iterative_method.py',
   '_finite_differences.py',
   '_gcutils.py',
   '_pep440.py',

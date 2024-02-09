@@ -970,6 +970,37 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.loc, -13.85)
         assert not np.allclose(res3.null_distribution, res1.null_distribution)
 
+    def test_custom_statistic(self):
+        # Test support for custom statistic function.
+
+        # References:
+        # [1] Pyke, R. (1965).  "Spacings".  Journal of the Royal Statistical
+        #     Society: Series B (Methodological), 27(3): 395-436.
+        # [2] Burrows, P. M. (1979).  "Selected Percentage Points of
+        #     Greenwood's Statistics".  Journal of the Royal Statistical
+        #     Society. Series A (General), 142(2): 256-258.
+
+        # Use the Greenwood statistic for illustration; see [1, p.402].
+        def greenwood(dist, data, *, axis):
+            x = np.sort(data, axis=axis)
+            y = dist.cdf(x)
+            d = np.diff(y, axis=axis, prepend=0, append=1)
+            return np.sum(d ** 2, axis=axis)
+
+        # Run the Monte Carlo test with sample size = 5 on a fully specified
+        # null distribution, and compare the simulated quantiles to the exact
+        # ones given in [2, Table 1, column (n = 5)].
+        rng = np.random.default_rng(9121950977643805391)
+        data = stats.expon.rvs(size=5, random_state=rng)
+        result = goodness_of_fit(stats.expon, data,
+                                 known_params={'loc': 0, 'scale': 1},
+                                 statistic=greenwood, random_state=rng)
+        p = [.01, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, .95, .99]
+        exact_quantiles = [
+            .183863, .199403, .210088, .226040, .239947, .253677, .268422,
+            .285293, .306002, .334447, .382972, .432049, .547468]
+        simulated_quantiles = np.quantile(result.null_distribution, p)
+        assert_allclose(simulated_quantiles, exact_quantiles, atol=0.005)
 
 class TestFitResult:
     def test_plot_iv(self):

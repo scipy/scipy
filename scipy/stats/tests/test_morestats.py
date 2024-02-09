@@ -1318,7 +1318,7 @@ class TestMood:
         assert_allclose(p2, p1/2)
         assert_allclose(p3, 1 - p1/2)
 
-        with pytest.raises(ValueError, match="alternative must be..."):
+        with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
@@ -1812,6 +1812,12 @@ class TestBoxcox_llf:
         llf = stats.boxcox_llf(-8, data)
         # The expected value was computed with mpmath.
         assert_allclose(llf, -17.93934208579061)
+
+    def test_instability_gh20021(self):
+        data = [2003, 1950, 1997, 2000, 2009]
+        llf = stats.boxcox_llf(1e-8, data)
+        # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        assert_allclose(llf, -15.32401272869016598)
 
 
 # This is the data from github user Qukaiyi, given as an example

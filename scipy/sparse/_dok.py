@@ -273,14 +273,14 @@ class _dok_base(_spbase, IndexMixin):
         new._dict.update(((k, v * other) for k, v in self.items()))
         return new
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         # matrix * vector
         result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
         for (i, j), v in self.items():
             result[i] += v * other[j]
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         # matrix * multivector
         result_shape = (self.shape[0], other.shape[1])
         result_dtype = upcast(self.dtype, other.dtype)

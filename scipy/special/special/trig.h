@@ -1,10 +1,12 @@
+/* Translated from Cython into C++ by SciPy developers in 2023.
+ *
+ * Original author: Josh Wilson, 2016.
+ */
+
 /* Implement sin(pi*z) and cos(pi*z) for complex z. Since the periods
  * of these functions are integral (and thus better representable in
  * floating point), it's possible to compute them with greater accuracy
  * than sin(z), cos(z).
- *
- * Originally written in Cython by Josh Wilson (github @person142) 2016.
- * Translated to C++ by SciPy developers in 2023.
  */
 
 #pragma once
