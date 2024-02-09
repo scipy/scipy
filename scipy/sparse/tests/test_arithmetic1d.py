@@ -45,11 +45,10 @@ class TestArithmetic1D:
             a = spcreator(shape, dtype=mytype)
             b = a + a
             c = 2 * a
-            d = a @ a.tocsr()
-            e = a @ a.tocoo()
-            for m in [a, b, c, d, e]:
-                a_matmul_a = a.toarray() @ a.toarray()
-                assert not (m @ m != a_matmul_a).nnz
+            assert isinstance(a @ a.tocsr(), np.ndarray)
+            assert isinstance(a @ a.tocoo(), np.ndarray)
+            for m in [a, b, c]:
+                assert m @ m == a.toarray() @ a.toarray()
                 assert np.array_equal(m.dtype, mytype)
                 assert np.array_equal(toarray(m).dtype, mytype)
 
@@ -302,7 +301,8 @@ class TestArithmetic1D:
             asp.__add__(dsp)
 
         # matrix product.
-        assert np.equal(asp.dot(asp).toarray()[0], np.dot(a, a))
+        assert isinstance(asp.dot(asp), np.ndarray)
+        assert np.equal(asp.dot(asp), np.dot(a, a))
 
         # bad matrix products
         with pytest.raises(ValueError, match='dimension mismatch'):

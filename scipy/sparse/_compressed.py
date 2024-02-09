@@ -528,7 +528,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if o_ndim == 1:
             # convert 1d array to a 2d column when on the right of @
             other = other.reshape((1, other.shape[0])).T  # Note: converts to CSC
-        K2, N = other._shape
+        K2, N = other._shape if other.ndim == 2 else (other.shape[0], 1)
 
         # find new_shape
         if self.ndim == 2:
@@ -576,7 +576,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            indptr, indices, data)
 
         if new_shape == ():
-            return np.array(data[0])
+            return data[0]
         return self.__class__((data, indices, indptr), shape=new_shape)
 
     def diagonal(self, k=0):
