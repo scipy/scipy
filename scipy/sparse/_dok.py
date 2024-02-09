@@ -19,23 +19,22 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _spbase.__init__(self)
-        self._dict = {}
 
-        self.dtype = getdtype(dtype, default=float)
         is_array = isinstance(self, sparray)
         if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
             self._shape = check_shape(arg1, allow_1d=is_array)
+            self._dict = {}
+            self.dtype = getdtype(dtype, default=float)
         elif issparse(arg1):  # Sparse ctor
             if arg1.format == self.format:
-                if copy:
-                    arg1 = arg1.copy()
+                arg1 = arg1.copy() if copy else arg1
             else:
                 arg1 = arg1.todok()
 
             if dtype is not None:
                 arg1 = arg1.astype(dtype, copy=False)
 
-            self._update(arg1._dict)
+            self._dict = arg1._dict
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
             self.dtype = arg1.dtype
         else:  # Dense ctor
@@ -50,11 +49,11 @@ class _dok_base(_spbase, IndexMixin, dict):
             if arg1.ndim == 1:
                 if dtype is not None:
                     arg1 = arg1.astype(dtype)
-                self._update((i, v) for i, v in enumerate(arg1.ravel()) if v != 0)
+                self._dict = {i: v for i, v in enumerate(arg1.ravel()) if v != 0}
                 self.dtype = arg1.dtype
             else:
                 d = self._coo_container(arg1, dtype=dtype).todok()
-                self._update(d._dict)
+                self._dict = d._dict
                 self.dtype = d.dtype
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
 
@@ -63,14 +62,6 @@ class _dok_base(_spbase, IndexMixin, dict):
         raise NotImplementedError(
             "Direct modification to dok_array element is not allowed."
         )
-
-    def _update(self, data):
-        """An update method for dict data defined for direct access to
-        `dok_array` data. Main purpose is to be used for efficient conversion
-        from other _spbase classes. Has no checking if `data` is valid.
-        Be careful to use int for 1d-array and tuple for 2d.
-        """
-        return self._dict.update(data)
 
     def _getnnz(self, axis=None):
         if axis is not None:
@@ -151,6 +142,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     def _get_int(self, idx):
         return self._dict.get(idx, self.dtype.type(0))
 
+# Only supporting integer indexing right now. Soon we will use 1d slice and array.
 #    def _get_slice(self, idx):
 #        i_range = range(*idx.indices(self.shape[0]))
 #        return self._get_array(list(i_range))
@@ -319,7 +311,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             res_dtype = upcast_scalar(self.dtype, other)
             new = self._dok_container(self.shape, dtype=res_dtype)
             # Add this scalar to each element.
-            for key in itertools.product(*map(range, self.shape)):
+            for key in itertools.product(*[range(d) for d in self.shape]):
                 aij = self._dict.get(key, 0) + other
                 if aij:
                     new[key] = aij
@@ -328,24 +320,17 @@ class _dok_base(_spbase, IndexMixin, dict):
                 raise ValueError("Matrix dimensions are not equal.")
             res_dtype = upcast(self.dtype, other.dtype)
             new = self._dok_container(self.shape, dtype=res_dtype)
-            new._dict.update(self._dict)
+            new._dict = self._dict.copy()
             if other.format == "dok":
                 with np.errstate(over='ignore'):
                     new._dict.update((k, new[k] + v) for k, v in other.items())
-            else:  # elif self.ndim == 1:
-                # this works for 2d too, but maybe subtle differences?
+            else:
                 o_coo = other.tocoo()
-                o_coo_data = zip(zip(*o_coo.coords), o_coo.data)
+                o_coo_items = zip(zip(*o_coo.coords), o_coo.data)
                 if self.ndim == 1:
-                    o_coo_data = ((k[0], v) for k, v in o_coo_data)
+                    o_coo_items = ((k[0], v) for k, v in o_coo_items)
                 with np.errstate(over='ignore'):
-                    new._dict.update((k, new[k] + v) for k, v in o_coo_data)
-#            else:
-#                # DAS would prefer to use the tocoo method above for 1d and 2d.
-#                # it avoids changing to csc format and I'm not sure why
-#                # that format is chosen. Can we switch to always using to_coo?
-#                csc = self.tocsc()
-#                new = csc + other
+                    new._dict.update((k, new[k] + v) for k, v in o_coo_items)
         elif isdense(other):
             new = self.todense() + other
         else:
@@ -380,8 +365,7 @@ class _dok_base(_spbase, IndexMixin, dict):
                 if other.format == "dok":
                     shared_keys = self.keys() & other.keys()
                 else:
-                    o_coo = other.tocoo()
-                    shared_keys = self.keys() & o_coo.coords[0]
+                    shared_keys = self.keys() & other.tocoo().coords[0]
                 arr = np.array([self._dict[k] * other._dict[k] for k in shared_keys])
                 return arr.sum(dtype=res_dtype)
             elif isdense(other):
@@ -398,29 +382,15 @@ class _dok_base(_spbase, IndexMixin, dict):
         result_dtype = upcast(self.dtype, other.dtype)
         # vector @ multivector
         if self.ndim == 1:
-            if other.ndim == 1:
-                result_shape = ()
-                result = np.zeros(result_shape, dtype=result_dtype)
-                for j, v in self._dict.items():
-                    result += v * other[j]
-            else:
-                result_shape = (other.shape[1],)
-                result = np.zeros(result_shape, dtype=result_dtype)
-                for j, v in self._dict.items():
-                    result[:] += v * other[j, :]
-            return result
+            # works for other 1d or 2d
+            return sum(v * other[j] for j, v in self._dict.items())
 
         # matrix @ multivector
-        if other.ndim == 1:
-            result_shape = (self.shape[0],)
-            result = np.zeros(result_shape, dtype=result_dtype)
-            for (i, j), v in self.items():
-                result[i] += v * other[j]
-        else:
-            result_shape = (self.shape[0], other.shape[1])
-            result = np.zeros(result_shape, dtype=result_dtype)
-            for (i, j), v in self.items():
-                result[i, :] += v * other[j, :]
+        M = self.shape[0]
+        new_shape = (M,) if other.ndim == 1 else (M, other.shape[1])
+        result = np.zeros(new_shape, dtype=result_dtype)
+        for (i, j), v in self.items():
+            result[i] += v * other[j]
         return result
 
     def __imul__(self, other):
@@ -480,9 +450,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             return new
         M, N = self.shape
         new = self._dok_container((N, M), dtype=self.dtype)
-        new._dict.update(
-            ((right, left), np.conj(val)) for (left, right), val in self.items()
-        )
+        new._dict = {(right, left): np.conj(val) for (left, right), val in self.items()}
         return new
 
     def copy(self):
@@ -534,10 +502,6 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
-# why doesnt dok have one of these?
-#    def eliminate_zeros(self):
-#        self._dict = {k: v for k, v in self._dict.items() if v != 0}
-
     def resize(self, *shape):
         is_array = isinstance(self, sparray)
         shape = check_shape(shape, allow_1d=is_array)
@@ -570,7 +534,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         if self.dtype != dtype:
             result = self._dok_container(self.shape, dtype=dtype)
             data = np.array(list(self._dict.values()), dtype=dtype)
-            result._update(zip(self._dict, data))
+            result._dict = dict(zip(self._dict, data))
             return result
         elif copy:
             return self.copy()

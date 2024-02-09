@@ -407,7 +407,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         else:
             coords = zip(*self.coords)
 
-        dok._update(zip(coords, self.data))
+        dok._dict = dict(zip(coords, self.data))
         return dok
 
     todok.__doc__ = _spbase.todok.__doc__
