@@ -220,9 +220,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
@@ -341,9 +341,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate cdf using Nolan's methods as detailed in [NO]."""
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
     xi = _nolan.xi
@@ -772,7 +772,18 @@ class levy_stable_gen(rv_continuous):
         For cdf calculations FFT calculation is considered experimental. Use
         Zolatarev's method instead (default).
 
-    %(after_notes)s
+    The probability density above is defined in the "standardized" form. To
+    shift and/or scale the distribution use the ``loc`` and ``scale``
+    parameters.
+    Generally ``%(name)s.pdf(x, %(shapes)s, loc, scale)`` is identically
+    equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+    ``y = (x - loc) / scale``, except in the ``S1`` parameterization if
+    ``alpha == 1``.  In that case ``%(name)s.pdf(x, %(shapes)s, loc, scale)``
+    is identically equivalent to ``%(name)s.pdf(y, %(shapes)s) / scale`` with
+    ``y = (x - loc - 2 * beta * scale * np.log(scale) / np.pi) / scale``.
+    See [NO2]_ Definition 1.8 for more information.
+    Note that shifting the location of a distribution
+    does not make it a "noncentral" distribution.
 
     References
     ----------
@@ -783,6 +794,8 @@ class levy_stable_gen(rv_continuous):
         to compute densities of stable distribution.
     .. [NO] Nolan, J., 1997. Numerical Calculation of Stable Densities and
         distributions Functions.
+    .. [NO2] Nolan, J., 2018. Stable Distributions: Models for Heavy Tailed
+        Data.
     .. [HO] Hopcraft, K. I., Jakeman, E., Tanner, R. M. J., 1999. Lévy random
         walks with fluctuating step number and multiscale behavior.
 
@@ -790,7 +803,7 @@ class levy_stable_gen(rv_continuous):
 
     """
     # Configurable options as class variables
-    # (accesible from self by attribute lookup).
+    # (accessible from self by attribute lookup).
     parameterization = "S1"
     pdf_default_method = "piecewise"
     cdf_default_method = "piecewise"
@@ -824,8 +837,8 @@ class levy_stable_gen(rv_continuous):
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
-        discrete = kwds.pop("discrete", None)  # noqa
-        rndm = kwds.pop("random_state", None)  # noqa
+        kwds.pop("discrete", None)
+        kwds.pop("random_state", None)
         (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
 
         # shift location for this parameterisation (S1)
@@ -940,7 +953,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Density calculations experimental for FFT method."
                     + " Use combination of piecewise and dni methods instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1080,7 +1093,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Cumulative density calculations experimental for FFT"
                     + " method. Use piecewise method instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1113,7 +1126,7 @@ class levy_stable_gen(rv_continuous):
                     density_x, np.real(density), k=fft_interpolation_degree
                 )
                 data_out[data_mask] = np.array(
-                    [f.integral(self.a, x_1) for x_1 in _x]
+                    [f.integral(self.a, float(x_1.squeeze())) for x_1 in _x]
                 ).reshape(data_out[data_mask].shape)
 
         return data_out.T[0]
@@ -1159,7 +1172,7 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
     h : Optional[float]
         Step size for Newton-Cotes integration. Default: 0.01
     q : Optional[int]
-        Use 2**q steps when peforming Newton-Cotes integration.
+        Use 2**q steps when performing Newton-Cotes integration.
         The infinite integral in the inverse Fourier transform will then
         be restricted to the interval [-2**q * h / 2, 2**q * h / 2]. Setting
         the number of steps equal to a power of 2 allows the fft to be

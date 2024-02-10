@@ -142,9 +142,6 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     %(input)s
     order : int, optional
         The order of the spline, default is 3.
-    axis : int, optional
-        The axis along which the spline filter is applied. Default is the last
-        axis.
     output : ndarray or dtype, optional
         The array in which to place the output, or the dtype of the returned
         array. Default is ``numpy.float64``.
@@ -622,7 +619,8 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         warnings.warn(
             "The behavior of affine_transform with a 1-D "
             "array supplied for the matrix parameter has changed in "
-            "SciPy 0.18.0."
+            "SciPy 0.18.0.",
+            stacklevel=2
         )
         _nd_image.zoom_shift(filtered, matrix, offset/matrix, output, order,
                              mode, cval, npad, False)
@@ -662,6 +660,10 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     shift : ndarray
         The shifted input.
 
+    See Also
+    --------
+    affine_transform : Affine transformations
+
     Notes
     -----
     For complex-valued `input`, this function shifts the real and imaginary
@@ -670,6 +672,37 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
     .. versionadded:: 1.6.0
         Complex-valued support added.
 
+    Examples
+    --------
+    Import the necessary modules and an exemplary image.
+
+    >>> from scipy.ndimage import shift
+    >>> import matplotlib.pyplot as plt
+    >>> from scipy import datasets
+    >>> image = datasets.ascent()
+
+    Shift the image vertically by 20 pixels.
+
+    >>> image_shifted_vertically = shift(image, (20, 0))
+
+    Shift the image vertically by -200 pixels and horizontally by 100 pixels.
+
+    >>> image_shifted_both_directions = shift(image, (-200, 100))
+
+    Plot the original and the shifted images.
+
+    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> plt.gray()  # show the filtered result in grayscale
+    >>> top, middle, bottom = axes
+    >>> for ax in axes:
+    ...     ax.set_axis_off()  # remove coordinate system
+    >>> top.imshow(image)
+    >>> top.set_title("Original image")
+    >>> middle.imshow(image_shifted_vertically)
+    >>> middle.set_title("Vertically shifted image")
+    >>> bottom.imshow(image_shifted_both_directions)
+    >>> bottom.set_title("Image shifted in both directions")
+    >>> fig.tight_layout()
     """
     if order < 0 or order > 5:
         raise RuntimeError('spline order not supported')
@@ -816,7 +849,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
         if suggest_mode is not None:
             warnings.warn(
                 ("It is recommended to use mode = {} instead of {} when "
-                 "grid_mode is True.").format(suggest_mode, mode)
+                 "grid_mode is True.").format(suggest_mode, mode),
+                stacklevel=2
             )
     mode = _ni_support._extend_mode_to_code(mode)
 

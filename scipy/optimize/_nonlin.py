@@ -35,7 +35,7 @@ def _as_inexact(x):
     """Return `x` as an array, of either floats or complex floats"""
     x = asarray(x)
     if not np.issubdtype(x.dtype, np.inexact):
-        return asarray(x, dtype=np.float_)
+        return asarray(x, dtype=np.float64)
     return x
 
 
@@ -325,7 +325,7 @@ class TerminationCondition:
                  iter=None, norm=maxnorm):
 
         if f_tol is None:
-            f_tol = np.finfo(np.float_).eps ** (1./3)
+            f_tol = np.finfo(np.float64).eps ** (1./3)
         if f_rtol is None:
             f_rtol = np.inf
         if x_tol is None:
@@ -1477,10 +1477,10 @@ class KrylovJacobian(Jacobian):
         return r
 
     def solve(self, rhs, tol=0):
-        if 'tol' in self.method_kw:
+        if 'rtol' in self.method_kw:
             sol, info = self.method(self.op, rhs, **self.method_kw)
         else:
-            sol, info = self.method(self.op, rhs, tol=tol, **self.method_kw)
+            sol, info = self.method(self.op, rhs, rtol=tol, **self.method_kw)
         return sol
 
     def update(self, x, f):

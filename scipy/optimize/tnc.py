@@ -26,7 +26,6 @@ __all__ = [  # noqa: F822
     'USERABORT',
     'XCONVERGED',
     'array',
-    'asfarray',
     'fmin_tnc',
     'inf',
     'moduleTNC',
@@ -41,5 +40,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="tnc",
-                                   private_module="_tnc", all=__all__,
+                                   private_modules=["_tnc"], all=__all__,
                                    attribute=name)

@@ -187,7 +187,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -209,6 +209,10 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Notes
     -----
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the magnitude (squared) spectrum.
+
     .. versionadded:: 0.12.0
 
     Examples
@@ -339,7 +343,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -373,6 +377,10 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     If `noverlap` is 0, this method is equivalent to Bartlett's method
     [2]_.
+
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the (squared) magnitude spectrum.
 
     .. versionadded:: 0.12.0
 
@@ -545,6 +553,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
+
     .. versionadded:: 0.16.0
 
     References
@@ -605,8 +616,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
-                raise ValueError('average must be "median" or "mean", got %s'
-                                 % (average,))
+                raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
@@ -616,7 +626,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    """Compute a spectrogram with consecutive Fourier transforms.
+    """Compute a spectrogram with consecutive Fourier transforms (legacy function).
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
@@ -759,8 +769,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
-        raise ValueError('unknown value for mode {}, must be one of {}'
-                         .format(mode, modelist))
+        raise ValueError(f'unknown value for mode {mode}, must be one of {modelist}')
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
@@ -1049,7 +1058,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
          axis=-1, scaling='spectrum'):
-    r"""Compute the Short Time Fourier Transform (STFT).
+    r"""Compute the Short Time Fourier Transform (legacy function).
 
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
@@ -1240,7 +1249,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
           input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
           scaling='spectrum'):
-    r"""Perform the inverse Short Time Fourier transform (iSTFT).
+    r"""Perform the inverse Short Time Fourier transform (legacy function).
 
     .. legacy:: function
 
@@ -1520,7 +1529,8 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.sum(norm > 1e-10) != len(norm):
         warnings.warn(
             "NOLA condition failed, STFT may not be invertible."
-            + (" Possibly due to missing boundary" if not boundary else "")
+            + (" Possibly due to missing boundary" if not boundary else ""),
+            stacklevel=2
         )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
@@ -1896,15 +1906,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if return_onesided:
         if np.iscomplexobj(x):
             sides = 'twosided'
-            warnings.warn('Input data is complex, switching to '
-                          'return_onesided=False')
+            warnings.warn('Input data is complex, switching to return_onesided=False',
+                          stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
-                                  'return_onesided=False')
+                                  'return_onesided=False',
+                                  stacklevel=3)
     else:
         sides = 'twosided'
 
@@ -2043,9 +2054,9 @@ def _triage_segments(window, nperseg, input_length):
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
-            warnings.warn('nperseg = {0:d} is greater than input length '
-                          ' = {1:d}, using nperseg = {1:d}'
-                          .format(nperseg, input_length))
+            warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
+                          f' = {input_length:d}, using nperseg = {input_length:d}',
+                          stacklevel=3)
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

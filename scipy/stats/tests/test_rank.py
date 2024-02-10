@@ -1,8 +1,9 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
+import pytest
 
 from scipy.stats import rankdata, tiecorrect
-import pytest
+from scipy._lib._util import np_long
 
 
 class TestTieCorrect:
@@ -80,6 +81,15 @@ class TestRankData:
         assert_array_equal(r, np.array([], dtype=np.float64))
         r = rankdata([])
         assert_array_equal(r, np.array([], dtype=np.float64))
+
+    @pytest.mark.parametrize("shape", [(0, 1, 2)])
+    @pytest.mark.parametrize("axis", [None, *range(3)])
+    def test_empty_multidim(self, shape, axis):
+        a = np.empty(shape, dtype=int)
+        r = rankdata(a, axis=axis)
+        expected_shape = (0,) if axis is None else shape
+        assert_equal(r.shape, expected_shape)
+        assert_equal(r.dtype, np.float64)
 
     def test_one(self):
         """Check stats.rankdata with an array of length 1."""
@@ -187,7 +197,7 @@ class TestRankData:
         assert_array_equal(r1, expected1)
 
     methods = ["average", "min", "max", "dense", "ordinal"]
-    dtypes = [np.float64] + [np.int_]*4
+    dtypes = [np.float64] + [np_long]*4
 
     @pytest.mark.parametrize("axis", [0, 1])
     @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
@@ -202,7 +212,7 @@ class TestRankData:
     @pytest.mark.parametrize('method', methods)
     def test_nan_policy_omit_3d(self, axis, method):
         shape = (20, 21, 22)
-        rng = np.random.default_rng(abs(hash('falafel')))
+        rng = np.random.RandomState(23983242)
 
         a = rng.random(size=shape)
         i = rng.random(size=shape) < 0.4

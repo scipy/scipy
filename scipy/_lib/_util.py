@@ -15,13 +15,43 @@ from typing import (
 )
 
 import numpy as np
+from scipy._lib._array_api import array_namespace
+
+
+AxisError: type[Exception]
+ComplexWarning: type[Warning]
+VisibleDeprecationWarning: type[Warning]
 
 if np.lib.NumpyVersion(np.__version__) >= '1.25.0':
-    from numpy.exceptions import AxisError
+    from numpy.exceptions import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning,
+        DTypePromotionError
+    )
 else:
-    from numpy import AxisError
+    from numpy import (
+        AxisError, ComplexWarning, VisibleDeprecationWarning  # noqa: F401
+    )
+    DTypePromotionError = TypeError  # type: ignore
 
+np_long: type
+np_ulong: type
 
+if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
+    try:
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                r".*In the future `np\.long` will be defined as.*",
+                FutureWarning,
+            )
+            np_long = np.long  # type: ignore[attr-defined]
+            np_ulong = np.ulong  # type: ignore[attr-defined]
+    except AttributeError:
+            np_long = np.int_
+            np_ulong = np.uint
+else:
+    np_long = np.int_
+    np_ulong = np.uint
 
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
@@ -37,14 +67,43 @@ if TYPE_CHECKING:
 try:
     from numpy.random import Generator as Generator
 except ImportError:
-    class Generator():  # type: ignore[no-redef]
+    class Generator:  # type: ignore[no-redef]
         pass
 
 
 def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
-    """
-    np.where(cond, x, fillvalue) always evaluates x even where cond is False.
-    This one only evaluates f(arr1[cond], arr2[cond], ...).
+    """Return elements chosen from two possibilities depending on a condition
+
+    Equivalent to ``f(*arrays) if cond else fillvalue`` performed elementwise.
+
+    Parameters
+    ----------
+    cond : array
+        The condition (expressed as a boolean array).
+    arrays : tuple of array
+        Arguments to `f` (and `f2`). Must be broadcastable with `cond`.
+    f : callable
+        Where `cond` is True, output will be ``f(arr1[cond], arr2[cond], ...)``
+    fillvalue : object
+        If provided, value with which to fill output array where `cond` is
+        not True.
+    f2 : callable
+        If provided, output will be ``f2(arr1[cond], arr2[cond], ...)`` where
+        `cond` is not True.
+
+    Returns
+    -------
+    out : array
+        An array with elements from the output of `f` where `cond` is True
+        and `fillvalue` (or elements from the output of `f2`) elsewhere. The
+        returned array has data type determined by Type Promotion Rules
+        with the output of `f` and `fillvalue` (or the output of `f2`).
+
+    Notes
+    -----
+    ``xp.where(cond, x, fillvalue)`` requires explicitly forming `x` even where
+    `cond` is False. This function evaluates ``f(arr1[cond], arr2[cond], ...)``
+    onle where `cond` ``is True.
 
     Examples
     --------
@@ -55,29 +114,30 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
     >>> _lazywhere(a > 2, (a, b), f, np.nan)
     array([ nan,  nan,  21.,  32.])
 
-    Notice, it assumes that all `arrays` are of the same shape, or can be
-    broadcasted together.
-
     """
-    cond = np.asarray(cond)
-    if fillvalue is None:
-        if f2 is None:
-            raise ValueError("One of (fillvalue, f2) must be given.")
-        else:
-            fillvalue = np.nan
-    else:
-        if f2 is not None:
-            raise ValueError("Only one of (fillvalue, f2) can be given.")
+    xp = array_namespace(cond, *arrays)
 
-    args = np.broadcast_arrays(cond, *arrays)
-    cond, arrays = args[0], args[1:]
-    temp = tuple(np.extract(cond, arr) for arr in arrays)
-    tcode = np.mintypecode([a.dtype.char for a in arrays])
-    out = np.full(np.shape(arrays[0]), fill_value=fillvalue, dtype=tcode)
-    np.place(out, cond, f(*temp))
-    if f2 is not None:
-        temp = tuple(np.extract(~cond, arr) for arr in arrays)
-        np.place(out, ~cond, f2(*temp))
+    if (f2 is fillvalue is None) or (f2 is not None and fillvalue is not None):
+        raise ValueError("Exactly one of `fillvalue` or `f2` must be given.")
+
+    args = xp.broadcast_arrays(cond, *arrays)
+    bool_dtype = xp.asarray([True]).dtype  # numpy 1.xx doesn't have `bool`
+    cond, arrays = xp.astype(args[0], bool_dtype, copy=False), args[1:]
+
+    temp1 = xp.asarray(f(*(arr[cond] for arr in arrays)))
+
+    if f2 is None:
+        fillvalue = xp.asarray(fillvalue)
+        dtype = xp.result_type(temp1.dtype, fillvalue.dtype)
+        out = xp.full(cond.shape, fill_value=fillvalue, dtype=dtype)
+    else:
+        ncond = ~cond
+        temp2 = xp.asarray(f2(*(arr[ncond] for arr in arrays)))
+        dtype = xp.result_type(temp1, temp2)
+        out = xp.empty(cond.shape, dtype=dtype)
+        out[ncond] = temp2
+
+    out[cond] = temp1
 
     return out
 
@@ -250,7 +310,7 @@ def _asarray_validated(a, check_finite=True,
             raise ValueError('object arrays are not supported')
     if as_inexact:
         if not np.issubdtype(a.dtype, np.inexact):
-            a = toarray(a, dtype=np.float_)
+            a = toarray(a, dtype=np.float64)
     return a
 
 
@@ -258,7 +318,7 @@ def _validate_int(k, name, minimum=None):
     """
     Validate a scalar integer.
 
-    This functon can be used to validate an argument to a function
+    This function can be used to validate an argument to a function
     that expects the value to be an integer.  It uses `operator.index`
     to validate the value (so, for example, k=2.0 results in a
     TypeError).
@@ -474,7 +534,7 @@ def rng_integers(gen, low, high=None, size=None, dtype='int64',
         Desired dtype of the result. All dtypes are determined by their name,
         i.e., 'int64', 'int', etc, so byteorder is not available and a specific
         precision may have different C types depending on the platform.
-        The default value is np.int_.
+        The default value is 'int64'.
     endpoint : bool, optional
         If True, sample from the interval [low, high] instead of the default
         [low, high) Defaults to False.
@@ -604,13 +664,13 @@ def _nan_allsame(a, axis, keepdims=False):
 
     Examples
     --------
-    >>> import numpy as np
-    >>> a = np.array([[ 3.,  3., nan,  3.],
-                      [ 1., nan,  2.,  4.],
-                      [nan, nan,  9., -1.],
-                      [nan,  5.,  4.,  3.],
-                      [ 2.,  2.,  2.,  2.],
-                      [nan, nan, nan, nan]])
+    >>> from numpy import nan, array
+    >>> a = array([[ 3.,  3., nan,  3.],
+    ...            [ 1., nan,  2.,  4.],
+    ...            [nan, nan,  9., -1.],
+    ...            [nan,  5.,  4.,  3.],
+    ...            [ 2.,  2.,  2.,  2.],
+    ...            [nan, nan, nan, nan]])
     >>> _nan_allsame(a, axis=1, keepdims=True)
     array([[ True],
            [False],
@@ -734,7 +794,11 @@ def _rng_spawn(rng, n_children):
 def _get_nan(*data):
     # Get NaN of appropriate dtype for data
     data = [np.asarray(item) for item in data]
-    dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    try:
+        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+    except DTypePromotionError:
+        # fallback to float64
+        return np.array(np.nan, dtype=np.float64)[()]
     return np.array(np.nan, dtype=dtype)[()]
 
 
@@ -747,3 +811,124 @@ def normalize_axis_index(axis, ndim):
     if axis < 0:
         axis = axis + ndim
     return axis
+
+
+def _call_callback_maybe_halt(callback, res):
+    """Call wrapped callback; return True if algorithm should stop.
+
+    Parameters
+    ----------
+    callback : callable or None
+        A user-provided callback wrapped with `_wrap_callback`
+    res : OptimizeResult
+        Information about the current iterate
+
+    Returns
+    -------
+    halt : bool
+        True if minimization should stop
+
+    """
+    if callback is None:
+        return False
+    try:
+        callback(res)
+        return False
+    except StopIteration:
+        callback.stop_iteration = True
+        return True
+
+
+class _RichResult(dict):
+    """ Container for multiple outputs with pretty-printing """
+    def __getattr__(self, name):
+        try:
+            return self[name]
+        except KeyError as e:
+            raise AttributeError(name) from e
+
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
+    def __repr__(self):
+        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
+                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
+                      'converged', 'flag', 'function_calls', 'iterations',
+                      'root']
+        order_keys = getattr(self, '_order_keys', order_keys)
+        # 'slack', 'con' are redundant with residuals
+        # 'crossover_nit' is probably not interesting to most users
+        omit_keys = {'slack', 'con', 'crossover_nit', '_order_keys'}
+
+        def key(item):
+            try:
+                return order_keys.index(item[0].lower())
+            except ValueError:  # item not in list
+                return np.inf
+
+        def omit_redundant(items):
+            for item in items:
+                if item[0] in omit_keys:
+                    continue
+                yield item
+
+        def item_sorter(d):
+            return sorted(omit_redundant(d.items()), key=key)
+
+        if self.keys():
+            return _dict_formatter(self, sorter=item_sorter)
+        else:
+            return self.__class__.__name__ + "()"
+
+    def __dir__(self):
+        return list(self.keys())
+
+
+def _indenter(s, n=0):
+    """
+    Ensures that lines after the first are indented by the specified amount
+    """
+    split = s.split("\n")
+    indent = " "*n
+    return ("\n" + indent).join(split)
+
+
+def _float_formatter_10(x):
+    """
+    Returns a string representation of a float with exactly ten characters
+    """
+    if np.isposinf(x):
+        return "       inf"
+    elif np.isneginf(x):
+        return "      -inf"
+    elif np.isnan(x):
+        return "       nan"
+    return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
+
+
+def _dict_formatter(d, n=0, mplus=1, sorter=None):
+    """
+    Pretty printer for dictionaries
+
+    `n` keeps track of the starting indentation;
+    lines are indented by this much after a line break.
+    `mplus` is additional left padding applied to keys
+    """
+    if isinstance(d, dict):
+        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
+        s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
+                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
+                       for k, v in sorter(d)])  # +2 for ': '
+    else:
+        # By default, NumPy arrays print with linewidth=76. `n` is
+        # the indent at which a line begins printing, so it is subtracted
+        # from the default to avoid exceeding 76 characters total.
+        # `edgeitems` is the number of elements to include before and after
+        # ellipses when arrays are not shown in full.
+        # `threshold` is the maximum number of elements for which an
+        # array is shown in full.
+        # These values tend to work well for use with OptimizeResult.
+        with np.printoptions(linewidth=76-n, edgeitems=2, threshold=12,
+                             formatter={'float_kind': _float_formatter_10}):
+            s = str(d)
+    return s

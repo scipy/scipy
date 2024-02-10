@@ -99,7 +99,8 @@ zgsequ(SuperMatrix *A, double *r, double *c, double *rowcnd,
     /* Local variables */
     NCformat *Astore;
     doublecomplex   *Aval;
-    int i, j, irow;
+    int_t i, j;
+    int   irow;
     double rcmin, rcmax;
     double bignum, smlnum;
     extern double dmach(char *);
@@ -110,8 +111,8 @@ zgsequ(SuperMatrix *A, double *r, double *c, double *rowcnd,
 	 A->Stype != SLU_NC || A->Dtype != SLU_Z || A->Mtype != SLU_GE )
 	*info = -1;
     if (*info != 0) {
-	i = -(*info);
-	input_error("zgsequ", &i);
+	int ii = -(*info);
+	input_error("zgsequ", &ii);
 	return;
     }
 

@@ -98,8 +98,7 @@ static double coscof[] = {
 static double PI180 = 1.74532925199432957692E-2;	/* pi/180 */
 static double lossth = 1.0e14;
 
-double sindg(x)
-double x;
+double sindg(double x)
 {
     double y, z, zz;
     int j, sign;
@@ -154,8 +153,7 @@ double x;
 }
 
 
-double cosdg(x)
-double x;
+double cosdg(double x)
 {
     double y, z, zz;
     int j, sign;
@@ -215,8 +213,7 @@ double x;
 static double P64800 =
     4.848136811095359935899141023579479759563533023727e-6;
 
-double radian(d, m, s)
-double d, m, s;
+double radian(double d, double m, double s)
 {
     return (((d * 60.0 + m) * 60.0 + s) * P64800);
 }

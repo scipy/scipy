@@ -784,8 +784,8 @@ class TestSolve:
             if assume_a == 'her' and not is_complex:
                 continue
 
-            err_msg = ("Failed for size: {}, assume_a: {},"
-                       "dtype: {}".format(size, assume_a, dtype))
+            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
+                       f"dtype: {dtype}")
 
             a = np.random.randn(size, size).astype(dtype)
             b = np.random.randn(size).astype(dtype)
@@ -1207,8 +1207,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1243,8 +1243,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1278,8 +1278,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1308,8 +1308,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
@@ -1596,13 +1596,13 @@ class TestMatrixNorms:
         # Not all of these are matrix norms in the most technical sense.
         np.random.seed(1234)
         for n, m in (1, 1), (1, 3), (3, 1), (4, 4), (4, 5), (5, 4):
-            for t in np.single, np.double, np.csingle, np.cdouble, np.int64:
+            for t in np.float32, np.float64, np.complex64, np.complex128, np.int64:
                 A = 10 * np.random.randn(n, m).astype(t)
                 if np.issubdtype(A.dtype, np.complexfloating):
                     A = (A + 10j * np.random.randn(n, m)).astype(t)
-                    t_high = np.cdouble
+                    t_high = np.complex128
                 else:
-                    t_high = np.double
+                    t_high = np.float64
                 for order in (None, 'fro', 1, -1, 2, -2, np.inf, -np.inf):
                     actual = norm(A, ord=order)
                     desired = np.linalg.norm(A, ord=order)

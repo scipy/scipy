@@ -88,7 +88,8 @@ _suppress_all_warnings = ff.get_supported_arguments('-w')
 arpack_lib = static_library('arpack_lib',
   arpack_sources,
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
-  include_directories: ['ARPACK/SRC']
+  include_directories: ['ARPACK/SRC'],
+  override_options: ['b_lto=false'],
 )
 
 arpack_module = custom_target('arpack_module',
@@ -99,7 +100,6 @@ arpack_module = custom_target('arpack_module',
 
 _arpack = py3.extension_module('_arpack',
   arpack_module,
-  c_args: numpy_nodepr_api,
   link_with: [arpack_lib],
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],

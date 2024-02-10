@@ -131,8 +131,7 @@ static double Q2[8] = {
     6.79019408009981274425E-9,
 };
 
-double ndtri(y0)
-double y0;
+double ndtri(double y0)
 {
     double x, y, z, y2, x0, x1;
     int code;

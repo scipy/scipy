@@ -1,4 +1,3 @@
-# distutils: language=c++
 # cython: language_level=3
 
 import numpy as np
@@ -342,7 +341,7 @@ def _highs_wrapper(
                 Verbosity level, corresponds to:
 
                     - ``0``: ``ML_NONE``
-                        All messaging to stdout is supressed.
+                        All messaging to stdout is suppressed.
 
                     - ``1``: ``ML_VERBOSE``
                         Includes a once-per-iteration report on simplex/ipm
@@ -514,7 +513,7 @@ def _highs_wrapper(
                 Slack variables.
 
             - ``lambda`` : list
-                Lagrange multipliers assoicated with the constraints
+                Lagrange multipliers associated with the constraints
                 Ax = b.
 
             - ``s`` : list

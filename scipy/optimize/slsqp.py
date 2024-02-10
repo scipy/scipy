@@ -11,7 +11,6 @@ __all__ = [  # noqa: F822
     'approx_derivative',
     'approx_jacobian',
     'array',
-    'asfarray',
     'atleast_1d',
     'concatenate',
     'exp',
@@ -34,5 +33,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="slsqp",
-                                   private_module="_slsqp_py", all=__all__,
+                                   private_modules=["_slsqp_py"], all=__all__,
                                    attribute=name)

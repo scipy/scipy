@@ -1,4 +1,4 @@
-! Signatures for f2py-wrappers of FORTRAN LAPACK Other Auxillary and Computational functions.
+! Signatures for f2py-wrappers of FORTRAN LAPACK Other Auxiliary and Computational functions.
 !
 
 subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ldv,work,workout,lwork,iwork,iworkout,info)
@@ -1281,7 +1281,7 @@ subroutine <prefix>trsyl(trana, tranb, isgn, m, n, a, lda, b, ldb, c, ldc, scale
     ! to be performed.  The value of isgn (1 or -1) specifies the sign of the
     ! X*op(B) term in the equation.
     !
-    ! Upon exit, x contains the solution, scale represnets scale factor, set
+    ! Upon exit, x contains the solution, scale represents scale factor, set
     ! <= 1 to avoid overflow in the solution, and info contains the exit
     ! status:
     !
@@ -1324,7 +1324,7 @@ subroutine <prefix2c>hbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,rwork
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,rwork,&lrwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
-    ! Remark: if ab is fortran contigous on input
+    ! Remark: if ab is fortran contiguous on input
     !         and overwrite_ab=1  ab will be overwritten.
     <ftype2c> dimension(ldab,n), intent(in, overwrite) :: ab
 
@@ -1375,7 +1375,7 @@ subroutine <prefix2c>hbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,
     integer optional,intent(in):: range = 0
     check(range==2||range==1||range==0) range
 
-    ! Remark: if ab is fortran contigous on input
+    ! Remark: if ab is fortran contiguous on input
     !         and overwrite_ab=1  ab will be overwritten.
     <ftype2c> dimension(ldab,n),intent(in, overwrite) :: ab
 
@@ -1614,7 +1614,7 @@ subroutine <prefix2>sbev(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,info)
 
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*
 
-    ! Remark: if ab is fortran contigous on input
+    ! Remark: if ab is fortran contiguous on input
     !         and overwrite_ab=1  ab will be overwritten.
     <ftype2> dimension(ldab,n), intent(in,overwrite) :: ab
 
@@ -1642,7 +1642,7 @@ subroutine <prefix2>sbevd(ab,compute_v,lower,n,ldab,kd,w,z,ldz,work,lwork,iwork,
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&kd,ab,&ldab,w,z,&ldz,work,&lwork,iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
-    ! Remark: if ab is fortran contigous on input
+    ! Remark: if ab is fortran contiguous on input
     !         and overwrite_ab=1  ab will be overwritten.
     <ftype2> dimension(ldab,n), intent(in, overwrite) :: ab
 
@@ -1687,7 +1687,7 @@ subroutine <prefix2>sbevx(ab,ldab,compute_v,range,lower,n,kd,q,ldq,vl,vu,il,iu,a
     check(range==2||range==1||range==0) range
 
 
-    ! Remark: if ab is fortran contigous on input
+    ! Remark: if ab is fortran contiguous on input
     !         and overwrite_ab=1  ab will be overwritten.
     <ftype2> dimension(ldab,n),intent(in, overwrite) :: ab
 

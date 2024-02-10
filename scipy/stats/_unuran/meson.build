@@ -1,3 +1,8 @@
+_unuran_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('unuran.pxd'),
+]
+
 unuran_sources = [
   '../../_lib/unuran/unuran/src/distr/cemp.c',
   '../../_lib/unuran/unuran/src/distr/condi.c',
@@ -208,9 +213,17 @@ unuran_defines = [
   '-DHAVE_DECL_HYPOT=1'
 ]
 
+# Cython pyx -> c generator with _lib_pxd dependency, because the unuran
+# code depends on _lib/_ccallback_c
+unuran_cython_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _lib_pxd, _stats_pxd, _unuran_pxd]
+)
+
 statlib = py3.extension_module('unuran_wrapper',
   [
-    unuran_wrap_pyx,
+    unuran_cython_gen.process('unuran_wrapper.pyx'),
     unuran_sources
   ],
   c_args: [unuran_defines, cython_c_args],
@@ -224,7 +237,6 @@ statlib = py3.extension_module('unuran_wrapper',
 
 py3.install_sources([
     '__init__.py',
-    'unuran.pxd',
     'unuran_wrapper.pyi',
   ],
   subdir: 'scipy/stats/_unuran'

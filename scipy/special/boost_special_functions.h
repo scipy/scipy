@@ -5,10 +5,196 @@
 #include <stdexcept>
 #include "sf_error.h"
 
+
+// Override some default BOOST policies.
+// These are required to ensure that the Boost function ibeta_inv
+// handles extremely small p values with precision comparable to the
+// Cephes incbi function.
+#define BOOST_MATH_MAX_ROOT_ITERATION_POLICY  400
+#define BOOST_MATH_PROMOTE_DOUBLE_POLICY      false
+
+#include "boost/math/special_functions/beta.hpp"
 #include "boost/math/special_functions/erf.hpp"
 #include "boost/math/special_functions/powm1.hpp"
 #include "boost/math/special_functions/hypergeometric_1F1.hpp"
 #include "boost/math/special_functions/hypergeometric_pFq.hpp"
+
+
+template<typename Real>
+static inline
+Real ibeta_wrap(Real a, Real b, Real x)
+{
+    Real y;
+
+    if (isnan(a) || isnan(b) || isnan(x)) {
+        return NAN;
+    }
+    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+        sf_error("betainc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta(a, b, x);
+    } catch (const std::domain_error& e) {
+        sf_error("betainc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("betainc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("betainc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("betainc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_float(float a, float b, float x)
+{
+    return ibeta_wrap(a, b, x);
+}
+
+double
+ibeta_double(double a, double b, double x)
+{
+    return ibeta_wrap(a, b, x);
+}
+
+
+template<typename Real>
+static inline
+Real ibetac_wrap(Real a, Real b, Real x)
+{
+    Real y;
+
+    if (isnan(a) || isnan(b) || isnan(x)) {
+        return NAN;
+    }
+    if ((a <= 0) || (b <= 0) || (x < 0) || (x > 1)) {
+        sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibetac(a, b, x);
+    } catch (const std::domain_error& e) {
+        sf_error("betaincc", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("betaincc", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("betaincc", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("betaincc", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibetac_float(float a, float b, float x)
+{
+    return ibetac_wrap(a, b, x);
+}
+
+double
+ibetac_double(double a, double b, double x)
+{
+    return ibetac_wrap(a, b, x);
+}
+
+
+template<typename Real>
+static inline
+Real ibeta_inv_wrap(Real a, Real b, Real p)
+{
+    Real y;
+
+    if (isnan(a) || isnan(b) || isnan(p)) {
+        return NAN;
+    }
+    if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
+        sf_error("betaincinv", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibeta_inv(a, b, p);
+    } catch (const std::domain_error& e) {
+        sf_error("betaincinv", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("betaincinv", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("betaincinv", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("betaincinv", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibeta_inv_float(float a, float b, float p)
+{
+    return ibeta_inv_wrap(a, b, p);
+}
+
+double
+ibeta_inv_double(double a, double b, double p)
+{
+    return ibeta_inv_wrap(a, b, p);
+}
+
+
+template<typename Real>
+static inline
+Real ibetac_inv_wrap(Real a, Real b, Real p)
+{
+    Real y;
+
+    if (isnan(a) || isnan(b) || isnan(p)) {
+        return NAN;
+    }
+    if ((a <= 0) || (b <= 0) || (p < 0) || (p > 1)) {
+        sf_error("betainccinv", SF_ERROR_DOMAIN, NULL);
+        return NAN;
+    }
+    try {
+        y = boost::math::ibetac_inv(a, b, p);
+    } catch (const std::domain_error& e) {
+        sf_error("betainccinv", SF_ERROR_DOMAIN, NULL);
+        y = NAN;
+    } catch (const std::overflow_error& e) {
+        sf_error("betainccinv", SF_ERROR_OVERFLOW, NULL);
+        y = INFINITY;
+    } catch (const std::underflow_error& e) {
+        sf_error("betainccinv", SF_ERROR_UNDERFLOW, NULL);
+        y = 0;
+    } catch (...) {
+        sf_error("betainccinv", SF_ERROR_OTHER, NULL);
+        y = NAN;
+    }
+    return y;
+}
+
+float
+ibetac_inv_float(float a, float b, float p)
+{
+    return ibetac_inv_wrap(a, b, p);
+}
+
+double
+ibetac_inv_double(double a, double b, double p)
+{
+    return ibetac_inv_wrap(a, b, p);
+}
+
 
 template<typename Real>
 static inline

@@ -31,6 +31,7 @@ extern double dnrm2_(int *, double *, int *);
 extern double dnrm2_(int *, double [], int *);
 extern int idamax_(int *, double [], int *);
 
+#if 0
 static double *A;  /* used in _compare_ only */
 static int _compare_(const void *a, const void *b)
 {
@@ -39,6 +40,7 @@ static int _compare_(const void *a, const void *b)
     else if (A[*x] - A[*y] < 0.0) return 1;
     else return 0;
 }
+#endif
 
 /*! \brief
  * <pre>
@@ -70,14 +72,14 @@ int ilu_ddrop_row(
 {
     register int i, j, k, m1;
     register int nzlc; /* number of nonzeros in column last+1 */
-    register int xlusup_first, xlsub_first;
+    int_t xlusup_first, xlsub_first;
     int m, n; /* m x n is the size of the supernode */
     int r = 0; /* number of dropped rows */
     register double *temp;
     register double *lusup = (double *) Glu->lusup;
-    register int *lsub = Glu->lsub;
-    register int *xlsub = Glu->xlsub;
-    register int *xlusup = Glu->xlusup;
+    int_t *lsub = Glu->lsub;
+    int_t *xlsub = Glu->xlsub;
+    int_t *xlusup = Glu->xlusup;
     register double d_max = 0.0, d_min = 1.0;
     int    drop_rule = options->ILU_DropRule;
     milu_t milu = options->ILU_MILU;
