@@ -104,8 +104,9 @@ Finally, hide private attributes if any::
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In new code, don't use `assert_almost_equal`, `assert_approx_equal` or
-`assert_array_almost_equal`. This is from the docstrings of these
-functions::
+`assert_array_almost_equal`. In addition, do not use `assert_warns` with a
+`match` parameter, as this ignores that parameter. This is from the docstrings of
+these functions::
 
     It is recommended to use one of `assert_allclose`,
     `assert_array_almost_equal_nulp` or `assert_array_max_ulp`
