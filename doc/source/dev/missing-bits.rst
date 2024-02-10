@@ -104,9 +104,7 @@ Finally, hide private attributes if any::
 Test functions from `numpy.testing`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In new code, don't use `assert_almost_equal`, `assert_approx_equal` or
-`assert_array_almost_equal`. In addition, do not use `assert_warns` with a
-`match` parameter, as this ignores that parameter. This is from the docstrings of
-these functions::
+`assert_array_almost_equal`. This is from the docstrings of these functions::
 
     It is recommended to use one of `assert_allclose`,
     `assert_array_almost_equal_nulp` or `assert_array_max_ulp`
@@ -124,7 +122,9 @@ the preferred style is to use ``pytest.raises`` as a context manager, with
 the code that is supposed to raise the exception in the code block defined
 by the context manager.  The `match` keyword argument of ``pytest.raises``
 is given with enough of the expected error message attached to the exception
-to ensure that the expected exception is raised.
+to ensure that the expected exception is raised. Do not use
+``np.testing.assert_warns`` with a `match` parameter, as this ignores that
+parameter.
 
 For example, the function `scipy.stats.zmap` is supposed to raise a
 ``ValueError`` if the input contains ``nan`` and ``nan_policy`` is ``"raise"``.
