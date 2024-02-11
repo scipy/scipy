@@ -305,6 +305,12 @@ class TestLeaders:
                    reasons=['`is_isomorphic` only supports NumPy backend'])
 class TestIsIsomorphic:
 
+    @skip_if_array_api(np_only=True,
+                       reasons=['array-likes only supported for NumPy backend'])
+    def test_array_like(self, xp):
+        assert is_isomorphic([1, 1, 1], [2, 2, 2])
+        assert is_isomorphic([], [])
+
     def test_is_isomorphic_1(self, xp):
         # Tests is_isomorphic on test case #1 (one flat cluster, different labellings)
         a = xp.asarray([1, 1, 1])

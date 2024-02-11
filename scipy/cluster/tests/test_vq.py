@@ -111,15 +111,24 @@ class TestWhiten:
             assert_(issubclass(w[-1].category, RuntimeWarning))
 
     def test_whiten_not_finite(self, xp):
-        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
-        for tp in arrays:
-            for bad_value in xp.nan, xp.inf, -xp.inf:
-                obs = tp([[0.98744510, bad_value],
+        for bad_value in xp.nan, xp.inf, -xp.inf:
+            obs = xp.asarray([[0.98744510, bad_value],
+                              [0.62093317, 0.19406729],
+                              [0.87545741, 0.00735733],
+                              [0.85124403, 0.26499712],
+                              [0.45067590, 0.45464607]])
+            assert_raises(ValueError, whiten, obs)
+
+    @pytest.mark.xfail(SCIPY_ARRAY_API,
+                       reason='`np.matrix` unsupported in array API mode')
+    def test_whiten_not_finite_matrix(self, xp):
+        for bad_value in np.nan, np.inf, -np.inf:
+            obs = matrix([[0.98744510, bad_value],
                           [0.62093317, 0.19406729],
                           [0.87545741, 0.00735733],
                           [0.85124403, 0.26499712],
                           [0.45067590, 0.45464607]])
-                assert_raises(ValueError, whiten, obs)
+            assert_raises(ValueError, whiten, obs)
 
 
 class TestVq:
@@ -127,21 +136,33 @@ class TestVq:
     @skip_if_array_api(cpu_only=True)
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
-        for tp in arrays:
-            # label1.dtype varies between int32 and int64 over platforms
-            label1 = py_vq(tp(X), tp(initc))[0]
-            xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
-                            check_dtype=False)
+        # label1.dtype varies between int32 and int64 over platforms
+        label1 = py_vq(xp.asarray(X), xp.asarray(initc))[0]
+        xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
+                        check_dtype=False)
+      
+    @pytest.mark.xfail(SCIPY_ARRAY_API,
+                       reason='`np.matrix` unsupported in array API mode')
+    def test_py_vq_matrix(self, xp):
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
+        # label1.dtype varies between int32 and int64 over platforms
+        label1 = py_vq(matrix(X), matrix(initc))[0]
+        assert_array_equal(label1, LABEL1)
 
     @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
-        for tp in arrays:
-            label1, dist = _vq.vq(tp(X), tp(initc))
-            assert_array_equal(label1, LABEL1)
-            _, _ = vq(tp(X), tp(initc))
+        label1, _ = _vq.vq(xp.asarray(X), xp.asarray(initc))
+        assert_array_equal(label1, LABEL1)
+        _, _ = vq(xp.asarray(X), xp.asarray(initc))
+
+    @pytest.mark.xfail(SCIPY_ARRAY_API,
+                       reason='`np.matrix` unsupported in array API mode')
+    def test_vq_matrix(self, xp):
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
+        label1, _ = _vq.vq(matrix(X), matrix(initc))
+        assert_array_equal(label1, LABEL1)
+        _, _ = vq(matrix(X), matrix(initc))
 
     @skip_if_array_api(cpu_only=True)
     def test_vq_1d(self, xp):
@@ -230,10 +251,16 @@ class TestKMean:
     def test_kmeans_simple(self, xp):
         np.random.seed(54321)
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
-        arrays = [xp.asarray] if SCIPY_ARRAY_API else [np.asarray, matrix]
-        for tp in arrays:
-            code1 = kmeans(tp(X), tp(initc), iter=1)[0]
-            xp_assert_close(code1, xp.asarray(CODET2))
+        code1 = kmeans(xp.asarray(X), xp.asarray(initc), iter=1)[0]
+        xp_assert_close(code1, xp.asarray(CODET2))
+
+    @pytest.mark.xfail(SCIPY_ARRAY_API,
+                       reason='`np.matrix` unsupported in array API mode')
+    def test_kmeans_simple_matrix(self, xp):
+        np.random.seed(54321)
+        initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
+        code1 = kmeans(matrix(X), matrix(initc), iter=1)[0]
+        xp_assert_close(code1, CODET2)
 
     def test_kmeans_lost_cluster(self, xp):
         # This will cause kmeans to have a cluster with no points.
@@ -261,6 +288,17 @@ class TestKMean:
 
             xp_assert_close(code1, xp.asarray(CODET1))
             xp_assert_close(code2, xp.asarray(CODET2))
+
+    @pytest.mark.xfail(SCIPY_ARRAY_API,
+                       reason='`np.matrix` unsupported in array API mode')
+    def test_kmeans2_simple_matrix(self, xp):
+        np.random.seed(12345678)
+        initc = xp.asarray(np.concatenate([[X[0]], [X[1]], [X[2]]]))
+        code1 = kmeans2(matrix(X), matrix(initc), iter=1)[0]
+        code2 = kmeans2(matrix(X), matrix(initc), iter=2)[0]
+
+        xp_assert_close(code1, CODET1)
+        xp_assert_close(code2, CODET2)
 
     def test_kmeans2_rank1(self, xp):
         data = xp.asarray(TESTDATA_2D)

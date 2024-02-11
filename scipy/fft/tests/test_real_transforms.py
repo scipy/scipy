@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
+import math
 
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
@@ -11,7 +12,6 @@ from scipy._lib._array_api import copy, xp_assert_close
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
 skip_if_array_api = pytest.mark.skip_if_array_api
 
-import math
 SQRT_2 = math.sqrt(2)
 
 # scipy.fft wraps the fftpack versions but with normalized inverse transforms.
