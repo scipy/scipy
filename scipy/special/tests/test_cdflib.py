@@ -199,6 +199,15 @@ def _noncentral_chi_cdf(x, df, nc, dps=None):
         return res
 
 
+def _normal_cdf(x, mu, sigma):
+    x = mpmath.mp.mpf(x)
+    mu = mpmath.mp.mpf(mu)
+    sigma = mpmath.mp.mpf(sigma)
+    q = mpmath.mp.ncdf(x, mu, sigma)
+    # print(f"x: {x}, mu: {mu}, sigma: {sigma}, {q}")
+    return q
+
+
 def _tukey_lmbda_quantile(p, lmbda):
     # For lmbda != 0
     return (p**lmbda - (1 - p)**lmbda)/lmbda
@@ -358,7 +367,14 @@ class TestCDFlib:
             sp.tklmbda,
             _tukey_lmbda_quantile,
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
-            spfunc_first=False, rtol=1e-5)
+            n=1000, spfunc_first=False, rtol=1e-5)
+
+    def test_nrdtrimn(self):
+        _assert_inverts(
+            sp.nrdtrimn,
+            _normal_cdf,
+            1, [ProbArg(), Arg(-30, 30), Arg(0, 10, inclusive_a=False)],
+            n=1000, rtol=1e-5)
 
     # The values of lmdba are chosen so that 1/lmbda is exact.
     @pytest.mark.parametrize('lmbda', [0.5, 1.0, 8.0])
