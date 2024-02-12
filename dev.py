@@ -619,7 +619,7 @@ class Build(Task):
 
         os.makedirs(openblas_dir, exist_ok=True)
         with open(pkg_config_fname, "w", encoding="utf8") as fid:
-            fid.write(openblas.get_pkg_config(use_preloading=True)
+            fid.write(openblas.get_pkg_config(use_preloading=True))
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
