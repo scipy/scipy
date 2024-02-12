@@ -49,7 +49,8 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy==1.22.4 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          python -m pip install requirements/openblas_requirements.txt
+          pip install numpy==1.22.4 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis
 
       - name: Build
         run: |
@@ -90,7 +91,7 @@ jobs:
         run: |
           # 1.22.4 is currently the oldest numpy usable on cp3.9 according
           # to pyproject.toml
-          python -m pip install numpy==1.22.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          python -m pip install numpy==1.22.4 cython pybind11 pythran meson-python meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32==0.3.26.0.4"
 
       - name: Build
         run: |

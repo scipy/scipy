@@ -1,0 +1,2 @@
+scipy-openblas32==0.3.26.0.4
+

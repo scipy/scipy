@@ -1,7 +1,7 @@
 set -xe
 
 PROJECT_DIR="$1"
-PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
+PLATFORM=$(uname)-$(uname -m)
 echo $PLATFORM
 
 # Update license
