@@ -2994,27 +2994,14 @@ class _TestFancyIndexing:
         col_long = np.ones(N + 2, dtype=bool)
         col_short = np.ones(N - 2, dtype=bool)
 
-        with pytest.raises(
-            IndexError,
-            match=rf"boolean row index has incorrect length: {M + 1} instead of {M}"
-        ):
-            _ = A[row_long, :]
-        with pytest.raises(
-            IndexError,
-            match=rf"boolean row index has incorrect length: {M - 1} instead of {M}"
-        ):
-            _ = A[row_short, :]
-
+        match="bool index .* has shape .* instead of .*"
         for i, j in itertools.product(
             (row_long, row_short, slice(None)),
             (col_long, col_short, slice(None)),
         ):
             if isinstance(i, slice) and isinstance(j, slice):
                 continue
-            with pytest.raises(
-                IndexError,
-                match=r"boolean \w+ index has incorrect length"
-            ):
+            with pytest.raises(IndexError, match=match):
                 _ = A[i, j]
 
     def test_fancy_indexing_boolean(self):
