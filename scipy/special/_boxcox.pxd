@@ -1,5 +1,5 @@
 
-from libc.math cimport log, log1p, expm1, exp, fabs
+from libc.math cimport log, log1p, expm1, exp, fabs, copysign
 
 
 cdef inline double boxcox(double x, double lmbda) noexcept nogil:
@@ -12,7 +12,7 @@ cdef inline double boxcox(double x, double lmbda) noexcept nogil:
     if fabs(lmbda) < 1e-19:
         return log(x)
     else:
-        return expm1(lmbda * log(x)) / lmbda
+        return copysign(1., lmbda) * exp(lmbda * log(x) - log(fabs(lmbda))) - 1 / lmbda
 
 
 cdef inline double boxcox1p(double x, double lmbda) noexcept nogil:
@@ -24,14 +24,14 @@ cdef inline double boxcox1p(double x, double lmbda) noexcept nogil:
     if fabs(lmbda) < 1e-19 or (fabs(lgx) < 1e-289 and fabs(lmbda) < 1e273):
         return lgx
     else:
-        return expm1(lmbda * lgx) / lmbda
+        return copysign(1., lmbda) * exp(lmbda * lgx - log(fabs(lmbda))) - 1 / lmbda
 
 
 cdef inline double inv_boxcox(double x, double lmbda) noexcept nogil:
     if lmbda == 0:
         return exp(x)
     else:
-        return exp(log1p(lmbda * x) / lmbda)
+        return exp((log(copysign(1., lmbda) * (x + 1 / lmbda)) + log(fabs(lmbda))) / lmbda)
 
 
 cdef inline double inv_boxcox1p(double x, double lmbda) noexcept nogil:
@@ -40,4 +40,4 @@ cdef inline double inv_boxcox1p(double x, double lmbda) noexcept nogil:
     elif fabs(lmbda * x) < 1e-154:
         return x
     else:
-        return expm1(log1p(lmbda * x) / lmbda)
+        return expm1((log(copysign(1., lmbda) * (x + 1 / lmbda)) + log(fabs(lmbda))) / lmbda)
