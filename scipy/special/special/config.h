@@ -108,7 +108,7 @@ SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return cuda
 SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::fmax(x, y); }
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
-SPECFUN_HOST_DEVICE inline double log1p(ndouble num) { return cuda::std::log1p(num); }
+SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
@@ -120,8 +120,13 @@ SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return ::mo
 SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y); }
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
-SPECFUN_HOST_DEVICE inline double log1p(ndouble num) { return ::log1p(num); }
+SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
 #endif
+
+template <typename T>
+SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
+    cuda::std::swap(a, b);
+}
 
 template <typename T>
 using numeric_limits = cuda::std::numeric_limits<T>;
@@ -160,12 +165,22 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
     return thrust::conj(z);
 }
 
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const complex<T> &y) {
+    return thrust::pow(x, y);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
+    return thrust::pow(x, y);
+}
+
+
 // Other types and utilities
-using cuda::std::is_floating_point;
-using cuda::std::pair;
-using cuda::std::is_floating_point;
-using cuda::std::uint64_t;
-using swap = thrust::swap;
+template <typename T>
+using is_floating_point = cuda::std::is_floating_point<T>;
+using uint64_t = cuda::std::uint64_t;
+
 
 } // namespace std
 
