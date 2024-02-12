@@ -72,8 +72,8 @@ jobs:
         python -m pip install meson ninja pybind11 pythran pytest hypothesis
         python -m pip install click rich_click doit pydevtool pooch
         
-        chmod +x tools/wheels/cibw_before_build_linux.sh
-        tools/wheels/cibw_before_build_linux.sh --nightly .     
+        chmod +x tools/wheels/cibw_before_build.sh
+        tools/wheels/cibw_before_build.sh --nightly .     
 
     - name: test
       run: |

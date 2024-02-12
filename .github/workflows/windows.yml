@@ -132,10 +132,11 @@ jobs:
       - name: Install OpenBLAS
         shell: bash
         run: |
-          # Keep this using the OpenBLAS tarballs for now, as long as we use those for wheel builds
           set -xe
-          bash tools/wheels/cibw_before_build_win.sh .
-          echo "PKG_CONFIG_PATH=c:\opt\64\lib\pkgconfig;" >> $GITHUB_ENV
+          bash -el tools/wheels/cibw_before_build.sh .
+          $PKG_CONFIG_PATH = "${{ github.workspace }}/.openblas"
+          $PKG_CONFIG_PATH = $PKG_CONFIG_PATH.replace("\","/")
+          echo "PKG_CONFIG_PATH=$PKG_CONFIG_PATH" >> $env:GITHUB_ENV
 
       - name: pip-packages
         run: |
@@ -148,7 +149,7 @@ jobs:
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel 
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
-          delvewheel repair --add-path c:\opt\openblas\openblas_dll -w dist $env:wheel_name
+          delvewheel repair --add-path ./.openblas -w dist $env:wheel_name
           
           python -m pip install $env:wheel_name
 

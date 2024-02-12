@@ -117,11 +117,11 @@ macos_arm64_test_task:
     python --version
 
     # used for installing OpenBLAS/gfortran
-    bash tools/wheels/cibw_before_build_macos.sh $PWD
-    echo "DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib" >> $CIRRUS_ENV
+    bash tools/wheels/cibw_before_build.sh $PWD
+    echo "DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:$PWD/.openblas/lib" >> $CIRRUS_ENV
 
-    echo "PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig" >> $CIRRUS_ENV
-    echo "CMAKE_PREFIX_PATH=/opt/arm64-builds/" >> $CIRRUS_ENV
+    echo "PKG_CONFIG_PATH=$PWD/.openblas" >> $CIRRUS_ENV
+    echo "CMAKE_PREFIX_PATH=$PWD/.openblas" >> $CIRRUS_ENV
     # export CCACHE_DIR=$PWD/.ccache
     
     cd ..
