@@ -21,38 +21,6 @@
 namespace special {
 namespace detail {
 
-    template <typename Generator>
-    SPECFUN_HOST_DEVICE double continued_fraction_eval(Generator &g, double tol, std::uint64_t max_terms) {
-        constexpr double tiny_value = 16.0 * std::numeric_limits<double>::min();
-
-        std::pair<double, double> v = g();
-        double f = v.second;
-        if (f == 0.0) {
-            f = tiny_value;
-        }
-        double C = f;
-        double D = 0.0;
-        double delta;
-
-        std::uint64_t counter = max_terms;
-        do {
-            v = g();
-            D = v.second + v.first * D;
-            if (D == 0.0) {
-                D = tiny_value;
-            }
-            C = v.second + v.first / C;
-            if (C == 0.0) {
-                C = tiny_value;
-            }
-            D = 1.0 / D;
-            delta = C * D;
-            f *= delta;
-        } while ((std::abs(delta - 1.0) > tol) && --counter);
-
-        return f;
-    }
-
     template <typename Generator, typename Number>
     SPECFUN_HOST_DEVICE Number series_eval(Generator &g, Number init_val, double tol, std::uint64_t max_terms,
                                            const char *func_name) {
