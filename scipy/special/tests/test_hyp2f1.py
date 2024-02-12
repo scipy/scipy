@@ -2467,6 +2467,16 @@ class TestHyp2f1:
                     rtol=5e-14,
                 ),
             ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=1,
+                    b=1,
+                    c=4,
+                    z=(3 + 4j),
+                    expected=(0.49234384000963544+0.6051340616612397j),
+                    rtol=5e-14,
+                ),
+            ),
         ]
     )
     def test_region6(self, hyp2f1_test_case):
