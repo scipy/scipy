@@ -456,28 +456,6 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
     if (c_non_pos_int && !((a_neg_int && c <= a && a < 0) || (b_neg_int && c <= b && b < 0))) {
         return std::complex<double>{std::numeric_limits<double>::infinity(), 0};
     }
-    /* Diverges as real(z) -> 1 when c < a + b.
-     * Todo: Actually check for overflow instead of using a fixed tolerance for
-     * all parameter combinations like in the Fortran original. This will have to
-     * wait until all points in the neighborhood of z = 1 are handled in Cython.
-     *
-     * Note that in the following three conditionals, we avoid the case where
-     * c is a non-positive integer. This is because if c is a non-positive
-     * integer and we have not returned already, then one of a or b must
-     * be a negative integer and the desired result can be computed as a
-     * polynomial with finite sum. */
-    if (std::abs(1 - z.real()) < detail::hyp2f1_EPS && z.imag() == 0 && c - a - b <= 0 && !c_non_pos_int) {
-        return std::complex<double>{std::numeric_limits<double>::infinity(), 0};
-    }
-    // Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    if (z == 1.0 && c - a - b > 0 && !c_non_pos_int) {
-        return detail::four_gammas(c, c - a - b, c - a, c - b);
-    }
-    // Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26)
-    if (std::abs(z + 1.0) < detail::hyp2f1_EPS && std::abs(1 + a - b - c) < detail::hyp2f1_EPS && !c_non_pos_int) {
-        return detail::four_gammas(a - b + 1, 0.5 * a + 1, a + 1, 0.5 * a - b + 1);
-    }
-
     /* Reduces to a polynomial when a or b is a negative integer.
      * If a and b are both negative integers, we take care to terminate
      * the series at a or b of smaller magnitude. This is to ensure proper
@@ -520,6 +498,20 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
             return std::complex<double>{std::numeric_limits<double>::quiet_NaN(),
                                         std::numeric_limits<double>::quiet_NaN()};
         }
+    }
+    /* Diverges as real(z) -> 1 when c <= a + b.
+     * Todo: Actually check for overflow instead of using a fixed tolerance for
+     * all parameter combinations like in the Fortran original. */
+    if (std::abs(1 - z.real()) < detail::hyp2f1_EPS && z.imag() == 0 && c - a - b <= 0 && !c_non_pos_int) {
+        return std::complex<double>{std::numeric_limits<double>::infinity(), 0};
+    }
+    // Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
+    if (z == 1.0 && c - a - b > 0 && !c_non_pos_int) {
+        return detail::four_gammas(c, c - a - b, c - a, c - b);
+    }
+    // Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26)
+    if (std::abs(z + 1.0) < detail::hyp2f1_EPS && std::abs(1 + a - b - c) < detail::hyp2f1_EPS && !c_non_pos_int) {
+        return detail::four_gammas(a - b + 1, 0.5 * a + 1, a + 1, 0.5 * a - b + 1);
     }
     /* |z| < 0, z.real() >= 0. Use the Maclaurin Series.
      * -----------------------------------------------------------------------
