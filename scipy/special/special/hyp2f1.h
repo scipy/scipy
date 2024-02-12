@@ -1,18 +1,11 @@
-/* Translated from Cython into C++ by SciPy developers in 2023.
- * Original header with Copyright information appears below.
- */
-
 /* Implementation of Gauss's hypergeometric function for complex values.
  *
  * This implementation is based on the Fortran implementation by Shanjie Zhang and
  * Jianming Jin included in specfun.f [1]_.  Computation of Gauss's hypergeometric
- * function involves handling a patchwork of special cases. Zhang and Jin's
- * implementation is being replaced case by case with this Cython implementation,
- * which falls back to their implementation for the cases that are yet to be
- * handled. By default the Zhang and Jin implementation has been followed as
- * closely as possible except for situations where an improvement was
- * obvious. We've attempted to document the reasons behind decisions made by Zhang
- * and Jin and to document the reasons for deviating from their implementation
+ * function involves handling a patchwork of special cases. By default the Zhang and
+ * Jin implementation has been followed as closely as possible except for situations where
+ * an improvement was obvious. We've attempted to document the reasons behind decisions
+ * made by Zhang and Jin and to document the reasons for deviating from their implementation
  * when this has been done. References to the NIST Digital Library of Mathematical
  * Functions [2]_ have been added where they are appropriate. The review paper by
  * Pearson et al [3]_ is an excellent resource for best practices for numerical
@@ -262,6 +255,7 @@ namespace detail {
     };
 
     class Hyp2f1Transform1LimitSeriesGenerator {
+        /* 1 - z transform in limit as c - a - b approaches an integer m. */
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform1LimitSeriesGenerator(double a, double b, double m, std::complex<double> z)
             : d1_(special::digamma(a)), d2_(special::digamma(b)), d3_(special::digamma(1 + m)),
@@ -305,6 +299,8 @@ namespace detail {
     };
 
     class Hyp2f1Transform2LimitSeriesGenerator {
+        /* 1/z transform in limit as a - b approaches a non-negative integer m. (Can swap a and b to
+         * handle the m a negative integer case. */
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesGenerator(double a, double b, double c, double m,
                                                                  std::complex<double> z)
@@ -333,6 +329,9 @@ namespace detail {
     };
 
     class Hyp2f1Transform2LimitFinitePartGenerator {
+        /* Initial finite sum in limit as a - b approaches a non-negative integer m. The limiting series
+         * for the 1 - z transform also has an initial finite sum, but it is a standard hypergeometric
+         * series. */
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double a, double b, double c, double m,
                                                                      std::complex<double> z)
@@ -385,6 +384,7 @@ namespace detail {
 
     SPECFUN_HOST_DEVICE std::complex<double> hyp2f1_transform1_limiting_case(double a, double b, double c, double m,
                                                                              std::complex<double> z) {
+        /* 1 - z transform in limiting case where c - a - b approaches an integer m. */
         std::complex<double> result = 0.0;
         if (m >= 0) {
             if (m != 0) {
@@ -415,6 +415,8 @@ namespace detail {
 
     SPECFUN_HOST_DEVICE std::complex<double> hyp2f1_transform2_limiting_case(double a, double b, double c, double m,
                                                                              std::complex<double> z) {
+        /* 1 / z transform in limiting case where a - b approaches a non-negative integer m. Negative integer case
+         * can be handled by swapping a and b. */
         auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(a, b, c, m, z);
         std::complex<double> result = cephes::Gamma(c) / cephes::Gamma(a) * std::pow(-z, -b);
         result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
