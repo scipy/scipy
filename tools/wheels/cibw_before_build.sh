@@ -13,8 +13,6 @@ else
     exit 1
 fi
 
-PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
-
 printenv
 
 # remove any cruft from a previous run
