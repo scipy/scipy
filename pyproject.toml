@@ -136,7 +136,7 @@ test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 #  Also remove/comment out all the
 # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL
 # before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
-before-build: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash -el {project}/tools/wheels/cibw_before_build {project}"
+before-build = "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash -el {project}/tools/wheels/cibw_before_build {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
