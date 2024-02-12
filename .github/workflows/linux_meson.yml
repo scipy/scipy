@@ -377,7 +377,7 @@ jobs:
         export PKG_CONFIG_PATH=${PWD}/.openblas && \
         python3.9 -m venv test && \
         source test/bin/activate && \
-        python -m pip install requirements/openblas_requirements.txt && \
+        python -m pip install -r requirements/openblas_requirements.txt && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install numpy==1.22.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         python dev.py build --with-scipy-openblas && \

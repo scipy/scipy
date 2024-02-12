@@ -3,7 +3,7 @@ set -xe
 
 if [ "$#" -eq 1 ]; then
     python -m pip insta
-    python -m pip install requirements/openblas_requirements.txt
+    python -m pip install -r requirements/openblas_requirements.txt
     PROJECT_DIR="$1"
 elif [ "$#" -eq 2 ] && [ "$1" = "--nightly" ]; then
     python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple scipy-openblas32
