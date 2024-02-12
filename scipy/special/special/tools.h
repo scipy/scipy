@@ -1,17 +1,4 @@
-/* Continued fraction evaluation with Lentz's algorithm [1]. Modification of Thompson and Barnett [1]
- * used to handle unwanted zero terms in denominators. Source code adapted from Boost Math's
- * implementation of continued_fraction_b [3].
- *
- * SciPy developers 2024.
- *
- * References:
- * [1] Lentz, W. J. (1973). A Method of Computing Spherical Bessel Functions of Complex Argument
- * with Tables. Defense Technical Information Center. DOI: 10.21236/ad0767223. September 1973.
- * [2] Thompson, I.J., & Barnett, A.R. (1986). Coulomb and Bessel functions of complex arguments and order.
- * Journal of Computational Physics, 64(2), 490-509. ISSN 0021-9991. DOI: 10.1016/0021-9991(86)90046-X.
- * [3]
- * https://github.com/boostorg/math/blob/79b4015d4d048a784ba341f40d6fa58c43087ec7/include/boost/math/tools/fraction.hpp#L106-L149
- */
+/* Building blocks for implementing special functions */
 
 #pragma once
 
@@ -21,9 +8,26 @@
 namespace special {
 namespace detail {
 
+    // Series evaluators.
     template <typename Generator, typename Number>
     SPECFUN_HOST_DEVICE Number series_eval(Generator &g, Number init_val, double tol, std::uint64_t max_terms,
                                            const char *func_name) {
+        /* Sum an infinite series to a given precision.
+         *
+         * g : a generator of terms for the series.
+         *
+         * init_val : A starting value that terms are added to. This argument determines the
+         *     type of the result.
+         *
+         * tol : relative tolerance for stopping criterion.
+         *
+         * max_terms : The maximum number of terms to add before giving up and declaring
+         *     non-convergence.
+         *
+         * func_name : The name of the function within SciPy where this call to series_eval
+         *     will ultimately be used. This is needed to pass to set_error in case
+         *     of non-convergence.
+         */
         Number result = init_val;
         Number term, previous;
         for (std::uint64_t i = 0; i < max_terms; ++i) {
@@ -45,6 +49,16 @@ namespace detail {
 
     template <typename Generator, typename Number>
     SPECFUN_HOST_DEVICE Number series_eval_fixed_length(Generator &g, Number init_val, std::uint64_t num_terms) {
+        /* Sum a fixed number of terms from a series.
+         *
+         * g : a generator of terms for the series.
+         *
+         * init_val : A starting value that terms are added to. This argument determines the
+         *     type of the result.
+         *
+         * max_terms : The number of terms from the series to sum.
+         *     
+         */
         Number result = init_val;
         for (std::uint64_t i = 0; i < num_terms; ++i) {
             result += g();
