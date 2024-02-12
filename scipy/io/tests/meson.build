@@ -81,8 +81,10 @@ py3.install_sources([
     'data/test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav',
     'data/test-44100Hz-le-1ch-4bytes-early-eof.wav',
     'data/test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav',
+    'data/test-44100Hz-le-1ch-4bytes-rf64.wav'.
     'data/test-44100Hz-le-1ch-4bytes.wav',
     'data/test-48000Hz-2ch-64bit-float-le-wavex.wav',
+    'data/test-8000Hz-le-3ch-5S-24bit-rf64',
     'data/test-8000Hz-be-3ch-5S-24bit.wav',
     'data/test-8000Hz-le-1ch-10S-20bit-extra.wav',
     'data/test-8000Hz-le-1ch-1byte-ulaw.wav',
