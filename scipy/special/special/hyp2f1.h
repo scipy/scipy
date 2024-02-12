@@ -481,6 +481,10 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
                                         std::numeric_limits<double>::quiet_NaN()};
         }
     }
+    // Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26)
+    if (std::abs(z + 1.0) < detail::hyp2f1_EPS && std::abs(1 + a - b - c) < detail::hyp2f1_EPS && !c_non_pos_int) {
+        return detail::four_gammas(a - b + 1, 0.5 * a + 1, a + 1, 0.5 * a - b + 1);
+    }
     std::complex<double> result;
     bool c_minus_a_neg_int = c - a == std::trunc(c - a) && c - a < 0;
     bool c_minus_b_neg_int = c - b == std::trunc(c - b) && c - b < 0;
@@ -510,10 +514,6 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
     // Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if (z == 1.0 && c - a - b > 0 && !c_non_pos_int) {
         return detail::four_gammas(c, c - a - b, c - a, c - b);
-    }
-    // Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26)
-    if (std::abs(z + 1.0) < detail::hyp2f1_EPS && std::abs(1 + a - b - c) < detail::hyp2f1_EPS && !c_non_pos_int) {
-        return detail::four_gammas(a - b + 1, 0.5 * a + 1, a + 1, 0.5 * a - b + 1);
     }
     /* |z| < 0, z.real() >= 0. Use the Maclaurin Series.
      * -----------------------------------------------------------------------
