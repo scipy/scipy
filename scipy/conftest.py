@@ -129,6 +129,13 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     except ImportError:
         pass
 
+    try:
+        import jax.experimental.array_api  # type: ignore[import]
+        xp_available_backends.update({'jax': jax.experimental.array_api})
+        jax.config.update("jax_enable_x64", True)
+    except ImportError:
+        pass
+
     # by default, use all available backends
     if SCIPY_ARRAY_API.lower() not in ("1", "true"):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
