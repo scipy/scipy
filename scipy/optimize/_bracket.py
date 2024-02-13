@@ -397,8 +397,15 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -np.inf if xmin is None else xmin
     xmax = np.inf if xmax is None else xmax
 
-    xl0 = xm0 - 0.5 if xl0 is None else xl0
-    xr0 = xm0 + 0.5 if xr0 is None else xr0
+    xl0_not_supplied = False
+    if xl0 is None:
+        xl0 = xm0 - 0.5
+        xl0_not_supplied = True
+
+    xr0_not_supplied = False
+    if xr0 is None:
+        xr0 = xm0 + 0.5
+        xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
     xl0, xm0, xr0, xmin, xmax, factor = np.broadcast_arrays(
@@ -425,15 +432,18 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     # Default choices for xl or xr might have exceeded xmin or xmax. Adjust
     # to make sure this doesn't happen. We replace with copies because xl, and xr
     # are read-only views produced by broadcast_arrays.
-    xl0, xr0 = xl0.copy(), xr0.copy()
-    cond = ~np.isinf(xmin) & (xl0 < xmin)
-    xl0[cond] = (
-        xm0[cond] - xmin[cond]
-    ) / np.array(16, dtype=xl0.dtype)
-    cond = ~np.isinf(xmax) & (xmax < xr0)
-    xr0[cond] = (
-        xmax[cond] - xm0[cond]
-    ) / np.array(16, dtype=xr0.dtype)
+    if xl0_not_supplied:
+        xl0 = xl0.copy()
+        cond = ~np.isinf(xmin) & (xl0 < xmin)
+        xl0[cond] = (
+            xm0[cond] - xmin[cond]
+        ) / np.array(16, dtype=xl0.dtype)
+    if xr0_not_supplied:
+        xr0 = xr0.copy()
+        cond = ~np.isinf(xmax) & (xmax < xr0)
+        xr0[cond] = (
+            xmax[cond] - xm0[cond]
+        ) / np.array(16, dtype=xr0.dtype)
 
     maxiter = np.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
@@ -454,7 +464,7 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
 def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      factor=None, args=(), maxiter=1000):
-    """Bracket the minima of a unimodal scalar function of one variable
+    """Bracket the minimum of a unimodal scalar function of one variable
 
     This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`,
     and the elements of `args` are broadcastable arrays.
@@ -462,21 +472,20 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     Parameters
     ----------
     func : callable
-        The function for which the minima is to be bracketed.
+        The function for which the minimum is to be bracketed.
         The signature must be::
 
             func(x: ndarray, *args) -> ndarray
 
-        where each element of `x` is a finite real and `args` is a tuple,
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`. `func` must be an elementwise function: each element
+        with ``x``. `func` must be an elementwise function: each element
         ``func(x)[i]`` must equal ``func(x[i])`` for all indices `i`.
     xm0: float array_like
         Starting guess for middle point of bracket.
-    xl0: float array_like, optional
-        Starting guess for left endpoint of bracket.
-    xr0: float array_like, optional
-        Starting guess for right endpoint of bracket.
+    xl0, xr0: float array_like, optional
+        Starting guesses for left and right endpoints of the bracket. Must be
+        broadcastable with one another and with `xm0`.
     xmin, xmax : float array_like, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
         be broadcastable with `xl0`, `xm0`, and `xr0`.
@@ -489,10 +498,10 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         broadcastable with `xl0`, `xm0`, `xr0`, `xmin`, and `xmax`. If the
         callable to be bracketed requires arguments that are not broadcastable
         with these arrays, wrap that callable with `func` such that `func`
-        accepts only `x` and broadcastable arrays.
+        accepts only ``x`` and broadcastable arrays.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform. The number
-        of function evaluations is 3 greater than the number of iterations.
+        of function evaluations is three greater than the number of iterations.
 
     Returns
     -------
@@ -516,12 +525,10 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
             - ``0`` : The algorithm produced a valid bracket.
             - ``-1`` : The bracket expanded to the allowable limits. Assuming
-                     unimodality, this implies the endpoint at the limit is a
-                     minimizer.
+                       unimodality, this implies the endpoint at the limit is a
+                       minimizer.
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
-            - ``-4`` : Iteration was terminated by `callback`.
-            - ``1`` : The algorithm is proceeding normally (in `callback` only).
 
         success : bool
             ``True`` when the algorithm terminated successfully (status ``0``).
@@ -530,15 +537,15 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     -----
     Similar to `scipy.optimize.bracket`, this function seeks to find real
     points ``xl < xm < xr`` such that ``f(xl) >= f(xm)`` and ``f(xr) >= f(xm)``,
-     where at least one of the inequalities is strict. Unlike `scipy.optimize.bracket`,
+    where at least one of the inequalities is strict. Unlike `scipy.optimize.bracket`,
     this function can operate in a vectorized manner on array input, so long as
     the input arrays are broadcastable with each other. Also unlike
     `scipy.optimize.bracket`, users may specify minimum and maximum endpoints
     for the desired bracket.
 
-    Given an initial trio of points `xl = xl0``, ``xm = xm0``, ``xr = xr0``,
+    Given an initial trio of points ``xl = xl0``, ``xm = xm0``, ``xr = xr0``,
     the algorithm checks if these points already give a valid bracket. If not,
-    a new endpoint, `w` is chosen in the "downhill" direction, `xm` becomes the new
+    a new endpoint, ``w`` is chosen in the "downhill" direction, ``xm`` becomes the new
     opposite endpoint, and either `xl` or `xr` becomes the new middle point,
     depending on which direction is downhill. The algorithm repeats from here.
 
@@ -571,7 +578,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
 
     # To simplify the logic, swap xl and xr if f(xl) < f(xr). We should always be
-    # marching downhill in the direction from a to b.
+    # marching downhill in the direction from xl to xr.
     comp = fl0 < fr0
     xl0[comp], xr0[comp] = xr0[comp], xl0[comp]
     fl0[comp], fr0[comp] = fr0[comp], fl0[comp]
@@ -605,7 +612,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         x[~work.limited] = work.xr0[~work.limited] + work.step[~work.limited]
         x[work.limited] = work.limit[work.limited] - work.step[work.limited]
         # Since the new bracket endpoint is calculated from an offset with the
-        # limit,it may be the case that the new endpoint equals the old endpoint,
+        # limit, it may be the case that the new endpoint equals the old endpoint,
         # when the old endpoint is sufficiently close to the limit. We use the
         # limit itself as the new endpoint in these cases.
         x[work.limited] = np.where(

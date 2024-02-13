@@ -302,9 +302,9 @@ class TestBracketRoot:
 
 class TestBracketMinimum:
     def init_f(self):
-        def f(x, xl0, xr0):
+        def f(x, a, b):
             f.count += 1
-            return (x - xl0)**2 + xr0
+            return (x - a)**2 + b
         f.count = 0
         return f
 
@@ -444,6 +444,7 @@ class TestBracketMinimum:
         )
         assert np.all(result.success)
         assert result.xl.dtype == result.xm.dtype == result.xr.dtype == dtype
+        assert result.fl.dtype == result.fm.dtype == result.fr.dtype == dtype
 
     def test_input_validation(self):
         # Test input validation for appropriate error messages
@@ -496,6 +497,9 @@ class TestBracketMinimum:
     @pytest.mark.parametrize("xl0", [0.0, None])
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
     @pytest.mark.parametrize("xr0", (0.2, 0.4, 0.6, None))
+    # Minimum is ``a`` for each tuple ``(a, b)`` below. Tests cases where minimum
+    # is within, or at varying disances to the left or right of the initial
+    # bracket.
     @pytest.mark.parametrize(
         "args",
         (
@@ -513,12 +517,16 @@ class TestBracketMinimum:
         assert result.nfev == f.count
 
     @pytest.mark.parametrize(
+        # xmin is set at 0.0 in all cases.
         "xl0,xm0,xr0,xmin",
         (
+            # Initial bracket at varying distances from the xmin.
             (0.5, 0.75, 1.0, 0.0),
             (1.0, 2.5, 4.0, 0.0),
             (2.0, 4.0, 6.0, 0.0),
             (12.0, 16.0, 20.0, 0.0),
+            # Test default initial left endpoint selection. It should not
+            # be below xmin.
             (None, 0.75, 1.0, 0.0),
             (None, 2.5, 4.0, 0.0),
             (None, 4.0, 6.0, 0.0),
@@ -527,7 +535,13 @@ class TestBracketMinimum:
     )
     @pytest.mark.parametrize(
         "args", (
-            (0.0, 0.0), (1e-300, 0.0), (1e-20, 0.0), (0.1, 0.0), (0.2, 0.0), (0.4, 0.0)
+            (0.0, 0.0), # Minimum is directly at xmin.
+            (1e-300, 0.0), # Minimum is extremely close to xmin.
+            (1e-20, 0.0), # Minimum is very close to xmin.
+            # Minimum at varying distances from xmin.
+            (0.1, 0.0),
+            (0.2, 0.0),
+            (0.4, 0.0)
         )
     )
     def test_scalar_with_limit_left(self, xl0, xm0, xr0, xmin, args):
@@ -540,12 +554,15 @@ class TestBracketMinimum:
         assert result.nfev == f.count
 
     @pytest.mark.parametrize(
+        #xmax is set to 1.0 in all cases.
         "xl0,xm0,xr0,xmax",
         (
+            # Bracket at varying distances from xmax.
             (0.2, 0.3, 0.4, 1.0),
             (0.05, 0.075, 0.1, 1.0),
             (-0.2, -0.1, 0.0, 1.0),
             (-21.2, -17.7, -14.2, 1.0),
+            # Test default right endpoint selection. It should not exceed xmax.
             (0.2, 0.3, None, 1.0),
             (0.05, 0.075, None, 1.0),
             (-0.2, -0.1, None, 1.0),
@@ -554,7 +571,11 @@ class TestBracketMinimum:
     )
     @pytest.mark.parametrize(
         "args", (
-            (0.9999999999999999, 0.0), (0.9, 0.0), (0.7, 0.0), (0.5, 0.0)
+            (0.9999999999999999, 0.0), # Minimum very close to xmax.
+            # Minimum at varying distances from xmax.
+            (0.9, 0.0),
+            (0.7, 0.0),
+            (0.5, 0.0)
         )
     )
     def test_scalar_with_limit_right(self, xl0, xm0, xr0, xmax, args):
@@ -569,17 +590,96 @@ class TestBracketMinimum:
     @pytest.mark.parametrize(
         "xl0,xm0,xr0,xmin,xmax,args",
         (
-            (0.2, 0.3, 0.4, None, 1.0, (1.0, 0.0)),
-            (1.4, 1.95, 2.5, 0.3, None, (0.3, 0.0)),
-            (2.6, 3.25, 3.9, None, 99.4, (99.4, 0)),
-            (4, 4.5, 5, -26.3, None, (-26.3, 0)),
-            (None, 0.3, None, None, 1.0, (1.0, 0.0)),
-            (None, 1.95, None, 0.3, None, (0.3, 0.0)),
-            (None, 3.25, None, None, 99.4, (99.4, 0)),
-            (None, 4.5, None, -26.3, None, (-26.3, 0)),
+            (   # Case 1:
+                # Initial bracket.
+                0.2, 
+                0.3,
+                0.4,
+                # Function slopes down to the right from the bracket to a minimum
+                # at 1.0. xmax is also at 1.0
+                None, 
+                1.0,
+                (1.0, 0.0)
+            ),
+            (   # Case 2:
+                # Initial bracket.
+                1.4,
+                1.95,
+                2.5,
+                # Function slopes down to the left from the bracket to a minimum at
+                # 0.3 with xmin set to 0.3.
+                0.3,
+                None,
+                (0.3, 0.0)
+            ),
+            (
+                # Case 3:
+                # Initial bracket.
+                2.6,
+                3.25,
+                3.9,
+                # Function slopes down and to the right to a minimum at 99.4 with xmax
+                # at 99.4. Tests case where minimum is at xmax relatively further from
+                # the bracket.
+                None,
+                99.4,
+                (99.4, 0)
+            ),
+            (
+                # Case 4:
+                # Initial bracket.
+                4,
+                4.5,
+                5,
+                # Function slopes down and to the left away from the bracket with a
+                # minimum at -26.3 with xmin set to -26.3. Tests case where minimum is
+                # at xmin relatively far from the bracket.
+                -26.3,
+                None,
+                (-26.3, 0)
+            ),
+            (
+                # Case 5:
+                # Similar to Case 1 above, but tests default values of xl0 and xr0.
+                None,
+                0.3,
+                None,
+                None,
+                1.0,
+                (1.0, 0.0)
+            ),
+            (   # Case 6:
+                # Similar to Case 2 above, but tests default values of xl0 and xr0.
+                None,
+                1.95,
+                None,
+                0.3,
+                None,
+                (0.3, 0.0)
+            ),
+            (
+                # Case 7:
+                # Similar to Case 3 above, but tests default values of xl0 and xr0.
+                None,
+                3.25,
+                None,
+                None,
+                99.4,
+                (99.4, 0)
+            ),
+            (
+                # Case 8:
+                # Similar to Case 4 above, but tests default values of xl0 and xr0.
+                None,
+                4.5,
+                None,
+                -26.3,
+                None,
+                (-26.3, 0)
+            ),
         )
     )
-    def test_minima_at_boundary_point(self, xl0, xm0, xr0, xmin, xmax, args):
+    def test_minimum_at_boundary_point(self, xl0, xm0, xr0, xmin, xmax, args):
         f = self.init_f()
         kwargs = self.get_kwargs(xr0=xr0, xmin=xmin, xmax=xmax, args=args)
         result = _bracket_minimum(f, xm0, **kwargs)
@@ -587,56 +687,53 @@ class TestBracketMinimum:
         assert args[0] in (result.xl, result.xr)
         assert result.nfev == f.count
 
-    @pytest.mark.parametrize(
-        "xm0",
-        (
-            np.array([[0.55], [0.58]]),
-            np.array([[0.55, 0.56], [0.57, 0.58]]),
-        ),
-    )
-    @pytest.mark.parametrize(
-        "xl0",
-        (
-            0.2,
-            np.array([[0.2], [0.3]]),
-            np.array([[0.2, 0.3],
-                      [0.3, 0.4]])
-        ),
-    )
-    @pytest.mark.parametrize(
-        "xr0",
-        (
-            0.6,
-            np.array([[0.6], [0.8]]),
-        ),
-    )
-    @pytest.mark.parametrize(
-        "xmin",
-        (
-            np.array([[-np.inf], [-1.0]]),
-            np.array([[-np.inf, -1.0], [-2.0, -3.0]]),
-        )
-    )
-    @pytest.mark.parametrize(
-        "xmax",
-        (
-            np.array([[np.inf], [2.0]]),
-            np.array([[np.inf, 2.0], [3.5, 4.5]]),
-        )
-    )
-    @pytest.mark.parametrize(
-        "args",
-        (
-            (0.0, 0.0),
-            (np.array([[0.0], [-0.1]]), np.array([[0.0], [2.5]])),
-        )
-    )
-    def test_vectorized(self, xl0, xm0, xr0, xmin, xmax, args):
+    @pytest.mark.parametrize('shape', [tuple(), (12, ), (3, 4), (3, 2, 2)])
+    def test_vectorization(self, shape):
+        # Test for correct functionality, output shapes, and dtypes for
+        # various input shapes.
+        a = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        args = (a, 0.0)
+        maxiter = 10
+
+        @np.vectorize
+        def bracket_minimum_single(xm0, xl0, xr0, xmin, xmax, factor, a):
+            return _bracket_minimum(self.init_f(), xm0, xl0=xl0, xr0=xr0, xmin=xmin,
+                                    xmax=xmax, factor=factor, maxiter=maxiter,
+                                    args=(a, 0.0))
+
         f = self.init_f()
-        kwargs = self.get_kwargs(xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax, args=args)
-        result = _bracket_minimum(f, xm0, **kwargs)
-        self.assert_valid_bracket(result)
-        result.nfev == f.count
+
+        rng = np.random.default_rng(2348234)
+        xl0 = -rng.random(size=shape)
+        xr0 = rng.random(size=shape)
+        xm0 = xl0 + rng.random(size=shape) * (xr0 - xl0)
+        xmin, xmax = 1e3*xl0, 1e3*xr0
+        if shape:  # make some elements un
+            i = rng.random(size=shape) > 0.5
+            xmin[i], xmax[i] = -np.inf, np.inf
+        factor = rng.random(size=shape) + 1.5
+        res = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin, xmax=xmax,
+                               factor=factor, args=args, maxiter=maxiter)
+        refs = bracket_minimum_single(xm0, xl0, xr0, xmin, xmax, factor, a).ravel()
+
+        attrs = ['xl', 'xm', 'xr', 'fl', 'fm', 'fr', 'success', 'nfev', 'nit']
+        for attr in attrs:
+            ref_attr = [getattr(ref, attr) for ref in refs]
+            res_attr = getattr(res, attr)
+            assert_allclose(res_attr.ravel(), ref_attr)
+            assert_equal(res_attr.shape, shape)
+
+        assert np.issubdtype(res.success.dtype, np.bool_)
+        if shape:
+            assert np.all(res.success[1:-1])
+        assert np.issubdtype(res.status.dtype, np.integer)
+        assert np.issubdtype(res.nfev.dtype, np.integer)
+        assert np.issubdtype(res.nit.dtype, np.integer)
+        assert_equal(np.max(res.nit), f.count - 3)
+        self.assert_valid_bracket(res)
+        assert_allclose(res.fl, f(res.xl, *args))
+        assert_allclose(res.fm, f(res.xm, *args))
+        assert_allclose(res.fr, f(res.xr, *args))
 
     def test_special_cases(self):
         # Test edge cases and other special cases.
@@ -668,5 +765,16 @@ class TestBracketMinimum:
 
         # Initial bracket is valid.
         f = self.init_f()
-        result = _bracket_minimum(f, -0.2, xl0=-1.0, xr0=1.0, args=(0, 0))
+        xl0, xm0, xr0 = [-1.0, -0.2, 1.0]
+        args = (0, 0)
+        result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, args=args)
         assert f.count == 3
+
+        assert_equal(
+            [result.xl, result.xm, result.xr],
+            [xl0, xm0, xr0],
+        )
+        assert_equal(
+            [result.fl, result.fm, result.fr],
+            [f(xl0, *args), f(xm0, *args), f(xr0, *args)],
+        )
