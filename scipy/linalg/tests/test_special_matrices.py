@@ -205,14 +205,15 @@ class TestBlockDiag:
 class TestKron:
 
     def test_basic(self):
-
-        a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
+        with pytest.deprecated_call(match="`kron`"):
+            a = kron(array([[1, 2], [3, 4]]), array([[1, 1, 1]]))
         assert_array_equal(a, array([[1, 1, 1, 2, 2, 2],
                                      [3, 3, 3, 4, 4, 4]]))
 
         m1 = array([[1, 2], [3, 4]])
         m2 = array([[10], [11]])
-        a = kron(m1, m2)
+        with pytest.deprecated_call(match="`kron`"):
+            a = kron(m1, m2)
         expected = array([[10, 20],
                           [11, 22],
                           [30, 40],

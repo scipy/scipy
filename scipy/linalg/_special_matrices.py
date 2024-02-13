@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
@@ -308,6 +309,10 @@ def kron(a, b):
     """
     Kronecker product.
 
+    .. deprecated:: 1.13.0
+        `kron` is deprecated and from be removed from SciPy 1.15.0 onwards. Use
+        `numpy.kron` instead.
+
     The result is the block matrix::
 
         a[0,0]*b    a[0,1]*b  ... a[0,-1]*b
@@ -336,6 +341,10 @@ def kron(a, b):
            [3, 3, 3, 4, 4, 4]])
 
     """
+    warnings.warn("`kron` is deprecated as of SciPy 1.13.0 and may be removed from "
+                  "SciPy 1.15.0 onwards. Use `numpy.kron` instead.",
+                  DeprecationWarning, stacklevel=2)
+
     if not a.flags['CONTIGUOUS']:
         a = np.reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:
