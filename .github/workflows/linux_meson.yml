@@ -44,12 +44,12 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -138,7 +138,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
@@ -197,7 +197,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           submodules: recursive
       - name: Configuring Test Environment
@@ -219,7 +219,7 @@ jobs:
 
   #################################################################################
   gcc8:
-    # Purpose is to examine builds with oldest-supported gcc.
+    # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
     name: Build with gcc-8
     needs: get_commit_message
     if: >
@@ -227,12 +227,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
@@ -250,6 +250,7 @@ jobs:
           pip install build meson-python ninja pythran pybind11 cython
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
+          pip install sparse
 
       - name: Build wheel and install
         run: |
@@ -271,7 +272,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps, coverage, and 64-bit BLAS
+    name: Prerelease deps, coverage and 64-bit BLAS
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -284,12 +285,12 @@ jobs:
         python-version: ['3.9', '3.11']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -367,7 +368,7 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 

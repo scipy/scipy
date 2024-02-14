@@ -1799,6 +1799,12 @@ class _ConstraintWrapper:
         Contains lower and upper bounds for the constraints --- lb and ub.
         These are converted to ndarray and have a size equal to the number of
         the constraints.
+
+    Notes
+    -----
+    _ConstraintWrapper.fun and _ConstraintWrapper.violation can get sent
+    arrays of shape (N, S) or (N,), where S is the number of vectors of shape
+    (N,) to consider constraints for.
     """
     def __init__(self, constraint, x0):
         self.constraint = constraint
@@ -1813,7 +1819,19 @@ class _ConstraintWrapper:
                     A = constraint.A
                 else:
                     A = np.atleast_2d(constraint.A)
-                return A.dot(x)
+
+                res = A.dot(x)
+                # x either has shape (N, S) or (N)
+                # (M, N) x (N, S) --> (M, S)
+                # (M, N) x (N,)   --> (M,)
+                # However, if (M, N) is a matrix then:
+                # (M, N) * (N,)   --> (M, 1), we need this to be (M,)
+                if x.ndim == 1 and res.ndim == 2:
+                    # deal with case that constraint.A is an np.matrix
+                    # see gh20041
+                    res = np.asarray(res)[:, 0]
+
+                return res
         elif isinstance(constraint, Bounds):
             def fun(x):
                 return np.asarray(x)
