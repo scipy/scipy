@@ -83,7 +83,7 @@ when the problem is presumed to have a smooth landscape around the initial guess
      - ✓
    * - dogleg
      - ✓
-     - must be pos. def.
+     - (✓)
      - 
      - 
      - 
