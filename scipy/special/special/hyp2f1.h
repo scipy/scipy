@@ -355,6 +355,37 @@ namespace detail {
                 return term;
             }
             if (k_ == n_) {
+                /* When c - a approaches a positive integer and k_ >= c - a = n then
+                 * poch(1 - c + b + m + k) = poch(1 - c + a + k) = approaches zero and
+                 * digamma(c - a - k) approaches a pole. However we can use the limit
+                 * digamma(-n + epsilon) / gamma(-n + epsilon) -> (-1)**(n + 1) * (n+1)! as epsilon -> 0
+                 * to continue the series.
+                 *
+                 * poch(1 - c + b, m + k) = gamma(1 - c + b + m + k)/gamma(1 - c + b)
+                 *
+                 * If a - b is an integer and c - a is an integer, then a and b must both be integers, so assume
+                 * a and b are integers and take the limit as c approaches an integer.
+                 *
+                 * gamma(1 - c + epsilon + a + k)/gamma(1 - c - epsilon + b) =
+                 * (gamma(c + epsilon - b) / gamma(c + epsilon - a - k)) *
+                 * (sin(pi * (c + epsilon - b)) / sin(pi * (c + epsilon - a - k))) (reflection principle)
+                 *
+                 * In the limit as epsilon goes to zero, the ratio of sines will approach
+                 * (-1)**(a - b + k) = (-1)**(m + k)
+                 *
+                 * We may then replace
+                 *
+                 * poch(1 - c - epsilon + b, m + k)*digamma(c + epsilon - a - k)
+                 *
+                 * with
+                 *
+                 * (-1)**(a - b + k)*gamma(c + epsilon - b) * digamma(c + epsilon - a - k) / gamma(c + epsilon - a - k)
+                 *
+                 * and taking the limit epsilon -> 0 gives
+                 *
+                 * (-1)**(a - b + k) * gamma(c - b) * (-1)**(k + a - c + 1)(k + a - c)!
+                 * = (-1)**(c - b - 1)*Gamma(k + a - c + 1)
+                 */
                 factor_ = std::pow(-1, m_ + n_) * special::binom(c_ - 1, b_ - 1)
                     * special::cephes::poch(c_ - a_ + 1, m_ - 1) / std::pow(z_, static_cast<double>(k_));
             }
@@ -417,7 +448,7 @@ namespace detail {
             ++n_;
             return Z_ * phi_;
         }
-        
+
       private:
         std::uint64_t n_;
         double a_, b_, c_, phi_previous_, phi_;
