@@ -11,7 +11,7 @@ from scipy.sparse.linalg import aslinearoperator
 import scipy.linalg
 from scipy.sparse.linalg import expm as sp_expm
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
-        _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
+        onenormest, expm_multiply, _expm_multiply_simple,
         _expm_multiply_interval)
 from scipy._lib._util import np_long
 
@@ -76,7 +76,7 @@ class TestExpmActionSimple:
                     M = np.identity(n)
                 else:
                     M = np.dot(M, A)
-                estimated = _onenormest_matrix_power(A, p)
+                estimated = onenormest(aslinearoperator(A)**p)
                 exact = np.linalg.norm(M, 1)
                 assert_(less_than_or_close(estimated, exact))
                 assert_(less_than_or_close(exact, 3*estimated))
@@ -120,11 +120,11 @@ class TestExpmActionSimple:
             with np.errstate(invalid='ignore'):
                 A = scipy.linalg.inv(np.random.randn(n, n))
                 B = np.random.randn(n, k)
-                observed = _expm_multiply_simple(A, B, t=t)
+                observed = _expm_multiply_simple(A, B, 0, t=t)
                 expected = np.dot(sp_expm(t*A), B)
                 assert_allclose(observed, expected)
-                observed = estimated(_expm_multiply_simple)(
-                    aslinearoperator(A), B, t=t
+                observed = _expm_multiply_simple(
+                    aslinearoperator(A), B, 0, t=t
                 )
                 assert_allclose(observed, expected)
 
@@ -135,11 +135,11 @@ class TestExpmActionSimple:
         k = 2
         A = np.random.randn(n, n)
         B = np.random.randn(n, k)
-        observed = _expm_multiply_simple(A, B, t=t)
+        observed = _expm_multiply_simple(A, B, 0, t=t)
         expected = sp_expm(t*A).dot(B)
         assert_allclose(observed, expected)
-        observed = estimated(_expm_multiply_simple)(
-            aslinearoperator(A), B, t=t
+        observed = _expm_multiply_simple(
+            aslinearoperator(A), B, 0, t=t
         )
         assert_allclose(observed, expected)
 
@@ -247,22 +247,22 @@ class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags(np.arange(5), format='csr', dtype=int)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
         # Test A complex, B int
-        A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
+        A = scipy.sparse.diags(-1j*np.arange(5), format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
-        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
         # Test A int, B complex
-        A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
+        A = scipy.sparse.diags(np.arange(5), format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
-        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
-        assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
+        Aexpm = scipy.sparse.diags(np.exp(np.arange(5)), format='csr')
+        assert_allclose(expm_multiply(A, B, 0, 1)[-1], Aexpm.dot(B))
 
     def test_expm_multiply_interval_status_0(self):
         self._help_test_specific_expm_interval_status(0)
@@ -286,16 +286,20 @@ class TestExpmActionInterval:
         for num in [14, 13, 2] * nrepeats:
             A = np.random.randn(n, n)
             B = np.random.randn(n, k)
-            status = _expm_multiply_interval(A, B,
-                    start=start, stop=stop, num=num, endpoint=endpoint,
-                    status_only=True)
+            mu = A.trace() / n
+            A_ = A - mu*np.eye(n, n)
+            status = _expm_multiply_interval(
+                A_, B, mu, start=start, stop=stop, num=num, endpoint=endpoint,
+                status_only=True
+            )
             if status == target_status:
-                X, status = _expm_multiply_interval(A, B,
-                        start=start, stop=stop, num=num, endpoint=endpoint,
-                        status_only=False)
+                X, _ = _expm_multiply_interval(
+                    A_, B, mu, start=start, stop=stop, num=num, endpoint=endpoint,
+                    status_only=False
+                )
                 assert_equal(X.shape, (num, n, k))
                 samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
+                                      num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
                     assert_allclose(solution, sp_expm(t*A).dot(B))
                 nsuccesses += 1
