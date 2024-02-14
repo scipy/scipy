@@ -19,10 +19,10 @@ optimization algorithms. A detailed listing is available:
 Optimization Solvers Reference
 ------------------------------
 
-Provide an overview of various optimization solvers,which are tools 
-used to find the minimum or maximum of an objective function subject 
-to constraints. These solvers are divided into two main categories: 
-Local Optimization and Global Optimization.Each category has a set of 
+This section provides an overview of the optimization solvers
+available in SciPy to assist users in finding a suitable solver for a given
+problem. These solvers are divided into two main categories: 
+local optimization and global optimization. Each category has a set of 
 solvers with unique characteristics and capabilities.
 
 
