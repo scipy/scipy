@@ -61,7 +61,7 @@ when the problem is presumed to have a smooth landscape around the initial guess
      - 
      - 
      - ✓
-     - 
+     - ✓
      - 
    * - CG
      - ✓
