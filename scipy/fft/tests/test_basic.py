@@ -15,6 +15,25 @@ from scipy._lib._array_api import (
     array_namespace, size, xp_assert_close, xp_assert_equal
 )
 
+
+# Expected input dtypes. Note that `scipy.fft` is more flexible for numpy,
+# but for C2C transforms like `fft.fft`, the array API standard only mandates
+# that complex dtypes should work, float32/float64 aren't guaranteed to.
+def get_expected_input_dtype(func, xp):
+    if func in [fft.fft, fft.fftn, fft.fft2,
+                fft.ifft, fft.ifftn, fft.ifft2,
+                fft.hfft, fft.hfftn, fft.hfft2,
+                fft.irfft, fft.irfftn, fft.irfft2]:
+        dtype = xp.complex128
+    elif func in [fft.rfft, fft.rfftn, fft.rfft2,
+                  fft.ihfft, fft.ihfftn, fft.ihfft2]:
+        dtype = xp.float64
+    else:
+        raise ValueError(f'Unknown FFT function: {func}')
+
+    return dtype
+
+
 def fft1(x):
     L = len(x)
     phase = -2j*np.pi*(np.arange(L)/float(L))
@@ -26,7 +45,7 @@ class TestFFTShift:
 
     @array_api_compatible
     def test_fft_n(self, xp):
-        x = xp.asarray([1, 2, 3])
+        x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         if xp.__name__ == 'torch':
             assert_raises(RuntimeError, fft.fft, x, 0)
         else:
@@ -114,11 +133,12 @@ class TestFFT1D:
 
     @array_api_compatible
     def test_rfft(self, xp):
-        x = xp.asarray(random(29))
+        x = xp.asarray(random(29), dtype=xp.float64)
         for n in [size(x), 2*size(x)]:
             for norm in [None, "backward", "ortho", "forward"]:
                 xp_assert_close(fft.rfft(x, n=n, norm=norm),
-                                fft.fft(x, n=n, norm=norm)[:(n//2 + 1)])
+                                fft.fft(xp.asarray(x, dtype=xp.complex128),
+                                        n=n, norm=norm)[:(n//2 + 1)])
             xp_assert_close(
                 fft.rfft(x, n=n, norm="ortho"),
                 fft.rfft(x, n=n) / xp.sqrt(xp.asarray(n, dtype=xp.float64))
@@ -135,8 +155,8 @@ class TestFFT1D:
     @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_rfft2(self, xp):
-        x = xp.asarray(random((30, 20)))
-        expect = fft.fft2(x)[:, :11]
+        x = xp.asarray(random((30, 20)), dtype=xp.float64)
+        expect = fft.fft2(xp.asarray(x, dtype=xp.complex128))[:, :11]
         xp_assert_close(fft.rfft2(x), expect)
         xp_assert_close(fft.rfft2(x, norm="backward"), expect)
         xp_assert_close(fft.rfft2(x, norm="ortho"),
@@ -156,8 +176,8 @@ class TestFFT1D:
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_rfftn(self, xp):
-        x = xp.asarray(random((30, 20, 10)))
-        expect = fft.fftn(x)[:, :, :6]
+        x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
+        expect = fft.fftn(xp.asarray(x, dtype=xp.complex128))[:, :, :6]
         xp_assert_close(fft.rfftn(x), expect)
         xp_assert_close(fft.rfftn(x, norm="backward"), expect)
         xp_assert_close(fft.rfftn(x, norm="ortho"),
@@ -211,8 +231,8 @@ class TestFFT1D:
     @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_ihfft2(self, xp):
-        x = xp.asarray(random((30, 20)))
-        expect = fft.ifft2(x)[:, :11]
+        x = xp.asarray(random((30, 20)), dtype=xp.float64)
+        expect = fft.ifft2(xp.asarray(x, dtype=xp.complex128))[:, :11]
         xp_assert_close(fft.ihfft2(x), expect)
         xp_assert_close(fft.ihfft2(x, norm="backward"), expect)
         xp_assert_close(
@@ -234,8 +254,8 @@ class TestFFT1D:
     # torch.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('torch')
     def test_ihfftn(self, xp):
-        x = xp.asarray(random((30, 20, 10)))
-        expect = fft.ifftn(x)[:, :, :6]
+        x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
+        expect = fft.ifftn(xp.asarray(x, dtype=xp.complex128))[:, :, :6]
         xp_assert_close(expect, fft.ihfftn(x))
         xp_assert_close(expect, fft.ihfftn(x, norm="backward"))
         xp_assert_close(
@@ -245,7 +265,8 @@ class TestFFT1D:
         xp_assert_close(fft.ihfftn(x, norm="forward"), expect * (30 * 20 * 10))
 
     def _check_axes(self, op, xp):
-        x = xp.asarray(random((30, 20, 10)))
+        dtype = get_expected_input_dtype(op, xp)
+        x = xp.asarray(random((30, 20, 10)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 0, 2), (1, 2, 0), (2, 0, 1), (2, 1, 0)]
         xp_test = array_namespace(x)
         for a in axes:
@@ -273,7 +294,8 @@ class TestFFT1D:
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
     def test_axes_subset_with_shape_standard(self, op, xp):
-        x = xp.asarray(random((16, 8, 4)))
+        dtype = get_expected_input_dtype(op, xp)
+        x = xp.asarray(random((16, 8, 4)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
         xp_test = array_namespace(x)
         for a in axes:
@@ -295,7 +317,8 @@ class TestFFT1D:
                                     fft.hfft2, fft.ihfft2,
                                     fft.hfftn, fft.ihfftn])
     def test_axes_subset_with_shape_non_standard(self, op, xp):
-        x = xp.asarray(random((16, 8, 4)))
+        dtype = get_expected_input_dtype(op, xp)
+        x = xp.asarray(random((16, 8, 4)), dtype=dtype)
         axes = [(0, 1, 2), (0, 2, 1), (1, 2, 0)]
         xp_test = array_namespace(x)
         for a in axes:
@@ -310,17 +333,21 @@ class TestFFT1D:
     @array_api_compatible
     def test_all_1d_norm_preserving(self, xp):
         # verify that round-trip transforms are norm-preserving
-        x = xp.asarray(random(30))
+        x = xp.asarray(random(30), dtype=xp.float64)
         xp_test = array_namespace(x)
         x_norm = xp_test.linalg.vector_norm(x)
         n = size(x) * 2
-        func_pairs = [(fft.fft, fft.ifft),
-                      (fft.rfft, fft.irfft),
+        func_pairs = [(fft.rfft, fft.irfft),
                       # hfft: order so the first function takes x.size samples
                       #       (necessary for comparison to x_norm above)
                       (fft.ihfft, fft.hfft),
+                      # functions that expect complex dtypes at the end
+                      (fft.fft, fft.ifft),
                       ]
         for forw, back in func_pairs:
+            if forw == fft.fft:
+                x = xp.asarray(x, dtype=xp.complex128)
+                x_norm = xp_test.linalg.vector_norm(x)
             for n in [size(x), 2*size(x)]:
                 for norm in ['backward', 'ortho', 'forward']:
                     tmp = forw(x, n=n, norm=norm)
@@ -346,20 +373,25 @@ class TestFFT1D:
 
     @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
-    def test_dtypes(self, dtype, xp):
+    def test_dtypes_real(self, dtype, xp):
         x = xp.asarray(random(30), dtype=getattr(xp, dtype))
-        out_dtypes = {"float32": xp.complex64, "float64": xp.complex128}
-        x_complex = xp.asarray(x, dtype=out_dtypes[dtype])
 
-        res_fft = fft.ifft(fft.fft(x))
         res_rfft = fft.irfft(fft.rfft(x))
         res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
         # Check both numerical results and exact dtype matches
         rtol = {"float32": 1.2e-4, "float64": 1e-8}[dtype]
-        xp_assert_close(res_fft, x_complex, rtol=rtol, atol=0)
         xp_assert_close(res_rfft, x, rtol=rtol, atol=0)
         xp_assert_close(res_hfft, x, rtol=rtol, atol=0)
 
+    @array_api_compatible
+    @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
+    def test_dtypes_complex(self, dtype, xp):
+        x = xp.asarray(random(30), dtype=getattr(xp, dtype))
+
+        res_fft = fft.ifft(fft.fft(x))
+        # Check both numerical results and exact dtype matches
+        rtol = {"complex64": 1.2e-4, "complex128": 1e-8}[dtype]
+        xp_assert_close(res_fft, x, rtol=rtol, atol=0)
 
 @pytest.mark.parametrize(
         "dtype",
@@ -490,8 +522,13 @@ class TestIRFFTN:
                                   fft.fftn, fft.ifftn,
                                   fft.rfftn, fft.irfftn, fft.hfft, fft.ihfft])
 def test_non_standard_params(func, xp):
+    if func in [fft.rfft, fft.rfftn, fft.ihfft]:
+        dtype = xp.float64
+    else:
+        dtype = xp.complex128
+
     if xp.__name__ != 'numpy':
-        x = xp.asarray([1, 2, 3])
+        x = xp.asarray([1, 2, 3], dtype=dtype)
         # func(x) should not raise an exception
         func(x)
         assert_raises(ValueError, func, x, workers=2)
