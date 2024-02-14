@@ -6,7 +6,6 @@ import tempfile
 from functools import wraps
 
 import numpy as np
-import numpy.array_api
 import numpy.testing as npt
 import pytest
 import hypothesis
@@ -108,7 +107,11 @@ xp_available_backends = {'numpy': np}
 
 if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     # fill the dict of backends with available libraries
-    xp_available_backends.update({'numpy.array_api': numpy.array_api})
+    try:
+        import array_api_strict
+        xp_available_backends.update({'array_api_strict': array_api_strict})
+    except ImportError:
+        pass
 
     try:
         import torch  # type: ignore[import]

@@ -426,8 +426,8 @@ class TestFFTShift:
 
 class TestFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
+    # fft not yet implemented by array-api-strict
+    @skip_if_array_api_backend('array_api_strict')
     # cupy.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
@@ -456,8 +456,8 @@ class TestFFTFreq:
 
 class TestRFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
+    # fft not yet implemented by array-api-strict
+    @skip_if_array_api_backend('array_api_strict')
     # cupy.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
