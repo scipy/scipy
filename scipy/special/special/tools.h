@@ -57,7 +57,7 @@ namespace detail {
          *     type of the result.
          *
          * max_terms : The number of terms from the series to sum.
-         *     
+         *
          */
         Number result = init_val;
         for (std::uint64_t i = 0; i < num_terms; ++i) {

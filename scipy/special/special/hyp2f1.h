@@ -43,10 +43,10 @@
 #include "error.h"
 #include "tools.h"
 
+#include "binom.h"
 #include "cephes/gamma.h"
 #include "cephes/lanczos.h"
 #include "cephes/poch.h"
-#include "binom.h"
 #include "digamma.h"
 
 namespace special {
@@ -314,10 +314,10 @@ namespace detail {
         SPECFUN_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> term = (d1_ + d2_ - d3_ - d4_ + log_neg_z_) * factor_;
             // Use digamma(x + 1) = digamma(x) + 1/x
-            d1_ += 1 / (1.0 + k_);      // d1 = digamma(1 + k)
-            d2_ += 1 / (1.0 + m_ + k_); // d2 = digamma(1 + m + k)
-            d3_ += 1 / (a_ + k_);       // d3 = digamma(a + k)
-            d4_ -= 1 / (c_ - a_ - k_ - 1);  // d4 = digamma(c - a - k)
+            d1_ += 1 / (1.0 + k_);         // d1 = digamma(1 + k)
+            d2_ += 1 / (1.0 + m_ + k_);    // d2 = digamma(1 + m + k)
+            d3_ += 1 / (a_ + k_);          // d3 = digamma(a + k)
+            d4_ -= 1 / (c_ - a_ - k_ - 1); // d4 = digamma(c - a - k)
             factor_ *= (b_ + m_ + k_) * (1 - c_ + b_ + m_ + k_) / ((k_ + 1) * (m_ + k_ + 1)) / z_;
             ++k_;
             return term;
@@ -346,10 +346,10 @@ namespace detail {
             if (k_ < n_) {
                 term = (d1_ + d2_ - d3_ - d4_ + log_neg_z_) * factor_;
                 // Use digamma(x + 1) = digamma(x) + 1/x
-                d1_ += 1 / (1.0 + k_);      // d1 = digamma(1 + k)
+                d1_ += 1 / (1.0 + k_);    // d1 = digamma(1 + k)
                 d2_ += 1 / (1 + m_ + k_); // d2 = digamma(1 + m + k)
-                d3_ += 1 / (a_ + k_);       // d3 = digamma(a + k)
-                d4_ -= 1 / (n_ - k_ - 1);  // d4 = digamma(c - a - k)
+                d3_ += 1 / (a_ + k_);     // d3 = digamma(a + k)
+                d4_ -= 1 / (n_ - k_ - 1); // d4 = digamma(c - a - k)
                 factor_ *= (b_ + m_ + k_) * (1 - c_ + b_ + m_ + k_) / ((k_ + 1) * (m_ + k_ + 1)) / z_;
                 ++k_;
                 return term;
@@ -386,8 +386,8 @@ namespace detail {
                  * (-1)**(a - b + k) * gamma(c - b) * (-1)**(k + a - c + 1)(k + a - c)!
                  * = (-1)**(c - b - 1)*Gamma(k + a - c + 1)
                  */
-                factor_ = std::pow(-1, m_ + n_) * special::binom(c_ - 1, b_ - 1)
-                    * special::cephes::poch(c_ - a_ + 1, m_ - 1) / std::pow(z_, static_cast<double>(k_));
+                factor_ = std::pow(-1, m_ + n_) * special::binom(c_ - 1, b_ - 1) *
+                          special::cephes::poch(c_ - a_ + 1, m_ - 1) / std::pow(z_, static_cast<double>(k_));
             }
             term = factor_;
             factor_ *= (b_ + m_ + k_) * (k_ + a_ - c_ + 1) / ((k_ + 1) * (m_ + k_ + 1)) / z_;
@@ -462,26 +462,27 @@ namespace detail {
         if (m >= 0) {
             if (m != 0) {
                 auto series_generator = HypergeometricSeriesGenerator(a, b, 1 - m, 1.0 - z);
-                result +=
-                    four_gammas(m, c, a + m, b + m) *
-                    series_eval_fixed_length(series_generator, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
+                result += four_gammas(m, c, a + m, b + m) * series_eval_fixed_length(series_generator,
+                                                                                     std::complex<double>{0.0, 0.0},
+                                                                                     static_cast<std::uint64_t>(m));
             }
             std::complex<double> prefactor = std::pow(-1.0, m + 1) * special::cephes::Gamma(c) /
                                              (special::cephes::Gamma(a) * special::cephes::Gamma(b)) *
                                              std::pow(1.0 - z, m);
             auto series_generator = Hyp2f1Transform1LimitSeriesGenerator(a + m, b + m, m, z);
-            result +=
-                prefactor * series_eval(series_generator, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
+            result += prefactor * series_eval(series_generator, std::complex<double>{0.0, 0.0}, hyp2f1_EPS,
+                                              hyp2f1_MAXITER, "hyp2f1");
             return result;
         } else {
             result = four_gammas(-m, c, a, b) * std::pow(1.0 - z, m);
             auto series_generator1 = HypergeometricSeriesGenerator(a + m, b + m, 1 + m, 1.0 - z);
-            result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(-m));
+            result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0},
+                                               static_cast<std::uint64_t>(-m));
             double prefactor = std::pow(-1.0, m + 1) * special::cephes::Gamma(c) /
                                (special::cephes::Gamma(a + m) * special::cephes::Gamma(b + m));
             auto series_generator2 = Hyp2f1Transform1LimitSeriesGenerator(a, b, -m, z);
-            result +=
-                prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
+            result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS,
+                                              hyp2f1_MAXITER, "hyp2f1");
             return result;
         }
     }
@@ -492,17 +493,19 @@ namespace detail {
          * can be handled by swapping a and b. */
         auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(a, b, c, m, z);
         std::complex<double> result = cephes::Gamma(c) / cephes::Gamma(a) * std::pow(-z, -b);
-        result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
-        std::complex<double> prefactor =
-            cephes::Gamma(c) / (cephes::Gamma(a) * cephes::Gamma(c - b) * std::pow(-z, a));
+        result *=
+            series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
+        std::complex<double> prefactor = cephes::Gamma(c) / (cephes::Gamma(a) * cephes::Gamma(c - b) * std::pow(-z, a));
         double n = c - a;
         if (abs(n - std::round(n)) < hyp2f1_EPS) {
             auto series_generator2 = Hyp2f1Transform2LimitSeriesCminusAIntGenerator(a, b, c, m, n, z);
-            result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
+            result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS,
+                                              hyp2f1_MAXITER, "hyp2f1");
             return result;
         }
         auto series_generator2 = Hyp2f1Transform2LimitSeriesGenerator(a, b, c, m, z);
-        result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
+        result += prefactor *
+                  series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
         return result;
     }
 
@@ -606,13 +609,13 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
             result = std::pow(1.0 - z, c - a - b);
             // Maximum number of terms 1500 comes from Zhang and Jin.
             auto series_generator = detail::HypergeometricSeriesGenerator(c - a, c - b, c, z);
-            result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER,
-                                          "hyp2f1");
+            result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                                          detail::hyp2f1_MAXITER, "hyp2f1");
             return result;
         }
         auto series_generator = detail::HypergeometricSeriesGenerator(a, b, c, z);
-        return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER,
-                                   "hyp2f1");
+        return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                                   detail::hyp2f1_MAXITER, "hyp2f1");
     }
     /* Points near exp(iπ/3), exp(-iπ/3) not handled by any of the standard
      * transformations. Use series of López and Temme [5]. These regions
@@ -626,13 +629,13 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
         if ((c - a <= a && c - b < b) || (c - a < a && c - b <= b)) {
             auto series_generator = detail::LopezTemmeSeriesGenerator(c - a, c - b, c, z);
             result = std::pow(1.0 - 0.5 * z, a - c); // Lopez-Temme prefactor
-            result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER,
-                                          "hyp2f1");
+            result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                                          detail::hyp2f1_MAXITER, "hyp2f1");
             return std::pow(1.0 - z, c - a - b) * result; // Euler transform prefactor.
         }
         auto series_generator = detail::LopezTemmeSeriesGenerator(a, b, c, z);
-        result =
-            detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
+        result = detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                                     detail::hyp2f1_MAXITER, "hyp2f1");
         return std::pow(1.0 - 0.5 * z, -a) * result; // Lopez-Temme prefactor.
     }
     /* z/(z - 1) transformation (DLMF 15.8.1). Avoids cancellation issues that
@@ -643,8 +646,8 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
             std::swap(a, b);
         }
         auto series_generator = detail::HypergeometricSeriesGenerator(a, c - b, c, z / (z - 1.0));
-        return std::pow(1.0 - z, -a) *
-               detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
+        return std::pow(1.0 - z, -a) * detail::series_eval(series_generator, std::complex<double>{0.0, 0.0},
+                                                           detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
     }
     /* 1 - z transformation (DLMF 15.8.4). */
     if (0.9 <= z_abs && z_abs < 1.1) {
@@ -654,7 +657,8 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
             return detail::hyp2f1_transform1_limiting_case(a, b, c, m, z);
         }
         auto series_generator = detail::Hyp2f1Transform1Generator(a, b, c, z);
-        return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
+        return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                                   detail::hyp2f1_MAXITER, "hyp2f1");
     }
     /* 1/z transformation (DLMF 15.8.2). */
     if (std::abs(a - b - std::round(a - b)) < detail::hyp2f1_EPS) {
@@ -665,6 +669,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
         return detail::hyp2f1_transform2_limiting_case(a, b, c, m, z);
     }
     auto series_generator = detail::Hyp2f1Transform2Generator(a, b, c, z);
-    return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
+    return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
+                               detail::hyp2f1_MAXITER, "hyp2f1");
 }
 } // namespace special
