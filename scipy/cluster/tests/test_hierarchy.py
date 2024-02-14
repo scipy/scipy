@@ -1271,7 +1271,7 @@ def test_node_compare(xp):
 
 @skip_if_array_api_gpu
 @array_api_compatible
-@skip_if_array_api_backend('numpy.array_api')
+@skip_if_array_api_backend('array_api_strict')
 def test_cut_tree(xp):
     np.random.seed(23)
     nobs = 50

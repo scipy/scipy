@@ -344,12 +344,12 @@ class TestFFTShift:
     @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
-        y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
+        x = xp.asarray([0., 1, 2, 3, 4, -4, -3, -2, -1])
+        y = xp.asarray([-4., -3, -2, -1, 0, 1, 2, 3, 4])
         xp_assert_close(fft.fftshift(x), y)
         xp_assert_close(fft.ifftshift(y), x)
-        x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1])
-        y = xp.asarray([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4])
+        x = xp.asarray([0., 1, 2, 3, 4, -5, -4, -3, -2, -1])
+        y = xp.asarray([-5., -4, -3, -2, -1, 0, 1, 2, 3, 4])
         xp_assert_close(fft.fftshift(x), y)
         xp_assert_close(fft.ifftshift(y), x)
 
@@ -365,8 +365,8 @@ class TestFFTShift:
     @skip_if_array_api_backend('torch')
     @array_api_compatible
     def test_axes_keyword(self, xp):
-        freqs = xp.asarray([[0, 1, 2], [3, 4, -4], [-3, -2, -1]])
-        shifted = xp.asarray([[-1, -3, -2], [2, 0, 1], [-4, 3, 4]])
+        freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
+        shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
         xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shifted)
         xp_assert_close(fft.fftshift(freqs, axes=0), fft.fftshift(freqs, axes=(0,)))
         xp_assert_close(fft.ifftshift(shifted, axes=(0, 1)), freqs)
@@ -384,14 +384,14 @@ class TestFFTShift:
             [0, 1],
             [2, 3],
             [4, 5]
-        ])
+        ], dtype=xp.float64)
 
         # shift in dimension 0
         shift_dim0 = xp.asarray([
             [4, 5],
             [0, 1],
             [2, 3]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=0), shift_dim0)
         xp_assert_close(fft.ifftshift(shift_dim0, axes=0), freqs)
         xp_assert_close(fft.fftshift(freqs, axes=(0,)), shift_dim0)
@@ -402,7 +402,7 @@ class TestFFTShift:
             [1, 0],
             [3, 2],
             [5, 4]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=1), shift_dim1)
         xp_assert_close(fft.ifftshift(shift_dim1, axes=1), freqs)
 
@@ -411,7 +411,7 @@ class TestFFTShift:
             [5, 4],
             [1, 0],
             [3, 2]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
         xp_assert_close(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
         xp_assert_close(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
@@ -426,8 +426,8 @@ class TestFFTShift:
 
 class TestFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
+    # fft not yet implemented by array-api-strict
+    @skip_if_array_api_backend('array_api_strict')
     # cupy.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
@@ -456,8 +456,8 @@ class TestFFTFreq:
 
 class TestRFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
+    # fft not yet implemented by array-api-strict
+    @skip_if_array_api_backend('array_api_strict')
     # cupy.fft not yet implemented by array-api-compat
     @skip_if_array_api_backend('cupy')
     @array_api_compatible
