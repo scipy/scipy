@@ -46,6 +46,7 @@
 #include "cephes/gamma.h"
 #include "cephes/lanczos.h"
 #include "cephes/poch.h"
+#include "binom.h"
 #include "digamma.h"
 
 namespace special {
@@ -328,6 +329,47 @@ namespace detail {
         std::uint64_t k_;
     };
 
+    class Hyp2f1Transform2LimitSeriesCminusAIntGenerator {
+        /* 1/z transform in limit as a - b approaches a non-negative integer m, and c - a approaches
+         * a positive integer n. */
+      public:
+        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesCminusAIntGenerator(double a, double b, double c, double m,
+                                                                           double n, std::complex<double> z)
+            : d1_(special::digamma(1)), d2_(special::digamma(1 + m)), d3_(special::digamma(a)),
+              d4_(special::digamma(n)), a_(a), b_(b), c_(c), m_(m), n_(n), z_(z), log_neg_z_(std::log(-z)),
+              factor_(special::cephes::poch(b, m) * special::cephes::poch(1 - c + b, m) /
+                      special::cephes::Gamma(m + 1)),
+              k_(0) {}
+
+        SPECFUN_HOST_DEVICE std::complex<double> operator()() {
+            std::complex<double> term;
+            if (k_ < n_) {
+                term = (d1_ + d2_ - d3_ - d4_ + log_neg_z_) * factor_;
+                // Use digamma(x + 1) = digamma(x) + 1/x
+                d1_ += 1 / (1.0 + k_);      // d1 = digamma(1 + k)
+                d2_ += 1 / (1 + m_ + k_); // d2 = digamma(1 + m + k)
+                d3_ += 1 / (a_ + k_);       // d3 = digamma(a + k)
+                d4_ -= 1 / (n_ - k_ - 1);  // d4 = digamma(c - a - k)
+                factor_ *= (b_ + m_ + k_) * (1 - c_ + b_ + m_ + k_) / ((k_ + 1) * (m_ + k_ + 1)) / z_;
+                ++k_;
+                return term;
+            }
+            if (k_ == n_) {
+                factor_ = std::pow(-1, m_ + n_) * special::binom(c_ - 1, b_ - 1)
+                    * special::cephes::poch(c_ - a_ + 1, m_ - 1) / std::pow(z_, static_cast<double>(k_));
+            }
+            term = factor_;
+            factor_ *= (b_ + m_ + k_) * (k_ + a_ - c_ + 1) / ((k_ + 1) * (m_ + k_ + 1)) / z_;
+            ++k_;
+            return term;
+        }
+
+      private:
+        double d1_, d2_, d3_, d4_, a_, b_, c_, m_, n_;
+        std::complex<double> z_, log_neg_z_, factor_;
+        std::uint64_t k_;
+    };
+
     class Hyp2f1Transform2LimitFinitePartGenerator {
         /* Initial finite sum in limit as a - b approaches a non-negative integer m. The limiting series
          * for the 1 - z transform also has an initial finite sum, but it is a standard hypergeometric
@@ -375,7 +417,7 @@ namespace detail {
             ++n_;
             return Z_ * phi_;
         }
-
+        
       private:
         std::uint64_t n_;
         double a_, b_, c_, phi_previous_, phi_;
@@ -422,6 +464,12 @@ namespace detail {
         result *= series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
         std::complex<double> prefactor =
             cephes::Gamma(c) / (cephes::Gamma(a) * cephes::Gamma(c - b) * std::pow(-z, a));
+        double n = c - a;
+        if (abs(n - std::round(n)) < hyp2f1_EPS) {
+            auto series_generator2 = Hyp2f1Transform2LimitSeriesCminusAIntGenerator(a, b, c, m, n, z);
+            result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
+            return result;
+        }
         auto series_generator2 = Hyp2f1Transform2LimitSeriesGenerator(a, b, c, m, z);
         result += prefactor * series_eval(series_generator2, std::complex<double>{0.0, 0.0}, hyp2f1_EPS, hyp2f1_MAXITER, "hyp2f1");
         return result;
