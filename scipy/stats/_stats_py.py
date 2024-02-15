@@ -34,8 +34,12 @@ from collections import namedtuple
 import numpy as np
 from numpy import array, asarray, ma
 
+from scipy import sparse
 from scipy.spatial.distance import cdist
+from scipy.spatial import distance_matrix
+
 from scipy.ndimage import _measurements
+from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan,
                               AxisError)
@@ -68,7 +72,6 @@ from scipy._lib._util import float_factorial  # noqa: F401
 from scipy.stats._mstats_basic import (  # noqa: F401
     PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
 )
-
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
@@ -10131,7 +10134,8 @@ def quantile_test(x, *, q=0, p=0.5, alternative='two-sided'):
 #####################################
 
 
-def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
+def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None,
+                        p=None):
     r"""
     Compute the first Wasserstein distance between two 1D distributions.
 
@@ -10205,8 +10209,28 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     4.0781331438047861
 
     """
-    return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+    u_values = asarray(u_values)
+    v_values = asarray(v_values)
 
+    if u_values.ndim > 2 or v_values.ndim > 2:
+        raise ValueError('Invalid input values. The inputs must have either '
+                         'one or two dimensions.')
+    # if dimensions are not equal throw error
+    if u_values.ndim != v_values.ndim:
+        raise ValueError('Invalid input values. Dimensions of inputs must be '
+                         'equal.')
+
+    if u_values.ndim == 1 and v_values.ndim == 1:
+        if p is None:
+            return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
+        elif p == 1 or p == 2:
+            # This is to test the optimization method.
+            # Do not add to the user guide.
+            u_values = np.expand_dims(u_values, axis=1)
+            v_values = np.expand_dims(v_values, axis=1)
+        else:
+            return _wasserstein_p(p, u_values, v_values, u_weights, v_weights)
+    return _wasserstein_distance_nd(p, u_values, v_values, u_weights, v_weights)
 
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""Compute the energy distance between two 1D distributions.
@@ -10380,6 +10404,111 @@ def _cdf_distance(p, u_values, v_values, u_weights=None, v_weights=None):
     return np.power(np.sum(np.multiply(np.power(np.abs(u_cdf - v_cdf), p),
                                        deltas)), 1/p)
 
+def _wasserstein_p(p, u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Calculate $W_p$ distance for two 1-D distributions.
+    p is str{'1', '2', 'inf'}
+    """
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+
+    u_sorter = np.argsort(u_values)
+    v_sorter = np.argsort(v_values)
+
+    u_values_sorted = u_values[u_sorter]
+    v_values_sorted = v_values[v_sorter]
+
+    # Calculate the CDFs of u and v using their weights, if specified.
+    if u_weights is None:
+        u_cdf = np.cumsum(np.ones(u_values.size)/u_values.size)
+    else:
+        u_sorted_cumweights = np.cumsum(u_weights[u_sorter])
+        u_cdf = u_sorted_cumweights / u_sorted_cumweights[-1]
+
+    if v_weights is None:
+        v_cdf = np.cumsum(np.ones(v_values.size)/v_values.size)
+    else:
+        v_sorted_cumweights = np.cumsum(v_weights[v_sorter])
+        v_cdf = v_sorted_cumweights / v_sorted_cumweights[-1]
+
+    # Maintainance Note: NumPy does not currently (Jan 2024) support efficient
+    # merging of two already sorted arrays O(N+M). If this is ever supported,
+    # replace the mergesort O((N+M)log(N+M)) here.
+    all_cdf = np.concatenate((u_cdf[:-1], v_cdf[:-1]))
+    all_cdf.sort(kind='mergesort')
+
+    u_quantile_indices = u_cdf.searchsorted(all_cdf, 'left')
+    v_quantile_indices = v_cdf.searchsorted(all_cdf, 'left')
+
+    u_quantile_values = np.concatenate((u_values_sorted[u_quantile_indices],
+                                    [u_values_sorted[-1]]))
+    v_quantile_values = np.concatenate((v_values_sorted[v_quantile_indices],
+                                    [v_values_sorted[-1]]))
+    abs_quantile_differences = np.abs(u_quantile_values - v_quantile_values)
+
+    if p == 'inf':
+        return np.max(abs_quantile_differences)
+    else:
+        deltas = np.diff(np.concatenate(([0], all_cdf, [1])))
+        if p == '1':
+            # This must give the same result with _cdf_distance
+            return np.sum(np.multiply(abs_quantile_differences, deltas))
+        elif p == '2':
+            integral = np.sum(np.multiply(abs_quantile_differences**2, deltas))
+            return np.sqrt(integral)
+        raise ValueError('Invalid p value: ', p)
+
+def _wasserstein_distance_nd(p, u_values, v_values, u_weights=None, v_weights=None):
+    r"""
+    Compute 2D Wasserstein distance using linear programming.
+    """
+    m, n = len(u_values), len(v_values)
+    u_values, u_weights = _validate_distribution(u_values, u_weights)
+    v_values, v_weights = _validate_distribution(v_values, v_weights)
+    # if number of columns is not equal throw error
+    if u_values.shape[1] != v_values.shape[1]:
+        raise ValueError('Invalid input values. If two-dimensional, '
+                         '`u_values` and `v_values` must have the same '
+                         'number of columns.')
+
+    # if data contains np.inf then return inf or nan
+    if np.any(np.isinf(u_values)) ^ np.any(np.isinf(v_values)):
+        return np.inf
+    elif np.any(np.isinf(u_values)) and np.any(np.isinf(v_values)):
+        return np.nan
+
+    # create constraints
+    A_upper_part = sparse.block_diag((np.ones((1, n)), ) * m)
+    A_lower_part = sparse.hstack((sparse.eye(n), ) * m)
+    # sparse constraint matrix of size (m + n)*(m * n)
+    A = sparse.vstack((A_upper_part, A_lower_part))
+    A = sparse.coo_array(A)
+
+    # get cost matrix
+    D = distance_matrix(u_values, v_values, p=2)
+    D_largest_abs = np.max(np.abs(D))
+    D /= D_largest_abs
+    if p is None or p == 1:
+        cost = D.ravel()
+    elif p == 2:
+        cost = np.power(D.ravel(), 2)
+    else:
+        raise ValueError('Invalid p value: ', p)
+
+    # create the minimization target
+    p_u = np.full(m, 1/m) if u_weights is None else u_weights/np.sum(u_weights)
+    p_v = np.full(n, 1/n) if v_weights is None else v_weights/np.sum(v_weights)
+    b = np.concatenate((p_u, p_v), axis=0)
+
+    # solving LP
+    constraints = LinearConstraint(A=A.T, ub=cost)
+    opt_res = milp(c=-b, constraints=constraints, bounds=(-np.inf, np.inf))
+    if p is None or p == 1:
+        return -opt_res.fun*D_largest_abs
+    elif p == 2:
+        return np.sqrt(-opt_res.fun)*D_largest_abs
+    else:
+        raise ValueError('Invalid p value: ', p)
 
 def _validate_distribution(values, weights):
     """

@@ -7526,6 +7526,56 @@ class TestWassersteinDistance:
                 stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
 
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_cdf_distance_wasserstein_p(self, u_size, v_size):
+        # Test consistency between _cdf_distance and _wasserstein_p backends
+        rng = np.random.default_rng(37658657856)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values),
+                        stats.wasserstein_distance(u_values, v_values, p='1'))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p='1')
+        assert_allclose(d1, d2)
+
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_cdf_distance_optimization(self, u_size, v_size):
+        # Test consistency between _cdf_distance and optimization backends
+        rng = np.random.default_rng(86789786976)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values),
+                        stats.wasserstein_distance(u_values, v_values, p=1))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p=1)
+        assert_allclose(d1, d2)
+
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_optimization_wasserstein_p(self, u_size, v_size):
+        # Test consistency between _wasserstein_p and optimization backends
+        rng = np.random.default_rng(376654786789)
+        u_values = rng.random(size=u_size)
+        v_values = rng.random(size=v_size)
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        assert_allclose(stats.wasserstein_distance(u_values, v_values, p='2'),
+                        stats.wasserstein_distance(u_values, v_values, p=2))
+        d1 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p='2')
+        d2 = stats.wasserstein_distance(u_values, v_values,
+                                        u_weights, v_weights, p=2)
+        assert_allclose(d1, d2)
 
 class TestEnergyDistance:
     """ Tests for energy_distance() output values.
