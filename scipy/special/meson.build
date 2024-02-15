@@ -15,7 +15,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_exprel.pxd'),
   fs.copyfile('_factorial.pxd'),
   fs.copyfile('_hyp0f1.pxd'),
-  fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
