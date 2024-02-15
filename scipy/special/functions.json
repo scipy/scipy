@@ -670,10 +670,8 @@
         }
     },
     "hyp2f1": {
-        "cephes.h": {
-            "hyp2f1": "dddd->d"
-        },
         "_special.h++": {
+            "hyp2f1_real": "dddd->d",
             "hyp2f1_complex": "dddD->D"
         }
     },

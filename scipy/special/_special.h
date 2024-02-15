@@ -6,6 +6,7 @@
 
 #include "special/binom.h"
 #include "special/hyp2f1.h"
+#include "special/cephes/hyp2f1.h"
 #include "special/lambertw.h"
 #include "special/loggamma.h"
 #include "special/trig.h"
@@ -74,6 +75,10 @@ inline npy_cdouble hyp2f1_complex(double a, double b, double c, npy_cdouble zp) 
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
     std::complex<double> w = special::hyp2f1(a, b, c, z);
     return npy_cpack(real(w), imag(w));
+}
+
+inline double hyp2f1_real(double a, double b, double c, double x) {
+    return special::cephes::hyp2f1(a, b, c, x);
 }
 
 inline double wright_bessel_scalar(double a, double b, double x) {
