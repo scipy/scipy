@@ -52,12 +52,63 @@ from scpdt.util import warnings_errors
 from contextlib import contextmanager
 import warnings
 
+
+# FIXME: populate the dict once
 @contextmanager
 def warnings_errors_and_rng(test):
     """Temporarily turn (almost) all warnings to errors.
 
-    `linalg.norm` is allowed to emit warnings.
+    Filter out known warnings which we allow.
     """
+    known_warnings = dict()
+
+    # these functions are known to emit "divide by zero" RuntimeWarnings
+    divide_by_zero = [
+        'scipy.linalg.norm', 'scipy.ndimage.center_of_mass',
+    ]
+    for name in divide_by_zero:
+        known_warnings[name] = dict(category=RuntimeWarning,
+                                    message='divide by zero')
+
+    # Deprecated stuff in scipy.signal and elsewhere
+    deprecated = [
+        'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
+        'scipy.signal.ricker'
+    ]
+    for name in deprecated:
+        known_warnings[name] = dict(category=DeprecationWarning)
+
+    from scipy import integrate
+    # the funcions are known to emit IntergrationWarnings
+    integration_w = ['scipy.special.ellip_normal',
+                     'scipy.special.ellip_harm_2',
+    ]
+    for name in integration_w:
+        known_warnings[name] = dict(category=integrate.IntegrationWarning,
+                                    message='The occurrence of roundoff')
+
+    # additional one-off warnings to filter
+    dct = {
+        'scipy.stats.anderson_ksamp':
+            dict(category=UserWarning, message='p-value capped:'),
+        'scipy.special.ellip_normal':
+            dict(category=integrate.IntegrationWarning,
+                 message='The occurrence of roundoff'),
+        'scipy.special.ellip_harm_2':
+            dict(category=integrate.IntegrationWarning,
+                 message='The occurrence of roundoff'),
+        # tutorials
+        'linalg.rst':
+            dict(message='the matrix subclass is not',
+                 category=PendingDeprecationWarning),
+        'stats.rst':
+            dict(message='The maximum number of subdivisions',
+                 category=integrate.IntegrationWarning),
+    }
+
+    # these legitimately emit warnings in examples
+    from scipy.signal._filter_design import BadCoefficients
+    legit = set('scipy.signal.normalize')
 
     # Now, the meat of the matter: filter warnings,
     # also control the random seed for each doctest.
@@ -72,8 +123,11 @@ def warnings_errors_and_rng(test):
     with _fixed_default_rng():
         np.random.seed(None)
 
-        with warnings.catch_warnings(record=True) as w:
-            if test.name == 'scipy.linalg.norm':
+        with warnings.catch_warnings():
+            if test.name in known_warnings:
+                warnings.filterwarnings('ignore', **known_warnings[test.name])
+                yield
+            elif test.name in legit:
                 yield
             else:
                 warnings.simplefilter('error', Warning)
