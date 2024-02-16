@@ -175,6 +175,8 @@ def main(args):
                                            fail_fast=args.fail_fast)
             all_success = all_success and tut_success
 
+    LOGFILE.close()
+
     # final report
     if all_success:
         sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
