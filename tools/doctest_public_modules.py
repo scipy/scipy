@@ -3,7 +3,7 @@ import sys
 import importlib
 
 from scpdt import testmod, DTConfig
-from scpdt._util import get_all_list
+from scpdt.util import get_all_list
 
 
 BASE_MODULE = "scipy"
@@ -54,7 +54,7 @@ OTHER_MODULE_DOCS = {
 }
 
 ################### A user ctx mgr to turn warnings to errors ###################
-from scpdt._util import warnings_errors
+from scpdt.util import warnings_errors
 
 config = DTConfig()
 config.user_context_mgr = warnings_errors
@@ -90,6 +90,9 @@ for submodule_name in module_names:
     sys.stderr.write(str(result))
 
     all_success = all_success and (result.failed == 0)
+
+
+LOGFILE.close()
 
 # final report
 if all_success:
