@@ -905,7 +905,7 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
         cr = 1.0;
         cf = 1.0;
         for (k = 1; k <= 20; k++) {
-            cr *= -0.25*(4.0*k - 1.0)*(4.0*k - 3.0)/zp2;
+            cr = -0.25*cr*(4.0*k - 1.0)*(4.0*k - 3.0)/zp2;
             cf += cr;
         }
         cr = 1.0/(pi*z*z);
@@ -970,7 +970,7 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
             cf1 = cf0;
             cf0 = cf;
         }
-        s *= 2.0/(pi * z)*csin(zp)/cf;
+        s = 2.0*s/(pi * z)*csin(zp)/cf;
     } else {
         // Auxiliary functions f(z) and g(z) can be computed using an
         // asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
@@ -1002,7 +1002,7 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
             cr = -0.25*cr*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
             cg += cr;
         }
-        cg *= 1.0/(pi*z*z);
+        cg = cg/(pi*z*z);
         s = d - (cf*ccos(zp) + cg*csin(zp))/(pi*z);
     }
     *zf = s;
@@ -3016,7 +3016,7 @@ double specfun_eix(double x) {
         r = 1.0;
 
         for (int k = 1; k <= 100; k++) {
-            r *= k * x / ((k + 1.0) * (k + 1.0));
+            r = r * k * x / ((k + 1.0) * (k + 1.0));
             ei += r;
             if (fabs(r / ei) <= 1.0e-15) { break; }
         }
@@ -3026,7 +3026,7 @@ double specfun_eix(double x) {
         ei = 1.0;
         r = 1.0;
         for (int k = 1; k <= 20; k++) {
-            r *= k / x;
+            r = r * k / x;
             ei += r;
         }
         ei = exp(x) / x * ei;
@@ -3074,7 +3074,7 @@ void specfun_eulerb(int n, double *en) {
     en[2] = -1.0;
     r1 = -4.0*pow(hpi, 3);
     for (m = 4; m <= n; m += 2) {
-        r1 *= -(m-1) * m * hpi * hpi;
+        r1 = -r1 * (m-1) * m * hpi * hpi;
         r2 = 1.0;
         isgn = 1;
         for (k = 3; k <= 1000; k += 2) {
@@ -3611,7 +3611,7 @@ double specfun_gaih(double x) {
             ga *= 0.5*(2.0*k - 1.0);
         }
     } else {
-        ga = 0.0;
+        ga = NAN;
     }
     return ga;
 }
@@ -3711,7 +3711,7 @@ void specfun_gmn(int m, int n, double c, double x, double *bk, double *gf, doubl
     int ip, k, nm;
     double xm, gf0, gw, gd0, gd1;
     const double eps = 1.0e-14;
-    ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
+    ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
     xm = pow(1.0 + x * x, -0.5 * m);
     gf0 = 0.0;
@@ -3804,7 +3804,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
         zhf = 1.0;
         zr = 1.0;
         for (k = 1; k < (nm+1); k++) {
-            zr *= (c-a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z;
+            zr = zr*(c-a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z;
             zhf += zr;
         }
     } else if (L5 || L6) {
@@ -3813,7 +3813,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
         zhf = 1.0;
         zr = 1.0;
         for (k = 1; k < (nm+1); k++) {
-            zr *= (c-a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z;
+            zr = zr*(c-a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z;
             zhf += zr;
         }
         zhf *= cpow(1.0-z, c-a-b);
@@ -3829,7 +3829,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             zr0 = 1.0;
             zw = 0.0;
             for (k = 1; k <501; k++) {
-                zr0 *= (a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z1;
+                zr0 = zr0*(a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z1;
                 zhf += zr0;
                 if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
                 zw = zhf;
@@ -3864,7 +3864,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                     zc0 = gm*gc/(gam*gbm);
                     zc1 = -gc*cpow(z-1.0, m)/(ga*gb*rm);
                     for (k = 1; k < m; k++) {
-                        zr0 *= (a+k-1.0)*(b+k-1.0)/(k*(k-m))*(1.0-z);
+                        zr0 = zr0*(a+k-1.0)*(b+k-1.0)/(k*(k-m))*(1.0-z);
                         zf0 += zr0;
                     }
                     for (k = 1; k < (m+1); k++) {
@@ -3879,7 +3879,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                             sm += (1.0-a)/((j+k)*(a+j+k-1.0)) + 1.0/(b+j+k-1.0);
                         }
                         zp = pa + pb + 2.0*el + sp + sm + clog(1.0 - z);
-                        zr1 *= (a+m+k-1.0)*(b+m+k-1.0) / (k*(m+k))*(1.0-z);
+                        zr1 = zr1*(a+m+k-1.0)*(b+m+k-1.0) / (k*(m+k))*(1.0-z);
                         zf1 += zr1*zp;
                         if (cabs(zf1-zw) < cabs(zf1)*eps) { break; }
                         zw = zf1;
@@ -3890,13 +3890,13 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                     zc0 = gm*gc/(ga*gb*cpow(1.0 - z, m));
                     zc1 = -(pow(-1.0, m))*gc/(gam*gbm*rm);
                     for (k = 1; k < m; k++) {
-                        zr0 *= (a-m+k-1.0)*(b-m+k-1.0)/(k*(k-m))*(1.0-z);
+                        zr0 = zr0*(a-m+k-1.0)*(b-m+k-1.0)/(k*(k-m))*(1.0-z);
                         zf0 += zr0;
                     }
                     for (k = 1; k < (m+1); k++) {
                         sp0 += 1.0 / k;
                     }
-                    zf1 = pa + pb -sp0 + 2.0*el + clog(1.0 + z);
+                    zf1 = pa + pb -sp0 + 2.0*el + clog(1.0 - z);
                     zw = 0.0;
                     for (k = 1; k <501; k++) {
                         sp += (1.0-a)/(k*(a+k-1.0)) + (1.0-b)/(k*(b+k-1.0));
@@ -3905,7 +3905,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                             sm += 1.0/(j+k);
                         }
                         zp = pa + pb+2.0*el + sp - sm + clog(1.0 -z );
-                        zr1 *= (a+k-1.0)*(b+k-1.0)/(k*(m+k))*(1.0-z);
+                        zr1 = zr1*(a+k-1.0)*(b+k-1.0)/(k*(m+k))*(1.0-z);
                         zf1 += zr1*zp;
                         if (cabs(zf1-zw) < cabs(zf1)*eps) { break; }
                         zw = zf1;
@@ -3927,8 +3927,8 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                 zr1 = zc1;
                 zw = 0.0;
                 for (k = 1; k < 501; k++) {
-                    zr0 *= (a+k-1.0)*(b+k-1.0)/(k*(a+b-c+k))*(1.0-z);
-                    zr1 *= (c-a+k-1.0)*(c-b+k-1.0)/(k*(c-a-b+k))*(1.0-z);
+                    zr0 = zr0*(a+k-1.0)*(b+k-1.0)/(k*(a+b-c+k))*(1.0-z);
+                    zr1 = zr1*(c-a+k-1.0)*(c-b+k-1.0)/(k*(c-a-b+k))*(1.0-z);
                     zhf += zr0+zr1;
                     if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
                     zw = zhf;
@@ -3946,7 +3946,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             zr = 1.0;
             zw = 0.0;
             for (k = 1; k < 1501; k++) {
-                zr *= (a+k-1.0)*(b+k-1.0)/(k*(c+k-1.0))*z;
+                zr = zr*(a+k-1.0)*(b+k-1.0)/(k*(c+k-1.0))*z;
                 zhf += zr;
                 if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
                 zw = zhf;
@@ -3955,7 +3955,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
         }
     } else if (a0 > 1.0) {
         mab = (int)(a - b + eps*copysign(1.0, a - b));
-        if ((fabs(a-b-mab) < eps) && (a0 < 1.1)) { b += eps; }
+        if ((fabs(a-b-mab) < eps) && (a0 <= 1.1)) { b += eps; }
         if (fabs(a-b-mab) > eps) {
             ga = specfun_gamma2(a);
             gb = specfun_gamma2(b);
@@ -3970,8 +3970,8 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             zr1 = zc1;
             zhf = 0.0;
             for (k = 1; k < 501; k++) {
-                zr0 *= (a+k-1.0)*(a-c+k)/((a-b+k)*k*z);
-                zr1 *= (b+k-1.0)*(b-c+k)/((b-a+k)*k*z);
+                zr0 = zr0*(a+k-1.0)*(a-c+k)/((a-b+k)*k*z);
+                zr1 = zr1*(b+k-1.0)*(b-c+k)/((b-a+k)*k*z);
                 zhf += zr0+zr1;
                 if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
                 zw = zhf;
@@ -3999,7 +3999,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             zf0 = gm/gcb*zc0;
             zr = zc0;
             for (k = 1; k < mab; k++) {
-                zr *= (b+k-1.0)/(k*z);
+                zr = zr*(b+k-1.0)/(k*z);
                 g0 = specfun_gamma2(a-b-k);
                 zf0 += zr*g0/specfun_gamma2(c-b-k);
             }
@@ -4009,26 +4009,26 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             for (j = 1; j < (mab+1); j++) {
                 sp += 1.0 / j;
             }
-            zp0 = sp + clog(z);
+            zp0 = sp + clog(-z);
             sq = 1.0;
             for (j = 1; j < (mab+1); j++) {
-                sq *= (b+j-1.0)*(b-c+j)/j;
+                sq = sq * (b+j-1.0)*(b-c+j)/j;
             }
             zf1 = (sq*zp0)*zc1;
             zr = zc1;
             rk1 = 1.0;
-            sj1 = 1.0;
+            sj1 = 0.0;
             w0 = 0.0;
             for (k = 1; k < 10001; k++) {
                 zr /= z;
-                rk1 *= (b+k-1.0)*(b-c+k)/(k*k);
+                rk1 = rk1*(b+k-1.0)*(b-c+k)/(k*k);
                 rk2 = rk1;
-                for (j = k+1; j < (k+mab+1); k++) {
-                    rk2 *= (b+j-1.0)*(b-c+j)/j;
+                for (j = k+1; j <= (k+mab); j++) {
+                    rk2 = rk2 * (b+j-1.0)*(b-c+j)/j;
                 }
                 sj1 += (a-1.0)/(k*(a+k-1.0)) + (a-c-1.0)/(k*(a-c+k-1.0));
                 sj2 = sj1;
-                for (j = k+1; j < (k+mab+1); k++) {
+                for (j = k+1; j <= (k+mab); j++) {
                     sj2 += 1.0 / j;
                 }
                 zp= -2.0*el -pa - pac + sj2 - 1.0/(k+a-c) - pi/tan(pi*(k+a-c)) + clog(-z);
@@ -4085,18 +4085,18 @@ void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
     } else {
         if (fabs(x) <= 9.25) {
             for (l = 0; l < 2; l++) {
-                x *= pow(-1, l);
+                x = x * pow(-1, l);
                 fx = x;
                 r = x;
                 for (k = 1; k < 41; k++) {
-                    r *= (3.0*k - 2.0)/(3.0*k + 1.0)*x/(3.0*k)*x/(3.0*k - 1.0)*x;
+                    r = r*(3.0*k - 2.0)/(3.0*k + 1.0)*x/(3.0*k)*x/(3.0*k - 1.0)*x;
                     fx += r;
                     if (fabs(r) < fabs(fx)*eps) { break; }
                 }
                 gx = 0.5*x*x;
                 r = gx;
                 for (k = 1; k < 41; k++) {
-                    r *= (3.0*k - 1.0)/(3.0*k + 2.0)*x/(3.0*k)*x/(3.0*k + 1.0)*x;
+                    r = r*(3.0*k - 1.0)/(3.0*k + 2.0)*x/(3.0*k)*x/(3.0*k + 1.0)*x;
                     gx += r;
                     if (fabs(r) < fabs(gx)*eps) { break; }
                 }
@@ -4118,13 +4118,13 @@ void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
             r = 1.0;
             xr1 = 1.0/xe;
             for (k = 1; k < 17; k++) {
-                r *= -xr1;
+                r = -r * xr1;
                 su1 += a[k-1]*r;
             }
             su2 = 1.0;
             r = 1.0;
             for (k = 1; k < 17; k++) {
-                r *= xr1;
+                r = r * xr1;
                 su2 += a[k-1]*r;
             }
             *apt = q0 - exp(-xe)*xp6*su1;
@@ -4133,13 +4133,13 @@ void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
             r = 1.0;
             xr2 = 1.0/(xe*xe);
             for (k = 1; k < 9; k++) {
-                r *= -xr2;
+                r = -r * xr2;
                 su3 += a[2*k - 1]*r;
             }
             su4 = a[0]*xr1;
             r = xr1;
             for (k = 1; k < 8; k++) {
-                r *= -xr2;
+                r = -r * xr2;
                 su4 += a[2*k]*r;
             }
             su5 = su3 + su4;
@@ -4181,7 +4181,7 @@ void specfun_itika(double x, double *ti, double *tk) {
         *ti = 1.0;
         r = 1.0;
         for (k = 1; k <= 50; k++) {
-            r *= 0.25 * (2 * k - 1.0) / (2 * k + 1.0) / (k * k) * x2;
+            r = 0.25 * r *(2 * k - 1.0) / (2 * k + 1.0) / (k * k) * x2;
             *ti += r;
             if (fabs(r/(*ti)) < 1.0e-12) { break; }
         }
@@ -4191,11 +4191,11 @@ void specfun_itika(double x, double *ti, double *tk) {
         *ti = 1.0;
         r = 1.0;
         for (k = 1; k <= 10; k++) {
-            r *= 1.0/x;
+            r = r/x;
             *ti += a[k-1]*r;
         }
         rc1 = 1.0 / sqrt(2.0*pi*x);
-        *ti *= rc1*exp(x);
+        *ti = (*ti) * rc1 * exp(x);
     }
 
     if (x < 12.0) {
@@ -4206,7 +4206,7 @@ void specfun_itika(double x, double *ti, double *tk) {
         r = 1.0;
         tw = 0.0;
         for (k = 1; k <= 50; k++) {
-            r *= 0.25*(2*k - 1.0) / (2*k + 1.0) / (k*k)*x2;
+            r = 0.25*r*(2*k - 1.0) / (2*k + 1.0) / (k*k)*x2;
             b1 += r * (1.0 / (2 * k + 1) - e0);
             rs += 1.0 / k;
             b2 += r * rs;
@@ -4219,7 +4219,7 @@ void specfun_itika(double x, double *ti, double *tk) {
         *tk = 1.0;
         r = 1.0;
         for (k = 1; k <= 10; k++) {
-            r *= -1.0 / x;
+            r = -r / x;
             *tk = *tk + a[k-1]*r;
         }
         rc2 = sqrt(pi/(2.0*x));
@@ -4246,7 +4246,7 @@ void specfun_itjya(double x, double *tj, double *ty) {
         *tj = x;
         r = x;
         for (k = 1; k < 61; k++) {
-            r *= -0.25*(2.0*k - 1.0) / (2.0*k + 1.0) / (k*k)*x2;
+            r = -0.25*r*(2.0*k - 1.0) / (2.0*k + 1.0) / (k*k)*x2;
             *tj += r;
             if (fabs(r) < fabs(*tj)*eps) { break; }
         }
@@ -4255,7 +4255,7 @@ void specfun_itjya(double x, double *tj, double *ty) {
         ty2 = 1.0;
         r = 1.0;
         for (k = 1; k < 61; k++) {
-            r *= -0.25*(2.0*k - 1.0) / (2.0*k + 1.0) / (k*k) * x2;
+            r = -0.25*r*(2.0*k - 1.0) / (2.0*k + 1.0) / (k*k) * x2;
             rs += 1.0 / k;
             r2 = r * (rs + 1.0 / (2.0*k + 1.0));
             ty2 += r2;
@@ -4276,7 +4276,7 @@ void specfun_itjya(double x, double *tj, double *ty) {
         bf = 1.0;
         r = 1.0;
         for (int k = 1; k <= 8; k++) {
-            r *= -1.0/(x*x);
+            r = -r / (x*x);
             bf += a[2*k-1] * r;
         }
         bg = a[0] / x;
@@ -4314,7 +4314,7 @@ double specfun_itsh0(double x) {
         for (k = 1; k < 101; k++) {
             rd = 1.0;
             if (k == 1) { rd = 0.5; }
-            r *= -rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
+            r = -r*rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
             s += r;
             if (fabs(r) < fabs(s)*1.0e-12) { break; }
         }
@@ -4322,7 +4322,7 @@ double specfun_itsh0(double x) {
     } else {
         s = 1.0;
         for (k = 1; k < 13; k++) {
-            r *= -k/(k+1.0)*pow((2.0*k+1.0)/x, 2);
+            r = -r*k/(k+1.0)*pow((2.0*k+1.0)/x, 2);
             s += r;
             if (fabs(r) < fabs(s)*1.0e-12) { break; }
         }
@@ -4339,13 +4339,13 @@ double specfun_itsh0(double x) {
         bf = 1.0;
         r = 1.0;
         for (k = 1; k < 11; k++) {
-            r *= -1.0 / (x*x);
+            r = -r / (x*x);
             bf += a[2*k - 1]*r;
         }
         bg = a[0]*x;
         r = 1.0 / x;
         for (k = 1; k < 10; k++) {
-            r *= -1.0 / (x*x);
+            r = -r / (x*x);
             bg += a[2*k]*r;
         }
         xp = x + 0.25*pi;
@@ -4375,7 +4375,7 @@ double specfun_itsl0(double x) {
         for (k = 1; k < 101; k++) {
             rd = 1.0;
             if (k == 1) { rd=0.5; }
-            r *= rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
+            r = r*rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
             s += r;
             if (fabs(r/s) < 1.0e-12) { break; }
         }
@@ -4383,7 +4383,7 @@ double specfun_itsl0(double x) {
     } else {
         s = 1.0;
         for (k = 1; k < 11; k++) {
-            r *= k/(k + 1.0)*pow((2.0*k + 1.0)/x, 2);
+            r = r*k/(k + 1.0)*pow((2.0*k + 1.0)/x, 2);
             s += r;
             if (fabs(r/s) < 1.0e-12) { break; }
         }
@@ -4400,7 +4400,7 @@ double specfun_itsl0(double x) {
         ti = 1.0;
         r = 1.0;
         for (k = 1; k < 11; k++) {
-            r *= 1.0/x;
+            r = r / x;
             ti += a[k-1]*r;
         }
         tl0 = ti/sqrt(2*pi*x)*exp(x) + s0;
@@ -4425,14 +4425,14 @@ double specfun_itth0(double x) {
     r=1.0;
     if (x < 24.5) {
         for (k = 1; k < 61; k++) {
-            r *= -x*x*(2.0*k - 1.0)/pow(2.0*k + 1.0, 3);
+            r = -r*x*x*(2.0*k - 1.0)/pow(2.0*k + 1.0, 3);
             s += r;
             if (fabs(r) < fabs(s)*1.0e-12) { break; }
         }
         tth = pi/2.0 - 2.0/pi*x*s;
     } else {
         for (k = 1; k < 11; k++) {
-            r *= -pow(2.0*k-1.0, 3)/((2.0*k+1.0)*x*x);
+            r = -r*pow(2.0*k-1.0, 3)/((2.0*k+1.0)*x*x);
             s += r;
             if (fabs(r) < fabs(s)*1.0e-12) { break; }
         }
@@ -4476,7 +4476,7 @@ void specfun_ittika(double x, double *tti, double *ttk) {
         *tti = 1.0;
         r = 1.0;
         for (int k = 2; k <= 50; k++) {
-            r *= 0.25*(k - 1.0) / (k*k*k)*x*x;
+            r = 0.25*r*(k - 1.0) / (k*k*k)*x*x;
             *tti += r;
             if (fabs(r / (*tti)) < 1.0e-12) { break; }
         }
@@ -4485,11 +4485,11 @@ void specfun_ittika(double x, double *tti, double *ttk) {
         *tti = 1.0;
         r = 1.0;
         for (int k = 1; k <= 8; k++) {
-            r *= 1.0 / x;
+            r = r / x;
             *tti += c[k-1] * r;
         }
         rc = x * sqrt(2.0 * pi * x);
-        *tti *= exp(x) / rc;
+        *tti = (*tti) * exp(x) / rc;
     }
     if (x <= 12.0) {
         e0 = (0.5 * log(x / 2.0) + el) * log(x / 2.0)
@@ -4513,7 +4513,7 @@ void specfun_ittika(double x, double *tti, double *ttk) {
             *ttk += c[k-1] * r;
         }
         rc = x*sqrt(2.0 / (pi * x));
-        *ttk *= exp(-x) / rc;
+        *ttk = (*ttk) * exp(-x) / rc;
     }
     return;
 }
@@ -4541,7 +4541,7 @@ void specfun_ittjya(double x, double *ttj, double *tty) {
         *ttj = 1.0;
         r = 1.0;
         for (k = 2; k <= 100; k++) {
-            r *= -0.25 * (k - 1.0) / (k*k*k)*x*x;
+            r = -0.25 * r * (k - 1.0) / (k*k*k)*x*x;
             *ttj += r;
             if (fabs(r) < fabs(*ttj) * 1.0e-12) { break; }
         }
@@ -4568,18 +4568,18 @@ void specfun_ittjya(double x, double *ttj, double *tty) {
             px = 1.0;
             r = 1.0;
             for (k = 1; k <= 14; k++) {
-                r *= -0.0078125*(vt-pow((4.0*k-3.0), 2))/(x*k)*(vt-pow((4.0*k-1.0), 2))/((2.0*k-1.0)*x);
+                r = -0.0078125*r*(vt-pow((4.0*k-3.0), 2))/(x*k)*(vt-pow((4.0*k-1.0), 2))/((2.0*k-1.0)*x);
                 px += r;
                 if (fabs(r) < fabs(px) * 1.0e-12) { break; }
             }
             qx = 1.0;
             r = 1.0;
             for (k = 1; k <= 14; k++) {
-                r *= -0.0078125*(vt-pow((4.0*k-1.0), 2))/(x*k)*(vt-pow((4.0*k+1.0), 2))/((2.0*k+1.0)*x);
+                r = -0.0078125*r*(vt-pow((4.0*k-1.0), 2))/(x*k)*(vt-pow((4.0*k+1.0), 2))/((2.0*k+1.0)*x);
                 qx += r;
                 if (fabs(r) < fabs(qx) * 1.0e-12) { break; }
             }
-            qx *= 0.125 * (vt - 1.0) / x;
+            qx = 0.125 * qx * (vt - 1.0) / x;
             xk = x - (0.25 + 0.5 * l)*pi;
             bj1 = a0*(px*cos(xk) - qx*sin(xk));
             by1 = a0*(px*sin(xk) + qx*cos(xk));
@@ -4592,13 +4592,13 @@ void specfun_ittjya(double x, double *ttj, double *tty) {
         g0 = 1.0;
         r0 = 1.0;
         for (k = 1; k <= 10; k++) {
-            r0 *= -k*k*t*t;
+            r0 = -r0*k*k*t*t;
             g0 += r0;
         }
         g1 = 1.0;
         r1 = 1.0;
         for (k = 1; k <= 10; k++) {
-            r1 *= -k * (k + 1.0) * t * t;
+            r1 = -r1 * k * (k + 1.0) * t * t;
             g1 += r1;
         }
         *ttj = 2.0*g1*bj0 / (x*x) - g0*bj1 / x + el + log(x / 2.0);
@@ -5151,7 +5151,7 @@ void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
         *ber = 1.0;
         r = 1.0;
         for (m = 1; m <= 60; m++) {
-            r *= -0.25 / (m * m) / pow((2.0 * m - 1.0), 2) * x4;
+            r = -0.25 * r / (m * m) / pow((2.0 * m - 1.0), 2) * x4;
             *ber += r;
             if (fabs(r) < fabs(*ber)*eps) { break; }
         }
@@ -5206,7 +5206,7 @@ void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
         gs = 1.5;
         *her = 1.5 * r - (*ber) / x - (log(x / 2.0) + el)*(*der) + 0.25*pi*(*dei);
         for (m = 1; m <= 60; m++) {
-            r *= -0.25 / m / (m + 1.0) / pow((2.0 * m + 1.0), 2) * x4;
+            r = -0.25 * r / m / (m + 1.0) / pow((2.0 * m + 1.0), 2) * x4;
             gs = gs + 1.0 / (2.0 * m + 1.0) + 1.0 / (2 * m + 2.0);
             *her += r * gs;
             if (fabs(r * gs) < fabs(*her)*eps) { break; }
@@ -5216,7 +5216,7 @@ void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
         gs = 1.0;
         *hei = 0.5 * x - (*bei) / x - (log(x / 2.0) + el) * (*dei) - 0.25 * pi * (*der);
         for (m = 1; m <= 60; m++) {
-            r *= -0.25 / (m * m) / (2 * m - 1.0) / (2 * m + 1.0) * x4;
+            r = -0.25 * r / (m * m) / (2 * m - 1.0) / (2 * m + 1.0) * x4;
             gs = gs + 1.0 / (2.0 * m) + 1.0 / (2 * m + 1.0);
             *hei += r * gs;
             if (fabs(r * gs) < fabs(*hei)*eps) { return; }
@@ -5270,7 +5270,7 @@ void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
             xt = 0.25*k*pi - (int)(0.125 * k)*2.0*pi;
             cs = cos(xt);
             ss = sin(xt);
-            r1 *= 0.125*(4.0 - pow(2.0*k - 1.0, 2))/(k*x);
+            r1 = 0.125*r1*(4.0 - pow(2.0*k - 1.0, 2))/(k*x);
             rc = r1*cs;
             rs = r1*ss;
             pp1 += fac*rc;
@@ -5411,7 +5411,7 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
 
     r1 = 1.0;
     for (j = 1; j <= (n + m + ip) / 2; j++) {
-        r1 *=(j + 0.5 * (n + m + ip));
+        r1 = r1*(j + 0.5 * (n + m + ip));
     }
     r = 1.0;
     for (j = 1; j <= 2 * m + ip; ++j){
@@ -5421,7 +5421,7 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
     sw = 0.0;
 
     for (k = 2; k <= nm; ++k) {
-        r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+        r = (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         su0 = su0 + r * df[k - 1];
         if (k > (n - m) / 2 && fabs((su0 - sw) / su0) < eps) { break; }
         sw = su0;
@@ -5453,7 +5453,7 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
     }
     r5 = 1.0;
     for (j = 1; j <= m; ++j)
-        r5 *= (j + m) / c;
+        r5 = r5 * (j + m) / c;
 
     g0 = dn[m - 1];
 
@@ -5501,7 +5501,7 @@ void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
             bk = 1.0;
             r = 1.0;
             for (i = 1; i <= 50; i++) {
-                r *= -0.25 * x2 / (i * (i + k));
+                r = -0.25 * r * x2 / (i * (i + k));
                 bk += r;
 
                 if (fabs(r) < fabs(bk) * 1.0e-15) { break; }
@@ -5514,7 +5514,7 @@ void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
         uk = 1.0;
         r = 1.0;
         for (i = 1; i <= 50; i++) {
-            r *= -0.25 * x2 / (i * (i + n + 1.0));
+            r = -0.25 * r * x2 / (i * (i + n + 1.0));
             uk += r;
 
             if (fabs(r) < fabs(uk) * 1.0e-15) { break; }
@@ -5552,7 +5552,7 @@ void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
     }
     r0 = 1.0;
     for (k = 1; k <= *nm; k++) {
-        r0 *= 2.0 * k / x;
+        r0 = 2.0 * r0 * k / x;
         bl[k] *= r0;
     }
     dl[0] = -0.5 * x * bl[1];
@@ -5637,11 +5637,11 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
         qx = 1.0;
         rp = 1.0;
         for (k = 1; k <= k0; k++) {
-            rp *= -0.78125e-2 * (vv - pow((4.0 * k - 1.0), 2.0)) * (vv - pow((4.0 * k + 1.0), 2.0)) / (k * (2.0 * k + 1.0) * x2);
+            rp = -0.78125e-2 * rp * (vv - pow((4.0 * k - 1.0), 2.0)) * (vv - pow((4.0 * k + 1.0), 2.0)) / (k * (2.0 * k + 1.0) * x2);
             qx += rp;
         }
 
-        qx *= 0.125 * (vv - 1.0) / x;
+        qx = 0.125 * qx * (vv - 1.0) / x;
         xk = x - (0.5 * (j + v0) + 0.25) * pi;
         a0 = sqrt(rp2 / x);
         ck = cos(xk);
@@ -6017,7 +6017,7 @@ double specfun_lpmv0(double v, int m, double x) {
         xq = sqrt(1.0 - x*x);
         r0 = 1.0;
         for (j = 1; j <= m; j++) {
-            r0 *= 0.5*xq/j;
+            r0 = 0.5*r0*xq/j;
         }
         c0 = r0*rg;
     }
@@ -6026,7 +6026,7 @@ double specfun_lpmv0(double v, int m, double x) {
         pmv = 1.0;
         r = 1.0;
         for (k = 1; k <= nv - m; k++) {
-            r *= 0.5 * (-nv + m + k - 1.0) * (nv + m + k) / (k * (k + m)) * (1.0 + x);
+            r = 0.5 * r * (-nv + m + k - 1.0) * (nv + m + k) / (k * (k + m)) * (1.0 + x);
             pmv += r;
         }
         return pow(-1, nv)*c0*pmv;
@@ -6035,7 +6035,7 @@ double specfun_lpmv0(double v, int m, double x) {
             pmv = 1.0;
             r = 1.0;
             for (k = 1; k <= 100; k++) {
-                r *= 0.5 * (-v + m + k - 1.0) * (v + m + k) / (k * (m + k)) * (1.0 - x);
+                r = 0.5 * r * (-v + m + k - 1.0) * (v + m + k) / (k * (m + k)) * (1.0 - x);
                 pmv += r;
                 if (k > 12 && fabs(r / pmv) < eps) { break; }
             }
@@ -6052,7 +6052,7 @@ double specfun_lpmv0(double v, int m, double x) {
                 s0 = 1.0;
                 r1 = 1.0;
                 for (k = 1; k <= m - 1; k++) {
-                    r1 *= 0.5 * (-v + k - 1) * (v + k) / (k * (k - m)) * (1.0 + x);
+                    r1 = 0.5 * r1 * (-v + k - 1) * (v + k) / (k * (k - m)) * (1.0 + x);
                     s0 += r1;
                 }
                 pv0 = -vs * r2 / m * s0;
@@ -6066,7 +6066,7 @@ double specfun_lpmv0(double v, int m, double x) {
             pmv = pa + s1 - 1.0 / (m - v) + log(0.5 * (1.0 + x));
             r = 1.0;
             for (k = 1; k <= 100; k++) {
-                r *= 0.5 * (-v + m + k - 1.0) * (v + m + k) / (k * (k + m)) * (1.0 + x);
+                r = 0.5 * r * (-v + m + k - 1.0) * (v + m + k) / (k * (k + m)) * (1.0 + x);
                 s = 0.0;
                 for (j = 1; j <= m; j++)
                     s += ((k + j) * (k + j) + v * v) / ((k + j) * ((k + j) * (k + j) - v * v));
@@ -6251,7 +6251,7 @@ void specfun_lqnb(int n, double x, double* qn, double* qd) {
             qr = 1.0;
 
             for (k = 1; k <= 500; k++) {
-                qr *= (0.5 * nl + k - 1.0) * (0.5 * (nl - 1) + k) / ((nl + k - 0.5) * k * x * x);
+                qr = qr * (0.5 * nl + k - 1.0) * (0.5 * (nl - 1) + k) / ((nl + k - 0.5) * k * x * x);
                 qf += qr;
                 if (fabs(qr / qf) < eps) break;
             }
@@ -7057,7 +7057,7 @@ void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, dou
     y1f = 1.0;
     r = 1.0;
     for (k = 1; k <= 100; k++) {
-        r *= 0.5*x*x/(k*(2.0*k - 1.0));
+        r = 0.5*r*x*x/(k*(2.0*k - 1.0));
         r1 = h[k - 1]*r;
         y1f += r1;
         if ((fabs(r1) <= eps*fabs(y1f)) && (k > 30)) { break; }
@@ -7065,7 +7065,7 @@ void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, dou
     y1d = a;
     r = 1.0;
     for (k = 1; k < 100; k++) {
-        r *= 0.5*x*x/(k*(2.0*k + 1.0));
+        r = 0.5*r*x*x/(k*(2.0*k + 1.0));
         r1 = h[k]*r;
         y1d += r1;
         if ((fabs(r1) <= eps*fabs(y1d)) && (k > 30)) { break; }
@@ -7186,7 +7186,7 @@ void specfun_qstar(int m, int n, double c, double ck1, double *ck, double *qs, d
     for (l = 1; l < m; l++) {
         r = 1.0;
         for (k = 1; k <= l; ++k) {
-            r *= (2.0 * k + ip) * (2.0 * k - 1.0 + ip) / pow(2.0 * k, 2);
+            r = r * (2.0 * k + ip) * (2.0 * k - 1.0 + ip) / pow(2.0 * k, 2);
         }
         qs0 += ap[m - l] * r;
     }
@@ -7375,7 +7375,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
     sw = 0.0;
 
     for (k = 2; k <= nm; k++) {
-        r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+        r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         suc += r * df[k - 1];
         if ((k > nm1) && (fabs(suc - sw) < fabs(suc) * eps)) { break; }
         sw = suc;
@@ -7394,7 +7394,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
 
         r1 = 1.0;
         for (j = 1; j <= (n + m + ip) / 2; j++) {
-            r1 *= (j + 0.5 * (n + m + ip));
+            r1 = r1 * (j + 0.5 * (n + m + ip));
         }
 
         r2 = 1.0;
@@ -7435,7 +7435,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
         if (k == 1) {
             r = r0;
         } else {
-            r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+            r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         }
 
         np = m + 2 * k - 2 + ip;
@@ -7458,7 +7458,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
         if (k == 1) {
             r = r0;
         } else {
-            r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+            r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         }
 
         np = m + 2 * k - 2 + ip;
@@ -7515,7 +7515,7 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
     sw = 0.0;
 
     for (k = 2; k <= nm; k++) {
-        r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+        r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         suc += r * Df[k - 1];
         if ((k > nm1) && (fabs(suc - sw) < fabs(suc) * eps)) { break; }
         sw = suc;
@@ -7533,7 +7533,7 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
         if (k == 1) {
             r = r0;
         } else {
-            r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+            r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         }
 
         np = m + 2 * k - 2 + ip;
@@ -7564,7 +7564,7 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
         if (k == 1) {
             r = r0;
         } else {
-            r *= (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+            r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         }
 
         np = m + 2 * k - 2 + ip;
@@ -7729,7 +7729,7 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
         r3 = 1.0;
         sf = 1.0;
         for (l1 = 1; l1 <= j; l1++) {
-            r3 *= 0.5 * (-j + l1 - 1.0) * (j + l1) / ((m + l1) * l1) * (1.0 - x);
+            r3 = 0.5 * r3 * (-j + l1 - 1.0) * (j + l1) / ((m + l1) * l1) * (1.0 - x);
             sf += r3;
         }
         if (m - j >= 2) {
@@ -7745,7 +7745,7 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
         sd = 1.0;
         r4 = 1.0;
         for (l1 = 1; l1 <= j - 1; l1++) {
-            r4 *= 0.5 * (-j + l1) * (j + l1 + 1.0) / ((m + l1 + 1.0) * l1) * (1.0 - x);
+            r4 = 0.5 * r4 * (-j + l1) * (j + l1 + 1.0) / ((m + l1 + 1.0) * l1) * (1.0 - x);
             sd += r4;
         }
         spd2 = r1 * ga * gb * gc * sd;
@@ -7920,7 +7920,7 @@ void specfun_sckb(int m, int n, double c, double *df, double *ck) {
             d1 = 2.0 * i + ip;
             d2 = 2.0 * m + d1;
             d3 = i + m + ip - 0.5;
-            r *= d2 * (d2 - 1.0) * i * (d3 + k) / (d1 * (d1 - 1.0) * (i - k) * d3);
+            r = r * d2 * (d2 - 1.0) * i * (d3 + k) / (d1 * (d1 - 1.0) * (i - k) * d3);
             sum += r * df[i];
             if (fabs(sw - sum) < fabs(sum) * 1.0e-14) { break; }
             sw = sum;
@@ -8048,7 +8048,7 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
     su1 = df[0] * r1;
 
     for (int k = 2; k <= kb; k++) {
-        r1 *= -(k + m + ip - 1.5) / (k - 1.0);
+        r1 = -r1 * (k + m + ip - 1.5) / (k - 1.0);
         su1 += r1 * df[k - 1];
     }
 
@@ -8057,7 +8057,7 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
 
     for (int k = kb + 1; k <= nm; k++) {
         if (k != 1) {
-            r1 *= -(k + m + ip - 1.5) / (k - 1.0);
+            r1 = -r1 * (k + m + ip - 1.5) / (k - 1.0);
         }
         su2 += r1 * df[k - 1];
 
@@ -8348,7 +8348,7 @@ double specfun_vvla(double x, double va) {
     r = 1.0;
     pv = 1.0;
     for (k = 1; k <= 18; k++) {
-        r *= 0.5 * (2.0*k + va - 1.0)*(2.0*k + va)/(k*x*x);
+        r = 0.5 * r * (2.0*k + va - 1.0)*(2.0*k + va)/(k*x*x);
         pv += r;
         if (fabs(r/pv) < eps) { break; }
     }
@@ -8404,7 +8404,7 @@ double specfun_vvsa(double x, double va) {
         for (int m = 1; m <= 250; m++) {
             vm = 0.5 * (m - va);
             gm = specfun_gamma2(vm);
-            r *= sq2 * x / m;
+            r = r * sq2 * x / m;
             fac = -fac;
             gw = fac * sv + 1.0;
             r1 = gw * r * gm;
