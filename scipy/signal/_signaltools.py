@@ -30,7 +30,7 @@ from ._sosfilt import _sosfilt
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
-           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
+           'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2', 'envelope',
            'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
@@ -1500,7 +1500,7 @@ def order_filter(a, domain, rank):
                              "should have an odd number of elements.")
 
     a = np.asarray(a)
-    if not (np.issubdtype(a.dtype, np.integer) 
+    if not (np.issubdtype(a.dtype, np.integer)
             or a.dtype in [np.float32, np.float64]):
         raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
 
@@ -1551,7 +1551,7 @@ def medfilt(volume, kernel_size=None):
 
     """
     volume = np.atleast_1d(volume)
-    if not (np.issubdtype(volume.dtype, np.integer) 
+    if not (np.issubdtype(volume.dtype, np.integer)
             or volume.dtype in [np.float32, np.float64]):
         raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
 
@@ -2452,6 +2452,266 @@ def hilbert2(x, N=None):
     return x
 
 
+def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
+             n_out: int | None = None, squared: bool = False,
+             residual: Literal['lowpass', 'all', None] = 'lowpass',
+             axis: int = -1) -> tuple[np.ndarray, np.ndarray | None]:
+    r"""Compute the envelope of a real- or complex-valued signal after applying an
+    optional bandpass filter.
+
+    Any complex-valued signal `z(t)` can be split into a real-valued (instantaneous)
+    amplitude `a(t)` and a real-valued (instantaneous) phase `phi(t)`, i.e.,
+    `z(t) = a(t) * exp(1j*phi(t))`. The envelope is defined as the absolute value of
+    the amplitude `|a(t)| = |z(t)|`, which is at the same time the absolute value of
+    the signal. Hence, `|a(t)|` "envelopes" the class of all signals with amplitude
+    `a(t)` and arbitrary phase `phi(t)`.
+    For real-valued signals `x(t) = a(t) * cos(phi(t))` is the analogous formulation.
+    `|a(t)|` can be determined by converting `x(t)` into an analytic signal `z_a(t)`
+    by means of a Hilbert transform, i.e.,
+    `z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t))`, which produces a
+    complex-valued signal with the same envelope `|a(t)|`.
+
+    Parameters
+    ----------
+    z :
+        Real- or complex-valued input signal, which is assumed to be made up of `n`
+        samples and having sampling interval `T`.
+    bp_in :
+        2-tuple defining the frequency band `[bp_in[0], bp_in[1])` of the input filter.
+        The corner frequencies are specified as multiples of `1/(n*T)` and the allowed
+        frequency range is specified by ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2``.
+        ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
+        default of ``(1, None)`` removes the mean value as well as the negative
+        frequency components.
+    n_out :
+        If not ``None`` the output will be resampled to `n_out` samples.
+    squared :
+        If set, the square of the envelope is returned. This is useful, if filters need
+        to be applied to the result, since the squared envelope possesses fewer
+        harmonics.
+    residual :
+        This option determines what kind of residual, i.e., the signal part which the
+        input bandpass filter removes, is returned. `'all'` returns everything except
+        the contents of the frequency band `[bp_in[0], bp_in[1])`, `'lowpass'`
+        returns the contents of the frequency band ``< bp_in[0]`` and ``None``
+        just returns ``None``.
+    axis :
+       Axis of `z` over which to compute the envelope (default is last axis).
+
+    Returns
+    -------
+    z_env :
+        The envelope of input `x`.
+    x_res :
+        The residual, i.e., the signal part which the input bandpass filter
+        removed. What is returned is determined by the parameter `residual`.
+
+    Notes
+    -----
+    The implementation is based on computing the FFT of the input signal and then
+    performing the necessary operations in Fourier space. Hence, the typical FFT
+    caveats need to be taken into account:
+
+    * The signal is assumed to be periodic. Discontinuities between signal start and
+      end can lead to unwanted results due to Gibbs phenomenon.
+    * The FFT is slow if the signal length is prime or very long. Also, the memory
+      demands are typically higher than a comparable FIR/IIR filter based
+      implementation.
+    * The frequency spacing ``1 / (n*T)`` for corner frequencies of the bandpass filter
+      corresponds to the frequencies produced by ``scipy.fft.fftfreq(len(z), T)``.
+
+    If the envelope of a complex-valued signal `z` with no bandpass filtering is
+    desired, i.e., ``bp_in=(None, None)``, then the envelope corresponds to the
+    absolute value. Hence, it is more efficient to use ``np.abs(z)`` instead of this
+    function.
+
+    Though, computing the envelope based on the analytic signal [1]_ is the natural
+    method for real-valued signals, other methods are also frequently used. The most
+    popular alterantive is probably the so-called "square-law" envelope detector and
+    its relatives [2]_. They do not always compute the correct result for all kind of
+    signals, but are usually correct and typically computationally more efficient for
+    narrowband signals. The definition for an envelope presented here is common for
+    typical signals processing frameworks (e.g., as described in [3]_), where
+    instantaneous amplitude and phase are of interest. There exist also other concepts,
+    which rely on the general mathematical idea of an envelope [4]_: A pragmatic
+    approach is to determine all upper and lower signal peaks and use a spline
+    interpolation to determine the curves [5]_.
+
+
+    References
+    ----------
+    .. [1] "Analytic Signal", Wikipedia,
+       https://en.wikipedia.org/wiki/Analytic_signal
+    .. [2] Lyons, Richard, "Digital envelope detection: The good, the bad, and the
+       ugly", IEEE Signal Processing Magazine 34.4 (2017): 183-187.
+       `PDF <https://community.infineon.com/gfawx74859/attachments/gfawx74859/psoc135/46469/1/R.%20Lyons_envelope_detection_v3.pdf>`__
+    .. [3] T.G. Kincaid, "The complex representation of signals.",
+       TIS R67# MH5, General Electric Co. (1966).
+       `PDF <https://apps.dtic.mil/sti/tr/pdf/ADA953296.pdf>`__
+    .. [4] "Envelope (mathematics)", Wikipedia,
+       https://en.wikipedia.org/wiki/Envelope_(mathematics)
+    .. [5] Yang, Yanli. "A signal theoretic approach for envelope analysis of
+       real-valued signals." IEEE Access 5 (2017): 5623-5630.
+       `PDF <https://ieeexplore.ieee.org/iel7/6287639/6514899/07891054.pdf>`__
+
+
+    See Also
+    --------
+    hilbert: Compute analytic signal by means of Hilbert transform.
+
+
+    Examples
+    --------
+    The following plot illustrates the envelope of a signal with variable frequency and
+    a low-frequency drift. To separate the drift from the envelope a 4 Hz highpass
+    filter is used. The low-pass residuum of the input bandpass filter is utilized to
+    determine an asymmetric upper and lower bound to enclose the signal. Due to the
+    smoothness of the resulting envelope, it is down-sampled from 1000 to 40 samples.
+    Note that the instantaneous amplitude `x_a` and the computed envelope `x_env` are
+    not perfectly identical. This due to the signal not being perfectly periodical as
+    well as the existence of some spectral overlapping of `x_carrier` and `x_drift`.
+    Hence, they cannot be completely separated by a bandpass filter.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal.windows import gaussian
+    >>> from scipy.signal import envelope
+    ...
+    >>> n, T, n_out = 1000, 1/1000, 40
+    >>> t = np.arange(n) * T
+    >>> x_a = gaussian(len(t), 0.2/T)  # instantaneous amplitude
+    >>> x_phi = 60*np.pi*t + 40*np.cos(np.pi*t)  # instantaneous phase
+    >>> x_carrier = x_a * np.cos(x_phi)
+    >>> x_drift = 0.3 * gaussian(len(t), 0.2/T)  # drift
+    ...
+    >>> x_env, x_res = envelope(x_carrier + x_drift, (4, None), n_out=n_out)
+    >>> t_out = np.arange(n_out) * (n / n_out) * T
+    ...
+    >>> fg0, ax0 = plt.subplots(1, 1, tight_layout=True)
+    >>> ax0.set_title(r"$4\,$Hz Highpass Envelope of Drifting Signal")
+    >>> ax0.set(xlabel="Time in seconds", xlim=(0, 1), ylabel="Amplitude")
+    >>> ax0.plot(t, x_carrier + x_drift, 'C0-', alpha=0.5, label="Signal")
+    >>> ax0.plot(t, x_drift, 'C2--', alpha=0.25, label="Drift")
+    >>> ax0.plot(t_out, x_res+x_env, 'C1.-', alpha=0.5, label="Envelope")
+    >>> ax0.plot(t_out, x_res-x_env, 'C1.-', alpha=0.5, label=None)
+    >>> ax0.grid(True)
+    >>> ax0.legend()
+    >>> plt.show()
+
+
+    The second example provides a geometric interpretation of a complex-valued
+    envelope: The following plot shows the complex-valued signal as a blue
+    3d-trajectory and the envelope as an orange round tube with varying diameter,
+    i.e., as :math:`|a(t)| \exp(j\rho)`, with :math:`\rho\in[-\pi,\pi]`. Also, the
+    projection into the 2d real and imaginary coordinate planes of trajectory and tube
+    is depicted.
+
+    The left plot shows an analytical signal, i.e, the phase difference between
+    real and imaginary is always 90 degrees resulting in a spiraling trajectory. It can
+    be seen that in this case the real part has also the expected envelope, i.e.,
+    representing the absolute value of the instantaneous amplitude. The right plot
+    shows a real-valued signal interpreted as a complex signal with zero imaginary
+    part. There the instantaneous amplitude is not recovered and the resulting envelope
+    is not as smooth as in the analytic case.
+
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal.windows import gaussian
+    >>> from scipy.signal import envelope
+    ...
+    >>> n, T, f_c = 1000, 1/1000, 3
+    >>> t = np.arange(n) * T
+    >>> z = gaussian(len(t), 0.3/T) * np.exp(2j*np.pi*f_c*t)  # analytic signal
+    >>> z_re = z.real + 0j  # complex signal with zero imaginary part
+    ...
+    >>> e_a, e_r = (envelope(z_, (None, None), residual=None)[0] for z_ in (z, z_re))
+    ...
+    >>> # Generate grids to visualize envelopes as 2d and 3d surfaces:
+    >>> E2d_t, E2_amp = np.meshgrid(t, [-1, 1])
+    >>> E2d_1 = np.ones_like(E2_amp)
+    >>> E3d_t, E3d_phi = np.meshgrid(t, np.linspace(0, 2 * np.pi, 300))
+    >>> ma = 1.8  # maximum axis values in real and imaginary direction
+    ...
+    >>> fg0 = plt.figure(figsize=(6.2, 4.))
+    >>> ax00 = fg0.add_subplot(1, 2, 1, projection='3d')
+    >>> ax01 = fg0.add_subplot(1, 2, 2, projection='3d', sharex=ax00, sharey=ax00,
+    ...                        sharez=ax00)
+    >>> ax00.set_title("Analytic Signal")
+    >>> ax00.set(xlim=(0, 1), ylim=(-ma, ma), zlim=(-ma, ma))
+    >>> ax01.set_title("Real-valued Signal")
+    >>> for z_, e_, ax_ in zip((z, z.real), (e_a, e_r), (ax00, ax01)):
+    ...     ax_.set(xlabel="Time $t$", ylabel="Real Amp. $x(t)$",
+    ...             zlabel="Imag. Amp. $y(t)$")
+    ...     ax_.plot(t, z_.real, 'C0-', zs=-ma, zdir='z', alpha=0.5, label="Real")
+    ...     ax_.plot_surface(E2d_t, e_ * E2_amp, -ma * E2d_1, color='C1', alpha=0.25)
+    ...     ax_.plot(t, z_.imag, 'C0-', zs=+ma, zdir='y', alpha=0.5, label="Imag.")
+    ...     ax_.plot_surface(E2d_t, ma * E2d_1, e_ * E2_amp, color='C1', alpha=0.25)
+    ...     ax_.plot(t, z_.real, z_.imag, 'C0-', label="Signal")
+    ...     ax_.plot_surface(E3d_t, e_ * np.cos(E3d_phi), e_ * np.sin(E3d_phi),
+    ...                      color='C1', alpha=0.5, shade=True, label="Envelope")
+    ...     ax_.view_init(elev=22.7, azim=-114.3)
+    >>> fg0.subplots_adjust(left=0.08, right=0.97, wspace=0.15)
+    >>> plt.show()
+
+    """
+    if not (-z.ndim <= axis < z.ndim):
+        raise ValueError(f"Invalid parameter {axis=} for {z.shape=}!")
+    if not (z.shape[axis] > 0):
+        raise ValueError(f"z.shape[axis] not > 0 for {z.shape=}, {axis=}!")
+    if len(bp_in) != 2 or any(not (isinstance(b_, int) or b_ is None) for b_ in bp_in):
+        raise ValueError(f"{bp_in=} isn't a 2-tuple of type (int | None, int | None)!")
+    if not ((isinstance(n_out, int) and 0 < n_out) or n_out is None):
+        raise ValueError(f"{n_out=} is not a positive integer or None!")
+
+    n = z.shape[axis]  # number of time samples of input
+    n_out = n if n_out is None else n_out
+    fak = n_out / n  # scaling factor for resampling
+
+    # Make bandpass indexes compatible with `Z` and set default values:
+    if bp_in[0] is None:  # analytic signals do not have negative frequencies:
+        l_lo = 0 if np.iscomplexobj(z) else n//2
+    else:
+        l_lo = n // 2 + bp_in[0]
+    l_hi = n // 2 + bp_in[1] if bp_in[1] is not None else n
+    if not (0 <= l_lo < l_hi <= n):
+        raise ValueError("`-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2` does not hold " +
+                         f"for n={z.shape[axis]=} and {bp_in=}!")
+
+    # moving active axis to end allows to use `...` for indexing:
+    z = np.moveaxis(z, axis, -1)
+    # Calculate FFT with the 0 Hz bin being at n//2:
+    if np.iscomplexobj(z):
+        Z = sp_fft.fftshift(sp_fft.fft(z), axes=-1)
+        # Envelopes are invariant to frequency shifts, so the baseband is used:
+        z_bb = sp_fft.ifft(Z[..., l_lo:l_hi], n=n_out) * fak  # baseband signal
+    else:  # Avoid calculating negative frequencies when computing analytical signal:
+        # create zero array with same dtype as rfft() produces:
+        Z = np.zeros_like(z, dtype=sp_fft.rfft(z[..., :1]).dtype)
+        # Account for last unpaired bin for even length signals:
+        Z[..., n//2:] = sp_fft.rfft(z)[..., :(-1 if n % 2 == 0 else None)]
+        # To obtain an analytic signal the non-negative frequency bins are doubled:
+        Z_bb = np.copy(Z[..., l_lo:l_hi])
+        j_lo = max(n // 2 + 1 - l_lo, 0)
+        Z_bb[..., j_lo:] *= 2
+        z_bb = sp_fft.ifft(Z_bb, n=n_out) * fak  # baseband signal
+
+    z_env = np.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
+    z_env = np.moveaxis(z_env, -1, axis)
+
+    # Calculate the residual from the input bandpass filter:
+    if residual is None:
+        return z_env, None
+    if residual == 'lowpass':
+        Z[..., l_lo:] = 0
+    elif residual == 'all':
+        Z[..., l_lo:l_hi] = 0
+    else:
+        raise ValueError(f"{residual=} not in ['lowpass', 'all', None]!")
+    Z_shift = sp_fft.ifftshift(Z, axes=-1)
+    z_res = fak * (sp_fft.ifft(Z_shift, n=n_out) if np.iscomplexobj(z) else
+                   sp_fft.irfft(Z_shift, n=n_out))
+    return z_env, np.moveaxis(z_res, -1, axis)
+
 def _cmplx_sort(p):
     """Sort roots based on magnitude.
 
@@ -3084,11 +3344,11 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     If `t` is not None, then it is used solely to calculate the resampled
     positions `resampled_t`
 
-    As noted, `resample` uses FFT transformations, which can be very 
-    slow if the number of input or output samples is large and prime; 
-    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample 
-    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of 
-    ``n//num`` before using `resample`. Note that this approach changes the 
+    As noted, `resample` uses FFT transformations, which can be very
+    slow if the number of input or output samples is large and prime;
+    see :func:`~scipy.fft.fft`. In such cases, it can be faster to first downsample
+    a signal of length ``n`` with :func:`~scipy.signal.resample_poly` by a factor of
+    ``n//num`` before using `resample`. Note that this approach changes the
     characteristics of the antialiasing filter.
 
     Examples
@@ -3116,9 +3376,9 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> x = np.linspace(0, 1, N)
     >>> y = np.cos(2 * np.pi * freq * x)
 
-    Due to ``N`` being prime, 
+    Due to ``N`` being prime,
 
-    >>> num = 5000  
+    >>> num = 5000
     >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
 
     runs significantly faster than
