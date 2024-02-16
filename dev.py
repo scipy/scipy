@@ -188,7 +188,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check"],
+            "commands": ["doc", "refguide-check", "doctest"],
         },
         {
             "name": "release",
@@ -1073,6 +1073,7 @@ class RefguideCheck(Task):
     verbose = Option(
         ['--verbose', '-v'], default=False, is_flag=True, help="verbosity")
 
+
     @classmethod
     def task_meta(cls, **kwargs):
         kwargs.update(cls.ctx.get())
@@ -1087,6 +1088,49 @@ class RefguideCheck(Task):
             cmd += ['-vvv']
         if args.submodule:
             cmd += [args.submodule]
+        cmd_str = ' '.join(cmd)
+        return {
+            'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
+            'task_dep': ['build'],
+            'io': {'capture': False},
+        }
+
+
+@cli.cls_cmd('doctest')
+class Doctest(Task):
+    """:wrench: Run doctests via CLI."""
+    ctx = CONTEXT
+
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True, help="verbosity")
+    filename = Option(
+        ['-t', '--filename'], default=None, metavar='FILENAME',
+        help="Specify a .py file to check")
+    fail_fast = Option(
+        ['--fail-fast', '-x'], default=False, is_flag=True,
+        help="fail on first error")
+
+    @classmethod
+    def task_meta(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        dirs = Dirs(args)
+
+        cmd = [f'{sys.executable}',
+               str(dirs.root / 'tools' / 'doctest_public_modules.py'),
+               ]
+        if args.verbose:
+            cmd += ['-vvv']
+        if args.filename:
+            cmd += ['-t', args.filename]
+        if args.submodule:
+            cmd += ['-s', args.submodule]
+        if args.fail_fast:
+            cmd += ['-x']
         cmd_str = ' '.join(cmd)
         return {
             'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
