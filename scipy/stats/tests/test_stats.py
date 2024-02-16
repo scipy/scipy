@@ -7434,6 +7434,153 @@ class TestCdfDistanceValidation:
                       [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
 
 
+class TestWassersteinDistanceND:
+    """ Tests for wasserstein_distance_nd() output values.
+    """
+
+    def test_published_values(self):
+        # Compare against published values and manually computed results.
+        # The values and computed result are posted at James D. McCaffrey's blog,
+        # https://jamesmccaffrey.wordpress.com/2018/03/05/earth-mover-distance
+        # -wasserstein-metric-example-calculation/
+        u = [(1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1), (1,1),
+             (4,2), (6,1), (6,1)]
+        v = [(2,1), (2,1), (3,2), (3,2), (3,2), (5,1), (5,1), (5,1), (5,1), (5,1),
+             (5,1), (5,1), (7,1)]
+
+        res = stats.wasserstein_distance_nd(u, v)
+        # In original post, the author kept two decimal places for ease of calculation.
+        # This test uses the more precise value of distance to get the precise results.
+        # For comparison, please see the table and figure in the original blog post.
+        flow = np.array([2., 3., 5., 1., 1., 1.])
+        dist = np.array([1.00, 5**0.5, 4.00, 2**0.5, 1.00, 1.00])
+        ref = np.sum(flow * dist)/np.sum(flow)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('n_value', (4, 15, 35))
+    @pytest.mark.parametrize('ndim', (3, 4, 7))
+    @pytest.mark.parametrize('max_repeats', (5, 10))
+    def test_same_distribution_nD(self, ndim, n_value, max_repeats):
+        # Any distribution moved to itself should have a Wasserstein distance
+        # of zero.
+        rng = np.random.default_rng(363836384995579937222333)
+        repeats = rng.integers(1, max_repeats, size=n_value, dtype=int)
+
+        u_values = rng.random(size=(n_value, ndim))
+        v_values = np.repeat(u_values, repeats, axis=0)
+        v_weights = rng.random(np.sum(repeats))
+        range_repeat = np.repeat(np.arange(len(repeats)), repeats)
+        u_weights = np.bincount(range_repeat, weights=v_weights)
+        index = rng.permutation(len(v_weights))
+        v_values, v_weights = v_values[index], v_weights[index]
+
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, 0, atol=1e-15)
+
+    @pytest.mark.parametrize('nu', (8, 9, 38))
+    @pytest.mark.parametrize('nv', (8, 12, 17))
+    @pytest.mark.parametrize('ndim', (3, 5, 23))
+    def test_collapse_nD(self, nu, nv, ndim):
+        # test collapse for n dimensional values
+        # Collapsing a n-D distribution to a point distribution at zero
+        # is equivalent to taking the average of the norm of data.
+        rng = np.random.default_rng(38573488467338826109)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = np.zeros((nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = np.average(np.linalg.norm(u_values, axis=1), weights=u_weights)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('nu', (8, 16, 32))
+    @pytest.mark.parametrize('nv', (8, 16, 32))
+    @pytest.mark.parametrize('ndim', (1, 2, 6))
+    def test_zero_weight_nD(self, nu, nv, ndim):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        rng = np.random.default_rng(38573488467338826109)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+
+        add_row, nrows = rng.integers(0, nu, size=2)
+        add_value = rng.random(size=(nrows, ndim))
+        u_values = np.insert(u_values, add_row, add_value, axis=0)
+        u_weights = np.insert(u_weights, add_row, np.zeros(nrows), axis=0)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        uv, vv, uw = [[1, 1], [2, 1]], [[np.inf, -np.inf]], [1, 1]
+        distance = stats.wasserstein_distance_nd(uv, vv, uw)
+        assert_equal(distance, np.inf)
+        with np.errstate(invalid='ignore'):
+            uv, vv = [[np.inf, np.inf]], [[np.inf, -np.inf]]
+            distance = stats.wasserstein_distance_nd(uv, vv)
+            assert_equal(distance, np.nan)
+
+    @pytest.mark.parametrize('nu', (10, 15, 20))
+    @pytest.mark.parametrize('nv', (10, 15, 20))
+    @pytest.mark.parametrize('ndim', (1, 3, 5))
+    def test_multi_dim_nD(self, nu, nv, ndim):
+        # Adding dimension on distributions do not affect the result
+        rng = np.random.default_rng(2736495738494849509)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+
+        add_dim = rng.integers(0, ndim)
+        add_value = rng.random()
+
+        u_values = np.insert(u_values, add_dim, add_value, axis=1)
+        v_values = np.insert(v_values, add_dim, add_value, axis=1)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('nu', (7, 13, 19))
+    @pytest.mark.parametrize('nv', (7, 13, 19))
+    @pytest.mark.parametrize('ndim', (2, 4, 7))
+    def test_orthogonal_nD(self, nu, nv, ndim):
+        # orthogonal transformations do not affect the result of the
+        # wasserstein_distance
+        rng = np.random.default_rng(34746837464536)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+
+        dist = stats.ortho_group(ndim)
+        transform = dist.rvs(random_state=rng)
+        shift = rng.random(size=ndim)
+        res = stats.wasserstein_distance_nd(u_values @ transform + shift,
+                                         v_values @ transform + shift,
+                                         u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    def test_error_code(self):
+        rng = np.random.default_rng(52473644737485644836320101)
+        with pytest.raises(ValueError, match='Invalid input values. The inputs'):
+            u_values = rng.random(size=(4, 10, 15))
+            v_values = rng.random(size=(6, 2, 7))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+        with pytest.raises(ValueError, match='Invalid input values. Dimensions'):
+            u_values = rng.random(size=(15,))
+            v_values = rng.random(size=(3, 15))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+        with pytest.raises(ValueError,
+            match='Invalid input values. If two-dimensional'):
+            u_values = rng.random(size=(2, 10))
+            v_values = rng.random(size=(2, 2))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+
+
 class TestWassersteinDistance:
     """ Tests for wasserstein_distance() output values.
     """
@@ -7441,22 +7588,22 @@ class TestWassersteinDistance:
     def test_simple(self):
         # For basic distributions, the value of the Wasserstein distance is
         # straightforward.
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance([0, 1], [0], [1, 1], [1]),
             .5)
-        assert_almost_equal(stats.wasserstein_distance(
+        assert_allclose(stats.wasserstein_distance(
             [0, 1], [0], [3, 1], [1]),
             .25)
-        assert_almost_equal(stats.wasserstein_distance(
+        assert_allclose(stats.wasserstein_distance(
             [0, 2], [0], [1, 1], [1]),
             1)
-        assert_almost_equal(stats.wasserstein_distance(
+        assert_allclose(stats.wasserstein_distance(
             [0, 1, 2], [1, 2, 3]),
             1)
 
     def test_same_distribution(self):
-        # Any distribution moved to itself should have a Wasserstein distance of
-        # zero.
+        # Any distribution moved to itself should have a Wasserstein distance
+        # of zero.
         assert_equal(stats.wasserstein_distance([1, 2, 3], [2, 1, 3]), 0)
         assert_equal(
             stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
@@ -7465,13 +7612,13 @@ class TestWassersteinDistance:
 
     def test_shift(self):
         # If the whole distribution is shifted by x, then the Wasserstein
-        # distance should be x.
-        assert_almost_equal(stats.wasserstein_distance([0], [1]), 1)
-        assert_almost_equal(stats.wasserstein_distance([-5], [5]), 10)
-        assert_almost_equal(
+        # distance should be the norm of x.
+        assert_allclose(stats.wasserstein_distance([0], [1]), 1)
+        assert_allclose(stats.wasserstein_distance([-5], [5]), 10)
+        assert_allclose(
             stats.wasserstein_distance([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
             10)
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance([4.5, 6.7, 2.1], [4.6, 7, 9.2],
                                        [3, 1, 1], [1, 3, 1]),
             2.5)
@@ -7479,7 +7626,7 @@ class TestWassersteinDistance:
     def test_combine_weights(self):
         # Assigning a weight w to a value is equivalent to including that value
         # w times in the value array with weight of 1.
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance(
                 [0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
                 [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
@@ -7488,22 +7635,23 @@ class TestWassersteinDistance:
 
     def test_collapse(self):
         # Collapsing a distribution to a point distribution at zero is
-        # equivalent to taking the average of the absolute values of the values.
+        # equivalent to taking the average of the absolute values of the
+        # values.
         u = np.arange(-10, 30, 0.3)
         v = np.zeros_like(u)
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance(u, v),
             np.mean(np.abs(u)))
 
         u_weights = np.arange(len(u))
         v_weights = u_weights[::-1]
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance(u, v, u_weights, v_weights),
             np.average(np.abs(u), weights=u_weights))
 
     def test_zero_weight(self):
         # Values with zero weight have no impact on the Wasserstein distance.
-        assert_almost_equal(
+        assert_allclose(
             stats.wasserstein_distance([1, 2, 100000], [1, 1],
                                        [1, 1, 0], [1, 1]),
             stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
