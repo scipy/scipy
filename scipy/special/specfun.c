@@ -157,7 +157,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
         fx = 1.0;
         r = 1.0;
         for (k = 1; k <= 40; k++) {
-            r *= x / (3.0 * k) * x / (3.0 * k - 1.0) * x;
+            r = r * x / (3.0 * k) * x / (3.0 * k - 1.0) * x;
             fx += r;
             if (fabs(r) < fabs(fx) * eps) break;
         }
@@ -165,7 +165,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
         gx = x;
         r = x;
         for (k = 1; k <= 40; k++) {
-            r *= x / (3.0 * k) * x / (3.0 * k + 1.0) * x;
+            r = r * x / (3.0 * k) * x / (3.0 * k + 1.0) * x;
             gx += r;
             if (fabs(r) < fabs(gx) * eps) break;
         }
@@ -176,7 +176,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
         df = 0.5 * x * x;
         r = df;
         for (k = 1; k <= 40; k++) {
-            r *= x / (3.0 * k) * x / (3.0 * k + 2.0) * x;
+            r = r * x / (3.0 * k) * x / (3.0 * k + 2.0) * x;
             df += r;
             if (fabs(r) < fabs(df) * eps) break;
         }
@@ -184,7 +184,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
         dg = 1.0;
         r = 1.0;
         for (k = 1; k <= 40; k++) {
-            r *= x / (3.0 * k) * x / (3.0 * k - 2.0) * x;
+            r = r * x / (3.0 * k) * x / (3.0 * k - 2.0) * x;
             dg += r;
             if (fabs(r) < fabs(dg) * eps) break;
         }
@@ -202,7 +202,6 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
             // Choose cutoffs so that the remainder term in asymptotic
             // expansion is epsilon size. The X<0 branch needs to be fast
             // in order to make AIRYZO efficient
-            km2 = km;
             if (xa > 70.0) km = 3;
             if (xa > 500.0) km = 2;
             if (xa > 1000.0) km = 1;
@@ -219,7 +218,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
         rp = 0.5641895835477563;
         r = 1.0;
         for (k = 1; k <= kmax; k++) {
-            r *= (6.0 * k - 1.0) / 216.0 * (6.0 * k - 3.0)
+            r = r * (6.0 * k - 1.0) / 216.0 * (6.0 * k - 3.0)
                 / k * (6.0 * k - 5.0) / (2.0 * k - 1.0);
             ck[k - 1] = r;
             dk[k - 1] = -(6.0 * k + 1.0) / (6.0 * k - 1.0) * r;
@@ -450,7 +449,7 @@ void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *
     x = fabs(x);
     ip = ((n-m) % 2 == 0 ? 0 : 1);
     nm = 40 + (int)((n-m)/2 + c);
-    nm2 = (int)(nm/2 - 2);
+    nm2 = nm/2 - 2;
     specfun_sdmn(m, n, c, cv, kd, df);
     specfun_sckb(m, n, c, df, ck);
     x1 = 1.0 - x*x;
@@ -490,6 +489,8 @@ void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *
     if ((x0 < 0.0) && (ip == 0)) { *s1d = -*s1d; }
     if ((x0 < 0.0) && (ip == 1)) { *s1f = -*s1f; }
     x = x0;
+    free(ck); free(df);
+    free(ck); free(df);
     return;
 }
 
@@ -511,7 +512,7 @@ void specfun_bernob(int n, double *bn) {
     bn[2] = 1.0 / 6.0;
     r1 = pow(2.0 / tpi, 2);
     for ( m = 4; m < (n+1); m += 2) {
-        r1 *= -(m-1)*m/(tpi*tpi);
+        r1 = -r1 * (m-1)*m/(tpi*tpi);
         r2 = 1.0;
         for (k = 2; k < 10001; k++) {
             s = pow(1.0/k, m);
@@ -552,7 +553,7 @@ void specfun_bjndd(double x, int n, double *bj, double *dj, double *fj) {
         f1 = f;
     }
     for (k = 0; k < (n+1); k++) {
-        bj[k] *= 1.0 / (bs - f);
+        bj[k] /= (bs - f);
     }
     dj[0] = -bj[1];
     fj[0] = -bj[0] - dj[0]/x;
@@ -598,7 +599,7 @@ void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, doubl
                 if (i < 0) { continue; }
                 r1 = 1.0;
                 for (j = 1; j <= k; j++) {
-                    r1 *= (i + m - j) / (1.0*j);
+                    r1 =  r1*(i + m - j) / (1.0*j);
                 }
                 s1 += ck[i] * (2.0 * i + m) * r1;
                 if (fabs(s1 - sw) < fabs(s1) * eps) { break; }
@@ -616,7 +617,7 @@ void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, doubl
                 if (i < 0) { continue; }
                 r1 = 1.0;
                 for (j = 1; j <= k; j++) {
-                    r1 *= (i + m - j) / (1.0*j);
+                    r1 = r1* (i + m - j) / (1.0*j);
                 }
                 if (i > 0) {
                     s1 += ck[i - 1] * (2.0 * i + m - 1) * r1;
@@ -760,7 +761,7 @@ double complex specfun_cerror(double complex z) {
         cs = z1;
         cr = z1;
         for (k = 1; k < 121; k++) {
-            cr *= (z1*z1) / (k+0.5);
+            cr = cr*(z1*z1) / (k+0.5);
             cs += cr;
             if (cabs(cr/cs) < 1e-15) { break; }
         }
@@ -775,7 +776,7 @@ double complex specfun_cerror(double complex z) {
         // ~ Gamma(2R**2 + 2) / (
         //          (2 R**2)**(R**2 + 1/2) Gamma(R**2 + 3/2) 2**(R**2 + 1/2))
         for (k = 1; k < 21; k++) {
-            cr *= -(k-0.5) / (z1*z1);
+            cr = -cr*(k-0.5) / (z1*z1);
             cl += cr;
             if (cabs(cr/cl) < 1e-15) { break; }
         }
@@ -866,7 +867,7 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
         c = cr;
         wa0 = 0.0;
         for (k = 1; k <= 80; k++) {
-            cr *= -0.5*(4.0*k - 3.0)/k/(2.0*k - 1.0)/(4.0*k + 1.0)*zp2;
+            cr = -0.5*cr*(4.0*k - 3.0)/k/(2.0*k - 1.0)/(4.0*k + 1.0)*zp2;
             c += cr;
             wa = cabs(c);
             if ((fabs((wa - wa0) / wa) < eps) && (k > 10)) {
@@ -911,7 +912,7 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
         cr = 1.0/(pi*z*z);
         cg = cr;
         for (k = 1; k <= 12; k++) {
-            cr *= -0.25*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
+            cr = -0.25*cr*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
             cg += cr;
         }
         c = d + (cf*csin(zp) - cg*ccos(zp))/(pi*z);
@@ -949,7 +950,7 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
         cr = s;
         wb0 = 0.0;
         for (k = 1; k <= 80; k++) {
-            cr *= -0.5 * (4.0 * k - 1.0) / k / (2.0 * k + 1.0) / (4.0 * k + 3.0) * zp2;
+            cr = -0.5 * cr * (4.0 * k - 1.0) / k / (2.0 * k + 1.0) / (4.0 * k + 3.0) * zp2;
             s += cr;
             wb = cabs(s);
             if ((fabs(wb - wb0) < eps) && (k > 10)) {
@@ -993,13 +994,13 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
         cr = 1.0;
         cf = 1.0;
         for (k = 1; k <= 20; k++) {
-            cr *= -0.25*(4.0*k - 1.0)*(4.0*k - 3.0)/zp2;
+            cr = -0.25*cr*(4.0*k - 1.0)*(4.0*k - 3.0)/zp2;
             cf += cr;
         }
         cr = 1.0;
         cg = 1.0;
         for (k = 1; k <= 12; k++) {
-            cr *= -0.25*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
+            cr = -0.25*cr*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
             cg += cr;
         }
         cg *= 1.0/(pi*z*z);
@@ -1046,7 +1047,7 @@ double complex specfun_cchg(double a, double b, double complex z) {
         cr = 1.0;
         chg = 1.0;
         for (k = 1; k < (m+1); k++) {
-            cr *= (a+k-1.0)/k/(b+k-1.0)*z;
+            cr = cr * (a+k-1.0)/k/(b+k-1.0)*z;
             chg += cr;
         }
     } else {
@@ -1071,7 +1072,7 @@ double complex specfun_cchg(double a, double b, double complex z) {
                 chw = 0.0;
                 crg = 1.0;
                 for (j = 1; j < 501; j++) {
-                    crg *= (a+j-1.0)/(j*(b+j-1.0))*z;
+                    crg = crg * (a+j-1.0)/(j*(b+j-1.0))*z;
                     if (cabs((chg-chw)/chg) < 1e-15) { break; }
                     chw = chg;
                 }
@@ -1085,8 +1086,8 @@ double complex specfun_cchg(double a, double b, double complex z) {
                 cr1 = 1.0;
                 cr2 = 1.0;
                 for (i = 1; i <= 8; i++) {
-                    cr1 *= -(a+i-1.0)*(a-b+i)/(z*i);
-                    cr2 *= (b-a+i-1.0)*(i-a)/(z*i);
+                    cr1 = -cr1 * (a+i-1.0)*(a-b+i)/(z*i);
+                    cr2 = cr2 * (b-a+i-1.0)*(i-a)/(z*i);
                     cs1 += cr1;
                     cs2 += cr2;
                 }
@@ -1142,7 +1143,7 @@ double complex specfun_cgama(double complex z, int kf) {
     double az0, az1, gi, gi1, gr, gr1, t, th, th1, th2, sr, si, x0, xx, yy;
     int j, k, na;
     const double pi = 3.141592653589793;
-    const double a[10] = {
+    static const double a[10] = {
         8.333333333333333e-02, -2.777777777777778e-03,
         7.936507936507937e-04, -5.952380952380952e-04,
         8.417508417508418e-04, -1.917526917526918e-03,
@@ -1249,7 +1250,7 @@ double specfun_chgm(double x, double a, double b) {
             hg = 1.0;
             rg = 1.0;
             for (j = 1; j < 501; j++) {
-                rg *= (a + j - 1.0) / (j*(b + j - 1.0))*x;
+                rg = rg * (a + j - 1.0) / (j*(b + j - 1.0))*x;
                 hg += rg;
                 if ((hg != 0.0) && (fabs(rg/hg) < 1e-15)) {
                     // DLMF 13.2.39 (cf. above)
@@ -1268,8 +1269,8 @@ double specfun_chgm(double x, double a, double b) {
             r1 = 1.0;
             r2 = 1.0;
             for (i = 1; i < 9; i++) {
-                r1 *= -(a+i-1.0)*(a-b+i)/(x*i);
-                r2 *= -(b-a+i-1.0)*(a-i)/(x*i);
+                r1 = -r1*(a+i-1.0)*(a-b+i)/(x*i);
+                r2 = -r2*(b-a+i-1.0)*(a-i)/(x*i);
                 sum1 += r1;
                 sum2 += r2;
             }
@@ -1320,18 +1321,18 @@ double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
     //      (4) CHGUIT for numerical integration ( MD=4 )
     // =======================================================
 
-    int il1 = 0, il2 = 0, il3 = 0, bl1 = 0, bl2 = 0, bl3 = 0, bn = 0, id1 = 0, id;
+    int il1, il2, il3, bl1, bl2, bl3, bn, id1 = 0, id;
     double aa, hu = 0.0, hu1;
 
     aa = a - b + 1.0;
     *isfer = 0;
-    if ((a == (int)a) && (a <= 0.0)) { il1= 1; }
-    if ((aa == (int)aa) && (aa <= 0.0)) { il2 = 1; }
-    if (fabs(a*(a-b+1.0))/x <= 2.0) { il3 = 1; }
-    if ((x <= 5.0) || (x <= 10.0 && a <= 2.0)) { bl1 = 1; }
-    if (((x > 5.0) && (x <= 12.5)) && ((a >= 1.0) && (b >= a+4.0))) { bl2 = 1; }
-    if ((x > 12.5) && (a >= 5.0) && (b >= a + 5.0)) { bl3 = 1; }
-    if ((b == (int)b) && (b != 0.0)) { bn = 1; }
+    il1 = (a == (int)a) && (a <= 0.0);
+    il2 = (aa == (int)aa) && (aa <= 0.0);
+    il3 = fabs(a*(a-b+1.0))/x <= 2.0;
+    bl1 = (x <= 5.0) || (x <= 10.0 && a <= 2.0);
+    bl2 = (x > 5.0) && (x <= 12.5) && ((a >= 1.0) && (b >= a+4.0));
+    bl3 = (x > 12.5) && (a >= 5.0) && (b >= a + 5.0);
+    bn = (b == (int)b) && (b != 0.0);
 
     id = -100;
     hu1 = 0.0;
@@ -1430,7 +1431,7 @@ double specfun_chgubi(double x, double a, double b, int *id) {
     hmin = 1e300;
     h0 = 0.0;
     for (k = 1; k <= 150; k++) {
-        r *= (a0 + k - 1) * x / ((n + k) * k);
+        r = r * (a0 + k - 1) * x / ((n + k) * k);
         hm1 += r;
         hu1 = fabs(hm1);
 
@@ -1490,7 +1491,7 @@ double specfun_chgubi(double x, double a, double b, int *id) {
         }
 
         hw = 2 * el + ps + s1 - s2;
-        r *= (a0 + k - 1) * x / ((n + k) * k);
+        r = r * (a0 + k - 1) * x / ((n + k) * k);
         hm2 += r * hw;
         hu2 = fabs(hm2);
 
@@ -1518,7 +1519,7 @@ double specfun_chgubi(double x, double a, double b, int *id) {
     if (n == 0) { hm3 = 0.0; }
     r = 1.0;
     for (k = 1; k < n; k++) {
-        r *= (a2 + k - 1.0) / ((k - n)*k)*x;
+        r = r * (a2 + k - 1.0) / ((k - n)*k)*x;
         hm3 += r;
     }
     sa = ua*(hm1 + hm2);
@@ -1547,7 +1548,7 @@ double specfun_chguit(double x, double a, double b, int *id) {
 
     int k, j, m;
     double a1, b1, c, d, f1, f2, g, ga, hu, hu0, hu1, hu2, s, t1, t2, t3, t4;
-    double t[30] = {
+    static const double t[30] = {
         0.259597723012478e-01, 0.778093339495366e-01, 0.129449135396945e+00, 0.180739964873425e+00,
         0.231543551376029e+00, 0.281722937423262e+00, 0.331142848268448e+00, 0.379670056576798e+00,
         0.427173741583078e+00, 0.473525841761707e+00, 0.518601400058570e+00, 0.562278900753945e+00,
@@ -1557,7 +1558,7 @@ double specfun_chguit(double x, double a, double b, int *id) {
         0.955722255839996e+00, 0.969701788765053e+00, 0.981067201752598e+00, 0.989787895222222e+00,
         0.995840525118838e+00, 0.999210123227436e+00
     };
-    double w[30] = {
+    static const double w[30] = {
         0.519078776312206e-01, 0.517679431749102e-01, 0.514884515009810e-01, 0.510701560698557e-01,
         0.505141845325094e-01, 0.498220356905502e-01, 0.489955754557568e-01, 0.480370318199712e-01,
         0.469489888489122e-01, 0.457343797161145e-01, 0.443964787957872e-01, 0.429388928359356e-01,
@@ -1636,13 +1637,13 @@ double specfun_chgul(double x, double a, double b, int *id) {
     //          ID --- Estimated number of significant digits
     // =======================================================
 
-    int il1 = 0, il2 = 0, k, nm;
+    int il1, il2, k, nm;
     double aa, hu, r, r0 = 0.0, ra = 0.0;
 
     *id = -100;
     aa = a - b + 1.0;
-    if ((a == (int)a) && (a <= 0.0)) { il1 = 1; }
-    if ((aa == (int)aa) && (aa <= 0.0)) { il2 = 1; }
+    il1 = (a == (int)a) && (a <= 0.0);
+    il2 = (aa == (int)aa) && (aa <= 0.0);
     nm = 0;
     if (il1) { nm = (int)fabs(a); }
     if (il2) { nm = (int)fabs(aa); }
@@ -1652,7 +1653,7 @@ double specfun_chgul(double x, double a, double b, int *id) {
         hu = 1.0;
         r = 1.0;
         for (k = 1; k <= nm; k++) {
-            r *= -(a + k - 1.0)*(a - b + k) / (k*x);
+            r = -r*(a + k - 1.0)*(a - b + k) / (k*x);
             hu += r;
         }
         hu *= pow(x, -a);
@@ -1662,7 +1663,7 @@ double specfun_chgul(double x, double a, double b, int *id) {
         hu = 1.0;
         r = 1.0;
         for (k = 1; k <= 25; k++) {
-            r *= -(a + k - 1.0)*(a - b + k) / (k*x);
+            r = -r*(a + k - 1.0)*(a - b + k) / (k*x);
             ra = fabs(r);
             if (((k > 5) && (ra >= r0)) || (ra < 1e-15)) { break; }
             r0 = ra;
@@ -1707,8 +1708,8 @@ double specfun_chgus(double x, double a, double b, int *id) {
     hmin = 1e300;
     h0 = 0.0;
     for (j = 1; j < 151; j++) {
-        r1 *= (a + j - 1.0) / (j*(b + j - 1.0))*x;
-        r2 *= (a - b + j) / (j*(1.0 - b + j))*x;
+        r1 = r1*(a + j - 1.0) / (j*(b + j - 1.0))*x;
+        r2 = r2*(a - b + j) / (j*(1.0 - b + j))*x;
         hu += r1 - r2;
         hua = fabs(hu);
         if (hua > hmax) { hmax = hua; }
@@ -2166,7 +2167,7 @@ double complex specfun_cpdla(int n, double complex z) {
     cr = 1.0;
     cdn = 1.0;
     for (k = 1; k <= 16; k++) {
-        cr *= - 0.5 * (2.0 * k - n - 1.0) * (2.0 * k - n - 2.0) / (k * z * z);
+        cr = - 0.5 * cr * (2.0 * k - n - 1.0) * (2.0 * k - n - 2.0) / (k * z * z);
         cdn += cr;
         if (cabs(cr) < cabs(cdn) * 1e-12) { break; }
     }
@@ -2217,7 +2218,7 @@ double complex specfun_cpdsa(int n, double complex z) {
             for (m = 1; m <= 250; m++) {
                 vm = 0.5 * (m - n);
                 gm = specfun_gaih(vm);
-                cr *= -sq2 * z / m;
+                cr = -cr*sq2 * z / m;
                 cdw = gm * cr;
                 cdn += cdw;
                 if (cabs(cdw) < cabs(cdn) * eps) {
@@ -2569,26 +2570,25 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
     const double rp2 = 2.0 / pi;
     const double complex ci = CMPLX(0.0, 1.0);
 
-    const double a[12] = {-0.703125e-01,        0.112152099609375, -0.5725014209747314,
-                           0.6074042001273483, -0.1100171402692467, 0.3038090510922384,
-                          -0.1188384262567832, 0.6252951493434797, -0.4259392165047669,
-                           0.3646840080706556, -0.3833534661393944, 0.4854014686852901};
-
-    const double b[12] = { 0.732421875e-01, -0.2271080017089844, 0.1727727502584457,
-                          -0.2438052969955606, 0.5513358961220206, -0.1825775547429318,
-                           0.8328593040162893, -0.5006958953198893, 0.3836255180230433,
-                          -0.3649010818849833, 0.4218971570284096, -0.5827244631566907};
-
-    const double a1[12] = { 0.1171875,          -0.144195556640625,   0.6765925884246826,
-                           -0.6883914268109947,  0.1215978918765359, -0.3302272294480852,
-                            0.1276412726461746, -0.6656367718817688,  0.4502786003050393,
-                           -0.3833857520742790,  0.4011838599133198, -0.5060568503314727};
-
-    const double b1[12] = {-0.1025390625,        0.2775764465332031, -0.1993531733751297,
-                            0.2724882731126854, -0.6038440767050702,  0.1971837591223663,
-                           -0.8902978767070678,  0.5310411010968522, -0.4043620325107754,
-                            0.3827011346598605, -0.4406481417852278,  0.6065091351222699};
-
+    static const double a[12] = {-0.703125e-01,        0.112152099609375, -0.5725014209747314,
+                                  0.6074042001273483, -0.1100171402692467, 0.3038090510922384,
+                                 -0.1188384262567832, 0.6252951493434797, -0.4259392165047669,
+                                  0.3646840080706556, -0.3833534661393944, 0.4854014686852901};
+           
+    static const double b[12] = { 0.732421875e-01, -0.2271080017089844, 0.1727727502584457,
+                                 -0.2438052969955606, 0.5513358961220206, -0.1825775547429318,
+                                  0.8328593040162893, -0.5006958953198893, 0.3836255180230433,
+                                 -0.3649010818849833, 0.4218971570284096, -0.5827244631566907};
+           
+    static const double a1[12] = { 0.1171875,          -0.144195556640625,   0.6765925884246826,
+                                  -0.6883914268109947,  0.1215978918765359, -0.3302272294480852,
+                                   0.1276412726461746, -0.6656367718817688,  0.4502786003050393,
+                                  -0.3833857520742790,  0.4011838599133198, -0.5060568503314727};
+           
+    static const double b1[12] = {-0.1025390625,        0.2775764465332031, -0.1993531733751297,
+                                   0.2724882731126854, -0.6038440767050702,  0.1971837591223663,
+                                  -0.8902978767070678,  0.5310411010968522, -0.4043620325107754,
+                                   0.3827011346598605, -0.4406481417852278,  0.6065091351222699};
 
     a0 = cabs(z);
     z1 = z;
@@ -2621,7 +2621,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         cbj0 = CMPLX(1.0, 0.0);
         cr = CMPLX(1.0, 0.0);
         for (k = 1; k <= 40; k++) {
-            cr *= -0.25 * z2 / (k * k);
+            cr = -0.25 * cr * z2 / (k * k);
             cbj0 += cr;
             if (cabs(cr) < cabs(cbj0) * 1.0e-15) break;
         }
@@ -2629,7 +2629,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         cbj1 = CMPLX(1.0, 0.0);
         cr = CMPLX(1.0, 0.0);
         for (k = 1; k <= 40; k++) {
-            cr *= -0.25 * z2 / (k * (k + 1.0));
+            cr = -0.25 * cr * z2 / (k * (k + 1.0));
             cbj1 += cr;
             if (cabs(cr) < cabs(cbj1) * 1.0e-15) break;
         }
@@ -2640,7 +2640,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         cs = CMPLX(0.0, 0.0);
         for (k = 1; k <= 40; k++) {
             w0 += 1.0 / k;
-            cr *= -0.25 / (k * k) * z2;
+            cr = -0.25 * cr / (k * k) * z2;
             cp = cr * w0;
             cs += cp;
             if (cabs(cp) < cabs(cs) * 1.0e-15) break;
@@ -2652,7 +2652,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         cs = 1.0;
         for (k = 1; k <= 40; k++) {
             w1 += 1.0 / k;
-            cr *= -0.25 / (k * (k + 1)) * z2;
+            cr = -0.25 * cr / (k * (k + 1)) * z2;
             cp = cr * (2.0 * w1 + 1.0 / (k + 1.0));
             cs += cp;
             if (cabs(cp) < cabs(cs) * 1.0e-15) break;
@@ -2830,7 +2830,7 @@ double specfun_dvla(double x, double va) {
     r=1.0;
     pd=1.0;
     for (k = 1; k <= 16; k++) {
-        r *= -0.5*(2.0*k-va-1.0)*(2.0*k-va-2.0)/(k*x*x);
+        r = -0.5*r*(2.0*k-va-1.0)*(2.0*k-va-2.0)/(k*x*x);
         pd += r;
         if (fabs(r/pd) < eps) { break; }
     }
@@ -2885,7 +2885,7 @@ double specfun_dvsa(double x, double va) {
             for (m = 1; m <= 250; m++) {
                 vm = 0.5*(m-va);
                 gm = specfun_gamma2(vm);
-                r *= -sq2*x/m;
+                r = -r*sq2*x/m;
                 r1 = gm*r;
                 pd += r1;
                 if (fabs(r1) < fabs(pd)*eps) { break; }
@@ -2915,7 +2915,7 @@ double specfun_e1xb(double x) {
         e1 = 1.0;
         r = 1.0;
         for (k = 1; k < 26; k++) {
-            r *= -k*x/pow(k+1.0, 2);
+            r = -r*k*x/pow(k+1.0, 2);
             e1 += r;
             if (fabs(r) <= fabs(e1)*1e-15) { break; }
         }
@@ -2957,7 +2957,7 @@ double complex specfun_e1z(double complex z) {
         ce1 = 1.0;
         cr = 1.0;
         for (k = 1; k < 501; k++) {
-            cr *= -z*(k / pow(k + 1.0, 2));
+            cr = -cr*z*(k / pow(k + 1.0, 2));
             ce1 += cr;
             if (cabs(cr) < cabs(ce1)*1e-15) { break; }
         }
@@ -3221,7 +3221,7 @@ void specfun_fcoef(int kd, int m, double q, double a, double *fc) {
 
                 for (j = 1; j <= km; j++) {
                     if (j <= kb + 1) {
-                        fc[j - 1] *= s0 * f3 / f2;
+                        fc[j - 1] = s0 * fc[j-1] * f3 / f2;
                     } else {
                         fc[j - 1] *= s0;
                     }
@@ -3626,7 +3626,7 @@ double specfun_gam0(double x) {
     // Output:  GA --- Г(x)
     // ================================================
     double gr;
-    const double g[25] = {
+    static const double g[25] = {
          1.0e0,
          0.5772156649015329e0, -0.6558780715202538e0, -0.420026350340952e-1, 0.1665386113822915e0,
         -0.421977345555443e-1, -0.96219715278770e-2, 0.72189432466630e-2, -0.11651675918591e-2,
@@ -3654,7 +3654,7 @@ double specfun_gamma2(double x) {
     double ga, gr, r, z;
     int k, m;
     const double pi = 3.141592653589793;
-    const double g[26] = {
+    static const double g[26] = {
         1.0000000000000000e+00,  0.5772156649015329e+00, -0.6558780715202538e+00, -0.4200263503409520e-01,
         0.1665386113822915e+00, -0.4219773455554430e-01, -0.9621971527877000e-02,  0.7218943246663000e-02,
        -0.1165167591859100e-02, -0.2152416741149000e-03,  0.1280502823882000e-03, -0.2013485478070000e-04,
@@ -4071,7 +4071,7 @@ void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
     const double q1 = 2.0 / 3.0;
     const double q2 = 1.4142135623730951;
     const double eps = 1e-5;
-    const double a[16] = {
+    static const double a[16] = {
         0.569444444444444    , 0.891300154320988    , 0.226624344493027e+01, 0.798950124766861e+01,
         0.360688546785343e+02, 0.198670292131169e+03, 0.129223456582211e+04, 0.969483869669600e+04,
         0.824184704952483e+05, 0.783031092490225e+06, 0.822210493622814e+07, 0.945557399360556e+08,
@@ -4165,7 +4165,7 @@ void specfun_itika(double x, double *ti, double *tk) {
 
     int k;
     double rc1, rc2, e0, b1, b2, rs, r, tw, x2;
-    double a[10] = {
+    static const double a[10] = {
         0.625, 1.0078125, 2.5927734375, 9.1868591308594,
         4.1567974090576e+1, 2.2919635891914e+2,1.491504060477e+3,
         1.1192354495579e+4, 9.515939374212e+4,9.0412425769041e+5
@@ -4463,7 +4463,7 @@ void specfun_ittika(double x, double *tti, double *ttk) {
     double b1, e0, r, r2, rc, rs;
     const double pi = 3.141592653589793;
     const double el = 0.5772156649015329;
-    const double c[8] = {
+    static const double c[8] = {
         1.625, 4.1328125, 1.45380859375, 6.553353881835, 3.6066157150269,
         2.3448727161884, 1.7588273098916,1.4950639538279
     };
@@ -7119,7 +7119,7 @@ double specfun_psi_spec(double x) {
     double ps, s = 0.0, x2, xa = fabs(x);
     const double pi = 3.141592653589793;
     const double el = 0.5772156649015329;
-    const double a[8] = {
+    static const double a[8] = {
         -0.8333333333333e-01,
          0.83333333333333333e-02,
         -0.39682539682539683e-02,
@@ -7491,7 +7491,6 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
     const double eps = 1.0e-14;
     double *sy = calloc(252, sizeof(double));
     double *dy = calloc(252, sizeof(double));
-
 
     ip = 1;
     nm1 = (int)((n - m) / 2);

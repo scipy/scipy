@@ -169,7 +169,7 @@ def clqn(int n, double complex z):
     cqd = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
     ccqn = <cnp.complex128_t *>cnp.PyArray_DATA(cqn)
     ccqd = <cnp.complex128_t *>cnp.PyArray_DATA(cqd)
-    specfun_clpn(n, z, ccqn, ccqd)
+    specfun_clqn(n, z, ccqn, ccqd)
     return cqn, cqd
 
 
