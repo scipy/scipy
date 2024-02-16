@@ -53,21 +53,38 @@ from contextlib import contextmanager
 import warnings
 
 @contextmanager
-def warnings_errors(test):
+def warnings_errors_and_rng(test):
     """Temporarily turn (almost) all warnings to errors.
 
     `linalg.norm` is allowed to emit warnings.
     """
-    with warnings.catch_warnings(record=True) as w:
-        if test.name == 'scipy.linalg.norm':
-            yield
-        else:
-            warnings.simplefilter('error', Warning)
-            yield
+
+    # Now, the meat of the matter: filter warnings,
+    # also control the random seed for each doctest.
+
+    # XXX: this matches the refguide-check behavior, but is a tad strange:
+    # makes sure that the seed the old-fashioned np.random* methods is *NOT*
+    # reproducible but the new-style `default_rng()` *IS* repoducible.
+    # Should these two be either both repro or both not repro?
+
+    from scipy._lib._util import _fixed_default_rng
+    import numpy as np
+    with _fixed_default_rng():
+        np.random.seed(None)
+
+        with warnings.catch_warnings(record=True) as w:
+            if test.name == 'scipy.linalg.norm':
+                yield
+            else:
+                warnings.simplefilter('error', Warning)
+                yield
 
 
 config = DTConfig()
-config.user_context_mgr = warnings_errors
+config.user_context_mgr = warnings_errors_and_rng
+config.skiplist = set([
+    'scipy.linalg.LinAlgError',    # comes from numpy
+])
 ############################################################################
 
 LOGFILE = open('doctest.log', 'a')
