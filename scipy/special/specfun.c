@@ -490,7 +490,6 @@ void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *
     if ((x0 < 0.0) && (ip == 1)) { *s1f = -*s1f; }
     x = x0;
     free(ck); free(df);
-    free(ck); free(df);
     return;
 }
 
