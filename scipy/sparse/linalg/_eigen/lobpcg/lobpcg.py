@@ -400,7 +400,7 @@ def lobpcg(
 
     and ``largest=False`` parameter
 
-    >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=80)
+    >>> eigenvalues, _ = lobpcg(A, X, largest=False, maxiter=90)
     >>> print(eigenvalues)  
     [1. 2. 3.]
 
