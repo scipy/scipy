@@ -130,6 +130,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
+        #XXX: change import to `jax` before merge
         import jax.experimental.array_api  # type: ignore[import]
         xp_available_backends.update({'jax': jax.experimental.array_api})
         jax.config.update("jax_enable_x64", True)

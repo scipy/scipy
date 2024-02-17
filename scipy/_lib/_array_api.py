@@ -206,6 +206,9 @@ def is_cupy(xp):
 def is_torch(xp):
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
+def is_jax(xp):
+    return xp.__name__ in ('jax', 'jax.experimental.array_api')
+
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
