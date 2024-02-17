@@ -16,7 +16,7 @@ PUBLIC_SUBMODULES = [
     'constants',
     'fft',
     'fftpack',
-    'fftpack.convolve',
+    'fftpack.convolve',   # has zero doctests?
     'integrate',
     'interpolate',
     'io',
@@ -138,6 +138,9 @@ config = DTConfig()
 config.user_context_mgr = warnings_errors_and_rng
 config.skiplist = set([
     'scipy.linalg.LinAlgError',    # comes from numpy
+    'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
+    'scipy.fftpack.ifftshift',
+    'scipy.fftpack.fftfreq',
 ])
 ############################################################################
 
