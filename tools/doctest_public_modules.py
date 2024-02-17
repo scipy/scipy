@@ -73,7 +73,8 @@ def warnings_errors_and_rng(test):
     # Deprecated stuff in scipy.signal and elsewhere
     deprecated = [
         'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
-        'scipy.signal.ricker'
+        'scipy.signal.ricker',
+        'scipy.integrate.simpson',
     ]
     for name in deprecated:
         known_warnings[name] = dict(category=DeprecationWarning)
