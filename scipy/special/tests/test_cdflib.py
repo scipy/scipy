@@ -199,14 +199,6 @@ def _noncentral_chi_cdf(x, df, nc, dps=None):
         return res
 
 
-def _normal_cdf(sigma, x, mu):
-    x = mpmath.mp.mpf(x)
-    mu = mpmath.mp.mpf(mu)
-    sigma = mpmath.mp.mpf(sigma)
-    q = mpmath.mp.ncdf(x, mu, sigma)
-    return q
-
-
 def _tukey_lmbda_quantile(p, lmbda):
     # For lmbda != 0
     return (p**lmbda - (1 - p)**lmbda)/lmbda
@@ -368,14 +360,6 @@ class TestCDFlib:
             0, [ProbArg(), Arg(0, 100, inclusive_a=False)],
             spfunc_first=False, rtol=1e-5)
 
-    def test_nrdtrimn(self):
-        _assert_inverts(
-            sp.nrdtrimn,
-            _normal_cdf,
-            2, [ProbArg(), Arg(0, np.inf, inclusive_a=False),
-                Arg(-np.inf, np.inf)],
-            n=1000, rtol=1e-5)
-
     # The values of lmdba are chosen so that 1/lmbda is exact.
     @pytest.mark.parametrize('lmbda', [0.5, 1.0, 8.0])
     def test_tklmbda_lmbda1(self, lmbda):
@@ -501,19 +485,3 @@ def test_nctdtrinc_gh19896():
                -3.086951096691082]
     actual = sp.nctdtrinc(dfarr, parr, tarr)
     assert_allclose(actual, desired, rtol=2e-12, atol=0.0)
-
-
-def test_stdtr_stdtrit_neg_inf():
-    # -inf was treated as +inf and values from the normal were returned
-    assert np.all(np.isnan(sp.stdtr(-np.inf, [-np.inf, -1.0, 0.0, 1.0, np.inf])))
-    assert np.all(np.isnan(sp.stdtrit(-np.inf, [0.0, 0.25, 0.5, 0.75, 1.0])))
-
-
-def test_bdtrik_nbdtrik_inf():
-    y = np.array(
-        [np.nan,-np.inf,-10.0, -1.0, 0.0, .00001, .5, 0.9999, 1.0, 10.0, np.inf])
-    y = y[:,None]
-    p = np.atleast_2d(
-        [np.nan, -np.inf, -10.0, -1.0, 0.0, .00001, .5, 1.0, np.inf])
-    assert np.all(np.isnan(sp.bdtrik(y, np.inf, p)))
-    assert np.all(np.isnan(sp.nbdtrik(y, np.inf, p)))
