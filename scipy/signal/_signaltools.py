@@ -1,7 +1,7 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
-from __future__ import annotations # Provides typing union operator `|` in Python 3.9
+from __future__ import annotations  # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
