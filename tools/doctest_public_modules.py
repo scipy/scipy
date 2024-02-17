@@ -139,10 +139,11 @@ def warnings_errors_and_rng(test):
 config = DTConfig()
 config.user_context_mgr = warnings_errors_and_rng
 config.skiplist = set([
-    'scipy.linalg.LinAlgError',    # comes from numpy
+    'scipy.linalg.LinAlgError',     # comes from numpy
     'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
     'scipy.fftpack.ifftshift',
     'scipy.fftpack.fftfreq',
+    'scipy.optimize.show_options',  # does not have much to doctest
 ])
 ############################################################################
 
