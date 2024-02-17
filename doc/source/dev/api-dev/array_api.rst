@@ -223,25 +223,57 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_if_array_api``: don't run a test if ``SCIPY_ARRAY_API`` is on.
-* ``skip_if_array_api_gpu``: don't run a test if GPU is involved (also applies
-  to PyTorch's MPS mode).
-* ``skip_if_array_api_backend(backend)``: don't run a test for a specific
-  backend
+* ``skip_if_array_api(*backends, reasons=None, np_only=False, cpu_only=False)``:
+  skip certain backends and/or devices. ``np_only`` skips tests for all backends
+  other than the default NumPy backend.
+  ``@pytest.mark.usefixtures("skip_if_array_api")`` must be used alongside this
+  marker for the skipping to apply.
 
-The following is an example using the main decorator responsible of the
-namespace parametrization::
+The following is an example using the markers::
 
   from scipy.conftest import array_api_compatible
   ...
+  @pytest.mark.skip_if_array_api(np_only=True,
+                                 reasons=['skip reason'])
+  @pytest.mark.usefixtures("skip_if_array_api")
   @array_api_compatible
-  def test_toto(self, xp):
+  def test_toto1(self, xp):
+      a = xp.asarray([1, 2, 3])
+      b = xp.asarray([0, 2, 5])
+      toto(a, b)
+  ...
+  @pytest.mark.skip_if_array_api('numpy.array_api', 'cupy',
+                                 reasons=['skip reason 1',
+                                          'skip reason 2',])
+  @pytest.mark.usefixtures("skip_if_array_api")
+  @array_api_compatible
+  def test_toto2(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
       toto(a, b)
 
-Then ``dev.py`` can be used with he new option ``-b`` or
-``--array-api-backend``::
+Passing a custom reason to ``reasons`` when ``cpu_only=True`` is unsupported
+since ``cpu_only=True`` can be used alongside passing ``backends``. Also,
+the reason for using ``cpu_only`` is likely just that compiled code is used
+in the function(s) being tested.
+
+When every test function in a file has been updated for array API
+compatibility, one can reduce verbosity by telling ``pytest`` to apply the
+markers to every test function using ``pytestmark``::
+
+    from scipy.conftest import array_api_compatible
+    
+    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
+    skip_if_array_api = pytest.mark.skip_if_array_api
+    ...
+    @skip_if_array_api(np_only=True, reasons=['skip reason'])
+    def test_toto1(self, xp):
+        a = xp.asarray([1, 2, 3])
+        b = xp.asarray([0, 2, 5])
+        toto(a, b)
+
+After applying these markers, ``dev.py test`` can be used with the new option
+``-b`` or ``--array-api-backend``::
 
   python dev.py test -b numpy -b pytorch -s cluster
 

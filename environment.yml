@@ -29,6 +29,7 @@ dependencies:
   - pytest-timeout
   - asv >=0.6
   - hypothesis
+  - array-api-strict
   # For type annotations
   - mypy
   - typing_extensions
