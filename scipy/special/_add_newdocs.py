@@ -11093,6 +11093,7 @@ add_newdoc("nrdtrimn",
     --------
     scipy.stats.norm : Normal distribution
     ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
     nrdtrisd : Inverse of normal distribution CDF with respect to
                standard deviation
 
@@ -11145,6 +11146,7 @@ add_newdoc("nrdtrisd",
     --------
     scipy.stats.norm : Normal distribution
     ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
     nrdtrimn : Inverse of normal distribution CDF with respect to
                mean
 
