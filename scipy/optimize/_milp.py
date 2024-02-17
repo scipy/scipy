@@ -322,7 +322,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     >>> A = np.array([[-1, 1], [3, 2], [2, 3]])
     >>> b_u = np.array([1, 12, 12])
-    >>> b_l = np.full_like(b_u, -np.inf)
+    >>> b_l = np.full_like(b_u, -np.inf, dtype=float)
 
     Because there is no lower limit on these constraints, we have defined a
     variable ``b_l`` full of values representing negative infinity. This may
@@ -350,7 +350,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [1.0, 2.0]
+    [2.0, 2.0]
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
