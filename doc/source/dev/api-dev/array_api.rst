@@ -242,7 +242,7 @@ The following is an example using the markers::
       b = xp.asarray([0, 2, 5])
       toto(a, b)
   ...
-  @pytest.mark.skip_if_array_api('numpy.array_api', 'cupy',
+  @pytest.mark.skip_if_array_api('array_api_strict', 'cupy',
                                  reasons=['skip reason 1',
                                           'skip reason 2',])
   @pytest.mark.usefixtures("skip_if_array_api")
