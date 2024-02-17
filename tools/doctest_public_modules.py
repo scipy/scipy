@@ -75,6 +75,7 @@ def warnings_errors_and_rng(test):
         'scipy.signal.cwt', 'scipy.signal.morlet', 'scipy.signal.morlet2',
         'scipy.signal.ricker',
         'scipy.integrate.simpson',
+        'scipy.interpolate.interp2d',
     ]
     for name in deprecated:
         known_warnings[name] = dict(category=DeprecationWarning)
