@@ -230,7 +230,6 @@ Construct a 1000x1000 `lil_array` and add some values to it:
 
 >>> A = lil_array((1000, 1000))
 >>> A[0, :100] = rand(100)
->>> A[1, 100:200] = A[0, :100]
 >>> A.setdiag(rand(1000))
 
 Now convert it to CSR format and solve A x = b for x:
