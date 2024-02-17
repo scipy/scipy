@@ -27,6 +27,14 @@ class _MWU:
         self._recursive = None
 
     def pmf(self, k, m, n):
+
+        # In practice, `pmf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here:
+        # k = np.array(k, copy=True)
+        # k2 = m*n - k
+        # i = k2 < k
+        # k[i] = k2[i]
+
         if (self._recursive is None and m <= 500 and n <= 500
                 or self._recursive):
             return self.pmf_recursive(k, m, n)
@@ -52,22 +60,30 @@ class _MWU:
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
-        # We could use the fact that the distribution is symmetric to avoid
-        # summing more than m*n/2 terms, but it might not be worth the
-        # overhead. Let's leave that to an improvement.
+
+        # In practice, `cdf` is never called with k > m*n/2.
+        # If it were, we'd exploit symmetry here rather than in `sf`
         pmfs = self.pmf(np.arange(0, np.max(k) + 1), m, n)
         cdfs = np.cumsum(pmfs)
         return cdfs[k]
 
     def sf(self, k, m, n):
         '''Survival function'''
-        # Use the fact that the distribution is symmetric; i.e.
-        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
-        k = m*n - k
         # Note that both CDF and SF include the PMF at k. The p-value is
         # calculated from the SF and should include the mass at k, so this
         # is desirable
-        return self.cdf(k, m, n)
+
+        # Use the fact that the distribution is symmetric; i.e.
+        # _f(m, n, m*n-k) = _f(m, n, k), and sum from the left
+        kc = np.asarray(m*n - k)  # complement of k
+        i = k < kc
+        if np.any(i):
+            kc[i] = k[i]
+            cdfs = np.asarray(self.cdf(kc, m, n))
+            cdfs[i] = 1. - cdfs[i] + self.pmf(kc[i], m, n)
+        else:
+            cdfs = np.asarray(self.cdf(kc, m, n))
+        return cdfs[()]
 
     def _resize_fmnks(self, m, n, k):
         '''If necessary, expand the array that remembers PMF values'''
@@ -206,10 +222,11 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     if axis != axis_int:
         raise ValueError('`axis` must be an integer.')
 
-    methods = {"asymptotic", "exact", "auto"}
-    method = method.lower()
-    if method not in methods:
-        raise ValueError(f'`method` must be one of {methods}.')
+    if not isinstance(method, stats.PermutationMethod):
+        methods = {"asymptotic", "exact", "auto"}
+        method = method.lower()
+        if method not in methods:
+            raise ValueError(f'`method` must be one of {methods}.')
 
     return x, y, use_continuity, alternative, axis_int, method
 
@@ -276,7 +293,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         see [5] section 5.1.
     axis : int, optional
         Axis along which to perform the test. Default is 0.
-    method : {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'} or `PermutationMethod` instance, optional
         Selects the method used to calculate the *p*-value.
         Default is 'auto'. The following options are available.
 
@@ -288,6 +305,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         * ``'auto'``: chooses ``'exact'`` when the size of one of the samples
           is less than or equal to 8 and there are no ties;
           chooses ``'asymptotic'`` otherwise.
+        * `PermutationMethod` instance. In this case, the p-value
+          is computed using `permutation_test` with the provided
+          configuration options and other appropriate settings.
 
     Returns
     -------
@@ -314,7 +334,9 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     relation originally proposed in [1]_ as it is described in [3]_.
     Note that the exact method is *not* corrected for ties, but
     `mannwhitneyu` will not raise errors or warnings if there are ties in the
-    data.
+    data. If there are ties and either samples is small (fewer than ~10
+    observations), consider passing an instance of `PermutationMethod`
+    as the `method` to perform a permutation test.
 
     The Mann-Whitney U test is a non-parametric version of the t-test for
     independent samples. When the means of samples from the populations
@@ -473,10 +495,21 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
         method = _mwu_choose_method(n1, n2, np.any(t > 1))
 
     if method == "exact":
-        p = _mwu_state.sf(U.astype(int), n1, n2)
+        p = _mwu_state.sf(U.astype(int), min(n1, n2), max(n1, n2))
     elif method == "asymptotic":
         z = _get_mwu_z(U, n1, n2, t, continuity=use_continuity)
         p = stats.norm.sf(z)
+    else:  # `PermutationMethod` instance (already validated)
+        def statistic(x, y, axis):
+            return mannwhitneyu(x, y, use_continuity=use_continuity,
+                                alternative=alternative, axis=axis,
+                                method="asymptotic").statistic
+
+        res = stats.permutation_test((x, y), statistic, axis=axis,
+                                     **method._asdict(), alternative=alternative)
+        p = res.pvalue
+        f = 1
+
     p *= f
 
     # Ensure that test statistic is not greater than 1

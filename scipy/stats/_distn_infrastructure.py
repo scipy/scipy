@@ -1154,7 +1154,8 @@ class rv_generic:
                         mu = self._munp(1, *goodargs)
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
-                        mu2 = mu2p - mu * mu
+                        with np.errstate(invalid='ignore'):
+                            mu2 = mu2p - mu * mu
                     with np.errstate(invalid='ignore'):
                         mu3 = (-mu*mu - 3*mu2)*mu + mu3p
                         g1 = mu3 / np.power(mu2, 1.5)
@@ -1169,7 +1170,8 @@ class rv_generic:
                         mu = self._munp(1, *goodargs)
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
-                        mu2 = mu2p - mu * mu
+                        with np.errstate(invalid='ignore'):
+                            mu2 = mu2p - mu * mu
                     if g1 is None:
                         mu3 = None
                     else:
@@ -2606,7 +2608,7 @@ class rv_continuous(rv_generic):
         >>> loc1, scale1 = norm.fit(x)
         >>> loc1, scale1
         (0.92087172783841631, 2.0015750750324668)
-        """
+        """ # noqa: E501
         method = kwds.get('method', "mle").lower()
 
         censored = isinstance(data, CensoredData)

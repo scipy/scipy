@@ -3393,8 +3393,8 @@ class gamma_gen(rv_continuous):
         floc = kwds.get('floc', None)
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or floc is None
-                or method.lower() == 'mm'):
+        if (isinstance(data, CensoredData) or
+                floc is None and method.lower() != 'mm'):
             # loc is not fixed or we're not doing standard MLE.
             # Use the default fit method.
             return super().fit(data, *args, **kwds)
@@ -3407,9 +3407,7 @@ class gamma_gen(rv_continuous):
 
         _remove_optimizer_parameters(kwds)
 
-        # Special case: loc is fixed.
-
-        if f0 is not None and fscale is not None:
+        if f0 is not None and floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
             # Without this check, this function would just return the
             # parameters that were given.
@@ -3422,6 +3420,34 @@ class gamma_gen(rv_continuous):
         if not np.isfinite(data).all():
             raise ValueError("The data contains non-finite values.")
 
+        # Use explicit formulas for mm (gh-19884)
+        if method.lower() == 'mm':
+            m1 = np.mean(data)
+            m2 = np.var(data)
+            m3 = np.mean((data - m1) ** 3)
+            a, loc, scale = f0, floc, fscale
+            # Three unknowns
+            if a is None and loc is None and scale is None:
+                scale = m3 / (2 * m2)
+            # Two unknowns
+            if loc is None and scale is None:
+                scale = np.sqrt(m2 / a)
+            if a is None and scale is None:
+                scale = m2 / (m1 - loc)
+            if a is None and loc is None:
+                a = m2 / (scale ** 2)
+            # One unknown
+            if a is None:
+                a = (m1 - loc) / scale
+            if loc is None:
+                loc = m1 - a * scale
+            if scale is None:
+                scale = (m1 - loc) / a
+            return a, loc, scale
+
+        # Special case: loc is fixed.
+
+        # NB: data == loc is ok if a >= 1; the below check is more strict.
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
 
@@ -4482,7 +4508,7 @@ class halfnorm_gen(rv_continuous):
         if fscale is not None:
             scale = fscale
         else:
-            scale = stats.moment(data, moment=2, center=loc)**0.5
+            scale = stats.moment(data, order=2, center=loc)**0.5
 
         return loc, scale
 
@@ -4698,14 +4724,26 @@ class invgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
-                    \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
+        f(x; \mu) = \frac{1}{\sqrt{2 \pi x^3}}
+                    \exp\left(-\frac{(x-\mu)^2}{2 \mu^2 x}\right)
 
-    for :math:`x >= 0` and :math:`\mu > 0`.
+    for :math:`x \ge 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
+
+    A common shape-scale parameterization of the inverse Gaussian distribution
+    has density
+
+    .. math::
+
+        f(x; \nu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\nu)^2}{2 \nu^2 x}\right)
+
+    Using ``nu`` for :math:`\nu` and ``lam`` for :math:`\lambda`, this
+    parameterization is equivalent to the one above with ``mu = nu/lam``,
+    ``loc = 0``, and ``scale = lam``.
 
     %(example)s
 
@@ -6304,6 +6342,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
@@ -6335,11 +6377,45 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # Specialize MLE only when location is known.
+        if floc is None:
+            return super(type(self), self).fit(data, *args, **kwds)
+
+        # Raise an error if any observation has zero likelihood.
+        if np.any(data <= floc):
+            raise FitDataError("loglaplace", lower=floc, upper=np.inf)
+
+        # Remove location from data.
+        if floc != 0:
+            data = data - floc
+
+        # When location is zero, the log-Laplace distribution is related to
+        # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
+        # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
+        # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 

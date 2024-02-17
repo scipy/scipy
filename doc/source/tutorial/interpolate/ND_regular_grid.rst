@@ -87,7 +87,7 @@ controlled by the ``fill_value`` keyword parameter:
 
     >>> x = np.array([0, 5, 10])
     >>> y = np.array([0])
-    >>> data = array([[0], [5], [10]])
+    >>> data = np.array([[0], [5], [10]])
     >>> rgi = RegularGridInterpolator((x, y), data,
     ...                               bounds_error=False, fill_value=None)
     >>> rgi([(2, 0), (2, 1), (2, -1)])
