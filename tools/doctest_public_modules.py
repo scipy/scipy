@@ -91,6 +91,8 @@ def warnings_errors_and_rng(test):
 
     # additional one-off warnings to filter
     dct = {
+        'scipy.sparse.linalg.norm':
+            dict(category=UserWarning, message="Exited at iteration"),
         'scipy.stats.anderson_ksamp':
             dict(category=UserWarning, message='p-value capped:'),
         'scipy.special.ellip_normal':
