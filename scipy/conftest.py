@@ -205,11 +205,17 @@ def skip_if_array_api(xp, request):
             if xp.__name__ == 'cupy':
                 pytest.skip(reason=reason)
             elif xp.__name__ == 'torch':
-                if 'cpu' not in torch.empty(0).device.type:
+                if 'cpu' not in xp.empty(0).device.type:
                     pytest.skip(reason=reason)
+            elif xp.__name__ == 'jax.experimental.array_api':
+                for d in xp.empty(0).devices():
+                    if 'cpu' not in d.device_kind:
+                        pytest.skip(reason=reason)
+
     if backends is not None:
         reasons = kwargs.get("reasons", False)
         for i, backend in enumerate(backends):
+            backend = 'jax.experimental.array_api' if backend == 'jax' else backend
             if xp.__name__ == backend:
                 if not reasons:
                     reason = f"do not run with array API backend: {backend}"
