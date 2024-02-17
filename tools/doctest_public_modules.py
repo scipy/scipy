@@ -177,7 +177,7 @@ def doctest_submodules(module_names, verbose, fail_fast):
         LOGFILE.write(module_name + '\n')
         LOGFILE.write("="*len(module_name)  + '\n')
         for entry in history:
-            LOGFILE.write(str(entry) + '\n')
+            LOGFILE.write(entry[len(module_name)+1:] + '\n')
 
         sys.stderr.write(str(result))
         all_success = all_success and (result.failed == 0)

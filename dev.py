@@ -1124,7 +1124,7 @@ class Doctest(Task):
                str(dirs.root / 'tools' / 'doctest_public_modules.py'),
                ]
         if args.verbose:
-            cmd += ['-vvv']
+            cmd += ['-vv']
         if args.filename:
             cmd += ['-t', args.filename]
         if args.submodule:
