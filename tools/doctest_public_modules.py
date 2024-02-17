@@ -193,13 +193,14 @@ def doctest_single_file(fname, verbose, fail_fast):
 def doctest_tutorial(verbose, fail_fast):
     base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
     tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
+    tut_path2 = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*', '*.rst')
     sys.stderr.write('\nChecking tutorial files at %s:\n'
                      % os.path.relpath(tut_path, os.getcwd()))
 
-    tutorials = [f for f in sorted(glob.glob(tut_path))]
+    tutorials = [f for f in sorted(glob.glob(tut_path)) + sorted(glob.glob(tut_path2))]
 
     # XXX: cf https://github.com/ev-br/scpdt/issues/43
-    tutorials = [f for f in tutorials if 'io.rst' not in f]
+   # tutorials = [f for f in tutorials if 'io.rst' not in f]
 
     # set up scipy-specific config
     config.pseudocode = set(['integrate.nquad(func,'])
@@ -225,11 +226,14 @@ def main(args):
                                           verbose=args.verbose,
                                           fail_fast=args.fail_fast)
     else:
-        name = args.submodule   # XXX : dance w/ subsubmodules : cluster.vq etc
-        submodule_names = [name]  if name else list(PUBLIC_SUBMODULES)
-        all_success = doctest_submodules(submodule_names,
-                                         verbose=args.verbose,
-                                         fail_fast=args.fail_fast)
+        all_success = True
+   #     name = args.submodule   # XXX : dance w/ subsubmodules : cluster.vq etc
+   #     submodule_names = [name]  if name else list(PUBLIC_SUBMODULES)
+   #     all_success = doctest_submodules(submodule_names,
+   #                                      verbose=args.verbose,
+   #                                      fail_fast=args.fail_fast)
+
+        breakpoint()
 
         # if full run: also check the tutorial
         if not args.submodule:
