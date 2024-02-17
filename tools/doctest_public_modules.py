@@ -95,17 +95,10 @@ def warnings_errors_and_rng(test):
     for name in user_w:
         known_warnings[name] = dict(category=UserWarning)
 
-
     # additional one-off warnings to filter
     dct = {
         'scipy.sparse.linalg.norm':
             dict(category=UserWarning, message="Exited at iteration"),
-        'scipy.special.ellip_normal':
-            dict(category=integrate.IntegrationWarning,
-                 message='The occurrence of roundoff'),
-        'scipy.special.ellip_harm_2':
-            dict(category=integrate.IntegrationWarning,
-                 message='The occurrence of roundoff'),
         # tutorials
         'linalg.rst':
             dict(message='the matrix subclass is not',
