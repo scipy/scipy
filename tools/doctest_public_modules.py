@@ -144,6 +144,7 @@ config.skiplist = set([
     'scipy.fftpack.ifftshift',
     'scipy.fftpack.fftfreq',
     'scipy.optimize.show_options',  # does not have much to doctest
+    'scipy.signal.normalize',       # manipulates warnings (XXX temp skip)
 ])
 ############################################################################
 
