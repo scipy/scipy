@@ -11113,6 +11113,7 @@ add_newdoc("nrdtrimn",
     0.9331927987311419
 
     Verify that `nrdtrimn` returns the original value for `mean`.
+
     >>> from scipy.special import nrdtrimn
     >>> nrdtrimn(p, std, x)
     3.0000000000000004
@@ -11166,6 +11167,7 @@ add_newdoc("nrdtrisd",
     0.9331927987311419
 
     Verify that `nrdtrisd` returns the original value for `std`.
+
     >>> from scipy.special import nrdtrisd
     >>> nrdtrisd(mean, p, x)
     2.0000000000000004
