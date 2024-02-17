@@ -145,6 +145,7 @@ config.skiplist = set([
     'scipy.fftpack.fftshift',       # fftpack stuff is also from numpy
     'scipy.fftpack.ifftshift',
     'scipy.fftpack.fftfreq',
+    'scipy.special.sinc',           # sinc is from numpy
     'scipy.optimize.show_options',  # does not have much to doctest
     'scipy.signal.normalize',       # manipulates warnings (XXX temp skip)
 ])
