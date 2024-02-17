@@ -89,12 +89,17 @@ def warnings_errors_and_rng(test):
         known_warnings[name] = dict(category=integrate.IntegrationWarning,
                                     message='The occurrence of roundoff')
 
+    # scipy.stats deliberately emits UserWarnings sometimes
+    user_w = ['scipy.stats.anderson_ksamp', 'scipy.stats.kurtosistest',
+              'scipy.stats.normaltest']
+    for name in user_w:
+        known_warnings[name] = dict(category=UserWarning)
+
+
     # additional one-off warnings to filter
     dct = {
         'scipy.sparse.linalg.norm':
             dict(category=UserWarning, message="Exited at iteration"),
-        'scipy.stats.anderson_ksamp':
-            dict(category=UserWarning, message='p-value capped:'),
         'scipy.special.ellip_normal':
             dict(category=integrate.IntegrationWarning,
                  message='The occurrence of roundoff'),
@@ -109,6 +114,7 @@ def warnings_errors_and_rng(test):
             dict(message='The maximum number of subdivisions',
                  category=integrate.IntegrationWarning),
     }
+    known_warnings.update(dct)
 
     # these legitimately emit warnings in examples
     from scipy.signal._filter_design import BadCoefficients
@@ -126,7 +132,6 @@ def warnings_errors_and_rng(test):
     import numpy as np
     with _fixed_default_rng():
         np.random.seed(None)
-
         with warnings.catch_warnings():
             if test.name in known_warnings:
                 warnings.filterwarnings('ignore', **known_warnings[test.name])
