@@ -174,6 +174,25 @@ jobs:
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build refguide-check
 
+# Reference guide checking
+  refguide_check_ng:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - check-skip
+      - apt-install
+
+      - run:
+          name: refguide_check_ng
+          no_output_timeout: 25m
+          command: |
+            sudo apt-get install -y wamerican-small
+            export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
+            python dev.py --no-build doctest
+
+
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/
