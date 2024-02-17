@@ -47,7 +47,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         # ask for the option type
         opt_type = hoptmanager.get_option_type(key)
         if -1 == opt_type:
-            warn(f"Unrecognized options detected: {dict({key: val})}", OptimizeWarning)
+            warn(f"Unrecognized options detected: {dict({key: val})}",
+                 OptimizeWarning, stacklevel = 2)
             continue
         else:
             if key in ("presolve", "parallel"):
@@ -59,6 +60,7 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
                         f'Option f"{key}" is "{val}", but only True or False is '
                         f"allowed. Using default.",
                         OptimizeWarning,
+                        stacklevel = 2,
                     )
                     continue
             opt_type = _h.HighsOptionType(opt_type)
@@ -69,12 +71,13 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
                         f'Option f"{key}" is "{val}", but only True or False is '
                         f"allowed. Using default.",
                         OptimizeWarning,
+                        stacklevel = 2,
                     )
                     continue
 
             # warn or set option
             if status != 0:
-                warn(msg, OptimizeWarning)
+                warn(msg, OptimizeWarning, stacklevel = 2)
             else:
                 setattr(highs_options, key, val)
 
@@ -145,7 +148,8 @@ def _highs_wrapper(c, indptr, indices, data, lhs, rhs, lb, ub, integrality, opti
         res.update(
             {
                 "status": model_status,
-                "message": f"model_status is {highs.modelStatusToString(model_status)}; "
+                "message": "model_status is "
+                f"{highs.modelStatusToString(model_status)}; "
                 "primal_status is "
                 f"{highs.solutionStatusToString(info.primal_solution_status)}",
                 "simplex_nit": info.simplex_iteration_count,
