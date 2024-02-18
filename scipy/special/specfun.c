@@ -970,7 +970,7 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
             cf1 = cf0;
             cf0 = cf;
         }
-        s = 2.0*s/(pi * z)*csin(zp)/cf;
+        s = 2.0/(pi * z)*csin(zp)/cf*s;
     } else {
         // Auxiliary functions f(z) and g(z) can be computed using an
         // asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
@@ -2573,17 +2573,17 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
                                   0.6074042001273483, -0.1100171402692467, 0.3038090510922384,
                                  -0.1188384262567832, 0.6252951493434797, -0.4259392165047669,
                                   0.3646840080706556, -0.3833534661393944, 0.4854014686852901};
-           
+
     static const double b[12] = { 0.732421875e-01, -0.2271080017089844, 0.1727727502584457,
                                  -0.2438052969955606, 0.5513358961220206, -0.1825775547429318,
                                   0.8328593040162893, -0.5006958953198893, 0.3836255180230433,
                                  -0.3649010818849833, 0.4218971570284096, -0.5827244631566907};
-           
+
     static const double a1[12] = { 0.1171875,          -0.144195556640625,   0.6765925884246826,
                                   -0.6883914268109947,  0.1215978918765359, -0.3302272294480852,
                                    0.1276412726461746, -0.6656367718817688,  0.4502786003050393,
                                   -0.3833857520742790,  0.4011838599133198, -0.5060568503314727};
-           
+
     static const double b1[12] = {-0.1025390625,        0.2775764465332031, -0.1993531733751297,
                                    0.2724882731126854, -0.6038440767050702,  0.1971837591223663,
                                   -0.8902978767070678,  0.5310411010968522, -0.4043620325107754,
@@ -4195,7 +4195,7 @@ void specfun_itika(double x, double *ti, double *tk) {
             *ti += a[k-1]*r;
         }
         rc1 = 1.0 / sqrt(2.0*pi*x);
-        *ti = (*ti) * rc1 * exp(x);
+        *ti = rc1 * exp(x) * (*ti);
     }
 
     if (x < 12.0) {
@@ -4579,7 +4579,7 @@ void specfun_ittjya(double x, double *ttj, double *tty) {
                 qx += r;
                 if (fabs(r) < fabs(qx) * 1.0e-12) { break; }
             }
-            qx = 0.125 * qx * (vt - 1.0) / x;
+            qx = 0.125 * (vt - 1.0) / x * qx;
             xk = x - (0.25 + 0.5 * l)*pi;
             bj1 = a0*(px*cos(xk) - qx*sin(xk));
             by1 = a0*(px*sin(xk) + qx*cos(xk));
@@ -4978,6 +4978,12 @@ void specfun_jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *
     // Routine called: JYNDD for computing Jn(x), Yn(x), and
     //                 their first and second derivatives
     // ======================================================
+
+    /*
+     * SciPy Note:
+     * See GH-18859 for additional changes done by SciPy for
+     * better initial condition selection in Newton iteration
+     */
 
     int L;
     double b, h, x, x0, bjn, djn, fjn, byn, dyn, fyn;
@@ -5421,7 +5427,7 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
     sw = 0.0;
 
     for (k = 2; k <= nm; ++k) {
-        r = (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
+        r = r * (m + k - 1.0) * (m + k + ip - 1.5) / (k - 1.0) / (k + ip - 1.5);
         su0 = su0 + r * df[k - 1];
         if (k > (n - m) / 2 && fabs((su0 - sw) / su0) < eps) { break; }
         sw = su0;
@@ -5621,7 +5627,7 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
         return;
     }
 
-    k0 = (x >= 35.0) ? 10 : ((x >= 50.0) ? 8 : 11);
+    k0 = (x >= 50.0) ? 8 : ((x >= 35.0) ? 10 : 11);
     bjv0 = 0.0;
     bjv1 = 0.0;
 
@@ -5630,7 +5636,7 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
         px = 1.0;
         rp = 1.0;
         for (k = 1; k <= k0; k++) {
-            rp = -0.78125e-2 * (vv - pow((4.0 * k - 3.0), 2.0)) * (vv - pow((4.0 * k - 1.0), 2.0)) / (k * (2.0 * k - 1.0) * x2);
+            rp = -0.78125e-2 * rp * (vv - pow((4.0 * k - 3.0), 2.0)) * (vv - pow((4.0 * k - 1.0), 2.0)) / (k * (2.0 * k - 1.0) * x2);
             px += rp;
         }
 
@@ -5641,7 +5647,7 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
             qx += rp;
         }
 
-        qx = 0.125 * qx * (vv - 1.0) / x;
+        qx = 0.125 * (vv - 1.0) * qx / x;
         xk = x - (0.5 * (j + v0) + 0.25) * pi;
         a0 = sqrt(rp2 / x);
         ck = cos(xk);
@@ -6023,6 +6029,7 @@ double specfun_lpmv0(double v, int m, double x) {
     }
 
     if (v0 == 0.0) {
+        // DLMF 14.3.4, 14.7.17, 15.2.4
         pmv = 1.0;
         r = 1.0;
         for (k = 1; k <= nv - m; k++) {
@@ -6032,6 +6039,7 @@ double specfun_lpmv0(double v, int m, double x) {
         return pow(-1, nv)*c0*pmv;
     } else {
         if (x >= -0.35) {
+            // DLMF 14.3.4, 15.2.1
             pmv = 1.0;
             r = 1.0;
             for (k = 1; k <= 100; k++) {
@@ -6041,6 +6049,7 @@ double specfun_lpmv0(double v, int m, double x) {
             }
             return pow(-1, m)*c0*pmv;
         } else {
+            // DLMF 14.3.5, 15.8.10
             vs = sin(v * pi) / pi;
             pv0 = 0.0;
             if (m != 0) {
@@ -7614,7 +7623,7 @@ void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double 
     double *dn = calloc(200, sizeof(double));
 
     nm = 25 + (int)((n - m) / 2 + c);
-    ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
+    ip = (n - m) % 2;
     specfun_sckb(m, n, c, df, ck);
     specfun_kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
     specfun_qstar(m, n, c, ck1, ck, &qs, &qt);
@@ -7676,10 +7685,10 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
     double *dn = malloc(201*sizeof(double));
     const double eps = 1.0e-14;
 
-    nm1 = floor((n - m) / 2);
+    nm1 = (n - m) / 2;
     nm = 25.0 + nm1 + c;
     nm2 = 2 * nm + m;
-    ip = ((n - m) == (2*nm1) ? 0 : 1);
+    ip = (n - m) % 2;
 
     specfun_kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
     specfun_lpmns(m, nm2, x, pm, pd);
@@ -7864,7 +7873,7 @@ void specfun_rswfo(int m, int n, double c, double x, double cv, int kf, double *
         specfun_rmn1(m, n, c, x, kd, df, r1f, r1d);
     }
     if (kf > 1) {
-        id = -10;
+        id = 10;
         if (x > 1e-8) {
             specfun_rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
         }
@@ -7959,7 +7968,7 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
         for (int i = 1; i <= nm; ++i) {
             df[i-1] = 0.0;
         }
-        df[(n - m) / 2 + 1] = 1.0;
+        df[(n - m) / 2] = 1.0;
         return;
     }
 
@@ -7967,7 +7976,7 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
     double *d = calloc(nm + 2, sizeof(double));
     double *g = calloc(nm + 2, sizeof(double));
     cs = c*c*kd;
-    ip = ((n - m) == (2 * (int)((n - m) / 2)) ? 0 : 1);
+    ip = (n - m) % 2;
 
     for (int i = 1; i <= nm + 2; ++i) {
         k = (ip == 0 ? 2 * (i - 1) : 2 * i - 1);
@@ -8124,7 +8133,7 @@ void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
     double *f = calloc(300, sizeof(double));
     double *g = calloc(300, sizeof(double));
     double *h = calloc(100, sizeof(double));
-    icm = (int)((n-m+2)/2);
+    icm = (n-m+2)/2;
     nm = 10 + (int)(0.5*(n-m)+c);
     cs = c*c*kd;
     k = 0;
@@ -8149,7 +8158,7 @@ void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
         xb = d[nm-1] - fabs(e[nm-1]);
         nm1 = nm-1;
         for (i = 1; i <= nm1; i++) {
-            t = fabs(e[i-1])+fabs(e[i+1]);
+            t = fabs(e[i-1])+fabs(e[i]);
             t1 = d[i-1] + t;
             if (xa < t1) { xa = t1; }
             t1 = d[i-1] - t;

@@ -24,6 +24,7 @@ cdef extern from "specfun.h" nogil:
     void specfun_lqmn(double x, int m, int n, double *qm, double *qd)
     void specfun_lqnb(int n, double x, double* qn, double* qd)
     void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
     void specfun_rctj(int n, double x, int *nm, double *rj, double *dj)
     void specfun_rcty(int n, double x, int *nm, double *ry, double *dy)
     void specfun_sdmn(int m, int n, double c, double cv, double kd, double *df)
@@ -479,6 +480,22 @@ def pbdv(double v, double x):
     return dv, dp, pdf, pdd
 
 
+def pbvv(double v, double x):
+    cdef double pvf
+    cdef double pvd
+    cdef double *dvv
+    cdef double *dvp
+    cdef cnp.npy_intp dims[1]
+    dims[0] = abs(<int>v) + 2
+
+    vv = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
+    vp = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
+    dvv = <cnp.float64_t *>cnp.PyArray_DATA(vv)
+    dvp = <cnp.float64_t *>cnp.PyArray_DATA(vp)
+    specfun_pbvv(x, v, dvv, dvp, &pvf, &pvd)
+    return vv, vp, pvf, pvd
+
+    
 def rctj(int n, double x):
     """
     Compute Riccati-Bessel functions of the first kind and their
