@@ -7580,6 +7580,34 @@ class TestWassersteinDistanceND:
             v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance_nd(u_values, v_values)
 
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_optimization_vs_analytical(self, u_size, v_size):
+        rng = np.random.default_rng(45634745675)
+        # Test when u_weights = None, v_weights = None
+        u_values = rng.random(size=(u_size, 1))
+        v_values = rng.random(size=(v_size, 1))
+        u_values_flat = u_values.ravel()
+        v_values_flat = v_values.ravel()
+        # These three calculations are done using different backends
+        # but they must be equal
+        d1 = stats.wasserstein_distance(u_values_flat, v_values_flat)
+        d2 = stats.wasserstein_distance_nd(u_values, v_values)
+        d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
+        # Test with u_weights and v_weights specified.
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        d1 = stats.wasserstein_distance(u_values_flat, v_values_flat,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance_nd(u_values, v_values,
+                                        u_weights, v_weights)
+        d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat,
+                                        u_weights, v_weights)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
+
 
 class TestWassersteinDistance:
     """ Tests for wasserstein_distance() output values.
