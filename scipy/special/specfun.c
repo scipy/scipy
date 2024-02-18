@@ -639,7 +639,7 @@ void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, doubl
         bk[k - 1] = (bk[k - 1] - bk[k - 2] * u[k - 1]) / t;
     }
 
-    for (k = n2 - 1; k >= 0; k--) {
+    for (k = n2 - 1; k >= 1; k--) {
         bk[k - 1] -= w[k - 1] * bk[k];
     }
     free(u); free(v); free(w);
