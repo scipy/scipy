@@ -8,6 +8,7 @@ py3.extension_module('_sigtools',
   ],
   dependencies: np_dep,
   link_args: version_link_args,
+  include_directories: ['../_build_utils/src'],
   install: true,
   subdir: 'scipy/signal'
 )
