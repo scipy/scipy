@@ -10529,39 +10529,39 @@ class vonmises_gen(rv_continuous):
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
-    >>> vonmises.pdf(loc, kappa, 0)
+    >>> vonmises.pdf(0, loc=loc, kappa=kappa)
     0.12570826359722018
 
     Verify that the percentile function ``ppf`` inverts the cumulative
     distribution function ``cdf`` up to floating point accuracy.
 
     >>> x = 1
-    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> cdf_value = vonmises.cdf(x, loc=loc, kappa=kappa)
     >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
     >>> x, cdf_value, ppf_value
     (1, 0.31489339900904967, 1.0000000000000004)
 
     Draw 1000 random variates by calling the ``rvs`` method.
 
-    >>> number_of_samples = 1000
-    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+    >>> sample_size = 1000
+    >>> sample = vonmises(loc=loc, kappa=kappa).rvs(sample_size)
 
     Plot the von Mises density on a Cartesian and polar grid to emphasize
-    that is is a circular distribution.
+    that it is a circular distribution.
 
     >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
-    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> vonmises_pdf = vonmises.pdf(x, loc=loc, kappa=kappa)
     >>> ticks = [0, 0.15, 0.3]
 
     The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
-    >>> number_of_bins = int(np.sqrt(number_of_samples))
-    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> number_of_bins = int(np.sqrt(sample_size))
+    >>> left.hist(sample, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
     >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
@@ -10570,7 +10570,7 @@ class vonmises_gen(rv_continuous):
 
     >>> right.plot(x, vonmises_pdf, label="PDF")
     >>> right.set_yticks(ticks)
-    >>> right.hist(samples, density=True, bins=number_of_bins,
+    >>> right.hist(sample, density=True, bins=number_of_bins,
     ...            label="Histogram")
     >>> right.set_title("Polar plot")
     >>> right.legend(bbox_to_anchor=(0.15, 1.06))
