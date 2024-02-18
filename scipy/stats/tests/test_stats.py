@@ -7594,8 +7594,8 @@ class TestWassersteinDistanceND:
         d1 = stats.wasserstein_distance(u_values_flat, v_values_flat)
         d2 = stats.wasserstein_distance_nd(u_values, v_values)
         d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat)
-        assert_allclose(d1,d2)
-        assert_allclose(d2,d3)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
         # Test with u_weights and v_weights specified.
         u_weights = rng.random(size=u_size)
         v_weights = rng.random(size=v_size)
@@ -7605,8 +7605,8 @@ class TestWassersteinDistanceND:
                                         u_weights, v_weights)
         d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat,
                                         u_weights, v_weights)
-        assert_allclose(d1, d2)
-        assert_allclose(d2, d3)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
 
 
 class TestWassersteinDistance:
