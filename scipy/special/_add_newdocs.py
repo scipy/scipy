@@ -11069,7 +11069,7 @@ add_newdoc("ndtr",
 
 add_newdoc("nrdtrimn",
     """
-    nrdtrimn(p, x, std, out=None)
+    nrdtrimn(p, std, x, out=None)
 
     Calculate mean of normal distribution given other params.
 
@@ -11077,10 +11077,10 @@ add_newdoc("nrdtrimn",
     ----------
     p : array_like
         CDF values, in range (0, 1].
-    x : array_like
-        Quantiles, i.e. the upper limit of integration.
     std : array_like
         Standard deviation.
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
     out : ndarray, optional
         Optional output array for the function results
 
@@ -11091,24 +11091,50 @@ add_newdoc("nrdtrimn",
 
     See Also
     --------
-    nrdtrimn, ndtr
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrisd : Inverse of normal distribution CDF with respect to
+               standard deviation
+
+    Examples
+    --------
+    `nrdtrimn` can be used to recover the mean of a normal distribution
+    if we know the CDF value `p` for a given quantile `x` and the
+    standard deviation `std`. First, we calculate
+    the normal distribution CDF for an exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrimn` returns the original value for `mean`.
+
+    >>> from scipy.special import nrdtrimn
+    >>> nrdtrimn(p, std, x)
+    3.0000000000000004
 
     """)
 
 add_newdoc("nrdtrisd",
     """
-    nrdtrisd(p, x, mn, out=None)
+    nrdtrisd(mn, p, x, out=None)
 
     Calculate standard deviation of normal distribution given other params.
 
     Parameters
     ----------
+    mn : scalar or ndarray
+        The mean of the normal distribution.
     p : array_like
         CDF values, in range (0, 1].
     x : array_like
         Quantiles, i.e. the upper limit of integration.
-    mn : scalar or ndarray
-        The mean of the normal distribution.
+
     out : ndarray, optional
         Optional output array for the function results
 
@@ -11119,7 +11145,32 @@ add_newdoc("nrdtrisd",
 
     See Also
     --------
-    ndtr
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrimn : Inverse of normal distribution CDF with respect to
+               mean
+
+    Examples
+    --------
+    `nrdtrisd` can be used to recover the standard deviation of a normal
+    distribution if we know the CDF value `p` for a given quantile `x` and
+    the mean `mn`. First, we calculate the normal distribution CDF for an
+    exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrisd` returns the original value for `std`.
+
+    >>> from scipy.special import nrdtrisd
+    >>> nrdtrisd(mean, p, x)
+    2.0000000000000004
 
     """)
 
