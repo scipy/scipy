@@ -11122,7 +11122,7 @@ add_newdoc("nrdtrimn",
 
 add_newdoc("nrdtrisd",
     """
-    nrdtrisd(p, x, mn, out=None)
+    nrdtrisd(mn, p, x, out=None)
 
     Calculate standard deviation of normal distribution given other params.
 
