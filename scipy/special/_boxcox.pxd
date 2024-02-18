@@ -11,6 +11,8 @@ cdef inline double boxcox(double x, double lmbda) noexcept nogil:
     # which is ~2.98e-19.  
     if fabs(lmbda) < 1e-19:
         return log(x)
+    elif lmbda * log(x) < 709.78:
+        return expm1(lmbda * log(x)) / lmbda
     else:
         return copysign(1., lmbda) * exp(lmbda * log(x) - log(fabs(lmbda))) - 1 / lmbda
 
@@ -23,6 +25,8 @@ cdef inline double boxcox1p(double x, double lmbda) noexcept nogil:
     cdef double lgx = log1p(x)
     if fabs(lmbda) < 1e-19 or (fabs(lgx) < 1e-289 and fabs(lmbda) < 1e273):
         return lgx
+    elif lmbda * lgx < 709.78:
+        return expm1(lmbda * lgx) / lmbda
     else:
         return copysign(1., lmbda) * exp(lmbda * lgx - log(fabs(lmbda))) - 1 / lmbda
 
@@ -30,6 +34,8 @@ cdef inline double boxcox1p(double x, double lmbda) noexcept nogil:
 cdef inline double inv_boxcox(double x, double lmbda) noexcept nogil:
     if lmbda == 0:
         return exp(x)
+    elif lmbda * x < 1.79e308:
+        return exp(log1p(lmbda * x) / lmbda)
     else:
         return exp((log(copysign(1., lmbda) * (x + 1 / lmbda)) + log(fabs(lmbda))) / lmbda)
 
@@ -39,5 +45,7 @@ cdef inline double inv_boxcox1p(double x, double lmbda) noexcept nogil:
         return expm1(x)
     elif fabs(lmbda * x) < 1e-154:
         return x
+    elif lmbda * x < 1.79e308:
+        return expm1(log1p(lmbda * x) / lmbda)
     else:
         return expm1((log(copysign(1., lmbda) * (x + 1 / lmbda)) + log(fabs(lmbda))) / lmbda)
