@@ -10671,12 +10671,32 @@ class vonmises_gen(rv_continuous):
             r = np.sum(np.cos(loc - data))/len(data)
             # See gh-18128 for more information.
 
+            # The function r[0](kappa) := I[1](kappa)/I[0](kappa) is monotonic
+            # increasing from r[0](0) = 0 to r[0](+inf) = 1.  The partial
+            # derivative of the log likelihood function with respect to kappa
+            # is monotonic decreasing in kappa.
             if r > 0:
                 def solve_for_kappa(kappa):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
+                # For backward compatibility, return MAX_KAPPA if the MLE of
+                # kappa would otherwise be larger than MAX_KAPPA.  Note that
+                # r[0](MAX_KAPPA) = 1.0 for double precision float.
+                MAX_KAPPA = 1e16
+
+                # The bounds of the root of r[0](kappa) = r are derived from
+                # the bounds of r[0](x) given in [1, Eq. 11]:
+                #
+                #   x/(1+sqrt(x*x+1)) <= r[0](x) <= x/sqrt(x*x+4)
+                #
+                # [1] Amos, D. E. (1973).  Computation of Modified Bessel
+                #     Functions and Their Ratios.  Mathematics of Computation,
+                #     28(125): 239-251.
+                with np.errstate(divide='ignore'):
+                    lower_bound = min(MAX_KAPPA, 2*r/np.sqrt(1-r*r))
+                    upper_bound = min(MAX_KAPPA, 2*r/(1-r*r))
                 root_res = root_scalar(solve_for_kappa, method="brentq",
-                                       bracket=(np.finfo(float).tiny, 1e16))
+                                       bracket=(lower_bound, upper_bound))
                 return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
