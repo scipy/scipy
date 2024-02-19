@@ -341,4 +341,14 @@ dt_config.skiplist = set([
     'scipy.optimize.show_options',  # does not have much to doctest
     'scipy.signal.normalize',       # manipulates warnings (XXX temp skip)
 ])
+
+# help pytest collection a bit: these names are either private (distributions)
+# or deprecated (misc), or just do not need doctesting 
+dt_config.pytest_extra_skips = [
+    "scipy.stats.distributions",
+    "scipy.optimize.cython_optimize",
+    "scipy.test",
+    "scipy.show_config",
+    "scipy.misc",
+]
 ############################################################################
