@@ -523,15 +523,19 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _matmul_sparse(self, other):
         M, K1 = self._shape_as_2d
         # if other is 1d, treat as a **column**
-        K2, N = other._shape if other.ndim == 2 else (other.shape[0], 1)
+        o_ndim = other.ndim
+        if o_ndim == 1:
+            # convert 1d array to a 2d column when on the right of @
+            other = other.reshape((1, other.shape[0])).T  # Note: converts to CSC
+        K2, N = other._shape
 
         # find new_shape
         if self.ndim == 2:
-            if other.ndim == 2:
+            if o_ndim == 2:
                 new_shape = (M, N)
             else:
                 new_shape = (M,)
-        elif other.ndim == 2:
+        elif o_ndim == 2:
             new_shape = (N,)
         else:
             new_shape = ()
@@ -571,7 +575,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            indptr, indices, data)
 
         if new_shape == ():
-            return data[0]
+            return np.array(data[0])
         return self.__class__((data, indices, indptr), shape=new_shape)
 
     def diagonal(self, k=0):
