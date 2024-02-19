@@ -224,7 +224,6 @@ Multidimensional
    :toctree: generated/
 
    root - Unified interface for nonlinear solvers of multivariate functions.
-   NoConvergence -  Exception raised when nonlinear solver does not converge.
 
 The `root` function supports the following methods:
 
@@ -386,6 +385,7 @@ General nonlinear solvers:
    fsolve - Non-linear multivariable equation solver.
    broyden1 - Broyden's first method.
    broyden2 - Broyden's second method.
+   NoConvergence -  Exception raised when nonlinear solver does not converge.
 
 Large-scale nonlinear solvers:
 
