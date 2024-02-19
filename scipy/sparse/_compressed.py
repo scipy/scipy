@@ -576,7 +576,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
            indptr, indices, data)
 
         if new_shape == ():
-            return data[0]
+            return np.array(data[0])
         return self.__class__((data, indices, indptr), shape=new_shape)
 
     def diagonal(self, k=0):

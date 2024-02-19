@@ -255,23 +255,38 @@ class TestArithmetic1D:
         assert np.allclose(actual.toarray(), expected.toarray())
 
     def test_matmul(self, spcreator):
-        M = spcreator([2, 0, 3.0])
+        Msp = spcreator([2, 0, 3.0])
         B = spcreator(np.array([[0, 1], [1, 0], [0, 2]], 'd'))
         col = np.array([[1, 2, 3]]).T
 
-        # check matrix-vector
-        assert np.allclose(M @ col, M.toarray() @ col)
+        # check sparse @ dense 2d column
+        assert np.allclose(Msp @ col, Msp.toarray() @ col)
 
-        # check matrix-matrix
-        assert np.allclose((M @ B).toarray(), (M @ B).toarray())
-        assert np.allclose(M.toarray() @ B, (M @ B).toarray())
-        assert np.allclose(M @ B.toarray(), (M @ B).toarray())
+        # check sparse1d @ sparse2d, sparse1d @ dense2d, dense1d @ sparse2d
+        assert np.allclose((Msp @ B).toarray(), (Msp @ B).toarray())
+        assert np.allclose(Msp.toarray() @ B, (Msp @ B).toarray())
+        assert np.allclose(Msp @ B.toarray(), (Msp @ B).toarray())
+
+        # check sparse1d @ dense1d, sparse1d @ sparse1d
+        V = np.array([0, 0, 1])
+        assert np.allclose(Msp @ V, Msp.toarray() @ V)
+
+        Vsp = spcreator(V)
+        Msp_Vsp = Msp @ Vsp
+        assert isinstance(Msp_Vsp, np.ndarray)
+        assert Msp_Vsp.shape == ()
+
+        # output is 0-dim ndarray
+        assert np.allclose(np.array(3), Msp_Vsp)
+        assert np.allclose(np.array(3), Msp.toarray() @ Vsp)
+        assert np.allclose(np.array(3), Msp @ Vsp.toarray())
+        assert np.allclose(np.array(3), Msp.toarray() @ Vsp.toarray())
 
         # check error on matrix-scalar
         with pytest.raises(ValueError, match='Scalar operands are not allowed'):
-            M @ 1
+            Msp @ 1
         with pytest.raises(ValueError, match='Scalar operands are not allowed'):
-            1 @ M
+            1 @ Msp
 
     def test_sub_dense(self, spcreator, datsp_math_dtypes):
         # subtracting a dense matrix to/from a sparse matrix
@@ -301,7 +316,6 @@ class TestArithmetic1D:
             asp.__add__(dsp)
 
         # matrix product.
-        assert isinstance(asp.dot(asp), np.ndarray)
         assert np.equal(asp.dot(asp), np.dot(a, a))
 
         # bad matrix products
