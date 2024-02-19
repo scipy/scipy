@@ -49,7 +49,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             if arg1.ndim == 1:
                 if dtype is not None:
                     arg1 = arg1.astype(dtype)
-                self._dict = {i: v for i, v in enumerate(arg1.ravel()) if v != 0}
+                self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
                 self.dtype = arg1.dtype
             else:
                 d = self._coo_container(arg1, dtype=dtype).todok()
@@ -106,7 +106,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     def get(self, key, default=0.0):
         """This provides dict.get method functionality with type checking"""
         if key in self._dict:
-            return self._dict.get(key, default)
+            return self._dict[key]
         if isintlike(key) and self.ndim == 1:
             key = (key,)
         if self.ndim != len(key):
@@ -119,6 +119,8 @@ class _dok_base(_spbase, IndexMixin, dict):
         key = tuple(i + M if i < 0 else i for i, M in zip(key, self.shape))
         if any(i < 0 or i >= M for i, M in zip(key, self.shape)):
             raise IndexError('Index out of bounds.')
+        if self.ndim == 1:
+            key = key[0]
         return self._dict.get(key, default)
 
     # override IndexMixin.__getitem__ for 1d case until fully implemented
@@ -141,32 +143,6 @@ class _dok_base(_spbase, IndexMixin, dict):
     # 1D get methods
     def _get_int(self, idx):
         return self._dict.get(idx, self.dtype.type(0))
-
-# Only supporting integer indexing right now. Soon we will use 1d slice and array.
-#    def _get_slice(self, idx):
-#        i_range = range(*idx.indices(self.shape[0]))
-#        return self._get_array(list(i_range))
-#
-#    def _get_array(self, idx):
-#        idx = np.asarray(idx)
-#        if len(idx.shape) == 0:
-#            val = self._dict.get(int(idx), self.dtype.type(0))
-#            return np.array(val, stype=self.dtype)
-#        new_dok = self._dok_container(idx.shape, dtype=self.dtype)
-#        dok_vals = [self._dict.get(i, 0) for i in idx.ravel()]
-#        if dok_vals:
-#            if len(idx.shape) == 1:
-#                for i, v in enumerate(dok_vals):
-#                    if v:
-#                        new_dok._dict[i] = v
-#            else:
-#                new_idx = np.unravel_index(np.arange(len(dok_vals)), idx.shape)
-#                new_idx = new_idx[0] if len(new_idx) == 1 else zip(*new_idx)
-#                # zip could use 'strict=True' With Python 3.10+
-#                for i, v in zip(new_idx, dok_vals):  # , strict=True):
-#                    if v:
-#                        new_dok._dict[i] = v
-#        return new_dok
 
     # 2D get methods
     def _get_intXint(self, row, col):
@@ -263,30 +239,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         elif idx in self._dict:
             del self._dict[idx]
 
-#    def _set_slice(self, idx, x):
-#        i_range = range(*idx.indices(self.shape[0]))
-#        x = x.ravel()
-#        for i, v in zip(i_range, x):
-#            if v:
-#                self._dict[i] = v
-#            elif i in self._dict:
-#                del self._dict[i]
-#
-#    def _set_array(self, idx, x):
-#        idx_set = idx.ravel()
-#        x_set = x.ravel()
-#        if len(idx_set) != len(x_set):
-#            if len(x_set) == 1:
-#                x_set = np.array([x_set[0]] * len(idx_set), dtype=self.dtype)
-#            else:
-#                raise ValueError("Need len(index)==len(data) or len(data)==1")
-#        for i, v in zip(idx_set, x_set):
-#            if v:
-#                self._dict[i] = v
-#            elif i in self._dict:
-#                del self._dict[i]
-
-    # 2D get methods
+    # 2D set methods
     def _set_intXint(self, row, col, x):
         key = (row, col)
         if x:
@@ -322,15 +275,15 @@ class _dok_base(_spbase, IndexMixin, dict):
             new = self._dok_container(self.shape, dtype=res_dtype)
             new._dict = self._dict.copy()
             if other.format == "dok":
-                with np.errstate(over='ignore'):
-                    new._dict.update((k, new[k] + v) for k, v in other.items())
+                o_items = other.items()
             else:
-                o_coo = other.tocoo()
-                o_coo_items = zip(zip(*o_coo.coords), o_coo.data)
+                other = other.tocoo()
                 if self.ndim == 1:
-                    o_coo_items = ((k[0], v) for k, v in o_coo_items)
-                with np.errstate(over='ignore'):
-                    new._dict.update((k, new[k] + v) for k, v in o_coo_items)
+                    o_items = zip(other.coords[0], other.data)
+                else:
+                    o_items = zip(zip(*other.coords), other.data)
+            with np.errstate(over='ignore'):
+                new._dict.update((k, new[k] + v) for k, v in o_items)
         elif isdense(other):
             new = self.todense() + other
         else:
@@ -363,14 +316,14 @@ class _dok_base(_spbase, IndexMixin, dict):
         if self.ndim == 1:
             if issparse(other):
                 if other.format == "dok":
-                    shared_keys = self.keys() & other.keys()
+                    keys = self.keys() & other.keys()
                 else:
-                    shared_keys = self.keys() & other.tocoo().coords[0]
-                arr = np.array([self._dict[k] * other._dict[k] for k in shared_keys])
-                return arr.sum(dtype=res_dtype)
+                    keys = self.keys() & other.tocoo().coords[0]
+                return res_dtype(sum(self._dict[k] * other._dict[k] for k in keys))
             elif isdense(other):
-                arr = np.array([other[k] * v for k, v in self.items()])
-                return arr.sum(dtype=res_dtype)
+                return res_dtype(sum(other[k] * v for k, v in self.items()))
+            else:
+                return NotImplemented
 
         # matrix @ vector
         result = np.zeros(self.shape[0], dtype=res_dtype)
