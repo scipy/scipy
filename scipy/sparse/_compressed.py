@@ -600,7 +600,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # The _spbase base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
-                axis in self._swap(((1, -1), (0, 2)))[0]):
+                axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
             res_dtype = get_sum_dtype(self.dtype)
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
