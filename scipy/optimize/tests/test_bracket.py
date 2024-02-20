@@ -3,7 +3,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
-from scipy.optimize._bracket import _bracket_root, _ELIMITS
+from scipy.optimize._bracket import _bracket_root, _bracket_minimum, _ELIMITS
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats
 
@@ -298,3 +298,375 @@ class TestBracketRoot:
         with np.errstate(over='ignore'):
             res = _bracket_root(f, 5, 10, min=1)
         assert not res.success
+
+
+class TestBracketMinimum:
+    def init_f(self):
+        def f(x, a, b):
+            f.count += 1
+            return (x - a)**2 + b
+        f.count = 0
+        return f
+
+    def assert_valid_bracket(self, result):
+        assert np.all(
+            (result.xl < result.xm) & (result.xm < result.xr)
+        )
+        assert np.all(
+            (result.fl >= result.fm) & (result.fr > result.fm)
+            | (result.fl > result.fm) & (result.fr > result.fm)
+        )
+
+    def get_kwargs(
+            self, *, xl=None, xr=None, factor=None, xmin=None, xmax=None, args=()
+    ):
+        names = ("xl", "xr", "xmin", "xmax", "factor", "args")
+        return {
+            name: val for name, val in zip(names, (xl, xr, xmin, xmax, factor, args))
+            if isinstance(val, np.ndarray) or np.isscalar(val)
+            or val not in [None, ()]
+        }
+
+    @pytest.mark.parametrize(
+        "seed",
+        (
+            307448016549685229886351382450158984917,
+            11650702770735516532954347931959000479,
+            113767103358505514764278732330028568336,
+        )
+    )
+    @pytest.mark.parametrize("use_xmin", (False, True))
+    @pytest.mark.parametrize("other_side", (False, True))
+    def test_nfev_expected(self, seed, use_xmin, other_side):
+        rng = np.random.default_rng(seed)
+        args = (0, 0)  # f(x) = x^2 with minimum at 0
+        # xl, xm, xr are chosen such that the initial bracket is to
+        # the right of the minimum, and the bracket will expand
+        # downhill towards zero.
+        xl, d1, d2, factor = rng.random(size=4) * [1e5, 10, 10, 5]
+        xm = xl + d1
+        xr = xm + d2
+        # Factor should be greater than one.
+        factor += 1
+
+        if use_xmin:
+            xmin = -rng.random() * 5
+            n = int(np.ceil(np.log(-(xl - xmin) / xmin) / np.log(factor)))
+            lower = xmin + (xl - xmin)*factor**-n
+            middle = xmin + (xl - xmin)*factor**-(n-1)
+            upper = xmin + (xl - xmin)*factor**-(n-2) if n > 1 else xm
+            # It may be the case the lower is below the minimum, but we still
+            # don't have a valid bracket.
+            if middle**2 > lower**2:
+                n += 1
+                lower, middle, upper = (
+                    xmin + (xl - xmin)*factor**-n, lower, middle
+                )
+        else:
+            xmin = None
+            n = int(np.ceil(np.log(xl / d1) / np.log(factor)))
+            lower = xl - d1*factor**n
+            middle = xl - d1*factor**(n-1) if n > 1 else xl
+            upper = xl - d1*factor**(n-2) if n > 1 else xm
+            # It may be the case the lower is below the minimum, but we still
+            # don't have a valid bracket.
+            if middle**2 > lower**2:
+                n += 1
+                lower, middle, upper = (
+                    xl - d1*factor**n, lower, middle
+                )
+        f = self.init_f()
+
+        xmax = None
+        if other_side:
+            xl, xm, xr = -xr, -xm, -xl
+            xmin, xmax = None, -xmin if xmin is not None else None
+            lower, middle, upper = -upper, -middle, -lower
+
+        kwargs = self.get_kwargs(
+            xl=xl, xr=xr, xmin=xmin, xmax=xmax, factor=factor, args=args
+        )
+        result = _bracket_minimum(f, xm, **kwargs)
+
+        # Check that `nfev` and `nit` have the correct relationship
+        assert result.nfev == result.nit + 3
+        # Check that `nfev` reports the correct number of function evaluations.
+        assert result.nfev == f.count
+        # Check that the number of iterations matches the theoretical value.
+        assert result.nit == n
+
+        # Compare reported bracket to theoretical bracket and reported function
+        # values to function evaluated at bracket.
+        bracket = np.asarray([result.xl, result.xm, result.xr])
+        assert_allclose(bracket, (lower, middle, upper))
+        f_bracket = np.asarray([result.fl, result.fm, result.fr])
+        assert_allclose(f_bracket, f(bracket, *args))
+
+        self.assert_valid_bracket(result)
+        assert result.status == 0
+        assert result.success
+
+    def test_flags(self):
+        # Test cases that should produce different status flags; show that all
+        # can be produced simultaneously
+        def f(xs, js):
+            funcs = [lambda x: (x - 1.5)**2,
+                     lambda x: x,
+                     lambda x: x,
+                     lambda x: np.nan]
+            return [funcs[j](x) for x, j in zip(xs, js)]
+
+        args = (np.arange(4, dtype=np.int64),)
+        xl, xm, xr = np.full(4, -1.0), np.full(4, 0.0), np.full(4, 1.0)
+        result = _bracket_minimum(f, xm, xl=xl, xr=xr,
+                                        xmin=[-np.inf, -1.0, -np.inf, -np.inf],
+                                        args=args, maxiter=3)
+
+        reference_flags = np.array([eim._ECONVERGED, _ELIMITS,
+                                    eim._ECONVERR, eim._EVALUEERR])
+        assert_equal(result.status, reference_flags)
+
+    @pytest.mark.parametrize("minimum", (0.622, [0.622, 0.623]))
+    @pytest.mark.parametrize("dtype", (np.float16, np.float32, np.float64))
+    @pytest.mark.parametrize("xmin", [-5, None])
+    @pytest.mark.parametrize("xmax", [5, None])
+    def test_dtypes(self, minimum, xmin, xmax, dtype):
+        xmin = xmin if xmin is None else dtype(xmin)
+        xmax = xmax if xmax is None else dtype(xmax)
+        minimum = dtype(minimum)
+
+        def f(x, minimum):
+            return ((x - minimum)**2).astype(dtype)
+
+        xl, xm, xr = np.array([-0.01, 0.0, 0.01], dtype=dtype)
+        result = _bracket_minimum(
+            f, xm, xl=xl, xr=xr, xmin=xmin, xmax=xmax, args=(minimum, )
+        )
+        assert np.all(result.success)
+        assert result.xl.dtype == result.xm.dtype == result.xr.dtype == dtype
+
+    def test_input_validation(self):
+        # Test input validation for appropriate error messages
+
+        message = '`func` must be callable.'
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(None, -4, xl=4)
+
+        message = '...must be numeric and real.'
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, 4+1j)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xl='hello')
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xmin=np)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xmax=object())
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, factor=sum)
+
+        message = "All elements of `factor` must be greater than 1."
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x, -4, factor=0.5)
+
+        message = '`xmin <= xl < xm < xr <= xmax` must be True'
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, 4, xl=6)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr=-6)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xl=-3, xr=-2)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xl=-6, xr=-5)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xl=-np.nan)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr=np.nan)
+
+        message = "shape mismatch: objects cannot be broadcast"
+        # raised by `np.broadcast, but the traceback is readable IMO
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, [-2, -3], xl=[-3, -4, -5])
+
+        message = '`maxiter` must be a non-negative integer.'
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr=4, maxiter=1.5)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr=4, maxiter=-1)
+
+    @pytest.mark.parametrize("xl", [0.0, None])
+    @pytest.mark.parametrize("xm", (0.05, 0.1, 0.15))
+    @pytest.mark.parametrize("xr", (0.2, 0.4, 0.6, None))
+    @pytest.mark.parametrize(
+        "args",
+        (
+            (1.2, 0), (-0.5, 0), (0.1, 0), (0.2, 0), (3.6, 0), (21.4, 0),
+            (121.6, 0), (5764.1, 0), (-6.4, 0), (-12.9, 0), (-146.2, 0)
+        )
+    )
+    def test_scalar_no_limits(self, xl, xm, xr, args):
+        f = self.init_f()
+        kwargs = self.get_kwargs(xl=xl, xr=xr, args=args)
+        result = _bracket_minimum(f, xm, **kwargs)
+        self.assert_valid_bracket(result)
+        assert result.status == 0
+        assert result.success
+        assert result.nfev == f.count
+
+    @pytest.mark.parametrize(
+        "xl,xm,xr,xmin",
+        (
+            (0.5, 0.75, 1.0, 0.0),
+            (1.0, 2.5, 4.0, 0.0),
+            (2.0, 4.0, 6.0, 0.0),
+            (12.0, 16.0, 20.0, 0.0),
+            (None, 0.75, 1.0, 0.0),
+            (None, 2.5, 4.0, 0.0),
+            (None, 4.0, 6.0, 0.0),
+            (None, 16.0, 20.0, 0.0),
+        )
+    )
+    @pytest.mark.parametrize(
+        "args", (
+            (0.0, 0.0), (1e-300, 0.0), (1e-20, 0.0), (0.1, 0.0), (0.2, 0.0), (0.4, 0.0)
+        )
+    )
+    def test_scalar_with_limit_left(self, xl, xm, xr, xmin, args):
+        f = self.init_f()
+        kwargs = self.get_kwargs(xl=xl, xr=xr, xmin=xmin, args=args)
+        result = _bracket_minimum(f, xm, **kwargs)
+        self.assert_valid_bracket(result)
+        assert result.status == 0
+        assert result.success
+        assert result.nfev == f.count
+
+    @pytest.mark.parametrize(
+        "xl,xm,xr,xmax",
+        (
+            (0.2, 0.3, 0.4, 1.0),
+            (0.05, 0.075, 0.1, 1.0),
+            (-0.2, -0.1, 0.0, 1.0),
+            (-21.2, -17.7, -14.2, 1.0),
+            (0.2, 0.3, None, 1.0),
+            (0.05, 0.075, None, 1.0),
+            (-0.2, -0.1, None, 1.0),
+            (-21.2, -17.7, None, 1.0),
+        )
+    )
+    @pytest.mark.parametrize(
+        "args", (
+            (0.9999999999999999, 0.0), (0.9, 0.0), (0.7, 0.0), (0.5, 0.0)
+        )
+    )
+    def test_scalar_with_limit_right(self, xl, xm, xr, xmax, args):
+        f = self.init_f()
+        kwargs = self.get_kwargs(xl=xl, xr=xr, xmax=xmax, args=args)
+        result = _bracket_minimum(f, xm, **kwargs)
+        self.assert_valid_bracket(result)
+        assert result.status == 0
+        assert result.success
+        assert result.nfev == f.count
+
+    @pytest.mark.parametrize(
+        "xl,xm,xr,xmin,xmax,args",
+        (
+            (0.2, 0.3, 0.4, None, 1.0, (1.0, 0.0)),
+            (1.4, 1.95, 2.5, 0.3, None, (0.3, 0.0)),
+            (2.6, 3.25, 3.9, None, 99.4, (99.4, 0)),
+            (4, 4.5, 5, -26.3, None, (-26.3, 0)),
+            (None, 0.3, None, None, 1.0, (1.0, 0.0)),
+            (None, 1.95, None, 0.3, None, (0.3, 0.0)),
+            (None, 3.25, None, None, 99.4, (99.4, 0)),
+            (None, 4.5, None, -26.3, None, (-26.3, 0)),
+        )
+    )
+    def test_minima_at_boundary_point(self, xl, xm, xr, xmin, xmax, args):
+        f = self.init_f()
+        kwargs = self.get_kwargs(xr=xr, xmin=xmin, xmax=xmax, args=args)
+        result = _bracket_minimum(f, xm, **kwargs)
+        assert result.status == -1
+        assert args[0] in (result.xl, result.xr)
+        assert result.nfev == f.count
+
+    @pytest.mark.parametrize(
+        "xm",
+        (
+            np.array([[0.55], [0.58]]),
+            np.array([[0.55, 0.56], [0.57, 0.58]]),
+        ),
+    )
+    @pytest.mark.parametrize(
+        "xl",
+        (
+            0.2,
+            np.array([[0.2], [0.3]]),
+            np.array([[0.2, 0.3],
+                      [0.3, 0.4]])
+        ),
+    )
+    @pytest.mark.parametrize(
+        "xr",
+        (
+            0.6,
+            np.array([[0.6], [0.8]]),
+        ),
+    )
+    @pytest.mark.parametrize(
+        "xmin",
+        (
+            np.array([[-np.inf], [-1.0]]),
+            np.array([[-np.inf, -1.0], [-2.0, -3.0]]),
+        )
+    )
+    @pytest.mark.parametrize(
+        "xmax",
+        (
+            np.array([[np.inf], [2.0]]),
+            np.array([[np.inf, 2.0], [3.5, 4.5]]),
+        )
+    )
+    @pytest.mark.parametrize(
+        "args",
+        (
+            (0.0, 0.0),
+            (np.array([[0.0], [-0.1]]), np.array([[0.0], [2.5]])),
+        )
+    )
+    def test_vectorized(self, xl, xm, xr, xmin, xmax, args):
+        f = self.init_f()
+        kwargs = self.get_kwargs(xl=xl, xr=xr, xmin=xmin, xmax=xmax, args=args)
+        result = _bracket_minimum(f, xm, **kwargs)
+        self.assert_valid_bracket(result)
+        result.nfev == f.count
+
+    def test_special_cases(self):
+        # Test edge cases and other special cases.
+
+        # Test that integers are not passed to `f`
+        # (otherwise this would overflow)
+        def f(x):
+            assert np.issubdtype(x.dtype, np.floating)
+            return x ** 98 - 1
+
+        result = _bracket_minimum(f, -7, xr=5)
+        assert result.success
+
+        # Test maxiter = 0. Should do nothing to bracket.
+        def f(x):
+            return x**2 - 10
+
+        xl, xm, xr = -3, -1, 2
+        result = _bracket_minimum(f, xm, xl=xl, xr=xr, maxiter=0)
+        assert_equal([result.xl, result.xm, result.xr], [xl, xm, xr])
+
+        # Test scalar `args` (not in tuple)
+        def f(x, c):
+            return c*x**2 - 1
+
+        result = _bracket_minimum(f, -1, args=3)
+        assert result.success
+        assert_allclose(result.fl, f(result.xl, 3))
+
+        # Initial bracket is valid.
+        f = self.init_f()
+        result = _bracket_minimum(f, -0.2, xl=-1.0, xr=1.0, args=(0, 0))
+        assert f.count == 3
