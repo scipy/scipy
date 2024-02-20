@@ -8,7 +8,8 @@
 
 namespace fast_matrix_market {
 
-#if __cplusplus >= 202002L
+// MSVC does not define __cplusplus correctly by default; fall back to _MSVC_LANG if it exists
+#if __cplusplus >= 202002L || (defined(_MSVC_LANG) && _MSVC_LANG >= 202002L)
     // If available, use C++20 concepts for programmer clarity and better error messages.
     // If not using C++20 this shows what fast_matrix_market expects each template type to support.
 

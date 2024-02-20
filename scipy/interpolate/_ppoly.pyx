@@ -181,7 +181,6 @@ def evaluate_nd(const double_or_complex[:,:,::1] c,
         # grab array pointers
         nxx[ip] = y.shape[0]
         xx[ip] = <double*>&y[0]
-        y = None
 
     if c.shape[1] != ntot:
         raise ValueError("xs and c have incompatible shapes")

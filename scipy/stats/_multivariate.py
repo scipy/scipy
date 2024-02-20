@@ -5009,7 +5009,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            http://www.randomservices.org/random/urn/MultiHypergeometric.html
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
-           https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
+           https://python.quantecon.org/multi_hyper.html
     """
     def __init__(self, seed=None):
         super().__init__(seed)

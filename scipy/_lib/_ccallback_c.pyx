@@ -1,3 +1,5 @@
+# cython: show_performance_hints=False
+
 from cpython.pycapsule cimport (
     PyCapsule_CheckExact, PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetName, PyCapsule_GetPointer,
     PyCapsule_GetContext
@@ -59,7 +61,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
     elif context_obj is None:
         context = NULL
     else:
-        context = PyLong_AsVoidPtr(long(context_obj))
+        context = PyLong_AsVoidPtr(int(context_obj))
 
     if PyCapsule_CheckExact(func_obj):
         capsule_name = PyCapsule_GetName(func_obj)
@@ -71,7 +73,7 @@ def get_raw_capsule(func_obj, name_obj, context_obj):
         if name == NULL:
             name = capsule_name
     else:
-        func = PyLong_AsVoidPtr(long(func_obj))
+        func = PyLong_AsVoidPtr(int(func_obj))
 
     if name == NULL:
         name_copy = name

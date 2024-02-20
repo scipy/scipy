@@ -127,6 +127,11 @@ your system.
 
     .. note::
 
+        ``export PKG_CONFIG_PATH="/opt/homebrew/opt/openblas/lib/pkgconfig"``
+        may need to be used in order for the build system to detect OpenBlas.
+
+    .. note::
+
         As of SciPy >=1.2.0, we do not support compiling against the system
         Accelerate library for BLAS and LAPACK. It does not support a sufficiently
         recent LAPACK interface. This is planned to change in 2023, because macOS
@@ -352,17 +357,20 @@ virtual environments:
     Then install the Python-level dependencies (see ``pyproject.toml``) from
     PyPI with::
 
-       # Build dependencies
-       python -m pip install numpy cython pythran pybind11 meson-python ninja pydevtool rich-click
+       # All dependencies
+       python -m pip install -r requirements/all.txt
 
-       # Test and optional runtime dependencies
-       python -m pip install pytest pytest-xdist pytest-timeout pooch threadpoolctl asv gmpy2 mpmath hypothesis
+       # Alternatively, you can install just the dependencies for certain
+       # development tasks:
 
-       # Doc build dependencies
-       python -m pip install sphinx "pydata-sphinx-theme==0.9.0" sphinx-design matplotlib numpydoc jupytext myst-nb
+       # Build and dev dependencies (for `python dev.py {build, lint, mypy}`)
+       python -m pip install -r requirements/build.txt -r requirements/dev.txt
 
-       # Dev dependencies (static typing and linting)
-       python -m pip install mypy typing_extensions types-psutil pycodestyle ruff cython-lint
+       # Doc dependencies (for `python dev.py {doc, refguide-check}`)
+       python -m pip install -r requirements/doc.txt
+
+       # Test dependencies (for `python dev.py {test, bench, refguide-check}`)
+       python -m pip install -r requirements/test.txt
 
 To build SciPy in an activated development environment, run::
 

@@ -25,7 +25,6 @@ __all__ = [  # noqa: F822
     'kron',
     'kronsum',
     'numbers',
-    'partial',
     'rand',
     'random',
     'rng_integers',

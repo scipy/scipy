@@ -222,7 +222,7 @@ class _TestIFFTBase:
             n = 2**i
             x = np.arange(n)
             y = ifft(x.astype(self.cdt))
-            y2 = numpy.fft.ifft(x)
+            y2 = numpy.fft.ifft(x.astype(self.cdt))
             assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)
             y = ifft(x)
             assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)

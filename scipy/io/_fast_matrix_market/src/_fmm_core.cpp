@@ -196,7 +196,7 @@ PYBIND11_MODULE(_fmm_core, m) {
         }
     });
 
-    py::class_<fmm::matrix_market_header>(m, "header")
+    py::class_<fmm::matrix_market_header>(m, "header", py::module_local())
 #ifndef FMM_SCIPY_PRUNE
     .def(py::init<>())
     .def(py::init<int64_t, int64_t>())
@@ -225,7 +225,7 @@ PYBIND11_MODULE(_fmm_core, m) {
 #endif
     ///////////////////////////////
     // Read methods
-    py::class_<read_cursor>(m, "_read_cursor")
+    py::class_<read_cursor>(m, "_read_cursor", py::module_local())
     .def_readonly("header", &read_cursor::header)
     .def("close", &read_cursor::close);
 
@@ -237,7 +237,7 @@ PYBIND11_MODULE(_fmm_core, m) {
 
     ///////////////////////////////
     // Write methods
-    py::class_<write_cursor>(m, "_write_cursor")
+    py::class_<write_cursor>(m, "_write_cursor", py::module_local())
 #ifndef FMM_SCIPY_PRUNE
     .def_readwrite("header", &write_cursor::header)
 #endif

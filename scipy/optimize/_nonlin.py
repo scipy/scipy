@@ -16,7 +16,7 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
     'diagbroyden', 'excitingmixing', 'newton_krylov',
-    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian', 'NoConvergence']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -24,6 +24,8 @@ __all__ = [
 
 
 class NoConvergence(Exception):
+    """Exception raised when nonlinear solver fails to converge within the specified
+    `maxiter`."""
     pass
 
 
@@ -1477,10 +1479,10 @@ class KrylovJacobian(Jacobian):
         return r
 
     def solve(self, rhs, tol=0):
-        if 'tol' in self.method_kw:
+        if 'rtol' in self.method_kw:
             sol, info = self.method(self.op, rhs, **self.method_kw)
         else:
-            sol, info = self.method(self.op, rhs, tol=tol, **self.method_kw)
+            sol, info = self.method(self.op, rhs, rtol=tol, **self.method_kw)
         return sol
 
     def update(self, x, f):

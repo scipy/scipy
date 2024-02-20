@@ -13,6 +13,8 @@ import pytest
 
 import scipy
 
+from scipy.conftest import xp_available_backends
+
 
 def test_dir_testing():
     """Assert that output of dir has only one "testing/tester"
@@ -116,7 +118,6 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.linalg.decomp_qr',
     'scipy.linalg.decomp_schur',
     'scipy.linalg.decomp_svd',
-    'scipy.linalg.flinalg',
     'scipy.linalg.matfuncs',
     'scipy.linalg.misc',
     'scipy.linalg.special_matrices',
@@ -213,16 +214,33 @@ SKIP_LIST = [
 ]
 
 
+# XXX: this test does more than it says on the tin - in using `pkgutil.walk_packages`,
+# it will raise if it encounters any exceptions which are not handled by `ignore_errors`
+# while attempting to import each discovered package.
+# For now, `ignore_errors` only ignores what is necessary, but this could be expanded -
+# for example, to all errors from private modules or git subpackages - if desired.
 def test_all_modules_are_expected():
     """
     Test that we don't add anything that looks like a new public module by
     accident.  Check is based on filenames.
     """
 
+    def ignore_errors(name):
+        # if versions of other array libraries are installed which are incompatible
+        # with the installed NumPy version, there can be errors on importing
+        # `array_api_compat`. This should only raise if SciPy is configured with
+        # that library as an available backend.
+        for backend, dir_name in {'cupy': 'cupy', 'pytorch': 'torch'}.items():
+            path = f'array_api_compat.{dir_name}'
+            if path in name and backend not in xp_available_backends:
+                return
+        raise
+
     modnames = []
-    for _, modname, ispkg in pkgutil.walk_packages(path=scipy.__path__,
-                                                   prefix=scipy.__name__ + '.',
-                                                   onerror=None):
+
+    for _, modname, _ in pkgutil.walk_packages(path=scipy.__path__,
+                                               prefix=scipy.__name__ + '.',
+                                               onerror=ignore_errors):
         if is_unexpected(modname) and modname not in SKIP_LIST:
             # We have a name that is new.  If that's on purpose, add it to
             # PUBLIC_MODULES.  We don't expect to have to add anything to
@@ -355,7 +373,6 @@ def test_api_importable():
                           ('scipy.linalg.decomp_qr', None),
                           ('scipy.linalg.decomp_schur', None),
                           ('scipy.linalg.decomp_svd', None),
-                          ('scipy.linalg.flinalg', None),
                           ('scipy.linalg.matfuncs', None),
                           ('scipy.linalg.misc', None),
                           ('scipy.linalg.special_matrices', None),

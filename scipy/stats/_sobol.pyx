@@ -1,9 +1,10 @@
 # cython: language_level=3
 # cython: cdivision=True
+import importlib.resources
+
 cimport cython
 cimport numpy as cnp
 
-import os
 import numpy as np
 
 cnp.import_array()
@@ -140,8 +141,11 @@ def _initialize_direction_numbers(poly, vinit, dtype):
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    dns = np.load(os.path.join(os.path.dirname(__file__),
-                  "_sobol_direction_numbers.npz"))
+    _curdir = importlib.resources.files("scipy.stats")
+    _npzfile = _curdir.joinpath("_sobol_direction_numbers.npz")
+    with importlib.resources.as_file(_npzfile) as f:
+        dns = np.load(f)
+
     dns_poly = dns["poly"].astype(dtype)
     dns_vinit = dns["vinit"].astype(dtype)
     poly[...] = dns_poly

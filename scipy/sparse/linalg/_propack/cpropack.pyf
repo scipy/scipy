@@ -2,7 +2,7 @@
 
 python module __user__routines
     interface
-        function caprod(transa,m,n,x,y,cparm,iparm)
+        subroutine caprod(transa,m,n,x,y,cparm,iparm)
            character*1 :: transa
            integer intent(in) :: m
            integer intent(in) :: n
@@ -10,7 +10,7 @@ python module __user__routines
            complex precision depend(m,n),check(len(y)>=(transa[0] == 'n' ? m : n)),dimension((transa[0] == 'n' ? m : n)) :: y
            integer dimension(*) :: iparm
            complex dimension(*) :: cparm
-        end function caprod
+        end subroutine caprod
     end interface
 end python module __user__routines
 

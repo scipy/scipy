@@ -2,7 +2,7 @@
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_allclose, assert_array_equal,
-                           assert_almost_equal, suppress_warnings)
+                           assert_almost_equal)
 import pytest
 from pytest import raises
 
@@ -65,27 +65,6 @@ class TestBSplines:
         assert_allclose(bsp.spline_filter(data_array_real, 0),
                         result_array_real)
 
-    def test_bspline(self):
-        # Verify with theoretical results at integer points up to order 5
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            assert_allclose(bsp.bspline([-1, 0, 1], 0),
-                            array([0, 1, 0]))
-            assert_allclose(bsp.bspline([-1, 0, 1], 1),
-                            array([0, 1, 0]))
-            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 2),
-                            array([0, 1, 6, 1, 0])/8.)
-            assert_allclose(bsp.bspline([-2, -1, 0, 1, 2], 3),
-                            array([0, 1, 4, 1, 0])/6.)
-            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 4),
-                            array([0, 1, 76, 230, 76, 1, 0])/384.)
-            assert_allclose(bsp.bspline([-3, -2, -1, 0, 1, 2, 3], 5),
-                            array([0, 1, 26, 66, 26, 1, 0]) / 120.)
-            # Compare with SciPy 1.1.0
-            np.random.seed(12458)
-            assert_allclose(bsp.bspline(np.random.rand(1, 1), 2),
-                            array([[0.73694695]]))
-
     def test_gauss_spline(self):
         np.random.seed(12459)
         assert_almost_equal(bsp.gauss_spline(0, 0), 1.381976597885342)
@@ -96,22 +75,6 @@ class TestBSplines:
         knots = [-1.0, 0.0, -1.0]
         assert_almost_equal(bsp.gauss_spline(knots, 3),
                             array([0.15418033, 0.6909883, 0.15418033]))
-
-    def test_cubic(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            np.random.seed(12460)
-            # Verify with theoretical results at integer points (see docstring)
-            assert_allclose(bsp.cubic([-2, -1, 0, 1, 2]),
-                            array([0, 1, 4, 1, 0])/6.)
-
-    def test_quadratic(self):
-        np.random.seed(12461)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            # Verify correct results at integer points
-            assert_allclose(bsp.quadratic([-2, -1, 0, 1, 2]),
-                            array([0, 1, 6, 1, 0])/8.)
 
     def test_cspline1d(self):
         np.random.seed(12462)

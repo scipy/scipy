@@ -2215,11 +2215,11 @@ class MultivariateNormalQMC:
             engine: QMCEngine | None = None,
             seed: SeedType = None
     ) -> None:
-        mean = np.array(mean, copy=False, ndmin=1)
+        mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
         if cov is not None:
             # covariance matrix provided
-            cov = np.array(cov, copy=False, ndmin=2)
+            cov = np.asarray(np.atleast_2d(cov))
             # check for square/symmetric cov matrix and mean vector has the
             # same d
             if not mean.shape[0] == cov.shape[0]:
@@ -2380,7 +2380,7 @@ class MultinomialQMC:
         *, engine: QMCEngine | None = None,
         seed: SeedType = None
     ) -> None:
-        self.pvals = np.array(pvals, copy=False, ndmin=1)
+        self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):

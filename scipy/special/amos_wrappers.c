@@ -1,46 +1,9 @@
-/* This file is a collection of wrappers around the
- *  Amos Fortran library of functions that take complex
- *  variables (see www.netlib.org) so that they can be called from
- *  the cephes library of corresponding name but work with complex
- *  arguments.
- */
-
 #include "amos_wrappers.h"
-
 #define CADDR(z) ((double *) (&(z))), (&(((double *) (&(z)))[1]))
-#define F2C_CST(z) ((double *) (z)), (&(((double *) (z))[1]))
 
-#if defined(NO_APPEND_FORTRAN)
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F
-#else
-#define F_FUNC(f,F) f
-#endif
-#else
-#if defined(UPPERCASE_FORTRAN)
-#define F_FUNC(f,F) F##_
-#else
-#define F_FUNC(f,F) f##_
-#endif
-#endif
-
-extern int F_FUNC(zairy,ZAIRY)
-     (double*, double*, int*, int*, double*, double*, int*, int*);
-extern int F_FUNC(zbiry,ZBIRY)
-     (double*, double*, int*, int*, double*, double*, int*);
-extern int F_FUNC(zbesi,ZBESI)
-     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
-extern int F_FUNC(zbesj,ZBESJ)
-     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
-extern int F_FUNC(zbesk,ZBESK)
-     (double*, double*, double*, int*, int*, double*, double*, int*, int*);
-extern int F_FUNC(zbesy,ZBESY)
-     (double*, double*, double*, int*, int*, double*, double*, int*, double*, double*, int*);
-extern int F_FUNC(zbesh,ZBESH)
-     (double*, double*, double*, int*, int*, int*, double*, double*, int*, int*);
-
-/* This must be linked with fortran
- */
+#ifndef CMPLX
+#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
+#endif /* CMPLX */
 
 int ierr_to_sferr(int nz, int ierr) {
   /* Return sf_error equivalents for ierr values */
@@ -61,6 +24,7 @@ int ierr_to_sferr(int nz, int ierr) {
   }
   return -1;
 }
+
 
 void set_nan_if_no_computation_done(npy_cdouble *v, int ierr) {
   if (v != NULL && (ierr == 1 || ierr == 2 || ierr == 4 || ierr == 5)) {
@@ -179,7 +143,9 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   int ierr = 0;
   int kode = 1;
   int nz;
-
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex res;
+  
   NPY_CSETREAL(ai, NAN);
   NPY_CSETIMAG(ai, NAN);
   NPY_CSETREAL(bi, NAN);
@@ -189,17 +155,27 @@ int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi
   NPY_CSETREAL(bip, NAN);
   NPY_CSETIMAG(bip, NAN);
 
-  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
+  res = amos_airy(z99, id, kode, &nz, &ierr);
+  NPY_CSETREAL(ai, creal(res));
+  NPY_CSETIMAG(ai, cimag(res));
   DO_SFERR("airy:", ai);
+
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(bi, creal(res));
+  NPY_CSETIMAG(bi, cimag(res));
   DO_SFERR("airy:", bi);
 
   id = 1;
-  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
+  res = amos_airy(z99, id, kode, &nz, &ierr);
+  NPY_CSETREAL(aip, creal(res));
+  NPY_CSETIMAG(aip, cimag(res));
   DO_SFERR("airy:", aip);
+
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(bip, creal(res));
+  NPY_CSETIMAG(bip, cimag(res));
   DO_SFERR("airy:", bip);
   return 0;
 }
@@ -209,6 +185,9 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex res;
+
   NPY_CSETREAL(ai, NAN);
   NPY_CSETIMAG(ai, NAN);
   NPY_CSETREAL(bi, NAN);
@@ -218,17 +197,27 @@ int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *
   NPY_CSETREAL(bip, NAN);
   NPY_CSETIMAG(bip, NAN);
 
-  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(ai), &nz, &ierr);
+  res = amos_airy(z99, id, kode, &nz, &ierr);
+  NPY_CSETREAL(ai, creal(res));
+  NPY_CSETIMAG(ai, cimag(res));
   DO_SFERR("airye:", ai);
+
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bi), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(bi, creal(res));
+  NPY_CSETIMAG(bi, cimag(res));
   DO_SFERR("airye:", bi);
 
   id = 1;
-  F_FUNC(zairy,ZAIRY)(CADDR(z), &id, &kode, F2C_CST(aip), &nz, &ierr);
+  res = amos_airy(z99, id, kode, &nz, &ierr);
+  NPY_CSETREAL(aip, creal(res));
+  NPY_CSETIMAG(aip, cimag(res));
   DO_SFERR("airye:", aip);
+
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(z), &id, &kode, F2C_CST(bip), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(bip, creal(res));
+  NPY_CSETIMAG(bip, cimag(res));
   DO_SFERR("airye:", bip);
   return 0;
 }
@@ -237,7 +226,10 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   int id = 0;
   int kode = 2;        /* Exponential scaling */
   int nz, ierr;
-  npy_cdouble cz, cai, caip, cbi, cbip;
+  npy_cdouble cai, caip, cbi, cbip;
+  
+  double complex z99 = z;
+  double complex res;
 
   NPY_CSETREAL(&cai, NAN);
   NPY_CSETIMAG(&cai, NAN);
@@ -248,18 +240,21 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   NPY_CSETREAL(&cbip, NAN);
   NPY_CSETIMAG(&cbip, NAN);
 
-  NPY_CSETREAL(&cz, z);
-  NPY_CSETIMAG(&cz, 0);
 
   if (z < 0) {
       *ai = NAN;
   } else {
-      F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(cai), &nz, &ierr);
+      res = amos_airy(z99, id, kode, &nz, &ierr);
+      NPY_CSETREAL(&cai, creal(res));
+      NPY_CSETIMAG(&cai, cimag(res));
       DO_SFERR("airye:", &cai);
       *ai = npy_creal(cai);
   }
+  
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbi), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(&cbi, creal(res));
+  NPY_CSETIMAG(&cbi, cimag(res));
   DO_SFERR("airye:", &cbi);
   *bi = npy_creal(cbi);
 
@@ -267,12 +262,17 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
   if (z < 0) {
       *aip = NAN;
   } else {
-      F_FUNC(zairy,ZAIRY)(CADDR(cz), &id, &kode, CADDR(caip), &nz, &ierr);
+      res = amos_airy(z99, id, kode, &nz, &ierr);
+      NPY_CSETREAL(&caip, creal(res));
+      NPY_CSETIMAG(&caip, cimag(res));
       DO_SFERR("airye:", &caip);
       *aip = npy_creal(caip);
   }
+
   nz = 0;
-  F_FUNC(zbiry,ZBIRY)(CADDR(cz), &id, &kode, CADDR(cbip), &ierr);
+  res = amos_biry(z99, id, kode, &ierr);
+  NPY_CSETREAL(&cbip, creal(res));
+  NPY_CSETIMAG(&cbip, cimag(res));
   DO_SFERR("airye:", &cbip);
   *bip = npy_creal(cbip);
   return 0;
@@ -284,6 +284,10 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
   int sign = 1;
   int nz, ierr;
   npy_cdouble cy, cy_k;
+
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+  double complex cy_k99[1] = { NAN };
 
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
@@ -297,7 +301,9 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besi(z99, v, kode, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("iv:", &cy);
   if (ierr == 2) {
     /* overflow */
@@ -316,7 +322,9 @@ npy_cdouble cbesi_wrap( double v, npy_cdouble z) {
 
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
-      F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
+      nz = amos_besk(z99, v, kode, n, cy_k99, &ierr);
+      NPY_CSETREAL(&cy_k, creal(cy_k99[0]));
+      NPY_CSETIMAG(&cy_k, cimag(cy_k99[0]));
       DO_SFERR("iv(kv):", &cy_k);
       cy = rotate_i(cy, cy_k, v);
     }
@@ -332,6 +340,10 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy, cy_k;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+  double complex cy_k99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
   NPY_CSETREAL(&cy_k, NAN);
@@ -344,12 +356,16 @@ npy_cdouble cbesi_wrap_e( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesi,ZBESI)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besi(z99, v, kode, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("ive:", &cy);
 
   if (sign == -1) {
     if (!reflect_i(&cy, v)) {
-      F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy_k), &nz, &ierr);
+      nz = amos_besk(z99, v, kode, n, cy_k99, &ierr);
+      NPY_CSETREAL(&cy_k, creal(cy_k99[0]));
+      NPY_CSETIMAG(&cy_k, cimag(cy_k99[0]));
       DO_SFERR("ive(kv):", &cy_k);
       /* adjust scaling to match zbesi */
       cy_k = rotate(cy_k, -npy_cimag(z)/M_PI);
@@ -382,7 +398,11 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  npy_cdouble cy_j, cy_y, cwork;
+  npy_cdouble cy_j, cy_y;
+
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy_j99[1] = { NAN };
+  double complex cy_y99[1] = { NAN };
 
   NPY_CSETREAL(&cy_j, NAN);
   NPY_CSETIMAG(&cy_j, NAN);
@@ -396,7 +416,9 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+  nz = amos_besj(z99, v, kode, n, cy_j99, &ierr);
+  NPY_CSETREAL(&cy_j, creal(cy_j99[0]));
+  NPY_CSETIMAG(&cy_j, cimag(cy_j99[0]));
   DO_SFERR("jv:", &cy_j);
   if (ierr == 2) {
     /* overflow */
@@ -407,7 +429,9 @@ npy_cdouble cbesj_wrap( double v, npy_cdouble z) {
 
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
-      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      nz = amos_besy(z99, v, kode, n, cy_y99, &ierr);
+      NPY_CSETREAL(&cy_y, creal(cy_y99[0]));
+      NPY_CSETIMAG(&cy_y, cimag(cy_y99[0]));
       DO_SFERR("jv(yv):", &cy_y);
       cy_j = rotate_jy(cy_j, cy_y, v);
     }
@@ -441,7 +465,11 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  npy_cdouble cy_j, cy_y, cwork;
+  npy_cdouble cy_j, cy_y;
+
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy_j99[1] = { NAN };
+  double complex cy_y99[1] = { NAN };
 
   NPY_CSETREAL(&cy_j, NAN);
   NPY_CSETIMAG(&cy_j, NAN);
@@ -455,11 +483,15 @@ npy_cdouble cbesj_wrap_e( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesj,ZBESJ)(CADDR(z), &v, &kode, &n, CADDR(cy_j), &nz, &ierr);
+  nz = amos_besj(z99, v, kode, n, cy_j99, &ierr);
+  NPY_CSETREAL(&cy_j, creal(cy_j99[0]));
+  NPY_CSETIMAG(&cy_j, cimag(cy_j99[0]));
   DO_SFERR("jve:", &cy_j);
   if (sign == -1) {
     if (!reflect_jy(&cy_j, v)) {
-      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      nz = amos_besy(z99, v, kode, n, cy_y99, &ierr);
+      NPY_CSETREAL(&cy_y, creal(cy_y99[0]));
+      NPY_CSETIMAG(&cy_y, cimag(cy_y99[0]));
       DO_SFERR("jve(yve):", &cy_y);
       cy_j = rotate_jy(cy_j, cy_y, v);
     }
@@ -484,7 +516,11 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
   int kode = 1;
   int nz, ierr;
   int sign = 1;
-  npy_cdouble cy_y, cy_j, cwork;
+  npy_cdouble cy_y, cy_j;
+
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy_j99[1] = { NAN };
+  double complex cy_y99[1] = { NAN };
 
   NPY_CSETREAL(&cy_j, NAN);
   NPY_CSETIMAG(&cy_j, NAN);
@@ -506,7 +542,9 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
       sf_error("yv", SF_ERROR_OVERFLOW, NULL);
   }
   else {
-      F_FUNC(zbesy,ZBESY)(CADDR(z), &v,  &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+      nz = amos_besy(z99, v, kode, n, cy_y99, &ierr);
+      NPY_CSETREAL(&cy_y, creal(cy_y99[0]));
+      NPY_CSETIMAG(&cy_y, cimag(cy_y99[0]));
       DO_SFERR("yv:", &cy_y);
       if (ierr == 2) {
           if (npy_creal(z) >= 0 && npy_cimag(z) == 0) {
@@ -519,7 +557,10 @@ npy_cdouble cbesy_wrap( double v, npy_cdouble z) {
 
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
-      F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+      nz = amos_besj(z99, v, kode, n, cy_j99, &ierr);
+      NPY_CSETREAL(&cy_j, creal(cy_j99[0]));
+      NPY_CSETIMAG(&cy_j, cimag(cy_j99[0]));
+      // F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
       DO_SFERR("yv(jv):", &cy_j);
       cy_y = rotate_jy(cy_y, cy_j, -v);
     }
@@ -553,7 +594,11 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
   int kode = 2;
   int nz, ierr;
   int sign = 1;
-  npy_cdouble cy_y, cy_j, cwork;
+  npy_cdouble cy_y, cy_j;
+
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy_j99[1] = { NAN };
+  double complex cy_y99[1] = { NAN };
 
   NPY_CSETREAL(&cy_j, NAN);
   NPY_CSETIMAG(&cy_j, NAN);
@@ -567,7 +612,9 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesy,ZBESY)(CADDR(z), &v, &kode, &n, CADDR(cy_y), &nz, CADDR(cwork), &ierr);
+  nz = amos_besy(z99, v, kode, n, cy_y99, &ierr);
+  NPY_CSETREAL(&cy_y, creal(cy_y99[0]));
+  NPY_CSETIMAG(&cy_y, cimag(cy_y99[0]));
   DO_SFERR("yve:", &cy_y);
   if (ierr == 2) {
     if (npy_creal(z) >= 0 && npy_cimag(z) == 0) {
@@ -579,7 +626,9 @@ npy_cdouble cbesy_wrap_e( double v, npy_cdouble z) {
 
   if (sign == -1) {
     if (!reflect_jy(&cy_y, v)) {
-      F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+      nz = amos_besj(z99, v, kode, n, cy_j99, &ierr);
+      NPY_CSETREAL(&cy_j, creal(cy_j99[0]));
+      NPY_CSETIMAG(&cy_j, cimag(cy_j99[0]));
       DO_SFERR("yv(jv):", &cy_j);
       cy_y = rotate_jy(cy_y, cy_j, -v);
     }
@@ -605,6 +654,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -615,7 +667,9 @@ npy_cdouble cbesk_wrap( double v, npy_cdouble z) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
   }
-  F_FUNC(zbesk,ZBESK)(CADDR(z), &v,  &kode, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besk(z99, v, kode, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("kv:", &cy);
   if (ierr == 2) {
     if (npy_creal(z) >= 0 && npy_cimag(z) == 0) {
@@ -634,6 +688,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
   int nz, ierr;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -644,7 +701,9 @@ npy_cdouble cbesk_wrap_e( double v, npy_cdouble z) {
     /* K_v == K_{-v} even for non-integer v */
     v = -v;
   }
-  F_FUNC(zbesk,ZBESK)(CADDR(z), &v, &kode, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besk(z99, v, kode, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("kve:", &cy);
   if (ierr == 2) {
     if (npy_creal(z) >= 0 && npy_cimag(z) == 0) {
@@ -709,6 +768,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -719,7 +781,9 @@ npy_cdouble cbesh_wrap1( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesh,ZBESH)(CADDR(z), &v,  &kode, &m, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besh(z99, v, kode, m, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("hankel1:", &cy);
   if (sign == -1) {
     cy = rotate(cy, v);
@@ -735,6 +799,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -745,7 +812,9 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besh(z99, v, kode, m, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("hankel1e:", &cy);
   if (sign == -1) {
     cy = rotate(cy, v);
@@ -761,6 +830,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -771,7 +843,9 @@ npy_cdouble cbesh_wrap2( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besh(z99, v, kode, m, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("hankel2:", &cy);
   if (sign == -1) {
     cy = rotate(cy, -v);
@@ -787,6 +861,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
   int sign = 1;
   npy_cdouble cy;
 
+  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  double complex cy99[1] = { NAN };
+
   NPY_CSETREAL(&cy, NAN);
   NPY_CSETIMAG(&cy, NAN);
 
@@ -797,7 +874,9 @@ npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z) {
     v = -v;
     sign = -1;
   }
-  F_FUNC(zbesh,ZBESH)(CADDR(z), &v, &kode, &m, &n, CADDR(cy), &nz, &ierr);
+  nz = amos_besh(z99, v, kode, m, n, cy99, &ierr);
+  NPY_CSETREAL(&cy, creal(cy99[0]));
+  NPY_CSETIMAG(&cy, cimag(cy99[0]));
   DO_SFERR("hankel2e:", &cy);
   if (sign == -1) {
     cy = rotate(cy, -v);

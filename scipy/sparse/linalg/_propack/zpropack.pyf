@@ -2,7 +2,7 @@
 
 python module __user__routines
     interface
-        function zaprod(transa,m,n,x,y,zparm,iparm)
+        subroutine zaprod(transa,m,n,x,y,zparm,iparm)
            character*1 :: transa
            integer intent(in) :: m
            integer intent(in) :: n
@@ -10,7 +10,7 @@ python module __user__routines
            complex*16 intent(in,out),dimension((transa[0] == 'n' ? m : n)) :: y
            integer dimension(*) :: iparm
            complex*16 dimension(*) :: zparm
-        end function zaprod
+        end subroutine zaprod
     end interface
 end python module __user__routines
 

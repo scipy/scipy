@@ -87,15 +87,11 @@ def _get_output(output, input, shape=None, complex_output=False):
             output = numpy.promote_types(output, numpy.complex64)
         output = numpy.zeros(shape, dtype=output)
     elif isinstance(output, str):
-        # testsuite only appears to cover
-        # f->np.float32 here
-        f_dict = {"f": numpy.float32,
-                  "d": numpy.float64,
-                  "F": numpy.complex64,
-                  "D": numpy.complex128}
-        output = f_dict[output]
-        if complex_output and numpy.dtype(output).kind != 'c':
+        output = numpy.dtype(output)
+        if complex_output and output.kind != 'c':
             raise RuntimeError("output must have complex dtype")
+        elif not issubclass(output.type, numpy.number):
+            raise RuntimeError("output must have numeric dtype")
         output = numpy.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")

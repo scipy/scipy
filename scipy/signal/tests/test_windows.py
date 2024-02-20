@@ -1,17 +1,13 @@
-import pickle
-
 import numpy as np
 from numpy import array
 from numpy.testing import (assert_array_almost_equal, assert_array_equal,
                            assert_allclose,
                            assert_equal, assert_, assert_array_less,
                            suppress_warnings)
-import pytest
 from pytest import raises as assert_raises
 
 from scipy.fft import fft
-from scipy.signal import windows, get_window, resample, hann as dep_hann
-from scipy import signal
+from scipy.signal import windows, get_window, resample
 
 
 window_funcs = [
@@ -39,15 +35,6 @@ window_funcs = [
     ('lanczos', ()),
     ]
 
-@pytest.mark.parametrize(["method", "args"], window_funcs)
-def test_deprecated_import(method, args):
-    if method in ('taylor', 'lanczos', 'dpss'):
-        pytest.skip("Deprecation test not applicable")
-    func = getattr(signal, method)
-    msg = f"Importing {method}"
-    with pytest.deprecated_call(match=msg):
-        func(1, *args)
-        
 
 class TestBartHann:
 
@@ -843,17 +830,6 @@ def test_not_needs_params():
                    ]:
         win = get_window(winstr, 7)
         assert_equal(len(win), 7)
-
-
-def test_deprecation():
-    if dep_hann.__doc__ is not None:  # can be None with `-OO` mode
-        assert_('signal.hann` is deprecated' in dep_hann.__doc__)
-        assert_('deprecated' not in windows.hann.__doc__)
-
-
-def test_deprecated_pickleable():
-    dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
-    assert_(dep_hann2 is dep_hann)
 
 
 def test_symmetric():

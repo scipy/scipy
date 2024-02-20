@@ -357,7 +357,8 @@ class TestBisplrep:
 
     def test_regression_1310(self):
         # Regression test for gh-1310
-        data = np.load(data_file('bug-1310.npz'))['data']
+        with np.load(data_file('bug-1310.npz')) as loaded_data:
+            data = loaded_data['data']
 
         # Shouldn't crash -- the input data triggers work array sizes
         # that caused previously some data to not be aligned on

@@ -16,6 +16,7 @@ cimport numpy as np
 
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.csgraph._validation import validate_graph
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 cimport cython
 
@@ -169,6 +170,7 @@ def shortest_path(csgraph, method='auto',
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
         N = csgraph.shape[0]
+        csgraph = convert_pydata_sparse_to_scipy(csgraph)
         is_sparse = issparse(csgraph)
         if is_sparse:
             Nk = csgraph.nnz

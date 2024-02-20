@@ -412,11 +412,11 @@ Building the Documentation
 ====================  =================================================
  Tool                 Version
 ====================  =================================================
-Sphinx                Whatever recent versions work. >= 2.0.
-PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
-Sphinx-Design         Whatever recent versions work. >= 0.2.0.
-numpydoc              Whatever recent versions work. >= 0.8.0.
-matplotlib            Generally suggest >= 2.0.
+Sphinx                Whatever recent versions work. >= 5.0.
+PyData Sphinx theme   Whatever recent versions work. >= 0.15.2.
+Sphinx-Design         Whatever recent versions work. >= 0.4.0.
+numpydoc              Whatever recent versions work. >= 1.5.0.
+matplotlib            Generally suggest >= 3.5.
 MyST-NB               Whatever recent versions work. >= 0.17.1
 ====================  =================================================
 

@@ -1,6 +1,7 @@
 import sys
 import warnings
 
+import numpy as np
 from numpy.testing import assert_, assert_equal, IS_PYPY
 import pytest
 from pytest import raises as assert_raises
@@ -29,6 +30,9 @@ _sf_error_actions = [
 
 
 def _check_action(fun, args, action):
+    # TODO: special expert should correct
+    # the coercion at the true location?
+    args = np.asarray(args, dtype=np.dtype("long"))
     if action == 'warn':
         with pytest.warns(sc.SpecialFunctionWarning):
             fun(*args)

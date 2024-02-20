@@ -71,8 +71,9 @@ Updating the version switcher
 The version switcher dropdown needs to be updated with the new release
 information.
 
-- ``doc/source/_static/version_switcher.json``: add the new release as well
-  as the new development version.
+- ``doc/source/_static/version_switcher.json``: add the new release,
+  the new development version, and transfer ``"preferred": true`` from the old release
+  to the new release.
 
 
 Updating upper bounds of dependencies
@@ -116,8 +117,9 @@ and PRs under the Milestone for the release
 and that the release notes are up-to-date and included in the html docs.
 
 Then edit ``meson.build`` and ``tools/version_utils.py`` to get the correct version number (set
-``version:`` in the former, and ``ISRELEASED = True`` in the latter) and commit
-it with a message like ``REL: set version to <version-number>``.  Don't push
+``version:`` in the former, and ``ISRELEASED = True`` in the latter). It is
+also necessary to adjust the ``version`` in ``pyproject.toml``. Commit these
+changes with a message like ``REL: set version to <version-number>``.  Don't push
 this commit to the SciPy repo yet.
 
 Finally tag the release locally with ``git tag -s <v1.x.y>`` (the ``-s`` ensures

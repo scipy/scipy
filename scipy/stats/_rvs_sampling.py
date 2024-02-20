@@ -9,7 +9,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     .. deprecated:: 1.12.0
         `rvs_ratio_uniforms` is deprecated in favour of
         `scipy.stats.sampling.RatioUniforms` from version 1.12.0 and will
-        be removed in SciPy 1.14.0
+        be removed in SciPy 1.15.0
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     warnings.warn("Please use `RatioUniforms` from the "
                   "`scipy.stats.sampling` namespace. The "
                   "`scipy.stats.rvs_ratio_uniforms` namespace is deprecated "
-                  "and will be removed in SciPy 1.14.0",
+                  "and will be removed in SciPy 1.15.0",
                   category=DeprecationWarning, stacklevel=2)
     gen = RatioUniforms(pdf, umax=umax, vmin=vmin, vmax=vmax,
                         c=c, random_state=random_state)
