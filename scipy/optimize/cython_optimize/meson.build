@@ -8,7 +8,7 @@ _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
   command: [
-    py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
+    tempita, '@INPUT@', '-o', '@OUTDIR@',
     '--ignore', _dummy_init_cyoptimize[0]
   ]
 )

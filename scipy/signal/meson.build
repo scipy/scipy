@@ -1,23 +1,10 @@
-correlate_nd_c = custom_target('_correlate_nd',
-  output: '_correlate_nd.c',
-  input: '_correlate_nd.c.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-lfilter_c = custom_target('_lfilter',
-  output: '_lfilter.c',
-  input: '_lfilter.c.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_sigtools',
   [
-    '_sigtoolsmodule.c',
     '_firfilter.c',
-    '_sigtools.h',
+    '_sigtoolsmodule.c',
     '_medianfilter.c',
-    lfilter_c,
-    correlate_nd_c
+    tempita_gen.process('_correlate_nd.c.in'),
+    tempita_gen.process('_lfilter.c.in'),
   ],
   dependencies: np_dep,
   link_args: version_link_args,
@@ -80,14 +67,11 @@ foreach pyx_file: pyx_files
   )
 endforeach
 
-bspline_util = custom_target('_bspline_util',
-  output: '_bspline_util.c',
-  input: '_bspline_util.c.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_spline',
-  ['_splinemodule.c', bspline_util],
+  [
+    '_splinemodule.c',
+    tempita_gen.process('_bspline_util.c.in'),
+  ],
   dependencies: np_dep,
   link_args: version_link_args,
   install: true,
