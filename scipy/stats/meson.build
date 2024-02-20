@@ -35,7 +35,7 @@ py3.extension_module('_ansari_swilk_statistics',
 mvn_module = custom_target('mvn_module',
   output: ['_mvn-f2pywrappers.f', '_mvnmodule.c'],
   input: 'mvn.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_mvn',

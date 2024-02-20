@@ -92,7 +92,7 @@ py3.extension_module('_zeros',
 lbfgsb_module = custom_target('lbfgsb_module',
   output: ['_lbfgsb-f2pywrappers.f', '_lbfgsbmodule.c'],
   input: 'lbfgsb_src/lbfgsb.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_lbfgsb',
@@ -126,7 +126,7 @@ py3.extension_module('_moduleTNC',
 cobyla_module = custom_target('cobyla_module',
   output: ['_cobylamodule.c'],
   input: 'cobyla/cobyla.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_cobyla',
@@ -143,7 +143,7 @@ py3.extension_module('_cobyla',
 minpack2_module = custom_target('minpack2_module',
   output: ['_minpack2module.c'],
   input: 'minpack2/minpack2.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_minpack2',
@@ -160,7 +160,7 @@ py3.extension_module('_minpack2',
 slsqp_module = custom_target('slsqp_module',
   output: ['_slsqpmodule.c'],
   input: 'slsqp/slsqp.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_slsqp',
