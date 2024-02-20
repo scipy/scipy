@@ -10,7 +10,7 @@ lfilter_c = custom_target('_lfilter',
   command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-sigtools = py3.extension_module('_sigtools',
+py3.extension_module('_sigtools',
   [
     '_sigtoolsmodule.c',
     '_firfilter.c',
@@ -86,7 +86,7 @@ bspline_util = custom_target('_bspline_util',
   command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-spline = py3.extension_module('_spline',
+py3.extension_module('_spline',
   ['_splinemodule.c', bspline_util],
   dependencies: np_dep,
   link_args: version_link_args,

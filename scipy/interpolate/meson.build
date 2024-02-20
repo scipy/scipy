@@ -94,7 +94,7 @@ fitpack_lib = static_library('fitpack_lib',
   override_options: ['b_lto=false'],
 )
 
-interpnd = py3.extension_module('interpnd',
+py3.extension_module('interpnd',
   spt_cython_gen.process('interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
@@ -120,7 +120,7 @@ py3.extension_module('_rgi_cython',
   subdir: 'scipy/interpolate'
 )
 
-_bspl = py3.extension_module('_bspl',
+py3.extension_module('_bspl',
   cython_gen.process('_bspl.pyx'),
   c_args: cython_c_args,
   include_directories: 'src/',
@@ -131,7 +131,7 @@ _bspl = py3.extension_module('_bspl',
 )
 
 # TODO: Add flags for 64 bit ints
-_fitpack = py3.extension_module('_fitpack',
+py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
   link_with: [fitpack_lib],
   include_directories: 'src/',
@@ -149,7 +149,7 @@ dfitpack_module = custom_target('dfitpack_module',
 )
 
 # TODO: Add flags for 64 bit ints
-dfitpack = py3.extension_module('dfitpack',
+py3.extension_module('dfitpack',
   dfitpack_module,
   c_args: [Wno_unused_variable],
   link_args: version_link_args,

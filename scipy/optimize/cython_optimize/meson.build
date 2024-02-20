@@ -21,7 +21,7 @@ cy_opt_gen = generator(cython,
     _dummy_init_optimize,
     _dummy_init_cyoptimize])
 
-_zeros = py3.extension_module('_zeros',
+py3.extension_module('_zeros',
   cy_opt_gen.process(_zeros_pyx),
   c_args: cython_c_args,
   dependencies: np_dep,

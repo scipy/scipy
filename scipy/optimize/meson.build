@@ -1,4 +1,4 @@
-_direct = py3.extension_module('_direct',
+py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
    '_direct/direct-internal.h',
    '_direct/DIRect.c',
@@ -42,7 +42,7 @@ minpack_lib = static_library('minpack',
   ]
 )
 
-_minpack = py3.extension_module('_minpack',
+py3.extension_module('_minpack',
   ['minpack.h', '__minpack.h', '_minpackmodule.c'],
   link_with: minpack_lib,
   include_directories: '../_lib/src',
@@ -95,7 +95,7 @@ lbfgsb_module = custom_target('lbfgsb_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-_lbfgsb = py3.extension_module('_lbfgsb',
+py3.extension_module('_lbfgsb',
   [
     'lbfgsb_src/lbfgsb.f',
     'lbfgsb_src/linpack.f',
@@ -111,7 +111,7 @@ _lbfgsb = py3.extension_module('_lbfgsb',
   subdir: 'scipy/optimize'
 )
 
-moduleTNC = py3.extension_module('_moduleTNC',
+py3.extension_module('_moduleTNC',
   ['tnc/tnc.h',
     cython_gen.process('tnc/_moduleTNC.pyx'),
     'tnc/tnc.c'],
@@ -129,7 +129,7 @@ cobyla_module = custom_target('cobyla_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-_cobyla = py3.extension_module('_cobyla',
+py3.extension_module('_cobyla',
   [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
   c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
@@ -146,7 +146,7 @@ minpack2_module = custom_target('minpack2_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-minpack2 = py3.extension_module('_minpack2',
+py3.extension_module('_minpack2',
   [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
@@ -163,7 +163,7 @@ slsqp_module = custom_target('slsqp_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-_slsqp = py3.extension_module('_slsqp',
+py3.extension_module('_slsqp',
   [slsqp_module, 'slsqp/slsqp_optmz.f'],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
@@ -173,7 +173,7 @@ _slsqp = py3.extension_module('_slsqp',
   subdir: 'scipy/optimize'
 )
 
-_pava_pybind = py3.extension_module('_pava_pybind',
+py3.extension_module('_pava_pybind',
   ['_pava/pava_pybind.cpp'],
   include_directories: '_pava',
   dependencies: [np_dep, pybind11_dep],
@@ -215,10 +215,8 @@ opt_gen = generator(cython,
   output : '@BASENAME@.c',
   depends : [_cython_tree, cython_blas_pxd, cython_optimize_pxd, _dummy_init_optimize])
 
-_bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
-
 py3.extension_module('_bglu_dense',
-  _bglu_dense_c,
+  opt_gen.process('_bglu_dense.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
   link_args: version_link_args,

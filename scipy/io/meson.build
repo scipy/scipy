@@ -4,7 +4,7 @@ _test_fortran_module = custom_target('_test_fortran_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-_test_fortran = py3.extension_module('_test_fortran',
+py3.extension_module('_test_fortran',
   [
     _test_fortran_module,
     '_test_fortran.f'
