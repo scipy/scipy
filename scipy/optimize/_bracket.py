@@ -5,7 +5,7 @@ from scipy._lib._util import _RichResult
 _ELIMITS = -1  # used in _bracket_root
 _ESTOPONESIDE = 2  # used in _bracket_root
 
-def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
+def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
 
     if not callable(func):
         raise ValueError('`func` must be callable.')
@@ -13,24 +13,24 @@ def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
     if not np.iterable(args):
         args = (args,)
 
-    a = np.asarray(a)[()]
-    if not np.issubdtype(a.dtype, np.number) or np.iscomplex(a).any():
-        raise ValueError('`a` must be numeric and real.')
+    xl0 = np.asarray(xl0)[()]
+    if not np.issubdtype(xl0.dtype, np.number) or np.iscomplex(xl0).any():
+        raise ValueError('`xl0` must be numeric and real.')
 
-    b = a + 1 if b is None else b
-    min = -np.inf if min is None else min
-    max = np.inf if max is None else max
+    xr0 = xl0 + 1 if xr0 is None else xr0
+    xmin = -np.inf if xmin is None else xmin
+    xmax = np.inf if xmax is None else xmax
     factor = 2. if factor is None else factor
-    a, b, min, max, factor = np.broadcast_arrays(a, b, min, max, factor)
+    xl0, xr0, xmin, xmax, factor = np.broadcast_arrays(xl0, xr0, xmin, xmax, factor)
 
-    if not np.issubdtype(b.dtype, np.number) or np.iscomplex(b).any():
-        raise ValueError('`b` must be numeric and real.')
+    if not np.issubdtype(xr0.dtype, np.number) or np.iscomplex(xr0).any():
+        raise ValueError('`xr0` must be numeric and real.')
 
-    if not np.issubdtype(min.dtype, np.number) or np.iscomplex(min).any():
-        raise ValueError('`min` must be numeric and real.')
+    if not np.issubdtype(xmin.dtype, np.number) or np.iscomplex(xmin).any():
+        raise ValueError('`xmin` must be numeric and real.')
 
-    if not np.issubdtype(max.dtype, np.number) or np.iscomplex(max).any():
-        raise ValueError('`max` must be numeric and real.')
+    if not np.issubdtype(xmax.dtype, np.number) or np.iscomplex(xmax).any():
+        raise ValueError('`xmax` must be numeric and real.')
 
     if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor).any():
         raise ValueError('`factor` must be numeric and real.')
@@ -46,17 +46,17 @@ def _bracket_root_iv(func, a, b, min, max, factor, args, maxiter):
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
 
-    if not np.all((min <= a) & (a < b) & (b <= max)):
-        raise ValueError('`min <= a < b <= max` must be True (elementwise).')
+    if not np.all((xmin <= xl0) & (xl0 < xr0) & (xr0 <= xmax)):
+        raise ValueError('`xmin <= xl0 < xr0 <= xmax` must be True (elementwise).')
 
-    return func, a, b, min, max, factor, args, maxiter
+    return func, xl0, xr0, xmin, xmax, factor, args, maxiter
 
 
-def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
+def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
                   args=(), maxiter=1000):
     """Bracket the root of a monotonic scalar function of one variable
 
-    This function works elementwise when `a`, `b`, `min`, `max`, `factor`, and
+    This function works elementwise when `xl0`, `xr0`, `xmin`, `xmax`, `factor`, and
     the elements of `args` are broadcastable arrays.
 
     Parameters
@@ -71,17 +71,17 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
         which may contain an arbitrary number of arrays that are broadcastable
         with `x`. ``func`` must be an elementwise function: each element
         ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
-    a, b : float array_like
-        Starting guess of bracket, which need not contain a root. If `b` is
-        not provided, ``b = a + 1``. Must be broadcastable with one another.
-    min, max : float array_like, optional
+    xl0, xr0: float array_like
+        Starting guess of bracket, which need not contain a root. If `xr0` is
+        not provided, ``xr0 = xl0 + 1``. Must be broadcastable with one another.
+    xmin, xmax : float array_like, optional
         Minimum and maximum allowable endpoints of the bracket, inclusive. Must
-        be broadcastable with `a` and `b`.
+        be broadcastable with `xl0` and `xr0`.
     factor : float array_like, default: 2
         The factor used to grow the bracket. See notes for details.
     args : tuple, optional
         Additional positional arguments to be passed to `func`.  Must be arrays
-        broadcastable with `a`, `b`, `min`, and `max`. If the callable to be
+        broadcastable with `xl0`, `xr0`, `xmin`, and `xmax`. If the callable to be
         bracketed requires arguments that are not broadcastable with these
         arrays, wrap that callable with `func` such that `func` accepts
         only `x` and broadcastable arrays.
@@ -128,16 +128,16 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     `scipy.stats`. The strategy is to iteratively grow the bracket `(l, r)`
      until ``func(l) < 0 < func(r)``. The bracket grows to the left as follows.
 
-    - If `min` is not provided, the distance between `b` and `l` is iteratively
+    - If `xmin` is not provided, the distance between `xl0` and `l` is iteratively
       increased by `factor`.
-    - If `min` is provided, the distance between `min` and `l` is iteratively
+    - If `xmin` is provided, the distance between `xmin` and `l` is iteratively
       decreased by `factor`. Note that this also *increases* the bracket size.
 
     Growth of the bracket to the right is analogous.
 
     Growth of the bracket in one direction stops when the endpoint is no longer
     finite, the function value at the endpoint is no longer finite, or the
-    endpoint reaches its limiting value (`min` or `max`). Iteration terminates
+    endpoint reaches its limiting value (`xmin` or `xmax`). Iteration terminates
     when the bracket stops growing in both directions, the bracket surrounds
     the root, or a root is found (accidentally).
 
@@ -153,10 +153,10 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     # - allow factor < 1?
 
     callback = None  # works; I just don't want to test it
-    temp = _bracket_root_iv(func, a, b, min, max, factor, args, maxiter)
-    func, a, b, min, max, factor, args, maxiter = temp
+    temp = _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter)
+    func, xl0, xr0, xmin, xmax, factor, args, maxiter = temp
 
-    xs = (a, b)
+    xs = (xl0, xr0)
     temp = eim._initialize(func, xs, args)
     func, xs, fs, args, shape, dtype = temp  # line split for PEP8
 
@@ -180,9 +180,9 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     # fixed end of the bracket is only needed to compute the new value of the
     # moving end; it is never returned.
 
-    min = np.broadcast_to(min, shape).astype(dtype, copy=False).ravel()
-    max = np.broadcast_to(max, shape).astype(dtype, copy=False).ravel()
-    limit = np.concatenate((min, max))
+    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
+    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    limit = np.concatenate((xmin, xmax))
 
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=False).ravel()
     factor = np.concatenate((factor, factor))
@@ -304,6 +304,8 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     def customize_result(res, shape):
         n = len(res['x']) // 2
 
+        # To avoid ambiguity, below we refer to `xl0`, the initial left endpoint
+        # as `a` and `xr0`, the initial right endpoint, as `b`.
         # Because we treat the two one-sided searches as though they were
         # independent, what we keep track of in `work` and what we want to
         # return in `res` look quite different. Combine the results from the
@@ -378,3 +380,284 @@ def _bracket_root(func, a, b=None, *, min=None, max=None, factor=None,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs)
+
+
+def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
+
+    if not callable(func):
+        raise ValueError('`func` must be callable.')
+
+    if not np.iterable(args):
+        args = (args,)
+
+    xm0 = np.asarray(xm0)[()]
+    if not np.issubdtype(xm0.dtype, np.number) or np.iscomplex(xm0).any():
+        raise ValueError('`xm0` must be numeric and real.')
+
+    xmin = -np.inf if xmin is None else xmin
+    xmax = np.inf if xmax is None else xmax
+
+    xl0_not_supplied = False
+    if xl0 is None:
+        xl0 = xm0 - 0.5
+        xl0_not_supplied = True
+
+    xr0_not_supplied = False
+    if xr0 is None:
+        xr0 = xm0 + 0.5
+        xr0_not_supplied = True
+
+    factor = 2.0 if factor is None else factor
+    xl0, xm0, xr0, xmin, xmax, factor = np.broadcast_arrays(
+        xl0, xm0, xr0, xmin, xmax, factor
+    )
+
+    if not np.issubdtype(xl0.dtype, np.number) or np.iscomplex(xl0).any():
+        raise ValueError('`xl0` must be numeric and real.')
+
+    if not np.issubdtype(xr0.dtype, np.number) or np.iscomplex(xr0).any():
+        raise ValueError('`xr0` must be numeric and real.')
+
+    if not np.issubdtype(xmin.dtype, np.number) or np.iscomplex(xmin).any():
+        raise ValueError('`xmin` must be numeric and real.')
+
+    if not np.issubdtype(xmax.dtype, np.number) or np.iscomplex(xmax).any():
+        raise ValueError('`xmax` must be numeric and real.')
+
+    if not np.issubdtype(factor.dtype, np.number) or np.iscomplex(factor).any():
+        raise ValueError('`factor` must be numeric and real.')
+    if not np.all(factor > 1):
+        raise ValueError('All elements of `factor` must be greater than 1.')
+
+    # Default choices for xl or xr might have exceeded xmin or xmax. Adjust
+    # to make sure this doesn't happen. We replace with copies because xl, and xr
+    # are read-only views produced by broadcast_arrays.
+    if xl0_not_supplied:
+        xl0 = xl0.copy()
+        cond = ~np.isinf(xmin) & (xl0 < xmin)
+        xl0[cond] = (
+            xm0[cond] - xmin[cond]
+        ) / np.array(16, dtype=xl0.dtype)
+    if xr0_not_supplied:
+        xr0 = xr0.copy()
+        cond = ~np.isinf(xmax) & (xmax < xr0)
+        xr0[cond] = (
+            xmax[cond] - xm0[cond]
+        ) / np.array(16, dtype=xr0.dtype)
+
+    maxiter = np.asarray(maxiter)
+    message = '`maxiter` must be a non-negative integer.'
+    if (not np.issubdtype(maxiter.dtype, np.number) or maxiter.shape != tuple()
+            or np.iscomplex(maxiter)):
+        raise ValueError(message)
+    maxiter_int = int(maxiter[()])
+    if not maxiter == maxiter_int or maxiter < 0:
+        raise ValueError(message)
+
+    if not np.all((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax)):
+        raise ValueError(
+            '`xmin <= xl0 < xm0 < xr0 <= xmax` must be True (elementwise).'
+        )
+
+    return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter
+
+
+def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
+                     factor=None, args=(), maxiter=1000):
+    """Bracket the minimum of a unimodal scalar function of one variable
+
+    This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`,
+    and the elements of `args` are broadcastable arrays.
+
+    Parameters
+    ----------
+    func : callable
+        The function for which the minimum is to be bracketed.
+        The signature must be::
+
+            func(x: ndarray, *args) -> ndarray
+
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with ``x``. `func` must be an elementwise function: each element
+        ``func(x)[i]`` must equal ``func(x[i])`` for all indices `i`.
+    xm0: float array_like
+        Starting guess for middle point of bracket.
+    xl0, xr0: float array_like, optional
+        Starting guesses for left and right endpoints of the bracket. Must be
+        broadcastable with one another and with `xm0`.
+    xmin, xmax : float array_like, optional
+        Minimum and maximum allowable endpoints of the bracket, inclusive. Must
+        be broadcastable with `xl0`, `xm0`, and `xr0`.
+    factor : float array_like, optional
+        Controls expansion of bracket endpoint in downhill direction. Works
+        differently in the cases where a limit is set in the downhill direction
+        with `xmax` or `xmin`. See Notes.
+    args : tuple, optional
+        Additional positional arguments to be passed to `func`.  Must be arrays
+        broadcastable with `xl0`, `xm0`, `xr0`, `xmin`, and `xmax`. If the
+        callable to be bracketed requires arguments that are not broadcastable
+        with these arrays, wrap that callable with `func` such that `func`
+        accepts only ``x`` and broadcastable arrays.
+    maxiter : int, optional
+        The maximum number of iterations of the algorithm to perform. The number
+        of function evaluations is three greater than the number of iterations.
+
+    Returns
+    -------
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
+        attributes. The descriptions are written as though the values will be
+        scalars; however, if `func` returns an array, the outputs will be
+        arrays of the same shape.
+
+        xl, xm, xr : float
+            The left, middle, and right points of the bracket, if the algorithm
+            terminated successfully.
+        fl, fm, fr : float
+            The function value at the left, middle, and right points of the bracket.
+        nfev : int
+            The number of function evaluations required to find the bracket.
+        nit : int
+            The number of iterations of the algorithm that were performed.
+        status : int
+            An integer representing the exit status of the algorithm.
+
+            - ``0`` : The algorithm produced a valid bracket.
+            - ``-1`` : The bracket expanded to the allowable limits. Assuming
+                       unimodality, this implies the endpoint at the limit is a
+                       minimizer.
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+
+        success : bool
+            ``True`` when the algorithm terminated successfully (status ``0``).
+
+    Notes
+    -----
+    Similar to `scipy.optimize.bracket`, this function seeks to find real
+    points ``xl < xm < xr`` such that ``f(xl) >= f(xm)`` and ``f(xr) >= f(xm)``,
+    where at least one of the inequalities is strict. Unlike `scipy.optimize.bracket`,
+    this function can operate in a vectorized manner on array input, so long as
+    the input arrays are broadcastable with each other. Also unlike
+    `scipy.optimize.bracket`, users may specify minimum and maximum endpoints
+    for the desired bracket.
+
+    Given an initial trio of points ``xl = xl0``, ``xm = xm0``, ``xr = xr0``,
+    the algorithm checks if these points already give a valid bracket. If not,
+    a new endpoint, ``w`` is chosen in the "downhill" direction, ``xm`` becomes the new
+    opposite endpoint, and either `xl` or `xr` becomes the new middle point,
+    depending on which direction is downhill. The algorithm repeats from here.
+
+    The new endpoint `w` is chosen differently depending on whether or not a
+    boundary `xmin` or `xmax` has been set in the downhill direction. Without
+    loss of generality, suppose the downhill direction is to the right, so that
+    ``f(xl) > f(xm) > f(xr)``. If there is no boundary to the right, then `w`
+    is chosen to be ``xr + factor * (xr - xm)`` where `factor` is controlled by
+    the user (defaults to 2.0) so that step sizes increase in geometric proportion.
+    If there is a boundary, `xmax` in this case, then `w` is chosen to be
+    ``xmax - (xmax - xr)/factor``, with steps slowing to a stop at
+    `xmax`. This cautious approach ensures that a minimum near but distinct from
+    the boundary isn't missed while also detecting whether or not the `xmax` is
+    a minimizer when `xmax` is reached after a finite number of steps.
+    """  # noqa: E501
+    callback = None  # works; I just don't want to test it
+
+    temp = _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter)
+    func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter = temp
+
+    xs = (xl0, xm0, xr0)
+    func, xs, fs, args, shape, dtype = eim._initialize(func, xs, args)
+
+    xl0, xm0, xr0 = xs
+    fl0, fm0, fr0 = fs
+    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
+    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    # We will modify factor later on so make a copy. np.broadcast_to returns
+    # a read-only view.
+    factor = np.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
+
+    # To simplify the logic, swap xl and xr if f(xl) < f(xr). We should always be
+    # marching downhill in the direction from xl to xr.
+    comp = fl0 < fr0
+    xl0[comp], xr0[comp] = xr0[comp], xl0[comp]
+    fl0[comp], fr0[comp] = fr0[comp], fl0[comp]
+    # We only need the boundary in the direction we're traveling.
+    limit = np.where(comp, xmin, xmax)
+
+    unlimited = np.isinf(limit)
+    limited = ~unlimited
+    step = np.empty_like(xl0)
+
+    step[unlimited] = (xr0[unlimited] - xm0[unlimited])
+    step[limited] = (limit[limited] - xr0[limited])
+
+    # Step size is divided by factor for case where there is a limit.
+    factor[limited] = 1 / factor[limited]
+
+    status = np.full_like(xl0, eim._EINPROGRESS, dtype=int)
+    nit, nfev = 0, 3
+
+    work = _RichResult(xl=xl0, xm=xm0, xr=xr0, xr0=xr0, fl=fl0, fm=fm0, fr=fr0,
+                       step=step, limit=limit, limited=limited, factor=factor, nit=nit,
+                       nfev=nfev, status=status, args=args)
+
+    res_work_pairs = [('status', 'status'), ('xl', 'xl'), ('xm', 'xm'), ('xr', 'xr'),
+                      ('nit', 'nit'), ('nfev', 'nfev'), ('fl', 'fl'), ('fm', 'fm'),
+                      ('fr', 'fr')]
+
+    def pre_func_eval(work):
+        work.step *= work.factor
+        x = np.empty_like(work.xr)
+        x[~work.limited] = work.xr0[~work.limited] + work.step[~work.limited]
+        x[work.limited] = work.limit[work.limited] - work.step[work.limited]
+        # Since the new bracket endpoint is calculated from an offset with the
+        # limit, it may be the case that the new endpoint equals the old endpoint,
+        # when the old endpoint is sufficiently close to the limit. We use the
+        # limit itself as the new endpoint in these cases.
+        x[work.limited] = np.where(
+            x[work.limited] == work.xr[work.limited],
+            work.limit[work.limited],
+            x[work.limited],
+        )
+        return x
+
+    def post_func_eval(x, f, work):
+        work.xl, work.xm, work.xr = work.xm, work.xr, x
+        work.fl, work.fm, work.fr = work.fm, work.fr, f
+
+    def check_termination(work):
+        # Condition 1: A valid bracket has been found.
+        stop = (
+            (work.fl >= work.fm) & (work.fr > work.fm)
+            | (work.fl > work.fm) & (work.fr >= work.fm)
+        )
+        work.status[stop] = eim._ECONVERGED
+
+        # Condition 2: Moving end of bracket reaches limit.
+        i = (work.xr == work.limit) & ~stop
+        work.status[i] = _ELIMITS
+        stop[i] = True
+
+        # Condition 3: non-finite value encountered
+        i = ~(np.isfinite(work.xr) & np.isfinite(work.fr)) & ~stop
+        work.status[i] = eim._EVALUEERR
+        stop[i] = True
+
+        return stop
+
+    def post_termination_check(work):
+        pass
+
+    def customize_result(res, shape):
+        # Reorder entries of xl and xr if they were swapped due to f(xl0) < f(xr0).
+        comp = res['xl'] > res['xr']
+        res['xl'][comp], res['xr'][comp] = res['xr'][comp], res['xl'][comp]
+        res['fl'][comp], res['fr'][comp] = res['fr'][comp], res['fl'][comp]
+        return shape
+
+    return eim._loop(work, callback, shape,
+                     maxiter, func, args, dtype,
+                     pre_func_eval, post_func_eval,
+                     check_termination, post_termination_check,
+                     customize_result, res_work_pairs)
