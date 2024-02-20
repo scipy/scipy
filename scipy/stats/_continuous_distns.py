@@ -10675,29 +10675,36 @@ class vonmises_gen(rv_continuous):
             # increasing from r[0](0) = 0 to r[0](+inf) = 1.  The partial
             # derivative of the log likelihood function with respect to kappa
             # is monotonic decreasing in kappa.
-            if r > 0:
+            if r == 1:
+                # All observations are (almost) equal to the mean.  Return
+                # some large kappa such that r[0](kappa) = 1.0 numerically.
+                return 1e16
+            elif r > 0:
                 def solve_for_kappa(kappa):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-                # For backward compatibility, return MAX_KAPPA if the MLE of
-                # kappa would otherwise be larger than MAX_KAPPA.  Note that
-                # r[0](MAX_KAPPA) = 1.0 for double precision float.
-                MAX_KAPPA = 1e16
-
                 # The bounds of the root of r[0](kappa) = r are derived from
-                # the bounds of r[0](x) given in [1, Eq. 11]:
-                #
-                #   x/(1+sqrt(x*x+1)) <= r[0](x) <= x/sqrt(x*x+4)
+                # selected bounds of r[0](x) given in [1, Eq. 11 & 16].  See
+                # gh-20102 for details.
                 #
                 # [1] Amos, D. E. (1973).  Computation of Modified Bessel
                 #     Functions and Their Ratios.  Mathematics of Computation,
                 #     28(125): 239-251.
-                with np.errstate(divide='ignore'):
-                    lower_bound = min(MAX_KAPPA, 2*r/np.sqrt(1-r*r))
-                    upper_bound = min(MAX_KAPPA, 2*r/(1-r*r))
-                root_res = root_scalar(solve_for_kappa, method="brentq",
-                                       bracket=(lower_bound, upper_bound))
-                return root_res.root
+                lower_bound = r/(1-r)/(1+r)
+                upper_bound = 2*lower_bound
+
+                # The bounds are violated numerically for certain values of r,
+                # where solve_for_kappa evaluated at the bounds have the same
+                # sign.  This indicates numerical imprecision of i1e()/i0e().
+                # Return the violated bound in this case as it's more accurate.
+                if solve_for_kappa(lower_bound) >= 0:
+                    return lower_bound
+                elif solve_for_kappa(upper_bound) <= 0:
+                    return upper_bound
+                else:
+                    root_res = root_scalar(solve_for_kappa, method="brentq",
+                                           bracket=(lower_bound, upper_bound))
+                    return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
                 # the mean resultant length r can become negative.
