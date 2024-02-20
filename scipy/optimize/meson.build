@@ -183,14 +183,8 @@ _pava_pybind = py3.extension_module('_pava_pybind',
 )
 
 if use_pythran
-  _group_columns_cpp = custom_target('_group_columns',
-    output: ['_group_columns.cpp'],
-    input: '_group_columns.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_group_columns.cpp']
-  )
-
-  _group_columns = py3.extension_module('_group_columns',
-    [_group_columns_cpp],
+  py3.extension_module('_group_columns',
+    pythran_gen.process('_group_columns.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
@@ -198,7 +192,7 @@ if use_pythran
     subdir: 'scipy/optimize'
   )
 else
-  _group_columns = py3.extension_module('_group_columns',
+  py3.extension_module('_group_columns',
     cython_gen.process('_group_columns.pyx'),
     c_args: cython_c_args,
     dependencies: np_dep,

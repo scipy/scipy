@@ -162,14 +162,8 @@ dfitpack = py3.extension_module('dfitpack',
 )
 
 if use_pythran
-  _rbfinterp_pythran = custom_target('_rbfinterp_pythran',
-    output: ['_rbfinterp_pythran.cpp'],
-    input: '_rbfinterp_pythran.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_rbfinterp_pythran.cpp']
-  )
-
-  _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
-    _rbfinterp_pythran,
+  py3.extension_module('_rbfinterp_pythran',
+    pythran_gen.process('_rbfinterp_pythran.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,

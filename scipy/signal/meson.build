@@ -26,14 +26,8 @@ sigtools = py3.extension_module('_sigtools',
 )
 
 if use_pythran
-  _max_len_seq_inner = custom_target('_max_len_seq_inner',
-    output: ['_max_len_seq_inner.cpp'],
-    input: '_max_len_seq_inner.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_max_len_seq_inner.cpp']
-  )
-
-  _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
-    [_max_len_seq_inner],
+  py3.extension_module('_max_len_seq_inner',
+    pythran_gen.process('_max_len_seq_inner.py'),
     cpp_args: [cpp_args_pythran, _cpp_Wno_unused_local_typedefs],
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
@@ -41,14 +35,8 @@ if use_pythran
     subdir: 'scipy/signal'
   )
 
-  _spectral = custom_target('_spectral',
-    output: ['_spectral.cpp'],
-    input: '_spectral.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_spectral.cpp']
-  )
-
-  _spectral = py3.extension_module('_spectral',
-    [_spectral],
+  py3.extension_module('_spectral',
+    pythran_gen.process('_spectral.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
@@ -56,7 +44,7 @@ if use_pythran
     subdir: 'scipy/signal'
   )
 else
-  _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
+  py3.extension_module('_max_len_seq_inner',
     [cython_gen.process('_max_len_seq_inner.pyx')],
     c_args: cython_c_args,
     dependencies: np_dep,
@@ -65,7 +53,7 @@ else
     subdir: 'scipy/signal'
   )
 
-  _spectral = py3.extension_module('_spectral',
+  py3.extension_module('_spectral',
     [cython_gen.process('_spectral.pyx')],
     c_args: cython_c_args,
     dependencies: np_dep,
