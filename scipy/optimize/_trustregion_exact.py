@@ -207,7 +207,14 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     # in formula 7.3.14 (p. 190) named as "theta".
     # As recommended there it value is fixed in 0.01.
     UPDATE_COEFF = 0.01
-    MAXITER_DEFAULT = 0  # zero means infinite.
+
+    # The subproblem may iterate infinitely for problematic
+    # cases (see https://github.com/scipy/scipy/issues/12513).
+    # When the `maxiter` setting is None, we need to apply a
+    # default. An ad-hoc number (though tested quite extensively)
+    # is 25, which is set below. To restore the old behavior (which
+    # potentially hangs), this parameter may be changed to zero:
+    MAXITER_DEFAULT = 25  # zero means infinite.
 
     EPS = np.finfo(float).eps
 
