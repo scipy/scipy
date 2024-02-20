@@ -286,7 +286,7 @@ def warnings_errors_and_rng(test):
 
     # scipy.stats deliberately emits UserWarnings sometimes
     user_w = ['scipy.stats.anderson_ksamp', 'scipy.stats.kurtosistest',
-              'scipy.stats.normaltest']
+              'scipy.stats.normaltest', 'scipy.sparse.linalg.norm']
     for name in user_w:
         known_warnings[name] = dict(category=UserWarning)
 
