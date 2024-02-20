@@ -120,7 +120,6 @@ py3.install_sources([
     '_savitzky_golay.py',
     '_short_time_fft.py',
     '_signaltools.py',
-    '_spectral.py',
     '_spectral_py.py',
     '_upfirdn.py',
     '_waveforms.py',
