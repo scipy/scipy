@@ -16,7 +16,7 @@ from ._discrete_distns import *  # noqa: F403
 from ._entropy import entropy
 
 # For backwards compatibility e.g. pymc expects distributions.__all__.
-__all__ = ['rv_discrete', 'rv_continuous', 'rv_histogram', 'entropy']  # noqa: F405
+__all__ = ['rv_discrete', 'rv_continuous', 'rv_histogram', 'entropy', 'mixture_distribution', 'norm_mixture']  # noqa: F405
 
 # Add only the distribution names, not the *_gen names.
 __all__ += _continuous_distns._distn_names
