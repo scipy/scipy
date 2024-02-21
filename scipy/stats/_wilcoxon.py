@@ -2,11 +2,11 @@ import warnings
 import numpy as np
 
 from scipy import stats
-from ._stats_py import _normtest_finish, _rankdata
+from ._stats_py import _get_pvalue, _rankdata
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
-from scipy._lib._util import _lazywhere
+from scipy._lib._util import _lazywhere, _get_nan
 
 
 class WilcoxonDistribution:
@@ -103,6 +103,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         if method not in methods:
             raise ValueError(message)
 
+    # add tie check
     message = ("Zeros are present, but `method='exact'` does not compute "
                "accurate p-values in the presence of zeros.")
     n_zero = np.sum(d == 0, axis=-1)
@@ -110,20 +111,34 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     if has_zeros and method == "exact":
         warnings.warn(message, stacklevel=2)
 
-    message = ("The sample size is small (fewer than 10 nonzero elements); "
-               "so `method='approx'` may not produce accurate p-values.")
-    count = d.shape[-1] - n_zero
-    too_small = np.any(count < 10)
-    if too_small and method == "approx":
-        warnings.warn(message, stacklevel=2)
+    # message = ("The sample size is small (fewer than 10 nonzero elements); "
+    #            "so `method='approx'` may not produce accurate p-values.")
+    # count = d.shape[-1] - n_zero
+    # too_small = np.any(count < 10)
+    # if too_small and method == "approx":
+    #     warnings.warn(message, stacklevel=2)
 
     if method == "auto":
-        if d.shape[-1] <= 50 and not has_zeros:
+        if d.shape[-1] <= 50: # and not has_zeros:
             method = "exact"
-        elif not too_small:
-            method = "approx"
         else:
-            method = stats.PermutationMethod()
+        # elif not too_small:
+            method = "approx"
+        # else:
+        #     method = stats.PermutationMethod()
+
+    # for backward compatibility
+    n_zero = np.sum(d == 0)
+    if n_zero > 0 and method == "exact":
+        method = "approx"
+        warnings.warn("Exact p-value calculation does not work if there are "
+                      "zeros. Switching to normal approximation.",
+                      stacklevel=2)
+
+    if (method == "approx" and zero_method in ["wilcox", "pratt"]
+            and n_zero == d.size and d.size > 0 and d.ndim==1):
+        raise ValueError("zero_method 'wilcox' and 'pratt' do not "
+                         "work if x - y is zero for all elements.")
 
     return d, zero_method, correction, alternative, method, axis
 
@@ -136,6 +151,8 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
         # Wilcoxon's method for treating zeros was to remove them from
         # the calculation. We do this by replacing 0s with NaNs, which
         # are ignored anyway.
+        if not d.flags['WRITEABLE']:
+            d = d.copy()
         d[i_zeros] = np.nan
 
     i_nan = np.isnan(d)
@@ -143,6 +160,7 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     count = d.shape[-1] - n_nan
 
     r, t = _rankdata(abs(d), 'average', return_ties=True)
+
     r_plus = np.sum((d > 0) * r, axis=-1)
     r_minus = np.sum((d < 0) * r, axis=-1)
 
@@ -173,7 +191,6 @@ def _wilcoxon_statistic(d, zero_method='wilcox'):
     se -= tie_correct/2
     se = np.sqrt(se / 24)
 
-    # need to add continuity correction
     z = (r_plus - mn) / se
 
     return r_plus, r_minus, se, z, count
@@ -195,13 +212,20 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True, alternative='
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
     d, zero_method, correction, alternative, method, axis = temp
 
+    if d.size == 0:
+        NaN = _get_nan(d)
+        res = _morestats.WilcoxonResult(statistic=NaN, pvalue=NaN)
+        if method == 'approx':
+            res.zstatistic = NaN
+        return res
+
     r_plus, r_minus, se, z, count = _wilcoxon_statistic(d, zero_method)
 
     if method == 'approx':
         if correction:
             sign = _correction_sign(z, alternative)
             z -= sign * 0.5 / se
-        z, p = _normtest_finish(z, alternative)
+        p = _get_pvalue(z, stats.norm, alternative)
     elif method == 'exact':
         dist = WilcoxonDistribution(count)
         if alternative == 'less':
@@ -216,7 +240,11 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True, alternative='
             (d,), lambda d: _wilcoxon_statistic(d, zero_method)[0],
             permutation_type='samples', alternative=alternative, axis=-1).pvalue
 
-    res = _morestats.WilcoxonResult(statistic=r_plus[()], pvalue=p[()])
+    # for backward compatibility...
+    statistic = np.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus
+    z = -np.abs(z) if (alternative == 'two-sided' and method == 'approx') else z
+
+    res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p[()])
     if method == 'approx':
         res.zstatistic = z[()]
     return res

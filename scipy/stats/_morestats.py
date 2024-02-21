@@ -4105,10 +4105,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.4375)
 
     """
-    if np.ndim(x) <= 1 and np.ndim(y) <= 1:
-        return _wilcoxon_1d(x, y, zero_method, correction, alternative, method)
-    else:
-        return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative, method)
+    return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative, method)
 
 
 def _wilcoxon_1d(x, y, zero_method, correction, alternative, method):
