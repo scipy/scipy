@@ -742,6 +742,24 @@ class TestEigTridiagonal:
             assert_array_almost_equal(abs(evec),
                                       abs(self.evec[:, ind1:ind2+1]))
 
+    def test_eigh_tridiagonal_1x1(self):
+        """See gh-20075"""
+        a = np.array([-2.0])
+        b = np.array([])
+        x = eigh_tridiagonal(a, b, eigvals_only=True)
+        assert x.ndim == 1
+        assert_allclose(x, a)
+        x, V = eigh_tridiagonal(a, b, select="i", select_range=(0, 0))
+        assert x.ndim == 1
+        assert V.ndim == 2
+        assert_allclose(x, a)
+        assert_allclose(V, array([[1.]]))
+
+        x, V = eigh_tridiagonal(a, b, select="v", select_range=(-2, 0))
+        assert x.size == 0
+        assert x.shape == (0,)
+        assert V.shape == (1, 0)
+
 
 class TestEigh:
     def setup_class(self):

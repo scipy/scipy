@@ -2035,3 +2035,92 @@ def make_smoothing_spline(x, y, w=None, lam=None):
                c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
 
     return BSpline.construct_fast(t, c_, 3)
+
+
+########################
+#  FITPACK look-alikes #
+########################
+
+def fpcheck(x, t, k):
+    """ Check consistency of the data vector `x` and the knot vector `t`.
+
+    Return None if inputs are consistent, raises a ValueError otherwise.
+    """
+    # This routine is a clone of the `fpchec` Fortran routine, 
+    # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+    # which carries the following comment:
+    #
+    # subroutine fpchec verifies the number and the position of the knots
+    #  t(j),j=1,2,...,n of a spline of degree k, in relation to the number
+    #  and the position of the data points x(i),i=1,2,...,m. if all of the
+    #  following conditions are fulfilled, the error parameter ier is set
+    #  to zero. if one of the conditions is violated ier is set to ten.
+    #      1) k+1 <= n-k-1 <= m
+    #      2) t(1) <= t(2) <= ... <= t(k+1)
+    #         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    #      3) t(k+1) < t(k+2) < ... < t(n-k)
+    #      4) t(k+1) <= x(i) <= t(n-k)
+    #      5) the conditions specified by schoenberg and whitney must hold
+    #         for at least one subset of data points, i.e. there must be a
+    #         subset of data points y(j) such that
+    #             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    x = np.asarray(x)
+    t = np.asarray(t)
+
+    if x.ndim != 1 or t.ndim != 1:
+        raise ValueError(f"Expect `x` and `t` be 1D sequences. Got {x = } and {t = }")
+
+    m = x.shape[0]
+    n = t.shape[0]
+    nk1 = n - k - 1
+
+    # check condition no 1
+    # c      1) k+1 <= n-k-1 <= m
+    if not (k + 1 <= nk1 <= m):
+        raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
+
+    # check condition no 2
+    # c      2) t(1) <= t(2) <= ... <= t(k+1)
+    # c         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    if (t[:k+1] > t[1:k+2]).any():
+        raise ValueError(f"First k knots must be ordered; got {t = }.")
+
+    if (t[nk1:] < t[nk1-1:-1]).any():
+        raise ValueError(f"Last k knots must be ordered; got {t = }.")
+
+    # c  check condition no 3
+    # c      3) t(k+1) < t(k+2) < ... < t(n-k)
+    if (t[k+1:n-k] <= t[k:n-k-1]).any():
+        raise ValueError(f"Internal knots must be distinct. Got {t = }.")
+
+    # c  check condition no 4
+    # c      4) t(k+1) <= x(i) <= t(n-k)
+    # NB: FITPACK's fpchec only checks x[0] & x[-1], so we follow.
+    if (x[0] < t[k]) or (x[-1] > t[n-k-1]):
+        raise ValueError(f"Out of bounds: {x = } and {t = }.")
+
+    # c  check condition no 5
+    # c      5) the conditions specified by schoenberg and whitney must hold
+    # c         for at least one subset of data points, i.e. there must be a
+    # c         subset of data points y(j) such that
+    # c             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    mesg = f"Schoenberg-Whitney condition is violated with {t = } and {x =}."
+
+    if (x[0] >= t[k+1]) or (x[-1] <= t[n-k-2]):
+        raise ValueError(mesg)
+
+    m = x.shape[0]
+    l = k+1
+    nk3 = n - k - 3
+    if nk3 < 2:
+        return
+    for j in range(1, nk3+1):
+        tj = t[j]
+        l += 1
+        tl = t[l]
+        i = np.argmax(x > tj)
+        if i >= m-1:
+            raise ValueError(mesg)
+        if x[i] >= tl:
+            raise ValueError(mesg)
+    return

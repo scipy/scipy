@@ -187,7 +187,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -209,6 +209,10 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
 
     Notes
     -----
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the magnitude (squared) spectrum.
+
     .. versionadded:: 0.12.0
 
     Examples
@@ -339,7 +343,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -373,6 +377,10 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     If `noverlap` is 0, this method is equivalent to Bartlett's method
     [2]_.
+
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the (squared) magnitude spectrum.
 
     .. versionadded:: 0.12.0
 
@@ -544,6 +552,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     50% is a reasonable trade off between accurately estimating the
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
+
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
 
     .. versionadded:: 0.16.0
 
