@@ -12,6 +12,7 @@
 #include "special/digamma.h"
 #include "special/wright_bessel.h"
 
+#include "special/cephes/besselpoly.h"
 #include "special/cephes/beta.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
@@ -92,6 +93,9 @@ inline double wright_bessel_scalar(double a, double b, double x) {
 
 // Special functions from cephes
 
+inline double besselpoly(double a, double lambda, double nu) {
+    return special::cephes::besselpoly(a, lambda, nu);
+}
 
 inline double beta(double a, double b) {
     return special::cephes::beta(a, b);

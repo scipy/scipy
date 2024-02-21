@@ -171,7 +171,7 @@
             "bdtrin": "ddd->d"        }
     },
     "besselpoly": {
-        "cephes.h": {
+        "_special.h++": {
             "besselpoly": "ddd->d"
         }
     },

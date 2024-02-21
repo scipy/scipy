@@ -378,7 +378,8 @@ special_cephes_sources = [
   'special/cephes/rgamma.h',
   'special/cephes/chbevl.h',
   'special/cephes/poch.h',
-  'special/cephes/hyp2f1.h'
+  'special/cephes/hyp2f1.h',
+  'special/cephes/besselpoly.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
