@@ -3978,6 +3978,13 @@ class TestSkewNorm:
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
 
+    def test_cdf_ppf_roundtrip_gh20124(self):
+        x0 = 0.02
+        skew = 500
+        q = stats.skewnorm.cdf(x0, skew, 0, 1)
+        x1 = stats.skewnorm.ppf(q, skew, 0, 1)
+        assert_almost_equal(x1, x0)
+
 
 class TestExpon:
     def test_zero(self):
