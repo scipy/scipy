@@ -16,6 +16,8 @@
 #include "special/cephes/beta.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
+#include "special/cephes/i0.h"
+#include "special/cephes/i1.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
@@ -127,6 +129,22 @@ inline double lgam(double x) {
 
 inline double hyp2f1_real(double a, double b, double c, double x) {
     return special::cephes::hyp2f1(a, b, c, x);
+}
+
+inline double i0(double x) {
+    return special::cephes::i0(x);
+}
+
+inline double i0e(double x) {
+    return special::cephes::i0e(x);
+}
+
+inline double i1(double x) {
+    return special::cephes::i1(x);
+}
+
+inline double i1e(double x) {
+    return special::cephes::i1e(x);
 }
 
 inline double lanczos_sum_expg_scaled(double x) {

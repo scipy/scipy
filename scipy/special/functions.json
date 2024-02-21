@@ -675,22 +675,22 @@
         }
     },
     "i0": {
-        "cephes.h": {
+        "_special.h++": {
             "i0": "d->d"
         }
     },
     "i0e": {
-        "cephes.h": {
+        "_special.h++": {
             "i0e": "d->d"
         }
     },
     "i1": {
-        "cephes.h": {
+        "_special.h++": {
             "i1": "d->d"
         }
     },
     "i1e": {
-        "cephes.h": {
+        "_special.h++": {
             "i1e": "d->d"
         }
     },
