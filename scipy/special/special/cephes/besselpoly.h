@@ -1,3 +1,7 @@
+/* Translated into C++ by SciPy developers in 2024.
+ *
+ * This was not part of the original cephes library.
+ */
 #pragma once
 
 #include "../config.h"
