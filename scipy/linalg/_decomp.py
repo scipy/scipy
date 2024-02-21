@@ -1309,9 +1309,25 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
         raise TypeError('lapack_driver must be str')
     drivers = ('auto', 'stemr', 'sterf', 'stebz', 'stev')
     if lapack_driver not in drivers:
-        raise ValueError(f'lapack_driver must be one of {drivers}, got {lapack_driver}')
+        raise ValueError(f'lapack_driver must be one of {drivers}, '
+                         f'got {lapack_driver}')
     if lapack_driver == 'auto':
         lapack_driver = 'stemr' if select == 0 else 'stebz'
+
+    # Quick exit for 1x1 case
+    if len(d) == 1:
+        if select == 1 and (not (vl < d[0] <= vu)):  # request by value
+            w = array([])
+            v = empty([1, 0], dtype=d.dtype)
+        else:  # all and request by index
+            w = array([d[0]], dtype=d.dtype)
+            v = array([[1.]], dtype=d.dtype)
+
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     func, = get_lapack_funcs((lapack_driver,), (d, e))
     compute_v = not eigvals_only
     if lapack_driver == 'sterf':
@@ -1578,7 +1594,7 @@ def cdf2rdf(w, v):
     stack_ind = ()
     for i in idx_stack:
         # should never happen, assuming nonzero orders by the last axis
-        assert (i[0::2] == i[1::2]).all(),\
+        assert (i[0::2] == i[1::2]).all(), \
                 "Conjugate pair spanned different arrays!"
         stack_ind += (i[0::2],)
 

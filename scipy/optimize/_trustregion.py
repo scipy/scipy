@@ -89,7 +89,7 @@ class BaseQuadraticSubproblem:
 
     def get_boundaries_intersections(self, z, d, trust_radius):
         """
-        Solve the scalar quadratic equation ||z + t d|| == trust_radius.
+        Solve the scalar quadratic equation ``||z + t d|| == trust_radius``.
         This is like a line-sphere intersection.
         Return the two values of t, sorted from low to high.
         """

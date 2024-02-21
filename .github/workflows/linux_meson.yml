@@ -44,12 +44,12 @@ jobs:
             python-version: '3.12'
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -138,7 +138,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
@@ -197,7 +197,7 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-22.04  # provides python3.10-dbg
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           submodules: recursive
       - name: Configuring Test Environment
@@ -219,7 +219,7 @@ jobs:
 
   #################################################################################
   gcc8:
-    # Purpose is to examine builds with oldest-supported gcc.
+    # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
     name: Build with gcc-8
     needs: get_commit_message
     if: >
@@ -227,12 +227,12 @@ jobs:
       && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4.1.1
         with:
           submodules: recursive
 
       - name: Setup Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.9"
 
@@ -250,6 +250,7 @@ jobs:
           pip install build meson-python ninja pythran pybind11 cython
           # test deps
           pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
+          pip install sparse
 
       - name: Build wheel and install
         run: |
@@ -271,7 +272,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps, coverage, and 64-bit BLAS
+    name: Prerelease deps, coverage and 64-bit BLAS
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -279,15 +280,17 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        # Both use numpy 2.0-dev at build time; 3.9 job then downgrades to
+        # lowest supported NumPy version in order to test ABI compatibility.
+        python-version: ['3.9', '3.11']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -306,11 +309,15 @@ jobs:
     - name: Install Python packages
       run: |
         python -m pip install cython pythran ninja meson-python pybind11 click rich_click pydevtool
-        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
-        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch matplotlib hypothesis
+        # Note: matplotlib not installed here to avoid issues around numpy 2.0
+        # (it can be put back after matplotlib has made a 2.0-compatible
+        # release on PyPI.
+        python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
         # TODO: once the scipy_ symbol prefix issue is fixed, install
         # scipy-openblas32 from the pre-releases bucket again (see gh-19640)
         python -m pip install "scipy-openblas32<=0.3.23.293.2"
+        # Install numpy last, to ensure we get 2.0.0-dev (avoid possible <2.0 constraints).
+        python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -339,10 +346,15 @@ jobs:
       shell: bash -l {0}
       run: ccache -s
 
+    - name: Downgrade NumPy from 2.0-dev to lowest supported
+      if: matrix.python-version == '3.9'
+      run: |
+        python -m pip install "numpy==1.22.4"
+
     - name: Test SciPy
       run: |
         export OPENBLAS_NUM_THREADS=1
-        python dev.py test -j2 --mode full -- --cov --cov-report term-missing 
+        python dev.py --no-build test -j2 --mode full -- --cov --cov-report term-missing
 
   #################################################################################
   linux_32bit:
@@ -356,7 +368,7 @@ jobs:
     # entries. Unfortunately at this time options: does not seem to listen to
     # --platform linux/i386.
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 

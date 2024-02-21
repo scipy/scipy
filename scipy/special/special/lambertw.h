@@ -1,3 +1,7 @@
+/* Translated from Cython into C++ by SciPy developers in 2023.
+ * Original header with Copyright information appears below.
+ */
+
 /* Implementation of the Lambert W function [1]. Based on MPMath
  *  Implementation [2], and documentation [3].
  *
@@ -5,7 +9,7 @@
  * Author email: mellerf@netvision.net.il
  *
  * Distributed under the same license as SciPy
- * Translated into C++ by SciPy developers, 2023.
+ *
  *
  * References:
  * [1] On the Lambert W function, Adv. Comp. Math. 5 (1996) 329-359,
@@ -22,6 +26,7 @@
 
 #pragma once
 
+#include "config.h"
 #include "error.h"
 #include "evalpoly.h"
 
@@ -134,7 +139,7 @@ SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z,
     }
 
     set_error("lambertw", SF_ERROR_SLOW, "iteration failed to converge: %g + %gj", z.real(), z.imag());
-    return std::complex<double>(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 }
 
 } // namespace special

@@ -160,7 +160,7 @@ DX:
   - any-glob-to-any-file:
     - doc/source/dev/**
 
-BLD:
+Build issues:
 - changed-files:
   - any-glob-to-any-file:
     - scipy/_build_utils/**
