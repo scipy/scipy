@@ -144,7 +144,7 @@ class TestCOBYQA:
         assert not sol.success, sol.message
         assert sol.nit <= 2, sol
 
-    def test_minimize_f_min(self):
+    def test_minimize_f_target(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         sol_ref = minimize(
             self.fun,
@@ -154,7 +154,7 @@ class TestCOBYQA:
             options=self.options,
         )
         options = dict(self.options)
-        options['f_min'] = sol_ref.fun
+        options['f_target'] = sol_ref.fun
         sol = minimize(
             self.fun,
             self.x0,

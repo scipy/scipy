@@ -7,7 +7,7 @@ __all__ = []
 
 def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
                      callback=None, disp=False, maxfev=None, maxiter=None,
-                     f_min=-np.inf, feasibility_tol=1e-8,
+                     f_target=-np.inf, feasibility_tol=1e-8,
                      initial_tr_radius=1.0, final_tr_radius=1e-6, scale=False,
                      **unknown_options):
     """
@@ -22,7 +22,7 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         Maximum number of function evaluations.
     maxiter : int
         Maximum number of iterations.
-    f_min : float
+    f_target : float
         Target value for the objective function. The optimization procedure is
         terminated when the objective function value of a nearly feasible point
         is less than or equal to this target.
@@ -44,7 +44,7 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         'disp': bool(disp),
         'maxfev': int(maxfev) if maxfev is not None else 500 * len(x0),
         'maxiter': int(maxiter) if maxiter is not None else 1000 * len(x0),
-        'target': float(f_min),
+        'target': float(f_target),
         'feasibility_tol': float(feasibility_tol),
         'radius_init': float(initial_tr_radius),
         'radius_final': float(final_tr_radius),
