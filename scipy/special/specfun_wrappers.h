@@ -12,7 +12,7 @@
 #include "Python.h"
 #include <numpy/npy_math.h>
 #include <math.h>
-
+#include "specfun.h"
 #include "npy_2_complexcompat.h"
 #include "sf_error.h"
 

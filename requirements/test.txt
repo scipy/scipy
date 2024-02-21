@@ -11,3 +11,4 @@ threadpoolctl
 # scikit-umfpack  # circular dependency issues
 pooch
 hypothesis>=6.30
+array-api-strict

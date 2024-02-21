@@ -58,7 +58,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict
 
     - name: Install PyTorch CPU
       run: |
@@ -92,6 +92,6 @@ jobs:
         export SCIPY_USE_PROPACK=1
         # expand as new modules are added
         # --array-api-backend == -b
-        python dev.py --no-build test -b pytorch -b numpy -b numpy.array_api -s cluster -- --durations 3 --timeout=60
-        python dev.py --no-build test -b pytorch -b numpy -b numpy.array_api -s fft -- --durations 3 --timeout=60
+        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -s cluster -- --durations 3 --timeout=60
+        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -s fft -- --durations 3 --timeout=60
         python dev.py --no-build test --array-api-backend all --tests scipy/_lib/tests/test_array_api.py

@@ -14,7 +14,7 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
 
 
-class _dok_base(_spbase, IndexMixin):
+class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
@@ -466,7 +466,7 @@ class dok_array(_dok_base, sparray):
     """
 
 
-class dok_matrix(spmatrix, _dok_base, dict):
+class dok_matrix(spmatrix, _dok_base):
     """
     Dictionary Of Keys based sparse matrix.
 

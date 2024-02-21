@@ -3505,6 +3505,17 @@ class TestLegendre:
         assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
         assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
 
+    @pytest.mark.parametrize('n', [1, 2, 3, 4, 5])
+    @pytest.mark.parametrize('zr', [0.5241717, 12.80232, -9.699001,
+                                    0.5122437, 0.1714377])
+    @pytest.mark.parametrize('zi', [9.766818, 0.2999083, 8.24726, -22.84843,
+                                    -0.8792666])
+    def test_lpn_against_clpmn(self, n, zr, zi):
+        reslpn = special.lpn(n, zr + zi*1j)
+        resclpmn = special.clpmn(0, n, zr+zi*1j)
+        assert_allclose(reslpn[0], resclpmn[0][0])
+        assert_allclose(reslpn[1], resclpmn[1][0])
+
 
 class TestLambda:
     def test_lmbda(self):
@@ -3736,6 +3747,15 @@ class TestParabolicCylinder:
         eps = 1e-7 + 1e-7*abs(x)
         dp = (special.pbvv(eta, x + eps)[0] - special.pbvv(eta, x - eps)[0]) / eps / 2.
         assert_allclose(p[1], dp, rtol=1e-6, atol=1e-6)
+
+    def test_pbvv_seq(self):
+        res1, res2 = special.pbvv_seq(2, 3)
+        assert_allclose(res1, np.array([2.976319645712036,
+                                        1.358840996329579,
+                                        0.5501016716383508]))
+        assert_allclose(res2, np.array([3.105638472238475,
+                                        0.9380581512176672,
+                                        0.533688488872053]))
 
 
 class TestPolygamma:
