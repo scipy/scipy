@@ -178,6 +178,9 @@ jobs:
             sudo apt-get install -y wamerican-small
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build refguide-check
+            pip install matplotlib hypothesis
+            pip install git+https://github.com/ev-br/scpdt.git@main
+            python dev.py test --doctests
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
