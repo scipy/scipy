@@ -6,12 +6,20 @@
 
 #include "special/binom.h"
 #include "special/hyp2f1.h"
-#include "special/cephes/hyp2f1.h"
 #include "special/lambertw.h"
 #include "special/loggamma.h"
 #include "special/trig.h"
 #include "special/digamma.h"
 #include "special/wright_bessel.h"
+
+#include "special/cephes/beta.h"
+#include "special/cephes/gamma.h"
+#include "special/cephes/hyp2f1.h"
+#include "special/cephes/lanczos.h"
+#include "special/cephes/poch.h"
+#include "special/cephes/rgamma.h"
+#include "special/cephes/trig.h"
+#include "special/cephes/zeta.h"
 
 
 inline double binom(double n, double k) {
@@ -77,14 +85,58 @@ inline npy_cdouble hyp2f1_complex(double a, double b, double c, npy_cdouble zp) 
     return npy_cpack(real(w), imag(w));
 }
 
-inline double hyp2f1_real(double a, double b, double c, double x) {
-    return special::cephes::hyp2f1(a, b, c, x);
-}
-
 inline double wright_bessel_scalar(double a, double b, double x) {
     return special::wright_bessel(a, b, x);
 }
 
+
+// Special functions from cephes
+
+
+inline double beta(double a, double b) {
+    return special::cephes::beta(a, b);
+}
+
+inline double lbeta(double a, double b) {
+    return special::cephes::lbeta(a, b);
+}
+
+inline double sinpi(double x) {
+    return special::cephes::sinpi(x);
+}
+
+inline double cospi(double x) {
+    return special::cephes::cospi(x);
+}
+
+inline double Gamma(double x) {
+    return special::cephes::Gamma(x);
+}
+
+inline double gammasgn(double x) {
+    return special::cephes::gammasgn(x);
+}
+
+inline double lgam(double x) {
+    return special::cephes::lgam(x);
+}
+
+inline double hyp2f1_real(double a, double b, double c, double x) {
+    return special::cephes::hyp2f1(a, b, c, x);
+}
+
+inline double lanczos_sum_expg_scaled(double x) {
+    return special::cephes::lanczos_sum_expg_scaled(x);
+}
+
+inline double poch(double x, double m) {
+    return special::cephes::poch(x, m);
+}
+
 inline double rgamma(double x) {
     return special::cephes::rgamma(x);
+}
+
+inline double zeta(double x, double q) {
+    return special::cephes::zeta(x, q);
 }

@@ -10,10 +10,8 @@
         }
     },
     "_cospi": {
-    	"cephes.h": {
-	    "cospi": "d->d"
-        },
         "_special.h++": {
+            "cospi": "d->d",
             "ccospi": "D->D"
         }
     },
@@ -36,7 +34,7 @@
 	}
     },
     "_lanczos_sum_expg_scaled": {
-        "cephes.h": {
+        "_special.h++": {
             "lanczos_sum_expg_scaled": "d->d"
         }
     },
@@ -56,10 +54,8 @@
         }
     },
     "_sinpi": {
-	"cephes.h": {
-	    "sinpi": "d->d"
-	},
         "_special.h++": {
+            "sinpi": "d->d",
             "csinpi": "D->D"
         }
     },
@@ -132,7 +128,7 @@
         }
     },
     "_zeta": {
-        "cephes.h": {
+        "_special.h++": {
             "zeta": "dd->d"
         }
     },
@@ -180,7 +176,7 @@
         }
     },
     "beta": {
-        "cephes.h": {
+        "_special.h++": {
             "beta": "dd->d"
         }
     },
@@ -209,7 +205,7 @@
         }
     },
     "betaln": {
-        "cephes.h": {
+        "_special.h++": {
             "lbeta": "dd->d"
         }
     },
@@ -591,9 +587,7 @@
     },
     "gamma": {
         "_special.h++": {
-            "cgamma": "D->D"
-        },
-        "cephes.h": {
+            "cgamma": "D->D",
             "Gamma": "d->d"
         }
     },
@@ -618,12 +612,12 @@
         }
     },
     "gammaln": {
-        "cephes.h": {
+        "_special.h++": {
             "lgam": "d->d"
         }
     },
     "gammasgn": {
-        "cephes.h": {
+        "_special.h++": {
             "gammasgn": "d->d"
         }
     },
@@ -947,7 +941,7 @@
             "pdtrik": "dd->d"        }
     },
     "poch": {
-        "cephes.h": {
+        "_special.h++": {
             "poch": "dd->d"
         }
     },
