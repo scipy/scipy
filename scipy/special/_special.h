@@ -19,6 +19,8 @@
 #include "special/cephes/i0.h"
 #include "special/cephes/i1.h"
 #include "special/cephes/scipy_iv.h"
+#include "special/cephes/j0.h"
+#include "special/cephes/j1.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
@@ -150,6 +152,14 @@ inline double i1e(double x) {
 
 inline double iv(double v, double x) {
     return special::cephes::iv(v, x);
+}
+
+inline double j0(double x) {
+    return special::cephes::j0(x);
+}
+
+inline double j1(double x) {
+    return special::cephes::j1(x);
 }
 
 inline double lanczos_sum_expg_scaled(double x) {

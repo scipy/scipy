@@ -705,12 +705,12 @@
         }
     },
     "j0": {
-        "cephes.h": {
+        "_special.h++": {
             "j0": "d->d"
         }
     },
     "j1": {
-        "cephes.h": {
+        "_special.h++": {
             "j1": "d->d"
         }
     },
