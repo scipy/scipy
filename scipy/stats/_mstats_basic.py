@@ -968,7 +968,7 @@ def kendalltau_seasonal(x):
     z_tot_ind = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(var_szn.sum())
     z_tot_dep = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(covmat.sum())
 
-    prob_szn = special.erfc(abs(z_szn)/np.sqrt(2))
+    prob_szn = special.erfc(abs(z_szn.data)/np.sqrt(2))
     prob_tot_ind = special.erfc(abs(z_tot_ind)/np.sqrt(2))
     prob_tot_dep = special.erfc(abs(z_tot_dep)/np.sqrt(2))
 
