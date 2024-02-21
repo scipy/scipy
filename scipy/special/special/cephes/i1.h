@@ -161,7 +161,7 @@ namespace cephes {
 
     }
 
-    SPECFUN_HOST_DEVICE double i1(double x) {
+    SPECFUN_HOST_DEVICE inline double i1(double x) {
         double y, z;
 
         z = std::abs(x);
@@ -177,9 +177,9 @@ namespace cephes {
         return (z);
     }
 
-/*                                                     i1e()   */
+    /*                                                     i1e()   */
 
-    SPECFUN_HOST_DEVICE double i1e(double x)
+    SPECFUN_HOST_DEVICE inline double i1e(double x)
     {
         double y, z;
 

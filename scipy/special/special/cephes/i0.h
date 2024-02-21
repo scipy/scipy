@@ -159,7 +159,7 @@ namespace cephes {
         };
     }
 
-    SPECFUN_HOST_DEVICE double i0(double x)
+    SPECFUN_HOST_DEVICE inline double i0(double x)
     {
         double y;
         
@@ -175,7 +175,7 @@ namespace cephes {
     }
 
 
-    double i0e(double x)
+    SPECFUN_HOST_DEVICE inline double i0e(double x)
     {
         double y;
         

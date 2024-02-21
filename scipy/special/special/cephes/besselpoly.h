@@ -16,7 +16,7 @@ namespace cephes {
     }
 
  
-    SPECFUN_HOST_DEVICE double besselpoly(double a, double lambda, double nu) {
+    SPECFUN_HOST_DEVICE inline double besselpoly(double a, double lambda, double nu) {
 
         int m, factor=0;
         double Sm, relerr, Sol;
