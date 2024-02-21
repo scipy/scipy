@@ -72,6 +72,7 @@ namespace cephes {
         constexpr double SCIPY_EULER = 0.577215664901532860606512090082402431;
         // e as long double
         constexpr long double SCIPY_El = 2.718281828459045235360287471352662498L;
+        constexpr std::uint64_t MAXITER = 500;
     } // namespace detail
 } // namespace cephes
 } // namespace special
