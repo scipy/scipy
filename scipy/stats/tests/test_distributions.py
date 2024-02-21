@@ -262,6 +262,19 @@ class TestVonMises:
         kappa, loc, scale = stats.vonmises.fit([0])
         assert kappa == 1e16 and loc == 0 and scale == 1
 
+    def test_vonmises_fit_bounds(self):
+        # For certain input data, the root bracket is violated numerically.
+        # Test that this situation is handled.  The input data below are
+        # crafted to trigger the bound violation for the current choice of
+        # bounds and the specific way the bounds and the objective function
+        # are computed.
+
+        # Test that no exception is raised when the lower bound is violated.
+        scipy.stats.vonmises.fit([0, 3.7e-08], floc=0)
+
+        # Test that no exception is raised when the upper bound is violated.
+        scipy.stats.vonmises.fit([np.pi/2*(1-4.86e-9)], floc=0)
+
 
 def _assert_less_or_close_loglike(dist, data, func=None, maybe_identical=False,
                                   **kwds):
