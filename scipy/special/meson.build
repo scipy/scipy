@@ -384,13 +384,10 @@ special_cephes_sources = [
   'special/cephes/i1.h',
   'special/cephes/scipy_iv.h',
   'special/cephes/j0.h',
-<<<<<<< Updated upstream
-  'special/cephes/j1.h'
-=======
   'special/cephes/j1.h',
   'special/cephes/jv.h',
-  'special/cephes/cbrt.h'
->>>>>>> Stashed changes
+  'special/cephes/cbrt.h',
+  'special/cephes/airy.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
