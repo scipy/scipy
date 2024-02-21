@@ -71,6 +71,7 @@
  *     Distributed under the same license as Scipy.
  *
  */
+#pragma once
 
 #include "../config.h"
 #include "../error.h"
