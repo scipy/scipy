@@ -95,7 +95,7 @@ class PytestTester:
         pytest_args = ['--showlocals', '--tb=short']
 
         if doctests:
-            raise ValueError("Doctests not supported")
+            pytest_args += ["--doctest-modules", "--ignore=scipy/interpolate/_interpnd_info.py", "--ignore=scipy/_lib/"]
 
         if extra_argv:
             pytest_args += list(extra_argv)
