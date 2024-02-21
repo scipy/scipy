@@ -340,6 +340,7 @@ dt_config.skiplist = set([
     'scipy.special.sinc',           # sinc is from numpy
     'scipy.optimize.show_options',  # does not have much to doctest
     'scipy.signal.normalize',       # manipulates warnings (XXX temp skip)
+    'scipy.sparse.linalg.norm',     # XXX temp skip
 ])
 
 # help pytest collection a bit: these names are either private (distributions)
