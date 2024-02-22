@@ -401,7 +401,7 @@ class TestCorrPearsonr:
         # See https://github.com/scipy/scipy/issues/9353
         x = [0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971]
         y = [2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245]
-        r, p = stats.pearsonr(x,y)
+        r, p = stats.pearsonr(x, y)
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.

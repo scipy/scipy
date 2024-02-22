@@ -4347,13 +4347,11 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     Fisher's transformation is used to compute the confidence interval
     (https://en.wikipedia.org/wiki/Fisher_transformation).
     """
-    if r == 1:
-        zr = np.inf
-    elif r == -1:
-        zr = -np.inf
-    else:
+
+    with np.errstate(divide='ignore'):
         zr = np.arctanh(r)
 
+    ones = np.ones_like(r)
     if n > 3:
         se = np.sqrt(1 / (n - 3))
         if alternative == "two-sided":
@@ -4366,28 +4364,28 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
             h = special.ndtri(confidence_level)
             zhi = zr + h*se
             rhi = np.tanh(zhi)
-            rlo = -1.0
+            rlo = -ones
         else:
             # alternative == "greater":
             h = special.ndtri(confidence_level)
             zlo = zr - h*se
             rlo = np.tanh(zlo)
-            rhi = 1.0
+            rhi = ones
     else:
-        rlo, rhi = -1.0, 1.0
+        rlo, rhi = -ones, ones
 
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
-def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
     """
     Compute the confidence interval for Pearson's R using the bootstrap.
     """
-    def statistic(x, y):
-        statistic, _ = pearsonr(x, y)
+    def statistic(x, y, axis):
+        statistic, _ = pearsonr(x, y, axis=axis)
         return statistic
 
-    res = bootstrap((x, y), statistic, confidence_level=confidence_level,
+    res = bootstrap((x, y), statistic, confidence_level=confidence_level, axis=axis,
                     paired=True, alternative=alternative, **method._asdict())
     # for one-sided confidence intervals, bootstrap gives +/- inf on one side
     res.confidence_interval = np.clip(res.confidence_interval, -1, 1)
@@ -4419,12 +4417,13 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
-    def __init__(self, statistic, pvalue, alternative, n, x, y):
+    def __init__(self, statistic, pvalue, alternative, n, x, y, axis):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
         self._x = x
         self._y = y
+        self._axis = axis
 
         # add alias for consistency with other correlation functions
         self.correlation = statistic
@@ -4475,8 +4474,8 @@ class PearsonRResult(PearsonRResultBase):
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
         if isinstance(method, BootstrapMethod):
-            ci = _pearsonr_bootstrap_ci(confidence_level, method,
-                                        self._x, self._y, self._alternative)
+            ci = _pearsonr_bootstrap_ci(confidence_level, method, self._x, self._y,
+                                        self._alternative, self._axis)
         elif method is None:
             ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
                                      self._alternative)
@@ -4486,7 +4485,7 @@ class PearsonRResult(PearsonRResultBase):
             raise ValueError(message)
         return ci
 
-def pearsonr(x, y, *, alternative='two-sided', method=None):
+def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
@@ -4508,10 +4507,15 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : array_like
         Input array.
-    y : (N,) array_like
+    y : array_like
         Input array.
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
+
+        .. versionadded:: 1.13.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -4644,6 +4648,24 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     >>> res
     PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
 
+    If N-dimensional arrays are provided, multiple tests are performed in a
+    single call according to the same conventions as most `scipy.stats` functions:
+
+    >>> rng = np.random.default_rng(2348246935601934321)
+    >>> x = rng.normal((8, 15))
+    >>> y = rng.normal((8, 15))
+    >>> stats.pearsonr(x, y, axis=0).statistic.shape  # between corresponding columns
+    (15,)
+    >>> stats.pearsonr(x, y, axis=1).statistic.shape  # between corresponding rows
+    (8,)
+
+    To perform all pairwise comparisons between slices of the arrays,
+    use standard NumPy broadcasting techniques. For instance, to compute the
+    correlation between all pairs of rows:
+
+    >>> stats.pearsonr(x[:, np.newaxis, :], y, axis=-1).statistic.shape
+    (8, 8)
+
     To perform an exact permutation version of the test:
 
     >>> rng = np.random.default_rng(7796654889291491997)
@@ -4716,53 +4738,73 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     than zero which happens in about half of the cases if we sample x and y.
 
     """
-    n = len(x)
-    if n != len(y):
-        raise ValueError('x and y must have the same length.')
+    x = np.asarray(x)
+    y = np.asarray(y)
+
+    axis_int = int(axis)
+    if axis_int != axis:
+        raise ValueError('`axis` must be an integer.')
+    axis = axis_int
+
+    if axis is None:
+        x = x.ravel()
+        y = y.ravel()
+
+    n = x.shape[axis]
+    if n != y.shape[axis]:
+        raise ValueError('x and y must have the same length along `axis`.')
 
     if n < 2:
         raise ValueError('x and y must have length at least 2.')
 
-    x = np.asarray(x)
-    y = np.asarray(y)
+    try:
+        x, y = np.broadcast_arrays(x, y)
+    except ValueError as e:
+        message = '`x` and `y` must be broadcastable.'
+        raise ValueError(message) from e
+
+    x = np.moveaxis(x, axis, -1)
+    y = np.moveaxis(y, axis, -1)
+    axis = -1
 
     if (np.issubdtype(x.dtype, np.complexfloating)
             or np.issubdtype(y.dtype, np.complexfloating)):
         raise ValueError('This function does not support complex data')
 
     # If an input is constant, the correlation coefficient is not defined.
-    if (x == x[0]).all() or (y == y[0]).all():
+    const_x = (x == x[..., [0]]).all(axis=-1)
+    const_y = (y == y[..., [0]]).all(axis=-1)
+    const_xy = const_x | const_y
+    if np.any(const_xy):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
-                                alternative=alternative, x=x, y=y)
-        return result
+        constant_warning_emitted = True
 
     if isinstance(method, PermutationMethod):
-        def statistic(y):
-            statistic, _ = pearsonr(x, y, alternative=alternative)
+        def statistic(y, axis):
+            statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
         res = permutation_test((y,), statistic, permutation_type='pairings',
-                               alternative=alternative, **method._asdict())
+                               axis=axis, alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
-                              alternative=alternative, x=x, y=y)
+                              alternative=alternative, x=x, y=y, axis=axis)
     elif isinstance(method, MonteCarloMethod):
-        def statistic(x, y):
-            statistic, _ = pearsonr(x, y, alternative=alternative)
+        def statistic(x, y, axis):
+            statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
         if method.rvs is None:
             rng = np.random.default_rng()
             method.rvs = rng.normal, rng.normal
 
-        res = monte_carlo_test((x, y,), statistic=statistic,
+        res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,
                                alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
-                              alternative=alternative, x=x, y=y)
+                              alternative=alternative, x=x, y=y, axis=axis)
     elif method is not None:
         message = ('`method` must be an instance of `PermutationMethod`,'
                    '`MonteCarloMethod`, or None.')
@@ -4771,16 +4813,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have
     # more precision if the input is, for example, np.longdouble.
-    dtype = type(1.0 + x[0] + y[0])
+    dtype = type(1.0 + x.ravel()[0] + y.ravel()[0])
 
     if n == 2:
-        r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
-        result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
-                                alternative=alternative, x=x, y=y)
+        r = dtype(np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]))
+        result = PearsonRResult(statistic=r, pvalue=np.ones_like(r)[()], n=n,
+                                alternative=alternative, x=x, y=y, axis=axis)
         return result
 
-    xmean = x.mean(dtype=dtype)
-    ymean = y.mean(dtype=dtype)
+    xmean = x.mean(axis=axis, keepdims=True, dtype=dtype)
+    ymean = y.mean(axis=axis, keepdims=True, dtype=dtype)
 
     # By using `astype(dtype)`, we ensure that the intermediate calculations
     # use at least 64 bit floating point.
@@ -4790,11 +4832,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     # Unlike np.linalg.norm or the expression sqrt((xm*xm).sum()),
     # scipy.linalg.norm(xm) does not overflow if xm is, for example,
     # [-5e210, 5e210, 3e200, -3e200]
-    normxm = linalg.norm(xm)
-    normym = linalg.norm(ym)
+    normxm = linalg.norm(xm, keepdims=True, axis=axis)
+    normym = linalg.norm(ym, keepdims=True, axis=axis)
 
     threshold = 1e-13
-    if normxm < threshold*abs(xmean) or normym < threshold*abs(ymean):
+    nconst_x = np.any(normxm < threshold*abs(xmean), axis=axis)
+    nconst_y = np.any(normym < threshold*abs(ymean), axis=axis)
+    nconst_xy = nconst_x | nconst_y
+    if np.any(nconst_xy & (~const_xy)):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
@@ -4802,11 +4847,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
                "correlation coefficient may be inaccurate.")
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
-    r = np.dot(xm/normxm, ym/normym)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        r = np.sum(xm/normxm * ym/normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
-    r = max(min(r, 1.0), -1.0)
+    r = np.asarray(np.clip(r, -1, 1))
+    r[const_xy] = np.nan
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
@@ -4815,7 +4862,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     pvalue = _get_pvalue(r, dist, alternative)
 
     return PearsonRResult(statistic=r, pvalue=pvalue, n=n,
-                          alternative=alternative, x=x, y=y)
+                          alternative=alternative, x=x, y=y, axis=axis)
 
 
 def fisher_exact(table, alternative='two-sided'):
