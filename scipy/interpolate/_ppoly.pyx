@@ -24,7 +24,7 @@ DEF MAX_DIMS = 64
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def evaluate(double_or_complex[:,:,::1] c,
+def evaluate(const double_or_complex[:,:,::1] c,
              const double[::1] x,
              const double[::1] xp,
              int dx,
