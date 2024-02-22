@@ -164,8 +164,7 @@ jobs:
     - name: Build and Install SciPy
       shell: bash -l {0}
       run: |
-        brew update
-        brew install gfortran
+        alias gfortran=gfortran-13
         python -m pip install "scipy-openblas32<=0.3.23.293.2"
         pip install click doit pydevtool rich_click meson numpy cython pythran pybind11 ninja
         python dev.py build --with-scipy-openblas
