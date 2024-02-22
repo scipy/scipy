@@ -165,6 +165,7 @@ jobs:
       shell: bash -l {0}
       run: |
         alias gfortran=gfortran-13
+        which gfortran
         python -m pip install "scipy-openblas32<=0.3.23.293.2"
         pip install click doit pydevtool rich_click meson numpy cython pythran pybind11 ninja
         python dev.py build --with-scipy-openblas
