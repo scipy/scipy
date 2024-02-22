@@ -12,6 +12,9 @@
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 
+#include "special/cephes/airy.h"
+#include "special/cephes/jv.h"
+
 using namespace std;
 
 namespace {
@@ -276,4 +279,12 @@ npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
 
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
     return to_ccomplex(special::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
+}
+
+double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
+    return special::cephes::airy(x, ai, aip, bi, bip);
+}
+
+double cephes_jv_wrap(double v, double x) {
+        return special::cephes::jv(v, x);
 }

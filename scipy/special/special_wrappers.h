@@ -116,6 +116,9 @@ double sin_pi(double x);
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
 
+double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
+double cephes_jv_wrap(double v, double x);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */
