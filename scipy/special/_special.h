@@ -15,6 +15,7 @@
 #include "special/cephes/besselpoly.h"
 #include "special/cephes/beta.h"
 #include "special/cephes/cbrt.h"
+#include "special/cephes/chdtr.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
 #include "special/cephes/i0.h"
@@ -26,6 +27,7 @@
 #include "special/cephes/k0.h"
 #include "special/cephes/k1.h"
 #include "special/cephes/igam.h"
+#include "special/cephes/igami.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/ndtr.h"
 #include "special/cephes/poch.h"
@@ -113,6 +115,18 @@ inline double cephes_beta(double a, double b) {
     return special::cephes::beta(a, b);
 }
 
+inline double cephes_chdtr(double df, double x) {
+    return special::cephes::chdtr(df, x);
+}
+
+inline double cephes_chdtrc(double df, double x) {
+    return special::cephes::chdtrc(df, x);
+}
+
+inline double cephes_chdtri(double df, double y) {
+    return special::cephes::chdtri(df, y);
+}
+
 inline double cephes_lbeta(double a, double b) {
     return special::cephes::lbeta(a, b);
 }
@@ -195,6 +209,14 @@ inline double cephes_igam(double a, double x) {
 
 inline double cephes_igamc(double a, double x) {
     return special::cephes::igamc(a, x);
+}
+
+inline double cephes_igami(double a, double p) {
+    return special::cephes::igami(a, p);
+}
+
+inline double cephes_igamci(double a, double p) {
+    return special::cephes::igamci(a, p);
 }
 
 inline double cephes_igam_fac(double a, double x) {

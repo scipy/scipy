@@ -250,18 +250,18 @@
         }
     },
     "chdtr": {
-        "cephes.h": {
-            "chdtr": "dd->d"
+        "_special.h++": {
+            "cephes_chdtr": "dd->d"
         }
     },
     "chdtrc": {
-        "cephes.h": {
-            "chdtrc": "dd->d"
+        "_special.h++": {
+            "cephes_chdtrc": "dd->d"
         }
     },
     "chdtri": {
-        "cephes.h": {
-            "chdtri": "dd->d"
+        "_special.h++": {
+            "cephes_chdtri": "dd->d"
         }
     },
     "chdtriv": {
@@ -602,13 +602,13 @@
         }
     },
     "gammainccinv": {
-        "cephes.h": {
-            "igamci": "dd->d"
+        "_special.h++": {
+            "cephes_igamci": "dd->d"
         }
     },
     "gammaincinv": {
-        "cephes.h": {
-            "igami": "dd->d"
+        "_special.h++": {
+            "cephes_igami": "dd->d"
         }
     },
     "gammaln": {
