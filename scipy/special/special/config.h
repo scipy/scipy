@@ -91,7 +91,7 @@ SPECFUN_HOST_DEVICE inline double cos(double x) { return cuda::std::cos(x); }
 
 SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
 
-SPECFUN_HOSt_DEVICE inline double acos(double x) {return cuda::std::acos(x); }
+SPECFUN_HOSt_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
 
 SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
 
@@ -112,11 +112,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::f
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
-<<<<<<< Updated upstream
-=======
-SPECFUN_HOST_DEVICE inline double frexp(double num, int* exp) {return cuda::std::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int* exp) {return cuda::std::ldexp(num); }
->>>>>>> Stashed changes
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return cuda::std::ldexp(num); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
@@ -129,11 +126,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y)
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
-<<<<<<< Updated upstream
-=======
-SPECFUN_HOST_DEVICE inline double frexp(double num, int* exp) {return ::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int* exp) {return ::ldexp(num); }
->>>>>>> Stashed changes
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return ::ldexp(num); }
 #endif
 
 template <typename T>

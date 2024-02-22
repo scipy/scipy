@@ -43,7 +43,6 @@
  *    IEEE   -125,125   -125,125      50000      3.5e-15*   1.9e-16*
  *
  */
-
 
 /*
  * Cephes Math Library Release 2.8:  June, 2000
@@ -61,7 +60,6 @@
 #include "j1.h"
 #include "polevl.h"
 
-
 namespace special {
 namespace cephes {
 
@@ -73,8 +71,7 @@ namespace cephes {
          * AMS55 #9.1.27 and 9.1.73.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_recur(double *n, double x, double *newn, int cancel)
-        {
+        SPECFUN_HOST_DEVICE inline double jv_recur(double *n, double x, double *newn, int cancel) {
             double pkm2, pkm1, pk, qkm2, qkm1;
 
             /* double pkp1; */
@@ -82,7 +79,7 @@ namespace cephes {
             constexpr double big = jv_BIG;
             int nflag, ctr;
             int miniter, maxiter;
-            
+
             /* Continued fraction for Jn(x)/Jn-1(x)
              * AMS 9.1.73
              *
@@ -98,7 +95,7 @@ namespace cephes {
              * so that no branch in `jv` requires more iterations to converge.
              * The exact maximum number is (500/3.6)^2 - 500 ~ 19000
              */
-            
+
             maxiter = 22000;
             miniter = std::abs(x) - std::abs(*n);
             if (miniter < 1) {
@@ -118,7 +115,7 @@ namespace cephes {
             qkm1 = *n + *n;
             xk = -x * x;
             yk = qkm1;
-            ans = 0.0;			/* ans=0.0 ensures that t=1.0 in the first iteration */
+            ans = 0.0; /* ans=0.0 ensures that t=1.0 in the first iteration */
             ctr = 0;
             do {
                 yk += 2.0;
@@ -138,8 +135,7 @@ namespace cephes {
                 if (r != 0) {
                     t = std::abs((ans - r) / r);
                     ans = r;
-                }
-                else {
+                } else {
                     t = 1.0;
                 }
 
@@ -158,8 +154,7 @@ namespace cephes {
                     qkm2 /= big;
                     qkm1 /= big;
                 }
-            }
-            while (t > MACHEP);
+            } while (t > MACHEP);
 
         done:
             if (ans == 0)
@@ -173,7 +168,6 @@ namespace cephes {
                     goto fstart;
                 }
             }
-
 
             kf = *newn;
 
@@ -207,8 +201,7 @@ namespace cephes {
                  * }
                  */
                 k -= 1.0;
-            }
-            while (k > (kf + 0.5));
+            } while (k > (kf + 0.5));
 
             /* Take the larger of the last two iterates
              * on the theory that it may have less cancellation error.
@@ -228,8 +221,7 @@ namespace cephes {
          * AMS55 #9.1.10.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_jvs(double n, double x)
-        {
+        SPECFUN_HOST_DEVICE inline double jv_jvs(double n, double x) {
             double t, u, y, z, k;
             int ex, sgngam;
 
@@ -248,14 +240,10 @@ namespace cephes {
             }
             t = std::frexp(0.5 * x, &ex);
             ex = ex * n;
-            if ((ex > -1023)
-                && (ex < 1023)
-                && (n > 0.0)
-                && (n < (MAXGAM - 1.0))) {
+            if ((ex > -1023) && (ex < 1023) && (n > 0.0) && (n < (MAXGAM - 1.0))) {
                 t = std::pow(0.5 * x, n) / special::cephes::Gamma(n + 1.0);
                 y *= t;
-            }
-            else {
+            } else {
                 t = n * std::log(0.5 * x) - lgam_sgn(n + 1.0, &sgngam);
                 if (y < 0) {
                     sgngam = -sgngam;
@@ -274,14 +262,12 @@ namespace cephes {
             return (y);
         }
 
-
         /* Hankel's asymptotic expansion
          * for large x.
          * AMS55 #9.2.5.
          */
 
-        SPECFUN_HOST_DEVICE inline double jv_hankel(double n, double x)
-        {
+        SPECFUN_HOST_DEVICE inline double jv_hankel(double n, double x) {
             double t, u, z, k, sign, conv;
             double p, q, j, m, pp, qq;
             int flag;
@@ -334,46 +320,23 @@ namespace cephes {
          * AMS55 #9.3.23.
          */
 
-        constexpr double jv_PF2[] = {
-            -9.0000000000000000000e-2,
-            8.5714285714285714286e-2
-        };
+        constexpr double jv_PF2[] = {-9.0000000000000000000e-2, 8.5714285714285714286e-2};
 
-        constexpr double jv_PF3[] = {
-            1.3671428571428571429e-1,
-            -5.4920634920634920635e-2,
-            -4.4444444444444444444e-3
-        };
+        constexpr double jv_PF3[] = {1.3671428571428571429e-1, -5.4920634920634920635e-2, -4.4444444444444444444e-3};
 
-        constexpr double jv_PF4[] = {
-            1.3500000000000000000e-3,
-            -1.6036054421768707483e-1,
-            4.2590187590187590188e-2,
-            2.7330447330447330447e-3
-        };
+        constexpr double jv_PF4[] = {1.3500000000000000000e-3, -1.6036054421768707483e-1, 4.2590187590187590188e-2,
+                                     2.7330447330447330447e-3};
 
-        constexpr double jv_PG1[] = {
-            -2.4285714285714285714e-1,
-            1.4285714285714285714e-2
-        };
+        constexpr double jv_PG1[] = {-2.4285714285714285714e-1, 1.4285714285714285714e-2};
 
-        constexpr double jv_PG2[] = {
-            -9.0000000000000000000e-3,
-            1.9396825396825396825e-1,
-            -1.1746031746031746032e-2
-        };
+        constexpr double jv_PG2[] = {-9.0000000000000000000e-3, 1.9396825396825396825e-1, -1.1746031746031746032e-2};
 
-        constexpr double jv_PG3[] = {
-            1.9607142857142857143e-2,
-            -1.5983694083694083694e-1,
-            6.3838383838383838384e-3
-        };
+        constexpr double jv_PG3[] = {1.9607142857142857143e-2, -1.5983694083694083694e-1, 6.3838383838383838384e-3};
 
-        SPECFUN_HOST_DEVICE inline double jv_jnt(double n, double x)
-        {
+        SPECFUN_HOST_DEVICE inline double jv_jnt(double n, double x) {
             double z, zz, z3;
             double cbn, n23, cbtwo;
-            double ai, aip, bi, bip;	/* Airy functions */
+            double ai, aip, bi, bip; /* Airy functions */
             double nk, fk, gk, pp, qq;
             double F[5], G[4];
             int k;
@@ -418,98 +381,58 @@ namespace cephes {
             return (fk);
         }
 
-
         /* Asymptotic expansion for large n.
          * AMS55 #9.3.35.
          */
 
-        constexpr double jv_lambda[] = {
-            1.0,
-            1.041666666666666666666667E-1,
-            8.355034722222222222222222E-2,
-            1.282265745563271604938272E-1,
-            2.918490264641404642489712E-1,
-            8.816272674437576524187671E-1,
-            3.321408281862767544702647E+0,
-            1.499576298686255465867237E+1,
-            7.892301301158651813848139E+1,
-            4.744515388682643231611949E+2,
-            3.207490090890661934704328E+3
-        };
+        constexpr double jv_lambda[] = {1.0,
+                                        1.041666666666666666666667E-1,
+                                        8.355034722222222222222222E-2,
+                                        1.282265745563271604938272E-1,
+                                        2.918490264641404642489712E-1,
+                                        8.816272674437576524187671E-1,
+                                        3.321408281862767544702647E+0,
+                                        1.499576298686255465867237E+1,
+                                        7.892301301158651813848139E+1,
+                                        4.744515388682643231611949E+2,
+                                        3.207490090890661934704328E+3};
 
-        constexpr double jv_mu[] = {
-            1.0,
-            -1.458333333333333333333333E-1,
-            -9.874131944444444444444444E-2,
-            -1.433120539158950617283951E-1,
-            -3.172272026784135480967078E-1,
-            -9.424291479571202491373028E-1,
-            -3.511203040826354261542798E+0,
-            -1.572726362036804512982712E+1,
-            -8.228143909718594444224656E+1,
-            -4.923553705236705240352022E+2,
-            -3.316218568547972508762102E+3
-        };
+        constexpr double jv_mu[] = {1.0,
+                                    -1.458333333333333333333333E-1,
+                                    -9.874131944444444444444444E-2,
+                                    -1.433120539158950617283951E-1,
+                                    -3.172272026784135480967078E-1,
+                                    -9.424291479571202491373028E-1,
+                                    -3.511203040826354261542798E+0,
+                                    -1.572726362036804512982712E+1,
+                                    -8.228143909718594444224656E+1,
+                                    -4.923553705236705240352022E+2,
+                                    -3.316218568547972508762102E+3};
 
-        constexpr double jv_P1[] = {
-            -2.083333333333333333333333E-1,
-            1.250000000000000000000000E-1
-        };
+        constexpr double jv_P1[] = {-2.083333333333333333333333E-1, 1.250000000000000000000000E-1};
 
-        constexpr double jv_P2[] = {
-            3.342013888888888888888889E-1,
-            -4.010416666666666666666667E-1,
-            7.031250000000000000000000E-2
-        };
+        constexpr double jv_P2[] = {3.342013888888888888888889E-1, -4.010416666666666666666667E-1,
+                                    7.031250000000000000000000E-2};
 
-        constexpr double jv_P3[] = {
-            -1.025812596450617283950617E+0,
-            1.846462673611111111111111E+0,
-            -8.912109375000000000000000E-1,
-            7.324218750000000000000000E-2
-        };
+        constexpr double jv_P3[] = {-1.025812596450617283950617E+0, 1.846462673611111111111111E+0,
+                                    -8.912109375000000000000000E-1, 7.324218750000000000000000E-2};
 
-        constexpr double jv_P4[] = {
-            4.669584423426247427983539E+0,
-            -1.120700261622299382716049E+1,
-            8.789123535156250000000000E+0,
-            -2.364086914062500000000000E+0,
-            1.121520996093750000000000E-1
-        };
+        constexpr double jv_P4[] = {4.669584423426247427983539E+0, -1.120700261622299382716049E+1,
+                                    8.789123535156250000000000E+0, -2.364086914062500000000000E+0,
+                                    1.121520996093750000000000E-1};
 
-        constexpr double jv_P5[] = {
-            -2.8212072558200244877E1,
-            8.4636217674600734632E1,
-            -9.1818241543240017361E1,
-            4.2534998745388454861E1,
-            -7.3687943594796316964E0,
-            2.27108001708984375E-1
-        };
+        constexpr double jv_P5[] = {-2.8212072558200244877E1, 8.4636217674600734632E1,  -9.1818241543240017361E1,
+                                    4.2534998745388454861E1,  -7.3687943594796316964E0, 2.27108001708984375E-1};
 
-        constexpr double jv_P6[] = {
-            2.1257013003921712286E2,
-            -7.6525246814118164230E2,
-            1.0599904525279998779E3,
-            -6.9957962737613254123E2,
-            2.1819051174421159048E2,
-            -2.6491430486951555525E1,
-            5.7250142097473144531E-1
-        };
+        constexpr double jv_P6[] = {2.1257013003921712286E2,  -7.6525246814118164230E2, 1.0599904525279998779E3,
+                                    -6.9957962737613254123E2, 2.1819051174421159048E2,  -2.6491430486951555525E1,
+                                    5.7250142097473144531E-1};
 
-        constexpr double jv_P7[] = {
-            -1.9194576623184069963E3,
-            8.0617221817373093845E3,
-            -1.3586550006434137439E4,
-            1.1655393336864533248E4,
-            -5.3056469786134031084E3,
-            1.2009029132163524628E3,
-            -1.0809091978839465550E2,
-            1.7277275025844573975E0
-        };
+        constexpr double jv_P7[] = {-1.9194576623184069963E3, 8.0617221817373093845E3,  -1.3586550006434137439E4,
+                                    1.1655393336864533248E4,  -5.3056469786134031084E3, 1.2009029132163524628E3,
+                                    -1.0809091978839465550E2, 1.7277275025844573975E0};
 
-
-        SPECFUN_HOST_DEVICE inline double jv_jnx(double n, double x)
-        {
+        SPECFUN_HOST_DEVICE inline double jv_jnx(double n, double x) {
             double zeta, sqz, zz, zp, np;
             double cbn, n23, t, z, sz;
             double pp, qq, z32i, zzi;
@@ -533,11 +456,10 @@ namespace cephes {
 
             if (zz > 0.0) {
                 sz = std::sqrt(zz);
-                t = 1.5 * (std::log((1.0 + sz) / z) - sz);	/* zeta ** 3/2          */
+                t = 1.5 * (std::log((1.0 + sz) / z) - sz); /* zeta ** 3/2          */
                 zeta = cbrt(t * t);
                 nflg = 1;
-            }
-            else {
+            } else {
                 sz = std::sqrt(-zz);
                 t = 1.5 * (sz - std::acos(1.0 / z));
                 zeta = -cbrt(t * t);
@@ -606,8 +528,7 @@ namespace cephes {
                     if (t < akl) {
                         akl = t;
                         pp += ak;
-                    }
-                    else
+                    } else
                         doa = 0;
                 }
 
@@ -618,8 +539,7 @@ namespace cephes {
                     if (t < bkl) {
                         bkl = t;
                         qq += bk;
-                    }
-                    else
+                    } else
                         dob = 0;
                 }
                 if (np < MACHEP)
@@ -635,15 +555,14 @@ namespace cephes {
             return (t);
         }
 
-    }
-    
-    SPECFUN_HOST_DEVICE inline double jv(double n, double x)
-    {
+    } // namespace detail
+
+    SPECFUN_HOST_DEVICE inline double jv(double n, double x) {
         double k, q, t, y, an;
         int i, sign, nint;
 
-        nint = 0;			/* Flag for integer n */
-        sign = 1;			/* Flag for sign inversion */
+        nint = 0; /* Flag for integer n */
+        sign = 1; /* Flag for sign inversion */
         an = std::abs(n);
         y = std::floor(an);
         if (y == an) {
@@ -709,8 +628,7 @@ namespace cephes {
             if (an > 2.0 * y)
                 goto rlarger;
 
-            if ((n >= 0.0) && (n < 20.0)
-                && (y > 6.0) && (y < 20.0)) {
+            if ((n >= 0.0) && (n < 20.0) && (y > 6.0) && (y < 20.0)) {
                 /* Recur backwards from a larger value of n */
             rlarger:
                 k = n;
@@ -721,79 +639,77 @@ namespace cephes {
                 y = n + std::floor(y - n);
                 q = detail::jv_recur(&y, x, &k, 0);
                 y = detail::jv_jvs(y, x) * q;
-	    goto done;
-	}
-
-	if (k <= 30.0) {
-	    k = 2.0;
-	}
-	else if (k < 90.0) {
-	    k = (3 * k) / 4;
-	}
-	if (an > (k + 3.0)) {
-	    if (n < 0.0) {
-		k = -k;
+                goto done;
             }
-	    q = n - std::floor(n);
-	    k = std::floor(k) + q;
-	    if (n > 0.0) {
-		q = detail::jv_recur(&n, x, &k, 1);
+
+            if (k <= 30.0) {
+                k = 2.0;
+            } else if (k < 90.0) {
+                k = (3 * k) / 4;
             }
-	    else {
-		t = k;
-		k = n;
-		q = detail::jv_recur(&t, x, &k, 1);
-		k = t;
-	    }
-	    if (q == 0.0) {
-		y = 0.0;
-		goto done;
-	    }
-	}
-	else {
-	    k = n;
-	    q = 1.0;
-	}
+            if (an > (k + 3.0)) {
+                if (n < 0.0) {
+                    k = -k;
+                }
+                q = n - std::floor(n);
+                k = std::floor(k) + q;
+                if (n > 0.0) {
+                    q = detail::jv_recur(&n, x, &k, 1);
+                } else {
+                    t = k;
+                    k = n;
+                    q = detail::jv_recur(&t, x, &k, 1);
+                    k = t;
+                }
+                if (q == 0.0) {
+                    y = 0.0;
+                    goto done;
+                }
+            } else {
+                k = n;
+                q = 1.0;
+            }
 
-	/* boundary between convergence of
-	 * power series and Hankel expansion
-	 */
-	y = std::abs(k);
-	if (y < 26.0)
-	    t = (0.0083 * y + 0.09) * y + 12.9;
-	else
-	    t = 0.9 * y;
+            /* boundary between convergence of
+             * power series and Hankel expansion
+             */
+            y = std::abs(k);
+            if (y < 26.0)
+                t = (0.0083 * y + 0.09) * y + 12.9;
+            else
+                t = 0.9 * y;
 
-	if (x > t)
-	    y = detail::jv_hankel(k, x);
-	else
-	    y = detail::jv_jvs(k, x);
-	if (n > 0.0)
-	    y /= q;
-	else
-	    y *= q;
+            if (x > t)
+                y = detail::jv_hankel(k, x);
+            else
+                y = detail::jv_jvs(k, x);
+            if (n > 0.0)
+                y /= q;
+            else
+                y *= q;
+        }
+
+        else {
+            /* For large n, use the uniform expansion or the transitional expansion.
+             * But if x is of the order of n**2, these may blow up, whereas the
+             * Hankel expansion will then work.
+             */
+            if (n < 0.0) {
+                set_error("jv", SF_ERROR_LOSS, NULL);
+                y = std::numeric_limits<double>::quiet_NaN();
+                goto done;
+            }
+            t = x / n;
+            t /= n;
+            if (t > 0.3)
+                y = detail::jv_hankel(n, x);
+            else
+                y = detail::jv_jnx(n, x);
+        }
+
+    done:
+        return (sign * y);
     }
 
-    else {
-	/* For large n, use the uniform expansion or the transitional expansion.
-	 * But if x is of the order of n**2, these may blow up, whereas the
-	 * Hankel expansion will then work.
-	 */
-	if (n < 0.0) {
-	    set_error("jv", SF_ERROR_LOSS, NULL);
-	    y = std::numeric_limits<double>::quiet_NaN();
-	    goto done;
-	}
-	t = x / n;
-	t /= n;
-	if (t > 0.3)
-	    y = detail::jv_hankel(n, x);
-	else
-	    y = detail::jv_jnx(n, x);
-    }
-
-    done:return (sign * y);
-    }
-
-}
-}
+} // namespace cephes
+} // namespace special

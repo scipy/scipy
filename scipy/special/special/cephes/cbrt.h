@@ -45,7 +45,6 @@
  */
 #pragma once
 
-
 #include "../config.h"
 
 namespace special {
@@ -56,13 +55,12 @@ namespace cephes {
         constexpr double CBRT2 = 1.2599210498948731647672;
         constexpr double CBRT4 = 1.5874010519681994747517;
         constexpr double CBRT2I = 0.79370052598409973737585;
-        constexpr  double CBRT4I = 0.62996052494743658238361;
+        constexpr double CBRT4I = 0.62996052494743658238361;
 
-        SPECFUN_HOST_DEVICE inline double cbrt(double x)
-        {
+        SPECFUN_HOST_DEVICE inline double cbrt(double x) {
             int e, rem, sign;
             double z;
-            
+
             if (!std::isfinite(x)) {
                 return x;
             }
@@ -75,21 +73,22 @@ namespace cephes {
                 sign = -1;
                 x = -x;
             }
-            
+
             z = x;
             /* extract power of 2, leaving
              * mantissa between 0.5 and 1
              */
             x = std::frexp(x, &e);
-            
+
             /* Approximate cube root of number between .5 and 1,
              * peak relative error = 9.2e-6
              */
-            x = (((-1.3466110473359520655053e-1 * x
-                   + 5.4664601366395524503440e-1) * x
-                  - 9.5438224771509446525043e-1) * x
-                 + 1.1399983354717293273738e0) * x + 4.0238979564544752126924e-1;
-            
+            x = (((-1.3466110473359520655053e-1 * x + 5.4664601366395524503440e-1) * x - 9.5438224771509446525043e-1) *
+                     x +
+                 1.1399983354717293273738e0) *
+                    x +
+                4.0238979564544752126924e-1;
+
             /* exponent divided by 3 */
             if (e >= 0) {
                 rem = e;
@@ -114,19 +113,19 @@ namespace cephes {
                 }
                 e = -e;
             }
-            
+
             /* multiply by power of 2 */
             x = std::ldexp(x, e);
-            
+
             /* Newton iteration */
             x -= (x - (z / (x * x))) * 0.33333333333333333333;
             x -= (x - (z / (x * x))) * 0.33333333333333333333;
-            
+
             if (sign < 0)
                 x = -x;
             return (x);
         }
-    }
+    } // namespace detail
 
-}
-}
+} // namespace cephes
+} // namespace special
