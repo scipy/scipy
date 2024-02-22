@@ -4247,7 +4247,7 @@ def _wilcoxon_1d(x, y, zero_method, correction, alternative, method):
         prob = np.clip(prob, 0, 1)
 
     res = WilcoxonResult(T, prob)
-    if method == 'approx':
+    if mode == 'approx':
         res.zstatistic = z
     return res
 

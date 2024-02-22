@@ -103,31 +103,15 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
         if method not in methods:
             raise ValueError(message)
 
-    # add tie check
-    message = ("Zeros are present, but `method='exact'` does not compute "
-               "accurate p-values in the presence of zeros.")
+    # logic unchanged here for backward compatibility
     n_zero = np.sum(d == 0, axis=-1)
     has_zeros = np.any(n_zero > 0)
-    if has_zeros and method == "exact":
-        warnings.warn(message, stacklevel=2)
-
-    # message = ("The sample size is small (fewer than 10 nonzero elements); "
-    #            "so `method='approx'` may not produce accurate p-values.")
-    # count = d.shape[-1] - n_zero
-    # too_small = np.any(count < 10)
-    # if too_small and method == "approx":
-    #     warnings.warn(message, stacklevel=2)
-
     if method == "auto":
-        if d.shape[-1] <= 50: # and not has_zeros:
+        if d.shape[-1] <= 50 and not has_zeros:
             method = "exact"
         else:
-        # elif not too_small:
             method = "approx"
-        # else:
-        #     method = stats.PermutationMethod()
 
-    # for backward compatibility
     n_zero = np.sum(d == 0)
     if n_zero > 0 and method == "exact":
         method = "approx"
@@ -139,6 +123,9 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
             and n_zero == d.size and d.size > 0 and d.ndim==1):
         raise ValueError("zero_method 'wilcox' and 'pratt' do not "
                          "work if x - y is zero for all elements.")
+
+    if 0 < d.shape[-1] < 10 and method == "approx":
+        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis
 
@@ -205,10 +192,9 @@ def _correction_sign(z, alternative):
         return np.sign(z)
 
 
-def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True, alternative='two-sided',
-                 method='auto', axis=0):
-    # test wilcox/pratt with all zeros
-    # change: respects specified method
+def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
+                 alternative='two-sided', method='auto', axis=0):
+
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
     d, zero_method, correction, alternative, method, axis = temp
 
