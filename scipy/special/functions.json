@@ -245,8 +245,8 @@
         }
     },
     "cbrt": {
-        "cephes.h": {
-            "cbrt": "d->d"
+        "_special.h++": {
+            "cephes_cbrt": "d->d"
         }
     },
     "chdtr": {
