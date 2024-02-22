@@ -75,7 +75,7 @@ jobs:
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
 
     - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
         channels: conda-forge
@@ -135,3 +135,41 @@ jobs:
       shell: bash -l {0}
       run: |
         ccache -s
+
+
+  test_scipy_openblas:
+    name: M1 + scipy-openblas32
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'andyfaff/scipy' || github.repository == '')
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Build and Install SciPy
+      shell: bash -l {0}
+      run: |
+        python -m pip install "scipy-openblas32<=0.3.23.293.2"
+        pip install click doit pydevtool rich_click meson numpy cython pythran pybind11 ninja
+        python dev.py build --with-scipy-openblas
+
+    - name: Test SciPy
+      shell: bash -l {0}
+      run: |
+        pip install pooch pytest hypothesis pytest-xdist
+        python dev.py -n test -j2
