@@ -387,7 +387,8 @@ special_cephes_sources = [
   'special/cephes/j1.h',
   'special/cephes/jv.h',
   'special/cephes/cbrt.h',
-  'special/cephes/airy.h'
+  'special/cephes/airy.h',
+  'special/cephes/k0.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')

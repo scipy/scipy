@@ -715,12 +715,12 @@
         }
     },
     "k0": {
-        "cephes.h": {
+        "_special.h++": {
             "k0": "d->d"
         }
     },
     "k0e": {
-        "cephes.h": {
+        "_special.h++": {
             "k0e": "d->d"
         }
     },
