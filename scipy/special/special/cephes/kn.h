@@ -84,7 +84,6 @@
 
 #include "const.h"
 
-
 namespace special {
 namespace cephes {
 
@@ -93,7 +92,6 @@ namespace cephes {
         constexpr int kn_MAXFAC = 31;
 
     }
-
 
     SPECFUN_HOST_DEVICE inline double kn(int nn, double x) {
         double k, kf, nk1f, nkf, zn, t, s, z0, z;
@@ -241,5 +239,5 @@ namespace cephes {
         return (ans);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

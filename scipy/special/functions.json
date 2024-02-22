@@ -11,7 +11,7 @@
     },
     "_cospi": {
         "_special.h++": {
-            "cospi": "d->d",
+            "cephes_cospi": "d->d",
             "ccospi": "D->D"
         }
     },
@@ -24,8 +24,8 @@
         }
     },
     "_igam_fac": {
-        "cephes.h": {
-            "igam_fac": "dd->d"
+        "_special.h++": {
+            "cephes_igam_fac": "dd->d"
         }
     },
     "_lambertw": {
@@ -35,17 +35,17 @@
     },
     "_lanczos_sum_expg_scaled": {
         "_special.h++": {
-            "lanczos_sum_expg_scaled": "d->d"
+            "cephes_lanczos_sum_expg_scaled": "d->d"
         }
     },
     "_lgam1p": {
-        "cephes.h": {
-            "lgam1p": "d->d"
+        "_special.h++": {
+            "cephes_lgam1p": "d->d"
         }
     },
     "_log1pmx": {
-        "cephes.h": {
-            "log1pmx": "d->d"
+        "_special.h++": {
+            "cephes_log1pmx": "d->d"
         }
     },
     "_sf_error_test_function": {
@@ -55,7 +55,7 @@
     },
     "_sinpi": {
         "_special.h++": {
-            "sinpi": "d->d",
+            "cephes_sinpi": "d->d",
             "csinpi": "D->D"
         }
     },
@@ -129,7 +129,7 @@
     },
     "_zeta": {
         "_special.h++": {
-            "zeta": "dd->d"
+            "cephes_zeta": "dd->d"
         }
     },
     "agm": {
@@ -172,12 +172,12 @@
     },
     "besselpoly": {
         "_special.h++": {
-            "besselpoly": "ddd->d"
+            "cephes_besselpoly": "ddd->d"
         }
     },
     "beta": {
         "_special.h++": {
-            "beta": "dd->d"
+            "cephes_beta": "dd->d"
         }
     },
     "betainc": {
@@ -206,7 +206,7 @@
     },
     "betaln": {
         "_special.h++": {
-            "lbeta": "dd->d"
+            "cephes_lbeta": "dd->d"
         }
     },
     "binom": {
@@ -290,8 +290,8 @@
         }
     },
     "cosm1": {
-        "cephes.h": {
-            "cosm1": "d->d"
+        "_special.h++": {
+            "cephes_cosm1": "d->d"
         }
     },
     "cotdg": {
@@ -379,16 +379,16 @@
         "_faddeeva.h++": {
             "faddeeva_erf": "D->D"
         },
-        "cephes.h": {
-            "erf": "d->d"
+        "_special.h++": {
+            "cephes_erf": "d->d"
         }
     },
     "erfc": {
         "_faddeeva.h++": {
             "faddeeva_erfc_complex": "D->D"
         },
-        "cephes.h": {
-            "erfc": "d->d"
+        "_special.h++": {
+            "cephes_erfc": "d->d"
         }
     },
     "erfcx": {
@@ -541,8 +541,8 @@
         "_cunity.pxd": {
             "cexpm1": "D->D"
         },
-        "cephes.h": {
-            "expm1": "d->d"
+        "_special.h++": {
+            "cephes_expm1": "d->d"
         }
     },
     "expn": {
@@ -588,17 +588,17 @@
     "gamma": {
         "_special.h++": {
             "cgamma": "D->D",
-            "Gamma": "d->d"
+            "cephes_Gamma": "d->d"
         }
     },
     "gammainc": {
-        "cephes.h": {
-            "igam": "dd->d"
+        "_special.h++": {
+            "cephes_igam": "dd->d"
         }
     },
     "gammaincc": {
-        "cephes.h": {
-            "igamc": "dd->d"
+        "_special.h++": {
+            "cephes_igamc": "dd->d"
         }
     },
     "gammainccinv": {
@@ -613,12 +613,12 @@
     },
     "gammaln": {
         "_special.h++": {
-            "lgam": "d->d"
+            "cephes_lgam": "d->d"
         }
     },
     "gammasgn": {
         "_special.h++": {
-            "gammasgn": "d->d"
+            "cephes_gammasgn": "d->d"
         }
     },
     "gdtr": {
@@ -665,7 +665,7 @@
     },
     "hyp2f1": {
         "_special.h++": {
-            "hyp2f1_real": "dddd->d",
+            "cephes_hyp2f1": "dddd->d",
             "hyp2f1_complex": "dddD->D"
         }
     },
@@ -676,22 +676,22 @@
     },
     "i0": {
         "_special.h++": {
-            "i0": "d->d"
+            "cephes_i0": "d->d"
         }
     },
     "i0e": {
         "_special.h++": {
-            "i0e": "d->d"
+            "cephes_i0e": "d->d"
         }
     },
     "i1": {
         "_special.h++": {
-            "i1": "d->d"
+            "cephes_i1": "d->d"
         }
     },
     "i1e": {
         "_special.h++": {
-            "i1e": "d->d"
+            "cephes_i1e": "d->d"
         }
     },
     "inv_boxcox": {
@@ -706,32 +706,32 @@
     },
     "j0": {
         "_special.h++": {
-            "j0": "d->d"
+            "cephes_j0": "d->d"
         }
     },
     "j1": {
         "_special.h++": {
-            "j1": "d->d"
+            "cephes_j1": "d->d"
         }
     },
     "k0": {
         "_special.h++": {
-            "k0": "d->d"
+            "cephes_k0": "d->d"
         }
     },
     "k0e": {
         "_special.h++": {
-            "k0e": "d->d"
+            "cephes_k0e": "d->d"
         }
     },
     "k1": {
         "_special.h++": {
-            "k1": "d->d"
+            "cephes_k1": "d->d"
         }
     },
     "k1e": {
         "_special.h++": {
-            "k1e": "d->d"
+            "cephes_k1e": "d->d"
         }
     },
     "kl_div": {
@@ -777,7 +777,7 @@
             "clog1p": "D->D"
         },
         "cephes.h": {
-            "log1p": "d->d"
+            "cephes_log1p": "d->d"
         }
     },
     "log_expit": {
@@ -895,8 +895,8 @@
         "_faddeeva.h++": {
             "faddeeva_ndtr": "D->D"
         },
-        "cephes.h": {
-            "ndtr": "d->d"
+        "_special.h++": {
+            "cephes_ndtr": "d->d"
         }
     },
     "ndtri": {
@@ -942,7 +942,7 @@
     },
     "poch": {
         "_special.h++": {
-            "poch": "dd->d"
+            "cephes_poch": "dd->d"
         }
     },
     "powm1": {
@@ -975,7 +975,7 @@
     "rgamma": {
         "_special.h++": {
             "crgamma": "D->D",
-            "rgamma": "d->d"
+            "cephes_rgamma": "d->d"
         }
     },
     "round": {

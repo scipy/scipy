@@ -14,6 +14,7 @@
 
 #include "special/cephes/besselpoly.h"
 #include "special/cephes/beta.h"
+#include "special/cephes/cbrt.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
 #include "special/cephes/i0.h"
@@ -24,10 +25,13 @@
 #include "special/cephes/jv.h"
 #include "special/cephes/k0.h"
 #include "special/cephes/k1.h"
+#include "special/cephes/igam.h"
 #include "special/cephes/lanczos.h"
+#include "special/cephes/ndtr.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
 #include "special/cephes/trig.h"
+#include "special/cephes/unity.h"
 #include "special/cephes/zeta.h"
 
 
@@ -101,98 +105,146 @@ inline double wright_bessel_scalar(double a, double b, double x) {
 
 // Special functions from cephes
 
-inline double besselpoly(double a, double lambda, double nu) {
+inline double cephes_besselpoly(double a, double lambda, double nu) {
     return special::cephes::besselpoly(a, lambda, nu);
 }
 
-inline double beta(double a, double b) {
+inline double cephes_beta(double a, double b) {
     return special::cephes::beta(a, b);
 }
 
-inline double lbeta(double a, double b) {
+inline double cephes_lbeta(double a, double b) {
     return special::cephes::lbeta(a, b);
 }
 
-inline double sinpi(double x) {
+inline double cephes_sinpi(double x) {
     return special::cephes::sinpi(x);
 }
 
-inline double cospi(double x) {
+inline double cephes_cospi(double x) {
     return special::cephes::cospi(x);
 }
 
-inline double Gamma(double x) {
+inline double cephes_cbrt(double x) {
+    return special::cephes::detail::cbrt(x);
+}
+
+inline double cephes_Gamma(double x) {
     return special::cephes::Gamma(x);
 }
 
-inline double gammasgn(double x) {
+inline double cephes_gammasgn(double x) {
     return special::cephes::gammasgn(x);
 }
 
-inline double lgam(double x) {
+inline double cephes_lgam(double x) {
     return special::cephes::lgam(x);
 }
 
-inline double hyp2f1_real(double a, double b, double c, double x) {
+inline double cephes_hyp2f1(double a, double b, double c, double x) {
     return special::cephes::hyp2f1(a, b, c, x);
 }
 
-inline double i0(double x) {
+inline double cephes_i0(double x) {
     return special::cephes::i0(x);
 }
 
-inline double i0e(double x) {
+inline double cephes_i0e(double x) {
     return special::cephes::i0e(x);
 }
 
-inline double i1(double x) {
+inline double cephes_i1(double x) {
     return special::cephes::i1(x);
 }
 
-inline double i1e(double x) {
+inline double cephes_i1e(double x) {
     return special::cephes::i1e(x);
 }
 
-inline double iv(double v, double x) {
+inline double cephes_iv(double v, double x) {
     return special::cephes::iv(v, x);
 }
 
-inline double j0(double x) {
+inline double cephes_j0(double x) {
     return special::cephes::j0(x);
 }
 
-inline double j1(double x) {
+inline double cephes_j1(double x) {
     return special::cephes::j1(x);
 }
 
-inline double k0(double x) {
+inline double cephes_k0(double x) {
     return special::cephes::k0(x);
 }
 
-inline double k0e(double x) {
+inline double cephes_k0e(double x) {
     return special::cephes::k0e(x);
 }
 
-inline double k1(double x) {
+inline double cephes_k1(double x) {
     return special::cephes::k1(x);
 }
 
-inline double k1e(double x) {
+inline double cephes_k1e(double x) {
     return special::cephes::k1e(x);
 }
 
-inline double lanczos_sum_expg_scaled(double x) {
+inline double cephes_igam(double a, double x) {
+    return special::cephes::igam(a, x);
+}
+
+inline double cephes_igamc(double a, double x) {
+    return special::cephes::igamc(a, x);
+}
+
+inline double cephes_igam_fac(double a, double x) {
+    return special::cephes::detail::igam_fac(a, x);
+}
+
+inline double cephes_lanczos_sum_expg_scaled(double x) {
     return special::cephes::lanczos_sum_expg_scaled(x);
 }
 
-inline double poch(double x, double m) {
+inline double cephes_ndtr(double x) {
+    return special::cephes::ndtr(x);
+}
+
+inline double cephes_erf(double x) {
+    return special::cephes::erf(x);
+}
+
+inline double cephes_erfc(double x) {
+    return special::cephes::erfc(x);
+}
+
+inline double cephes_poch(double x, double m) {
     return special::cephes::poch(x, m);
 }
 
-inline double rgamma(double x) {
+inline double cephes_rgamma(double x) {
     return special::cephes::rgamma(x);
 }
 
-inline double zeta(double x, double q) {
+inline double cephes_zeta(double x, double q) {
     return special::cephes::zeta(x, q);
+}
+
+inline double cephes_log1p(double x) {
+    return special::cephes::log1p(x);
+}
+
+inline double cephes_log1pmx(double x) {
+    return special::cephes::log1pmx(x);
+}
+
+inline double cephes_lgam1p(double x) {
+    return special::cephes::lgam1p(x);
+}
+
+inline double cephes_expm1(double x) {
+    return special::cephes::expm1(x);
+}
+
+inline double cephes_cosm1(double x) {
+    return special::cephes::cosm1(x);
 }
