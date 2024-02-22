@@ -145,7 +145,7 @@ namespace cephes {
     }
 
 
-    SPECFUN_HOST_DEVICE double k0(double x)
+    SPECFUN_HOST_DEVICE inline double k0(double x)
     {
         double y, z;
 
@@ -157,7 +157,7 @@ namespace cephes {
             set_error("k0", SF_ERROR_DOMAIN, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
-
+        
         if (x <= 2.0) {
             y = x * x - 2.0;
             y = chbevl(y, detail::k0_A, 10) - std::log(0.5 * x) * i0(x);
@@ -169,7 +169,7 @@ namespace cephes {
     }
 
 
-    SPECFUN_HOST_DEVICE double k0e(double x)
+    SPECFUN_HOST_DEVICE double inline k0e(double x)
     {
         double y;
         
