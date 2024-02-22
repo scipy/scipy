@@ -743,7 +743,7 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "cephes.h": {
+        "amos_wrappers.h": {
             "cbesk_wrap_real_int": "id->d"
         }
     },
