@@ -725,12 +725,12 @@
         }
     },
     "k1": {
-        "cephes.h": {
+        "_special.h++": {
             "k1": "d->d"
         }
     },
     "k1e": {
-        "cephes.h": {
+        "_special.h++": {
             "k1e": "d->d"
         }
     },

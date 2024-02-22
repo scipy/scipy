@@ -23,6 +23,7 @@
 #include "special/cephes/j1.h"
 #include "special/cephes/jv.h"
 #include "special/cephes/k0.h"
+#include "special/cephes/k1.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
@@ -170,6 +171,14 @@ inline double k0(double x) {
 
 inline double k0e(double x) {
     return special::cephes::k0e(x);
+}
+
+inline double k1(double x) {
+    return special::cephes::k1(x);
+}
+
+inline double k1e(double x) {
+    return special::cephes::k1e(x);
 }
 
 inline double lanczos_sum_expg_scaled(double x) {
