@@ -144,7 +144,7 @@ jobs:
     # the usual skipping should not be enforced
     if: >
       needs.get_commit_message.outputs.message == 1
-      && (github.repository == 'andyfaff/scipy' || github.repository == '')
+      && (github.repository == 'scipy/scipy' || github.repository == '')
     runs-on: macos-14
     strategy:
       matrix:
