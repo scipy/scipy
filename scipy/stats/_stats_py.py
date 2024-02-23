@@ -45,6 +45,9 @@ from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               AxisError)
 
 import scipy.special as special
+# Import unused here but needs to stay until end of deprecation periode
+# See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
+from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
