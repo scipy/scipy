@@ -45,7 +45,6 @@ from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               AxisError)
 
 import scipy.special as special
-from scipy import linalg
 from . import distributions
 from . import _mstats_basic as mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
@@ -4741,21 +4740,22 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     x = np.asarray(x)
     y = np.asarray(y)
 
+    if axis is None:
+        x = x.ravel()
+        y = y.ravel()
+        axis = -1
+
     axis_int = int(axis)
     if axis_int != axis:
         raise ValueError('`axis` must be an integer.')
     axis = axis_int
 
-    if axis is None:
-        x = x.ravel()
-        y = y.ravel()
-
     n = x.shape[axis]
     if n != y.shape[axis]:
-        raise ValueError('x and y must have the same length along `axis`.')
+        raise ValueError('`x` and `y` must have the same length along `axis`.')
 
     if n < 2:
-        raise ValueError('x and y must have length at least 2.')
+        raise ValueError('`x` and `y` must have length at least 2.')
 
     try:
         x, y = np.broadcast_arrays(x, y)
@@ -4779,7 +4779,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        constant_warning_emitted = True
 
     if isinstance(method, PermutationMethod):
         def statistic(y, axis):
@@ -4829,11 +4828,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     xm = x.astype(dtype) - xmean
     ym = y.astype(dtype) - ymean
 
-    # Unlike np.linalg.norm or the expression sqrt((xm*xm).sum()),
-    # scipy.linalg.norm(xm) does not overflow if xm is, for example,
+    # scipy.linalg.norm(xm) avoids premature overflow when xm is e.g.
     # [-5e210, 5e210, 3e200, -3e200]
-    normxm = linalg.norm(xm, keepdims=True, axis=axis)
-    normym = linalg.norm(ym, keepdims=True, axis=axis)
+    # but not when `axis` is provided, so scale manually. scipy.linalg.norm
+    # also raises an error with NaN input rather than returning NaN, so
+    # use np.linalg.norm.
+    xmax = np.max(np.abs(xm), axis=axis, keepdims=True)
+    ymax = np.max(np.abs(ym), axis=axis, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        normxm = xmax * np.linalg.norm(xm/xmax, axis=axis, keepdims=True)
+        normym = ymax * np.linalg.norm(ym/ymax, axis=axis, keepdims=True)
 
     threshold = 1e-13
     nconst_x = np.any(normxm < threshold*abs(xmean), axis=axis)
