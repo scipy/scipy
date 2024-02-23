@@ -96,6 +96,6 @@ jobs:
         export SCIPY_USE_PROPACK=1
         # expand as new modules are added
         # --array-api-backend == -b
-        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -b jax -s cluster -- --durations 3 --timeout=60
-        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -b jax -s fft -- --durations 3 --timeout=60
+        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -b jax.numpy -s cluster -- --durations 3 --timeout=60
+        python dev.py --no-build test -b pytorch -b numpy -b array_api_strict -b jax.numpy -s fft -- --durations 3 --timeout=60
         python dev.py --no-build test --array-api-backend all --tests scipy/_lib/tests/test_array_api.py

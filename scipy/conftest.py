@@ -130,9 +130,8 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        #XXX: change import to `jax` before merge
-        import jax.experimental.array_api  # type: ignore[import]
-        xp_available_backends.update({'jax': jax.experimental.array_api})
+        import jax.numpy  # type: ignore[import]
+        xp_available_backends.update({'jax.numpy': jax.numpy})
         jax.config.update("jax_enable_x64", True)
     except ImportError:
         pass
@@ -208,7 +207,7 @@ def skip_if_array_api(xp, request):
             elif xp.__name__ == 'torch':
                 if 'cpu' not in xp.empty(0).device.type:
                     pytest.skip(reason=reason)
-            elif xp.__name__ == 'jax.experimental.array_api':
+            elif xp.__name__ == 'jax.numpy':
                 for d in xp.empty(0).devices():
                     if 'cpu' not in d.device_kind:
                         pytest.skip(reason=reason)
@@ -216,7 +215,6 @@ def skip_if_array_api(xp, request):
     if backends is not None:
         reasons = kwargs.get("reasons", False)
         for i, backend in enumerate(backends):
-            backend = 'jax.experimental.array_api' if backend == 'jax' else backend
             if xp.__name__ == backend:
                 if not reasons:
                     reason = f"do not run with array API backend: {backend}"

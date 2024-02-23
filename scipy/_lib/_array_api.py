@@ -207,7 +207,7 @@ def is_torch(xp):
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
 def is_jax(xp):
-    return xp.__name__ in ('jax', 'jax.experimental.array_api')
+    return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
 
 
 def _strict_check(actual, desired, xp,
