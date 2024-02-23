@@ -1,0 +1,104 @@
+
+QUADPACK is a FORTRAN subroutine package for the numerical
+computation of definite one-dimensional integrals. It originated
+from a joint project of R. Piessens and E. de Doncker (Appl.
+Math. and Progr. Div.- K.U.Leuven, Belgium), C. Ueberhuber (Inst.
+Fuer Math.- Techn.U.Wien, Austria), and D. Kahaner (Nation. Bur.
+of Standards- Washington D.C., U.S.A.).
+The routine names for the DOUBLE PRECISION versions are preceded
+by the letter D.
+
+- QNG  : Is a simple non-adaptive automatic integrator, based on
+         a sequence of rules with increasing degree of algebraic
+         precision (Patterson, 1968).
+
+- QAG  : Is a simple globally adaptive integrator using the
+         strategy of Aind (Piessens, 1973). It is possible to
+         choose between 6 pairs of Gauss-Kronrod quadrature
+         formulae for the rule evaluation component. The pairs
+         of high degree of precision are suitable for handling
+         integration difficulties due to a strongly oscillating
+         integrand.
+
+- QAGS : Is an integrator based on globally adaptive interval
+         subdivision in connection with extrapolation (de Doncker,
+         1978) by the Epsilon algorithm (Wynn, 1956).
+
+- QAGP : Serves the same purposes as QAGS, but also allows
+         for eventual user-supplied information, i.e. the
+         abscissae of internal singularities, discontinuities
+         and other difficulties of the integrand function.
+         The algorithm is a modification of that in QAGS.
+
+- QAGI : Handles integration over infinite intervals. The
+         infinite range is mapped onto a finite interval and
+         then the same strategy as in QAGS is applied.
+
+- QAWO : Is a routine for the integration of COS(OMEGA*X)*F(X)
+         or SIN(OMEGA*X)*F(X) over a finite interval (A,B).
+         OMEGA is is specified by the user
+         The rule evaluation component is based on the
+         modified Clenshaw-Curtis technique.
+         An adaptive subdivision scheme is used connected with
+         an extrapolation procedure, which is a modification
+         of that in QAGS and provides the possibility to deal
+         even with singularities in F.
+
+- QAWF : Calculates the Fourier cosine or Fourier sine
+         transform of F(X), for user-supplied interval (A,
+         INFINITY), OMEGA, and F. The procedure of QAWO is
+         used on successive finite intervals, and convergence
+         acceleration by means of the Epsilon algorithm (Wynn,
+         1956) is applied to the series of the integral
+         contributions.
+
+- QAWS : Integrates W(X)*F(X) over (A,B) with A.LT.B finite,
+         and   W(X) = ((X-A)**ALFA)*((B-X)**BETA)*V(X)
+         where V(X) = 1 or LOG(X-A) or LOG(B-X)
+                        or LOG(X-A)*LOG(B-X)
+         and   ALFA.GT.(-1), BETA.GT.(-1).
+         The user specifies A, B, ALFA, BETA and the type of
+         the function V.
+         A globally adaptive subdivision strategy is applied,
+         with modified Clenshaw-Curtis integration on the
+         subintervals which contain A or B.
+
+- QAWC : Computes the Cauchy Principal Value of F(X)/(X-C)
+         over a finite interval (A,B) and for
+         user-determined C.
+         The strategy is globally adaptive, and modified
+         Clenshaw-Curtis integration is used on the subranges
+         which contain the point X = C.
+
+   Each of the routines above also has a "more detailed" version
+with a name ending in E, as QAGE.  These provide more
+information and control than the easier versions.
+
+
+   The preceding routines are all automatic.  That is, the user
+inputs his problem and an error tolerance.  The routine
+attempts to perform the integration to within the requested
+absolute or relative error.
+   There are, in addition, a number of non-automatic integrators.
+These are most useful when the problem is such that the
+user knows that a fixed rule will provide the accuracy
+required.  Typically they return an error estimate but make
+no attempt to satisfy any particular input error request.
+
+  QK15 QK21 QK31 QK41 QK51 QK61
+       Estimate the integral on [a,b] using 15, 21,..., 61
+       point rule and return an error estimate.
+  QK15I 15 point rule for (semi)infinite interval.
+  QK15W 15 point rule for special singular weight functions.
+  QC25C 25 point rule for Cauchy Principal Values
+  QC25F 25 point rule for sin/cos integrand.
+  QMOMO Integrates k-th degree Chebychev polynomial times
+        function with various explicit singularities.
+
+Support functions from linpack, slatec, and blas have been omitted
+by default but can be obtained by asking.  For example, suppose you
+already have installed linpack and the blas, but not slatec.  Then
+use a request like  "send dqag from quadpack slatec".
+
+
+[see also toms/691]

@@ -1,0 +1,34 @@
+exclude = ["scipy/datasets/_registry.py"]
+
+line-length = 88
+
+# Assume Python 3.9
+target-version = "py39"
+
+[lint]
+# Enable Pyflakes `E` and `F` and PyUpgrade `UP` codes by default.
+# Also, `PGH004` which checks for blanket (non-specific) `noqa`s
+# and `B028` which checks that warnings include the `stacklevel` keyword.
+# `B028` added in gh-19623.
+select = ["E", "F", "PGH004", "UP", "B028"]
+ignore = ["E741"]
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[lint.per-file-ignores]
+"**/__init__.py" = ["E402", "F401", "F403", "F405"]
+"scipy/linalg/lapack.py" = ["F405"]
+"scipy/stats/tests/data/_mvt.py" = ["E501", "E701", "E702"]
+# E501 (line length) ignores
+"scipy/constants/_codata.py" = ["E501"]
+"scipy/linalg/_cython_signature_generator.py" = ["E501"]
+"scipy/linalg/_generate_pyx.py" = ["E501"]
+"scipy/spatial/transform/_rotation.pyi" = ["E501"]
+
+[lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+[lint.pydocstyle]
+convention = "numpy"

@@ -1,0 +1,693 @@
+!*******************************************************************************
+!   Copyright (C) 2013 Kenneth L. Ho
+!
+!   Redistribution and use in source and binary forms, with or without
+!   modification, are permitted provided that the following conditions are met:
+!
+!   Redistributions of source code must retain the above copyright notice, this
+!   list of conditions and the following disclaimer. Redistributions in binary
+!   form must reproduce the above copyright notice, this list of conditions and
+!   the following disclaimer in the documentation and/or other materials
+!   provided with the distribution.
+!
+!   None of the names of the copyright holders may be used to endorse or promote
+!   products derived from this software without specific prior written
+!   permission.
+!
+!   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+!   AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+!   IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+!   ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+!   LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+!   CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+!   SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+!   INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+!   CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+!   ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+!   POSSIBILITY OF SUCH DAMAGE.
+!*******************************************************************************
+
+!===============================================================================
+! main module
+!===============================================================================
+
+  python module _interpolative
+    interface
+
+!   ----------------------------------------------------------------------------
+!   id_rand.f
+!   ----------------------------------------------------------------------------
+
+    subroutine id_srand(n,r)
+      integer, intent(in) :: n
+      real*8, intent(out), depend(n) :: r(n)
+      real*8, intent(in) :: t(55)
+      entry id_srandi(t)
+      entry id_srando()
+    end subroutine id_srand
+
+!   ----------------------------------------------------------------------------
+!   idd_frm.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idd_frm(m,n,w,x,y)
+      integer, integer(in), optional, depend(x) :: m = len(x)
+      integer, intent(in) :: n
+      real*8, intent(in), depend(m) :: w(17*m+70)
+      real*8, intent(in) :: x(m)
+      real*8, intent(out), depend(n) :: y(n)
+    end subroutine idd_frm
+
+    subroutine idd_sfrm(l,m,n,w,x,y)
+      integer, intent(in), check(l<=n), depend(n) :: l
+      integer, intent(in), optional, depend(x) :: m = len(x)
+      integer, intent(in) :: n
+      real*8, intent(in), depend(m), :: w(27*m+90)
+      real*8, intent(in) :: x(m)
+      real*8, intent(out), depend(l) :: y(l)
+    end subroutine idd_sfrm
+
+    subroutine idd_frmi(m,n,w)
+      integer, intent(in) :: m
+      integer, intent(out) :: n
+      real*8, intent(out), depend(m) :: w(17*m+70)
+    end subroutine idd_frmi
+
+    subroutine idd_sfrmi(l,m,n,w)
+      integer, intent(in) :: l, m
+      integer, intent(out) :: n
+      real*8, intent(out), depend(m) :: w(27*m+90)
+    end subroutine idd_sfrmi
+
+!   ----------------------------------------------------------------------------
+!   idd_id.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddp_id(eps,m,n,a,krank,list,rnorms)
+      real*8, intent(in) :: eps, a(m,n)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      integer, intent(out) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(n) :: rnorms(n)
+    end subroutine iddp_id
+
+    subroutine iddr_id(m,n,a,krank,list,rnorms)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(n) :: rnorms(n)
+    end subroutine iddr_id
+
+    subroutine idd_reconid(m,krank,col,n,list,proj,approx)
+      integer, intent(in), optional, depend(col) :: m = shape(col,0), krank = shape(col,1)
+      real*8, intent(in) :: col(m,krank)
+      integer, intent(in), depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      real*8, intent(in), depend(krank,n) :: proj(krank,n-krank)
+      real*8, intent(out), depend(m,n) :: approx(m,n)
+    end subroutine idd_reconid
+
+    subroutine idd_reconint(n,list,krank,proj,p)
+      integer, intent(in), optional, depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      integer, intent(in), optional, depend(proj) :: krank = shape(proj,0)
+      real*8, intent(in), depend(n) :: proj(krank,n-krank)
+      real*8, intent(out), depend(krank,n) :: p(krank,n)
+    end subroutine idd_reconint
+
+    subroutine idd_copycols(m,n,a,krank,list,col)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in) :: a(m,n)
+      integer, intent(in) :: krank, list(*)
+      real*8, intent(out), depend(m,krank) :: col(m,krank)
+    end subroutine idd_copycols
+
+!   ----------------------------------------------------------------------------
+!   idd_id2svd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idd_id2svd(m,krank,b,n,list,proj,u,v,s,ier,w)
+      integer, intent(in), optional, depend(b) :: m = shape(b,0), krank = shape(b,1)
+      real*8, intent(in) :: b(m,krank)
+      integer, intent(in), optional, depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      real*8, intent(in), depend(krank,n) :: proj(krank,n-krank)
+      real*8, intent(out), depend(m,krank) :: u(m,krank)
+      real*8, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      real*8, intent(in), optional, depend(m,n,krank) :: w((krank+1)*(m+3*n)+26*pow(krank,2))
+    end subroutine idd_id2svd
+
+!   ----------------------------------------------------------------------------
+!   idd_snorm.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idd_snorm(m,n,matvect,p1t,p2t,p3t,p4t,matvec,p1,p2,p3,p4,its,snorm,v,u)
+      use idd__user__routines
+      integer, intent(in) :: m, n, its
+      external matvect, matvec
+      real*8, intent(in), optional :: p1t, p2t, p3t, p4t, p1, p2, p3, p4
+      real*8, intent(out) :: snorm
+      real*8, intent(out), depend(n) :: v(n)
+      real*8, intent(in), optional, depend(m) :: u(m)
+    end subroutine idd_snorm
+
+    subroutine idd_diffsnorm(m,n,matvect,p1t,p2t,p3t,p4t,matvect2,p1t2,p2t2,p3t2,p4t2,matvec,p1,p2,p3,p4,matvec2,p12,p22,p32,p42,its,snorm,w)
+      use idd__user__routines
+      integer, intent(in) :: m, n, its
+      external matvect, matvect2, matvec, matvec2
+      real*8, intent(in), optional :: p1t, p2t, p3t, p4t, p1t2, p2t2, p3t2, p4t2, p1, p2, p3, p4, p12, p22, p32, p42
+      real*8, intent(out) :: snorm
+      real*8, intent(in), optional, depend(m,n) :: w(3*(m+n))
+    end subroutine idd_diffsnorm
+
+!   ----------------------------------------------------------------------------
+!   idd_svd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddr_svd(m,n,a,krank,u,v,s,ier,r)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      real*8, intent(out), depend(m,krank) :: u(m,krank)
+      real*8, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      real*8, intent(in), optional, depend(m,n,krank) :: r((krank+2)*n+8*min(m,n)+15*pow(krank,2)+8*krank)
+    end subroutine iddr_svd
+
+    subroutine iddp_svd(lw,eps,m,n,a,krank,iu,iv,is,w,ier)
+      integer, intent(hide), optional, depend(m,n) :: lw = (min(m,n)+1)*(m+2*n+9)+8*min(m,n)+15*pow(min(m,n),2)
+      real*8, intent(in) :: eps, a(m,n)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      integer, intent(out) :: krank, iu, iv, is, ier
+      real*8, intent(out), depend(m,n) :: w((min(m,n)+1)*(m+2*n+9)+8*min(m,n)+15*pow(min(m,n),2))
+    end subroutine iddp_svd
+
+!   ----------------------------------------------------------------------------
+!   iddp_aid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddp_aid(eps,m,n,a,work,krank,list,proj)
+      real*8, intent(in) :: eps, a(m,n)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in), depend(m) :: work(17*m+70)
+      integer, intent(out) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(in,out) :: proj(*)
+    end subroutine iddp_aid
+
+    subroutine idd_estrank(eps,m,n,a,w,krank,ra)
+      real*8, intent(in) :: eps, a(m,n)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in), depend(m) :: w(17*m+70)
+      integer, intent(out) :: krank
+      real*8, intent(in,out) :: ra(*)
+    end subroutine idd_estrank
+
+!   ----------------------------------------------------------------------------
+!   iddp_asvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddp_asvd(lw,eps,m,n,a,winit,krank,iu,iv,is,w,ier)
+      integer, intent(hide), optional, depend(m,n) :: lw = max((min(m,n)+1)*(3*m+5*n+1)+25*pow(min(m,n),2),(2*n+1)*(m+1))
+      real*8, intent(in) :: eps, a(m,n)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in), depend(m) :: winit(17*m+70)
+      integer, intent(out) :: krank, iu, iv, is, ier
+      real*8, intent(in,out) :: w(*)
+    end subroutine iddp_asvd
+
+!   ----------------------------------------------------------------------------
+!   iddp_rid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddp_rid(lproj,eps,m,n,matvect,p1,p2,p3,p4,krank,list,proj,ier)
+      use idd__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lproj = m+1+2*n*(min(m,n)+1)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m, n
+      external matvect
+      real*8, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out) :: krank, ier
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(in,out) :: proj(*)
+    end subroutine iddp_rid
+
+    subroutine idd_findrank(lra,eps,m,n,matvect,p1,p2,p3,p4,krank,ra,ier,w)
+      use idd__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lra = 2*n*min(m,n)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m, n
+      external matvect
+      real*8, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out) :: krank, ier
+      real*8, intent(out), depend(m,n) :: ra(2*n*min(m,n))
+      real*8, intent(in), optional, depend(m,n) :: w(m+2*n+1)
+    end subroutine idd_findrank
+
+!   ----------------------------------------------------------------------------
+!   iddp_rsvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddp_rsvd(lw,eps,m,n,matvect,p1t,p2t,p3t,p4t,matvec,p1,p2,p3,p4,krank,iu,iv,is,w,ier)
+      use idd__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lw = (min(m,n)+1)*(3*m+5*n+1)+25*pow(min(m,n),2)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m ,n
+      external matvect, matvec
+      real*8, intent(in), optional :: p1t, p2t, p3t, p4t, p1, p2, p3, p4
+      integer, intent(out) :: krank, iu, iv, is, ier
+      real*8, intent(out), depend(m,n) :: w((min(m,n)+1)*(3*m+5*n+1)+25*pow(min(m,n),2))
+    end subroutine iddp_rsvd
+
+!   ----------------------------------------------------------------------------
+!   iddr_aid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddr_aid(m,n,a,krank,w,list,proj)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      real*8, intent(in), depend(m,n,krank) :: w((2*krank+17)*n+27*m+100)
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(n,krank) :: proj(max(krank*(n-krank),1))
+    end subroutine iddr_aid
+
+    subroutine iddr_aidi(m,n,krank,w)
+      integer, intent(in) :: m, n, krank
+      real*8, intent(out), depend(m,n,krank) :: w((2*krank+17)*n+27*m+100)
+    end subroutine iddr_aidi
+
+!   ----------------------------------------------------------------------------
+!   iddr_asvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddr_asvd(m,n,a,krank,w,u,v,s,ier)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      real*8, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      real*8, intent(in), depend(m,n,krank) :: w((2*krank+28)*m+(6*krank+21)*n+25*pow(krank,2)+100)
+      real*8, intent(out), depend(m,krank) :: u(m,krank)
+      real*8, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+    end subroutine iddr_asvd
+
+!   ----------------------------------------------------------------------------
+!   iddr_rid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddr_rid(m,n,matvect,p1,p2,p3,p4,krank,list,proj)
+      use idd__user__routines
+      integer, intent(in) :: m, n, krank
+      external matvect
+      real*8, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(m,n,krank) :: proj(m+(krank+3)*n)
+    end subroutine iddr_rid
+
+!   ----------------------------------------------------------------------------
+!   iddr_rsvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine iddr_rsvd(m,n,matvect,p1t,p2t,p3t,p4t,matvec,p1,p2,p3,p4,krank,u,v,s,ier,w)
+      use idd__user__routines
+      integer, intent(in) :: m, n, krank
+      external matvect, matvec
+      real*8, intent(in), optional :: p1t, p2t, p3t, p4t, p1, p2, p3, p4
+      real*8, intent(out), depend(m,krank) :: u(m,krank)
+      real*8, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      real*8, intent(in), optional, depend(m,n,krank) :: w((krank+1)*(2*m+4*n)+25*pow(krank,2))
+    end subroutine iddr_rsvd
+
+!   ----------------------------------------------------------------------------
+!   idz_frm.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idz_frm(m,n,w,x,y)
+      integer, integer(in), optional, depend(x) :: m = len(x)
+      integer, intent(in) :: n
+      complex*16, intent(in), depend(m) :: w(17*m+70)
+      complex*16, intent(in) :: x(m)
+      complex*16, intent(out), depend(n) :: y(n)
+    end subroutine idz_frm
+
+    subroutine idz_sfrm(l,m,n,w,x,y)
+      integer, intent(in), check(l<=n), depend(n) :: l
+      integer, intent(in), optional, depend(x) :: m = len(x)
+      integer, intent(in) :: n
+      complex*16, intent(in), depend(m), :: w(27*m+90)
+      complex*16, intent(in) :: x(m)
+      complex*16, intent(out), depend(l) :: y(l)
+    end subroutine idz_sfrm
+
+    subroutine idz_frmi(m,n,w)
+      integer, intent(in) :: m
+      integer, intent(out) :: n
+      complex*16, intent(out), depend(m) :: w(17*m+70)
+    end subroutine idz_frmi
+
+    subroutine idz_sfrmi(l,m,n,w)
+      integer, intent(in) :: l, m
+      integer, intent(out) :: n
+      complex*16, intent(out), depend(m) :: w(27*m+90)
+    end subroutine idz_sfrmi
+
+!   ----------------------------------------------------------------------------
+!   idz_id.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzp_id(eps,m,n,a,krank,list,rnorms)
+      real*8, intent(in) :: eps
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(out) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(n) :: rnorms(n)
+    end subroutine idzp_id
+
+    subroutine idzr_id(m,n,a,krank,list,rnorms)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      real*8, intent(out), depend(n) :: rnorms(n)
+    end subroutine idzr_id
+
+    subroutine idz_reconid(m,krank,col,n,list,proj,approx)
+      integer, intent(in), optional, depend(col) :: m = shape(col,0), krank = shape(col,1)
+      complex*16, intent(in) :: col(m,krank)
+      integer, intent(in), depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      complex*16, intent(in), depend(krank,n) :: proj(krank,n-krank)
+      complex*16, intent(out), depend(m,n) :: approx(m,n)
+    end subroutine idz_reconid
+
+    subroutine idz_reconint(n,list,krank,proj,p)
+      integer, intent(in), optional, depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      integer, intent(in), optional, depend(proj) :: krank = shape(proj,0)
+      complex*16, intent(in), depend(n) :: proj(krank,n-krank)
+      complex*16, intent(out), depend(krank,n) :: p(krank,n)
+    end subroutine idz_reconint
+
+    subroutine idz_copycols(m,n,a,krank,list,col)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(in) :: krank, list(*)
+      complex*16, intent(out), depend(m,krank) :: col(m,krank)
+    end subroutine idz_copycols
+
+!   ----------------------------------------------------------------------------
+!   idz_id2svd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idz_id2svd(m,krank,b,n,list,proj,u,v,s,ier,w)
+      integer, intent(in), optional, depend(b) :: m = shape(b,0), krank = shape(b,1)
+      complex*16, intent(in) :: b(m,krank)
+      integer, intent(in), optional, depend(list) :: n = len(list)
+      integer, intent(in) :: list(n)
+      complex*16, intent(in), depend(krank,n) :: proj(krank,n-krank)
+      complex*16, intent(out), depend(m,krank) :: u(m,krank)
+      complex*16, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      complex*16, intent(in), optional, depend(m,n,krank) :: w((krank+1)*(m+3*n+10)+9*pow(krank,2))
+    end subroutine idz_id2svd
+
+!   ----------------------------------------------------------------------------
+!   idz_snorm.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idz_snorm(m,n,matveca,p1a,p2a,p3a,p4a,matvec,p1,p2,p3,p4,its,snorm,v,u)
+      use idz__user__routines
+      integer, intent(in) :: m, n, its
+      external matveca, matvec
+      complex*16, intent(in), optional :: p1a, p2a, p3a, p4a, p1, p2, p3, p4
+      real*8, intent(out) :: snorm
+      complex*16, intent(out), depend(n) :: v(n)
+      complex*16, intent(in), optional, depend(m) :: u(m)
+    end subroutine idz_snorm
+
+    subroutine idz_diffsnorm(m,n,matveca,p1a,p2a,p3a,p4a,matveca2,p1a2,p2a2,p3a2,p4a2,matvec,p1,p2,p3,p4,matvec2,p12,p22,p32,p42,its,snorm,w)
+      use idz__user__routines
+      integer, intent(in) :: m, n, its
+      external matveca, matveca2, matvec, matvec2
+      complex*16, intent(in), optional :: p1a, p2a, p3a, p4a, p1a2, p2a2, p3a2, p4a2, p1, p2, p3, p4, p12, p22, p32, p42
+      real*8, intent(out) :: snorm
+      complex*16, intent(in), optional, depend(m,n) :: w(3*(m+n))
+    end subroutine idz_diffsnorm
+
+!   ----------------------------------------------------------------------------
+!   idz_svd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzr_svd(m,n,a,krank,u,v,s,ier,r)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      complex*16, intent(out), depend(m,krank) :: u(m,krank)
+      complex*16, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      complex*16, intent(in), optional, depend(m,n,krank) :: r((krank+2)*n+8*min(m,n)+6*pow(krank,2)+8*krank)
+    end subroutine idzr_svd
+
+    subroutine idzp_svd(lw,eps,m,n,a,krank,iu,iv,is,w,ier)
+      integer, intent(hide), optional, depend(m,n) :: lw = (min(m,n)+1)*(m+2*n+9)+8*min(m,n)+6*pow(min(m,n),2)
+      real*8, intent(in) :: eps
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(out) :: krank, iu, iv, is, ier
+      complex*16, intent(out), depend(m,n) :: w((min(m,n)+1)*(m+2*n+9)+8*min(m,n)+6*pow(min(m,n),2))
+    end subroutine idzp_svd
+
+!   ----------------------------------------------------------------------------
+!   idzp_aid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzp_aid(eps,m,n,a,work,krank,list,proj)
+      real*8, intent(in) :: eps
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      complex*16, intent(in), depend(m) :: work(17*m+70)
+      integer, intent(out) :: krank
+      integer, intent(out), depend(n) :: list(n)
+      complex*16, intent(in,out) :: proj(*)
+    end subroutine idzp_aid
+
+    subroutine idz_estrank(eps,m,n,a,w,krank,ra)
+      real*8, intent(in) :: eps
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      complex*16, intent(in), depend(m) :: w(17*m+70)
+      integer, intent(out) :: krank
+      complex*16, intent(in,out) :: ra(*)
+    end subroutine idz_estrank
+
+!   ----------------------------------------------------------------------------
+!   idzp_asvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzp_asvd(lw,eps,m,n,a,winit,krank,iu,iv,is,w,ier)
+      integer, intent(hide), optional, depend(m,n) :: lw = max((min(m,n)+1)*(3*m+5*n+11)+8*pow(min(m,n),2),(2*n+1)*(m+1))
+      real*8, intent(in) :: eps
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      complex*16, intent(in), depend(m) :: winit(17*m+70)
+      integer, intent(out) :: krank, iu, iv, is, ier
+      complex*16, intent(in,out) :: w(*)
+    end subroutine idzp_asvd
+
+!   ----------------------------------------------------------------------------
+!   idzp_rid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzp_rid(lproj,eps,m,n,matveca,p1,p2,p3,p4,krank,list,proj,ier)
+      use idz__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lproj = m+1+2*n*(min(m,n)+1)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m, n
+      external matveca
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out) :: krank, ier
+      integer, intent(out), depend(n) :: list(n)
+      complex*16, intent(in,out) :: proj(*)
+    end subroutine idzp_rid
+
+    subroutine idz_findrank(lra,eps,m,n,matveca,p1,p2,p3,p4,krank,ra,ier,w)
+      use idz__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lra = 2*n*min(m,n)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m, n
+      external matveca
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out) :: krank, ier
+      complex*16, intent(out), depend(m,n) :: ra(2*n*min(m,n))
+      complex*16, intent(in), optional, depend(m,n) :: w(m+2*n+1)
+    end subroutine idz_findrank
+
+!   ----------------------------------------------------------------------------
+!   idzp_rsvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzp_rsvd(lw,eps,m,n,matveca,p1a,p2a,p3a,p4a,matvec,p1,p2,p3,p4,krank,iu,iv,is,w,ier)
+      use idz__user__routines
+      integer, intent(hide), optional, depend(m,n) :: lw = (min(m,n)+1)*(3*m+5*n+11)+8*pow(min(m,n),2)
+      real*8, intent(in) :: eps
+      integer, intent(in) :: m ,n
+      external matveca, matvec
+      complex*16, intent(in), optional :: p1a, p2a, p3a, p4a, p1, p2, p3, p4
+      integer, intent(out) :: krank, iu, iv, is, ier
+      complex*16, intent(out), depend(m,n) :: w((min(m,n)+1)*(3*m+5*n+11)+8*pow(min(m,n),2))
+    end subroutine idzp_rsvd
+
+!   ----------------------------------------------------------------------------
+!   idzr_aid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzr_aid(m,n,a,krank,w,list,proj)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      complex*16, intent(in), depend(m,n,krank) :: w((2*krank+17)*n+21*m+80)
+      integer, intent(out), depend(n) :: list(n)
+      complex*16, intent(out), depend(n,krank) :: proj(max(krank*(n-krank),1))
+    end subroutine idzr_aid
+
+    subroutine idzr_aidi(m,n,krank,w)
+      integer, intent(in) :: m, n, krank
+      complex*16, intent(out), depend(m,n,krank) :: w((2*krank+17)*n+21*m+80)
+    end subroutine idzr_aidi
+
+!   ----------------------------------------------------------------------------
+!   idzr_asvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzr_asvd(m,n,a,krank,w,u,v,s,ier)
+      integer, intent(in), optional, depend(a) :: m = shape(a,0), n = shape(a,1)
+      complex*16, intent(in) :: a(m,n)
+      integer, intent(in) :: krank
+      complex*16, intent(in), depend(m,n,krank) :: w((2*krank+22)*m+(6*krank+21)*n+8*pow(krank,2)+10*krank+90)
+      complex*16, intent(out), depend(m,krank) :: u(m,krank)
+      complex*16, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+    end subroutine idzr_asvd
+
+!   ----------------------------------------------------------------------------
+!   idzr_rid.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzr_rid(m,n,matveca,p1,p2,p3,p4,krank,list,proj)
+      use idz__user__routines
+      integer, intent(in) :: m, n, krank
+      external matveca
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+      integer, intent(out), depend(n) :: list(n)
+      complex*16, intent(out), depend(m,n,krank) :: proj(m+(krank+3)*n)
+    end subroutine idzr_rid
+
+!   ----------------------------------------------------------------------------
+!   idzr_rsvd.f
+!   ----------------------------------------------------------------------------
+
+    subroutine idzr_rsvd(m,n,matveca,p1a,p2a,p3a,p4a,matvec,p1,p2,p3,p4,krank,u,v,s,ier,w)
+      use idz__user__routines
+      integer, intent(in) :: m, n, krank
+      external matveca, matvec
+      complex*16, intent(in), optional :: p1a, p2a, p3a, p4a, p1, p2, p3, p4
+      complex*16, intent(out), depend(m,krank) :: u(m,krank)
+      complex*16, intent(out), depend(n,krank) :: v(n,krank)
+      real*8, intent(out), depend(krank) :: s(krank)
+      integer, intent(out) :: ier
+      complex*16, intent(in), optional, depend(m,n,krank) :: w((krank+1)*(2*m+4*n+10)+8*pow(krank,2))
+    end subroutine idzr_rsvd
+
+    end interface
+  end python module _interpolative
+
+!===============================================================================
+! auxiliary modules
+!===============================================================================
+
+  python module idd__user__routines
+    interface idd_user_interface
+
+    subroutine matvect(m,x,n,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(u) :: m = len(x)
+      real*8, intent(in) :: x(m)
+      integer, intent(in), optional :: n
+      real*8, intent(out), depend(n) :: y(n)
+      real*8, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvect
+
+    subroutine matvec(n,x,m,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(v) :: n = len(x)
+      real*8, intent(in) :: x(n)
+      integer, intent(in), optional :: m
+      real*8, intent(out), depend(m) :: y(m)
+      real*8, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvec
+
+    subroutine matvect2(m,x,n,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(u) :: m = len(x)
+      real*8, intent(in) :: x(m)
+      integer, intent(in), optional :: n
+      real*8, intent(out), depend(n) :: y(n)
+      real*8, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvect2
+
+    subroutine matvec2(n,x,m,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(v) :: n = len(x)
+      real*8, intent(in) :: x(n)
+      integer, intent(in), optional :: m
+      real*8, intent(out), depend(m) :: y(m)
+      real*8, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvec2
+
+    end interface idd_user_interface
+  end python module idd__user__routines
+
+  python module idz__user__routines
+    interface idz_user_interface
+
+    subroutine matveca(m,x,n,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(u) :: m = len(x)
+      complex*16, intent(in) :: x(m)
+      integer, intent(in), optional :: n
+      complex*16, intent(out), depend(n) :: y(n)
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvect
+
+    subroutine matvec(n,x,m,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(v) :: n = len(x)
+      complex*16, intent(in) :: x(n)
+      integer, intent(in), optional :: m
+      complex*16, intent(out), depend(m) :: y(m)
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvec
+
+    subroutine matveca2(m,x,n,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(u) :: m = len(x)
+      complex*16, intent(in) :: x(m)
+      integer, intent(in), optional :: n
+      complex*16, intent(out), depend(n) :: y(n)
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvect2
+
+    subroutine matvec2(n,x,m,y,p1,p2,p3,p4)
+      integer, intent(in), optional, depend(v) :: n = len(x)
+      complex*16, intent(in) :: x(n)
+      integer, intent(in), optional :: m
+      complex*16, intent(out), depend(m) :: y(m)
+      complex*16, intent(in), optional :: p1, p2, p3, p4
+    end subroutine matvec2
+
+    end interface idz_user_interface
+  end python module idz__user__routines

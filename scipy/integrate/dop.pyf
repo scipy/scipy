@@ -1,0 +1,83 @@
+!%f90 -*- f90 -*-
+!Author: John Travers
+!Date:   22 Feb 2009
+
+python module __user__routines
+    interface
+       subroutine fcn(n,x,y,f,rpar,ipar)
+         integer intent(hide) :: n
+         double precision intent(in) :: x
+         double precision dimension(n),intent(in,c) :: y
+         double precision dimension(n),intent(out,c) :: f
+         double precision intent(hide) :: rpar
+         integer intent(hide) :: ipar
+       end subroutine fcn
+       subroutine solout(nr,xold,x,y,n,con,icomp,nd,rpar,ipar,irtn)
+         integer intent(in) :: nr
+         integer intent(hide) :: n
+         double precision intent(in) :: xold, x
+         double precision dimension(n),intent(c,in) :: y
+         integer intent(in) :: nd
+         integer dimension(nd), intent(in) :: icomp
+         double precision dimension(5*nd), intent(in) :: con
+         double precision intent(hide) :: rpar
+         integer intent(hide) :: ipar
+         integer intent(out) :: irtn
+       end subroutine solout
+    end interface
+end python module __user__routines
+
+python module _dop
+    interface
+       subroutine dopri5(n,fcn,x,y,xend,rtol,atol,itol,solout,iout,work,lwork,iwork,liwork,rpar,ipar,idid)
+         use __user__routines
+         external fcn
+         external solout
+         integer intent(hide),depend(y) :: n = len(y)
+         double precision dimension(n),intent(in,out,copy) :: y
+         double precision intent(in,out):: x
+         double precision intent(in):: xend
+         double precision dimension(*),intent(in),check(len(atol)<&
+              &=1||len(atol)>=n),depend(n) :: atol
+         double precision dimension(*),intent(in),check(len(rtol)==len(atol)), &
+              depend(atol) :: rtol
+         integer intent(hide), depend(atol) :: itol = (len(atol)<=1?0:1)
+         integer intent(in) :: iout
+         double precision dimension(*), intent(in), check(len(work)>=8*n+21), &
+                              :: work
+         integer intent(hide), depend(work) :: lwork = len(work)
+         integer intent(in,out), dimension(*), check(len(iwork)>=21) :: iwork
+         integer intent(hide), depend(iwork) :: liwork = len(iwork)
+         integer intent(out) :: idid
+         double precision intent(hide) :: rpar = 0.0
+         integer intent(hide) :: ipar = 0
+       end subroutine dopri5
+       subroutine dop853(n,fcn,x,y,xend,rtol,atol,itol,solout,iout,work,lwork,iwork,liwork,rpar,ipar,idid)
+         use __user__routines
+         external fcn
+         external solout
+         integer intent(hide),depend(y) :: n = len(y)
+         double precision dimension(n),intent(in,out,copy) :: y
+         double precision intent(in,out):: x
+         double precision intent(in):: xend
+         double precision dimension(*),intent(in),check(len(atol)<&
+              &=1||len(atol)>=n),depend(n) :: atol
+         double precision dimension(*),intent(in),check(len(rtol)==len(atol)), &
+              depend(atol) :: rtol
+         integer intent(hide), depend(atol) :: itol = (len(atol)<=1?0:1)
+         integer intent(in) :: iout
+         double precision dimension(*), intent(in), check(len(work)>=8*n+21), &
+                              :: work
+         integer intent(hide), depend(work) :: lwork = len(work)
+         integer intent(in,out), dimension(*), check(len(iwork)>=21) :: iwork
+         integer intent(hide), depend(iwork) :: liwork = len(iwork)
+         integer intent(out) :: idid
+         double precision intent(hide) :: rpar = 0.0
+         integer intent(hide) :: ipar = 0
+       end subroutine dop853
+
+       ! Fake common block for indicating the integer size
+       integer :: intvar
+       common /types/ intvar
+    end interface
+end python module _dop

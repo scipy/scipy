@@ -1,0 +1,98 @@
+README FOR INTERPOLATION MODULE
+
+
+Author: Enthought, Inc
+	Austin, TX
+	enthough-dev@mail.enthought.com
+
+
+Interpolate is a central package in SciPy, an open-source software package for scientific computing in Python which is maintained by Enthought, Inc.  Interpolate provides functionality for a variety of interpolation techniques, particularly those based on splines.
+
+
+A large portion of scipy.interpolate is Python wrappers around the functionality of FITPACK, a Fortran package produced by Pleasant Valley Software for working with curves and surfaces.  Scipy.interpolate provides the following wrappers around FITPACK functions:
+
+ splrep    -- find smoothing spline given (x,y) points on curve.
+ splprep   -- find smoothing spline given parametrically defined curve.
+ splev     -- evaluate the spline or its derivatives.
+ splint    -- compute definite integral of a spline.
+ sproot    -- find the roots of a cubic spline.
+ spalde    -- compute all derivatives of a spline at given points.
+ bisplrep   -- find bivariate smoothing spline representation.
+ bisplev   -- evaluate bivariate smoothing spline.
+
+
+Other available functions include
+
+ UnivariateSpline             -- A more recent, object-oriented wrapper;
+                                finds a (possibly smoothed) interpolating
+                                spline.
+ InterpolatedUnivariateSpline -- Identical to UnivariateSpline, but with
+				less error checking
+ LSQUnivariateSpline	      -- Appears to be identical to UnivariateSplin
+				with more error checking.  Uses weighted
+				least squares fitting
+ BivariateSpline              -- A more recent, object-oriented wrapper;
+                                      finds a interpolating spline for a
+                                      bivariate function.
+ SmoothBivariateSpline	      -- Smooth bivariate spline approximation
+
+
+A number of other functions and classes are provided, for which README documentation is forthcoming.
+
+Introductions to interpolation and splines can be found online at:
+
+https://en.wikipedia.org/wiki/Interpolation
+	The Wikipedia article on interpolation.  Provides an accessible
+	overview of major areas of the subject, including spline
+	interpolation.
+https://en.wikipedia.org/wiki/Spline_interpolation
+	The Wikipedia article on spline interpolation.  It is accessible
+	as a conceptual introduction, and contains links to various
+	algorithms, but discussion is limited to 1D interpolation.
+
+
+
+interpolate.BivariateSpline
+interpolate.InterpolatedUnivariateSpline
+interpolate.LSQBivariateSpline
+interpolate.LSQUnivariateSpline
+interpolate.NumpyTest
+interpolate.RectBivariateSpline
+interpolate.SmoothBivariateSpline
+interpolate.UnivariateSpline
+interpolate.__all__
+interpolate.__class__
+interpolate.__delattr__
+interpolate.__dict__
+interpolate.__doc__
+interpolate.__file__
+interpolate.__getattribute__
+interpolate.__hash__
+interpolate.__init__
+interpolate.__name__
+interpolate.__new__
+interpolate.__path__
+interpolate.__reduce__
+interpolate.__reduce_ex__
+interpolate.__repr__
+interpolate.__setattr__
+interpolate.__str__
+interpolate._fitpack
+interpolate.bisplev
+interpolate.bisplrep
+interpolate.dfitpack
+interpolate.fitpack
+interpolate.fitpack2
+interpolate.insert
+interpolate.interp1d
+interpolate.interp2d
+interpolate.interpolate
+interpolate.lagrange
+interpolate.ppform
+interpolate.spalde
+interpolate.splev
+interpolate.splint
+interpolate.splprep
+interpolate.splrep
+interpolate.sproot
+interpolate.test

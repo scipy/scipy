@@ -1,0 +1,54 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _mvn ! in
+    interface  ! in :_mvn
+        subroutine mvnun(d,n,lower,upper,means,covar,maxpts,abseps,releps,value,inform) ! in :_mvn:mvndst.f
+            integer intent(hide) :: d=shape(means,0)
+            integer intent(hide) :: n=shape(means,1)
+            double precision dimension(d) :: lower
+            double precision dimension(d) :: upper
+            double precision dimension(d,n) :: means
+            double precision dimension(d,d) :: covar
+            integer intent(optional) :: maxpts=d*1000
+            double precision intent(optional) :: abseps=1e-6
+            double precision intent(optional) :: releps=1e-6
+            double precision intent(out) :: value
+            integer intent(out) :: inform
+        end subroutine mvnun
+
+        subroutine mvnun_weighted(d,n,lower,upper,means,weights,covar,maxpts,abseps,releps,value,inform) ! in :_mvn:mvndst.f
+            integer intent(hide) :: d=shape(means,0)
+            integer intent(hide) :: n=shape(means,1)
+            double precision dimension(d) :: lower
+            double precision dimension(d) :: upper
+            double precision dimension(d,n) :: means
+            double precision dimension(n) :: weights
+            double precision dimension(d,d) :: covar
+            integer intent(optional) :: maxpts=d*1000
+            double precision intent(optional) :: abseps=1e-6
+            double precision intent(optional) :: releps=1e-6
+            double precision intent(out) :: value
+            integer intent(out) :: inform
+        end subroutine mvnun_weighted
+
+        subroutine mvndst(n,lower,upper,infin,correl,maxpts,abseps,releps,error,value,inform) ! in :_mvn:mvndst.f
+            integer intent(hide) :: n=len(lower)
+            double precision dimension(n) :: lower
+            double precision dimension(n) :: upper
+            integer dimension(n) :: infin
+            double precision dimension(n*(n-1)/2) :: correl
+            integer intent(optional) :: maxpts=2000
+            double precision intent(optional) :: abseps=1e-6
+            double precision intent(optional) :: releps=1e-6
+            double precision intent(out) :: error
+            double precision intent(out) :: value
+            integer intent(out) :: inform
+            integer :: ivls
+            common /dkblck/ ivls
+        end subroutine mvndst
+    end interface
+end python module _mvn
+
+! This file was auto-generated with f2py (version:2.39.235_1752).
+! See http://cens.ioc.ee/projects/f2py2e/

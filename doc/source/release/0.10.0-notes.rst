@@ -1,0 +1,221 @@
+==========================
+SciPy 0.10.0 Release Notes
+==========================
+
+.. contents::
+
+SciPy 0.10.0 is the culmination of 8 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and
+better documentation.  There have been a limited number of deprecations
+and backwards-incompatible changes in this release, which are documented
+below.  All users are encouraged to upgrade to this release, as there
+are a large number of bug-fixes and optimizations.  Moreover, our 
+development attention will now shift to bug-fix releases on the 0.10.x 
+branch, and on adding new features on the development master branch.
+
+Release highlights:
+
+  - Support for Bento as optional build system.
+  - Support for generalized eigenvalue problems, and all shift-invert modes
+    available in ARPACK.
+
+This release requires Python 2.4-2.7 or 3.1- and NumPy 1.5 or greater.
+
+
+New features
+============
+
+Bento: new optional build system
+--------------------------------
+
+Scipy can now be built with `Bento <http://cournape.github.com/Bento/>`_.
+Bento has some nice features like parallel builds and partial rebuilds, that
+are not possible with the default build system (distutils).  For usage
+instructions see BENTO_BUILD.txt in the scipy top-level directory.
+
+Currently Scipy has three build systems, distutils, numscons and bento.
+Numscons is deprecated and is planned and will likely be removed in the next
+release.
+
+
+Generalized and shift-invert eigenvalue problems in ``scipy.sparse.linalg``
+---------------------------------------------------------------------------
+
+The sparse eigenvalue problem solver functions
+``scipy.sparse.eigs/eigh`` now support generalized eigenvalue
+problems, and all shift-invert modes available in ARPACK.
+
+
+Discrete-Time Linear Systems (``scipy.signal``)
+-----------------------------------------------
+
+Support for simulating discrete-time linear systems, including
+``scipy.signal.dlsim``, ``scipy.signal.dimpulse``, and ``scipy.signal.dstep``,
+has been added to SciPy.  Conversion of linear systems from continuous-time to
+discrete-time representations is also present via the
+``scipy.signal.cont2discrete`` function.
+
+
+Enhancements to ``scipy.signal``
+--------------------------------
+
+A Lomb-Scargle periodogram can now be computed with the new function
+``scipy.signal.lombscargle``.
+
+The forward-backward filter function ``scipy.signal.filtfilt`` can now
+filter the data in a given axis of an n-dimensional numpy array.
+(Previously it only handled a 1-dimensional array.)  Options have been
+added to allow more control over how the data is extended before filtering.
+
+FIR filter design with ``scipy.signal.firwin2`` now has options to create
+filters of type III (zero at zero and Nyquist frequencies) and IV (zero at zero
+frequency).
+
+
+Additional decomposition options (``scipy.linalg``)
+---------------------------------------------------
+
+A sort keyword has been added to the Schur decomposition routine 
+(``scipy.linalg.schur``) to allow the sorting of eigenvalues in
+the resultant Schur form.
+
+Additional special matrices (``scipy.linalg``)
+----------------------------------------------
+
+The functions ``hilbert`` and ``invhilbert`` were added to ``scipy.linalg``.
+
+
+Enhancements to ``scipy.stats``
+-------------------------------
+
+* The *one-sided form* of Fisher's exact test is now also implemented in
+  ``stats.fisher_exact``. 
+* The function ``stats.chi2_contingency`` for computing the chi-square test of
+  independence of factors in a contingency table has been added, along with
+  the related utility functions ``stats.contingency.margins`` and
+  ``stats.contingency.expected_freq``.
+
+
+Enhancements to ``scipy.special``
+---------------------------------
+
+The functions ``logit(p) = log(p/(1-p))``
+and ``expit(x) = 1/(1+exp(-x))`` have been implemented as
+``scipy.special.logit`` and ``scipy.special.expit`` respectively.
+
+
+Basic support for Harwell-Boeing file format for sparse matrices
+----------------------------------------------------------------
+
+Both read and write are support through a simple function-based API, as well as
+a more complete API to control number format. The functions may be found in
+scipy.sparse.io.
+
+The following features are supported:
+
+    * Read and write sparse matrices in the CSC format
+    * Only real, symmetric, assembled matrix are supported (RUA format)
+
+
+Deprecated features
+===================
+
+``scipy.maxentropy``
+--------------------
+
+The maxentropy module is unmaintained, rarely used and has not been functioning
+well for several releases.  Therefore it has been deprecated for this release,
+and will be removed for scipy 0.11.  Logistic regression in scikits.learn is a
+good alternative for this functionality.  The ``scipy.maxentropy.logsumexp``
+function has been moved to ``scipy.misc``.
+
+
+``scipy.lib.blas``
+------------------
+
+There are similar BLAS wrappers in ``scipy.linalg`` and ``scipy.lib``.  These
+have now been consolidated as ``scipy.linalg.blas``, and ``scipy.lib.blas`` is
+deprecated.
+
+
+Numscons build system
+---------------------
+
+The numscons build system is being replaced by Bento, and will be removed in
+one of the next scipy releases.
+
+
+Backwards-incompatible changes
+==============================
+
+The deprecated name `invnorm` was removed from ``scipy.stats.distributions``,
+this distribution is available as `invgauss`.
+
+The following deprecated nonlinear solvers from ``scipy.optimize`` have been
+removed::
+
+  - ``broyden_modified`` (bad performance)
+  - ``broyden1_modified`` (bad performance)
+  - ``broyden_generalized`` (equivalent to ``anderson``)
+  - ``anderson2`` (equivalent to ``anderson``)
+  - ``broyden3`` (obsoleted by new limited-memory broyden methods)
+  - ``vackar`` (renamed to ``diagbroyden``)
+ 
+
+Other changes
+=============
+
+``scipy.constants`` has been updated with the CODATA 2010 constants.
+
+``__all__`` dicts have been added to all modules, which has cleaned up the
+namespaces (particularly useful for interactive work).
+
+An API section has been added to the documentation, giving recommended import
+guidelines and specifying which submodules are public and which aren't.
+
+
+Authors
+=======
+
+This release contains work by the following people (contributed at least
+one patch to this release, names in alphabetical order):
+
+* Jeff Armstrong +
+* Matthew Brett
+* Lars Buitinck +
+* David Cournapeau
+* FI$H 2000 +
+* Michael McNeil Forbes +
+* Matty G +
+* Christoph Gohlke
+* Ralf Gommers
+* Yaroslav Halchenko
+* Charles Harris
+* Thouis (Ray) Jones +
+* Chris Jordan-Squire +
+* Robert Kern
+* Chris Lasher +
+* Wes McKinney +
+* Travis Oliphant
+* Fabian Pedregosa
+* Josef Perktold
+* Thomas Robitaille +
+* Pim Schellart +
+* Anthony Scopatz +
+* Skipper Seabold +
+* Fazlul Shahriar +
+* David Simcha +
+* Scott Sinclair +
+* Andrey Smirnov +
+* Collin RM Stocks +
+* Martin Teichmann +
+* Jake Vanderplas +
+* Gaël Varoquaux +
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Mark Wiebe +
+
+A total of 35 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+

@@ -1,0 +1,23 @@
+!    -*- f90 -*-
+! Note: the context of this file is case sensitive.
+
+python module _test_fortran
+    interface
+        subroutine read_unformatted_double(m,n,k,a,filename)
+            integer, intent(in) :: m, n, k
+            double precision, intent(out), dimension(m,n,k), depend(m,n,k) :: a
+            character*4096, intent(in) :: filename
+        end subroutine read_unformatted_double
+        subroutine read_unformatted_int(m,n,k,a,filename)
+            integer, intent(in) :: m, n, k
+            integer, intent(out), dimension(m,n,k), depend(m,n,k) :: a
+            character*4096, intent(in) :: filename
+        end subroutine read_unformatted_int
+        subroutine read_unformatted_mixed(m,n,k,a,b,filename)
+            integer, intent(in) :: m, n, k
+            double precision, dimension(m,n), intent(out), depend(m,n) :: a
+            integer, dimension(k), intent(out), depend(k) :: b
+            character*4096, intent(in) :: filename
+        end subroutine read_unformatted_mixed
+    end interface
+end python module _test_fortran

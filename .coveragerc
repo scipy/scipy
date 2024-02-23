@@ -1,0 +1,6 @@
+[run]
+branch = True
+include = */scipy/*
+omit =
+    scipy/signal/_max_len_seq_inner.py
+disable_warnings = include-ignored

@@ -1,0 +1,119 @@
+!%f90 -*- f90 -*-
+!
+! Signatures for f2py wrappers of ATLAS LAPACK functions via the C interface.
+! These should be compatible with the flapack functions.
+!
+!  gesv
+!  posv
+!  lauum
+!  trtri
+!
+
+python module _clapack
+  interface
+   
+   function <prefix>gesv(n,nrhs,a,piv,b,info,rowmajor)
+
+   ! lu,piv,x,info = gesv(a,b,rowmajor=1,overwrite_a=0,overwrite_b=0)
+   ! Solve A * X = B.
+   ! A * P = L * U
+   ! U is unit upper diagonal triangular, L is lower triangular,
+   ! piv pivots columns.
+
+     fortranname  clapack_<prefix>gesv
+     integer intent(c,hide) ::  <prefix>gesv
+     callstatement <prefix>gesv_return_value = info = (*f2py_func)(102-rowmajor,n,nrhs,a,n,piv,b,n)
+     callprotoargument const int,const int,const int,<ctype>*,const int,int*,<ctype>*,const int
+
+     integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
+
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype> dimension(n,n),check(shape(a,0)==shape(a,1)) :: a
+     integer dimension(n),depend(n),intent(out) :: piv
+     <ftype> dimension(n,nrhs),check(shape(a,0)==shape(b,0)),depend(n) :: b
+     integer intent(out)::info
+     intent(in,out,copy,out=x) b
+     intent(c,in,out,copy,out=lu) a
+
+   end function <prefix>gesv
+
+   function <prefix>posv(n,nrhs,a,b,info,lower,rowmajor)
+
+   ! c,x,info = posv(a,b,lower=0,rowmajor=1,overwrite_a=0,overwrite_b=0)
+   ! Solve A * X = B.
+   ! A is symmetric positive defined
+   ! A = U^T * U, C = U if lower = 0
+   ! A = L * L^T, C = L if lower = 1
+   ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+     fortranname  clapack_<prefix>posv
+     integer intent(c,hide) ::  <prefix>posv
+     callstatement <prefix>posv_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,nrhs,a,n,b,n)
+     callprotoargument const int,const int,const int,const int,<ctype>*,const int,<ctype>*,const int
+
+     integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+
+     integer depend(a),intent(hide):: n = shape(a,0)
+     integer depend(b),intent(hide):: nrhs = shape(b,1)
+     <ftype> dimension(n,n),intent(c,in,out,copy,out=c) :: a
+     check(shape(a,0)==shape(a,1)) :: a
+     <ftype> dimension(n,nrhs),intent(in,out,copy,out=x),depend(n):: b
+     check(shape(a,0)==shape(b,0)) :: b
+     integer intent(out) :: info
+
+   end function <prefix>posv
+
+
+   function <prefix>lauum(n,c,info,lower,rowmajor)
+   
+     ! a,info = lauum(c,lower=0,rowmajor=1,overwrite_c=0)
+     ! Compute product
+     ! U^T * U, C = U if lower = 0
+     ! L * L^T, C = L if lower = 1
+     ! C is triangular matrix of the corresponding Cholesky decomposition.
+
+     fortranname  clapack_<prefix>lauum
+     integer intent(c,hide) ::  <prefix>lauum
+     callstatement <prefix>lauum_return_value = info = (*f2py_func)(102-rowmajor,121+lower,n,c,n)
+     callprotoargument const int,const int,const int,<ctype>*,const int
+
+     integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     
+     integer depend(c),intent(hide):: n = shape(c,0)
+     <ftype> dimension(n,n),intent(c,in,out,copy,out=a) :: c
+     check(shape(c,0)==shape(c,1)) :: c
+     integer intent(out) :: info
+     
+   end function <prefix>lauum
+
+   function <prefix>trtri(n,c,info,lower,unitdiag,rowmajor)
+   
+     ! inv_c,info = trtri(c,lower=0,unitdiag=0,rowmajor=1,overwrite_c=0)
+     ! Compute C inverse C^-1 where
+     ! C = U if lower = 0
+     ! C = L if lower = 1
+     ! C is non-unit triangular matrix if unitdiag = 0
+     ! C is unit triangular matrix if unitdiag = 1
+
+     fortranname  clapack_<prefix>trtri
+     integer intent(c,hide) ::  <prefix>trtri
+     callstatement <prefix>trtri_return_value = info = (*f2py_func)(102-rowmajor,121+lower,131+unitdiag,n,c,n)
+     callprotoargument const int,const int,const int,const int,<ctype>*,const int
+
+     integer optional,intent(in),check(rowmajor==1||rowmajor==0) :: rowmajor = 1
+     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
+     integer optional,intent(in),check(unitdiag==0||unitdiag==1) :: unitdiag = 0
+     
+     integer depend(c),intent(hide):: n = shape(c,0)
+     <ftype> dimension(n,n),intent(c,in,out,copy,out=inv_c) :: c
+     check(shape(c,0)==shape(c,1)) :: c
+     integer intent(out) :: info
+     
+   end function <prefix>trtri
+
+
+  end interface
+end python module _clapack

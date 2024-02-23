@@ -1,0 +1,33 @@
+==========================
+SciPy 0.10.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 0.10.1 is a bug-fix release with no new features compared to 0.10.0.  
+
+Main changes
+------------
+
+The most important changes are:
+
+1. The single precision routines of ``eigs`` and ``eigsh`` in
+   ``scipy.sparse.linalg`` have been disabled (they internally use double
+   precision now).
+2. A compatibility issue related to changes in NumPy macros has been fixed, in
+   order to make scipy 0.10.1 compile with the upcoming numpy 1.7.0 release.
+
+
+Other issues fixed
+------------------
+
+- #835: stats: nan propagation in stats.distributions
+- #1202: io: netcdf segfault
+- #1531: optimize: make curve_fit work with method as callable.
+- #1560: linalg: fixed mistake in eig_banded documentation.
+- #1565: ndimage: bug in ndimage.variance
+- #1457: ndimage: standard_deviation does not work with sequence of indexes
+- #1562: cluster: segfault in linkage function
+- #1568: stats: One-sided fisher_exact() returns `p` < 1 for 0 successful attempts
+- #1575: stats: zscore and zmap handle the axis keyword incorrectly
+
