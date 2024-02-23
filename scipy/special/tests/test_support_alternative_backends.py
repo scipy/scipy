@@ -56,8 +56,8 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
 
     eps = np.finfo(dtype).eps
     # PyTorch seems to struggle with precision near the poles of `gammaln`,
-    # so the tolerance needs to be quite loose (eps**0.2) - see gh-19935.
-    # To compensate, we aso check that that the root-mean-square error is
+    # so the tolerance needs to be quite loose (eps**0.2) - see gh-19935.
+    # To compensate, we also check that the root-mean-square error is
     # less than eps**0.5.
     ref = xp.asarray(ref, dtype=dtype_xp)
     xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*10,
