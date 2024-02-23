@@ -125,10 +125,10 @@ c       for the present routine (please see routine idzr_rsvd
 c       for further documentation).
 c
         implicit none
-        integer m,n,krank,list(n),ier,k
+        integer m,n,krank,ier,k
         real*8 s(krank)
         complex*16 p1t,p2t,p3t,p4t,p1,p2,p3,p4,u(m,krank),v(n,krank),
-     1             proj(krank*(n-krank)),col(m*krank),
+     1             proj(krank*(n-krank)),col(m*krank),list(n),
      2             work((krank+1)*(m+3*n+10)+9*krank**2)
         external matveca,matvec
 c

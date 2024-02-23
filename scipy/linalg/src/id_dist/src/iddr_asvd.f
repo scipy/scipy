@@ -88,8 +88,8 @@ c       for the present routine (please see routine iddr_asvd
 c       for further documentation).
 c
         implicit none
-        integer m,n,krank,list(n),ier
-        real*8 a(m,n),u(m,krank),v(n,krank),s(krank),
+        integer m,n,krank,ier
+        real*8 a(m,n),u(m,krank),v(n,krank),s(krank),list(n),
      1         proj(krank,n-krank),col(m*krank),
      2         winit((2*krank+17)*n+27*m+100),
      3         work((krank+1)*(m+3*n)+26*krank**2)
