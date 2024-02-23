@@ -18,6 +18,7 @@
 #include "special/cephes/chdtr.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
+#include "special/cephes/hyperg.h"
 #include "special/cephes/i0.h"
 #include "special/cephes/i1.h"
 #include "special/cephes/scipy_iv.h"
