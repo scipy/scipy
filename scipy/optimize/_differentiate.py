@@ -5,8 +5,8 @@ from scipy._lib._util import _RichResult
 
 _EERRORINCREASE = -1  # used in _differentiate
 
-def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
-                      initial_step, step_factor, step_direction, callback):
+def _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
+                      step_factor, step_direction, preserve_shape, callback):
     # Input validation for `_differentiate`
 
     if not callable(func):
@@ -45,16 +45,20 @@ def _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
     x, step_direction = np.broadcast_arrays(x, step_direction)
     x, step_direction = x[()], step_direction[()]
 
+    message = '`preserve_shape` must be True or False.'
+    if preserve_shape not in {True, False}:
+        raise ValueError(message)
+
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
 
     return (func, x, args, atol, rtol, maxiter_int, order_int, initial_step,
-            step_factor, step_direction, callback)
+            step_factor, step_direction, preserve_shape, callback)
 
 
 def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
                    order=8, initial_step=0.5, step_factor=2.0,
-                   step_direction=0, callback=None):
+                   step_direction=0, preserve_shape=False, callback=None):
     """Evaluate the derivative of an elementwise scalar function numerically.
 
     Parameters
@@ -62,9 +66,9 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     func : callable
         The function whose derivative is desired. The signature must be::
 
-            func(x: ndarray, *args) -> ndarray
+            func(x: ndarray, *fargs) -> ndarray
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
+         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`. ``func`` must be an elementwise function: each element
          ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
@@ -103,6 +107,25 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
         Where 0 (default), central differences are used; where negative (e.g.
         -1), steps are non-positive; and where positive (e.g. 1), all steps are
         non-negative.
+    preserve_shape : bool, default: False
+        In the following, "arguments of `func`" refers to the array ``x`` and
+        any arrays within ``fargs``. Let ``shape`` be the broadcasted shape
+        of `x` and all elements of `args` (which is conceptually
+        distinct from ``fargs`` passed into `f`).
+
+        - When ``preserve_shape=False`` (default), `f` must accept arguments
+          of *any* broadcastable shapes.
+
+        - When ``preserve_shape=True``, `f` must accept arguments of shape
+          ``shape`` *or* ``shape + (n,)``, where ``(n,)`` is the number of
+          abscissae at which the function is being evaluated.
+
+        In either case, for each scalar element ``xi`` within `x`, the array
+        returned by `f` must include the scalar ``f(xi)`` at the same index.
+        Consequently, the shape of the output is always the shape of the input
+        ``x``.
+
+        See Examples.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -258,23 +281,88 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     >>> f.nit
     2
 
+    By default, `preserve_shape` is False, and therefore the callable
+    `f` may be called with arrays of any broadcastable shapes.
+    For example:
+
+    >>> shapes = []
+    >>> def f(x, c):
+    ...    shape = np.broadcast_shapes(x.shape, c.shape)
+    ...    shapes.append(shape)
+    ...    return np.sin(c*x)
+    >>>
+    >>> c = [1, 5, 10, 20]
+    >>> res = _differentiate(f, 0, args=(c,))
+    >>> shapes
+    [(4,), (4, 8), (4, 2), (3, 2), (2, 2), (1, 2)]
+
+    To understand where these shapes are coming from - and to better
+    understand how `_differentiate` computes accurate results - note that
+    higher values of ``c`` correspond with higher frequency sinusoids.
+    The higher frequency sinusoids make the function's derivative change
+    faster, so more function evaluations are required to achieve the target
+    accuracy:
+
+    >>> res.nfev
+    array([11, 13, 15, 17])
+
+    The initial ``shape``, ``(4,)``, corresponds with evaluating the
+    function at a single abscissa and all four frequencies; this is used
+    for input validation and to determine the size and dtype of the arrays
+    that store results. The next shape corresponds with evaluating the
+    function at an initial grid of abscissae and all four frequencies.
+    Successive calls to the function evaluate the function at two more
+    abscissae, increasing the effective order of the approximation by two.
+    However, in later function evaluations, the function is evaluated at
+    fewer frequencies because the corresponding derivative has already
+    converged to the required tolerance. This saves function evaluations to
+    improve performance, but it requires the function to accept arguments of
+    any shape.
+
+    "Vector-valued" functions are unlikely to satisfy this requirement.
+    For example, consider
+
+    >>> def f(x):
+    ...    return [x, np.sin(3*x), x+np.sin(10*x), np.sin(20*x)*(x-1)**2]
+
+    This integrand is not compatible with `_differentiate` as written; for instance,
+    the shape of the output will not be the same as the shape of ``x``. Such a
+    function *could* be converted to a compatible form with the introduction of
+    additional parameters, but this would be inconvenient. In such cases,
+    a simpler solution would be to use `preserve_shape`.
+
+    >>> shapes = []
+    >>> def f(x):
+    ...     shapes.append(x.shape)
+    ...     x0, x1, x2, x3 = x
+    ...     return [x0, np.sin(3*x1), x2+np.sin(10*x2), np.sin(20*x3)*(x3-1)**2]
+    >>>
+    >>> x = np.zeros(4)
+    >>> res = _differentiate(f, x, preserve_shape=True)
+    >>> shapes
+    [(4,), (4, 8), (4, 2), (4, 2), (4, 2), (4, 2)]
+
+    Here, the shape of ``x`` is ``(4,)``. With ``preserve_shape=True``, the
+    function may be called with argument ``x`` of shape ``(4,)`` or ``(4, n)``,
+    and this is what we observe.
+
     """
     # TODO (followup):
     #  - investigate behavior at saddle points
     #  - array initial_step / step_factor?
     #  - multivariate functions?
-    #  - vector-valued functions?
 
-    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, order,
-                            initial_step, step_factor, step_direction, callback)
-    func, x, args, atol, rtol, maxiter, order, h0, fac, hdir, callback = res
+    res = _differentiate_iv(func, x, args, atol, rtol, maxiter, order, initial_step,
+                            step_factor, step_direction, preserve_shape, callback)
+    (func, x, args, atol, rtol, maxiter, order,
+     h0, fac, hdir, preserve_shape, callback) = res
 
     # Initialization
     # Since f(x) (no step) is not needed for central differences, it may be
     # possible to eliminate this function evaluation. However, it's useful for
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
-    temp = eim._initialize(func, (x,), args)
+    temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
     func, xs, fs, args, shape, dtype = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
@@ -457,7 +545,8 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     preserve_shape)
 
 
 def _differentiate_weights(work, n):
