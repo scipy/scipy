@@ -871,7 +871,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     If the optimal parameters of `f` differ by more than four orders
     of magnitude, the resulting fit can be inaccurate. 
-    Sometimes, `curve_fit()` can fail to find any results.
+    Sometimes, `curve_fit` can fail to find any results.
 
     >>> ydata = func(xdata, 500000, 0.01, 15)
     >>> try:
@@ -881,7 +881,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     Optimal parameters not found: The maximum number of function evaluations is exceeded.
 
     If parameter scale is roughly known beforehand, it can be defined in
-    ``x_scale`` argument:
+    `x_scale` argument:
 
     >>> popt, pcov = curve_fit(func, xdata, ydata, method = 'trf',
     ...                        x_scale = [1000, 1, 1])
