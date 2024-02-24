@@ -4650,24 +4650,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     >>> res
     PearsonRResult(statistic=-0.828503883588428, pvalue=0.021280260007523286)
 
-    If N-dimensional arrays are provided, multiple tests are performed in a
-    single call according to the same conventions as most `scipy.stats` functions:
-
-    >>> rng = np.random.default_rng(2348246935601934321)
-    >>> x = rng.normal((8, 15))
-    >>> y = rng.normal((8, 15))
-    >>> stats.pearsonr(x, y, axis=0).statistic.shape  # between corresponding columns
-    (15,)
-    >>> stats.pearsonr(x, y, axis=1).statistic.shape  # between corresponding rows
-    (8,)
-
-    To perform all pairwise comparisons between slices of the arrays,
-    use standard NumPy broadcasting techniques. For instance, to compute the
-    correlation between all pairs of rows:
-
-    >>> stats.pearsonr(x[:, np.newaxis, :], y, axis=-1).statistic.shape
-    (8, 8)
-
     To perform an exact permutation version of the test:
 
     >>> rng = np.random.default_rng(7796654889291491997)
@@ -4692,6 +4674,24 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     >>> method = stats.BootstrapMethod(method='BCa', random_state=rng)
     >>> res.confidence_interval(confidence_level=0.9, method=method)
     ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
+
+    If N-dimensional arrays are provided, multiple tests are performed in a
+    single call according to the same conventions as most `scipy.stats` functions:
+
+    >>> rng = np.random.default_rng(2348246935601934321)
+    >>> x = rng.standard_normal((8, 15))
+    >>> y = rng.standard_normal((8, 15))
+    >>> stats.pearsonr(x, y, axis=0).statistic.shape  # between corresponding columns
+    (15,)
+    >>> stats.pearsonr(x, y, axis=1).statistic.shape  # between corresponding rows
+    (8,)
+
+    To perform all pairwise comparisons between slices of the arrays,
+    use standard NumPy broadcasting techniques. For instance, to compute the
+    correlation between all pairs of rows:
+
+    >>> stats.pearsonr(x[:, np.newaxis, :], y, axis=-1).statistic.shape
+    (8, 8)
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
