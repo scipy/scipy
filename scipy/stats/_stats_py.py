@@ -10341,6 +10341,15 @@ def wasserstein_distance_nd(u_values, v_values, u_weights=None, v_weights=None):
     return -opt_res.fun
 
 
+def _n_samples_cdf_distance(kwargs):
+    n_samples = 2
+    n_samples += (1 if kwargs.get('u_weights', None) is not None else 0)
+    n_samples += (1 if kwargs.get('v_weights', None) is not None else 0)
+    return n_samples
+
+
+@_axis_nan_policy_factory(lambda x: x, n_samples=_n_samples_cdf_distance,
+                          result_to_tuple=lambda x: (x,), n_outputs=1)
 def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""
     Compute the Wasserstein-1 distance between two 1D discrete distributions.
@@ -10357,15 +10366,15 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     Parameters
     ----------
-    u_values : 1d array_like
+    u_values : array_like
         A sample from a probability distribution or the support (set of all
         possible values) of a probability distribution. Each element is an
         observation or possible value.
 
-    v_values : 1d array_like
+    v_values : array_like
         A sample from or the support of a second distribution.
 
-    u_weights, v_weights : 1d array_like, optional
+    u_weights, v_weights : array_like, optional
         Weights or counts corresponding with the sample or probability masses
         corresponding with the support values. Sum of elements must be positive
         and finite. If unspecified, each value is assigned the same weight.
@@ -10433,6 +10442,8 @@ def wasserstein_distance(u_values, v_values, u_weights=None, v_weights=None):
     return _cdf_distance(1, u_values, v_values, u_weights, v_weights)
 
 
+@_axis_nan_policy_factory(lambda x: x, n_samples=_n_samples_cdf_distance,
+                          result_to_tuple=lambda x: (x,), n_outputs=1)
 def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     r"""Compute the energy distance between two 1D distributions.
 

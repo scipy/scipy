@@ -105,6 +105,8 @@ axis_nan_policy_cases = [
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.wasserstein_distance, tuple(), {}, 2, 1, False, lambda x: (x,)),
+    (stats.energy_distance, tuple(), {}, 2, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -133,7 +135,9 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "kurtosistest requires at least 5",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
-                      "Input sample size must be greater than one.",}
+                      "Input sample size must be greater than one.",
+                      "Distribution can't be empty.",
+                      }
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
