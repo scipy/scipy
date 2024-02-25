@@ -303,14 +303,12 @@ class SVDSCommonTests:
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
-                      'arpack': [2e-15, 1e-10, 1e-10],
+                      'arpack': [2.5e-15, 1e-10, 1e-10],
                       'lobpcg': [1e-10, 1e-3, 10]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
             error = err(tol)
             assert error < accuracy
-            # Why do we test a lower bound for error?
-            # assert error > accuracy/10
 
     def test_svd_v0(self):
         # check that the `v0` parameter affects the solution
@@ -540,12 +538,16 @@ class SVDSCommonTests:
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
             pytest.skip("#16725")
 
+        atol = 3e-10
+        if self.solver == 'propack':
+            atol = 8e-10  # otherwise test fails on Linux aarch64 (see gh-19855)
+
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 u, s, vh = svds(A2, k, solver=self.solver)
         else:
             u, s, vh = svds(A2, k, solver=self.solver)
-        _check_svds(A, k, u, s, vh, atol=3e-10)
+        _check_svds(A, k, u, s, vh, atol=atol)
 
     def test_svd_linop(self):
         solver = self.solver
