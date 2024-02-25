@@ -3132,9 +3132,10 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
 
-    If you need to set the sampling rate to a specific value, you can use 
-    `scipy.signal.resample_poly` before using `resample`. 
-    Consider the following example where ``len(x)`` is a large prime number:
+    If you need to set the number of samples in the resampled signal to a 
+    specific value, you can use `scipy.signal.resample_poly` before using 
+    `resample`. Consider the following example where ``len(x)`` is a large 
+    prime number:
 
     >>> N, num = 55949, 5000
     >>> freq = 100
