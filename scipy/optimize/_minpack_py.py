@@ -869,9 +869,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
-    If the optimal parameters of `f` differ by more than four orders
-    of magnitude, the resulting fit can be inaccurate. 
-    Sometimes, `curve_fit` can fail to find any results.
+    If the optimal parameters of `f` differ by multiple orders of magnitude, the
+    resulting fit can be inaccurate. Sometimes, `curve_fit` can fail to find any
+    results:
 
     >>> ydata = func(xdata, 500000, 0.01, 15)
     >>> try:
