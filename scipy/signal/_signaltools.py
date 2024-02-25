@@ -3112,7 +3112,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     see `scipy.fft.fft`. In such cases, it can be faster to use the polyphase
     method in `scipy.signal.resample_poly`. If you need to set the number
     of samples in the resampled signal to a specific value, you can use
-    `scipy.signal.resample_poly` before using `scipy.signal.resample`.
+    `scipy.signal.resample_poly` before using `resample`.
 
     Examples
     --------
@@ -3133,7 +3133,7 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.show()
 
     If you need to set the sampling rate to a specific value, you can use 
-    `scipy.signal.resample_poly` before using `scipy.signal.resample`. 
+    `scipy.signal.resample_poly` before using `resample`. 
     Consider the following example where ``len(x)`` is a large prime number:
 
     >>> N, num = 55949, 5000
