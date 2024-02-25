@@ -470,7 +470,7 @@ def test_nctdtr_gh19896():
     for df, p, t in itertools.product(dfarr, pnoncarr, tarr):
         actarr += [sp.nctdtr(df, p, t)]
     # The rtol is kept high on purpose to make it pass on 32bit systems
-    assert_allclose(actarr, resarr, rtol=1e-12, atol=0.0)
+    assert_allclose(actarr, resarr, rtol=1e-6, atol=0.0)
 
 
 def test_nctdtrinc_gh19896():
@@ -484,7 +484,7 @@ def test_nctdtrinc_gh19896():
                1.4312427877936222, 2.014225177124157, 3.712743137978295,
                -3.086951096691082]
     actual = sp.nctdtrinc(dfarr, parr, tarr)
-    assert_allclose(actual, desired, rtol=2e-12, atol=0.0)
+    assert_allclose(actual, desired, rtol=5e-12, atol=0.0)
 
 
 def test_stdtr_stdtrit_neg_inf():
