@@ -680,16 +680,16 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
-    >>> integrate.simpson(y, x)
+    >>> integrate.simpson(y, x=x)
     40.5
 
     >>> y = np.power(x, 3)
-    >>> integrate.simpson(y, x)
+    >>> integrate.simpson(y, x=x)
     1640.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
 
-    >>> integrate.simpson(y, x, even='first')
+    >>> integrate.simpson(y, x=x, even='first')
     1644.5
 
     """

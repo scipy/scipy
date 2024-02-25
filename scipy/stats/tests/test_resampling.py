@@ -537,8 +537,10 @@ def test_bootstrap_alternative(method):
     l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
     g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
 
-    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
-    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert_allclose(l.confidence_interval.high, t.confidence_interval.high,
+                    rtol=1e-14)
+    assert_allclose(g.confidence_interval.low, t.confidence_interval.low,
+                    rtol=1e-14)
     assert np.isneginf(l.confidence_interval.low)
     assert np.isposinf(g.confidence_interval.high)
 

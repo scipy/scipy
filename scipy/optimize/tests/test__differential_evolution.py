@@ -986,6 +986,26 @@ class TestDifferentialEvolutionSolver:
         assert pc.num_constr == 2
         assert pc.parameter_count == 2
 
+    def test_matrix_linear_constraint(self):
+        # gh20041 supplying an np.matrix to construct a LinearConstraint caused
+        # _ConstraintWrapper to start returning constraint violations of the
+        # wrong shape.
+        with suppress_warnings() as sup:
+            sup.filter(PendingDeprecationWarning)
+            matrix = np.matrix([[1, 1, 1, 1.],
+                                [2, 2, 2, 2.]])
+        lc = LinearConstraint(matrix, 0, 1)
+        x0 = np.ones(4)
+        cw = _ConstraintWrapper(lc, x0)
+        # the shape of the constraint violation should be the same as the number
+        # of constraints applied.
+        assert cw.violation(x0).shape == (2,)
+
+        # let's try a vectorised violation call.
+        xtrial = np.arange(4 * 5).reshape(4, 5)
+        assert cw.violation(xtrial).shape == (2, 5)
+
+
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 

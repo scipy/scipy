@@ -41,10 +41,10 @@ class spmatrix:
 
     # Restore matrix multiplication
     def __mul__(self, other):
-        return self._mul_dispatch(other)
+        return self._matmul_dispatch(other)
 
     def __rmul__(self, other):
-        return self._rmul_dispatch(other)
+        return self._rmatmul_dispatch(other)
 
     # Restore matrix power
     def __pow__(self, power):

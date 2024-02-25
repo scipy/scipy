@@ -2,6 +2,7 @@
 """
 
 import sys
+from typing import Any, Literal, Optional, Union
 import operator
 import numpy as np
 from math import prod
@@ -386,6 +387,22 @@ def is_pydata_spmatrix(m) -> bool:
     """
     base_cls = getattr(sys.modules.get('sparse'), 'SparseArray', None)
     return base_cls is not None and isinstance(m, base_cls)
+
+
+def convert_pydata_sparse_to_scipy(
+    arg: Any, target_format: Optional[Literal["csc", "csr"]] = None
+) -> Union[Any, "sp.spmatrix"]:
+    """
+    Convert a pydata/sparse array to scipy sparse matrix,
+    pass through anything else.
+    """
+    if is_pydata_spmatrix(arg):
+        arg = arg.to_scipy_sparse()
+        if target_format is not None:
+            arg = arg.asformat(target_format)
+        elif arg.format not in ("csc", "csr"):
+            arg = arg.tocsc()
+    return arg
 
 
 ###############################################################################

@@ -1,4 +1,4 @@
-_trlib = py3.extension_module('_trlib',
+py3.extension_module('_trlib',
   [
     lib_cython_gen.process('_trlib.pyx'),
     'trlib_krylov.c',

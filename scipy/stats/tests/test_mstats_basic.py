@@ -1165,7 +1165,7 @@ class TestNormalitytests:
 
     def test_bad_alternative(self):
         x = stats.norm.rvs(size=20, random_state=123)
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be..."
 
         with pytest.raises(ValueError, match=msg):
             mstats.skewtest(x, alternative='error')

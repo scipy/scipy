@@ -443,7 +443,7 @@ class LazyOperatorNormInfo:
 
     def d(self, p):
         """
-        Lazily estimate d_p(A) ~= || A^p ||^(1/p) where ||.|| is the 1-norm.
+        Lazily estimate :math:`d_p(A) ~= || A^p ||^(1/p)` where :math:`||.||` is the 1-norm.
         """
         if p not in self._d:
             est = _onenormest_matrix_power(self._A, p, self._ell)

@@ -749,7 +749,7 @@ class TestShgoArguments:
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
 
-    def test_16_disp_bounds_minimizer(self):
+    def test_16_disp_bounds_minimizer(self, capsys):
         """Test disp=True with minimizers that do not support bounds """
         options = {'disp': True}
         minimizer_kwargs = {'method': 'nelder-mead'}

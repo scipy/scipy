@@ -102,7 +102,7 @@ def array_namespace(*arrays):
     1. Check for the global switch: SCIPY_ARRAY_API. This can also be accessed
        dynamically through ``_GLOBAL_CONFIG['SCIPY_ARRAY_API']``.
     2. `compliance_scipy` raise exceptions on known-bad subclasses. See
-       it's definition for more details.
+       its definition for more details.
 
     When the global switch is False, it defaults to the `numpy` namespace.
     In that case, there is no compliance check. This is a convenience to

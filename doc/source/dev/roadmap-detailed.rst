@@ -160,11 +160,6 @@ Once we have a reasonably feature complete set, we can start taking a long look
 at the future of the venerable FITPACK Fortran library, which currently is the
 only way of constructing smoothing splines in SciPy.
 
-*Tensor-product splines*: `RegularGridInterpolator` provides a minimal
-implementation. We want to evolve it both for new features (e.g. derivatives),
-performance and API (possibly provide a transparent N-dimensional tensor-product
-B-spline object).
-
 *Scalability and performance*: For the FITPACK-based functionality, the data
 size is limited by 32-bit Fortran integer size (for non-ILP64 builds).
 For N-D scattered interpolators (which are QHull based) and N-D regular grid

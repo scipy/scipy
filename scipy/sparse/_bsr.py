@@ -251,7 +251,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     def _add_dense(self, other):
         return self.tocoo(copy=False)._add_dense(other)
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M,N = self.shape
         R,C = self.blocksize
 
@@ -263,7 +263,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_multivector(self,other):
+    def _matmul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
@@ -276,7 +276,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
