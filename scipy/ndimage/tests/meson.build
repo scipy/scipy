@@ -8,6 +8,7 @@ python_sources = [
   'test_interpolation.py',
   'test_measurements.py',
   'test_morphology.py',
+  'test_ni_support.py',
   'test_splines.py'
 ]
 

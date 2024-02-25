@@ -15,6 +15,10 @@ def test_eval_chebyt():
     assert_(np.allclose(v1, v2, rtol=1e-15))
 
 
+def test_eval_chebyt_gh20129():
+    # https://github.com/scipy/scipy/issues/20129
+    assert _ufuncs.eval_chebyt(7, 2 + 0j) == 5042.0
+
 def test_eval_genlaguerre_restriction():
     # check it returns nan for alpha <= -1
     assert_(np.isnan(_ufuncs.eval_genlaguerre(0, -1, 0)))

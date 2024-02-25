@@ -39,7 +39,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper, check_random_state
+from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
+                              _call_callback_maybe_halt)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -83,56 +84,6 @@ class MemoizeJac:
         return self.jac
 
 
-def _indenter(s, n=0):
-    """
-    Ensures that lines after the first are indented by the specified amount
-    """
-    split = s.split("\n")
-    indent = " "*n
-    return ("\n" + indent).join(split)
-
-
-def _float_formatter_10(x):
-    """
-    Returns a string representation of a float with exactly ten characters
-    """
-    if np.isposinf(x):
-        return "       inf"
-    elif np.isneginf(x):
-        return "      -inf"
-    elif np.isnan(x):
-        return "       nan"
-    return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
-
-
-def _dict_formatter(d, n=0, mplus=1, sorter=None):
-    """
-    Pretty printer for dictionaries
-
-    `n` keeps track of the starting indentation;
-    lines are indented by this much after a line break.
-    `mplus` is additional left padding applied to keys
-    """
-    if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
-        s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
-                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
-                       for k, v in sorter(d)])  # +2 for ': '
-    else:
-        # By default, NumPy arrays print with linewidth=76. `n` is
-        # the indent at which a line begins printing, so it is subtracted
-        # from the default to avoid exceeding 76 characters total.
-        # `edgeitems` is the number of elements to include before and after
-        # ellipses when arrays are not shown in full.
-        # `threshold` is the maximum number of elements for which an
-        # array is shown in full.
-        # These values tend to work well for use with OptimizeResult.
-        with np.printoptions(linewidth=76-n, edgeitems=2, threshold=12,
-                             formatter={'float_kind': _float_formatter_10}):
-            s = str(d)
-    return s
-
-
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
     if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
@@ -157,34 +108,9 @@ def _wrap_callback(callback, method=None):
     return wrapped_callback
 
 
-def _call_callback_maybe_halt(callback, res):
-    """Call wrapped callback; return True if minimization should stop.
-
-    Parameters
-    ----------
-    callback : callable or None
-        A user-provided callback wrapped with `_wrap_callback`
-    res : OptimizeResult
-        Information about the current iterate
-
-    Returns
-    -------
-    halt : bool
-        True if minimization should stop
-
+class OptimizeResult(_RichResult):
     """
-    if callback is None:
-        return False
-    try:
-        callback(res)
-        return False
-    except StopIteration:
-        callback.stop_iteration = True  # make `minimize` override status/msg
-        return True
-
-
-class OptimizeResult(dict):
-    """ Represents the optimization result.
+    Represents the optimization result.
 
     Attributes
     ----------
@@ -220,49 +146,9 @@ class OptimizeResult(dict):
     attributes not listed here. Since this class is essentially a
     subclass of dict with attribute accessors, one can see which
     attributes are available using the `OptimizeResult.keys` method.
+
     """
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __repr__(self):
-        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
-                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
-                      'converged', 'flag', 'function_calls', 'iterations',
-                      'root']
-        order_keys = getattr(self, '_order_keys', order_keys)
-        # 'slack', 'con' are redundant with residuals
-        # 'crossover_nit' is probably not interesting to most users
-        omit_keys = {'slack', 'con', 'crossover_nit', '_order_keys'}
-
-        def key(item):
-            try:
-                return order_keys.index(item[0].lower())
-            except ValueError:  # item not in list
-                return np.inf
-
-        def omit_redundant(items):
-            for item in items:
-                if item[0] in omit_keys:
-                    continue
-                yield item
-
-        def item_sorter(d):
-            return sorted(omit_redundant(d.items()), key=key)
-
-        if self.keys():
-            return _dict_formatter(self, sorter=item_sorter)
-        else:
-            return self.__class__.__name__ + "()"
-
-    def __dir__(self):
-        return list(self.keys())
+    pass
 
 
 class OptimizeWarning(UserWarning):
@@ -281,8 +167,8 @@ def _check_positive_definite(Hk):
     if Hk is not None:
         if not is_pos_def(Hk):
             raise ValueError("'hess_inv0' matrix isn't positive definite.")
-        
-        
+
+
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))

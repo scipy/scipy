@@ -1,8 +1,9 @@
-#pragma once
-
-/* Author: Josh Wilson 2016
- * Translated from Cython to C++ by SciPy developers 2023.
+/* Translated from Cython into C++ by SciPy developers in 2023.
+ *
+ * Original author: Josh Wilson, 2016.
  */
+
+#pragma once
 
 #include "config.h"
 

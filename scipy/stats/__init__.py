@@ -506,6 +506,7 @@ Statistical distances
    :toctree: generated/
 
    wasserstein_distance
+   wasserstein_distance_nd
    energy_distance
 
 Sampling

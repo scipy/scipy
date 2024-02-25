@@ -170,7 +170,8 @@ def cossin(X, p=None, q=None, separate=False,
 
     method_name = csd.typecode + driver
     if info < 0:
-        raise ValueError(f'illegal value in argument {-info} of internal {method_name}')
+        raise ValueError(f'illegal value in argument {-info} '
+                         f'of internal {method_name}')
     if info > 0:
         raise LinAlgError(f"{method_name} did not converge: {info}")
 

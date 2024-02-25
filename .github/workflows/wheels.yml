@@ -42,7 +42,7 @@ jobs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -94,12 +94,12 @@ jobs:
 
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: 3.9
 
@@ -123,7 +123,7 @@ jobs:
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}

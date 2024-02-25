@@ -161,7 +161,7 @@ def _warning(s):
 
 
 def int_floor(arr, xp):
-    # numpy.array_api is strict about not allowing `int()` on a float array.
+    # array_api_strict is strict about not allowing `int()` on a float array.
     # That's typically not needed, here it is - so explicitly convert
     return int(xp.astype(xp.asarray(arr), xp.int64))
 

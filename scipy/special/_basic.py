@@ -8,9 +8,8 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
-                   imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, inexact, nan, zeros, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
+                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
@@ -781,10 +780,10 @@ def y1p_zeros(nt, complex=False):
     >>> from scipy.special import y1p_zeros
     >>> y1grad_roots, y1_values = y1p_zeros(4)
     >>> with np.printoptions(precision=5):
-    ...     print(f"Y1' Roots: {y1grad_roots}")
-    ...     print(f"Y1 values: {y1_values}")
-    Y1' Roots: [ 3.68302+0.j  6.9415 +0.j 10.1234 +0.j 13.28576+0.j]
-    Y1 values: [ 0.41673+0.j -0.30317+0.j  0.25091+0.j -0.21897+0.j]
+    ...     print(f"Y1' Roots: {y1grad_roots.real}")
+    ...     print(f"Y1 values: {y1_values.real}")
+    Y1' Roots: [ 3.68302  6.9415  10.1234  13.28576]
+    Y1 values: [ 0.41673 -0.30317  0.25091 -0.21897]
 
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
@@ -1595,7 +1594,7 @@ def mathieu_even_coef(m, q):
 
     .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
 
-    .. math:: \mathrm{ce}_{2n+1}(z, q) = 
+    .. math:: \mathrm{ce}_{2n+1}(z, q) =
               \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
 
     This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
@@ -1856,7 +1855,7 @@ def clpmn(m, n, z, type=3):
                 fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
-    p, pd = _specfun.clpmn(mp, n, real(z), imag(z), type)
+    p, pd = _specfun.clpmn(mp, n, z, type)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
@@ -3204,7 +3203,7 @@ def stirling2(N, K, *, exact=False):
 
     The values this function returns are calculated using a dynamic
     program which avoids redundant computation across the subproblems
-    in the solution. For array-like input, this implementation also 
+    in the solution. For array-like input, this implementation also
     avoids redundant computation across the different Stirling number
     calculations.
 

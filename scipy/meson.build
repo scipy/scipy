@@ -268,6 +268,19 @@ cython_gen_cpp = generator(cython,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
+if use_pythran
+  pythran_gen = generator(pythran,
+    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
+    output : '@BASENAME@.cpp',
+  )
+endif
+
+# Used for templated C code (not Cython code since Cython is path-dependent)
+tempita_gen = generator(tempita,
+  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
+  output : '@BASENAME@',
+)
+
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
 # because we want to be able to build with `-Werror` in CI; that ensures that

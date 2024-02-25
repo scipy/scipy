@@ -6384,6 +6384,38 @@ class loglaplace_gen(rv_continuous):
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # Specialize MLE only when location is known.
+        if floc is None:
+            return super(type(self), self).fit(data, *args, **kwds)
+
+        # Raise an error if any observation has zero likelihood.
+        if np.any(data <= floc):
+            raise FitDataError("loglaplace", lower=floc, upper=np.inf)
+
+        # Remove location from data.
+        if floc != 0:
+            data = data - floc
+
+        # When location is zero, the log-Laplace distribution is related to
+        # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
+        # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
+        # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
@@ -10497,39 +10529,39 @@ class vonmises_gen(rv_continuous):
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
-    >>> vonmises.pdf(loc, kappa, 0)
+    >>> vonmises.pdf(0, loc=loc, kappa=kappa)
     0.12570826359722018
 
     Verify that the percentile function ``ppf`` inverts the cumulative
     distribution function ``cdf`` up to floating point accuracy.
 
     >>> x = 1
-    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> cdf_value = vonmises.cdf(x, loc=loc, kappa=kappa)
     >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
     >>> x, cdf_value, ppf_value
     (1, 0.31489339900904967, 1.0000000000000004)
 
     Draw 1000 random variates by calling the ``rvs`` method.
 
-    >>> number_of_samples = 1000
-    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+    >>> sample_size = 1000
+    >>> sample = vonmises(loc=loc, kappa=kappa).rvs(sample_size)
 
     Plot the von Mises density on a Cartesian and polar grid to emphasize
-    that is is a circular distribution.
+    that it is a circular distribution.
 
     >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
-    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> vonmises_pdf = vonmises.pdf(x, loc=loc, kappa=kappa)
     >>> ticks = [0, 0.15, 0.3]
 
     The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
-    >>> number_of_bins = int(np.sqrt(number_of_samples))
-    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> number_of_bins = int(np.sqrt(sample_size))
+    >>> left.hist(sample, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
     >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
@@ -10538,7 +10570,7 @@ class vonmises_gen(rv_continuous):
 
     >>> right.plot(x, vonmises_pdf, label="PDF")
     >>> right.set_yticks(ticks)
-    >>> right.hist(samples, density=True, bins=number_of_bins,
+    >>> right.hist(sample, density=True, bins=number_of_bins,
     ...            label="Histogram")
     >>> right.set_title("Polar plot")
     >>> right.legend(bbox_to_anchor=(0.15, 1.06))

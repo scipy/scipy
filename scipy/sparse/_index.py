@@ -1,7 +1,14 @@
 """Indexing mixin for sparse array/matrix classes.
 """
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 from ._sputils import isintlike
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 INT_TYPES = (int, np.integer)
 
@@ -144,8 +151,28 @@ class IndexMixin:
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
+        # First, check if indexing with single boolean matrix.
+        from ._base import _spbase
+        if (isinstance(key, (_spbase, np.ndarray)) and
+                key.ndim == 2 and key.dtype.kind == 'b'):
+            if key.shape != self.shape:
+                raise IndexError('boolean index shape does not match array shape')
+            row, col = key.nonzero()
+        else:
+            row, col = _unpack_index(key)
         M, N = self.shape
-        row, col = _unpack_index(key)
+
+        def _validate_bool_idx(
+            idx: npt.NDArray[np.bool_],
+            axis_size: int,
+            axis_name: str
+        ) -> npt.NDArray[np.int_]:
+            if len(idx) != axis_size:
+                raise IndexError(
+                    f"boolean {axis_name} index has incorrect length: {len(idx)} "
+                    f"instead of {axis_size}"
+                )
+            return _boolean_index_to_array(idx)
 
         if isintlike(row):
             row = int(row)
@@ -153,6 +180,8 @@ class IndexMixin:
                 raise IndexError('row index (%d) out of range' % row)
             if row < 0:
                 row += M
+        elif (bool_row := _compatible_boolean_index(row)) is not None:
+            row = _validate_bool_idx(bool_row, M, "row")
         elif not isinstance(row, slice):
             row = self._asindices(row, M)
 
@@ -162,6 +191,8 @@ class IndexMixin:
                 raise IndexError('column index (%d) out of range' % col)
             if col < 0:
                 col += N
+        elif (bool_col := _compatible_boolean_index(col)) is not None:
+            col = _validate_bool_idx(bool_col, N, "column")
         elif not isinstance(col, slice):
             col = self._asindices(col, N)
 
@@ -262,16 +293,13 @@ class IndexMixin:
         self._set_arrayXarray(row, col, x)
 
 
-def _unpack_index(index):
+def _unpack_index(index) -> tuple[
+    int | slice | npt.NDArray[np.bool_ | np.int_],
+    int | slice | npt.NDArray[np.bool_ | np.int_]
+]:
     """ Parse index. Always return a tuple of the form (row, col).
-    Valid type for row/col is integer, slice, or array of integers.
+    Valid type for row/col is integer, slice, array of bool, or array of integers.
     """
-    # First, check if indexing with single boolean matrix.
-    from ._base import _spbase, issparse
-    if (isinstance(index, (_spbase, np.ndarray)) and
-            index.ndim == 2 and index.dtype.kind == 'b'):
-        return index.nonzero()
-
     # Parse any ellipses.
     index = _check_ellipsis(index)
 
@@ -288,10 +316,11 @@ def _unpack_index(index):
         if idx is None:
             row, col = index, slice(None)
         elif idx.ndim < 2:
-            return _boolean_index_to_array(idx), slice(None)
+            return idx, slice(None)
         elif idx.ndim == 2:
             return idx.nonzero()
     # Next, check for validity and transform the index as needed.
+    from ._base import issparse
     if issparse(row) or issparse(col):
         # Supporting sparse boolean indexing with both row and col does
         # not work because spmatrix.ndim is always 2.
@@ -299,12 +328,6 @@ def _unpack_index(index):
             'Indexing with sparse matrices is not supported '
             'except boolean indexing where matrix and index '
             'are equal shapes.')
-    bool_row = _compatible_boolean_index(row)
-    bool_col = _compatible_boolean_index(col)
-    if bool_row is not None:
-        row = _boolean_index_to_array(bool_row)
-    if bool_col is not None:
-        col = _boolean_index_to_array(bool_col)
     return row, col
 
 

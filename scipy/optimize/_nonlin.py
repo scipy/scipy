@@ -16,7 +16,7 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
     'diagbroyden', 'excitingmixing', 'newton_krylov',
-    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian', 'NoConvergence']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -24,6 +24,8 @@ __all__ = [
 
 
 class NoConvergence(Exception):
+    """Exception raised when nonlinear solver fails to converge within the specified
+    `maxiter`."""
     pass
 
 

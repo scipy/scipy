@@ -2982,6 +2982,41 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I_bad,J))
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
+    def test_missized_masking(self):
+        M, N = 5, 10
+
+        B = asmatrix(arange(M * N).reshape(M, N))
+        A = self.spcreator(B)
+
+        # Content of mask shouldn't matter, only its size
+        row_long = np.ones(M + 1, dtype=bool)
+        row_short = np.ones(M - 1, dtype=bool)
+        col_long = np.ones(N + 2, dtype=bool)
+        col_short = np.ones(N - 2, dtype=bool)
+
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M + 1} instead of {M}"
+        ):
+            _ = A[row_long, :]
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M - 1} instead of {M}"
+        ):
+            _ = A[row_short, :]
+
+        for i, j in itertools.product(
+            (row_long, row_short, slice(None)),
+            (col_long, col_short, slice(None)),
+        ):
+            if isinstance(i, slice) and isinstance(j, slice):
+                continue
+            with pytest.raises(
+                IndexError,
+                match=r"boolean \w+ index has incorrect length"
+            ):
+                _ = A[i, j]
+
     def test_fancy_indexing_boolean(self):
         np.random.seed(1234)  # make runs repeatable
 
@@ -3009,7 +3044,7 @@ class _TestFancyIndexing:
         Z3 = np.zeros((6, 11), dtype=bool)
         Z3[-1,0] = True
 
-        assert_equal(A[Z1], np.array([]))
+        assert_raises(IndexError, A.__getitem__, Z1)
         assert_raises(IndexError, A.__getitem__, Z2)
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))

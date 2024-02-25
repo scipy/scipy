@@ -781,6 +781,19 @@ class TestCubicSpline:
         self.check_correctness(S, 'periodic', 'periodic')
         assert_allclose(S.derivative(1)(x), np.array([-48.0, -48.0, -48.0]))
 
+    def test_periodic_three_points_multidim(self):
+        # make sure one multidimensional interpolator does the same as multiple
+        # one-dimensional interpolators
+        x = np.array([0.0, 1.0, 3.0])
+        y = np.array([[0.0, 1.0], [1.0, 0.0], [0.0, 1.0]])
+        S = CubicSpline(x, y, bc_type="periodic")
+        self.check_correctness(S, 'periodic', 'periodic')
+        S0 = CubicSpline(x, y[:, 0], bc_type="periodic")
+        S1 = CubicSpline(x, y[:, 1], bc_type="periodic")
+        q = np.linspace(0, 2, 5)
+        assert_allclose(S(q)[:, 0], S0(q))
+        assert_allclose(S(q)[:, 1], S1(q))
+
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
         y = np.array([-5, 2, 3, 1], dtype=int)
