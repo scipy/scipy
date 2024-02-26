@@ -2863,10 +2863,9 @@ class TestEnvelope:
         self.assert_close(sp_fft.rfft(zr_3), np.array([4, 0, 0, 0, 0]).astype(complex),
                           msg="`residual='lowpass'` residual calculation error")
 
-        ze2_4, zr_4 = envelope(z, (1, 3), residual=None, squared=True)
+        ze2_4 = envelope(z, (1, 3), residual=None, squared=True)
         self.assert_close(ze2_4, ze2_0,
                           msg="`residual=None` envelope calculation error")
-        assert zr_4 is None, "`residual=None` residual calculation error"
 
         # compare complex analytic signal to real version
         Z_a = np.copy(Z)
@@ -2880,7 +2879,6 @@ class TestEnvelope:
         self.assert_close(sp_fft.fft(zr_a), np.array(Zr_a).astype(complex),
                           msg="Complex residual calculation error")
 
-
     @pytest.mark.parametrize(
         "               Z,        bp_in,     Ze2_desired,      Zr_desired",
         [([1, 0, 2, 2, 0],    (1, None), [4, 2, 0, 0, 0], [1, 0, 0, 0, 0]),
@@ -2888,7 +2886,8 @@ class TestEnvelope:
          ([4, 0, 0, 2, 0], (None, None), [4, 0, 0, 2, 0], [0, 0, 0, 0, 0]),
          ([0, 0, 2, 2, 0],       (1, 3), [2, 0, 0, 0, 0], [0, 0, 0, 2, 0]),
          ([4, 0, 2, 2, 0],      (-3, 3), [4, 0, 2, 0, 0], [0, 0, 0, 2, 0]),
-         ([4, 0, 3, 4, 0],    (None, 1), [2, 0, 0, 0, 0], [0, 0, 3, 4, 0])])
+         ([4, 0, 3, 4, 0],    (None, 1), [2, 0, 0, 0, 0], [0, 0, 3, 4, 0]),
+         ([4, 0, 3, 4, 0],    (None, 0), [0, 0, 0, 0, 0], [4, 0, 3, 4, 0])])
     def test_envelope_real_signals(self, Z, bp_in, Ze2_desired, Zr_desired):
         """Test envelope calculation with real-valued test signals.
 
@@ -2901,12 +2900,22 @@ class TestEnvelope:
         """
         z = sp_fft.irfft(Z)
         ze2, zr = envelope(z, bp_in, residual='all', squared=True)
-        Ze2, Zr = sp_fft.rfft(ze2), sp_fft.rfft(zr)
+        ze2_lp, zr_lp = envelope(z, bp_in, residual='lowpass', squared=True)
+        Ze2, Zr, Ze2_lp, Zr_lp = (sp_fft.rfft(z_) for z_ in (ze2, zr, ze2_lp, zr_lp))
 
-        self.assert_close(Ze2, np.array(Ze2_desired).astype(complex),
-                          msg="Envelope calculation error")
-        self.assert_close(Zr, np.array(Zr_desired).astype(complex),
-                          msg="Residual calculation error")
+        Ze2_desired = np.array(Ze2_desired).astype(complex)
+        Zr_desired = np.array(Zr_desired).astype(complex)
+        self.assert_close(Ze2, Ze2_desired,
+                          msg="Envelope calculation error (residual='all')")
+        self.assert_close(Zr, Zr_desired,
+                          msg="Residual calculation error (residual='all')")
+
+        if bp_in[1] is not None:
+            Zr_desired[bp_in[1]:] = 0
+        self.assert_close(Ze2_lp, Ze2_desired,
+                          msg="Envelope calculation error (residual='lowpass')")
+        self.assert_close(Zr_lp, Zr_desired,
+                          msg="Residual calculation error (residual='lowpass')")
 
     @pytest.mark.parametrize(
         "               Z,        bp_in,         Ze2_desired,         Zr_desired",
@@ -2962,6 +2971,14 @@ class TestEnvelope:
         self.assert_close(Zr, Zr_des, msg="2d residual calculation error")
         self.assert_close(Ye2, Ze2_des,  msg="Transposed 2d envelope calc. error")
         self.assert_close(Yr, Zr_des,  msg="Transposed 2d residual calc. error")
+
+    @pytest.mark.parametrize('X', [[4, 0, 0, 1, 2], [4, 0, 0, 2, 1, 2]])
+    def test_compare_envelope_hilbert(self, X):
+        """Compare output of `envelope()` and `hilbert()`. """
+        x = sp_fft.irfft(X)
+        e_hil = np.abs(hilbert(x))
+        e_env = envelope(x, (None, None), residual=None)
+        self.assert_close(e_hil, e_env, msg="Hilbert-Envelope comparison error")
 
 
 class TestPartialFractionExpansion:
