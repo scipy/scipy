@@ -2327,6 +2327,10 @@ def hilbert(x, N=None, axis=-1):
            Processing, Third Edition, 2009. Chapter 12.
            ISBN 13: 978-1292-02572-8
 
+    See Also
+    --------
+    envelope: Compute envelope of a signal after applying an optional bandpass filter.
+
     Examples
     --------
     In this example we use the Hilbert transform to determine the amplitude
@@ -2455,7 +2459,7 @@ def hilbert2(x, N=None):
 def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
              n_out: int | None = None, squared: bool = False,
              residual: Literal['lowpass', 'all', None] = 'lowpass',
-             axis: int = -1) -> tuple[np.ndarray, np.ndarray | None]:
+             axis: int = -1) -> tuple[np.ndarray, np.ndarray] | np.ndarray:
     r"""Compute the envelope of a real- or complex-valued signal after applying an
     optional bandpass filter.
 
@@ -2465,7 +2469,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     the amplitude `|a(t)| = |z(t)|`, which is at the same time the absolute value of
     the signal. Hence, `|a(t)|` "envelopes" the class of all signals with amplitude
     `a(t)` and arbitrary phase `phi(t)`.
-    For real-valued signals `x(t) = a(t) * cos(phi(t))` is the analogous formulation.
+    For real-valued signals, `x(t) = a(t) * cos(phi(t))` is the analogous formulation.
     `|a(t)|` can be determined by converting `x(t)` into an analytic signal `z_a(t)`
     by means of a Hilbert transform, i.e.,
     `z_a(t) = a(t) * cos(phi(t)) + 1j * a(t) * sin(phi(t))`, which produces a
@@ -2475,9 +2479,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     ----------
     z :
         Real- or complex-valued input signal, which is assumed to be made up of `n`
-        samples and having sampling interval `T`.
+        samples and having sampling interval `T`. `z` may also be a multidimensional
+        signal with the time axis being defined by `axis`.
     bp_in :
-        2-tuple defining the frequency band `[bp_in[0], bp_in[1])` of the input filter.
+        2-tuple defining the frequency band ``bp_in[0]:bp_in[1]`` of the input filter.
         The corner frequencies are specified as multiples of `1/(n*T)` and the allowed
         frequency range is specified by ``-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2``.
         ``None`` entries are replaced with `-n//2` or `(n+1)//2` respectively. The
@@ -2492,9 +2497,9 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     residual :
         This option determines what kind of residual, i.e., the signal part which the
         input bandpass filter removes, is returned. `'all'` returns everything except
-        the contents of the frequency band `[bp_in[0], bp_in[1])`, `'lowpass'`
-        returns the contents of the frequency band ``< bp_in[0]`` and ``None``
-        just returns ``None``.
+        the contents of the frequency band ``bp_in[0]:bp_in[1]``, `'lowpass'`
+        returns the contents of the frequency band ``< bp_in[0]``. If ``None`` then
+        nothing is returned.
     axis :
        Axis of `z` over which to compute the envelope (default is last axis).
 
@@ -2503,8 +2508,10 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     z_env :
         The envelope of input `x`.
     x_res :
-        The residual, i.e., the signal part which the input bandpass filter
-        removed. What is returned is determined by the parameter `residual`.
+        Optional residual, i.e., the signal part which the input bandpass filter
+        removed. What is returned is determined by the parameter `residual`. Note that
+        for real-valued signals, also a real-valued residual is returned. Hence, the
+        negative frequency components of `bp_in` are ignored.
 
     Notes
     -----
@@ -2530,12 +2537,11 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     popular alterantive is probably the so-called "square-law" envelope detector and
     its relatives [2]_. They do not always compute the correct result for all kind of
     signals, but are usually correct and typically computationally more efficient for
-    narrowband signals. The definition for an envelope presented here is common for
-    typical signals processing frameworks (e.g., as described in [3]_), where
-    instantaneous amplitude and phase are of interest. There exist also other concepts,
-    which rely on the general mathematical idea of an envelope [4]_: A pragmatic
-    approach is to determine all upper and lower signal peaks and use a spline
-    interpolation to determine the curves [5]_.
+    most kinds of narrowband signals. The definition for an envelope presented here is
+    common where instantaneous amplitude and phase are of interest (e.g., as described
+    in [3]_). There exist also other concepts, which rely on the general mathematical
+    idea of an envelope [4]_: A pragmatic approach is to determine all upper and lower
+    signal peaks and use a spline interpolation to determine the curves [5]_.
 
 
     References
@@ -2563,12 +2569,12 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     Examples
     --------
     The following plot illustrates the envelope of a signal with variable frequency and
-    a low-frequency drift. To separate the drift from the envelope a 4 Hz highpass
+    a low-frequency drift. To separate the drift from the envelope, a 4 Hz highpass
     filter is used. The low-pass residuum of the input bandpass filter is utilized to
     determine an asymmetric upper and lower bound to enclose the signal. Due to the
     smoothness of the resulting envelope, it is down-sampled from 1000 to 40 samples.
     Note that the instantaneous amplitude `x_a` and the computed envelope `x_env` are
-    not perfectly identical. This due to the signal not being perfectly periodical as
+    not perfectly identical. This due to the signal not being perfectly periodic as
     well as the existence of some spectral overlapping of `x_carrier` and `x_drift`.
     Hence, they cannot be completely separated by a bandpass filter.
 
@@ -2599,8 +2605,8 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> plt.show()
 
 
-    The second example provides a geometric interpretation of a complex-valued
-    envelope: The following plot shows the complex-valued signal as a blue
+    The second example provides a geometric envelope interpretation of a complex-valued
+    signal: The following plot shows the complex-valued signal as a blue
     3d-trajectory and the envelope as an orange round tube with varying diameter,
     i.e., as :math:`|a(t)| \exp(j\rho)`, with :math:`\rho\in[-\pi,\pi]`. Also, the
     projection into the 2d real and imaginary coordinate planes of trajectory and tube
@@ -2610,9 +2616,9 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     real and imaginary is always 90 degrees resulting in a spiraling trajectory. It can
     be seen that in this case the real part has also the expected envelope, i.e.,
     representing the absolute value of the instantaneous amplitude. The right plot
-    shows a real-valued signal interpreted as a complex signal with zero imaginary
-    part. There the instantaneous amplitude is not recovered and the resulting envelope
-    is not as smooth as in the analytic case.
+    shows a real-valued signal interpreted as a complex signal, i.e., having zero
+    imaginary part. There the resulting envelope is not as smooth as in the analytic
+    case and the instantaneous amplitude in the real plane is not recovered.
 
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
@@ -2624,7 +2630,7 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     >>> z = gaussian(len(t), 0.3/T) * np.exp(2j*np.pi*f_c*t)  # analytic signal
     >>> z_re = z.real + 0j  # complex signal with zero imaginary part
     ...
-    >>> e_a, e_r = (envelope(z_, (None, None), residual=None)[0] for z_ in (z, z_re))
+    >>> e_a, e_r = (envelope(z_, (None, None), residual=None) for z_ in (z, z_re))
     ...
     >>> # Generate grids to visualize envelopes as 2d and 3d surfaces:
     >>> E2d_t, E2_amp = np.meshgrid(t, [-1, 1])
@@ -2643,11 +2649,11 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
     ...     ax_.set(xlabel="Time $t$", ylabel="Real Amp. $x(t)$",
     ...             zlabel="Imag. Amp. $y(t)$")
     ...     ax_.plot(t, z_.real, 'C0-', zs=-ma, zdir='z', alpha=0.5, label="Real")
-    ...     ax_.plot_surface(E2d_t, e_ * E2_amp, -ma * E2d_1, color='C1', alpha=0.25)
+    ...     ax_.plot_surface(E2d_t, e_*E2_amp, -ma*E2d_1, color='C1', alpha=0.25)
     ...     ax_.plot(t, z_.imag, 'C0-', zs=+ma, zdir='y', alpha=0.5, label="Imag.")
-    ...     ax_.plot_surface(E2d_t, ma * E2d_1, e_ * E2_amp, color='C1', alpha=0.25)
+    ...     ax_.plot_surface(E2d_t, ma*E2d_1, e_*E2_amp, color='C1', alpha=0.25)
     ...     ax_.plot(t, z_.real, z_.imag, 'C0-', label="Signal")
-    ...     ax_.plot_surface(E3d_t, e_ * np.cos(E3d_phi), e_ * np.sin(E3d_phi),
+    ...     ax_.plot_surface(E3d_t, e_*np.cos(E3d_phi), e_*np.sin(E3d_phi),
     ...                      color='C1', alpha=0.5, shade=True, label="Envelope")
     ...     ax_.view_init(elev=22.7, azim=-114.3)
     >>> fg0.subplots_adjust(left=0.08, right=0.97, wspace=0.15)
@@ -2658,58 +2664,59 @@ def envelope(z: np.ndarray, bp_in: tuple[int | None, int | None] = (1, None), *,
         raise ValueError(f"Invalid parameter {axis=} for {z.shape=}!")
     if not (z.shape[axis] > 0):
         raise ValueError(f"z.shape[axis] not > 0 for {z.shape=}, {axis=}!")
-    if len(bp_in) != 2 or any(not (isinstance(b_, int) or b_ is None) for b_ in bp_in):
+    if len(bp_in) != 2 or not all((isinstance(b_, int) or b_ is None) for b_ in bp_in):
         raise ValueError(f"{bp_in=} isn't a 2-tuple of type (int | None, int | None)!")
     if not ((isinstance(n_out, int) and 0 < n_out) or n_out is None):
         raise ValueError(f"{n_out=} is not a positive integer or None!")
+    if residual not in ('lowpass', 'all', None):
+        raise ValueError(f"{residual=} not in ['lowpass', 'all', None]!")
 
     n = z.shape[axis]  # number of time samples of input
     n_out = n if n_out is None else n_out
     fak = n_out / n  # scaling factor for resampling
 
-    # Make bandpass indexes compatible with `Z` and set default values:
-    if bp_in[0] is None:  # analytic signals do not have negative frequencies:
-        l_lo = 0 if np.iscomplexobj(z) else n//2
-    else:
-        l_lo = n // 2 + bp_in[0]
-    l_hi = n // 2 + bp_in[1] if bp_in[1] is not None else n
-    if not (0 <= l_lo < l_hi <= n):
+    bp = slice(bp_in[0] if bp_in[0] is not None else -(n//2),
+               bp_in[1] if bp_in[1] is not None else (n+1)//2)
+    if not (-n//2 <= bp.start < bp.stop <= (n+1)//2):
         raise ValueError("`-n//2 <= bp_in[0] < bp_in[1] <= (n+1)//2` does not hold " +
                          f"for n={z.shape[axis]=} and {bp_in=}!")
 
     # moving active axis to end allows to use `...` for indexing:
     z = np.moveaxis(z, axis, -1)
-    # Calculate FFT with the 0 Hz bin being at n//2:
+
     if np.iscomplexobj(z):
-        Z = sp_fft.fftshift(sp_fft.fft(z), axes=-1)
-        # Envelopes are invariant to frequency shifts, so the baseband is used:
-        z_bb = sp_fft.ifft(Z[..., l_lo:l_hi], n=n_out) * fak  # baseband signal
-    else:  # Avoid calculating negative frequencies when computing analytical signal:
-        # create zero array with same dtype as rfft() produces:
-        Z = np.zeros_like(z, dtype=sp_fft.rfft(z[..., :1]).dtype)
-        # Account for last unpaired bin for even length signals:
-        Z[..., n//2:] = sp_fft.rfft(z)[..., :(-1 if n % 2 == 0 else None)]
-        # To obtain an analytic signal the non-negative frequency bins are doubled:
-        Z_bb = np.copy(Z[..., l_lo:l_hi])
-        j_lo = max(n // 2 + 1 - l_lo, 0)
-        Z_bb[..., j_lo:] *= 2
-        z_bb = sp_fft.ifft(Z_bb, n=n_out) * fak  # baseband signal
+        Z = sp_fft.fft(z)
+    else:  # avoid calculating negative frequency bins for real signals:
+        Z = np.zeros_like(z, dtype=sp_fft.rfft(z.flat[:1]).dtype)
+        Z[..., :n//2 + 1] = sp_fft.rfft(z)
+        if bp.start > 0:  # make signal analytic within bp_in band:
+            Z[..., bp] *= 2
+        elif bp.stop > 0:
+            Z[..., 1:bp.stop] *= 2
+    if not (bp.start <= 0 < bp.stop):  # envelope is invariant to freq. shifts.
+        z_bb = sp_fft.ifft(Z[..., bp], n=n_out) * fak  # baseband signal
+    else:
+        bp_shift = slice(bp.start + n//2, bp.stop + n//2)
+        z_bb = sp_fft.ifft(sp_fft.fftshift(Z, axes=-1)[..., bp_shift], n=n_out) * fak
 
     z_env = np.abs(z_bb) if not squared else z_bb.real ** 2 + z_bb.imag ** 2
     z_env = np.moveaxis(z_env, -1, axis)
 
     # Calculate the residual from the input bandpass filter:
     if residual is None:
-        return z_env, None
-    if residual == 'lowpass':
-        Z[..., l_lo:] = 0
-    elif residual == 'all':
-        Z[..., l_lo:l_hi] = 0
+        return z_env
+    if not (bp.start <= 0 < bp.stop):
+        Z[..., bp] = 0
     else:
-        raise ValueError(f"{residual=} not in ['lowpass', 'all', None]!")
-    Z_shift = sp_fft.ifftshift(Z, axes=-1)
-    z_res = fak * (sp_fft.ifft(Z_shift, n=n_out) if np.iscomplexobj(z) else
-                   sp_fft.irfft(Z_shift, n=n_out))
+        Z[..., :bp.stop], Z[..., bp.start:] = 0, 0
+    if residual == 'lowpass':
+        if bp.stop > 0:
+            Z[..., bp.stop:(n+1) // 2] = 0
+        else:
+            Z[..., bp.start:], Z[..., 0:(n + 1) // 2] = 0, 0
+
+    z_res = fak * (sp_fft.ifft(Z, n=n_out) if np.iscomplexobj(z) else
+                   sp_fft.irfft(Z, n=n_out))
     return z_env, np.moveaxis(z_res, -1, axis)
 
 def _cmplx_sort(p):
