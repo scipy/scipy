@@ -105,6 +105,7 @@ axis_nan_policy_cases = [
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
