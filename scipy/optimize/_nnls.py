@@ -136,7 +136,7 @@ def _nnls(A, b, maxiter=None, tol=None):
                      assume_a='sym', check_finite=False)  # B.4
 
         # Inner loop
-        while (iter < maxiter) and (s[P].min() <= tol):  # C.1
+        while (iter < maxiter) and (s[P].min() < 0):  # C.1
             alpha_ind = ((s < tol) & P).nonzero()
             alpha = (x[alpha_ind] / (x[alpha_ind] - s[alpha_ind])).min()  # C.2
             x *= (1 - alpha)
