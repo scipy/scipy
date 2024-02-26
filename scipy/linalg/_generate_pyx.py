@@ -81,12 +81,14 @@ def pyx_decl_func(name, ret_type, args, header_name):
     argnames = ', '.join(argnames)
     args = args.replace('lambda', 'lambda_')
     if name in wrapped_funcs:
+        # Cast from Cython to Numpy complex types
+        npy_ret_type = npy_types.get(ret_type, ret_type)
         return f"""
 cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name}wrp, {name.upper()}WRP)"({ret_type} *out, {fort_args}) nogil
+    void _fortran_{name} "F_FUNC({name}wrp, {name.upper()}WRP)"({npy_ret_type} *out, {fort_args}) nogil
 cdef {ret_type} {name}({args}) noexcept nogil:
     cdef {ret_type} out
-    _fortran_{name}(&out, {argnames})
+    _fortran_{name}(<{npy_ret_type}*>&out, {argnames})
     return out
 """
     else:
