@@ -14,14 +14,14 @@ cdef extern from "npy_2_npymathcompat.h":
     void npymath_csetimag(np.npy_cdouble *c, double imag) nogil
 
 cdef extern from "_complexstuff.h":
-    double npy_cabs(np.npy_cdouble z) nogil
-    double npy_carg(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_clog(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_cexp(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_csin(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_ccos(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_csqrt(np.npy_cdouble z) nogil
-    np.npy_cdouble npy_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
+    double npymath_cabs(np.npy_cdouble z) nogil
+    double npymath_carg(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_clog(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_cexp(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_csin(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_ccos(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_csqrt(np.npy_cdouble z) nogil
+    np.npy_cdouble npymath_cpow(np.npy_cdouble x, np.npy_cdouble y) nogil
 
 ctypedef double complex double_complex
 
@@ -71,17 +71,17 @@ cdef inline double zreal(number_t x) noexcept nogil:
 
 cdef inline double zabs(number_t x) noexcept nogil:
     if number_t is double_complex:
-        return npy_cabs(npy_cdouble_from_double_complex(x))
+        return npymath_cabs(npy_cdouble_from_double_complex(x))
     else:
         return fabs(x)
 
 cdef inline double zarg(double complex x) noexcept nogil:
-    return npy_carg(npy_cdouble_from_double_complex(x))
+    return npymath_carg(npy_cdouble_from_double_complex(x))
 
 cdef inline number_t zlog(number_t x) noexcept nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_clog(npy_cdouble_from_double_complex(x))
+        r = npymath_clog(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return log(x)
@@ -89,7 +89,7 @@ cdef inline number_t zlog(number_t x) noexcept nogil:
 cdef inline number_t zexp(number_t x) noexcept nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_cexp(npy_cdouble_from_double_complex(x))
+        r = npymath_cexp(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return exp(x)
@@ -97,7 +97,7 @@ cdef inline number_t zexp(number_t x) noexcept nogil:
 cdef inline number_t zsin(number_t x) noexcept nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_csin(npy_cdouble_from_double_complex(x))
+        r = npymath_csin(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return sin(x)
@@ -105,7 +105,7 @@ cdef inline number_t zsin(number_t x) noexcept nogil:
 cdef inline number_t zcos(number_t x) noexcept nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_ccos(npy_cdouble_from_double_complex(x))
+        r = npymath_ccos(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return cos(x)
@@ -113,7 +113,7 @@ cdef inline number_t zcos(number_t x) noexcept nogil:
 cdef inline number_t zsqrt(number_t x) noexcept nogil:
     cdef np.npy_cdouble r
     if number_t is double_complex:
-        r = npy_csqrt(npy_cdouble_from_double_complex(x))
+        r = npymath_csqrt(npy_cdouble_from_double_complex(x))
         return double_complex_from_npy_cdouble(r)
     else:
         return sqrt(x)
@@ -124,7 +124,7 @@ cdef inline number_t zpow(number_t x, double y) noexcept nogil:
     if number_t is double_complex:
         npymath_csetreal(&z, y)
         npymath_csetimag(&z, 0.0)
-        r = npy_cpow(npy_cdouble_from_double_complex(x), z)
+        r = npymath_cpow(npy_cdouble_from_double_complex(x), z)
         return double_complex_from_npy_cdouble(r)
     else:
         return pow(x, y)
