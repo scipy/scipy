@@ -1,3 +1,19 @@
+/*
+Some linear algebra libraries are built with a Fortran ABI that is incompatible
+with the compiler used to build scipy (see gh-11812). This results in segfaults
+when calling functions with complex-valued return types.
+
+The wrappers in THIS FILE ensure compatibility by calling either:
+1. The ABI-independent CBLAS API (cdotc, cdotu, zdotc, zdotu)
+2. Fortran functions without complex-valued args (cladiv, zladiv)
+
+When these wrappers are not necessary, wrap_g77_dummy_abi.c provides wrappers
+that have the same name ('w' prefix) and calling convention as those here.
+
+The choice of which wrapper file to compile with is handled at build time by
+Meson (g77_abi_wrappers in scipy/meson.build).
+*/
+
 #include "fortran_defs.h"
 #include "npy_cblas.h"
 
