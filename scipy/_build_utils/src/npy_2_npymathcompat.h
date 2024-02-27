@@ -4,7 +4,6 @@
 #ifdef NPYMATH_USE_NUMPY_TYPES
 
 #include <numpy/npy_common.h>
-#include <numpy/numpyconfig.h>
 
 #endif
 
