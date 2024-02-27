@@ -16,6 +16,7 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.signal._arraytools import _validate_fs
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -431,6 +432,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     b = atleast_1d(b)
     a = atleast_1d(a)
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if worN is None:
         # For backwards compatibility
         worN = 512
@@ -571,6 +574,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     """
     z, p = map(atleast_1d, (z, p))
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if whole:
         lastpoint = 2 * pi
     else:
@@ -672,6 +677,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     if w is None:
         # For backwards compatibility
         w = 512
+
+    fs = _validate_fs(fs, allow_none=False)
 
     if _is_int_type(w):
         if whole:
@@ -838,6 +845,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     sos, n_sections = _validate_sos(sos)
     if n_sections == 0:
@@ -2200,7 +2208,7 @@ def bilinear(b, a, fs=1.0):
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.grid(True)
     """
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
@@ -2380,6 +2388,8 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
 
+    fs = _validate_fs(fs, allow_none=True)
+
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
         raise ValueError("wp and ws must have one or two elements each, and"
                          f"the same shape, got {wp.shape} and {ws.shape}")
@@ -2548,6 +2558,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
@@ -2730,6 +2741,8 @@ def bilinear_zpk(z, p, k, fs):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+
+    fs = _validate_fs(fs, allow_none=False)
 
     degree = _relative_degree(z, p)
 
@@ -3948,6 +3961,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     _validate_gpass_gstop(gpass, gstop)
+    fs = _validate_fs(fs, allow_none=True)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
     nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
@@ -4069,6 +4083,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4163,6 +4178,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4285,7 +4301,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -5112,6 +5128,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
         Numerator (``b``) and denominator (``a``) polynomials
         of the IIR filter.
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     # Guarantee that the inputs are floats
     w0 = float(w0)
@@ -5295,7 +5312,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Convert w0, Q, and fs to float
     w0 = float(w0)
     Q = float(Q)
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
@@ -5462,7 +5479,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     # Set sampling rate if not passed
     if fs is None:
         fs = 2
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()

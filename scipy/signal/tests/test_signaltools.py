@@ -1489,7 +1489,7 @@ class _TestLinearFilter:
                 y[...] = self.type(x[()])
             return out
         else:
-            return np.array(arr, self.dtype, copy=False)
+            return np.asarray(arr, dtype=self.dtype)
 
     def test_rank_1_IIR(self):
         x = self.generate((6,))
@@ -2013,7 +2013,7 @@ class TestCorrelateReal:
                       [308., 1006., 1950., 2996., 4052., 2400., 1078., 230.],
                       [230., 692., 1290., 1928., 2568., 1458., 596., 78.],
                       [126., 354., 636., 924., 1212., 654., 234., 0.]]],
-                    dtype=dt)
+                    dtype=np.float64).astype(dt)
 
         return a, b, y_r
 

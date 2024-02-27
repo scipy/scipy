@@ -1,7 +1,11 @@
+/* Translated into C++ by SciPy developers in 2024.
+ * Original header with Copyright information appears below.
+ *
+ * Since we support only IEEE-754 floating point numbers, conditional logic
+ * supporting other arithmetic types has been removed.
+ */
+
 /*
- * Taken from Stephen Moshier's cephes library. Since we support only IEEE-754
- * floating point numbers, conditional logic supporting other arithmetic types
- * is removed. Original header comment appears unmodified below.
  *
  *
  *                                                   const.c

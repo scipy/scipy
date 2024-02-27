@@ -521,6 +521,17 @@ def test_x0_equals_Mb(case):
     assert norm(A @ x - b) <= rtol * norm(b)
 
 
+@pytest.mark.parametrize('solver', _SOLVERS)
+def test_x0_solves_problem_exactly(solver):
+    # See gh-19948
+    mat = np.eye(2)
+    rhs = np.array([-1., -1.])
+
+    sol, info = solver(mat, rhs, x0=rhs)
+    assert_allclose(sol, rhs)
+    assert info == 0
+
+
 # Specific tfqmr test
 @pytest.mark.parametrize('case', IterativeParams().cases)
 def test_show(case, capsys):

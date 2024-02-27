@@ -11,9 +11,8 @@
 #define _SPEC_WRAPPERS_H
 #include "Python.h"
 #include <math.h>
-
+#include "specfun.h"
 #include "npy_2_npymathcompat.h"
-
 #include "sf_error.h"
 
 #define ZCONVINF(func,z)                                                \

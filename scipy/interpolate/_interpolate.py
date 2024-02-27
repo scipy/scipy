@@ -420,8 +420,8 @@ class interp1d(_Interpolator1D):
         Axis in the ``y`` array corresponding to the x-coordinate values. Unlike
         other interpolators, defaults to ``axis=-1``.
     copy : bool, optional
-        If True, the class makes internal copies of x and y.
-        If False, references to `x` and `y` are used. The default is to copy.
+        If ``True``, the class makes internal copies of x and y. If ``False``,
+        references to ``x`` and ``y`` are used if possible. The default is to copy.
     bounds_error : bool, optional
         If True, a ValueError is raised any time interpolation is attempted on
         a value outside of the range of x (where extrapolation is
@@ -499,7 +499,10 @@ class interp1d(_Interpolator1D):
         _Interpolator1D.__init__(self, x, y, axis=axis)
 
         self.bounds_error = bounds_error  # used by fill_value setter
-        self.copy = copy
+
+        # `copy` keyword semantics changed in NumPy 2.0, once that is
+        # the minimum version this can use `copy=None`.
+        self.copy = np._CopyMode.ALWAYS if copy else np._CopyMode.IF_NEEDED
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,

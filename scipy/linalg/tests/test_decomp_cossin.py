@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.random import seed
+from numpy.random import default_rng
 from numpy.testing import assert_allclose
 
 from scipy.linalg.lapack import _compute_lwork
@@ -28,11 +28,11 @@ DTYPES = REAL_DTYPES + COMPLEX_DTYPES
                          ])
 @pytest.mark.parametrize('swap_sign', [True, False])
 def test_cossin(dtype_, m, p, q, swap_sign):
-    seed(1234)
+    rng = default_rng(1708093570726217)
     if dtype_ in COMPLEX_DTYPES:
-        x = np.array(unitary_group.rvs(m), dtype=dtype_)
+        x = np.array(unitary_group.rvs(m, random_state=rng), dtype=dtype_)
     else:
-        x = np.array(ortho_group.rvs(m), dtype=dtype_)
+        x = np.array(ortho_group.rvs(m, random_state=rng), dtype=dtype_)
 
     u, cs, vh = cossin(x, p, q,
                        swap_sign=swap_sign)
@@ -69,8 +69,8 @@ def test_cossin(dtype_, m, p, q, swap_sign):
 
 
 def test_cossin_mixed_types():
-    seed(1234)
-    x = np.array(ortho_group.rvs(4), dtype=np.float64)
+    rng = default_rng(1708093736390459)
+    x = np.array(ortho_group.rvs(4, random_state=rng), dtype=np.float64)
     u, cs, vh = cossin([x[:2, :2],
                         np.array(x[:2, 2:], dtype=np.complex128),
                         x[2:, :2],
@@ -116,6 +116,7 @@ def test_cossin_error_non_square():
     with pytest.raises(ValueError, match="only supports square"):
         cossin(np.array([[1, 2]]), 1, 1)
 
+
 def test_cossin_error_partitioning():
     x = np.array(ortho_group.rvs(4), dtype=np.float64)
     with pytest.raises(ValueError, match="invalid p=0.*0<p<4.*"):
@@ -130,14 +131,15 @@ def test_cossin_error_partitioning():
 
 @pytest.mark.parametrize("dtype_", DTYPES)
 def test_cossin_separate(dtype_):
-    seed(1234)
-    m, p, q = 250, 80, 170
+    rng = default_rng(1708093590167096)
+    m, p, q = 98, 37, 61
 
     pfx = 'or' if dtype_ in REAL_DTYPES else 'un'
-    X = ortho_group.rvs(m) if pfx == 'or' else unitary_group.rvs(m)
+    X = (ortho_group.rvs(m, random_state=rng) if pfx == 'or'
+         else unitary_group.rvs(m, random_state=rng))
     X = np.array(X, dtype=dtype_)
 
-    drv, dlw = get_lapack_funcs((pfx + 'csd', pfx + 'csd_lwork'),[X])
+    drv, dlw = get_lapack_funcs((pfx + 'csd', pfx + 'csd_lwork'), [X])
     lwval = _compute_lwork(dlw, m, p, q)
     lwvals = {'lwork': lwval} if pfx == 'or' else dict(zip(['lwork',
                                                             'lrwork'],

@@ -41,12 +41,12 @@ jobs:
           - maintenance-branch: true
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'  # not using a path to also cache pytorch
@@ -58,7 +58,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool pooch hypothesis array-api-strict
 
     - name: Install PyTorch CPU
       run: |
@@ -91,7 +91,7 @@ jobs:
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
         # expand as new modules are added
-        # --array-api-backend == -b
-        python dev.py --no-build test -b pytorch -b numpy -b numpy.array_api -s cluster -- --durations 3 --timeout=60
-        python dev.py --no-build test -b pytorch -b numpy -b numpy.array_api -s fft -- --durations 3 --timeout=60
-        python dev.py --no-build test --array-api-backend all --tests scipy/_lib/tests/test_array_api.py
+        python dev.py --no-build test -b all -s cluster -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -s fft -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api

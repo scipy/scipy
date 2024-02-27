@@ -16,7 +16,7 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py
 from ._fit import FitResult
-from ._stats_py import find_repeats, _normtest_finish, SignificanceResult
+from ._stats_py import find_repeats, _get_pvalue, SignificanceResult
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -944,9 +944,9 @@ def boxcox_llf(lmb, data):
         # Transform without the constant offset 1/lmb.  The offset does
         # not affect the variance, and the subtraction of the offset can
         # lead to loss of precision.
-        # The sign of lmb at the denominator doesn't affect the variance.
-        logx = lmb * logdata - np.log(abs(lmb))
-        logvar = _log_var(logx)
+        # Division by lmb can be factored out to enhance numerical stability.
+        logx = lmb * logdata
+        logvar = _log_var(logx) - 2 * np.log(abs(lmb))
 
     return (lmb - 1) * np.sum(logdata, axis=0) - N/2 * logvar
 
@@ -2823,8 +2823,8 @@ def ansari(x, y, alternative='two-sided'):
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
     z = (mnAB - AB) / sqrt(varAB)
-    z, pval = _normtest_finish(z, alternative)
-    return AnsariResult(AB, pval)
+    pvalue = _get_pvalue(z, distributions.norm, alternative)
+    return AnsariResult(AB[()], pvalue[()])
 
 
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
@@ -3855,7 +3855,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         mnM = n * (N * N - 1.0) / 12
         varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
         z = (M - mnM) / sqrt(varM)
-    z, pval = _normtest_finish(z, alternative)
+    pval = _get_pvalue(z, distributions.norm, alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
@@ -3864,7 +3864,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-    return SignificanceResult(z, pval)
+    return SignificanceResult(z[()], pval[()])
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])

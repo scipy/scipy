@@ -12,14 +12,13 @@
 #define _END_EXTERN_C	/* nothing */
 #endif
 
+#include "npy_2_npymathcompat.h"
 
 #define ELLINT_NO_VALIDATE_RELATIVE_ERROR_BOUND
 #include "ellint_carlson_cpp_lite/ellint_carlson.hh"
 
 
 _BEGIN_EXTERN_C
-
-#include "npy_2_npymathcompat.h"
 
 
 extern double fellint_RC(double x, double y);

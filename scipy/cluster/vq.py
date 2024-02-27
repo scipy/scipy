@@ -462,7 +462,10 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     >>> plt.show()
 
     """
-    xp = array_namespace(obs, k_or_guess)
+    if isinstance(k_or_guess, int):
+        xp = array_namespace(obs)
+    else:
+        xp = array_namespace(obs, k_or_guess)
     obs = _asarray(obs, xp=xp, check_finite=check_finite)
     guess = _asarray(k_or_guess, xp=xp, check_finite=check_finite)
     if iter < 1:
@@ -517,7 +520,9 @@ def _kpoints(data, k, rng, xp):
 
     """
     idx = rng.choice(data.shape[0], size=int(k), replace=False)
-    return data[idx, ...]
+    # convert to array with default integer dtype (avoids numpy#25607)
+    idx = xp.asarray(idx, dtype=xp.asarray([1]).dtype)
+    return xp.take(data, idx, axis=0)
 
 
 def _krandinit(data, k, rng, xp):
@@ -768,7 +773,10 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     except KeyError as e:
         raise ValueError(f"Unknown missing method {missing!r}") from e
 
-    xp = array_namespace(data, k)
+    if isinstance(k, int):
+        xp = array_namespace(data)
+    else:
+        xp = array_namespace(data, k)
     data = _asarray(data, xp=xp, check_finite=check_finite)
     code_book = copy(k, xp=xp)
     if data.ndim == 1:
@@ -805,12 +813,12 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
             rng = check_random_state(seed)
             code_book = init_meth(data, code_book, rng, xp)
 
+    data = np.asarray(data)
+    code_book = np.asarray(code_book)
     for i in range(iter):
         # Compute the nearest neighbor for each obs using the current code book
         label = vq(data, code_book, check_finite=check_finite)[0]
         # Update the code book by computing centroids
-        data = np.asarray(data)
-        label = np.asarray(label)
         new_code_book, has_members = _vq.update_cluster_means(data, label, nc)
         if not has_members.all():
             miss_meth()
