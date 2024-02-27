@@ -742,6 +742,9 @@ class Test(Task):
         else:
             tests = None
 
+        if args.doctests and not args.tests:
+            extra_argv += ['--doctest-collect=api']
+
         if len(args.array_api_backend) != 0:
             os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 
