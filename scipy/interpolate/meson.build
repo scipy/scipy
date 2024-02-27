@@ -184,7 +184,6 @@ py3.install_sources([
     '_fitpack_impl.py',
     '_fitpack_py.py',
     '_fitpack2.py',
-    '_interpnd_info.py',
     '_interpolate.py',
     '_ndgriddata.py',
     '_pade.py',
