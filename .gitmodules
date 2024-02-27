@@ -3,9 +3,8 @@
 	url = https://github.com/scipy/scipy-mathjax.git
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
-	url = https://github.com/thalassemia/PROPACK.git
+	url = https://github.com/scipy/PROPACK.git
 	shallow = true
-	branch = wrapped_blas
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
