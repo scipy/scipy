@@ -1085,6 +1085,9 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
             return stats.pmean(a, p=0.42, **kwargs)
     else:
         weighted_fun = getattr(stats, weighted_fun_name)
+        
+    def func(*args, **kwargs):
+        return unpacker(weighted_fun(*args, **kwargs))
 
     m, n = 3, 20
     axis = -1
@@ -1123,29 +1126,11 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
-        res = unpacker(
-            weighted_fun(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
-        )
-        res1 = unpacker(
-            weighted_fun(
-                a_masked1, weights=b_masked1, nan_policy="omit", axis=axis
-            )
-        )
-        res2 = unpacker(
-            weighted_fun(
-                a_masked2, weights=b_masked2, nan_policy="omit", axis=axis
-            )
-        )
-        res3 = unpacker(
-            weighted_fun(
-                a_masked3, weights=b_masked3, nan_policy="raise", axis=axis
-            )
-        )
-        res4 = unpacker(
-            weighted_fun(
-                a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis
-            )
-        )
+        res = func(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
+        res1 = func(a_masked1, weights=b_masked1, nan_policy="omit", axis=axis)
+        res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
+        res3 = func(a_masked3, weights=b_masked3, nan_policy="raise", axis=axis)
+        res4 = func(a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
