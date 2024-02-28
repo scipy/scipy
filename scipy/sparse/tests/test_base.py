@@ -3534,58 +3534,143 @@ class _TestMinMax:
         D[2, 2] = -1
         X = self.spcreator(D)
 
-        axes = [-2, -1, 0, 1]
-        for axis in axes:
+        axes_even = [0, -2]
+        axes_odd = [1, -1]
+        for axis in axes_even:
             assert_array_equal(
                 X.max(axis=axis).toarray(), D.max(axis=axis, keepdims=True)
             )
             assert_array_equal(
                 X.min(axis=axis).toarray(), D.min(axis=axis, keepdims=True)
             )
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A,
+                np.array([[40, 41, 42, 43, 44, 45, 46, 47, 48, 0]])
+            )
+            if np.any(X.data == 0):
+                # Noncanonical case
+                assert_array_equal(
+                    X.min(axis=axis, explicit=True).A,
+                    np.array([[20, 1, -1, 3, 4, 5, 0, 7, 8, 0]])
+                )
+            else:
+                # Canonical case.
+                assert_array_equal(
+                    X.min(axis=axis, explicit=True).A,
+                    np.array([[20, 1, -1, 3, 4, 5, 6, 7, 8, 0]])
+                )
+
+        for axis in axes_odd:
+            assert_array_equal(
+                X.max(axis=axis).A, D.max(axis=axis, keepdims=True))
+            assert_array_equal(
+                X.min(axis=axis).A, D.min(axis=axis, keepdims=True))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A,
+                np.array([[8], [0], [28], [38], [48]]))
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A,
+                np.array([[1], [0], [-1], [30], [40]]))
 
         # full matrix
         D = np.arange(1, 51).reshape(10, 5)
         X = self.spcreator(D)
-        for axis in axes:
+        for axis in axes_even:
             assert_array_equal(
                 X.max(axis=axis).toarray(), D.max(axis=axis, keepdims=True)
             )
             assert_array_equal(
                 X.min(axis=axis).toarray(), D.min(axis=axis, keepdims=True)
+            )
+            assert_array_equal(X.max(axis=axis, explicit=True).A,
+                               np.array([[46, 47, 48, 49, 50]]))
+            assert_array_equal(X.min(axis=axis, explicit=True).A,
+                               np.array([[1, 2, 3, 4, 5]]))
+        for axis in axes_odd:
+            assert_array_equal(
+                X.max(axis=axis).A, D.max(axis=axis, keepdims=True)
+            )
+            assert_array_equal(
+                X.min(axis=axis).A, D.min(axis=axis, keepdims=True)
+            )
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A,
+                np.array([
+                    [5], [10], [15], [20], [25], [30], [35], [40], [45], [50]
+                ])
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A,
+                np.array([
+                    [1], [6], [11], [16], [21], [26], [31], [36], [41], [46]
+                ])
             )
 
         # empty matrix
         D = np.zeros((10, 5))
         X = self.spcreator(D)
-        for axis in axes:
+        for axis in axes_even:
             assert_array_equal(
                 X.max(axis=axis).toarray(), D.max(axis=axis, keepdims=True)
             )
             assert_array_equal(
                 X.min(axis=axis).toarray(), D.min(axis=axis, keepdims=True)
             )
-
-        axes_even = [0, -2]
-        axes_odd = [1, -1]
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A,
+                np.zeros((1, 5))
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A,
+                np.zeros((1, 5))
+            )
+        for axis in axes_odd:
+            assert_array_equal(
+                X.max(axis=axis).A, D.max(axis=axis, keepdims=True)
+            )
+            assert_array_equal(
+                X.min(axis=axis).A, D.min(axis=axis, keepdims=True)
+            )
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A,
+                np.zeros((10, 1))
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A,
+                np.zeros((10, 1))
+            )
 
         # zero-size matrices
         D = np.zeros((0, 10))
         X = self.spcreator(D)
-        for axis in axes_even:
-            assert_raises(ValueError, X.min, axis=axis)
-            assert_raises(ValueError, X.max, axis=axis)
-        for axis in axes_odd:
-            assert_array_equal(np.zeros((0, 1)), X.min(axis=axis).toarray())
-            assert_array_equal(np.zeros((0, 1)), X.max(axis=axis).toarray())
+        explicit_values = [True, False]
+        even_explicit_pairs = list(itertools.product(axes_even,
+                                                     explicit_values))
+        odd_explicit_pairs = list(itertools.product(axes_odd,
+                                                    explicit_values))
+        for axis, explicit in even_explicit_pairs:
+            assert_raises(ValueError, X.min, axis=axis, explicit=explicit)
+            assert_raises(ValueError, X.max, axis=axis, explicit=explicit)
+        for axis, explicit in odd_explicit_pairs:
+            assert_array_equal(
+                np.zeros((0, 1)),
+                X.min(axis=axis, explicit=explicit).toarray())
+            assert_array_equal(
+                np.zeros((0, 1)),
+                X.max(axis=axis, explicit=explicit).toarray())
 
         D = np.zeros((10, 0))
         X = self.spcreator(D)
-        for axis in axes_odd:
-            assert_raises(ValueError, X.min, axis=axis)
-            assert_raises(ValueError, X.max, axis=axis)
-        for axis in axes_even:
-            assert_array_equal(np.zeros((1, 0)), X.min(axis=axis).toarray())
-            assert_array_equal(np.zeros((1, 0)), X.max(axis=axis).toarray())
+        for axis, explicit in odd_explicit_pairs:
+            assert_raises(ValueError, X.min, axis=axis, explicit=explicit)
+            assert_raises(ValueError, X.max, axis=axis, explicit=explicit)
+        for axis, explicit in even_explicit_pairs:
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.min(axis=axis, explicit=explicit).toarray())
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.max(axis=axis, explicit=explicit).toarray())
 
     def test_nanminmax(self):
         D = matrix(np.arange(50).reshape(5,10), dtype=float)
@@ -3680,20 +3765,78 @@ class _TestMinMax:
                          asmatrix(np.argmax(D, axis=1).reshape(-1, 1)))
             assert_equal(mat.argmin(axis=1),
                          asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
+            
+        mat = self.spcreator(D1)
+        assert_array_equal(mat.argmax(axis=0, explicit=True).A,
+                           np.array([[3, 0, 3, 3]]))
+        assert_array_equal(mat.argmin(axis=0, explicit=True).A,
+                           np.array([[0, 2, 2, 2]]))
+
+        assert_array_equal(mat.argmax(axis=1, explicit=True).A,
+                           np.array([[1], [2], [0], [3], [1]]))
+        assert_array_equal(mat.argmin(axis=1, explicit=True).A,
+                           np.array([[0], [3], [3], [0], [0]]))
 
         D1 = np.empty((0, 5))
         D2 = np.empty((5, 0))
+        explicit_values = [True, False]
 
-        for axis in [None, 0]:
+        for axis, explicit in itertools.product([None, 0], explicit_values):
             mat = self.spcreator(D1)
-            assert_raises(ValueError, mat.argmax, axis=axis)
-            assert_raises(ValueError, mat.argmin, axis=axis)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
 
-        for axis in [None, 1]:
+        for axis, explicit in itertools.product([None, 1], explicit_values):
             mat = self.spcreator(D2)
-            assert_raises(ValueError, mat.argmax, axis=axis)
-            assert_raises(ValueError, mat.argmin, axis=axis)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
 
+        # zero-size matrices
+        D = np.zeros((0, 10))
+        mat = self.spcreator(D)
+        axes_even = [0, -2]
+        axes_odd = [1, -1]
+        even_explicit_pairs = list(itertools.product(axes_even,
+                                                     explicit_values))
+        odd_explicit_pairs = list(itertools.product(axes_odd,
+                                                    explicit_values))
+
+        for axis, explicit in even_explicit_pairs:
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+        for axis, explicit in odd_explicit_pairs:
+            assert_array_equal(
+                np.zeros((0, 1)),
+                mat.argmin(axis=axis, explicit=explicit).A)
+            assert_array_equal(
+                np.zeros((0, 1)),
+                mat.argmax(axis=axis, explicit=explicit).A)
+
+        D = np.zeros((10, 0))
+        mat = self.spcreator(D)
+
+        for axis, explicit in even_explicit_pairs:
+            mat.argmin(axis=axis, explicit=explicit)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                mat.argmin(axis=axis, explicit=explicit).A)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                mat.argmax(axis=axis, explicit=explicit).A)
+
+        for axis, explicit in odd_explicit_pairs:
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+
+        D = np.zeros((2, 2))
+        mat = self.spcreator(D)
+        if mat.nnz != 0:
+            # Noncanonical case
+            assert_equal(mat.argmin(axis=None, explicit=True), 0)
+            assert_equal(mat.argmax(axis=None, explicit=True), 0)
+        else:
+            assert_raises(ValueError, mat.argmin, axis=None, explicit=True)
+            assert_raises(ValueError, mat.argmax, axis=None, explicit=True)
 
 class _TestGetNnzAxis:
     def test_getnnz_axis(self):

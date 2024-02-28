@@ -176,7 +176,7 @@ class _minmax_mixin:
     These are not implemented for dia_matrix, hence the separate class.
     """
 
-    def _min_or_max_axis(self, axis, min_or_max):
+    def _min_or_max_axis(self, axis, min_or_max, explicit):
         N = self.shape[axis]
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
@@ -187,8 +187,9 @@ class _minmax_mixin:
         mat.sum_duplicates()
 
         major_index, value = mat._minor_reduce(min_or_max)
-        not_full = np.diff(mat.indptr)[major_index] < N
-        value[not_full] = min_or_max(value[not_full], 0)
+        if not explicit:
+            not_full = np.diff(mat.indptr)[major_index] < N
+            value[not_full] = min_or_max(value[not_full], 0)
 
         mask = value != 0
         major_index = np.compress(mask, major_index)
@@ -205,7 +206,7 @@ class _minmax_mixin:
                 dtype=self.dtype, shape=(M, 1)
             )
 
-    def _min_or_max(self, axis, out, min_or_max):
+    def _min_or_max(self, axis, out, min_or_max, explicit):
         if out is not None:
             raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
@@ -223,7 +224,7 @@ class _minmax_mixin:
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != np.prod(self.shape) and not explicit:
                 m = min_or_max(zero, m)
             return m
 
@@ -231,11 +232,11 @@ class _minmax_mixin:
             axis += 2
 
         if (axis == 0) or (axis == 1):
-            return self._min_or_max_axis(axis, min_or_max)
+            return self._min_or_max_axis(axis, min_or_max, explicit)
         else:
             raise ValueError("axis out of range")
 
-    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
+    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare, explicit):
         if self.shape[axis] == 0:
             raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
@@ -257,21 +258,25 @@ class _minmax_mixin:
             indices = mat.indices[p:q]
             extreme_index = argmin_or_argmax(data)
             extreme_value = data[extreme_index]
-            if compare(extreme_value, zero) or q - p == line_size:
-                ret[i] = indices[extreme_index]
+            if explicit:
+                if q - p > 0:
+                    ret[i] = indices[extreme_index]
             else:
-                zero_ind = _find_missing_index(indices, line_size)
-                if extreme_value == zero:
-                    ret[i] = min(extreme_index, zero_ind)
+                if compare(extreme_value, zero) or q - p == line_size:
+                    ret[i] = indices[extreme_index]
                 else:
-                    ret[i] = zero_ind
+                    zero_ind = _find_missing_index(indices, line_size)
+                    if extreme_value == zero:
+                        ret[i] = min(extreme_index, zero_ind)
+                    else:
+                        ret[i] = zero_ind
 
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
         return self._ascontainer(ret)
 
-    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare):
+    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare, explicit):
         if out is not None:
             raise ValueError("Sparse types do not support an 'out' parameter.")
 
@@ -283,12 +288,15 @@ class _minmax_mixin:
             axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is not None:
-            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
+            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare, explicit)
 
         if 0 in self.shape:
             raise ValueError("Cannot apply the operation to an empty matrix.")
 
         if self.nnz == 0:
+            if explicit:
+                raise ValueError("Can't apply the operation to zero matrix "
+                                 "when explicit=True.")
             return 0
 
         zero = self.dtype.type(0)
@@ -296,6 +304,8 @@ class _minmax_mixin:
         # Convert to canonical form: no duplicates, sorted indices.
         mat.sum_duplicates()
         extreme_index = argmin_or_argmax(mat.data)
+        if explicit:
+            return extreme_index
         extreme_value = mat.data[extreme_index]
         num_col = mat.shape[-1]
 
@@ -319,7 +329,7 @@ class _minmax_mixin:
             return min(first_implicit_zero_index, extreme_index)
         return first_implicit_zero_index
 
-    def max(self, axis=None, out=None):
+    def max(self, axis=None, out=None, *, explicit=False):
         """
         Return the maximum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
@@ -336,6 +346,13 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
+
+
         Returns
         -------
         amax : coo_matrix or scalar
@@ -349,9 +366,9 @@ class _minmax_mixin:
         numpy.matrix.max : NumPy's implementation of 'max' for matrices
 
         """
-        return self._min_or_max(axis, out, np.maximum)
+        return self._min_or_max(axis, out, np.maximum, explicit)
 
-    def min(self, axis=None, out=None):
+    def min(self, axis=None, out=None, *, explicit=False):
         """
         Return the minimum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
@@ -368,6 +385,11 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
         Returns
         -------
         amin : coo_matrix or scalar
@@ -381,9 +403,9 @@ class _minmax_mixin:
         numpy.matrix.min : NumPy's implementation of 'min' for matrices
 
         """
-        return self._min_or_max(axis, out, np.minimum)
+        return self._min_or_max(axis, out, np.minimum, explicit)
 
-    def nanmax(self, axis=None, out=None):
+    def nanmax(self, axis=None, out=None, *, explicit=False):
         """
         Return the maximum of the array/matrix or maximum along an axis, ignoring any
         NaNs. This takes all elements into account, not just the non-zero
@@ -403,6 +425,12 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except
             for the default value, as this argument is not used.
 
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
+
         Returns
         -------
         amax : coo_matrix or scalar
@@ -419,9 +447,9 @@ class _minmax_mixin:
         numpy.nanmax : NumPy's implementation of 'nanmax'.
 
         """
-        return self._min_or_max(axis, out, np.fmax)
+        return self._min_or_max(axis, out, np.fmax, explicit)
 
-    def nanmin(self, axis=None, out=None):
+    def nanmin(self, axis=None, out=None, *, explicit=False):
         """
         Return the minimum of the array/matrix or minimum along an axis, ignoring any
         NaNs. This takes all elements into account, not just the non-zero
@@ -441,6 +469,12 @@ class _minmax_mixin:
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
 
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
+
         Returns
         -------
         amin : coo_matrix or scalar
@@ -457,9 +491,9 @@ class _minmax_mixin:
         numpy.nanmin : NumPy's implementation of 'nanmin'.
 
         """
-        return self._min_or_max(axis, out, np.fmin)
+        return self._min_or_max(axis, out, np.fmin, explicit)
 
-    def argmax(self, axis=None, out=None):
+    def argmax(self, axis=None, out=None, *, explicit=False):
         """Return indices of maximum elements along an axis.
 
         Implicit zero elements are also taken into account. If there are
@@ -474,15 +508,20 @@ class _minmax_mixin:
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
 
         Returns
         -------
         ind : numpy.matrix or int
             Indices of maximum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmax, np.greater)
+        return self._arg_min_or_max(axis, out, np.argmax, np.greater, explicit)
 
-    def argmin(self, axis=None, out=None):
+    def argmin(self, axis=None, out=None, *, explicit=False):
         """Return indices of minimum elements along an axis.
 
         Implicit zero elements are also taken into account. If there are
@@ -497,10 +536,15 @@ class _minmax_mixin:
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
+        explicit : {False, True} optional
+            When set to True, only the nonzero entries of the matrix will be
+            considered. If a row/column is empty, a zero will be returned
+            to indicate it contains no nonzero values. Default is False.
+            .. versionadded:: 1.15.0
 
         Returns
         -------
          ind : numpy.matrix or int
             Indices of minimum elements. If matrix, its size along `axis` is 1.
         """
-        return self._arg_min_or_max(axis, out, np.argmin, np.less)
+        return self._arg_min_or_max(axis, out, np.argmin, np.less, explicit)
