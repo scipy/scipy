@@ -353,4 +353,6 @@ dt_config.pytest_extra_skips = [
     "scipy.misc",
 ]
 
+dt_config.pseudocode = set(['integrate.nquad(func,'])
+dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
 ############################################################################

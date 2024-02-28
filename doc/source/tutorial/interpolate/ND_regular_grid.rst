@@ -92,10 +92,10 @@ controlled by the ``fill_value`` keyword parameter:
     >>> rgi = RegularGridInterpolator((x, y), data,
     ...                               bounds_error=False, fill_value=None)
     >>> rgi([(2, 0), (2, 1), (2, -1)])   # extrapolates the value on the axis
-    array([2., 2., 2.]))
+    array([2., 2., 2.])
     >>> rgi.fill_value = -101
     >>> rgi([(2, 0), (2, 1), (2, -1)])
-    array([2., -101., -101.]))
+    array([2., -101., -101.])
 
 .. note::
 
