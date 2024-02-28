@@ -105,6 +105,7 @@ axis_nan_policy_cases = [
     (stats.f_oneway, tuple(), {}, 2, 2, False, None),
     (stats.alexandergovern, tuple(), {}, 2, 2, False,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -1065,8 +1066,16 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean", "pmean"])
-def test_mean_mixed_mask_nan_weights(weighted_fun_name):
+@pytest.mark.parametrize(
+    ("weighted_fun_name, unpacker"),
+    [
+        ("gmean", lambda x: x),
+        ("hmean", lambda x: x),
+        ("pmean", lambda x: x),
+        ("combine_pvalues", lambda x: (x.pvalue, x.statistic)),
+    ],
+)
+def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
     # also checks paired-sample sentinel value removal
@@ -1076,6 +1085,9 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
             return stats.pmean(a, p=0.42, **kwargs)
     else:
         weighted_fun = getattr(stats, weighted_fun_name)
+        
+    def func(*args, **kwargs):
+        return unpacker(weighted_fun(*args, **kwargs))
 
     m, n = 3, 20
     axis = -1
@@ -1114,20 +1126,15 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
-        res = weighted_fun(a_nans, weights=b_nans,
-                           nan_policy='omit', axis=axis)
-        res1 = weighted_fun(a_masked1, weights=b_masked1,
-                            nan_policy='omit', axis=axis)
-        res2 = weighted_fun(a_masked2, weights=b_masked2,
-                            nan_policy='omit', axis=axis)
-        res3 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='raise', axis=axis)
-        res4 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='propagate', axis=axis)
+        res = func(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
+        res1 = func(a_masked1, weights=b_masked1, nan_policy="omit", axis=axis)
+        res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
+        res3 = func(a_masked3, weights=b_masked3, nan_policy="raise", axis=axis)
+        res4 = func(a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name not in {'pmean', 'gmean'}:
+        if weighted_fun_name in {"hmean"}:
             weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
             res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
                                    axis=axis, _no_deco=True)
@@ -1136,7 +1143,7 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name not in {'pmean', 'gmean'}:
+    if weighted_fun_name in {"hmean"}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
 
