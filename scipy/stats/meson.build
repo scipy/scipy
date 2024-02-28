@@ -14,7 +14,7 @@ stats_special_cython_gen = generator(cython,
     _stats_pxd,
     cython_special_pxd])
 
-_stats = py3.extension_module('_stats',
+py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
@@ -23,7 +23,7 @@ _stats = py3.extension_module('_stats',
   subdir: 'scipy/stats'
 )
 
-_ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
+py3.extension_module('_ansari_swilk_statistics',
   cython_gen.process('_ansari_swilk_statistics.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
@@ -35,10 +35,10 @@ _ansari_swilk_statistics = py3.extension_module('_ansari_swilk_statistics',
 mvn_module = custom_target('mvn_module',
   output: ['_mvn-f2pywrappers.f', '_mvnmodule.c'],
   input: 'mvn.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-mvn = py3.extension_module('_mvn',
+py3.extension_module('_mvn',
   [mvn_module, 'mvndst.f'],
   # Wno-surprising is to suppress a pointless warning with GCC 10-12
   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)
@@ -50,7 +50,7 @@ mvn = py3.extension_module('_mvn',
   subdir: 'scipy/stats'
 )
 
-_sobol = py3.extension_module('_sobol',
+py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
   c_args: cython_c_args,
   dependencies: np_dep,
@@ -65,7 +65,7 @@ py3.install_sources([
   subdir: 'scipy/stats'
 )
 
-_qmc_cy = py3.extension_module('_qmc_cy',
+py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: cython_cpp_args,
   dependencies: [np_dep, thread_dep],
@@ -123,7 +123,7 @@ skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 
 
-biasedurn = py3.extension_module('_biasedurn',
+py3.extension_module('_biasedurn',
   [
     cython_gen_cpp.process('_biasedurn.pyx'),
     'biasedurn/fnchyppr.cpp',
@@ -142,14 +142,8 @@ biasedurn = py3.extension_module('_biasedurn',
 )
 
 if use_pythran
-  _stats_pythran_cpp = custom_target('_stats_pythran',
-    output: ['_stats_pythran.cpp'],
-    input: '_stats_pythran.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_stats_pythran.cpp']
-  )
-
-  _stats_pythran = py3.extension_module('_stats_pythran',
-    _stats_pythran_cpp,
+  py3.extension_module('_stats_pythran',
+    pythran_gen.process('_stats_pythran.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,

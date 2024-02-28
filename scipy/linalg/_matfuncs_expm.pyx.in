@@ -33,11 +33,10 @@ prefixes = ['s', 'd', 'c', 'z']
 
 
 # ========================= norm1 : s, d, c, z ===============================
-# The generic abs() function is made nogil friendly in Cython 3.x (unreleased)
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef double norm1(lapack_t[:, ::1] A) noexcept:
+cdef double norm1(lapack_t[:, ::1] A):
     """
     Fast 1-norm computation for C-contiguous square arrays.
     Regardless of the dtype we work in double precision to prevent overflows
@@ -98,7 +97,7 @@ cdef double kth_power_norm_d(double* A, double* v1, double* v2, Py_ssize_t n, in
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.initializedcheck(False)
-cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am) noexcept:
+cdef pick_pade_structure_{{ pfx }}({{ tname }}[:, :, ::1] Am):
     cdef Py_ssize_t n = Am.shape[1], i, j, k
     cdef int lm = 0, s = 0, intn = <int>n, n2= intn*intn, int_one = 1
     cdef {{ tname }}[:, :, ::1] Amv = Am

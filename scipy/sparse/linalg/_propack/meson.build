@@ -108,7 +108,7 @@ foreach ele: elements
   propack_module = custom_target('propack_module' + ele[0],
     output: [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
     input: ele[2],
-    command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
   )
 
   propacklib = py3.extension_module(ele[0],

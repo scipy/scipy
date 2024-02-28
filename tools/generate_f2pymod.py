@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Process f2py template files (`filename.pyf.src` -> `filename.pyf`)
 

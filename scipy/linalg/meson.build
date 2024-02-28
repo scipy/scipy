@@ -60,7 +60,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
   input: 'fblas.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
@@ -81,7 +81,7 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
   input: 'flapack.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
@@ -103,7 +103,7 @@ py3.extension_module('_flapack',
 interpolative_module = custom_target('interpolative_module',
   output: '_interpolativemodule.c',
   input: 'interpolative.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # id_dist contains a copy of FFTPACK, which has type mismatch warnings
@@ -233,7 +233,7 @@ py3.extension_module('_decomp_lu_cython',
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_decomp_update',
@@ -249,7 +249,7 @@ py3.extension_module('_decomp_update',
 _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
   output: '_matfuncs_expm.pyx',
   input: '_matfuncs_expm.pyx.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_matfuncs_expm',
