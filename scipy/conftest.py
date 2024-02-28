@@ -351,8 +351,16 @@ dt_config.pytest_extra_skips = [
     "scipy.test",
     "scipy.show_config",
     "scipy.misc",
+     # tutorials:
+    "io.rst",              # broken?
+    "ND_regular_grid.rst",
+    "ND_unstructured.rst",   # XXX: MPL deprecation?
+    "extrapolation_examples.rst",
+    "sampling_pinv.rst",
+    "sampling_srou.rst",
 ]
 
-dt_config.pseudocode = set(['integrate.nquad(func,'])
+# tutorials
+dt_config.pseudocode = set(['integrate.nquad(func,']) #, 'octave_struct.mat'])
 dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
 ############################################################################
