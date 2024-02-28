@@ -1,7 +1,6 @@
-import numpy as np
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse import dok_matrix
-import pytest
+
 
 def test_fromkeys_default():
     # test default value value
