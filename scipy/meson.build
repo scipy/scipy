@@ -200,16 +200,16 @@ uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
   g77_abi_wrappers = declare_dependency(
-    sources:
-      [
-        '_build_utils/src/wrap_g77_abi_f.f',
-        '_build_utils/src/wrap_g77_abi_c.c'
-      ],
+    sources: ['_build_utils/src/wrap_g77_abi.c'],
     include_directories: inc_np,
     dependencies: [py3_dep, cblas],
   )
 else
-  g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
+  g77_abi_wrappers = declare_dependency(
+    sources: ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    include_directories: inc_np,
+    dependencies: [py3_dep],
+  )
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
@@ -304,7 +304,6 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
-Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
