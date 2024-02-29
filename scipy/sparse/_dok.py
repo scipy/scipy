@@ -346,11 +346,10 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     @classmethod
     def fromkeys(cls, iterable, value=1):
-        d = dict.fromkeys(iterable, value)
-        num_rows = 1 + max(k[0] for k in d.keys())
-        num_cols = 1 + max(k[1] for k in d.keys())
+        num_rows = 1 + max(k[0] for k in iterable)
+        num_cols = 1 + max(k[1] for k in iterable)
         result = cls((num_rows, num_cols))
-        result._update(d)
+        result._dict = dict.fromkeys(iterable, value)
         return result
 
     def tocoo(self, copy=False):
