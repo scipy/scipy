@@ -76,7 +76,7 @@ class NDInterpolatorBase:
         points = _ndim_coords_from_arrays(points)
 
         if need_contiguous:
-            points = np.ascontiguousarray(points, dtype=np.double)
+            points = np.ascontiguousarray(points, dtype=np.float64)
 
         if not rescale:
             self.scale = None
@@ -85,7 +85,7 @@ class NDInterpolatorBase:
             # scale to unit cube centered at 0
             self.offset = np.mean(points, axis=0)
             self.points = points - self.offset
-            self.scale = self.points.ptp(axis=0)
+            self.scale = np.ptp(points, axis=0)
             self.scale[~(self.scale > 0)] = 1.0  # avoid division by 0
             self.points /= self.scale
         
@@ -121,7 +121,9 @@ class NDInterpolatorBase:
             self.fill_value = complex(fill_value)
         else:
             if need_contiguous:
-                self.values = np.ascontiguousarray(self.values, dtype=np.double)
+                self.values = np.ascontiguousarray(
+                    self.values, dtype=np.float64
+                )
             self.fill_value = float(fill_value)
 
     def _check_call_shape(self, xi):
@@ -141,7 +143,7 @@ class NDInterpolatorBase:
         xi = self._check_call_shape(xi)
         interpolation_points_shape = xi.shape
         xi = xi.reshape(-1, xi.shape[-1])
-        xi = np.ascontiguousarray(xi, dtype=np.double)
+        xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
     
     @cython.boundscheck(False)
@@ -245,7 +247,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N > 1 dimensions.
+    Piecewise linear interpolator in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -306,11 +308,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolator in N dimensions.
     CloughTocher2DInterpolator :
-        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 
@@ -586,7 +588,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
         y = y[:,None]
 
     y = y.reshape(tri.npoints, -1).T
-    y = np.ascontiguousarray(y, dtype=np.double)
+    y = np.ascontiguousarray(y, dtype=np.float64)
     yi = np.empty((y.shape[0], y.shape[1], 2))
 
     data = y
@@ -835,7 +837,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
 class CloughTocher2DInterpolator(NDInterpolatorBase):
     """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
-    Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+    Piecewise cubic, C1 smooth, curvature-minimizing interpolator in 2D.
 
     .. versionadded:: 0.9
 
@@ -907,11 +909,11 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N > 1 dimensions.
+        Piecewise linear interpolator in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N > 1 dimensions.
+        Nearest-neighbor interpolator in N > 1 dimensions.
     interpn : Interpolation on a regular grid or rectilinear grid.
-    RegularGridInterpolator : Interpolation on a regular or rectilinear grid
+    RegularGridInterpolator : Interpolator on a regular or rectilinear grid
                               in arbitrary dimensions (`interpn` wraps this
                               class).
 

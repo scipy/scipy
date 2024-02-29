@@ -16,6 +16,7 @@ cimport numpy as np
 
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.csgraph._validation import validate_graph
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 cimport cython
 
@@ -25,6 +26,9 @@ from libc.math cimport INFINITY
 np.import_array()
 
 include 'parameters.pxi'
+
+# EPS is the precision of DTYPE (float64, from parameters.pxi)
+DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
@@ -86,7 +90,7 @@ def shortest_path(csgraph, method='auto',
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -124,6 +128,9 @@ def shortest_path(csgraph, method='auto',
     do not work for graphs with direction-dependent distances when
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -163,6 +170,7 @@ def shortest_path(csgraph, method='auto',
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
         N = csgraph.shape[0]
+        csgraph = convert_pydata_sparse_to_scipy(csgraph)
         is_sparse = issparse(csgraph)
         if is_sparse:
             Nk = csgraph.nnz
@@ -236,7 +244,7 @@ def floyd_warshall(csgraph, directed=True,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -264,6 +272,11 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Notes
+    -----
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -426,7 +439,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -486,6 +499,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -937,7 +953,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -968,6 +984,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -1002,7 +1021,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     N = csgraph.shape[0]
 
     # ------------------------------
-    # intitialize/validate indices
+    # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
     else:
@@ -1171,7 +1190,7 @@ def johnson(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -1202,6 +1221,9 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------

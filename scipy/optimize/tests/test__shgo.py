@@ -27,7 +27,7 @@ class StructTestFunction:
 def wrap_constraints(g):
     cons = []
     if g is not None:
-        if (type(g) is not tuple) and (type(g) is not list):
+        if not isinstance(g, (tuple, list)):
             g = (g,)
         else:
             pass
@@ -583,7 +583,7 @@ class TestShgoArguments:
 
     @pytest.mark.slow
     def test_4_2_known_f_min(self):
-        """Test Global mode limiting local evalutions"""
+        """Test Global mode limiting local evaluations"""
         options = {  # Specify known function value
             'f_min': test4_1.expected_fun,
             'f_tol': 1e-6,
@@ -749,7 +749,7 @@ class TestShgoArguments:
         run_test(test1_1, n=1, iters=7, options=options,
                  sampling_method='sobol')
 
-    def test_16_disp_bounds_minimizer(self):
+    def test_16_disp_bounds_minimizer(self, capsys):
         """Test disp=True with minimizers that do not support bounds """
         options = {'disp': True}
         minimizer_kwargs = {'method': 'nelder-mead'}

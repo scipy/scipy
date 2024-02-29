@@ -71,13 +71,6 @@ cdef extern from 'specfun_wrappers.h':
     ) nogil
 
 
-# Small value from Zhang and Jin's Fortran implementation.
-DEF EPS = 1e-15
-
-DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
-DEF LOG_PI_2 = 0.5723649429247001  # log(M_PI) / 2
-
-
 @cython.cdivision(True)
 cdef inline double complex hyp2f1_complex(
         double a, double b, double c, double complex z
@@ -88,6 +81,9 @@ cdef inline double complex hyp2f1_complex(
         double complex result
         bint a_neg_int, b_neg_int, c_non_pos_int
         bint c_minus_a_neg_int, c_minus_b_neg_int
+        # Small value from Zhang and Jin's Fortran implementation.
+        double EPS = 1e-15
+
     modulus_z = zabs(z)
     a_neg_int = a == trunc(a) and a < 0
     b_neg_int = b == trunc(b) and b < 0

@@ -44,9 +44,10 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
     lu : (M, N) ndarray
         Matrix containing U in its upper triangle, and L in its lower triangle.
         The unit diagonal elements of L are not stored.
-    piv : (N,) ndarray
+    piv : (K,) ndarray
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
+        Of shape ``(K,)``, with ``K = min(M, N)``.
 
     See Also
     --------
@@ -172,8 +173,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
         b1 = asarray(b)
     overwrite_b = overwrite_b or _datacopied(b1, b)
     if lu.shape[0] != b1.shape[0]:
-        raise ValueError("Shapes of lu {} and b {} are incompatible"
-                         .format(lu.shape, b1.shape))
+        raise ValueError(f"Shapes of lu {lu.shape} and b {b1.shape} are incompatible")
 
     getrs, = get_lapack_funcs(('getrs',), (lu, b1))
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)

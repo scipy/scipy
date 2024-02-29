@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor, wait
+
 import numpy as np
 from .common import Benchmark, safe_import
 
@@ -50,3 +52,17 @@ class LinearAssignment(Benchmark):
 
     def time_evaluation(self, *args):
         linear_sum_assignment(self.cost_matrix)
+
+
+class ParallelLinearAssignment(Benchmark):
+    shape = (100, 100)
+    param_names = ['threads']
+    params = [[1, 2, 4]]
+
+    def setup(self, threads):
+        self.cost_matrices = [random_uniform(self.shape) for _ in range(20)]
+
+    def time_evaluation(self, threads):
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            wait({pool.submit(linear_sum_assignment, cost_matrix)
+                  for cost_matrix in self.cost_matrices})

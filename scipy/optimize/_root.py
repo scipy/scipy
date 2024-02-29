@@ -208,7 +208,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     if callback is not None and meth in ('hybr', 'lm'):
         warn('Method %s does not accept callback.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
@@ -255,7 +255,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 def _warn_jac_unused(jac, method):
     if jac is not None:
         warn(f'Method {method} does not use the jacobian (jac).',
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,
@@ -301,7 +301,7 @@ def _root_leastsq(fun, x0, args=(), jac=None,
                                        factor=factor, diag=diag)
     sol = OptimizeResult(x=x, message=msg, status=ier,
                          success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                         fun=info.pop('fvec'))
+                         fun=info.pop('fvec'), method="lm")
     sol.update(info)
     return sol
 
@@ -349,7 +349,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                                   line_search=line_search,
                                   callback=_callback, full_output=True,
                                   raise_exception=False)
-    sol = OptimizeResult(x=x)
+    sol = OptimizeResult(x=x, method=_method)
     sol.update(info)
     return sol
 
@@ -363,8 +363,7 @@ def _root_broyden1_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -441,8 +440,7 @@ def _root_broyden2_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -506,8 +504,7 @@ def _root_anderson_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -548,8 +545,7 @@ def _root_linearmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, ``NoConvergence`` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -585,8 +581,7 @@ def _root_diagbroyden_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -622,8 +617,7 @@ def _root_excitingmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -662,8 +656,7 @@ def _root_krylov_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional

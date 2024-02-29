@@ -23,7 +23,8 @@ cython_linalg = custom_target('cython_linalg',
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
-  install_dir: py3.get_install_dir() / 'scipy/linalg'
+  install_dir: py3.get_install_dir() / 'scipy/linalg',
+  install_tag: 'devel'
 )
 
 # This dummy custom target is only needed to establish a dependency on
@@ -59,7 +60,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
   input: 'fblas.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
@@ -67,9 +68,9 @@ fblas_module = custom_target('fblas_module',
 # LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
   fblas_module,
-  c_args: numpy_nodepr_api,
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -80,16 +81,17 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
   input: 'flapack.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
 # in flapack_other.pyf.src
 py3.extension_module('_flapack',
   flapack_module,
-  c_args: [numpy_nodepr_api, Wno_empty_body],
+  c_args: [Wno_empty_body],
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -97,28 +99,11 @@ py3.extension_module('_flapack',
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
-# _flinalg
-flinalg_module = custom_target('flinalg_module',
-  output: '_flinalgmodule.c',
-  input: ['src/flinalg.pyf'],
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.extension_module('_flinalg',
-  ['src/det.f', 'src/lu.f', flinalg_module],
-  c_args: numpy_nodepr_api,
-  link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
-  install: true,
-  link_language: 'fortran',
-  subdir: 'scipy/linalg'
-)
-
 # _interpolative
 interpolative_module = custom_target('interpolative_module',
   output: '_interpolativemodule.c',
   input: 'interpolative.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # id_dist contains a copy of FFTPACK, which has type mismatch warnings
@@ -166,10 +151,10 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/prini.f',
     interpolative_module,
   ],
-  c_args: numpy_nodepr_api,
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -203,19 +188,20 @@ fwrappers = static_library('fwrappers',
     cython_linalg[7],
   ],
   dependencies: g77_abi_wrappers,
+  override_options: ['b_lto=false'],
 )
 
 cython_blas = py3.extension_module('cython_blas',
   [
     linalg_cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
     cython_linalg[4],  # _blas_subroutines.h
-    'fortran_defs.h'
   ],
-  c_args: [cython_c_args, Wno_incompatible_pointer_types],
+  c_args: cython_c_args,
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
   install: true,
+  include_directories: ['../_build_utils/src'],
   link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
@@ -224,13 +210,13 @@ cython_lapack = py3.extension_module('cython_lapack',
   [
     linalg_cython_gen.process(cython_linalg[1]),  # cython_lapack.pyx
     cython_linalg[5],  # _lapack_subroutines.h
-    'fortran_defs.h'
   ],
-  c_args: [cython_c_args, Wno_incompatible_pointer_types],
+  c_args: cython_c_args,
   link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
   install: true,
+  include_directories: ['../_build_utils/src'],
   link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
@@ -247,7 +233,7 @@ py3.extension_module('_decomp_lu_cython',
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_decomp_update',
@@ -263,7 +249,7 @@ py3.extension_module('_decomp_update',
 _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
   output: '_matfuncs_expm.pyx',
   input: '_matfuncs_expm.pyx.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_matfuncs_expm',
@@ -302,7 +288,6 @@ python_sources = [
   '_decomp_schur.py',
   '_decomp_svd.py',
   '_expm_frechet.py',
-  '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
   '_matfuncs_expm.pyi',
@@ -322,7 +307,6 @@ python_sources = [
   'decomp_qr.py',
   'decomp_schur.py',
   'decomp_svd.py',
-  'flinalg.py',
   'interpolative.py',
   'lapack.py',
   'matfuncs.py',

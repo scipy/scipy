@@ -30,9 +30,11 @@ except ImportError:
 
 
 def mpmath_check(min_ver):
-    return pytest.mark.skipif(mpmath is None or
-                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
-                              reason="mpmath version >= %s required" % min_ver)
+    return pytest.mark.skipif(
+        mpmath is None
+        or _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
+        reason=f"mpmath version >= {min_ver} required",
+    )
 
 
 class TestCplxPair:
@@ -893,6 +895,30 @@ class TestFreqz:
         assert_array_almost_equal(w1, w2)
         assert_array_almost_equal(h1, h2)
 
+    # https://github.com/scipy/scipy/issues/17289
+    # https://github.com/scipy/scipy/issues/15273
+    @pytest.mark.parametrize('whole,nyquist,worN',
+                             [(False, False, 32),
+                              (False, True, 32),
+                              (True, False, 32),
+                              (True, True, 32),
+                              (False, False, 257),
+                              (False, True, 257),
+                              (True, False, 257),
+                              (True, True, 257)])
+    def test_17289(self, whole, nyquist, worN):
+        d = [0, 1]
+        w, Drfft = freqz(d, worN=32, whole=whole, include_nyquist=nyquist)
+        _, Dpoly = freqz(d, worN=w)
+        assert_allclose(Drfft, Dpoly)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            freqz([1.0], fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none."):
+            freqz([1.0], fs=None)
+
 
 class TestSOSFreqz:
 
@@ -1086,6 +1112,11 @@ class TestSOSFreqz:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
 
+    def test_fs_validation(self):
+        sos = butter(4, 0.2, output='sos')
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            sosfreqz(sos, fs=np.array([10, 20]))
+
 
 class TestFreqz_zpk:
 
@@ -1182,6 +1213,13 @@ class TestFreqz_zpk:
             w_out, h = freqz_zpk([], [], 1, worN=w, fs=100)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(h, [1])
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            freqz_zpk([1.0], [1.0], [1.0], fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none."):
+            freqz_zpk([1.0], [1.0], [1.0], fs=None)
 
 
 class TestNormalize:
@@ -1302,6 +1340,15 @@ class TestBilinear:
         assert_array_almost_equal(a_z, [1, -1.2158, 0.72826],
                                   decimal=4)
 
+    def test_fs_validation(self):
+        b = [0.14879732743343033]
+        a = [1, 0.54552236880522209, 0.14879732743343033]
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            bilinear(b, a, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            bilinear(b, a, fs=None)
+
 
 class TestLp2lp_zpk:
 
@@ -1322,6 +1369,17 @@ class TestLp2lp_zpk:
         assert_allclose(sort(z_lp), sort([-40j, +40j]))
         assert_allclose(sort(p_lp), sort([-15, -10-10j, -10+10j]))
         assert_allclose(k_lp, 60)
+
+    def test_fs_validation(self):
+        z = [-2j, +2j]
+        p = [-0.75, -0.5 - 0.5j, -0.5 + 0.5j]
+        k = 3
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            bilinear_zpk(z, p, k, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            bilinear_zpk(z, p, k, fs=None)
 
 
 class TestLp2hp_zpk:
@@ -1544,8 +1602,25 @@ class TestButtord:
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
     def test_runtime_warnings(self):
-        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+        msg = "Order is zero.*|divide by zero encountered"
+        with pytest.warns(RuntimeWarning, match=msg):
             buttord(0.0, 1.0, 3, 60)
+
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = buttord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 14
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            buttord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestCheb1ord:
@@ -1657,6 +1732,25 @@ class TestCheb1ord:
         with pytest.raises(ValueError) as exc_info:
             cheb1ord(0.2, 0.3, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb1(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n2, w2 = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w2).all()
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            cheb1ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestCheb2ord:
@@ -1771,6 +1865,25 @@ class TestCheb2ord:
         with pytest.raises(ValueError) as exc_info:
             cheb2ord([0.1, 0.6], [0.2, 0.5], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_cheb2(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 7
+
+        n1, w1 = cheb1ord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert not (wn == w1).all()
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            cheb2ord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestEllipord:
@@ -1899,6 +2012,22 @@ class TestEllipord:
         with pytest.raises(ValueError) as exc_info:
             ellipord(0.2, 0.5, 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_ellip_butter(self):
+        # The purpose of the test is to compare to some known output from past
+        # scipy versions. The values to compare to are generated with scipy
+        # 1.9.1 (there is nothing special about this particular version though)
+        n, wn = ellipord([0.1, 0.6], [0.2, 0.5], 3, 60)
+        assert n == 5
+
+    def test_fs_validation(self):
+        wp = 0.2
+        ws = 0.3
+        rp = 3
+        rs = 60
+
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            ellipord(wp, ws, rp, rs, False, fs=np.array([10, 20]))
 
 
 class TestBessel:
@@ -3484,6 +3613,13 @@ class TestEllip:
                             ba2 = ellip(N, 1, 20, fcnorm, btype)
                             assert_allclose(ba1, ba2)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iirnotch(0.06, 30, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            iirnotch(0.06, 30, fs=None)
+
 
 def test_sos_consistency():
     # Consistency checks of output='sos' for the specialized IIR filter
@@ -3512,7 +3648,7 @@ def test_sos_consistency():
 class TestIIRNotch:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirnotch(0.06, 30)
         b2 = [
@@ -3528,7 +3664,7 @@ class TestIIRNotch:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(0.3, 30)
 
         # Get frequency response
@@ -3570,7 +3706,7 @@ class TestIIRNotch:
         assert_raises(TypeError, iirnotch, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirnotch(1500, 30, fs=10000)
 
         # Get frequency response
@@ -3605,7 +3741,7 @@ class TestIIRNotch:
 class TestIIRPeak:
 
     def test_ba_output(self):
-        # Compare coeficients with Matlab ones
+        # Compare coefficients with Matlab ones
         # for the equivalent input:
         b, a = iirpeak(0.06, 30)
         b2 = [
@@ -3620,7 +3756,7 @@ class TestIIRPeak:
         assert_allclose(a, a2, rtol=1e-8)
 
     def test_frequency_response(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(0.3, 30)
 
         # Get frequency response
@@ -3662,7 +3798,7 @@ class TestIIRPeak:
         assert_raises(TypeError, iirpeak, w0=-1, Q=[1, 2, 3])
 
     def test_fs_param(self):
-        # Get filter coeficients
+        # Get filter coefficients
         b, a = iirpeak(1200, 30, fs=8000)
 
         # Get frequency response
@@ -3802,6 +3938,13 @@ class TestIIRComb:
         # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
         assert abs(response[0]) < 1e-10
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iircomb(1000, 30, fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            iircomb(1000, 30, fs=None)
+
 
 class TestIIRDesign:
 
@@ -3918,6 +4061,10 @@ class TestIIRDesign:
             iirdesign([0.3, 0.6], [0.4, 0.7], 1, 40)
         with pytest.raises(ValueError, match="strictly inside stopband"):
             iirdesign([0.4, 0.7], [0.3, 0.6], 1, 40)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            iirfilter(1, 1, btype="low", fs=np.array([10, 20]))
 
 
 class TestIIRFilter:
@@ -4071,9 +4218,16 @@ class TestGroupDelay:
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            group_delay((1, 1), fs=np.array([10, 20]))
+
+        with pytest.raises(ValueError, match="Sampling.*be none"):
+            group_delay((1, 1), fs=None)
+
 
 class TestGammatone:
-    # Test erroneus input cases.
+    # Test erroneous input cases.
     def test_invalid_input(self):
         # Cutoff frequency is <= 0 or >= fs / 2.
         fs = 16000
@@ -4111,8 +4265,8 @@ class TestGammatone:
             freq_hz = freqs[np.argmax(np.abs(response))] / ((2 * np.pi) / fs)
 
             # Check that the peak magnitude is 1 and the frequency is 1000 Hz.
-            response_max == pytest.approx(1, rel=1e-2)
-            freq_hz == pytest.approx(1000, rel=1e-2)
+            assert_allclose(response_max, 1, rtol=1e-2)
+            assert_allclose(freq_hz, 1000, rtol=1e-2)
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -4155,6 +4309,10 @@ class TestGammatone:
               0.793651554625368]
         assert_allclose(b, b2)
         assert_allclose(a, a2)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            gammatone(440, 'iir', fs=np.array([10, 20]))
 
 
 class TestOrderFilter:

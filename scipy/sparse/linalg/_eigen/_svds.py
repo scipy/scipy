@@ -1,4 +1,3 @@
-import os
 import numpy as np
 
 from .arpack import _arpack  # type: ignore[attr-defined]
@@ -7,11 +6,7 @@ from . import eigsh
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
-if os.environ.get("SCIPY_USE_PROPACK"):
-    from scipy.sparse.linalg._svdp import _svdp
-    HAS_PROPACK = True
-else:
-    HAS_PROPACK = False
+from scipy.sparse.linalg._svdp import _svdp
 from scipy.linalg import svd
 
 arpack_int = _arpack.timing.nbx.dtype
@@ -200,10 +195,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Choices of the input matrix `A` numeric dtype may be limited.
     Only ``solver="lobpcg"`` supports all floating point dtypes
-    real: 'np.single', 'np.double', 'np.longdouble' and
-    complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
+    real: 'np.float32', 'np.float64', 'np.longdouble' and
+    complex: 'np.complex64', 'np.complex128', 'np.clongdouble'.
     The ``solver="arpack"`` supports only
-    'np.single', 'np.double', and 'np.cdouble'.
+    'np.float32', 'np.float64', and 'np.complex128'.
 
     Examples
     --------
@@ -488,12 +483,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                            largest=largest)
 
     elif solver == 'propack':
-        if not HAS_PROPACK:
-            raise ValueError("`solver='propack'` is opt-in due "
-                             "to potential issues on Windows, "
-                             "it can be enabled by setting the "
-                             "`SCIPY_USE_PROPACK` environment "
-                             "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
         irl_mode = (which == 'SM')

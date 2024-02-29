@@ -2,13 +2,6 @@
 # Created by: Pearu Peterson, April 2002
 #
 
-__usage__ = """
-Build linalg:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.linalg.test()'
-"""
-
 import math
 import pytest
 import numpy as np
@@ -61,7 +54,7 @@ def test_get_blas_funcs():
     assert_equal(f1.typecode, 'c')
 
     # extended precision complex
-    f1 = get_blas_funcs('gemm', dtype=np.longcomplex)
+    f1 = get_blas_funcs('gemm', dtype=np.clongdouble)
     assert_equal(f1.typecode, 'z')
 
     # check safe complex upcasting

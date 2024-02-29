@@ -54,9 +54,7 @@
 #include "mconf.h"
 extern double MAXLOG;
 
-double yn(n, x)
-int n;
-double x;
+double yn(int n, double x)
 {
     double an, anm1, anm2, r;
     int k, sign;

@@ -7,6 +7,7 @@ cimport cython
 
 from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph._validation import validate_graph
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 np.import_array()
 
@@ -54,6 +55,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     forest, i.e. the union of the minimum spanning trees on each connected
     component.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     The following example shows the computation of a minimum spanning tree
@@ -90,6 +94,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     """
     global NULL_IDX
     
+    is_pydata_sparse = is_pydata_spmatrix(csgraph)
+    if is_pydata_sparse:
+        pydata_sparse_cls = csgraph.__class__
     csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
@@ -112,6 +119,8 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     sp_tree = csr_matrix((data, indices, indptr), (N, N))
     sp_tree.eliminate_zeros()
 
+    if is_pydata_sparse:
+        sp_tree = pydata_sparse_cls.from_scipy_sparse(sp_tree)
     return sp_tree
 
 

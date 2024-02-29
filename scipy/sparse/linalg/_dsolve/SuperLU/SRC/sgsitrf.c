@@ -185,10 +185,10 @@ int num_drop_L;
 
 void
 sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
-	int *etree, void *work, int lwork, int *perm_c, int *perm_r,
+	int *etree, void *work, int_t lwork, int *perm_c, int *perm_r,
 	SuperMatrix *L, SuperMatrix *U, 
     	GlobalLU_t *Glu, /* persistent to facilitate multiple factorizations */
-	SuperLUStat_t *stat, int *info)
+	SuperLUStat_t *stat, int_t *info)
 {
     /* Local working arrays */
     NCPformat *Astore;
@@ -202,17 +202,19 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 				factorization, it is equal to perm_r. */
     int       *iwork;
     float   *swork;
-    int       *segrep, *repfnz, *parent, *xplore;
+    int       *segrep, *repfnz, *parent;
+    int_t     *xplore;
     int       *panel_lsub; /* dense[]/panel_lsub[] pair forms a w-wide SPA */
-    int       *marker, *marker_relax;
+    int       *marker;
+    int       *marker_relax;
     float    *dense, *tempv;
     int       *relax_end, *relax_fsupc;
     float    *a;
-    int       *asub;
-    int       *xa_begin, *xa_end;
+    int_t     *asub;
+    int_t     *xa_begin, *xa_end;
     int       *xsup, *supno;
-    int       *xlsub, *xlusup, *xusub;
-    int       nzlumax;
+    int_t     *xlsub, *xlusup, *xusub;
+    int_t     nzlumax;
     float    *amax; 
     float    drop_sum;
     float alpha, omega;  /* used in MILU, mimicing DRIC */
@@ -230,14 +232,15 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     int       pivrow;	/* pivotal row number in the original matrix A */
     int       nseg1;	/* no of segments in U-column above panel row jcol */
     int       nseg;	/* no of segments in each U-column */
-    register int jcol;
+    register int jcol, jj;
     register int kcol;	/* end column of a relaxed snode */
     register int icol;
-    register int i, k, jj, new_next, iinfo;
-    int       m, n, min_mn, jsupno, fsupc, nextlu, nextu;
+    int_t     i, k, iinfo;
+    int       m, n, min_mn, jsupno, fsupc;
+    int_t     new_next, nextlu, nextu;
     int       w_def;	/* upper bound on panel width */
     int       usepr, iperm_r_allocated = 0;
-    int       nnzL, nnzU;
+    int_t     nnzL, nnzU;
     int       *panel_histo = stat->panel_histo;
     flops_t   *ops = stat->ops;
 
@@ -271,19 +274,23 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     xlusup  = Glu->xlusup;
     xusub   = Glu->xusub;
 
+    int_t *xprune;
     SetIWork(m, n, panel_size, iwork, &segrep, &parent, &xplore,
-	     &repfnz, &panel_lsub, &marker_relax, &marker);
+	     &repfnz, &panel_lsub, &xprune, &marker);
+    marker_relax = int32Malloc(m);
+    SUPERLU_FREE(xprune); /* not used in ILU */
+    
     sSetRWork(m, panel_size, swork, &dense, &tempv);
 
     usepr = (fact == SamePattern_SameRowPerm);
     if ( usepr ) {
 	/* Compute the inverse of perm_r */
-	iperm_r = (int *) intMalloc(m);
+	iperm_r = (int *) int32Malloc(m);
 	for (k = 0; k < m; ++k) iperm_r[perm_r[k]] = k;
 	iperm_r_allocated = 1;
     }
 
-    iperm_c = (int *) intMalloc(n);
+    iperm_c = (int *) int32Malloc(n);
     for (k = 0; k < n; ++k) iperm_c[perm_c[k]] = k;
     swap = (int *)intMalloc(n);
     for (k = 0; k < n; k++) swap[k] = iperm_c[k];
@@ -320,7 +327,7 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     i = mark_relax(m, relax_end, relax_fsupc, xa_begin, xa_end,
 	         asub, marker_relax);
 #if ( PRNTlevel >= 1)
-    printf("%d relaxed supernodes.\n", i);
+    printf("%d relaxed supernodes.\n", (int)i);
 #endif
 
     /*
@@ -475,9 +482,9 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		/* Make a fill-in position if the column is entirely zero */
 		if (xlsub[jj + 1] == xlsub[jj]) {
 		    register int i, row;
-		    int nextl;
-		    int nzlmax = Glu->nzlmax;
-		    int *lsub = Glu->lsub;
+		    int_t nextl;
+		    int_t nzlmax = Glu->nzlmax;
+		    int_t *lsub = Glu->lsub;
 		    int *marker2 = marker + 2 * m;
 
 		    /* Allocate memory */
@@ -499,7 +506,7 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
 		    marker2[row] = jj;
 		    lsub[xlsub[jj]] = row;
 #ifdef DEBUG
-		    printf("Fill col %d.\n", jj);
+		    printf("Fill col %d.\n", (int)jj);
 		    fflush(stdout);
 #endif
 		}
@@ -622,6 +629,8 @@ sgsitrf(superlu_options_t *options, SuperMatrix *A, int relax, int panel_size,
     fixupL(min_mn, perm_r, Glu);
 
     sLUWorkFree(iwork, swork, Glu); /* Free work space and compress storage */
+    SUPERLU_FREE (xplore);
+    SUPERLU_FREE (marker_relax);
 
     if ( fact == SamePattern_SameRowPerm ) {
 	/* L and U structures may have changed due to possibly different

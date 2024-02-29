@@ -263,7 +263,7 @@ double cosine_invcdf(double p)
         x = y * _p2(y2) / _q2(y2);
     }
 
-    // For p < 0.0018, the asymptotic expansion at p=0 is sufficently
+    // For p < 0.0018, the asymptotic expansion at p=0 is sufficiently
     // accurate that no more work is needed.  Similarly, for p > 0.42,
     // the Pade approximant is sufficiently accurate.  In between these
     // bounds, we refine the estimate with Halley's method.

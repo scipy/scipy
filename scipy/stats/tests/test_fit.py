@@ -59,8 +59,8 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
-                   'halfcauchy', 'invgamma', 'invweibull', 'johnsonsu',
-                   'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
+                   'halfcauchy', 'invgamma', 'invweibull', 'jf_skew_t',
+                   'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
                    'rel_breitwigner', 'skewcauchy', 't', 'trapezoid', 'triang',
@@ -199,8 +199,8 @@ def test_fit_error():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
-                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
+                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined]
+                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined]
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
@@ -230,8 +230,8 @@ def cases_test_fit_mle():
                       'f', 'fatiguelife', 'fisk', 'foldcauchy',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
                       'gompertz', 'halfgennorm', 'invgauss', 'invweibull',
-                      'johnsonsb', 'johnsonsu', 'kappa3', 'kstwobign',
-                      'loglaplace', 'lognorm', 'lomax', 'mielke',
+                      'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
+                      'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nakagami', 'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
                       'randint', 'rdist', 'recipinvgauss', 'rice',
@@ -279,8 +279,8 @@ def cases_test_fit_mse():
                       'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
                       'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
                       'genlogistic', 'genpareto', 'gompertz',
-                      'hypergeom', 'invweibull', 'johnsonsb', 'johnsonsu',
-                      'kappa3', 'kstwobign',
+                      'hypergeom', 'invweibull', 'jf_skew_t', 'johnsonsb',
+                      'johnsonsu', 'kappa3', 'kstwobign',
                       'laplace_asymmetric', 'loggamma', 'loglaplace',
                       'lognorm', 'lomax',
                       'maxwell', 'mielke', 'nakagami', 'nhypergeom',
@@ -355,7 +355,7 @@ class TestFit:
     dist = stats.binom  # type: ignore[attr-defined]
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined] # noqa
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined]  # noqa: E501
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
@@ -461,7 +461,7 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-        message = "Guess for parameter `n` rounded..."
+        message = "Guess for parameter `n` rounded.*|Guess for parameter `p` clipped.*"
         guess = {'n': 4.5, 'p': -0.5}
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
@@ -970,6 +970,37 @@ class TestGoodnessOfFit:
         assert_equal(res3.fit_result.params.loc, -13.85)
         assert not np.allclose(res3.null_distribution, res1.null_distribution)
 
+    def test_custom_statistic(self):
+        # Test support for custom statistic function.
+
+        # References:
+        # [1] Pyke, R. (1965).  "Spacings".  Journal of the Royal Statistical
+        #     Society: Series B (Methodological), 27(3): 395-436.
+        # [2] Burrows, P. M. (1979).  "Selected Percentage Points of
+        #     Greenwood's Statistics".  Journal of the Royal Statistical
+        #     Society. Series A (General), 142(2): 256-258.
+
+        # Use the Greenwood statistic for illustration; see [1, p.402].
+        def greenwood(dist, data, *, axis):
+            x = np.sort(data, axis=axis)
+            y = dist.cdf(x)
+            d = np.diff(y, axis=axis, prepend=0, append=1)
+            return np.sum(d ** 2, axis=axis)
+
+        # Run the Monte Carlo test with sample size = 5 on a fully specified
+        # null distribution, and compare the simulated quantiles to the exact
+        # ones given in [2, Table 1, column (n = 5)].
+        rng = np.random.default_rng(9121950977643805391)
+        data = stats.expon.rvs(size=5, random_state=rng)
+        result = goodness_of_fit(stats.expon, data,
+                                 known_params={'loc': 0, 'scale': 1},
+                                 statistic=greenwood, random_state=rng)
+        p = [.01, .05, .1, .2, .3, .4, .5, .6, .7, .8, .9, .95, .99]
+        exact_quantiles = [
+            .183863, .199403, .210088, .226040, .239947, .253677, .268422,
+            .285293, .306002, .334447, .382972, .432049, .547468]
+        simulated_quantiles = np.quantile(result.null_distribution, p)
+        assert_allclose(simulated_quantiles, exact_quantiles, atol=0.005)
 
 class TestFitResult:
     def test_plot_iv(self):
@@ -982,11 +1013,15 @@ class TestFitResult:
         bounds = [(0, 30), (0, 1)]
         res = stats.fit(stats.norm, data, bounds, optimizer=optimizer)
         try:
-            import matplotlib  # noqa
+            import matplotlib  # noqa: F401
             message = r"`plot_type` must be one of \{'..."
             with pytest.raises(ValueError, match=message):
                 res.plot(plot_type='llama')
         except (ModuleNotFoundError, ImportError):
-            message = r"matplotlib must be installed to use method `plot`."
-            with pytest.raises(ModuleNotFoundError, match=message):
-                res.plot(plot_type='llama')
+            # Avoid trying to call MPL with numpy 2.0-dev, because that fails
+            # too often due to ABI mismatches and is hard to avoid. This test
+            # will work fine again once MPL has done a 2.0-compatible release.
+            if not np.__version__.startswith('2.0.0.dev0'):
+                message = r"matplotlib must be installed to use method `plot`."
+                with pytest.raises(ModuleNotFoundError, match=message):
+                    res.plot(plot_type='llama')

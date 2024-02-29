@@ -3,36 +3,45 @@ import numpy as np
 from scipy.sparse.linalg._interface import LinearOperator
 from .utils import make_system
 from scipy.linalg import get_lapack_funcs
-from scipy._lib.deprecation import _NoValue
+from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 __all__ = ['bicg', 'bicgstab', 'cg', 'cgs', 'gmres', 'qmr']
 
 
-def _get_atol(name, b, tol=_NoValue, atol=0., rtol=1e-5):
+def _get_atol_rtol(name, b_norm, tol=_NoValue, atol=0., rtol=1e-5):
     """
     A helper function to handle tolerance deprecations and normalization
     """
     if tol is not _NoValue:
-        msg = (f"'scipy.sparse.linalg.{name}' keyword argument 'tol' is "
-               "deprecated in favor of 'rtol' and will be removed in SciPy "
-               "v.1.14.0. Until then, if set, it will override 'rtol'.")
+        msg = (f"'scipy.sparse.linalg.{name}' keyword argument `tol` is "
+               "deprecated in favor of `rtol` and will be removed in SciPy "
+               "v1.14.0. Until then, if set, it will override `rtol`.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         rtol = float(tol) if tol is not None else rtol
 
     if atol == 'legacy':
-        warnings.warn("scipy.sparse.linalg.{name} called with `atol` set to "
-                      "string. This behavior is deprecated and atol parameter"
-                      " only excepts floats. In SciPy 1.14, this will result"
-                      " with an error.", category=DeprecationWarning,
-                      stacklevel=4)
+        msg = (f"'scipy.sparse.linalg.{name}' called with `atol='legacy'`. "
+               "This behavior is deprecated and will result in an error in "
+               "SciPy v1.14.0. To preserve current behaviour, set `atol=0.0`.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
         atol = 0
 
-    atol = max(float(atol), float(rtol) * float(np.linalg.norm(b)))
+    # this branch is only hit from gcrotmk/lgmres/tfqmr
+    if atol is None:
+        msg = (f"'scipy.sparse.linalg.{name}' called without specifying "
+               "`atol`. This behavior is deprecated and will result in an "
+               "error in SciPy v1.14.0. To preserve current behaviour, set "
+               "`atol=rtol`, or, to adopt the future default, set `atol=0.0`.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=4)
+        atol = rtol
 
-    return atol
+    atol = max(float(atol), float(rtol) * float(b_norm))
+
+    return atol, rtol
 
 
-def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+@_deprecate_positional_args(version="1.14")
+def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
          atol=0., rtol=1e-5):
     """Use BIConjugate Gradient iteration to solve ``Ax = b``.
 
@@ -64,9 +73,9 @@ def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `bicg` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+        .. deprecated:: 1.12.0
+           `bicg` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -85,7 +94,7 @@ def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     >>> from scipy.sparse.linalg import bicg
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = bicg(A, b)
+    >>> x, exitCode = bicg(A, b, atol=1e-5)
     >>> print(exitCode)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -95,10 +104,10 @@ def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('bicg', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol = _get_atol('bicg', b, tol, atol, rtol)
 
     n = len(b)
     dotprod = np.vdot if np.iscomplexobj(x) else np.dot
@@ -160,8 +169,9 @@ def bicg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
-             atol=0., rtol=1e-5):
+@_deprecate_positional_args(version="1.14")
+def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
+             callback=None, atol=0., rtol=1e-5):
     """Use BIConjugate Gradient STABilized iteration to solve ``Ax = b``.
 
     Parameters
@@ -192,9 +202,9 @@ def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `bicgstab` keyword argument `tol` is deprecated in favor of `rtol`
-           and will be removed in SciPy 1.14.0.
+        .. deprecated:: 1.12.0
+           `bicgstab` keyword argument ``tol`` is deprecated in favor of
+           ``rtol`` and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -217,7 +227,7 @@ def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     ...               [0, 2, 1, 0]])
     >>> A = csc_matrix(R)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = bicgstab(A, b)
+    >>> x, exit_code = bicgstab(A, b, atol=1e-5)
     >>> print(exit_code)  # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -227,10 +237,10 @@ def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('bicgstab', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol = _get_atol('bicgstab', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -302,7 +312,8 @@ def bicgstab(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+@_deprecate_positional_args(version="1.14")
+def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
        atol=0., rtol=1e-5):
     """Use Conjugate Gradient iteration to solve ``Ax = b``.
 
@@ -335,8 +346,8 @@ def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `cg` keyword argument `tol` is deprecated in favor of `rtol` and
+        .. deprecated:: 1.12.0
+           `cg` keyword argument ``tol`` is deprecated in favor of ``rtol`` and
            will be removed in SciPy 1.14.0.
 
     Returns
@@ -359,7 +370,7 @@ def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     ...               [0, 0, 2, 4]])
     >>> A = csc_matrix(P)
     >>> b = np.array([-1, -0.5, -1, 2])
-    >>> x, exit_code = cg(A, b)
+    >>> x, exit_code = cg(A, b, atol=1e-5)
     >>> print(exit_code)    # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -369,10 +380,10 @@ def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('cg', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol = _get_atol('cg', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -416,7 +427,8 @@ def cg(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
+@_deprecate_positional_args(version="1.14")
+def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         atol=0., rtol=1e-5):
     """Use Conjugate Gradient Squared iteration to solve ``Ax = b``.
 
@@ -448,9 +460,9 @@ def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `cgs` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+        .. deprecated:: 1.12.0
+           `cgs` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -483,10 +495,10 @@ def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
     A, M, x, b, postprocess = make_system(A, M, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('cgs', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol = _get_atol('cgs', b, tol, atol, rtol)
 
     n = len(b)
 
@@ -568,7 +580,8 @@ def cgs(A, b, x0=None, tol=_NoValue, maxiter=None, M=None, callback=None,
         return postprocess(x), maxiter
 
 
-def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
+@_deprecate_positional_args(version="1.14")
+def gmres(A, b, x0=None, *, tol=_NoValue, restart=None, maxiter=None, M=None,
           callback=None, restrt=_NoValue, atol=0., callback_type=None,
           rtol=1e-5):
     """
@@ -622,13 +635,13 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     restrt : int, optional, deprecated
 
         .. deprecated:: 0.11.0
-           `gmres` keyword argument `restrt` is deprecated in favor of
-           `restart` and will be removed in SciPy 1.14.0.
+           `gmres` keyword argument ``restrt`` is deprecated in favor of
+           ``restart`` and will be removed in SciPy 1.14.0.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `gmres` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0
+        .. deprecated:: 1.12.0
+           `gmres` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0
 
     Returns
     -------
@@ -662,7 +675,7 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import gmres
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = gmres(A, b)
+    >>> x, exitCode = gmres(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -674,7 +687,7 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
         raise ValueError("Cannot specify both 'restart' and 'restrt'"
                          " keywords. Also 'rstrt' is deprecated."
                          " and will be removed in SciPy 1.14.0. Use "
-                         "'restart' instad.")
+                         "'restart' instead.")
     if restrt is not _NoValue:
         msg = ("'gmres' keyword argument 'restrt' is deprecated "
                "in favor of 'restart' and will be removed in SciPy"
@@ -710,6 +723,8 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     n = len(b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('gmres', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
 
@@ -723,8 +738,6 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     if restart is None:
         restart = 20
     restart = min(restart, n)
-
-    atol = _get_atol('gmres', b, tol, atol, rtol)
 
     Mb_nrm2 = np.linalg.norm(psolve(b))
 
@@ -751,6 +764,8 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     for iteration in range(maxiter):
         if iteration == 0:
             r = b - matvec(x) if x.any() else b.copy()
+            if np.linalg.norm(r) < atol:  # Are we done?
+                return postprocess(x), 0
 
         v[0, :] = psolve(r)
         tmp = np.linalg.norm(v[0, :])
@@ -854,7 +869,8 @@ def gmres(A, b, x0=None, tol=_NoValue, restart=None, maxiter=None, M=None,
     return postprocess(x), info
 
 
-def qmr(A, b, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
+@_deprecate_positional_args(version="1.14")
+def qmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M1=None, M2=None,
         callback=None, atol=0., rtol=1e-5):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -887,9 +903,9 @@ def qmr(A, b, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
         as callback(xk), where xk is the current solution vector.
     tol : float, optional, deprecated
 
-        .. deprecated 1.12.0
-           `qmr` keyword argument `tol` is deprecated in favor of `rtol` and
-           will be removed in SciPy 1.14.0.
+        .. deprecated:: 1.12.0
+           `qmr` keyword argument ``tol`` is deprecated in favor of ``rtol``
+           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -912,7 +928,7 @@ def qmr(A, b, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
     >>> from scipy.sparse.linalg import qmr
     >>> A = csc_matrix([[3., 2., 0.], [1., -1., 0.], [0., 5., 1.]])
     >>> b = np.array([2., 4., -1.])
-    >>> x, exitCode = qmr(A, b)
+    >>> x, exitCode = qmr(A, b, atol=1e-5)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -922,10 +938,10 @@ def qmr(A, b, x0=None, tol=_NoValue, maxiter=None, M1=None, M2=None,
     A, M, x, b, postprocess = make_system(A, None, x0, b)
     bnrm2 = np.linalg.norm(b)
 
+    atol, _ = _get_atol_rtol('qmr', bnrm2, tol, atol, rtol)
+
     if bnrm2 == 0:
         return postprocess(b), 0
-
-    atol = _get_atol('qmr', b, tol, atol, rtol)
 
     if M1 is None and M2 is None:
         if hasattr(A_, 'psolve'):

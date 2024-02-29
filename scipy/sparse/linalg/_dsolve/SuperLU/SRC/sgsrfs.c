@@ -148,7 +148,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 #define ITMAX 5
     
     /* Table of constant values */
-    int    ione = 1;
+    int    ione = 1, nrow = A->nrow;
     float ndone = -1.;
     float done = 1.;
     
@@ -229,7 +229,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
     /* Allocate working space */
     work = floatMalloc(2*A->nrow);
     rwork = (float *) SUPERLU_MALLOC( A->nrow * sizeof(float) );
-    iwork = intMalloc(2*A->nrow);
+    iwork = int32Malloc(2*A->nrow);
     if ( !work || !rwork || !iwork ) 
         ABORT("Malloc fails for work/rwork/iwork.");
     
@@ -290,9 +290,9 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	       where op(A) = A, A**T, or A**H, depending on TRANS. */
 	    
 #ifdef _CRAY
-	    SCOPY(&A->nrow, Bptr, &ione, work, &ione);
+	    SCOPY(&nrow, Bptr, &ione, work, &ione);
 #else
-	    scopy_(&A->nrow, Bptr, &ione, work, &ione);
+	    scopy_(&nrow, Bptr, &ione, work, &ione);
 #endif
 	    sp_sgemv(transc, ndone, A, Xptr, ione, done, work, ione);
 
@@ -347,10 +347,10 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 		sgstrs (trans, L, U, perm_c, perm_r, &Bjcol, stat, info);
 		
 #ifdef _CRAY
-		SAXPY(&A->nrow, &done, work, &ione,
+		SAXPY(&nrow, &done, work, &ione,
 		       &Xmat[j*ldx], &ione);
 #else
-		saxpy_(&A->nrow, &done, work, &ione,
+		saxpy_(&nrow, &done, work, &ione,
 		       &Xmat[j*ldx], &ione);
 #endif
 		lstres = berr[j];
@@ -412,7 +412,7 @@ sgsrfs(trans_t trans, SuperMatrix *A, SuperMatrix *L, SuperMatrix *U,
 	kase = 0;
 
 	do {
-	    slacon2_(&A->nrow, &work[A->nrow], work,
+	    slacon2_(&nrow, &work[A->nrow], work,
 		    &iwork[A->nrow], &ferr[j], &kase, isave);
 	    if (kase == 0) break;
 
