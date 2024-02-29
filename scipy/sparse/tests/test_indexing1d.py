@@ -27,6 +27,33 @@ def check_remains_sorted(X):
 
 @pytest.mark.parametrize("spcreator", formats_for_index1d)
 class TestGetSet1D:
+    def test_None_index(self, spcreator):
+        D = np.array([4, 3, 0])
+        A = spcreator(D)
+
+        N = D.shape[0]
+        for j in range(-N, N):
+            assert np.array_equal(A[j, None].toarray(), D[j, None])
+            assert np.array_equal(A[None, j].toarray(), D[None, j])
+            assert np.array_equal(A[None, None, j].toarray(), D[None, None, j])
+
+    def test_getitem_shape(self, spcreator):
+        A = spcreator(np.arange(3 * 4).reshape(3, 4))
+        assert A[1, 2].ndim == 0
+        assert A[1, 2:3].shape == (1,)
+        assert A[None, 1, 2:3].shape == (1, 1)
+        assert A[None, 1, 2].shape == (1,)
+        assert A[None, 1, 2, None].shape == (1, 1)
+
+        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
+            A[None, 2 , 1, None, None]
+        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
+            A[None, 0:2 , None, 1]
+        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
+            A[0:1 , 1:, None]
+        with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
+            A[1: , 1, None, None]
+
     def test_getelement(self, spcreator):
         D = np.array([4, 3, 0])
         A = spcreator(D)
@@ -36,13 +63,13 @@ class TestGetSet1D:
             assert np.array_equal(A[j], D[j])
 
         for ij in [3, -4]:
-            with pytest.raises(IndexError, match='index (.*) out of range'):
+            with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
                 A.__getitem__(ij)
 
         # single element tuples unwrapped
         assert A[(0,)] == 4
 
-        with pytest.raises(IndexError, match='index (.*) out of range'):
+        with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
             A.__getitem__((4,))
 
     def test_setelement(self, spcreator):
@@ -63,7 +90,7 @@ class TestGetSet1D:
             A[1,] = dtype(5)  # overwrite using 1-tuple index
 
             for ij in [13, -14, (13,), (14,)]:
-                with pytest.raises(IndexError, match='index (.*) out of range'):
+                with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
                     A.__setitem__(ij, 123.0)
 
 
@@ -78,7 +105,7 @@ class TestSlicingAndFancy1D:
 
         assert_array_equal(A[()].toarray(), D[()])
         for ij in [(0,3), (3,)]:
-            with pytest.raises(IndexError, match='out of range'):
+            with pytest.raises(IndexError, match='out of (range|bounds)|too many indices'):
                 A.__getitem__(ij)
 
     def test_set_array_index(self, spcreator):
@@ -94,13 +121,12 @@ class TestSlicingAndFancy1D:
             assert_array_equal(A.toarray(), [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0])
 
             for ij in [(13,),(-14,)]:
-                with pytest.raises(IndexError, match='index .* out of range'):
+                with pytest.raises(IndexError, match='index .* out of (range|bounds)'):
                     A.__setitem__(ij, 123.0)
 
             for v in [(), (0, 3), [1,2,3], np.array([1,2,3])]:
-                with pytest.raises(
-                    ValueError, match='Trying to assign a sequence to an item'
-                ):
+                msg = 'Trying to assign a sequence to an item'
+                with pytest.raises(ValueError, match=msg):
                     A.__setitem__(0, v)
 
     ####################
@@ -298,11 +324,13 @@ class TestSlicingAndFancy1D:
     def test_bad_index(self, spcreator):
         A = spcreator(np.zeros(5))
         with pytest.raises(
-            (IndexError, ValueError, TypeError), match='Index dimension must be 1 or 2'
+            (IndexError, ValueError, TypeError),
+            match='Index dimension must be 1 or 2|only integers'
         ):
             A.__getitem__("foo")
         with pytest.raises(
-            (IndexError, ValueError, TypeError), match='tuple index out of range'
+            (IndexError, ValueError, TypeError),
+            match='tuple index out of range|only integers'
         ):
             A.__getitem__((2, "foo"))
 
@@ -313,7 +341,7 @@ class TestSlicingAndFancy1D:
         # [i]
         assert_equal(A[[3]].toarray(), B[[3]])
 
-#        # [np.array]
+        # [np.array]
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
         assert_equal(A[[2, -5]].toarray(), B[[2, -5]])
         assert_equal(A[np.array(-1)], B[-1])
@@ -355,11 +383,12 @@ class TestSlicingAndFancy1D:
         Z3 = np.zeros(51, dtype=bool)
         Z3[0] = True
 
-        with pytest.raises(IndexError, match='bool index .* has shape'):
+        msg = 'bool index .* has shape|boolean index did not match'
+        with pytest.raises(IndexError, match=msg):
             A.__getitem__(Z1)
-        with pytest.raises(IndexError, match='bool index .* has shape'):
+        with pytest.raises(IndexError, match=msg):
             A.__getitem__(Z2)
-        with pytest.raises(IndexError, match='bool index .* has shape'):
+        with pytest.raises(IndexError, match=msg):
             A.__getitem__(Z3)
 
     def test_fancy_indexing_sparse_boolean(self, spcreator):
@@ -378,9 +407,9 @@ class TestSlicingAndFancy1D:
 
         Ysp = sp.sparse.csr_array(Y)
 
-        with pytest.raises(IndexError, match='bool index .* has shape'):
+        with pytest.raises(IndexError, match='bool index .* has shape|only integers'):
             A.__getitem__(Ysp)
-        with pytest.raises(IndexError, match='tuple index out of range'):
+        with pytest.raises(IndexError, match='tuple index out of range|only integers'):
             A.__getitem__((Xsp, 1))
 
     def test_fancy_indexing_seq_assign(self, spcreator):
@@ -406,9 +435,8 @@ class TestSlicingAndFancy1D:
     ############################
     def test_bad_index_assign(self, spcreator):
         A = spcreator(np.zeros(5))
-        with pytest.raises(
-            (IndexError, ValueError, TypeError), match='Index dimension must be 1 or 2'
-        ):
+        msg = 'Index dimension must be 1 or 2|only integers'
+        with pytest.raises((IndexError, ValueError, TypeError), match=msg):
             A.__setitem__("foo", 2)
 
     def test_fancy_indexing_set(self, spcreator):
@@ -444,7 +472,8 @@ class TestSlicingAndFancy1D:
             )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
-                with pytest.raises(IndexError, match='tuple index out of range'):
+                msg = "too many indices for array|tuple index out of range"
+                with pytest.raises(IndexError, match=msg):
                     B.__getitem__(i1)
                 A[i2] = B[i2]
             assert_array_equal(A[:3].toarray(), B.toarray())

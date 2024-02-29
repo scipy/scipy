@@ -911,12 +911,14 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         major, minor = self._swap((0, idx))
         self._set_many(major, minor, x)
 
+    def _set_slice(self, idx, x):
+        idx = np.arange(*idx.indices(self.shape[0]))
+        x = np.broadcast_to(x, idx.shape)
+        self._set_many(np.zeros_like(idx), idx, x)
+
     def _set_array(self, idx, x):
-        major, minor = self._swap((np.zeros_like(idx), idx))
-        broadcast = x.shape[-1] == 1 and minor.shape[-1] != 1
-        if broadcast:
-            x = np.repeat(x.data, idx.shape[-1])
-        self._set_many(major, minor, x)
+        x = np.broadcast_to(x, idx.shape)
+        self._set_many(np.zeros_like(idx), idx, x)
 
     def _set_intXint(self, row, col, x):
         i, j = self._swap((row, col))
