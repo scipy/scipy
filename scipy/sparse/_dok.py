@@ -345,7 +345,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     copy.__doc__ = _spbase.copy.__doc__
 
     @classmethod
-    def fromkeys(cls, iterable, value=1):
+    def fromkeys(cls, iterable, value=1, /):
         num_rows = 1 + max(k[0] for k in iterable)
         num_cols = 1 + max(k[1] for k in iterable)
         result = cls((num_rows, num_cols))

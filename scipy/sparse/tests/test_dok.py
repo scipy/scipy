@@ -19,12 +19,3 @@ def test_fromkeys_positional():
         Xdok.todense(),
         [[0, 0, -1], [-1, 0, 0], [0, -1, 0]],
     )
-
-def test_fromkeys_kwargs():
-    # test with kwarg value
-    edges = [(0,2), (1,0), (2, 1)]
-    Xdok = dok_array.fromkeys(edges, value=-1)
-    assert_array_equal(
-        Xdok.todense(),
-        [[0, 0, -1], [-1, 0, 0], [0, -1, 0]],
-    )
