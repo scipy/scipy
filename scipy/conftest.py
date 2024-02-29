@@ -343,24 +343,28 @@ dt_config.skiplist = set([
     'scipy.sparse.linalg.norm',     # XXX temp skip
 ])
 
-# help pytest collection a bit: these names are either private (distributions)
-# or deprecated (misc), or just do not need doctesting 
-dt_config.pytest_extra_skips = [
+# help pytest collection a bit: these names are either private (distributions),
+# or just do not need doctesting.
+dt_config.pytest_extra_ignore = [
     "scipy.stats.distributions",
     "scipy.optimize.cython_optimize",
     "scipy.test",
     "scipy.show_config",
-    "scipy.misc",
-     # tutorials:
-    "io.rst",              # broken?
-    "ND_regular_grid.rst",
-    "ND_unstructured.rst",   # XXX: MPL deprecation?
-    "extrapolation_examples.rst",
-    "sampling_pinv.rst",
-    "sampling_srou.rst",
 ]
 
+dt_config.pytest_extra_xfail = {
+    # name: reason
+    "io.rst": "",
+    "ND_regular_grid.rst": "ReST parser limitation",
+    "ND_unstructured.rst": "matplotlib deprecation",
+    "extrapolation_examples.rst": "ReST parser limitation",
+    "sampling_pinv.rst": "__cinit__ unexpected argument",
+    "sampling_srou.rst": "nan in scalar_power",
+}
+
 # tutorials
-dt_config.pseudocode = set(['integrate.nquad(func,']) #, 'octave_struct.mat'])
+dt_config.pseudocode = set(['integrate.nquad(func,'])
 dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
+
+dt_config.nameerror_after_exception = True
 ############################################################################
