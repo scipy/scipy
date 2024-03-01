@@ -13,6 +13,7 @@ from ._sputils import (
     isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
 )
 from ._sparsetools import dia_matvec
+from .._lib._util import copy_false
 
 
 class _dia_base(_data_matrix):
@@ -20,6 +21,8 @@ class _dia_base(_data_matrix):
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
+        if not copy:
+            copy = copy_false
 
         if issparse(arg1):
             if arg1.format == "dia":

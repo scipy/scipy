@@ -56,6 +56,13 @@ else:
 IntNumber = Union[int, np.integer]
 DecimalNumber = Union[float, np.floating, np.integer]
 
+copy_false: Optional[bool]
+
+if np.lib.NumpyVersion(np.__version__) >= "2.0.0.dev0":
+    copy_false = None
+else:
+    copy_false = False
+
 # Since Generator was introduced in numpy 1.17, the following condition is needed for
 # backward compatibility
 if TYPE_CHECKING:

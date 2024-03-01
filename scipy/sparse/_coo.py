@@ -16,6 +16,7 @@ from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
+from .._lib._util import copy_false
 
 import operator
 
@@ -26,6 +27,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
         is_array = isinstance(self, sparray)
+        if not copy:
+            copy = copy_false
 
         if isinstance(arg1, tuple):
             if isshape(arg1, allow_1d=is_array):
