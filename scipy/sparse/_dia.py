@@ -13,6 +13,7 @@ from ._sputils import (
     isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
 )
 from ._sparsetools import dia_matvec
+from scipy._lib import _pep440
 
 
 class _dia_base(_data_matrix):
@@ -54,6 +55,9 @@ class _dia_base(_data_matrix):
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
+                    if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
+                        if copy == False:
+                            copy = None
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     offsets = np.array(arg1[1],
                                        dtype=self._get_index_dtype(maxval=max(shape)),

@@ -1181,7 +1181,7 @@ def test_array_like_input(dtype):
         def __init__(self, x):
             self._x = x
 
-        def __array__(self):
+        def __array__(self, copy=None):
             return np.asarray(x, dtype=dtype)
 
     x = [1]*2 + [3, 4, 5]

@@ -8,6 +8,7 @@ from numpy import (array, transpose, searchsorted, atleast_1d, atleast_2d,
                    ravel, poly1d, asarray, intp)
 
 import scipy.special as spec
+from scipy._lib import _pep440
 from scipy.special import comb
 
 from . import _fitpack_py
@@ -502,7 +503,10 @@ class interp1d(_Interpolator1D):
 
         # `copy` keyword semantics changed in NumPy 2.0, once that is
         # the minimum version this can use `copy=None`.
-        self.copy = np._CopyMode.ALWAYS if copy else np._CopyMode.IF_NEEDED
+        self.copy = copy
+        if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
+            if self.copy == False:
+                self.copy = None
 
         if kind in ['zero', 'slinear', 'quadratic', 'cubic']:
             order = {'zero': 0, 'slinear': 1,

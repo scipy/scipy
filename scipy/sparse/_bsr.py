@@ -18,6 +18,7 @@ from . import _sparsetools
 from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
                            bsr_matmat, bsr_transpose, bsr_sort_indices,
                            bsr_tocsr)
+from scipy._lib import _pep440
 
 
 class _bsr_base(_cs_matrix, _minmax_mixin):
@@ -78,6 +79,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     maxval = max(maxval, max(blocksize))
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                                   check_contents=True)
+                if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
+                    if copy == False:
+                        copy = None
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)

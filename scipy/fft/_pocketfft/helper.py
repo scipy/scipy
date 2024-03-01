@@ -7,6 +7,7 @@ import contextlib
 import numpy as np
 # good_size is exposed (and used) from this import
 from .pypocketfft import good_size
+from scipy._lib import _pep440
 
 __all__ = ['good_size', 'set_workers', 'get_workers']
 
@@ -96,6 +97,9 @@ def _asfarray(x):
     dtype = x.dtype.newbyteorder('=')
     # Always align input
     copy = not x.flags['ALIGNED']
+    if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
+        if copy == False:
+            copy = None
     return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):

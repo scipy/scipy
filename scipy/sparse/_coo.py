@@ -16,6 +16,7 @@ from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
+from scipy._lib import _pep440
 
 import operator
 
@@ -53,6 +54,9 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 idx_dtype = self._get_index_dtype(coords,
                                                   maxval=max(self.shape),
                                                   check_contents=True)
+                if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
+                    if copy == False:
+                        copy = None
                 self.coords = tuple(np.array(idx, copy=copy, dtype=idx_dtype)
                                      for idx in coords)
                 self.data = getdata(obj, copy=copy, dtype=dtype)

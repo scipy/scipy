@@ -421,8 +421,10 @@ class Jacobian:
             if value is not None:
                 setattr(self, name, kw[name])
 
-        if hasattr(self, 'todense'):
-            self.__array__ = lambda: self.todense()
+
+        if hasattr(self, "todense"):
+            def __array__(self, copy=None):
+                return self.todense()
 
     def aspreconditioner(self):
         return InverseJacobian(self)
@@ -675,7 +677,7 @@ class LowRankMatrix:
         if len(self.cs) > c.size:
             self.collapse()
 
-    def __array__(self):
+    def __array__(self, copy=None):
         if self.collapsed is not None:
             return self.collapsed
 
