@@ -189,7 +189,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check"],
+            "commands": ["doc", "refguide-check", "smoke-docs"],
         },
         {
             "name": "release",
@@ -670,9 +670,8 @@ class Test(Task):
     verbose = Option(
         ['--verbose', '-v'], default=False, is_flag=True,
         help="more verbosity")
-    doctests = Option(['--doctests'], default=False, is_flag=True,
-        help="Run doctests"
-    )
+    # removed doctests as currently not supported by _lib/_testutils.py
+    # doctests = Option(['--doctests'], default=False)
     coverage = Option(
         ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
@@ -742,9 +741,6 @@ class Test(Task):
         else:
             tests = None
 
-        if args.doctests and not args.tests:
-            extra_argv += ['--doctest-collect=api']
-
         if len(args.array_api_backend) != 0:
             os.environ['SCIPY_ARRAY_API'] = json.dumps(list(args.array_api_backend))
 
@@ -759,7 +755,7 @@ class Test(Task):
                 args.mode,
                 verbose=verbose,
                 extra_argv=extra_argv,
-                doctests=args.doctests,
+                doctests=False,
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
@@ -772,6 +768,90 @@ class Test(Task):
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
         return cls.scipy_tests(args, pytest_args)
+
+
+@cli.cls_cmd('smoke-docs')
+class SmokeDocs(Task):
+    # XXX This essntially is a copy-paste of the Task class. Consider de-duplicating.
+    ctx = CONTEXT
+
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True,
+        help="more verbosity")
+    durations = Option(
+        ['--durations', '-d'], default=None, metavar="NUM_TESTS",
+        help="Show timing for the given number of slowest tests"
+    )
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+    tests = Option(
+        ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
+        help='Specify tests to run')
+    parallel = Option(
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
+        help="Number of parallel jobs for testing"
+    )
+    # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
+    pytest_args = Argument(
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
+
+    TASK_META = {
+        'task_dep': ['build'],
+    }
+
+    @classmethod
+    def scipy_tests(cls, args, pytest_args):
+        dirs = Dirs(args)
+        dirs.add_sys_path()
+        print(f"SciPy from development installed path at: {dirs.site}")
+
+        # FIXME: support pos-args with doit
+        extra_argv = list(pytest_args[:]) if pytest_args else []
+        if extra_argv and extra_argv[0] == '--':
+            extra_argv = extra_argv[1:]
+
+        if args.durations:
+            extra_argv += ['--durations', args.durations]
+
+        # convert options to test selection
+        if args.submodule:
+            tests = [PROJECT_MODULE + "." + args.submodule]
+        elif args.tests:
+            tests = args.tests
+        else:
+            tests = None
+
+        # use strategy=api unless -t path/to/specific/file
+        if not args.tests:
+            extra_argv += ['--doctest-collect=api']
+
+        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
+        # FIXME: changing CWD is not a good practice
+        with working_dir(dirs.site):
+            print("Running tests for {} version:{}, installed at:{}".format(
+                        PROJECT_MODULE, version, mod_path))
+            # runner verbosity - convert bool to int
+            verbose = int(args.verbose) + 1
+            result = runner(  # scipy._lib._testutils:PytestTester
+                "fast",
+                verbose=verbose,
+                extra_argv=extra_argv,
+                doctests=True,
+                coverage=False,
+                tests=tests,
+                parallel=args.parallel)
+        return result
+
+    @classmethod
+    def run(cls, pytest_args, **kwargs):
+        """run unit-tests"""
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        return cls.scipy_tests(args, pytest_args)
+
 
 
 @cli.cls_cmd('bench')
