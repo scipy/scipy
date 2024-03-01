@@ -14,6 +14,9 @@ from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
+from scpdt.conftest import dt_config
+from contextlib import contextmanager
+
 
 def pytest_configure(config):
     config.addinivalue_line("markers",
@@ -241,11 +244,6 @@ hypothesis.settings.load_profile(SCIPY_HYPOTHESIS_PROFILE)
 ############################################################################
 # doctesting stuff
 
-from scpdt.conftest import dt_config
-from contextlib import contextmanager
-import warnings
-
-
 # FIXME: populate the dict once
 @contextmanager
 def warnings_errors_and_rng(test):
@@ -303,7 +301,6 @@ def warnings_errors_and_rng(test):
     known_warnings.update(dct)
 
     # these legitimately emit warnings in examples
-    from scipy.signal._filter_design import BadCoefficients
     legit = set('scipy.signal.normalize')
 
     # Now, the meat of the matter: filter warnings,
@@ -363,6 +360,4 @@ dt_config.pytest_extra_xfail = {
 # tutorials
 dt_config.pseudocode = set(['integrate.nquad(func,'])
 dt_config.local_resources = {'io.rst': ["octave_a.mat"]}
-
-dt_config.nameerror_after_exception = True
 ############################################################################
