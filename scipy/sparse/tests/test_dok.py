@@ -7,7 +7,7 @@ def test_fromkeys_default():
     edges = [(0, 2), (1, 0), (2, 1)]
     Xdok = dok_array.fromkeys(edges)
     assert_array_equal(
-        Xdok.todense(),
+        Xdok.toarray(),
         [[0, 0, 1], [1, 0, 0], [0, 1, 0]],
     )
 
@@ -16,6 +16,6 @@ def test_fromkeys_positional():
     edges = [(0, 2), (1, 0), (2, 1)]
     Xdok = dok_array.fromkeys(edges, -1)
     assert_array_equal(
-        Xdok.todense(),
+        Xdok.toarray(),
         [[0, 0, -1], [-1, 0, 0], [0, -1, 0]],
     )
