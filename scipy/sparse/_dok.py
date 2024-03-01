@@ -114,13 +114,6 @@ class _dok_base(_spbase, IndexMixin, dict):
             raise IndexError('Index out of bounds.')
         return self._dict.get(key, default)
 
-    __nodefault = object()
-
-    def pop(self, key, default=__nodefault):
-        if default is self.__nodefault:
-            return self._dict.pop(key)
-        return self._dict.pop(key, default)
-
     def _get_intXint(self, row, col):
         return self._dict.get((row, col), self.dtype.type(0))
 
@@ -353,12 +346,14 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     @classmethod
     def fromkeys(cls, iterable, value=1, /):
-        if isinstance(next(iter(iterable)), tuple):
-            shape = tuple(max(idx) + 1 for idx in zip(*iterable))
+        tmp = dict.fromkeys(iterable, value)
+        keys = tmp.keys()
+        if isinstance(next(iter(keys)), tuple):
+            shape = tuple(max(idx) + 1 for idx in zip(*keys))
         else:
-            shape = (max(iterable) + 1,)
+            shape = (max(keys) + 1,)
         result = cls(shape, dtype=type(value))
-        result._dict = dict.fromkeys(iterable, value)
+        result._dict = tmp
         return result
 
     def tocoo(self, copy=False):
