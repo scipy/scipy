@@ -233,4 +233,4 @@ References
 
 """
 from ._qmc import *  # noqa: F403
-from ._qmc import __all__  # noqa: F403
+from ._qmc import __all__  # noqa: F401
