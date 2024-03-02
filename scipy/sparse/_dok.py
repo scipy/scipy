@@ -344,6 +344,18 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     copy.__doc__ = _spbase.copy.__doc__
 
+    @classmethod
+    def fromkeys(cls, iterable, value=1, /):
+        tmp = dict.fromkeys(iterable, value)
+        keys = tmp.keys()
+        if isinstance(next(iter(keys)), tuple):
+            shape = tuple(max(idx) + 1 for idx in zip(*keys))
+        else:
+            shape = (max(keys) + 1,)
+        result = cls(shape, dtype=type(value))
+        result._dict = tmp
+        return result
+
     def tocoo(self, copy=False):
         if self.nnz == 0:
             return self._coo_container(self.shape, dtype=self.dtype)
