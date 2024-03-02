@@ -9,7 +9,7 @@
 
 import numpy as np
 import scipy.sparse
-from scipy._lib import _pep440
+from scipy._lib._util import copy_if_needed
 
 cimport numpy as np
 
@@ -552,9 +552,8 @@ cdef class cKDTree:
 
         self._python_tree = None
 
-        if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
-            if copy_data == False:
-                copy_data = None
+        if not copy_data:
+            copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:

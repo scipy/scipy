@@ -5,9 +5,12 @@ import threading
 import contextlib
 
 import numpy as np
+
+from scipy._lib._util import copy_if_needed
+
 # good_size is exposed (and used) from this import
 from .pypocketfft import good_size
-from scipy._lib import _pep440
+
 
 __all__ = ['good_size', 'set_workers', 'get_workers']
 
@@ -96,10 +99,7 @@ def _asfarray(x):
     # Require native byte order
     dtype = x.dtype.newbyteorder('=')
     # Always align input
-    copy = not x.flags['ALIGNED']
-    if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
-        if copy == False:
-            copy = None
+    copy = True if not x.flags['ALIGNED'] else copy_if_needed
     return np.array(x, dtype=dtype, copy=copy)
 
 def _datacopied(arr, original):

@@ -5,8 +5,7 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib import _pep440
-from scipy._lib._util import _prune_array
+from scipy._lib._util import _prune_array, copy_if_needed
 
 from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
@@ -68,9 +67,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                 maxval=maxval,
                                                 check_contents=True)
 
-                    if _pep440.parse(np.__version__) >= _pep440.Version("2.0.0.dev0"):
-                        if copy == False:
-                            copy = None
+                    if not copy:
+                        copy = copy_if_needed
                     self.indices = np.array(indices, copy=copy,
                                             dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
