@@ -150,9 +150,10 @@ def test_1d_row_and_col():
     assert np.array_equal(res.col, np.array([0, 1, 2]))
     assert np.array_equal(res.row, np.zeros_like(res.col))
     assert res.row.dtype == res.col.dtype
+    assert res.row.flags.writeable is False
 
     res.col = [1, 2, 3]
-    assert len(res.indices) == 1
+    assert len(res.coords) == 1
     assert np.array_equal(res.col, np.array([1, 2, 3]))
     assert res.row.dtype == res.col.dtype
 
@@ -239,7 +240,7 @@ def test_1d_add_sparse():
         coo_array(den_a) + coo_array(den_b)
 
 
-def test_1d_mul_vector():
+def test_1d_matmul_vector():
     den_a = np.array([0, -2, -3, 0])
     den_b = np.array([0, 1, 2, 3])
     exp = den_a @ den_b
@@ -248,7 +249,7 @@ def test_1d_mul_vector():
     assert np.array_equal(res, exp)
 
 
-def test_1d_mul_multivector():
+def test_1d_matmul_multivector():
     den = np.array([0, -2, -3, 0])
     other = np.array([[0, 1, 2, 3], [3, 2, 1, 0]]).T
     exp = den @ other
@@ -257,7 +258,7 @@ def test_1d_mul_multivector():
     assert np.array_equal(res, exp)
 
 
-def test_2d_mul_multivector():
+def test_2d_matmul_multivector():
     den = np.array([[0, 1, 2, 3], [3, 2, 1, 0]])
     arr2d = coo_array(den)
     exp = den @ den.T

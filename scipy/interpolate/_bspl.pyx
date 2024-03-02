@@ -6,7 +6,7 @@ Routines for evaluating and manipulating B-splines.
 import numpy as np
 cimport numpy as cnp
 
-from numpy cimport npy_intp
+from numpy cimport npy_intp, npy_int64, npy_int32
 
 cimport cython
 from libc.math cimport NAN
@@ -672,3 +672,168 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                     for i_c in range(num_c_tr):
                         out[j, i_c] = out[j, i_c] + c1r[idx_cflat_base + i_c] * factor
 
+
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.boundscheck(False)
+def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
+    """Construct the N-D tensor product collocation matrix as a CSR array.
+
+    In the dense representation, each row of the collocation matrix corresponds
+    to a data point and contains non-zero b-spline basis functions which are
+    non-zero at this data point.
+
+    Parameters
+    ----------
+    xvals : ndarray, shape(size, ndim)
+        Data points. ``xvals[j, :]`` gives the ``j``-th data point as an
+        ``ndim``-dimensional array.
+    t : tuple of 1D arrays, length-ndim
+        Tuple of knot vectors
+    k : ndarray, shape (ndim,)
+        Spline degrees
+
+    Returns
+    -------
+    csr_data, csr_indices, csr_indptr
+        The collocation matrix in the CSR array format.
+
+    Notes
+    -----
+    Algorithm: given `xvals` and the tuple of knots `t`, we construct a tensor
+    product spline, i.e. a linear combination of
+
+       B(x1; i1, t1) * B(x2; i2, t2) * ... * B(xN; iN, tN)
+
+
+    Here ``B(x; i, t)`` is the ``i``-th b-spline defined by the knot vector
+    ``t`` evaluated at ``x``.
+
+    Since ``B`` functions are localized, for each point `(x1, ..., xN)` we
+    loop over the dimensions, and
+    - find the the location in the knot array, `t[i] <= x < t[i+1]`,
+    - compute all non-zero `B` values
+    - place these values into the relevant row
+
+    In the dense representation, the collocation matrix would have had a row per
+    data point, and each row has the values of the basis elements (i.e., tensor
+    products of B-splines) evaluated at this data point. Since the matrix is very
+    sparse (has size = len(x)**ndim, with only (k+1)**ndim non-zero elements per
+    row), we construct it in the CSR format.
+    """
+    cdef:
+        npy_intp size = xvals.shape[0]
+        npy_intp ndim = xvals.shape[1]
+
+        # 'intervals': indices for a point in xi into the knot arrays t
+        npy_intp[::1] i = np.empty(ndim, dtype=np.intp)
+
+        # container for non-zero b-splines at each point in xi
+        double[:, ::1] b = np.empty((ndim, max(k) + 1), dtype=float)
+
+        double xd               # d-th component of x
+        const double[::1] td    # knots in the dimension d
+        npy_intp kd             # d-th component of k
+
+        npy_intp iflat    # index to loop over (k+1)**ndim non-zero terms
+        npy_intp volume   # the number of non-zero terms
+        npy_intp[:, ::1] _indices_k1d    # tabulated np.unravel_index
+
+        # shifted indices into the data array
+        npy_intp[::1] idx_c = np.ones(ndim, dtype=np.intp) * (-101)  # any sentinel would do, really
+        npy_intp[::1] cstrides
+        npy_intp idx_cflat
+
+        npy_intp[::1] nu = np.zeros(ndim, dtype=np.intp)
+
+        int out_of_bounds
+        double factor
+        double[::1] wrk = np.empty(2*max(k) + 2, dtype=float)
+
+        # output
+        double[::1] csr_data
+        npy_int64[::1] csr_indices
+
+        int j, d
+
+    # the number of non-zero b-splines for each data point.
+    k1_shape = tuple(kd + 1 for kd in k)
+    volume = 1
+    for d in range(ndim):
+        volume *= k[d] + 1
+
+    # Precompute the shape and strides of the coefficients array.
+    # This would have been the NdBSpline coefficients; in the present context
+    # this is a helper to compute the indices into the collocation matrix.
+    c_shape = tuple(len(t[d]) - k1_shape[d] for d in range(ndim))
+
+    # The computation is equivalent to
+    # >>> x = np.empty(c_shape)
+    # >>> cstrides = [s // 8 for s in x.strides]
+    cs = c_shape[1:] + (1,)
+    cstrides = np.cumprod(cs[::-1], dtype=np.intp)[::-1].copy()
+
+    # tabulate flat indices for iterating over the (k+1)**ndim subarray of
+    # non-zero b-spline elements
+    indices = np.unravel_index(np.arange(volume), k1_shape)
+    _indices_k1d = np.asarray(indices, dtype=np.intp).T.copy()
+
+    # Allocate the collocation matrix in the CSR format.
+    # If dense, this would have been
+    # >>> matr = np.zeros((size, max_row_index), dtype=float)
+    csr_indices = np.empty(shape=(size*volume,), dtype=np.int64)
+    csr_data = np.empty(shape=(size*volume,), dtype=float)
+    csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
+
+    # ### Iterate over the the data points ###
+    for j in range(size):
+        xv = xvals[j, :]
+
+        # For each point, iterate over the dimensions
+        out_of_bounds = 0
+        for d in range(ndim):
+            td = t[d]
+            xd = xv[d]
+            kd = k[d]
+
+            # get the location of x[d] in t[d]
+            i[d] = find_interval(td, kd, xd, kd, extrapolate=True)
+
+            if i[d] < 0:
+                out_of_bounds = 1
+                break
+
+            # compute non-zero b-splines at this value of xd in dimension d
+            _deBoor_D(&td[0], xd, kd, i[d], nu[d], &wrk[0])
+            b[d, :kd+1] = wrk[:kd+1]
+
+        if out_of_bounds:
+            raise ValueError(f"Out of bounds in {d = }, with {xv = }")
+
+        # Iterate over the products of non-zero b-splines and place them
+        # into the current row of the design matrix
+        for iflat in range(volume):
+            # the line below is an unrolled version of
+            # idx_b = np.unravel_index(iflat,  tuple(kd+1 for kd in k))
+            idx_b = _indices_k1d[iflat, :]
+
+            factor = 1.0
+            idx_cflat = 0
+            for d in range(ndim):
+                factor *= b[d, idx_b[d]]
+                idx_c[d] = idx_b[d] + i[d] - k[d]
+                idx_cflat += idx_c[d] * cstrides[d]
+
+            # The `idx_cflat` computation above is an unrolled version of
+            # idx_cflat = np.ravel_multi_index(tuple(idx_c), c_shape)
+
+            # Fill the row of the collocation matrix in the CSR format.
+            # If it were dense, it would have been just
+            # >>> matr[j, idx_cflat] = factor
+
+            # Each row of the full matrix has `volume` non-zero elements.
+            # Thus the CSR format `indptr` increases in steps of `volume`
+            csr_indices[j*volume + iflat] = idx_cflat
+            csr_data[j*volume + iflat] = factor
+
+    return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr

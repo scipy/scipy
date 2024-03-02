@@ -90,10 +90,11 @@ fitpack_src = [
 # TODO: Add flags for 64 bit ints
 fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
-  fortran_args: _fflag_Wno_maybe_uninitialized
+  fortran_args: _fflag_Wno_maybe_uninitialized,
+  override_options: ['b_lto=false'],
 )
 
-interpnd = py3.extension_module('interpnd',
+py3.extension_module('interpnd',
   spt_cython_gen.process('interpnd.pyx'),
   c_args: [Wno_discarded_qualifiers, cython_c_args],
   dependencies: np_dep,
@@ -119,7 +120,7 @@ py3.extension_module('_rgi_cython',
   subdir: 'scipy/interpolate'
 )
 
-_bspl = py3.extension_module('_bspl',
+py3.extension_module('_bspl',
   cython_gen.process('_bspl.pyx'),
   c_args: cython_c_args,
   include_directories: 'src/',
@@ -130,7 +131,7 @@ _bspl = py3.extension_module('_bspl',
 )
 
 # TODO: Add flags for 64 bit ints
-_fitpack = py3.extension_module('_fitpack',
+py3.extension_module('_fitpack',
   ['src/_fitpackmodule.c'],
   link_with: [fitpack_lib],
   include_directories: 'src/',
@@ -144,30 +145,25 @@ _fitpack = py3.extension_module('_fitpack',
 dfitpack_module = custom_target('dfitpack_module',
   output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
   input: 'src/fitpack.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # TODO: Add flags for 64 bit ints
-dfitpack = py3.extension_module('dfitpack',
+py3.extension_module('dfitpack',
   dfitpack_module,
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack, fortranobject_dep],
   link_with: [fitpack_lib],
+  override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/interpolate'
 )
 
 if use_pythran
-  _rbfinterp_pythran = custom_target('_rbfinterp_pythran',
-    output: ['_rbfinterp_pythran.cpp'],
-    input: '_rbfinterp_pythran.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_rbfinterp_pythran.cpp']
-  )
-
-  _rbfinterp_pythran = py3.extension_module('_rbfinterp_pythran',
-    _rbfinterp_pythran,
+  py3.extension_module('_rbfinterp_pythran',
+    pythran_gen.process('_rbfinterp_pythran.py'),
     cpp_args: cpp_args_pythran,
     dependencies: [pythran_dep, np_dep],
     link_args: version_link_args,
@@ -188,7 +184,6 @@ py3.install_sources([
     '_fitpack_impl.py',
     '_fitpack_py.py',
     '_fitpack2.py',
-    '_interpnd_info.py',
     '_interpolate.py',
     '_ndgriddata.py',
     '_pade.py',

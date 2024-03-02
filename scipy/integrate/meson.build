@@ -85,12 +85,14 @@ quadpack_lib = static_library('quadpack_lib',
 
 lsoda_lib = static_library('lsoda_lib',
   lsoda_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: fortran_ignore_warnings,
+  override_options: ['b_lto=false'],
 )
 
 vode_lib = static_library('vode_lib',
   vode_src,
-  fortran_args: fortran_ignore_warnings
+  fortran_args: fortran_ignore_warnings,
+  override_options: ['b_lto=false'],
 )
 
 dop_lib = static_library('dop_lib',
@@ -124,7 +126,7 @@ py3.extension_module('_odepack',
 vode_module = custom_target('vode_module',
   output: ['_vode-f2pywrappers.f', '_vodemodule.c'],
   input: 'vode.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_vode',
@@ -141,7 +143,7 @@ py3.extension_module('_vode',
 lsoda_module = custom_target('lsoda_module',
   output: ['_lsoda-f2pywrappers.f', '_lsodamodule.c'],
   input: 'lsoda.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_lsoda',
@@ -158,7 +160,7 @@ py3.extension_module('_lsoda',
 _dop_module = custom_target('_dop_module',
   output: ['_dop-f2pywrappers.f', '_dopmodule.c'],
   input: 'dop.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_dop',
@@ -182,7 +184,7 @@ py3.extension_module('_test_multivariate',
 _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
   output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
   input: 'tests/banded5x5.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_test_odeint_banded',

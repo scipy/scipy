@@ -240,7 +240,7 @@ def vq(np.ndarray obs, np.ndarray codes):
 
 @cython.cdivision(True)
 cdef np.ndarray _update_cluster_means(vq_type *obs, int32_t *labels,
-                                      vq_type *cb, int nobs, int nc, int nfeat) noexcept:
+                                      vq_type *cb, int nobs, int nc, int nfeat):
     """
     The underlying function (template) of _vq.update_cluster_means.
 

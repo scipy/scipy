@@ -511,6 +511,7 @@ class RBFInterpolator:
             # neighborhood.
             yindices = np.sort(yindices, axis=1)
             yindices, inv = np.unique(yindices, return_inverse=True, axis=0)
+            inv = np.reshape(inv, (-1,))  # flatten, we need 1-D indices
             # `inv` tells us which neighborhood will be used by each evaluation
             # point. Now we find which evaluation points will be using each
             # neighborhood.

@@ -1,4 +1,10 @@
+/* Translated from Cython into C++ by SciPy developers in 2024.
+ *
+ * Original authors: Pauli Virtanen, Eric Moore
+ */
+
 // Binomial coefficient
+
 #pragma once
 
 #include "config.h"

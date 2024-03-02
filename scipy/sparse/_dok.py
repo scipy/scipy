@@ -14,7 +14,7 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
                        upcast, upcast_scalar, check_shape)
 
 
-class _dok_base(_spbase, IndexMixin):
+class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
@@ -273,14 +273,14 @@ class _dok_base(_spbase, IndexMixin):
         new._dict.update(((k, v * other) for k, v in self.items()))
         return new
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         # matrix * vector
         result = np.zeros(self.shape[0], dtype=upcast(self.dtype, other.dtype))
         for (i, j), v in self.items():
             result[i] += v * other[j]
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         # matrix * multivector
         result_shape = (self.shape[0], other.shape[1])
         result_dtype = upcast(self.dtype, other.dtype)
@@ -466,7 +466,7 @@ class dok_array(_dok_base, sparray):
     """
 
 
-class dok_matrix(spmatrix, _dok_base, dict):
+class dok_matrix(spmatrix, _dok_base):
     """
     Dictionary Of Keys based sparse matrix.
 

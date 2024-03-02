@@ -432,7 +432,7 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     PyMem_Free(visited)
 
 
-cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n) noexcept:
+cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
     """
     Get the maximum inconsistency coefficient for each non-singleton cluster.
 
@@ -1089,7 +1089,7 @@ cdef class LinkageUnionFind:
         self.next_label += 1
         return size
 
-    cdef find(self, int x) noexcept:
+    cdef find(self, int x):
         cdef int p = x
 
         while self.parent[x] != x:
@@ -1101,10 +1101,11 @@ cdef class LinkageUnionFind:
         return x
 
 
-cdef label(double[:, :] Z, int n) noexcept:
+cdef label(double[:, :] Z, int n):
     """Correctly label clusters in unsorted dendrogram."""
     cdef LinkageUnionFind uf = LinkageUnionFind(n)
     cdef int i, x, y, x_root, y_root
+
     for i in range(n - 1):
         x, y = int(Z[i, 0]), int(Z[i, 1])
         x_root, y_root = uf.find(x), uf.find(y)

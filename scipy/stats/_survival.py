@@ -8,6 +8,7 @@ import numpy as np
 from scipy import special, interpolate, stats
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
+from scipy.stats import norm  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -615,7 +616,7 @@ def logrank(
     >>> ecdf_x = stats.ecdf(x)
     >>> ecdf_x.sf.plot(ax, label='Astrocytoma')
     >>> ecdf_y = stats.ecdf(y)
-    >>> ecdf_x.sf.plot(ax, label='Glioblastoma')
+    >>> ecdf_y.sf.plot(ax, label='Glioblastoma')
     >>> ax.set_xlabel('Time to death (weeks)')
     >>> ax.set_ylabel('Empirical SF')
     >>> plt.legend()
@@ -637,7 +638,7 @@ def logrank(
     difference between the two survival functions.
 
     """
-    # Input validation. `alternative` IV handled in `_normtest_finish` below.
+    # Input validation. `alternative` IV handled in `_get_pvalue` below.
     x = _iv_CensoredData(sample=x, param_name='x')
     y = _iv_CensoredData(sample=y, param_name='y')
 
@@ -680,8 +681,6 @@ def logrank(
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
-    _, pvalue = stats._stats_py._normtest_finish(
-        z=statistic, alternative=alternative
-    )
+    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative)
 
-    return LogRankResult(statistic=statistic, pvalue=pvalue)
+    return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])
