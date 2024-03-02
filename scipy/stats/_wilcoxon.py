@@ -31,7 +31,7 @@ class WilcoxonDistribution:
         return np.vectorize(self._sf1, otypes=[float])(k, n)
 
     def mean(self):
-        return self.n * (self.n + 1) // 4
+        return self.n * (self.n + 1) / 4
 
     def _prep(self, k):
         k = np.asarray(k).astype(int, copy=False)
@@ -120,7 +120,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
                       stacklevel=2)
 
     if (method == "approx" and zero_method in ["wilcox", "pratt"]
-            and n_zero == d.size and d.size > 0 and d.ndim==1):
+            and n_zero == d.size and d.size > 0 and d.ndim == 1):
         raise ValueError("zero_method 'wilcox' and 'pratt' do not "
                          "work if x - y is zero for all elements.")
 
