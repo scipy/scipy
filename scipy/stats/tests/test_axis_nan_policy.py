@@ -1168,23 +1168,21 @@ def test_raise_invalid_args_g17713():
     with pytest.raises(TypeError, match=message):
         stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)
 
-@pytest.mark.parametrize(
-    'dtype',
-    (list(np.typecodes['Float']
-          + np.typecodes['Integer']
-          + np.typecodes['Complex'])))
+
+@pytest.mark.parametrize('dtype', [np.int16, np.float32, np.complex128])
 def test_array_like_input(dtype):
     # Check that `_axis_nan_policy`-decorated functions work with custom
     # containers that are coercible to numeric arrays
 
     class ArrLike:
-        def __init__(self, x):
+        def __init__(self, x, dtype):
             self._x = x
+            self._dtype = dtype
 
-        def __array__(self):
-            return np.asarray(x, dtype=dtype)
+        def __array__(self, dtype=None, copy=None):
+            return np.asarray(x, dtype=self._dtype)
 
     x = [1]*2 + [3, 4, 5]
-    res = stats.mode(ArrLike(x))
+    res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2

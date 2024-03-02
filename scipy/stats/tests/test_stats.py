@@ -2478,7 +2478,7 @@ class TestMode:
             def __init__(self, x):
                 self._x = x
 
-            def __array__(self):
+            def __array__(self, dtype=None, copy=None):
                 return self._x.astype(object)
 
         with pytest.raises(TypeError, match=message):
