@@ -212,6 +212,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
         If non-zero, data points are considered periodic with period x[m-1] -
         x[0] and a smooth periodic spline approximation is returned. Values of
         y[m-1] and w[m-1] are not used.
+        The default is zero, corresponding to boundary condition 'not-a-knot'.
     quiet : bool, optional
         Non-zero to suppress messages.
 
@@ -253,6 +254,10 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     as the array of knots ``t`` (the trailing ``k + 1`` coefficients are ignored
     by the evaluation routines, `splev` and `BSpline`.) This is in contrast with
     `splprep`, which does not zero-pad the coefficients.
+
+    The default boundary condition is 'not-a-knot', i.e. the first and second
+    segment at a curve end are the same polynomial. More boundary conditions are
+    available in `CubicSpline`.
 
     References
     ----------
