@@ -19,3 +19,12 @@ def test_fromkeys_positional():
         Xdok.toarray(),
         [[0, 0, -1], [-1, 0, 0], [0, -1, 0]],
     )
+
+def test_fromkeys_iterator():
+    # test with positional value
+    it = ((a, a % 2) for a in range(4))
+    Xdok = dok_array.fromkeys(it)
+    assert_array_equal(
+        Xdok.toarray(),
+        [[1, 0], [0, 1], [1, 0], [0, 1]],
+    )
