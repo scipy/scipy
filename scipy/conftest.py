@@ -353,7 +353,6 @@ dt_config.pytest_extra_xfail = {
     # name: reason
     "io.rst": "",
     "ND_regular_grid.rst": "ReST parser limitation",
-    "ND_unstructured.rst": "matplotlib deprecation",
     "extrapolation_examples.rst": "ReST parser limitation",
     "sampling_pinv.rst": "__cinit__ unexpected argument",
     "sampling_srou.rst": "nan in scalar_power",
