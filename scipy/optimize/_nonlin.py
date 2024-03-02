@@ -423,7 +423,9 @@ class Jacobian:
 
 
         if hasattr(self, "todense"):
-            def __array__(self, copy=None):
+            def __array__(self, dtype=None, copy=None):
+                if dtype is not None:
+                    raise ValueError(f"`dtype` must be None, was {dtype}")
                 return self.todense()
 
     def aspreconditioner(self):
