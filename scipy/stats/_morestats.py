@@ -6,8 +6,7 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,
-                   arctan2, hypot)
+                   pi, exp, ravel, count_nonzero, sin, cos, arctan2, hypot)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -16,11 +15,10 @@ from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import find_repeats, _get_pvalue, SignificanceResult
+from ._stats_py import _get_pvalue, SignificanceResult
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
