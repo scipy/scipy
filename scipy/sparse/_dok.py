@@ -59,9 +59,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def update(self, val):
         # Prevent direct usage of update
-        raise NotImplementedError(
-            "Direct modification to dok_array element is not allowed."
-        )
+        raise NotImplementedError("Direct update to DOK sparse format is not allowed.")
 
     def _getnnz(self, axis=None):
         if axis is not None:
