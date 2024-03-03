@@ -8253,6 +8253,10 @@ class powerlaw_gen(rv_continuous):
     def _sf(self, p, a):
         return -sc.powm1(p, a)
 
+    def _munp(self, n, a):
+        # The following expression is correct for all real n (provided a > 0).
+        return a / (a + n)
+
     def _stats(self, a):
         return (a / (a + 1.0),
                 a / (a + 2.0) / (a + 1.0) ** 2,
