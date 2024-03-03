@@ -3196,7 +3196,7 @@ class genextreme_gen(rv_continuous):
         # skewness
         sk1 = _lazywhere(c >= -1./3,
                          (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2gm12:
+                         lambda c, g1, g2, g3, g2mg12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
