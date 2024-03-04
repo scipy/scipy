@@ -52,6 +52,7 @@ https://physics.nist.gov/cuu/Constants/
 
 from __future__ import annotations
 
+import re
 import warnings
 
 from typing import Any
@@ -132,8 +133,8 @@ def parse_constants_2010toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     return constants
 
 
-#_physical_constants_2002 = parse_constants_2002to2006(txt2002)
-#_physical_constants_2006 = parse_constants_2002to2006(txt2006)
+_physical_constants_2002 = parse_constants_2002to2006(txt2002)
+_physical_constants_2006 = parse_constants_2002to2006(txt2006)
 _physical_constants_2010 = parse_constants_2010toXXXX(txt2010)
 _physical_constants_2014 = parse_constants_2010toXXXX(txt2014)
 _physical_constants_2018 = parse_constants_2010toXXXX(txt2018)
