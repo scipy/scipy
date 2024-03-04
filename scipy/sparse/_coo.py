@@ -399,12 +399,15 @@ class _coo_base(_data_matrix, _minmax_mixin):
     todia.__doc__ = _spbase.todia.__doc__
 
     def todok(self, copy=False):
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to dok format")
         self.sum_duplicates()
-        dok = self._dok_container((self.shape), dtype=self.dtype)
-        dok._update(zip(zip(self.row,self.col),self.data))
+        dok = self._dok_container(self.shape, dtype=self.dtype)
+        # ensure that 1d coordinates are not tuples
+        if self.ndim == 1:
+            coords = self.coords[0]
+        else:
+            coords = zip(*self.coords)
 
+        dok._dict = dict(zip(coords, self.data))
         return dok
 
     todok.__doc__ = _spbase.todok.__doc__
