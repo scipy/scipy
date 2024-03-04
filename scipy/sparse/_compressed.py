@@ -697,7 +697,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _major_index_fancy(self, idx):
         """Index along the major axis where idx is an array of ints.
         """
-        idx_dtype = self.indices.dtype
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices))
         indices = np.asarray(idx, dtype=idx_dtype).ravel()
 
         _, N = self._swap(self.shape)
@@ -706,8 +706,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = self.indptr[indices + 1] - self.indptr[indices]
-        idx_dtype = self.indices.dtype
+        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+
+        self.indices = self.indices.astype(idx_dtype, copy=False)
+        self.indptr = self.indptr.astype(idx_dtype, copy=False)
+
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
@@ -763,7 +766,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _minor_index_fancy(self, idx):
         """Index along the minor axis where idx is an array of ints.
         """
-        idx_dtype = self.indices.dtype
+        idx_dtype = self._get_index_dtype((self.indices, self.indptr))
+        self.indices = self.indices.astype(idx_dtype, copy=False)
+        self.indptr = self.indptr.astype(idx_dtype, copy=False)
+
         idx = np.asarray(idx, dtype=idx_dtype).ravel()
 
         M, N = self._swap(self.shape)
