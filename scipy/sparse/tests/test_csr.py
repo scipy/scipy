@@ -173,6 +173,7 @@ def test_csr_hstack_int64():
 
 @pytest.mark.parametrize("cls", [csr_matrix, csr_array, csc_matrix, csc_array])
 def test_mixed_index_dtype_int_indexing(cls):
+    # https://github.com/scipy/scipy/issues/20182
     rng = np.random.default_rng(0)
     base_mtx = cls(sparse.random(50, 50, random_state=rng, density=0.1))
     indptr_64bit = base_mtx.copy()
