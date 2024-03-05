@@ -14,13 +14,13 @@ pip install -r requirements.txt
 Next, you will need to replace the runnable by setting the following variable:
 
 ```shell
-export ARRAY_API_TESTS_MODULE=scipy.array_api
+export ARRAY_API_TESTS_MODULE=scipy.sparse.array_api
 ```
 
 Once this is done, you can run the test suite via:
 
 ```shell
-pytest array_api_tests --skips-file path/back/to/scipy/scipy/array_api/array-api-skips.txt
+pytest array_api_tests --skips-file path/back/to/scipy/scipy/sparse/array_api/array-api-skips.txt
 ```
 
 and make edits in real time (since we installed `scipy` in editable mode) which will then be tested for.

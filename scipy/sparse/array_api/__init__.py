@@ -1,5 +1,5 @@
 from .csr import *
-from .. import linalg
+from ... import linalg
 from numpy.array_api import(
     bool,
     int8,
