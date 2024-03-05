@@ -221,6 +221,12 @@ class TestApproxDerivativesDense:
         xp = np.asarray(x).item()
         return math.exp(xp)
 
+    def fun_complex_value(self, x):
+        return x * (1 + 1j)
+
+    def jac_complex_value(self, x):
+        return 1 + 1j
+
     def test_scalar_scalar(self):
         x0 = 1.0
         jac_diff_2 = approx_derivative(self.fun_scalar_scalar, x0,
@@ -424,6 +430,13 @@ class TestApproxDerivativesDense:
         # math.exp cannot handle complex arguments, hence this raises
         assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
                       **dict(method='cs'))
+
+    def test_complex_value(self):
+        x0 = 0
+        jac_true = self.jac_complex_value(x0)
+        jac_diff = approx_derivative(
+            self.fun_complex_value, x0, method='2-point')
+        assert_allclose(jac_diff, jac_true, rtol=1e-6)
 
     def test_fp(self):
         # checks that approx_derivative works for FP size other than 64.
