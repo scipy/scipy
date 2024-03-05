@@ -115,6 +115,7 @@ submodules = [
     'spatial',
     'special',
     'stats'
+    'array_api'
 ]
 
 __all__ = submodules + [
