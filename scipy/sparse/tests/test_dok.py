@@ -21,6 +21,7 @@ def Asp(request):
     yield A
 
 # Note: __iter__ and comparison dunders act like ndarrays for DOK, not dict.
+# Dunders reversed, or, ror, ior work as dict for dok_matrix, raise for dok_array
 # All other dict methods on DOK format act like dict methods (with extra checks).
 
 # Start of tests
@@ -102,9 +103,6 @@ def test_values(d, Asp):
     # Using list(d.values()) makes them comparable.
     assert list(Asp.values()) == list(d.values())
 
-def test_dunder_reversed(d, Asp):
-    assert list(reversed(Asp)) == list(reversed(d))
-
 def test_dunder_getitem(d, Asp):
     assert Asp[(0, 1)] == d[(0, 1)]
 
@@ -125,17 +123,45 @@ def test_dunder_contains(d, Asp):
 def test_dunder_len(d, Asp):
     assert len(d) == len(Asp)
 
+# Note: dunders reversed, or, ror, ior work as dict for dok_matrix, raise for dok_array
+def test_dunder_reversed(d, Asp):
+    if isinstance(Asp, dok_array):
+        with pytest.raises(TypeError):
+            list(reversed(Asp))
+    else:
+        list(reversed(Asp)) == list(reversed(d))
+
 def test_dunder_ior(d, Asp):
-    with pytest.raises(NotImplementedError):
-        Asp |= Asp
+    if isinstance(Asp, dok_array):
+        with pytest.raises(TypeError):
+            Asp |= Asp
+    else:
+        dd = {(0, 0): 5}
+        Asp |= dd
+        assert Asp[(0, 0)] == 5
+        d |= dd
+        assert d.items() == Asp.items()
+        dd |= Asp
+        assert dd.items() == Asp.items()
 
 def test_dunder_or(d, Asp):
-    assert d | d == Asp | d
-    assert d | d == Asp | Asp
+    if isinstance(Asp, dok_array):
+        with pytest.raises(TypeError):
+            Asp | Asp
+    else:
+        assert d | d == Asp | d
+        assert d | d == Asp | Asp
 
 def test_dunder_ror(d, Asp):
-    assert Asp.__ror__(d) == Asp.__ror__(Asp)
-    assert d.__ror__(d) == Asp.__ror__(d)
+    if isinstance(Asp, dok_array):
+        with pytest.raises(TypeError):
+            Asp | Asp
+        with pytest.raises(TypeError):
+            d | Asp
+    else:
+        assert Asp.__ror__(d) == Asp.__ror__(Asp)
+        assert d.__ror__(d) == Asp.__ror__(d)
+        assert d | Asp
 
 # Note: comparison dunders, e.g. ==, >=, etc follow np.array not dict
 def test_dunder_eq(A, Asp):

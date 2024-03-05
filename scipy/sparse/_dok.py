@@ -93,20 +93,19 @@ class _dok_base(_spbase, IndexMixin, dict):
         return self._dict.pop(key, default)
 
     def __reversed__(self):
-        return self._dict.__reversed__()
+        raise TypeError("reversed is not defined for dok_array type")
 
     def __or__(self, other):
-        if isinstance(other, _dok_base):
-            return self._dict.__or__(other._dict)
-        return self._dict.__or__(other)
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def __ror__(self, other):
-        if isinstance(other, _dok_base):
-            return self._dict.__ror__(other._dict)
-        return self._dict.__ror__(other)
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def __ior__(self, other):
-        raise NotImplementedError('DOK sparse format does not support the |= operator')
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
 
     def popitem(self):
         return self._dict.popitem()
@@ -651,3 +650,23 @@ class dok_matrix(spmatrix, _dok_base):
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
+
+    def __reversed__(self):
+        return self._dict.__reversed__()
+
+    def __or__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ror__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ior__(self, other):
+        if isinstance(other, _dok_base):
+            self._dict |= other._dict
+        else:
+            self._dict |= other
+        return self
