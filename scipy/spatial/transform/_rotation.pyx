@@ -2642,11 +2642,14 @@ cdef class Rotation:
 
         # Exact short-cuts
         if n == 0:
-            return Rotation.identity(len(self._quat))
+            return Rotation.identity(None if self._single else len(self._quat))
         elif n == -1:
             return self.inv()
         elif n == 1:
-            return self.__class__(self._quat.copy())
+            if self._single:
+                return self.__class__(self._quat[0], copy=True)
+            else:
+                return self.__class__(self._quat, copy=True)
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
