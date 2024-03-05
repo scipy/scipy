@@ -71,23 +71,23 @@ all fields of science and technology. The values became available on 20 May
 """
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
-with open('scipy/constants/codata_constants_2002.txt') as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2002.txt') as f:
     txt2002 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
-with open('scipy/constants/codata_constants_2006.txt') as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2006.txt') as f:
     txt2006 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
-with open("scipy/constants/codata_constants_2010.txt") as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2010.txt') as f:
     txt2010 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
-with open('scipy/constants/codata_constants_2014.txt') as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2014.txt') as f:
     txt2014 = f.read()
 
 # https://physics.nist.gov/cuu/Constants/Table/allascii.txt
-with open('scipy/constants/codata_constants_2018.txt') as f:
+with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2018.txt') as f:
     txt2018 = f.read()
 
 physical_constants: dict[str, tuple[float, str, float]] = {}
