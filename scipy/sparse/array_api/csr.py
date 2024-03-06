@@ -1,3 +1,4 @@
+from collections import namedtuple
 from scipy import sparse
 import numpy as np
 import numpy.typing as npt
@@ -81,3 +82,36 @@ def argmax(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = 
 
 def argmin(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
     return x.argmin(axis=axis)
+
+def var(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | float = 0.0, keepdims: bool = False):
+    divisor = 1
+    if isinstance(axis, tuple):
+        if len(axis) != 1:
+            raise NotImplementedError("Cannot calculate variance over more than one axis for sparse")
+        axis = axis[0]
+        divisor = (x.shape[axis] - correction)
+    return (1 / divisor) * (x ** 2).mean(axis=axis) - np.square(x.mean(axis=axis))
+
+def std(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | float = 0.0, keepdims: bool = False):
+    return np.sqrt(var(x, axis=axis, correction=correction, keepdims=keepdims))
+
+def unique_values(x):
+    return np.append(np.unique(x.data), np.array([0], dtype=x.data.dtype))
+
+def unique_counts(x):
+    is_first_element_zero = x[0, 0] == 0
+    values, counts = np.unique(x.data, return_counts=True)
+    number_of_zeros = (x.shape[0] * x.shape[1]) - x.count_nonzero()
+    if is_first_element_zero:
+        values = np.append(np.array([0], dtype=x.data.dtype), values)
+        counts = np.append(np.array([number_of_zeros]), values)
+    else:
+        values = np.append(values, np.array([0], dtype=x.data.dtype))
+        counts = np.append(values, np.array([number_of_zeros]))
+    return values, counts
+
+def unique_all(x):
+    raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')
+
+def unique_inverse(x):
+    raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')

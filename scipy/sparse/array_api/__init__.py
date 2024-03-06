@@ -161,5 +161,10 @@ __all__ += [
     "sum",
     "argmax",
     "argmin",
+    "var",
+    "unique_values",
+    "unique_counts",
+    "unique_all",
+    "unique_inverse",
     "__array_api_version__"
 ]
