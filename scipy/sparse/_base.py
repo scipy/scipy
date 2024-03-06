@@ -1507,7 +1507,7 @@ class sparray:
     """A namespace class to separate sparray from spmatrix"""
     
     def __array_namespace__(self, *, api_version: str | None = None):
-        from .. import array_api
+        from . import array_api
         return array_api
 
 
