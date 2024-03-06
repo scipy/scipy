@@ -2361,7 +2361,7 @@ class TestDatacopied:
         M2 = M.copy()
 
         class Fake1:
-            def __array__(self):
+            def __array__(self, dtype=None, copy=None):
                 return A
 
         class Fake2:

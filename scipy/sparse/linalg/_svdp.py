@@ -174,12 +174,6 @@ def _svdp(A, k, which='LM', irl_mode=True, kmax=None,
         ``full_output=True``.
 
     """
-    # 32-bit complex PROPACK functions have Fortran LAPACK ABI
-    # incompatibility issues
-    if np.iscomplexobj(A) and (np.intp(0).itemsize < 8):
-        raise TypeError('PROPACK complex-valued SVD methods not available '
-                        'for 32-bit builds')
-
     random_state = check_random_state(random_state)
 
     which = which.upper()

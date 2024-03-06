@@ -9508,6 +9508,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     return BrunnerMunzelResult(wbfn, p)
 
 
+@_axis_nan_policy_factory(SignificanceResult, kwd_samples=['weights'], paired=True)
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
@@ -9523,7 +9524,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Parameters
     ----------
-    pvalues : array_like, 1-D
+    pvalues : array_like
         Array of p-values assumed to come from independent tests based on
         continuous distributions.
     method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
@@ -9537,8 +9538,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         * 'mudholkar_george': Mudholkar's and George's method
         * 'tippett': Tippett's method
         * 'stouffer': Stouffer's Z-score method
-    weights : array_like, 1-D, optional
+    weights : array_like, optional
         Optional array of weights used only for Stouffer's Z-score method.
+        Ignored by other methods.
 
     Returns
     -------
@@ -9628,9 +9630,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
-    pvalues = np.asarray(pvalues)
-    if pvalues.ndim != 1:
-        raise ValueError("pvalues is not 1-D")
+    if pvalues.size == 0:
+        NaN = _get_nan(pvalues)
+        return SignificanceResult(NaN, NaN)
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
@@ -9653,10 +9655,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             weights = np.ones_like(pvalues)
         elif len(weights) != len(pvalues):
             raise ValueError("pvalues and weights must be of the same size.")
-
-        weights = np.asarray(weights)
-        if weights.ndim != 1:
-            raise ValueError("weights is not 1-D")
 
         Zi = distributions.norm.isf(pvalues)
         statistic = np.dot(weights, Zi) / np.linalg.norm(weights)

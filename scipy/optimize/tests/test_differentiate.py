@@ -112,6 +112,34 @@ class TestDifferentiate:
                               eim._EVALUEERR])
         assert_equal(res.status, ref_flags)
 
+    def test_flags_preserve_shape(self):
+        # Same test as above but using `preserve_shape` option to simplify.
+        rng = np.random.default_rng(5651219684984213)
+        def f(x):
+            return [x - 2.5,  # converges
+                    np.exp(x)*rng.random(),  # error increases
+                    np.exp(x),  # reaches maxiter due to order=2
+                    np.full_like(x, np.nan)[()]]  # stops due to NaN
+
+        res = differentiate(f, 1, rtol=1e-14, order=2, preserve_shape=True)
+
+        ref_flags = np.array([eim._ECONVERGED,
+                              _EERRORINCREASE,
+                              eim._ECONVERR,
+                              eim._EVALUEERR])
+        assert_equal(res.status, ref_flags)
+
+    def test_preserve_shape(self):
+        # Test `preserve_shape` option
+        def f(x):
+            return [x, np.sin(3*x), x+np.sin(10*x), np.sin(20*x)*(x-1)**2]
+
+        x = 0
+        ref = [1, 3*np.cos(3*x), 1+10*np.cos(10*x),
+               20*np.cos(20*x)*(x-1)**2 + 2*np.sin(20*x)*(x-1)]
+        res = differentiate(f, x, preserve_shape=True)
+        assert_allclose(res.df, ref)
+
     def test_convergence(self):
         # Test that the convergence tolerances behave as expected
         dist = stats.norm()
@@ -276,8 +304,7 @@ class TestDifferentiate:
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, -4+1j)
 
-        message = "The shape of the array returned by `func`"
-        # raised by `np.broadcast, but the traceback is readable IMO
+        message = "When `preserve_shape=False`, the shape of the array..."
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: [1, 2, 3], [-2, -3])
 
@@ -302,6 +329,10 @@ class TestDifferentiate:
             differentiate(lambda x: x, 1, order=1.5)
         with pytest.raises(ValueError, match=message):
             differentiate(lambda x: x, 1, order=0)
+
+        message = '`preserve_shape` must be True or False.'
+        with pytest.raises(ValueError, match=message):
+            differentiate(lambda x: x, 1, preserve_shape='herring')
 
         message = '`callback` must be callable.'
         with pytest.raises(ValueError, match=message):

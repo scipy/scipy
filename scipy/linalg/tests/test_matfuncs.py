@@ -231,6 +231,12 @@ class TestLogM:
         assert_allclose(expm(L), E, atol=1e-14)
         assert_allclose(logm(E), L, atol=1e-14)
 
+    def test_readonly(self):
+        n = 5
+        a = np.ones((n, n)) + np.identity(n)
+        a.flags.writeable = False
+        logm(a)
+
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
@@ -714,6 +720,12 @@ class TestExpM:
                            [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
                          ])
         assert_allclose(expm(a), a_res)
+
+    def test_readonly(self):
+        n = 7
+        a = np.ones((n, n))
+        a.flags.writeable = False
+        expm(a)
 
 
 class TestExpmFrechet:

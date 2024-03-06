@@ -5,7 +5,6 @@ from the files "cython_blas_signatures.txt" and
 all the BLAS/LAPACK routines that should be included in the wrappers.
 """
 
-from collections import defaultdict
 from operator import itemgetter
 import os
 from stat import ST_MTIME
@@ -43,14 +42,10 @@ def arg_names_and_types(args):
     return zip(*[arg.split(' *') for arg in args.split(', ')])
 
 
-pyx_func_template = """
-cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name}wrp, {upname}WRP)"({ret_type} *out, {fort_args}) nogil
-cdef {ret_type} {name}({args}) noexcept nogil:
-    cdef {ret_type} out
-    _fortran_{name}(&out, {argnames})
-    return out
-"""
+# Create and use Fortran wrappers for funcs with complex return values to
+# handle G77 ABI in MKL and Accelerate
+wrapped_funcs = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
+
 
 npy_types = {'c': 'npy_complex64', 'z': 'npy_complex128',
              'cselect1': '_cselect1', 'cselect2': '_cselect2',
@@ -84,18 +79,24 @@ def pyx_decl_func(name, ret_type, args, header_name):
                            for n, t in zip(argtypes, argnames)])
     argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
-    c_ret_type = c_types[ret_type]
     args = args.replace('lambda', 'lambda_')
-    return pyx_func_template.format(name=name, upname=name.upper(), args=args,
-                                    fort_args=fort_args, ret_type=ret_type,
-                                    c_ret_type=c_ret_type, argnames=argnames,
-                                    header_name=header_name)
-
-
-pyx_sub_template = """cdef extern from "{header_name}":
-    void _fortran_{name} "F_FUNC({name},{upname})"({fort_args}) nogil
-cdef void {name}({args}) noexcept nogil:
-    _fortran_{name}({argnames})
+    if name in wrapped_funcs:
+        # Cast from Cython to Numpy complex types
+        npy_ret_type = npy_types.get(ret_type, ret_type)
+        return f"""
+cdef extern from "{header_name}":
+    void _fortran_{name} "F_FUNC({name}wrp, {name.upper()}WRP)"({npy_ret_type} *out, {fort_args}) nogil
+cdef {ret_type} {name}({args}) noexcept nogil:
+    cdef {ret_type} out
+    _fortran_{name}(<{npy_ret_type}*>&out, {argnames})
+    return out
+"""
+    else:
+        return f"""
+cdef extern from "{header_name}":
+    {ret_type} _fortran_{name} "F_FUNC({name},{name.upper()})"({fort_args}) nogil
+cdef {ret_type} {name}({args}) noexcept nogil:
+    return _fortran_{name}({argnames})
 """
 
 
@@ -108,9 +109,11 @@ def pyx_decl_sub(name, args, header_name):
     argnames = [arg_casts(t) + n for n, t in zip(argnames, argtypes)]
     argnames = ', '.join(argnames)
     args = args.replace('*lambda,', '*lambda_,').replace('*in,', '*in_,')
-    return pyx_sub_template.format(name=name, upname=name.upper(),
-                                   args=args, fort_args=fort_args,
-                                   argnames=argnames, header_name=header_name)
+    return f"""cdef extern from "{header_name}":
+    void _fortran_{name} "F_FUNC({name},{name.upper()})"({fort_args}) nogil
+cdef void {name}({args}) noexcept nogil:
+    _fortran_{name}({argnames})
+"""
 
 
 blas_pyx_preamble = '''# cython: boundscheck = False
@@ -463,9 +466,6 @@ def generate_lapack_pyx(func_sigs, sub_sigs, all_sigs, header_name):
     return preamble + funcs + subs + lapack_py_wrappers
 
 
-pxd_template = """ctypedef {ret_type} {name}_t({args}) noexcept nogil
-cdef {name}_t *{name}_f
-"""
 pxd_template = """cdef {ret_type} {name}({args}) noexcept nogil
 """
 
@@ -547,43 +547,13 @@ fortran_template = """      subroutine {name}wrp(
       end
 """
 
-dims = {'work': '(*)', 'ab': '(ldab,*)', 'a': '(lda,*)', 'dl': '(*)',
-        'd': '(*)', 'du': '(*)', 'ap': '(*)', 'e': '(*)', 'lld': '(*)'}
-
-xy_specialized_dims = {'x': '', 'y': ''}
-a_specialized_dims = {'a': '(*)'}
-special_cases = defaultdict(dict,
-                            ladiv = xy_specialized_dims,
-                            lanhf = a_specialized_dims,
-                            lansf = a_specialized_dims,
-                            lapy2 = xy_specialized_dims,
-                            lapy3 = xy_specialized_dims)
-
-
-def process_fortran_name(name, funcname):
-    if 'inc' in name:
-        return name
-    special = special_cases[funcname[1:]]
-    if 'x' in name or 'y' in name:
-        suffix = special.get(name, '(n)')
-    else:
-        suffix = special.get(name, '')
-    return name + suffix
-
-
-def called_name(name):
-    included = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
-    if name in included:
-        return "w" + name
-    return name
-
 
 def fort_subroutine_wrapper(name, ret_type, args):
-    wrapper = called_name(name)
+    if name not in wrapped_funcs:
+        return ""
+    wrapper = "w" + name
     types, names = arg_names_and_types(args)
     argnames = ',\n     +    '.join(names)
-
-    names = [process_fortran_name(n, name) for n in names]
     argdecls = '\n        '.join(f'{fortran_types[t]} {n}'
                                  for n, t in zip(names, types))
     return fortran_template.format(name=name, wrapper=wrapper,
@@ -601,15 +571,12 @@ def make_c_args(args):
     return ', '.join(f'{t} *{n}' for t, n in zip(types, names))
 
 
-c_func_template = ("void F_FUNC({name}wrp, {upname}WRP)"
-                   "({return_type} *ret, {args});\n")
-
-
 def c_func_decl(name, return_type, args):
     args = make_c_args(args)
     return_type = c_types[return_type]
-    return c_func_template.format(name=name, upname=name.upper(),
-                                  return_type=return_type, args=args)
+    if name not in wrapped_funcs:
+        return f"{return_type} F_FUNC({name}, {name.upper()})({args});\n"
+    return f"void F_FUNC({name}wrp, {name.upper()}WRP)({return_type} *ret, {args});\n"
 
 
 c_sub_template = "void F_FUNC({name},{upname})({args});\n"

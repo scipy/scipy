@@ -236,7 +236,7 @@ def _read_string(GenericStream st, size_t n):
     return bytes(my_str)
 
 
-cpdef GenericStream make_stream(object fobj) noexcept:
+cpdef GenericStream make_stream(object fobj):
     """ Make stream of correct type for file-like `fobj`
     """
     if isinstance(fobj, GenericStream):

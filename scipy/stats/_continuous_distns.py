@@ -3196,7 +3196,7 @@ class genextreme_gen(rv_continuous):
         # skewness
         sk1 = _lazywhere(c >= -1./3,
                          (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2gm12:
+                         lambda c, g1, g2, g3, g2mg12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
@@ -8253,6 +8253,10 @@ class powerlaw_gen(rv_continuous):
     def _sf(self, p, a):
         return -sc.powm1(p, a)
 
+    def _munp(self, n, a):
+        # The following expression is correct for all real n (provided a > 0).
+        return a / (a + n)
+
     def _stats(self, a):
         return (a / (a + 1.0),
                 a / (a + 2.0) / (a + 1.0) ** 2,
@@ -10498,7 +10502,7 @@ class vonmises_gen(rv_continuous):
 
         f(x, \kappa) = \frac{ \exp(\kappa \cos(x)) }{ 2 \pi I_0(\kappa) }
 
-    for :math:`-\pi \le x \le \pi`, :math:`\kappa > 0`. :math:`I_0` is the
+    for :math:`-\pi \le x \le \pi`, :math:`\kappa \ge 0`. :math:`I_0` is the
     modified Bessel function of order zero (`scipy.special.i0`).
 
     `vonmises` is a circular distribution which does not restrict the
@@ -10577,7 +10581,10 @@ class vonmises_gen(rv_continuous):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("kappa", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("kappa", False, (0, np.inf), (True, False))]
+
+    def _argcheck(self, kappa):
+        return kappa >= 0
 
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)

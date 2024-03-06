@@ -13,7 +13,7 @@ sup_complex = np.testing.suppress_warnings()
 sup_complex.filter(ComplexWarning)
 
 
-spcreators = [sp.sparse.coo_array]
+spcreators = [sp.sparse.coo_array, sp.sparse.dok_array]
 math_dtypes = [np.int64, np.float64, np.complex128]
 
 
@@ -395,3 +395,47 @@ class TestCommon1D:
         assert np.array_equal(S.toarray(), [1, 0, 3])
         S.resize((5,))
         assert np.array_equal(S.toarray(), [1, 0, 3, 0, 0])
+
+
+@pytest.mark.parametrize("spcreator", [sp.sparse.dok_array])
+class TestGetSet1D:
+    def test_getelement(self, spcreator):
+        D = np.array([4, 3, 0])
+        A = spcreator(D)
+
+        N = D.shape[0]
+        for j in range(-N, N):
+            assert np.array_equal(A[j], D[j])
+
+        for ij in [3, -4]:
+            with pytest.raises(
+                (IndexError, TypeError), match='index value out of bounds'
+            ):
+                A.__getitem__(ij)
+
+        # single element tuples unwrapped
+        assert A[(0,)] == 4
+
+        with pytest.raises(IndexError, match='index value out of bounds'):
+            A.__getitem__((4,))
+
+    def test_setelement(self, spcreator):
+        dtype = np.float64
+        A = spcreator((12,), dtype=dtype)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(
+                sp.sparse.SparseEfficiencyWarning,
+                "Changing the sparsity structure of a cs[cr]_matrix is expensive",
+            )
+            A[0] = dtype(0)
+            A[1] = dtype(3)
+            A[8] = dtype(9.0)
+            A[-2] = dtype(7)
+            A[5] = 9
+
+            A[-9,] = dtype(8)
+            A[1,] = dtype(5)  # overwrite using 1-tuple index
+
+            for ij in [13, -14, (13,), (14,)]:
+                with pytest.raises(IndexError, match='index value out of bounds'):
+                    A.__setitem__(ij, 123.0)

@@ -229,6 +229,7 @@ html_theme_options = {
 
 if 'dev' in version:
     html_theme_options["switcher"]["version_match"] = "development"
+    html_theme_options["show_version_warning_banner"] = False
 
 if 'versionwarning' in tags:  # noqa: F821
     # Specific to docs.scipy.org deployment.
