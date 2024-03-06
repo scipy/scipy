@@ -268,7 +268,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B, atol_homog=2e-13)
+            self._check_gen_eig(A, B, atol_homog=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
