@@ -187,7 +187,7 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -204,7 +204,7 @@ class TestEig:
         val2 = B @ vr * w[0, :]
         for i in range(val1.shape[1]):
             assert_allclose(val1[:, i], val2[:, i],
-                            rtol=1e-13, atol=1e-13, err_msg=msg)
+                            rtol=rtol_homog, atol=atol_homog, err_msg=msg)
 
         if B0 is None:
             assert_allclose(w[1, :], 1)
@@ -253,7 +253,6 @@ class TestEig:
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @pytest.mark.xfail(reason="See gh-2254")
     def test_singular(self):
         # Example taken from
         # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -269,7 +268,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B)
+            self._check_gen_eig(A, B, atol_homog=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
