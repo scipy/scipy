@@ -51,8 +51,9 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A P = Q R`` as above, but where P is chosen such that the diagonal
-        of R is non-increasing.
+        :math:`A_p = Q R` as above, but where :math:`A_p` is the matrix A with 
+        columns swapped according to the vector p, chosen such that the 
+        diagonal of R is non-increasing.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
