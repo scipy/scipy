@@ -14,7 +14,7 @@ from ._matrix import spmatrix
 from ._sparsetools import coo_tocsr, coo_todense, coo_matvec
 from ._base import issparse, SparseEfficiencyWarning, _spbase, sparray
 from ._data import _data_matrix, _minmax_mixin
-from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
+from ._sputils import (upcast_char, to_native, isshape, getdtype,
                        getdata, downcast_intp_index, get_index_dtype,
                        check_shape, check_reshape_kwargs)
 
@@ -307,19 +307,10 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csc_container(self.shape, dtype=self.dtype)
         else:
-            M,N = self.shape
-            idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, M))
-            row = self.row.astype(idx_dtype, copy=False)
-            col = self.col.astype(idx_dtype, copy=False)
+            from ._csc import csc_array
+            indptr, indices, data, shape = self._coo_to_compressed(csc_array._swap)
 
-            indptr = np.empty(N + 1, dtype=idx_dtype)
-            indices = np.empty_like(row, dtype=idx_dtype)
-            data = np.empty_like(self.data, dtype=upcast(self.dtype))
-
-            coo_tocsr(N, M, self.nnz, col, row, self.data,
-                      indptr, indices, data)
-
-            x = self._csc_container((data, indices, indptr), shape=self.shape)
+            x = self._csc_container((data, indices, indptr), shape=shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
@@ -349,22 +340,31 @@ class _coo_base(_data_matrix, _minmax_mixin):
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
-            M,N = self.shape
-            idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
-            row = self.row.astype(idx_dtype, copy=False)
-            col = self.col.astype(idx_dtype, copy=False)
-
-            indptr = np.empty(M + 1, dtype=idx_dtype)
-            indices = np.empty_like(col, dtype=idx_dtype)
-            data = np.empty_like(self.data, dtype=upcast(self.dtype))
-
-            coo_tocsr(M, N, self.nnz, row, col, self.data,
-                      indptr, indices, data)
+            from ._csr import csr_array
+            indptr, indices, data, shape = self._coo_to_compressed(csr_array._swap)
 
             x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
+
+    def _coo_to_compressed(self, swap):
+        """convert (shape, coords, data) to (indptr, indices, data, shape)"""
+        M, N = swap(self.shape)
+        major, minor = swap(self.coords)
+        nnz = len(major)
+        # convert idx_dtype intc to int32 for pythran.
+        # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
+        idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+        major = major.astype(idx_dtype, copy=False)
+        minor = minor.astype(idx_dtype, copy=False)
+
+        indptr = np.empty(M + 1, dtype=idx_dtype)
+        indices = np.empty_like(minor, dtype=idx_dtype)
+        data = np.empty_like(self.data, dtype=self.dtype)
+
+        coo_tocsr(M, N, nnz, major, minor, self.data, indptr, indices, data)
+        return indptr, indices, data, self.shape
 
     def tocoo(self, copy=False):
         if copy:

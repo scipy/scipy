@@ -32,7 +32,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1,tuple):
             if isshape(arg1):
@@ -60,10 +62,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                self._set_self(
-                    self._coo_container(arg1, dtype=dtype, shape=shape).tobsr(
-                        blocksize=blocksize
-                    )
+                coo = self._coo_container(arg1, dtype=dtype, shape=shape)
+                bsr = coo.tobsr(blocksize=blocksize)
+                self.indptr, self.indices, self.data, self._shape = (
+                    bsr.indptr, bsr.indices, bsr.data, bsr._shape
                 )
 
             elif len(arg1) == 3:
@@ -106,7 +108,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             arg1 = self._coo_container(
                 arg1, dtype=dtype
             ).tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         if shape is not None:
             self._shape = check_shape(shape)

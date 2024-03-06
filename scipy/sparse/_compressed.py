@@ -32,7 +32,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.asformat(self.format)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -50,10 +52,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    other = self.__class__(
-                        self._coo_container(arg1, shape=shape, dtype=dtype)
-                    )
-                    self._set_self(other)
+                    coo = self._coo_container(arg1, shape=shape, dtype=dtype)
+                    arrays = coo._coo_to_compressed(self._swap)
+                    self.indptr, self.indices, self.data, self._shape = arrays
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -69,8 +70,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
                     if not copy:
                         copy = copy_if_needed
-                    self.indices = np.array(indices, copy=copy,
-                                            dtype=idx_dtype)
+                    self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
@@ -84,9 +84,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 msg = f"unrecognized {self.format}_matrix constructor usage"
                 raise ValueError(msg) from e
-            self._set_self(self.__class__(
-                self._coo_container(arg1, dtype=dtype)
-            ))
+            coo = self._coo_container(arg1, dtype=dtype)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, self._shape = arrays
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -100,8 +100,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except Exception as e:
                     raise ValueError('unable to infer matrix dimensions') from e
                 else:
-                    self._shape = check_shape(self._swap((major_dim,
-                                                          minor_dim)))
+                    self._shape = check_shape(self._swap((major_dim, minor_dim)))
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
@@ -124,17 +123,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError('axis out of bounds')
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-
-    def _set_self(self, other, copy=False):
-        """take the member variables of other and assign them to self"""
-
-        if copy:
-            other = other.copy()
-
-        self.data = other.data
-        self.indices = other.indices
-        self.indptr = other.indptr
-        self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
         """Check whether the array/matrix respects the CSR or CSC format.
@@ -868,9 +856,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 max_index = min(M + k, N)
             else:
                 max_index = min(M + k, N, len(values))
-            i = np.arange(max_index, dtype=self.indices.dtype)
+            i = np.arange(-k, max_index - k, dtype=self.indices.dtype)
             j = np.arange(max_index, dtype=self.indices.dtype)
-            i -= k
 
         else:
             if broadcast:
@@ -878,13 +865,50 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 max_index = min(M, N - k, len(values))
             i = np.arange(max_index, dtype=self.indices.dtype)
-            j = np.arange(max_index, dtype=self.indices.dtype)
-            j += k
+            j = np.arange(k, k + max_index, dtype=self.indices.dtype)
 
         if not broadcast:
             values = values[:len(i)]
 
-        self[i, j] = values
+        x = np.atleast_1d(np.asarray(values, dtype=self.dtype)).ravel()
+        if x.squeeze().shape != i.squeeze().shape:
+            x = np.broadcast_to(x, i.shape)
+        if x.size == 0:
+            return
+
+        M, N = self._swap((M, N))
+        i, j = self._swap((i, j))
+        n_samples = x.size
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
+        if -1 not in offsets:
+            # only affects existing non-zero cells
+            self.data[offsets] = x
+            return
+
+        mask = (offsets <= -1)
+        # Boundary between csc and convert to coo
+        # The value 0.001 is justified in gh-19962#issuecomment-1920499678
+        if mask.sum() < self.nnz * 0.001:
+            # create new entries
+            i = i[mask]
+            j = j[mask]
+            self._insert_many(i, j, x[mask])
+            # replace existing entries
+            mask = ~mask
+            self.data[offsets[mask]] = x[mask]
+        else:
+            # convert to coo for _set_diag
+            coo = self.tocoo()
+            coo._setdiag(values, k)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, _ = arrays
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
