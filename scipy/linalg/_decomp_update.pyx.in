@@ -1047,7 +1047,7 @@ cdef int reorth(int m, int n, blas_t* q, int* qs, bint qisF, blas_t* u,
        length and orthogonal to the columns of q.
 
        This function returns 0 or 1 on success, and 2 if the recipercal
-       condition number of [q, u/||u||] is less than RCOND. This condition is
+       condition number of ``[q, u/||u||]`` is less than RCOND. This condition is
        important when inserting columns, because updating may not be meaningful
        if u is a linear combination of the columns of q.
 
@@ -1180,8 +1180,7 @@ def _form_qTu(object a, object b):
     form_qTu(q, u, qTuvoid, qTus, 0)
     return qTu
 
-cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
-              int k) noexcept:
+cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus, int k):
     """ assuming here that q and u have compatible shapes, and are the same
         type + Q is contiguous.  This function is preferable over simply
         calling np.dot for two reasons: 1) this output is always in F order, 2)
@@ -1312,7 +1311,7 @@ cdef form_qTu(cnp.ndarray q, cnp.ndarray u, void* qTuvoid, int* qTus,
     else:
         raise ValueError('q must be either F or C contiguous')
 
-cdef validate_array(cnp.ndarray a, bint chkfinite) noexcept:
+cdef validate_array(cnp.ndarray a, bint chkfinite):
     # here we check that a has positive strides and that its size is small
     # enough to fit in into an int, as BLAS/LAPACK require
     cdef bint copy = False
@@ -1335,7 +1334,7 @@ cdef validate_array(cnp.ndarray a, bint chkfinite) noexcept:
     return a
 
 cdef tuple validate_qr(object q0, object r0, bint overwrite_q, int q_order,
-                       bint overwrite_r, int r_order, bint chkfinite) noexcept:
+                       bint overwrite_r, int r_order, bint chkfinite):
     cdef cnp.ndarray Q
     cdef cnp.ndarray R
     cdef int typecode
@@ -1661,7 +1660,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
     ------
     LinAlgError :
         If updating a (M,N) (N,N) factorization and the reciprocal condition
-        number of Q augmented with u/||u|| is smaller than rcond.
+        number of Q augmented with ``u/||u||`` is smaller than rcond.
 
     See Also
     --------
@@ -1757,7 +1756,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
     else:
         raise ValueError("'which' must be either 'row' or 'col'")
 
-cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite) noexcept:
+cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j
     cdef int u_flags = cnp.NPY_ARRAY_BEHAVED_NS | cnp.NPY_ARRAY_ELEMENTSTRIDES
@@ -1877,7 +1876,7 @@ cdef qr_insert_row(Q, R, u, int k, bint overwrite_qru, bint check_finite) noexce
                 raise MemoryError('Unable to allocate memory for array')
         return qnew, rnew
 
-cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite) noexcept:
+cdef qr_insert_col(Q, R, u, int k, rcond, bint overwrite_qru, bint check_finite):
     cdef cnp.ndarray q1, r1, u1, qnew, rnew
     cdef int j
     cdef int q_flags = ARRAY_ANYORDER

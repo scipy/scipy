@@ -1,7 +1,7 @@
 #pragma once
 
-#include <complex>
 #include <numpy/npy_math.h>
+#include <complex>
 
 
 #include "special/binom.h"

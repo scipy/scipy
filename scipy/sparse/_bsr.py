@@ -8,6 +8,7 @@ from warnings import warn
 
 import numpy as np
 
+from scipy._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
@@ -78,6 +79,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     maxval = max(maxval, max(blocksize))
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                                   check_contents=True)
+                if not copy:
+                    copy = copy_if_needed
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)

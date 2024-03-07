@@ -689,7 +689,7 @@ class Test(Task):
         ['--array-api-backend', '-b'], default=None, metavar='ARRAY_BACKEND',
         multiple=True,
         help=(
-            "Array API backend ('all', 'numpy', 'pytorch', 'cupy', 'numpy.array_api')."
+            "Array API backend ('all', 'numpy', 'pytorch', 'cupy', 'array_api_strict')."
         )
     )
     # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
@@ -708,7 +708,7 @@ class Test(Task):
         print(f"SciPy from development installed path at: {dirs.site}")
 
         # FIXME: support pos-args with doit
-        extra_argv = pytest_args[:] if pytest_args else []
+        extra_argv = list(pytest_args[:]) if pytest_args else []
         if extra_argv and extra_argv[0] == '--':
             extra_argv = extra_argv[1:]
 

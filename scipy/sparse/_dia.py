@@ -6,6 +6,7 @@ __all__ = ['dia_array', 'dia_matrix', 'isspmatrix_dia']
 
 import numpy as np
 
+from .._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._base import issparse, _formats, _spbase, sparray
 from ._data import _data_matrix
@@ -54,6 +55,8 @@ class _dia_base(_data_matrix):
                 else:
                     if shape is None:
                         raise ValueError('expected a shape argument')
+                    if not copy:
+                        copy = copy_if_needed
                     self.data = np.atleast_2d(np.array(arg1[0], dtype=dtype, copy=copy))
                     offsets = np.array(arg1[1],
                                        dtype=self._get_index_dtype(maxval=max(shape)),
