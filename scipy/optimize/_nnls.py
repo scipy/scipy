@@ -139,9 +139,10 @@ def _nnls(A, b, maxiter=None, tol=None):
         while (iter < maxiter) and (s[P].min() < 0):  # C.1
             alpha_ind = ((s < tol) & P).nonzero()
             alpha = (x[alpha_ind] / (x[alpha_ind] - s[alpha_ind])).min()  # C.2
+            alpha_ind = ((s < 0) & P).nonzero()
             x *= (1 - alpha)
             x += alpha*s
-            P[x < tol] = False
+            P[x <= 0] = False
             s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym',
                          check_finite=False)
             s[~P] = 0  # C.6
