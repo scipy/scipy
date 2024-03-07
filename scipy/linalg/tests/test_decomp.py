@@ -350,6 +350,34 @@ class TestEig:
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
 
+    def test_gh_11577(self):
+        # https://github.com/scipy/scipy/issues/11577
+        # `A - lambda B` should have 4 and 8 among the eigenvalues, and this
+        # was apparently broken on some platforms
+        A = np.array([[12.0, 28.0, 76.0, 220.0],
+                      [16.0, 32.0, 80.0, 224.0],
+                      [24.0, 40.0, 88.0, 232.0],
+                      [40.0, 56.0, 104.0, 248.0]], dtype='float64')
+        B = np.array([[2.0, 4.0, 10.0, 28.0],
+                      [3.0, 5.0, 11.0, 29.0],
+                      [5.0, 7.0, 13.0, 31.0],
+                      [9.0, 11.0, 17.0, 35.0]], dtype='float64')
+
+        D, V = eig(A, B)
+
+        # The problem is ill-conditioned, and two other eigenvalues
+        # depend on ATLAS/OpenBLAS version, compiler version etc
+        # see gh-11577 for discussion
+        #
+        # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
+        # the ordering of eigenvalues also comes out different on different
+        # systems depending on who knows what.
+        with np.testing.suppress_warnings() as sup:
+            # isclose chokes on inf/nan values
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert np.isclose(D, 4.0, atol=1e-14).any()
+            assert np.isclose(D, 8.0, atol=1e-14).any()
+
 
 class TestEigBanded:
     def setup_method(self):
