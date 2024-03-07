@@ -1,4 +1,3 @@
-import os
 import re
 import copy
 import numpy as np
@@ -9,10 +8,6 @@ import pytest
 from scipy.linalg import svd, null_space
 from scipy.sparse import csc_matrix, issparse, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-if os.environ.get("SCIPY_USE_PROPACK"):
-    has_propack = True
-else:
-    has_propack = False
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
 
@@ -158,8 +153,6 @@ class SVDSCommonTests:
 
         # propack can do complete SVD
         if self.solver == 'propack' and k == 3:
-            if not has_propack:
-                pytest.skip("PROPACK not enabled")
             res = svds(A, k=k, solver=self.solver)
             _check_svds(A, k, *res, check_usvh_A=True, check_svd=True)
             return
@@ -260,9 +253,6 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("k", [3, 5])
     @pytest.mark.parametrize("which", ["LM", "SM"])
     def test_svds_parameter_k_which(self, k, which):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         # check that the `k` parameter sets the number of eigenvalues/
         # eigenvectors returned.
         # Also check that the `which` parameter sets whether the largest or
@@ -280,10 +270,6 @@ class SVDSCommonTests:
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
-        return  # TODO: needs work, disabling for now
         # check the effect of the `tol` parameter on solver accuracy by solving
         # the same problem with varying `tol` and comparing the eigenvalues
         # against ground truth computed
@@ -304,7 +290,9 @@ class SVDSCommonTests:
 
         def err(tol):
             if self.solver == 'lobpcg' and tol == 1e-4:
-                with pytest.warns(UserWarning, match="Exited at iteration"):
+                msg = ("Exited at iteration.*|"
+                       "Exited postprocessing with accuracies.*")
+                with pytest.warns(UserWarning, match=msg):
                     _, s2, _ = svds(A, k=k, v0=np.ones(n),
                                     solver=self.solver, tol=tol)
             else:
@@ -315,18 +303,14 @@ class SVDSCommonTests:
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
-                      'arpack': [2e-15, 1e-10, 1e-10],
-                      'lobpcg': [1e-11, 1e-3, 10]}
+                      'arpack': [2.5e-15, 1e-10, 1e-10],
+                      'lobpcg': [1e-10, 1e-3, 10]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
             error = err(tol)
             assert error < accuracy
-            assert error > accuracy/10
 
     def test_svd_v0(self):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         # check that the `v0` parameter affects the solution
         n = 100
         k = 1
@@ -361,9 +345,6 @@ class SVDSCommonTests:
             assert_equal(res1a, res1b)
 
     def test_svd_random_state(self):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         # check that the `random_state` parameter affects the solution
         # Admittedly, `n` and `k` are chosen so that all solver pass all
         # these checks. That's a tall order, since LOBPCG doesn't want to
@@ -398,10 +379,6 @@ class SVDSCommonTests:
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
     def test_svd_random_state_2(self, random_state):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
-
         n = 100
         k = 1
 
@@ -421,10 +398,6 @@ class SVDSCommonTests:
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
     def test_svd_random_state_3(self, random_state):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
-
         n = 100
         k = 5
 
@@ -446,9 +419,6 @@ class SVDSCommonTests:
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
         # solution after 1 iteration, but should with default `maxiter`
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
         A = np.diag(np.arange(9)).astype(np.float64)
         k = 1
         u, s, vh = sorted_svd(A, k)
@@ -475,10 +445,6 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("shape", ((5, 7), (6, 6), (7, 5)))
     def test_svd_return_singular_vectors(self, rsv, shape):
         # check that the return_singular_vectors parameter works as expected
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
-
         rng = np.random.default_rng(0)
         A = rng.random(shape)
         k = 2
@@ -559,10 +525,6 @@ class SVDSCommonTests:
                                          aslinearoperator))
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
-
         A = np.asarray(A)
         A = np.real(A) if real else A
         A = A.T if transpose else A
@@ -576,22 +538,19 @@ class SVDSCommonTests:
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
             pytest.skip("#16725")
 
-        if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
-            pytest.skip('PROPACK complex-valued SVD methods not available '
-                        'for 32-bit builds')
+        atol = 3e-10
+        if self.solver == 'propack':
+            atol = 8e-10  # otherwise test fails on Linux aarch64 (see gh-19855)
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 u, s, vh = svds(A2, k, solver=self.solver)
         else:
             u, s, vh = svds(A2, k, solver=self.solver)
-        _check_svds(A, k, u, s, vh, atol=3e-10)
+        _check_svds(A, k, u, s, vh, atol=atol)
 
     def test_svd_linop(self):
         solver = self.solver
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not available")
 
         nmks = [(6, 7, 3),
                 (9, 5, 4),
@@ -652,9 +611,6 @@ class SVDSCommonTests:
             if k < min(n, m) - 1:
                 # Complex input and explicit which="LM".
                 for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
-                    if self.solver == 'propack' and np.intp(0).itemsize < 8:
-                        pytest.skip('PROPACK complex-valued SVD methods '
-                                    'not available for 32-bit builds')
                     rng = np.random.RandomState(1648)
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)
@@ -770,8 +726,6 @@ class SVDSCommonTests:
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma(self, shape, dtype):
-        if not has_propack:
-            pytest.skip("PROPACK not enabled")
         # https://github.com/scipy/scipy/pull/11829
         if dtype == complex and self.solver == 'propack':
             pytest.skip("PROPACK unsupported for complex dtype")
@@ -795,15 +749,6 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:The problem size")
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
-        if self.solver == 'propack':
-            if not has_propack:
-                pytest.skip("PROPACK not enabled")
-            elif dtype == np.float32:
-                pytest.skip("Test failures in CI, see gh-17004")
-            elif dtype == complex:
-                # https://github.com/scipy/scipy/issues/11406
-                pytest.skip("PROPACK unsupported for complex dtype")
-
         rng = np.random.default_rng(179847540)
         # create a 10x10 singular matrix with a 4-dim null space
         dim = 4

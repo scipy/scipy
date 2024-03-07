@@ -1096,7 +1096,7 @@ The following plot shows three different spectral representations of four sine s
 
 Note that depending on the representation, the height of the peaks vary. Only the
 interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_z` in
-the  represents half the magnitude :math:`|a|` of the sine signal. For all other
+the second plot represents half the magnitude :math:`|a|` of the sine signal. For all other
 representations the duration :math:`\tau` needs to be taken into account to extract
 information about the signal's amplitude.
 

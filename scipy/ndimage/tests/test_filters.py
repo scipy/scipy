@@ -895,7 +895,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
-    def test_sobel01(sel, dtype):
+    def test_sobel01(self, dtype):
         array = numpy.array([[3, 2, 5, 1, 4],
                              [5, 8, 3, 7, 1],
                              [5, 6, 9, 3, 5]], dtype)

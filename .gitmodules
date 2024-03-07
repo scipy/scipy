@@ -3,7 +3,7 @@
 	url = https://github.com/scipy/scipy-mathjax.git
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
-	url = https://github.com/scipy/PROPACK
+	url = https://github.com/scipy/PROPACK.git
 	shallow = true
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran

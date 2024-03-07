@@ -6,7 +6,7 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,
+                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
                    arctan2, hypot)
 
 from scipy import optimize, special, interpolate, stats
@@ -14,13 +14,12 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
 
 from ._ansari_swilk_statistics import gscale, swilk
-from . import _stats_py
+from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import find_repeats, _get_pvalue, SignificanceResult
+from ._stats_py import find_repeats, _get_pvalue, SignificanceResult  # noqa: F401
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
 
 
@@ -3898,7 +3897,7 @@ def wilcoxon_outputs(kwds):
     result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
 )
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", method='auto'):
+             alternative="two-sided", method='auto', *, axis=0):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
@@ -3958,6 +3957,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     method : {"auto", "exact", "approx"}, optional
         Method to calculate the p-value, see Notes. Default is "auto".
+
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
@@ -4105,147 +4110,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     WilcoxonResult(statistic=6.0, pvalue=0.4375)
 
     """
-    mode = method
-
-    if mode not in ["auto", "approx", "exact"]:
-        raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
-
-    if zero_method not in ["wilcox", "pratt", "zsplit"]:
-        raise ValueError("Zero method must be either 'wilcox' "
-                         "or 'pratt' or 'zsplit'")
-
-    if alternative not in ["two-sided", "less", "greater"]:
-        raise ValueError("Alternative must be either 'two-sided', "
-                         "'greater' or 'less'")
-
-    if y is None:
-        d = asarray(x)
-        if d.ndim > 1:
-            raise ValueError('Sample x must be one-dimensional.')
-    else:
-        x, y = map(asarray, (x, y))
-        if x.ndim > 1 or y.ndim > 1:
-            raise ValueError('Samples x and y must be one-dimensional.')
-        if len(x) != len(y):
-            raise ValueError('The samples x and y must have the same length.')
-        # Future enhancement: consider warning when elements of `d` appear to
-        # be tied but are numerically distinct.
-        d = x - y
-
-    if len(d) == 0:
-        NaN = _get_nan(d)
-        res = WilcoxonResult(NaN, NaN)
-        if method == 'approx':
-            res.zstatistic = NaN
-        return res
-
-    if mode == "auto":
-        if len(d) <= 50:
-            mode = "exact"
-        else:
-            mode = "approx"
-
-    n_zero = np.sum(d == 0)
-    if n_zero > 0 and mode == "exact":
-        mode = "approx"
-        warnings.warn("Exact p-value calculation does not work if there are "
-                      "zeros. Switching to normal approximation.",
-                      stacklevel=2)
-
-    if mode == "approx":
-        if zero_method in ["wilcox", "pratt"]:
-            if n_zero == len(d):
-                raise ValueError("zero_method 'wilcox' and 'pratt' do not "
-                                 "work if x - y is zero for all elements.")
-        if zero_method == "wilcox":
-            # Keep all non-zero differences
-            d = compress(np.not_equal(d, 0), d)
-
-    count = len(d)
-    if count < 10 and mode == "approx":
-        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
-
-    r = _stats_py.rankdata(abs(d))
-    r_plus = np.sum((d > 0) * r)
-    r_minus = np.sum((d < 0) * r)
-
-    if zero_method == "zsplit":
-        r_zero = np.sum((d == 0) * r)
-        r_plus += r_zero / 2.
-        r_minus += r_zero / 2.
-
-    # return min for two-sided test, but r_plus for one-sided test
-    # the literature is not consistent here
-    # r_plus is more informative since r_plus + r_minus = count*(count+1)/2,
-    # i.e. the sum of the ranks, so r_minus and the min can be inferred
-    # (If alternative='pratt', r_plus + r_minus = count*(count+1)/2 - r_zero.)
-    # [3] uses the r_plus for the one-sided test, keep min for two-sided test
-    # to keep backwards compatibility
-    if alternative == "two-sided":
-        T = min(r_plus, r_minus)
-    else:
-        T = r_plus
-
-    if mode == "approx":
-        mn = count * (count + 1.) * 0.25
-        se = count * (count + 1.) * (2. * count + 1.)
-
-        if zero_method == "pratt":
-            r = r[d != 0]
-            # normal approximation needs to be adjusted, see Cureton (1967)
-            mn -= n_zero * (n_zero + 1.) * 0.25
-            se -= n_zero * (n_zero + 1.) * (2. * n_zero + 1.)
-
-        replist, repnum = find_repeats(r)
-        if repnum.size != 0:
-            # Correction for repeated elements.
-            se -= 0.5 * (repnum * (repnum * repnum - 1)).sum()
-
-        se = sqrt(se / 24)
-
-        # apply continuity correction if applicable
-        d = 0
-        if correction:
-            if alternative == "two-sided":
-                d = 0.5 * np.sign(T - mn)
-            elif alternative == "less":
-                d = -0.5
-            else:
-                d = 0.5
-
-        # compute statistic and p-value using normal approximation
-        z = (T - mn - d) / se
-        if alternative == "two-sided":
-            prob = 2. * distributions.norm.sf(abs(z))
-        elif alternative == "greater":
-            # large T = r_plus indicates x is greater than y; i.e.
-            # accept alternative in that case and return small p-value (sf)
-            prob = distributions.norm.sf(z)
-        else:
-            prob = distributions.norm.cdf(z)
-    elif mode == "exact":
-        # get pmf of the possible positive ranksums r_plus
-        pmf = _get_wilcoxon_distr(count)
-        # note: r_plus is int (ties not allowed), need int for slices below
-        r_plus = int(r_plus)
-        if alternative == "two-sided":
-            if r_plus == (len(pmf) - 1) // 2:
-                # r_plus is the center of the distribution.
-                prob = 1.0
-            else:
-                p_less = np.sum(pmf[:r_plus + 1])
-                p_greater = np.sum(pmf[r_plus:])
-                prob = 2*min(p_greater, p_less)
-        elif alternative == "greater":
-            prob = np.sum(pmf[r_plus:])
-        else:
-            prob = np.sum(pmf[:r_plus + 1])
-        prob = np.clip(prob, 0, 1)
-
-    res = WilcoxonResult(T, prob)
-    if method == 'approx':
-        res.zstatistic = z
-    return res
+    return _wilcoxon._wilcoxon_nd(x, y, zero_method, correction, alternative,
+                                  method, axis)
 
 
 MedianTestResult = _make_tuple_bunch(
