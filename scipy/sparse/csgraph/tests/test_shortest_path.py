@@ -334,7 +334,7 @@ def test_negative_cycles():
             check(method, directed)
 
         assert_raises(NegativeCycleError, yen, graph, 0, 1, 1,
-                        directed=directed)
+                      directed=directed)
 
 
 @pytest.mark.parametrize("method", ['FW', 'J', 'BF'])

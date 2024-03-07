@@ -1718,24 +1718,25 @@ def yen(
     Returns
     -------
     dist_array : ndarray
-        The M array of shortest distances between the source and sink nodes. ``dist_array[i]``
-        gives the i-th shortest distance from the source to the sink along the graph.
-        M is the number of shortest paths found, which is less than or equal to K.
+        The M array of shortest distances between the source and sink nodes.
+        ``dist_array[i]`` gives the i-th shortest distance from the source to the sink
+        along the graph. M is the number of shortest paths found, which is less than or
+        equal to `K`.
     predecessors : ndarray
         Returned only if ``return_predecessors == True``.
         The M x N matrix of predecessors, which can be used to reconstruct
         the shortest paths.
-        M is the number of shortest paths found, which is less than or equal to ``K``.
+        M is the number of shortest paths found, which is less than or equal to `K`.
         Row ``i`` of the predecessor matrix contains
-        information on the ``i``-th shortest path from the source to the sink: each entry
-        ``predecessors[i, j]`` gives the index of the previous node in the
+        information on the ``i``-th shortest path from the source to the sink: each
+        entry ``predecessors[i, j]`` gives the index of the previous node in the
         path from the source to node ``j``.  If the path does not pass via node ``j``,
         then ``predecessors[i, j] = -9999``
 
     Raises
     ------
     NegativeCycleError:
-        if there are negative cycles in the graph
+        If there are negative cycles in the graph
 
     Notes
     -----
@@ -1774,7 +1775,8 @@ def yen(
     (2, 0)	2
     (2, 3)	3
 
-    >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2, directed=False, return_predecessors=True)
+    >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
+    ...                                directed=False, return_predecessors=True)
     >>> dist_array
     array([2., 5.])
     >>> predecessors
@@ -1783,8 +1785,7 @@ def yen(
 
     """
 
-    csgraph = validate_graph(csgraph, directed, DTYPE,
-                                dense_output=False)
+    csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
 
     cdef int N = csgraph.shape[0]
     cdef int has_negataive_weights = False
@@ -1805,12 +1806,12 @@ def yen(
                                         csgraph.indptr, johnoson_dist_array)
             else:
                 ret = _johnson_undirected(csr_data, csgraph.indices,
-                                        csgraph.indptr, johnoson_dist_array)
+                                          csgraph.indptr, johnoson_dist_array)
             if ret >= 0:
                 raise NegativeCycleError("Negative cycle detected on node %i" % ret)
     if has_negataive_weights:
-        _johnson_add_weights(csr_data, csgraph.indices,
-                    csgraph.indptr, johnoson_dist_array)
+        _johnson_add_weights(csr_data, csgraph.indices, csgraph.indptr,
+                             johnoson_dist_array)
 
     if directed:
         csgraphT = csgraph
@@ -1822,7 +1823,7 @@ def yen(
         else:
             if has_negataive_weights:
                 _johnson_add_weights(csgraphT.data, csgraphT.indices,
-                                csgraphT.indptr, johnoson_dist_array)
+                                     csgraphT.indptr, johnoson_dist_array)
             csrT_data = csgraphT.data
 
     _yen(
@@ -1838,7 +1839,8 @@ def yen(
     num_paths_found = sum(dist_array < INFINITY)
     return_shape = (num_paths_found, N)
     if return_predecessors:
-        return dist_array[:num_paths_found].reshape((num_paths_found,)), predecessor_matrix[:num_paths_found].reshape(return_shape)
+        return (dist_array[:num_paths_found].reshape((num_paths_found,)),
+                predecessor_matrix[:num_paths_found].reshape(return_shape))
     return dist_array[:num_paths_found].reshape((num_paths_found,))
 
 
@@ -1941,25 +1943,43 @@ cdef void _yen(
             for short_path_idx in range(k):
                 # For each shortest path
                 # Remove the edge {spur_node -> next node} in shortest path
-                # If the original path coincides with the current shortest path up to spur node.
+                # If the original path coincides with the current shortest path up to
+                # spur node.
                 node = spur_node
-                while shortest_paths_predecessors[short_path_idx][node] == shortest_paths_predecessors[k-1][node]:
+                while (
+                    shortest_paths_predecessors[short_path_idx][node]
+                    == shortest_paths_predecessors[k-1][node]
+                ):
                     if node == source:
                         # Remove edge spur_node -> next node
-                        for i in range(csr_indptr[spur_node], csr_indptr[spur_node + 1]):
-                            if spur_node == shortest_paths_predecessors[short_path_idx][csr_indices[i]]:
+                        for i in range(
+                            csr_indptr[spur_node], csr_indptr[spur_node + 1]
+                        ):
+                            if (
+                                spur_node
+                                == shortest_paths_predecessors[short_path_idx][
+                                    csr_indices[i]
+                                ]
+                            ):
                                 csr_weights[i] = INFINITY
                         if not directed:
-                            for i in range(csrT_indptr[spur_node], csrT_indptr[spur_node + 1]):
-                                if spur_node == shortest_paths_predecessors[short_path_idx][csrT_indices[i]]:
+                            for i in range(
+                                csrT_indptr[spur_node], csrT_indptr[spur_node + 1]
+                            ):
+                                if (
+                                    spur_node
+                                    == shortest_paths_predecessors[short_path_idx][
+                                        csrT_indices[i]
+                                    ]
+                                ):
                                     csrT_weights[i] = INFINITY
 
                         break
                     node = shortest_paths_predecessors[short_path_idx][node]
 
             # ---------------------------------------------------
-            # Avoid loops in paths by removing all nodes of the root path from the graph except for
-            # the spur node.
+            # Avoid loops in paths by removing all nodes of the root path from the graph
+            # except for the spur node.
             # A node is removed from the graph by setting all its out-edges to infinity
             node = shortest_paths_predecessors[k-1][spur_node]
             while node != NULL_IDX:
@@ -1998,8 +2018,10 @@ cdef void _yen(
             # Add the found path to arrays of candidates
             if (
                 total_distance != INFINITY
-                and _yen_is_path_in_candidates(candidate_predecessors, shortest_paths_predecessors[k-1], 
-                    predecessor_matrix[0], spur_node, sink) == 0
+                and _yen_is_path_in_candidates(candidate_predecessors,
+                                               shortest_paths_predecessors[k-1], 
+                                               predecessor_matrix[0],
+                                               spur_node, sink) == 0
             ):
                 # Find the index to insert the new path
                 short_path_idx = tmp_i = NULL_IDX
@@ -2021,22 +2043,30 @@ cdef void _yen(
                     # Fill original path
                     node = spur_node
                     while node != NULL_IDX:
-                        candidate_predecessors[short_path_idx, node] = shortest_paths_predecessors[k-1, node]
+                        candidate_predecessors[short_path_idx, node] = (
+                            shortest_paths_predecessors[k-1, node]
+                        )
                         node = shortest_paths_predecessors[k-1, node]
 
                     # Fill spur path
                     node = sink
                     while node != spur_node:
-                        candidate_predecessors[short_path_idx, node] = predecessor_matrix[0, node]
+                        candidate_predecessors[short_path_idx, node] = (
+                            predecessor_matrix[0, node]
+                        )
                         node = predecessor_matrix[0, node]
 
            # ---------------------------------------------------
             # Restore graph weights
             node = spur_node
             while node != NULL_IDX:
-                csr_weights[csr_indptr[node]: csr_indptr[node + 1]] = original_weights[csr_indptr[node]: csr_indptr[node + 1]]
+                csr_weights[csr_indptr[node]: csr_indptr[node + 1]] = (
+                    original_weights[csr_indptr[node]: csr_indptr[node + 1]]
+                )
                 if not directed:
-                    csrT_weights[csrT_indptr[node]: csrT_indptr[node + 1]] = originalT_weights[csrT_indptr[node]: csrT_indptr[node + 1]]
+                    csrT_weights[csrT_indptr[node]: csrT_indptr[node + 1]] = (
+                        originalT_weights[csrT_indptr[node]: csrT_indptr[node + 1]]
+                    )
                 node = shortest_paths_predecessors[k-1, node]
 
 
