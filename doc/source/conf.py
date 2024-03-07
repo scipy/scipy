@@ -399,6 +399,14 @@ nb_execution_excludepatterns = ["_contents/*.ipynb"]
 #------------------------------------------------------------------------------
 global_enable_try_examples = True
 try_examples_global_button_text = "Try it in your browser!"
+try_examples_global_warning_text = (
+    "SciPy's interactive examples with Jupyterlite are experimental and may"
+    " not always work as expected. Execution of cells containing imports may"
+    " result in large downloads (up to 60MB of content for the first import"
+    " from SciPy). Load times when importing from SciPy may take roughly 10-20"
+    " seconds. If you notice any problems, feel free to open an"
+    " [issue](https://github.com/scipy/scipy/issues/new/choose)."
+)
 
 # -----------------------------------------------------------------------------
 # Source code links
