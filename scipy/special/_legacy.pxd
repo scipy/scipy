@@ -56,21 +56,21 @@ cdef inline double bdtr_unsafe(double k, double n, double p) noexcept nogil:
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtr(k, <int>n, p)
+        return bdtr(k, <long>n, p)
 
 cdef inline double bdtrc_unsafe(double k, double n, double p) noexcept nogil:
     _legacy_deprecation("bdtrc", k, n)
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtrc(k, <int>n, p)
+        return bdtrc(k, <long>n, p)
 
 cdef inline double bdtri_unsafe(double k, double n, double p) noexcept nogil:
     _legacy_deprecation("bdtri", k, n)
     if isnan(n) or isinf(n):
         return NAN
     else:
-        return bdtri(k, <int>n, p)
+        return bdtri(k, <long>n, p)
 
 cdef inline double expn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
