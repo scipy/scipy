@@ -7,17 +7,17 @@ density estimation. The most well-known tool to do this is the histogram.
 A histogram is a useful tool for visualization (mainly because everyone
 understands it), but doesn't use the available data very efficiently. Kernel
 density estimation (KDE) is a more efficient tool for the same task. The
-:func:`~stats.gaussian_kde` estimator can be used to estimate the PDF of univariate as
-well as multivariate data. It works best if the data is unimodal.
+:func:`scipy.stats.gaussian_kde` estimator can be used to estimate the PDF of
+univariate as well as multivariate data. It works best if the data is unimodal.
 
 
 Univariate estimation
 ^^^^^^^^^^^^^^^^^^^^^
 
-We start with a minimal amount of data in order to see how :func:`~stats.gaussian_kde`
-works and what the different options for bandwidth selection do. The data
-sampled from the PDF are shown as blue dashes at the bottom of the figure (this
-is called a rug plot):
+We start with a minimal amount of data in order to see how
+:func:`scipy.stats.gaussian_kde` works and what the different options for
+bandwidth selection do. The data sampled from the PDF are shown as blue dashes
+at the bottom of the figure (this is called a rug plot):
 
 .. plot::
     :alt: " "
@@ -132,9 +132,9 @@ non-uniform (adaptive) bandwidth.
 Multivariate estimation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-With :func:`~stats.gaussian_kde` we can perform multivariate, as well as univariate
-estimation. We demonstrate the bivariate case. First, we generate some random
-data with a model in which the two variates are correlated.
+With :func:`scipy.stats.gaussian_kde` we can perform multivariate, as well as
+univariate estimation. We demonstrate the bivariate case. First, we generate
+some random data with a model in which the two variates are correlated.
 
     >>> def measure(n):
     ...     """Measurement model, return two coupled measurements."""
@@ -180,8 +180,8 @@ the individual data points on top.
 Multiscale Graph Correlation (MGC)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With :func:`~stats.multiscale_graphcorr`, we can test for independence on high
-dimensional and nonlinear data. Before we start, let's import some useful
+With :func:`scipy.stats.multiscale_graphcorr`, we can test for independence on
+high dimensional and nonlinear data. Before we start, let's import some useful
 packages:
 
     >>> import numpy as np

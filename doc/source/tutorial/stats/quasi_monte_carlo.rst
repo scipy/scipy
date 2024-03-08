@@ -111,7 +111,7 @@ Calculate the discrepancy
 
 Let's consider two sets of points. From the figure below, it is clear that
 the design on the left covers more of the space than the design on the right.
-This can be quantified using a :func:`~stats.qmc.discrepancy` measure.
+This can be quantified using a :func:`scipy.stats.qmc.discrepancy` measure.
 The lower the discrepancy, the more uniform a sample is.
 
     >>> import numpy as np
@@ -136,8 +136,8 @@ Using a QMC engine
 ^^^^^^^^^^^^^^^^^^
 
 Several QMC samplers/engines are implemented. Here we look at two of the most
-used QMC methods: :class:`~stats.qmc.Sobol` and :class:`~stats.qmc.Halton`
-sequences.
+used QMC methods: :class:`scipy.stats.qmc.Sobol` and
+:class:`scipy.stats.qmc.Halton` sequences.
 
 .. plot:: tutorial/stats/plots/qmc_plot_sobol_halton.py
    :align: center
@@ -152,7 +152,7 @@ sequences.
 
 QMC engines are state-aware. Meaning that you can continue the sequence,
 skip some points, or reset it. Let's take 5 points from
-:class:`~stats.qmc.Halton`. And then ask for a second set of 5 points:
+:class:`scipy.stats.qmc.Halton`. And then ask for a second set of 5 points:
 
     >>> from scipy.stats import qmc
     >>> engine = qmc.Halton(d=2)
@@ -191,8 +191,8 @@ And here we advance the sequence to get the same second set of 5 points:
            [0.14353937, 0.63536078],
            [0.64353937, 0.01807683]])
 
-.. note:: By default, both :class:`~stats.qmc.Sobol` and
-   :class:`~stats.qmc.Halton` are scrambled. The convergence properties are
+.. note:: By default, both :class:`scipy.stats.qmc.Sobol` and
+   :class:`scipy.stats.qmc.Halton` are scrambled. The convergence properties are
    better, and it prevents the appearance of fringes or noticeable patterns
    of points in high dimensions. There should be no practical reason not to
    use the scrambled version.
@@ -200,7 +200,7 @@ And here we advance the sequence to get the same second set of 5 points:
 Making a QMC engine, i.e., subclassing ``QMCEngine``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-To make your own :class:`~stats.qmc.QMCEngine`, a few methods have to be
+To make your own :class:`scipy.stats.qmc.QMCEngine`, a few methods have to be
 defined. Following is an example wrapping `numpy.random.Generator`.
 
     >>> import numpy as np
@@ -247,9 +247,9 @@ Guidelines on using QMC
 
 * QMC has rules! Be sure to read the documentation or you might have no
   benefit over MC.
-* Use :class:`~stats.qmc.Sobol` if you need **exactly** :math:`2^m` points.
-* :class:`~stats.qmc.Halton` allows to sample, or skip, an arbitrary number of
-  points. This is at the cost of a slower rate of convergence than *Sobol'*.
+* Use :class:`scipy.stats.qmc.Sobol` if you need **exactly** :math:`2^m` points.
+* :class:`scipy.stats.qmc.Halton` allows to sample, or skip, an arbitrary number
+  of points. This is at the cost of a slower rate of convergence than *Sobol'*.
 * Never remove the first points of the sequence. It will destroy the
   properties.
 * Scrambling is always better.

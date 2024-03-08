@@ -1,5 +1,13 @@
-Random variables
-----------------
+Probability distributions
+-------------------------
+
+.. toctree::
+    :maxdepth: 1
+
+    continuous
+    discrete
+    building_distributions
+
 
 There are two general distribution classes that have been implemented
 for encapsulating :ref:`continuous random variables
@@ -10,8 +18,7 @@ these classes. Besides this, new routines and distributions can be
 easily added by the end user. (If you create one, please contribute it.)
 
 All of the statistics functions are located in the sub-package
-:mod:`scipy.stats` and a fairly complete listing of these functions
-can be obtained using ``info(stats)``. The list of the random
+:mod:`scipy.stats` and a fairly complete listing of these functions and random
 variables available can also be obtained from the docstring for the
 stats sub-package.
 
