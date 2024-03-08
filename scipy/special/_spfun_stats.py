@@ -36,7 +36,7 @@ import numpy as np
 from scipy.special import gammaln as loggam
 
 
-__all__ = ['multigammaln']
+__all__ = ['multigammaln', 'multivariate_betaln']
 
 
 def multigammaln(a, d):
@@ -104,3 +104,39 @@ def multigammaln(a, d):
     res = (d * (d-1) * 0.25) * np.log(np.pi)
     res += np.sum(loggam([(a - (j - 1.)/2) for j in range(1, d+1)]), axis=0)
     return res
+
+
+def multivariate_betaln(alpha):
+    r"""Returns the log of the multivariate beta function.
+
+    Parameters
+    ----------
+    alpha : ndarray.
+
+    Returns
+    -------
+    res : float
+        The log of the multivariate beta at the given point `alpha`.
+
+    Notes
+    -----
+    The log of the multivariate beta function is defined as a function of
+    the vector :math:`\mathbf{\alpha}=(\alpha_1,\alpha_2,...,\alpha_n)`:
+
+    .. math::
+
+        \ln B(\mathbf{\alpha}) = \ln\left(\frac{\Gamma(\alpha_1)
+        \Gamma(\alpha_2)...\Gamma(\alpha_n)}{\Gamma(\alpha_1+\alpha_2+
+        ...+\alpha_n)}\right)
+
+    Examples
+    --------
+    Compute the log of the multivariate beta function at one point.
+
+    >>> from scipy.special import multivariate_betaln
+    >>> multivariate_betaln([1, 2, 3])
+    -4.0943445622221
+    """
+
+    alpha = np.asarray(alpha)
+    return np.sum(loggam(alpha)) - loggam(np.sum(alpha))
