@@ -102,6 +102,8 @@ doc = [
     "jupytext",
     "myst-nb",
     "pooch",
+    "jupyterlite-sphinx>=0.12.0",
+    "jupyterlite-pyodide-kernel",
 ]
 dev = [
     "mypy",
