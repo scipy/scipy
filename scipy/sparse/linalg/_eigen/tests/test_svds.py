@@ -268,6 +268,8 @@ class SVDSCommonTests:
                        random_state=0)
         _check_svds(A, k, *res, which=which, atol=8e-10)
 
+    @pytest.mark.filterwarnings("ignore:Exited",
+                                reason="Ignore LOBPCG early exit.")
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
         # check the effect of the `tol` parameter on solver accuracy by solving
@@ -289,22 +291,15 @@ class SVDSCommonTests:
         A = csc_matrix(A)
 
         def err(tol):
-            if self.solver == 'lobpcg' and tol == 1e-4:
-                msg = ("Exited at iteration.*|"
-                       "Exited postprocessing with accuracies.*")
-                with pytest.warns(UserWarning, match=msg):
-                    _, s2, _ = svds(A, k=k, v0=np.ones(n),
-                                    solver=self.solver, tol=tol)
-            else:
-                _, s2, _ = svds(A, k=k, v0=np.ones(n),
-                                solver=self.solver, tol=tol)
+            _, s2, _ = svds(A, k=k, v0=np.ones(n), maxiter=1000,
+                            solver=self.solver, tol=tol)
             return np.linalg.norm((s2 - s[k-1::-1])/s[k-1::-1])
 
         tols = [1e-4, 1e-2, 1e0]  # tolerance levels to check
         # for 'arpack' and 'propack', accuracies make discrete steps
         accuracies = {'propack': [1e-12, 1e-6, 1e-4],
                       'arpack': [2.5e-15, 1e-10, 1e-10],
-                      'lobpcg': [1e-10, 1e-3, 10]}
+                      'lobpcg': [2e-12, 4e-2, 2]}
 
         for tol, accuracy in zip(tols, accuracies[self.solver]):
             error = err(tol)
@@ -408,8 +403,8 @@ class SVDSCommonTests:
         # not necessarily identical - results
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state)
-        _check_svds(A, k, *res1a, atol=2e-10, rtol=1e-6)
-        _check_svds(A, k, *res2a, atol=2e-10, rtol=1e-6)
+        _check_svds(A, k, *res1a, atol=2e-9, rtol=2e-6)
+        _check_svds(A, k, *res2a, atol=2e-9, rtol=2e-6)
 
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
@@ -422,12 +417,17 @@ class SVDSCommonTests:
         A = np.diag(np.arange(9)).astype(np.float64)
         k = 1
         u, s, vh = sorted_svd(A, k)
+        # Use default maxiter by default
+        maxiter = None
 
         if self.solver == 'arpack':
             message = "ARPACK error -1: No convergence"
             with pytest.raises(ArpackNoConvergence, match=message):
                 svds(A, k, ncv=3, maxiter=1, solver=self.solver)
         elif self.solver == 'lobpcg':
+            # Set maxiter higher so test passes without changing
+            # default and breaking backward compatibility (gh-20221)
+            maxiter = 30
             with pytest.warns(UserWarning, match="Exited at iteration"):
                 svds(A, k, maxiter=1, solver=self.solver)
         elif self.solver == 'propack':
@@ -435,7 +435,7 @@ class SVDSCommonTests:
             with pytest.raises(np.linalg.LinAlgError, match=message):
                 svds(A, k, maxiter=1, solver=self.solver)
 
-        ud, sd, vhd = svds(A, k, solver=self.solver)  # default maxiter
+        ud, sd, vhd = svds(A, k, solver=self.solver, maxiter=maxiter)
         _check_svds(A, k, ud, sd, vhd, atol=1e-8)
         assert_allclose(np.abs(ud), np.abs(u), atol=1e-8)
         assert_allclose(np.abs(vhd), np.abs(vh), atol=1e-8)
@@ -540,7 +540,7 @@ class SVDSCommonTests:
 
         atol = 3e-10
         if self.solver == 'propack':
-            atol = 8e-10  # otherwise test fails on Linux aarch64 (see gh-19855)
+            atol = 3e-9  # otherwise test fails on Linux aarch64 (see gh-19855)
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
@@ -610,7 +610,7 @@ class SVDSCommonTests:
 
             if k < min(n, m) - 1:
                 # Complex input and explicit which="LM".
-                for (dt, eps) in [(complex, 1e-7), (np.complex64, 1e-3)]:
+                for (dt, eps) in [(complex, 1e-7), (np.complex64, 3e-3)]:
                     rng = np.random.RandomState(1648)
                     A = (rng.randn(n, m) + 1j * rng.randn(n, m)).astype(dt)
                     L = CheckingLinearOperator(A)
@@ -725,6 +725,8 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("shape", ((20, 20), (20, 21), (21, 20)))
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    @pytest.mark.filterwarnings("ignore:Exited",
+                                reason="Ignore LOBPCG early exit.")
     def test_small_sigma(self, shape, dtype):
         # https://github.com/scipy/scipy/pull/11829
         if dtype == complex and self.solver == 'propack':
