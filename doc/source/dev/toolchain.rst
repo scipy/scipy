@@ -418,6 +418,7 @@ Sphinx-Design         Whatever recent versions work. >= 0.4.0.
 numpydoc              Whatever recent versions work. >= 1.5.0.
 matplotlib            Generally suggest >= 3.5.
 MyST-NB               Whatever recent versions work. >= 0.17.1
+jupyterlite-sphinx    Whatever recent versions work. >= 0.12.0
 ====================  =================================================
 
 .. note::

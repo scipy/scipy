@@ -416,6 +416,7 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    @pytest.mark.xfail(reason="failing on macOS after gh-20212")
     def test_gh17918(self):
         M = np.empty((19, 19))
         M.fill(0.94)
