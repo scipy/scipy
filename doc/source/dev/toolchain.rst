@@ -125,7 +125,7 @@ Official Builds
 Currently, SciPy wheels are being built as follows:
 
 ================    ==============================   ==============================   =============================
- Platform            CI Base Images [5]_ [6]_         Compilers                        Comment
+ Platform            CI Base Images [5]_ [6]_ [7]_    Compilers                        Comment
 ================    ==============================   ==============================   =============================
 Linux x86            ``ubuntu-22.04``                 GCC 10.2.1                       ``cibuildwheel``
 Linux arm            ``docker-builder-arm64``         GCC 11.3.0                       ``cibuildwheel``
