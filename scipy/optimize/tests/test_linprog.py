@@ -1953,6 +1953,13 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 class TestLinprogIPDense(LinprogIPTests):
     options = {"sparse": False}
 
+    # see https://github.com/scipy/scipy/issues/20216 for skip reason
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on some macOS builds for reason not relevant to test"
+    )
+    def test_bug_6139(self):
+        super().test_bug_6139()
 
 if has_cholmod:
     class TestLinprogIPSparseCholmod(LinprogIPTests):
