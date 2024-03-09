@@ -10932,8 +10932,8 @@ add_newdoc("nctdtridf",
 
     Returns
     -------
-    cdf : scalar or ndarray
-        The calculated CDF. If all inputs are scalar, the return will be a
+    df : scalar or ndarray
+        The degrees of freedom. If all inputs are scalar, the return will be a
         float. Otherwise, it will be an array.
 
     See Also
@@ -10941,6 +10941,22 @@ add_newdoc("nctdtridf",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtridf
+
+    Compute the CDF for several values of `df`:
+
+    >>> df = [1, 2, 3]
+    >>> p = nctdtr(df, 0.25, 1)
+    >>> p
+    array([0.67491974, 0.716464  , 0.73349456])
+
+    Compute the inverse. We recover the values of `df`, as expected:
+
+    >>> nctdtridf(p, 0.25, 1)
+    array([1., 2., 3.])
 
     """)
 
@@ -10974,6 +10990,22 @@ add_newdoc("nctdtrinc",
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
 
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.5]
+    >>> p = nctdtr(3, nc, 1.5)
+    >>> p
+    array([0.77569497, 0.45524533, 0.1668691 ])
+
+    Compute the inverse. We recover the values of `nc`, as expected:
+
+    >>> nctdtrinc(3, p, 1.5)
+    array([0.5, 1.5, 2.5])
+
     """)
 
 add_newdoc("nctdtrit",
@@ -11005,6 +11037,22 @@ add_newdoc("nctdtrit",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrit
+
+    Compute the CDF for several values of `t`:
+
+    >>> t = [0.5, 1, 1.5]
+    >>> p = nctdtr(3, 1, t)
+    >>> p
+    array([0.29811049, 0.46922687, 0.6257559 ])
+
+    Compute the inverse. We recover the values of `t`, as expected:
+
+    >>> nctdtrit(3, 1, p)
+    array([0.5, 1. , 1.5])
 
     """)
 

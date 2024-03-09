@@ -3630,8 +3630,8 @@ cdef inline (double, int, double) cdftnc_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0
-    DS.big = 1.e6
+    DS.small = 1e-100
+    DS.big = 1.e10
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
