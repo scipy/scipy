@@ -115,27 +115,6 @@ class CensoredData:
     to use `uncensored`, `left` and `right` for uncensored, left-censored and
     right-censored observations, respectively.
 
-    The ``fit`` method of continuous univariate SciPy distributions find
-    the maximum likelihood estimates by minimizing the following function:
-
-    .. math::
-
-        l(x; \pmb{\\theta}) & = \sum_{k=1}^{n_{nc}} 
-                                \log(f(\\text{uncensored[k]}; \pmb{\\theta}))
-                            + \sum_{k=1}^{n_{lc}} 
-                                \log(F(\\text{left[k]}; \pmb{\\theta})) \\\\
-                            & + \sum_{k=1}^{n_{rc}} 
-                                \log(1 - F(\\text{right[k]}; \pmb{\\theta})) \\\\
-                            & + \sum_{k=1}^{n_{ic}} 
-                                \log(F(\\text{interval[k, 1]}; \pmb{\\theta}) 
-                                - F(\\text{interval[k, 0]}; \pmb{\\theta}))
-
-    where :math:`f` is the pdf, :math:`\pmb{\\theta}` is the parameter vector, 
-    :math:`n_{nc}` the number of uncensored observations, 
-    :math:`n_{lc}` the number of left-censored observations, :math:`n_{rc}`
-    the number of right-censored 
-    observations, :math:`n_{ic}` the number of interval-censored observations.
-        
     Examples
     --------
     In the most general case, a censored data set may contain values that
