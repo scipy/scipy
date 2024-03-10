@@ -93,9 +93,9 @@ cdef double norm1(lapack_t[:, ::1] A):
 # ====================== pick_pade_structure : s, d, c, z ====================
 def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     cdef:
-        Py_ssize_t n = Am.shape[1]
-        Py_ssize_t i
-        Py_ssize_t [2] dims
+        cnp.npy_intp n = Am.shape[1]
+        cnp.npy_intp i
+        cnp.npy_intp [2] dims
         int lm = 0
         int s = 0
         double normA
@@ -116,7 +116,7 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
     dims[0] = n
     dims[1] = n
 
-    work_arr = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_FLOAT64)
+    work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
 
     theta[0] = 1.495585217958292e-002
     theta[1] = 2.539398330063230e-001
