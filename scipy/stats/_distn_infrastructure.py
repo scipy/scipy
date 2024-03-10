@@ -2554,6 +2554,27 @@ class rv_continuous(rv_generic):
         If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
         the `fit` method will raise a ``RuntimeError``.
 
+        When passing a ``CensoredData`` instance to ``data``, the log-likelihood
+        function is defined as:
+
+        .. math::
+
+            l(k; \pmb{\\theta}) & = \sum
+                                    \log(f(k_u; \pmb{\\theta}))
+                                + \sum
+                                    \log(F(k_l; \pmb{\\theta})) \\\\
+                                & + \sum 
+                                    \log(1 - F(k_r; \pmb{\\theta})) \\\\
+                                & + \sum
+                                    \log(F(\\text{interval[k, 1]}; \pmb{\\theta}) 
+                                    - F(\\text{interval[k, 0]}; \pmb{\\theta}))
+
+        where :math:`f` and :math:`F` are the pdf and cdf, respectively, of the function
+        being fitted, :math:`\pmb{\\theta}` is the parameter vector, 
+        :math:`u` the indices of uncensored observations, 
+        :math:`l` the indices of left-censored observations, 
+        :math:`r` the indices of right-censored observations.
+
         Examples
         --------
 
