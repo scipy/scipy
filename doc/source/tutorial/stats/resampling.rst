@@ -53,7 +53,7 @@ Your brother Kyle is the analytical one. He answers:
 
 You are a little more practical, so you decide to take a computational
 approach (or more precisely, a Monte Carlo approach): just simulate many
-sequences of coin tosses, count the the number of heads in each toss,
+sequences of coin tosses, count the number of heads in each toss,
 and estimate the probability as the fraction of sequences in which the
 count does not exceed 45.
 

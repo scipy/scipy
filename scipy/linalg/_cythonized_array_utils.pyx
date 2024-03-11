@@ -126,7 +126,7 @@ def bandwidth(a):
     and in the 6th row, 4th entry is nonzero then, on the succeeding rows
     the horizontal search is done only up to that band entries since we know
     that band is occupied. Therefore, a completely dense matrix scan cost is
-    in the the order of n.
+    in the order of n.
 
     Examples
     --------

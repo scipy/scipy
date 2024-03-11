@@ -61,7 +61,7 @@ c          Leading dimension of H exactly as declared in the calling
 c          program.
 c
 c  RESID   Double precision array of length N.  (INPUT/OUTPUT)
-c          On INPUT, RESID contains the the residual vector r_{k+p}.
+c          On INPUT, RESID contains the residual vector r_{k+p}.
 c          On OUTPUT, RESID is the update residual vector rnew_{k} 
 c          in the first KEV locations.
 c
