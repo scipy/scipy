@@ -195,16 +195,6 @@ py3.install_sources(
 
 py3.install_sources(
   [
-    'cobyqa/cobyqa/tests/__init__.py',
-    'cobyqa/cobyqa/tests/test_main.py',
-    'cobyqa/cobyqa/tests/test_models.py',
-    'cobyqa/cobyqa/tests/test_problem.py',
-  ],
-  subdir: 'scipy/_lib/cobyqa/tests',
-)
-
-py3.install_sources(
-  [
     'cobyqa/cobyqa/subsolvers/__init__.py',
     'cobyqa/cobyqa/subsolvers/geometry.py',
     'cobyqa/cobyqa/subsolvers/optim.py',
@@ -220,15 +210,6 @@ py3.install_sources(
     'cobyqa/cobyqa/utils/versions.py',
   ],
   subdir: 'scipy/_lib/cobyqa/utils',
-)
-
-py3.install_sources(
-  [
-    'cobyqa/cobyqa/utils/tests/__init__.py',
-    'cobyqa/cobyqa/utils/tests/test_exceptions.py',
-    'cobyqa/cobyqa/utils/tests/test_math.py',
-  ],
-  subdir: 'scipy/_lib/cobyqa/utils/tests',
 )
 
 subdir('_uarray')
