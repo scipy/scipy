@@ -2566,8 +2566,8 @@ class rv_continuous(rv_generic):
                                 & + \sum 
                                     \log(1 - F(k_r; \pmb{\\theta})) \\\\
                                 & + \sum
-                                    \log(F(k_{\mbox{high}, i}; \pmb{\\theta})
-                                    - F(k_{\mbox{low}, i}; \pmb{\\theta}))
+                                    \log(F(k_{\text{high}, i}; \pmb{\\theta})
+                                    - F(k_{\text{low}, i}; \pmb{\\theta}))
 
         where :math:`f` and :math:`F` are the pdf and cdf, respectively, of the
         function being fitted, :math:`\pmb{\\theta}` is the parameter vector,
