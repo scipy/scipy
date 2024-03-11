@@ -2415,8 +2415,8 @@ class rv_continuous(rv_generic):
         elif method == "mle":
             objective = self._penalized_nnlf
         else:
-            raise ValueError("Method '{}' not available; must be one of {}"
-                             .format(method, methods))
+            raise ValueError(f"Method '{method}' not available; "
+                             f"must be one of {methods}")
 
         if len(fixedn) == 0:
             func = objective
@@ -2553,6 +2553,29 @@ class rv_continuous(rv_generic):
         may only be locally optimal, or the optimization may fail altogether.
         If the data contain any of ``np.nan``, ``np.inf``, or ``-np.inf``,
         the `fit` method will raise a ``RuntimeError``.
+
+        When passing a ``CensoredData`` instance to ``data``, the log-likelihood
+        function is defined as:
+
+        .. math::
+
+            l(\pmb{\\theta}; k) & = \sum
+                                    \log(f(k_u; \pmb{\\theta}))
+                                + \sum
+                                    \log(F(k_l; \pmb{\\theta})) \\\\
+                                & + \sum 
+                                    \log(1 - F(k_r; \pmb{\\theta})) \\\\
+                                & + \sum
+                                    \log(F(k_{\\text{high}, i}; \pmb{\\theta})
+                                    - F(k_{\\text{low}, i}; \pmb{\\theta}))
+
+        where :math:`f` and :math:`F` are the pdf and cdf, respectively, of the
+        function being fitted, :math:`\pmb{\\theta}` is the parameter vector,
+        :math:`u` are the indices of uncensored observations,
+        :math:`l` are the indices of left-censored observations,
+        :math:`r` are the indices of right-censored observations,
+        subscripts "low"/"high" denote endpoints of interval-censored observations, and
+        :math:`i` are the indices of interval-censored observations.
 
         Examples
         --------
