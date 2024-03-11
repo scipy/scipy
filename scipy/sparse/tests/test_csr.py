@@ -1,5 +1,3 @@
-from itertools import product
-
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
@@ -179,8 +177,8 @@ def test_mixed_index_dtype_int_indexing(cls):
     indptr_64bit = base_mtx.copy()
     indices_64bit = base_mtx.copy()
     indptr_64bit.indptr = base_mtx.indptr.astype(np.int64)
-    indptr_64bit.indices = base_mtx.indices.astype(np.int64)
+    indices_64bit.indices = base_mtx.indices.astype(np.int64)
 
-    indices = [([2, 3, 4], slice(None)), (slice(None), [2, 3, 4])]
-    for idx, mtx in product(indices, [base_mtx, indptr_64bit, indices_64bit]):
-        np.testing.assert_array_equal(mtx[idx].toarray(), base_mtx[idx].toarray())
+    for mtx in [base_mtx, indptr_64bit, indices_64bit]:
+        np.testing.assert_array_equal(mtx[[1,2], :].toarray(), base_mtx[[1, 2], :].toarray())
+        np.testing.assert_array_equal(mtx[:, [1, 2]].toarray(), base_mtx[:, [1, 2]].toarray())
