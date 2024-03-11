@@ -58,7 +58,7 @@ linalg_cython_gen = generator(cython,
 
 # fblas
 fblas_module = custom_target('fblas_module',
-  output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
+  output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
@@ -71,16 +71,14 @@ py3.extension_module('_fblas',
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep],
   link_with: [g77_abi_wrappers],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
 # flapack
 
 flapack_module = custom_target('flapack_module',
-  output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
+  output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
@@ -93,9 +91,7 @@ py3.extension_module('_flapack',
   link_args: version_link_args,
   dependencies: [lapack, blas, fortranobject_dep],
   link_with: [g77_abi_wrappers],
-  override_options: ['b_lto=false'],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
