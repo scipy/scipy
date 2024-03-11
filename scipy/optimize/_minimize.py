@@ -343,9 +343,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     Method :ref:`COBYQA <optimize.minimize-cobyqa>` uses the Constrained
     Optimization BY Quadratic Approximations (COBYQA) method [18]_. The
     algorithm is a derivative-free trust-region SQP method based on quadratic
-    approximations to the objective function and each constraint. The bounds are
-    treated as unrelaxable constraints, in the sense that the algorithm always
-    respects them throughout the optimization process.
+    approximations to the objective function and each nonlinear constraint. The
+    bounds are treated as unrelaxable constraints, in the sense that the
+    algorithm always respects them throughout the optimization process.
 
     Method :ref:`SLSQP <optimize.minimize-slsqp>` uses Sequential
     Least SQuares Programming to minimize a function of several
