@@ -1,6 +1,8 @@
+import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
+import numpy as np
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
 from scipy.linalg import cholesky, cholesky_banded, cho_solve_banded, \
@@ -64,6 +66,19 @@ class TestCholesky:
             c = transpose(c)
             a = dot(c, transpose(conjugate(c)))
             assert_array_almost_equal(cholesky(a, lower=1), c)
+
+    @pytest.mark.xslow
+    def test_int_overflow(self):
+       # regression test for
+       # https://github.com/scipy/scipy/issues/17436
+       # the problem was an int overflow in zeroing out
+       # the unused triangular part
+       n = 47_000
+       np.random.seed(1234)
+       x = np.random.uniform(size=n)
+       a = x[:, None] @ x[None, :] + np.identity(n)
+
+       cholesky(a)   # does not segfault
 
 
 class TestCholeskyBanded:
