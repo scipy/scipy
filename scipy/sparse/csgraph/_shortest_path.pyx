@@ -1674,7 +1674,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
 ######################################################################
 
 # Author: Tomer Sery  -- <tomersery28@gmail.com>
-# License: BSD, (C) 2024
+# License: BSD 3-clause ("New BSD License"), (C) 2024
 
 def yen(
     csgraph,
@@ -1692,46 +1692,48 @@ def yen(
 
     Yen's K-Shortest Paths algorithm on a directed or undirected graph.
 
+    .. versionadded:: 1.14.0
+
     Parameters
     ----------
     csgraph : array or sparse array, 2 dimensions
         The N x N array of distances representing the input graph.
     source : int
-        The index of starting node for the paths.
+        The index of the starting node for the paths.
     sink : int
         The index of the ending node for the paths.
     K : int
         The number of shortest paths to find.
     directed : bool, optional
-        If True (default), then find the shortest path on a directed graph:
-        only move from point i to point j along paths ``csgraph[i, j]``.
+        If ``True`` (default), then find the shortest path on a directed graph:
+        only move from point ``i`` to point ``j`` along paths ``csgraph[i, j]``.
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j along ``csgraph[i, j]`` or
-        ``csgraph[j, i]``
+        ``csgraph[j, i]``.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecessor matrix.
+        If ``True``, return the size ``(M, N)`` predecessor matrix. Default: ``False``.
     unweighted : bool, optional
-        If True, then find unweighted distances. That is, rather than finding
+        If ``True``, then find unweighted distances. That is, rather than finding
         the path between each point such that the sum of weights is minimized,
-        find the path such that the number of edges is minimized.
+        find the path such that the number of edges is minimized. Default: ``False``.
 
     Returns
     -------
     dist_array : ndarray
-        The M array of shortest distances between the source and sink nodes.
+        Array of size ``M`` of shortest distances between the source and sink nodes.
         ``dist_array[i]`` gives the i-th shortest distance from the source to the sink
-        along the graph. M is the number of shortest paths found, which is less than or
+        along the graph. ``M`` is the number of shortest paths found, which is less than or
         equal to `K`.
     predecessors : ndarray
         Returned only if ``return_predecessors == True``.
         The M x N matrix of predecessors, which can be used to reconstruct
         the shortest paths.
-        M is the number of shortest paths found, which is less than or equal to `K`.
+        ``M`` is the number of shortest paths found, which is less than or equal to `K`.
         Row ``i`` of the predecessor matrix contains
         information on the ``i``-th shortest path from the source to the sink: each
         entry ``predecessors[i, j]`` gives the index of the previous node in the
         path from the source to node ``j``.  If the path does not pass via node ``j``,
-        then ``predecessors[i, j] = -9999``
+        then ``predecessors[i, j] = -9999``.
 
     Raises
     ------
@@ -1788,7 +1790,7 @@ def yen(
     csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
 
     cdef int N = csgraph.shape[0]
-    cdef int has_negataive_weights = False
+    cdef int has_negative_weights = False
     dist_array = np.full(K, INFINITY, dtype=DTYPE)
 
     predecessor_matrix = np.full((K, N), NULL_IDX, dtype=ITYPE)
@@ -1799,19 +1801,19 @@ def yen(
         csr_data = csgraph.data.copy()
         if np.any(csr_data < 0):
             # Use Johnson's algorithm to handle negative weights
-            has_negataive_weights = True
-            johnoson_dist_array = np.zeros(N, dtype=DTYPE)
+            has_negative_weights = True
+            johnson_dist_array = np.zeros(N, dtype=DTYPE)
             if directed:
                 ret = _johnson_directed(csr_data, csgraph.indices,
-                                        csgraph.indptr, johnoson_dist_array)
+                                        csgraph.indptr, johnson_dist_array)
             else:
                 ret = _johnson_undirected(csr_data, csgraph.indices,
-                                          csgraph.indptr, johnoson_dist_array)
+                                          csgraph.indptr, johnson_dist_array)
             if ret >= 0:
                 raise NegativeCycleError("Negative cycle detected on node %i" % ret)
-    if has_negataive_weights:
+    if has_negative_weights:
         _johnson_add_weights(csr_data, csgraph.indices, csgraph.indptr,
-                             johnoson_dist_array)
+                             johnson_dist_array)
 
     if directed:
         csgraphT = csgraph
@@ -1821,9 +1823,9 @@ def yen(
         if unweighted:
             csrT_data = csr_data
         else:
-            if has_negataive_weights:
+            if has_negative_weights:
                 _johnson_add_weights(csgraphT.data, csgraphT.indices,
-                                     csgraphT.indptr, johnoson_dist_array)
+                                     csgraphT.indptr, johnson_dist_array)
             csrT_data = csgraphT.data
 
     _yen(
@@ -1832,8 +1834,8 @@ def yen(
         csrT_data, csgraphT.indices, csgraphT.indptr,
         dist_array, predecessor_matrix,
     )
-    if has_negataive_weights:
-        dist_array += johnoson_dist_array[sink] - johnoson_dist_array[source]
+    if has_negative_weights:
+        dist_array += johnson_dist_array[sink] - johnson_dist_array[source]
 
 
     num_paths_found = sum(dist_array < INFINITY)
@@ -2091,7 +2093,7 @@ cdef void _yen(
 @cython.boundscheck(False)
 cdef bint _yen_is_path_in_candidates(
     const int[:, :] candidate_predecessors,
-    const int[:] orig_path, int[:] spur_path,
+    const int[:] orig_path, const int[:] spur_path,
     const int spur_node, const int sink
 ):
     """
