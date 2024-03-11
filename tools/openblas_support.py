@@ -59,10 +59,7 @@ def get_ilp64():
 
 
 def get_manylinux(arch):
-    if arch in ('i686'):
-        default = '2010'
-    else:
-        default = '2014'
+    default = '2014'
     ml_ver = os.environ.get("MB_ML_VER", default)
     # XXX For PEP 600 this can be a glibc version
     assert ml_ver in ('2010', '2014', '_2_24'), f'invalid MB_ML_VER {ml_ver}'
