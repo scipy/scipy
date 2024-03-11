@@ -1095,6 +1095,8 @@ def test_trsm():
         assert_allclose(x1, x2.conj().T, atol=tol)
 
 
+@pytest.mark.xfail(run=False,
+                   reason="gh-16930")
 def test_gh_169309():
     x = np.repeat(10, 9)
     actual = scipy.linalg.blas.dnrm2(x, 5, 3, -1)
