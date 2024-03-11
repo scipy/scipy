@@ -74,11 +74,13 @@ class TestCholesky:
        # the problem was an int overflow in zeroing out
        # the unused triangular part
        n = 47_000
-       np.random.seed(1234)
-       x = np.random.uniform(size=n)
-       a = x[:, None] @ x[None, :] + np.identity(n)
+       x = np.eye(n, dtype=np.float64, order='F')
+       x[:4, :4] = np.array([[4, -2, 3, -1],
+                             [-2, 4, -3, 1],
+                             [3, -3, 5, 0],
+                             [-1, 1, 0, 5]])
 
-       cholesky(a)   # does not segfault
+       cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
 
 
 class TestCholeskyBanded:
