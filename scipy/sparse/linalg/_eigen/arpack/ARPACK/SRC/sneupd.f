@@ -133,7 +133,7 @@ c           WORKD, WORKL, LWORKL, INFO
 c
 c         must be passed directly to SNEUPD following the last call
 c         to SNAUPD.  These arguments MUST NOT BE MODIFIED between
-c         the the last call to SNAUPD and the call to SNEUPD.
+c         the last call to SNAUPD and the call to SNEUPD.
 c
 c  Three of these parameters (V, WORKL, INFO) are also output parameters:
 c
