@@ -6,8 +6,8 @@ Examples::
     $ python check_installation.py install_directory_name
 
         install_directory_name:
-            the relative path to the directory where SciPy is installed after
-            building and running `meson install`.
+            the relative path from the root of the repo to the directory where
+            SciPy is installed (for dev.py usually "build-install")
 
 Notes
 =====
@@ -40,6 +40,9 @@ exception_list_test_files = [
     "_lib/array_api_compat/tests/test_isdtype.py",
     "_lib/array_api_compat/tests/test_vendoring.py",
     "_lib/array_api_compat/tests/test_array_namespace.py",
+    "cobyqa/cobyqa/tests/test_main.py",
+    "cobyqa/cobyqa/tests/test_models.py",
+    "cobyqa/cobyqa/tests/test_problem.py",
 ]
 
 
