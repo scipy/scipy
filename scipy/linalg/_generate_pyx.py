@@ -13,14 +13,6 @@ import argparse
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-fortran_types = {'int': 'integer',
-                 'c': 'complex',
-                 'd': 'double precision',
-                 's': 'real',
-                 'z': 'complex*16',
-                 'char': 'character',
-                 'bint': 'logical'}
-
 c_types = {'int': 'int',
            'c': 'npy_complex64',
            'd': 'double',
@@ -533,38 +525,6 @@ def generate_lapack_pxd(all_sigs):
     return lapack_pxd_preamble + '\n'.join(pxd_decl(*sig) for sig in all_sigs)
 
 
-fortran_template = """      subroutine {name}wrp(
-     +    ret,
-     +    {argnames}
-     +    )
-        external {wrapper}
-        {ret_type} {wrapper}
-        {ret_type} ret
-        {argdecls}
-        ret = {wrapper}(
-     +    {argnames}
-     +    )
-      end
-"""
-
-
-def fort_subroutine_wrapper(name, ret_type, args):
-    if name not in wrapped_funcs:
-        return ""
-    wrapper = "w" + name
-    types, names = arg_names_and_types(args)
-    argnames = ',\n     +    '.join(names)
-    argdecls = '\n        '.join(f'{fortran_types[t]} {n}'
-                                 for n, t in zip(names, types))
-    return fortran_template.format(name=name, wrapper=wrapper,
-                                   argnames=argnames, argdecls=argdecls,
-                                   ret_type=fortran_types[ret_type])
-
-
-def generate_fortran(func_sigs):
-    return "\n".join(fort_subroutine_wrapper(*sig) for sig in func_sigs)
-
-
 def make_c_args(args):
     types, names = arg_names_and_types(args)
     types = [c_types[arg] for arg in types]
@@ -673,8 +633,6 @@ def make_all(outdir,
              lapack_signature_file="cython_lapack_signatures.txt",
              blas_name="cython_blas",
              lapack_name="cython_lapack",
-             blas_fortran_name="_blas_subroutine_wrappers.f",
-             lapack_fortran_name="_lapack_subroutine_wrappers.f",
              blas_header_name="_blas_subroutines.h",
              lapack_header_name="_lapack_subroutines.h"):
 
@@ -683,11 +641,9 @@ def make_all(outdir,
                  lapack_signature_file)
     dst_files = (blas_name + '.pyx',
                  blas_name + '.pxd',
-                 blas_fortran_name,
                  blas_header_name,
                  lapack_name + '.pyx',
                  lapack_name + '.pxd',
-                 lapack_fortran_name,
                  lapack_header_name)
     dst_files = (os.path.join(outdir, f) for f in dst_files)
 
@@ -714,10 +670,6 @@ def make_all(outdir,
     with open(os.path.join(outdir, blas_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(blas_pxd)
-    blas_fortran = generate_fortran(blas_sigs[0])
-    with open(os.path.join(outdir, blas_fortran_name), 'w') as f:
-        f.write(fcomment)
-        f.write(blas_fortran)
     blas_c_header = generate_c_header(*(blas_sigs + ('BLAS',)))
     with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
@@ -733,10 +685,6 @@ def make_all(outdir,
     with open(os.path.join(outdir, lapack_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(lapack_pxd)
-    lapack_fortran = generate_fortran(lapack_sigs[0])
-    with open(os.path.join(outdir, lapack_fortran_name), 'w') as f:
-        f.write(fcomment)
-        f.write(lapack_fortran)
     lapack_c_header = generate_c_header(*(lapack_sigs + ('LAPACK',)))
     with open(os.path.join(outdir, lapack_header_name), 'w') as f:
         f.write(ccomment)
