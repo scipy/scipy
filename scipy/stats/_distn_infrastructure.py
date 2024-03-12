@@ -2459,7 +2459,7 @@ class rv_continuous(rv_generic):
                  np.maximum(np.abs(data_moments), 1e-8))**2).sum()
 
     def fit(self, data, *args, **kwds):
-        """
+        r"""
         Return estimates of shape (if applicable), location, and scale
         parameters from data. The default estimation method is Maximum
         Likelihood Estimation (MLE), but Method of Moments (MM)
@@ -2559,18 +2559,18 @@ class rv_continuous(rv_generic):
 
         .. math::
 
-            l(\pmb{\\theta}; k) & = \sum
-                                    \log(f(k_u; \pmb{\\theta}))
+            l(\pmb{\theta}; k) & = \sum
+                                    \log(f(k_u; \pmb{\theta}))
                                 + \sum
-                                    \log(F(k_l; \pmb{\\theta})) \\\\
+                                    \log(F(k_l; \pmb{\theta})) \\
                                 & + \sum 
-                                    \log(1 - F(k_r; \pmb{\\theta})) \\\\
+                                    \log(1 - F(k_r; \pmb{\theta})) \\
                                 & + \sum
-                                    \log(F(k_{\\text{high}, i}; \pmb{\\theta})
-                                    - F(k_{\\text{low}, i}; \pmb{\\theta}))
+                                    \log(F(k_{\text{high}, i}; \pmb{\theta})
+                                    - F(k_{\text{low}, i}; \pmb{\theta}))
 
         where :math:`f` and :math:`F` are the pdf and cdf, respectively, of the
-        function being fitted, :math:`\pmb{\\theta}` is the parameter vector,
+        function being fitted, :math:`\pmb{\theta}` is the parameter vector,
         :math:`u` are the indices of uncensored observations,
         :math:`l` are the indices of left-censored observations,
         :math:`r` are the indices of right-censored observations,
