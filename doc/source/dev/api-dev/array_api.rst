@@ -114,7 +114,7 @@ functions for Numpy, CuPy and PyTorch is provided through
 This package is included in the SciPy code base via a git submodule (under
 ``scipy/_lib``), so no new dependencies are introduced.
 
-``array-api_compat`` provides generic utility functions and adds aliases such
+``array-api-compat`` provides generic utility functions and adds aliases such
 as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
 using a uniform API across NumPy, PyTorch and CuPy (as of right now; support
 for other libraries like JAX is expected to be added in the future).
