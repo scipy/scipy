@@ -18,7 +18,7 @@ def empty_like(x, *, dtype=None, device=None):
     return sparse.csr_array(x, dtype=dtype, copy=False)
 
 def eye(n_rows, n_cols=None, /, *, k=0, dtype=None, device=None):
-    return sparse.eye(n_rows, n_cols, k=k, dtype=dtype, format="csr")
+    return sparse.eye_array(n_rows, n_cols, k=k, dtype=dtype, format="csr")
 
 def full(shape, fill_value, *, dtype=None, device=None):
     return sparse.csr_array(np.full(shape, fill_value, dtype=dtype))
