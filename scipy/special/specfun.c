@@ -7601,7 +7601,7 @@ void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double 
     //      (1) SCKB for computing the expansion coefficients c2k
     //      (2) KMN for computing the joining factors
     //      (3) QSTAR for computing the factor defined in (15.7.3)
-    //      (4) CBK for computing the the expansion coefficient
+    //      (4) CBK for computing the expansion coefficient
     //          defined in (15.7.6)
     //      (5) GMN for computing the function defined in (15.7.4)
     //      (6) RMN1 for computing the radial function of the first

@@ -101,7 +101,7 @@ c           WORKD, WORKL, LWORKL, INFO
 c
 c         must be passed directly to SSEUPD following the last call
 c         to SSAUPD.  These arguments MUST NOT BE MODIFIED between
-c         the the last call to SSAUPD and the call to SSEUPD.
+c         the last call to SSAUPD and the call to SSEUPD.
 c
 c  Two of these parameters (WORKL, INFO) are also output parameters:
 c

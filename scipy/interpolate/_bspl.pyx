@@ -711,7 +711,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
 
     Since ``B`` functions are localized, for each point `(x1, ..., xN)` we
     loop over the dimensions, and
-    - find the the location in the knot array, `t[i] <= x < t[i+1]`,
+    - find the location in the knot array, `t[i] <= x < t[i+1]`,
     - compute all non-zero `B` values
     - place these values into the relevant row
 
@@ -785,7 +785,7 @@ def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
     csr_data = np.empty(shape=(size*volume,), dtype=float)
     csr_indptr = np.arange(0, volume*size + 1, volume, dtype=np.int64)
 
-    # ### Iterate over the the data points ###
+    # ### Iterate over the data points ###
     for j in range(size):
         xv = xvals[j, :]
 

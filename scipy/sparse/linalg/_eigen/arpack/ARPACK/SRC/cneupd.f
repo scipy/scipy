@@ -104,7 +104,7 @@ c           WORKD, WORKL, LWORKL, RWORK, INFO
 c
 c         must be passed directly to CNEUPD following the last call 
 c         to CNAUPD.  These arguments MUST NOT BE MODIFIED between
-c         the the last call to CNAUPD and the call to CNEUPD.
+c         the last call to CNAUPD and the call to CNEUPD.
 c
 c  Three of these parameters (V, WORKL and INFO) are also output parameters:
 c
