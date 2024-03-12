@@ -48,6 +48,23 @@ def arange(start, stop, step, *, dtype=None, device=None):
 def linspace(start, stop, /, num, *, dtype=None, device=None, endpoint=True):
     return sparse.csr_array(np.linspace(start, stop, num, dtype=dtype, endpoint=endpoint))
 
+def any(x, /, *, axis = None, keepdims=False):
+    if axis is None:
+        return x.count_nonzero()
+    return x.astype('bool').sum(axis=axis)
+
+def less(x1, x2):
+    return x1 < x2
+
+def less_equal(x1, x2):
+    return x1 <= x2
+
+def greater(x1, x2):
+    return x1 > x2
+
+def greater_equal(x1, x2):
+    return x1 >= x2
+
 def floor(x, /):
     return sparse.csr_array((np.floor(x.data), x.indices, x.indptr), shape=x.shape)
 
