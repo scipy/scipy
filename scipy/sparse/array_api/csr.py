@@ -120,3 +120,21 @@ def where(condition, x1, x2, /):
     data = x2.copy()
     data[condition] = x1
     return data
+
+def logical_and(x1, x2, /):
+    x1_bool = x1.astype('bool') 
+    x2_bool = x2.astype('bool')
+    return x1_bool @ x2_bool
+
+def logical_or(x1, x2, /):
+    x1_bool = x1.astype('bool') 
+    x2_bool = x2.astype('bool')
+    return x1_bool + x2_bool
+
+def logical_xor(x1, x2, /):
+    x1_bool = x1.astype('bool') 
+    x2_bool = x2.astype('bool')
+    return x2_bool != x1_bool
+
+def logical_not(x, /):
+    raise NotImplementedError

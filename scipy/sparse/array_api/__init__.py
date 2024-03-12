@@ -166,5 +166,9 @@ __all__ += [
     "unique_counts",
     "unique_all",
     "unique_inverse",
-    "__array_api_version__"
+    "__array_api_version__",
+    "logical_and",
+    "logical_or",
+    "logical_xor",
+    "logical_not"
 ]
