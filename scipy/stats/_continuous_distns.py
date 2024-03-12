@@ -3196,7 +3196,7 @@ class genextreme_gen(rv_continuous):
         # skewness
         sk1 = _lazywhere(c >= -1./3,
                          (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2gm12:
+                         lambda c, g1, g2, g3, g2mg12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
@@ -6342,6 +6342,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
@@ -6373,11 +6377,45 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # Specialize MLE only when location is known.
+        if floc is None:
+            return super(type(self), self).fit(data, *args, **kwds)
+
+        # Raise an error if any observation has zero likelihood.
+        if np.any(data <= floc):
+            raise FitDataError("loglaplace", lower=floc, upper=np.inf)
+
+        # Remove location from data.
+        if floc != 0:
+            data = data - floc
+
+        # When location is zero, the log-Laplace distribution is related to
+        # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
+        # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
+        # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
@@ -8214,6 +8252,10 @@ class powerlaw_gen(rv_continuous):
 
     def _sf(self, p, a):
         return -sc.powm1(p, a)
+
+    def _munp(self, n, a):
+        # The following expression is correct for all real n (provided a > 0).
+        return a / (a + n)
 
     def _stats(self, a):
         return (a / (a + 1.0),
@@ -10460,7 +10502,7 @@ class vonmises_gen(rv_continuous):
 
         f(x, \kappa) = \frac{ \exp(\kappa \cos(x)) }{ 2 \pi I_0(\kappa) }
 
-    for :math:`-\pi \le x \le \pi`, :math:`\kappa > 0`. :math:`I_0` is the
+    for :math:`-\pi \le x \le \pi`, :math:`\kappa \ge 0`. :math:`I_0` is the
     modified Bessel function of order zero (`scipy.special.i0`).
 
     `vonmises` is a circular distribution which does not restrict the
@@ -10491,39 +10533,39 @@ class vonmises_gen(rv_continuous):
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
-    >>> vonmises.pdf(loc, kappa, 0)
+    >>> vonmises.pdf(0, loc=loc, kappa=kappa)
     0.12570826359722018
 
     Verify that the percentile function ``ppf`` inverts the cumulative
     distribution function ``cdf`` up to floating point accuracy.
 
     >>> x = 1
-    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> cdf_value = vonmises.cdf(x, loc=loc, kappa=kappa)
     >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
     >>> x, cdf_value, ppf_value
     (1, 0.31489339900904967, 1.0000000000000004)
 
     Draw 1000 random variates by calling the ``rvs`` method.
 
-    >>> number_of_samples = 1000
-    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+    >>> sample_size = 1000
+    >>> sample = vonmises(loc=loc, kappa=kappa).rvs(sample_size)
 
     Plot the von Mises density on a Cartesian and polar grid to emphasize
-    that is is a circular distribution.
+    that it is a circular distribution.
 
     >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
-    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> vonmises_pdf = vonmises.pdf(x, loc=loc, kappa=kappa)
     >>> ticks = [0, 0.15, 0.3]
 
     The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
-    >>> number_of_bins = int(np.sqrt(number_of_samples))
-    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> number_of_bins = int(np.sqrt(sample_size))
+    >>> left.hist(sample, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
     >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
@@ -10532,14 +10574,17 @@ class vonmises_gen(rv_continuous):
 
     >>> right.plot(x, vonmises_pdf, label="PDF")
     >>> right.set_yticks(ticks)
-    >>> right.hist(samples, density=True, bins=number_of_bins,
+    >>> right.hist(sample, density=True, bins=number_of_bins,
     ...            label="Histogram")
     >>> right.set_title("Polar plot")
     >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("kappa", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("kappa", False, (0, np.inf), (True, False))]
+
+    def _argcheck(self, kappa):
+        return kappa >= 0
 
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)

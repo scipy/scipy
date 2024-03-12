@@ -39,7 +39,7 @@ jobs:
         python-version: ["3.11"]
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         submodules: recursive
 
@@ -75,7 +75,7 @@ jobs:
           ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
 
     - name: Setup Conda
-      uses: conda-incubator/setup-miniconda@v2
+      uses: conda-incubator/setup-miniconda@v3
       with:
         python-version: ${{ matrix.python-version }}
         channels: conda-forge
@@ -128,10 +128,55 @@ jobs:
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        export SCIPY_USE_PROPACK=1
         python dev.py -n test -j2
 
     - name: Ccache statistics
       shell: bash -l {0}
       run: |
         ccache -s
+
+
+  test_scipy_openblas:
+    name: M1 test - openblas
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Build and Install SciPy
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.2.app
+        
+        git submodule update --init
+        # for some reason gfortran is not on the path
+        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+        ln -s $GFORTRAN_LOC gfortran
+        export PATH=$PWD:$PATH
+
+        # make sure we have openblas
+        bash tools/wheels/cibw_before_build_macos.sh $PWD
+        export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
+        export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+    
+        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+        python dev.py build
+
+        pip install pooch pytest hypothesis
+        python dev.py -n test 

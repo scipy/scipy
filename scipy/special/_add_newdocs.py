@@ -6097,7 +6097,7 @@ add_newdoc("gdtr",
     >>> for parameter_set in parameters_list:
     ...     a, b, style = parameter_set
     ...     gdtr_vals = gdtr(a, b, x)
-    ...     ax.plot(x, gdtr_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    ...     ax.plot(x, gdtr_vals, label=fr"$a= {a},\, b={b}$", ls=style)
     >>> ax.legend()
     >>> ax.set_xlabel("$x$")
     >>> ax.set_title("Gamma distribution cumulative distribution function")
@@ -6216,7 +6216,7 @@ add_newdoc("gdtrc",
     >>> for parameter_set in parameters_list:
     ...     a, b, style = parameter_set
     ...     gdtrc_vals = gdtrc(a, b, x)
-    ...     ax.plot(x, gdtrc_vals, label=f"$a= {a},\, b={b}$", ls=style)
+    ...     ax.plot(x, gdtrc_vals, label=fr"$a= {a},\, b={b}$", ls=style)
     >>> ax.legend()
     >>> ax.set_xlabel("$x$")
     >>> ax.set_title("Gamma distribution survival function")
@@ -6731,10 +6731,10 @@ add_newdoc("huber",
     >>> fig, ax = plt.subplots()
     >>> combined_plot_parameters = list(zip(deltas, linestyles))
     >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, huber(delta, x), label=f"$\delta={delta}$", ls=style)
+    ...     ax.plot(x, huber(delta, x), label=fr"$\delta={delta}$", ls=style)
     >>> ax.legend(loc="upper center")
     >>> ax.set_xlabel("$x$")
-    >>> ax.set_title("Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_title(r"Huber loss function $h_{\delta}(x)$")
     >>> ax.set_xlim(-4, 4)
     >>> ax.set_ylim(0, 8)
     >>> plt.show()
@@ -7598,10 +7598,10 @@ add_newdoc(
     >>> x = np.linspace(-10, 10, 500)
     >>> apt, bpt, ant, bnt = itairy(x)
     >>> fig, ax = plt.subplots(figsize=(6, 5))
-    >>> ax.plot(x, apt, label="$\int_0^x\, Ai(t)\, dt$")
-    >>> ax.plot(x, bpt, ls="dashed", label="$\int_0^x\, Bi(t)\, dt$")
-    >>> ax.plot(x, ant, ls="dashdot", label="$\int_0^x\, Ai(-t)\, dt$")
-    >>> ax.plot(x, bnt, ls="dotted", label="$\int_0^x\, Bi(-t)\, dt$")
+    >>> ax.plot(x, apt, label=r"$\int_0^x\, Ai(t)\, dt$")
+    >>> ax.plot(x, bpt, ls="dashed", label=r"$\int_0^x\, Bi(t)\, dt$")
+    >>> ax.plot(x, ant, ls="dashdot", label=r"$\int_0^x\, Ai(-t)\, dt$")
+    >>> ax.plot(x, bnt, ls="dotted", label=r"$\int_0^x\, Bi(-t)\, dt$")
     >>> ax.set_ylim(-2, 1.5)
     >>> ax.legend(loc="lower right")
     >>> plt.show()
@@ -7665,8 +7665,8 @@ add_newdoc("iti0k0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> int_i, int_k = iti0k0(x)
-    >>> ax.plot(x, int_i, label="$\int_0^x I_0(t)\,dt$")
-    >>> ax.plot(x, int_k, label="$\int_0^x K_0(t)\,dt$")
+    >>> ax.plot(x, int_i, label=r"$\int_0^x I_0(t)\,dt$")
+    >>> ax.plot(x, int_k, label=r"$\int_0^x K_0(t)\,dt$")
     >>> ax.legend()
     >>> plt.show()
     """)
@@ -7729,8 +7729,8 @@ add_newdoc("itj0y0",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 10., 1000)
     >>> int_j, int_y = itj0y0(x)
-    >>> ax.plot(x, int_j, label="$\int_0^x J_0(t)\,dt$")
-    >>> ax.plot(x, int_y, label="$\int_0^x Y_0(t)\,dt$")
+    >>> ax.plot(x, int_j, label=r"$\int_0^x J_0(t)\,dt$")
+    >>> ax.plot(x, int_y, label=r"$\int_0^x Y_0(t)\,dt$")
     >>> ax.legend()
     >>> plt.show()
 
@@ -8080,7 +8080,7 @@ add_newdoc("ive",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(-5., 5., 1000)
     >>> for i in range(4):
-    ...     ax.plot(x, ive(i, x), label=f'$I_{i!r}(z)\cdot e^{{-|z|}}$')
+    ...     ax.plot(x, ive(i, x), label=fr'$I_{i!r}(z)\cdot e^{{-|z|}}$')
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> plt.show()
@@ -9346,7 +9346,7 @@ add_newdoc("kve",
     >>> fig, ax = plt.subplots()
     >>> x = np.linspace(0., 5., 1000)
     >>> for i in range(4):
-    ...     ax.plot(x, kve(i, x), label=f'$K_{i!r}(z)\cdot e^z$')
+    ...     ax.plot(x, kve(i, x), label=fr'$K_{i!r}(z)\cdot e^z$')
     >>> ax.legend()
     >>> ax.set_xlabel(r"$z$")
     >>> ax.set_ylim(0, 4)
@@ -10932,8 +10932,8 @@ add_newdoc("nctdtridf",
 
     Returns
     -------
-    cdf : scalar or ndarray
-        The calculated CDF. If all inputs are scalar, the return will be a
+    df : scalar or ndarray
+        The degrees of freedom. If all inputs are scalar, the return will be a
         float. Otherwise, it will be an array.
 
     See Also
@@ -10941,6 +10941,22 @@ add_newdoc("nctdtridf",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtridf
+
+    Compute the CDF for several values of `df`:
+
+    >>> df = [1, 2, 3]
+    >>> p = nctdtr(df, 0.25, 1)
+    >>> p
+    array([0.67491974, 0.716464  , 0.73349456])
+
+    Compute the inverse. We recover the values of `df`, as expected:
+
+    >>> nctdtridf(p, 0.25, 1)
+    array([1., 2., 3.])
 
     """)
 
@@ -10974,6 +10990,22 @@ add_newdoc("nctdtrinc",
     nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
 
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrinc
+
+    Compute the CDF for several values of `nc`:
+
+    >>> nc = [0.5, 1.5, 2.5]
+    >>> p = nctdtr(3, nc, 1.5)
+    >>> p
+    array([0.77569497, 0.45524533, 0.1668691 ])
+
+    Compute the inverse. We recover the values of `nc`, as expected:
+
+    >>> nctdtrinc(3, p, 1.5)
+    array([0.5, 1.5, 2.5])
+
     """)
 
 add_newdoc("nctdtrit",
@@ -11005,6 +11037,22 @@ add_newdoc("nctdtrit",
     nctdtr :  CDF of the non-central `t` distribution.
     nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
     nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
+    Examples
+    --------
+    >>> from scipy.special import nctdtr, nctdtrit
+
+    Compute the CDF for several values of `t`:
+
+    >>> t = [0.5, 1, 1.5]
+    >>> p = nctdtr(3, 1, t)
+    >>> p
+    array([0.29811049, 0.46922687, 0.6257559 ])
+
+    Compute the inverse. We recover the values of `t`, as expected:
+
+    >>> nctdtrit(3, 1, p)
+    array([0.5, 1. , 1.5])
 
     """)
 
@@ -11062,14 +11110,14 @@ add_newdoc("ndtr",
     >>> x = np.linspace(-5, 5, 100)
     >>> fig, ax = plt.subplots()
     >>> ax.plot(x, ndtr(x))
-    >>> ax.set_title("Standard normal cumulative distribution function $\Phi$")
+    >>> ax.set_title(r"Standard normal cumulative distribution function $\Phi$")
     >>> plt.show()
     """)
 
 
 add_newdoc("nrdtrimn",
     """
-    nrdtrimn(p, x, std, out=None)
+    nrdtrimn(p, std, x, out=None)
 
     Calculate mean of normal distribution given other params.
 
@@ -11077,10 +11125,10 @@ add_newdoc("nrdtrimn",
     ----------
     p : array_like
         CDF values, in range (0, 1].
-    x : array_like
-        Quantiles, i.e. the upper limit of integration.
     std : array_like
         Standard deviation.
+    x : array_like
+        Quantiles, i.e. the upper limit of integration.
     out : ndarray, optional
         Optional output array for the function results
 
@@ -11091,24 +11139,50 @@ add_newdoc("nrdtrimn",
 
     See Also
     --------
-    nrdtrimn, ndtr
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrisd : Inverse of normal distribution CDF with respect to
+               standard deviation
+
+    Examples
+    --------
+    `nrdtrimn` can be used to recover the mean of a normal distribution
+    if we know the CDF value `p` for a given quantile `x` and the
+    standard deviation `std`. First, we calculate
+    the normal distribution CDF for an exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrimn` returns the original value for `mean`.
+
+    >>> from scipy.special import nrdtrimn
+    >>> nrdtrimn(p, std, x)
+    3.0000000000000004
 
     """)
 
 add_newdoc("nrdtrisd",
     """
-    nrdtrisd(p, x, mn, out=None)
+    nrdtrisd(mn, p, x, out=None)
 
     Calculate standard deviation of normal distribution given other params.
 
     Parameters
     ----------
+    mn : scalar or ndarray
+        The mean of the normal distribution.
     p : array_like
         CDF values, in range (0, 1].
     x : array_like
         Quantiles, i.e. the upper limit of integration.
-    mn : scalar or ndarray
-        The mean of the normal distribution.
+
     out : ndarray, optional
         Optional output array for the function results
 
@@ -11119,7 +11193,32 @@ add_newdoc("nrdtrisd",
 
     See Also
     --------
-    ndtr
+    scipy.stats.norm : Normal distribution
+    ndtr : Standard normal cumulative probability distribution
+    ndtri : Inverse of standard normal CDF with respect to quantile
+    nrdtrimn : Inverse of normal distribution CDF with respect to
+               mean
+
+    Examples
+    --------
+    `nrdtrisd` can be used to recover the standard deviation of a normal
+    distribution if we know the CDF value `p` for a given quantile `x` and
+    the mean `mn`. First, we calculate the normal distribution CDF for an
+    exemplary parameter set.
+
+    >>> from scipy.stats import norm
+    >>> mean = 3.
+    >>> std = 2.
+    >>> x = 6.
+    >>> p = norm.cdf(x, loc=mean, scale=std)
+    >>> p
+    0.9331927987311419
+
+    Verify that `nrdtrisd` returns the original value for `std`.
+
+    >>> from scipy.special import nrdtrisd
+    >>> nrdtrisd(mean, p, x)
+    2.0000000000000004
 
     """)
 
@@ -12174,11 +12273,11 @@ add_newdoc("pseudo_huber",
     >>> fig, ax = plt.subplots()
     >>> combined_plot_parameters = list(zip(deltas, linestyles))
     >>> for delta, style in combined_plot_parameters:
-    ...     ax.plot(x, pseudo_huber(delta, x), label=f"$\delta={delta}$",
+    ...     ax.plot(x, pseudo_huber(delta, x), label=rf"$\delta={delta}$",
     ...             ls=style)
     >>> ax.legend(loc="upper center")
     >>> ax.set_xlabel("$x$")
-    >>> ax.set_title("Pseudo-Huber loss function $h_{\delta}(x)$")
+    >>> ax.set_title(r"Pseudo-Huber loss function $h_{\delta}(x)$")
     >>> ax.set_xlim(-4, 4)
     >>> ax.set_ylim(0, 8)
     >>> plt.show()
@@ -13451,9 +13550,9 @@ add_newdoc(
     >>> x = np.linspace(-12, 12, 500)
     >>> for k, lmbda in enumerate([-1.0, -0.5, 0.0]):
     ...     y = tklmbda(x, lmbda)
-    ...     ax.plot(x, y, styles[k], label=f'$\lambda$ = {lmbda:-4.1f}')
+    ...     ax.plot(x, y, styles[k], label=rf'$\lambda$ = {lmbda:-4.1f}')
 
-    >>> ax.set_title('tklmbda(x, $\lambda$)')
+    >>> ax.set_title(r'tklmbda(x, $\lambda$)')
     >>> ax.set_label('x')
     >>> ax.legend(framealpha=1, shadow=True)
     >>> ax.grid(True)
@@ -13466,13 +13565,13 @@ add_newdoc(
     >>> lmbdas = [0.25, 0.5, 1.0, 1.5]
     >>> for k, lmbda in enumerate(lmbdas):
     ...     y = tklmbda(x, lmbda)
-    ...     ax.plot(x, y, styles[k], label=f'$\lambda$ = {lmbda}')
+    ...     ax.plot(x, y, styles[k], label=fr'$\lambda$ = {lmbda}')
 
     >>> ax.set_prop_cycle(None)
     >>> for lmbda in lmbdas:
     ...     ax.plot([-1/lmbda, 1/lmbda], [0, 1], '.', ms=8)
 
-    >>> ax.set_title('tklmbda(x, $\lambda$)')
+    >>> ax.set_title(r'tklmbda(x, $\lambda$)')
     >>> ax.set_xlabel('x')
     >>> ax.legend(framealpha=1, shadow=True)
     >>> ax.grid(True)

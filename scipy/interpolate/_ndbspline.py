@@ -197,7 +197,6 @@ class NdBSpline:
         # prepare the coefficients: flatten the trailing dimensions
         c1 = self.c.reshape(self.c.shape[:ndim] + (-1,))
         c1r = c1.ravel()
-        # XXX: is c1r guaranteed to be C-contiguous? Cython code assumes it is.
 
         # replacement for np.ravel_multi_index for indexing of `c1`:
         _strides_c1 = np.asarray([s // c1.dtype.itemsize
@@ -234,7 +233,7 @@ class NdBSpline:
         k : int
             B-spline degree.
         extrapolate : bool, optional
-            Whether to extrapolate out-of bounds values of raise a `ValueError`
+            Whether to extrapolate out-of-bounds values of raise a `ValueError`
 
         Returns
         -------
@@ -251,7 +250,11 @@ class NdBSpline:
                 f"Data and knots are inconsistent: len(t) = {len(t)} for "
                 f" {ndim = }."
             )
-        # XXX: other consistency checks
+        try:
+            len(k)
+        except TypeError:
+            # make k a tuple
+            k = (k,)*ndim
 
         kk = np.asarray(k, dtype=np.int32)
         data, indices, indptr = _bspl._colloc_nd(xvals, t, kk)
@@ -289,7 +292,7 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     ----------
     points : tuple of ndarrays of float, with shapes (m1,), ... (mN,)
         The points defining the regular grid in N dimensions. The points in
-        each dimension (i.e. every elements of the points tuple) must be
+        each dimension (i.e. every element of the `points` tuple) must be
         strictly ascending or descending.      
     values : ndarray of float, shape (m1, ..., mN, ...)
         The data on the regular grid in n dimensions.
@@ -313,7 +316,6 @@ def make_ndbspl(points, values, k=3, *, solver=ssl.gcrotmk, **solver_args):
     -----
     Boundary conditions are not-a-knot in all dimensions.
     """
-    # XXX: if this is made public, need to check consistency of inputs
     ndim = len(points)
     xi_shape = tuple(len(x) for x in points)
 

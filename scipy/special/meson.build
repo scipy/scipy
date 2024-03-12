@@ -104,12 +104,6 @@ cephes_sources = [
   'cephes/zetac.c'
 ]
 
-mach_sources = [
-  'mach/d1mach.f',
-  'mach/i1mach.f',
-  'mach/xerror.f'
-]
-
 amos_lib = static_library('_amos',
   ['_amos.c'],
   c_args: use_math_defines,
@@ -140,28 +134,16 @@ cephes_lib = static_library('cephes',
   dependencies: [py3_dep, np_dep],
 )
 
-mach_lib = static_library('mach',
-  mach_sources,
-  fortran_args: [_fflag_Wno_unused_dummy_argument, _fflag_Wno_maybe_uninitialized]
-)
-
 specfun_lib = static_library('specfun',
-  'specfun/specfun.f',
-  fortran_args: _fflag_Wno_maybe_uninitialized
-)
-
-specfun_module = custom_target('specfun_module',
-  output: '_specfunmodule.c',
-  input: 'specfun.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  ['specfun.c'],
+  c_args: use_math_defines,
+  include_directories: ['../_lib', '../_build_utils/src'],
 )
 
 py3.extension_module('_specfun',
-  specfun_module,
+  [cython_gen.process('_specfun.pyx'), 'specfun.c'],
+  dependencies: [np_dep],
   link_args: version_link_args,
-  dependencies: [fortranobject_dep],
-  link_with: specfun_lib,
-  link_language: 'fortran',
   install: true,
   subdir: 'scipy/special'
 )
@@ -233,11 +215,9 @@ py3.extension_module('_ufuncs',
   link_with: [
     amos_lib,
     cephes_lib,
-    mach_lib,
     specfun_lib
   ],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/special'
 )
 
@@ -305,11 +285,9 @@ py3.extension_module('cython_special',
   link_with: [
     amos_lib,
     cephes_lib,
-    mach_lib,
     specfun_lib
   ],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/special'
 )
 

@@ -27,7 +27,7 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     V = 0
     for n in range(p - 1, 0, -1):
         sn, cn = sn * c - cn * s, cn * c + sn * s
-        R = 1. / (2 * n / k + R)
+        R = k / (2 * n + k * R)
         V = R * (sn / n + V)
 
     with cython.cdivision(True):

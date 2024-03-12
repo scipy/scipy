@@ -5,7 +5,7 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib._util import _prune_array
+from scipy._lib._util import _prune_array, copy_if_needed
 
 from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
@@ -32,7 +32,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.asformat(self.format)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -50,10 +52,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    other = self.__class__(
-                        self._coo_container(arg1, shape=shape, dtype=dtype)
-                    )
-                    self._set_self(other)
+                    coo = self._coo_container(arg1, shape=shape, dtype=dtype)
+                    arrays = coo._coo_to_compressed(self._swap)
+                    self.indptr, self.indices, self.data, self._shape = arrays
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -67,8 +68,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                 maxval=maxval,
                                                 check_contents=True)
 
-                    self.indices = np.array(indices, copy=copy,
-                                            dtype=idx_dtype)
+                    if not copy:
+                        copy = copy_if_needed
+                    self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
@@ -82,9 +84,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 msg = f"unrecognized {self.format}_matrix constructor usage"
                 raise ValueError(msg) from e
-            self._set_self(self.__class__(
-                self._coo_container(arg1, dtype=dtype)
-            ))
+            coo = self._coo_container(arg1, dtype=dtype)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, self._shape = arrays
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -98,8 +100,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except Exception as e:
                     raise ValueError('unable to infer matrix dimensions') from e
                 else:
-                    self._shape = check_shape(self._swap((major_dim,
-                                                          minor_dim)))
+                    self._shape = check_shape(self._swap((major_dim, minor_dim)))
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
@@ -122,17 +123,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             raise ValueError('axis out of bounds')
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
-
-    def _set_self(self, other, copy=False):
-        """take the member variables of other and assign them to self"""
-
-        if copy:
-            other = other.copy()
-
-        self.data = other.data
-        self.indices = other.indices
-        self.indptr = other.indptr
-        self._shape = check_shape(other.shape)
 
     def check_format(self, full_check=True):
         """Check whether the array/matrix respects the CSR or CSC format.
@@ -385,37 +375,37 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return other._mul_scalar(self.toarray()[0, 0])
             # A row times a column.
             elif self.shape[1] == 1 and other.shape[0] == 1:
-                return self._mul_sparse_matrix(other.tocsc())
+                return self._matmul_sparse(other.tocsc())
             elif self.shape[0] == 1 and other.shape[1] == 1:
-                return other._mul_sparse_matrix(self.tocsc())
+                return other._matmul_sparse(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[1], other.shape[1])
                 )
-                return self._mul_sparse_matrix(other)
+                return self._matmul_sparse(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[1], self.shape[1])
                 )
-                return other._mul_sparse_matrix(copy)
+                return other._matmul_sparse(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[0], other.shape[0])
                 )
-                return other._mul_sparse_matrix(self)
+                return other._matmul_sparse(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[0], self.shape[0])
                 )
-                return copy._mul_sparse_matrix(other)
+                return copy._matmul_sparse(other)
             else:
                 raise ValueError("inconsistent shapes")
 
@@ -484,7 +474,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Multiplication handlers #
     ###########################
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M, N = self.shape
 
         # output array
@@ -497,7 +487,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         M, N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
 
@@ -511,7 +501,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
@@ -866,9 +856,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 max_index = min(M + k, N)
             else:
                 max_index = min(M + k, N, len(values))
-            i = np.arange(max_index, dtype=self.indices.dtype)
+            i = np.arange(-k, max_index - k, dtype=self.indices.dtype)
             j = np.arange(max_index, dtype=self.indices.dtype)
-            i -= k
 
         else:
             if broadcast:
@@ -876,13 +865,50 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 max_index = min(M, N - k, len(values))
             i = np.arange(max_index, dtype=self.indices.dtype)
-            j = np.arange(max_index, dtype=self.indices.dtype)
-            j += k
+            j = np.arange(k, k + max_index, dtype=self.indices.dtype)
 
         if not broadcast:
             values = values[:len(i)]
 
-        self[i, j] = values
+        x = np.atleast_1d(np.asarray(values, dtype=self.dtype)).ravel()
+        if x.squeeze().shape != i.squeeze().shape:
+            x = np.broadcast_to(x, i.shape)
+        if x.size == 0:
+            return
+
+        M, N = self._swap((M, N))
+        i, j = self._swap((i, j))
+        n_samples = x.size
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
+        if -1 not in offsets:
+            # only affects existing non-zero cells
+            self.data[offsets] = x
+            return
+
+        mask = (offsets <= -1)
+        # Boundary between csc and convert to coo
+        # The value 0.001 is justified in gh-19962#issuecomment-1920499678
+        if mask.sum() < self.nnz * 0.001:
+            # create new entries
+            i = i[mask]
+            j = j[mask]
+            self._insert_many(i, j, x[mask])
+            # replace existing entries
+            mask = ~mask
+            self.data[offsets[mask]] = x[mask]
+        else:
+            # convert to coo for _set_diag
+            coo = self.tocoo()
+            coo._setdiag(values, k)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, _ = arrays
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
@@ -897,8 +923,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise IndexError('index (%d) out of range (< -%d)' %
                                  (idx, bound))
 
-        i = np.array(i, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
-        j = np.array(j, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
+        i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
+        j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
         check_bounds(i, M)
         check_bounds(j, N)
         return i, j, M, N
@@ -910,7 +936,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
-        x = np.array(x, dtype=self.dtype, copy=False, ndmin=1).ravel()
+        x = np.atleast_1d(np.asarray(x, dtype=self.dtype)).ravel()
 
         n_samples = x.size
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
@@ -1043,11 +1069,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         minor_indices = self.indices
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
-        row, col = self._swap((major_indices, minor_indices))
+        coords = self._swap((major_indices, minor_indices))
 
         return self._coo_container(
-            (self.data, (row, col)), self.shape, copy=copy,
-            dtype=self.dtype
+            (self.data, coords), self.shape, copy=copy, dtype=self.dtype
         )
 
     tocoo.__doc__ = _spbase.tocoo.__doc__

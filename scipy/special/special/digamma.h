@@ -1,9 +1,10 @@
-#pragma once
+/* Translated from Cython into C++ by SciPy developers in 2024.
+ * Original header comment appears below.
+ */
 
 /* An implementation of the digamma function for complex arguments.
  *
  * Author: Josh Wilson
- * Translated from Cython to C++ by SciPy developers 2023.
  *
  * Distributed under the same license as Scipy.
  *
@@ -12,6 +13,8 @@
  *
  * [2] mpmath (version 0.19), http://mpmath.org
  */
+
+#pragma once
 
 #include "cephes/psi.h"
 #include "cephes/zeta.h"
@@ -89,6 +92,14 @@ namespace detail {
         std::complex<double> zfac = 1.0;
         std::complex<double> term;
         std::complex<double> res;
+
+        if (!(std::isfinite(z.real()) && std::isfinite(z.imag()))) {
+            /* Check for infinity (or nan) and return early.
+             * Result of division by complex infinity is implementation dependent.
+             * and has been observed to vary between C++ stdlib and CUDA stdlib.
+             */
+            return std::log(z);
+        }
 
         res = std::log(z) - 0.5 / z;
 
