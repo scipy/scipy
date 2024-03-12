@@ -42,7 +42,7 @@ def zeros_like(x, *, dtype=None):
         dtype = x.dtype
     return sparse.csr_array(x.shape, dtype=dtype)
 
-def floor(x):
+def floor(x, /):
     return sparse.csr_array((np.floor(x.data), x.indices, x.indptr), shape=x.shape)
 
 def take(x, indices, /, *, axis: int | None = None):
@@ -53,16 +53,16 @@ def take(x, indices, /, *, axis: int | None = None):
 def all(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False): # type: ignore
     return np.sum(x, axis=axis)
 
-def isnan(x):
+def isnan(x, /):
     return sparse.csr_array((np.isnan(x.data), x.indices, x.indptr), shape=x.shape)
 
-def isinf(x):
+def isinf(x, /):
     return sparse.csr_array((np.isinf(x.data), x.indices, x.indptr), shape=x.shape)
 
 def reshape(x, /, shape: tuple[int, ...], *, copy: bool | None = None):
     raise NotImplementedError
 
-def isfinite(x):
+def isfinite(x, /):
     return sparse.csr_array((np.isfinite(x.data), x.indices, x.indptr), shape=x.shape)
 
 def mean(x, /, *, axis: int | tuple[int, ...] | None = None, keepdims: bool = False):
@@ -95,10 +95,10 @@ def var(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | fl
 def std(x, /, *, axis: int | tuple[int, ...] | None = None, correction: int | float = 0.0, keepdims: bool = False):
     return np.sqrt(var(x, axis=axis, correction=correction, keepdims=keepdims))
 
-def unique_values(x):
+def unique_values(x, /):
     return np.append(np.unique(x.data), np.array([0], dtype=x.data.dtype))
 
-def unique_counts(x):
+def unique_counts(x, /):
     is_first_element_zero = x[0, 0] == 0
     values, counts = np.unique(x.data, return_counts=True)
     number_of_zeros = (x.shape[0] * x.shape[1]) - x.count_nonzero()
@@ -110,8 +110,13 @@ def unique_counts(x):
         counts = np.append(values, np.array([number_of_zeros]))
     return values, counts
 
-def unique_all(x):
+def unique_all(x, /):
     raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')
 
-def unique_inverse(x):
+def unique_inverse(x, /):
     raise NotImplementedError('Construction of `inverse_indices` for sparse arrays is inefficient')
+
+def where(condition, x1, x2, /):
+    data = x2.copy()
+    data[condition] = x1
+    return data
