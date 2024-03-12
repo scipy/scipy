@@ -170,5 +170,9 @@ __all__ += [
     "logical_and",
     "logical_or",
     "logical_xor",
-    "logical_not"
+    "logical_not",
+    "multiply",
+    "subtract",
+    "matmul",
+    "not_equal",
 ]

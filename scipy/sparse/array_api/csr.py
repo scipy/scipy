@@ -138,3 +138,21 @@ def logical_xor(x1, x2, /):
 
 def logical_not(x, /):
     raise NotImplementedError
+
+def multiply(x1, x2, /):
+    # TODO: Does scipy obey the type promotions listed for multiply?
+    # https://data-apis.org/array-api/latest/API_specification/generated/array_api.multiply.html#multiply
+    return x1.multiply(x2)
+
+def subtract(x1, x2, /):
+    # TODO: Does scipy obey type promotion rules in general?
+    # https://data-apis.org/array-api/latest/API_specification/type_promotion.html#type-promotion
+    return x1 - x2
+
+def matmul(x1, x2, /):
+    # TODO: In general, this will rely on 1D array functionality via broadcasting:
+    # https://data-apis.org/array-api/latest/API_specification/generated/array_api.matmul.html#array_api.matmul
+    return x1 @ x2
+
+def not_equal(x1, x2, /):
+    return x1 != x2
