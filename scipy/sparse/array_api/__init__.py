@@ -148,6 +148,8 @@ __all__ += [
     "ones_like",
     "zeros",
     "zeros_like",
+    "arange",
+    "linspace",
     "floor",
     "take",
     "all",

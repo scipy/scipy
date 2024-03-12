@@ -3,7 +3,7 @@ from scipy import sparse
 import numpy as np
 import numpy.typing as npt
 
-def asarray(obj, *, dtype=None, copy=None):
+def asarray(obj, *, dtype=None, copy=None, device=None):
     # This is a HUGE hack to get the array-api test suite even running, much less doing anything sensible.
     if np.isscalar(obj):
          obj = np.array(obj).reshape(1, -1)
@@ -11,19 +11,19 @@ def asarray(obj, *, dtype=None, copy=None):
         obj = np.array(obj).reshape(len(obj), -1)
     return sparse.csr_array(obj, dtype=dtype, copy=copy)
 
-def empty(shape, *, dtype=None):
+def empty(shape, *, dtype=None, device=None):
     return sparse.csr_array(shape, dtype=dtype)
 
-def empty_like(x, *, dtype=None):
+def empty_like(x, *, dtype=None, device=None):
     return sparse.csr_array(x, dtype=dtype, copy=False)
 
-def eye(n_rows, n_cols=None, /, *, k=0, dtype=None):
+def eye(n_rows, n_cols=None, /, *, k=0, dtype=None, device=None):
     return sparse.eye(n_rows, n_cols, k=k, dtype=dtype, format="csr")
 
-def full(shape, fill_value, *, dtype=None):
+def full(shape, fill_value, *, dtype=None, device=None):
     return sparse.csr_array(np.full(shape, fill_value, dtype=dtype))
 
-def full_like(x, fill_value, *, dtype=None):
+def full_like(x, fill_value, *, dtype=None, device=None):
     return sparse.csr_array(np.full_like(x, fill_value, dtype=dtype))
 
 def ones(shape, *, dtype=None):
@@ -41,6 +41,12 @@ def zeros_like(x, *, dtype=None):
     if dtype is None:
         dtype = x.dtype
     return sparse.csr_array(x.shape, dtype=dtype)
+
+def arange(start, stop, step, *, dtype=None, device=None):
+    return sparse.csr_array(np.arange(start, stop, step, dtype=dtype))
+
+def linspace(start, stop, /, num, *, dtype=None, device=None, endpoint=True):
+    return sparse.csr_array(np.linspace(start, stop, num, dtype=dtype, endpoint=endpoint))
 
 def floor(x, /):
     return sparse.csr_array((np.floor(x.data), x.indices, x.indptr), shape=x.shape)
