@@ -38,7 +38,7 @@ from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
 from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 cdef extern from "special_c_wrappers.h":
-    npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp) nogil
+    npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble z) nogil
 
 cdef extern from "special_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
