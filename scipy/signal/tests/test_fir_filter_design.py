@@ -1,14 +1,14 @@
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
                            assert_equal, assert_,
-                           assert_allclose, assert_warns)
+                           assert_allclose, assert_warns, assert_array_less)
 from pytest import raises as assert_raises
 import pytest
 
 from scipy.fft import fft
 from scipy.special import sinc
 from scipy.signal import kaiser_beta, kaiser_atten, kaiserord, \
-    firwin, firwin2, freqz, remez, firls, minimum_phase
+    firwin, firwin2, freqz, remez, firls, minimum_phase, fwind1, dimpulse
 
 
 def test_kaiser_beta():
@@ -695,3 +695,52 @@ class TestMinimumPhase:
              -0.014977068692269, -0.158416139047557]
         m = minimum_phase(h, 'hilbert', n_fft=2**19)
         assert_allclose(m, k, rtol=2e-3)
+
+
+class TestFwind1:
+    def test_invalid_args(self):
+        # Test invalid input arguments
+        with pytest.raises(ValueError, match="hsize must be a 2-element tuple or list"):
+            fwind1((50,), window=((("kaiser", 5.0)), "boxcar"), fc=0.4)
+        with pytest.raises(ValueError, match="window must be a 2-element tuple or list"):
+            fwind1((51, 51), window=("hamming",), fc=0.5)
+        with pytest.raises(ValueError, match="Invalid window specified"):
+            fwind1((51, 51), window=((("invalid_window",), None), ("hann", None)), fc=0.5)
+
+    def test_filter_design(self):
+        # Test filter design
+        hsize = (51, 51)
+        window = ((("kaiser", 8.0),), ("kaiser", 8.0))
+        fc = 0.4
+        taps_kaiser = fwind1(hsize, window, fc)
+        window = ("hamming", "hamming")
+        taps_hamming = fwind1(hsize, window, fc)
+        assert_array_almost_equal(taps_hamming, taps_kaiser, decimal=5)
+
+    def test_impulse_response(self):
+        # Test the impulse response of the filter
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+        h = dimpulse(([1], taps), n=30)
+        expected_impulse_response = np.squeeze(h[1])
+        assert_array_almost_equal(expected_impulse_response, taps, decimal=5)
+
+    def test_frequency_response(self):
+        # Test the frequency response of the filter
+        hsize = (31, 31)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+        w, h = freqz(taps)
+        assert_array_almost_equal(abs(h), 1.0, decimal=3)
+        assert_array_less(abs(w), fc * np.pi, err_msg="Filter does not meet cutoff frequency")
+
+    def test_symmetry(self):
+        # Test symmetry of the filter coefficients
+        hsize = (51, 51)
+        window = ("hamming", "hamming")
+        fc = 0.4
+        taps = fwind1(hsize, window, fc)
+        assert_array_almost_equal(taps, np.flip(taps), decimal=5)
