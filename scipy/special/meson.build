@@ -141,7 +141,7 @@ specfun_lib = static_library('specfun',
 )
 
 py3.extension_module('_specfun',
-  [cython_gen.process('_specfun.pyx'), 'specfun.cpp'],
+  [cython_gen_cpp.process('_specfun.pyx'), 'specfun.cpp'],
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,
