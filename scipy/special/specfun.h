@@ -71,42 +71,42 @@
 #ifndef SPECFUN_H
 #define SPECFUN_H
 
+#include <stdlib.h>
+#include <math.h>
+#include <complex.h>
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
-#include <stdlib.h>
-#include <math.h>
-#include <complex.h>
-
 void specfun_airyzo(int, int, double *, double *, double *, double *);
 void specfun_aswfa(double, int, int, double, int, double, double *, double *);
 void specfun_bernob(int, double *);
-double complex specfun_cerror(double complex);
-void specfun_cerzo(int, double complex *);
-double complex specfun_cchg(double, double, double complex);
-void specfun_cfc(double complex, double complex *, double complex *);
-void specfun_cfs(double complex, double complex *, double complex *);
-double complex specfun_cgama(double complex, int);
+double _Complex specfun_cerror(double _Complex);
+void specfun_cerzo(int, double _Complex *);
+double _Complex specfun_cchg(double, double, double _Complex);
+void specfun_cfc(double _Complex, double _Complex *, double _Complex *);
+void specfun_cfs(double _Complex, double _Complex *, double _Complex *);
+double _Complex specfun_cgama(double _Complex, int);
 double specfun_chgm(double, double, double);
 double specfun_chgu(double, double, double, int *, int *);
-void specfun_clpmn(double complex, int, int, int, double complex *, double complex *);
-void specfun_clpn(int, double complex, double complex *, double complex *);
-void specfun_clqmn(double complex, int, int, double complex *, double complex *);
-void specfun_clqn(int, double complex, double complex *, double complex *);
-void specfun_cpbdn(int, double complex, double complex *, double complex *);
+void specfun_clpmn(double _Complex, int, int, int, double _Complex *, double _Complex *);
+void specfun_clpn(int, double _Complex, double _Complex *, double _Complex *);
+void specfun_clqmn(double _Complex, int, int, double _Complex *, double _Complex *);
+void specfun_clqn(int, double _Complex, double _Complex *, double _Complex *);
+void specfun_cpbdn(int, double _Complex, double _Complex *, double _Complex *);
 double specfun_cva2(int, int, double);
-void specfun_cyzo(int, int, int, double complex*, double complex *);
+void specfun_cyzo(int, int, int, double _Complex*, double _Complex *);
 double specfun_eix(double);
 double specfun_e1xb(double);
-double complex specfun_eixz(double complex);
-double complex specfun_e1z(double complex);
+double _Complex specfun_eixz(double _Complex);
+double _Complex specfun_e1z(double _Complex);
 void specfun_eulerb(int, double *);
 void specfun_fcoef(int, int, double, double, double *);
-void specfun_fcszo(int, int, double complex *);
+void specfun_fcszo(int, int, double _Complex *);
 void specfun_ffk(int, double, double *, double *, double *, double *, double *, double *, double *, double *);
-double complex specfun_hygfz(double, double, double, double complex, int*);
+double _Complex specfun_hygfz(double, double, double, double _Complex, int*);
 void specfun_itairy(double, double *, double *, double *, double *);
 void specfun_itika(double, double *, double *);
 void specfun_itjya(double, double *, double *);

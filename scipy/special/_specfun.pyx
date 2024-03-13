@@ -1,6 +1,7 @@
 cimport numpy as cnp
 cnp.import_array()
 
+
 cdef extern from "specfun.h" nogil:
     void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
     void specfun_bernob(int n, double *bn)

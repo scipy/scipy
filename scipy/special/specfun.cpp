@@ -70,54 +70,74 @@
 
 #include "specfun.h"
 
-#ifndef CMPLX
-#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
-#endif /* CMPLX */
 
-static void specfun_airyb(double, double *, double *, double *, double *);
-static void specfun_bjndd(double, int, double *, double *, double *);
-static void specfun_cbk(int, int, double, double, double, double *, double *);
-static void specfun_cerf(double complex, double complex *, double complex *);
-static double specfun_chgubi(double, double, double, int *);
-static double specfun_chguit(double, double, double, int *);
-static double specfun_chgul(double, double, double, int *);
-static double specfun_chgus(double, double, double, int *);
-static double complex specfun_cpdla(int, double complex);
-static double complex specfun_cpdsa(int, double complex);
-static double specfun_cv0(double, double, double);
-static double specfun_cvf(int, int, double, double, int);
-static double specfun_cvql(int, int, double);
-static double specfun_cvqm(int, double);
-static double specfun_dvla(double, double);
-static double specfun_dvsa(double, double);
-static double specfun_gaih(double);
-static double specfun_gam0(double);
-static double specfun_gamma2(double);
-static void specfun_gmn(int, int, double, double, double *, double *, double *);
-static void specfun_jynb(int, double, int *, double *, double *, double *, double *);
-static void specfun_jynbh(int, int, double, int *, double *, double *);
-static void specfun_jyndd(int, double, double *, double *, double *, double *, double *, double *);
-static void specfun_kmn(int, int, double, double, int, double *, double *, double *, double *);
-static double specfun_lpmv0(double, int, double);
-static void specfun_lpmns(int, int, double, double *, double *);
-static void specfun_lqmns(int, int, double, double *, double *);
-static int specfun_msta1(double, int);
-static int specfun_msta2(double, int, int);
-static double specfun_psi_spec(double);
-static void specfun_qstar(int, int, double, double, double *, double *, double *);
-static double specfun_refine(int, int, double, double);
-static void specfun_rmn1(int, int, double, double, int, double *, double *, double *);
-static void specfun_rmn2l(int, int, double, double, int, double *, double *, double *, int *);
-static void specfun_rmn2so(int, int, double, double, double, int, double *, double *, double *);
-static void specfun_rmn2sp(int, int, double, double, double, int, double *, double *, double *);
-static void specfun_sckb(int, int, double, double *, double *);
-static void specfun_sphj(double, int, int *, double *, double *);
-static void specfun_sphy(double, int, int *, double *, double *);
-static double specfun_vvla(double, double);
-static double specfun_vvsa(double, double);
+namespace specfun {
 
 
-void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
+void airyb(double, double*, double*, double*, double*);
+void bjndd(double, int, double *, double *, double *);
+
+void cerzo(int, std::complex<double> *);
+
+
+std::complex<double> cerror(std::complex<double>);
+std::complex<double> cchg(double, double, std::complex<double>);
+std::complex<double> cgama(std::complex<double>, int);
+
+void clpmn(std::complex<double>, int, int, int, std::complex<double> *, std::complex<double> *);
+void clpn(int, std::complex<double>, std::complex<double> *, std::complex<double> *);
+
+void cyzo(int, int, int, std::complex<double>*, std::complex<double> *);
+
+
+
+void cbk(int, int, double, double, double, double *, double *);
+void cerf(std::complex<double>, std::complex<double> *, std::complex<double> *);
+std::complex<double> cgama(std::complex<double>, int);
+double chgubi(double, double, double, int *);
+double chguit(double, double, double, int *);
+double chgul(double, double, double, int *);
+double chgus(double, double, double, int *);
+void cpbdn(int, std::complex<double>, std::complex<double> *, std::complex<double> *);
+std::complex<double> cpdla(int, std::complex<double>);
+std::complex<double> cpdsa(int, std::complex<double>);
+double cv0(double, double, double);
+double cvf(int, int, double, double, int);
+double cvql(int, int, double);
+double cvqm(int, double);
+double dvla(double, double);
+double dvsa(double, double);
+void fcszo(int, int, std::complex<double> *);
+double gaih(double);
+double gam0(double);
+double gamma2(double);
+void gmn(int, int, double, double, double *, double *, double *);
+void jynb(int, double, int *, double *, double *, double *, double *);
+void jynbh(int, int, double, int *, double *, double *);
+void jyndd(int, double, double *, double *, double *, double *, double *, double *);
+void kmn(int, int, double, double, int, double *, double *, double *, double *);
+double lpmv0(double, int, double);
+void lpmns(int, int, double, double *, double *);
+void lqmns(int, int, double, double *, double *);
+int msta1(double, int);
+int msta2(double, int, int);
+double psi_spec(double);
+void qstar(int, int, double, double, double *, double *, double *);
+double refine(int, int, double, double);
+void rmn1(int, int, double, double, int, double *, double *, double *);
+void rmn2l(int, int, double, double, int, double *, double *, double *, int *);
+void rmn2so(int, int, double, double, double, int, double *, double *, double *);
+void rmn2sp(int, int, double, double, double, int, double *, double *, double *);
+void sckb(int, int, double, double *, double *);
+void sdmn(int, int, double, double, int, double *);
+void sphj(double, int, int *, double *, double *);
+void sphy(double, int, int *, double *, double *);
+double vvla(double, double);
+double vvsa(double, double);
+
+
+
+void airyb(double x, double* ai, double* bi, double* ad, double* bd) {
 
     // =======================================================
     // Purpose: Compute Airy functions and their derivatives
@@ -277,7 +297,7 @@ void specfun_airyb(double x, double* ai, double* bi, double* ad, double* bd) {
 }
 
 
-void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *xd) {
+void airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *xd) {
 
     // ========================================================
     // Purpose: Compute the first NT zeros of Airy functions
@@ -331,7 +351,7 @@ void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *
 
         while (1) {
             x = rt0;
-            specfun_airyb(x, &ai, &bi, &ad, &bd);
+            airyb(x, &ai, &bi, &ad, &bd);
 
             if (kf == 1) {
                 rt = rt0 - ai / ad;
@@ -349,7 +369,7 @@ void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *
 
         xa[i - 1] = rt;
         if (err > 1.0e-14) {
-            specfun_airyb(rt, &ai, &bi, &ad, &bd);
+            airyb(rt, &ai, &bi, &ad, &bd);
         }
 
         if (kf == 1) {
@@ -390,7 +410,7 @@ void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *
 
         while (1) {
             x = rt0;
-            specfun_airyb(x, &ai, &bi, &ad, &bd);
+            airyb(x, &ai, &bi, &ad, &bd);
 
             if (kf == 1) {
                 rt = rt0 - ad / (ai * x);
@@ -408,7 +428,7 @@ void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *
         xb[i - 1] = rt;
 
         if (err > 1.0e-14) {
-            specfun_airyb(rt, &ai, &bi, &ad, &bd);
+            airyb(rt, &ai, &bi, &ad, &bd);
         }
 
         if (kf == 1) {
@@ -421,7 +441,7 @@ void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *
 }
 
 
-void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *s1f, double *s1d) {
+void aswfa(double x, int m, int n, double c, int kd, double cv, double *s1f, double *s1d) {
 
     // ===========================================================
     // Purpose: Compute the prolate and oblate spheroidal angular
@@ -442,16 +462,16 @@ void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *
 
     int ip, k, nm, nm2;
     double a0, d0, d1, r, su1, su2, x0, x1;
-    double *ck = calloc(200, sizeof(double));
-    double *df = calloc(200, sizeof(double));
+    double *ck = (double *) calloc(200, sizeof(double));
+    double *df = (double *) calloc(200, sizeof(double));
     const double eps = 1e-14;
     x0 = x;
     x = fabs(x);
     ip = ((n-m) % 2 == 0 ? 0 : 1);
     nm = 40 + (int)((n-m)/2 + c);
     nm2 = nm/2 - 2;
-    specfun_sdmn(m, n, c, cv, kd, df);
-    specfun_sckb(m, n, c, df, ck);
+    sdmn(m, n, c, cv, kd, df);
+    sckb(m, n, c, df, ck);
     x1 = 1.0 - x*x;
     if ((m == 0) && (x1 == 0.0)) {
         a0 = 1.0;
@@ -494,7 +514,7 @@ void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *
 }
 
 
-void specfun_bernob(int n, double *bn) {
+void bernob(int n, double *bn) {
 
     // ======================================
     // Purpose: Compute Bernoulli number Bn
@@ -524,7 +544,7 @@ void specfun_bernob(int n, double *bn) {
 }
 
 
-void specfun_bjndd(double x, int n, double *bj, double *dj, double *fj) {
+void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x) and their
@@ -564,7 +584,7 @@ void specfun_bjndd(double x, int n, double *bj, double *dj, double *fj) {
 }
 
 
-void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, double *bk) {
+void cbk(int m, int n, double c, double cv, double qt, double *ck, double *bk) {
     const double eps = 1.0e-14;
 
     int i, i1, ip, j, k, n2, nm;
@@ -572,9 +592,9 @@ void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, doubl
 
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
-    double *u = calloc(200, sizeof(double));
-    double *v = calloc(200, sizeof(double));
-    double *w = calloc(200, sizeof(double));
+    double *u = (double *) calloc(200, sizeof(double));
+    double *v = (double *) calloc(200, sizeof(double));
+    double *w = (double *) calloc(200, sizeof(double));
 
     u[0] = 0.0;
     n2 = nm - 2;
@@ -647,7 +667,7 @@ void specfun_cbk(int m, int n, double c, double cv, double qt, double *ck, doubl
 }
 
 
-void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
+void cerf(std::complex<double> z, std::complex<double> *cer, std::complex<double> *cder) {
 
     // ==========================================================
     // Purpose: Compute complex Error function erf(z) & erf'(z)
@@ -663,8 +683,8 @@ void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
     const double eps = 1.0e-12;
     const double pi = 3.141592653589793;
 
-    double x = creal(z);
-    double y = cimag(z);
+    double x = z.real();
+    double y = z.imag();
     double x2 = x * x;
 
     if (x <= 3.5) {
@@ -682,7 +702,7 @@ void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
 
         c0 = 2.0 / sqrt(pi) * x * exp(-x2);
         er0 = c0 * er;
-        *cer = CMPLX(er0, 0.0);
+        *cer = er0;
     } else {
         er = 1.0;
         r = 1.0;
@@ -694,13 +714,13 @@ void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
 
         c0 = exp(-x2) / (x * sqrt(pi));
         er0 = 1.0 - c0 * er;
-        *cer = CMPLX(er0, 0.0);
+        *cer = er0;
     }
 
     if (y == 0.0) {
-        err = creal(*cer);
+        err = cer->real();
         eri = 0.0;
-        *cer = CMPLX(err, eri);
+        *cer = std::complex<double>(err, eri);
     } else {
         cs = cos(2.0 * x * y);
         ss = sin(2.0 * x * y);
@@ -717,7 +737,7 @@ void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
         }
 
         c0 = 2.0 * exp(-x2) / pi;
-        err = creal(*cer) + er1 + c0 * er2;
+        err = cer->real() + er1 + c0 * er2;
         ei2 = 0.0;
         w2 = 0.0;
 
@@ -727,14 +747,14 @@ void specfun_cerf(double complex z, double complex *cer, double complex *cder) {
                 break;
             w2 = ei2;
         }
-        *cer = CMPLX(err, ei1 + c0 * ei2);
+        *cer = std::complex<double>(err, ei1 + c0 * ei2);
     }
-    *cder = 2.0 / sqrt(pi) * cexp(-z*z);
+    *cder = 2.0 / sqrt(pi) * std::exp(-z*z);
 
 }
 
 
-double complex specfun_cerror(double complex z) {
+std::complex<double> cerror(std::complex<double> z) {
 
     // ====================================================
     // Purpose: Compute error function erf(z) for a complex
@@ -744,17 +764,17 @@ double complex specfun_cerror(double complex z) {
     // ====================================================
 
     int k;
-    double complex cer, cl, cr, cs, z1;
-    double complex c0 = cexp(-z*z);
+    std::complex<double> cer, cl, cr, cs, z1;
+    std::complex<double> c0 = std::exp(-z*z);
     const double sqpi = 1.7724538509055160273;
     z1 = z;
-    if (creal(z) < 0.0) { z1 = -z; }
+    if (z.real() < 0.0) { z1 = -z; }
     // Cutoff radius R = 4.36; determined by balancing rounding error
     // and asymptotic expansion error, see below.
     //
     // The resulting maximum global accuracy expected is around 1e-8
     //
-    if (cabs(z) <= 4.36) {
+    if (std::abs(z) <= 4.36) {
         // Rounding error in the Taylor expansion is roughly
         // ~ R*R * EPSILON * R**(2 R**2) / (2 R**2 Gamma(R**2 + 1/2))
         cs = z1;
@@ -762,7 +782,7 @@ double complex specfun_cerror(double complex z) {
         for (k = 1; k < 121; k++) {
             cr = cr*(z1*z1) / (k+0.5);
             cs += cr;
-            if (cabs(cr/cs) < 1e-15) { break; }
+            if (std::abs(cr/cs) < 1e-15) { break; }
         }
         cer = 2.0*c0*cs/sqpi;
     } else {
@@ -777,16 +797,16 @@ double complex specfun_cerror(double complex z) {
         for (k = 1; k < 21; k++) {
             cr = -cr*(k-0.5) / (z1*z1);
             cl += cr;
-            if (cabs(cr/cl) < 1e-15) { break; }
+            if (std::abs(cr/cl) < 1e-15) { break; }
         }
         cer = 1.0 - c0*cl/sqpi;
     }
-    if (creal(z) < 0.0) { cer = -cer; }
+    if (z.real() < 0.0) { cer = -cer; }
     return cer;
 }
 
 
-void specfun_cerzo(int nt, double complex *zo) {
+void cerzo(int nt, std::complex<double> *zo) {
 
     // ===============================================================
     // Purpose : Evaluate the complex zeros of error function erf(z)
@@ -798,7 +818,7 @@ void specfun_cerzo(int nt, double complex *zo) {
 
     int i, j, nr, it = 0;
     double pu, pv, px, py, w0;
-    double complex z, zf, zd, zp, zw, zq, zfd, zgd;
+    std::complex<double> z, zf, zd, zp, zw, zq, zfd, zgd;
     double w = 0.0;
     const double pi = 3.141592653589793;
 
@@ -807,12 +827,12 @@ void specfun_cerzo(int nt, double complex *zo) {
         pv = pi * sqrt(2.0 * nr - 0.25);
         px = 0.5 * pu - 0.5 * log(pv) / pu;
         py = 0.5 * pu + 0.5 * log(pv) / pu;
-        z = px + I * py;
+        z = std::complex<double>(px, py);
         it = 0;
 
         do {
             it++;
-            specfun_cerf(z, &zf, &zd);
+            cerf(z, &zf, &zd);
             zp = 1.0;
 
             for (i = 1; i < nr; i++) {
@@ -831,7 +851,7 @@ void specfun_cerzo(int nt, double complex *zo) {
             zgd = (zd - zq * zfd) / zp;
             z -= zfd / zgd;
             w0 = w;
-            w = cabs(z);
+            w = std::abs(z);
         } while ((it <= 50) && (fabs((w - w0) / w) > 1.0e-11));
         zo[nr - 1] = z;
     }
@@ -839,7 +859,7 @@ void specfun_cerzo(int nt, double complex *zo) {
 }
 
 
-void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
+void cfc(std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
 
     // =========================================================
     // Purpose: Compute complex Fresnel integral C(z) and C'(z)
@@ -850,14 +870,14 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
 
     int k, m;
     double wa0, wa;
-    double complex c, cr, cf, cf0, cf1, cg, d;
+    std::complex<double> c, cr, cf, cf0, cf1, cg, d;
     const double eps = 1.0e-14;
     const double pi = 3.141592653589793;
 
-    double w0 = cabs(z);
-    double complex zp = 0.5 * pi * z * z;
-    double complex zp2 = zp * zp;
-    double complex z0 = 0.0;
+    double w0 = std::abs(z);
+    std::complex<double> zp = 0.5 * pi * z * z;
+    std::complex<double> zp2 = zp * zp;
+    std::complex<double> z0 = 0.0;
 
     if (z == z0) {
         c = z0;
@@ -866,12 +886,12 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
         c = cr;
         wa0 = 0.0;
         for (k = 1; k <= 80; k++) {
-            cr = -0.5*cr*(4.0*k - 3.0)/k/(2.0*k - 1.0)/(4.0*k + 1.0)*zp2;
+            cr = -0.5*cr*(4.0*k - 3.0)/static_cast<double>(k)/(2.0*k - 1.0)/(4.0*k + 1.0)*zp2;
             c += cr;
-            wa = cabs(c);
+            wa = std::abs(c);
             if ((fabs((wa - wa0) / wa) < eps) && (k > 10)) {
                 *zf = c;
-                *zd = ccos(0.5*pi*z*z);
+                *zd = std::cos(0.5*pi*z*z);
                 return;
             }
             wa0 = wa;
@@ -887,20 +907,20 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
             cf1 = cf0;
             cf0 = cf;
         }
-        c *= 2.0/(pi*z)*csin(zp)/cf;
+        c *= 2.0/(pi*z)*std::sin(zp)/cf;
     } else {
         // See comment at CFS(), use C(z) = iC(-iz)
-        if ((cimag(z) > -creal(z)) && (cimag(z) <= creal(z))) {
+        if ((z.imag() > -z.real()) && (z.imag() <= z.real())) {
             // right quadrant
             d = 0.5;
-        } else if ((cimag(z) > creal(z)) && (cimag(z) >= -creal(z))) {
+        } else if ((z.imag() > z.real()) && (z.imag() >= -z.real())) {
             // upper quadrant
-            d = 0.5*I;
-        } else if ((cimag(z) < -creal(z)) && (cimag(z) >= creal(z))) {
+            d = std::complex<double>(0, 0.5);
+        } else if ((z.imag() < -z.real()) && (z.imag() >= z.real())) {
             // left quadrant
             d = -0.5;
         } else {
-            d = -0.5*I;
+            d = std::complex<double>(0, -0.5);
         }
         cr = 1.0;
         cf = 1.0;
@@ -914,15 +934,15 @@ void specfun_cfc(double complex z, double complex *zf, double complex *zd) {
             cr = -0.25*cr*(4.0*k + 1.0)*(4.0*k - 1.0)/zp2;
             cg += cr;
         }
-        c = d + (cf*csin(zp) - cg*ccos(zp))/(pi*z);
+        c = d + (cf*std::sin(zp) - cg*std::cos(zp))/(pi*z);
     }
     *zf = c;
-    *zd = ccos(0.5*pi*z*z);
+    *zd = std::cos(0.5*pi*z*z);
     return;
 }
 
 
-void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
+void cfs(std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
 
     // =========================================================
     // Purpose: Compute complex Fresnel Integral S(z) and S'(z)
@@ -933,14 +953,14 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
 
     int k, m;
     double wb0, wb;
-    double complex s, cr, cf, cf0, cf1, cg, d;
+    std::complex<double> s, cr, cf, cf0, cf1, cg, d;
     const double eps = 1.0e-14;
     const double pi = 3.141592653589793;
 
-    double w0 = cabs(z);
-    double complex zp = 0.5 * pi * z * z;
-    double complex zp2 = zp * zp;
-    double complex z0 = 0.0;
+    double w0 = std::abs(z);
+    std::complex<double> zp = 0.5 * pi * z * z;
+    std::complex<double> zp2 = zp * zp;
+    std::complex<double> z0 = 0.0;
 
     if (z == z0) {
         s = z0;
@@ -949,12 +969,12 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
         cr = s;
         wb0 = 0.0;
         for (k = 1; k <= 80; k++) {
-            cr = -0.5 * cr * (4.0 * k - 1.0) / k / (2.0 * k + 1.0) / (4.0 * k + 3.0) * zp2;
+            cr = -0.5 * cr * (4.0 * k - 1.0) / static_cast<double>(k) / (2.0 * k + 1.0) / (4.0 * k + 3.0) * zp2;
             s += cr;
-            wb = cabs(s);
+            wb = std::abs(s);
             if ((fabs(wb - wb0) < eps) && (k > 10)) {
                     *zf = s;
-                    *zd = csin(0.5*pi*z*z);
+                    *zd = std::sin(0.5*pi*z*z);
                     return;
             }
             wb0 = wb;
@@ -970,7 +990,7 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
             cf1 = cf0;
             cf0 = cf;
         }
-        s = 2.0/(pi * z)*csin(zp)/cf*s;
+        s = 2.0/(pi * z)*std::sin(zp)/cf*s;
     } else {
         // Auxiliary functions f(z) and g(z) can be computed using an
         // asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
@@ -978,17 +998,17 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
         // Interestingly, most of the expansion code is the same across
         // the quadrants. (The forth power in Z is the equalizer here.)
         // Only one constant has to be adapted.
-        if ((cimag(z) > -creal(z)) && (cimag(z) <= creal(z))) {
+        if ((z.imag() > -z.real()) && (z.imag() <= z.real())) {
             // right quadrant
             d = 0.5;
-        } else if ((cimag(z) > creal(z)) && (cimag(z) >= -creal(z))) {
+        } else if ((z.imag() > z.real()) && (z.imag() >= -z.real())) {
             // upper quadrant
-            d = -0.5*I;
-        } else if ((cimag(z) < -creal(z)) && (cimag(z) >= creal(z))) {
+            d = std::complex<double>(0, -0.5);
+        } else if ((z.imag() < -z.real()) && (z.imag() >= z.real())) {
             // left quadrant
             d = -0.5;
         } else {
-            d = 0.5*I;
+            d = std::complex<double>(0, 0.5);
         }
         cr = 1.0;
         cf = 1.0;
@@ -1003,15 +1023,15 @@ void specfun_cfs(double complex z, double complex *zf, double complex *zd) {
             cg += cr;
         }
         cg = cg/(pi*z*z);
-        s = d - (cf*ccos(zp) + cg*csin(zp))/(pi*z);
+        s = d - (cf*std::cos(zp) + cg*std::sin(zp))/(pi*z);
     }
     *zf = s;
-    *zd = csin(0.5*pi*z*z);
+    *zd = std::sin(0.5*pi*z*z);
     return;
 }
 
 
-double complex specfun_cchg(double a, double b, double complex z) {
+std::complex<double> cchg(double a, double b, std::complex<double> z) {
 
     // ===================================================
     // Purpose: Compute confluent hypergeometric function
@@ -1026,10 +1046,10 @@ double complex specfun_cchg(double a, double b, double complex z) {
 
     int i, j, k, la, m, n, nl, ns;
     double a0, a1, phi, x0, x, y;
-    double complex cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,\
+    std::complex<double> cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,\
                    cs2, crg, cy0, cy1, z0;
     const double pi = 3.141592653589793;
-    const double complex ci = CMPLX(0.0, 1.0);
+    const std::complex<double> ci(0.0, 1.0);
     a0 = a;
     a1 = a;
     z0 = z;
@@ -1038,19 +1058,19 @@ double complex specfun_cchg(double a, double b, double complex z) {
     if ((b == 0.0) || (b == -(int)fabs(b))) { return 1e300; }
     if ((a == 0.0) || (z == 0.0)) { return 1.0; }
     if (a == -1.0) { return 1.0 - z/b; }
-    if (a == b) { return cexp(z); }
-    if (a - b == 1.0) { return (1.0 + z/b)*cexp(z); }
-    if ((a == 1.0) && (b == 2.0)) { return (cexp(z)-1.0) / z; }
+    if (a == b) { return std::exp(z); }
+    if (a - b == 1.0) { return (1.0 + z/b)*std::exp(z); }
+    if ((a == 1.0) && (b == 2.0)) { return (std::exp(z)-1.0) / z; }
     if ((a == (int)a) && (a < 0.0)) {
         m = (int)(-a);
         cr = 1.0;
         chg = 1.0;
         for (k = 1; k < (m+1); k++) {
-            cr = cr * (a+k-1.0)/k/(b+k-1.0)*z;
+            cr = cr * (a+k-1.0)/static_cast<double>(k)/(b+k-1.0)*z;
             chg += cr;
         }
     } else {
-        x0 = creal(z);
+        x0 = z.real();
         if (x0 < 0.0) {
             a = b-a;
             a0 = a;
@@ -1066,32 +1086,32 @@ double complex specfun_cchg(double a, double b, double complex z) {
         ns = 0;
         for (n = 0; n < (nl+1); n++) {
             if (a0 >= 2.0) { a += 1.0; }
-            if ((cabs(z) < 20.0+fabs(b)) || (a < 0.0)) {
+            if ((std::abs(z) < 20.0+fabs(b)) || (a < 0.0)) {
                 chg = 1.0;
                 chw = 0.0;
                 crg = 1.0;
                 for (j = 1; j < 501; j++) {
                     crg = crg * (a+j-1.0)/(j*(b+j-1.0))*z;
-                    if (cabs((chg-chw)/chg) < 1e-15) { break; }
+                    if (std::abs((chg-chw)/chg) < 1e-15) { break; }
                     chw = chg;
                 }
             } else {
                 y = 0.0;
-                cg1 = specfun_cgama(a, 0);
-                cg2 = specfun_cgama(b, 0);
-                cg3 = specfun_cgama(b-a, 0);
+                cg1 = cgama(a, 0);
+                cg2 = cgama(b, 0);
+                cg3 = cgama(b-a, 0);
                 cs1 = 1.0;
                 cs2 = 1.0;
                 cr1 = 1.0;
                 cr2 = 1.0;
                 for (i = 1; i <= 8; i++) {
-                    cr1 = -cr1 * (a+i-1.0)*(a-b+i)/(z*i);
-                    cr2 = cr2 * (b-a+i-1.0)*(i-a)/(z*i);
+                    cr1 = -cr1 * (a+i-1.0)*(a-b+i)/(z*static_cast<double>(i));
+                    cr2 = cr2 * (b-a+i-1.0)*(i-a)/(z*static_cast<double>(i));
                     cs1 += cr1;
                     cs2 += cr2;
                 }
-                x = creal(z);
-                y = cimag(z);
+                x = z.real();
+                y = z.imag();
                 if ((x == 0.0) && (y >= 0.0)) {
                     phi = 0.5*pi;
                 } else if ((x == 0.0) && (y <= 0.0)) {
@@ -1101,10 +1121,10 @@ double complex specfun_cchg(double a, double b, double complex z) {
                 }
                 if ((phi > -0.5*pi) && (phi < 1.5*pi)) { ns = 1; }
                 if ((phi > -1.5*pi) && (phi <= -0.5*pi)) { ns = -1; }
-                cfac = cexp(ns*ci*pi*a);
+                cfac = std::exp(static_cast<double>(ns)*ci*pi*a);
                 if (y == 0.0) { cfac = cos(pi*a); }
-                chg1 = cexp(cg2-cg3)*cpow(z, -a)*cfac*cs1;
-                chg2 = cexp(cg2-cg1+z)*cpow(z, a-b)*cs2;
+                chg1 = std::exp(cg2-cg3)*std::pow(z, -a)*cfac*cs1;
+                chg2 = std::exp(cg2-cg1+z)*std::pow(z, a-b)*cs2;
                 chg = chg1 + chg2;
             }
             if (n == 0) { cy0 = chg; }
@@ -1118,7 +1138,7 @@ double complex specfun_cchg(double a, double b, double complex z) {
                 a += 1.0;
             }
         }
-        if (x0 < 0.0) { chg *= cexp(-z); }
+        if (x0 < 0.0) { chg *= std::exp(-z); }
     }
     a = a1;
     z = z0;
@@ -1126,7 +1146,7 @@ double complex specfun_cchg(double a, double b, double complex z) {
 }
 
 
-double complex specfun_cgama(double complex z, int kf) {
+std::complex<double> cgama(std::complex<double> z, int kf) {
 
     // =========================================================
     // Purpose: Compute the gamma function Г(z) or ln[Г(z)]
@@ -1138,7 +1158,7 @@ double complex specfun_cgama(double complex z, int kf) {
     // Output:  g  --- ln[Г(z)] or Г(z)
     // ========================================================
 
-    double complex g, z1;
+    std::complex<double> g, z1;
     double az0, az1, gi, gi1, gr, gr1, t, th, th1, th2, sr, si, x0, xx, yy;
     int j, k, na;
     const double pi = 3.141592653589793;
@@ -1149,8 +1169,8 @@ double complex specfun_cgama(double complex z, int kf) {
         6.410256410256410e-03, -2.955065359477124e-02,
         1.796443723688307e-01, -1.392432216905900e+00
     };
-    xx = creal(z);
-    yy = cimag(z);
+    xx = z.real();
+    yy = z.imag();
     if ((yy == 0.0) && (xx <= 0.0) && (xx == (int)xx)) {
         return 1e300;
     } else if (xx < 0.0) {
@@ -1159,7 +1179,7 @@ double complex specfun_cgama(double complex z, int kf) {
         xx = -xx;
         yy = -yy;
     } else {
-        z1 = CMPLX(xx, 0.0);
+        z1 = std::complex<double>(xx, 0.0);
     }
     x0 = xx;
     na = 0;
@@ -1167,7 +1187,7 @@ double complex specfun_cgama(double complex z, int kf) {
         na = (int)(7 - xx);
         x0 = xx + na;
     }
-    az0 = cabs(CMPLX(x0, yy));
+    az0 = std::abs(std::complex<double>(x0, yy));
     th = atan(yy / x0);
     gr = (x0 - 0.5)*log(az0) - th*yy - x0 + 0.5*log(2.0*pi);
     gi = th*(x0 - 0.5) + yy*log(az0) - yy;
@@ -1186,12 +1206,12 @@ double complex specfun_cgama(double complex z, int kf) {
         gr -= gr1;
         gi -= gi1;
     }
-    if (creal(z1) < 0.0) {
-        az0 = cabs(z);
+    if (z1.real() < 0.0) {
+        az0 = std::abs(z);
         th1 = atan(yy/xx);
         sr = -sin(pi*xx)*cosh(pi*yy);
         si = -cos(pi*xx)*sinh(pi*yy);
-        az1 = cabs(CMPLX(sr, si));
+        az1 = std::abs(std::complex<double>(sr, si));
         th2 = atan(si/sr);
         if (sr < 0.0) {
             th2 += pi;
@@ -1201,15 +1221,15 @@ double complex specfun_cgama(double complex z, int kf) {
         z = z1;
     }
     if (kf == 1) {
-        g = exp(gr)*CMPLX(cos(gi), sin(gi));
+        g = exp(gr)*std::complex<double>(cos(gi), sin(gi));
     } else {
-        g = CMPLX(gr, gi);
+        g = std::complex<double>(gr, gi);
     }
     return g;
 }
 
 
-double specfun_chgm(double x, double a, double b) {
+double chgm(double x, double a, double b) {
 
     // ===================================================
     // Purpose: Compute confluent hypergeometric function
@@ -1223,7 +1243,7 @@ double specfun_chgm(double x, double a, double b) {
 
     int i, j, la, n, nl;
     double a0 = a, a1 = a, x0 = x, y0, y1, hg1, hg2, r1, r2, rg, xg, sum1, sum2;
-    double complex cta, ctb, ctba;
+    std::complex<double> cta, ctb, ctba;
     const double pi = 3.141592653589793;
     double hg = 0.0;
 
@@ -1259,10 +1279,10 @@ double specfun_chgm(double x, double a, double b) {
             }
         } else {
             // DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
-            cta = specfun_cgama(a, 0);
-            ctb = specfun_cgama(b, 0);
+            cta = cgama(a, 0);
+            ctb = cgama(b, 0);
             xg = b-a;
-            ctba = specfun_cgama(xg, 0);
+            ctba = cgama(xg, 0);
             sum1 = 1.0;
             sum2 = 1.0;
             r1 = 1.0;
@@ -1274,12 +1294,12 @@ double specfun_chgm(double x, double a, double b) {
                 sum2 += r2;
             }
             if (x0 >= 0.0) {
-                hg1 = creal(cexp(ctb-ctba))*pow(x, -a)*cos(pi*a)*sum1;
-                hg2 = creal(cexp(ctb-cta+x))*pow(x, a-b)*sum2;
+                hg1 = (std::exp(ctb-ctba)).real()*pow(x, -a)*cos(pi*a)*sum1;
+                hg2 = (std::exp(ctb-cta+x)).real()*pow(x, a-b)*sum2;
             } else {
             // DLMF 13.2.39 (cf. above)
-                 hg1 = creal(cexp(ctb-ctba+x0))*pow(x, -a)*cos(pi*a)*sum1;
-                 hg2 = creal(cexp(ctb-cta))*pow(x, a-b)*sum2;
+                 hg1 = (std::exp(ctb-ctba+x0)).real()*pow(x, -a)*cos(pi*a)*sum1;
+                 hg2 = (std::exp(ctb-cta)).real()*pow(x, a-b)*sum2;
             }
             hg = hg1 + hg2;
         }
@@ -1302,7 +1322,7 @@ double specfun_chgm(double x, double a, double b) {
 }
 
 
-double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
+double chgu(double x, double a, double b, int *md, int *isfer) {
 
     // =======================================================
     // Purpose: Compute the confluent hypergeometric function
@@ -1336,13 +1356,13 @@ double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
     id = -100;
     hu1 = 0.0;
     if (b != (int)b) {
-        hu = specfun_chgus(x, a, b, &id1);
+        hu = chgus(x, a, b, &id1);
         *md = 1;
         if (id1 >= 9) { return hu; }
         hu1 = hu;
     }
     if (il1 || il2 || il3) {
-        hu = specfun_chgul(x, a, b, &id);
+        hu = chgul(x, a, b, &id);
         *md = 2;
         if (id >= 9) { return hu; }
         if (id1 > id) {
@@ -1353,21 +1373,21 @@ double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
     }
     if (a >= 1.0) {
         if (bn && (bl1 || bl2 || bl3)) {
-            hu = specfun_chgubi(x, a, b, &id);
+            hu = chgubi(x, a, b, &id);
             *md = 3;
         } else {
-            hu = specfun_chguit(x, a, b, &id);
+            hu = chguit(x, a, b, &id);
             *md = 4;
         }
     } else {
         if (b <= a) {
             a -= b - 1.0;
             b = 2.0 - b;
-            hu = specfun_chguit(x, a, b, &id);
+            hu = chguit(x, a, b, &id);
             hu *= pow(x, 1.0 - b);
             *md = 4;
         } else if (bn && (~il1)) {
-            hu = specfun_chgubi(x, a, b, &id);
+            hu = chgubi(x, a, b, &id);
             *md = 3;
         }
     }
@@ -1376,7 +1396,7 @@ double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
 }
 
 
-double specfun_chgubi(double x, double a, double b, int *id) {
+double chgubi(double x, double a, double b, int *id) {
 
     // ======================================================
     // Purpose: Compute confluent hypergeometric function
@@ -1407,20 +1427,20 @@ double specfun_chgubi(double x, double a, double b, int *id) {
             rn1 = rn;
         }
     }
-    ps = specfun_psi_spec(a);
-    ga = specfun_gamma2(a);
+    ps = psi_spec(a);
+    ga = gamma2(a);
     if (b > 0.0) {
         a0 = a;
         a1 = a - n;
         a2 = a1;
-        ga1 = specfun_gamma2(a1);
+        ga1 = gamma2(a1);
         ua = pow(-1, n-1) / (rn * ga1);
         ub = rn1 / ga * pow(x, -n);
     } else {
         a0 = a + n;
         a1 = a0;
         a2 = a;
-        ga1 = specfun_gamma2(a1);
+        ga1 = gamma2(a1);
         ua = pow(-1, n-1) / (rn * ga) * pow(x, n);
         ub = rn1 / ga1;
     }
@@ -1532,7 +1552,7 @@ double specfun_chgubi(double x, double a, double b, int *id) {
 }
 
 
-double specfun_chguit(double x, double a, double b, int *id) {
+double chguit(double x, double a, double b, int *id) {
 
     // ======================================================
     // Purpose: Compute hypergeometric function U(a,b,x) by
@@ -1592,7 +1612,7 @@ double specfun_chguit(double x, double a, double b, int *id) {
         if (fabs(1.0 - hu0/hu1) < 1.0e-9) { break; }
         hu0 = hu1;
     }
-    ga = specfun_gamma2(a);
+    ga = gamma2(a);
     hu1 /= ga;
     // DLMF 13.4.4 with substitution t=C/(1-u)
     // integration u from 0 to 1, i.e. t from C=12/X to infinity
@@ -1617,14 +1637,14 @@ double specfun_chguit(double x, double a, double b, int *id) {
         if (fabs(1.0 - hu0/hu2) < 1.0e-9) { break; }
         hu0 = hu2;
     }
-    ga = specfun_gamma2(a);
+    ga = gamma2(a);
     hu2 /= ga;
     hu = hu1 + hu2;
     return hu;
 }
 
 
-double specfun_chgul(double x, double a, double b, int *id) {
+double chgul(double x, double a, double b, int *id) {
 
     // =======================================================
     // Purpose: Compute the confluent hypergeometric function
@@ -1675,7 +1695,7 @@ double specfun_chgul(double x, double a, double b, int *id) {
 }
 
 
-double specfun_chgus(double x, double a, double b, int *id) {
+double chgus(double x, double a, double b, int *id) {
 
     // ======================================================
     // Purpose: Compute confluent hypergeometric function
@@ -1695,10 +1715,10 @@ double specfun_chgus(double x, double a, double b, int *id) {
     const double pi = 3.141592653589793;
 
     *id = 100;
-    ga = specfun_gamma2(a);
-    gb = specfun_gamma2(b);
-    gab = specfun_gamma2(1.0 + a - b);
-    gb2 = specfun_gamma2(2.0 - b);
+    ga = gamma2(a);
+    gb = gamma2(b);
+    gab = gamma2(1.0 + a - b);
+    gb2 = gamma2(2.0 - b);
     hu0 = pi / sin(pi*b);
     r1 = hu0 / (gab*gb);
     r2 = hu0*pow(x, 1.0 - b) / (ga*gb2);
@@ -1724,7 +1744,7 @@ double specfun_chgus(double x, double a, double b, int *id) {
 }
 
 
-void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cpm, double complex *cpd) {
+void clpmn(std::complex<double> z, int m, int n, int ntype, std::complex<double> *cpm, std::complex<double> *cpd) {
 
     // =========================================================
     // Purpose: Compute the associated Legendre functions Pmn(z)
@@ -1743,9 +1763,9 @@ void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cp
     // =========================================================
 
     int i, j, ls;
-    double complex zq, zs;
-    double x = creal(z);
-    double y = cimag(z);
+    std::complex<double> zq, zs;
+    double x = z.real();
+    double y = z.imag();
 
     for (i = 0; i < (m+1)*(n+1); i++) {
             cpm[i] = 0.0;
@@ -1774,12 +1794,12 @@ void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cp
     if (ntype == 2) {
         // sqrt(1 - z**2) with branch cut on |x|>1
         zs = (1.0 - z*z);
-        zq = -csqrt(zs);
+        zq = -std::sqrt(zs);
         ls = -1;
     } else {
         // sqrt(z**2 - 1) with branch cut between [-1, 1]
         zs = (z*z - 1.0);
-        zq = csqrt(zs);
+        zq = std::sqrt(zs);
         if (x < 0.) { zq = -zq; }
         ls = 1;
     }
@@ -1794,19 +1814,19 @@ void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cp
     for (i = 0; i <= m; i++) {
         for (j = i+2; j <= n; j++) {
             // DLMF 14.10.3
-            cpm[i*(n + 1) + j] = ((2.*j - 1)*z*cpm[i*(n + 1) + j-1] - (i+j-1)*cpm[i*(n+1) + j-2])/(j-i);
+            cpm[i*(n + 1) + j] = ((2.*j - 1)*z*cpm[i*(n + 1) + j-1] - static_cast<double>(i+j-1)*cpm[i*(n+1) + j-2])/static_cast<double>(j-i);
         }
     }
     cpd[0] = 0.0;
     for (j = 1; j <= n; j++) {
         // DLMF 14.10.5
-        cpd[j] = ls*j*(z*cpm[j] - cpm[j-1])/zs;
+        cpd[j] = ls*static_cast<double>(j)*(z*cpm[j] - cpm[j-1])/zs;
     }
     for (i = 1; i <= m; i++) {
         for (j = i; j <= n; j++) {
             // derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
             // derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
-            cpd[i * (n + 1) + j] = ls*(-i*z*cpm[i * (n + 1) + j]/zs +
+            cpd[i * (n + 1) + j] = static_cast<double>(ls)*(-static_cast<double>(i)*z*cpm[i * (n + 1) + j]/zs +
                                    (j+i)*(j-i+1.0)/zq*cpm[(i - 1)*(n + 1) + j]);
         }
     }
@@ -1814,7 +1834,7 @@ void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cp
 }
 
 
-void specfun_clpn(int n, double complex z, double complex *cpn, double complex *cpd) {
+void clpn(int n, std::complex<double> z, std::complex<double> *cpn, std::complex<double> *cpd) {
 
     // ==================================================
     // Purpose: Compute Legendre polynomials Pn(z) and
@@ -1828,7 +1848,7 @@ void specfun_clpn(int n, double complex z, double complex *cpn, double complex *
     // ==================================================
 
     int k;
-    double complex cp0, cp1, cpf;
+    std::complex<double> cp0, cp1, cpf;
 
     cpn[0] = 1.0;
     cpn[1] = z;
@@ -1840,9 +1860,9 @@ void specfun_clpn(int n, double complex z, double complex *cpn, double complex *
         cpf = (2.0 * k -1.0) / k * z * cp1 - (k - 1.0) / k * cp0;
         cpn[k] = cpf;
         if (z == 1.0) {
-            cpd[k] = 0.5 * pow(creal(z) , k+1) * k * (k + 1.0);
+            cpd[k] = 0.5 * pow(z.real() , k+1) * k * (k + 1.0);
         } else {
-            cpd[k] = k * (cp1 - z * cpf) / (1.0 - z * z);
+            cpd[k] = static_cast<double>(k) * (cp1 - z * cpf) / (1.0 - z * z);
         }
         cp0 = cp1;
         cp1 = cpf;
@@ -1851,7 +1871,7 @@ void specfun_clpn(int n, double complex z, double complex *cpn, double complex *
 }
 
 
-void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double complex *cqd) {
+void clqmn(std::complex<double> z, int m, int n, std::complex<double> *cqm, std::complex<double> *cqd) {
 
     // =======================================================
     // Purpose: Compute the associated Legendre functions of
@@ -1868,9 +1888,9 @@ void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double c
 
     int i, j, k, km, ls;
     double xc;
-    double complex cq0, cq1, cq10, cqf0 = 0.0, cqf, cqf1, cqf2, zq, zs;
-    double x = creal(z);
-    double y = cimag(z);
+    std::complex<double> cq0, cq1, cq10, cqf0 = 0.0, cqf, cqf1, cqf2, zq, zs;
+    double x = z.real();
+    double y = z.imag();
     if ((fabs(x) == 1.0) && (y == 0.0)) {
         for (i = 0; i < (m + 1) * (n + 1); i++) {
             cqm[i] = 1e300;
@@ -1878,17 +1898,17 @@ void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double c
         }
         return;
     }
-    xc = cabs(z);
+    xc = std::abs(z);
     ls = 0;
-    if ((cimag(z) == 0.0) || (xc < 1.0)) {
+    if ((z.imag() == 0.0) || (xc < 1.0)) {
         ls = 1;
     }
     if (xc > 1.0) {
         ls = -1;
     }
-    zs = ls*(1.0 - z*z);
-    zq = csqrt(zs);
-    cq0 = 0.5*clog(ls*(1.0 + z)/(1.0 - z));
+    zs = static_cast<double>(ls)*(1.0 - z*z);
+    zq = std::sqrt(zs);
+    cq0 = 0.5*std::log(static_cast<double>(ls)*(1.0 + z)/(1.0 - z));
 
     if (xc < 1.0001) {
         cqm[0] = cq0;
@@ -1898,7 +1918,7 @@ void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double c
         for (i = 0; i <= 1; i++) {
             for (j = 2; j <= n; j++) {
                 cqm[i * (n + 1) + j] = ((2.0*j-1.0)*z*cqm[i * (n + 1) + j - 1]
-                                       -(j+i-1.0)*cqm[i * (n + 1) + j - 2])/(j-i);
+                                       -(j+i-1.0)*cqm[i * (n + 1) + j - 2])/static_cast<double>(j-i);
             }
         }
         for (i = 2; i <= m; i++) {
@@ -1953,14 +1973,14 @@ void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double c
                 cq1 = cqf;
             }
         }
-        cqd[0] = ls / zs;
+        cqd[0] = static_cast<double>(ls) / zs;
         for (j = 1; j <= n; j++) {
-            cqd[j] = ls*j*(cqm[j-1] - z*cqm[j])/zs;
+            cqd[j] = ls*static_cast<double>(j)*(cqm[j-1] - z*cqm[j])/zs;
         }
         /* 50 */
         for (i = 1; i <= m; i++) {
             for (j = 0; j <= n; j++) {
-                cqd[i*(n + 1) + j] = ls*i*z/zs*cqm[i*(n + 1) + j] + (i+j)*(j-i+1.0)/zq*cqm[(i - 1)*(n + 1) + j];
+                cqd[i*(n + 1) + j] = static_cast<double>(ls*i)*z/zs*cqm[i*(n + 1) + j] + (i+j)*(j-i+1.0)/zq*cqm[(i - 1)*(n + 1) + j];
             }
         }
         return;
@@ -1968,7 +1988,7 @@ void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double c
 }
 
 
-void specfun_clqn(int n, double complex z, double complex *cqn, double complex *cqd) {
+void clqn(int n, std::complex<double> z, std::complex<double> *cqn, std::complex<double> *cqd) {
 
     // ==================================================
     // Purpose: Compute the Legendre functions Qn(z) and
@@ -1982,7 +2002,7 @@ void specfun_clqn(int n, double complex z, double complex *cqn, double complex *
     // ==================================================
 
     int k, km, ls;
-    double complex cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
+    std::complex<double> cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
 
     if (z == 1.0) {
         for (int k = 0; k <= n; ++k) {
@@ -1991,28 +2011,28 @@ void specfun_clqn(int n, double complex z, double complex *cqn, double complex *
         }
         return;
     }
-    ls = ((cabs(z) > 1.0) ? -1 : 1);
+    ls = ((std::abs(z) > 1.0) ? -1 : 1);
 
-    cq0 = 0.5 * clog(ls * (1.0 + z) / (1.0 - z));
+    cq0 = 0.5 * std::log(static_cast<double>(ls) * (1.0 + z) / (1.0 - z));
     cq1 = z * cq0 - 1.0;
 
     cqn[0] = cq0;
     cqn[1] = cq1;
 
-    if (cabs(z) < 1.0001) {
+    if (std::abs(z) < 1.0001) {
         cqf0 = cq0;
         cqf1 = cq1;
         for (k = 2; k <= n; k++) {
-            cqf2 = ((2.0 * k - 1.0) * z * cqf1 - (k - 1.0) * cqf0) / k;
+            cqf2 = ((2.0 * k - 1.0) * z * cqf1 - (k - 1.0) * cqf0) / static_cast<double>(k);
             cqn[k] = cqf2;
             cqf0 = cqf1;
             cqf1 = cqf2;
         }
     } else {
-        if (cabs(z) > 1.1) {
+        if (std::abs(z) > 1.1) {
             km = 40 + n;
         } else {
-            km = (int)((40 + n) * floor(-1.0 - 1.8 * log(cabs(z - 1.0))));
+            km = (int)((40 + n) * floor(-1.0 - 1.8 * log(std::abs(z - 1.0))));
         }
 
         cqf2 = 0.0;
@@ -2032,13 +2052,13 @@ void specfun_clqn(int n, double complex z, double complex *cqn, double complex *
     cqd[0] = (cqn[1] - z * cqn[0]) / (z * z - 1.0);
 
     for (int k = 1; k <= n; ++k) {
-        cqd[k] = (k * z * cqn[k] - k * cqn[k - 1]) / (z * z - 1.0);
+        cqd[k] = (static_cast<double>(k) * z * cqn[k] - static_cast<double>(k) * cqn[k - 1]) / (z * z - 1.0);
     }
     return;
 }
 
 
-void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex *cpd) {
+void cpbdn(int n, std::complex<double> z, std::complex<double> *cpb, std::complex<double> *cpd) {
 
     // ==================================================
     // Purpose: Compute the parabolic cylinder functions
@@ -2054,12 +2074,12 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
 
     int n0, n1, nm1;
     double a0, x;
-    double complex ca0, cf, cf0, cf1, cfa, cfb, cs0, z1;
+    std::complex<double> ca0, cf, cf0, cf1, cfa, cfb, cs0, z1;
     const double pi = 3.141592653589793;
 
-    x = creal(z);
-    a0 = cabs(z);
-    ca0 = cexp(-0.25 * z * conj(z));
+    x = z.real();
+    a0 = std::abs(z);
+    ca0 = std::exp(-0.25 * z * conj(z));
     n0 = 0;
 
     if (n >= 0) {
@@ -2085,12 +2105,12 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
             z1 = -z;
 
             if (a0 <= 7.0) {
-                cpb[1] = specfun_cpdsa(-1, z1);
+                cpb[1] = cpdsa(-1, z1);
             } else {
-                cpb[1] = specfun_cpdla(-1, z1);
+                cpb[1] = cpdla(-1, z1);
             }
 
-            cf1 = csqrt(2.0 * pi) / ca0 - cpb[1];
+            cf1 = std::sqrt(2.0 * pi) / ca0 - cpb[1];
             cpb[1] = cf1;
 
             for (int k = 2; k < n0; ++k) {
@@ -2100,9 +2120,9 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
                 cf1 = cf;
             }
         } else if (a0 <= 3.0) {
-            cpb[n0] = specfun_cpdsa(-n0, z);
+            cpb[n0] = cpdsa(-n0, z);
             n1 = n0 + 1;
-            cpb[n1] = specfun_cpdsa(-n1, z);
+            cpb[n1] = cpdsa(-n1, z);
 
             nm1 = n0 - 1;
             for (int k = nm1; k >= 0; --k) {
@@ -2114,7 +2134,7 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
         } else {
             int m = 100 + abs(n);
             cfa = 0.0;
-            cfb = 1.0e-30 + 0.0 * I;
+            cfb = 1.0e-30;
 
             for (int k = m; k >= 0; --k) {
                 cf = z * cfb + (k + 1.0) * cfa;
@@ -2139,7 +2159,7 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
 
     if (n >= 0) {
         for (int k = 1; k <= n; ++k) {
-            cpd[k] = -0.5 * z * cpb[k] + k * cpb[k - 1];
+            cpd[k] = -0.5 * z * cpb[k] + static_cast<double>(k) * cpb[k - 1];
         }
     } else {
         for (int k = 1; k < n0; ++k) {
@@ -2149,7 +2169,7 @@ void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex 
 }
 
 
-double complex specfun_cpdla(int n, double complex z) {
+std::complex<double> cpdla(int n, std::complex<double> z) {
 
     // ===========================================================
     // Purpose: Compute complex parabolic cylinder function Dn(z)
@@ -2160,26 +2180,26 @@ double complex specfun_cpdla(int n, double complex z) {
     // ===========================================================
 
     int k;
-    double complex cb0, cr, cdn;
+    std::complex<double> cb0, cr, cdn;
 
-    cb0 = cpow(z, n)*cexp(-0.25*z*z);
+    cb0 = std::pow(z, n)*std::exp(-0.25*z*z);
     cr = 1.0;
     cdn = 1.0;
     for (k = 1; k <= 16; k++) {
-        cr = - 0.5 * cr * (2.0 * k - n - 1.0) * (2.0 * k - n - 2.0) / (k * z * z);
+        cr = - 0.5 * cr * (2.0 * k - n - 1.0) * (2.0 * k - n - 2.0) / (static_cast<double>(k) * z * z);
         cdn += cr;
-        if (cabs(cr) < cabs(cdn) * 1e-12) { break; }
+        if (std::abs(cr) < std::abs(cdn) * 1e-12) { break; }
     }
     return cdn * cb0;
 }
 
 
-double complex specfun_cpdsa(int n, double complex z) {
+std::complex<double> cpdsa(int n, std::complex<double> z) {
 
     // ===========================================================
     // Purpose: Compute complex parabolic cylinder function Dn(z)
     //          for small argument
-    // Input:   z   --- complex argument of D(z)
+    // Input:   z   --- Complex argument of D(z)
     //          n   --- Order of D(z) (n = 0,-1,-2,...)
     // Output:  CDN --- Dn(z)
     // Routine called: GAIH for computing Г(x), x=n/2 (n=1,2,...)
@@ -2187,40 +2207,40 @@ double complex specfun_cpdsa(int n, double complex z) {
 
     int m;
     double va0, pd, vm, vt, xn;
-    double complex ca0, cb0, cdn, cr, cdw, g0, g1, ga0, gm;
+    std::complex<double> ca0, cb0, cdn, cr, cdw, g0, g1, ga0, gm;
     const double eps = 1.0e-15;
     const double pi = 3.141592653589793;
     const double sq2 = sqrt(2.0);
 
-    ca0 = cexp(-0.25 * z * z);
+    ca0 = std::exp(-0.25 * z * z);
     va0 = 0.5 * (1.0 - n);
     if (n == 0.0) {
         cdn = ca0;
     } else {
-        if (cabs(z) == 0.0) {
+        if (std::abs(z) == 0.0) {
             if ((va0 <= 0.0) && (va0 == (int)va0)) {
                 cdn = 0.0;
             } else {
-                ga0 = specfun_gaih(va0);
-                pd = sqrt(pi) / (pow(2.0, -0.5 * n) * ga0);
+                ga0 = gaih(va0);
+                pd = sqrt(pi) / (pow(2.0, -0.5 * n) * ga0.real());
                 cdn = pd;
             }
         } else {
             xn = -n;
-            g1 = specfun_gaih(xn);
+            g1 = gaih(xn);
             cb0 = pow(2.0, -0.5 * n - 1.0) * ca0 / g1;
             vt = -0.5 * n;
-            g0 = specfun_gaih(vt);
+            g0 = gaih(vt);
             cdn = g0;
-            cr = CMPLX(1.0, 0.0);
+            cr = std::complex<double>(1.0, 0.0);
 
             for (m = 1; m <= 250; m++) {
                 vm = 0.5 * (m - n);
-                gm = specfun_gaih(vm);
-                cr = -cr*sq2 * z / m;
+                gm = gaih(vm);
+                cr = -cr*sq2 * z / static_cast<double>(m);
                 cdw = gm * cr;
                 cdn += cdw;
-                if (cabs(cdw) < cabs(cdn) * eps) {
+                if (std::abs(cdw) < std::abs(cdn) * eps) {
                     break;
                 }
             }
@@ -2231,7 +2251,7 @@ double complex specfun_cpdsa(int n, double complex z) {
 }
 
 
-double specfun_cv0(double kd, double m, double q) {
+double cv0(double kd, double m, double q) {
 
     // =====================================================
     // Purpose: Compute the initial characteristic value of
@@ -2255,7 +2275,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 10.0) {
             a0 = ((3.999267e-3 * q - 9.638957e-2) * q - 0.88297) * q + 0.5542818;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 1) {
         if ((q <= 1.0) && (kd == 2)) {
@@ -2267,7 +2287,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 10.0 && kd == 3) {
             a0 = ((1.971096e-3 * q - 5.482465e-2) * q - 1.152218) * q + 1.10427;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 2) {
         if (q <= 1.0 && kd == 1) {
@@ -2279,7 +2299,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 10.0 && kd == 4) {
             a0 = ((2.38446e-3 * q - 0.08725329) * q - 4.732542e-3) * q + 4.00909;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 3) {
         if (q <= 1.0 && kd == 2) {
@@ -2291,7 +2311,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 15.0 && kd == 3) {
             a0 = ((9.369364e-5 * q - 0.03569325) * q + 0.2689874) * q + 8.771735;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 4) {
         if (q <= 1.0 && kd == 1) {
@@ -2303,7 +2323,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 20.0 && kd == 4) {
             a0 = ((-7.08719e-4 * q + 3.8216144e-3) * q + 0.1907493) * q + 15.744;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 5) {
         if (q <= 1.0 && kd == 2) {
@@ -2315,7 +2335,7 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 25.0 && kd == 3) {
             a0 = ((-7.425364e-4 * q + 2.18225e-2) * q + 4.16399e-2) * q + 24.897;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 6) {
         if (q <= 1.0) {
@@ -2325,23 +2345,23 @@ double specfun_cv0(double kd, double m, double q) {
         } else if (q <= 35.0 && kd == 4) {
             a0 = ((-4.57146e-4 * q + 2.16609e-2) * q - 2.349616e-2) * q + 35.99251;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m == 7) {
         if (q <= 10.0) {
-            a0 = specfun_cvqm(m, q);
+            a0 = cvqm(m, q);
         } else if (q <= 50.0 && kd == 2) {
             a0 = (((-1.411114e-5 * q + 9.730514e-4) * q - 3.097887e-3) * q + 3.533597e-2) * q + 49.0547;
         } else if (q <= 40.0 && kd == 3) {
             a0 = ((-3.043872e-4 * q + 2.05511e-2) * q - 9.16292e-2) * q + 49.19035;
         } else {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         }
     } else if (m >= 8) {
         if (q <= 3*m) {
-            a0 = specfun_cvqm(m, q);
+            a0 = cvqm(m, q);
         } else if (q > m * m) {
-            a0 = specfun_cvql(kd, m, q);
+            a0 = cvql(kd, m, q);
         } else {
             if (m == 8 && kd == 1) {
                 a0 = (((8.634308e-6 * q - 2.100289e-3) * q + 0.169072) * q - 4.64336) * q + 109.4211;
@@ -2370,7 +2390,7 @@ double specfun_cv0(double kd, double m, double q) {
 }
 
 
-double specfun_cva2(int kd, int m, double q) {
+double cva2(int kd, int m, double q) {
 
     // ======================================================
     // Purpose: Calculate a specific characteristic value of
@@ -2398,9 +2418,9 @@ double specfun_cva2(int kd, int m, double q) {
     double a = 0.0, delta, q1, q2, qq, a1, a2;
 
     if ((m <= 12) || (q <= 3.0 * m) || (q > m * m)) {
-        a = specfun_cv0(kd, m, q);
-        if ((q != 0.0) && (m != 2)) { a = specfun_refine(kd, m, q, a); }
-        if ((q > 2.0e-3) && (m == 2)) { a = specfun_refine(kd, m, q, a); }
+        a = cv0(kd, m, q);
+        if ((q != 0.0) && (m != 2)) { a = refine(kd, m, q, a); }
+        if ((q > 2.0e-3) && (m == 2)) { a = refine(kd, m, q, a); }
     } else {
         ndiv = 10;
         delta = (m - 3.0) * m / ndiv;
@@ -2409,14 +2429,14 @@ double specfun_cva2(int kd, int m, double q) {
             nn = (int)((q - 3.0 * m) / delta) + 1;
             delta = (q - 3.0 * m) / nn;
             q1 = 2.0 * m;
-            a1 = specfun_cvqm(m, q1);
+            a1 = cvqm(m, q1);
             q2 = 3.0 * m;
-            a2 = specfun_cvqm(m, q2);
+            a2 = cvqm(m, q2);
             qq = 3.0 * m;
             for (i = 1; i <= nn; i++) {
                 qq = qq + delta;
                 a = (a1 * q2 - a2 * q1 + (a2 - a1) * qq) / (q2 - q1);
-                a = specfun_refine(kd, m, qq, a);
+                a = refine(kd, m, qq, a);
                 q1 = q2;
                 q2 = qq;
                 a1 = a2;
@@ -2426,14 +2446,14 @@ double specfun_cva2(int kd, int m, double q) {
             nn = (int)((m * m - q) / delta) + 1;
             delta = (m * m - q) / nn;
             q1 = m * (m - 1.0);
-            a1 = specfun_cvql(kd, m, q1);
+            a1 = cvql(kd, m, q1);
             q2 = m * m;
-            a2 = specfun_cvql(kd, m, q2);
+            a2 = cvql(kd, m, q2);
             qq = m * m;
             for (i = 1; i <= nn; ++i) {
                 qq = qq - delta;
                 a = (a1 * q2 - a2 * q1 + (a2 - a1) * qq) / (q2 - q1);
-                a = specfun_refine(kd, m, qq, a);
+                a = refine(kd, m, qq, a);
                 q1 = q2;
                 q2 = qq;
                 a1 = a2;
@@ -2445,7 +2465,7 @@ double specfun_cva2(int kd, int m, double q) {
 }
 
 
-double specfun_cvf(int kd, int m, double q, double a, int mj) {
+double cvf(int kd, int m, double q, double a, int mj) {
 
     // ======================================================
     // Purpose: Compute the value of F for characteristic
@@ -2491,7 +2511,7 @@ double specfun_cvf(int kd, int m, double q, double a, int mj) {
 }
 
 
-double specfun_cvql(int kd, int m, double q) {
+double cvql(int kd, int m, double q) {
 
     // ========================================================
     // Purpose: Compute the characteristic value of Mathieu
@@ -2525,7 +2545,7 @@ double specfun_cvql(int kd, int m, double q) {
 }
 
 
-double specfun_cvqm(int m, double q) {
+double cvqm(int m, double q) {
 
     // =====================================================
     // Purpose: Compute the characteristic value of Mathieu
@@ -2545,7 +2565,7 @@ double specfun_cvqm(int m, double q) {
 }
 
 
-void specfun_cy01(int kf, double complex z, double complex *zf, double complex *zd) {
+void cy01(int kf, std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
 
     // ===========================================================
     // Purpose: Compute complex Bessel functions Y0(z), Y1(z)
@@ -2561,13 +2581,13 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
 
     int k, k0;
     double a0, w0, w1;
-    double complex cr, cp, cp0, cq0, cu, cp1, cq1, cbj0, cbj1,\
+    std::complex<double> cr, cp, cp0, cq0, cu, cp1, cq1, cbj0, cbj1,\
                    cby0, cby1, cdy0, cdy1, cs, ct1, ct2, z1, z2;
 
     const double pi = 3.141592653589793;
     const double el = 0.5772156649015329;
     const double rp2 = 2.0 / pi;
-    const double complex ci = CMPLX(0.0, 1.0);
+    const std::complex<double> ci(0.0, 1.0);
 
     static const double a[12] = {-0.703125e-01,        0.112152099609375, -0.5725014209747314,
                                   0.6074042001273483, -0.1100171402692467, 0.3038090510922384,
@@ -2589,16 +2609,16 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
                                   -0.8902978767070678,  0.5310411010968522, -0.4043620325107754,
                                    0.3827011346598605, -0.4406481417852278,  0.6065091351222699};
 
-    a0 = cabs(z);
+    a0 = std::abs(z);
     z1 = z;
     z2 = z * z;
     if (a0 == 0.0) {
-        cbj0 = CMPLX(1.0, 0.0);
-        cbj1 = CMPLX(0.0, 0.0);
-        cby0 = CMPLX(-1e300, 0.0);
-        cby1 = CMPLX(-1e300, 0.0);
-        cdy0 = CMPLX( 1e300, 0.0);
-        cdy1 = CMPLX( 1e300, 0.0);
+        cbj0 = std::complex<double>(1.0, 0.0);
+        cbj1 = std::complex<double>(0.0, 0.0);
+        cby0 = std::complex<double>(-1e300, 0.0);
+        cby1 = std::complex<double>(-1e300, 0.0);
+        cdy0 = std::complex<double>( 1e300, 0.0);
+        cdy1 = std::complex<double>( 1e300, 0.0);
         if (kf == 0) {
             *zf = cby0;
             *zd = cdy0;
@@ -2612,51 +2632,51 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         return;
     }
 
-    if (creal(z) < 0.0) {
+    if (z.real() < 0.0) {
         z1 = -z;
     }
 
     if (a0 <= 12.0) {
-        cbj0 = CMPLX(1.0, 0.0);
-        cr = CMPLX(1.0, 0.0);
+        cbj0 = std::complex<double>(1.0, 0.0);
+        cr = std::complex<double>(1.0, 0.0);
         for (k = 1; k <= 40; k++) {
-            cr = -0.25 * cr * z2 / (k * k);
+            cr = -0.25 * cr * z2 / static_cast<double>(k * k);
             cbj0 += cr;
-            if (cabs(cr) < cabs(cbj0) * 1.0e-15) break;
+            if (std::abs(cr) < std::abs(cbj0) * 1.0e-15) break;
         }
 
-        cbj1 = CMPLX(1.0, 0.0);
-        cr = CMPLX(1.0, 0.0);
+        cbj1 = std::complex<double>(1.0, 0.0);
+        cr = std::complex<double>(1.0, 0.0);
         for (k = 1; k <= 40; k++) {
             cr = -0.25 * cr * z2 / (k * (k + 1.0));
             cbj1 += cr;
-            if (cabs(cr) < cabs(cbj1) * 1.0e-15) break;
+            if (std::abs(cr) < std::abs(cbj1) * 1.0e-15) break;
         }
 
         cbj1 *= 0.5 * z1;
         w0 = 0.0;
-        cr = CMPLX(1.0, 0.0);
-        cs = CMPLX(0.0, 0.0);
+        cr = std::complex<double>(1.0, 0.0);
+        cs = std::complex<double>(0.0, 0.0);
         for (k = 1; k <= 40; k++) {
             w0 += 1.0 / k;
-            cr = -0.25 * cr / (k * k) * z2;
+            cr = -0.25 * cr / static_cast<double>(k * k) * z2;
             cp = cr * w0;
             cs += cp;
-            if (cabs(cp) < cabs(cs) * 1.0e-15) break;
+            if (std::abs(cp) < std::abs(cs) * 1.0e-15) break;
         }
 
-        cby0 = rp2 * (clog(z1 / 2.0) + el) * cbj0 - rp2 * cs;
+        cby0 = rp2 * (std::log(z1 / 2.0) + el) * cbj0 - rp2 * cs;
         w1 = 0.0;
         cr = 1.0;
         cs = 1.0;
         for (k = 1; k <= 40; k++) {
             w1 += 1.0 / k;
-            cr = -0.25 * cr / (k * (k + 1)) * z2;
+            cr = -0.25 * cr / static_cast<double>(k * (k + 1)) * z2;
             cp = cr * (2.0 * w1 + 1.0 / (k + 1.0));
             cs += cp;
-            if (cabs(cp) < cabs(cs) * 1.0e-15) break;
+            if (std::abs(cp) < std::abs(cs) * 1.0e-15) break;
         }
-        cby1 = rp2 * ((clog(z1 / 2.0) + el) * cbj1 - 1.0 / z1 - 0.25 * z1 * cs);
+        cby1 = rp2 * ((std::log(z1 / 2.0) + el) * cbj1 - 1.0 / z1 - 0.25 * z1 * cs);
     } else {
         k0 = 12;
         if (a0 >= 35.0) k0 = 10;
@@ -2671,7 +2691,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         for (k = 1; k <= k0; k++)
             cq0 += b[k - 1] * pow(z1, -2 * k - 1);
 
-        cu = csqrt(rp2 / z1);
+        cu = std::sqrt(rp2 / z1);
         cbj0 = cu * (cp0 * cos(ct1) - cq0 * sin(ct1));
         cby0 = cu * (cp0 * sin(ct1) + cq0 * cos(ct1));
 
@@ -2688,11 +2708,11 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
         cby1 = cu * (cp1 * sin(ct2) + cq1 * cos(ct2));
     }
 
-    if (creal(z) < 0.0) {
-        if (cimag(z) < 0.0) cby0 = cby0 - 2.0 * ci * cbj0;
-        if (cimag(z) > 0.0) cby0 = cby0 + 2.0 * ci * cbj0;
-        if (cimag(z) < 0.0) cby1 = -(cby1 - 2.0 * ci * cbj1);
-        if (cimag(z) > 0.0) cby1 = -(cby1 + 2.0 * ci * cbj1);
+    if (z.real() < 0.0) {
+        if (z.imag() < 0.0) cby0 = cby0 - 2.0 * ci * cbj0;
+        if (z.imag() > 0.0) cby0 = cby0 + 2.0 * ci * cbj0;
+        if (z.imag() < 0.0) cby1 = -(cby1 - 2.0 * ci * cbj1);
+        if (z.imag() > 0.0) cby1 = -(cby1 + 2.0 * ci * cbj1);
         cbj1 = -cbj1;
     }
 
@@ -2713,7 +2733,7 @@ void specfun_cy01(int kf, double complex z, double complex *zf, double complex *
 }
 
 
-void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv) {
+void cyzo(int nt, int kf, int kc, std::complex<double> *zo, std::complex<double> *zv) {
 
     // ===========================================================
     // Purpose : Compute the complex zeros of Y0(z), Y1(z) and
@@ -2736,7 +2756,7 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
 
     int i, it, j, nr;
     double x, h, w, y, w0;
-    double complex z, zf, zd, zfd, zgd, zp, zq, zw;
+    std::complex<double> z, zf, zd, zfd, zgd, zp, zq, zw;
 
     x = 0.0;
     y = 0.0;
@@ -2759,7 +2779,7 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
     if (kf == 2) {
         x = 0.577;
     }
-    z = CMPLX(x, y);
+    z = std::complex<double>(x, y);
     w = 0.0;
     for (nr = 1; nr <= nt; nr++) {
         if (nr > 1) {
@@ -2768,7 +2788,7 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
         it = 0;
         do {
             it += 1;
-            specfun_cy01(kf, z, &zf, &zd);
+            cy01(kf, z, &zf, &zd);
             zp = 1.0;
             for (i = 1; i < nr; i++) {
                 zp *= (z - zo[i - 1]);
@@ -2786,7 +2806,7 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
             zgd = (zd - zq * zfd) / zp;
             z -= zfd / zgd;
             w0 = w;
-            w = cabs(z);
+            w = std::abs(z);
         } while ((it <= 50) && (fabs((w - w0) / w) > 1.0e-12));
 
         zo[nr - 1] = z;
@@ -2795,10 +2815,10 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
     for (i = 1; i <= nt; i++) {
         z = zo[i - 1];
         if ((kf == 0) || (kf == 2)) {
-            specfun_cy01(1, z, &zf, &zd);
+            cy01(1, z, &zf, &zd);
             zv[i - 1] = zf;
         } else if (kf == 1) {
-            specfun_cy01(0, z, &zf, &zd);
+            cy01(0, z, &zf, &zd);
             zv[i - 1] = zf;
         }
     }
@@ -2806,7 +2826,7 @@ void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv
 }
 
 
-double specfun_dvla(double x, double va) {
+double dvla(double x, double va) {
 
     // ====================================================
     // Purpose: Compute parabolic cylinder functions Dv(x)
@@ -2836,15 +2856,15 @@ double specfun_dvla(double x, double va) {
     pd *= a0;
     if (x < 0.0) {
         x1 = -x;
-        vl = specfun_vvla(x1, va);
-        gl = specfun_gamma2(-va);
+        vl = vvla(x1, va);
+        gl = gamma2(-va);
         pd = pi*vl/gl + cos(pi*va)*pd;
     }
     return pd;
 }
 
 
-double specfun_dvsa(double x, double va) {
+double dvsa(double x, double va) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder function Dv(x)
@@ -2871,19 +2891,19 @@ double specfun_dvsa(double x, double va) {
             if ((va0 <= 0.0) && (va0 == (int)va0)) {
                 pd = 0.0;
             } else {
-                ga0 = specfun_gamma2(va0);
+                ga0 = gamma2(va0);
                 pd = sqrt(pi)/(pow(2.0, -0.5*va)*ga0);
             }
         } else {
-            g1 = specfun_gamma2(-va);
+            g1 = gamma2(-va);
             a0 = pow(2.0, -0.5*va - 1.0)*ep/g1;
             vt = -0.5*va;
-            g0 = specfun_gamma2(vt);
+            g0 = gamma2(vt);
             pd = g0;
             r = 1.0;
             for (m = 1; m <= 250; m++) {
                 vm = 0.5*(m-va);
-                gm = specfun_gamma2(vm);
+                gm = gamma2(vm);
                 r = -r*sq2*x/m;
                 r1 = gm*r;
                 pd += r1;
@@ -2896,7 +2916,7 @@ double specfun_dvsa(double x, double va) {
 }
 
 
-double specfun_e1xb(double x) {
+double e1xb(double x) {
 
     // ============================================
     // Purpose: Compute exponential integral E1(x)
@@ -2932,7 +2952,7 @@ double specfun_e1xb(double x) {
 }
 
 
-double complex specfun_e1z(double complex z) {
+std::complex<double> e1z(std::complex<double> z) {
 
     // ====================================================
     // Purpose: Compute complex exponential integral E1(z)
@@ -2943,12 +2963,12 @@ double complex specfun_e1z(double complex z) {
     const double pi = 3.141592653589793;
     const double el = 0.5772156649015328;
     int k;
-    double complex ce1, cr, zc, zd, zdc;
-    double x = creal(z);
-    double a0 = cabs(z);
+    std::complex<double> ce1, cr, zc, zd, zdc;
+    double x = z.real();
+    double a0 = std::abs(z);
     // Continued fraction converges slowly near negative real axis,
     // so use power series in a wedge around it until radius 40.0
-    double xt = -2.0*fabs(cimag(z));
+    double xt = -2.0*fabs(z.imag());
 
     if (a0 == 0.0) { return 1e300; }
     if ((a0 < 5.0) || ((x < xt) && (a0 < 40.0))) {
@@ -2958,14 +2978,14 @@ double complex specfun_e1z(double complex z) {
         for (k = 1; k < 501; k++) {
             cr = -cr*z*(k / pow(k + 1.0, 2));
             ce1 += cr;
-            if (cabs(cr) < cabs(ce1)*1e-15) { break; }
+            if (std::abs(cr) < std::abs(ce1)*1e-15) { break; }
         }
-        if ((x <= 0.0) && (cimag(z) == 0.0)) {
+        if ((x <= 0.0) && (z.imag() == 0.0)) {
             //Careful on the branch cut -- use the sign of the imaginary part
             // to get the right sign on the factor if pi.
-            ce1 = -el - clog(-z) + z*ce1 - copysign(pi, cimag(z))*CMPLX(0.0, 1.0);
+            ce1 = -el - std::log(-z) + z*ce1 - copysign(pi, z.imag())*std::complex<double>(0.0, 1.0);
         } else {
-            ce1 = -el - clog(z) + z*ce1;
+            ce1 = -el - std::log(z) + z*ce1;
         }
     } else {
         // Continued fraction https://dlmf.nist.gov/6.9
@@ -2973,29 +2993,29 @@ double complex specfun_e1z(double complex z) {
         // E1 = exp(-z) * ----- ----- ----- ----- ----- ----- ----- ...
         //                Z +   1 +   Z +   1 +   Z +   1 +   Z +
         zc = 0.0;
-        zd = 1 / z;
+        zd = 1.0 / z;
         zdc = zd;
         zc += zdc;
         for (k = 1; k < 501; k++) {
-            zd = 1.0 / (zd*k + 1.0);
+            zd = 1.0 / (zd*static_cast<double>(k) + 1.0);
             zdc *= (1.0*zd - 1.0);
             zc += zdc;
 
-            zd = 1.0 / (zd*k + z);
+            zd = 1.0 / (zd*static_cast<double>(k) + z);
             zdc *= (z*zd - 1.0);
             zc += zdc;
-            if ((cabs(zdc) <= cabs(zc)*1e-15) && (k > 20)) { break; }
+            if ((std::abs(zdc) <= std::abs(zc)*1e-15) && (k > 20)) { break; }
         }
-        ce1 = cexp(-z)*zc;
-        if ((x <= 0.0) && (cimag(z) == 0.0)) {
-            ce1 -= pi*CMPLX(0.0, 1.0);
+        ce1 = std::exp(-z)*zc;
+        if ((x <= 0.0) && (z.imag() == 0.0)) {
+            ce1 -= pi*std::complex<double>(0.0, 1.0);
         }
     }
     return ce1;
 }
 
 
-double specfun_eix(double x) {
+double eix(double x) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3009,7 +3029,7 @@ double specfun_eix(double x) {
     if (x == 0.0) {
         ei = -1.0e+300;
     } else if (x < 0) {
-        ei = -specfun_e1xb(-x);
+        ei = -e1xb(-x);
     } else if (fabs(x) <= 40.0) {
         // Power series around x=0
         ei = 1.0;
@@ -3035,7 +3055,7 @@ double specfun_eix(double x) {
 }
 
 
-double complex specfun_eixz(double complex z) {
+std::complex<double> eixz(std::complex<double> z) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3043,23 +3063,23 @@ double complex specfun_eixz(double complex z) {
     // Output:  EI --- Ei(x)
     // ============================================
 
-    double complex cei;
+    std::complex<double> cei;
     const double pi = 3.141592653589793;
-    cei = - specfun_e1z(-z);
-    if (cimag(z) > 0.0) {
-        cei += CMPLX(0.0, pi);
-    } else if (cimag(z) < 0.0 ) {
-        cei -= CMPLX(0.0, pi);
+    cei = - e1z(-z);
+    if (z.imag() > 0.0) {
+        cei += std::complex<double>(0.0, pi);
+    } else if (z.imag() < 0.0 ) {
+        cei -= std::complex<double>(0.0, pi);
     } else {
-        if (creal(z) > 0.0) {
-            cei += CMPLX(0.0, copysign(pi, cimag(z)));
+        if (z.real() > 0.0) {
+            cei += std::complex<double>(0.0, copysign(pi, z.imag()));
         }
     }
     return cei;
 }
 
 
-void specfun_eulerb(int n, double *en) {
+void eulerb(int n, double *en) {
 
     // ======================================
     // Purpose: Compute Euler number En
@@ -3089,7 +3109,7 @@ void specfun_eulerb(int n, double *en) {
 }
 
 
-void specfun_fcoef(int kd, int m, double q, double a, double *fc) {
+void fcoef(int kd, int m, double q, double a, double *fc) {
 
     // =====================================================
     // Purpose: Compute expansion coefficients for Mathieu
@@ -3362,7 +3382,7 @@ L70:
 }
 
 
-void specfun_fcszo(int kf, int nt, double complex *zo) {
+void fcszo(int kf, int nt, std::complex<double> *zo) {
 
     // ===============================================================
     // Purpose: Compute the complex zeros of Fresnel integral C(z)
@@ -3379,7 +3399,7 @@ void specfun_fcszo(int kf, int nt, double complex *zo) {
 
     int i, j, it, nr;
     double psq, px, py, w, w0;
-    double complex z, zp, zf, zd, zfd, zgd, zq, zw;
+    std::complex<double> z, zp, zf, zd, zfd, zgd, zq, zw;
     const double pi = 3.141592653589793;
     psq = 0.0;
     w = 0.0;
@@ -3392,19 +3412,19 @@ void specfun_fcszo(int kf, int nt, double complex *zo) {
 
         px = psq - log(pi * psq) / (pi * pi * psq * psq * psq);
         py = log(pi * psq) / (pi * psq);
-        z = CMPLX(px, py);
+        z = std::complex<double>(px, py);
 
         if (kf == 2) {
-            if (nr == 2) { z = CMPLX(2.8334, 0.2443); }
-            if (nr == 3) { z = CMPLX(3.4674, 0.2185); }
-            if (nr == 4) { z = CMPLX(4.0025, 0.2008); }
+            if (nr == 2) { z = std::complex<double>(2.8334, 0.2443); }
+            if (nr == 3) { z = std::complex<double>(3.4674, 0.2185); }
+            if (nr == 4) { z = std::complex<double>(4.0025, 0.2008); }
         }
 
         it = 0;
         do {
             it++;
-            if (kf == 1) { specfun_cfc(z, &zf, &zd); }
-            if (kf == 2) { specfun_cfs(z, &zf, &zd); }
+            if (kf == 1) { cfc(z, &zf, &zd); }
+            if (kf == 2) { cfs(z, &zf, &zd); }
 
             zp = 1.0;
             for (i = 1; i < nr; i++)
@@ -3423,7 +3443,7 @@ void specfun_fcszo(int kf, int nt, double complex *zo) {
             zgd = (zd - zq * zfd) / zp;
             z -= zfd / zgd;
             w0 = w;
-            w = cabs(z);
+            w = std::abs(z);
         } while ((it <= 50) && (fabs((w - w0) / w) > 1.0e-12));
         zo[nr - 1] = z;
     }
@@ -3431,7 +3451,7 @@ void specfun_fcszo(int kf, int nt, double complex *zo) {
 }
 
 
-void specfun_ffk(int ks, double x, double *fr, double *fi, double *fm, double *fa,
+void ffk(int ks, double x, double *fr, double *fi, double *fm, double *fa,
          double *gr, double *gi, double *gm, double *ga) {
 
     // =======================================================
@@ -3545,7 +3565,7 @@ void specfun_ffk(int ks, double x, double *fr, double *fi, double *fm, double *f
         *fr = pp2 * (0.5 - c1);
         fi0 = pp2 * (0.5 - s1);
         *fi = pow(-1, ks) * fi0;
-        *fm = cabs(CMPLX(*fr, *fi));
+        *fm = std::abs(std::complex<double>(*fr, *fi));
 
         if (*fr >= 0.0) {
             *fa = srd * atan((*fi) / (*fr));
@@ -3586,7 +3606,7 @@ void specfun_ffk(int ks, double x, double *fr, double *fi, double *fm, double *f
 }
 
 
-double specfun_gaih(double x) {
+double gaih(double x) {
 
     // =====================================================
     // Purpose: Compute gamma function Г(x)
@@ -3617,7 +3637,7 @@ double specfun_gaih(double x) {
 }
 
 
-double specfun_gam0(double x) {
+double gam0(double x) {
 
     // ================================================
     // Purpose: Compute gamma function Г(x)
@@ -3641,7 +3661,7 @@ double specfun_gam0(double x) {
 }
 
 
-double specfun_gamma2(double x) {
+double gamma2(double x) {
 
     // ==================================================
     // Purpose: Compute gamma function Г(x)
@@ -3701,7 +3721,7 @@ double specfun_gamma2(double x) {
 }
 
 
-void specfun_gmn(int m, int n, double c, double x, double *bk, double *gf, double *gd) {
+void gmn(int m, int n, double c, double x, double *bk, double *gf, double *gd) {
 
     // ===========================================================
     // Purpose: Compute gmn(-ic,ix) and its derivative for oblate
@@ -3740,7 +3760,7 @@ void specfun_gmn(int m, int n, double c, double x, double *bk, double *gf, doubl
 }
 
 
-double complex specfun_hygfz(double a, double b, double c, double complex z, int *isfer) {
+std::complex<double> hygfz(double a, double b, double c, std::complex<double> z, int *isfer) {
 
     // ======================================================
     // Purpose: Compute the hypergeometric function for a
@@ -3760,9 +3780,9 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
     int j, k=1, m, mab, mcab, nca, ncb, nm;
     double a0, aa, bb, ca, cb, g0, g1, g2, g3, ga, gab, gam, gabc, gb, gba, gbm, gc, gcab,\
            gca, gcb, gm, pa, pac, pb, pca, rk1, rk2, rm, sp0, sm, sp, sq, sj1, sj2, w0, ws;
-    double complex z00, z1, zc0, zc1, zf0, zf1, zhf = 0.0, zp, zr, zp0, zr0, zr1, zw = 0.0;
-    double x = creal(z);
-    double y = cimag(z);
+    std::complex<double> z00, z1, zc0, zc1, zf0, zf1, zhf = 0.0, zp, zr, zp0, zr0, zr1, zw = 0.0;
+    double x = z.real();
+    double y = z.imag();
     double eps = 1e-15;
     double pi = 3.141592653589793;
     double el = 0.5772156649015329;
@@ -3770,14 +3790,14 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
 
     if ((c == (int)c) && (c < 0.0)) { L0 = 1; }
     if ((fabs(1 - x) < eps) && (y == 0.0) && (c-a-b <= 0.0)) { L1 = 1; }
-    if ((cabs(z+1) < eps) && (fabs(c-a+b - 1.0) < eps)) { L2 = 1; }
+    if ((std::abs(z+1.0) < eps) && (fabs(c-a+b - 1.0) < eps)) { L2 = 1; }
     if ((a == (int)a) && (a < 0.0)) { L3 = 1; }
     if ((b == (int)b) && (b < 0.0)) { L4 = 1; }
     if (((c-a) == (int)(c-a)) && (c-a <= 0.0)) { L5 = 1; }
     if (((c-b) == (int)(c-b)) && (c-b <= 0.0)) { L6 = 1; }
     aa = a;
     bb = b;
-    a0 = cabs(z);
+    a0 = std::abs(z);
     if (a0 > 0.95) { eps = 1e-8; }
     if (L0 || L1) {
         *isfer = 3;
@@ -3787,16 +3807,16 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
     if ((a0 == 0.0) || (a == 0.0) || (b == 0.0)) {
         zhf = 1.0;
     } else if ((z == 1.0) && (c-a-b > 0.0)) {
-        gc = specfun_gamma2(c);
-        gcab = specfun_gamma2(c-a-b);
-        gca = specfun_gamma2(c-a);
-        gcb = specfun_gamma2(c-b);
+        gc = gamma2(c);
+        gcab = gamma2(c-a-b);
+        gca = gamma2(c-a);
+        gcb = gamma2(c-b);
         zhf = gc*gcab/(gca*gcb);
     } else if (L2) {
         g0 = sqrt(pi)*pow(2.0, -a);
-        g1 = specfun_gamma2(c);
-        g2 = specfun_gamma2(1.0 + 0.5*a - b);
-        g3 = specfun_gamma2(0.5 + 0.5*a);
+        g1 = gamma2(c);
+        g2 = gamma2(1.0 + 0.5*a - b);
+        g3 = gamma2(0.5 + 0.5*a);
         zhf = g0*g1/(g2*g3);
     } else if (L3 || L4) {
         if (L3) { nm = (int)fabs(a); }
@@ -3816,7 +3836,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             zr = zr*(c-a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z;
             zhf += zr;
         }
-        zhf *= cpow(1.0-z, c-a-b);
+        zhf *= std::pow(1.0-z, c-a-b);
     } else if (a0 <= 1.0) {
         if (x < 0.0) {
             z1 = z / (z - 1.0);
@@ -3824,14 +3844,14 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                 a = aa;
                 b = bb;
             }
-            zc0 = 1.0 / cpow(1.0 - z, a);
+            zc0 = 1.0 / std::pow(1.0 - z, a);
             zhf = 1.0;
             zr0 = 1.0;
             zw = 0.0;
             for (k = 1; k <501; k++) {
                 zr0 = zr0*(a+k-1.0)*(c-b+k-1.0)/(k*(c+k-1.0))*z1;
                 zhf += zr0;
-                if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
+                if (std::abs(zhf-zw) < std::abs(zhf)*eps) { break; }
                 zw = zhf;
             }
             zhf *= zc0;
@@ -3840,13 +3860,13 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             mcab = (int)(c-a-b + eps*copysign(1.0, c-a-b));
             if (fabs(c-a-b-mcab) < eps) {
                 m = (int)(c-a-b);
-                ga = specfun_gamma2(a);
-                gb = specfun_gamma2(b);
-                gc = specfun_gamma2(c);
-                gam = specfun_gamma2(a+m);
-                gbm = specfun_gamma2(b+m);
-                pa = specfun_psi_spec(a);
-                pb = specfun_psi_spec(b);
+                ga = gamma2(a);
+                gb = gamma2(b);
+                gc = gamma2(c);
+                gam = gamma2(a+m);
+                gbm = gamma2(b+m);
+                pa = psi_spec(a);
+                pb = psi_spec(b);
                 if (m != 0) { gm = 1.0; }
                 for (j = 1; j < abs(m); j++) {
                     gm *= j;
@@ -3862,15 +3882,15 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                 sp = 0.0;
                 if (m >= 0) {
                     zc0 = gm*gc/(gam*gbm);
-                    zc1 = -gc*cpow(z-1.0, m)/(ga*gb*rm);
+                    zc1 = -gc*std::pow(z-1.0, m)/(ga*gb*rm);
                     for (k = 1; k < m; k++) {
-                        zr0 = zr0*(a+k-1.0)*(b+k-1.0)/(k*(k-m))*(1.0-z);
+                        zr0 = zr0*(a+k-1.0)*(b+k-1.0)/static_cast<double>(k*(k-m))*(1.0-z);
                         zf0 += zr0;
                     }
                     for (k = 1; k < (m+1); k++) {
                         sp0 += 1.0/(a+k-1.0) + 1.0/(b+k-1.0) - 1.0/k;
                     }
-                    zf1 = pa + pb + sp0 + 2.0*el + clog(1.0 - z);
+                    zf1 = pa + pb + sp0 + 2.0*el + std::log(1.0 - z);
                     zw = 0.0;
                     for (k = 1; k <501; k++) {
                         sp += (1.0-a)/(k*(a+k-1.0)) + (1.0-b)/(k*(b+k-1.0));
@@ -3878,25 +3898,25 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                         for (j = 1; j < (m+1); j++) {
                             sm += (1.0-a)/((j+k)*(a+j+k-1.0)) + 1.0/(b+j+k-1.0);
                         }
-                        zp = pa + pb + 2.0*el + sp + sm + clog(1.0 - z);
-                        zr1 = zr1*(a+m+k-1.0)*(b+m+k-1.0) / (k*(m+k))*(1.0-z);
+                        zp = pa + pb + 2.0*el + sp + sm + std::log(1.0 - z);
+                        zr1 = zr1*(a+m+k-1.0)*(b+m+k-1.0) / static_cast<double>(k*(m+k))*(1.0-z);
                         zf1 += zr1*zp;
-                        if (cabs(zf1-zw) < cabs(zf1)*eps) { break; }
+                        if (std::abs(zf1-zw) < std::abs(zf1)*eps) { break; }
                         zw = zf1;
                     }
                     zhf = zf0*zc0 + zf1*zc1;
                 } else if (m < 0) {
                     m = -m;
-                    zc0 = gm*gc/(ga*gb*cpow(1.0 - z, m));
+                    zc0 = gm*gc/(ga*gb*std::pow(1.0 - z, m));
                     zc1 = -(pow(-1.0, m))*gc/(gam*gbm*rm);
                     for (k = 1; k < m; k++) {
-                        zr0 = zr0*(a-m+k-1.0)*(b-m+k-1.0)/(k*(k-m))*(1.0-z);
+                        zr0 = zr0*(a-m+k-1.0)*(b-m+k-1.0)/static_cast<double>(k*(k-m))*(1.0-z);
                         zf0 += zr0;
                     }
                     for (k = 1; k < (m+1); k++) {
                         sp0 += 1.0 / k;
                     }
-                    zf1 = pa + pb -sp0 + 2.0*el + clog(1.0 - z);
+                    zf1 = pa + pb -sp0 + 2.0*el + std::log(1.0 - z);
                     zw = 0.0;
                     for (k = 1; k <501; k++) {
                         sp += (1.0-a)/(k*(a+k-1.0)) + (1.0-b)/(k*(b+k-1.0));
@@ -3904,24 +3924,24 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                         for (j = 1; j < (m+1); j++) {
                             sm += 1.0/(j+k);
                         }
-                        zp = pa + pb+2.0*el + sp - sm + clog(1.0 -z );
-                        zr1 = zr1*(a+k-1.0)*(b+k-1.0)/(k*(m+k))*(1.0-z);
+                        zp = pa + pb+2.0*el + sp - sm + std::log(1.0 -z );
+                        zr1 = zr1*(a+k-1.0)*(b+k-1.0)/static_cast<double>(k*(m+k))*(1.0-z);
                         zf1 += zr1*zp;
-                        if (cabs(zf1-zw) < cabs(zf1)*eps) { break; }
+                        if (std::abs(zf1-zw) < std::abs(zf1)*eps) { break; }
                         zw = zf1;
                     }
                     zhf = zf0*zc0 + zf1*zc1;
                 }
             } else {
-                ga = specfun_gamma2(a);
-                gb = specfun_gamma2(b);
-                gc = specfun_gamma2(c);
-                gca = specfun_gamma2(c-a);
-                gcb = specfun_gamma2(c-b);
-                gcab = specfun_gamma2(c-a-b);
-                gabc = specfun_gamma2(a+b-c);
+                ga = gamma2(a);
+                gb = gamma2(b);
+                gc = gamma2(c);
+                gca = gamma2(c-a);
+                gcb = gamma2(c-b);
+                gcab = gamma2(c-a-b);
+                gabc = gamma2(a+b-c);
                 zc0 = gc*gcab/(gca*gcb);
-                zc1 = gc*gabc/(ga*gb)*cpow(1.0-z, c-a-b);
+                zc1 = gc*gabc/(ga*gb)*std::pow(1.0-z, c-a-b);
                 zhf = 0.0;
                 zr0 = zc0;
                 zr1 = zc1;
@@ -3930,7 +3950,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                     zr0 = zr0*(a+k-1.0)*(b+k-1.0)/(k*(a+b-c+k))*(1.0-z);
                     zr1 = zr1*(c-a+k-1.0)*(c-b+k-1.0)/(k*(c-a-b+k))*(1.0-z);
                     zhf += zr0+zr1;
-                    if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
+                    if (std::abs(zhf-zw) < std::abs(zhf)*eps) { break; }
                     zw = zhf;
                 }
                 zhf += zc0 + zc1;
@@ -3938,7 +3958,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
         } else {
             z00 = 1.0;
             if ((c-a < a) && (c-b < b)) {
-                z00 = cpow(1.0 - z, c-a-b);
+                z00 = std::pow(1.0 - z, c-a-b);
                 a = c-a;
                 b = c-b;
             }
@@ -3948,7 +3968,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             for (k = 1; k < 1501; k++) {
                 zr = zr*(a+k-1.0)*(b+k-1.0)/(k*(c+k-1.0))*z;
                 zhf += zr;
-                if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
+                if (std::abs(zhf-zw) < std::abs(zhf)*eps) { break; }
                 zw = zhf;
             }
             zhf *= z00;
@@ -3957,15 +3977,15 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
         mab = (int)(a - b + eps*copysign(1.0, a - b));
         if ((fabs(a-b-mab) < eps) && (a0 <= 1.1)) { b += eps; }
         if (fabs(a-b-mab) > eps) {
-            ga = specfun_gamma2(a);
-            gb = specfun_gamma2(b);
-            gc = specfun_gamma2(c);
-            gab = specfun_gamma2(a-b);
-            gba = specfun_gamma2(b-a);
-            gca = specfun_gamma2(c-a);
-            gcb = specfun_gamma2(c-b);
-            zc0 = gc*gba/(gca*gb*cpow(-z, a));
-            zc1 = gc*gab/(gcb*ga*cpow(-z, b));
+            ga = gamma2(a);
+            gb = gamma2(b);
+            gc = gamma2(c);
+            gab = gamma2(a-b);
+            gba = gamma2(b-a);
+            gca = gamma2(c-a);
+            gcb = gamma2(c-b);
+            zc0 = gc*gba/(gca*gb*std::pow(-z, a));
+            zc1 = gc*gab/(gcb*ga*std::pow(-z, b));
             zr0 = zc0;
             zr1 = zc1;
             zhf = 0.0;
@@ -3973,7 +3993,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                 zr0 = zr0*(a+k-1.0)*(a-c+k)/((a-b+k)*k*z);
                 zr1 = zr1*(b+k-1.0)*(b-c+k)/((b-a+k)*k*z);
                 zhf += zr0+zr1;
-                if (cabs(zhf-zw) < cabs(zhf)*eps) { break; }
+                if (std::abs(zhf-zw) < std::abs(zhf)*eps) { break; }
                 zw = zhf;
             }
             zhf += zc0 + zc1;
@@ -3987,29 +4007,29 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
             nca = (int)(ca + eps*copysign(1.0, ca));
             ncb = (int)(cb + eps*copysign(1.0, cb));
             if ((fabs(ca-nca) < eps) || (fabs(cb-ncb) < eps)) { c += eps; }
-            ga = specfun_gamma2(a);
-            gc = specfun_gamma2(c);
-            gcb = specfun_gamma2(c-b);
-            pa = specfun_psi_spec(a);
-            pca = specfun_psi_spec(c-a);
-            pac = specfun_psi_spec(a-c);
+            ga = gamma2(a);
+            gc = gamma2(c);
+            gcb = gamma2(c-b);
+            pa = psi_spec(a);
+            pca = psi_spec(c-a);
+            pac = psi_spec(a-c);
             mab = (int)(a-b+eps);
-            zc0 = gc / (ga*cpow(-z, b));
-            gm = specfun_gamma2(a-b);
+            zc0 = gc / (ga*std::pow(-z, b));
+            gm = gamma2(a-b);
             zf0 = gm/gcb*zc0;
             zr = zc0;
             for (k = 1; k < mab; k++) {
-                zr = zr*(b+k-1.0)/(k*z);
-                g0 = specfun_gamma2(a-b-k);
-                zf0 += zr*g0/specfun_gamma2(c-b-k);
+                zr = zr*(b+k-1.0)/(static_cast<double>(k)*z);
+                g0 = gamma2(a-b-k);
+                zf0 += zr*g0/gamma2(c-b-k);
             }
             if (mab == 0) { zf0 = 0.0; }
-            zc1 = gc/(ga*gcb*cpow(-z, a));
+            zc1 = gc/(ga*gcb*std::pow(-z, a));
             sp = -2.0*el - pa- pca;
             for (j = 1; j < (mab+1); j++) {
                 sp += 1.0 / j;
             }
-            zp0 = sp + clog(-z);
+            zp0 = sp + std::log(-z);
             sq = 1.0;
             for (j = 1; j < (mab+1); j++) {
                 sq = sq * (b+j-1.0)*(b-c+j)/j;
@@ -4031,9 +4051,9 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
                 for (j = k+1; j <= (k+mab); j++) {
                     sj2 += 1.0 / j;
                 }
-                zp= -2.0*el -pa - pac + sj2 - 1.0/(k+a-c) - pi/tan(pi*(k+a-c)) + clog(-z);
+                zp= -2.0*el -pa - pac + sj2 - 1.0/(k+a-c) - pi/tan(pi*(k+a-c)) + std::log(-z);
                 zf1 += rk2*zr*zp;
-                ws = cabs(zf1);
+                ws = std::abs(zf1);
                 if (fabs((ws-w0)/ws) < eps) { break; }
                 w0 = ws;
             }
@@ -4047,7 +4067,7 @@ double complex specfun_hygfz(double a, double b, double c, double complex z, int
 }
 
 
-void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
+void itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
 
     // ======================================================
     // Purpose: Compute the integrals of Airy fnctions with
@@ -4152,7 +4172,7 @@ void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
 }
 
 
-void specfun_itika(double x, double *ti, double *tk) {
+void itika(double x, double *ti, double *tk) {
 
     // =======================================================
     // Purpose: Integrate modified Bessel functions I0(t) and
@@ -4229,7 +4249,7 @@ void specfun_itika(double x, double *ti, double *tk) {
 }
 
 
-void specfun_itjya(double x, double *tj, double *ty) {
+void itjya(double x, double *tj, double *ty) {
 
 
     int k;
@@ -4294,7 +4314,7 @@ void specfun_itjya(double x, double *tj, double *ty) {
 }
 
 
-double specfun_itsh0(double x) {
+double itsh0(double x) {
 
     // ===================================================
     // Purpose: Evaluate the integral of Struve function
@@ -4356,7 +4376,7 @@ double specfun_itsh0(double x) {
 }
 
 
-double specfun_itsl0(double x) {
+double itsl0(double x) {
 
     // ===========================================================
     // Purpose: Evaluate the integral of modified Struve function
@@ -4409,7 +4429,7 @@ double specfun_itsl0(double x) {
 }
 
 
-double specfun_itth0(double x) {
+double itth0(double x) {
 
     // ===========================================================
     // Purpose: Evaluate the integral H0(t)/t with respect to t
@@ -4448,7 +4468,7 @@ double specfun_itth0(double x) {
 }
 
 
-void specfun_ittika(double x, double *tti, double *ttk) {
+void ittika(double x, double *tti, double *ttk) {
 
     // =========================================================
     // Purpose: Integrate [I0(t)-1]/t with respect to t from 0
@@ -4519,7 +4539,7 @@ void specfun_ittika(double x, double *tti, double *ttk) {
 }
 
 
-void specfun_ittjya(double x, double *ttj, double *tty) {
+void ittjya(double x, double *ttj, double *tty) {
 
     // =========================================================
     // Purpose: Integrate [1-J0(t)]/t with respect to t from 0
@@ -4608,7 +4628,7 @@ void specfun_ittjya(double x, double *ttj, double *tty) {
 }
 
 
-void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
+void jdzo(int nt, double *zo, int *n, int *m, int *p) {
 
     // ===========================================================
     // Purpose: Compute the zeros of Bessel functions Jn(x) and
@@ -4635,7 +4655,7 @@ void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
     int i, j, k, L, L0, L1, L2, mm, nm;
     double x, x0, x1, x2, xm;
 
-    int* p1 = calloc(70, sizeof(int));
+    int* p1 = (int *) calloc(70, sizeof(int));
     // Compared to specfun.f we use a single array instead of separate
     // three arrays and use pointer arithmetic to access. Their usage
     // is pretty much one-shot hence does not complicate the code.
@@ -4643,10 +4663,10 @@ void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
     // Note: ZO and ZOC arrays are 0-indexed in specfun.f
 
     // m1, n1, zoc -> 70 + 70 + 71
-    double* mnzoc = calloc(211, sizeof(double));
+    double* mnzoc = (double *) calloc(211, sizeof(double));
 
     // bj, dj, fj -> 101 + 101 + 101
-    double* bdfj = calloc(303, sizeof(double));
+    double* bdfj = (double *) calloc(303, sizeof(double));
 
     x = 0;
 
@@ -4673,7 +4693,7 @@ void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
                 x = x1;
                 do
                 {
-                    specfun_bjndd(x, i, &bdfj[0], &bdfj[101], &bdfj[202]);
+                    bjndd(x, i, &bdfj[0], &bdfj[101], &bdfj[202]);
                     x0 = x;
                     x -= bdfj[100+i]/bdfj[201+i];
                     if (x1 > xm) { goto L20; }
@@ -4694,7 +4714,7 @@ void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
 L20:
             x = x2;
             do {
-                specfun_bjndd(x, i, &bdfj[0], &bdfj[101], &bdfj[202]);
+                bjndd(x, i, &bdfj[0], &bdfj[101], &bdfj[202]);
                 x0 = x;
                 x -= bdfj[i-1]/bdfj[100+i];
                 if (x > xm) { goto L30; }  /* Need to "continue;" twice hence goto is simpler */
@@ -4749,7 +4769,7 @@ L30:
 }
 
 
-void specfun_jynb(int n, double x, int *nm, double *bj, double *dj, double *by, double *dy) {
+void jynb(int n, double x, int *nm, double *bj, double *dj, double *by, double *dy) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x) and
@@ -4766,7 +4786,7 @@ void specfun_jynb(int n, double x, int *nm, double *bj, double *dj, double *by, 
     // =====================================================
 
     int k;
-    specfun_jynbh(n, 0, x, nm, bj, by);
+    jynbh(n, 0, x, nm, bj, by);
     // Compute derivatives by differentiation formulas
     if (x < 1.0e-100) {
         for (k = 0; k <= n; k++) {
@@ -4789,7 +4809,7 @@ void specfun_jynb(int n, double x, int *nm, double *bj, double *dj, double *by, 
 }
 
 
-void specfun_jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
+void jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x)
@@ -4832,11 +4852,11 @@ void specfun_jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
         if (n == 0) {
             *nm = 1;
         }
-        m = specfun_msta1(x, 200);
+        m = msta1(x, 200);
         if (m < *nm) {
             *nm = m;
         } else {
-            m = specfun_msta2(x, *nm, 15);
+            m = msta2(x, *nm, 15);
         }
         bs = 0.0;
         su = 0.0;
@@ -4932,7 +4952,7 @@ void specfun_jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
 }
 
 
-void specfun_jyndd(int n, double x, double *bjn, double *djn, double *fjn, double *byn, double *dyn, double *fyn) {
+void jyndd(int n, double x, double *bjn, double *djn, double *fjn, double *byn, double *dyn, double *fyn) {
 
     // ===========================================================
     // purpose: compute bessel functions jn(x) and yn(x), and
@@ -4952,7 +4972,7 @@ void specfun_jyndd(int n, double x, double *bjn, double *djn, double *fjn, doubl
     int nm = 0;
     double bj[2], by[2];
 
-    specfun_jynbh(n+1, n, x, &nm, bj, by);
+    jynbh(n+1, n, x, &nm, bj, by);
     // compute derivatives by differentiation formulas
     *bjn = bj[0];
     *byn = by[0];
@@ -4964,7 +4984,7 @@ void specfun_jyndd(int n, double x, double *bjn, double *djn, double *fjn, doubl
 }
 
 
-void specfun_jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1) {
+void jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1) {
 
     // ======================================================
     // Purpose: Compute the zeros of Bessel functions Jn(x),
@@ -5000,7 +5020,7 @@ void specfun_jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *
     L = 0;
 L10:
     x0 = x;
-    specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+    jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
     x -= bjn/djn;
     if (fabs(x - x0) > 1e-11) { goto L10; }
 
@@ -5020,7 +5040,7 @@ L10:
         x = rj0[L - 1] + (rj0[L - 1] - rj0[L - 2]);
     }
     if (L <= (n + 10)) {
-        specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+        jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
         h = atan(fabs(djn) / sqrt(fabs(fjn * bjn)));
         b = -djn / (bjn * atan(h));
         x -= (h - pi/2) / b;
@@ -5039,7 +5059,7 @@ L10:
     L=0;
 L15:
     x0 = x;
-    specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+    jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
     x -= djn/fjn;
     if (fabs(x-x0) > 1e-11) goto L15;
     L += 1;
@@ -5062,7 +5082,7 @@ L15:
     L=0;
 L20:
     x0 = x;
-    specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+    jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
     x -= byn/dyn;
     if (fabs(x - x0) > 1.0e-11) goto L20;
     L += 1;
@@ -5081,7 +5101,7 @@ L20:
         x = ry0[L - 1] + (ry0[L - 1] - ry0[L - 2]);
     }
     if (L <= n+10) {
-        specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+        jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
         h = atan(fabs(dyn) / sqrt(fabs(fyn * byn)));
         b = -dyn / (byn * tan(h));
         x -= (h - pi/2) / b;
@@ -5100,7 +5120,7 @@ L20:
     L=0;
 L25:
     x0 = x;
-    specfun_jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
+    jyndd(n, x, &bjn, &djn, &fjn, &byn, &dyn, &fyn);
     x -= dyn/fyn;
     if (fabs(x-x0) > 1.0e-11) goto L25;
     L += 1;
@@ -5114,7 +5134,7 @@ L25:
 }
 
 
-void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
+void klvna(double x, double *ber, double *bei, double *ger, double *gei,
                    double *der, double *dei, double *her, double *hei) {
 
     // ======================================================
@@ -5293,7 +5313,7 @@ void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
 }
 
 
-void specfun_klvnzo(int nt, int kd, double *zo) {
+void klvnzo(int nt, int kd, double *zo) {
 
     // ====================================================
     // Purpose: Compute the zeros of Kelvin functions
@@ -5316,7 +5336,7 @@ void specfun_klvnzo(int nt, int kd, double *zo) {
 
     for (int m = 1; m <= nt; m++) {
         while (1) {
-            specfun_klvna(rt, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+            klvna(rt, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
             if (kd == 1) {
                 rt -= ber / der;
             } else if (kd == 2) {
@@ -5347,7 +5367,7 @@ void specfun_klvnzo(int nt, int kd, double *zo) {
 }
 
 
-void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *dn, double *ck1, double *ck2) {
+void kmn(int m, int n, double c, double cv, int kd, double *df, double *dn, double *ck1, double *ck2) {
 
     // ===================================================
     // Purpose: Compute the expansion coefficients of the
@@ -5359,11 +5379,11 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
     double cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    double *u =  malloc((nn + 4) * sizeof(double));
-    double *v =  malloc((nn + 4) * sizeof(double));
-    double *w =  malloc((nn + 4) * sizeof(double));
-    double *tp = malloc((nn + 4) * sizeof(double));
-    double *rk = malloc((nn + 4) * sizeof(double));
+    double *u =  (double *) malloc((nn + 4) * sizeof(double));
+    double *v =  (double *) malloc((nn + 4) * sizeof(double));
+    double *w =  (double *) malloc((nn + 4) * sizeof(double));
+    double *tp = (double *) malloc((nn + 4) * sizeof(double));
+    double *rk = (double *) malloc((nn + 4) * sizeof(double));
 
     const double eps = 1.0e-14;
 
@@ -5474,7 +5494,7 @@ void specfun_kmn(int m, int n, double c, double cv, int kd, double *df, double *
 }
 
 
-void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
+void lamn(int n, double x, int *nm, double *bl, double *dl) {
 
     // =========================================================
     // Purpose: Compute lambda functions and their derivatives
@@ -5531,11 +5551,11 @@ void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
     if (n == 0) {
         *nm = 1;
     }
-    m = specfun_msta1(x, 200);
+    m = msta1(x, 200);
     if (m < *nm) {
         *nm = m;
     } else {
-        m = specfun_msta2(x, *nm, 15);
+        m = msta2(x, *nm, 15);
     }
     bs = 0.0;
     f = 0.0;
@@ -5569,7 +5589,7 @@ void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
 }
 
 
-void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
+void lamv(double v, double x, double *vm, double *vl, double *dl) {
 
     // =========================================================
     // Purpose: Compute lambda function with arbitrary order v,
@@ -5660,7 +5680,7 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
     if (v0 == 0.0) {
         ga = 1.0;
     } else {
-        ga = specfun_gam0(v0);
+        ga = gam0(v0);
         ga *= v0;
     }
 
@@ -5690,11 +5710,11 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
             vl[k] = f;
         }
     } else if (n >= 2) {
-        m = specfun_msta1(x, 200);
+        m = msta1(x, 200);
         if (m < n) {
             n = m;
         } else {
-            m = specfun_msta2(x, n, 15);
+            m = msta2(x, n, 15);
         }
 
         f = 0.0;
@@ -5733,7 +5753,7 @@ void specfun_lamv(double v, double x, double *vm, double *vl, double *dl) {
 }
 
 
-void specfun_lpmn(int m, int n, double x, double *pm, double *pd) {
+void lpmn(int m, int n, double x, double *pm, double *pd) {
 
     // =====================================================
     // Purpose: Compute the associated Legendre functions
@@ -5819,7 +5839,7 @@ void specfun_lpmn(int m, int n, double x, double *pm, double *pd) {
 }
 
 
-void specfun_lpmns(int m, int n, double x, double* pm, double* pd) {
+void lpmns(int m, int n, double x, double* pm, double* pd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Pmn(x)
@@ -5888,7 +5908,7 @@ void specfun_lpmns(int m, int n, double x, double* pm, double* pd) {
 }
 
 
-void specfun_lpn(int n, double x, double *pn, double *pd) {
+void lpn(int n, double x, double *pn, double *pd) {
 
     // ===============================================
     // Purpose: Compute Legendre polynomials Pn(x)
@@ -5922,7 +5942,7 @@ void specfun_lpn(int n, double x, double *pn, double *pd) {
 }
 
 
-double specfun_lpmv(double x, int m, double v) {
+double lpmv(double x, int m, double v) {
 
     // =======================================================
     // Purpose: Compute the associated Legendre function
@@ -5963,8 +5983,8 @@ double specfun_lpmv(double x, int m, double v) {
     v0 = vx - nv;
     if ((nv > 2) && (nv > mx)) {
         // Up-recursion on degree, AMS 8.5.3 / DLMF 14.10.3
-        p0 = specfun_lpmv0(v0+mx, mx, x);
-        p1 = specfun_lpmv0(v0+mx+1, mx, x);
+        p0 = lpmv0(v0+mx, mx, x);
+        p1 = lpmv0(v0+mx+1, mx, x);
         pmv = p1;
         for (j = mx+2; j <= nv; j++) {
             pmv = ((2*(v0+j)-1)*x*p1 - (v0+j-1+mx)*p0) / (v0+j-mx);
@@ -5972,19 +5992,19 @@ double specfun_lpmv(double x, int m, double v) {
             p1 = pmv;
         }
     } else {
-        pmv = specfun_lpmv0(vx, mx, x);
+        pmv = lpmv0(vx, mx, x);
     }
     if ((neg_m != 0) && (fabs(pmv) < 1.e300)) {
         // DLMF 14.9.3
-        g1 = specfun_gamma2(vx-mx+1);
-        g2 =  specfun_gamma2(vx+mx+1);
+        g1 = gamma2(vx-mx+1);
+        g2 =  gamma2(vx+mx+1);
         pmv = pmv*g1/g2 * pow(-1, mx);
     }
     return pmv;
 }
 
 
-double specfun_lpmv0(double v, int m, double x) {
+double lpmv0(double v, int m, double x) {
 
     // =======================================================
     // Purpose: Compute the associated Legendre function
@@ -6067,7 +6087,7 @@ double specfun_lpmv0(double v, int m, double x) {
                 pv0 = -vs * r2 / m * s0;
             }
 
-            pa = 2.0 * (specfun_psi_spec(v) + el) + pi / tan(pi * v) + 1.0 / v;
+            pa = 2.0 * (psi_spec(v) + el) + pi / tan(pi * v) + 1.0 / v;
             s1 = 0.0;
             for (j = 1; j <= m; j++) {
                 s1 += (j * j + v * v) / (j * (j * j - v * v));
@@ -6095,7 +6115,7 @@ double specfun_lpmv0(double v, int m, double x) {
 }
 
 
-void specfun_lqmn(double x, int m, int n, double *qm, double *qd) {
+void lqmn(double x, int m, int n, double *qm, double *qd) {
 
     // ==========================================================
     // Purpose: Compute the associated Legendre functions of the
@@ -6207,7 +6227,7 @@ void specfun_lqmn(double x, int m, int n, double *qm, double *qd) {
 }
 
 
-void specfun_lqnb(int n, double x, double* qn, double* qd) {
+void lqnb(int n, double x, double* qn, double* qd) {
 
     // ====================================================
     // Purpose: Compute Legendre functions Qn(x) & Qn'(x)
@@ -6292,7 +6312,7 @@ void specfun_lqnb(int n, double x, double* qn, double* qd) {
 }
 
 
-void specfun_lqmns(int m, int n, double x, double *qm, double *qd) {
+void lqmns(int m, int n, double x, double *qm, double *qd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Qmn(x)
@@ -6443,7 +6463,7 @@ void specfun_lqmns(int m, int n, double x, double *qm, double *qd) {
 }
 
 
-int specfun_msta1(double x, int mp) {
+int msta1(double x, int mp) {
 
     // ===================================================
     // Purpose: Determine the starting point for backward
@@ -6475,7 +6495,7 @@ int specfun_msta1(double x, int mp) {
 }
 
 
-int specfun_msta2(double x, int n, int mp) {
+int msta2(double x, int n, int mp) {
 
     // ===================================================
     // Purpose: Determine the starting point for backward
@@ -6516,7 +6536,7 @@ int specfun_msta2(double x, int n, int mp) {
 }
 
 
-void specfun_mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
+void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
 
     // ===============================================================
     // Purpose: Compute Mathieu functions cem(x,q) and sem(x,q)
@@ -6544,7 +6564,7 @@ void specfun_mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
     if (kf == 2 && m != 2 * (int)(m / 2)) { kd = 3; }
     if (kf == 2 && m == 2 * (int)(m / 2)) { kd = 4; }
 
-    a = specfun_cva2(kd, m, q);
+    a = cva2(kd, m, q);
 
     if (q <= 1.0) {
         qm = 7.5 + 56.1 * sqrt(q) - 134.7 * q + 90.7 * sqrt(q) * q;
@@ -6560,8 +6580,8 @@ void specfun_mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
         return;
     }
 
-    double *fg = calloc(251, sizeof(double));
-    specfun_fcoef(kd, m, q, a, fg);
+    double *fg = (double *) calloc(251, sizeof(double));
+    fcoef(kd, m, q, a, fg);
 
     ic = (int)(m / 2) + 1;
     xr = x * rd;
@@ -6601,7 +6621,7 @@ void specfun_mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
 }
 
 
-void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, double *d1r, double *f2r, double *d2r) {
+void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double *d1r, double *f2r, double *d2r) {
 
     // ==============================================================
     // Purpose: Compute modified Mathieu functions of the first and
@@ -6639,7 +6659,7 @@ void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, doubl
     if ((kf == 2) && (m % 2 != 0)) { kd = 3; }
     if ((kf == 2) && (m % 2 == 0)) { kd = 4; }
 
-    a = specfun_cva2(kd, m, q);
+    a = cva2(kd, m, q);
 
     if (q <= 1.0) {
         qm = 7.5 + 56.1 * sqrt(q) - 134.7 * q + 90.7 * sqrt(q) * q;
@@ -6657,17 +6677,17 @@ void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, doubl
     }
 
     // allocate memory after a possible NAN return
-    double *fg = calloc(251, sizeof(double));
-    double *bj1 = calloc(252, sizeof(double));
-    double *dj1 = calloc(252, sizeof(double));
-    double *bj2 = calloc(252, sizeof(double));
-    double *dj2 = calloc(252, sizeof(double));
-    double *by1 = calloc(252, sizeof(double));
-    double *dy1 = calloc(252, sizeof(double));
-    double *by2 = calloc(252, sizeof(double));
-    double *dy2 = calloc(252, sizeof(double));
+    double *fg = (double *) calloc(251, sizeof(double));
+    double *bj1 = (double *) calloc(252, sizeof(double));
+    double *dj1 = (double *) calloc(252, sizeof(double));
+    double *bj2 = (double *) calloc(252, sizeof(double));
+    double *dj2 = (double *) calloc(252, sizeof(double));
+    double *by1 = (double *) calloc(252, sizeof(double));
+    double *dy1 = (double *) calloc(252, sizeof(double));
+    double *by2 = (double *) calloc(252, sizeof(double));
+    double *dy2 = (double *) calloc(252, sizeof(double));
 
-    specfun_fcoef(kd, m, q, a, fg);
+    fcoef(kd, m, q, a, fg);
     ic = (int)(m / 2) + 1;
     if (kd == 4) { ic = m / 2; }
 
@@ -6675,8 +6695,8 @@ void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, doubl
     c2 = exp(x);
     u1 = sqrt(q) * c1;
     u2 = sqrt(q) * c2;
-    specfun_jynb(km+1, u1, &nm, bj1, dj1, by1, dy1);
-    specfun_jynb(km+1, u2, &nm, bj2, dj2, by2, dy2);
+    jynb(km+1, u1, &nm, bj1, dj1, by1, dy1);
+    jynb(km+1, u2, &nm, bj2, dj2, by2, dy2);
     w1 = 0.0;
     w2 = 0.0;
 
@@ -6760,7 +6780,7 @@ void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, doubl
 }
 
 
-void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd) {
+void pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd) {
 
     // ====================================================
     // Purpose: Compute parabolic cylinder functions Dv(x)
@@ -6798,9 +6818,9 @@ void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, doubl
             for (l = 0; l <= ja; l++) {
                 v1 = v0 + l;
                 if (xa <= 5.8) {
-                    pd1 = specfun_dvsa(x, v1);
+                    pd1 = dvsa(x, v1);
                 } else {
-                    pd1 = specfun_dvla(x, v1);
+                    pd1 = dvla(x, v1);
                 }
                 if (l == 0) {
                     pd0 = pd1;
@@ -6819,13 +6839,13 @@ void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, doubl
         if (x <= 0.0) {
             if (xa <= 5.8)
             {
-                pd0 = specfun_dvsa(x, v0);
+                pd0 = dvsa(x, v0);
                 v1 = v0 - 1.0;
-                pd1 = specfun_dvsa(x, v1);
+                pd1 = dvsa(x, v1);
             } else {
-                pd0 = specfun_dvla(x, v0);
+                pd0 = dvla(x, v0);
                 v1 = v0 - 1.0;
-                pd1 = specfun_dvla(x, v1);
+                pd1 = dvla(x, v1);
             }
             dv[0] = pd0;
             dv[1] = pd1;
@@ -6839,9 +6859,9 @@ void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, doubl
             v2 = nv + v0;
             if (nv == 0) { v2 -= 1.0; }
             nk = (int)(-v2);
-            f1 = specfun_dvsa(x, v2);
+            f1 = dvsa(x, v2);
             v1 = v2 + 1.0;
-            f0 = specfun_dvsa(x, v1);
+            f0 = dvsa(x, v1);
             dv[nk] = f1;
             dv[nk-1] = f0;
             for (k = nk-2; k >= 0; k--) {
@@ -6853,9 +6873,9 @@ void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, doubl
         } else {
             if (xa <= 5.8)
             {
-                pd0 = specfun_dvsa(x, v0);
+                pd0 = dvsa(x, v0);
             } else {
-                pd0 = specfun_dvla(x, v0);
+                pd0 = dvla(x, v0);
             }
             dv[0] = pd0;
             m = 100 + na;
@@ -6887,7 +6907,7 @@ void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, doubl
 }
 
 
-void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd) {
+void pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder functions Vv(x)
@@ -6924,9 +6944,9 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
     if (v <= 0.0) {
         if (v0 == 0.0) {
             if (xa <= 7.5) {
-                pv0 = specfun_vvsa(x, v0);
+                pv0 = vvsa(x, v0);
             } else {
-                pv0 = specfun_vvla(x, v0);
+                pv0 = vvla(x, v0);
             }
             f0 = q2p*qe;
             f1 = x*f0;
@@ -6937,9 +6957,9 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
             for (l = 0; l <= ja; l++) {
                 v1 = v0-l;
                 if (xa <= 7.5) {
-                    f1 = specfun_vvsa(x, v1);
+                    f1 = vvsa(x, v1);
                 } else {
-                    f1 = specfun_vvla(x, v1);
+                    f1 = vvla(x, v1);
                 }
                 if (l == 0) { f0 = f1; }
             }
@@ -6958,10 +6978,10 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
         if ((x >= 0.0) && (x <= 7.5)) {
             v2 = v;
             if (v2 < 1.0) { v2 = v2+1.0; }
-            f1 = specfun_vvsa(x, v2);
+            f1 = vvsa(x, v2);
             v1 = v2 - 1.0;
             kv = (int)v2;
-            f0 = specfun_vvsa(x, v1);
+            f0 = vvsa(x, v1);
             vv[kv] = f1;
             vv[kv - 1] = f0;
             for (k = kv-2; k >= 0; k--) {
@@ -6971,7 +6991,7 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
                 f0 = f;
             }
         } else if (x > 7.5) {
-            pv0 = specfun_vvla(x, v0);
+            pv0 = vvla(x, v0);
             m = 100 + abs(na);
             vv[1] = pv0;
             f1 = 0.0;
@@ -6988,13 +7008,13 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
             }
         } else {
             if (xa <= 7.5) {
-                f0 = specfun_vvsa(x, v0);
+                f0 = vvsa(x, v0);
                 v1 = v0 + 1.0;
-                f1 = specfun_vvsa(x, v1);
+                f1 = vvsa(x, v1);
             } else {
-                f0 = specfun_vvla(x, v0);
+                f0 = vvla(x, v0);
                 v1 = v0 + 1.0;
-                f1 = specfun_vvla(x, v1);
+                f1 = vvla(x, v1);
             }
             vv[0] = f0;
             vv[1] = f1;
@@ -7021,7 +7041,7 @@ void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, doubl
 }
 
 
-void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, double *w2d) {
+void pbwa(double a, double x, double *w1f, double *w1d, double *w2f, double *w2d) {
 
     // ======================================================
     // Purpose: Compute parabolic cylinder functions W(a,±x)
@@ -7039,7 +7059,7 @@ void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, dou
     int k, L1, L2;
     double d[80], d1, d2, dl, f1, f2, g1, g2, h[100], h0, h1, hl, r, r1,\
            y1d, y2d, y1f, y2f;
-    double complex ug, vg;
+    std::complex<double> ug, vg;
     const double eps = 1e-15;
     const double p0 = 0.59460355750136;
 
@@ -7047,10 +7067,10 @@ void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, dou
         g1 = 3.625609908222;
         g2 = 1.225416702465;
     } else {
-        ug = specfun_cgama(CMPLX(0.25, 0.5*a), 1);
-        g1 = cabs(ug);
-        vg = specfun_cgama(CMPLX(0.75, 0.5*a), 1);
-        g2 = cabs(vg);
+        ug = cgama(std::complex<double>(0.25, 0.5*a), 1);
+        g1 = std::abs(ug);
+        vg = cgama(std::complex<double>(0.75, 0.5*a), 1);
+        g2 = std::abs(vg);
     }
     f1 = sqrt(g1/g2);
     f2 = sqrt(2.0*g2/g1);
@@ -7115,7 +7135,7 @@ void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, dou
 }
 
 
-double specfun_psi_spec(double x) {
+double psi_spec(double x) {
 
     // ======================================
     // Purpose: Compute Psi function
@@ -7172,10 +7192,10 @@ double specfun_psi_spec(double x) {
 }
 
 
-void specfun_qstar(int m, int n, double c, double ck1, double *ck, double *qs, double *qt) {
+void qstar(int m, int n, double c, double ck1, double *ck, double *qs, double *qt) {
     int ip, i, l, k;
     double r, s, sk, qs0;
-    double *ap = malloc(200*sizeof(double));
+    double *ap = (double *) malloc(200*sizeof(double));
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
     r = 1.0 / pow(ck[0], 2);
     ap[0] = r;
@@ -7206,7 +7226,7 @@ void specfun_qstar(int m, int n, double c, double ck1, double *ck, double *qs, d
 }
 
 
-void specfun_rctj(int n, double x, int *nm, double *rj, double *dj) {
+void rctj(int n, double x, int *nm, double *rj, double *dj) {
 
     // ========================================================
     // Purpose: Compute Riccati-Bessel functions of the first
@@ -7241,11 +7261,11 @@ void specfun_rctj(int n, double x, int *nm, double *rj, double *dj) {
     f = 0.0;
 
     if (n >= 2) {
-        m = specfun_msta1(x, 200);
+        m = msta1(x, 200);
         if (m < n) {
             *nm = m;
         } else {
-            m = specfun_msta2(x, n, 15);
+            m = msta2(x, n, 15);
         }
 
         f0 = 0.0;
@@ -7267,7 +7287,7 @@ void specfun_rctj(int n, double x, int *nm, double *rj, double *dj) {
 }
 
 
-void specfun_rcty(int n, double x, int *nm, double *ry, double *dy) {
+void rcty(int n, double x, int *nm, double *ry, double *dy) {
 
     // ========================================================
     // Purpose: Compute Riccati-Bessel functions of the second
@@ -7314,7 +7334,7 @@ void specfun_rcty(int n, double x, int *nm, double *ry, double *dy) {
 }
 
 
-double specfun_refine(int kd, int m, double q, double a) {
+double refine(int kd, int m, double q, double a) {
 
     // =====================================================
     // Purpose: calculate the accurate characteristic value
@@ -7333,13 +7353,13 @@ double specfun_refine(int kd, int m, double q, double a) {
 
     mj = 10 + m;
     x0 = a;
-    f0 = specfun_cvf(kd, m, q, x0, mj);
+    f0 = cvf(kd, m, q, x0, mj);
     x1 = 1.002*a;
-    f1 = specfun_cvf(kd, m, q, x1, mj);
+    f1 = cvf(kd, m, q, x1, mj);
     for (it = 1; it <= 100; it++) {
         mj += 1;
         x = x1 - (x1-x0)/(1.0 - f0/f1);
-        f = specfun_cvf(kd, m, q, x, mj);
+        f = cvf(kd, m, q, x, mj);
         if ((fabs(1.0 - x1/x) < eps) || (f == 0.0)) { break; }
         x0 = x1;
         f0 = f1;
@@ -7350,7 +7370,7 @@ double specfun_refine(int kd, int m, double q, double a) {
 }
 
 
-void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *r1f, double *r1d) {
+void rmn1(int m, int n, double c, double x, int kd, double *df, double *r1f, double *r1d) {
 
     // =======================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7365,9 +7385,9 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
     double a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
     int ip, j, k, l, lg, nm, nm1, nm2, np;
 
-    double *ck = calloc(200, sizeof(double));
-    double *dj = calloc(252, sizeof(double));
-    double *sj = calloc(252, sizeof(double));
+    double *ck = (double *) calloc(200, sizeof(double));
+    double *dj = (double *) calloc(252, sizeof(double));
+    double *sj = (double *) calloc(252, sizeof(double));
     const double eps = 1.0e-14;
 
     nm1 = (int)((n - m) / 2);
@@ -7391,7 +7411,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
     }
 
     if (x == 0.0) {
-        specfun_sckb(m, n, c, df, ck);
+        sckb(m, n, c, df, ck);
 
         sum = 0.0;
         sw1 = 0.0;
@@ -7430,7 +7450,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    specfun_sphj(nm2, cx, &nm2, sj, dj);
+    sphj(nm2, cx, &nm2, sj, dj);
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -7482,7 +7502,7 @@ void specfun_rmn1(int m, int n, double c, double x, int kd, double *df, double *
 }
 
 
-void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *R2f, double *R2d, int *Id) {
+void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *R2f, double *R2d, int *Id) {
 
     // ========================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7497,8 +7517,8 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
     int ip, nm1, nm, nm2, np, j, k, l, lg, id1, id2;
     double a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
     const double eps = 1.0e-14;
-    double *sy = calloc(252, sizeof(double));
-    double *dy = calloc(252, sizeof(double));
+    double *sy = (double *) calloc(252, sizeof(double));
+    double *dy = (double *) calloc(252, sizeof(double));
 
     ip = 1;
     nm1 = (int)((n - m) / 2);
@@ -7512,7 +7532,7 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
     }
     nm2 = 2 * nm + m;
     cx = c * x;
-    specfun_sphy(cx, nm2, &nm2, sy, dy);
+    sphy(cx, nm2, &nm2, sy, dy);
     r0 = reg;
 
     for (j = 1; j <= 2 * m + ip; ++j) {
@@ -7592,7 +7612,7 @@ void specfun_rmn2l(int m, int n, double c, double x, int Kd, double *Df, double 
 }
 
 
-void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+void rmn2so(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
 
     // =============================================================
     // Purpose: Compute oblate radial functions of the second kind
@@ -7618,16 +7638,16 @@ void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double 
         *r2d = 1.0e+300;
         return;
     }
-    double *bk = calloc(200, sizeof(double));
-    double *ck = calloc(200, sizeof(double));
-    double *dn = calloc(200, sizeof(double));
+    double *bk = (double *) calloc(200, sizeof(double));
+    double *ck = (double *) calloc(200, sizeof(double));
+    double *dn = (double *) calloc(200, sizeof(double));
 
     nm = 25 + (int)((n - m) / 2 + c);
     ip = (n - m) % 2;
-    specfun_sckb(m, n, c, df, ck);
-    specfun_kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
-    specfun_qstar(m, n, c, ck1, ck, &qs, &qt);
-    specfun_cbk(m, n, c, cv, qt, ck, bk);
+    sckb(m, n, c, df, ck);
+    kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
+    qstar(m, n, c, ck1, ck, &qs, &qt);
+    cbk(m, n, c, cv, qt, ck, bk);
 
     if (x == 0.0) {
         sum = 0.0;
@@ -7649,8 +7669,8 @@ void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double 
             *r2d = -0.5 * pi * qs * r1d;
         }
     } else {
-        specfun_gmn(m, n, c, x, bk, &gf, &gd);
-        specfun_rmn1(m, n, c, x, kd, df, &r1f, &r1d);
+        gmn(m, n, c, x, bk, &gf, &gd);
+        rmn1(m, n, c, x, kd, df, &r1f, &r1d);
         h0 = atan(x) - 0.5 * pi;
         *r2f = qs * r1f * h0 + gf;
         *r2d = qs * (r1d * h0 + r1f / (1.0 + x * x)) + gd;
@@ -7660,7 +7680,7 @@ void specfun_rmn2so(int m, int n, double c, double x, double cv, int kd, double 
 }
 
 
-void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
 
     // ======================================================
     // Purpose: Compute prolate spheroidal radial function
@@ -7678,11 +7698,11 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
     double ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2;
 
-    double *pm = malloc(252*sizeof(double));
-    double *pd = malloc(252*sizeof(double));
-    double *qm = malloc(252*sizeof(double));
-    double *qd = malloc(252*sizeof(double));
-    double *dn = malloc(201*sizeof(double));
+    double *pm = (double *) malloc(252*sizeof(double));
+    double *pd = (double *) malloc(252*sizeof(double));
+    double *qm = (double *) malloc(252*sizeof(double));
+    double *qd = (double *) malloc(252*sizeof(double));
+    double *dn = (double *) malloc(201*sizeof(double));
     const double eps = 1.0e-14;
 
     nm1 = (n - m) / 2;
@@ -7690,9 +7710,9 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
     nm2 = 2 * nm + m;
     ip = (n - m) % 2;
 
-    specfun_kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
-    specfun_lpmns(m, nm2, x, pm, pd);
-    specfun_lqmns(m, nm2, x, qm, qd);
+    kmn(m, n, c, cv, kd, df, dn, &ck1, &ck2);
+    lpmns(m, nm2, x, pm, pd);
+    lqmns(m, nm2, x, qm, qd);
 
     su0 = 0.0;
     sw = 0.0;
@@ -7785,7 +7805,7 @@ void specfun_rmn2sp(int m, int n, double c, double x, double cv, int kd, double 
 }
 
 
-void specfun_rswfp(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+void rswfp(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
 
     // ==============================================================
     // Purpose: Compute prolate spheriodal radial functions of the
@@ -7815,18 +7835,18 @@ void specfun_rswfp(int m, int n, double c, double x, double cv, int kf, double *
     //          of the second kind for a small argument
     // ==============================================================
 
-    double *df = malloc(200*sizeof(double));
+    double *df = (double *) malloc(200*sizeof(double));
     int id, kd = 1;
 
-    specfun_sdmn(m, n, c, cv, kd, df);
+    sdmn(m, n, c, cv, kd, df);
 
     if (kf != 2) {
-        specfun_rmn1(m, n, c, x, kd, df, r1f, r1d);
+        rmn1(m, n, c, x, kd, df, r1f, r1d);
     }
     if (kf > 1) {
-        specfun_rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
+        rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
         if (id > -8) {
-            specfun_rmn2sp(m, n, c, x, cv, kd, df, r2f, r2d);
+            rmn2sp(m, n, c, x, cv, kd, df, r2f, r2d);
         }
     }
     free(df);
@@ -7834,7 +7854,7 @@ void specfun_rswfp(int m, int n, double c, double x, double cv, int kf, double *
 }
 
 
-void specfun_rswfo(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+void rswfo(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
 
     // ==========================================================
     // Purpose: Compute oblate radial functions of the first
@@ -7864,21 +7884,21 @@ void specfun_rswfo(int m, int n, double c, double x, double cv, int kf, double *
     //          the second kind for a small argument
     // ==========================================================
 
-    double *df = malloc(200*sizeof(double));
+    double *df = (double *) malloc(200*sizeof(double));
     int id, kd = -1;
 
-    specfun_sdmn(m, n, c, cv, kd, df);
+    sdmn(m, n, c, cv, kd, df);
 
     if (kf != 2) {
-        specfun_rmn1(m, n, c, x, kd, df, r1f, r1d);
+        rmn1(m, n, c, x, kd, df, r1f, r1d);
     }
     if (kf > 1) {
         id = 10;
         if (x > 1e-8) {
-            specfun_rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
+            rmn2l(m, n, c, x, kd, df, r2f, r2d, &id);
         }
         if (id > -1) {
-            specfun_rmn2so(m, n, c, x, cv, kd, df, r2f, r2d);
+            rmn2so(m, n, c, x, cv, kd, df, r2f, r2d);
         }
     }
     free(df);
@@ -7886,7 +7906,7 @@ void specfun_rswfo(int m, int n, double c, double x, double cv, int kf, double *
 }
 
 
-void specfun_sckb(int m, int n, double c, double *df, double *ck) {
+void sckb(int m, int n, double c, double *df, double *ck) {
 
     // ======================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7941,7 +7961,7 @@ void specfun_sckb(int m, int n, double c, double *df, double *ck) {
 }
 
 
-void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
+void sdmn(int m, int n, double c, double cv, int kd, double *df) {
 
     // =====================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7972,9 +7992,9 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
         return;
     }
 
-    double *a = calloc(nm + 2, sizeof(double));
-    double *d = calloc(nm + 2, sizeof(double));
-    double *g = calloc(nm + 2, sizeof(double));
+    double *a = (double *) calloc(nm + 2, sizeof(double));
+    double *d = (double *) calloc(nm + 2, sizeof(double));
+    double *g = (double *) calloc(nm + 2, sizeof(double));
     cs = c*c*kd;
     ip = (n - m) % 2;
 
@@ -8096,7 +8116,7 @@ void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
 }
 
 
-void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
+void segv(int m, int n, double c, int kd, double *cv, double *eg) {
 
     // =========================================================
     // Purpose: Compute the characteristic values of spheroidal
@@ -8125,14 +8145,14 @@ void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
     }
 
     // TODO: Following array sizes should be decided dynamically
-    double *a = calloc(300, sizeof(double));
-    double *b = calloc(100, sizeof(double));
-    double *cv0 = calloc(100, sizeof(double));
-    double *d = calloc(300, sizeof(double));
-    double *e = calloc(300, sizeof(double));
-    double *f = calloc(300, sizeof(double));
-    double *g = calloc(300, sizeof(double));
-    double *h = calloc(100, sizeof(double));
+    double *a = (double *) calloc(300, sizeof(double));
+    double *b = (double *) calloc(100, sizeof(double));
+    double *cv0 = (double *) calloc(100, sizeof(double));
+    double *d = (double *) calloc(300, sizeof(double));
+    double *e = (double *) calloc(300, sizeof(double));
+    double *f = (double *) calloc(300, sizeof(double));
+    double *g = (double *) calloc(300, sizeof(double));
+    double *h = (double *) calloc(100, sizeof(double));
     icm = (n-m+2)/2;
     nm = 10 + (int)(0.5*(n-m)+c);
     cs = c*c*kd;
@@ -8213,7 +8233,7 @@ void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
 }
 
 
-void specfun_sphj(double x, int n, int *nm, double *sj, double *dj) {
+void sphj(double x, int n, int *nm, double *sj, double *dj) {
 
     //  MODIFIED to ALLOW N=0 CASE (ALSO IN SPHY)
     //
@@ -8254,11 +8274,11 @@ void specfun_sphj(double x, int n, int *nm, double *sj, double *dj) {
     if (n >= 2) {
         sa = sj[0];
         sb = sj[1];
-        m = specfun_msta1(x, 200);
+        m = msta1(x, 200);
         if (m < n) {
             *nm = m;
         } else {
-            m = specfun_msta2(x, n, 15);
+            m = msta2(x, n, 15);
         }
         f = 0.0;
         f0 = 0.0;
@@ -8281,7 +8301,7 @@ void specfun_sphj(double x, int n, int *nm, double *sj, double *dj) {
 }
 
 
-void specfun_sphy(double x, int n, int *nm, double *sy, double *dy) {
+void sphy(double x, int n, int *nm, double *sy, double *dy) {
 
     // ======================================================
     // Purpose: Compute spherical Bessel functions yn(x) and
@@ -8333,7 +8353,7 @@ void specfun_sphy(double x, int n, int *nm, double *sy, double *dy) {
 }
 
 
-double specfun_vvla(double x, double va) {
+double vvla(double x, double va) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder function Vv(x)
@@ -8364,8 +8384,8 @@ double specfun_vvla(double x, double va) {
     pv *= a0;
     if (x < 0.0) {
         x1 = -x;
-        pdl = specfun_dvla(x1, va);
-        gl = specfun_gamma2(-va);
+        pdl = dvla(x1, va);
+        gl = gamma2(-va);
         dsl = sin(pi*va)*sin(pi*va);
         pv = dsl*gl/pi*pdl - cos(pi*va)*pv;
     }
@@ -8373,7 +8393,7 @@ double specfun_vvla(double x, double va) {
 }
 
 
-double specfun_vvsa(double x, double va) {
+double vvsa(double x, double va) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder function Vv(x)
@@ -8397,7 +8417,7 @@ double specfun_vvsa(double x, double va) {
         } else {
             vb0 = -0.5 * va;
             sv0 = sin(va0 * pi);
-            ga0 = specfun_gamma2(va0);
+            ga0 = gamma2(va0);
             pv = pow(2.0, vb0) * sv0 / ga0;
         }
     } else {
@@ -8405,14 +8425,14 @@ double specfun_vvsa(double x, double va) {
         a0 = pow(2.0, -0.5 * va) * ep / (2.0 * pi);
         sv = sin(-(va + 0.5) * pi);
         v1 = -0.5 * va;
-        g1 = specfun_gamma2(v1);
+        g1 = gamma2(v1);
         pv = (sv + 1.0) * g1;
         r = 1.0;
         fac = 1.0;
 
         for (int m = 1; m <= 250; m++) {
             vm = 0.5 * (m - va);
-            gm = specfun_gamma2(vm);
+            gm = gamma2(vm);
             r = r * sq2 * x / m;
             fac = -fac;
             gw = fac * sv + 1.0;
@@ -8423,4 +8443,246 @@ double specfun_vvsa(double x, double va) {
         pv *= a0;
     }
     return pv;
+}
+
+}
+
+extern "C" {
+
+void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *xd) {
+    specfun::airyzo(nt, kf, xa, xb, xc, xd);
+}
+
+void specfun_aswfa(double x, int m, int n, double c, int kd, double cv, double *s1f, double *s1d) {
+    specfun::aswfa(x, m, n, c, kd, cv, s1f, s1d);
+}
+
+void specfun_bernob(int n, double *bn) {
+    specfun::bernob(n, bn);
+}
+
+double _Complex specfun_cerror(double _Complex z)  {
+    std::complex<double> res = specfun::cerror(*reinterpret_cast<std::complex<double> *>(&z));
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+void specfun_cerzo(int nt, double _Complex *zo) {
+    specfun::cerzo(nt, reinterpret_cast<std::complex<double> *>(zo));
+}
+
+double _Complex specfun_cchg(double a, double b, double _Complex z) {
+    std::complex<double> res = specfun::cchg(a, b, *reinterpret_cast<std::complex<double> *>(&z));
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+void specfun_cfc(double _Complex z, double _Complex *zf, double _Complex *zd) {
+    specfun::cfc(*reinterpret_cast<std::complex<double> *>(&z), reinterpret_cast<std::complex<double> *>(zf), reinterpret_cast<std::complex<double> *>(zd));
+}
+
+void specfun_cfs(double _Complex z, double _Complex *zf, double _Complex *zd) {
+    specfun::cfs(*reinterpret_cast<std::complex<double> *>(&z), reinterpret_cast<std::complex<double> *>(zf), reinterpret_cast<std::complex<double> *>(zd));
+}
+
+double _Complex specfun_cgama(double _Complex z, int kf) {
+    std::complex<double> res = specfun::cgama(*reinterpret_cast<std::complex<double> *>(&z), kf);
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+double specfun_chgm(double x, double a, double b) {
+    return specfun::chgm(x, a, b);
+}
+
+double specfun_chgu(double x, double a, double b, int *md, int *isfer) {
+    return specfun::chgu(x, a, b, md, isfer);
+}
+
+void specfun_clpmn(double _Complex z, int m, int n, int ntype, double _Complex *cpm, double _Complex *cpd) {
+    specfun::clpmn(*reinterpret_cast<std::complex<double> *>(&z), m, n, ntype, reinterpret_cast<std::complex<double> *>(cpm), reinterpret_cast<std::complex<double> *>(cpd));
+}
+
+void specfun_clpn(int n, double _Complex z, double _Complex *cpn, double _Complex *cpd) {
+    specfun::clpn(n, *reinterpret_cast<std::complex<double> *>(&z), reinterpret_cast<std::complex<double> *>(cpn), reinterpret_cast<std::complex<double> *>(cpd));
+}
+
+void specfun_clqmn(double _Complex z, int m, int n, double _Complex *cqm, double _Complex *cqd) {
+    specfun::clqmn(*reinterpret_cast<std::complex<double> *>(&z), m, n, reinterpret_cast<std::complex<double> *>(cqm), reinterpret_cast<std::complex<double> *>(cqd));
+}
+
+void specfun_clqn(int n, double _Complex z, double _Complex *cqn, double _Complex *cqd) {
+    specfun::clqn(n, *reinterpret_cast<std::complex<double> *>(&z), reinterpret_cast<std::complex<double> *>(cqn), reinterpret_cast<std::complex<double> *>(cqd));
+}
+
+void specfun_cpbdn(int n, double _Complex z, double _Complex *cpb, double _Complex *cpd) {
+    specfun::cpbdn(n, *reinterpret_cast<std::complex<double> *>(&z), reinterpret_cast<std::complex<double> *>(cpb), reinterpret_cast<std::complex<double> *>(cpd));
+}
+
+double specfun_cva2(int kd, int m, double q) {
+    return specfun::cva2(kd, m, q);
+}
+
+void specfun_cyzo(int nt, int kf, int kc, double _Complex *zo, double _Complex *zv) {
+    specfun::cyzo(nt, kf, kc, reinterpret_cast<std::complex<double> *>(zo), reinterpret_cast<std::complex<double> *>(zv));
+}
+
+double specfun_eix(double x) {
+    return specfun::eix(x);
+}
+
+double specfun_e1xb(double x) {
+    return specfun::e1xb(x);
+}
+
+double _Complex specfun_eixz(double _Complex z) {
+    std::complex<double> res = specfun::eixz(*reinterpret_cast<std::complex<double> *>(&z));
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+double _Complex specfun_e1z(double _Complex z) {
+    std::complex<double> res = specfun::e1z(*reinterpret_cast<std::complex<double> *>(&z));
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+void specfun_eulerb(int n, double *en) {
+    specfun::eulerb(n, en);
+}
+
+void specfun_fcoef(int kd, int m, double q, double a, double *fc) {
+    specfun::fcoef(kd, m, q, a, fc);
+}
+
+void specfun_fcszo(int kf, int nt, double _Complex *zo) {
+    specfun::fcszo(kf, nt, reinterpret_cast<std::complex<double> *>(zo));
+}
+
+void specfun_ffk(int ks, double x, double *fr, double *fi, double *fm, double *fa,
+         double *gr, double *gi, double *gm, double *ga) {
+    specfun::ffk(ks, x, fr, fi, fm, fa, gr, gi, gm, ga);
+}
+
+double _Complex specfun_hygfz(double a, double b, double c, double _Complex z, int *isfer) {
+    std::complex<double> res = specfun::hygfz(a, b, c, *reinterpret_cast<std::complex<double> *>(&z), isfer);
+    return *reinterpret_cast<double _Complex *>(&res);
+}
+
+void specfun_itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
+    specfun::itairy(x, apt, bpt, ant, bnt);
+}
+
+void specfun_itika(double x, double *ti, double *tk) {
+    specfun::itika(x, ti, tk);
+}
+
+void specfun_itjya(double x, double *tj, double *ty) {
+    specfun::itjya(x, tj, ty);
+}
+
+double specfun_itsh0(double x) {
+    return specfun::itsh0(x);
+}
+
+double specfun_itsl0(double x) {
+    return specfun::itsl0(x);
+}
+
+double specfun_itth0(double x) {
+    return specfun::itth0(x);
+}
+
+void specfun_ittika(double x, double *tti, double *ttk) {
+    specfun::ittika(x, tti, ttk);
+}
+
+void specfun_ittjya(double x, double *ttj, double *tty) {
+    specfun::ittjya(x, ttj, tty);
+}
+
+void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p) {
+    specfun::jdzo(nt, zo, n, m, p);
+}
+
+void specfun_jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1) {
+    specfun::jyzo(n, nt, rj0, rj1, ry0, ry1);
+}
+
+void specfun_klvna(double x, double *ber, double *bei, double *ger, double *gei,
+                   double *der, double *dei, double *her, double *hei) {
+    specfun::klvna(x, ber, bei, ger, gei, der, dei, her, hei);
+}
+
+void specfun_klvnzo(int nt, int kd, double *zo) {
+    specfun::klvnzo(nt, kd, zo);
+}
+
+void specfun_lamn(int n, double x, int *nm, double *bl, double *dl) {
+    specfun::lamn(n, x, nm, bl, dl);
+}
+
+void specfun_lamv(double v, double x, double *vm, double *vl, double *dl)  {
+    specfun::lamv(v, x, vm, vl, dl);
+}
+
+void specfun_lpmn(int m, int n, double x, double *pm, double *pd) { 
+    specfun::lpmn(m, n, x, pm, pd);
+}
+
+double specfun_lpmv(double x, int m, double v) {
+    return specfun::lpmv(x, m, v);
+}
+
+void specfun_lpn(int n, double x, double *pn, double *pd) {
+    specfun::lpn(n, x, pn, pd);
+}
+
+void specfun_lqmn(double x, int m, int n, double *qm, double *qd) {
+    specfun::lqmn(x, m, n, qm, qd);
+}
+
+void specfun_lqnb(int n, double x, double* qn, double* qd) {
+    specfun::lqnb(n, x, qn, qd);
+}
+
+void specfun_mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
+    specfun::mtu0(kf, m, q, x, csf, csd);
+}
+
+void specfun_mtu12(int kf, int kc, int m, double q, double x, double *f1r, double *d1r, double *f2r, double *d2r) {
+    specfun::mtu12(kf, kc, m, q, x, f1r, d1r, f2r, d2r);
+}
+
+void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd) {
+    specfun::pbdv(x, v, dv, dp, pdf, pdd);
+}
+
+void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd) {
+    specfun::pbvv(x, v, vv, vp, pvf, pvd);
+}
+
+void specfun_pbwa(double a, double x, double *w1f, double *w1d, double *w2f, double *w2d) {
+    specfun::pbwa(a, x, w1f, w1d, w2f, w2d);
+}
+
+void specfun_rctj(int n, double x, int *nm, double *rj, double *dj) {
+    specfun::rctj(n, x, nm, rj, dj);
+}
+
+void specfun_rcty(int n, double x, int *nm, double *ry, double *dy) {
+    specfun::rcty(n, x, nm, ry, dy);
+}
+
+void specfun_rswfp(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+    specfun::rswfp(m, n, c, x, cv, kf, r1f, r1d, r2f, r2d);
+}
+
+void specfun_rswfo(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+    specfun::rswfo(m, n, c, x, cv, kf, r1f, r1d, r2f, r2d);
+}
+
+void specfun_sdmn(int m, int n, double c, double cv, int kd, double *df) {
+    specfun::sdmn(m, n, c, cv, kd, df);
+}
+
+void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg) {
+    specfun::segv(m, n, c, kd, cv, eg);
+}
+
 }
