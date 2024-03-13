@@ -11183,7 +11183,8 @@ class argus_gen(rv_continuous):
     with :math:`\Phi` and :math:`\phi` being the CDF and PDF of a standard
     normal distribution, respectively.
 
-    `argus` takes :math:`\chi` as shape a parameter.
+    `argus` takes :math:`\chi` as shape a parameter. Details about sampling
+    from the ARGUS distribution can be found in [2]_.
 
     %(after_notes)s
 
@@ -11191,6 +11192,9 @@ class argus_gen(rv_continuous):
     ----------
     .. [1] "ARGUS distribution",
            https://en.wikipedia.org/wiki/ARGUS_distribution
+    .. [2] Christoph Baumgarten "Random variate generation by fast numerical
+           inversion in the varying parameter case." Research in Statistics,
+           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
 
     .. versionadded:: 0.19.0
 
