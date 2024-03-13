@@ -43,6 +43,8 @@ exception_list_test_files = [
     "cobyqa/cobyqa/tests/test_main.py",
     "cobyqa/cobyqa/tests/test_models.py",
     "cobyqa/cobyqa/tests/test_problem.py",
+    "cobyqa/cobyqa/utils/tests/test_exceptions.py",
+    "cobyqa/cobyqa/utils/tests/test_math.py",
 ]
 
 
