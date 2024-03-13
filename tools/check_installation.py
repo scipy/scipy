@@ -40,11 +40,11 @@ exception_list_test_files = [
     "_lib/array_api_compat/tests/test_isdtype.py",
     "_lib/array_api_compat/tests/test_vendoring.py",
     "_lib/array_api_compat/tests/test_array_namespace.py",
-    "cobyqa/cobyqa/tests/test_main.py",
-    "cobyqa/cobyqa/tests/test_models.py",
-    "cobyqa/cobyqa/tests/test_problem.py",
-    "cobyqa/cobyqa/utils/tests/test_exceptions.py",
-    "cobyqa/cobyqa/utils/tests/test_math.py",
+    "_lib/cobyqa/cobyqa/tests/test_main.py",
+    "_lib/cobyqa/cobyqa/tests/test_models.py",
+    "_lib/cobyqa/cobyqa/tests/test_problem.py",
+    "_lib/cobyqa/cobyqa/utils/tests/test_exceptions.py",
+    "_lib/cobyqa/cobyqa/utils/tests/test_math.py",
 ]
 
 
