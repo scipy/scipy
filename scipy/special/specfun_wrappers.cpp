@@ -1,17 +1,14 @@
+#include "special/specfun/specfun.h"
+
 #include "specfun_wrappers.h"
 #include "sf_error.h"
 
-#define CADDR(z) ((double *) (&(z))), (&(((double *) (&(z)))[1]))
-
-#ifndef CMPLX
-#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
-#endif /* CMPLX */
-
+extern "C" {
 
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   npy_cdouble outz;
-  double complex z99;
-  double complex outz99;
+  std::complex<double> z99;
+  std::complex<double> outz99;
   int l1, l0, isfer = 0;
 
   l0 = ((c == floor(c)) && (c < 0));
@@ -22,10 +19,10 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
     NPY_CSETIMAG(&outz, 0.0);
     return outz;
   }
-  z99 = CMPLX(npy_creal(z), npy_cimag(z));
-  outz99 = specfun_hygfz(a, b, c, z99, &isfer);
-  NPY_CSETREAL(&outz, creal(outz99));
-  NPY_CSETIMAG(&outz, cimag(outz99));
+  z99 = std::complex<double>(npy_creal(z), npy_cimag(z));
+  outz99 = special::specfun::hygfz(a, b, c, z99, &isfer);
+  NPY_CSETREAL(&outz, outz99.real());
+  NPY_CSETIMAG(&outz, outz99.imag());
   if (isfer == 3) {
     sf_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
     NPY_CSETREAL(&outz, INFINITY);
@@ -33,7 +30,7 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
   } else if (isfer == 5) {
     sf_error("chyp2f1", SF_ERROR_LOSS, NULL);
   } else if (isfer != 0) {
-    sf_error("chyp2f1", isfer, NULL);
+    sf_error("chyp2f1", static_cast<sf_error_t>(isfer), NULL);
     NPY_CSETREAL(&outz, NAN);
     NPY_CSETIMAG(&outz, NAN);
   }
@@ -42,12 +39,12 @@ npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z) {
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
   npy_cdouble outz;
-  double complex outz99;
-  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  std::complex<double> outz99;
+  std::complex<double> z99(npy_creal(z), npy_cimag(z));
 
-  outz99 = specfun_cchg(a, b, z99);
-  NPY_CSETREAL(&outz, creal(outz99));
-  NPY_CSETIMAG(&outz, cimag(outz99));
+  outz99 = special::specfun::cchg(a, b, z99);
+  NPY_CSETREAL(&outz, outz99.real());
+  NPY_CSETIMAG(&outz, outz99.imag());
 
   if (npy_creal(outz) == 1e300) {
     sf_error("chyp1f1", SF_ERROR_OVERFLOW, NULL);
@@ -62,7 +59,7 @@ double hypU_wrap(double a, double b, double x) {
   int md; /* method code --- not returned */
   int isfer = 0;
 
-  out = specfun_chgu(x, a, b, &md, &isfer);
+  out = special::specfun::chgu(x, a, b, &md, &isfer);
   if (out == 1e300) {
       sf_error("hypU", SF_ERROR_OVERFLOW, NULL);
       out = INFINITY;
@@ -71,7 +68,7 @@ double hypU_wrap(double a, double b, double x) {
     sf_error("hypU", SF_ERROR_NO_RESULT, NULL);
     out = NAN;
   } else if (isfer != 0) {
-    sf_error("hypU", isfer, NULL);
+    sf_error("hypU", static_cast<sf_error_t>(isfer), NULL);
     out = NAN;
   }
   return out;
@@ -80,7 +77,7 @@ double hypU_wrap(double a, double b, double x) {
 double hyp1f1_wrap(double a, double b, double x) {
    double outy;
 
-   outy = specfun_chgm(x, a, b);
+   outy = special::specfun::chgm(x, a, b);
    return outy;
 }
 
@@ -92,7 +89,7 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
     x = -x;
     flag = 1;
   }
-  specfun_itairy(x, apt, bpt, ant, bnt);
+  special::specfun::itairy(x, apt, bpt, ant, bnt);
   if (flag) {  /* negative limit -- switch signs and roles */
     tmp = *apt;
     *apt = -*ant;
@@ -108,18 +105,18 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
 double exp1_wrap(double x) {
   double out;
 
-  out = specfun_e1xb(x);
+  out = special::specfun::e1xb(x);
   CONVINF("exp1", out);
   return out;
 }
 
 npy_cdouble cexp1_wrap(npy_cdouble z) {
   npy_cdouble outz;
-  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  std::complex<double> z99(npy_creal(z), npy_cimag(z));
 
-  double complex outz99 = specfun_e1z(z99);
-  NPY_CSETREAL(&outz, creal(outz99));
-  NPY_CSETIMAG(&outz, cimag(outz99));
+  std::complex<double> outz99 = special::specfun::e1z(z99);
+  NPY_CSETREAL(&outz, outz99.real());
+  NPY_CSETIMAG(&outz, outz99.imag());
   ZCONVINF("cexp1", outz);
   return outz;
 }
@@ -127,29 +124,29 @@ npy_cdouble cexp1_wrap(npy_cdouble z) {
 double expi_wrap(double x) {
   double out;
 
-  out = specfun_eix(x);
+  out = special::specfun::eix(x);
   CONVINF("expi", out);
   return out;
 }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) {
   npy_cdouble outz;
-  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  std::complex<double> z99(npy_creal(z), npy_cimag(z));
 
-  double complex outz99 = specfun_eixz(z99);
-  NPY_CSETREAL(&outz, creal(outz99));
-  NPY_CSETIMAG(&outz, cimag(outz99));
+  std::complex<double> outz99 = special::specfun::eixz(z99);
+  NPY_CSETREAL(&outz, outz99.real());
+  NPY_CSETIMAG(&outz, outz99.imag());
   ZCONVINF("cexpi", outz);
   return outz;
 }
 
 npy_cdouble cerf_wrap(npy_cdouble z) {
   npy_cdouble outz;
-  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
+  std::complex<double> z99(npy_creal(z), npy_cimag(z));
 
-  double complex outz99 = specfun_cerror(z99);
-  NPY_CSETREAL(&outz, creal(outz99));
-  NPY_CSETIMAG(&outz, cimag(outz99));
+  std::complex<double> outz99 = special::specfun::cerror(z99);
+  NPY_CSETREAL(&outz, outz99.real());
+  NPY_CSETIMAG(&outz, outz99.imag());
   return outz;
 }
 
@@ -157,7 +154,7 @@ double itstruve0_wrap(double x) {
   double out;
 
   if (x<0) x=-x;
-  out = specfun_itsh0(x);
+  out = special::specfun::itsh0(x);
   CONVINF("itstruve0", out);
   return out;
 }
@@ -170,7 +167,7 @@ double it2struve0_wrap(double x) {
       x=-x;
       flag=1;
   }
-  out = specfun_itth0(x);
+  out = special::specfun::itth0(x);
   CONVINF("it2struve0", out);
   if (flag) {
     out = M_PI - out;
@@ -184,7 +181,7 @@ double itmodstruve0_wrap(double x) {
   if (x<0) {
       x=-x;
   }
-  out = specfun_itsl0(x);
+  out = special::specfun::itsl0(x);
   CONVINF("itmodstruve0", out);
   return out;
 }
@@ -198,7 +195,7 @@ double ber_wrap(double x)
   if (x<0) {
       x=-x;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Be, ber);
   NPY_CSETIMAG(&Be, bei);
   ZCONVINF("ber", Be);
@@ -213,7 +210,7 @@ double bei_wrap(double x)
   if (x<0) {
       x=-x;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Be, ber);
   NPY_CSETIMAG(&Be, bei);
   ZCONVINF("bei", Be);
@@ -227,7 +224,7 @@ double ker_wrap(double x)
   if (x<0) {
       return NAN;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Ke, ger);
   NPY_CSETIMAG(&Ke, gei);
   ZCONVINF("ker", Ke);
@@ -241,7 +238,7 @@ double kei_wrap(double x)
   if (x<0) {
       return NAN;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Ke, ger);
   NPY_CSETIMAG(&Ke, gei);
   ZCONVINF("kei", Ke);
@@ -258,7 +255,7 @@ double berp_wrap(double x)
       x=-x;
       flag=1;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Bep, der);
   NPY_CSETIMAG(&Bep, dei);
   ZCONVINF("berp", Bep);
@@ -278,7 +275,7 @@ double beip_wrap(double x)
       x=-x;
       flag=1;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Bep, der);
   NPY_CSETIMAG(&Bep, dei);
   ZCONVINF("beip", Bep);
@@ -296,7 +293,7 @@ double kerp_wrap(double x)
   if (x<0) {
       return NAN;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Kep, her);
   NPY_CSETIMAG(&Kep, hei);
   ZCONVINF("kerp", Kep);
@@ -311,7 +308,7 @@ double keip_wrap(double x)
   if (x<0) {
       return NAN;
   }
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(&Kep, her);
   NPY_CSETIMAG(&Kep, hei);
   ZCONVINF("keip", Kep);
@@ -327,7 +324,7 @@ int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, np
       flag=1;
   }
 
-  specfun_klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
+  special::specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
   NPY_CSETREAL(Be, ber);
   NPY_CSETIMAG(Be, bei);
   NPY_CSETREAL(Ke, ger);
@@ -365,7 +362,7 @@ int it1j0y0_wrap(double x, double *j0int, double *y0int)
       x = -x;
       flag=1;
   }
-  specfun_itjya(x, j0int, y0int);
+  special::specfun::itjya(x, j0int, y0int);
   if (flag) {
     *j0int = -(*j0int);
     *y0int = NAN;    /* domain error */
@@ -384,7 +381,7 @@ int it2j0y0_wrap(double x, double *j0int, double *y0int)
       x=-x;
       flag=1;
   }
-  specfun_ittjya(x, j0int, y0int);
+  special::specfun::ittjya(x, j0int, y0int);
   if (flag) {
     *y0int = NAN;  /* domain error */
   }
@@ -401,7 +398,7 @@ int it1i0k0_wrap(double x, double *i0int, double *k0int)
       x = -x;
       flag=1;
   }
-  specfun_itika(x, i0int, k0int);
+  special::specfun::itika(x, i0int, k0int);
   if (flag) {
     *i0int = -(*i0int);
     *k0int = NAN;    /* domain error */
@@ -417,7 +414,7 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
       x=-x;
       flag=1;
   }
-  specfun_ittika(x, i0int, k0int);
+  special::specfun::ittika(x, i0int, k0int);
   if (flag) {
     *k0int = NAN;  /* domain error */
   }
@@ -429,16 +426,16 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int)
 
 int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc)
 {
-  double complex z99 = CMPLX(npy_creal(z), npy_cimag(z));
-  double complex zfs99, zfc99, zfd;
+  std::complex<double> z99(npy_creal(z), npy_cimag(z));
+  std::complex<double> zfs99, zfc99, zfd;
 
-  specfun_cfs(z99, &zfs99, &zfd);
-  specfun_cfc(z99, &zfc99, &zfd);
+  special::specfun::cfs(z99, &zfs99, &zfd);
+  special::specfun::cfc(z99, &zfc99, &zfd);
 
-  NPY_CSETREAL(zfs, creal(zfs99));
-  NPY_CSETIMAG(zfs, cimag(zfs99));
-  NPY_CSETREAL(zfc, creal(zfc99));
-  NPY_CSETIMAG(zfc, cimag(zfc99));  
+  NPY_CSETREAL(zfs, zfs99.real());
+  NPY_CSETIMAG(zfs, zfs99.imag());
+  NPY_CSETREAL(zfc, zfc99.real());
+  NPY_CSETIMAG(zfc, zfc99.imag());  
 
   return 0;
 }
@@ -467,7 +464,7 @@ double cem_cva_wrap(double m, double q) {
   if (int_m % 2) {
       kd=2;
   }
-  out = specfun_cva2(kd, int_m, q);
+  out = special::specfun::cva2(kd, int_m, q);
   return out;
 }
 
@@ -492,7 +489,7 @@ double sem_cva_wrap(double m, double q) {
   if (int_m % 2) {
       kd=3;
   }
-  out = specfun_cva2(kd, int_m, q);
+  out = special::specfun::cva2(kd, int_m, q);
   return out;
 }
 
@@ -525,7 +522,7 @@ int cem_wrap(double m, double q, double x, double *csf, double *csd)
         return 0;
       }
   }
-  specfun_mtu0(kf, int_m, q, x, csf, csd);
+  special::specfun::mtu0(kf, int_m, q, x, csf, csd);
   return 0;
 }
 
@@ -562,7 +559,7 @@ int sem_wrap(double m, double q, double x, double *csf, double *csd)
         return 0;
       }
   }
-  specfun_mtu0(kf, int_m, q, x, csf, csd);
+  special::specfun::mtu0(kf, int_m, q, x, csf, csd);
   return 0;
 }
 
@@ -579,7 +576,7 @@ int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r)
     return -1;
   }
   int_m = (int)m;
-  specfun_mtu12(kf, kc, int_m, q, x, f1r, d1r, &f2r, &d2r);
+  special::specfun::mtu12(kf, kc, int_m, q, x, f1r, d1r, &f2r, &d2r);
   return 0;
 }
 
@@ -595,7 +592,7 @@ int msm1_wrap(double m, double q, double x, double *f1r, double *d1r)
     return -1;
   }
   int_m = (int)m;
-  specfun_mtu12(kf, kc, int_m, q, x, f1r, d1r, &f2r, &d2r);
+  special::specfun::mtu12(kf, kc, int_m, q, x, f1r, d1r, &f2r, &d2r);
   return 0;
 }
 
@@ -611,7 +608,7 @@ int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r)
     return -1;
   }
   int_m = (int)m;
-  specfun_mtu12(kf, kc, int_m, q, x, &f1r, &d1r, f2r, d2r);
+  special::specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, f2r, d2r);
   return 0;
 }
 
@@ -627,7 +624,7 @@ int msm2_wrap(double m, double q, double x, double *f2r, double *d2r)
     return -1;
   }
   int_m = (int)m;
-  specfun_mtu12(kf, kc, int_m, q, x, &f1r, &d1r, f2r, d2r);
+  special::specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, f2r, d2r);
   return 0;
 }
 
@@ -640,7 +637,7 @@ double pmv_wrap(double m, double v, double x){
       return NAN;
   }
   int_m = (int)m;
-  out = specfun_lpmv(x, int_m, v);
+  out = special::specfun::lpmv(x, int_m, v);
   CONVINF("pmv", out);
   return out;
 }
@@ -669,7 +666,7 @@ int pbwa_wrap(double a, double x, double *wf, double *wd) {
     x = -x;
     flag = 1;
   }
-  specfun_pbwa(a, x, &w1f, &w1d, &w2f, &w2d);
+  special::specfun::pbwa(a, x, &w1f, &w1d, &w2f, &w2d);
   if (flag) {
     *wf = w2f;
     *wd = -w2d;
@@ -702,7 +699,7 @@ int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
     return -1;
   }
   dp = dv + num;
-  specfun_pbdv(x, v, dv, dp, pdf, pdd);
+  special::specfun::pbdv(x, v, dv, dp, pdf, pdd);
   PyMem_Free(dv);
   return 0;
 }
@@ -727,7 +724,7 @@ int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
     return -1;
   }
   vp = vv + num;
-  specfun_pbvv(x, v, vv, vp, pvf, pvd);
+  special::specfun::pbvv(x, v, vv, vp, pvf, pvd);
   PyMem_Free(vv);
   return 0;
 }
@@ -748,7 +745,7 @@ double prolate_segv_wrap(double m, double n, double c)
     sf_error("prolate_segv", SF_ERROR_OTHER, "memory allocation error");
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
   PyMem_Free(eg);
   return cv;
 }
@@ -769,7 +766,7 @@ double oblate_segv_wrap(double m, double n, double c)
     sf_error("oblate_segv", SF_ERROR_OTHER, "memory allocation error");
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv,eg);
+  special::specfun::segv(int_m, int_n, c, kd, &cv,eg);
   PyMem_Free(eg);
   return cv;
 }
@@ -795,8 +792,8 @@ double prolate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s
     *s1d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
   PyMem_Free(eg);
   return s1f;
 }
@@ -822,8 +819,8 @@ double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1
     *s1d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
   PyMem_Free(eg);
   return s1f;
 }
@@ -843,7 +840,7 @@ int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_aswfa(x, int_m, int_n, c, kd, cv, s1f, s1d);
+  special::specfun::aswfa(x, int_m, int_n, c, kd, cv, s1f, s1d);
   return 0;
 }
 
@@ -862,7 +859,7 @@ int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double 
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_aswfa(x, int_m, int_n, c, kd, cv, s1f, s1d);
+  special::specfun::aswfa(x, int_m, int_n, c, kd, cv, s1f, s1d);
   return 0;
 }
 
@@ -887,8 +884,8 @@ double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double 
     *r1d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_rswfp(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
   PyMem_Free(eg);
   return r1f;
 }
@@ -913,8 +910,8 @@ double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double 
     *r2d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
   PyMem_Free(eg);
   return r2f;
 }
@@ -934,7 +931,7 @@ int prolate_radial1_wrap(double m, double n, double c, double cv, double x, doub
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_rswfp(int_m, int_n, c, x, cv, kf, r1f, r1d, &r2f, &r2d);
+  special::specfun::rswfp(int_m, int_n, c, x, cv, kf, r1f, r1d, &r2f, &r2d);
   return 0;
 }
 
@@ -953,7 +950,7 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, r2f, r2d);
+  special::specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, r2f, r2d);
   return 0;
 }
 
@@ -977,8 +974,8 @@ double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *
     *r1d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_rswfo(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
   PyMem_Free(eg);
   return r1f;
 }
@@ -1003,8 +1000,8 @@ double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *
     *r2d = NAN;
     return NAN;
   }
-  specfun_segv(int_m, int_n, c, kd, &cv, eg);
-  specfun_rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
+  special::specfun::segv(int_m, int_n, c, kd, &cv, eg);
+  special::specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
   PyMem_Free(eg);
   return r2f;
 }
@@ -1024,7 +1021,7 @@ int oblate_radial1_wrap(double m, double n, double c, double cv, double x, doubl
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_rswfo(int_m, int_n, c, x, cv, kf, r1f, r1d, &r2f, &r2d);
+  special::specfun::rswfo(int_m, int_n, c, x, cv, kf, r1f, r1d, &r2f, &r2d);
   return 0;
 }
 
@@ -1043,7 +1040,7 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
   }
   int_m = (int )m;
   int_n = (int )n;
-  specfun_rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, r2f, r2d);
+  special::specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, r2f, r2d);
   return 0;
 }
 
@@ -1053,7 +1050,7 @@ int modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus)
   int ks=0;
   double fr = 0.0, gr = 0.0, fi = 0.0, gi = 0.0, fa = 0.0, ga = 0.0, fm = 0.0, gm = 0.0;
 
-  specfun_ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
+  special::specfun::ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
   NPY_CSETREAL(Fplus, fr);
   NPY_CSETIMAG(Fplus, fi);
   NPY_CSETREAL(Kplus, gr);
@@ -1066,10 +1063,12 @@ int modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kmin
   int ks=1;
   double fr = 0.0, gr = 0.0, fi = 0.0, gi = 0.0, fa = 0.0, ga = 0.0, fm = 0.0, gm = 0.0;
 
-  specfun_ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
+  special::specfun::ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
   NPY_CSETREAL(Fminus, fr);
   NPY_CSETIMAG(Fminus, fi);
   NPY_CSETREAL(Kminus, gr);
   NPY_CSETIMAG(Kminus, gi); 
   return 0;
+}
+
 }

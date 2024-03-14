@@ -114,7 +114,7 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'amos_wrappers.c',
-  'specfun_wrappers.c',
+  'specfun_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -275,7 +275,7 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.c',
-    'specfun_wrappers.c',
+    'specfun_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
