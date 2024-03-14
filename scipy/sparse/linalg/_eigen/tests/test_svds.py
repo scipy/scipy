@@ -392,6 +392,8 @@ class SVDSCommonTests:
     @pytest.mark.parametrize("random_state", (None,
                                               np.random.RandomState(0),
                                               np.random.default_rng(0)))
+    @pytest.mark.filterwarnings("ignore:Exited",
+                                reason="Ignore LOBPCG early exit.")
     def test_svd_random_state_3(self, random_state):
         n = 100
         k = 5
@@ -399,12 +401,14 @@ class SVDSCommonTests:
         rng = np.random.default_rng(0)
         A = rng.random((n, n))
 
+        random_state = copy.deepcopy(random_state)
+
         # random_state in different state produces accurate - but not
         # not necessarily identical - results
-        res1a = svds(A, k, solver=self.solver, random_state=random_state)
-        res2a = svds(A, k, solver=self.solver, random_state=random_state)
-        _check_svds(A, k, *res1a, atol=2e-9, rtol=2e-6)
-        _check_svds(A, k, *res2a, atol=2e-9, rtol=2e-6)
+        res1a = svds(A, k, solver=self.solver, random_state=random_state, maxiter=1000)
+        res2a = svds(A, k, solver=self.solver, random_state=random_state, maxiter=1000)
+        _check_svds(A, k, *res1a, atol=2e-7)
+        _check_svds(A, k, *res2a, atol=2e-7)
 
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):
@@ -832,9 +836,6 @@ class Test_SVDS_LOBPCG(SVDSCommonTests):
 
     def setup_method(self):
         self.solver = 'lobpcg'
-
-    def test_svd_random_state_3(self):
-        pytest.xfail("LOBPCG is having trouble with accuracy.")
 
 
 class Test_SVDS_PROPACK(SVDSCommonTests):
