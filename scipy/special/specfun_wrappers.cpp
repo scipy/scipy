@@ -690,7 +690,7 @@ int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
     return 0;
   }
   /* NB. Indexing of DV/DP in specfun.f:PBDV starts from 0, hence +2 */
-  num = ABS((int)v) + 2;
+  num = std::abs((int)v) + 2;
   dv = (double *)PyMem_Malloc(sizeof(double)*2*num);
   if (dv==NULL) {
     special::set_error("pbdv", SF_ERROR_OTHER, "memory allocation error");
@@ -715,7 +715,7 @@ int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
     return 0;
   }
   /* NB. Indexing of DV/DP in specfun.f:PBVV starts from 0, hence +2 */
-  num = ABS((int)v) + 2;
+  num = std::abs((int)v) + 2;
   vv = (double *)PyMem_Malloc(sizeof(double)*2*num);
   if (vv==NULL) {
     special::set_error("pbvv", SF_ERROR_OTHER, "memory allocation error");

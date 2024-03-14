@@ -37,7 +37,6 @@
             (x)=-INFINITY;                                              \
         }                                                               \
     } while (0)
-#define ABS(x) ((x)<0 ? -(x) : (x))
 
 #ifdef __cplusplus
 extern "C"
