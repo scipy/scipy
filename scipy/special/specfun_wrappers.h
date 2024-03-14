@@ -15,29 +15,6 @@
 #include "npy_2_complexcompat.h"
 #include "sf_error.h"
 
-#define ZCONVINF(func,z)                                                \
-    do {                                                                \
-        if ((double)npy_creal(z) == (double)1.0e300) {    \
-            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            NPY_CSETREAL(&(z), INFINITY);                       \
-        }                                                               \
-        if ((double)npy_creal(z) == (double)-1.0e300) {   \
-            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            NPY_CSETREAL(&(z), -INFINITY);                      \
-        }                                                               \
-    } while (0)
-#define CONVINF(func, x)                                                \
-    do {                                                                \
-        if ((double)(x) == (double)1.0e300) {                           \
-            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            (x)=INFINITY;                                               \
-        }                                                               \
-        if ((double)(x) == (double)-1.0e300) {                          \
-            sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
-            (x)=-INFINITY;                                              \
-        }                                                               \
-    } while (0)
-
 #ifdef __cplusplus
 extern "C"
 {
