@@ -4,15 +4,15 @@
 extern "C" {
 
 npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z) {
-  std::complex<double> res = special::chyp2f1_wrap(
-      a, b, c, *reinterpret_cast<std::complex<double> *>(&z));
-  return *reinterpret_cast<npy_cdouble *>(&res);
+  std::complex<double> res =
+      special::chyp2f1_wrap(a, b, c, {npy_creal(z), npy_cimag(z)});
+  return npy_cpack(res.real(), res.imag());
 }
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
-  std::complex<double> res = special::chyp1f1_wrap(
-      a, b, *reinterpret_cast<std::complex<double> *>(&z));
-  return *reinterpret_cast<npy_cdouble *>(&res);
+  std::complex<double> res =
+      special::chyp1f1_wrap(a, b, {npy_creal(z), npy_cimag(z)});
+  return npy_cpack(res.real(), res.imag());
 }
 
 double hypU_wrap(double a, double b, double x) {
@@ -27,77 +27,53 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
   return special::itairy_wrap(x, apt, bpt, ant, bnt);
 }
 
-double exp1_wrap(double x) {
-  return special::exp1_wrap(x);
-}
+double exp1_wrap(double x) { return special::exp1_wrap(x); }
 
 npy_cdouble cexp1_wrap(npy_cdouble z) {
-  std::complex<double> res = special::cexp1_wrap(*reinterpret_cast<std::complex<double> *>(&z));
-  return *reinterpret_cast<npy_cdouble *>(&res);
+  std::complex<double> res = special::cexp1_wrap({npy_creal(z), npy_cimag(z)});
+  return npy_cpack(res.real(), res.imag());
 }
 
-double expi_wrap(double x) {
-  return special::expi_wrap(x);
-}
+double expi_wrap(double x) { return special::expi_wrap(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) {
-  std::complex<double> res = special::cexpi_wrap(*reinterpret_cast<std::complex<double> *>(&z));
-  return *reinterpret_cast<npy_cdouble *>(&res);
+  std::complex<double> res = special::cexpi_wrap({npy_creal(z), npy_cimag(z)});
+  return npy_cpack(res.real(), res.imag());
 }
 
 npy_cdouble cerf_wrap(npy_cdouble z) {
-  std::complex<double> res = special::cerf_wrap(*reinterpret_cast<std::complex<double> *>(&z));
-  return *reinterpret_cast<npy_cdouble *>(&res);
+  std::complex<double> res = special::cerf_wrap({npy_creal(z), npy_cimag(z)});
+  return npy_cpack(res.real(), res.imag());
 }
 
-double itstruve0_wrap(double x) {
-  return special::itstruve0_wrap(x);
-}
+double itstruve0_wrap(double x) { return special::itstruve0_wrap(x); }
 
-double it2struve0_wrap(double x) {
-  return special::it2struve0_wrap(x);
-}
+double it2struve0_wrap(double x) { return special::it2struve0_wrap(x); }
 
-double itmodstruve0_wrap(double x) {
-  return special::itmodstruve0_wrap(x);
-}
+double itmodstruve0_wrap(double x) { return special::itmodstruve0_wrap(x); }
 
-double ber_wrap(double x) {
-  return special::ber_wrap(x);
-}
+double ber_wrap(double x) { return special::ber_wrap(x); }
 
-double bei_wrap(double x) {
-  return special::bei_wrap(x);
-}
+double bei_wrap(double x) { return special::bei_wrap(x); }
 
-double ker_wrap(double x) {
-  return special::ker_wrap(x);
-}
+double ker_wrap(double x) { return special::ker_wrap(x); }
 
-double kei_wrap(double x) {
-  return special::kei_wrap(x);
-}
+double kei_wrap(double x) { return special::kei_wrap(x); }
 
-double berp_wrap(double x) {
-  return special::berp_wrap(x);
-}
+double berp_wrap(double x) { return special::berp_wrap(x); }
 
-double beip_wrap(double x) {
-  return special::beip_wrap(x);
-}
+double beip_wrap(double x) { return special::beip_wrap(x); }
 
-double kerp_wrap(double x) {
-  return special::kerp_wrap(x);
-}
+double kerp_wrap(double x) { return special::kerp_wrap(x); }
 
-double keip_wrap(double x) {
-  return special::keip_wrap(x);
-}
+double keip_wrap(double x) { return special::keip_wrap(x); }
 
 int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep,
                 npy_cdouble *Kep) {
-  return special::kelvin_wrap(x, reinterpret_cast<std::complex<double> *>(Be), reinterpret_cast<std::complex<double> *>(Ke),
-    reinterpret_cast<std::complex<double> *>(Bep), reinterpret_cast<std::complex<double> *>(Kep));
+  return special::kelvin_wrap(x, reinterpret_cast<std::complex<double> *>(Be),
+                              reinterpret_cast<std::complex<double> *>(Ke),
+                              reinterpret_cast<std::complex<double> *>(Bep),
+                              reinterpret_cast<std::complex<double> *>(Kep));
 }
 
 int it1j0y0_wrap(double x, double *j0int, double *y0int) {
@@ -117,17 +93,14 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int) {
 }
 
 int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
-  return special::cfresnl_wrap(*reinterpret_cast<std::complex<double> *>(&z),
-    reinterpret_cast<std::complex<double> *>(zfs), reinterpret_cast<std::complex<double> *>(zfc));
+  return special::cfresnl_wrap({npy_creal(z), npy_cimag(z)},
+                               reinterpret_cast<std::complex<double> *>(zfs),
+                               reinterpret_cast<std::complex<double> *>(zfc));
 }
 
-double cem_cva_wrap(double m, double q) {
-  return special::cem_cva_wrap(m, q);
-}
+double cem_cva_wrap(double m, double q) { return special::cem_cva_wrap(m, q); }
 
-double sem_cva_wrap(double m, double q) {
-  return special::sem_cva_wrap(m, q);
-}
+double sem_cva_wrap(double m, double q) { return special::sem_cva_wrap(m, q); }
 
 int cem_wrap(double m, double q, double x, double *csf, double *csd) {
   return special::cem_wrap(m, q, x, csf, csd);
