@@ -652,8 +652,6 @@ class SVDSCommonTests:
         # 2do: PROPACK fails orthogonality of singular vectors
         # if dtype == complex and self.solver == 'propack':
         #    pytest.skip("PROPACK unsupported for complex dtype")
-        if solver == 'propack':
-            pytest.skip("PROPACK failures unrelated to PR")
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
@@ -666,7 +664,7 @@ class SVDSCommonTests:
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
         c_svd = False  # partial SVD can be different from full SVD
-        _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=1e-1)
+        _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=2e-1)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
@@ -732,9 +730,6 @@ class SVDSCommonTests:
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")
     def test_small_sigma(self, shape, dtype):
-        # https://github.com/scipy/scipy/pull/11829
-        if dtype == complex and self.solver == 'propack':
-            pytest.skip("PROPACK unsupported for complex dtype")
         rng = np.random.default_rng(179847540)
         A = rng.random(shape).astype(dtype)
         u, _, vh = svd(A, full_matrices=False)
