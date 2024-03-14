@@ -16,8 +16,8 @@ cdef extern from "amos_wrappers.h":
     np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
     double sin_pi(double x) nogil
 
-cdef extern from "numpy/npy_math.h":
-    double npy_creal(np.npy_cdouble z) nogil
+cdef extern from "npy_2_npymathcompat.h":
+    double npymath_creal(np.npy_cdouble z) nogil
 
 #
 # Real-valued kernel
@@ -118,7 +118,7 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept no
         t2 = z*z / (2.0*v*(v+1.0))
         return t1 + t2
 
-    if npy_creal(zz) > 0:
+    if npymath_creal(zz) > 0:
         arg = zsqrt(z)
         s = 2.0 * arg
         r = cbesi_wrap(v-1.0, npy_cdouble_from_double_complex(s))

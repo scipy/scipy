@@ -20,6 +20,9 @@
 [submodule "scipy/_lib/array_api_compat"]
 	path = scipy/_lib/array_api_compat
 	url = https://github.com/data-apis/array-api-compat.git
+[submodule "subprojects/libnpymath"]
+	path = subprojects/libnpymath
+	url = https://github.com/numpy/libnpymath.git
 [submodule "scipy/_lib/pocketfft"]
 	path = scipy/_lib/pocketfft
 	url = https://github.com/scipy/pocketfft

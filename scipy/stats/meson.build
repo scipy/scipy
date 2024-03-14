@@ -122,6 +122,7 @@ nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[7])
 skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 
+npyrandom_includes = include_directories('libnpyrandom')
 
 py3.extension_module('_biasedurn',
   [
@@ -132,11 +133,12 @@ py3.extension_module('_biasedurn',
     'biasedurn/stoc3.cpp',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
+    'libnpyrandom/distributions.c'
   ],
+  include_directories: npyrandom_includes,
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   link_args: version_link_args,
-  # Note that we're not using npymath directly, it is needed to use npyrandom
-  dependencies: [np_dep, npyrandom_lib, npymath_lib],
+  dependencies: np_dep,
   install: true,
   subdir: 'scipy/stats'
 )

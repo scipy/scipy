@@ -2,7 +2,7 @@
 extern "C" {
 #endif
 
-#include <numpy/npy_math.h>
+#include "npy_2_npymathcompat.h"
 
 #ifdef __cplusplus
 }

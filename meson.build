@@ -142,4 +142,10 @@ if use_pythran
   xsimd_dep = dependency('xsimd', required: false)
 endif
 
+libnpymath_proj = subproject('libnpymath', default_options: [
+  'use_numpy_types=true',
+  'install_lib=false',
+])
+libnpymath_dep = libnpymath_proj.get_variable('libnpymath_dep')
+
 subdir('scipy')

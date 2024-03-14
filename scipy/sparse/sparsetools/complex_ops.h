@@ -6,8 +6,7 @@
  */
 
 #include <numpy/arrayobject.h>
-#include <numpy/npy_math.h>
-#include "npy_2_complexcompat.h"
+#include "npy_2_npymathcompat.h"
 
 template <class c_type, class npy_type>
 class complex_wrapper {
@@ -167,62 +166,62 @@ class complex_wrapper {
 
 template <>
 inline float complex_wrapper<float, npy_cfloat>::real() const {
-    return npy_crealf(this->complex);
+    return npymath_crealf(this->complex);
 }
 
 template <>
 inline void complex_wrapper<float, npy_cfloat>::set_real(const float r) {
-    NPY_CSETREALF(&this->complex, r);
+    npymath_csetrealf(&this->complex, r);
 }
 
 template <>
 inline double complex_wrapper<double, npy_cdouble>::real() const {
-    return npy_creal(this->complex);
+    return npymath_creal(this->complex);
 }
 
 template <>
 inline void complex_wrapper<double, npy_cdouble>::set_real(const double r) {
-    NPY_CSETREAL(&this->complex, r);
+    npymath_csetreal(&this->complex, r);
 }
 
 template <>
 inline long double complex_wrapper<long double, npy_clongdouble>::real() const {
-    return npy_creall(this->complex);
+    return npymath_creall(this->complex);
 }
 
 template <>
 inline void complex_wrapper<long double, npy_clongdouble>::set_real(const long double r) {
-    NPY_CSETREALL(&this->complex, r);
+    npymath_csetreall(&this->complex, r);
 }
 
 template <>
 inline float complex_wrapper<float, npy_cfloat>::imag() const {
-    return npy_cimagf(this->complex);
+    return npymath_cimagf(this->complex);
 }
 
 template <>
 inline void complex_wrapper<float, npy_cfloat>::set_imag(const float i) {
-    NPY_CSETIMAGF(&this->complex, i);
+    npymath_csetimagf(&this->complex, i);
 }
 
 template <>
 inline double complex_wrapper<double, npy_cdouble>::imag() const {
-    return npy_cimag(this->complex);
+    return npymath_cimag(this->complex);
 }
 
 template <>
 inline void complex_wrapper<double, npy_cdouble>::set_imag(const double i) {
-    NPY_CSETIMAG(&this->complex, i);
+    npymath_csetimag(&this->complex, i);
 }
 
 template <>
 inline long double complex_wrapper<long double, npy_clongdouble>::imag() const {
-    return npy_cimagl(this->complex);
+    return npymath_cimagl(this->complex);
 }
 
 template <>
 inline void complex_wrapper<long double, npy_clongdouble>::set_imag(const long double i) {
-    NPY_CSETIMAGL(&this->complex, i);
+    npymath_csetimagl(&this->complex, i);
 }
 
 typedef complex_wrapper<float,npy_cfloat> npy_cfloat_wrapper;

@@ -8,9 +8,9 @@ extern "C" {
 
 npy_cdouble wrightomega(npy_cdouble zp)
 {
-    complex<double> z(npy_creal(zp), npy_cimag(zp));
+    complex<double> z(npymath_creal(zp), npymath_cimag(zp));
     complex<double> w = wright::wrightomega(z);
-    return npy_cpack(real(w), imag(w));
+    return npymath_cpack(real(w), imag(w));
 }
 
 double wrightomega_real(double x)
