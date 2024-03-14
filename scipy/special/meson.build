@@ -134,6 +134,13 @@ cephes_lib = static_library('cephes',
   dependencies: [py3_dep, np_dep],
 )
 
+py3.extension_module('_specfun',
+  [cython_gen_cpp.process('_specfun.pyx')],
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special'
+)
 
 py3.extension_module('_cdflib',
   cython_gen.process('_cdflib.pyx'),
