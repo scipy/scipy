@@ -2,8 +2,6 @@ import numpy as np
 
 from ._optimize import _check_unknown_options
 
-__all__ = []
-
 
 def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
                      callback=None, disp=False, maxfev=None, maxiter=None,
