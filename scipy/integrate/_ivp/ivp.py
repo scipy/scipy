@@ -27,47 +27,16 @@ class OdeResult(OptimizeResult):
 
 
 def prepare_events(events):
-    """Standardize event functions and extract the 'terminal', 'max_events',
-    and 'direction' event function attributes."""
+    """Standardize event functions and extract attributes."""
     if callable(events):
         events = (events,)
 
     max_events = np.empty(len(events))
     direction = np.empty(len(events))
     for i, event in enumerate(events):
-        try:
-            terminal = event.terminal
-            terminate_after = event.max_events
-            raise RuntimeError("Only one of 'terminal' and 'max_events' "
-                               "attributes can be supplied for a given event.")
-        except AttributeError:
-            pass
-
-        try:
-            terminal = event.terminal
-            warnings.warn(
-                "The 'terminal' event function attribute is deprecated and "
-                "will be removed in SciPy release 1.11.0. Please use the new "
-                "'max_events' attribute, which can be set to 1 to replicate "
-                "the behaviour of the 'terminal' attribute.",
-                DeprecationWarning, stacklevel=3)
-            max_events[i] = 1 if terminal else np.inf
-        except AttributeError:
-            try:
-                terminate_after = event.max_events
-                assert (isinstance(terminate_after, (int, float))
-                        and not isinstance(terminate_after, bool)
-                        and terminate_after >= 1), (
-                    "The 'max_events' event function attribute must have type"
-                    " int or float and be greater or equal to one.")
-                max_events[i] = terminate_after
-            except AttributeError:
-                max_events[i] = np.inf
-
-        try:
-            direction[i] = event.direction
-        except AttributeError:
-            direction[i] = 0
+        terminal = int(event.terminal) if hasattr(event, 'terminal') else np.inf
+        max_events[i] = terminal if terminal > 0 else np.inf
+        direction[i] = event.direction if hasattr(event, 'direction') else 0
 
     return events, max_events, direction
 
