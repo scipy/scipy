@@ -171,8 +171,7 @@ static double Z2 = 4.92184563216946036703E1;
 
 extern double THPIO4, SQ2OPI;
 
-double j1(x)
-double x;
+double j1(double x)
 {
     double w, z, p, q, xn;
 
@@ -197,23 +196,22 @@ double x;
 }
 
 
-double y1(x)
-double x;
+double y1(double x)
 {
     double w, z, p, q, xn;
 
     if (x <= 5.0) {
 	if (x == 0.0) {
 	    sf_error("y1", SF_ERROR_SINGULAR, NULL);
-	    return -NPY_INFINITY;
+	    return -INFINITY;
 	}
 	else if (x <= 0.0) {
 	    sf_error("y1", SF_ERROR_DOMAIN, NULL);
-	    return NPY_NAN;
+	    return NAN;
 	}
 	z = x * x;
 	w = x * (polevl(z, YP, 5) / p1evl(z, YQ, 8));
-	w += NPY_2_PI * (j1(x) * log(x) - 1.0 / x);
+	w += M_2_PI * (j1(x) * log(x) - 1.0 / x);
 	return (w);
     }
 

@@ -80,7 +80,7 @@ typedef struct {
 /* initialize iterations over single array elements: */
 int NI_InitPointIterator(PyArrayObject*, NI_Iterator*);
 
-/* initialize iterations over an arbritrary sub-space: */
+/* initialize iterations over an arbitrary sub-space: */
 int NI_SubspaceIterator(NI_Iterator*, npy_uint32);
 
 /* initialize iteration over array lines: */

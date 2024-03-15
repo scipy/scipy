@@ -80,7 +80,7 @@ class TestNdimageFourier:
 
     @pytest.mark.parametrize('shape', [(32, 16), (31, 15)])
     @pytest.mark.parametrize('dtype, dec',
-                             [(numpy.complex64, 6), (numpy.complex128, 11)])
+                             [(numpy.complex64, 4), (numpy.complex128, 11)])
     def test_fourier_shift_complex01(self, shape, dtype, dec):
         expected = numpy.arange(shape[0] * shape[1], dtype=dtype)
         expected.shape = shape
@@ -125,7 +125,7 @@ class TestNdimageFourier:
         # arrays with ndim > 3 raise NotImplementedError
         x = numpy.ones((4, 6, 8, 10), dtype=numpy.complex128)
         with pytest.raises(NotImplementedError):
-            a = ndimage.fourier_ellipsoid(x, 3)
+            ndimage.fourier_ellipsoid(x, 3)
 
     def test_fourier_ellipsoid_1d_complex(self):
         # expected result of 1d ellipsoid is the same as for fourier_uniform

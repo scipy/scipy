@@ -8,18 +8,18 @@ from numpy cimport npy_intp as intp
 
 np.import_array()
 
-cdef void _destructor(obj):
+cdef void _destructor(obj) noexcept:
     cdef void *callback_data = PyCapsule_GetContext(obj)
     PyMem_Free(callback_data)
 
 
-cdef void _destructor_data(obj):
+cdef void _destructor_data(obj) noexcept:
     cdef void *callback_data = PyCapsule_GetPointer(obj, NULL)
     PyMem_Free(callback_data)
 
 
 cdef int _filter1d(double *input_line, intp input_length, double *output_line,
-	           intp output_length, void *callback_data):
+	           intp output_length, void *callback_data) noexcept:
     cdef intp i, j
     cdef intp filter_size = (<intp *>callback_data)[0]
 
@@ -43,7 +43,7 @@ def filter1d(intp filter_size, with_signature=False):
 
     try:
         capsule = PyCapsule_New(<void *>_filter1d, signature, _destructor)
-        res = PyCapsule_SetContext(capsule, callback_data)
+        PyCapsule_SetContext(capsule, callback_data)
     except:  # noqa: E722
         PyMem_Free(callback_data)
         raise
@@ -65,7 +65,7 @@ def filter1d_capsule(intp filter_size):
 
 
 cdef int _filter2d(double *buffer, intp filter_size, double *res,
-	           void *callback_data):
+	           void *callback_data) noexcept:
     cdef intp i
     cdef double *weights = <double *>callback_data
 
@@ -111,7 +111,7 @@ def filter2d_capsule(seq):
 
 
 cdef int _transform(intp *output_coordinates, double *input_coordinates,
-	            int output_rank, int input_rank, void *callback_data):
+	            int output_rank, int input_rank, void *callback_data) noexcept:
     cdef intp i
     cdef double shift = (<double *>callback_data)[0]
 

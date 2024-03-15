@@ -78,6 +78,10 @@ def geometric_slerp(
         If ``start`` and ``end`` are antipodes, not on the
         unit n-sphere, or for a variety of degenerate conditions.
 
+    See Also
+    --------
+    scipy.spatial.transform.Slerp : 3-D Slerp that works with quaternions
+
     Notes
     -----
     The implementation is based on the mathematical formula provided in [1]_,
@@ -93,15 +97,12 @@ def geometric_slerp(
     .. [2] Ken Shoemake (1985) Animating rotation with quaternion curves.
            ACM SIGGRAPH Computer Graphics, 19(3): 245-254.
 
-    See Also
-    --------
-    scipy.spatial.transform.Slerp : 3-D Slerp that works with quaternions
-
     Examples
     --------
     Interpolate four linearly-spaced values on the circumference of
     a circle spanning 90 degrees:
 
+    >>> import numpy as np
     >>> from scipy.spatial import geometric_slerp
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
@@ -216,9 +217,10 @@ def geometric_slerp(
     # diameter of 2 within tolerance means antipodes, which is a problem
     # for all unit n-spheres (even the 0-sphere would have an ambiguous path)
     if np.allclose(coord_dist, 2.0, rtol=0, atol=tol):
-        warnings.warn("start and end are antipodes"
-                      " using the specified tolerance;"
-                      " this may cause ambiguous slerp paths")
+        warnings.warn("start and end are antipodes "
+                      "using the specified tolerance; "
+                      "this may cause ambiguous slerp paths",
+                      stacklevel=2)
 
     t = np.asarray(t, dtype=np.float64)
 

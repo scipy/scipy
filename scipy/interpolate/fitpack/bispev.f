@@ -1,5 +1,6 @@
-      subroutine bispev(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,wrk,lwrk,
-     * iwrk,kwrk,ier)
+      recursive subroutine bispev(tx,nx,ty,ny,c,kx,ky,x,mx,y,my,z,
+     *    wrk,lwrk,iwrk,kwrk,ier)
+      implicit none
 c  subroutine bispev evaluates on a grid (x(i),y(j)),i=1,...,mx; j=1,...
 c  ,my a bivariate spline s(x,y) of degrees kx and ky, given in the
 c  b-spline representation.

@@ -1,4 +1,5 @@
-      subroutine fpknot(x,m,t,n,fpint,nrdata,nrint,nest,istart)
+      recursive subroutine fpknot(x,m,t,n,fpint,nrdata,nrint,nest,
+     *   istart)
       implicit none
 c  subroutine fpknot locates an additional knot for a spline of degree
 c  k and adjusts the corresponding parameters,i.e.
@@ -20,7 +21,11 @@ c  ..local scalars..
       real*8 an,am,fpmax
       integer ihalf,j,jbegin,jj,jk,jpoint,k,maxbeg,maxpt,
      * next,nrx,number
-c  ..
+
+c  note: do not initialize on the same line to avoid saving between calls
+      logical iserr
+      iserr = .TRUE.
+
       k = (n-nrint-1)/2
 c  search for knot interval t(number+k) <= x <= t(number+k+1) where
 c  fpint(number) is maximal on the condition that nrdata(number)
@@ -30,12 +35,15 @@ c  not equals zero.
       do 20 j=1,nrint
         jpoint = nrdata(j)
         if(fpmax.ge.fpint(j) .or. jpoint.eq.0) go to 10
+        iserr = .FALSE.
         fpmax = fpint(j)
         number = j
         maxpt = jpoint
         maxbeg = jbegin
   10    jbegin = jbegin+jpoint+1
   20  continue
+c  error condition detected, go to exit
+      if(iserr) go to 50
 c  let coincide the new knot t(number+k+1) with a data point x(nrx)
 c  inside the old knot interval t(number+k) <= x <= t(number+k+1).
       ihalf = maxpt/2+1
@@ -59,7 +67,7 @@ c  adjust the different parameters.
       fpint(next) = fpmax*an/am
       jk = next+k
       t(jk) = x(nrx)
-      n = n+1
+  50  n = n+1
       nrint = nrint+1
       return
       end

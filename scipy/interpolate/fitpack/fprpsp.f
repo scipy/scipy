@@ -1,4 +1,5 @@
-      subroutine fprpsp(nt,np,co,si,c,f,ncoff)
+      recursive subroutine fprpsp(nt,np,co,si,c,f,ncoff)
+      implicit none
 c  given the coefficients of a spherical spline function, subroutine
 c  fprpsp calculates the coefficients in the standard b-spline re-
 c  presentation of this bicubic spline.

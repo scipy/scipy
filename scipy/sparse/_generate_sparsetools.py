@@ -18,7 +18,7 @@ Type codes used:
 See sparsetools.cxx for more details.
 
 """
-import optparse
+import argparse
 import os
 from stat import ST_MTIME
 
@@ -175,7 +175,7 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 %(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
@@ -311,7 +311,7 @@ def parse_routine(name, args, types):
             elif t == 'l':
                 args.append("*(%snpy_int64*)a[%d]" % (const, j))
             else:
-                raise ValueError("Invalid spec character %r" % (t,))
+                raise ValueError(f"Invalid spec character {t!r}")
             j += 1
         return ", ".join(args)
 
@@ -352,12 +352,13 @@ def parse_routine(name, args, types):
 
 
 def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
-    p.add_option("--no-force", action="store_false",
-                 dest="force", default=True)
-    p.add_option("-o", "--outdir", type=str,
-                 help="Relative path to the output directory")
-    options, args = p.parse_args()
+    p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
+
+    p.add_argument("--no-force", action="store_false",
+                   dest="force", default=True)
+    p.add_argument("-o", "--outdir", type=str,
+                   help="Relative path to the output directory")
+    options = p.parse_args()
 
     names = []
 
@@ -377,7 +378,7 @@ def main():
             try:
                 name, args = line.split(None, 1)
             except ValueError as e:
-                raise ValueError("Malformed line: %r" % (line,)) from e
+                raise ValueError(f"Malformed line: {line!r}") from e
 
             args = "".join(args.split())
             if 't' in args or 'T' in args:
@@ -386,7 +387,7 @@ def main():
                 thunk, method = parse_routine(name, args, i_types)
 
             if name in names:
-                raise ValueError("Duplicate routine %r" % (name,))
+                raise ValueError(f"Duplicate routine {name!r}")
 
             names.append(name)
             thunks.append(thunk)
@@ -396,16 +397,13 @@ def main():
         if options.outdir:
             # Used by Meson (options.outdir == scipy/sparse/sparsetools)
             outdir = os.path.join(os.getcwd(), options.outdir)
-        else:
-            # Used by setup.py
-            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
 
         dst = os.path.join(outdir,
                            unit_name + '_impl.h')
         if newer(__file__, dst) or options.force:
             if not options.outdir:
                 # Be silent if we're using Meson. TODO: add --verbose option
-                print("[generate_sparsetools] generating %r" % (dst,))
+                print(f"[generate_sparsetools] generating {dst!r}")
             with open(dst, 'w') as f:
                 write_autogen_blurb(f)
                 f.write(getter_code)
@@ -416,17 +414,20 @@ def main():
         else:
             if not options.outdir:
                 # Be silent if we're using Meson
-                print("[generate_sparsetools] %r already up-to-date" % (dst,))
+                print(f"[generate_sparsetools] {dst!r} already up-to-date")
 
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += "NPY_VISIBILITY_HIDDEN PyObject *%s_method(PyObject *, PyObject *);\n" % (name,)
+        method_defs += (f"PyObject *{name}"
+                        f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
-        method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        method_struct += ("""
+            {{"{name}", (PyCFunction){name}_method, METH_VARARGS, NULL}},"""
+            .format(**dict(name=name))
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""
@@ -436,7 +437,7 @@ def main():
     if newer(__file__, dst) or options.force:
         if not options.outdir:
             # Be silent if we're using Meson.
-            print("[generate_sparsetools] generating %r" % (dst,))
+            print(f"[generate_sparsetools] generating {dst!r}")
         with open(dst, 'w') as f:
             write_autogen_blurb(f)
             f.write(method_defs)
@@ -444,7 +445,7 @@ def main():
     else:
         if not options.outdir:
             # Be silent if we're using Meson
-            print("[generate_sparsetools] %r already up-to-date" % (dst,))
+            print(f"[generate_sparsetools] {dst!r} already up-to-date")
 
 
 def write_autogen_blurb(stream):

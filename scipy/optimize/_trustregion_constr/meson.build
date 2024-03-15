@@ -10,6 +10,5 @@ py3.install_sources([
     'report.py',
     'tr_interior_point.py'
   ],
-  pure: false,
   subdir: 'scipy/optimize/_trustregion_constr'
 )

@@ -3,10 +3,9 @@
 Legacy discrete Fourier transforms (:mod:`scipy.fftpack`)
 =========================================================
 
-.. warning::
+.. legacy::
 
-   This submodule is now considered legacy, new code should use
-   :mod:`scipy.fft`.
+   New code should use :mod:`scipy.fft`.
 
 Fast Fourier Transforms (FFTs)
 ==============================

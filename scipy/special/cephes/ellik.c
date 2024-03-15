@@ -58,8 +58,6 @@
 #include "mconf.h"
 extern double MACHEP;
 
-#include <numpy/npy_math.h>
-
 static double ellik_neg_m(double phi, double m);
 
 double ellik(double phi,  double m)
@@ -68,9 +66,9 @@ double ellik(double phi,  double m)
     int d, mod, sign;
 
     if (cephes_isnan(phi) || cephes_isnan(m))
-        return NPY_NAN;
+        return NAN;
     if (m > 1.0)
-        return NPY_NAN;
+        return NAN;
     if (cephes_isinf(phi) || cephes_isinf(m))
     {
         if (cephes_isinf(m) && cephes_isfinite(phi))
@@ -78,25 +76,25 @@ double ellik(double phi,  double m)
         else if (cephes_isinf(phi) && cephes_isfinite(m))
             return phi;
         else
-            return NPY_NAN;
+            return NAN;
     }
     if (m == 0.0)
 	return (phi);
     a = 1.0 - m;
     if (a == 0.0) {
-	if (fabs(phi) >= (double)NPY_PI_2) {
+	if (fabs(phi) >= (double)M_PI_2) {
 	    sf_error("ellik", SF_ERROR_SINGULAR, NULL);
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
         /* DLMF 19.6.8, and 4.23.42 */
-       return npy_asinh(tan(phi));
+       return asinh(tan(phi));
     }
-    npio2 = floor(phi / NPY_PI_2);
+    npio2 = floor(phi / M_PI_2);
     if (fmod(fabs(npio2), 2.0) == 1.0)
 	npio2 += 1;
     if (npio2 != 0.0) {
 	K = ellpk(a);
-	phi = phi - npio2 * NPY_PI_2;
+	phi = phi - npio2 * M_PI_2;
     }
     else
 	K = 0.0;
@@ -131,15 +129,15 @@ double ellik(double phi,  double m)
 
     while (fabs(c / a) > MACHEP) {
 	temp = b / a;
-	phi = phi + atan(t * temp) + mod * NPY_PI;
+	phi = phi + atan(t * temp) + mod * M_PI;
         denom = 1.0 - temp * t * t;
         if (fabs(denom) > 10*MACHEP) {
 	    t = t * (1.0 + temp) / denom;
-            mod = (phi + NPY_PI_2) / NPY_PI;
+            mod = (phi + M_PI_2) / M_PI;
         }
         else {
             t = tan(phi);
-            mod = (int)floor((phi - atan(t))/NPY_PI);
+            mod = (int)floor((phi - atan(t))/M_PI);
         }
 	c = (a - b) / 2.0;
 	temp = sqrt(a * b);
@@ -148,7 +146,7 @@ double ellik(double phi,  double m)
 	d += d;
     }
 
-    temp = (atan(t) + mod * NPY_PI) / (d * a);
+    temp = (atan(t) + mod * M_PI) / (d * a);
 
   done:
     if (sign < 0)

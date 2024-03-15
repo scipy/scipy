@@ -20,6 +20,7 @@ Integrating functions, given function object
    quadrature    -- Integrate with given tolerance using Gaussian quadrature
    romberg       -- Integrate func using Romberg integration
    newton_cotes  -- Weights and error coefficient for Newton-Cotes integration
+   qmc_quad      -- N-D integration using Quasi-Monte Carlo quadrature
    IntegrationWarning -- Warning on issues during integration
    AccuracyWarning  -- Warning on issues during quadrature integration
 
@@ -32,6 +33,7 @@ Integrating functions, given fixed samples
    trapezoid            -- Use trapezoidal rule to compute integral.
    cumulative_trapezoid -- Use trapezoidal rule to cumulatively compute integral.
    simpson              -- Use Simpson's rule to compute integral from samples.
+   cumulative_simpson   -- Use Simpson's rule to cumulatively compute integral from samples.
    romb                 -- Use Romberg Integration to compute integral from
                         -- (2**k + 1) evenly-spaced samples.
 
@@ -76,6 +78,7 @@ Fortran code. In some cases, it might be worth using this old API.
    odeint        -- General integration of ordinary differential equations.
    ode           -- Integrate ODE using VODE and ZVODE routines.
    complex_ode   -- Convert a complex-valued ODE to real-valued and integrate.
+   ODEintWarning -- Warning raised during the execution of `odeint`.
 
 
 Solving boundary value problems for ODE systems

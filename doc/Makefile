@@ -8,6 +8,10 @@ PYTHON = python3
 SPHINXOPTS    =
 SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
 
+# Environment variables needed for notebooks (see gh-17322):
+export SQLALCHEMY_SILENCE_UBER_WARNING?=1
+export JUPYTER_PLATFORM_DIRS?=1
+
 FILES=
 
 # Internal variables.
@@ -20,7 +24,6 @@ ALLSPHINXOPTS   = -d build/doctrees $(SPHINXOPTS) source
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html      to make standalone HTML files"
-	@echo "  html-scipyorg  to make standalone HTML files with scipy.org theming"
 	@echo "  pickle    to make pickle files (usable by e.g. sphinx-web)"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
@@ -29,10 +32,10 @@ help:
 	@echo "  dist      to make a distribution-ready tree (installing Scipy in venv)"
 	@echo "  doc-dist  to make a distribution-ready tree (assuming Scipy is installed)"
 	@echo "  upload USERNAME=... RELEASE=... to upload built docs to docs.scipy.org"
-	@echo "  show      to show the html-scipyorg output"
+	@echo "  show      to show the HTML output"
 
 clean:
-	-rm -rf build/* source/reference/generated
+	-rm -rf build/* source/reference/generated source/.jupyterlite.doit.db
 
 
 #------------------------------------------------------------------------------
@@ -72,18 +75,17 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install Sphinx
+	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
 doc-dist: VERSIONWARNING=-t versionwarning
 
-doc-dist: html-scipyorg html
+doc-dist: html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist
-	touch build/dist/index.html
+	cp -r build/html/* build/dist
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
@@ -109,15 +111,7 @@ upload:
 html: version-check html-build
 html-build:
 	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) build/html $(FILES)
-	@echo
-	@echo "Build finished. The HTML pages are in build/html."
-
-html-scipyorg:
-	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
-	@echo
-	@echo "Build finished. The HTML pages are in build/html-scipyorg."
+	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees
@@ -138,4 +132,4 @@ linkcheck: version-check
 	      "or in build/linkcheck/output.txt."
 
 show:
-	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
+	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html/index.html')"

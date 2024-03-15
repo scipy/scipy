@@ -3,7 +3,6 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
-import warnings
 
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
@@ -14,13 +13,12 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._distn_infrastructure import (
-    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape, _ShapeInfo)
+from ._distn_infrastructure import (rv_discrete, get_distribution_names,
+                                    _check_shape, _ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
-                        _PyWalleniusNCHypergeometric,
-                        _PyStochasticLib3)
+                         _PyWalleniusNCHypergeometric,
+                         _PyStochasticLib3)
 
 
 def _isintegral(x):
@@ -248,7 +246,7 @@ class betabinom_gen(rv_discrete):
             g1 *= (a + b + 2 * n) * (b - a)
             g1 /= (a + b + 2) * (a + b)
         if 'k' in moments:
-            g2 = a + b
+            g2 = (a + b).astype(e_p.dtype)
             g2 *= (a + b - 1 + 6 * n)
             g2 += 3 * a * b * (n - 2)
             g2 += 6 * n ** 2
@@ -281,9 +279,9 @@ class nbinom_gen(rv_discrete):
 
     for :math:`k \ge 0`, :math:`0 < p \leq 1`
 
-    `nbinom` takes :math:`n` and :math:`p` as shape parameters where n is the
-    number of successes, :math:`p` is the probability of a single success,
-    and :math:`1-p` is the probability of a single failure.
+    `nbinom` takes :math:`n` and :math:`p` as shape parameters where :math:`n`
+    is the number of successes, :math:`p` is the probability of a single
+    success, and :math:`1-p` is the probability of a single failure.
 
     Another common parameterization of the negative binomial distribution is
     in terms of the mean number of failures :math:`\mu` to achieve :math:`n`
@@ -338,37 +336,33 @@ class nbinom_gen(rv_discrete):
 
     def _logcdf(self, x, n, p):
         k = floor(x)
+        k, n, p = np.broadcast_arrays(k, n, p)
         cdf = self._cdf(k, n, p)
         cond = cdf > 0.5
-
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
 
-        def f2(k, n, p):
-            return np.log(cdf)
-
+        # do calc in place
+        logcdf = cdf
         with np.errstate(divide='ignore'):
-            return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
+            logcdf[cond] = f1(k[cond], n[cond], p[cond])
+            logcdf[~cond] = np.log(cdf[~cond])
+        return logcdf
 
     def _sf(self, x, n, p):
         k = floor(x)
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        with warnings.catch_warnings():
-            # See gh-14901
-            message = "overflow encountered in _nbinom_isf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        with warnings.catch_warnings():
-            message = "overflow encountered in _nbinom_ppf"
-            warnings.filterwarnings('ignore', message=message)
+        with np.errstate(over='ignore'):  # see gh-17432
             return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
-        return(
+        return (
             _boost._nbinom_mean(n, p),
             _boost._nbinom_variance(n, p),
             _boost._nbinom_skewness(n, p),
@@ -377,6 +371,102 @@ class nbinom_gen(rv_discrete):
 
 
 nbinom = nbinom_gen(name='nbinom')
+
+
+class betanbinom_gen(rv_discrete):
+    r"""A beta-negative-binomial discrete random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The beta-negative-binomial distribution is a negative binomial
+    distribution with a probability of success `p` that follows a
+    beta distribution.
+
+    The probability mass function for `betanbinom` is:
+
+    .. math::
+
+       f(k) = \binom{n + k - 1}{k} \frac{B(a + n, b + k)}{B(a, b)}
+
+    for :math:`k \ge 0`, :math:`n \geq 0`, :math:`a > 0`,
+    :math:`b > 0`, where :math:`B(a, b)` is the beta function.
+
+    `betanbinom` takes :math:`n`, :math:`a`, and :math:`b` as shape parameters.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Beta_negative_binomial_distribution
+
+    %(after_notes)s
+
+    .. versionadded:: 1.12.0
+
+    See Also
+    --------
+    betabinom : Beta binomial distribution
+
+    %(example)s
+
+    """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (0, np.inf), (True, False)),
+                _ShapeInfo("a", False, (0, np.inf), (False, False)),
+                _ShapeInfo("b", False, (0, np.inf), (False, False))]
+
+    def _rvs(self, n, a, b, size=None, random_state=None):
+        p = random_state.beta(a, b, size)
+        return random_state.negative_binomial(n, p, size)
+
+    def _argcheck(self, n, a, b):
+        return (n >= 0) & _isintegral(n) & (a > 0) & (b > 0)
+
+    def _logpmf(self, x, n, a, b):
+        k = floor(x)
+        combiln = -np.log(n + k) - betaln(n, k + 1)
+        return combiln + betaln(a + n, b + k) - betaln(a, b)
+
+    def _pmf(self, x, n, a, b):
+        return exp(self._logpmf(x, n, a, b))
+
+    def _stats(self, n, a, b, moments='mv'):
+        # reference: Wolfram Alpha input
+        # BetaNegativeBinomialDistribution[a, b, n]
+        def mean(n, a, b):
+            return n * b / (a - 1.)
+        mu = _lazywhere(a > 1, (n, a, b), f=mean, fillvalue=np.inf)
+        def var(n, a, b):
+            return (n * b * (n + a - 1.) * (a + b - 1.)
+                    / ((a - 2.) * (a - 1.)**2.))
+        var = _lazywhere(a > 2, (n, a, b), f=var, fillvalue=np.inf)
+        g1, g2 = None, None
+        def skew(n, a, b):
+            return ((2 * n + a - 1.) * (2 * b + a - 1.)
+                    / (a - 3.) / sqrt(n * b * (n + a - 1.) * (b + a - 1.)
+                    / (a - 2.)))
+        if 's' in moments:
+            g1 = _lazywhere(a > 3, (n, a, b), f=skew, fillvalue=np.inf)
+        def kurtosis(n, a, b):
+            term = (a - 2.)
+            term_2 = ((a - 1.)**2. * (a**2. + a * (6 * b - 1.)
+                      + 6. * (b - 1.) * b)
+                      + 3. * n**2. * ((a + 5.) * b**2. + (a + 5.)
+                      * (a - 1.) * b + 2. * (a - 1.)**2)
+                      + 3 * (a - 1.) * n
+                      * ((a + 5.) * b**2. + (a + 5.) * (a - 1.) * b
+                      + 2. * (a - 1.)**2.))
+            denominator = ((a - 4.) * (a - 3.) * b * n
+                           * (a + b - 1.) * (a + n - 1.))
+            # Wolfram Alpha uses Pearson kurtosis, so we substract 3 to get
+            # scipy's Fisher kurtosis
+            return term * term_2 / denominator - 3.
+        if 'k' in moments:
+            g2 = _lazywhere(a > 4, (n, a, b), f=kurtosis, fillvalue=np.inf)
+        return mu, var, g1, g2
+
+
+betanbinom = betanbinom_gen(name='betanbinom')
 
 
 class geom_gen(rv_discrete):
@@ -447,6 +537,9 @@ class geom_gen(rv_discrete):
         g2 = np.polyval([1, -6, 6], p)/(1.0-p)
         return mu, var, g1, g2
 
+    def _entropy(self, p):
+        return -np.log(p) - np.log1p(-p) * (1.0-p) / p
+
 
 geom = geom_gen(a=1, name='geom', longname="A geometric")
 
@@ -481,6 +574,7 @@ class hypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import hypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -645,6 +739,7 @@ class nhypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -988,7 +1083,7 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False)),
                 _ShapeInfo("N", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_, N):
@@ -1052,7 +1147,47 @@ class randint_gen(rv_discrete):
 
     %(after_notes)s
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import randint
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Calculate the first four moments:
+
+    >>> low, high = 7, 31
+    >>> mean, var, skew, kurt = randint.stats(low, high, moments='mvsk')
+
+    Display the probability mass function (``pmf``):
+
+    >>> x = np.arange(low - 5, high + 5)
+    >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
+    >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
+    
+    Alternatively, the distribution object can be called (as a function) to 
+    fix the shape and location. This returns a "frozen" RV object holding the
+    given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pmf``:
+
+    >>> rv = randint(low, high)
+    >>> ax.vlines(x, 0, rv.pmf(x), colors='k', linestyles='-',
+    ...           lw=1, label='frozen pmf')
+    >>> ax.legend(loc='lower center')
+    >>> plt.show()
+    
+    Check the relationship between the cumulative distribution function
+    (``cdf``) and its inverse, the percent point function (``ppf``):
+
+    >>> q = np.arange(low, high)
+    >>> p = randint.cdf(q, low, high)
+    >>> np.allclose(q, randint.ppf(p, low, high))
+    True
+
+    Generate random numbers:
+
+    >>> r = randint.rvs(low, high, size=1000)
 
     """
 
@@ -1104,7 +1239,7 @@ class randint_gen(rv_discrete):
             low = np.broadcast_to(low, size)
             high = np.broadcast_to(high, size)
         randint = np.vectorize(partial(rng_integers, random_state),
-                               otypes=[np.int_])
+                               otypes=[np.dtype(int)])
         return randint(low, high)
 
     def _entropy(self, low, high):
@@ -1152,7 +1287,8 @@ class zipf_gen(rv_discrete):
 
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
-    >>> from scipy.stats import zipfian
+    >>> import numpy as np
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
     True
@@ -1248,7 +1384,8 @@ class zipfian_gen(rv_discrete):
 
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
-    >>> from scipy.stats import zipf
+    >>> import numpy as np
+    >>> from scipy.stats import zipf, zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
     True
@@ -1331,8 +1468,13 @@ class dlaplace_gen(rv_discrete):
 
     def _cdf(self, x, a):
         k = floor(x)
-        f = lambda k, a: 1.0 - exp(-a * k) / (exp(a) + 1)
-        f2 = lambda k, a: exp(a * (k+1)) / (exp(a) + 1)
+
+        def f(k, a):
+            return 1.0 - exp(-a * k) / (exp(a) + 1)
+
+        def f2(k, a):
+            return exp(a * (k + 1)) / (exp(a) + 1)
+
         return _lazywhere(k >= 0, (k, a), f=f, f2=f2)
 
     def _ppf(self, q, a):
@@ -1418,17 +1560,19 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
-        # ncx2.pdf() returns nan's for extremely low probabilities
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+            # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
-        px = np.where(x < 0,
-                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+        with np.errstate(over='ignore'):  # see gh-17432
+            px = np.where(x < 0,
+                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
@@ -1506,16 +1650,17 @@ class yulesimon_gen(rv_discrete):
     def _stats(self, alpha):
         mu = np.where(alpha <= 1, np.inf, alpha / (alpha - 1))
         mu2 = np.where(alpha > 2,
-                alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
-                np.inf)
+                       alpha**2 / ((alpha - 2.0) * (alpha - 1)**2),
+                       np.inf)
         mu2 = np.where(alpha <= 1, np.nan, mu2)
         g1 = np.where(alpha > 3,
-                sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
-                np.inf)
+                      sqrt(alpha - 2) * (alpha + 1)**2 / (alpha * (alpha - 3)),
+                      np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                (alpha + 3) + (alpha**3 - 49 * alpha - 22) / (alpha *
-                        (alpha - 4) * (alpha - 3)), np.inf)
+                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                                   (alpha * (alpha - 4) * (alpha - 3))),
+                      np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
         return mu, mu2, g1, g2
 

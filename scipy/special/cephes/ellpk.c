@@ -94,13 +94,12 @@ static double C1 = 1.3862943611198906188E0;	/* log(4) */
 
 extern double MACHEP;
 
-double ellpk(x)
-double x;
+double ellpk(double x)
 {
 
     if (x < 0.0) {
 	sf_error("ellpk", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (x > 1.0) {
@@ -116,7 +115,7 @@ double x;
     else {
 	if (x == 0.0) {
 	    sf_error("ellpk", SF_ERROR_SINGULAR, NULL);
-	    return (NPY_INFINITY);
+	    return (INFINITY);
 	}
 	else {
 	    return (C1 - 0.5 * log(x));

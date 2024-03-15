@@ -1293,7 +1293,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit___odrpack(void)
+PyMODINIT_FUNC
+PyInit___odrpack(void)
 {
     PyObject *m;
     import_array();

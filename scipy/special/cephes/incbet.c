@@ -68,103 +68,51 @@ extern double MACHEP, MINLOG, MAXLOG;
 static double big = 4.503599627370496e15;
 static double biginv = 2.22044604925031308085e-16;
 
-static double incbcf(double a, double b, double x);
-static double incbd(double a, double b, double x);
-static double pseries(double a, double b, double x);
 
-double incbet(aa, bb, xx)
-double aa, bb, xx;
+/* Power series for incomplete beta integral.
+ * Use when b*x is small and x not too close to 1.  */
+
+static double pseries(double a, double b, double x)
 {
-    double a, b, t, x, xc, w, y;
-    int flag;
+    double s, t, u, v, n, t1, z, ai;
 
-    if (aa <= 0.0 || bb <= 0.0)
-	goto domerr;
-
-    if ((xx <= 0.0) || (xx >= 1.0)) {
-	if (xx == 0.0)
-	    return (0.0);
-	if (xx == 1.0)
-	    return (1.0);
-      domerr:
-	sf_error("incbet", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    ai = 1.0 / a;
+    u = (1.0 - b) * x;
+    v = u / (a + 1.0);
+    t1 = v;
+    t = u;
+    n = 2.0;
+    s = 0.0;
+    z = MACHEP * ai;
+    while (fabs(v) > z) {
+	u = (n - b) * x / n;
+	t *= u;
+	v = t / (a + n);
+	s += v;
+	n += 1.0;
     }
+    s += t1;
+    s += ai;
 
-    flag = 0;
-    if ((bb * xx) <= 1.0 && xx <= 0.95) {
-	t = pseries(aa, bb, xx);
-	goto done;
-    }
-
-    w = 1.0 - xx;
-
-    /* Reverse a and b if x is greater than the mean. */
-    if (xx > (aa / (aa + bb))) {
-	flag = 1;
-	a = bb;
-	b = aa;
-	xc = xx;
-	x = w;
+    u = a * log(x);
+    if ((a + b) < MAXGAM && fabs(u) < MAXLOG) {
+        t = 1.0 / beta(a, b);
+	s = s * t * pow(x, a);
     }
     else {
-	a = aa;
-	b = bb;
-	xc = w;
-	x = xx;
-    }
-
-    if (flag == 1 && (b * x) <= 1.0 && x <= 0.95) {
-	t = pseries(a, b, x);
-	goto done;
-    }
-
-    /* Choose expansion for better convergence. */
-    y = x * (a + b - 2.0) - (a - 1.0);
-    if (y < 0.0)
-	w = incbcf(a, b, x);
-    else
-	w = incbd(a, b, x) / xc;
-
-    /* Multiply w by the factor
-     * a      b   _             _     _
-     * x  (1-x)   | (a+b) / ( a | (a) | (b) ) .   */
-
-    y = a * log(x);
-    t = b * log(xc);
-    if ((a + b) < MAXGAM && fabs(y) < MAXLOG && fabs(t) < MAXLOG) {
-	t = pow(xc, b);
-	t *= pow(x, a);
-	t /= a;
-	t *= w;
-	t *= 1.0 / beta(a, b);
-	goto done;
-    }
-    /* Resort to logarithms.  */
-    y += t - lbeta(a,b);
-    y += log(w / a);
-    if (y < MINLOG)
-	t = 0.0;
-    else
-	t = exp(y);
-
-  done:
-
-    if (flag == 1) {
-	if (t <= MACHEP)
-	    t = 1.0 - MACHEP;
+	t = -lbeta(a,b) + u + log(s);
+	if (t < MINLOG)
+	    s = 0.0;
 	else
-	    t = 1.0 - t;
+	    s = exp(t);
     }
-    return (t);
+    return (s);
 }
-
-/* Continued fraction expansion #1
- * for incomplete beta integral
- */
 
-static double incbcf(a, b, x)
-double a, b, x;
+
+/* Continued fraction expansion #1 for incomplete beta integral */
+
+static double incbcf(double a, double b, double x)
 {
     double xk, pk, pkm1, pkm2, qk, qkm1, qkm2;
     double k1, k2, k3, k4, k5, k6, k7, k8;
@@ -245,14 +193,11 @@ double a, b, x;
   cdone:
     return (ans);
 }
-
 
-/* Continued fraction expansion #2
- * for incomplete beta integral
- */
 
-static double incbd(a, b, x)
-double a, b, x;
+/* Continued fraction expansion #2 for incomplete beta integral */
+
+static double incbd(double a, double b, double x)
 {
     double xk, pk, pkm1, pkm2, qk, qkm1, qkm2;
     double k1, k2, k3, k4, k5, k6, k7, k8;
@@ -333,44 +278,92 @@ double a, b, x;
   cdone:
     return (ans);
 }
-
-/* Power series for incomplete beta integral.
- * Use when b*x is small and x not too close to 1.  */
 
-static double pseries(a, b, x)
-double a, b, x;
+
+double incbet(double aa, double bb, double xx)
 {
-    double s, t, u, v, n, t1, z, ai;
+    double a, b, t, x, xc, w, y;
+    int flag;
 
-    ai = 1.0 / a;
-    u = (1.0 - b) * x;
-    v = u / (a + 1.0);
-    t1 = v;
-    t = u;
-    n = 2.0;
-    s = 0.0;
-    z = MACHEP * ai;
-    while (fabs(v) > z) {
-	u = (n - b) * x / n;
-	t *= u;
-	v = t / (a + n);
-	s += v;
-	n += 1.0;
+    if (aa <= 0.0 || bb <= 0.0)
+	goto domerr;
+
+    if ((xx <= 0.0) || (xx >= 1.0)) {
+	if (xx == 0.0)
+	    return (0.0);
+	if (xx == 1.0)
+	    return (1.0);
+      domerr:
+	sf_error("incbet", SF_ERROR_DOMAIN, NULL);
+	return (NAN);
     }
-    s += t1;
-    s += ai;
 
-    u = a * log(x);
-    if ((a + b) < MAXGAM && fabs(u) < MAXLOG) {
-        t = 1.0 / beta(a, b);
-	s = s * t * pow(x, a);
+    flag = 0;
+    if ((bb * xx) <= 1.0 && xx <= 0.95) {
+	t = pseries(aa, bb, xx);
+	goto done;
+    }
+
+    w = 1.0 - xx;
+
+    /* Reverse a and b if x is greater than the mean. */
+    if (xx > (aa / (aa + bb))) {
+	flag = 1;
+	a = bb;
+	b = aa;
+	xc = xx;
+	x = w;
     }
     else {
-	t = -lbeta(a,b) + u + log(s);
-	if (t < MINLOG)
-	    s = 0.0;
-	else
-	    s = exp(t);
+	a = aa;
+	b = bb;
+	xc = w;
+	x = xx;
     }
-    return (s);
+
+    if (flag == 1 && (b * x) <= 1.0 && x <= 0.95) {
+	t = pseries(a, b, x);
+	goto done;
+    }
+
+    /* Choose expansion for better convergence. */
+    y = x * (a + b - 2.0) - (a - 1.0);
+    if (y < 0.0)
+	w = incbcf(a, b, x);
+    else
+	w = incbd(a, b, x) / xc;
+
+    /* Multiply w by the factor
+     * a      b   _             _     _
+     * x  (1-x)   | (a+b) / ( a | (a) | (b) ) .   */
+
+    y = a * log(x);
+    t = b * log(xc);
+    if ((a + b) < MAXGAM && fabs(y) < MAXLOG && fabs(t) < MAXLOG) {
+	t = pow(xc, b);
+	t *= pow(x, a);
+	t /= a;
+	t *= w;
+	t *= 1.0 / beta(a, b);
+	goto done;
+    }
+    /* Resort to logarithms.  */
+    y += t - lbeta(a,b);
+    y += log(w / a);
+    if (y < MINLOG)
+	t = 0.0;
+    else
+	t = exp(y);
+
+  done:
+
+    if (flag == 1) {
+	if (t <= MACHEP)
+	    t = 1.0 - MACHEP;
+	else
+	    t = 1.0 - t;
+    }
+    return (t);
 }
+
+

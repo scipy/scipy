@@ -1,11 +1,13 @@
+from io import StringIO
 import warnings
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal
+from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
                                   NegativeCycleError)
 import scipy.sparse
+from scipy.io import mmread
 import pytest
 
 directed_G = np.array([[0, 3, 3, 0, 0],
@@ -76,6 +78,14 @@ undirected_pred = np.array([[-9999, 0, 0, 0, 0],
                             [2, 0, -9999, 0, 0],
                             [3, 3, 0, -9999, 3],
                             [4, 4, 0, 4, -9999]], dtype=float)
+
+directed_negative_weighted_G = np.array([[0, 0, 0],
+                                         [-1, 0, 0],
+                                         [0, -1, 0]], dtype=float)
+
+directed_negative_weighted_SP = np.array([[0, np.inf, np.inf],
+                                          [-1, 0, np.inf],
+                                          [-2, -1, 0]], dtype=float)
 
 methods = ['auto', 'FW', 'D', 'BF', 'J']
 
@@ -176,7 +186,7 @@ def test_dijkstra_indices_min_only(directed, SP_ans, indices):
 
 
 @pytest.mark.parametrize('n', (10, 100, 1000))
-def test_shortest_path_min_only_random(n):
+def test_dijkstra_min_only_random(n):
     np.random.seed(1234)
     data = scipy.sparse.rand(n, n, density=0.5, format='lil',
                              random_state=42, dtype=np.float64)
@@ -186,16 +196,58 @@ def test_shortest_path_min_only_random(n):
     np.random.shuffle(v)
     indices = v[:int(n*.1)]
     ds, pred, sources = dijkstra(data,
-                                 directed=False,
+                                 directed=True,
                                  indices=indices,
                                  min_only=True,
                                  return_predecessors=True)
     for k in range(n):
         p = pred[k]
         s = sources[k]
-        while(p != -9999):
-            assert(sources[p] == s)
+        while p != -9999:
+            assert sources[p] == s
             p = pred[p]
+
+
+def test_dijkstra_random():
+    # reproduces the hang observed in gh-17782
+    n = 10
+    indices = [0, 4, 4, 5, 7, 9, 0, 6, 2, 3, 7, 9, 1, 2, 9, 2, 5, 6]
+    indptr = [0, 0, 2, 5, 6, 7, 8, 12, 15, 18, 18]
+    data = [0.33629, 0.40458, 0.47493, 0.42757, 0.11497, 0.91653, 0.69084,
+            0.64979, 0.62555, 0.743, 0.01724, 0.99945, 0.31095, 0.15557,
+            0.02439, 0.65814, 0.23478, 0.24072]
+    graph = scipy.sparse.csr_matrix((data, indices, indptr), shape=(n, n))
+    dijkstra(graph, directed=True, return_predecessors=True)
+
+
+def test_gh_17782_segfault():
+    text = """%%MatrixMarket matrix coordinate real general
+                84 84 22
+                2 1 4.699999809265137e+00
+                6 14 1.199999973177910e-01
+                9 6 1.199999973177910e-01
+                10 16 2.012000083923340e+01
+                11 10 1.422000026702881e+01
+                12 1 9.645999908447266e+01
+                13 18 2.012000083923340e+01
+                14 13 4.679999828338623e+00
+                15 11 1.199999973177910e-01
+                16 12 1.199999973177910e-01
+                18 15 1.199999973177910e-01
+                32 2 2.299999952316284e+00
+                33 20 6.000000000000000e+00
+                33 32 5.000000000000000e+00
+                36 9 3.720000028610229e+00
+                36 37 3.720000028610229e+00
+                36 38 3.720000028610229e+00
+                37 44 8.159999847412109e+00
+                38 32 7.903999328613281e+01
+                43 20 2.400000000000000e+01
+                43 33 4.000000000000000e+00
+                44 43 6.028000259399414e+01
+    """
+    data = mmread(StringIO(text))
+    dijkstra(data, directed=True, return_predecessors=True)
 
 
 def test_shortest_path_indices():
@@ -277,6 +329,12 @@ def test_negative_cycles():
     for method in ['FW', 'J', 'BF']:
         for directed in (True, False):
             check(method, directed)
+
+
+@pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
+def test_negative_weights(method):
+    SP = shortest_path(directed_negative_weighted_G, method, directed=True)
+    assert_allclose(SP, directed_negative_weighted_SP, atol=1e-10)
 
 
 def test_masked_input():

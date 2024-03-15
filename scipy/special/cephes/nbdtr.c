@@ -152,9 +152,7 @@
 
 #include "mconf.h"
 
-double nbdtrc(k, n, p)
-int k, n;
-double p;
+double nbdtrc(int k, int n, double p)
 {
     double dk, dn;
 
@@ -163,7 +161,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     dk = k + 1;
@@ -173,9 +171,7 @@ double p;
 
 
 
-double nbdtr(k, n, p)
-int k, n;
-double p;
+double nbdtr(int k, int n, double p)
 {
     double dk, dn;
 
@@ -184,7 +180,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;
@@ -193,9 +189,7 @@ double p;
 
 
 
-double nbdtri(k, n, p)
-int k, n;
-double p;
+double nbdtri(int k, int n, double p)
 {
     double dk, dn, w;
 
@@ -204,7 +198,7 @@ double p;
     if (k < 0) {
       domerr:
 	sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
     dk = k + 1;
     dn = n;
