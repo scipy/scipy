@@ -114,7 +114,7 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'amos_wrappers.c',
-  'specfun_wrappers.c',
+  'specfun_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -134,14 +134,8 @@ cephes_lib = static_library('cephes',
   dependencies: [py3_dep, np_dep],
 )
 
-specfun_lib = static_library('specfun',
-  ['specfun.cpp'],
-  c_args: use_math_defines,
-  include_directories: ['../_lib', '../_build_utils/src'],
-)
-
 py3.extension_module('_specfun',
-  [cython_gen_cpp.process('_specfun.pyx'), 'specfun.cpp'],
+  [cython_gen_cpp.process('_specfun.pyx')],
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,
@@ -214,8 +208,7 @@ py3.extension_module('_ufuncs',
   link_args: version_link_args,
   link_with: [
     amos_lib,
-    cephes_lib,
-    specfun_lib
+    cephes_lib
   ],
   install: true,
   subdir: 'scipy/special'
@@ -275,7 +268,7 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.c',
-    'specfun_wrappers.c',
+    'specfun_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
@@ -284,8 +277,7 @@ py3.extension_module('cython_special',
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     amos_lib,
-    cephes_lib,
-    specfun_lib
+    cephes_lib
   ],
   install: true,
   subdir: 'scipy/special'

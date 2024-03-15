@@ -70,7 +70,7 @@
 
 #pragma once
 
-#include <complex>
+#include "../config.h"
 
 namespace special {
 namespace specfun {
