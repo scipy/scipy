@@ -522,6 +522,22 @@ def test_events():
                            rtol=1e-3, atol=1e-6)
 
 
+@pytest.mark.parametrize('n_events', [3, 4])
+def test_event_terminal_integer(n_events):
+    def f(t, y):
+        return [y[1], -y[0]]
+
+    def event(t, y):
+        return y[0]
+
+    event.terminal = n_events
+
+    sol = solve_ivp(f, (0, 100), [1, 0], events=event)
+    assert len(sol.t_events[0]) == n_events
+    assert len(sol.y_events[0]) == n_events
+    assert_allclose(sol.y_events[0][:, 0], 0, atol=1e-14)
+
+
 def test_max_step():
     rtol = 1e-3
     atol = 1e-6

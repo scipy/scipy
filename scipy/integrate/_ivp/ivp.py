@@ -252,19 +252,18 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         events may be missed. Additionally each `event` function might
         have the following attributes:
 
-            terminal: bool, optional (deprecated)
-                Whether to terminate integration if this event occurs.
+            terminal: bool or int, optional
+                When boolean, whether to terminate integration if this event occurs.
+                When integral, termination occurs after the specified the number of
+                occurences of this event.
                 Implicitly False if not assigned.
-            max_events: int or float, optional
-                Number of occurrences of the `event` before termination occurs.
-                Implicitly np.inf if not assigned.
             direction: float, optional
                 Direction of a zero crossing. If `direction` is positive,
                 `event` will only trigger when going from negative to positive,
                 and vice versa if `direction` is negative. If 0, then either
                 direction will trigger event. Implicitly 0 if not assigned.
 
-        You can assign attributes like ``event.max_events = 1`` to any
+        You can assign attributes like ``event.terminal = True`` to any
         function in Python.
     vectorized : bool, optional
         Whether `fun` can be called in a vectorized fashion. Default is False.
@@ -457,15 +456,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
      [4.         2.42610739 1.47068043 0.54133472 0.02701876]
      [8.         4.85221478 2.94136085 1.08266944 0.05403753]]
 
-    Cannon fired upward with terminal event upon impact. The ``max_events`` and
-    ``direction`` attributes of an event are applied by monkey patching a
-    function. Here ``y[0]`` is position and ``y[1]`` is velocity. The
-    projectile starts at position 0 with velocity +10. Note that the
-    integration never reaches t=100 because the event is terminal.
+    Cannon fired upward with terminal event upon impact. The ``terminal`` and
+    ``direction`` fields of an event are applied by monkey patching a function.
+    Here ``y[0]`` is position and ``y[1]`` is velocity. The projectile starts
+    at position 0 with velocity +10. Note that the integration never reaches
+    t=100 because the event is terminal.
 
     >>> def upward_cannon(t, y): return [y[1], -0.5]
     >>> def hit_ground(t, y): return y[0]
-    >>> hit_ground.max_events = 1
+    >>> hit_ground.terminal = True
     >>> hit_ground.direction = -1
     >>> sol = solve_ivp(upward_cannon, [0, 100], [0, 10], events=hit_ground)
     >>> print(sol.t_events)
