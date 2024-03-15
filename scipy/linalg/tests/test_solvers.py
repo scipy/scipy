@@ -110,7 +110,7 @@ class TestSolveLyapunov:
             self.check_discrete_case(case[0], case[1], method='bilinear')
 
 
-def test_solve_continuous_are():
+class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')
     mat15 = _load_data('carex_15_data.npz')
     mat18 = _load_data('carex_18_data.npz')
@@ -291,20 +291,19 @@ def test_solve_continuous_are():
     min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
                    None, 9, 14, 13, 14, None, 12, None, None)
 
-    def _test_factory(case, dec):
+    @pytest.mark.parametrize("j, case", enumerate(cases))
+    def test_solve_continuous_are(self, j, case):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
             pytest.xfail(reason=knownfailure)
 
+        dec = self.min_decimal[j]
         x = solve_continuous_are(a, b, q, r)
-        res = x.dot(a) + a.conj().T.dot(x) + q
-        out_fact = x.dot(b)
-        res -= out_fact.dot(solve(np.atleast_2d(r), out_fact.conj().T))
+        res = x @ a + a.conj().T @ x + q
+        out_fact = x @ b
+        res -= out_fact @ solve(np.atleast_2d(r), out_fact.conj().T)
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
-
-    for ind, case in enumerate(cases):
-        _test_factory(case, min_decimal[ind])
 
 
 def test_solve_discrete_are():
