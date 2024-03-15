@@ -676,7 +676,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(double[:, ::1] xvals, tuple t not None, npy_int32[::1] k):
+def _colloc_nd(double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds

@@ -337,7 +337,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
@@ -389,8 +389,10 @@ class GradientEstimationWarning(Warning):
     pass
 
 @cython.cdivision(True)
-cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, const double *data,
-                                       int maxiter, double tol,
+cdef int _estimate_gradients_2d_global(const qhull.DelaunayInfo_t *d,
+                                       const double *data,
+                                       int maxiter,
+                                       double tol,
                                        double *y) noexcept nogil:
     """
     Estimate gradients of a function at the vertices of a 2d triangulation.
@@ -620,7 +622,7 @@ cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
 
 
 @cython.cdivision(True)
-cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
+cdef double_or_complex _clough_tocher_2d_single(const qhull.DelaunayInfo_t *d,
                                                 int isimplex,
                                                 double *b,
                                                 double_or_complex *f,
@@ -973,7 +975,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+    def _do_evaluate(self, const double[:,::1] xi, const double_or_complex dummy):
         cdef const double_or_complex[:,::1] values = self.values
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
