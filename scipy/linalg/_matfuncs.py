@@ -6,7 +6,6 @@ from itertools import product
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
-from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
@@ -303,9 +302,9 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # Explicit formula for 2x2 case exists; formula (2.2) in [1].
-    # Howver without Kahan's method numerical instabilities can occur (See gh-19584).
-    # Hence removed here until we have a more stable implementation.
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
+    # here until we have a more stable implementation.
 
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
