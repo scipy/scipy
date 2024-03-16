@@ -1938,8 +1938,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{}', must be one of: {}"
-                         .format(boundary, list(boundary_funcs.keys())))
+        raise ValueError(f"Unknown boundary option '{boundary}', "
+                         f"must be one of: {list(boundary_funcs.keys())}")
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
