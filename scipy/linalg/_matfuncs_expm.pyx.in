@@ -342,6 +342,7 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) noexcept nogi
     cdef int i, info, n2 = n*n, int_one = 1
     cdef {{ tname }} one = 1.0, zero = 0.0, neg_one = -1.0
     cdef {{if pfx in ['s', 'c']}}float{{else}}double{{endif}} two = 2.0
+    cdef char* cN = 'N'
 
     if not (work and ipiv):
         raise MemoryError('Internal function "pade_9_UV_calc" failed to allocate memory.')
@@ -356,6 +357,11 @@ cdef void pade_9_UV_calc_{{ pfx }}({{ tname }}[:, :, ::]Am, int n) noexcept nogi
         b[6] = 110880.
         b[7] = 3960.
         b[8] = 90.
+
+        # Compute this in case we skipped it before
+        if n >= 400:
+            {{ pfx }}gemm(cN, cN, &n, &n, &n, &one, &Am[2, 0, 0], &n,
+                &Am[2, 0, 0], &n, &zero, &Am[4, 0, 0], &n)
 
         # Utilize the unused powers of Am as scratch memory
         # U = Am[0] @ (b[9]*Am[4] + b[7]*Am[3] + b[5]*Am[2] + b[3]*Am[1] + b[1]*I_n)
