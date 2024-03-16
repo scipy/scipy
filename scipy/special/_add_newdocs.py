@@ -9660,7 +9660,7 @@ add_newdoc("mathieu_cem",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
@@ -9694,7 +9694,7 @@ add_newdoc("mathieu_modcem1",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
@@ -9728,7 +9728,7 @@ add_newdoc("mathieu_modcem2",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
@@ -9762,7 +9762,7 @@ add_newdoc("mathieu_modsem1",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
@@ -9796,7 +9796,7 @@ add_newdoc("mathieu_modsem2",
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
@@ -9831,7 +9831,7 @@ add_newdoc(
     Parameters
     ----------
     m : array_like
-        Order of the function
+        Order of the function for values to be periodic with 2pi 
     q : array_like
         Parameter of the function
     x : array_like
