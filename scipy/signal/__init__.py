@@ -312,9 +312,7 @@ from ._upfirdn import upfirdn
 from ._spline import (
     cspline2d,
     qspline2d,
-    sepfir2d,
-    symiirorder1,
-    symiirorder2,
+    sepfir2d
 )
 
 from ._splines import *

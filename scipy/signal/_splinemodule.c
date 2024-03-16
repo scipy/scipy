@@ -338,7 +338,6 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   double precision = -1.0;
   int thetype, ret;
   npy_intp M, N;
-  npy_intp outstrides, instrides;
   PyArray_Descr* dtype;
 
   if (!PyArg_ParseTuple(args, "OD|d", &sig, &z1, &precision))
@@ -467,8 +466,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   npy_intp* in_size;
   double r, omega;
   double precision = -1.0;
-  int thetype, N, ret;
-  npy_intp outstrides, instrides;
+  int thetype, ret;
   npy_intp N;
   PyArray_Descr* dtype;
 
@@ -482,7 +480,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   if (a_sig == NULL) goto fail;
 
   dtype = PyArray_DescrFromType(thetype);
-  int sz = 2;
+  npy_intp sz = 2;
   out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
   if (out == NULL) goto fail;
 
@@ -501,7 +499,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   case NPY_DOUBLE:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = S_SYM_IIR2_initial_fwd(r, omega, (double *)PyArray_DATA(a_sig),
+      ret = D_SYM_IIR2_initial_fwd(r, omega, (double *)PyArray_DATA(a_sig),
                                   (double *)PyArray_DATA(out), N,
                                   precision);
     }
@@ -569,8 +567,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   npy_intp* in_size;
   double r, omega;
   double precision = -1.0;
-  int thetype, N, ret;
-  npy_intp outstrides, instrides;
+  int thetype, ret;
   npy_intp N;
   PyArray_Descr* dtype;
 
@@ -584,7 +581,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   if (a_sig == NULL) goto fail;
 
   dtype = PyArray_DescrFromType(thetype);
-  int sz = 2;
+  npy_intp sz = 2;
   out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
   if (out == NULL) goto fail;
 
@@ -603,7 +600,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   case NPY_DOUBLE:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = S_SYM_IIR2_initial_bwd(r, omega, (double *)PyArray_DATA(a_sig),
+      ret = D_SYM_IIR2_initial_bwd(r, omega, (double *)PyArray_DATA(a_sig),
                                    (double *)PyArray_DATA(out), N,
                                    precision);
     }
@@ -636,9 +633,10 @@ static struct PyMethodDef toolbox_module_methods[] = {
     {"cspline2d", cspline2d, METH_VARARGS, doc_cspline2d},
     {"qspline2d", qspline2d, METH_VARARGS, doc_qspline2d},
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
-    {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2},
+    // {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2},
     {"symiirorder1_ic", IIRsymorder1_ic, METH_VARARGS, doc_IIRsymorder1_ic},
     {"symiirorder2_ic_fwd", IIRsymorder2_ic_fwd, METH_VARARGS, doc_IIRsymorder2_ic_fwd},
+    {"symiirorder2_ic_bwd", IIRsymorder2_ic_bwd, METH_VARARGS,doc_IIRsymorder2_ic_bwd },
     {NULL, NULL, 0, NULL}		/* sentinel */
 };
 
