@@ -1,9 +1,25 @@
+#include "Python.h"
+#include <numpy/npy_math.h>
+#include <math.h>
+#include "npy_2_complexcompat.h"
+
+#include "_amos.h"
 #include "amos_wrappers.h"
+#include "sf_error.h"
+
 #define CADDR(z) ((double *) (&(z))), (&(((double *) (&(z)))[1]))
 
 #ifndef CMPLX
 #define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
 #endif /* CMPLX */
+
+#define DO_SFERR(name, varp)                          \
+    do {                                              \
+      if (nz !=0 || ierr != 0) {                      \
+        sf_error(name, ierr_to_sferr(nz, ierr), NULL);\
+        set_nan_if_no_computation_done(varp, ierr);   \
+      }                                               \
+    } while (0)
 
 int ierr_to_sferr(int nz, int ierr) {
   /* Return sf_error equivalents for ierr values */
