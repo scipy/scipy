@@ -5,7 +5,7 @@ from ._arraytools import axis_slice, axis_reverse
 from ._signaltools import lfiltic, lfilter, sosfilt
 from ._spline import symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd
 
-__all__ = ['symiirorder1']
+__all__ = ['symiirorder1', 'symiirorder2']
 
 
 def symiirorder1(signal, c0, z1, precision=-1.0):
@@ -45,6 +45,8 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     # Apply first the system 1 / (1 - z1 * z^-1)
     b = np.ones(1, dtype=signal.dtype)
     a = np.r_[1, -z1]
+    a = a.astype(signal.dtype)
+
     zi = lfiltic(b, a, y0)
 
     y1, _ = lfilter(b, a, axis_slice(signal, 1), zi=zi)
@@ -52,10 +54,10 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
 
     # Compute backward symmetric condition and apply the system
     # c0 / (1 - z1 * z)
-    b = np.asarray([c0])
+    b = np.asarray([c0], dtype=signal.dtype)
     out_last = -c0 / (z1 - 1.0) * y1[-1]
 
-    zi = lfiltic(b, a, np.atleast_1d(out_last))
+    zi = lfiltic(b, a, np.atleast_1d(out_last).astype(signal.dtype))
     out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zi)
     return np.r_[axis_reverse(out), out_last]
 
@@ -105,17 +107,17 @@ def symiirorder2(input, r, omega, precision=-1.0):
     ic_fwd = symiirorder2_ic_fwd(input, r, omega, precision)
 
     # Apply first the system cs / (1 - a2 * z^-1 - a3 * z^-2)
-    b = cs
-    a = np.r_[1, -a2, -a3]
-    zi = lfiltic(b, a, ic_fwd)
-    sos = np.r_[cs, 0, 0, 1, -a2, -a3]
-    y_fwd, _ = sosfilt(sos, input[2:], zi=zi)
+    b = cs.astype(input.dtype)
+    a = np.r_[1, -a2, -a3].astype(input.dtype)
+    zi = lfiltic(b, a, ic_fwd[::-1])
+    sos = np.atleast_2d(np.r_[cs, 0, 0, 1, -a2, -a3]).astype(input.dtype)
+    y_fwd, _ = sosfilt(sos, input[2:], zi=np.atleast_2d(zi))
+    # Then compute the symmetric backward starting conditions
     y_fwd = np.r_[ic_fwd, y_fwd]
 
-    # Then compute the symmetric backward starting conditions
     ic_bwd = symiirorder2_ic_bwd(input, r, omega, precision)
 
     # Apply the system cs / (1 - a2 * z^1 - a3 * z^2)
     zi = lfiltic(b, a, ic_bwd)
-    y, _ = sosfilt(sos, axis_slice(y_fwd, -3, step=-1), zi=zi)
+    y, _ = sosfilt(sos, axis_slice(y_fwd, -3, step=-1), zi=np.atleast_2d(zi))
     return np.r_[axis_reverse(y), ic_bwd]

@@ -290,7 +290,8 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     precision *= precision;
     {{TYP}} *xptr = x;
     int stridex = 1;
-    int stridey = 1;
+    {{TYP}} err;
+    {{TYP}} diff;
 
     do {
         yp[0] = yp0;
@@ -304,7 +305,7 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     if (k >= N) {return -3;}     /* sum did not converge */
     yp[0] = yp0;
 
-    yp1 = {{SUB}}_hc(0, cs, r, omega) * (*(x+stridex));
+    {{TYP}} yp1 = {{SUB}}_hc(0, cs, r, omega) * (*(x+stridex));
     yp1 += {{SUB}}_hc(1, cs, r, omega) * x[0];
     k = 0;
     xptr = x;
@@ -336,6 +337,9 @@ int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
     int stridex = 1;
     int stridey = 1;
 
+    {{TYP}} err;
+    {{TYP}} diff;
+
     // yptr = y + (N-1)*stridey;
     {{TYP}} *yptr = yp + stridey;
     {{TYP}} *xptr = x + (N - 1) * stridex;
@@ -351,7 +355,7 @@ int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
     if (k >= N) {return -3;}     /* sum did not converge */
     *yptr = yp0;
 
-    yp1 = 0.0;
+    {{TYP}} yp1 = 0.0;
     k = 0;
     yptr -= stridey;        /* Initialize in next-to-last slot in output array */
     xptr = x + (N - 1) * stridex;

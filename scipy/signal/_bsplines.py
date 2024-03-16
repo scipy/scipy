@@ -3,7 +3,7 @@ from numpy import (asarray, pi, zeros_like,
                    r_, atleast_1d, sqrt, exp, greater, cos, add, sin)
 
 # From splinemodule.c
-from ._spline import cspline2d, sepfir2d, symiirorder1_ic
+from ._spline import cspline2d, sepfir2d
 from ._signaltools import lfilter, sosfilt, lfiltic
 
 from scipy.interpolate import BSpline
