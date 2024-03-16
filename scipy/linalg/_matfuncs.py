@@ -299,35 +299,14 @@ def expm(A):
         return np.exp(a)
 
     if not np.issubdtype(a.dtype, np.inexact):
-        a = a.astype(float)
+        a = a.astype(np.float64)
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # Explicit formula for 2x2 case, formula (2.2) in [1]
-    # without Kahan's method numerical instabilities can occur.
-    if a.shape[-2:] == (2, 2):
-        a1, a2, a3, a4 = (a[..., [0], [0]],
-                          a[..., [0], [1]],
-                          a[..., [1], [0]],
-                          a[..., [1], [1]])
-        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+    # Explicit formula for 2x2 case exists; formula (2.2) in [1].
+    # Howver without Kahan's method numerical instabilities can occur (See gh-19584).
+    # Hence removed here until we have a more stable implementation.
 
-        eApD2 = np.exp((a1+a4)/2.)
-        AmD2 = (a1 - a4)/2.
-        coshMu = np.cosh(mu)
-        sinchMu = np.ones_like(coshMu)
-        mask = mu != 0
-        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask]
-        eA = np.empty((a.shape), dtype=mu.dtype)
-        eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu)
-        eA[..., [0], [1]] = eApD2 * a2 * sinchMu
-        eA[..., [1], [0]] = eApD2 * a3 * sinchMu
-        eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu)
-        if np.isrealobj(a):
-            return eA.real
-        return eA
-
-    # larger problem with unspecified stacked dimensions.
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
     # working memory to hold intermediate arrays
