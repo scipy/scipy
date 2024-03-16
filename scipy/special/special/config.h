@@ -154,5 +154,6 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
 #include <complex>
 #include <limits>
 #include <math.h>
+#include <memory>
 
 #endif
