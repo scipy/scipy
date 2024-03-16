@@ -310,8 +310,8 @@ def test_rf64():
                         'test-8000Hz-le-3ch-5S-24bit.wav')}:
         rate1, data1 = wavfile.read(datafile(rf64), mmap=False)
         rate2, data2 = wavfile.read(datafile(riff), mmap=False)
-        assert_equal(rate1, rate2)
-        assert_equal(data1, data2)
+        assert_array_equal(rate1, rate2)
+        assert_array_equal(data1, data2)
 
 
 @pytest.mark.xslow
@@ -319,14 +319,15 @@ def test_write_roundtrip_rf64(tmpdir):
     dtype = np.dtype("<i8")
     tmpfile = str(tmpdir.join('temp.wav'))
     rate = 44100
-    data = np.random.randint(0, 127, (2**29, )).astype(dtype)
+    data = np.random.randint(0, 127, (2**29,)).astype(dtype)
 
     wavfile.write(tmpfile, rate, data)
 
     rate2, data2 = wavfile.read(tmpfile, mmap=True)
 
     assert_equal(rate, rate2)
-    assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
+    msg = f"{data2.dtype} byteorder not in ('<', '=', '|')"
+    assert data2.dtype.byteorder in ('<', '=', '|'), msg
     assert_array_equal(data, data2)
     # also test writing (gh-12176)
     data2[0] = 0
