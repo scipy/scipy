@@ -676,140 +676,136 @@ inline int pbwa(double a, double x, double *wf, double *wd) {
 }
 
 inline int pbdv(double v, double x, double *pdf, double *pdd) {
-    double *dv;
-    double *dp;
-    int num;
-
-    if (isnan(v) || isnan(x)) {
+    if (std::isnan(v) || std::isnan(x)) {
         *pdf = std::numeric_limits<double>::quiet_NaN();
         *pdd = std::numeric_limits<double>::quiet_NaN();
         return 0;
     }
+
     /* NB. Indexing of DV/DP in specfun.f:PBDV starts from 0, hence +2 */
-    num = std::abs((int) v) + 2;
-    dv = (double *) malloc(sizeof(double) * 2 * num);
+    int num = std::abs(static_cast<int>(v)) + 2;
+    std::unique_ptr<double[]> dv = std::make_unique<double[]>(2 * num);
     if (dv == NULL) {
         set_error("pbdv", SF_ERROR_OTHER, "memory allocation error");
         *pdf = std::numeric_limits<double>::quiet_NaN();
         *pdd = std::numeric_limits<double>::quiet_NaN();
         return -1;
     }
-    dp = dv + num;
-    specfun::pbdv(x, v, dv, dp, pdf, pdd);
-    free(dv);
+
+    specfun::pbdv(x, v, dv.get(), dv.get() + num, pdf, pdd);
     return 0;
 }
 
 inline int pbvv(double v, double x, double *pvf, double *pvd) {
-    double *vv;
-    double *vp;
-    int num;
-
     if (isnan(v) || isnan(x)) {
         *pvf = std::numeric_limits<double>::quiet_NaN();
         *pvd = std::numeric_limits<double>::quiet_NaN();
         return 0;
     }
+
     /* NB. Indexing of DV/DP in specfun.f:PBVV starts from 0, hence +2 */
-    num = std::abs((int) v) + 2;
-    vv = (double *) malloc(sizeof(double) * 2 * num);
+    int num = std::abs((int) v) + 2;
+    std::unique_ptr<double[]> vv = std::make_unique<double[]>(2 * num);
     if (vv == NULL) {
         set_error("pbvv", SF_ERROR_OTHER, "memory allocation error");
         *pvf = std::numeric_limits<double>::quiet_NaN();
         *pvd = std::numeric_limits<double>::quiet_NaN();
         return -1;
     }
-    vp = vv + num;
-    specfun::pbvv(x, v, vv, vp, pvf, pvd);
-    free(vv);
+
+    specfun::pbvv(x, v, vv.get(), vv.get() + num, pvf, pvd);
     return 0;
 }
 
 inline double prolate_segv(double m, double n, double c) {
     int kd = 1;
     int int_m, int_n;
-    double cv = 0.0, *eg;
+    double cv = 0.0;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
 
     if ((m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
+
     int_m = (int) m;
     int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
     if (eg == NULL) {
         set_error("prolate_segv", SF_ERROR_OTHER, "memory allocation error");
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    free(eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
+
     return cv;
 }
 
 inline double oblate_segv(double m, double n, double c) {
     int kd = -1;
     int int_m, int_n;
-    double cv = 0.0, *eg;
+    double cv = 0.0;
 
     if ((m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
+
     int_m = (int) m;
     int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("oblate_segv", SF_ERROR_OTHER, "memory allocation error");
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    free(eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     return cv;
 }
 
 double prolate_aswfa_nocv(double m, double n, double c, double x, double *s1d) {
     int kd = 1;
-    int int_m, int_n;
-    double cv = 0.0, s1f, *eg;
+    double cv = 0.0, s1f;
 
     if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("prolate_aswfa_nocv", SF_ERROR_DOMAIN, NULL);
         *s1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("prolate_aswfa_nocv", SF_ERROR_OTHER, "memory allocation error");
         *s1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
-    free(eg);
+
     return s1f;
 }
 
 double oblate_aswfa_nocv(double m, double n, double c, double x, double *s1d) {
     int kd = -1;
-    int int_m, int_n;
-    double cv = 0.0, s1f = 0.0, *eg;
+    double cv = 0.0, s1f = 0.0;
 
     if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("oblate_aswfa_nocv", SF_ERROR_DOMAIN, NULL);
         *s1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("oblate_aswfa_nocv", SF_ERROR_OTHER, "memory allocation error");
         *s1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
-    free(eg);
     return s1f;
 }
 
@@ -847,49 +843,47 @@ inline int oblate_aswfa(double m, double n, double c, double cv, double x, doubl
 
 inline double prolate_radial1_nocv(double m, double n, double c, double x, double *r1d) {
     int kf = 1, kd = 1;
-    double r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
+    double r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0;
     if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("prolate_radial1_nocv", SF_ERROR_DOMAIN, NULL);
         *r1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("prolate_radial1_nocv", SF_ERROR_OTHER, "memory allocation error");
         *r1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
-    free(eg);
     return r1f;
 }
 
 inline double prolate_radial2_nocv(double m, double n, double c, double x, double *r2d) {
     int kf = 2, kd = 1;
-    double r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
+    double r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0;
     if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("prolate_radial2_nocv", SF_ERROR_DOMAIN, NULL);
         *r2d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("prolate_radial2_nocv", SF_ERROR_OTHER, "memory allocation error");
         *r2d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
-    free(eg);
     return r2f;
 }
 
@@ -929,49 +923,49 @@ inline int prolate_radial2(double m, double n, double c, double cv, double x, do
 
 inline double oblate_radial1_nocv(double m, double n, double c, double x, double *r1d) {
     int kf = 1, kd = -1;
-    double r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
+    double r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0;
 
     if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("oblate_radial1_nocv", SF_ERROR_DOMAIN, NULL);
         *r1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("oblate_radial1_nocv", SF_ERROR_OTHER, "memory allocation error");
         *r1d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
-    free(eg);
     return r1f;
 }
 
 inline double oblate_radial2_nocv(double m, double n, double c, double x, double *r2d) {
     int kf = 2, kd = -1;
-    double r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
+    double r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0;
 
     if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
         set_error("oblate_radial2_nocv", SF_ERROR_DOMAIN, NULL);
         *r2d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (double *) malloc(sizeof(double) * (n - m + 2));
+
+    int int_m = (int) m;
+    int int_n = (int) n;
+    std::unique_ptr<double[]> eg = std::make_unique<double[]>(n - m + 2);
     if (eg == NULL) {
         set_error("oblate_radial2_nocv", SF_ERROR_OTHER, "memory allocation error");
         *r2d = std::numeric_limits<double>::quiet_NaN();
         return std::numeric_limits<double>::quiet_NaN();
     }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
+
+    specfun::segv(int_m, int_n, c, kd, &cv, eg.get());
     specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
-    free(eg);
     return r2f;
 }
 

@@ -5377,11 +5377,11 @@ inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *d
     double cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    double *u =  (double *) malloc((nn + 4) * sizeof(double));
-    double *v =  (double *) malloc((nn + 4) * sizeof(double));
-    double *w =  (double *) malloc((nn + 4) * sizeof(double));
-    double *tp = (double *) malloc((nn + 4) * sizeof(double));
-    double *rk = (double *) malloc((nn + 4) * sizeof(double));
+    std::unique_ptr<double[]> u =  std::make_unique<double[]>(nn + 4);
+    std::unique_ptr<double[]> v =  std::make_unique<double[]>(nn + 4);
+    std::unique_ptr<double[]> w =  std::make_unique<double[]>(nn + 4);
+    std::unique_ptr<double[]> tp = std::make_unique<double[]>(nn + 4);
+    std::unique_ptr<double[]> rk = std::make_unique<double[]>(nn + 4);
 
     const double eps = 1.0e-14;
 
@@ -5466,7 +5466,6 @@ inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *d
         *ck1 = sa0 * su0;
 
         if (kd == -1) {
-            free(u); free(v); free(w); free(tp); free(rk);
             return;
         }
     }
@@ -5486,9 +5485,6 @@ inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *d
 
     sb0 = (ip + 1.0) * pow(c, ip + 1) / (2.0 * ip * (m - 2.0) + 1.0) / (2.0 * m - 1.0);
     *ck2 = pow(-1, ip) * sb0 * r4 * r5 * g0 / r1 * su0;
-
-    free(u); free(v); free(w); free(tp); free(rk);
-    return;
 }
 
 
@@ -7193,7 +7189,7 @@ inline double psi_spec(double x) {
 inline void qstar(int m, int n, double c, double ck1, double *ck, double *qs, double *qt) {
     int ip, i, l, k;
     double r, s, sk, qs0;
-    double *ap = (double *) malloc(200*sizeof(double));
+    double ap[200];
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
     r = 1.0 / pow(ck[0], 2);
     ap[0] = r;
@@ -7219,7 +7215,6 @@ inline void qstar(int m, int n, double c, double ck1, double *ck, double *qs, do
     }
     *qs = pow(-1, ip) * (ck1) * (ck1 * qs0) / c;
     *qt = -2.0 / (ck1) * (*qs);
-    free(ap);
     return;
 }
 
@@ -7696,11 +7691,11 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
     double ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2;
 
-    double *pm = (double *) malloc(252*sizeof(double));
-    double *pd = (double *) malloc(252*sizeof(double));
-    double *qm = (double *) malloc(252*sizeof(double));
-    double *qd = (double *) malloc(252*sizeof(double));
-    double *dn = (double *) malloc(201*sizeof(double));
+    double pm[252];
+    double pd[252];
+    double qm[252];
+    double qd[252];
+    double dn[252];
     const double eps = 1.0e-14;
 
     nm1 = (n - m) / 2;
@@ -7798,8 +7793,6 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
     sdm = sd0 + sd1 + sd2;
     *r2f = sum / ck2;
     *r2d = sdm / ck2;
-    free(pm); free(pd); free(qm); free(qd); free(dn);
-    return;
 }
 
 
@@ -7833,7 +7826,7 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
     //          of the second kind for a small argument
     // ==============================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    double df[200];
     int id, kd = 1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7847,7 +7840,6 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
             rmn2sp(m, n, c, x, cv, kd, df, r2f, r2d);
         }
     }
-    free(df);
     return;
 }
 
@@ -7882,7 +7874,7 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
     //          the second kind for a small argument
     // ==========================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    double df[200];
     int id, kd = -1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7899,7 +7891,6 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
             rmn2so(m, n, c, x, cv, kd, df, r2f, r2d);
         }
     }
-    free(df);
     return;
 }
 
