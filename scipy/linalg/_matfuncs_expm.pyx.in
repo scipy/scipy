@@ -105,18 +105,17 @@ def pick_pade_structure(cnp.ndarray[ndim=3, dtype=numpy_lapack_t] Am):
         double two_pow_s
         double temp
         double [5] theta
-        double [5] coeff        
+        double [5] coeff
         numpy_lapack_t [:, :, ::1] Amv = Am
-        cnp.ndarray[ndim=2, dtype=cnp.float64_t] absA
-        cnp.ndarray[ndim=1, dtype=cnp.float64_t] work_arr
-
-    if numpy_lapack_t in numpy_lapack_sc_t:
-        u = (2.)**(-24)
 
     dims[0] = n
     dims[1] = n
 
-    work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
+    if numpy_lapack_t in numpy_lapack_sc_t:
+        u = (2.)**(-24)
+        work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT32, 0)
+    else:
+        work_arr = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
 
     theta[0] = 1.495585217958292e-002
     theta[1] = 2.539398330063230e-001
@@ -637,28 +636,28 @@ def pade_UV_calc(lapack_t[:, :, ::1]Am, int n, int m):
             pade_357_UV_calc_s(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_s(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_s(Am, n)
     elif lapack_t is double:
         if m in [3, 5, 7]:
             pade_357_UV_calc_d(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_d(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_d(Am, n)
     elif lapack_t is floatcomplex:
         if m in [3, 5, 7]:
             pade_357_UV_calc_c(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_c(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_c(Am, n)
     elif lapack_t is doublecomplex:
         if m in [3, 5, 7]:
             pade_357_UV_calc_z(Am, n, m)
         elif m == 9:
             pade_9_UV_calc_z(Am, n)
-        else: 
+        else:
             pade_13_UV_calc_z(Am, n)
     else:
         raise ValueError('Internal function "pade_UV_calc" received an unsupported dtype')
