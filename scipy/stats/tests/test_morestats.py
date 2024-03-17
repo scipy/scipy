@@ -1645,6 +1645,17 @@ class TestWilcoxon:
         assert_equal(res.statistic, ref.statistic)
         assert_equal(res.pvalue, ref.pvalue)
 
+        x = rng.random(size=size*10)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        ref = stats.wilcoxon(x, method=pm)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        res = stats.wilcoxon(x, method=pm)
+
+        assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
+        assert_equal(res.pvalue, ref.pvalue)  # random_state used
+
 
 class TestKstat:
     def test_moments_normal_distribution(self):
