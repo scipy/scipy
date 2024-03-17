@@ -6,9 +6,10 @@ SciPy 1.13.0 Release Notes
 
 .. contents::
 
-SciPy 1.13.0 is the culmination of 2 months of hard work. This
-out-of-band release aims to support NumPy `2.0.0`, and is backwards
-compatible to NumPy `1.22.4`.
+SciPy 1.13.0 is the culmination of 3 months of hard work. This
+out-of-band release aims to support NumPy ``2.0.0``, and is backwards
+compatible to NumPy ``1.22.4``. The version of OpenBLAS used to build
+the PyPI wheels has been increased to ``0.3.26``.
 
 This release requires Python 3.9+ and NumPy 1.22.4 or greater.
 
@@ -18,10 +19,14 @@ For running on PyPy, PyPy3 6.0+ is required.
 **************************
 Highlights of this release
 **************************
-- Support for NumPy `2.0.0`
+- Support for NumPy ``2.0.0``.
 - Interactive examples have been added to the documentation, allowing users
   to run the examples locally on embedded Jupyterlite notebooks in their
   browser.
+- Preliminary 1D array support for the COO and DOK sparse formats.
+- Several `scipy.stats` functions have gained support for additional
+  ``axis``, ``nan_policy``, and ``keepdims`` arguments. `scipy.stats` also
+  has several performance and accuracy improvements.
 
 ************
 New features
@@ -58,17 +63,6 @@ New features
   construction, slow evaluations) can be obtained via `"*_legacy"` methods:
   ``method="cubic_legacy"`` is exactly equivalent to ``method="cubic"`` in
   previous releases. See ``gh-19633`` for details.
-
-`scipy.linalg` improvements
-===========================
-
-
-`scipy.ndimage` improvements
-============================
-
-
-`scipy.optimize` improvements
-=============================
 
 
 `scipy.signal` improvements
@@ -122,40 +116,21 @@ New features
   ``keepdims`` support.
 - `scipy.stats.boxcox_normmax` has gained a ``ymax`` parameter to allow user
   specification of the maximum value of the transformed data.
-- `scipy.stats.invwishart` ``rvs`` and ``logpdf`` are now faster.
 - `scipy.stats.vonmises` ``pdf`` method has been extended to support
   ``kappa=0``. The ``fit`` method is also more performant due to the use of
   non-trivial bounds to solve for ``kappa``.
 - High order ``moment`` calculations for `scipy.stats.powerlaw` are now more
   accurate.
-- `scipy.stats.loglaplace` now has a more accurate ``fit`` method when ``floc``
-  is provided.
+- The ``fit`` methods of  `scipy.stats.gamma` (with ``method='mm'``) and
+  `scipy.stats.loglaplace` are faster and more reliable.
 - `scipy.stats.goodness_of_fit` now supports the use of a custom ``statistic``
   provided by the user.
-- `scipy.stats.gamma` now has improved method of moments ``fit`` accuracy
-  when ``floc`` is known.
 - `scipy.stats.wilcoxon` now supports ``PermutationMethod``, enabling
   calculation of accurate p-values in the presence of ties and zeros.
 - `scipy.stats.monte_carlo_test` now has improved robustness in the face of
   numerical noise.
-
-
-Hypothesis Tests
-----------------
-
-
-Sample statistics
------------------
-
-
-Statistical Distributions
--------------------------
-
-
-Other
------
-
-
+- `scipy.stats.wasserstein_distance_nd` was introduced to compute the
+  Wasserstein-1 distance between two N-D discrete distributions.
 
 
 *******************
@@ -164,13 +139,6 @@ Deprecated features
 - Complex dtypes in ``PchipInterpolator`` and ``Akima1DInterpolator`` have
   been deprecated and will raise an error in SciPy 1.15.0. If you are trying
   to use the real components of the passed array, use ``np.real`` on ``y``.
-
-`scipy.linalg` deprecations
-===========================
-
-
-`scipy.spatial` deprecations
-============================
 
 
 
@@ -181,6 +149,8 @@ Backwards incompatible changes
 *************
 Other changes
 *************
+- The second argument of `scipy.stats.moment` has been renamed to ``order``
+  while maintaining backward compatibility.
 
 
 
@@ -199,7 +169,9 @@ Authors
 * Aaditya Bansal (1) +
 * Christoph Baumgarten (2)
 * Sebastian Berg (4)
+* Nicolas Bloyet (2) +
 * Matt Borland (1)
+* Jonas Bosse (1) +
 * Jake Bowhay (25)
 * Matthew Brett (1)
 * Dietrich Brunn (7)
@@ -208,21 +180,21 @@ Authors
 * Cale (1) +
 * CJ Carey (4)
 * Thomas A Caswell (1)
+* Sean Cheah (44) +
 * Lucas Colley (97)
 * com3dian (1)
-* danigm (1) +
 * Gianluca Detommaso (1) +
 * Thomas Duvernay (1)
 * DWesl (2)
 * f380cedric (1) +
 * fancidev (13) +
+* Daniel Garcia (1) +
 * Lukas Geiger (3)
 * Ralf Gommers (139)
 * Matt Haberland (79)
 * Tessa van der Heiden (2) +
 * inky (3) +
 * Jannes Münchmeyer (2) +
-* jonasBoss (1) +
 * Aditya Vidyadhar Kamath (2) +
 * Agriya Khetarpal (1) +
 * Andrew Landau (1) +
@@ -240,11 +212,10 @@ Authors
 * Michał Górny (4)
 * Juan Montesinos (1) +
 * Juan F. Montesinos (1) +
-* mzechmeister (1) +
-* Takumasa N (1)
+* Takumasa Nakamura (1)
 * Andrew Nelson (26)
 * Praveer Nidamaluri (1)
-* Yagiz Olmez (3) +
+* Yagiz Olmez (5) +
 * Dimitri Papadopoulos Orfanos (1)
 * Drew Parsons (1) +
 * Tirth Patel (7)
@@ -266,24 +237,21 @@ Authors
 * Albert Steppi (30)
 * Adam J. Stewart (4)
 * Kai Striega (3)
-* SunRuikang (1) +
+* Ruikang Sun (1) +
 * Mike Taves (1)
 * Nicolas Tessore (3)
-* thalassemia (44) +
 * Benedict T Thekkel (1) +
-* theplatypus (2) +
+* Will Tirone (4)
 * Jacob Vanderplas (2)
 * Christian Veenhuis (1)
 * Isaac Virshup (2)
 * Ben Wallace (1) +
-* willtirone (4) +
 * Xuefeng Xu (3)
-* yagizolmez (2) +
-* Xiao Yuan (1)
-* yuanx749 (4)
+* Xiao Yuan (5)
 * Irwin Zaid (6)
+* Mathias Zechmeister (1) +
 
-A total of 93 people contributed to this release.
+A total of 91 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
