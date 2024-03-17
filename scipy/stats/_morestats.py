@@ -3955,7 +3955,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         * 'greater': the distribution underlying ``d`` is stochastically
           greater than a distribution symmetric about zero.
 
-    method : {"auto", "exact", "approx"}, optional
+    method : {"auto", "exact", "approx"} or `PermutationMethod` instance, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
     axis : int or None, default: 0
@@ -4004,21 +4004,19 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
       execution time).
 
     - The default, ``method='auto'``, selects between the two: when
-      ``len(d) <= 50``, the exact method is used; otherwise, the approximate
-      method is used.
+      ``len(d) <= 50`` and there are no zeros, the exact method is used;
+      otherwise, the approximate method is used.
 
-    The presence of "ties" (i.e. not all elements of ``d`` are unique) and
+    The presence of "ties" (i.e. not all elements of ``d`` are unique) or
     "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
     of the test statistic, and ``method='exact'`` no longer calculates
     the exact p-value. If ``method='approx'``, the z-statistic is adjusted
     for more accurate comparison against the standard normal, but still,
     for finite sample sizes, the standard normal is only an approximation of
-    the true null distribution of the z-statistic. There is no clear
-    consensus among references on which method most accurately approximates
-    the p-value for small samples in the presence of zeros and/or ties. In any
-    case, this is the behavior of `wilcoxon` when ``method='auto':
-    ``method='exact'`` is used when ``len(d) <= 50`` *and there are no zeros*;
-    otherwise, ``method='approx'`` is used.
+    the true null distribution of the z-statistic. For such situations, the
+    `method` parameter also accepts instances `PermutationMethod`. In this
+    case, the p-value is computed using `permutation_test` with the provided
+    configuration options and other appropriate settings.
 
     References
     ----------
