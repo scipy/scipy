@@ -23,6 +23,7 @@ Note: This documentation is work in progress.
    stats/hypothesis_tests
    stats/sampling
    stats/kernel_density_estimation
+   stats/multiscale_graphcorr
    stats/quasi_monte_carlo
 
 
