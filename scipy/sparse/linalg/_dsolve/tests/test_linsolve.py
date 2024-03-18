@@ -722,6 +722,45 @@ class TestSplu:
 
         assert_equal(len(oks), 20)
 
+class TestGstrsErrors:
+    def setup_method(self):
+      self.A = array([[1.0,2.0,3.0],[4.0,5.0,6.0],[7.0,8.0,9.0]], dtype=np.float64)
+      self.b = np.array([[1.0],[2.0],[3.0]], dtype=np.float64)
+
+    def test_trans(self):
+        L = scipy.sparse.tril(self.A, format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(ValueError, match="trans must be N, T, or H"):
+            _superlu.gstrs('X', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_shape_LU(self):
+        L = scipy.sparse.tril(self.A[0:2,0:2], format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(TypeError, match="L and U must have the same dimension"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_shape_b(self):
+        L = scipy.sparse.tril(self.A, format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(ValueError, match="right hand side array has invalid shape"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b[0:2])
+
+    def test_types_differ(self):
+        L = scipy.sparse.tril(self.A.astype(np.float32), format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(TypeError, match="nzvals types of L and U differ"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_types_unsupported(self):
+        L = scipy.sparse.tril(self.A.astype(np.uint8), format='csc')
+        U = scipy.sparse.triu(self.A.astype(np.uint8), k=1, format='csc')
+        with assert_raises(TypeError, match="nzvals is not of a type supported by SuperLU"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b.astype(np.uint8))
 
 class TestSpsolveTriangular:
     def setup_method(self):
@@ -821,3 +860,6 @@ class TestSpsolveTriangular:
         if unit_diagonal:
             A.setdiag(1)
         assert_allclose(A.dot(x), b, atol=1.5e-6)
+
+
+
