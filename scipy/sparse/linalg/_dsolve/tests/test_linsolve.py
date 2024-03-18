@@ -737,7 +737,7 @@ class TestGstrsErrors:
     def test_shape_LU(self):
         L = scipy.sparse.tril(self.A[0:2,0:2], format='csc')
         U = scipy.sparse.triu(self.A, k=1, format='csc')
-        with assert_raises(TypeError, match="L and U must have the same dimension"):
+        with assert_raises(ValueError, match="L and U must have the same dimension"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
                                 U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
 

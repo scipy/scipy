@@ -310,7 +310,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     }
 
     if (L_N!=U_N) {
-        PyErr_SetString(PyExc_TypeError, "L and U must have the same dimension");
+        PyErr_SetString(PyExc_ValueError, "L and U must have the same dimension");
         return NULL;
     }
 
