@@ -890,7 +890,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     ...     popt, pcov = curve_fit(func, xdata, ydata, method = 'trf')
     ... except RuntimeError as e:
     ...     print(e)
-    Optimal parameters not found: The maximum number of function evaluations is exceeded.
+    Optimal parameters not found: The maximum number of function evaluations is
+    exceeded.
 
     If parameter scale is roughly known beforehand, it can be defined in
     `x_scale` argument:
