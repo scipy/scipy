@@ -182,4 +182,10 @@ __all__ += [
     "subtract",
     "matmul",
     "not_equal",
+    "bitwise_left_shift",
+    "bitwise_right_shift",
+    "bitwise_invert",
+    "bitwise_or",
+    "bitwise_or",
+    "bitwise_and",
 ]

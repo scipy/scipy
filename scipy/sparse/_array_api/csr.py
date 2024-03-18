@@ -179,3 +179,34 @@ def matmul(x1, x2, /):
 
 def not_equal(x1, x2, /):
     return x1 != x2
+
+def binopt(x1, x2, op, /):
+    x2_nonzero = np.column_stack(x2.nonzero())
+    x1_nonzero = np.column_stack(x1.nonzero())
+    non_zero_coords = np.moveaxis(np.unique(np.concatenate((x2_nonzero, x1_nonzero)), axis=0), 1, 0)
+    x1_data = x1[*non_zero_coords][0]
+    x2_data = x2[*non_zero_coords][0]
+    op_data = np.ravel(op(x1_data, x2_data))
+    return sparse.coo_array((op_data, (non_zero_coords[0], non_zero_coords[1]))).tocsr()
+
+def bitwise_left_shift(x1, x2, /):
+    shifted_data = np.left_shift(x1.data, x2)
+    return sparse.csr_array((shifted_data, x1.indices, x1.indptr), shape=x1.shape)
+
+def bitwise_right_shift(x1, x2, /):
+    shifted_data = np.right_shift(x1.data, x2)
+    return sparse.csr_array((shifted_data, x1.indices, x1.indptr), shape=x1.shape)
+
+def bitwise_invert(x, /):
+    inverted_data = np.bitwise_not(x.data)
+    return sparse.csr_array((inverted_data, x.indices, x.indptr), shape=x.shape)
+
+def bitwise_or(x1, x2, /):
+    binopt(x1, x2, np.bitwise_or)
+
+def bitwise_or(x1, x2, /):
+    binopt(x1, x2, np.bitwise_xor)
+
+def bitwise_and(x1, x2, /):
+    binopt(x1, x2, np.bitwise_and)
+
