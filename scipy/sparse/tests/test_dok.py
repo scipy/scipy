@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_equal
+from numpy.testing import assert_equal
 import scipy as sp
 from scipy.sparse import dok_array, dok_matrix
 
@@ -49,22 +49,22 @@ def test_copy(d, Asp):
 def test_fromkeys_default():
     # test with default value
     edges = [(0, 2), (1, 0), (2, 1)]
-    Xdok = sp.sparse.dok_array.fromkeys(edges)
+    Xdok = dok_array.fromkeys(edges)
     X = [[0, 0, 1], [1, 0, 0], [0, 1, 0]]
-    assert_array_equal(Xdok.toarray(), X)
+    assert_equal(Xdok.toarray(), X)
 
 def test_fromkeys_positional():
     # test with positional value
     edges = [(0, 2), (1, 0), (2, 1)]
-    Xdok = sp.sparse.dok_array.fromkeys(edges, -1)
+    Xdok = dok_array.fromkeys(edges, -1)
     X = [[0, 0, -1], [-1, 0, 0], [0, -1, 0]]
-    assert_array_equal(Xdok.toarray(), X)
+    assert_equal(Xdok.toarray(), X)
 
 def test_fromkeys_iterator():
     it = ((a, a % 2) for a in range(4))
-    Xdok = sp.sparse.dok_array.fromkeys(it)
+    Xdok = dok_array.fromkeys(it)
     X = [[1, 0], [0, 1], [1, 0], [0, 1]]
-    assert_array_equal(Xdok.toarray(), X)
+    assert_equal(Xdok.toarray(), X)
 
 def test_get(d, Asp):
     assert Asp.get((0, 1)) == d.get((0, 1))
@@ -196,7 +196,7 @@ def test_dunder_ge(A, Asp):
 
 # Note: iter dunder follows np.array not dict
 def test_dunder_iter(A, Asp):
-    if isinstance(Asp, sp.sparse.dok_array):
+    if isinstance(Asp, dok_array):
         with pytest.raises(NotImplementedError):
             [a.toarray() for a in Asp]
     else:
