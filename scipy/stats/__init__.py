@@ -285,6 +285,8 @@ Frequency statistics
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
+.. _hypotests:
+
 Hypothesis Tests and related functions
 ======================================
 SciPy has many functions for performing hypothesis tests that return a
