@@ -144,10 +144,7 @@ jobs:
               MACOS_DEPLOYMENT_TARGET=12.0\
               LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
               _PYTHON_HOST_PLATFORM=macosx-12.0-arm64\
-              PIP_PRE=1\
-              PIP_NO_BUILD_ISOLATION=false\
-              PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig\
-              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+              PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig"
             echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
           
             CIBW="sudo xcode-select -s /Applications/Xcode_15.2.app"
@@ -171,10 +168,7 @@ jobs:
               MACOS_DEPLOYMENT_TARGET=10.9\
               SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk\
               LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
-              _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64\
-              PIP_PRE=1\
-              PIP_NO_BUILD_ISOLATION=false\
-              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+              _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64"
             echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
           
             CIBW="DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&\
@@ -190,22 +184,9 @@ jobs:
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
           CIBW_PRERELEASE_PYTHONS: True
 
-          # TODO remove the CIBW_BEFORE_BUILD_* lines once there are
-          # numpy2.0 wheels available on PyPI. Also remove/comment out the
-          # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL from CIBW_ENVIRONMENT
-          # (also for _MACOS and _WINDOWS below)
-          CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
-          CIBW_BEFORE_BUILD_WINDOWS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
-          CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-          # Allow pip to find install nightly wheels if necessary
-          # Setting PIP_NO_BUILD_ISOLATION=false makes pip use build-isolation.
-          CIBW_ENVIRONMENT: "PIP_NO_BUILD_ISOLATION=false PIP_PRE=1 PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
 
           CIBW_ENVIRONMENT_WINDOWS: >
             PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
-            PIP_PRE=1
-            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-            PIP_NO_BUILD_ISOLATION=false
 
       - uses: actions/upload-artifact@v4
         with:
