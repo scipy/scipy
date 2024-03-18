@@ -1,7 +1,7 @@
 import contextlib
 import pytest
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_equal
+from numpy.testing import assert_allclose, assert_equal
 
 import scipy as sp
 from .test_arithmetic1d import toarray
@@ -21,7 +21,7 @@ def check_remains_sorted(X):
     indices = X.indices.copy()
     X.has_sorted_indices = False
     X.sort_indices()
-    assert_array_equal(indices, X.indices,
+    assert_equal(indices, X.indices,
                        'Expected sorted indices, found unsorted')
 
 
@@ -33,9 +33,9 @@ class TestGetSet1D:
 
         N = D.shape[0]
         for j in range(-N, N):
-            assert np.array_equal(A[j, None].toarray(), D[j, None])
-            assert np.array_equal(A[None, j].toarray(), D[None, j])
-            assert np.array_equal(A[None, None, j].toarray(), D[None, None, j])
+            assert_equal(A[j, None].toarray(), D[j, None])
+            assert_equal(A[None, j].toarray(), D[None, j])
+            assert_equal(A[None, None, j].toarray(), D[None, None, j])
 
     def test_getitem_shape(self, spcreator):
         A = spcreator(np.arange(3 * 4).reshape(3, 4))
@@ -60,7 +60,7 @@ class TestGetSet1D:
 
         N = D.shape[0]
         for j in range(-N, N):
-            assert np.array_equal(A[j], D[j])
+            assert_equal(A[j], D[j])
 
         for ij in [3, -4]:
             with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
@@ -103,7 +103,7 @@ class TestSlicingAndFancy1D:
         D = np.array([4,3,0])
         A = spcreator(D)
 
-        assert_array_equal(A[()].toarray(), D[()])
+        assert_equal(A[()].toarray(), D[()])
         for ij in [(0,3), (3,)]:
             with pytest.raises(IndexError, match='out of (range|bounds)|too many indices'):
                 A.__getitem__(ij)
@@ -118,7 +118,7 @@ class TestSlicingAndFancy1D:
             )
             A[np.array(6)] = dtype(4.0)  # scalar index
             A[np.array(6)] = dtype(2.0)  # overwrite with scalar index
-            assert_array_equal(A.toarray(), [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0])
+            assert_equal(A.toarray(), [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0])
 
             for ij in [(13,),(-14,)]:
                 with pytest.raises(IndexError, match='index .* out of (range|bounds)'):
@@ -140,20 +140,20 @@ class TestSlicingAndFancy1D:
     def test_get_1d_slice(self, spcreator):
         B = np.arange(50.)
         A = spcreator(B)
-        assert_array_equal(B[:], A[:].toarray())
-        assert_array_equal(B[2:5], A[2:5].toarray())
+        assert_equal(B[:], A[:].toarray())
+        assert_equal(B[2:5], A[2:5].toarray())
 
         C = np.array([4, 0, 6, 0, 0, 0, 0, 0, 1])
         D = spcreator(C)
-        assert_array_equal(C[1:3], D[1:3].toarray())
+        assert_equal(C[1:3], D[1:3].toarray())
 
         # Now test slicing when a row contains only zeros
         E = np.array([0, 0, 0, 0, 0])
         F = spcreator(E)
-        assert_array_equal(E[1:3], F[1:3].toarray())
-        assert_array_equal(E[-2:], F[-2:].toarray())
-        assert_array_equal(E[:], F[:].toarray())
-        assert_array_equal(E[slice(None)], F[slice(None)].toarray())
+        assert_equal(E[1:3], F[1:3].toarray())
+        assert_equal(E[-2:], F[-2:].toarray())
+        assert_equal(E[:], F[:].toarray())
+        assert_equal(E[slice(None)], F[slice(None)].toarray())
 
     def test_slicing_idx_slice(self, spcreator):
         B = np.arange(50)
@@ -190,13 +190,13 @@ class TestSlicingAndFancy1D:
                 if x.size == 0 and y.size == 0:
                     pass
                 else:
-                    assert_array_equal(x.toarray(), y, repr(a))
+                    assert_equal(x.toarray(), y, repr(a))
 
     def test_ellipsis_1d_slicing(self, spcreator):
         B = np.arange(50)
         A = spcreator(B)
-        assert_array_equal(A[...].toarray(), B[...])
-        assert_array_equal(A[...,].toarray(), B[...,])
+        assert_equal(A[...].toarray(), B[...])
+        assert_equal(A[...,].toarray(), B[...,])
 
     ##########################
     #  Assignment with Slicing
@@ -215,7 +215,7 @@ class TestSlicingAndFancy1D:
                 C[2:3] = 9
                 C[3:] = 1
                 C[3::-1] = 9
-        assert_array_equal(A.toarray(), B)
+        assert_equal(A.toarray(), B)
 
     def test_slice_assign_2(self, spcreator):
         shape = (10,)
@@ -231,7 +231,7 @@ class TestSlicingAndFancy1D:
             B = np.zeros(shape)
             B[idx] = 1
             msg = f"idx={idx!r}"
-            assert_array_almost_equal(A.toarray(), B, err_msg=msg)
+            assert_allclose(A.toarray(), B, err_msg=msg)
 
     def test_self_self_assignment(self, spcreator):
         # Tests whether a row of one lil_matrix can be assigned to another.
@@ -248,16 +248,16 @@ class TestSlicingAndFancy1D:
 
             A = B / 10
             B[:] = A[:]
-            assert_array_equal(A[:].toarray(), B[:].toarray())
+            assert_equal(A[:].toarray(), B[:].toarray())
             B.eliminate_zeros()
 
             A = B / 10
             B[:] = A[:1]
-            assert_array_equal(np.zeros((5,)) + A[0], B.toarray())
+            assert_equal(np.zeros((5,)) + A[0], B.toarray())
 
             A = B / 10
             B[:-1] = A[1:]
-            assert_array_equal(A[1:].toarray(), B[:-1].toarray())
+            assert_equal(A[1:].toarray(), B[:-1].toarray())
 
     def test_slice_assignment(self, spcreator):
         B = spcreator((4,))
@@ -272,10 +272,10 @@ class TestSlicingAndFancy1D:
             B[0] = 5
             B[2] = 7
             B[:] = B + B
-            assert_array_equal(B.toarray(), expected)
+            assert_equal(B.toarray(), expected)
 
             B[:2] = sp.sparse.csr_array(block)
-            assert_array_equal(B.toarray()[:2], block)
+            assert_equal(B.toarray()[:2], block)
 
     def test_set_slice(self, spcreator):
         A = spcreator((5,))
@@ -294,11 +294,11 @@ class TestSlicingAndFancy1D:
             for j, a in enumerate(slices):
                 A[a] = j
                 B[a] = j
-                assert_array_equal(A.toarray(), B, repr(a))
+                assert_equal(A.toarray(), B, repr(a))
 
             A[1:10:2] = range(1, 5, 2)
             B[1:10:2] = range(1, 5, 2)
-            assert_array_equal(A.toarray(), B)
+            assert_equal(A.toarray(), B)
 
         # The next commands should raise exceptions
         toobig = list(range(100))
@@ -311,7 +311,7 @@ class TestSlicingAndFancy1D:
         A = spcreator(np.ones(3))
         B = spcreator((2,))
         A[:2] = B
-        assert_array_equal(A.toarray(), [0, 0, 1])
+        assert_equal(A.toarray(), [0, 0, 1])
 
     ####################
     #  1d Fancy Indexing
@@ -455,7 +455,7 @@ class TestSlicingAndFancy1D:
                 B[j] = 1
                 with check_remains_sorted(A):
                     A[j] = 1
-            assert_array_almost_equal(A.toarray(), B)
+            assert_allclose(A.toarray(), B)
 
     def test_sequence_assignment(self, spcreator):
         A = spcreator((4,))
@@ -476,14 +476,14 @@ class TestSlicingAndFancy1D:
                 with pytest.raises(IndexError, match=msg):
                     B.__getitem__(i1)
                 A[i2] = B[i2]
-            assert_array_equal(A[:3].toarray(), B.toarray())
+            assert_equal(A[:3].toarray(), B.toarray())
             assert A.shape == (4,)
 
             # slice
             A = spcreator((4,))
             with check_remains_sorted(A):
                 A[1:3] = [10,20]
-            assert_array_equal(A.toarray(), [0, 10, 20, 0])
+            assert_equal(A.toarray(), [0, 10, 20, 0])
 
             # array
             A = spcreator((4,))
@@ -491,7 +491,7 @@ class TestSlicingAndFancy1D:
             with check_remains_sorted(A):
                 for C in [A, B]:
                     C[[0,1,2]] = [4,5,6]
-            assert_array_equal(A.toarray(), B)
+            assert_equal(A.toarray(), B)
 
     def test_fancy_assign_empty(self, spcreator):
         B = np.arange(50)
