@@ -1065,8 +1065,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a {}_matrix is expensive."
-                 " lil_matrix is more efficient.".format(self.format),
+            warn(f"Changing the sparsity structure of {self.format} format
+                 " is expensive. lil or dok is more efficient.",
                  SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1
@@ -1331,8 +1331,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into {} blocks. "
-                                 "Got {}".format(self.blocksize, shape))
+                raise ValueError(f"shape must be divisible into {self.blocksize}
+                                 " blocks. Got {shape}")
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape if len(shape)>1 else (1, shape[0]))

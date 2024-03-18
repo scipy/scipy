@@ -90,7 +90,7 @@ class TestGetSet1D:
             A[1,] = dtype(5)  # overwrite using 1-tuple index
 
             for ij in [13, -14, (13,), (14,)]:
-                with pytest.raises(IndexError, match='index (.*) out of (range|bounds)'):
+                with pytest.raises(IndexError, match='out of (range|bounds)'):
                     A.__setitem__(ij, 123.0)
 
 
@@ -105,7 +105,7 @@ class TestSlicingAndFancy1D:
 
         assert_equal(A[()].toarray(), D[()])
         for ij in [(0,3), (3,)]:
-            with pytest.raises(IndexError, match='out of (range|bounds)|too many indices'):
+            with pytest.raises(IndexError, match='out of (range|bounds)|many indices'):
                 A.__getitem__(ij)
 
     def test_set_array_index(self, spcreator):

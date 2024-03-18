@@ -67,9 +67,6 @@ class IndexMixin:
                 if ixtypes[1] == 0:
                     res = self._get_arrayXint(*index)
                 elif ixtypes[1] == 1:
-                    if row.ndim == 2:
-                        assert False, "You should get stopped in validate_indices before this"
-                        raise IndexError('index results in >2 dimensions')
                     res = self._get_arrayXslice(*index)
                 else:
                     # arrayXarray preprocess
