@@ -7,7 +7,7 @@
 import numpy as np
 cimport numpy as cnp
 cnp.import_array()
-from libc.math cimport sin, tan, log, exp, sqrt, floor, INFINITY, pi as PI
+from libc.math cimport sin, tan, log, exp, sqrt, floor, pi as PI
 
 cdef double[3] spmpar = [np.finfo(np.float64).eps,
                          np.finfo(np.float64).tiny,
@@ -1273,7 +1273,7 @@ cdef inline (double, int, double) cdfbet_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -1321,7 +1321,7 @@ cdef inline (double, int, double) cdfbet_which4(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, (1 if DS.qleft else 2), (0. if DS.qleft else INFINITY))
+        return (DS.x, (1 if DS.qleft else 2), (1e-100 if DS.qleft else 1e100))
     else:
         return(DS.x, 0, 0.)
 
@@ -1524,7 +1524,7 @@ cdef inline (double, int, double) cdfbin_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -1714,7 +1714,7 @@ cdef inline (double, int, double) cdfchi_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -1741,7 +1741,7 @@ cdef inline (double, int, double) cdfchi_which3(
     if ((abs(p+q)-0.5)-0.5) > 3*spmpar[0]:
         return (0., 3, (0. if (p+q) < 0 else 1.))
 
-    DS.small = 0.
+    DS.small = 1e-100
     DS.big = 1.e100
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -1759,7 +1759,7 @@ cdef inline (double, int, double) cdfchi_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -1896,8 +1896,8 @@ cdef inline (double, int, double) cdfchn_which2(
     df = min(df, spmpar[2])
     pnonc = min(pnonc, 1.e9)
 
-    if not (0 <= p <= 1.):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= p <= (1. - 1e-16)):
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (df >= 0.):
         return (0., -2, 0.)
     if not (pnonc >= 0.):
@@ -1910,7 +1910,7 @@ cdef inline (double, int, double) cdfchn_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e300)
     else:
         return(DS.x, 0, 0.)
 
@@ -1927,7 +1927,7 @@ cdef inline (double, int, double) cdfchn_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
+    DS.small = 1e-300
     DS.big = 1e300
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -1953,7 +1953,7 @@ cdef inline (double, int, double) cdfchn_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-300 if DS.qleft else 1e300)
     else:
         return(DS.x, 0, 0.)
 
@@ -1996,7 +1996,7 @@ cdef inline (double, int, double) cdfchn_which4(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-300 if DS.qleft else 1e9)
     else:
         return(DS.x, 0, 0.)
 
@@ -2143,7 +2143,7 @@ cdef inline (double, int, double) cdff_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2188,7 +2188,7 @@ cdef inline (double, int, double) cdff_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2233,7 +2233,7 @@ cdef inline (double, int, double) cdff_which4(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2375,7 +2375,7 @@ cdef (double, int, double) cdffnc_which2(
                                     0, 0, 0, 0, 0, 0, 0)
 
     DS.small = 0.
-    DS.big = 1e300
+    DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -2384,7 +2384,7 @@ cdef (double, int, double) cdffnc_which2(
     DS.x = 5.
 
     if not (0 <= p <= 1.-1e-16):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (dfn > 0.):
         return (0., -3, 0.)
     if not (dfd > 0.):
@@ -2401,7 +2401,7 @@ cdef (double, int, double) cdffnc_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2429,7 +2429,7 @@ cdef (double, int, double) cdffnc_which3(
     DS.x = 5.
 
     if not (0 <= p <= 1.-1e-16):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (f >= 0.):
         return (0., -3, 0.)
     if not (dfd > 0.):
@@ -2446,7 +2446,7 @@ cdef (double, int, double) cdffnc_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2474,7 +2474,7 @@ cdef (double, int, double) cdffnc_which4(
     DS.x = 5.
 
     if not (0 <= p <= 1.-1e-16):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (f >= 0.):
         return (0., -3, 0.)
     if not (dfn > 0.):
@@ -2491,7 +2491,7 @@ cdef (double, int, double) cdffnc_which4(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2519,7 +2519,7 @@ cdef (double, int, double) cdffnc_which5(
     DS.x = 5.
 
     if not (0 <= p <= 1.-1e-16):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (f >= 0.):
         return (0., -3, 0.)
     if not (dfd > 0.):
@@ -2692,7 +2692,7 @@ cdef (double, int, double) cdfgam_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0.
+    DS.small = 1e-100
     DS.big = 1e100
     DS.absstp = 0.5
     DS.relstp = 0.5
@@ -2721,7 +2721,7 @@ cdef (double, int, double) cdfgam_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2909,7 +2909,7 @@ cdef inline (double, int, double) cdfnbn_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else xn)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -2958,7 +2958,7 @@ cdef inline (double, int, double) cdfnbn_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -3273,7 +3273,7 @@ cdef inline (double, int, double) cdfpoi_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -3315,7 +3315,7 @@ cdef inline (double, int, double) cdfpoi_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -3595,8 +3595,8 @@ cdef inline (double, int, double) cdftnc_which2(
     DS.reltol = tol
     DS.x = 5.
 
-    if not (0 <= p <= 1.):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= p <= (1. - 1e-16)):
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (df > 0.):
         return (0., -3, 0.)
     df = min(df, 1.e10)
@@ -3613,7 +3613,7 @@ cdef inline (double, int, double) cdftnc_which2(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, -1e100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -3630,8 +3630,8 @@ cdef inline (double, int, double) cdftnc_which3(
                                     0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
                                     0, 0, 0, 0, 0, 0, 0)
 
-    DS.small = 0
-    DS.big = 1.e6
+    DS.small = 1e-100
+    DS.big = 1.e10
     DS.absstp = 0.5
     DS.relstp = 0.5
     DS.stpmul = 5.
@@ -3639,8 +3639,8 @@ cdef inline (double, int, double) cdftnc_which3(
     DS.reltol = tol
     DS.x = 5.
 
-    if not (0 <= p <= 1.):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= p <= (1. - 1e-16)):
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     t = max(min(t, spmpar[2]), -spmpar[2])
     if not (t == t):
         return (0., -3, 0.)
@@ -3656,7 +3656,7 @@ cdef inline (double, int, double) cdftnc_which3(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 1e-100 if DS.qleft else 1e100)
     else:
         return(DS.x, 0, 0.)
 
@@ -3682,8 +3682,8 @@ cdef inline (double, int, double) cdftnc_which4(
     DS.reltol = tol
     DS.x = 5.
 
-    if not (0 <= p <= 1.):
-        return (0., -1, 0. if not (p > 0.) else 1.)
+    if not (0 <= p <= (1. - 1e-16)):
+        return (0., -1, 0. if not (p > 0.) else (1. - 1e-16))
     if not (t == t):
         return (0., -3, 0.)
     if not (df > 0.):
@@ -3701,7 +3701,7 @@ cdef inline (double, int, double) cdftnc_which4(
         dinvr(&DS, &DZ)
 
     if DS.status == -1:
-        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else INFINITY)
+        return (DS.x, 1 if DS.qleft else 2, 0. if DS.qleft else 1e6)
     else:
         return(DS.x, 0, 0.)
 

@@ -11,7 +11,7 @@
 build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
-    "Cython>=3.0.4",  # when updating version, also update check in meson.build
+    "Cython>=3.0.8",  # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
     "pythran>=0.14.0",
 
@@ -39,7 +39,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.13.0.dev0"
+version = "1.14.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
@@ -102,6 +102,8 @@ doc = [
     "jupytext",
     "myst-nb",
     "pooch",
+    "jupyterlite-sphinx>=0.12.0",
+    "jupyterlite-pyodide-kernel",
 ]
 dev = [
     "mypy",

@@ -1,34 +1,36 @@
+from libcpp.complex cimport complex as ccomplex
+
 cimport numpy as cnp
 cnp.import_array()
 
-cdef extern from "specfun.h" nogil:
-    void specfun_airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
-    void specfun_bernob(int n, double *bn)
-    void specfun_cerzo(int nt, double complex *zo)
-    void specfun_clpmn(double complex z, int m, int n, int ntype, double complex *cpm, double complex *cpd)
-    void specfun_clpn(int n, double complex z, double complex *cpn, double complex *cpd)
-    void specfun_clqmn(double complex z, int m, int n, double complex *cqm, double complex *cqd)
-    void specfun_clqn(int n, double complex z, double complex *cqn, double complex *cqd)
-    void specfun_cpbdn(int n, double complex z, double complex *cpb, double complex *cpd)
-    void specfun_cyzo(int nt, int kf, int kc, double complex *zo, double complex *zv)
-    void specfun_eulerb(int n, double *en)
-    void specfun_fcoef(int kd, int m, double q, double a, double *fc)
-    void specfun_fcszo(int kf, int nt, double complex *zo)
-    void specfun_jdzo(int nt, double *zo, int *n, int *m, int *p)
-    void specfun_jyzo(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
-    void specfun_klvnzo(int nt, int kd, double *zo)
-    void specfun_lamn(int n, double x, int *nm, double *bl, double *dl)
-    void specfun_lamv(double v, double x, double *vm, double *vl, double *dl)
-    void specfun_lpmn(int m, int n, double x, double *pm, double *pd)
-    void specfun_lpn(int n, double x, double *pn, double *pd)
-    void specfun_lqmn(double x, int m, int n, double *qm, double *qd)
-    void specfun_lqnb(int n, double x, double* qn, double* qd)
-    void specfun_pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
-    void specfun_pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
-    void specfun_rctj(int n, double x, int *nm, double *rj, double *dj)
-    void specfun_rcty(int n, double x, int *nm, double *ry, double *dy)
-    void specfun_sdmn(int m, int n, double c, double cv, double kd, double *df)
-    void specfun_segv(int m, int n, double c, int kd, double *cv, double *eg)
+cdef extern from "special/specfun/specfun.h" nogil:
+    void specfun_airyzo 'special::specfun::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
+    void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
+    void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
+    void specfun_clpmn 'special::specfun::clpmn'(ccomplex[double] z, int m, int n, int ntype, ccomplex[double] *cpm, ccomplex[double] *cpd)
+    void specfun_clpn 'special::specfun::clpn'(int n, ccomplex[double] z, ccomplex[double] *cpn, ccomplex[double] *cpd)
+    void specfun_clqmn 'special::specfun::clqmn'(ccomplex[double] z, int m, int n, ccomplex[double] *cqm, ccomplex[double] *cqd)
+    void specfun_clqn 'special::specfun::clqn'(int n, ccomplex[double] z, ccomplex[double] *cqn, ccomplex[double] *cqd)
+    void specfun_cpbdn 'special::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
+    void specfun_cyzo 'special::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
+    void specfun_eulerb 'special::specfun::eulerb'(int n, double *en)
+    void specfun_fcoef 'special::specfun::fcoef'(int kd, int m, double q, double a, double *fc)
+    void specfun_fcszo 'special::specfun::fcszo'(int kf, int nt, ccomplex[double] *zo)
+    void specfun_jdzo 'special::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
+    void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
+    void specfun_klvnzo 'special::specfun::klvnzo'(int nt, int kd, double *zo)
+    void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
+    void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
+    void specfun_lpmn 'special::specfun::lpmn'(int m, int n, double x, double *pm, double *pd)
+    void specfun_lpn 'special::specfun::lpn'(int n, double x, double *pn, double *pd)
+    void specfun_lqmn 'special::specfun::lqmn'(double x, int m, int n, double *qm, double *qd)
+    void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
+    void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
+    void specfun_rctj 'special::specfun::rctj'(int n, double x, int *nm, double *rj, double *dj)
+    void specfun_rcty 'special::specfun::rcty'(int n, double x, int *nm, double *ry, double *dy)
+    void specfun_sdmn 'special::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
+    void specfun_segv 'special::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
 
 
 def airyzo(int nt, int kf):
@@ -84,23 +86,23 @@ def cerzo(int nt):
     the modified Newton's iteration method. This is a wrapper
     for the function 'specfun_cerzo'.
     """
-    cdef double complex *zzo
+    cdef ccomplex[double] *zzo
     cdef cnp.npy_intp dims[1]
     dims[0] = nt
     zo = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
-    zzo = <cnp.complex128_t *>cnp.PyArray_DATA(zo)
+    zzo = <ccomplex[double] *>cnp.PyArray_DATA(zo)
     specfun_cerzo(nt, zzo)
     return zo
 
 
-def clpmn(int m, int n, double complex z, int ntype):
+def clpmn(int m, int n, ccomplex[double] z, int ntype):
     """
     Compute the associated Legendre functions Pmn(z) and their derivatives
     Pmn'(z) for a complex argument. This is a wrapper for the function
     'specfun_clpmn'.
     """
-    cdef double complex *ccpm
-    cdef double complex *ccpd
+    cdef ccomplex[double] *ccpm
+    cdef ccomplex[double] *ccpd
     cdef cnp.npy_intp dims[2]
     dims[0] = m+1
     dims[1] = n+1
@@ -108,39 +110,39 @@ def clpmn(int m, int n, double complex z, int ntype):
     # specfun_clpmn initializes the array internally
     cpm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
     cpd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    ccpm = <cnp.complex128_t *>cnp.PyArray_DATA(cpm)
-    ccpd = <cnp.complex128_t *>cnp.PyArray_DATA(cpd)
+    ccpm = <ccomplex[double] *>cnp.PyArray_DATA(cpm)
+    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
     specfun_clpmn(z, m, n, ntype, ccpm, ccpd)
     return cpm, cpd
 
 
-def clpn(int n1, double complex z):
+def clpn(int n1, ccomplex[double] z):
     """
     Compute Legendre polynomials Pn(z) and their derivatives Pn'(z) for
     a complex argument. This is a wrapper for the function 'specfun_clpn'.
     """
-    cdef double complex *ccpn
-    cdef double complex *ccpd
+    cdef ccomplex[double] *ccpn
+    cdef ccomplex[double] *ccpd
     cdef cnp.npy_intp dims[1]
     dims[0] = n1 + 1
 
     # specfun_clpn initializes the array internally
     cpn = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
     cpd = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    ccpn = <cnp.complex128_t *>cnp.PyArray_DATA(cpn)
-    ccpd = <cnp.complex128_t *>cnp.PyArray_DATA(cpd)
+    ccpn = <ccomplex[double] *>cnp.PyArray_DATA(cpn)
+    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
     specfun_clpn(n1, z, ccpn, ccpd)
     return cpn, cpd
 
 
-def clqmn(int m, int n, double complex z):
+def clqmn(int m, int n, ccomplex[double] z):
     """
     Compute the associated Legendre functions of the second kind,
     Qmn(z) and Qmn'(z), for a complex argument. This is a wrapper
     for the function 'specfun_clqmn'.
     """
-    cdef double complex *ccqm
-    cdef double complex *ccqd
+    cdef ccomplex[double] *ccqm
+    cdef ccomplex[double] *ccqd
     cdef cnp.npy_intp dims[2]
     dims[0] = m+1
     dims[1] = n+1
@@ -148,48 +150,48 @@ def clqmn(int m, int n, double complex z):
     # specfun_clqmn initializes the array internally
     cqm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
     cqd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    ccqm = <cnp.complex128_t *>cnp.PyArray_DATA(cqm)
-    ccqd = <cnp.complex128_t *>cnp.PyArray_DATA(cqd)
+    ccqm = <ccomplex[double] *>cnp.PyArray_DATA(cqm)
+    ccqd = <ccomplex[double] *>cnp.PyArray_DATA(cqd)
     specfun_clqmn(z, m, n, ccqm, ccqd)
     return cqm, cqd
 
 
-def clqn(int n, double complex z):
+def clqn(int n, ccomplex[double] z):
     """
     Compute the Legendre functions Qn(z) and their derivatives
     Qn'(z) for a complex argument. This is a wrapper for the
     function 'specfun_clqn'.
     """
-    cdef double complex *ccqn
-    cdef double complex *ccqd
+    cdef ccomplex[double] *ccqn
+    cdef ccomplex[double] *ccqd
     cdef cnp.npy_intp dims[1]
     dims[0] = n + 1
 
     # specfun_clpn initializes the array internally
     cqn = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
     cqd = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    ccqn = <cnp.complex128_t *>cnp.PyArray_DATA(cqn)
-    ccqd = <cnp.complex128_t *>cnp.PyArray_DATA(cqd)
-    specfun_clqn(n, z, ccqn, ccqd)
+    ccqn = <ccomplex[double] *>cnp.PyArray_DATA(cqn)
+    ccqd = <ccomplex[double] *>cnp.PyArray_DATA(cqd)
+    specfun_clqn(n, <ccomplex[double]> z, ccqn, ccqd)
     return cqn, cqd
 
 
-def cpbdn(int n, double complex z):
+def cpbdn(int n, ccomplex[double] z):
     """
     Compute the parabolic cylinder functions Dn(z) and Dn'(z)
     for a complex argument. This is a wrapper for the function
     'specfun_cpbdn'.
     """
-    cdef double complex *ccpb
-    cdef double complex *ccpd
+    cdef ccomplex[double] *ccpb
+    cdef ccomplex[double] *ccpd
     cdef cnp.npy_intp dims[1]
     dims[0] = abs(n) + 2
 
     cpb = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
     cpd = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
-    ccpb = <cnp.complex128_t *>cnp.PyArray_DATA(cpb)
-    ccpd = <cnp.complex128_t *>cnp.PyArray_DATA(cpd)
-    specfun_cpbdn(n, z, ccpb, ccpd)
+    ccpb = <ccomplex[double] *>cnp.PyArray_DATA(cpb)
+    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
+    specfun_cpbdn(n, <ccomplex[double]> z, ccpb, ccpd)
     return cpb, cpd
 
 
@@ -199,15 +201,15 @@ def cyzo(int nt, int kf, int kc):
     associated values at the zeros using the modified Newton's
     iteration method. This is a wrapper for the function 'specfun_cyzo'.
     """
-    cdef double complex *zzo
-    cdef double complex *zzv
+    cdef ccomplex[double] *zzo
+    cdef ccomplex[double] *zzv
     cdef cnp.npy_intp dims[1]
     dims[0] = nt
 
     zo = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
     zv = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
-    zzo = <cnp.complex128_t *>cnp.PyArray_DATA(zo)
-    zzv = <cnp.complex128_t *>cnp.PyArray_DATA(zv)
+    zzo = <ccomplex[double] *>cnp.PyArray_DATA(zo)
+    zzv = <ccomplex[double] *>cnp.PyArray_DATA(zv)
     specfun_cyzo(nt, kf, kc, zzo, zzv)
     return zo, zv
 
@@ -248,11 +250,11 @@ def fcszo(int kf, int nt):
     modified Newton's iteration method. This is a wrapper for the
     function 'specfun_fcszo'.
     """
-    cdef double complex *zzo
+    cdef ccomplex[double] *zzo
     cdef cnp.npy_intp dims[1]
     dims[0] = nt
     zo = cnp.PyArray_ZEROS(1, dims, cnp.NPY_COMPLEX128, 0)
-    zzo = <cnp.complex128_t *>cnp.PyArray_DATA(zo)
+    zzo = <ccomplex[double] *>cnp.PyArray_DATA(zo)
     specfun_fcszo(kf, nt, zzo)
     return zo
 

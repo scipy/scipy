@@ -35,7 +35,7 @@ help:
 	@echo "  show      to show the HTML output"
 
 clean:
-	-rm -rf build/* source/reference/generated
+	-rm -rf build/* source/reference/generated source/.jupyterlite.doit.db
 
 
 #------------------------------------------------------------------------------

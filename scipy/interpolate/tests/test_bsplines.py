@@ -618,6 +618,127 @@ class TestBSpline:
         assert_allclose(b(xx), 3)
 
 
+class TestInsert:
+
+    @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
+    def test_insert(self, xval):
+        # insert a knot, incl edges (0.0, 7.0) and exactly at an existing knot (4.0)
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl)     # FITPACK
+        spl_1 = spl.insert_knot(xval)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        # knot insertion preserves values, unless multiplicity >= k+1
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+        # ... repeat with ndim > 1
+        y1 = np.cos(x)**3
+        spl_y1 = make_interp_spline(x, y1, k=3)
+        spl_yy = make_interp_spline(x, np.c_[y, y1], k=3)
+        spl_yy1 = spl_yy.insert_knot(xval)
+
+        assert_allclose(spl_yy1.t, spl_1.t, atol=1e-15)
+        assert_allclose(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
+                                         spl_y1.insert_knot(xval).c], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl_yy(xx), spl_yy1(xx), atol=1e-15)
+
+
+    @pytest.mark.parametrize(
+        'xval, m', [(0.0, 2), (1.0, 3), (1.5, 5), (4, 2), (7.0, 2)]
+    )
+    def test_insert_multi(self, xval, m):
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl, m=m)
+        spl_1 = spl.insert_knot(xval, m)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+    def test_insert_random(self):
+        rng = np.random.default_rng(12345)
+        n, k = 11, 3
+
+        t = np.sort(rng.uniform(size=n+k+1))
+        c = rng.uniform(size=(n, 3, 2))
+        spl = BSpline(t, c, k)
+
+        xv = rng.uniform(low=t[k+1], high=t[-k-1])
+        spl_1 = spl.insert_knot(xv)
+
+        xx = rng.uniform(low=t[k+1], high=t[-k-1], size=33)
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+    @pytest.mark.parametrize('xv', [0, 0.1, 2.0, 4.0, 4.5,      # l.h. edge
+                                    5.5, 6.0, 6.1, 7.0]         # r.h. edge
+    )
+    def test_insert_periodic(self, xv):
+        x = np.arange(8)
+        y = np.sin(x)**3
+        tck = splrep(x, y, k=3)
+        spl = BSpline(*tck, extrapolate="periodic")
+
+        spl_1 = spl.insert_knot(xv)
+        tf, cf, k = insert(xv, spl.tck, per=True)
+
+        assert_allclose(spl_1.t, tf, atol=1e-15)
+        assert_allclose(spl_1.c[:-k-1], cf[:-k-1], atol=1e-15)
+
+        xx = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
+        assert_allclose(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
+
+    def test_insert_periodic_too_few_internal_knots(self):
+        # both FITPACK and spl.insert_knot raise when there's not enough
+        # internal knots to make a periodic extension.
+        # Below the internal knots are 2, 3,    , 4, 5 
+        #                                     ^
+        #                              2, 3, 3.5, 4, 5
+        #   so two knots from each side from the new one, while need at least
+        #   from either left or right.
+        xv = 3.5
+        k = 3
+        t = np.array([0]*(k+1) + [2, 3, 4, 5] + [7]*(k+1))
+        c = np.ones(len(t) - k - 1)
+        spl = BSpline(t, c, k, extrapolate="periodic")
+
+        with assert_raises(ValueError):
+            insert(xv, (t, c, k), per=True)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(xv)
+
+    def test_insert_no_extrap(self):
+        k = 3
+        t = np.array([0]*(k+1) + [2, 3, 4, 5] + [7]*(k+1))
+        c = np.ones(len(t) - k - 1)
+        spl = BSpline(t, c, k)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(-1)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(8)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(3, m=0)
+
+
 def test_knots_multiplicity():
     # Take a spline w/ random coefficients, throw in knots of varying
     # multiplicity.

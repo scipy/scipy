@@ -7,6 +7,7 @@ is granted under the SciPy License.
 #include <Python.h>
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #include "numpy/ndarrayobject.h"
+#include "npy_2_compat.h"
 
 #include "_sigtools.h"
 #include <setjmp.h>
@@ -916,7 +917,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	os = PyArray_ITEMSIZE(ret);
 	op = PyArray_DATA(ret);
 
-	copyswap = PyArray_DESCR(ret)->f->copyswap;
+	copyswap = PyDataType_GetArrFuncs(PyArray_DESCR(ret))->copyswap;
 
 	bytes_in_array = PyArray_NDIM(ap1)*sizeof(npy_intp);
 	mode_dep = malloc(bytes_in_array);

@@ -95,14 +95,14 @@ arpack_lib = static_library('arpack_lib',
 arpack_module = custom_target('arpack_module',
   output: ['_arpackmodule.c', '_arpack-f2pywrappers.f'],
   input: 'arpack.pyf.src',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 _arpack = py3.extension_module('_arpack',
   arpack_module,
-  link_with: [arpack_lib],
+  link_with: [arpack_lib, g77_abi_wrappers],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
+  dependencies: [lapack, blas, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/sparse/linalg/_eigen/arpack'

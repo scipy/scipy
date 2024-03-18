@@ -116,6 +116,7 @@ class BSpline:
     derivative
     antiderivative
     integrate
+    insert_knot
     construct_fast
     design_matrix
     from_power_basis
@@ -829,6 +830,94 @@ class BSpline:
                         * np.power(-1, k - m)\
                         * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
+
+    def insert_knot(self, x, m=1):
+        """Insert a new knot at `x` of multiplicity `m`.
+
+        Given the knots and coefficients of a B-spline representation, create a
+        new B-spline with a knot inserted `m` times at point `x`.
+
+        Parameters
+        ----------
+        x : float
+            The position of the new knot
+        m : int, optional
+            The number of times to insert the given knot (its multiplicity).
+            Default is 1.
+
+        Returns
+        -------
+        spl : BSpline object
+            A new BSpline object with the new knot inserted.
+
+        Notes
+        -----
+        Based on algorithms from [1]_ and [2]_.
+
+        In case of a periodic spline (``self.extrapolate == "periodic"``)
+        there must be either at least k interior knots t(j) satisfying
+        ``t(k+1)<t(j)<=x`` or at least k interior knots t(j) satisfying
+        ``x<=t(j)<t(n-k)``.
+
+        This routine is functionally equivalent to `scipy.interpolate.insert`.
+
+        .. versionadded:: 1.13
+
+        References
+        ----------
+        .. [1] W. Boehm, "Inserting new knots into b-spline curves.",
+            Computer Aided Design, 12, p.199-201, 1980.
+            :doi:`10.1016/0010-4485(80)90154-2`.
+        .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
+            Numerical Analysis", Oxford University Press, 1993.
+
+        See Also
+        --------
+        scipy.interpolate.insert
+
+        Examples
+        --------
+        You can insert knots into a B-spline:
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.linspace(0, 10, 5)
+        >>> y = np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl.t
+        array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
+
+        Insert a single knot
+
+        >>> spl_1 = spl.insert_knot(3)
+        >>> spl_1.t
+        array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
+
+        Insert a multiple knot
+
+        >>> spl_2 = spl.insert_knot(8, m=3)
+        >>> spl_2.t
+        array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
+
+        """
+        if x < self.t[self.k] or x > self.t[-self.k-1]:
+            raise ValueError(f"Cannot insert a knot at {x}.")
+        if m <= 0:
+            raise ValueError(f"`m` must be positive, got {m = }.")
+
+        extradim = self.c.shape[1:]
+        num_extra = prod(extradim)
+
+        tt = self.t.copy()
+        cc = self.c.copy()
+        cc = cc.reshape(-1, num_extra)
+
+        for _ in range(m):
+            tt, cc = _bspl.insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+
+        return self.construct_fast(
+            tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
+        )
 
 
 #################################

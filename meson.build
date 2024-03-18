@@ -4,7 +4,7 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.13.0.dev0',
+  version: '1.14.0.dev0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
@@ -48,8 +48,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=3.0.4')
-  error('SciPy requires Cython >= 3.0.4')
+if not cy.version().version_compare('>=3.0.8')
+  error('SciPy requires Cython >= 3.0.8')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -130,8 +130,8 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
   version_link_args = []
 endif
 
-generate_f2pymod = files('tools/generate_f2pymod.py')
-tempita = files('scipy/_build_utils/tempita.py')
+generate_f2pymod = find_program('tools/generate_f2pymod.py')
+tempita = find_program('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran

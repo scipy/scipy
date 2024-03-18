@@ -199,17 +199,17 @@ uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
-  g77_abi_wrappers = declare_dependency(
-    sources:
-      [
-        '_build_utils/src/wrap_g77_abi_f.f',
-        '_build_utils/src/wrap_g77_abi_c.c'
-      ],
-    include_directories: inc_np,
-    dependencies: [py3_dep, cblas],
+  g77_abi_wrappers = static_library(
+    'g77_abi_wrappers',
+    ['_build_utils/src/wrap_g77_abi.c'],
+    dependencies: [py3_dep, cblas, blas, np_dep],
   )
 else
-  g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
+  g77_abi_wrappers = static_library(
+    'dummy_g77_abi_wrappers',
+    ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    dependencies: [py3_dep, blas, np_dep],
+  )
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
@@ -268,6 +268,19 @@ cython_gen_cpp = generator(cython,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
+if use_pythran
+  pythran_gen = generator(pythran,
+    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
+    output : '@BASENAME@.cpp',
+  )
+endif
+
+# Used for templated C code (not Cython code since Cython is path-dependent)
+tempita_gen = generator(tempita,
+  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
+  output : '@BASENAME@',
+)
+
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
 # because we want to be able to build with `-Werror` in CI; that ensures that
@@ -291,7 +304,6 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
-Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')

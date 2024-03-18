@@ -507,7 +507,7 @@ class BenchGlobal(Benchmark):
 
     params = [
         list(_functions.keys()),
-        ["success%", "<nfev>"],
+        ["success%", "<nfev>", "average time"],
         ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
@@ -549,6 +549,8 @@ class BenchGlobal(Benchmark):
                         / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
 
@@ -571,6 +573,8 @@ class BenchGlobal(Benchmark):
                         / av_results[solver]['ntrials'])
             elif ret_value == '<nfev>':
                 return av_results[solver]['mean_nfev']
+            elif ret_value == 'average time':
+                return av_results[solver]['mean_time']
             else:
                 raise ValueError()
         except Exception:
