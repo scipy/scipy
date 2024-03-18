@@ -235,21 +235,16 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Setup OS
+      - name: Setup system dependencies
         run: |
           sudo apt-get -y update
           sudo apt install -y g++-8 gcc-8 gfortran-8
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
             libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
 
-      - name: Setup Python deps
+      - name: Setup Python build deps
         run: |
-          pip install "numpy==1.22.4" &&
-          # build deps
-          pip install build meson-python ninja pythran pybind11 cython
-          # test deps
-          pip install gmpy2 threadpoolctl mpmath pooch pythran pybind11 pytest pytest-xdist==2.5.0 pytest-timeout hypothesis
-          pip install sparse
+          pip install build meson-python ninja pythran pybind11 cython "numpy>=2.0.0b1"
 
       - name: Build wheel and install
         run: |
@@ -259,6 +254,11 @@ jobs:
           # specify which compilers to use using environment variables
           CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
           python -m pip install dist/scipy*.whl
+
+      - name: Install test dependencies
+        run: |
+          # Downgrade numpy to oldest supported version
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.22.4"
 
       - name: Run tests
         run: |
