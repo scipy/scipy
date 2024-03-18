@@ -1065,7 +1065,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn(f"Changing the sparsity structure of {self.format} format
+            warn(f"Changing the sparsity structure of {self.format} format"
                  " is expensive. lil or dok is more efficient.",
                  SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
