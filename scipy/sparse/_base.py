@@ -328,10 +328,9 @@ class _spbase:
     def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements in {format_name} format>"
+            f"<{format_name} sparse {sparse_cls} of type '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements and shape {self.shape}>"
         )
 
     def __str__(self):
