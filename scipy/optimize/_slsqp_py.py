@@ -1,6 +1,8 @@
 """
-This module implements the Sequential Least Squares Programming optimization
-algorithm (SLSQP), originally developed by Dieter Kraft.
+This module implements the algorithm taken from
+"Sequential Least Squares Programming" optimization algorithm (SLSQP),
+originally developed by Dieter Kraft in Fortran77.
+
 See http://www.netlib.org/toms/733
 
 Functions
@@ -20,10 +22,9 @@ from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, concatenate, finfo,
                    sqrt, vstack, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
-                        _prepare_scalar_function, _clip_x_for_func,
-                        _check_clip_x)
+                        _prepare_scalar_function)
 from ._numdiff import approx_derivative
-from ._constraints import old_bound_to_new, _arr_to_scalar
+from ._constraints import old_bound_to_new, _arr_to_scalar, Bounds
 from scipy._lib._array_api import atleast_nd, array_namespace
 
 # deprecated imports to be removed in SciPy 1.13.0
@@ -33,6 +34,89 @@ from numpy import exp, inf  # noqa: F401
 __docformat__ = "restructuredtext en"
 
 _epsilon = sqrt(finfo(float).eps)
+
+
+def _extract_bounds(B: Bounds | None, n: int):
+    """
+    A helper function that converts the information encoded by a Bounds instance to
+    separate lower and upper bounds with the finite entry indices to be used in SLSQP.
+
+    Parameters
+    ----------
+    bounds : Bounds, None
+        Bounds object instance to be decoded.
+    n : int
+        Length of the independent variable vector x for the SLSQP problem.
+
+    Returns
+    -------
+    LB: ndarray
+        If any, the finite lower bound entries. Returns None if none found.
+    LB_ind: list
+        If any, the indices of finite entries. Returns [] if none found.
+    UB: ndarray
+        If any, the finite upper bound entries. Returns None if none found.
+    UB_ind: list
+        If any, the indices of finite entries. Returns [] if none found.
+
+    """
+    # There are too many cases that can go wrong hence check the common convenience
+    # cases and bail out otherwise.
+
+    # No bounds given
+    if not B:
+        return None, [], None, []
+
+    # if it is a scalar inside array, take it out so that it enters the scalar branch
+    if isinstance(B.lb, np.ndarray) and B.lb.size == 1:
+        B.lb = B.lb.item()
+    if isinstance(B.ub, np.ndarray) and B.ub.size == 1:
+        B.ub = B.ub.item()
+
+    # Is it a scalar setting like B.lb = 4.5 to be broadcasted
+    if not isinstance(B.lb, np.ndarray):
+        # Assuming scalar given; check if it is finite
+        if np.isfinite(B.lb):
+            # OK finite entry hence all variables are bounded.
+            LB = np.ones(n, dtype=np.float64)*B.lb
+            LB_ind = [i for i in range(n)]
+        else:
+            # infinity given -> no bounds
+            LB = None
+            LB_ind = []
+    elif isinstance(B.lb, np.ndarray):
+        # OK array given check if it is n-long, scalar case was handled above
+        if len(B.lb) != n:
+            raise ValueError("The lower bound array size is not compatible with the "
+                             "variable vector 'x'")
+        else:
+            LB_ind = np.isfinite(B.lb).nonzero()[0].tolist()
+            LB = B.lb[LB_ind] if LB_ind else None
+    else:
+        raise TypeError("The lower bound array size should either be a NumPy array"
+                        f"or a real scalar. However {type(B.lb)} is given.")
+
+    # Do the same for the upper bound
+    if not isinstance(B.ub, np.ndarray):
+        if np.isfinite(B.ub):
+            UB = np.ones(n, dtype=np.float64)*B.ub
+            UB_ind = [i for i in range(n)]
+        else:
+            UB = None
+            UB_ind = []
+    elif isinstance(B.ub, np.ndarray):
+        if len(B.ub) != n:
+            raise ValueError("The upper bound array size is not compatible with the "
+                             "variable vector 'x'")
+        else:
+            UB_ind = np.isfinite(B.ub).nonzero()[0].tolist()
+            UB = B.ub[UB_ind] if UB_ind else None
+
+    else:
+        raise TypeError("The upper bound array size should either be a NumPy array"
+                        f"or a real scalar. However {type(B.ub)} is given.")
+
+    return LB, LB_ind, UB, UB_ind
 
 
 def approx_jacobian(x, func, epsilon, *args):
@@ -105,7 +189,7 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
     bounds : list, optional
         A list of tuples specifying the lower and upper bound
         for each independent variable [(xl0, xu0),(xl1, xu1),...]
-        Infinite values will be interpreted as large floating values.
+        Infinite values will be interpreted as unbounded and discarded.
     fprime : callable `f(x,*args)`, optional
         A function that evaluates the partial derivatives of func.
     fprime_eqcons : callable `f(x,*args)`, optional
@@ -207,6 +291,10 @@ def fmin_slsqp(func, x0, eqcons=(), f_eqcons=None, ieqcons=(), f_ieqcons=None,
         cons += ({'type': 'ineq', 'fun': f_ieqcons, 'jac': fprime_ieqcons,
                   'args': args}, )
 
+    #
+    # FIXME: Convert bounds to Bounds object
+    #
+
     res = _minimize_slsqp(func, x0, args, jac=fprime, bounds=bounds,
                           constraints=cons, **opts)
     if full_output:
@@ -244,9 +332,19 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         automatically.
     """
     _check_unknown_options(unknown_options)
+
     iter = maxiter - 1
     acc = ftol
     epsilon = eps
+
+    exit_modes = {2: "More equality constraints than independent variables",
+                  3: "More than 3*n iterations in LSQ subproblem",
+                  4: "Inequality constraints incompatible",
+                  5: "Singular matrix E in LSQ subproblem",
+                  6: "Singular matrix C in LSQ subproblem",
+                  7: "Rank-deficient equality constraint subproblem HFTI",
+                  8: "Positive directional derivative for linesearch",
+                  9: "Iteration limit reached"}
 
     if not disp:
         iprint = 0
@@ -259,15 +357,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         dtype = x0.dtype
     x = xp.reshape(xp.astype(x0, dtype), -1)
 
-    # SLSQP is sent 'old-style' bounds, 'new-style' bounds are required by
-    # ScalarFunction
-    if bounds is None or len(bounds) == 0:
-        new_bounds = (-np.inf, np.inf)
-    else:
-        new_bounds = old_bound_to_new(bounds)
+    LB, LB_ind, UB, UB_ind = _extract_bounds(bounds, len(x))
 
-    # clip the initial guess to bounds, otherwise ScalarFunction doesn't work
-    x = np.clip(x, new_bounds[0], new_bounds[1])
+    # mbounds = The number of finite upper or lower bounds
+    B_ind = LB_ind + UB_ind
+    mlbounds = len(LB_ind)
+    mbounds = len(B_ind)
 
     # Constraints are triaged per type into a dictionary of tuples
     if isinstance(constraints, dict):
@@ -279,7 +374,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         try:
             ctype = con['type'].lower()
         except KeyError as e:
-            raise KeyError('Constraint %d has no type defined.' % ic) from e
+            raise KeyError(f'Constraint {ic} has no type defined.') from e
         except TypeError as e:
             raise TypeError('Constraints must be defined using a '
                             'dictionary.') from e
@@ -287,7 +382,8 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             raise TypeError("Constraint's type must be a string.") from e
         else:
             if ctype not in ['eq', 'ineq']:
-                raise ValueError("Unknown constraint type '%s'." % con['type'])
+                raise ValueError(f"Unknown constraint type '{con['type']}'."
+                                 " Known types are 'eq' and 'ineq'.")
 
         # check function
         if 'fun' not in con:
@@ -300,16 +396,16 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
             # to keep a reference to `fun`, see gh-4240.
             def cjac_factory(fun):
                 def cjac(x, *args):
-                    x = _check_clip_x(x, new_bounds)
+                    x = _check_clip_x(x, bounds)
 
                     if jac in ['2-point', '3-point', 'cs']:
                         return approx_derivative(fun, x, method=jac, args=args,
                                                  rel_step=finite_diff_rel_step,
-                                                 bounds=new_bounds)
+                                                 bounds=bounds)
                     else:
                         return approx_derivative(fun, x, method='2-point',
                                                  abs_step=epsilon, args=args,
-                                                 bounds=new_bounds)
+                                                 bounds=bounds)
 
                 return cjac
             cjac = cjac_factory(con['fun'])
@@ -319,195 +415,148 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
                          'jac': cjac,
                          'args': con.get('args', ())}, )
 
-    exit_modes = {-1: "Gradient evaluation required (g & a)",
-                   0: "Optimization terminated successfully",
-                   1: "Function evaluation required (f & c)",
-                   2: "More equality constraints than independent variables",
-                   3: "More than 3*n iterations in LSQ subproblem",
-                   4: "Inequality constraints incompatible",
-                   5: "Singular matrix E in LSQ subproblem",
-                   6: "Singular matrix C in LSQ subproblem",
-                   7: "Rank-deficient equality constraint subproblem HFTI",
-                   8: "Positive directional derivative for linesearch",
-                   9: "Iteration limit reached"}
-
-    # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-              for c in cons['eq']]))
-    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-               for c in cons['ineq']]))
-    # m = The total number of constraints
-    m = meq + mieq
-    # la = The number of constraints, or 1 if there are no constraints
-    la = array([1, m]).max()
+    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['eq']]))
+    mineq = sum(map(len, [atleast_1d(c['fun'](x, *c['args'])) for c in cons['ineq']]))
+
+    # m = The total number of constraints (excluding bounds)
+    m = meq + mineq
     # n = The number of independent variables
     n = len(x)
-
-    # Define the workspaces for SLSQP
-    n1 = n + 1
-    mineq = m - meq + n1 + n1
-    len_w = (3*n1+m)*(n1+1)+(n1-meq+1)*(mineq+2) + 2*mineq+(n1+mineq)*(n1-meq) \
-            + 2*meq + n1 + ((n+1)*n)//2 + 2*m + 3*n + 3*n1 + 1
-    len_jw = mineq
-    w = zeros(len_w)
-    jw = zeros(len_jw)
-
-    # Decompose bounds into xl and xu
-    if bounds is None or len(bounds) == 0:
-        xl = np.empty(n, dtype=float)
-        xu = np.empty(n, dtype=float)
-        xl.fill(np.nan)
-        xu.fill(np.nan)
-    else:
-        bnds = array([(_arr_to_scalar(l), _arr_to_scalar(u))
-                      for (l, u) in bounds], float)
-        if bnds.shape[0] != n:
-            raise IndexError('SLSQP Error: the length of bounds is not '
-                             'compatible with that of x0.')
-
-        with np.errstate(invalid='ignore'):
-            bnderr = bnds[:, 0] > bnds[:, 1]
-
-        if bnderr.any():
-            raise ValueError('SLSQP Error: lb > ub in bounds %s.' %
-                             ', '.join(str(b) for b in bnderr))
-        xl, xu = bnds[:, 0], bnds[:, 1]
-
-        # Mark infinite bounds with nans; the Fortran code understands this
-        infbnd = ~isfinite(bnds)
-        xl[infbnd[:, 0]] = np.nan
-        xu[infbnd[:, 1]] = np.nan
 
     # ScalarFunction provides function and gradient evaluation
     sf = _prepare_scalar_function(func, x, jac=jac, args=args, epsilon=eps,
                                   finite_diff_rel_step=finite_diff_rel_step,
-                                  bounds=new_bounds)
+                                  bounds=bounds)
     # gh11403 SLSQP sometimes exceeds bounds by 1 or 2 ULP, make sure this
     # doesn't get sent to the func/grad evaluator.
-    wrapped_fun = _clip_x_for_func(sf.fun, new_bounds)
-    wrapped_grad = _clip_x_for_func(sf.grad, new_bounds)
-
-    # Initialize the iteration counter and the mode value
-    mode = array(0, int)
-    acc = array(acc, float)
-    majiter = array(iter, int)
-    majiter_prev = 0
-
-    # Initialize internal SLSQP state variables
-    alpha = array(0, float)
-    f0 = array(0, float)
-    gs = array(0, float)
-    h1 = array(0, float)
-    h2 = array(0, float)
-    h3 = array(0, float)
-    h4 = array(0, float)
-    t = array(0, float)
-    t0 = array(0, float)
-    tol = array(0, float)
-    iexact = array(0, int)
-    incons = array(0, int)
-    ireset = array(0, int)
-    itermx = array(0, int)
-    line = array(0, int)
-    n1 = array(0, int)
-    n2 = array(0, int)
-    n3 = array(0, int)
+    wrapped_fun = _clip_x_for_func(sf.fun, bounds)
+    wrapped_grad = _clip_x_for_func(sf.grad, bounds)
 
     # Print the header if iprint >= 2
     if iprint >= 2:
         print("%5s %5s %16s %16s" % ("NIT", "FC", "OBJFUN", "GNORM"))
 
-    # mode is zero on entry, so call objective, constraints and gradients
-    # there should be no func evaluations here because it's cached from
-    # ScalarFunction
+    # Call objective, constraints and gradients, there should be no func
+    # evaluations here because it's cached from ScalarFunction
     fx = wrapped_fun(x)
     g = append(wrapped_grad(x), 0.0)
-    c = _eval_constraint(x, cons)
-    a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
-    while 1:
+    # ===========================================
+    # Prepare the least squares problem arguments
+    # ===========================================
+
+    # If any, evaluate all meq-many eq. constraints into (E)quality array
+    # of Ex = f
+    if meq:
+        E = np.zeros([meq, n])
+        f = np.zeros(n)
+        for ind, eqc in enumerate(cons['eq']):
+            E[ind, :] = eqc['jac'](x, *eqc['args'])
+            f[ind] = eqc['fun'](x, *eqc['args'])
+    else:
+        E = np.empty([0, 0])
+        f = np.array([])
+
+    # Same with inequality constraints to Gx >= h, including bounds on x
+
+    # Are there any inequalities?
+    if mineq + mbounds > 0:
+        # +1 is for the additional variable to avoid inconsistent linearization
+        G = np.zeros([mineq + mbounds + 1, n])
+        h = np.zeros([mineq + mbounds + 1])
+
+        if mineq:
+            for ind, ineqc in enumerate(cons['ineq']):
+                G[ind, :] = con['jac'](x, *con['args'])
+                h[ind] = ineqc['fun'](x, *ineqc['args'])
+
+        # We are only interested in finite entries in the bounds which will
+        # enter the inequality constraints as new rows of Gx >= h as the
+        # following
+        #
+        #
+        #
+        #     [...              ]        [       ]
+        #     [inequality const.]        [       ]
+        #     [...              ]        [       ]
+        #     [0 1 0 ... 0 0 0 0]        [ xl[1] ] <-----------------
+        #     [0 0 0 ... 0 0 1 0] * X >= [ xl[k] ]     |- mlbounds  |
+        #     [      ...        ]        [  ..   ] <---             |- mbounds
+        #     [0-1 0 ... 0 0 0 0]        [-xu[1] ]                  |
+        #     [0 0 0 ...-1 0 0 0]        [-xu[j] ] <----------------
+        #
+        #
+        #           [G]             X >=     h
+        #
+        #
+        # Infinite entries are discarded. Thus, we need the independent
+        #  variable indices for the LHS and the value for the RHS
+        # G will be constant however the right hand side will be changing
+        # across iterations.
+
+        if mbounds:
+            G[[i for i in range(mineq, mineq+mlbounds)], LB_ind] = 1.
+            G[[i for i in range(mineq+mlbounds, mineq+mbounds)], UB_ind] = -1.
+            h[mineq:mineq+mlbounds] = LB - x[LB_ind]
+            h[mineq+mlbounds:-1] = UB - x[UB_ind]
+
+    # ====================
+    # Start main iteration
+    # ====================
+
+    for iter in maxiter:
         # Call SLSQP
-        slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
-              alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-              iexact, incons, ireset, itermx, line,
-              n1, n2, n3)
 
-        if mode == 1:  # objective and constraint evaluation required
-            fx = wrapped_fun(x)
-            c = _eval_constraint(x, cons)
 
-        if mode == -1:  # gradient evaluation required
-            g = append(wrapped_grad(x), 0.0)
-            a = _eval_con_normals(x, cons, la, n, m, meq, mieq)
 
-        if majiter > majiter_prev:
-            # call callback if major iteration has incremented
-            if callback is not None:
-                callback(np.copy(x))
+
+
+        # objective and constraint evaluation required
+        fx = wrapped_fun(x)
+        # Compute constraints
+        if cons['eq']:
+            c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
+                                for con in cons['eq']])
+
+        if cons['ineq']:
+            c_ieq = concatenate([atleast_1d(con['fun'](x, *con['args']))
+                                 for con in cons['ineq']])
+
+        # gradient evaluation required
+        g = append(wrapped_grad(x), 0.0)
+        # Compute the normals of the constraints
+        if cons['eq']:
+            a_eq = vstack([con['jac'](x, *con['args'])
+                          for con in cons['eq']])
+
+        if cons['ineq']:
+            a_ieq = vstack([con['jac'](x, *con['args'])
+                           for con in cons['ineq']])
+
+
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
                 print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
                                                    fx, linalg.norm(g)))
 
-        # If exit mode is not -1 or 1, slsqp has completed
-        if abs(mode) != 1:
-            break
+        # End of iteration do callbacks
+        if callback is not None:
+            callback(np.copy(x))
 
-        majiter_prev = int(majiter)
+    else:  # all iterations are exhausted
+        # TODO: Maxiter reached
+        mode = 9
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
         print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
         print("            Current function value:", fx)
-        print("            Iterations:", majiter)
+        print("            Iterations:", iter)
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(iter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(mode),
                           message=exit_modes[int(mode)], success=(mode == 0))
-
-
-def _eval_constraint(x, cons):
-    # Compute constraints
-    if cons['eq']:
-        c_eq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                            for con in cons['eq']])
-    else:
-        c_eq = zeros(0)
-
-    if cons['ineq']:
-        c_ieq = concatenate([atleast_1d(con['fun'](x, *con['args']))
-                             for con in cons['ineq']])
-    else:
-        c_ieq = zeros(0)
-
-    # Now combine c_eq and c_ieq into a single matrix
-    c = concatenate((c_eq, c_ieq))
-    return c
-
-
-def _eval_con_normals(x, cons, la, n, m, meq, mieq):
-    # Compute the normals of the constraints
-    if cons['eq']:
-        a_eq = vstack([con['jac'](x, *con['args'])
-                       for con in cons['eq']])
-    else:  # no equality constraint
-        a_eq = zeros((meq, n))
-
-    if cons['ineq']:
-        a_ieq = vstack([con['jac'](x, *con['args'])
-                        for con in cons['ineq']])
-    else:  # no inequality constraint
-        a_ieq = zeros((mieq, n))
-
-    # Now combine a_eq and a_ieq into a single a matrix
-    if m == 0:  # no constraints
-        a = zeros((la, n))
-    else:
-        a = vstack((a_eq, a_ieq))
-    a = concatenate((a, zeros([la, 1])), 1)
-
-    return a
