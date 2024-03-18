@@ -859,7 +859,7 @@ class _TestCommon:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive",
+                "Changing the sparsity structure of cs[cr] format is expensive",
             )
             assert_raises(ValueError, m.setdiag, values, k=4)
             m.setdiag(values)
@@ -2335,7 +2335,7 @@ class _TestGetSet:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[0, 0] = dtype.type(0)  # bug 870
                 A[1, 2] = dtype.type(4.0)
@@ -2377,7 +2377,7 @@ class _TestGetSet:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[0, -4] = 1
             assert_equal(A[0, -4], 1)
@@ -2394,7 +2394,7 @@ class _TestGetSet:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[i, j] = 1
             assert_almost_equal(A.sum(), nitems, err_msg=msg)
@@ -2411,7 +2411,7 @@ class _TestGetSet:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             for C in [A, B]:
                 C[0,1] = 1
@@ -2672,7 +2672,7 @@ class _TestSlicingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             for C in [A, B]:
                 C[0:1,1] = 1
@@ -2691,7 +2691,7 @@ class _TestSlicingAssign:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[i, j] = 1
             B = np.zeros((n, m))
@@ -2709,7 +2709,7 @@ class _TestSlicingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             B[0,0] = 2
             B[1,2] = 7
@@ -2739,7 +2739,7 @@ class _TestSlicingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             B[0,0] = 5
             B[1,2] = 3
@@ -2755,7 +2755,7 @@ class _TestSlicingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             B[0,0] = 5
             B[1,2] = 3
@@ -2778,7 +2778,7 @@ class _TestSlicingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             for j, a in enumerate(slices):
                 A[a] = j
@@ -3124,7 +3124,7 @@ class _TestFancyIndexingAssign:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 B[i, j] = 1
                 with check_remains_sorted(A):
@@ -3144,7 +3144,7 @@ class _TestFancyIndexingAssign:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[[0,1],[0,1]] = dtype.type(1)
                 assert_equal(A.sum(), dtype.type(1)*2)
@@ -3167,7 +3167,7 @@ class _TestFancyIndexingAssign:
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             with check_remains_sorted(A):
                 A[0,i0] = B[i0,0].T
@@ -3305,7 +3305,7 @@ class _TestFancyMultidimAssign:
             with check_remains_sorted(A), suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 A[i, j] = 1
             B = asmatrix(np.zeros((n, m)))
@@ -3787,7 +3787,7 @@ class TestCSR(sparse_test_class()):
     def spcreator(cls, *args, **kwargs):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a csr_matrix is expensive")
+                       "Changing the sparsity structure of csr format is expensive")
             return csr_matrix(*args, **kwargs)
     math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
@@ -4040,7 +4040,7 @@ class TestCSC(sparse_test_class()):
     def spcreator(cls, *args, **kwargs):
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning,
-                       "Changing the sparsity structure of a csc_matrix is expensive")
+                       "Changing the sparsity structure of csc format is expensive")
             return csc_matrix(*args, **kwargs)
     math_dtypes = [np.bool_, np.int_, np.float64, np.complex128]
 
@@ -4885,7 +4885,7 @@ class _NonCanonicalMixin:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                    "Changing the sparsity structure of cs[cr] format is expensive"
                 )
                 M = self._insert_explicit_zero(M, zero_pos[0][k], zero_pos[1][k])
 
@@ -4972,7 +4972,7 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             A[1,:] = B
         assert_array_equal(A.toarray(), D)
@@ -4981,7 +4981,7 @@ class _NonCanonicalCSMixin(_NonCanonicalCompressedMixin):
         with suppress_warnings() as sup:
             sup.filter(
                 SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive"
+                "Changing the sparsity structure of cs[cr] format is expensive"
             )
             A[:,2] = B.T
         assert_array_equal(A.toarray(), D)
