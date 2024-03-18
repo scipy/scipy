@@ -7,7 +7,7 @@ import scipy as sp
 from .test_arithmetic1d import toarray
 
 
-formats_for_index1d = [sp.sparse.csr_array]
+formats_for_index1d = [sp.sparse.csr_array, sp.sparse.dok_array]
 
 
 @contextlib.contextmanager
@@ -249,7 +249,6 @@ class TestSlicingAndFancy1D:
             A = B / 10
             B[:] = A[:]
             assert_equal(A[:].toarray(), B[:].toarray())
-            B.eliminate_zeros()
 
             A = B / 10
             B[:] = A[:1]
