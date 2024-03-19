@@ -98,86 +98,6 @@ static PyObject *cspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
 }
 
-static char doc_qspline2d[] = "out = qspline2d(input, lambda=0.0, precision=-1.0)\n"
-"\n"
-"    Coefficients for 2-D quadratic (2nd order) B-spline:\n"
-"\n"
-"    Return the second-order B-spline coefficients over a regularly spaced\n"
-"    input grid for the two-dimensional input image.\n"
-"\n"
-"    Parameters\n"
-"    ----------\n"
-"    input : ndarray\n"
-"        The input signal.\n"
-"    lambda : float\n"
-"        Specifies the amount of smoothing in the transfer function.\n"
-"    precision : float\n"
-"        Specifies the precision for computing the infinite sum needed to apply mirror-\n"
-"        symmetric boundary conditions.\n"
-"\n"
-"    Returns\n"
-"    -------\n"
-"    output : ndarray\n"
-"        The filtered signal.\n"
-"\n"
-"    Examples\n"
-"    --------\n"
-"    Examples are given :ref:`in the tutorial <tutorial-signal-bsplines>`.\n"
-"\n";
-
-static PyObject *qspline2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
-{
-  PyObject *image=NULL;
-  PyArrayObject *a_image=NULL, *ck=NULL;
-  double lambda = 0.0;
-  double precision = -1.0;
-  int thetype, M, N, retval=0;
-  npy_intp outstrides[2], instrides[2];
-
-  if (!PyArg_ParseTuple(args, "O|dd", &image, &lambda, &precision)) return NULL;
-
-  if (lambda != 0.0) PYERR("Smoothing spline not yet implemented.");
-
-  thetype = PyArray_ObjectType(image, NPY_FLOAT);
-  thetype = PyArray_MIN(thetype, NPY_DOUBLE);
-  a_image = (PyArrayObject *)PyArray_FromObject(image, thetype, 2, 2);
-  if (a_image == NULL) goto fail;
-
-  ck = (PyArrayObject *)PyArray_SimpleNew(2, PyArray_DIMS(a_image), thetype);
-  if (ck == NULL) goto fail;
-  M = PyArray_DIMS(a_image)[0];
-  N = PyArray_DIMS(a_image)[1];
-
-  convert_strides(PyArray_STRIDES(a_image), instrides, PyArray_ITEMSIZE(a_image), 2);
-  outstrides[0] = N;
-  outstrides[1] = 1;
-
-  if (thetype == NPY_FLOAT) {
-    if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-3;
-    retval = S_quadratic_spline2D((float *)PyArray_DATA(a_image),
-                                  (float *)PyArray_DATA(ck),
-                                  M, N, lambda, instrides, outstrides, precision);
-  }
-  else if (thetype == NPY_DOUBLE) {
-    if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-    retval = D_quadratic_spline2D((double *)PyArray_DATA(a_image),
-                                  (double *)PyArray_DATA(ck),
-                                  M, N, lambda, instrides, outstrides, precision);
-  }
-
-  if (retval == -3) PYERR("Precision too high.  Error did not converge.");
-  if (retval < 0) PYERR("Problem occurred inside routine");
-
-  Py_DECREF(a_image);
-  return PyArray_Return(ck);
-
- fail:
-  Py_XDECREF(a_image);
-  Py_XDECREF(ck);
-  return NULL;
-
-}
-
 static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "\n"
 "    Convolve with a 2-D separable FIR filter.\n"
@@ -345,7 +265,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
-  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
+  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) goto fail;
 
@@ -631,9 +551,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
 
 static struct PyMethodDef toolbox_module_methods[] = {
     {"cspline2d", cspline2d, METH_VARARGS, doc_cspline2d},
-    {"qspline2d", qspline2d, METH_VARARGS, doc_qspline2d},
     {"sepfir2d", FIRsepsym2d, METH_VARARGS, doc_FIRsepsym2d},
-    // {"symiirorder2", IIRsymorder2, METH_VARARGS, doc_IIRsymorder2},
     {"symiirorder1_ic", IIRsymorder1_ic, METH_VARARGS, doc_IIRsymorder1_ic},
     {"symiirorder2_ic_fwd", IIRsymorder2_ic_fwd, METH_VARARGS, doc_IIRsymorder2_ic_fwd},
     {"symiirorder2_ic_bwd", IIRsymorder2_ic_bwd, METH_VARARGS,doc_IIRsymorder2_ic_bwd },
