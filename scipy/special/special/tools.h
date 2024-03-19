@@ -8,6 +8,18 @@
 namespace special {
 namespace detail {
 
+    // Return NaN, handling both real and complex types.
+    template <typename T>
+    SPECFUN_HOST_DEVICE inline std::enable_if_t<std::is_floating_point_v<T>, T> maybe_complex_NaN() {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    template <typename T>
+    SPECFUN_HOST_DEVICE inline std::enable_if_t<!std::is_floating_point_v<T>, T> maybe_complex_NaN() {
+        using V = typename T::value_type;
+        return {std::numeric_limits<V>::quiet_NaN(), std::numeric_limits<V>::quiet_NaN()};
+    }
+
     // Series evaluators.
     template <typename Generator, typename T>
     SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, double tol, std::uint64_t max_terms,
@@ -39,12 +51,7 @@ namespace detail {
         }
         // Exceeded max terms without converging. Return NaN.
         set_error(func_name, SF_ERROR_NO_RESULT, NULL);
-        if constexpr (std::is_floating_point<T>::value) {
-            return std::numeric_limits<T>::quiet_NaN();
-        }
-        // If result type is not a floating point type, assume it is complex.
-        using FloatingType = typename T::value_type;
-        return T(std::numeric_limits<FloatingType>::quiet_NaN(), std::numeric_limits<FloatingType>::quiet_NaN());
+        return maybe_complex_NaN<T>();
     }
 
     template <typename Generator, typename T>
