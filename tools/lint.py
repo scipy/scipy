@@ -71,7 +71,7 @@ def run_ruff(files, fix):
         return 0, ""
     args = ['--fix', '--exit-non-zero-on-fix'] if fix else []
     res = subprocess.run(
-        ['ruff', f'--config={CONFIG}'] + args + list(files),
+        ['ruff', 'check', f'--config={CONFIG}'] + args + list(files),
         stdout=subprocess.PIPE,
         encoding='utf-8'
     )

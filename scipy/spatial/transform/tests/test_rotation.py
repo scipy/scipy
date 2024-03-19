@@ -1584,6 +1584,7 @@ def test_pow():
     p_inv = p.inv()
     # Test the short-cuts and other integers
     for n in [-5, -2, -1, 0, 1, 2, 5]:
+        # Test accuracy
         q = p ** n
         r = Rotation.identity(10)
         for _ in range(abs(n)):
@@ -1593,6 +1594,12 @@ def test_pow():
                 r = r * p_inv
         ang = (q * r.inv()).magnitude()
         assert np.all(ang < atol)
+
+        # Test shape preservation
+        r = Rotation.from_quat([0, 0, 0, 1])
+        assert (r**n).as_quat().shape == (4,)
+        r = Rotation.from_quat([[0, 0, 0, 1]])
+        assert (r**n).as_quat().shape == (1, 4)
 
     # Large angle fractional
     for n in [-1.5, -0.5, -0.0, 0.0, 0.5, 1.5]:

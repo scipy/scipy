@@ -1636,6 +1636,26 @@ class TestWilcoxon:
         d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
+    @pytest.mark.parametrize('size', [3, 5, 10])
+    def test_permutation_method(self, size):
+        rng = np.random.default_rng(92348034828501345)
+        x = rng.random(size=size)
+        res = stats.wilcoxon(x, method=stats.PermutationMethod())
+        ref = stats.wilcoxon(x, method='exact')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        x = rng.random(size=size*10)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        ref = stats.wilcoxon(x, method=pm)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        res = stats.wilcoxon(x, method=pm)
+
+        assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
+        assert_equal(res.pvalue, ref.pvalue)  # random_state used
+
 
 class TestKstat:
     def test_moments_normal_distribution(self):

@@ -140,7 +140,7 @@ class TestVq:
         label1 = py_vq(xp.asarray(X), xp.asarray(initc))[0]
         xp_assert_equal(label1, xp.asarray(LABEL1, dtype=xp.int64),
                         check_dtype=False)
-      
+
     @pytest.mark.skipif(SCIPY_ARRAY_API,
                         reason='`np.matrix` unsupported in array API mode')
     def test_py_vq_matrix(self, xp):
@@ -327,16 +327,16 @@ class TestKMean:
         k = 3
 
         kmeans2(data, k, minit='points')
-        kmeans2(data[:, :1], k, minit='points')  # special case (1-D)
+        kmeans2(data[:, 1], k, minit='points')  # special case (1-D)
 
         kmeans2(data, k, minit='++')
-        kmeans2(data[:, :1], k, minit='++')  # special case (1-D)
+        kmeans2(data[:, 1], k, minit='++')  # special case (1-D)
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
             sup.filter(message="One of the clusters is empty. Re-run.")
             kmeans2(data, k, minit='random')
-            kmeans2(data[:, :1], k, minit='random')  # special case (1-D)
+            kmeans2(data[:, 1], k, minit='random')  # special case (1-D)
 
     @pytest.mark.skipif(sys.platform == 'win32',
                         reason='Fails with MemoryError in Wine.')
