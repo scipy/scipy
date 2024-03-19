@@ -1,5 +1,6 @@
 import scipy as sp
 import pytest
+from scipy._lib._util import VisibleDeprecationWarning
 
 
 def test_array_api_deprecations():
@@ -38,5 +39,5 @@ def test_dok_deprecations():
     ])
     msg = "1.15.0"
 
-    with pytest.deprecated_call(match=msg):
-        X.conjtransp().toarray()
+    with pytest.warns(VisibleDeprecationWarning):
+        X.conjtransp()
