@@ -38,6 +38,8 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import xp_assert_close
+from scipy.conftest import array_api_compatible
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -6533,6 +6535,17 @@ class TestGeometricStandardDeviation:
         mask = [[0, 0, 0], [0, 1, 1]]
         assert_allclose(gstd_actual, gstd_desired)
         assert_equal(gstd_actual.mask, mask)
+
+    @array_api_compatible
+    @pytest.mark.parametrize("data", [array_1d, array_3d])
+    @pytest.mark.parametrize("axis", [0, 1, 2, None])
+    def test_array_api(self, xp, data, axis):
+        if data.ndim == 1 and axis in {1, 2}:
+            pytest.skip("Can't test other axes when ndim==1")
+        data_xp = xp.asarray(data, dtype=xp.float64)
+        res = stats.gstd(data_xp, axis=axis)
+        ref = stats.gstd(data, axis=axis)
+        xp_assert_close(res, xp.asarray(ref))
 
 
 def test_binomtest():

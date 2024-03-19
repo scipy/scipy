@@ -43,6 +43,7 @@ from scipy.optimize import milp, LinearConstraint
 from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               rng_integers, _rename_parameter, _contains_nan,
                               AxisError)
+from scipy._lib._array_api import array_namespace
 
 import scipy.special as special
 from scipy import linalg
@@ -3213,25 +3214,28 @@ def gstd(a, axis=0, ddof=1):
       fill_value=999999)
 
     """
-    a = np.asanyarray(a)
-    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+    if isinstance(a, ma.MaskedArray):
+        xp = np
+        log = ma.log
+        ddof = {'ddof': ddof}
+    else:
+        xp = array_namespace(a)
+        log = xp.log
+        ddof = {'correction': ddof}
+        a = xp.asarray(a)
 
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
-            return np.exp(np.std(log(a), axis=axis, ddof=ddof))
+            return xp.exp(xp.std(log(a), axis=axis, **ddof))
     except RuntimeWarning as w:
-        if np.isinf(a).any():
+        if xp.any(xp.isinf(a)):
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
                 'is defined for strictly positive values only.'
             ) from w
-        a_nan = np.isnan(a)
-        a_nan_any = a_nan.any()
-        # exclude NaN's from negativity check, but
-        # avoid expensive masking for arrays with no NaN
-        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
-                (not a_nan_any and np.less_equal(a, 0).any())):
+        a_nan = xp.isnan(a)
+        if xp.any(xp.less_equal(a, 0)):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
                 'deviation is defined for strictly positive values only.'
@@ -3240,7 +3244,7 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
-            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
+            return xp.exp(xp.std(log(a), axis=axis, **ddof))
     except TypeError as e:
         raise ValueError(
             'Invalid array input. The inputs could not be '
