@@ -321,7 +321,7 @@ def directed_hausdorff(u, v, seed=0):
         Input array with M points in N dimensions.
     v : (O,N) array_like
         Input array with O points in N dimensions.
-    seed : int or None
+    seed : int or None, optional
         Local `numpy.random.RandomState` seed. Default is 0, a random
         shuffling of u and v that guarantees reproducibility.
 
@@ -645,8 +645,8 @@ def correlation(u, v, w=None, centered=True):
     uu = np.dot(u, uw)
     vv = np.dot(v, vw)
     dist = 1.0 - uv / math.sqrt(uu * vv)
-    # Return absolute value to avoid small negative value due to rounding
-    return abs(dist)
+    # Clip the result to avoid rounding error
+    return np.clip(dist, 0.0, 2.0)
 
 
 def cosine(u, v, w=None):
@@ -691,8 +691,7 @@ def cosine(u, v, w=None):
     """
     # cosine distance is also referred to as 'uncentered correlation',
     #   or 'reflective correlation'
-    # clamp the result to 0-2
-    return max(0, min(correlation(u, v, w=w, centered=False), 2.0))
+    return correlation(u, v, w=w, centered=False)
 
 
 def hamming(u, v, w=None):
@@ -1881,7 +1880,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
-    out : ndarray
+    out : ndarray, optional
         The output array.
         If not None, condensed distance matrix Y is stored in this array.
     **kwargs : dict, optional

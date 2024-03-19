@@ -2294,7 +2294,10 @@ cdef class Rotation:
     @cython.embedsignature(True)
     @classmethod
     def concatenate(cls, rotations):
-        """Concatenate a sequence of `Rotation` objects.
+        """Concatenate a sequence of `Rotation` objects into a single object.
+
+        This is useful if you want to, for example, take the mean of a set of
+        rotations and need to pack them into a single object to do so.
 
         Parameters
         ----------
@@ -2305,6 +2308,26 @@ cdef class Rotation:
         -------
         concatenated : `Rotation` instance
             The concatenated rotations.
+
+        Examples
+        --------
+        >>> from scipy.spatial.transform import Rotation as R
+        >>> r1 = R.from_rotvec([0, 0, 1])
+        >>> r2 = R.from_rotvec([0, 0, 2])
+        >>> rc = R.concatenate([r1, r2])
+        >>> rc.as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
+        >>> rc.mean().as_rotvec()
+        array([0., 0., 1.5])
+
+        Note that it may be simpler to create the desired rotations by passing
+        in a single list of the data during initialization, rather then by
+        concatenating:
+
+        >>> R.from_rotvec([[0, 0, 1], [0, 0, 2]]).as_rotvec()
+        array([[0., 0., 1.],
+               [0., 0., 2.]])
 
         Notes
         -----
@@ -2619,11 +2642,14 @@ cdef class Rotation:
 
         # Exact short-cuts
         if n == 0:
-            return Rotation.identity(len(self._quat))
+            return Rotation.identity(None if self._single else len(self._quat))
         elif n == -1:
             return self.inv()
         elif n == 1:
-            return self.__class__(self._quat.copy())
+            if self._single:
+                return self.__class__(self._quat[0], copy=True)
+            else:
+                return self.__class__(self._quat, copy=True)
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 

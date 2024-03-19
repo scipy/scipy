@@ -537,8 +537,10 @@ def test_bootstrap_alternative(method):
     l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
     g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
 
-    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
-    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert_allclose(l.confidence_interval.high, t.confidence_interval.high,
+                    rtol=1e-14)
+    assert_allclose(g.confidence_interval.low, t.confidence_interval.low,
+                    rtol=1e-14)
     assert np.isneginf(l.confidence_interval.low)
     assert np.isposinf(g.confidence_interval.high)
 
@@ -1008,6 +1010,25 @@ class TestMonteCarloHypothesisTest:
 
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
+
+    @pytest.mark.xfail_on_32bit("Statistic may not depend on sample order on 32-bit")
+    def test_finite_precision_statistic(self):
+        # Some statistics return numerically distinct values when the values
+        # should be equal in theory. Test that `monte_carlo_test` accounts
+        # for this in some way.
+        rng = np.random.default_rng(2549824598234528)
+        n_resamples = 9999
+        def rvs(size):
+            return 1. * stats.bernoulli(p=0.333).rvs(size=size, random_state=rng)
+
+        x = rvs(100)
+        res = stats.monte_carlo_test(x, rvs, np.var, alternative='less',
+                                     n_resamples=n_resamples)
+        # show that having a tolerance matters
+        c0 = np.sum(res.null_distribution <= res.statistic)
+        c1 = np.sum(res.null_distribution <= res.statistic*(1+1e-15))
+        assert c0 != c1
+        assert res.pvalue == (c1 + 1)/(n_resamples + 1)
 
 
 class TestPermutationTest:

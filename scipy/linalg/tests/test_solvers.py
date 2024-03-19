@@ -110,7 +110,7 @@ class TestSolveLyapunov:
             self.check_discrete_case(case[0], case[1], method='bilinear')
 
 
-def test_solve_continuous_are():
+class TestSolveContinuousAre:
     mat6 = _load_data('carex_6_data.npz')
     mat15 = _load_data('carex_15_data.npz')
     mat18 = _load_data('carex_18_data.npz')
@@ -291,24 +291,22 @@ def test_solve_continuous_are():
     min_decimal = (14, 12, 13, 14, 11, 6, None, 5, 7, 14, 14,
                    None, 9, 14, 13, 14, None, 12, None, None)
 
-    def _test_factory(case, dec):
+    @pytest.mark.parametrize("j, case", enumerate(cases))
+    def test_solve_continuous_are(self, j, case):
         """Checks if 0 = XA + A'X - XB(R)^{-1} B'X + Q is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
             pytest.xfail(reason=knownfailure)
 
+        dec = self.min_decimal[j]
         x = solve_continuous_are(a, b, q, r)
-        res = x.dot(a) + a.conj().T.dot(x) + q
-        out_fact = x.dot(b)
-        res -= out_fact.dot(solve(np.atleast_2d(r), out_fact.conj().T))
+        res = x @ a + a.conj().T @ x + q
+        out_fact = x @ b
+        res -= out_fact @ solve(np.atleast_2d(r), out_fact.conj().T)
         assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
 
-    for ind, case in enumerate(cases):
-        _test_factory(case, min_decimal[ind])
 
-
-def test_solve_discrete_are():
-
+class TestSolveDiscreteAre:
     cases = [
         # Darex examples taken from (with default parameters):
         # [1] P.BENNER, A.J. LAUB, V. MEHRMANN: 'A Collection of Benchmark
@@ -514,33 +512,36 @@ def test_solve_discrete_are():
     # relaxed tolerance in gh-18012 after bump to OpenBLAS
     max_tol[11] = 2.5e-13
 
-    def _test_factory(case, atol):
+    @pytest.mark.parametrize("j, case", enumerate(cases))
+    def test_solve_discrete_are(self, j, case):
         """Checks if X = A'XA-(A'XB)(R+B'XB)^-1(B'XA)+Q) is true"""
         a, b, q, r, knownfailure = case
         if knownfailure:
             pytest.xfail(reason=knownfailure)
 
+        atol = self.max_tol[j]
+
         x = solve_discrete_are(a, b, q, r)
-        res = a.conj().T.dot(x.dot(a)) - x + q
-        res -= a.conj().T.dot(x.dot(b)).dot(
-                    solve(r+b.conj().T.dot(x.dot(b)), b.conj().T).dot(x.dot(a))
-                    )
+        bH = b.conj().T
+        xa, xb = x @ a, x @ b
+
+        res = a.conj().T @ xa - x + q
+        res -= a.conj().T @ xb @ (solve(r + bH @ xb, bH) @ xa)
+
         # changed from
         # assert_array_almost_equal(res, np.zeros_like(res), decimal=dec)
         # in gh-18012 as it's easier to relax a tolerance and allclose is
         # preferred
         assert_allclose(res, np.zeros_like(res), atol=atol)
 
-    for ind, case in enumerate(cases):
-        _test_factory(case, max_tol[ind])
-
-    # An infeasible example taken from https://arxiv.org/abs/1505.04861v1
-    A = np.triu(np.ones((3, 3)))
-    A[0, 1] = -1
-    B = np.array([[1, 1, 0], [0, 0, 1]]).T
-    Q = np.full_like(A, -2) + np.diag([8, -1, -1.9])
-    R = np.diag([-10, 0.1])
-    assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
+    def test_infeasible(self):
+        # An infeasible example taken from https://arxiv.org/abs/1505.04861v1
+        A = np.triu(np.ones((3, 3)))
+        A[0, 1] = -1
+        B = np.array([[1, 1, 0], [0, 0, 1]]).T
+        Q = np.full_like(A, -2) + np.diag([8, -1, -1.9])
+        R = np.diag([-10, 0.1])
+        assert_raises(LinAlgError, solve_continuous_are, A, B, Q, R)
 
 
 def test_solve_generalized_continuous_are():
@@ -624,7 +625,7 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         None),
+         "Presumed issue with OpenBLAS, see gh-16926"),
         # user-reported (under PR-6616) 20-Jan-2017
         # tests against the case where E is None but S is provided
         (mat20170120['A'],

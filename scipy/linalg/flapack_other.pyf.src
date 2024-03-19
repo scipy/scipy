@@ -2258,22 +2258,32 @@ end subroutine <prefix>laswp
 !          rmin  = underflow threshold - base**(emin-1)
 !          emax  = largest exponent before overflow
 !          rmax  = overflow threshold  - (base**emax)*(1-eps)
-function dlamch(cmach)
+function dlamch(cmach) result(x)
+    double precision :: dlamch, x
     character :: cmach
-    double precision intent(out):: dlamch
+    callstatement dlamch_return_value = (*f2py_func)(cmach)
+    callprotoargument char*
+    intent(c) dlamch
+    fortranname F_FUNC(dlamch,DLAMCH)
 end function dlamch
 
-function slamch(cmach)
+function slamch(cmach) result(x)
+    real :: slamch, x
     character :: cmach
-    real intent(out):: slamch
+    callstatement slamch_return_value = (*f2py_func)(cmach)
+    callprotoargument char*
+    intent(c) slamch
+    fortranname F_FUNC(slamch,SLAMCH)
 end function slamch
 
 function <prefix2>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a real matrix A.
     <ftype2> <prefix2>lange, n2
-    callstatement (*f2py_func)(&<prefix2>lange,norm,&m,&n,a,&lda,work)
-    callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
+    callstatement <prefix2>lange_return_value = (*f2py_func)(norm,&m,&n,a,&lda,work)
+    callprotoargument char*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
+    intent(c) <prefix2>lange
+    fortranname F_FUNC(<prefix2>lange,<S,D>LANGE)
 
     character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)
@@ -2287,8 +2297,10 @@ function <prefix2c>lange(norm,m,n,a,lda,work) result(n2)
     ! the one norm, or the Frobenius norm, or the  infinity norm, or the
     ! element of largest absolute value of a complex matrix A.
     <ftype2> <prefix2c>lange, n2
-    callstatement (*f2py_func)(&<prefix2c>lange,norm,&m,&n,a,&lda,work)
-    callprotoargument <ctype2>*,char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*
+    callstatement <prefix2c>lange_return_value = (*f2py_func)(norm,&m,&n,a,&lda,work)
+    callprotoargument char*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*
+    intent(c) <prefix2c>lange
+    fortranname F_FUNC(<prefix2c>lange,<C,Z>LANGE)
 
     character intent(in),check(*norm=='M'||*norm=='m'||*norm=='1'||*norm=='O'||*norm=='o'||*norm=='I'||*norm=='i'||*norm=='F'||*norm=='f'||*norm=='E'||*norm=='e'):: norm
     integer intent(hide),depend(a,n) :: m = shape(a,0)

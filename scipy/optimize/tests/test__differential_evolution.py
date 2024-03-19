@@ -698,12 +698,18 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds)
         assert_(solver._updating == 'immediate')
 
-        # should raise a UserWarning because the updating='immediate'
-        # is being overridden by the workers keyword
-        with warns(UserWarning):
-            with DifferentialEvolutionSolver(rosen, bounds, workers=2) as solver:
-                pass
-        assert_(solver._updating == 'deferred')
+        # Safely forking from a multithreaded process is
+        # problematic, and deprecated in Python 3.12, so
+        # we use a slower but portable alternative
+        # see gh-19848
+        ctx = multiprocessing.get_context("spawn")
+        with ctx.Pool(2) as p:
+            # should raise a UserWarning because the updating='immediate'
+            # is being overridden by the workers keyword
+            with warns(UserWarning):
+                with DifferentialEvolutionSolver(rosen, bounds, workers=p.map) as s:
+                    pass
+            assert s._updating == 'deferred'
 
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
@@ -980,6 +986,26 @@ class TestDifferentialEvolutionSolver:
         assert pc.num_constr == 2
         assert pc.parameter_count == 2
 
+    def test_matrix_linear_constraint(self):
+        # gh20041 supplying an np.matrix to construct a LinearConstraint caused
+        # _ConstraintWrapper to start returning constraint violations of the
+        # wrong shape.
+        with suppress_warnings() as sup:
+            sup.filter(PendingDeprecationWarning)
+            matrix = np.matrix([[1, 1, 1, 1.],
+                                [2, 2, 2, 2.]])
+        lc = LinearConstraint(matrix, 0, 1)
+        x0 = np.ones(4)
+        cw = _ConstraintWrapper(lc, x0)
+        # the shape of the constraint violation should be the same as the number
+        # of constraints applied.
+        assert cw.violation(x0).shape == (2,)
+
+        # let's try a vectorised violation call.
+        xtrial = np.arange(4 * 5).reshape(4, 5)
+        assert cw.violation(xtrial).shape == (2, 5)
+
+
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 
@@ -1013,9 +1039,9 @@ class TestDifferentialEvolutionSolver:
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
 
-        assert_allclose(f(x_opt), f_opt)
+        assert_allclose(f(x_opt), f_opt, atol=6e-4)
         assert res.success
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
@@ -1063,7 +1089,7 @@ class TestDifferentialEvolutionSolver:
                                          seed=1234, constraints=constraints,
                                          popsize=2)
 
-        assert_allclose(res.x, x_opt, atol=5e-4)
+        assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
         assert_(np.all(A@res.x <= b))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))

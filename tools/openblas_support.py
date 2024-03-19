@@ -13,8 +13,8 @@ from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.21.dev'
-OPENBLAS_LONG = 'v0.3.20-571-g3dec11c6'
+OPENBLAS_V = '0.3.26'
+OPENBLAS_LONG = 'v0.3.26'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 NIGHTLY_BASE_LOC = (
     'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
@@ -59,10 +59,7 @@ def get_ilp64():
 
 
 def get_manylinux(arch):
-    if arch in ('i686'):
-        default = '2010'
-    else:
-        default = '2014'
+    default = '2014'
     ml_ver = os.environ.get("MB_ML_VER", default)
     # XXX For PEP 600 this can be a glibc version
     assert ml_ver in ('2010', '2014', '_2_24'), f'invalid MB_ML_VER {ml_ver}'
@@ -162,7 +159,8 @@ def setup_openblas(plat=get_plat(), ilp64=get_ilp64(), nightly=False):
         path to extracted files on success, otherwise indicates what went wrong
         To determine success, do ``os.path.exists(msg)``
     '''
-    _, tmp = mkstemp()
+    fd, tmp = mkstemp()
+    os.close(fd)
     if not plat:
         raise ValueError('unknown platform')
     openblas_version = "HEAD" if nightly else OPENBLAS_LONG

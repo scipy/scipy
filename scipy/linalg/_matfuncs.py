@@ -6,7 +6,6 @@ from itertools import product
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
-from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
@@ -87,7 +86,7 @@ def _maybe_real(A, B, tol=None):
     # Note that booleans and integers compare as real.
     if np.isrealobj(A) and np.iscomplexobj(B):
         if tol is None:
-            tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[B.dtype.char]]
+            tol = {0: feps*1e3, 1: eps*1e6}[_array_precision[B.dtype.char]]
         if np.allclose(B.imag, 0.0, atol=tol):
             B = B.real
     return B
@@ -204,8 +203,8 @@ def logm(A, disp=True):
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
-    #TODO use a better error approximation
-    errest = norm(expm(F)-A,1) / norm(A,1)
+    # TODO use a better error approximation
+    errest = norm(expm(F)-A, 1) / norm(A, 1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
             print("logm result may be inaccurate, approximate err =", errest)
@@ -299,35 +298,14 @@ def expm(A):
         return np.exp(a)
 
     if not np.issubdtype(a.dtype, np.inexact):
-        a = a.astype(float)
+        a = a.astype(np.float64)
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # Explicit formula for 2x2 case, formula (2.2) in [1]
-    # without Kahan's method numerical instabilities can occur.
-    if a.shape[-2:] == (2, 2):
-        a1, a2, a3, a4 = (a[..., [0], [0]],
-                          a[..., [0], [1]],
-                          a[..., [1], [0]],
-                          a[..., [1], [1]])
-        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
+    # here until we have a more stable implementation.
 
-        eApD2 = np.exp((a1+a4)/2.)
-        AmD2 = (a1 - a4)/2.
-        coshMu = np.cosh(mu)
-        sinchMu = np.ones_like(coshMu)
-        mask = mu != 0
-        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask]
-        eA = np.empty((a.shape), dtype=mu.dtype)
-        eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu)
-        eA[..., [0], [1]] = eApD2 * a2 * sinchMu
-        eA[..., [1], [0]] = eApD2 * a3 * sinchMu
-        eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu)
-        if np.isrealobj(a):
-            return eA.real
-        return eA
-
-    # larger problem with unspecified stacked dimensions.
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
     # working memory to hold intermediate arrays
@@ -700,36 +678,36 @@ def funm(A, func, disp=True):
     A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
     T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    n,n = T.shape
+    T, Z = rsf2csf(T, Z)
+    n, n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
     F = F.astype(T.dtype.char)  # e.g., when F is real but T is complex
 
-    minden = abs(T[0,0])
+    minden = abs(T[0, 0])
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
     #                 "matrix Computations."
-    for p in range(1,n):
-        for i in range(1,n-p+1):
+    for p in range(1, n):
+        for i in range(1, n-p+1):
             j = i + p
-            s = T[i-1,j-1] * (F[j-1,j-1] - F[i-1,i-1])
-            ksl = slice(i,j-1)
-            val = dot(T[i-1,ksl],F[ksl,j-1]) - dot(F[i-1,ksl],T[ksl,j-1])
+            s = T[i-1, j-1] * (F[j-1, j-1] - F[i-1, i-1])
+            ksl = slice(i, j-1)
+            val = dot(T[i-1, ksl], F[ksl, j-1]) - dot(F[i-1, ksl], T[ksl, j-1])
             s = s + val
-            den = T[j-1,j-1] - T[i-1,i-1]
+            den = T[j-1, j-1] - T[i-1, i-1]
             if den != 0.0:
                 s = s / den
-            F[i-1,j-1] = s
-            minden = min(minden,abs(den))
+            F[i-1, j-1] = s
+            minden = min(minden, abs(den))
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
 
-    tol = {0:feps, 1:eps}[_array_precision[F.dtype.char]]
+    tol = {0: feps, 1: eps}[_array_precision[F.dtype.char]]
     if minden == 0.0:
         minden = tol
-    err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
-    if prod(ravel(logical_not(isfinite(F))),axis=0):
+    err = min(1, max(tol, (tol/minden)*norm(triu(T, 1), 1)))
+    if prod(ravel(logical_not(isfinite(F))), axis=0):
         err = np.inf
     if disp:
         if err > 1000*tol:
@@ -782,7 +760,7 @@ def signm(A, disp=True):
             c = 1e3*eps*amax(x)
         return sign((absolute(rx) > c) * rx)
     result, errest = funm(A, rounded_sign, disp=0)
-    errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]
+    errtol = {0: 1e3*feps, 1: 1e3*eps}[_array_precision[result.dtype.char]]
     if errest < errtol:
         return result
 
@@ -806,8 +784,8 @@ def signm(A, disp=True):
     for i in range(100):
         iS0 = inv(S0)
         S0 = 0.5*(S0 + iS0)
-        Pp = 0.5*(dot(S0,S0)+S0)
-        errest = norm(dot(Pp,Pp)-Pp,1)
+        Pp = 0.5*(dot(S0, S0)+S0)
+        errest = norm(dot(Pp, Pp)-Pp, 1)
         if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest

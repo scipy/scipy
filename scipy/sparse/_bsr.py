@@ -8,6 +8,7 @@ from warnings import warn
 
 import numpy as np
 
+from scipy._lib._util import copy_if_needed
 from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
@@ -31,7 +32,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1,tuple):
             if isshape(arg1):
@@ -59,10 +62,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
             elif len(arg1) == 2:
                 # (data,(row,col)) format
-                self._set_self(
-                    self._coo_container(arg1, dtype=dtype, shape=shape).tobsr(
-                        blocksize=blocksize
-                    )
+                coo = self._coo_container(arg1, dtype=dtype, shape=shape)
+                bsr = coo.tobsr(blocksize=blocksize)
+                self.indptr, self.indices, self.data, self._shape = (
+                    bsr.indptr, bsr.indices, bsr.data, bsr._shape
                 )
 
             elif len(arg1) == 3:
@@ -78,6 +81,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     maxval = max(maxval, max(blocksize))
                 idx_dtype = self._get_index_dtype((indices, indptr), maxval=maxval,
                                                   check_contents=True)
+                if not copy:
+                    copy = copy_if_needed
                 self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                 self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                 self.data = getdata(data, copy=copy, dtype=dtype)
@@ -103,7 +108,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             arg1 = self._coo_container(
                 arg1, dtype=dtype
             ).tobsr(blocksize=blocksize)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         if shape is not None:
             self._shape = check_shape(shape)
@@ -251,7 +258,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     def _add_dense(self, other):
         return self.tocoo(copy=False)._add_dense(other)
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M,N = self.shape
         R,C = self.blocksize
 
@@ -263,7 +270,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_multivector(self,other):
+    def _matmul_multivector(self,other):
         R,C = self.blocksize
         M,N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
@@ -276,7 +283,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
