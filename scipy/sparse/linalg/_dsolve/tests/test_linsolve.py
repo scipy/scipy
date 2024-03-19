@@ -746,7 +746,8 @@ class TestGstrsErrors:
         U = scipy.sparse.triu(self.A, k=1, format='csc')
         with assert_raises(ValueError, match="right hand side array has invalid shape"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
-                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b[0:2])
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                self.b[0:2])
 
     def test_types_differ(self):
         L = scipy.sparse.tril(self.A.astype(np.float32), format='csc')
@@ -758,9 +759,10 @@ class TestGstrsErrors:
     def test_types_unsupported(self):
         L = scipy.sparse.tril(self.A.astype(np.uint8), format='csc')
         U = scipy.sparse.triu(self.A.astype(np.uint8), k=1, format='csc')
-        with assert_raises(TypeError, match="nzvals is not of a type supported by SuperLU"):
+        with assert_raises(TypeError, match="nzvals is not of a type supported"):
             _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
-                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b.astype(np.uint8))
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                self.b.astype(np.uint8))
 
 class TestSpsolveTriangular:
     def setup_method(self):
