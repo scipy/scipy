@@ -155,15 +155,15 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     array([ True,  True])
 
     """
-    nfev = 0
     def _wrapped_func(*fargs):
         """
         Wrapped `func` to track the number of times
         the function has been called.
         """
-        nonlocal nfev
-        nfev += 1
+        _wrapped_func.nfev += 1
         return func(*fargs)
+
+    _wrapped_func.nfev = 0
 
     options = {'col_deriv': col_deriv,
                'xtol': xtol,
@@ -174,7 +174,7 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'diag': diag}
 
     res = _root_hybr(_wrapped_func, x0, args, jac=fprime, **options)
-    res.nfev = nfev
+    res.nfev = _wrapped_func.nfev
 
     if full_output:
         x = res['x']

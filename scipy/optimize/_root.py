@@ -199,15 +199,15 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> plt.show()
 
     """
-    nfev = 0
     def _wrapped_fun(*fargs):
         """
         Wrapped `func` to track the number of times
         the function has been called.
         """
-        nonlocal nfev
-        nfev += 1
+        _wrapped_fun.nfev += 1
         return fun(*fargs)
+
+    _wrapped_fun.nfev = 0
 
     if not isinstance(args, tuple):
         args = (args,)
@@ -259,7 +259,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     else:
         raise ValueError('Unknown solver %s' % method)
 
-    sol.nfev = nfev
+    sol.nfev = _wrapped_fun.nfev
     return sol
 
 
