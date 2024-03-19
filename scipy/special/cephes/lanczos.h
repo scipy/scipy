@@ -130,6 +130,5 @@ static const double lanczos_sum_near_2_d[12] = {
 
 static const double lanczos_g = 6.024680040776729583740234375;
 
-double lanczos_sum_expg_scaled(double x);
 
 #endif
