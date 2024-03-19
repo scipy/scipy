@@ -39,5 +39,5 @@ def test_dok_deprecations():
     ])
     msg = "1.15.0"
 
-    with pytest.warns(VisibleDeprecationWarning):
+    with pytest.warns(VisibleDeprecationWarning, match=msg):
         X.conjtransp()
