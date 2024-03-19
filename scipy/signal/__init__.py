@@ -311,7 +311,6 @@ from ._upfirdn import upfirdn
 
 from ._spline import (
     cspline2d,
-    qspline2d,
     sepfir2d
 )
 

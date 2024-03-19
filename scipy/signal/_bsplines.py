@@ -1,15 +1,20 @@
 from numpy import (asarray, pi, zeros_like,
                    array, arctan2, tan, ones, arange, floor,
-                   r_, atleast_1d, sqrt, exp, greater, cos, add, sin)
+                   r_, c_, atleast_1d, sqrt, exp, greater, cos, add, sin,
+                   sqrt, moveaxis, abs)
+
+from scipy._lib._util import normalize_axis_index
 
 # From splinemodule.c
-from ._spline import cspline2d, sepfir2d
+from ._spline import cspline2d, sepfir2d, symiirorder1_ic
+from ._arraytools import axis_slice, axis_reverse
 from ._signaltools import lfilter, sosfilt, lfiltic
 
 from scipy.interpolate import BSpline
 
 __all__ = ['spline_filter', 'gauss_spline',
-           'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
+           'cspline1d', 'qspline1d', 'qspline2d',
+           'cspline1d_eval', 'qspline1d_eval']
 
 
 def spline_filter(Iin, lmbda=5.0):
@@ -367,6 +372,88 @@ def qspline1d(signal, lamb=0.0):
         raise ValueError("Smoothing quadratic splines not supported yet.")
     else:
         return _quadratic_coeff(signal)
+
+
+def collapse_2d(x, axis):
+    x = moveaxis(x, axis, -1)
+    x_shape = x.shape
+    x = x.reshape(-1, x.shape[-1])
+    if not x.flags.c_contiguous:
+        x = x.copy()
+    return x, x_shape
+
+
+def _symiirorder1_nd(input, c0, z1, precision=-1.0, axis=-1):
+    axis = normalize_axis_index(axis, input.ndim)
+    input_shape = input.shape
+    input_ndim = input.ndim
+    if input.ndim > 1:
+        input, input_shape = collapse_2d(input, axis)
+
+    if abs(z1) >= 1:
+        raise ValueError('|z1| must be less than 1.0')
+
+    zi = symiirorder1_ic(input, z1, precision)
+
+    # Apply first the system 1 / (1 - z1 * z^-1)
+    b = ones(1, dtype=input.dtype)
+    a = r_[1, -z1]
+    zii = zi[:, None] * z1
+
+    y1, _ = lfilter(b, a, axis_slice(input, 1), zi=zii)
+    y1 = c_[zi, y1]
+
+    # Compute backward symmetric condition and apply the system
+    # c0 / (1 - z1 * z)
+    zi = -c0 / (z1 - 1.0) * axis_slice(y1, -1)
+    zii = zi * z1
+
+    b = asarray([c0], dtype=input.dtype)
+    out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zii)
+    out = c_[out[:, ::-1], zi]
+
+    if input_ndim > 1:
+        out = out.reshape(input_shape)
+        out = moveaxis(out, -1, axis)
+        if not out.flags.c_contiguous:
+            out = out.copy()
+    return out
+
+
+def qspline2d(signal, lamb=0.0, precision=-1.0):
+    """
+    Coefficients for 2-D quadratic (2nd order) B-spline.
+
+    Return the second-order B-spline coefficients over a regularly spaced
+    input grid for the two-dimensional input image.
+
+    Parameters
+    ----------
+    input : ndarray
+        The input signal.
+    lamb : float
+        Specifies the amount of smoothing in the transfer function.
+    precision : float
+        Specifies the precision for computing the infinite sum needed to apply
+        mirror-symmetric boundary conditions.
+
+    Returns
+    -------
+    output : ndarray
+        The filtered signal.
+    """
+
+    if lamb > 0:
+        raise ValueError('lambda must be negative or zero')
+
+    # normal quadratic spline
+    r = -3 + 2 * sqrt(2.0)
+    c0 = -r * 8.0
+    z1 = r
+
+    out = _symiirorder1_nd(signal, c0, z1, precision, axis=-1)
+    out = _symiirorder1_nd(out, c0, z1, precision, axis=0)
+    return out
 
 
 def cspline1d_eval(cj, newx, dx=1.0, x0=0):
