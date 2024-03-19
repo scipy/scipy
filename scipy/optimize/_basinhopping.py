@@ -580,8 +580,9 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x) = -1.0009
+    >>> # the global minimum is:
+    >>> ret.x, ret.fun
+    -0.1951, -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.

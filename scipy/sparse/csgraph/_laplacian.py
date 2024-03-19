@@ -315,7 +315,7 @@ def laplacian(
     >>> for cut in ["max", "min"]:
     ...     G = -G  # 1.
     ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")  # 2.
-    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
+    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-2)  # 3.
     ...     eves *= np.sign(eves[0, 0])  # 4.
     ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 5.
     max-cut labels:

@@ -43,7 +43,7 @@ of the given probability vector can be set by the `guide_factor` parameter:
     >>> urng = np.random.default_rng()
     >>> rng = DiscreteGuideTable(pv, random_state=urng)
     >>> rng.rvs()
-    2
+    2    # may vary
 
 By default, the probability vector is indexed starting at 0. However, this
 can be changed by passing a ``domain`` parameter. When ``domain`` is given
@@ -53,7 +53,7 @@ distribution from ``(0, len(pv))`` to ``(domain[0], domain[0] + len(pv))``.
 
     >>> rng = DiscreteGuideTable(pv, random_state=urng, domain=(10, 13))
     >>> rng.rvs()
-    10
+    10   # may vary
 
 The method also works when no probability vector but a PMF is given.
 In that case, a bounded (finite) domain must also be given either by
@@ -71,7 +71,7 @@ method in the distribution object:
     >>> dist = Distribution(2)
     >>> rng = DiscreteGuideTable(dist, random_state=urng)
     >>> rng.rvs()
-    9
+    9     # may vary
 
 .. note:: As :class:`~DiscreteGuideTable` expects PMF with signature
           ``def pmf(self, x: float) -> float``, it first vectorizes the
@@ -99,7 +99,7 @@ time but require a more expensive setup.
     >>> guide_factor = 2
     >>> rng = DiscreteGuideTable(pv, random_state=urng, guide_factor=guide_factor)
     >>> rng.rvs()
-    2
+    2     # may vary
 
 Unfortunately, the PPF is rarely available in closed form or too slow when
 available. The user only has to provide the probability vector and the 
@@ -109,6 +109,7 @@ method calculates the (exact) PPF of the given distribution.
 For example to calculate the PPF of a binomial distribution with :math:`n=4` and
 :math:`p=0.1`: we can set up a guide table as follows:
 
+    >>> import scipy.stats as stats
     >>> n, p = 4, 0.1
     >>> dist = stats.binom(n, p)
     >>> rng = DiscreteGuideTable(dist, random_state=42)
