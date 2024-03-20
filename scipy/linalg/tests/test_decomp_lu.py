@@ -291,12 +291,18 @@ class TestLUSolve:
         x2 = lu_solve(lu_a, b, check_finite=False)
         assert_allclose(x1, x2)
 
-    def test_empty(self):
-        lu_and_piv = (np.empty((0, 0)), np.array([]))
-        b = []
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt, dt_b):
+        lu_and_piv = (np.empty((0, 0), dtype=dt), np.array([]))
+        b = np.asarray([], dtype=dt_b)
         x = lu_solve(lu_and_piv, b)
-        assert_allclose(x, [])
+        assert x.shape == (0,)
 
-        b = np.empty((0, 0))
+        m = lu_solve((np.eye(2, dtype=dt), [0, 1]), np.ones(2, dtype=dt_b))
+        assert x.dtype == m.dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
         x = lu_solve(lu_and_piv, b)
-        assert_allclose(x, np.empty((0, 0)))
+        assert x.shape == (0, 0)
+        assert x.dtype == m.dtype

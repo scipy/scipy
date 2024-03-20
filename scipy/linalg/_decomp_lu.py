@@ -187,7 +187,8 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
 
     # accommodate empty arrays
     if b1.size == 0:
-        return np.empty_like(b1)
+        m = lu_solve((np.eye(2, dtype=lu.dtype), [0, 1]), np.ones(2, dtype=b.dtype))
+        return np.empty_like(b1, dtype=m.dtype)
 
     getrs, = get_lapack_funcs(('getrs',), (lu, b1))
     x, info = getrs(lu, piv, b1, trans=trans, overwrite_b=overwrite_b)
