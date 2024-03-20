@@ -1430,6 +1430,16 @@ class TestLstsq:
             assert_(rank == 0, 'expected rank 0')
             assert_equal(s, np.empty((0,)))
 
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty_dtype(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty(0, dtype=dt_b)
+        x, residues, rank, s = lstsq(a, b)
+
+        assert x.size == 0
+        dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
+        assert x.dtype == dt_nonempty
 
 class TestPinv:
     def setup_method(self):
