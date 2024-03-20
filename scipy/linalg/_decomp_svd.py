@@ -111,18 +111,18 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 
     # accommodate empty matrix
     if a1.size == 0:
-        dchar = a1.dtype.char
-        real_dchar = dchar.lower() if dchar in 'FD' else dchar
-        s = numpy.empty_like(a1, shape=(0,), dtype=real_dchar)
+        u0, s0, v0 = svd(numpy.eye(2, dtype=a1.dtype))
+
+        s = numpy.empty_like(a1, shape=(0,), dtype=s0.dtype)
         m, n = a1.shape
         if full_matrices:
-            u = numpy.empty_like(a1, shape=(m, m))
+            u = numpy.empty_like(a1, shape=(m, m), dtype=u0.dtype)
             u[...] = numpy.identity(m)
-            v = numpy.empty_like(a1, shape=(n, n))
+            v = numpy.empty_like(a1, shape=(n, n), dtype=v0.dtype)
             v[...] = numpy.identity(n)
         else:
-            u = numpy.empty_like(a1, shape=(m, 0))
-            v = numpy.empty_like(a1, shape=(0, n))
+            u = numpy.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
+            v = numpy.empty_like(a1, shape=(0, n), dtype=v0.dtype)
         if compute_uv:
             return u, s, v
         else:

@@ -1191,22 +1191,35 @@ class TestSVD_GESDD:
         assert_equal(s.shape, (k,))
         assert_equal(s.dtype, np.dtype(real_dchar))
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
-    def test_empty(self, m, n):
-        a = np.empty((m, n))
+    def test_empty(self, dt, m, n):
+        a0 = np.eye(3, dtype=dt)
+        u0, s0, v0 = svd(a0)
+
+        a = np.empty((m, n), dtype=dt)
         u, s, v = svd(a)
         assert_allclose(u, np.identity(m))
         assert_allclose(s, np.empty((0,)))
         assert_allclose(v, np.identity(n))
+
+        assert u.dtype == u0.dtype
+        assert v.dtype == v0.dtype
+        assert s.dtype == s0.dtype
 
         u, s, v = svd(a, full_matrices=False)
         assert_allclose(u, np.empty((m, 0)))
         assert_allclose(s, np.empty((0,)))
         assert_allclose(v, np.empty((0, n)))
 
+        assert u.dtype == u0.dtype
+        assert v.dtype == v0.dtype
+        assert s.dtype == s0.dtype
+
         s = svd(a, compute_uv=False)
         assert_allclose(s, np.empty((0,)))
 
+        assert s.dtype == s0.dtype
 
 class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
@@ -1214,10 +1227,15 @@ class TestSVD_GESVD(TestSVD_GESDD):
 
 class TestSVDVals:
 
-    def test_empty(self):
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
+            a = np.array(a, dtype=dt)
             s = svdvals(a)
             assert_equal(s, np.empty(0))
+
+            s0 = svdvals(np.eye(2, dtype=dt))
+            assert s.dtype == s0.dtype
 
     def test_simple(self):
         a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
