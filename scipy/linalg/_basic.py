@@ -1689,12 +1689,13 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     # accommodate empty arrays
     if A.size == 0:
-        B = np.empty_like(A)
+        b_n, t_n = matrix_balance(np.eye(2, dtype=A.dtype))
+        B = np.empty_like(A, dtype=b_n.dtype)
         if separate:
             scaling = np.ones_like(A, shape=len(A))
             perm = np.arange(len(A))
             return B, (scaling, perm)
-        return B, np.empty_like(A)
+        return B, np.empty_like(A, dtype=t_n.dtype)
 
     gebal = get_lapack_funcs(('gebal'), (A,))
     B, lo, hi, ps, info = gebal(A, scale=scale, permute=permute,

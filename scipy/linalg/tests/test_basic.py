@@ -1929,13 +1929,26 @@ class TestMatrix_Balance:
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         b, t = matrix_balance(a)
-        assert_allclose(b, np.empty((0, 0)))
-        assert_allclose(t, np.empty((0, 0)))
+
+        assert b.size == 0
+        assert t.size == 0
+
+        b_n, t_n = matrix_balance(np.eye(2, dtype=dt))
+        assert b.dtype == b_n.dtype
+        assert t.dtype == t_n.dtype
+
 
         b, (scale, perm) = matrix_balance(a, separate=True)
-        assert_allclose(b, np.empty((0, 0)))
-        assert_allclose(scale, np.empty((0,)))
-        assert_allclose(perm, np.arange(0))
+        assert b.size == 0
+        assert scale.size == 0
+        assert perm.size == 0
+
+        b_n, (scale_n, perm_n) = matrix_balance(a, separate=True)
+        assert b.dtype == b_n.dtype
+        assert scale.dtype == scale_n.dtype
+        assert perm.dtype == perm_n.dtype
+
