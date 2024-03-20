@@ -1535,10 +1535,12 @@ class TestPinv:
         with pytest.deprecated_call(match="use keyword arguments"):
             pinv(np.ones((2,2)), 0., 1e-10)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         a_pinv = pinv(a)
-        assert_allclose(a_pinv, a)
+        assert a_pinv.size == 0
+        assert a_pinv.dtype == pinv(np.eye(2, dtype=dt)).dtype
 
 
 class TestPinvSymmetric:
@@ -1603,10 +1605,12 @@ class TestPinvSymmetric:
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         a_pinv = pinvh(a)
-        assert_allclose(a_pinv, a)
+        assert a_pinv.size == 0
+        assert a_pinv.dtype == pinv(np.eye(2, dtype=dt)).dtype
 
 
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
