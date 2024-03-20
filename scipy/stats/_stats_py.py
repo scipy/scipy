@@ -4857,8 +4857,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
-    r = np.asarray(np.clip(r, -1, 1))
-    r[const_xy] = np.nan
+    one = np.asarray(1, dtype=dtype)
+    r = np.asarray(np.clip(r, -one, one))
+    r[const_xy] = _get_nan(r)
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
