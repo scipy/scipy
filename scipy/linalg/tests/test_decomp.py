@@ -2879,6 +2879,15 @@ def test_orth():
     for dt, n in itertools.product(dtypes, sizes):
         _check_orth(n, dt)
 
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_orth_empty(dt):
+    a = np.empty((0, 0), dtype=dt)
+    a0 = np.eye(2, dtype=dt)
+
+    oa = orth(a)
+    assert oa.dtype == orth(a0).dtype
+    assert oa.shape == (0, 0)
+
 
 def test_null_space():
     np.random.seed(1)
@@ -2916,6 +2925,16 @@ def test_null_space():
 
             Y = null_space(X, rcond=1e-6)
             assert_equal(Y.shape, (n, n - 6))
+
+
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_null_space_empty(dt):
+    a = np.empty((0, 0), dtype=dt)
+    a0 = np.eye(2, dtype=dt)
+    nsa = null_space(a)
+
+    assert nsa.shape == (0, 0)
+    assert nsa.dtype == null_space(a0).dtype
 
 
 def test_subspace_angles():
