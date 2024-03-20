@@ -759,13 +759,6 @@ class TestSolve:
             warnings.simplefilter('error')
             assert_raises(LinAlgWarning, solve, a, b)
 
-    def test_empty_rhs(self):
-        a = np.eye(2)
-        b = [[], []]
-        x = solve(a, b)
-        assert_(x.size == 0, 'Returned array is not empty')
-        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
-
     def test_multiple_rhs(self):
         a = np.eye(2)
         b = np.random.rand(2, 3, 4)
@@ -843,15 +836,23 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
-        b = []
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty(0, dtype=dt_b)
         x = solve(a, b)
-        assert_allclose(x, [])
 
-        b = np.empty((0, 0))
+        assert x.size == 0
+        dt_nonempty = solve(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)).dtype
+        assert x.dtype == dt_nonempty
+
+    def test_empty_rhs(self):
+        a = np.eye(2)
+        b = [[], []]
         x = solve(a, b)
-        assert_allclose(x, np.empty((0, 0)))
+        assert_(x.size == 0, 'Returned array is not empty')
+        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
 
 class TestSolveTriangular:

@@ -163,7 +163,8 @@ def solve(a, b, lower=False, overwrite_a=False,
 
     # accommodate empty arrays
     if b1.size == 0:
-        return np.empty_like(b1)
+        dt = solve(np.eye(2, dtype=a1.dtype), np.ones(2, dtype=b1.dtype)).dtype
+        return np.empty_like(b1, dtype=dt)
 
     # regularize 1-D b arrays to 2D
     if b1.ndim == 1:
