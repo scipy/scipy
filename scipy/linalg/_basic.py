@@ -973,7 +973,8 @@ def inv(a, overwrite_a=False, check_finite=True):
 
     # accommodate empty square matrices
     if a1.size == 0:
-        return np.empty_like(a1)
+        dt = inv(np.eye(2, dtype=a1.dtype)).dtype
+        return np.empty_like(a1, dtype=dt)
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     getrf, getri, getri_lwork = get_lapack_funcs(('getrf', 'getri',

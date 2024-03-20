@@ -979,10 +979,12 @@ class TestInv:
         a_inv = inv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         a_inv = inv(a)
-        assert_allclose(a_inv, a)
+        assert a_inv.size == 0
+        assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
 
 
 class TestDet:
