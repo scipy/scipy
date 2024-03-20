@@ -4770,9 +4770,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     y = np.moveaxis(y, axis, -1)
     axis = -1
 
-    if (np.issubdtype(x.dtype, np.complexfloating)
-            or np.issubdtype(y.dtype, np.complexfloating)):
+    dtype = np.result_type(x.dtype, y.dtype)
+    if np.issubdtype(dtype, np.integer):
+        dtype = np.float64
+
+    if np.issubdtype(dtype, np.complexfloating):
         raise ValueError('This function does not support complex data')
+
+    x = x.astype(np.float64, copy=False)
+    y = y.astype(np.float64, copy=False)
+    threshold = np.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
     const_x = (x == x[..., [0]]).all(axis=-1)
@@ -4812,13 +4819,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
-    # dtype is the data type for the calculations.  This expression ensures
-    # that the data type is at least 64 bit floating point.  It might have
-    # more precision if the input is, for example, np.longdouble.
-    dtype = type(1.0 + x.ravel()[0] + y.ravel()[0])
-
     if n == 2:
-        r = dtype(np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]))
+        r = np.asarray(np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]),
+                       dtype=dtype)
         result = PearsonRResult(statistic=r, pvalue=np.ones_like(r)[()], n=n,
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
@@ -4842,7 +4845,6 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         normxm = xmax * np.linalg.norm(xm/xmax, axis=axis, keepdims=True)
         normym = ymax * np.linalg.norm(ym/ymax, axis=axis, keepdims=True)
 
-    threshold = 1e-13
     nconst_x = np.any(normxm < threshold*abs(xmean), axis=axis)
     nconst_y = np.any(normym < threshold*abs(ymean), axis=axis)
     nconst_xy = nconst_x | nconst_y
@@ -4864,11 +4866,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    ab = n/2 - 1
-    dist = stats.beta(ab, ab, loc=-1, scale=2)
+    ab, loc, scale = np.asarray([n/2 - 1, -1, 2], dtype=dtype)
+    dist = stats.beta(ab, ab, loc=loc, scale=scale)
     pvalue = _get_pvalue(r, dist, alternative)
 
-    return PearsonRResult(statistic=r, pvalue=pvalue, n=n,
+    return PearsonRResult(statistic=r, pvalue=pvalue.astype(dtype), n=n,
                           alternative=alternative, x=x, y=y, axis=axis)
 
 
