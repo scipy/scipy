@@ -208,7 +208,8 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
 
     # accommodate empty arrays
     if b1.size == 0:
-        dt = cho_solve((np.eye(2, dtype=b1.dtype), True), np.ones(2, dtype=c.dtype)).dtype
+        dt = cho_solve((np.eye(2, dtype=b1.dtype), True),
+                        np.ones(2, dtype=c.dtype)).dtype
         return empty_like(b1, dtype=dt)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)

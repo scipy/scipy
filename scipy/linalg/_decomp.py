@@ -614,8 +614,8 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
             return w, v
     else:
         if info < -1:
-            raise LinAlgError('Illegal value in argument {} of internal {}'
-                              ''.format(-info, drv.typecode + pfx + driver))
+            raise LinAlgError(f'Illegal value in argument {-info} of internal '
+                              f'{drv.typecode + pfx + driver}')
         elif info > n:
             raise LinAlgError(f'The leading minor of order {info-n} of B is not '
                               'positive definite. The factorization of B '

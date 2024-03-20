@@ -1,9 +1,8 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
+from numpy.testing import assert_array_almost_equal
 from pytest import raises as assert_raises
 
-import numpy as np
 from numpy import array, transpose, dot, conjugate, zeros_like, empty
 from numpy.random import random
 from scipy.linalg import (cholesky, cholesky_banded, cho_solve_banded,
@@ -96,12 +95,14 @@ class TestCholesky:
         b = np.asarray([], dtype=dt_b)
         x = cho_solve(c_and_lower, b)
         assert x.shape == (0,)
-        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True), np.ones(2, dtype=dt_b)).dtype
+        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True),
+                                     np.ones(2, dtype=dt_b)).dtype
 
         b = empty((0, 0), dtype=dt_b)
         x = cho_solve(c_and_lower, b)
         assert x.shape == (0, 0)
-        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True), np.ones(2, dtype=dt_b)).dtype
+        assert x.dtype == cho_solve((np.eye(2, dtype=dt), True),
+                                     np.ones(2, dtype=dt_b)).dtype
 
         a1 = array([])
         a2 = array([[]])

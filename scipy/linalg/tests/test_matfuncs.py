@@ -508,8 +508,8 @@ class TestSqrtM:
         a0 = np.eye(2, dtype=dt)
         s0 = sqrtm(a0)
 
-        assert a.shape == (0, 0)
-        assert a.dtype == a0.dtype
+        assert s.shape == (0, 0)
+        assert s.dtype == s0.dtype
 
 
 class TestFractionalMatrixPower:
