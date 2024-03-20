@@ -490,6 +490,16 @@ class TestSqrtM:
             M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
             assert sqrtm(M).dtype == np.complex256
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        s = sqrtm(a)
+        a0 = np.eye(2, dtype=dt)
+        s0 = sqrtm(a0)
+
+        assert a.shape == (0, 0)
+        assert a.dtype == a0.dtype
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
