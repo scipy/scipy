@@ -7,7 +7,6 @@ __all__ = ['dok_array', 'dok_matrix', 'isspmatrix_dok']
 import itertools
 from warnings import warn
 import numpy as np
-from scipy._lib._util import VisibleDeprecationWarning
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray, issparse
@@ -398,14 +397,14 @@ class _dok_base(_spbase, IndexMixin, dict):
     def conjtransp(self):
         """DEPRECATED: Return the conjugate transpose.
 
-        .. deprecated:: 1.13.0
+        .. deprecated:: 1.14.0
 
-            `conjtransp` is deprecated and will be removed in v1.15.0.
+            `conjtransp` is deprecated and will be removed in v1.16.0.
             Use `.T.conj()` instead.
         """
-        message = ("`conjtransp` is deprecated and will be removed in v1.15.0. "
+        msg = ("`conjtransp` is deprecated and will be removed in v1.16.0. "
                    "Use `.T.conj()` instead.")
-        warn(VisibleDeprecationWarning(message), stacklevel=2)
+        warn(msg, DeprecationWarning, stacklevel=2)
 
         if self.ndim == 1:
             new = self.tocoo()
