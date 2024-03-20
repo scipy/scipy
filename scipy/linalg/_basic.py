@@ -1085,9 +1085,9 @@ def det(a, overwrite_a=False, check_finite=True):
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
         if a1.ndim == 2:
-            return np.float64(1.)
+            return a1.dtype.type(1.)
         else:
-            return np.ones(shape=a1.shape[:-2], dtype=np.float64)
+            return np.ones(shape=a1.shape[:-2], dtype=a1.dtype)
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):

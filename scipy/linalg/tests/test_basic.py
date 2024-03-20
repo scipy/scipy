@@ -1103,6 +1103,14 @@ class TestDet:
         with assert_raises(ValueError, match='Last 2 dimensions'):
             det(np.array([[[]]]))
 
+    @pytest.mark.xfail(reason="det(float32) -> float64, is it a bug?")
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_dtype(self, dt):
+        a = np.empty((3, 0, 0), dtype=dt)
+        d = det(a)
+        assert d.shape == (3,)
+        assert d.dtype == det(np.empty((3, 1, 1), dtype=dt)).dtype
+
     def test_overwrite_a(self):
         # If all conditions are met then input should be overwritten;
         #   - dtype is one of 'fdFD'
