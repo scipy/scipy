@@ -238,6 +238,17 @@ class TestLogM:
         a.flags.writeable = False
         logm(a)
 
+    @pytest.mark.xfail(reason="ValueError: attempt to get argmax of an empty sequence")
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        log_a = logm(a)
+        a0 = np.eye(2, dtype=dt)
+        log_a0 = logm(a0)
+
+        assert log_a.shape == (0, 0)
+        assert log_a.dtype == log_a0.dtype
+
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
