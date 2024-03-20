@@ -342,7 +342,10 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     # accommodate empty arrays
     if b1.size == 0:
-        return np.empty_like(b1)
+        dt_nonempty = solve_triangular(
+            np.eye(2, dtype=a1.dtype), np.ones(2, dtype=b1.dtype)
+        ).dtype
+        return np.empty_like(b1, dtype=dt_nonempty)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
