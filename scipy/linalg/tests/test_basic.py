@@ -175,16 +175,22 @@ class TestSolveBanded:
         x = solve_banded((l, u), ab, b)
         assert_array_almost_equal(dot(a, x), b)
 
-    def test_empty(self):
+    @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_ab, dt_b):
         # ab contains one empty row corresponding to the diagonal
-        ab = [[]]
-        b = []
+        ab = np.array([[]], dtype=dt_ab)
+        b = np.array([], dtype=dt_b)
         x = solve_banded((0, 0), ab, b)
-        assert_allclose(x, [])
 
-        b = np.empty((0, 0))
+        assert x.shape == (0,)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
         x = solve_banded((0, 0), ab, b)
-        assert_allclose(x, np.empty((0, 0)))
+
+        assert x.shape == (0, 0)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
 
 class TestSolveHBanded:
@@ -501,17 +507,22 @@ class TestSolveHBanded:
         x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
-    def test_empty(self):
+    @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_ab, dt_b):
         # ab contains one empty row corresponding to the diagonal
-        ab = [[]]
-        b = []
+        ab = np.array([[]], dtype=dt_ab)
+        b = np.array([], dtype=dt_b)
         x = solveh_banded(ab, b)
-        assert_allclose(x, [])
 
-        b = np.empty((0, 0))
+        assert x.shape == (0,)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
         x = solveh_banded(ab, b)
-        assert_allclose(x, np.empty((0, 0)))
 
+        assert x.shape == (0, 0)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
 class TestSolve:
     def setup_method(self):
