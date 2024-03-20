@@ -133,13 +133,16 @@ class TestEigVals:
         exact_w = [(9+sqrt(93))/2, 0, (9-sqrt(93))/2]
         assert_array_almost_equal(w, exact_w)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, float32, complex, complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         w = eigvals(a)
-        assert_allclose(w, np.empty((0,)))
+        assert w.shape == (0,)
+        assert w.dtype == eigvals(np.eye(2, dtype=dt)).dtype
 
         w = eigvals(a, homogeneous_eigvals=True)
-        assert_allclose(w, np.empty((2, 0)))
+        assert w.shape == (2, 0)
+        assert w.dtype == eigvals(np.eye(2, dtype=dt)).dtype
 
 
 class TestEig:
@@ -386,15 +389,27 @@ class TestEig:
             assert np.isclose(D, 4.0, atol=1e-14).any()
             assert np.isclose(D, 8.0, atol=1e-14).any()
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         w, vr = eig(a)
-        assert_allclose(w, np.empty((0,)))
+
+        w_n, vr_n = eig(np.eye(2, dtype=dt))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype  #eigvals(np.eye(2, dtype=dt)).dtype
+
         assert_allclose(vr, np.empty((0, 0)))
+        assert vr.shape == (0, 0)
+        assert vr.dtype == vr_n.dtype
 
         w, vr = eig(a, homogeneous_eigvals=True)
-        assert_allclose(w, np.empty((2, 0)))
-        assert_allclose(vr, np.empty((0, 0)))
+        assert w.shape == (2, 0)
+        assert w.dtype == w_n.dtype
+
+        assert vr.shape == (0, 0)
+        assert vr.dtype == vr_n.dtype
+
 
 
 class TestEigBanded:

@@ -218,10 +218,11 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
 
     # accommodate square empty matrices
     if a1.size == 0:
-        w = numpy.empty_like(a1, shape=(0,))
+        w_n, vr_n = eig(numpy.eye(2, dtype=a1.dtype))
+        w = numpy.empty_like(a1, shape=(0,), dtype=w_n.dtype)
         w = _make_eigvals(w, None, homogeneous_eigvals)
-        vl = numpy.empty_like(a1, shape=(0, 0))
-        vr = numpy.empty_like(a1, shape=(0, 0))
+        vl = numpy.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        vr = numpy.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
         if not (left or right):
             return w
         if left:
