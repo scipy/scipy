@@ -134,10 +134,13 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     # accommodate empty matrix
     if a1.size == 0:
+        t0, z0 = schur(numpy.eye(2, dtype=a1.dtype))
         if sort is None:
-            return numpy.empty_like(a1), numpy.empty_like(a1)
+            return (numpy.empty_like(a1, dtype=t0.dtype),
+                    numpy.empty_like(a1, dtype=z0.dtype))
         else:
-            return numpy.empty_like(a1), numpy.empty_like(a1), 0
+            return (numpy.empty_like(a1, dtype=t0.dtype),
+                    numpy.empty_like(a1, dtype=z0.dtype), 0)
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))

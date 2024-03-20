@@ -2141,16 +2141,22 @@ class TestSchur:
         t, z = schur(a, check_finite=False)
         assert_array_almost_equal(z @ t @ z.conj().T, a)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         t, z = schur(a)
+        t0, z0 = schur(np.eye(2, dtype=dt))
         assert_allclose(t, np.empty((0, 0)))
         assert_allclose(z, np.empty((0, 0)))
+        assert t.dtype == t0.dtype
+        assert z.dtype == z0.dtype
 
         t, z, sdim = schur(a, sort='lhp')
         assert_allclose(t, np.empty((0, 0)))
         assert_allclose(z, np.empty((0, 0)))
         assert_equal(sdim, 0)
+        assert t.dtype == t0.dtype
+        assert z.dtype == z0.dtype
 
 
 class TestHessenberg:
