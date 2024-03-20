@@ -240,39 +240,35 @@ int {{SUB}}_IIR_forback1({{TYP}} c0, {{TYP}} z1, {{TYP}} *x, {{TYP}} *y,
 int {{SUB}}_SYM_IIR1_initial({{TYP}} z1, {{TYP}} *x, {{TYP}} *yp0,
                              int M, int N, {{RTYP}} precision)
 {
-    {{TYP}} *cur_yp0 = NULL;
     {{TYP}} powz1, diff;
     {{RTYP}} err;
     int k;
 
     if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
 
-    if ((cur_yp0 = malloc(M*sizeof({{TYP}})))==NULL) return -1;
-
    /* Fix starting value assuming mirror-symmetric boundary conditions. */
     for(int i = 0; i < M; i++) {
-        cur_yp0[i] = x[N * i];
+        yp0[i] = x[N * i];
     }
 
     powz1 = 1.0;
     k = 0;
     precision *= precision;
     do {
-        memcpy(yp0, cur_yp0, M * sizeof({{TYP}}));
     	powz1 *= z1;
         for(int i = 0; i < M; i++) {
-            cur_yp0[i] += powz1 * x[N * i + k];
+            yp0[i] += powz1 * x[N * i + k];
         }
     	diff = powz1;
     	err = ABSQ(diff);
     	k++;
     } while((err > precision) && (k < N));
+
     if (k >= N){
         /* sum did not converge */
         return -3;
     }
-    memcpy(yp0, cur_yp0, M * sizeof({{TYP}}));
-    free(cur_yp0);
+
     return 0;
 }
 {{if SUB in CNAME}}
@@ -282,94 +278,85 @@ int {{SUB}}_SYM_IIR1_initial({{TYP}} z1, {{TYP}} *x, {{TYP}} *yp0,
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
-        {{TYP}} *x, {{TYP}} *yp, int N, {{TYP}} precision) {
+        {{TYP}} *x, {{TYP}} *yp, int M, int N, {{TYP}} precision) {
     /* Fix starting values assuming mirror-symmetric boundary conditions. */
     {{TYP}} cs = 1 - 2 * r * cos(omega) + r * r;
-    {{TYP}} yp0 = {{SUB}}_hc(0, cs, r, omega) * x[0];
+
+    for(int i = 0; i < M; i++) {
+        yp[2 * i] = {{SUB}}_hc(0, cs, r, omega) * x[N * i];
+    }
+
     int k = 0;
     precision *= precision;
-    {{TYP}} *xptr = x;
-    int stridex = 1;
+
     {{TYP}} err;
     {{TYP}} diff;
 
     do {
-        yp[0] = yp0;
         diff = {{SUB}}_hc(k+1, cs, r, omega);
-        yp0 += diff * (*xptr);
+        for(int i = 0; i < M; i++) {
+            yp[2 * i] += diff * x[N * i + k];
+        }
         err = diff * diff;
-        xptr += stridex;
         k++;
     } while((err > precision) && (k < N));
 
     if (k >= N) {return -3;}     /* sum did not converge */
-    yp[0] = yp0;
 
-    {{TYP}} yp1 = {{SUB}}_hc(0, cs, r, omega) * (*(x+stridex));
-    yp1 += {{SUB}}_hc(1, cs, r, omega) * x[0];
+    for(int i = 0; i < M; i++) {
+        yp[2 * i + 1] = {{SUB}}_hc(0, cs, r, omega) * x[N * i + 1];
+        yp[2 * i + 1] += {{SUB}}_hc(1, cs, r, omega) * x[N * i];
+    }
+
     k = 0;
-    xptr = x;
     do {
-        yp[1] = yp1;
         diff = {{SUB}}_hc(k+2, cs, r, omega);
-        yp1 += diff * (*xptr);
+        for(int i = 0; i < M; i++) {
+            yp[2 * i + 1] += diff * x[N * i + k];
+        }
         err = diff * diff;
-        xptr += stridex;
         k++;
     } while((err > precision) && (k < N));
 
     if (k >= N) {return -3;}     /* sum did not converge */
-    yp[1] = yp1;
-
     return 0;
 }
 {{endfor}}
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
-        {{TYP}} *x, {{TYP}} *yp, int N, {{TYP}} precision) {
+        {{TYP}} *x, {{TYP}} *yp, int M, int N, {{TYP}} precision) {
     double rsq = r * r;
     {{TYP}} cs = 1 - 2 * r * cos(omega) + rsq;
 
     /* Fix starting values assuming mirror-symmetric boundary conditions. */
-    {{TYP}} yp0 = 0.0;
     int k = 0;
-    int stridex = 1;
-    int stridey = 1;
 
     {{TYP}} err;
     {{TYP}} diff;
 
-    // yptr = y + (N-1)*stridey;
-    {{TYP}} *yptr = yp + stridey;
-    {{TYP}} *xptr = x + (N - 1) * stridex;
     do {
-	    *yptr = yp0;
 	    diff = ({{SUB}}_hs(k, cs, rsq, omega) + {{SUB}}_hs(k+1, cs, rsq, omega));
-	    yp0 += diff * (*xptr);
+	    for(int i = 0; i < M; i++) {
+            yp[2 * i] += diff * x[N * i + N - 1 - k];
+        }
 	    err = diff * diff;
-	    xptr -= stridex;
 	    k++;
     } while((err > precision) && (k < N));
 
     if (k >= N) {return -3;}     /* sum did not converge */
-    *yptr = yp0;
 
-    {{TYP}} yp1 = 0.0;
     k = 0;
-    yptr -= stridey;        /* Initialize in next-to-last slot in output array */
-    xptr = x + (N - 1) * stridex;
     do {
-        *yptr = yp1;
         diff = ({{SUB}}_hs(k-1, cs, rsq, omega) + {{SUB}}_hs(k+2, cs, rsq, omega));
-        yp1 += diff * (*xptr);
+        for(int i = 0; i < M; i++) {
+            yp[2 * i + 1] += diff * x[N * i + N - 1 - k];
+        }
         err = diff * diff;
-        xptr -= stridex;
         k++;
     } while((err > precision) && (k < N));
 
     if (k >= N) {return -3;}     /* sum did not converge */
-    *yptr = yp1;
 
     return 0;
 }

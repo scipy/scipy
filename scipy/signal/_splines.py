@@ -25,7 +25,8 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     Parameters
     ----------
     input : ndarray
-        The input signal.
+        The input signal. If 2D, then the filter will be applied in a batched
+        fashion across the last axis.
     c0, z1 : scalar
         Parameters in the transfer function.
     precision :
@@ -40,6 +41,14 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     if np.abs(z1) >= 1:
         raise ValueError('|z1| must be less than 1.0')
 
+    if signal.ndim > 2:
+        raise ValueError('Input must be 1D or 2D')
+
+    squeeze_dim = False
+    if signal.ndim == 1:
+        signal = signal[None, :]
+        squeeze_dim = True
+
     y0 = symiirorder1_ic(signal, z1, precision)
 
     # Apply first the system 1 / (1 - z1 * z^-1)
@@ -47,19 +56,27 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
     a = np.r_[1, -z1]
     a = a.astype(signal.dtype)
 
-    zi = lfiltic(b, a, y0)
+    # Compute the initial state for lfilter.
+    zii = y0 * z1
 
-    y1, _ = lfilter(b, a, axis_slice(signal, 1), zi=zi)
-    y1 = np.r_[y0, y1]
+    y1, _ = lfilter(b, a, axis_slice(signal, 1), zi=zii)
+    y1 = np.c_[y0, y1]
 
     # Compute backward symmetric condition and apply the system
     # c0 / (1 - z1 * z)
     b = np.asarray([c0], dtype=signal.dtype)
-    out_last = -c0 / (z1 - 1.0) * y1[-1]
+    out_last = -c0 / (z1 - 1.0) * axis_slice(y1, -1)
 
-    zi = lfiltic(b, a, np.atleast_1d(out_last).astype(signal.dtype))
-    out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zi)
-    return np.r_[axis_reverse(out), out_last]
+    # Compute the initial state for lfilter.
+    zii = out_last * z1
+
+    out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zii)
+    out = np.c_[axis_reverse(out), out_last]
+
+    if squeeze_dim:
+        out = out[0]
+
+    return out
 
 
 def symiirorder2(input, r, omega, precision=-1.0):
@@ -95,29 +112,45 @@ def symiirorder2(input, r, omega, precision=-1.0):
     if r >= 1.0:
         raise ValueError('r must be less than 1.0')
 
+    if input.ndim > 2:
+        raise ValueError('Input must be 1D or 2D')
+
     if not input.flags.c_contiguous:
         input = input.copy()
+
+    squeeze_dim = False
+    if input.ndim == 1:
+        input = input[None, :]
+        squeeze_dim = True
 
     rsq = r * r
     a2 = 2 * r * np.cos(omega)
     a3 = -rsq
     cs = np.atleast_1d(1 - 2 * r * np.cos(omega) + rsq)
+    sos = np.atleast_2d(np.r_[cs, 0, 0, 1, -a2, -a3]).astype(input.dtype)
 
     # Find the starting (forward) conditions.
     ic_fwd = symiirorder2_ic_fwd(input, r, omega, precision)
 
     # Apply first the system cs / (1 - a2 * z^-1 - a3 * z^-2)
-    b = cs.astype(input.dtype)
-    a = np.r_[1, -a2, -a3].astype(input.dtype)
-    zi = lfiltic(b, a, ic_fwd[::-1])
-    sos = np.atleast_2d(np.r_[cs, 0, 0, 1, -a2, -a3]).astype(input.dtype)
-    y_fwd, _ = sosfilt(sos, input[2:], zi=np.atleast_2d(zi))
-    # Then compute the symmetric backward starting conditions
-    y_fwd = np.r_[ic_fwd, y_fwd]
+    # Compute the initial conditions in the form expected by sosfilt
+    # coef = np.asarray([[a3, a2], [0, a3]], dtype=input.dtype)
+    coef = np.r_[a3, a2, 0, a3].reshape(2, 2).astype(input.dtype)
+    zi = np.matmul(coef, ic_fwd[:, :, None])[:, :, 0]
 
+    y_fwd, _ = sosfilt(sos, axis_slice(input, 2), zi=zi[None])
+    y_fwd = np.c_[ic_fwd, y_fwd]
+
+    # Then compute the symmetric backward starting conditions
     ic_bwd = symiirorder2_ic_bwd(input, r, omega, precision)
 
     # Apply the system cs / (1 - a2 * z^1 - a3 * z^2)
-    zi = lfiltic(b, a, ic_bwd)
-    y, _ = sosfilt(sos, axis_slice(y_fwd, -3, step=-1), zi=np.atleast_2d(zi))
-    return np.r_[axis_reverse(y), ic_bwd]
+    # Compute the initial conditions in the form expected by sosfilt
+    zi = np.matmul(coef, ic_bwd[:, :, None])[:, :, 0]
+    y, _ = sosfilt(sos, axis_slice(y_fwd, -3, step=-1), zi=zi[None])
+    out = np.c_[axis_reverse(y), axis_reverse(ic_bwd)]
+
+    if squeeze_dim:
+        out = out[0]
+
+    return out

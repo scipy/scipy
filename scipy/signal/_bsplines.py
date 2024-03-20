@@ -7,6 +7,7 @@ from scipy._lib._util import normalize_axis_index
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d, symiirorder1_ic
+from ._splines import symiirorder1
 from ._arraytools import axis_slice, axis_reverse
 from ._signaltools import lfilter, sosfilt, lfiltic
 
@@ -390,27 +391,7 @@ def _symiirorder1_nd(input, c0, z1, precision=-1.0, axis=-1):
     if input.ndim > 1:
         input, input_shape = collapse_2d(input, axis)
 
-    if abs(z1) >= 1:
-        raise ValueError('|z1| must be less than 1.0')
-
-    zi = symiirorder1_ic(input, z1, precision)
-
-    # Apply first the system 1 / (1 - z1 * z^-1)
-    b = ones(1, dtype=input.dtype)
-    a = r_[1, -z1]
-    zii = zi[:, None] * z1
-
-    y1, _ = lfilter(b, a, axis_slice(input, 1), zi=zii)
-    y1 = c_[zi, y1]
-
-    # Compute backward symmetric condition and apply the system
-    # c0 / (1 - z1 * z)
-    zi = -c0 / (z1 - 1.0) * axis_slice(y1, -1)
-    zii = zi * z1
-
-    b = asarray([c0], dtype=input.dtype)
-    out, _ = lfilter(b, a, axis_slice(y1, -2, step=-1), zi=zii)
-    out = c_[out[:, ::-1], zi]
+    out = symiirorder1(input, c0, z1, precision=precision)
 
     if input_ndim > 1:
         out = out.reshape(input_shape)

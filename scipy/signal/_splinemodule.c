@@ -278,8 +278,9 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
     N = in_size[1];
   }
 
+  const npy_intp sz[2] = {M, 1};
   dtype = PyArray_DescrFromType(thetype);
-  out = (PyArrayObject *)PyArray_Empty(1, &M, dtype, 0);
+  out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
   if (out == NULL) goto fail;
 
   switch (thetype) {
@@ -387,7 +388,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   double r, omega;
   double precision = -1.0;
   int thetype, ret;
-  npy_intp N;
+  npy_intp N, M;
   PyArray_Descr* dtype;
 
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
@@ -395,24 +396,30 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
-  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
+  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) goto fail;
 
-  dtype = PyArray_DescrFromType(thetype);
-  npy_intp sz = 2;
-  out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
-  if (out == NULL) goto fail;
-
   in_size = PyArray_DIMS(a_sig);
+  M = 1;
   N = in_size[0];
+
+  if(PyArray_NDIM(a_sig) > 1) {
+    M = in_size[0];
+    N = in_size[1];
+  }
+
+  dtype = PyArray_DescrFromType(thetype);
+  const npy_intp sz[2] = {M, 2};
+  out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
+  if (out == NULL) goto fail;
 
   switch (thetype) {
   case NPY_FLOAT:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
       ret = S_SYM_IIR2_initial_fwd(r, omega, (float *)PyArray_DATA(a_sig),
-                                  (float *)PyArray_DATA(out), N,
+                                  (float *)PyArray_DATA(out), M, N,
                                   (float )precision);
     }
     break;
@@ -420,7 +427,7 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
       ret = D_SYM_IIR2_initial_fwd(r, omega, (double *)PyArray_DATA(a_sig),
-                                  (double *)PyArray_DATA(out), N,
+                                  (double *)PyArray_DATA(out), M, N,
                                   precision);
     }
     break;
@@ -488,7 +495,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   double r, omega;
   double precision = -1.0;
   int thetype, ret;
-  npy_intp N;
+  npy_intp M, N;
   PyArray_Descr* dtype;
 
   if (!PyArg_ParseTuple(args, "Odd|d", &sig, &r, &omega, &precision))
@@ -496,24 +503,30 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
 
   thetype = PyArray_ObjectType(sig, NPY_FLOAT);
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
-  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 1);
+  a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
   if (a_sig == NULL) goto fail;
 
-  dtype = PyArray_DescrFromType(thetype);
-  npy_intp sz = 2;
-  out = (PyArrayObject *)PyArray_Empty(1, &sz, dtype, 0);
-  if (out == NULL) goto fail;
-
   in_size = PyArray_DIMS(a_sig);
+  M = 1;
   N = in_size[0];
+
+  if(PyArray_NDIM(a_sig) > 1) {
+    M = in_size[0];
+    N = in_size[1];
+  }
+
+  dtype = PyArray_DescrFromType(thetype);
+  const npy_intp sz[2] = {M, 2};
+  out = (PyArrayObject *)PyArray_Zeros(2, sz, dtype, 0);
+  if (out == NULL) goto fail;
 
   switch (thetype) {
   case NPY_FLOAT:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
       ret = S_SYM_IIR2_initial_bwd(r, omega, (float *)PyArray_DATA(a_sig),
-                                  (float *)PyArray_DATA(out), N,
+                                  (float *)PyArray_DATA(out), M, N,
                                   (float )precision);
     }
     break;
@@ -521,7 +534,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
       ret = D_SYM_IIR2_initial_bwd(r, omega, (double *)PyArray_DATA(a_sig),
-                                   (double *)PyArray_DATA(out), N,
+                                   (double *)PyArray_DATA(out), M, N,
                                    precision);
     }
     break;
