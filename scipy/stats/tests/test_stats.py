@@ -36,8 +36,10 @@ from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import _permutation_distribution_t
+from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import xp_assert_close
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -3324,6 +3326,16 @@ class TestMoments:
             stats.skew([])
         with pytest.warns(RuntimeWarning, match=message):
             stats.kurtosis([])
+
+    @array_api_compatible
+    @pytest.mark.parametrize('order', [0, 1, 2, 3])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    def test_moment_array_api(self, xp, order, axis):
+        rng = np.random.default_rng(34823589259425)
+        x = rng.random(size=(5, 6, 7))
+        res = _moment(xp.asarray(x), order, axis)
+        ref = xp.asarray(_moment(x, order, axis))
+        xp_assert_close(res, ref)
 
 
 @hypothesis.strategies.composite
@@ -8675,3 +8687,25 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
+
+
+@array_api_compatible
+def test_chk_asarray(xp):
+    rng = np.random.default_rng(2348923425434)
+    x0 = rng.random(size=(2, 3, 4))
+    x = xp.asarray(x0)
+
+    axis = 1
+    x_out, axis_out = _chk_asarray(x, axis=axis)
+    assert_equal(x_out, x)
+    assert_equal(axis_out, axis)
+
+    axis = None
+    x_out, axis_out = _chk_asarray(x, axis=axis)
+    assert_equal(x_out, xp.asarray(x.ravel()))
+    assert_equal(axis_out, 0)
+
+    axis = 2
+    x_out, axis_out = _chk_asarray(x[0], axis=axis)
+    assert_equal(x_out, xp.asarray(np.atleast_1d(x[0])))
+    assert_equal(axis_out, axis)

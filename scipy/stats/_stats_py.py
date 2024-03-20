@@ -66,6 +66,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
@@ -98,16 +99,16 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'expectile']
 
 
-def _chk_asarray(a, axis):
+def _chk_asarray(a, axis, xp=np):
     if axis is None:
-        a = np.ravel(a)
+        a = xp.reshape(a, -1)
         outaxis = 0
     else:
-        a = np.asarray(a)
+        a = xp.asarray(a)
         outaxis = axis
 
     if a.ndim == 0:
-        a = np.atleast_1d(a)
+        a = xp.reshape(a, -1)
 
     return a, outaxis
 
@@ -1017,14 +1018,23 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, moment, axis, *, mean=None):
-    if np.abs(moment - np.round(moment)) > 0:
+    xp = array_namespace(a)
+
+    if xp.abs(moment - xp.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
     # moment of empty array is the same regardless of order
     if a.size == 0:
-        return np.mean(a, axis=axis)
+        return xp.mean(a, axis=axis)
 
-    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
+    # again, how do we determine non-NumPy dtypes?
+    dtype_name = str(a.dtype).split('.')[-1]
+    if 'int' in dtype_name:
+        dtype = xp.float64
+        dtype_name = 'float64'
+        a = xp.asarray(a, dtype=dtype)
+    else:
+        dtype = getattr(xp, dtype_name)
 
     if moment == 0 or (moment == 1 and mean is None):
         # By definition the zeroth moment is always 1, and the first *central*
@@ -1032,11 +1042,8 @@ def _moment(a, moment, axis, *, mean=None):
         shape = list(a.shape)
         del shape[axis]
 
-        if len(shape) == 0:
-            return dtype(1.0 if moment == 0 else 0.0)
-        else:
-            return (np.ones(shape, dtype=dtype) if moment == 0
-                    else np.zeros(shape, dtype=dtype))
+        return (xp.ones(shape, dtype=dtype) if moment == 0
+                else xp.zeros(shape, dtype=dtype))[()]
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -1049,16 +1056,18 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = (a.mean(axis, keepdims=True) if mean is None
-                else np.asarray(mean, dtype=dtype)[()])
+        mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
+                else xp.asarray(mean, dtype=dtype)[()])
         a_zero_mean = a - mean
 
-        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        # I don't know how I'm supposed to do this with array API
+        eps = np.finfo(getattr(np, dtype_name)).resolution * 10
+
         with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
-                              keepdims=True) / np.abs(mean)
+            rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                              keepdims=True) / xp.abs(mean)
         with np.errstate(invalid='ignore'):
-            precision_loss = np.any(rel_diff < eps)
+            precision_loss = xp.any(rel_diff < eps)
         n = a.shape[axis] if axis is not None else a.size
         if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
@@ -1067,7 +1076,7 @@ def _moment(a, moment, axis, *, mean=None):
             warnings.warn(message, RuntimeWarning, stacklevel=4)
 
         if n_list[-1] == 1:
-            s = a_zero_mean.copy()
+            s = xp.asarray(a_zero_mean, copy=True)
         else:
             s = a_zero_mean**2
 
@@ -1076,7 +1085,7 @@ def _moment(a, moment, axis, *, mean=None):
             s = s**2
             if n % 2:
                 s *= a_zero_mean
-        return np.mean(s, axis)
+        return xp.mean(s, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None):

@@ -12,7 +12,7 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible
 
-from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._array_api import xp_assert_equal, is_numpy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -330,6 +330,32 @@ class TestContainsNaNTest:
 
         data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
         assert _contains_nan(data4)[0]
+
+    @array_api_compatible
+    @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
+    def test_array_api(self, xp, nan_policy):
+        rng = np.random.default_rng(932347235892482)
+        x0 = xp.asarray(rng.random(size=(2, 3, 4)))
+        x0_nan = xp.asarray(x0.copy())
+        x0_nan[1, 2, 1] = np.nan
+
+        contains_nan, nan_policy_out = _contains_nan(x0, nan_policy=nan_policy, xp=xp)
+        assert not contains_nan
+        assert nan_policy_out == nan_policy
+
+        if nan_policy == 'raise':
+            message = 'The input contains...'
+            with pytest.raises(ValueError, match=message):
+                _contains_nan(x0_nan, nan_policy=nan_policy, xp=xp)
+        elif nan_policy == 'omit' and not is_numpy(xp):
+            message = "`nan_policy='omit' is incompatible..."
+            with pytest.raises(ValueError, match=message):
+                _contains_nan(x0_nan, nan_policy=nan_policy, xp=xp)
+        elif nan_policy == 'propagate':
+            contains_nan, nan_policy_out = _contains_nan(
+                x0_nan, nan_policy=nan_policy, xp=xp)
+            assert contains_nan
+            assert nan_policy_out == nan_policy
 
 
 def test__rng_html_rewrite():

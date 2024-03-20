@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, is_numpy
 
 
 AxisError: type[Exception]
@@ -708,8 +708,11 @@ def _nan_allsame(a, axis, keepdims=False):
 
 
 def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None):
-    if not isinstance(a, np.ndarray):
+                  policies=None, xp=np):
+
+    not_numpy = not is_numpy(xp)
+
+    if not_numpy:
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
         policies = ['propagate', 'raise', 'omit']
@@ -717,14 +720,15 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
 
-    if np.issubdtype(a.dtype, np.inexact):
-        # The summation method avoids creating a (potentially huge) array.
+    inexact = ('float' in str(a.dtype) or 'complex' in str(a.dtype))
+    if inexact or (is_numpy(xp) and np.issubdtype(a.dtype, np.inexact)):
+        # The summation method avoids creating another (potentially huge) array
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
+                contains_nan = xp.isnan(xp.sum(a))
         else:
-            contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, object):
+            contains_nan = xp.any(xp.isnan(a))
+    elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
             # isnan doesn't work on non-numeric elements
@@ -737,6 +741,10 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
+
+    if not_numpy and contains_nan and nan_policy=='omit':
+        message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
+        raise ValueError(message)
 
     return contains_nan, nan_policy
 
