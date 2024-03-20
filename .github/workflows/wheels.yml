@@ -42,7 +42,7 @@ jobs:
       message: ${{ steps.commit_message.outputs.message }}
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         # Gets the correct commit message for pull request
         with:
           ref: ${{ github.event.pull_request.head.sha }}
@@ -80,6 +80,7 @@ jobs:
         - [ubuntu-22.04, manylinux, x86_64]
         - [ubuntu-22.04, musllinux, x86_64]
         - [macos-11, macosx, x86_64]
+        - [macos-14, macosx, arm64]
         - [windows-2019, win, AMD64]
 
         python: [["cp39", "3.9"], ["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
@@ -94,14 +95,14 @@ jobs:
 
     steps:
       - name: Checkout scipy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.1.1
         with:
           submodules: true
           fetch-depth: 0
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v5
         with:
-          python-version: 3.9
+          python-version: 3.11
 
       - name: win_amd64 - install rtools
         run: |
@@ -122,8 +123,67 @@ jobs:
 #          echo $(gcc --version)
 #        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'true' }}
 
+      - name: Setup macOS
+        if: matrix.buildplat[0] == 'macos-11' || matrix.buildplat[0] == 'macos-14'
+        run: |
+          if [[ ${{ matrix.buildplat[2] }} == 'arm64' ]]; then
+            # macosx_arm64
+          
+            # use homebrew gfortran
+            sudo xcode-select -s /Applications/Xcode_15.2.app            
+            # for some reason gfortran is not on the path
+            GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+            ln -s $GFORTRAN_LOC gfortran
+            export PATH=$PWD:$PATH
+            echo "PATH=$PATH" >> "$GITHUB_ENV"
+          
+            # location of the gfortran's libraries
+            GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+
+            CIBW="MACOSX_DEPLOYMENT_TARGET=12.0\
+              MACOS_DEPLOYMENT_TARGET=12.0\
+              LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
+              _PYTHON_HOST_PLATFORM=macosx-12.0-arm64\
+              PIP_PRE=1\
+              PIP_NO_BUILD_ISOLATION=false\
+              PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig\
+              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
+          
+            CIBW="sudo xcode-select -s /Applications/Xcode_15.2.app"
+            echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+
+            echo "REPAIR_PATH=/opt/arm64-builds/lib" >> "$GITHUB_ENV"
+
+            CIBW="DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib delocate-listdeps {wheel} &&\
+              DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
+            echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+      
+          else
+            # macosx_x86_64 with OpenBLAS
+            # setting SDKROOT necessary when using the gfortran compiler
+            # installed in cibw_before_build_macos.sh
+            # MACOS_DEPLOYMENT_TARGET is set because of
+            # https://github.com/mesonbuild/meson-python/pull/309. Once
+            # an update is released, then that environment variable can
+            # be removed.
+            CIBW="MACOSX_DEPLOYMENT_TARGET=10.9\
+              MACOS_DEPLOYMENT_TARGET=10.9\
+              SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk\
+              LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
+              _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64\
+              PIP_PRE=1\
+              PIP_NO_BUILD_ISOLATION=false\
+              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
+          
+            CIBW="DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&\
+              DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
+            echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+          fi
+
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.15.0
+        uses: pypa/cibuildwheel@v2.16.5
         env:
           CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
@@ -131,7 +191,7 @@ jobs:
           CIBW_PRERELEASE_PYTHONS: True
 
           # TODO remove the CIBW_BEFORE_BUILD_* lines once there are
-          #  numpy2.0 wheels available on PyPI. Also remove/comment out the
+          # numpy2.0 wheels available on PyPI. Also remove/comment out the
           # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL from CIBW_ENVIRONMENT
           # (also for _MACOS and _WINDOWS below)
           CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
@@ -147,32 +207,12 @@ jobs:
             PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
             PIP_NO_BUILD_ISOLATION=false
 
-          # setting SDKROOT necessary when using the gfortran compiler
-          # installed in cibw_before_build_macos.sh
-          # MACOS_DEPLOYMENT_TARGET is set because of
-          # https://github.com/mesonbuild/meson-python/pull/309. Once
-          # an update is released, then that environment variable can
-          # be removed.
-          CIBW_ENVIRONMENT_MACOS: >
-            SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk
-            LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-            MACOSX_DEPLOYMENT_TARGET=10.9
-            MACOS_DEPLOYMENT_TARGET=10.9
-            _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64
-            PIP_PRE=1
-            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-            PIP_NO_BUILD_ISOLATION=false
-
-          CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-            DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&
-            DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
-
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           path: ./wheelhouse/*.whl
-          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
 
-      - uses: conda-incubator/setup-miniconda@v2
+      - uses: conda-incubator/setup-miniconda@v3
         with:
           # for installation of anaconda-client, required for upload to
           # anaconda.org

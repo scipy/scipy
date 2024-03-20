@@ -1,3 +1,5 @@
+:html_theme.sidebar_secondary.remove: true
+
 .. template taken from Pandas
 
 .. module:: scipy
@@ -23,7 +25,7 @@ science, and engineering.
 .. grid:: 2
 
     .. grid-item-card::
-        :img-top: _static/index_user_guide.png
+        :img-top: _static/index_user_guide.svg
 
         User guide
         ^^^^^^^^^^
@@ -41,7 +43,7 @@ science, and engineering.
             To the user guide
 
     .. grid-item-card::
-        :img-top: _static/index_api.png
+        :img-top: _static/index_api.svg
 
         API reference
         ^^^^^^^^^^^^^
@@ -60,7 +62,7 @@ science, and engineering.
             To the reference guide
 
     .. grid-item-card::
-        :img-top: _static/index_getting_started.png
+        :img-top: _static/index_getting_started.svg
 
         Building from source
         ^^^^^^^^^^^^^^^^^^^^
@@ -80,7 +82,7 @@ science, and engineering.
             To the build guide
 
     .. grid-item-card::
-        :img-top: _static/index_contribute.png
+        :img-top: _static/index_contribute.svg
 
         Developer guide
         ^^^^^^^^^^^^^^^

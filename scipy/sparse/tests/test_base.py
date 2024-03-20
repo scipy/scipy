@@ -1230,13 +1230,13 @@ class _TestCommon:
         chk = self.datsp.todense(out=out)
         assert_array_equal(self.dat, out)
         assert_array_equal(self.dat, chk)
-        assert_(chk.base is out)
+        assert np.may_share_memory(chk, out)
         # Check with out array (matrix).
         out = asmatrix(np.zeros(self.datsp.shape, dtype=self.datsp.dtype))
         chk = self.datsp.todense(out=out)
         assert_array_equal(self.dat, out)
         assert_array_equal(self.dat, chk)
-        assert_(chk is out)
+        assert np.may_share_memory(chk, out)
         a = array([[1.,2.,3.]])
         dense_dot_dense = a @ self.dat
         check = a @ self.datsp.todense()
@@ -1336,9 +1336,8 @@ class _TestCommon:
         S = self.spcreator(D)
         if hasattr(S, 'data'):
             S.data.flags.writeable = False
-        if hasattr(S, 'indptr'):
+        if S.format in ('csr', 'csc', 'bsr'):
             S.indptr.flags.writeable = False
-        if hasattr(S, 'indices'):
             S.indices.flags.writeable = False
         for x in supported_dtypes:
             D_casted = D.astype(x)
@@ -2098,8 +2097,16 @@ class _TestCommon:
                 assert_equal(datsp.shape, sploaded.shape)
                 assert_array_equal(datsp.toarray(), sploaded.toarray())
                 assert_equal(datsp.format, sploaded.format)
+                # Hacky check for class member equality. This assumes that
+                # all instance variables are one of:
+                #  1. Plain numpy ndarrays
+                #  2. Tuples of ndarrays
+                #  3. Types that support equality comparison with ==
                 for key, val in datsp.__dict__.items():
                     if isinstance(val, np.ndarray):
+                        assert_array_equal(val, sploaded.__dict__[key])
+                    elif (isinstance(val, tuple) and val
+                          and isinstance(val[0], np.ndarray)):
                         assert_array_equal(val, sploaded.__dict__[key])
                     else:
                         assert_(val == sploaded.__dict__[key])
@@ -2648,21 +2655,14 @@ class _TestSlicing:
         assert_equal(a[1, ..., 1], b[1, ..., 1])
 
     def test_multiple_ellipsis_slicing(self):
-        b = asmatrix(arange(50).reshape(5,10))
-        a = self.spcreator(b)
+        a = self.spcreator(arange(6).reshape(3, 2))
 
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[..., ...].toarray(), b[:, :].A)
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[..., ..., ...].toarray(), b[:, :].A)
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[1, ..., ...].toarray(), b[1, :].A)
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[1:, ..., ...].toarray(), b[1:, :].A)
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[..., ..., 1:].toarray(), b[:, 1:].A)
-        with pytest.deprecated_call(match='removed in v1.13'):
-            assert_array_equal(a[..., ..., 1].toarray(), b[:, 1].A)
+        with pytest.raises(IndexError,
+                           match='an index can only have a single ellipsis'):
+            a[..., ...]
+        with pytest.raises(IndexError,
+                           match='an index can only have a single ellipsis'):
+            a[..., 1, ...]
 
 
 class _TestSlicingAssign:
@@ -2982,6 +2982,41 @@ class _TestFancyIndexing:
         assert_raises(IndexError, S.__getitem__, (I_bad,J))
         assert_raises(IndexError, S.__getitem__, (I,J_bad))
 
+    def test_missized_masking(self):
+        M, N = 5, 10
+
+        B = asmatrix(arange(M * N).reshape(M, N))
+        A = self.spcreator(B)
+
+        # Content of mask shouldn't matter, only its size
+        row_long = np.ones(M + 1, dtype=bool)
+        row_short = np.ones(M - 1, dtype=bool)
+        col_long = np.ones(N + 2, dtype=bool)
+        col_short = np.ones(N - 2, dtype=bool)
+
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M + 1} instead of {M}"
+        ):
+            _ = A[row_long, :]
+        with pytest.raises(
+            IndexError,
+            match=rf"boolean row index has incorrect length: {M - 1} instead of {M}"
+        ):
+            _ = A[row_short, :]
+
+        for i, j in itertools.product(
+            (row_long, row_short, slice(None)),
+            (col_long, col_short, slice(None)),
+        ):
+            if isinstance(i, slice) and isinstance(j, slice):
+                continue
+            with pytest.raises(
+                IndexError,
+                match=r"boolean \w+ index has incorrect length"
+            ):
+                _ = A[i, j]
+
     def test_fancy_indexing_boolean(self):
         np.random.seed(1234)  # make runs repeatable
 
@@ -3009,7 +3044,7 @@ class _TestFancyIndexing:
         Z3 = np.zeros((6, 11), dtype=bool)
         Z3[-1,0] = True
 
-        assert_equal(A[Z1], np.array([]))
+        assert_raises(IndexError, A.__getitem__, Z1)
         assert_raises(IndexError, A.__getitem__, Z2)
         assert_raises(IndexError, A.__getitem__, Z3)
         assert_raises((IndexError, ValueError), A.__getitem__, (X, 1))

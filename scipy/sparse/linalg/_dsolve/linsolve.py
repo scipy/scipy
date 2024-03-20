@@ -4,7 +4,7 @@ import numpy as np
 from numpy import asarray
 from scipy.sparse import (issparse,
                           SparseEfficiencyWarning, csc_matrix, csr_matrix)
-from scipy.sparse._sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
 from scipy.linalg import LinAlgError
 import copy
 
@@ -121,8 +121,8 @@ def _get_umf_family(A):
     # but that didn't always fix the issue.
     family = family[0] + "l"
     A_new = copy.copy(A)
-    A_new.indptr = np.array(A.indptr, copy=False, dtype=np.int64)
-    A_new.indices = np.array(A.indices, copy=False, dtype=np.int64)
+    A_new.indptr = np.asarray(A.indptr, dtype=np.int64)
+    A_new.indices = np.asarray(A.indices, dtype=np.int64)
 
     return family, A_new
 
@@ -223,9 +223,10 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     >>> np.allclose(A.dot(x).toarray(), B.toarray())
     True
     """
-
-    if is_pydata_spmatrix(A):
-        A = A.to_scipy_sparse().tocsc()
+    is_pydata_sparse = is_pydata_spmatrix(b)
+    pydata_sparse_cls = b.__class__ if is_pydata_sparse else None
+    A = convert_pydata_sparse_to_scipy(A)
+    b = convert_pydata_sparse_to_scipy(b)
 
     if not (issparse(A) and A.format in ("csc", "csr")):
         A = csc_matrix(A)
@@ -233,7 +234,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
              SparseEfficiencyWarning, stacklevel=2)
 
     # b is a vector only if b have shape (n,) or (n, 1)
-    b_is_sparse = issparse(b) or is_pydata_spmatrix(b)
+    b_is_sparse = issparse(b)
     if not b_is_sparse:
         b = asarray(b)
     b_is_vector = ((b.ndim == 1) or (b.ndim == 2 and b.shape[1] == 1))
@@ -329,8 +330,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
             x = A.__class__((sparse_data, (sparse_row, sparse_col)),
                            shape=b.shape, dtype=A.dtype)
 
-            if is_pydata_spmatrix(b):
-                x = b.__class__(x)
+            if is_pydata_sparse:
+                x = pydata_sparse_cls.from_scipy_sparse(x)
 
     return x
 
@@ -405,7 +406,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if is_pydata_spmatrix(A):
         def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix
@@ -500,7 +501,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if is_pydata_spmatrix(A):
         def csc_construct_func(*a, cls=type(A)):
-            return cls(csc_matrix(*a))
+            return cls.from_scipy_sparse(csc_matrix(*a))
         A = A.to_scipy_sparse().tocsc()
     else:
         csc_construct_func = csc_matrix

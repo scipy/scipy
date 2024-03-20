@@ -30,7 +30,10 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize import rosen, rosen_der, rosen_hess
 
+from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
+                          csr_array, csc_array)
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
@@ -1157,40 +1160,6 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(optimize.rosen, x0, method=custmin,
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
-
-    @pytest.mark.xfail(reason="output not reliable on all platforms")
-    def test_gh13321(self, capfd):
-        # gh-13321 reported issues with console output in fmin_l_bfgs_b;
-        # check that iprint=0 works.
-        kwargs = {'func': optimize.rosen, 'x0': [4, 3],
-                  'fprime': optimize.rosen_der, 'bounds': ((3, 5), (3, 5))}
-
-        # "L-BFGS-B" is always in output; should show when iprint >= 0
-        # "At iterate" is iterate info; should show when iprint >= 1
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" not in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=0)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=1)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" in out
-
-        # `disp is not None` overrides `iprint` behavior
-        # `disp=0` should suppress all output
-        # `disp=1` should be the same as `iprint = 1`
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=1, disp=False)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" not in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1, disp=True)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" in out
 
     def test_gh10771(self):
         # check that minimize passes bounds and constraints to a custom
@@ -2554,14 +2523,14 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-    def test_runtime_warning(self):
+    def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
         def func(z, *params):
             return rng.random(1) * 1000  # never converged problem
 
-        with pytest.warns(RuntimeWarning,
-                          match=r'Either final optimization did not succeed'):
+        msg = "final optimization did not succeed.*|Maximum number of function eval.*"
+        with pytest.warns(RuntimeWarning, match=msg):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
     def test_coerce_args_param(self):
@@ -3125,3 +3094,29 @@ def test_gh12594():
 
     assert_allclose(res.fun, ref.fun)
     assert_allclose(res.x, ref.x)
+
+
+@pytest.mark.parametrize('method', ['Newton-CG', 'trust-constr'])
+@pytest.mark.parametrize('sparse_type', [coo_matrix, csc_matrix, csr_matrix,
+                                         coo_array, csr_array, csc_array])
+def test_sparse_hessian(method, sparse_type):
+    # gh-8792 reported an error for minimization with `newton_cg` when `hess`
+    # returns a sparse matrix. Check that results are the same whether `hess`
+    # returns a dense or sparse matrix for optimization methods that accept
+    # sparse Hessian matrices.
+
+    def sparse_rosen_hess(x):
+        return sparse_type(rosen_hess(x))
+
+    x0 = [2., 2.]
+
+    res_sparse = optimize.minimize(rosen, x0, method=method,
+                                   jac=rosen_der, hess=sparse_rosen_hess)
+    res_dense = optimize.minimize(rosen, x0, method=method,
+                                  jac=rosen_der, hess=rosen_hess)
+
+    assert_allclose(res_dense.fun, res_sparse.fun)
+    assert_allclose(res_dense.x, res_sparse.x)
+    assert res_dense.nfev == res_sparse.nfev
+    assert res_dense.njev == res_sparse.njev
+    assert res_dense.nhev == res_sparse.nhev

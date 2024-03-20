@@ -155,8 +155,8 @@ def test_exceptions_properties_methods():
 
 @pytest.mark.parametrize('m', ('onesided', 'onesided2X'))
 def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
-    """Verify hat one-sided spectra are not allowed with complex-valued
-    windows.
+    """Verify that one-sided spectra are not allowed with complex-valued
+    windows or with complex-valued signals.
 
     The reason being, the `rfft` function only accepts real-valued input.
     """
@@ -168,6 +168,13 @@ def test_exceptions_fft_mode_complex_win(m: FFT_MODE_TYPE):
     with pytest.raises(ValueError,
                        match=f"One-sided spectra, i.e., fft_mode='{m}'.*"):
         SFT.fft_mode = m
+
+    SFT = ShortTimeFFT(np.ones(8), hop=4, fs=1, scale_to='psd', fft_mode='onesided')
+    with pytest.raises(ValueError, match="Complex-valued `x` not allowed for self.*"):
+        SFT.stft(np.ones(8)*1j)
+    SFT.fft_mode = 'onesided2X'
+    with pytest.raises(ValueError, match="Complex-valued `x` not allowed for self.*"):
+        SFT.stft(np.ones(8)*1j)
 
 
 def test_invalid_fft_mode_RuntimeError():
@@ -617,6 +624,27 @@ def test_permute_axes():
 
         ybT = SFT.istft(SyT, k1=n, t_axis=i, f_axis=-1)
         assert_allclose(ybT, y, atol=atol)
+
+
+@pytest.mark.parametrize("fft_mode",
+                         ('twosided', 'centered', 'onesided', 'onesided2X'))
+def test_roundtrip_multidimensional(fft_mode: FFT_MODE_TYPE):
+    """Test roundtrip of a multidimensional input signal versus its components.
+
+    This test can uncover potential problems with `fftshift()`.
+    """
+    n = 9
+    x = np.arange(4*n*2).reshape(4, n, 2)
+    SFT = ShortTimeFFT(get_window('hann', 4), hop=2, fs=1,
+                       scale_to='magnitude', fft_mode=fft_mode)
+    Sx = SFT.stft(x, axis=1)
+    y = SFT.istft(Sx, k1=n, f_axis=1, t_axis=-1)
+    assert_allclose(y, x, err_msg='Multidim. roundtrip failed!')
+
+    for i, j in product(range(x.shape[0]), range(x.shape[2])):
+        y_ = SFT.istft(Sx[i, :, j, :], k1=n)
+        assert_allclose(y_, x[i, :, j], err_msg="Multidim. roundtrip for component " +
+                        f"x[{i}, :, {j}] and {fft_mode=} failed!")
 
 
 @pytest.mark.parametrize('window, n, nperseg, noverlap',

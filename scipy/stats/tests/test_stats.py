@@ -380,7 +380,7 @@ class TestCorrPearsonr:
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
         msg = "An input array is constant"
-        with assert_warns(stats.ConstantInputWarning, match=msg):
+        with pytest.warns(stats.ConstantInputWarning, match=msg):
             r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -390,7 +390,7 @@ class TestCorrPearsonr:
         x = [2, 2, 2 + np.spacing(2)]
         y = [3, 3, 3 + 6*np.spacing(3)]
         msg = "An input array is nearly constant; the computed"
-        with assert_warns(stats.NearConstantInputWarning, match=msg):
+        with pytest.warns(stats.NearConstantInputWarning, match=msg):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             r, p = stats.pearsonr(x, y)
@@ -1039,7 +1039,7 @@ class TestCorrSpearmanr2:
     def test_tie0(self):
         # with only ties in one or both inputs
         warn_msg = "An input array is constant"
-        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
+        with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1082,7 +1082,7 @@ class TestCorrSpearmanr2:
         z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
         z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
         warn_msg = "An input array is constant"
-        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
+        with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(z1, axis=1)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1099,7 +1099,7 @@ class TestCorrSpearmanr2:
                       0.0007535430349118562, 0.0002661781514710257, 0, 0,
                       0.0007835762419683435])
         warn_msg = "An input array is constant"
-        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
+        with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(x, y)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1131,7 +1131,7 @@ class TestCorrSpearmanr2:
         assert_approx_equal(res[0], expected[0])
         assert_approx_equal(res[1], expected[1] / 2)
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.spearmanr(x1, x2, alternative="ekki-ekki")
 
     @pytest.mark.parametrize("alternative", ('two-sided', 'less', 'greater'))
@@ -1419,9 +1419,10 @@ def test_kendalltau_nan_2nd_arg():
 
 
 def test_kendalltau_deprecations():
-    with pytest.deprecated_call(match="keyword argument 'initial_lexsort"):
+    msg_dep = "keyword argument 'initial_lexsort'"
+    with pytest.deprecated_call(match=msg_dep):
         stats.kendalltau([], [], initial_lexsort=True)
-    with pytest.deprecated_call(match="use keyword arguments"):
+    with pytest.deprecated_call(match=f"use keyword arguments|{msg_dep}"):
         stats.kendalltau([], [], True)
 
 
@@ -1482,7 +1483,7 @@ class TestKendallTauAlternative:
         assert_equal(res[0], expected[0])
         assert_allclose(res[1], expected[1] / 2)
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.kendalltau(x1, x2, alternative="ekki-ekki")
 
     # There are a lot of special cases considered in the calculation of the
@@ -2477,7 +2478,7 @@ class TestMode:
             def __init__(self, x):
                 self._x = x
 
-            def __array__(self):
+            def __array__(self, dtype=None, copy=None):
                 return self._x.astype(object)
 
         with pytest.raises(TypeError, match=message):
@@ -2724,9 +2725,9 @@ class TestZmapZscore:
         assert_equal(z, x)
 
     def test_gzscore_normal_array(self):
-        z = stats.gzscore([1, 2, 3, 4])
-        desired = ([-1.526072095151, -0.194700599824, 0.584101799472,
-                    1.136670895503])
+        x = np.array([1, 2, 3, 4])
+        z = stats.gzscore(x)
+        desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
     def test_gzscore_masked_array(self):
@@ -2785,7 +2786,7 @@ class TestMedianAbsDeviation:
         mad = stats.median_abs_deviation(x, axis=1)
         assert_equal(mad, np.array([np.nan, 3.0]))
 
-    def test_nan_policy_omit_with_inf(sef):
+    def test_nan_policy_omit_with_inf(self):
         z = np.array([1, 3, 4, 6, 99, np.nan, np.inf])
         mad = stats.median_abs_deviation(z, nan_policy='omit')
         assert_equal(mad, 3.0)
@@ -3136,7 +3137,7 @@ class TestMoments:
         assert_allclose(y, [0, 1.25, 0, 2.5625])
 
         # test empty input
-        message = "Mean of empty slice."
+        message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
             y = stats.moment([])
             self._assert_equal(y, np.nan, dtype=np.float64)
@@ -3146,7 +3147,7 @@ class TestMoments:
             self._assert_equal(y, [], shape=(0,), dtype=np.float64)
             y = stats.moment([[]], axis=1)
             self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
-            y = stats.moment([[]], moment=[0, 1], axis=0)
+            y = stats.moment([[]], order=[0, 1], axis=0)
             self._assert_equal(y, [], shape=(2, 0))
 
         x = np.arange(10.)
@@ -3157,21 +3158,21 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex128])
-    @pytest.mark.parametrize('expect, moment', [(0, 1), (1, 0)])
-    def test_constant_moments(self, dtype, expect, moment):
+    @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
+    def test_constant_moments(self, dtype, expect, order):
         x = np.random.rand(5).astype(dtype)
-        y = stats.moment(x, moment=moment)
+        y = stats.moment(x, order=order)
         self._assert_equal(y, expect, dtype=dtype)
 
-        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, moment=moment)
+        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, order=order)
         self._assert_equal(y, expect, shape=(5,), dtype=dtype)
 
         y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
-                         moment=moment)
+                         order=order)
         self._assert_equal(y, expect, shape=(1, 2, 4, 5), dtype=dtype)
 
         y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
-                         moment=moment)
+                         order=order)
         self._assert_equal(y, expect, shape=(), dtype=dtype)
 
     def test_moment_propagate_nan(self):
@@ -3182,11 +3183,19 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
-    def test_moment_empty_moment(self):
-        # tests moment with empty `moment` list
-        with pytest.raises(ValueError, match=r"'moment' must be a scalar or a"
+    def test_moment_empty_order(self):
+        # tests moment with empty `order` list
+        with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
                                              r" non-empty 1D list/array."):
-            stats.moment([1, 2, 3, 4], moment=[])
+            stats.moment([1, 2, 3, 4], order=[])
+
+    def test_rename_moment_order(self):
+        # Parameter 'order' was formerly known as 'moment'. The old name
+        # has not been deprecated, so it must continue to work.
+        x = np.arange(10)
+        res = stats.moment(x, moment=3)
+        ref = stats.moment(x, order=3)
+        np.testing.assert_equal(res, ref)
 
     def test_skewness(self):
         # Scalar test case
@@ -3310,7 +3319,7 @@ class TestMoments:
             stats.skew(a)[0]
 
     def test_empty_1d(self):
-        message = "Mean of empty slice."
+        message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
             stats.skew([])
         with pytest.warns(RuntimeWarning, match=message):
@@ -3334,7 +3343,7 @@ def ttest_data_axis_strategy(draw):
         warnings.simplefilter("error")
         for axis in range(len(data.shape)):
             with contextlib.suppress(Exception):
-                var = stats.moment(data, moment=2, axis=axis)
+                var = stats.moment(data, order=2, axis=axis)
                 if np.all(var > 0) and np.all(np.isfinite(var)):
                     ok_axes.append(axis)
     # if there are no valid axes, tell hypothesis to try a different example
@@ -4101,9 +4110,9 @@ class TestKSOneSample:
             (32, 1.0 / 64, False, 1.0),  # Ruben-Gambino
 
             # Miller
-            (32, 0.5, True, 0.9999999363163307),  
+            (32, 0.5, True, 0.9999999363163307),
             # Miller 2 * special.smirnov(32, 0.5)
-            (32, 0.5, False, 6.368366937916623e-08),  
+            (32, 0.5, False, 6.368366937916623e-08),
 
             # Check some other paths
             (32, 1.0 / 8, True, 0.34624229979775223),
@@ -4403,7 +4412,7 @@ class TestKSTwoSamples:
     def test_warnings_gh_14019(self):
         # Check that RuntimeWarning is raised when method='auto' and exact
         # p-value calculation fails. See gh-14019.
-        rng = np.random.default_rng(abs(hash('test_warnings_gh_14019')))
+        rng = np.random.RandomState(seed=23493549)
         # random samples of the same size as in the issue
         data1 = rng.random(size=881) + 0.5
         data2 = rng.random(size=369)
@@ -5853,7 +5862,7 @@ class TestRankSums:
         check_named_results(res, ('statistic', 'pvalue'))
 
     def test_input_validation(self):
-        with assert_raises(ValueError, match="alternative must be 'less'"):
+        with assert_raises(ValueError, match="`alternative` must be 'less'"):
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
@@ -5897,7 +5906,7 @@ class TestJarqueBera:
         assert_raises(ValueError, stats.jarque_bera, [])
 
     def test_axis(self):
-        rng = np.random.default_rng(abs(hash('JarqueBera')))
+        rng = np.random.RandomState(seed=122398129)
         x = rng.random(size=(2, 45))
 
         assert_equal(stats.jarque_bera(x, axis=None),
@@ -6838,10 +6847,6 @@ class TestAlexanderGovern:
         # inputs are not finite (infinity)
         with assert_raises(ValueError, match="Input samples must be finite."):
             stats.alexandergovern([1, 2], [np.inf, np.inf])
-        # inputs are multidimensional
-        with assert_raises(ValueError, match="Input samples must be one"
-                                             "-dimensional"):
-            stats.alexandergovern([1, 2], [[1, 2], [3, 4]])
 
     def test_compare_r(self):
         '''
@@ -7022,7 +7027,7 @@ class TestAlexanderGovern:
             stats.alexandergovern(*args, nan_policy='raise')
 
     def test_nan_policy_omit(self):
-        args_nan = [[1, 2, 3, None, 4], [1, np.nan, 19, 25]]
+        args_nan = [[1, 2, 3, np.nan, 4], [1, np.nan, 19, 25]]
         args_no_nan = [[1, 2, 3, 4], [1, 19, 25]]
         res_nan = stats.alexandergovern(*args_nan, nan_policy='omit')
         res_no_nan = stats.alexandergovern(*args_no_nan)
@@ -7032,7 +7037,7 @@ class TestAlexanderGovern:
     def test_constant_input(self):
         # Zero variance input, consistent with `stats.pearsonr`
         msg = "An input array is constant; the statistic is not defined."
-        with assert_warns(stats.ConstantInputWarning, match=msg):
+        with pytest.warns(stats.ConstantInputWarning, match=msg):
             res = stats.alexandergovern([0.667, 0.667, 0.667],
                                         [0.123, 0.456, 0.789])
             assert_equal(res.statistic, np.nan)
@@ -7118,7 +7123,7 @@ class TestFOneWay:
     def test_constant_input(self, a, b, expected):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
         msg = "Each of the input arrays is constant;"
-        with assert_warns(stats.ConstantInputWarning, match=msg):
+        with pytest.warns(stats.ConstantInputWarning, match=msg):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
 
@@ -7151,7 +7156,7 @@ class TestFOneWay:
             take_axis = 1
 
         warn_msg = "Each of the input arrays is constant;"
-        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
+        with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
             f, p = stats.f_oneway(a, b, c, axis=axis)
 
         # Verify that the result computed with the 2d arrays matches
@@ -7163,7 +7168,7 @@ class TestFOneWay:
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
-            with assert_warns(stats.ConstantInputWarning, match=warn_msg):
+            with pytest.warns(stats.ConstantInputWarning, match=warn_msg):
                 fj, pj = stats.f_oneway(np.take(a, j, take_axis),
                                         np.take(b, j, take_axis),
                                         np.take(c, j, take_axis))
@@ -7189,14 +7194,14 @@ class TestFOneWay:
 
     def test_length0_1d_error(self):
         # Require at least one value in each group.
-        msg = 'all input arrays have length 1.'
-        with assert_warns(stats.DegenerateDataWarning, match=msg):
+        msg = 'at least one input has length 0'
+        with pytest.warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
             assert_equal(result, (np.nan, np.nan))
 
     def test_length0_2d_error(self):
-        msg = 'all input arrays have length 1.'
-        with assert_warns(stats.DegenerateDataWarning, match=msg):
+        msg = 'at least one input has length 0'
+        with pytest.warns(stats.DegenerateDataWarning, match=msg):
             ncols = 3
             a = np.ones((4, ncols))
             b = np.ones((0, ncols))
@@ -7208,7 +7213,7 @@ class TestFOneWay:
 
     def test_all_length_one(self):
         msg = 'all input arrays have length 1.'
-        with assert_warns(stats.DegenerateDataWarning, match=msg):
+        with pytest.warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([10], [11], [12], [13])
             assert_equal(result, (np.nan, np.nan))
 
@@ -7429,26 +7434,10 @@ class TestCdfDistanceValidation:
                       [1, 2, 1], [1, 1], [1, np.inf, 1], [1, 1])
 
 
-class TestWassersteinDistance:
-    """ Tests for wasserstein_distance() output values.
+class TestWassersteinDistanceND:
+    """ Tests for wasserstein_distance_nd() output values.
     """
 
-    def test_simple(self):
-        # For basic distributions, the value of the Wasserstein distance is
-        # straightforward.
-        assert_almost_equal(
-            stats.wasserstein_distance([0, 1], [0], [1, 1], [1]),
-            .5)
-        assert_almost_equal(stats.wasserstein_distance(
-            [0, 1], [0], [3, 1], [1]),
-            .25)
-        assert_almost_equal(stats.wasserstein_distance(
-            [0, 2], [0], [1, 1], [1]),
-            1)
-        assert_almost_equal(stats.wasserstein_distance(
-            [0, 1, 2], [1, 2, 3]),
-            1)
-    
     def test_published_values(self):
         # Compare against published values and manually computed results.
         # The values and computed result are posted at James D. McCaffrey's blog,
@@ -7458,25 +7447,16 @@ class TestWassersteinDistance:
              (4,2), (6,1), (6,1)]
         v = [(2,1), (2,1), (3,2), (3,2), (3,2), (5,1), (5,1), (5,1), (5,1), (5,1),
              (5,1), (5,1), (7,1)]
-        
-        res = stats.wasserstein_distance(u, v)
+
+        res = stats.wasserstein_distance_nd(u, v)
         # In original post, the author kept two decimal places for ease of calculation.
         # This test uses the more precise value of distance to get the precise results.
         # For comparison, please see the table and figure in the original blog post.
         flow = np.array([2., 3., 5., 1., 1., 1.])
         dist = np.array([1.00, 5**0.5, 4.00, 2**0.5, 1.00, 1.00])
         ref = np.sum(flow * dist)/np.sum(flow)
-        assert_almost_equal(res, ref)
+        assert_allclose(res, ref)
 
-    def test_same_distribution(self):
-        # Any distribution moved to itself should have a Wasserstein distance
-        # of zero.
-        assert_equal(stats.wasserstein_distance([1, 2, 3], [2, 1, 3]), 0)
-        assert_equal(
-            stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
-                                       [1, 1, 1, 1], [1, 3]),
-            0)
-    
     @pytest.mark.parametrize('n_value', (4, 15, 35))
     @pytest.mark.parametrize('ndim', (3, 4, 7))
     @pytest.mark.parametrize('max_repeats', (5, 10))
@@ -7494,47 +7474,8 @@ class TestWassersteinDistance:
         index = rng.permutation(len(v_weights))
         v_values, v_weights = v_values[index], v_weights[index]
 
-        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
         assert_allclose(res, 0, atol=1e-15)
-
-    def test_shift(self):
-        # If the whole distribution is shifted by x, then the Wasserstein
-        # distance should be the norm of x.
-        assert_almost_equal(stats.wasserstein_distance([0], [1]), 1)
-        assert_almost_equal(stats.wasserstein_distance([-5], [5]), 10)
-        assert_almost_equal(
-            stats.wasserstein_distance([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
-            10)
-        assert_almost_equal(
-            stats.wasserstein_distance([4.5, 6.7, 2.1], [4.6, 7, 9.2],
-                                       [3, 1, 1], [1, 3, 1]),
-            2.5)
-
-    def test_combine_weights(self):
-        # Assigning a weight w to a value is equivalent to including that value
-        # w times in the value array with weight of 1.
-        assert_almost_equal(
-            stats.wasserstein_distance(
-                [0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
-                [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
-            stats.wasserstein_distance([5, 0, 1], [0, 4, 3],
-                                       [1, 2, 4], [1, 2, 4]))
-
-    def test_collapse(self):
-        # Collapsing a distribution to a point distribution at zero is
-        # equivalent to taking the average of the absolute values of the
-        # values.
-        u = np.arange(-10, 30, 0.3)
-        v = np.zeros_like(u)
-        assert_almost_equal(
-            stats.wasserstein_distance(u, v),
-            np.mean(np.abs(u)))
-
-        u_weights = np.arange(len(u))
-        v_weights = u_weights[::-1]
-        assert_almost_equal(
-            stats.wasserstein_distance(u, v, u_weights, v_weights),
-            np.average(np.abs(u), weights=u_weights))
 
     @pytest.mark.parametrize('nu', (8, 9, 38))
     @pytest.mark.parametrize('nv', (8, 12, 17))
@@ -7549,15 +7490,8 @@ class TestWassersteinDistance:
         u_weights = rng.random(size=nu)
         v_weights = rng.random(size=nv)
         ref = np.average(np.linalg.norm(u_values, axis=1), weights=u_weights)
-        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
-        assert_almost_equal(res, ref)
-
-    def test_zero_weight(self):
-        # Values with zero weight have no impact on the Wasserstein distance.
-        assert_almost_equal(
-            stats.wasserstein_distance([1, 2, 100000], [1, 1],
-                                       [1, 1, 0], [1, 1]),
-            stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
 
     @pytest.mark.parametrize('nu', (8, 16, 32))
     @pytest.mark.parametrize('nv', (8, 16, 32))
@@ -7569,14 +7503,186 @@ class TestWassersteinDistance:
         v_values = rng.random(size=(nv, ndim))
         u_weights = rng.random(size=nu)
         v_weights = rng.random(size=nv)
-        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
 
-        add_row, nrows = rng.integers(0, nu, size=2) 
+        add_row, nrows = rng.integers(0, nu, size=2)
         add_value = rng.random(size=(nrows, ndim))
         u_values = np.insert(u_values, add_row, add_value, axis=0)
         u_weights = np.insert(u_weights, add_row, np.zeros(nrows), axis=0)
-        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
-        assert_almost_equal(res, ref)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    def test_inf_values(self):
+        # Inf values can lead to an inf distance or trigger a RuntimeWarning
+        # (and return NaN) if the distance is undefined.
+        uv, vv, uw = [[1, 1], [2, 1]], [[np.inf, -np.inf]], [1, 1]
+        distance = stats.wasserstein_distance_nd(uv, vv, uw)
+        assert_equal(distance, np.inf)
+        with np.errstate(invalid='ignore'):
+            uv, vv = [[np.inf, np.inf]], [[np.inf, -np.inf]]
+            distance = stats.wasserstein_distance_nd(uv, vv)
+            assert_equal(distance, np.nan)
+
+    @pytest.mark.parametrize('nu', (10, 15, 20))
+    @pytest.mark.parametrize('nv', (10, 15, 20))
+    @pytest.mark.parametrize('ndim', (1, 3, 5))
+    def test_multi_dim_nD(self, nu, nv, ndim):
+        # Adding dimension on distributions do not affect the result
+        rng = np.random.default_rng(2736495738494849509)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+
+        add_dim = rng.integers(0, ndim)
+        add_value = rng.random()
+
+        u_values = np.insert(u_values, add_dim, add_value, axis=1)
+        v_values = np.insert(v_values, add_dim, add_value, axis=1)
+        res = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    @pytest.mark.parametrize('nu', (7, 13, 19))
+    @pytest.mark.parametrize('nv', (7, 13, 19))
+    @pytest.mark.parametrize('ndim', (2, 4, 7))
+    def test_orthogonal_nD(self, nu, nv, ndim):
+        # orthogonal transformations do not affect the result of the
+        # wasserstein_distance
+        rng = np.random.default_rng(34746837464536)
+        u_values = rng.random(size=(nu, ndim))
+        v_values = rng.random(size=(nv, ndim))
+        u_weights = rng.random(size=nu)
+        v_weights = rng.random(size=nv)
+        ref = stats.wasserstein_distance_nd(u_values, v_values, u_weights, v_weights)
+
+        dist = stats.ortho_group(ndim)
+        transform = dist.rvs(random_state=rng)
+        shift = rng.random(size=ndim)
+        res = stats.wasserstein_distance_nd(u_values @ transform + shift,
+                                         v_values @ transform + shift,
+                                         u_weights, v_weights)
+        assert_allclose(res, ref)
+
+    def test_error_code(self):
+        rng = np.random.default_rng(52473644737485644836320101)
+        with pytest.raises(ValueError, match='Invalid input values. The inputs'):
+            u_values = rng.random(size=(4, 10, 15))
+            v_values = rng.random(size=(6, 2, 7))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+        with pytest.raises(ValueError, match='Invalid input values. Dimensions'):
+            u_values = rng.random(size=(15,))
+            v_values = rng.random(size=(3, 15))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+        with pytest.raises(ValueError,
+            match='Invalid input values. If two-dimensional'):
+            u_values = rng.random(size=(2, 10))
+            v_values = rng.random(size=(2, 2))
+            _ = stats.wasserstein_distance_nd(u_values, v_values)
+
+    @pytest.mark.parametrize('u_size', [1, 10, 300])
+    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    def test_optimization_vs_analytical(self, u_size, v_size):
+        rng = np.random.default_rng(45634745675)
+        # Test when u_weights = None, v_weights = None
+        u_values = rng.random(size=(u_size, 1))
+        v_values = rng.random(size=(v_size, 1))
+        u_values_flat = u_values.ravel()
+        v_values_flat = v_values.ravel()
+        # These three calculations are done using different backends
+        # but they must be equal
+        d1 = stats.wasserstein_distance(u_values_flat, v_values_flat)
+        d2 = stats.wasserstein_distance_nd(u_values, v_values)
+        d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
+        # Test with u_weights and v_weights specified.
+        u_weights = rng.random(size=u_size)
+        v_weights = rng.random(size=v_size)
+        d1 = stats.wasserstein_distance(u_values_flat, v_values_flat,
+                                        u_weights, v_weights)
+        d2 = stats.wasserstein_distance_nd(u_values, v_values,
+                                        u_weights, v_weights)
+        d3 = stats.wasserstein_distance_nd(u_values_flat, v_values_flat,
+                                        u_weights, v_weights)
+        assert_allclose(d2, d1)
+        assert_allclose(d3, d1)
+
+
+class TestWassersteinDistance:
+    """ Tests for wasserstein_distance() output values.
+    """
+
+    def test_simple(self):
+        # For basic distributions, the value of the Wasserstein distance is
+        # straightforward.
+        assert_allclose(
+            stats.wasserstein_distance([0, 1], [0], [1, 1], [1]),
+            .5)
+        assert_allclose(stats.wasserstein_distance(
+            [0, 1], [0], [3, 1], [1]),
+            .25)
+        assert_allclose(stats.wasserstein_distance(
+            [0, 2], [0], [1, 1], [1]),
+            1)
+        assert_allclose(stats.wasserstein_distance(
+            [0, 1, 2], [1, 2, 3]),
+            1)
+
+    def test_same_distribution(self):
+        # Any distribution moved to itself should have a Wasserstein distance
+        # of zero.
+        assert_equal(stats.wasserstein_distance([1, 2, 3], [2, 1, 3]), 0)
+        assert_equal(
+            stats.wasserstein_distance([1, 1, 1, 4], [4, 1],
+                                       [1, 1, 1, 1], [1, 3]),
+            0)
+
+    def test_shift(self):
+        # If the whole distribution is shifted by x, then the Wasserstein
+        # distance should be the norm of x.
+        assert_allclose(stats.wasserstein_distance([0], [1]), 1)
+        assert_allclose(stats.wasserstein_distance([-5], [5]), 10)
+        assert_allclose(
+            stats.wasserstein_distance([1, 2, 3, 4, 5], [11, 12, 13, 14, 15]),
+            10)
+        assert_allclose(
+            stats.wasserstein_distance([4.5, 6.7, 2.1], [4.6, 7, 9.2],
+                                       [3, 1, 1], [1, 3, 1]),
+            2.5)
+
+    def test_combine_weights(self):
+        # Assigning a weight w to a value is equivalent to including that value
+        # w times in the value array with weight of 1.
+        assert_allclose(
+            stats.wasserstein_distance(
+                [0, 0, 1, 1, 1, 1, 5], [0, 3, 3, 3, 3, 4, 4],
+                [1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1]),
+            stats.wasserstein_distance([5, 0, 1], [0, 4, 3],
+                                       [1, 2, 4], [1, 2, 4]))
+
+    def test_collapse(self):
+        # Collapsing a distribution to a point distribution at zero is
+        # equivalent to taking the average of the absolute values of the
+        # values.
+        u = np.arange(-10, 30, 0.3)
+        v = np.zeros_like(u)
+        assert_allclose(
+            stats.wasserstein_distance(u, v),
+            np.mean(np.abs(u)))
+
+        u_weights = np.arange(len(u))
+        v_weights = u_weights[::-1]
+        assert_allclose(
+            stats.wasserstein_distance(u, v, u_weights, v_weights),
+            np.average(np.abs(u), weights=u_weights))
+
+    def test_zero_weight(self):
+        # Values with zero weight have no impact on the Wasserstein distance.
+        assert_allclose(
+            stats.wasserstein_distance([1, 2, 100000], [1, 1],
+                                       [1, 1, 0], [1, 1]),
+            stats.wasserstein_distance([1, 2], [1, 1], [1, 1], [1, 1]))
 
     def test_inf_values(self):
         # Inf values can lead to an inf distance or trigger a RuntimeWarning
@@ -7595,72 +7701,6 @@ class TestWassersteinDistance:
             assert_equal(
                 stats.wasserstein_distance([1, 2, np.inf], [np.inf, 1]),
                 np.nan)
-        uv, vv, uw = [[1, 1], [2, 1]], [[np.inf, -np.inf]], [1, 1]
-        distance = stats.wasserstein_distance(uv, vv, uw)
-        assert_equal(distance, np.inf)
-        with np.errstate(invalid='ignore'):
-            uv, vv = [[np.inf, np.inf]], [[np.inf, -np.inf]]
-            distance = stats.wasserstein_distance(uv, vv)
-            assert_equal(distance, np.nan)
-
-    @pytest.mark.parametrize('nu', (10, 15, 20))
-    @pytest.mark.parametrize('nv', (10, 15, 20))
-    @pytest.mark.parametrize('ndim', (1, 3, 5))
-    def test_multi_dim_nD(self, nu, nv, ndim):
-        # Adding dimension on distributions do not affect the result
-        rng = np.random.default_rng(2736495738494849509)
-        u_values = rng.random(size=(nu, ndim))
-        v_values = rng.random(size=(nv, ndim))
-        u_weights = rng.random(size=nu)
-        v_weights = rng.random(size=nv)
-        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
-
-        add_dim = rng.integers(0, ndim)
-        add_value = rng.random()
-
-        u_values = np.insert(u_values, add_dim, add_value, axis=1)
-        v_values = np.insert(v_values, add_dim, add_value, axis=1)
-        res = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
-        assert_almost_equal(res, ref)
-
-    @pytest.mark.parametrize('nu', (7, 13, 19))
-    @pytest.mark.parametrize('nv', (7, 13, 19))
-    @pytest.mark.parametrize('ndim', (2, 4, 7))
-    def test_orthogonal_nD(self, nu, nv, ndim):
-        # orthogonal transformations do not affect the result of the 
-        # wasserstein_distance
-        rng = np.random.default_rng(34746837464536)
-        u_values = rng.random(size=(nu, ndim))
-        v_values = rng.random(size=(nv, ndim))
-        u_weights = rng.random(size=nu)
-        v_weights = rng.random(size=nv)
-        ref = stats.wasserstein_distance(u_values, v_values, u_weights, v_weights)
-
-        dist = stats.ortho_group(ndim)
-        transform = dist.rvs(random_state=rng)
-        shift = rng.random(size=ndim)
-        res = stats.wasserstein_distance(u_values @ transform + shift,
-                                         v_values @ transform + shift,
-                                         u_weights, v_weights)
-        assert_almost_equal(res, ref)
-
-    def test_error_code(self):
-        rng = np.random.default_rng(52473644737485644836320101)
-        with pytest.raises(ValueError,
-                           match='Invalid input values. The inputs'):
-            u_values = rng.random(size=(4, 10, 15))
-            v_values = rng.random(size=(6, 2, 7))
-            _ = stats.wasserstein_distance(u_values, v_values)
-        with pytest.raises(ValueError,
-                           match='Invalid input values. Dimensions'):
-            u_values = rng.random(size=(15,))
-            v_values = rng.random(size=(3, 15))
-            _ = stats.wasserstein_distance(u_values, v_values)
-        with pytest.raises(ValueError,
-                           match='Invalid input values. If two-dimensional'):
-            u_values = rng.random(size=(2, 10))
-            v_values = rng.random(size=(2, 2))
-            _ = stats.wasserstein_distance(u_values, v_values)
 
 
 class TestEnergyDistance:
@@ -7888,7 +7928,8 @@ class TestBrunnerMunzel:
         x = [1, 2, 3]
         y = [5, 6, 7, 8, 9]
 
-        with pytest.warns(RuntimeWarning, match='p-value cannot be estimated'):
+        msg = "p-value cannot be estimated|divide by zero|invalid value encountered"
+        with pytest.warns(RuntimeWarning, match=msg):
             stats.brunnermunzel(x, y, distribution="t")
 
     def test_brunnermunzel_normal_dist(self):

@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.15.0
+    - python -m pip install cibuildwheel==2.16.5
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -47,51 +47,6 @@ cirrus_wheels_linux_aarch64_task:
 
 
 ######################################################################
-# Build macosx_arm64 natively
-######################################################################
-
-cirrus_wheels_macos_arm64_task:
-  macos_instance:
-    image: ghcr.io/cirruslabs/macos-monterey-xcode:14
-  matrix:
-    - env:
-       # building all four wheels in a single task takes ~45 mins
-       CIBW_BUILD: cp39-* cp310-* cp311-* cp312-*
-  env:
-    PATH: /opt/homebrew/opt/python@3.10/bin:$PATH
-    CIBW_PRERELEASE_PYTHONS: True
-    CIBW_ENVIRONMENT: >
-      MACOSX_DEPLOYMENT_TARGET=12.0
-      _PYTHON_HOST_PLATFORM="macosx-12.0-arm64"             
-      PIP_PRE=1
-      PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
-      PIP_NO_BUILD_ISOLATION=false
-    # TODO remove the following line once there are numpy2.0 wheels available on PyPI.
-    # Also remove PIP_NO_BUILD_ISOLATION, PIP_EXTRA_INDEX_URL flags.
-    CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja;bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
-    PKG_CONFIG_PATH: /opt/arm64-builds/lib/pkgconfig
-    # assumes that the cmake config is in /usr/local/lib/cmake
-    CMAKE_PREFIX_PATH: /opt/arm64-builds/
-    REPAIR_PATH: /usr/local/gfortran/lib:/opt/arm64-builds/lib
-    CIBW_REPAIR_WHEEL_COMMAND_MACOS: >
-      DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-listdeps {wheel} &&
-      DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}
-
-  install_pre_requirements_script:
-    - brew install python@3.10
-    - ln -s python3 /opt/homebrew/opt/python@3.10/bin/python
-
-  build_script:
-    - which python
-    # needed for submodules
-    - git submodule update --init
-    - uname -m
-    - python -c "import platform;print(platform.python_version());print(platform.system());print(platform.machine())"
-    - clang --version
-  <<: *BUILD_AND_STORE_WHEELS
-
-
-######################################################################
 # Upload all wheels
 ######################################################################
 
@@ -102,7 +57,6 @@ cirrus_wheels_upload_task:
   # which bash, etc, may not be present.
   depends_on:
     - cirrus_wheels_linux_aarch64
-    - cirrus_wheels_macos_arm64
   compute_engine_instance:
     image_project: cirrus-images
     image: family/docker-builder
