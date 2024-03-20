@@ -691,15 +691,22 @@ class TestEigBanded:
         y_lin = linalg.solve(self.comp_mat, self.bc)
         assert_array_almost_equal(y, y_lin)
 
-    def test_empty(self):
-        a_band = np.empty((0, 0))
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a_band = np.empty((0, 0), dtype=dt)
         w, v = eig_banded(a_band)
-        assert_allclose(w, np.empty((0,)))
-        assert_allclose(v, np.empty((0, 0)))
+
+        w_n, v_n = eig_banded(np.array([[0, 0], [1, 1]], dtype=dt))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
+
+        assert v.shape == (0, 0)
+        assert v.dtype == v_n.dtype
 
         w = eig_banded(a_band, eigvals_only=True)
-        assert_allclose(w, np.empty((0,)))
-
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
 
 class TestEigTridiagonal:
     def setup_method(self):

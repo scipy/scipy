@@ -806,8 +806,10 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     # accommodate square empty matrices
     if a1.size == 0:
-        w = numpy.empty_like(a1, shape=(0,))
-        v = numpy.empty_like(a1, shape=(0, 0))
+        w_n, v_n = eig_banded(numpy.array([[0, 0], [1, 1]], dtype=a1.dtype))
+
+        w = numpy.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = numpy.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
         if eigvals_only:
             return w
         else:
