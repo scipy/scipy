@@ -101,14 +101,14 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
 
 def _chk_asarray(a, axis, xp=np):
     if axis is None:
-        a = xp.reshape(a, -1)
+        a = xp.reshape(a, (-1,))
         outaxis = 0
     else:
         a = xp.asarray(a)
         outaxis = axis
 
     if a.ndim == 0:
-        a = xp.reshape(a, -1)
+        a = xp.reshape(a, (-1,))
 
     return a, outaxis
 
@@ -1020,7 +1020,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 def _moment(a, moment, axis, *, mean=None):
     xp = array_namespace(a)
 
-    if xp.abs(moment - xp.round(moment)) > 0:
+    if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
 
     # moment of empty array is the same regardless of order

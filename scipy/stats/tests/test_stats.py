@@ -39,7 +39,7 @@ from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -8696,16 +8696,16 @@ def test_chk_asarray(xp):
     x = xp.asarray(x0)
 
     axis = 1
-    x_out, axis_out = _chk_asarray(x, axis=axis)
-    assert_equal(x_out, x)
+    x_out, axis_out = _chk_asarray(x, axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(x0))
     assert_equal(axis_out, axis)
 
     axis = None
-    x_out, axis_out = _chk_asarray(x, axis=axis)
-    assert_equal(x_out, xp.asarray(x.ravel()))
+    x_out, axis_out = _chk_asarray(x, axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(x0.ravel()))
     assert_equal(axis_out, 0)
 
     axis = 2
-    x_out, axis_out = _chk_asarray(x[0], axis=axis)
-    assert_equal(x_out, xp.asarray(np.atleast_1d(x[0])))
+    x_out, axis_out = _chk_asarray(x[0, 0, 0], axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(np.atleast_1d(x0[0, 0, 0])))
     assert_equal(axis_out, axis)

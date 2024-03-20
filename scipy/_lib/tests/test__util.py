@@ -335,25 +335,26 @@ class TestContainsNaNTest:
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
         rng = np.random.default_rng(932347235892482)
-        x0 = xp.asarray(rng.random(size=(2, 3, 4)))
-        x0_nan = xp.asarray(x0.copy())
-        x0_nan[1, 2, 1] = np.nan
+        x0 = rng.random(size=(2, 3, 4))
+        x = xp.asarray(x0)
+        x_nan = xp.asarray(x0.copy())
+        x_nan[1, 2, 1] = np.nan
 
-        contains_nan, nan_policy_out = _contains_nan(x0, nan_policy=nan_policy, xp=xp)
+        contains_nan, nan_policy_out = _contains_nan(x, nan_policy=nan_policy, xp=xp)
         assert not contains_nan
         assert nan_policy_out == nan_policy
 
         if nan_policy == 'raise':
             message = 'The input contains...'
             with pytest.raises(ValueError, match=message):
-                _contains_nan(x0_nan, nan_policy=nan_policy, xp=xp)
+                _contains_nan(x_nan, nan_policy=nan_policy, xp=xp)
         elif nan_policy == 'omit' and not is_numpy(xp):
             message = "`nan_policy='omit' is incompatible..."
             with pytest.raises(ValueError, match=message):
-                _contains_nan(x0_nan, nan_policy=nan_policy, xp=xp)
+                _contains_nan(x_nan, nan_policy=nan_policy, xp=xp)
         elif nan_policy == 'propagate':
             contains_nan, nan_policy_out = _contains_nan(
-                x0_nan, nan_policy=nan_policy, xp=xp)
+                x_nan, nan_policy=nan_policy, xp=xp)
             assert contains_nan
             assert nan_policy_out == nan_policy
 
