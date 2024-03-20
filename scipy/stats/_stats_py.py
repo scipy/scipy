@@ -4777,8 +4777,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     if np.issubdtype(dtype, np.complexfloating):
         raise ValueError('This function does not support complex data')
 
-    x = x.astype(np.float64, copy=False)
-    y = y.astype(np.float64, copy=False)
+    x = x.astype(dtype, copy=False)
+    y = y.astype(dtype, copy=False)
     threshold = np.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
@@ -4820,19 +4820,15 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError(message)
 
     if n == 2:
-        r = np.asarray(np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]),
-                       dtype=dtype)
+        r = (np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]))[()]
         result = PearsonRResult(statistic=r, pvalue=np.ones_like(r)[()], n=n,
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
 
-    xmean = x.mean(axis=axis, keepdims=True, dtype=dtype)
-    ymean = y.mean(axis=axis, keepdims=True, dtype=dtype)
-
-    # By using `astype(dtype)`, we ensure that the intermediate calculations
-    # use at least 64 bit floating point.
-    xm = x.astype(dtype) - xmean
-    ym = y.astype(dtype) - ymean
+    xmean = x.mean(axis=axis, keepdims=True)
+    ymean = y.mean(axis=axis, keepdims=True)
+    xm = x - xmean
+    ym = y - ymean
 
     # scipy.linalg.norm(xm) avoids premature overflow when xm is e.g.
     # [-5e210, 5e210, 3e200, -3e200]
