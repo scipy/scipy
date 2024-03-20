@@ -685,11 +685,13 @@ class TestExpM:
         elt = expm(1)
         assert_allclose(elt, np.array([[np.e]]))
 
-    def test_empty_matrix_input(self):
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_matrix_input(self, dt):
         # handle gh-11082
-        A = np.zeros((0, 0))
+        A = np.zeros((0, 0), dtype=dt)
         result = expm(A)
         assert result.size == 0
+        assert result.dtype == A.dtype
 
     def test_2x2_input(self):
         E = np.e
