@@ -1448,5 +1448,10 @@
             "hypergeom_skewness_float": "fff->f",
             "hypergeom_skewness_double": "ddd->d"
         }
+    },
+    "_iv_ratio": {
+        "_iv_ratio.h++": {
+            "iv_ratio": "dd->d"
+        }
     }
 }

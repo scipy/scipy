@@ -13651,3 +13651,8 @@ add_newdoc(
     scalar or ndarray
 
     """)
+
+add_newdoc("_iv_ratio",
+    """
+    Internal function, use `ellip_harm` instead.
+    """)
