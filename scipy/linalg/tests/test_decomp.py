@@ -987,14 +987,25 @@ class TestEigh:
         assert_allclose(w_dep, w)
         assert_allclose(v_dep, v)
 
-    def test_empty(self):
-        a = np.empty((0, 0))
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
         w, v = eigh(a)
-        assert_allclose(w, np.empty((0,)))
-        assert_allclose(v, np.empty((0, 0)))
+
+        w_n, v_n = eigh(np.eye(2, dtype=dt))
+
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
+
+        assert v.shape == (0, 0)
+        assert v.dtype == v_n.dtype
+
         w = eigh(a, eigvals_only=True)
         assert_allclose(w, np.empty((0,)))
 
+        assert w.shape == (0,)
+        assert w.dtype == w_n.dtype
 
 class TestSVD_GESDD:
     lapack_driver = 'gesdd'
