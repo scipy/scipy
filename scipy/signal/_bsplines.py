@@ -1,20 +1,19 @@
 from numpy import (asarray, pi, zeros_like,
                    array, arctan2, tan, ones, arange, floor,
                    r_, c_, atleast_1d, sqrt, exp, greater, cos, add, sin,
-                   sqrt, moveaxis, abs)
+                   sqrt, moveaxis, abs, arctan)
 
 from scipy._lib._util import normalize_axis_index
 
 # From splinemodule.c
-from ._spline import cspline2d, sepfir2d, symiirorder1_ic
-from ._splines import symiirorder1
-from ._arraytools import axis_slice, axis_reverse
+from ._spline import sepfir2d
+from ._splines import symiirorder1, symiirorder2
 from ._signaltools import lfilter, sosfilt, lfiltic
 
 from scipy.interpolate import BSpline
 
 __all__ = ['spline_filter', 'gauss_spline',
-           'cspline1d', 'qspline1d', 'qspline2d',
+           'cspline1d', 'qspline1d', 'qspline2d', 'cspline2d',
            'cspline1d_eval', 'qspline1d_eval']
 
 
@@ -274,6 +273,16 @@ def _quadratic_coeff(signal):
     return output * 8.0
 
 
+def compute_root_from_lambda(lamb):
+    tmp = sqrt(3 + 144 * lamb)
+    xi = 1 - 96 * lamb + 24 * lamb * tmp
+    omega = arctan(sqrt((144 * lamb - 1.0) / xi))
+    tmp2 = sqrt(xi)
+    r = ((24 * lamb - 1 - tmp2) / (24 * lamb) *
+         sqrt((48*lamb + 24 * lamb * tmp)) / tmp2)
+    return r, omega
+
+
 def cspline1d(signal, lamb=0.0):
     """
     Compute cubic spline coefficients for rank-1 array.
@@ -384,14 +393,14 @@ def collapse_2d(x, axis):
     return x, x_shape
 
 
-def _symiirorder1_nd(input, c0, z1, precision=-1.0, axis=-1):
+def symiirorder_nd(func, input, *args, axis=-1, **kwargs):
     axis = normalize_axis_index(axis, input.ndim)
     input_shape = input.shape
     input_ndim = input.ndim
     if input.ndim > 1:
         input, input_shape = collapse_2d(input, axis)
 
-    out = symiirorder1(input, c0, z1, precision=precision)
+    out = func(input, *args, **kwargs)
 
     if input_ndim > 1:
         out = out.reshape(input_shape)
@@ -432,8 +441,47 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
     c0 = -r * 8.0
     z1 = r
 
-    out = _symiirorder1_nd(signal, c0, z1, precision, axis=-1)
-    out = _symiirorder1_nd(out, c0, z1, precision, axis=0)
+    out = symiirorder_nd(symiirorder1, signal, c0, z1, precision, axis=-1)
+    out = symiirorder_nd(symiirorder1, out, c0, z1, precision, axis=0)
+    return out
+
+
+def cspline2d(signal, lamb=0.0, precision=-1.0):
+    """
+    Coefficients for 2-D cubic (3rd order) B-spline.
+
+    Return the third-order B-spline coefficients over a regularly spaced
+    input grid for the two-dimensional input image.
+
+    Parameters
+    ----------
+    input : ndarray
+        The input signal.
+    lamb : float
+        Specifies the amount of smoothing in the transfer function.
+    precision : float
+        Specifies the precision for computing the infinite sum needed to apply
+        mirror-symmetric boundary conditions.
+
+    Returns
+    -------
+    output : ndarray
+        The filtered signal.
+    """
+    if lamb <= 1 / 144.0:
+        # Normal cubic spline
+        r = -2 + sqrt(3.0)
+        out = symiirorder_nd(
+            symiirorder1, signal, -r * 6.0, r, precision=precision, axis=-1)
+        out = symiirorder_nd(
+            symiirorder1, out, -r * 6.0, r, precision=precision, axis=0)
+        return out
+
+    r, omega = compute_root_from_lambda(lamb)
+    out = symiirorder_nd(symiirorder2, signal, r, omega,
+                         precision=precision, axis=-1)
+    out = symiirorder_nd(symiirorder2, out, r, omega,
+                         precision=precision, axis=0)
     return out
 
 
