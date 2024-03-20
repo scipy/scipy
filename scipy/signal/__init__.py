@@ -310,7 +310,6 @@ from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
 from ._spline import (
-    cspline2d,
     sepfir2d
 )
 
