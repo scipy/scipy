@@ -2,7 +2,7 @@
 import numpy as np
 
 from ._arraytools import axis_slice, axis_reverse
-from ._signaltools import lfiltic, lfilter, sosfilt
+from ._signaltools import lfilter, sosfilt
 from ._spline import symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd
 
 __all__ = ['symiirorder1', 'symiirorder2']

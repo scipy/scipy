@@ -1,7 +1,7 @@
 from numpy import (asarray, pi, zeros_like,
                    array, arctan2, tan, ones, arange, floor,
-                   r_, c_, atleast_1d, sqrt, exp, greater, cos, add, sin,
-                   sqrt, moveaxis, abs, arctan)
+                   r_, atleast_1d, sqrt, exp, greater, cos, add, sin,
+                   moveaxis, abs, arctan)
 
 from scipy._lib._util import normalize_axis_index
 
@@ -279,7 +279,7 @@ def compute_root_from_lambda(lamb):
     omega = arctan(sqrt((144 * lamb - 1.0) / xi))
     tmp2 = sqrt(xi)
     r = ((24 * lamb - 1 - tmp2) / (24 * lamb) *
-         sqrt((48*lamb + 24 * lamb * tmp)) / tmp2)
+         sqrt(48*lamb + 24 * lamb * tmp) / tmp2)
     return r, omega
 
 
