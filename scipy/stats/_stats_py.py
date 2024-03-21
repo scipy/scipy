@@ -4480,7 +4480,7 @@ class PearsonRResult(PearsonRResultBase):
         """
         if isinstance(method, BootstrapMethod):
             xp = array_namespace(self._x)
-            message = ('`method` must be None if `pearsonr` '
+            message = ('`method` must be `None` if `pearsonr` '
                        'arguments were not NumPy arrays.')
             if not is_numpy(xp):
                 raise ValueError(message)
@@ -4775,7 +4775,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     try:
         x, y = xp.broadcast_arrays(x, y)
-    except ValueError as e:
+    except (ValueError, RuntimeError) as e:
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
@@ -4828,7 +4828,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y, axis=axis)
     elif method == 'invalid':
-        message = ('`method` must be None if arguments are not NumPy arrays.')
+        message = '`method` must be `None` if arguments are not NumPy arrays.'
         raise ValueError(message)
     elif method is not None:
         message = ('`method` must be an instance of `PermutationMethod`,'
@@ -4875,7 +4875,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
     r = xp.asarray(xp.clip(r, -one, one))
-    r[const_xy] = xp.asarray(np.nan, dtype=dtype)
+    r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
