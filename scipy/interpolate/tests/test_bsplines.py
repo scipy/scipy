@@ -19,6 +19,9 @@ import scipy.sparse.linalg as ssl
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
+
+from scipy.interpolate import generate_knots, make_splrep, make_splprep
+
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
 from scipy._lib._testutils import _run_concurrent_barrier
@@ -1856,7 +1859,7 @@ class PackedMatrix:
 
 def _qr_reduce_py(a_p, y, startrow=1):
     """This is a python counterpart of the `_qr_reduce` routine,
-    defined in interpolate/src/__fitpack.h
+    declared in interpolate/src/__fitpack.h
     """
     from scipy.linalg.lapack import dlartg
 
@@ -3032,4 +3035,582 @@ class TestFpchec:
         assert dfitpack.fpchec(x, t, k) == 50
         with pytest.raises(ValueError, match="Schoenberg-Whitney*"):
             _b.fpcheck(x, t, k)
+
+
+# ### python replicas of generate_knots(...) implementation details, for testing.
+# ### see TestGenerateKnots::test_split_and_add_knot
+def _split(x, t, k, residuals):
+    """Split the knot interval into "runs".
+    """
+    ix = np.searchsorted(x, t[k:-k])
+    # sum half-open intervals
+    fparts = [residuals[ix[i]:ix[i+1]].sum() for i in range(len(ix)-1)]
+    carries = residuals[ix[1:-1]]
+
+    for i in range(len(carries)):     # split residuals at internal knots
+        carry = carries[i] / 2
+        fparts[i] += carry
+        fparts[i+1] -= carry
+
+    fparts[-1] += residuals[-1]       # add the contribution of the last knot
+
+    assert_allclose(sum(fparts), sum(residuals), atol=1e-15)
+
+    return fparts, ix
+
+
+def _add_knot(x, t, k, residuals):
+    """Insert a new knot given reduals."""
+    fparts, ix = _split(x, t, k, residuals)
+
+    # find the interval with max fparts and non-zero number of x values inside
+    idx_max = -101
+    fpart_max = -1e100
+    for i in range(len(fparts)):
+        if ix[i+1] - ix[i] > 1 and fparts[i] > fpart_max:
+            idx_max = i
+            fpart_max = fparts[i]
+
+    if idx_max == -101:
+        raise ValueError("Internal error, please report it to SciPy developers.")
+
+    # round up, like Dierckx does? This is really arbitrary though.
+    idx_newknot = (ix[idx_max] + ix[idx_max+1] + 1) // 2
+    new_knot = x[idx_newknot]
+    idx_t = np.searchsorted(t, new_knot)
+    t_new = np.r_[t[:idx_t], new_knot, t[idx_t:]]
+    return t_new
+
+
+class TestGenerateKnots:
+    def test_split_add_knot(self):
+        # smoke test implementation details: insert a new knot given residuals
+        x = np.arange(8, dtype=float)
+        y = x**3 + 1./(1 + x)
+        k = 3
+        t = np.array([0.]*(k+1) + [7.]*(k+1))
+        spl = make_lsq_spline(x, y, k=k, t=t)
+        residuals = (spl(x) - y)**2
+
+        from scipy.interpolate import _fitpack_repro as _fr
+        new_t = _fr.add_knot(x, t, k, residuals)
+        new_t_py = _add_knot(x, t, k, residuals)
+
+        assert_allclose(new_t, new_t_py, atol=1e-15)
+
+        # redo with new knots
+        spl2 = make_lsq_spline(x, y, k=k, t=new_t)
+        residuals2 = (spl2(x) - y)**2
+
+        new_t2 = _fr.add_knot(x, new_t, k, residuals2)
+        new_t2_py = _add_knot(x, new_t, k, residuals2)
+
+        assert_allclose(new_t2, new_t2_py, atol=1e-15)
+
+    @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
+    def test_s0(self, k):
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        t = list(generate_knots(x, y, k=k, s=0))[-1]
+
+        tt = splrep(x, y, k=k, s=0)[0]
+        assert_allclose(t, tt, atol=1e-15)
+
+    def test_s0_1(self):
+        # with these data, naive algorithm tries to insert >= nmax knots
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        knots = list(generate_knots(x, y, k=3, s=0))   # does not error out
+        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+
+    def test_s0_n20(self):
+        n = 20
+        x = np.arange(n)
+        y = x**3
+        knots = list(generate_knots(x, y, k=3, s=0))
+        assert_allclose(knots[-1], _not_a_knot(x, 3), atol=1e-15)
+
+    def test_s0_nest(self):
+        # s=0 and non-default nest: not implemented, errors out
+        x = np.arange(10)
+        y = x**3
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, k=3, s=0, nest=10))
+
+    def test_s_switch(self):
+        # test the process switching to interpolating knots when len(t) == m + k + 1
+        """
+        To generate the `wanted` list below apply the following diff and rerun
+        the test. The stdout will contain successive iterations of the `t`
+        array.
+
+$ git diff scipy/interpolate/fitpack/fpcurf.f
+diff --git a/scipy/interpolate/fitpack/fpcurf.f b/scipy/interpolate/fitpack/fpcurf.f
+index 1afb1900f1..d817e51ad8 100644
+--- a/scipy/interpolate/fitpack/fpcurf.f
++++ b/scipy/interpolate/fitpack/fpcurf.f
+@@ -216,6 +216,9 @@ c  t(j+k) <= x(i) <= t(j+k+1) and store it in fpint(j),j=1,2,...nrint.
+         do 190 l=1,nplus
+ c  add a new knot.
+           call fpknot(x,m,t,n,fpint,nrdata,nrint,nest,1)
++          print*, l, nest, ': ', t
++          print*, "n, nmax = ", n, nmax
++
+ c  if n=nmax we locate the knots as for interpolation.
+           if(n.eq.nmax) go to 10
+ c  test whether we cannot further increase the number of knots.
+        """
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        k = 3
+
+        knots = list(generate_knots(x, y, k=k, s=1e-7))
+        wanted = [[0., 0., 0., 0., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 4., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], 
+                  [0., 0., 0., 0., 2., 4., 6., 7., 7., 7., 7.],
+                  [0., 0., 0., 0., 2., 3., 4., 5., 7, 7., 7., 7.]
+        ]
+
+        assert len(knots) == len(wanted)
+        for t, tt in zip(knots, wanted):
+            assert_allclose(t, tt, atol=1e-15)
+
+        # also check that the last knot vector matches FITPACK
+        t, _, _ = splrep(x, y, k=k, s=1e-7)
+        assert_allclose(knots[-1], t, atol=1e-15)
+
+    def test_list_input(self):
+        # test that list inputs are accepted
+        x = list(range(8))
+        gen = generate_knots(x, x, s=0.1, k=1)
+        next(gen)
+
+    def test_nest(self):
+        # test that nest < nmax stops the process early (and we get 10 knots not 12)
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+        s = 1e-7
+
+        knots = list(generate_knots(x, y, k=3, s=s, nest=10))
+        assert_allclose(knots[-1],
+                        [0., 0., 0., 0., 2., 4., 7., 7., 7., 7.], atol=1e-15)
+
+        with assert_raises(ValueError):
+            # nest < 2*(k+1)
+            list(generate_knots(x, y, k=3, nest=4))
+
+    def test_weights(self):
+        x = np.arange(8)
+        y = np.sin(x*np.pi/8)
+
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, w=np.arange(11)))   # len(w) != len(x)
+
+        with assert_raises(ValueError):
+            list(generate_knots(x, y, w=-np.ones(8)))    # w < 0
+
+    @pytest.mark.parametrize("npts", [30, 50, 100])
+    @pytest.mark.parametrize("s", [0.1, 1e-2, 0])
+    def test_vs_splrep(self, s, npts):
+        # XXX this test is brittle: differences start apearing for k=3 and s=1e-6,
+        # also for k != 3. Might be worth investigating at some point.
+        # I think we do not really guarantee exact agreement with splrep. Instead,
+        # we guarantee it is the same *in most cases*; otherwise slight differences
+        # are allowed. There is no theorem, it is al heuristics by P. Dierckx.
+        # The best we can do it to best-effort reproduce it.
+        rndm = np.random.RandomState(12345)
+        x = 10*np.sort(rndm.uniform(size=npts))
+        y = np.sin(x*np.pi/10) + np.exp(-(x-6)**2)
+
+        k = 3
+        t = splrep(x, y, k=k, s=s)[0]
+        tt = list(generate_knots(x, y, k=k, s=s))[-1]
+
+        assert_allclose(tt, t, atol=1e-15)
+
+    def test_s_too_small(self):
+        n = 14
+        x = np.arange(n)
+        y = x**3
+
+        # XXX splrep warns that "s too small": ier=2
+        knots = list(generate_knots(x, y, k=3, s=1e-50))
+
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning)
+            tck = splrep(x, y, k=3, s=1e-50)
+            assert len(r) == 1
+        assert_equal(knots[-1], tck[0])
+
+
+def disc_naive(t, k):
+    """Straitforward way to compute the discontinuity matrix. For testing ONLY.
+
+    This routine returns a dense matrix, while `_fitpack_repro.disc` returns
+    a packed one.
+    """
+    n = t.shape[0]
+
+    delta = t[n - k - 1] - t[k]
+    nrint = n - 2*k - 1
+
+    ti = t[k+1:n-k-1]   # internal knots
+    tii = np.repeat(ti, 2)
+    tii[::2] += 1e-10
+    tii[1::2] -= 1e-10
+    m = BSpline.design_matrix(tii, t, k, nu=k).todense()
+
+    matr = np.empty((nrint-1, m.shape[1]), dtype=float)
+    for i in range(0, m.shape[0], 2):
+        matr[i//2, :] = m[i, :] - m[i+1, :]
+
+    matr *= (delta/nrint)**k / math.factorial(k)
+    return matr
+
+
+class F_dense:
+    """ The r.h.s. of ``f(p) = s``, an analog of _fitpack_repro.F
+    Uses full matrices, so is for tests only.
+    """
+    def __init__(self, x, y, t, k, s, w=None):
+        self.x = x
+        self.y = y
+        self.t = t
+        self.k = k
+        self.w = np.ones_like(x, dtype=float) if w is None else w
+        assert self.w.ndim == 1
+
+        # lhs
+        a_csr = BSpline.design_matrix(x, t, k)
+        self.a_w = (a_csr * self.w[:, None]).tocsr()
+        from scipy.interpolate import _fitpack_repro as _fr
+        self.b = PackedMatrix(*_fr.disc(t, k))
+
+        self.a_dense = (a_csr * self.w[:, None]).todense()
+        self.b_dense = PackedMatrix(*_fr.disc(t, k)).todense()
+
+        # rhs
+        assert y.ndim == 1
+        yy = y * self.w
+        self.yy = np.r_[yy, np.zeros(self.b.shape[0])]
+
+        self.s = s
+
+    def __call__(self, p):
+        ab = np.vstack((self.a_dense, self.b_dense / p))
+
+        # LSQ solution of ab @ c = yy
+        from scipy.linalg import qr, solve
+        q, r = qr(ab, mode='economic')
+
+        qy = q.T @ self.yy
+
+        nc = r.shape[1]
+        c = solve(r[:nc, :nc], qy[:nc])
+
+        spl = BSpline(self.t, c, self.k)
+        fp = np.sum(self.w**2 * (spl(self.x) - self.y)**2)
+
+        self.spl = spl   # store it
+
+        return fp - self.s
+
+
+class TestMakeSplrep:
+    def test_input_errors(self):
+        x = np.linspace(0, 10, 11)
+        y = np.linspace(0, 10, 12)
+        with assert_raises(ValueError):
+            # len(x) != len(y)
+            make_splrep(x, y)
+
+        with assert_raises(ValueError):
+            # 0D inputs
+            make_splrep(1, 2, s=0.1)
+
+        with assert_raises(ValueError):
+            # y.ndim > 2
+            y = np.ones((x.size, 2, 2, 2))
+            make_splrep(x, y, s=0.1)
+
+        w = np.ones(12)
+        with assert_raises(ValueError):
+            # len(weights) != len(x)
+            make_splrep(x, x**3, w=w, s=0.1)
+
+        w = -np.ones(12)
+        with assert_raises(ValueError):
+            # w < 0
+            make_splrep(x, x**3, w=w, s=0.1)
+
+        w = np.ones((x.shape[0], 2))
+        with assert_raises(ValueError):
+            # w.ndim != 1
+            make_splrep(x, x**3, w=w, s=0.1)
+
+        with assert_raises(ValueError):
+            # x not ordered
+            make_splrep(x[::-1], x**3, s=0.1)
+
+        with assert_raises(TypeError):
+            # k != int(k)
+            make_splrep(x, x**3, k=2.5, s=0.1)
+
+        with assert_raises(ValueError):
+            # s < 0
+            make_splrep(x, x**3, s=-1)
+
+        with assert_raises(ValueError):
+            # nest < 2*k + 2
+            make_splrep(x, x**3, k=3, nest=2, s=0.1)
+
+        with assert_raises(ValueError):
+            # nest not None and s==0
+            make_splrep(x, x**3, s=0, nest=11)
+
+        with assert_raises(ValueError):
+            # len(x) != len(y)
+            make_splrep(np.arange(8), np.arange(9), s=0.1)
+
+    def _get_xykt(self):
+        x = np.linspace(0, 5, 11)
+        y  = np.sin(x*3.14 / 5)**2
+        k = 3
+        s = 1.7e-4
+        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+
+        return x, y, k, s, tt
+
+    def test_fitpack_F(self):
+        # test an implementation detail: banded/packed linalg vs full matrices
+        from scipy.interpolate._fitpack_repro import F
+
+        x, y, k, s, t = self._get_xykt()
+        f = F(x, y[:, None], t, k, s)    # F expects y to be 2D
+        f_d = F_dense(x, y, t, k, s)
+        for p in [1, 10, 100]:
+            assert_allclose(f(p), f_d(p), atol=1e-15)
+
+    def test_fitpack_F_with_weights(self):
+        # repeat test_fitpack_F, with weights
+        from scipy.interpolate._fitpack_repro import F
+
+        x, y, k, s, t = self._get_xykt()
+        w = np.arange(x.shape[0], dtype=float)
+        fw = F(x, y[:, None], t, k, s, w=w)       # F expects y to be 2D
+        fw_d = F_dense(x, y, t, k, s, w=w)
+
+        f_d = F_dense(x, y, t, k, s)   # no weights
+
+        for p in [1, 10, 100]:
+            assert_allclose(fw(p), fw_d(p), atol=1e-15)
+            assert not np.allclose(f_d(p), fw_d(p), atol=1e-15)
+
+    def test_disc_matrix(self):
+        # test an implementation detail: discontinuity matrix
+        # (jumps of k-th derivative at knots)
+        import scipy.interpolate._fitpack_repro as _fr
+
+        rng = np.random.default_rng(12345)
+        t = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7))*5, 5, 5, 5, 5]
+
+        n, k = len(t), 3
+        D = PackedMatrix(*_fr.disc(t, k)).todense()
+        D_dense = disc_naive(t, k)
+        assert D.shape[0] == n - 2*k - 2   # number of internal knots
+        assert_allclose(D, D_dense, atol=1e-15)
+
+    def test_simple_vs_splrep(self):
+        x, y, k, s, tt = self._get_xykt()
+        tt = np.array([0]*(k+1) + [2.5, 4.0] + [5]*(k+1))
+
+        t,c,k = splrep(x, y, k=k, s=s)
+        assert all(t == tt)
+ 
+        spl = make_splrep(x, y, k=k, s=s)
+        assert_allclose(c[:spl.c.size], spl.c, atol=1e-15)
+
+    def test_with_knots(self):
+        x, y, k, s, _ = self._get_xykt()
+
+        t = list(generate_knots(x, y, k=k, s=s))[-1]
+
+        spl_auto = make_splrep(x, y, k=k, s=s)
+        spl_t = make_splrep(x, y, t=t, k=k, s=s)
+
+        assert_allclose(spl_auto.t, spl_t.t, atol=1e-15)
+        assert_allclose(spl_auto.c, spl_t.c, atol=1e-15)
+        assert_allclose(spl_auto.k, spl_t.k, atol=1e-15)
+
+    def test_no_internal_knots(self):
+        # should not fail if there are no internal knots
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        k = 3
+        spl = make_splrep(x, y, k=k, s=1)
+        assert spl.t.shape[0] == 2*(k+1)
+
+    def test_default_s(self):
+        n = 10
+        x = np.arange(n)
+        y = x**3
+        spl = make_splrep(x, y, k=3)
+        spl_i = make_interp_spline(x, y, k=3)
+
+        assert_allclose(spl.c, spl_i.c, atol=1e-15)
+
+    def test_s_too_small(self):
+        # both splrep and make_splrep warn that "s too small": ier=2
+        n = 14
+        x = np.arange(n)
+        y = x**3
+
+        with suppress_warnings() as sup:
+            r = sup.record(RuntimeWarning)
+            tck = splrep(x, y, k=3, s=1e-50)
+            spl = make_splrep(x, y, k=3, s=1e-50)
+            assert len(r) == 2
+            assert_equal(spl.t, tck[0])
+            assert_allclose(np.r_[spl.c, [0]*(spl.k+1)],
+                            tck[1], atol=5e-13)
+
+    def test_shape(self):
+        # make sure coefficients have the right shape (not extra dims)
+        n, k = 10, 3
+        x = np.arange(n)
+        y = x**3
+
+        spl = make_splrep(x, y, k=k)
+        spl_1 = make_splrep(x, y, k=k, s=1e-5)
+
+        assert spl.c.ndim == 1
+        assert spl_1.c.ndim == 1
+
+        # force the general code path, not shortcuts
+        spl_2 = make_splrep(x, y + 1/(1+y), k=k, s=1e-5)
+        assert spl_2.c.ndim == 1
+
+    def test_s0_vs_not(self):
+        # check that the shapes are consistent
+        n, k = 10, 3
+        x = np.arange(n)
+        y = x**3
+
+        spl_0 = make_splrep(x, y, k=3, s=0)
+        spl_1 = make_splrep(x, y, k=3, s=1)
+
+        assert spl_0.c.ndim == 1
+        assert spl_1.c.ndim == 1
+
+        assert spl_0.t.shape[0] == n + k + 1
+        assert spl_1.t.shape[0] == 2 * (k + 1)
+
+
+class TestMakeSplprep:
+    def _get_xyk(self, m=10, k=3):
+        x = np.arange(m) * np.pi / m
+        y = [np.sin(x), np.cos(x)]
+        return x, y, k
+
+    @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
+    def test_simple_vs_splprep(self, s):
+        # Check/document the interface vs splPrep
+        # The four values of `s` are to probe all code paths and shortcuts
+        m, k = 10, 3
+        x = np.arange(m) * np.pi / m
+        y = [np.sin(x), np.cos(x)]
+
+        # the number of knots depends on `s` (this is by construction)
+        num_knots = {0: 14, 0.1: 8, 1e-3: 8 + 1, 1e-5: 8 + 2}
+
+        # construct the splines
+        (t, c, k), u_ = splprep(y, s=s)
+        spl, u = make_splprep(y, s=s)
+
+        # parameters
+        assert_allclose(u, u_, atol=1e-15)
+
+        # knots
+        assert_allclose(spl.t, t, atol=1e-15)
+        assert len(t) == num_knots[s]
+
+        # coefficients: note the transpose
+        cc = np.asarray(c).T
+        assert_allclose(spl.c, cc, atol=1e-15)
+
+        # values: note axis=1
+        assert_allclose(spl(u),
+                        BSpline(t, c, k, axis=1)(u), atol=1e-15)
+
+    @pytest.mark.parametrize('s', [0, 0.1, 1e-3, 1e-5])
+    def test_array_not_list(self, s):
+        # the argument of splPrep is either a list of arrays or a 2D array (sigh)
+        _, y, _ = self._get_xyk()
+        assert isinstance(y, list)
+        assert np.shape(y)[0] == 2
+
+        # assert the behavior of FITPACK's splrep
+        tck, u = splprep(y, s=s)
+        tck_a, u_a = splprep(np.asarray(y), s=s)
+        assert_allclose(u, u_a, atol=s)
+        assert_allclose(tck[0], tck_a[0], atol=1e-15)
+        assert_allclose(tck[1], tck_a[1], atol=1e-15)
+        assert tck[2] == tck_a[2]
+        assert np.shape(splev(u, tck)) == np.shape(y)
+
+        spl, u = make_splprep(y, s=s)
+        assert_allclose(u, u_a, atol=1e-15)
+        assert_allclose(spl.t, tck_a[0], atol=1e-15)
+        assert_allclose(spl.c.T, tck_a[1], atol=1e-15)
+        assert spl.k == tck_a[2]
+        assert spl(u).shape == np.shape(y)
+
+        spl, u = make_splprep(np.asarray(y), s=s)
+        assert_allclose(u, u_a, atol=1e-15)
+        assert_allclose(spl.t, tck_a[0], atol=1e-15)
+        assert_allclose(spl.c.T, tck_a[1], atol=1e-15)
+        assert spl.k == tck_a[2]
+        assert spl(u).shape == np.shape(y)
+
+        with assert_raises(ValueError):
+            make_splprep(np.asarray(y).T, s=s)
+
+    def test_default_s_is_zero(self):
+        x, y, k = self._get_xyk(m=10)
+
+        spl, u = make_splprep(y)
+        assert_allclose(spl(u), y, atol=1e-15)
+
+    def test_s_zero_vs_near_zero(self):
+        # s=0 and s \approx 0 are consistent
+        x, y, k = self._get_xyk(m=10)
+
+        spl_i, u_i = make_splprep(y, s=0)
+        spl_n, u_n = make_splprep(y, s=1e-15)
+
+        assert_allclose(u_i, u_n, atol=1e-15)
+        assert_allclose(spl_i(u_i), y, atol=1e-15)
+        assert_allclose(spl_n(u_n), y, atol=1e-7)
+        assert spl_i.axis == spl_n.axis
+        assert spl_i.c.shape == spl_n.c.shape
+
+    def test_1D(self):
+        x = np.arange(8, dtype=float)
+        with assert_raises(ValueError):
+            splprep(x)
+
+        with assert_raises(ValueError):
+            make_splprep(x, s=0)
+
+        with assert_raises(ValueError):
+            make_splprep(x, s=0.1)
+
+        tck, u_ = splprep([x], s=1e-5)
+        spl, u = make_splprep([x], s=1e-5)
+
+        assert spl(u).shape == (1, 8)
+        assert_allclose(spl(u), [x], atol=1e-15)
 
