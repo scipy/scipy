@@ -940,7 +940,7 @@ def _insert(xval, t, c, k, periodic=False):
     # satisfy these boundary constraints, i.e.
     #      tt(i+nn-2*k-1) = tt(i)+per  ,i=1,2,...,2*k+1
     #      cc(i+nn-2*k-1) = cc(i)      ,i=1,2,...,k
-    interval = _bspl._find_interval(t, k, xval, k, False)
+    interval = _bspl._py_find_interval(t, k, xval, k, False)
     if interval < 0:
         # extrapolated values are guarded for in BSpline.insert_knot
         raise ValueError(f"Cannot insert the knot at {xval}.")
