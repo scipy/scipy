@@ -420,7 +420,7 @@ from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
 from ._tnc import fmin_tnc
 from ._cobyla_py import fmin_cobyla
 from ._nonlin import *
-from ._slsqp_py import approx_jacobian, fmin_slsqp
+from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback

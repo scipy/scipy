@@ -7,7 +7,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'OptimizeResult',
-    'approx_jacobian',
     'fmin_slsqp',
     'slsqp',
     'zeros',
