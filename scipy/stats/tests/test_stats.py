@@ -513,6 +513,7 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
+    @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
     def test_resampling_pvalue(self, method, alternative):
