@@ -510,7 +510,8 @@ class Akima1DInterpolator(CubicHermiteSpline):
 
     """
 
-    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", extrapolate:bool=None):
+    def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
+                 extrapolate:bool=None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
@@ -967,8 +968,9 @@ class CubicSpline(CubicHermiteSpline):
                 deriv_value = np.asarray(deriv_value)
                 if deriv_value.shape != expected_deriv_shape:
                     raise ValueError(
-                        "`deriv_value` shape {} is not the expected one {}."
-                        .format(deriv_value.shape, expected_deriv_shape))
+                        f"`deriv_value` shape {deriv_value.shape} is not "
+                        f"the expected one {expected_deriv_shape}."
+                    )
 
                 if np.issubdtype(deriv_value.dtype, np.complexfloating):
                     y = y.astype(complex, copy=False)
