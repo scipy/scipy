@@ -856,7 +856,6 @@ def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1
     return np.asarray(csr_data), np.asarray(csr_indices), csr_indptr
 
 
-
 # ---------------------------
 # wrappers for fitpack repro
 # ---------------------------
