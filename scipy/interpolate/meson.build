@@ -121,11 +121,21 @@ py3.extension_module('_rgi_cython',
   subdir: 'scipy/interpolate'
 )
 
+__fitpack_lib = static_library('__fitpack',
+    ['src/__fitpack.h', 'src/__fitpack.cc'],
+    dependencies:[lapack]
+    # XXX: static_library or (dynamic) library(...)? If dynamic, how to install
+)
+
+__fitpack_dep = declare_dependency(
+    link_with: __fitpack_lib,
+)
+
 py3.extension_module('_bspl',
-  cython_gen.process('_bspl.pyx'),
-  c_args: cython_c_args,
+  cython_gen_cpp.process('_bspl.pyx'),
+  cpp_args: cython_cpp_args,
   include_directories: 'src/',
-  dependencies: np_dep,
+  dependencies: [lapack, np_dep, __fitpack_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/interpolate'
