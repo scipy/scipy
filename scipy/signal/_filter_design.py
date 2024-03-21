@@ -651,7 +651,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     When such a case arises the warning is raised and the group delay
     is set to 0 at those frequencies.
 
-    For the details of numerical computation of the group delay refer to [1]_.
+    For the details of numerical computation of the group delay refer to [1]_ or [2]_.
 
     .. versionadded:: 0.16.0
 
@@ -659,6 +659,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     ----------
     .. [1] Richard G. Lyons, "Understanding Digital Signal Processing,
            3rd edition", p. 830.
+    .. [2] Julius O. Smith III, "Numerical Computation of Group Delay",
+           in "Introduction to Digital Filters with Audio Applications",
+           online book, 2007,
+           https://ccrma.stanford.edu/~jos/fp/Numerical_Computation_Group_Delay.html
 
     Examples
     --------
@@ -690,7 +694,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
-    c = np.convolve(b, a[::-1])
+    c = np.convolve(b, conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)

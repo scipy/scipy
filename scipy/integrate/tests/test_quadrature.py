@@ -9,8 +9,8 @@ import hypothesis.strategies as st
 import hypothesis.extra.numpy as hyp_num
 
 from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
-                             cumulative_trapezoid, cumtrapz, trapz, trapezoid,
-                             quad, simpson, simps, fixed_quad, AccuracyWarning,
+                             cumulative_trapezoid, trapezoid,
+                             quad, simpson, fixed_quad, AccuracyWarning,
                              qmc_quad, cumulative_simpson)
 from scipy.integrate._quadrature import _cumulative_simpson_unequal_intervals
 from scipy import stats, special
@@ -257,16 +257,6 @@ class TestQuadrature:
         expected = simpson(np.array(y, dtype=np.float64), axis=-1)
         assert_equal(result, expected)
 
-    def test_simps(self):
-        # Basic coverage test for the alias
-        y = np.arange(5)
-        x = 2**y
-        with pytest.deprecated_call(match="simpson"):
-            assert_allclose(
-                simpson(y, x=x, dx=0.5),
-                simps(y, x=x, dx=0.5)
-            )
-
 
 @pytest.mark.parametrize('func', [romberg, quadrature])
 def test_deprecate_integrator(func):
@@ -364,15 +354,6 @@ class TestCumulative_trapezoid:
         with pytest.raises(ValueError, match="At least one point is required"):
             cumulative_trapezoid(y=[])
 
-    def test_cumtrapz(self):
-        # Basic coverage test for the alias
-        x = np.arange(3 * 2 * 4).reshape(3, 2, 4)
-        y = x
-        with pytest.deprecated_call(match="cumulative_trapezoid"):
-            assert_allclose(cumulative_trapezoid(y, x, dx=0.5, axis=0, initial=0),
-                            cumtrapz(y, x, dx=0.5, axis=0, initial=0),
-                            rtol=1e-14)
-
 
 class TestTrapezoid:
     def test_simple(self):
@@ -433,14 +414,6 @@ class TestTrapezoid:
 
         xm = np.ma.array(x, mask=mask)
         assert_allclose(trapezoid(y, xm), r)
-
-    def test_trapz_alias(self):
-        # Basic coverage test for the alias
-        y = np.arange(4)
-        x = 2**y
-        with pytest.deprecated_call(match="trapezoid"):
-            assert_equal(trapezoid(y, x=x, dx=0.5, axis=0),
-                         trapz(y, x=x, dx=0.5, axis=0))
 
 
 class TestQMCQuad:
