@@ -4353,7 +4353,7 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     xp = array_namespace(r)
 
     with np.errstate(divide='ignore'):
-        zr = xp.arctanh(r)
+        zr = xp.atanh(r)
 
     ones = xp.ones_like(r)
     n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
@@ -4841,8 +4841,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
 
-    xmean = x.mean(axis=axis, keepdims=True)
-    ymean = y.mean(axis=axis, keepdims=True)
+    xmean = xp.mean(x, axis=axis, keepdims=True)
+    ymean = xp.mean(y, axis=axis, keepdims=True)
     xm = x - xmean
     ym = y - ymean
 
