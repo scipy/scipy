@@ -38,6 +38,8 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import xp_assert_close
+from scipy.conftest import array_api_compatible
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -511,7 +513,6 @@ class TestCorrPearsonr:
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
-    @pytest.mark.xslow
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
     def test_resampling_pvalue(self, method, alternative):
@@ -527,7 +528,6 @@ class TestCorrPearsonr:
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
-    @pytest.mark.xslow
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(2462935790378923)
@@ -632,6 +632,22 @@ class TestCorrPearsonr:
         assert_allclose(ci.high, 1)
         assert (res.pvalue.shape == res.statistic.shape
                 == ci.low.shape == ci.high.shape)
+
+    @array_api_compatible
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_array_api(self, xp, axis, alternative):
+        x, y = rng.normal(size=(2, 10, 11))
+        res = stats.pearsonr(xp.asarray(x), xp.asarray(y),
+                             axis=axis, alternative=alternative)
+        ref = stats.pearsonr(x, y, axis=axis, alternative=alternative)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+
+        res_ci = res.confidence_interval()
+        ref_ci = ref.confidence_interval()
+        xp_assert_close(res_ci.low, xp.asarray(ref_ci.low))
+        xp_assert_close(res_ci.high, xp.asarray(ref_ci.high))
 
 
 class TestFisherExact:

@@ -68,6 +68,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace, is_numpy
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
@@ -4349,34 +4350,36 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     Fisher's transformation is used to compute the confidence interval
     (https://en.wikipedia.org/wiki/Fisher_transformation).
     """
+    xp = array_namespace(r)
 
     with np.errstate(divide='ignore'):
-        zr = np.arctanh(r)
+        zr = xp.arctanh(r)
 
-    ones = np.ones_like(r)
+    ones = xp.ones_like(r)
+    n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
     if n > 3:
-        se = np.sqrt(1 / (n - 3))
+        se = xp.sqrt(1 / (n - 3))
         if alternative == "two-sided":
             h = special.ndtri(0.5 + confidence_level/2)
             zlo = zr - h*se
             zhi = zr + h*se
-            rlo = np.tanh(zlo)
-            rhi = np.tanh(zhi)
+            rlo = xp.tanh(zlo)
+            rhi = xp.tanh(zhi)
         elif alternative == "less":
             h = special.ndtri(confidence_level)
             zhi = zr + h*se
-            rhi = np.tanh(zhi)
+            rhi = xp.tanh(zhi)
             rlo = -ones
         else:
             # alternative == "greater":
             h = special.ndtri(confidence_level)
             zlo = zr - h*se
-            rlo = np.tanh(zlo)
+            rlo = xp.tanh(zlo)
             rhi = ones
     else:
         rlo, rhi = -ones, ones
 
-    return ConfidenceInterval(low=rlo, high=rhi)
+    return ConfidenceInterval(low=rlo[()], high=rhi[()])
 
 
 def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
@@ -4476,6 +4479,12 @@ class PearsonRResult(PearsonRResultBase):
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
         if isinstance(method, BootstrapMethod):
+            xp = array_namespace(self._x)
+            message = ('`method` must be None if `pearsonr` '
+                       'arguments were not NumPy arrays.')
+            if not is_numpy(xp):
+                raise ValueError(message)
+
             ci = _pearsonr_bootstrap_ci(confidence_level, method, self._x, self._y,
                                         self._alternative, self._axis)
         elif method is None:
@@ -4740,12 +4749,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     than zero which happens in about half of the cases if we sample x and y.
 
     """
-    x = np.asarray(x)
-    y = np.asarray(y)
+    xp = array_namespace(x, y)
+    x = xp.asarray(x)
+    y = xp.asarray(y)
+
+    if not is_numpy(xp) and method is not None:
+        method = 'invalid'
 
     if axis is None:
-        x = x.ravel()
-        y = y.ravel()
+        x = xp.reshape(x, (-1,))
+        y = xp.reshape(y, (-1,))
         axis = -1
 
     axis_int = int(axis)
@@ -4761,31 +4774,31 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError('`x` and `y` must have length at least 2.')
 
     try:
-        x, y = np.broadcast_arrays(x, y)
+        x, y = xp.broadcast_arrays(x, y)
     except ValueError as e:
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
-    x = np.moveaxis(x, axis, -1)
-    y = np.moveaxis(y, axis, -1)
+    x = xp.moveaxis(x, axis, -1)
+    y = xp.moveaxis(y, axis, -1)
     axis = -1
 
-    dtype = np.result_type(x.dtype, y.dtype)
-    if np.issubdtype(dtype, np.integer):
-        dtype = np.float64
+    dtype = xp.result_type(x.dtype, y.dtype)
+    if xp.isdtype(dtype, "integral"):
+        dtype = xp.float64
 
-    if np.issubdtype(dtype, np.complexfloating):
+    if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
 
-    x = x.astype(dtype, copy=False)
-    y = y.astype(dtype, copy=False)
-    threshold = np.finfo(dtype).eps ** 0.75
+    x = xp.astype(x, dtype, copy=False)
+    y = xp.astype(y, dtype, copy=False)
+    threshold = xp.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
-    const_x = (x == x[..., [0]]).all(axis=-1)
-    const_y = (y == y[..., [0]]).all(axis=-1)
+    const_x = xp.all(x == x[..., [0]], axis=-1)
+    const_y = xp.all(y == y[..., [0]], axis=-1)
     const_xy = const_x | const_y
-    if np.any(const_xy):
+    if xp.any(const_xy):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
@@ -4814,14 +4827,17 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
                               alternative=alternative, x=x, y=y, axis=axis)
+    elif method == 'invalid':
+        message = ('`method` must be None if arguments are not NumPy arrays.')
+        raise ValueError(message)
     elif method is not None:
         message = ('`method` must be an instance of `PermutationMethod`,'
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
     if n == 2:
-        r = (np.sign(x[..., 1] - x[..., 0])*np.sign(y[..., 1] - y[..., 0]))[()]
-        result = PearsonRResult(statistic=r, pvalue=np.ones_like(r)[()], n=n,
+        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))[()]
+        result = PearsonRResult(statistic=r, pvalue=xp.ones_like(r)[()], n=n,
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
 
@@ -4835,16 +4851,16 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # but not when `axis` is provided, so scale manually. scipy.linalg.norm
     # also raises an error with NaN input rather than returning NaN, so
     # use np.linalg.norm.
-    xmax = np.max(np.abs(xm), axis=axis, keepdims=True)
-    ymax = np.max(np.abs(ym), axis=axis, keepdims=True)
+    xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
+    ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
     with np.errstate(invalid='ignore'):
-        normxm = xmax * np.linalg.norm(xm/xmax, axis=axis, keepdims=True)
-        normym = ymax * np.linalg.norm(ym/ymax, axis=axis, keepdims=True)
+        normxm = xmax * xp.linalg.vector_norm(xm/xmax, axis=axis, keepdims=True)
+        normym = ymax * xp.linalg.vector_norm(ym/ymax, axis=axis, keepdims=True)
 
-    nconst_x = np.any(normxm < threshold*abs(xmean), axis=axis)
-    nconst_y = np.any(normym < threshold*abs(ymean), axis=axis)
+    nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
+    nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
     nconst_xy = nconst_x | nconst_y
-    if np.any(nconst_xy & (~const_xy)):
+    if xp.any(nconst_xy & (~const_xy)):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
@@ -4853,21 +4869,23 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
     with np.errstate(invalid='ignore', divide='ignore'):
-        r = np.sum(xm/normxm * ym/normym, axis=axis)
+        r = xp.sum(xm/normxm * ym/normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
-    one = np.asarray(1, dtype=dtype)
-    r = np.asarray(np.clip(r, -one, one))
-    r[const_xy] = _get_nan(r)
+    one = xp.asarray(1, dtype=dtype)
+    r = xp.asarray(xp.clip(r, -one, one))
+    r[const_xy] = xp.asarray(np.nan, dtype=dtype)
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    ab, loc, scale = np.asarray([n/2 - 1, -1, 2], dtype=dtype)
-    dist = stats.beta(ab, ab, loc=loc, scale=scale)
-    pvalue = _get_pvalue(r, dist, alternative)
+    # This needs to be done with NumPy arrays given the existing infrastructure.
+    ab = n/2 - 1
+    dist = stats.beta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(np.asarray(r), dist, alternative)
+    pvalue = xp.asarray(pvalue, dtype=dtype)
 
-    return PearsonRResult(statistic=r, pvalue=pvalue.astype(dtype), n=n,
+    return PearsonRResult(statistic=r[()], pvalue=pvalue[()], n=n,
                           alternative=alternative, x=x, y=y, axis=axis)
 
 
