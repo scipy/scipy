@@ -1250,6 +1250,12 @@ def boxcox_normmax(
     6.000...
     """
     x = np.asarray(x)
+
+    if np.any(~np.isfinite(x) | (x < 0)):
+        message = ("The `x` argument of `boxcox_normmax` must contain "
+                   "only positive, finite, real numbers.")
+        raise ValueError(message)
+
     end_msg = "exceed specified `ymax`."
     if isinstance(ymax, _BigFloat):
         dtype = x.dtype if np.issubdtype(x.dtype, np.floating) else np.float64
@@ -1321,15 +1327,7 @@ def boxcox_normmax(
 
     optimfunc = methods[method]
 
-    try:
-        res = optimfunc(x)
-    except ValueError as e:
-        if "infs or NaNs" in str(e):
-            message = ("The `x` argument of `boxcox_normmax` must contain "
-                       "only positive, finite, real numbers.")
-            raise ValueError(message) from e
-        else:
-            raise e
+    res = optimfunc(x)
 
     if res is None:
         message = ("The `optimizer` argument of `boxcox_normmax` must return "
