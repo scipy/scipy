@@ -2116,7 +2116,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         update_l1norm = np.linalg.norm(update, ord=1)
 
     else:
-        if np.isnan(old_fval) or np.isnan(update).any():
+        if np.isnan(old_fval) or np.isnan(update_l1norm):
             return terminate(3, _status_message['nan'])
 
         msg = _status_message['success']
