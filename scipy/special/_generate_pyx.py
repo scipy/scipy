@@ -1522,18 +1522,19 @@ def main(outdir):
         print("scipy/special/_generate_pyx.py: all files up-to-date")
         return
 
-    ufuncs, fused_funcs = [], []
+    ufuncs, ufuncs_type_stubs, fused_funcs = [], [], []
     with open('functions.json') as data:
         functions = json.load(data)
     for f, sig in functions.items():
         if (f not in special_ufuncs):
             ufuncs.append(Ufunc(f, sig))
+        ufuncs_type_stubs.append(Ufunc(f, sig))
         fused_funcs.append(FusedFunc(f, sig))
     generate_ufuncs(os.path.join(outdir, "_ufuncs"),
                     os.path.join(outdir, "_ufuncs_cxx"),
                     ufuncs)
     generate_ufuncs_type_stubs(os.path.join(outdir, "_ufuncs"),
-                               ufuncs)
+                               ufuncs_type_stubs)
     generate_fused_funcs(os.path.join(outdir, "cython_special"),
                          os.path.join(outdir, "_ufuncs"),
                          fused_funcs)

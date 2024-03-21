@@ -1,9 +1,6 @@
 #include <cmath>
 
-#include "_special.h"
 #include "special/gamma.h"
-#include "special/lambertw.h"
-#include "special/loggamma.h"
 #include "special/specfun.h"
 #include "special/trig.h"
 #include "special/zeta.h"
@@ -16,27 +13,15 @@ using namespace std;
 // already in such a context.
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
-extern const char *_cosine_cdf_doc;
-extern const char *_cosine_invcdf_doc;
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
-extern const char *_zeta_doc;
-extern const char *airy_doc;
-extern const char *airye_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
 extern const char *berp_doc;
-extern const char *beta_doc;
-extern const char *betaln_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
-extern const char *gamma_doc;
 extern const char *gammaln_doc;
-extern const char *hankel1_doc;
-extern const char *hankel1e_doc;
-extern const char *hankel2_doc;
-extern const char *hankel2e_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
 extern const char *it2struve0_doc;
@@ -60,6 +45,7 @@ extern const char *mathieu_modsem2_doc;
 extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
+extern const char *_zeta_doc;
 
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT,
