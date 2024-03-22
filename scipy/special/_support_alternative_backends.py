@@ -3,7 +3,7 @@ import sys
 import functools
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_cupy, is_torch, is_numpy
+from scipy._lib._array_api import array_namespace, is_cupy, is_torch, is_numpy, is_jax
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -23,7 +23,7 @@ def get_array_special_func(f_name, xp, n_array_args):
     elif is_cupy(xp):
         import cupyx  # type: ignore[import]
         f = getattr(cupyx.scipy.special, f_name, None)
-    elif xp.__name__ == f"{array_api_compat_prefix}.jax":
+    elif is_jax(xp):
         f = getattr(xp.scipy.special, f_name, None)
     else:
         f_scipy = getattr(_ufuncs, f_name, None)

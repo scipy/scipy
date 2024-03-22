@@ -283,6 +283,7 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -300,6 +301,7 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -319,6 +321,7 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+    # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
