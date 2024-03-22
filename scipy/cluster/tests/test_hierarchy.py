@@ -210,8 +210,8 @@ class TestMLabLinkageConversion:
         xp_assert_equal(to_mlab_linkage(X), X)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_mlab_linkage_conversion_single_row(self, xp):
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
@@ -222,8 +222,8 @@ class TestMLabLinkageConversion:
                         rtol=1e-15)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_mlab_linkage_conversion_multiple_rows(self, xp):
         # Tests from/to_mlab_linkage on linkage array with multiple rows.
         Zm = xp.asarray([[3, 6, 138], [4, 5, 219],
