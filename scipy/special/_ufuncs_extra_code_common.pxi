@@ -7,6 +7,8 @@ from numpy cimport (
     NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
     NPY_INT, NPY_LONG)
 
+import warnings
+
 ctypedef double complex double_complex
 
 cdef extern from "numpy/ufuncobject.h":
@@ -29,3 +31,18 @@ np.import_ufunc()
 cdef void _set_action(sf_error.sf_error_t code,
                       sf_error.sf_action_t action) noexcept nogil:
     sf_error.set_action(code, action)
+
+cdef void ufunc_warnorraise(sf_error.sf_action_t action, const char *msg) except *:
+    from scipy.special import SpecialFunctionWarning, SpecialFunctionError
+
+    if (action == sf_error.WARN):
+        warnings.warn(msg, SpecialFunctionWarning)
+    elif (action == sf_error.RAISE):
+        raise SpecialFunctionError(msg)
+
+sf_error.sf_error_set_callback(ufunc_warnorraise)
+
+cdef int ufunc_getfpe() noexcept:
+    return wrap_PyUFunc_getfperr()
+
+sf_error.sf_error_set_callback_fpe(ufunc_getfpe)
