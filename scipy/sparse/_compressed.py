@@ -155,8 +155,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1):
-            raise ValueError("index pointer size ({}) should be ({})"
-                             "".format(len(self.indptr), major_dim + 1))
+            raise ValueError(
+                f"index pointer size ({len(self.indptr)}) should be ({major_dim + 1})"
+                )
         if (self.indptr[0] != 0):
             raise ValueError("index pointer should start with 0")
 
@@ -600,7 +601,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # The _spbase base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
-                axis in self._swap(((1, -1), (0, 2)))[0]):
+                axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
             res_dtype = get_sum_dtype(self.dtype)
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
@@ -972,8 +973,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a {}_matrix is expensive."
-                 " lil_matrix is more efficient.".format(self.format),
+            warn(f"Changing the sparsity structure of a {self.format}_matrix is"
+                 " expensive. lil and dok are more efficient.",
                  SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1
@@ -1236,8 +1237,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into {} blocks. "
-                                 "Got {}".format(self.blocksize, shape))
+                raise ValueError(f"shape must be divisible into {self.blocksize}"
+                                 f" blocks. Got {shape}")
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape)
@@ -1359,8 +1360,7 @@ def _process_slice(sl, num):
             sl += num
         i0, i1 = sl, sl + 1
         if i0 < 0 or i1 > num:
-            raise IndexError('index out of bounds: 0 <= %d < %d <= %d' %
-                             (i0, i1, num))
+            raise IndexError(f'index out of bounds: 0 <= {i0} < {i1} <= {num}')
     else:
         raise TypeError('expected slice or scalar')
 
