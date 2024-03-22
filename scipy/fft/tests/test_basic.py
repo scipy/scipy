@@ -40,17 +40,6 @@ def fft1(x):
     phase = np.arange(L).reshape(-1, 1) * phase
     return np.sum(x*np.exp(phase), axis=1)
 
-
-class TestFFTShift:
-
-    def test_fft_n(self, xp):
-        x = xp.asarray([1, 2, 3], dtype=xp.complex128)
-        if xp.__name__ == 'torch':
-            assert_raises(RuntimeError, fft.fft, x, 0)
-        else:
-            assert_raises(ValueError, fft.fft, x, 0)
-
-
 class TestFFT1D:
 
     def test_identity(self, xp):
@@ -70,6 +59,11 @@ class TestFFT1D:
         xp_assert_close(fft.fft(x, norm="ortho"),
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
+
+    @skip_if_array_api(np_only=True, reasons=['some backends allow `n=0`'])
+    def test_fft_n(self, xp):
+        x = xp.asarray([1, 2, 3], dtype=xp.complex128)
+        assert_raises(ValueError, fft.fft, x, 0)
 
     def test_ifft(self, xp):
         x = xp.asarray(random(30) + 1j*random(30))

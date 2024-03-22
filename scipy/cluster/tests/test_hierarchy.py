@@ -828,8 +828,8 @@ class TestMaxInconsts:
         assert_raises(ValueError, maxinconsts, Z, R)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_maxinconsts_one_cluster_linkage(self, xp):
         # Tests maxinconsts(Z, R) on linkage with one cluster.
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
@@ -839,8 +839,8 @@ class TestMaxInconsts:
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_maxinconsts_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             self.check_maxinconsts_Q_linkage(method, xp)
@@ -894,8 +894,8 @@ class TestMaxRStat:
         assert_raises(ValueError, maxRstat, Z, R, i)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_maxRstat_one_cluster_linkage(self, xp):
         for i in range(4):
             self.check_maxRstat_one_cluster_linkage(i, xp)
@@ -909,8 +909,8 @@ class TestMaxRStat:
         xp_assert_close(MD, expectedMD, atol=1e-15)
 
     @skip_if_array_api('jax.numpy',
-                    reasons=['jax arrays do not support item assignment'],
-                    cpu_only=True)
+                       reasons=['jax arrays do not support item assignment'],
+                       cpu_only=True)
     def test_maxRstat_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
             for i in range(4):
