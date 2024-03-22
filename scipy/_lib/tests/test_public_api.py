@@ -230,7 +230,10 @@ def test_all_modules_are_expected():
         # with the installed NumPy version, there can be errors on importing
         # `array_api_compat`. This should only raise if SciPy is configured with
         # that library as an available backend.
-        for backend, dir_name in {'cupy': 'cupy', 'pytorch': 'torch'}.items():
+        backends = {'cupy': 'cupy',
+                    'pytorch': 'torch',
+                    'dask.array': 'dask.array'}
+        for backend, dir_name in backends.items():
             path = f'array_api_compat.{dir_name}'
             if path in name and backend not in xp_available_backends:
                 return
