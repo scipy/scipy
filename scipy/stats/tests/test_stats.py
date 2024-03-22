@@ -645,7 +645,7 @@ class TestPearsonr:
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
             x = copy(x0)
-            x[0, ...] q= 1
+            x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
             nan = xp.asarray(xp.nan, dtype=xp.float64)
