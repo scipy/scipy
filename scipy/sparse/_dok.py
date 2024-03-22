@@ -90,6 +90,24 @@ class _dok_base(_spbase, IndexMixin, dict):
     def clear(self):
         return self._dict.clear()
 
+    def pop(self, key, default=None, /):
+        return self._dict.pop(key, default)
+
+    def __reversed__(self):
+        raise TypeError("reversed is not defined for dok_array type")
+
+    def __or__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
+
+    def __ror__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
+
+    def __ior__(self, other):
+        type_names = f"{type(self).__name__} and {type(other).__name__}"
+        raise TypeError(f"unsupported operand type for |: {type_names}")
+
     def popitem(self):
         return self._dict.popitem()
 
@@ -426,11 +444,10 @@ class _dok_base(_spbase, IndexMixin, dict):
     @classmethod
     def fromkeys(cls, iterable, value=1, /):
         tmp = dict.fromkeys(iterable, value)
-        keys = tmp.keys()
-        if isinstance(next(iter(keys)), tuple):
-            shape = tuple(max(idx) + 1 for idx in zip(*keys))
+        if isinstance(next(iter(tmp)), tuple):
+            shape = tuple(max(idx) + 1 for idx in zip(*tmp))
         else:
-            shape = (max(keys) + 1,)
+            shape = (max(tmp) + 1,)
         result = cls(shape, dtype=type(value))
         result._dict = tmp
         return result
@@ -645,3 +662,23 @@ class dok_matrix(spmatrix, _dok_base):
         return self._shape
 
     shape = property(fget=get_shape, fset=set_shape)
+
+    def __reversed__(self):
+        return self._dict.__reversed__()
+
+    def __or__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ror__(self, other):
+        if isinstance(other, _dok_base):
+            return self._dict | other._dict
+        return self._dict | other
+
+    def __ior__(self, other):
+        if isinstance(other, _dok_base):
+            self._dict |= other._dict
+        else:
+            self._dict |= other
+        return self
