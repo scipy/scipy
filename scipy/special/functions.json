@@ -11,8 +11,8 @@
     },
     "_cospi": {
     	"cephes.h": {
-	        "cospi": "d->d"
-    	},
+	    "cospi": "d->d"
+        },
         "_special.h++": {
             "ccospi": "D->D"
         }

@@ -6,6 +6,14 @@
 #include "special/zeta.h"
 #include "ufunc.h"
 
+// This is the extension module for the NumPy ufuncs in SciPy's special module. To create such a ufunc, call
+// "SpecFun_NewUFunc" with a braced list of kernel functions that will become the ufunc overloads. There are
+// many examples in the code below. The documentation of each ufunc is kept in a companion file called
+// _special_ufuncs_docs.cpp.
+//
+// If you are adding a ufunc, you will also need to add the appropriate entry to scipy/special/functions.json.
+// This allows the build process to generate a corresponding entry for scipy.special.cython_special.
+
 using namespace std;
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".

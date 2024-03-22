@@ -1442,12 +1442,12 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         f.write("\n\n".join(bench_aux))
 
 
-def generate_ufuncs_type_stubs(module_name: str, ufuncs: list[Ufunc]):
+def generate_ufuncs_type_stubs(module_name: str, ufunc_names: list[str]):
     stubs, module_all = [], []
-    for ufunc in ufuncs:
-        stubs.append(f'{ufunc.name}: np.ufunc')
-        if not ufunc.name.startswith('_'):
-            module_all.append(f"'{ufunc.name}'")
+    for ufunc_name in ufunc_names:
+        stubs.append(f'{ufunc_name}: np.ufunc')
+        if not ufunc_name.startswith('_'):
+            module_all.append(f"'{ufunc_name}'")
     # jn is an alias for jv.
     module_all.append("'jn'")
     stubs.append('jn: np.ufunc')
@@ -1528,7 +1528,7 @@ def main(outdir):
     for f, sig in functions.items():
         if (f not in special_ufuncs):
             ufuncs.append(Ufunc(f, sig))
-        ufuncs_type_stubs.append(Ufunc(f, sig))
+        ufuncs_type_stubs.append(f)
         fused_funcs.append(FusedFunc(f, sig))
     generate_ufuncs(os.path.join(outdir, "_ufuncs"),
                     os.path.join(outdir, "_ufuncs_cxx"),

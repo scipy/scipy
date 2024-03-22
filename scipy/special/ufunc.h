@@ -115,8 +115,8 @@ T from_pointer(char *src) {
 }
 
 struct SpecFun_UFuncData {
-    const char *name;
     void *func;
+    const char *name;
 };
 
 template <typename Func, typename Indices = std::make_index_sequence<arity_of_v<Func>>>
@@ -210,7 +210,7 @@ class SpecFun_UFunc {
             m_data[i] = m_data_alloc.get() + i;
             std::copy(it->types(), it->types() + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
 
-            m_data_alloc[i] = {name, it->func()};
+            m_data_alloc[i] = {it->func(), name};
         }
     }
 
