@@ -15,7 +15,6 @@ The :mod:`scipy.optimize` package provides several commonly used
 optimization algorithms. A detailed listing is available:
 :mod:`scipy.optimize` (can also be found by ``help(scipy.optimize)``).
 
-
 Unconstrained minimization of multivariate scalar functions (:func:`minimize`)
 ------------------------------------------------------------------------------
 
