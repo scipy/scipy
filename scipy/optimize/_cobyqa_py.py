@@ -12,6 +12,8 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Quadratic Approximations (COBYQA) algorithm.
 
+    .. versionadded:: 1.14.0
+
     Options
     -------
     disp : bool
@@ -22,10 +24,10 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         Maximum number of iterations.
     f_target : float
         Target value for the objective function. The optimization procedure is
-        terminated when the objective function value of a nearly feasible point
-        is less than or equal to this target.
+        terminated when the objective function value of a feasible point (see
+        `feasibility_tol` below) is less than or equal to this target.
     feasibility_tol : float
-        Tolerance for the constraint violation.
+        Absolute tolerance for the constraint violation.
     initial_tr_radius : float
         Initial trust-region radius. Typically, this value should be in the
         order of one tenth of the greatest expected change to the variables.

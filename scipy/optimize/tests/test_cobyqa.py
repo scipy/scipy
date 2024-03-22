@@ -1,10 +1,12 @@
 import numpy as np
-from numpy.testing import assert_allclose
+import pytest
+from numpy.testing import assert_allclose, assert_equal
 
 from scipy.optimize import (
     Bounds,
     LinearConstraint,
     NonlinearConstraint,
+    OptimizeResult,
     minimize,
 )
 
@@ -29,9 +31,19 @@ class TestCOBYQA:
                 self.n_calls = 0
 
             def __call__(self, x):
+                assert isinstance(x, np.ndarray)
+                self.n_calls += 1
+
+        class CallbackNewSyntax:
+            def __init__(self):
+                self.n_calls = 0
+
+            def __call__(self, intermediate_result):
+                assert isinstance(intermediate_result, OptimizeResult)
                 self.n_calls += 1
 
         callback = Callback()
+        callback_new_syntax = CallbackNewSyntax()
 
         # Minimize with method='cobyqa'.
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
@@ -43,6 +55,14 @@ class TestCOBYQA:
             callback=callback,
             options=self.options,
         )
+        sol_new = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            constraints=constraints,
+            callback=callback_new_syntax,
+            options=self.options,
+        )
         solution = [np.sqrt(25.0 - 4.0 / 9.0), 2.0 / 3.0]
         assert_allclose(sol.x, solution, atol=1e-4)
         assert sol.success, sol.message
@@ -51,13 +71,25 @@ class TestCOBYQA:
         assert sol.fun < self.fun(solution) + 1e-3, sol
         assert sol.nfev == callback.n_calls, \
             "Callback is not called exactly once for every function eval."
+        assert_equal(sol.x, sol_new.x)
+        assert sol_new.success, sol_new.message
+        assert sol.fun == sol_new.fun
+        assert sol.maxcv == sol_new.maxcv
+        assert sol.nfev == sol_new.nfev
+        assert sol.nit == sol_new.nit
+        assert sol_new.nfev == callback_new_syntax.n_calls, \
+            "Callback is not called exactly once for every function eval."
 
     def test_minimize_bounds(self):
+        def fun_check_bounds(x):
+            assert np.all(bounds.lb <= x) and np.all(x <= bounds.ub)
+            return self.fun(x)
+
         # Case where the bounds are not active at the solution.
         bounds = Bounds([4.5, 0.6], [5.0, 0.7])
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)
         sol = minimize(
-            self.fun,
+            fun_check_bounds,
             self.x0,
             method='cobyqa',
             bounds=bounds,
@@ -68,13 +100,14 @@ class TestCOBYQA:
         assert_allclose(sol.x, solution, atol=1e-4)
         assert sol.success, sol.message
         assert sol.maxcv < 1e-8, sol
+        assert np.all(bounds.lb <= sol.x) and np.all(sol.x <= bounds.ub), sol
         assert sol.nfev <= 100, sol
         assert sol.fun < self.fun(solution) + 1e-3, sol
 
         # Case where the bounds are active at the solution.
         bounds = Bounds([5.0, 0.6], [5.5, 0.65])
         sol = minimize(
-            self.fun,
+            fun_check_bounds,
             self.x0,
             method='cobyqa',
             bounds=bounds,
@@ -83,6 +116,7 @@ class TestCOBYQA:
         )
         assert not sol.success, sol.message
         assert sol.maxcv > 0.35, sol
+        assert np.all(bounds.lb <= sol.x) and np.all(sol.x <= bounds.ub), sol
         assert sol.nfev <= 100, sol
 
     def test_minimize_linear_constraints(self):
@@ -106,8 +140,8 @@ class TestCOBYQA:
         sol = minimize(
             self.fun,
             self.x0,
-            (2.0,),
-            'cobyqa',
+            args=(2.0,),
+            method='cobyqa',
             constraints=constraints,
             options=self.options,
         )
@@ -117,6 +151,50 @@ class TestCOBYQA:
         assert sol.maxcv < 1e-8, sol
         assert sol.nfev <= 100, sol
         assert sol.fun < self.fun(solution, 2.0) + 1e-3, sol
+
+    def test_minimize_array(self):
+        def fun_array(x, dim):
+            f = np.array(self.fun(x))
+            return np.reshape(f, (1,) * dim)
+
+        # The argument fun can return an array with a single element.
+        bounds = Bounds([4.5, 0.6], [5.0, 0.7])
+        constraints = NonlinearConstraint(self.con, 0.0, 0.0)
+        sol = minimize(
+            self.fun,
+            self.x0,
+            method='cobyqa',
+            bounds=bounds,
+            constraints=constraints,
+            options=self.options,
+        )
+        for dim in [0, 1, 2]:
+            sol_array = minimize(
+                fun_array,
+                self.x0,
+                args=(dim,),
+                method='cobyqa',
+                bounds=bounds,
+                constraints=constraints,
+                options=self.options,
+            )
+            assert_equal(sol.x, sol_array.x)
+            assert sol_array.success, sol_array.message
+            assert sol.fun == sol_array.fun
+            assert sol.maxcv == sol_array.maxcv
+            assert sol.nfev == sol_array.nfev
+            assert sol.nit == sol_array.nit
+
+        # The argument fun cannot return an array with more than one element.
+        with pytest.raises(TypeError):
+            minimize(
+                lambda x: np.array([self.fun(x), self.fun(x)]),
+                self.x0,
+                method='cobyqa',
+                bounds=bounds,
+                constraints=constraints,
+                options=self.options,
+            )
 
     def test_minimize_maxfev(self):
         constraints = NonlinearConstraint(self.con, 0.0, 0.0)

@@ -608,6 +608,25 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
+    def test_cobyqa(self):
+        # COBYQA method.
+        if self.use_wrapper:
+            res = optimize.minimize(
+                self.func,
+                self.startparams,
+                method='cobyqa',
+                options={'maxiter': self.maxiter, 'disp': self.disp},
+            )
+            assert_allclose(res.fun, self.func(self.solution), atol=1e-6)
+
+            # Ensure that function call counts are 'known good'; these are from
+            # SciPy 1.14.0. Don't allow them to increase. The exact evaluation
+            # count is sensitive to numerical error and floating-point
+            # computations are not bit-for-bit reproducible across machines. It
+            # takes 45 calls on my machine, but we can add the same +20 margin
+            # as is used in `test_powell`
+            assert self.funccalls <= 45 + 20, self.funccalls
+
 
 def test_maxfev_test():
     rng = np.random.default_rng(271707100830272976862395227613146332411)
@@ -1314,7 +1333,8 @@ class TestOptimizeSimple(CheckOptimize):
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
                                         'Newton-CG', 'L-BFGS-B', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+                                        'trust-exact', 'trust-krylov',
+                                        'cobyqa'])
     def test_respect_maxiter(self, method):
         # Check that the number of iterations equals max_iter, assuming
         # convergence doesn't establish before
@@ -1344,6 +1364,8 @@ class TestOptimizeSimple(CheckOptimize):
         # method specific tests
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
+        elif method == 'cobyqa':
+            assert sol.status == 6  # Iteration limit reached
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
@@ -1595,11 +1617,18 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(**kwargs, callback=callback_interface)
         if method == 'nelder-mead':
             maxiter = maxiter + 1  # nelder-mead counts differently
-        ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+        if method == 'cobyqa':
+            ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
+            assert res.nfev == ref.nfev == maxiter
+        else:
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.nit == ref.nit == maxiter
         assert res.fun == ref.fun
         assert_equal(res.x, ref.x)
-        assert res.nit == ref.nit == maxiter
-        assert res.status == (3 if method == 'trust-constr' else 99)
+        assert res.status == (3 if method in [
+            'trust-constr',
+            'cobyqa',
+        ] else 99)
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -1643,7 +1672,7 @@ class TestOptimizeSimple(CheckOptimize):
 
 @pytest.mark.parametrize(
     'method',
-    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead', 'cobyqa']
 )
 def test_minimize_with_scalar(method):
     # checks that minimize works with a scalar being provided to it.

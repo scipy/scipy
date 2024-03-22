@@ -46,7 +46,7 @@ MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
 # These methods support the new callback interface (passed an OptimizeResult)
 MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
-                           'trust-exact', 'trust-krylov']
+                           'trust-exact', 'trust-krylov', 'cobyqa']
 
 MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
 
@@ -479,9 +479,9 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         implementation of an algorithm for large-scale equality constrained
         optimization. SIAM Journal on Optimization 8.3: 682-706.
     .. [18] Ragonneau, T. M. *Model-Based Derivative-Free Optimization Methods
-       and Software*. PhD thesis, Department of Applied Mathematics, The Hong
-       Kong Polytechnic University, Hong Kong, China, 2022. URL:
-       https://theses.lib.polyu.edu.hk/handle/200/12294.
+        and Software*. PhD thesis, Department of Applied Mathematics, The Hong
+        Kong Polytechnic University, Hong Kong, China, 2022. URL:
+        https://theses.lib.polyu.edu.hk/handle/200/12294.
 
     Examples
     --------
