@@ -146,7 +146,7 @@ class TestExpM:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a csc_matrix is expensive."
+                    "Changing the sparsity structure of csc format is expensive."
                 )
                 exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
                 inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
@@ -162,7 +162,7 @@ class TestExpM:
             with suppress_warnings() as sup:
                 sup.filter(
                     SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a csc_matrix is expensive."
+                    "Changing the sparsity structure of csc format is expensive."
                 )
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 

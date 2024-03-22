@@ -601,8 +601,6 @@ class _spbase:
         if issparse(other):
             if self.shape[-1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
-            if other.ndim == 1:
-                raise ValueError('Cannot yet multiply a 1d sparse array')
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -867,7 +865,7 @@ class _spbase:
         # convert to COOrdinate format
         A = self.tocoo()
         nz_mask = A.data != 0
-        return (A.row[nz_mask], A.col[nz_mask])
+        return tuple(idx[nz_mask] for idx in A.coords)
 
     def _getcol(self, j):
         """Returns a copy of column j of the array, as an (m x 1) sparse
