@@ -57,7 +57,7 @@ c          Leading dimension of H exactly as declared in the calling
 c          program.
 c
 c  RESID   Double precision array of length (N).  (INPUT/OUTPUT)
-c          INPUT: RESID contains the residual vector r_{k+p}.
+c          INPUT: RESID contains the the residual vector r_{k+p}.
 c          OUTPUT: RESID is the updated residual vector rnew_{k}.
 c
 c  Q       Double precision KEV+NP by KEV+NP work array.  (WORKSPACE)
@@ -408,7 +408,7 @@ c
          if (iend .lt. kplusp) go to 20
 c
 c        %-----------------------------------------------------%
-c        | Check if we can increase the start of the block |
+c        | Check if we can increase the the start of the block |
 c        %-----------------------------------------------------%
 c
          do 80 i = itop, kplusp-1

@@ -37,7 +37,7 @@ c  NP      Integer.  (INPUT)
 c          The number of shifts to compute.
 c
 c  RITZ    Complex*16 array of length KEV+NP.  (INPUT/OUTPUT)
-c          On INPUT, RITZ contains the eigenvalues of H.
+c          On INPUT, RITZ contains the the eigenvalues of H.
 c          On OUTPUT, RITZ are sorted so that the unwanted
 c          eigenvalues are in the first NP locations and the wanted
 c          portion is in the last KEV locations.  When exact shifts are 

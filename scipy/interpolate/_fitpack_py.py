@@ -586,8 +586,8 @@ def insert(x, tck, m=1, per=0):
 
     Parameters
     ----------
-    x (u) : array_like
-        A 1-D point at which to insert a new knot(s).  If `tck` was returned
+    x (u) : float
+        A knot value at which to insert a new knot.  If `tck` was returned
         from ``splprep``, then the parameter values, u should be given.
     tck : a `BSpline` instance or a tuple
         If tuple, then it is expected to be a tuple (t,c,k) containing
@@ -615,7 +615,12 @@ def insert(x, tck, m=1, per=0):
     Based on algorithms from [1]_ and [2]_.
 
     Manipulating the tck-tuples directly is not recommended. In new code,
-    prefer using the `BSpline` objects.
+    prefer using the `BSpline` objects, in particular `BSpline.insert_knot`
+    method.
+
+    See Also
+    --------
+    BSpline.insert_knot
 
     References
     ----------
