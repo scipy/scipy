@@ -1,7 +1,5 @@
-#include <Python.h>
-
-#include <stdlib.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include "special/error.h"
 // #include "sf_error.h"
@@ -10,10 +8,8 @@ extern "C" {
 #include "sf_error.c"
 }
 
-
 #ifdef SP_SPECFUN_ERROR
-void special::set_error(const char *func_name, sf_error_t code,
-			       const char *fmt, ...) {
+void special::set_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
     /* Definition of error handling for special C++ library of special
      * functions used in SciPy.
      *

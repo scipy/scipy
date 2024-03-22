@@ -115,7 +115,6 @@ ufuncs_sources = [
   'scaled_exp1.c',
   'amos_wrappers.c',
   'specfun_wrappers.cpp',
-  'sf_error.c'
 ]
 
 ufuncs_cxx_sources = [
@@ -123,9 +122,15 @@ ufuncs_cxx_sources = [
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
-  'sf_error.cc',
   'wright.cc'
 ]
+
+special_error_lib = shared_library('special_error',
+  ['sf_error.cc'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  install: true
+)
 
 cephes_lib = static_library('cephes',
   cephes_sources,
@@ -217,7 +222,8 @@ py3.extension_module('_ufuncs',
   link_args: version_link_args,
   link_with: [
     amos_lib,
-    cephes_lib
+    cephes_lib,
+    special_error_lib
   ],
   install: true,
   subdir: 'scipy/special'
@@ -255,17 +261,18 @@ py3.extension_module('_ufuncs_cxx',
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
-    link_with: [cephes_lib],
+  link_with: [cephes_lib, special_error_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
 
 py3.extension_module('_ellip_harm_2',
-  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
+  [uf_cython_gen.process('_ellip_harm_2.pyx')],
   c_args: cython_c_args,
   include_directories: ['../_lib', '../_build_utils/src'],
   link_args: version_link_args,
+  link_with: [special_error_lib],
   dependencies: [lapack, np_dep],
   install: true,
   subdir: 'scipy/special'
@@ -278,7 +285,6 @@ py3.extension_module('cython_special',
     'scaled_exp1.c',
     'amos_wrappers.c',
     'specfun_wrappers.cpp',
-    'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
@@ -286,7 +292,8 @@ py3.extension_module('cython_special',
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     amos_lib,
-    cephes_lib
+    cephes_lib,
+    special_error_lib
   ],
   install: true,
   subdir: 'scipy/special'
