@@ -14,7 +14,7 @@ sup_complex = np.testing.suppress_warnings()
 sup_complex.filter(ComplexWarning)
 
 
-spcreators = [coo_array, csr_array]
+spcreators = [coo_array, csr_array, dok_array]
 math_dtypes = [np.int64, np.float64, np.complex128]
 
 

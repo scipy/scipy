@@ -33,7 +33,7 @@ class _csr_base(_cs_matrix):
                 raise IndexError('index value out of bounds')
             return self._get_int(key)
         else:
-            raise IndexError('array/slice index for 1d dok_array not yet supported')
+            raise IndexError('array/slice index for 1d csr_array not yet supported')
 
     # override IndexMixin.__setitem__ for 1d case until fully implemented
     def __setitem__(self, key, value):
@@ -50,7 +50,7 @@ class _csr_base(_cs_matrix):
                 raise IndexError('index value out of bounds')
             return self._set_int(key, value)
         else:
-            raise IndexError('array index for 1d dok_array not yet provided')
+            raise IndexError('array index for 1d csr_array not yet provided')
 
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):

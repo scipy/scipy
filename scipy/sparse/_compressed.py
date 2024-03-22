@@ -74,7 +74,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
-                    raise ValueError(f"unrecognized {self.format} "
+                    raise ValueError(f"unrecognized {self.__class__.__name__} "
                                      f"constructor input: {arg1}")
 
         else:
@@ -82,7 +82,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError(f"unrecognized {self.format} constructor usage") from e
+                raise ValueError(f"unrecognized {self.__class__.__name__} "
+                                 f"constructor input: {arg1}") from e
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays
@@ -370,13 +371,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return result
             if other.shape == (1,):
                 return self._mul_scalar(other.toarray()[0])
-            if self.shape == (1, 1):
-                result = other._mul_scalar(self.toarray()[0, 0])
-                if self.ndim == 1:
-                    return result.reshape((1, other.shape[0]))
-                return result
-            if self.shape == (1,):
-                return other._mul_scalar(self.toarray()[0])
+            if self.shape in ((1,), (1, 1)):
+                return other._mul_scalar(self.data.sum())
 
             # broadcast. treat 1d like a row
             sM, sN = self._shape_as_2d
@@ -387,36 +383,24 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if sN == 1 and oM == 1:
                 return self._matmul_sparse(other.reshape(oM, oN).tocsc())
 
+            is_array = isinstance(self, sparray)
             # Other is a row.
             if oM == 1 and sN == oN:
-                # build diagonal csc_array/csr_array => self._csr_container
-                data = other.toarray().ravel()
-                indptr = np.arange(oN + 1)
-                indices = indptr[:-1]
-                new_other = self._csr_container((data, indices, indptr))
+                new_other = _make_diagonal_csr(other.toarray().ravel(), is_array)
                 result = self._matmul_sparse(new_other)
                 return result if self.ndim == 2 else result.reshape((1, oN))
             # self is a row.
             if sM == 1 and sN == oN:
-                data = self.toarray().ravel()
-                indptr = np.arange(oN + 1)
-                indices = indptr[:-1]
-                copy = self._csr_container((data, indices, indptr))
+                copy = _make_diagonal_csr(self.toarray().ravel(), is_array)
                 return other._matmul_sparse(copy)
 
             # Other is a column.
             if oN == 1 and sM == oM:
-                data = other.toarray().ravel()
-                indptr = np.arange(oM + 1)
-                indices = indptr[:-1]
-                new_other = self._csr_container((data, indices, indptr))
+                new_other = _make_diagonal_csr(other.toarray().ravel(), is_array)
                 return new_other._matmul_sparse(self)
             # self is a column.
             if sN == 1 and sM == oM:
-                data = self.toarray().ravel()
-                indptr = np.arange(oM + 1)
-                indices = indptr[:-1]
-                new_self = self._csr_container((data, indices, indptr))
+                new_self = _make_diagonal_csr(self.toarray().ravel(), is_array)
                 return new_self._matmul_sparse(other)
             raise ValueError("inconsistent shapes")
 
@@ -428,15 +412,15 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return np.multiply(self.toarray(), other)
         # Single element / wrapped object.
         if other.size == 1:
+            if other.dtype == np.object_:
+                # 'other' not convertible to ndarray.
+                return NotImplemented
             bshape = np.broadcast_shapes(self.shape, other.shape)
             return self._mul_scalar(other.flat[0]).reshape(bshape)
         # Fast case for trivial sparse matrix.
-        if self.shape == (1, 1):
+        if self.shape in ((1,), (1, 1)):
             bshape = np.broadcast_shapes(self.shape, other.shape)
-            return np.multiply(self.toarray()[0, 0], other).reshape(bshape)
-        if self.shape == (1,):
-            bshape = np.broadcast_shapes(self.shape, other.shape)
-            return np.multiply(self.toarray()[0], other).reshape(bshape)
+            return np.multiply(self.data.sum(), other).reshape(bshape)
 
         ret = self.tocoo()
         # Matching shapes.
@@ -1440,6 +1424,22 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # integers types go with nan <-> 0
             out = r
             return out
+
+
+def _make_diagonal_csr(data, is_array=False):
+    """build diagonal csc_array/csr_array => self._csr_container
+
+    Parameter `data` should be a raveled numpy array holding the
+    values on the diagonal of the resulting sparse matrix. 
+    """
+    from ._csr import csr_array, csr_matrix
+    csr_array = csr_array if is_array else csr_matrix
+
+    N = len(data)
+    indptr = np.arange(N + 1)
+    indices = indptr[:-1]
+
+    return csr_array((data, indices, indptr), shape=(N, N))
 
 
 def _process_slice(sl, num):
