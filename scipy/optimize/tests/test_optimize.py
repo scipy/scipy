@@ -523,6 +523,7 @@ class CheckOptimizeParameterized(CheckOptimize):
                                    method="newton-cg",
                                    options=dict(xtol=xtol))
         assert result.status == 0
+        assert_almost_equal(result.x[0], np.pi)
 
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
