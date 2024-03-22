@@ -2025,6 +2025,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
+    # Make sure we enter the while loop.
     update_l1norm = np.finfo(float).max
     xk = np.copy(x0)
     if retall:
