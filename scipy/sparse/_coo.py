@@ -339,26 +339,31 @@ class _coo_base(_data_matrix, _minmax_mixin):
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
             from ._csr import csr_array
-            indptr, indices, data, shape = self._coo_to_compressed(csr_array._swap)
+            arrays = self._coo_to_compressed(csr_array._swap, copy=copy)
+            indptr, indices, data, shape = arrays
 
             x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
 
-    def _coo_to_compressed(self, swap):
+    def _coo_to_compressed(self, swap, copy=False):
         """convert (shape, coords, data) to (indptr, indices, data, shape)"""
         M, N = swap(self._shape_as_2d)
-        if self.ndim ==1:
-            minor = self.coords[0]
-            nnz = len(minor)
-            major = np.zeros((nnz,), dtype=minor.dtype)
-        else:
-            major, minor = swap(self.coords)
-            nnz = len(major)
         # convert idx_dtype intc to int32 for pythran.
         # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+
+        if self.ndim == 1:
+            indices = self.coords[0]
+            nnz = len(indices)
+            indptr = np.array([0, nnz], dtype=idx_dtype)
+            data = self.data.copy() if copy else self.data
+            return indptr, indices, data, self.shape
+
+        # ndim == 2
+        major, minor = swap(self.coords)
+        nnz = len(major)
         major = major.astype(idx_dtype, copy=False)
         minor = minor.astype(idx_dtype, copy=False)
 
