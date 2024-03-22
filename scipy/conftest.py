@@ -200,7 +200,11 @@ def skip_if_array_api(xp, request):
             elif xp.__name__ == 'torch':
                 if 'cpu' not in torch.empty(0).device.type:
                     pytest.skip(reason=reason)
-    if backends is not None:
+    if "all" in backends:
+        reason = "do not run at all with SCIPY_ARRAY_API=1"
+        reason = kwargs.get("reasons", reason)
+        pytest.skip(reason=reason)
+    elif backends is not None:
         reasons = kwargs.get("reasons", False)
         for i, backend in enumerate(backends):
             if xp.__name__ == backend:

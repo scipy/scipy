@@ -3214,28 +3214,21 @@ def gstd(a, axis=0, ddof=1):
       fill_value=999999)
 
     """
-    if isinstance(a, ma.MaskedArray):
-        xp = np
-        log = ma.log
-        ddof = {'ddof': ddof}
-    else:
-        xp = array_namespace(a)
-        log = xp.log
-        ddof = {'correction': ddof}
-        a = xp.asarray(a)
+    xp = array_namespace(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else xp.log
+    a = a if isinstance(a, ma.MaskedArray) else xp.asarray(a)
 
     try:
         with warnings.catch_warnings():
             warnings.simplefilter("error", RuntimeWarning)
-            return xp.exp(xp.std(log(a), axis=axis, **ddof))
+            return xp.exp(xp.std(log(a), axis=axis, correction=ddof))
     except RuntimeWarning as w:
         if xp.any(xp.isinf(a)):
             raise ValueError(
                 'Infinite value encountered. The geometric standard deviation '
                 'is defined for strictly positive values only.'
             ) from w
-        a_nan = xp.isnan(a)
-        if xp.any(xp.less_equal(a, 0)):
+        if xp.any(a <= 0):
             raise ValueError(
                 'Non positive value encountered. The geometric standard '
                 'deviation is defined for strictly positive values only.'
@@ -3244,7 +3237,7 @@ def gstd(a, axis=0, ddof=1):
             raise ValueError(w) from w
         else:
             #  Remaining warnings don't need to be exceptions.
-            return xp.exp(xp.std(log(a), axis=axis, **ddof))
+            return xp.exp(xp.std(log(a), axis=axis, correction=ddof))
     except TypeError as e:
         raise ValueError(
             'Invalid array input. The inputs could not be '
