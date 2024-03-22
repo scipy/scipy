@@ -614,7 +614,7 @@ class TestPearsonr:
         assert_allclose(ci, ci_ref)
 
     def test_nd_input_validation(self, xp):
-        x, y = xp.ones((2, 2, 5))
+        x = y = xp.ones((2, 5))
         message = '`axis` must be an integer.'
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y, axis=1.5)
@@ -625,7 +625,7 @@ class TestPearsonr:
 
         message = '`x` and `y` must have length at least 2.'
         with pytest.raises(ValueError, match=message):
-            stats.pearsonr(*xp.ones((2, 2, 1)), axis=1)
+            stats.pearsonr(xp.ones((2, 1)), xp.ones((2, 1)), axis=1)
 
         message = '`x` and `y` must be broadcastable.'
         with pytest.raises(ValueError, match=message):
@@ -639,12 +639,13 @@ class TestPearsonr:
 
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0, y0 = xp.asarray(rng.random((2, 3, 5)), dtype=xp.float64)
+        x0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
+        y0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
             x = copy(x0)
-            x[0] = 1
+            x[0, ...] q= 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
             nan = xp.asarray(xp.nan, dtype=xp.float64)

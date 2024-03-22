@@ -4379,7 +4379,9 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     else:
         rlo, rhi = -ones, ones
 
-    return ConfidenceInterval(low=rlo[()], high=rhi[()])
+    rlo = rlo[()] if rlo.ndim == 0 else rlo
+    rhi = rhi[()] if rhi.ndim == 0 else rhi
+    return ConfidenceInterval(low=rlo, high=rhi)
 
 
 def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
@@ -4495,6 +4497,21 @@ class PearsonRResult(PearsonRResultBase):
                        'or None.')
             raise ValueError(message)
         return ci
+
+
+def _move_axis_to_end(x, source, xp):
+    axes = list(range(x.ndim))
+    temp =  axes.pop(source)
+    axes = axes + [temp]
+    return xp.permute_dims(x, axes)
+
+
+def _clip(x, a, b, xp):
+    y = xp.asarray(x, copy=True)
+    y[y < a] = a
+    y[y > b] = b
+    return y
+
 
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
@@ -4779,8 +4796,10 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         message = '`x` and `y` must be broadcastable.'
         raise ValueError(message) from e
 
-    x = xp.moveaxis(x, axis, -1)
-    y = xp.moveaxis(y, axis, -1)
+    # `moveaxis` only recently added to array API, so it's not yey available in
+    # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
+    x = _move_axis_to_end(x, axis, xp)
+    y = _move_axis_to_end(y, axis, xp)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)
@@ -4795,8 +4814,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     threshold = xp.finfo(dtype).eps ** 0.75
 
     # If an input is constant, the correlation coefficient is not defined.
-    const_x = xp.all(x == x[..., [0]], axis=-1)
-    const_y = xp.all(y == y[..., [0]], axis=-1)
+    const_x = xp.all(x == x[..., 0:1], axis=-1)
+    const_y = xp.all(y == y[..., 0:1], axis=-1)
     const_xy = const_x | const_y
     if xp.any(const_xy):
         msg = ("An input array is constant; the correlation coefficient "
@@ -4836,8 +4855,11 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
         raise ValueError(message)
 
     if n == 2:
-        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))[()]
-        result = PearsonRResult(statistic=r, pvalue=xp.ones_like(r)[()], n=n,
+        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
+        r = r[()] if r.ndim == 0 else r
+        pvalue = xp.ones_like(r)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        result = PearsonRResult(statistic=r, pvalue=pvalue, n=n,
                                 alternative=alternative, x=x, y=y, axis=axis)
         return result
 
@@ -4874,7 +4896,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
     one = xp.asarray(1, dtype=dtype)
-    r = xp.asarray(xp.clip(r, -one, one))
+    # `clip` only recently added to array API, so it's not yet available in
+    # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
+    r = xp.asarray(_clip(r, -one, one, xp))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
@@ -4885,7 +4909,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     pvalue = _get_pvalue(np.asarray(r), dist, alternative)
     pvalue = xp.asarray(pvalue, dtype=dtype)
 
-    return PearsonRResult(statistic=r[()], pvalue=pvalue[()], n=n,
+    r = r[()] if r.ndim == 0 else r
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return PearsonRResult(statistic=r, pvalue=pvalue, n=n,
                           alternative=alternative, x=x, y=y, axis=axis)
 
 
