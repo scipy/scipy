@@ -513,7 +513,7 @@ class CheckOptimizeParameterized(CheckOptimize):
             return np.cos(x[0])
 
         def jac(x):
-            return -np.sin(x)
+            return -np.sin(x[0])
 
         x0 = [0.1]
         xtol = 0
