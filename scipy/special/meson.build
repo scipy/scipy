@@ -136,7 +136,6 @@ cephes_lib = static_library('cephes',
 
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
-  c_args: use_math_defines,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep],
   link_args: version_link_args,
