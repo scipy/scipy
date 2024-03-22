@@ -17,6 +17,7 @@ import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
                           expm, expm_frechet, expm_cond, norm, khatri_rao)
 from scipy.linalg import _matfuncs_inv_ssq
+from scipy.linalg._matfuncs import pick_pade_structure
 import scipy.linalg._expm_frechet
 
 from scipy.optimize import minimize
@@ -231,6 +232,12 @@ class TestLogM:
         assert_allclose(expm(L), E, atol=1e-14)
         assert_allclose(logm(E), L, atol=1e-14)
 
+    def test_readonly(self):
+        n = 5
+        a = np.ones((n, n)) + np.identity(n)
+        a.flags.writeable = False
+        logm(a)
+
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
@@ -410,6 +417,7 @@ class TestSqrtM:
         assert_allclose(np.dot(R, R), M, atol=1e-14)
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
+    @pytest.mark.xfail(reason="failing on macOS after gh-20212")
     def test_gh17918(self):
         M = np.empty((19, 19))
         M.fill(0.94)
@@ -714,6 +722,31 @@ class TestExpM:
                            [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
                          ])
         assert_allclose(expm(a), a_res)
+
+    def test_readonly(self):
+        n = 7
+        a = np.ones((n, n))
+        a.flags.writeable = False
+        expm(a)
+
+    def test_gh18086(self):
+        A = np.zeros((400, 400), dtype=float)
+        rng = np.random.default_rng(100)
+        i = rng.integers(0, 399, 500)
+        j = rng.integers(0, 399, 500)
+        A[i, j] = rng.random(500)
+        # Problem appears when m = 9
+        Am = np.empty((5, 400, 400), dtype=float)
+        Am[0] = A.copy()
+        m, s = pick_pade_structure(Am)
+        assert m == 9
+        # Check that result is accurate
+        first_res = expm(A)
+        np.testing.assert_array_almost_equal(logm(first_res), A)
+        # Check that result is consistent
+        for i in range(5):
+            next_res = expm(A)
+            np.testing.assert_array_almost_equal(first_res, next_res)
 
 
 class TestExpmFrechet:

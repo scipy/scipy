@@ -161,11 +161,13 @@ def test_1d_row_and_col():
         res.row = [1, 2, 3]
 
 
-def test_1d_tocsc_tocsr_todia_todok():
+def test_1d_toformats():
     res = coo_array([1, -2, -3])
-    for f in [res.tocsc, res.tocsr, res.todok, res.todia]:
+    for f in [res.tocsc, res.tocsr, res.todia, res.tolil, res.tobsr]:
         with pytest.raises(ValueError, match='Cannot convert'):
             f()
+    for f in [res.tocoo, res.todok]:
+        assert np.array_equal(f().toarray(), res.toarray())
 
 
 @pytest.mark.parametrize('arg', [1, 2, 4, 5, 8])

@@ -199,16 +199,16 @@ uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
-  g77_abi_wrappers = declare_dependency(
-    sources: ['_build_utils/src/wrap_g77_abi.c'],
-    include_directories: inc_np,
-    dependencies: [py3_dep, cblas],
+  g77_abi_wrappers = static_library(
+    'g77_abi_wrappers',
+    ['_build_utils/src/wrap_g77_abi.c'],
+    dependencies: [py3_dep, cblas, blas, np_dep],
   )
 else
-  g77_abi_wrappers = declare_dependency(
-    sources: ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    include_directories: inc_np,
-    dependencies: [py3_dep],
+  g77_abi_wrappers = static_library(
+    'dummy_g77_abi_wrappers',
+    ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    dependencies: [py3_dep, blas, np_dep],
   )
 endif
 

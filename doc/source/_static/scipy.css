@@ -193,3 +193,31 @@ div.admonition-legacy {
 .navbar-brand.logo {
     margin-right: 0.5rem;
 }
+
+.try_examples_button {
+    color: white;
+    background-color: #0054a6;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 5px rgba(108,108,108,0.2);
+    font-weight: bold;
+    font-size: small;
+}
+
+.try_examples_button:hover {
+background-color: #0066cc;
+transform: scale(1.02);
+box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+cursor: pointer;
+}
+
+.try_examples_button_container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+

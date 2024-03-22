@@ -187,7 +187,7 @@ class TestEig:
         assert_equal(w, np.inf)
         assert_allclose(vr, 1)
 
-    def _check_gen_eig(self, A, B):
+    def _check_gen_eig(self, A, B, atol_homog=1e-13, rtol_homog=1e-13):
         if B is not None:
             A, B = asarray(A), asarray(B)
             B0 = B
@@ -204,7 +204,7 @@ class TestEig:
         val2 = B @ vr * w[0, :]
         for i in range(val1.shape[1]):
             assert_allclose(val1[:, i], val2[:, i],
-                            rtol=1e-13, atol=1e-13, err_msg=msg)
+                            rtol=rtol_homog, atol=atol_homog, err_msg=msg)
 
         if B0 is None:
             assert_allclose(w[1, :], 1)
@@ -253,7 +253,6 @@ class TestEig:
         # Compare homogeneous and nonhomogeneous versions
         assert_allclose(sort(wh), sort(w[np.isfinite(w)]))
 
-    @pytest.mark.xfail(reason="See gh-2254")
     def test_singular(self):
         # Example taken from
         # https://web.archive.org/web/20040903121217/http://www.cs.umu.se/research/nla/singular_pairs/guptri/matlab.html
@@ -269,7 +268,7 @@ class TestEig:
                    [24, 35, 18, 21, 22]])
 
         with np.errstate(all='ignore'):
-            self._check_gen_eig(A, B)
+            self._check_gen_eig(A, B, atol_homog=5e-13)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -350,6 +349,34 @@ class TestEig:
         B = np.arange(9.0).reshape(3, 3)
         assert_raises(ValueError, eig, A, B)
         assert_raises(ValueError, eig, B, A)
+
+    def test_gh_11577(self):
+        # https://github.com/scipy/scipy/issues/11577
+        # `A - lambda B` should have 4 and 8 among the eigenvalues, and this
+        # was apparently broken on some platforms
+        A = np.array([[12.0, 28.0, 76.0, 220.0],
+                      [16.0, 32.0, 80.0, 224.0],
+                      [24.0, 40.0, 88.0, 232.0],
+                      [40.0, 56.0, 104.0, 248.0]], dtype='float64')
+        B = np.array([[2.0, 4.0, 10.0, 28.0],
+                      [3.0, 5.0, 11.0, 29.0],
+                      [5.0, 7.0, 13.0, 31.0],
+                      [9.0, 11.0, 17.0, 35.0]], dtype='float64')
+
+        D, V = eig(A, B)
+
+        # The problem is ill-conditioned, and two other eigenvalues
+        # depend on ATLAS/OpenBLAS version, compiler version etc
+        # see gh-11577 for discussion
+        #
+        # NB: it is tempting to use `assert_allclose(D[:2], [4, 8])` instead but
+        # the ordering of eigenvalues also comes out different on different
+        # systems depending on who knows what.
+        with np.testing.suppress_warnings() as sup:
+            # isclose chokes on inf/nan values
+            sup.filter(RuntimeWarning, "invalid value encountered in multiply")
+            assert np.isclose(D, 4.0, atol=1e-14).any()
+            assert np.isclose(D, 8.0, atol=1e-14).any()
 
 
 class TestEigBanded:
@@ -2361,7 +2388,7 @@ class TestDatacopied:
         M2 = M.copy()
 
         class Fake1:
-            def __array__(self):
+            def __array__(self, dtype=None, copy=None):
                 return A
 
         class Fake2:

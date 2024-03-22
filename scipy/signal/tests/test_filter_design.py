@@ -3,6 +3,7 @@ import warnings
 from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
+                           assert_array_almost_equal_nulp,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
                            assert_allclose, assert_warns, suppress_warnings)
@@ -4217,6 +4218,43 @@ class TestGroupDelay:
             w_out, gd = group_delay((1, 1), w)
             assert_array_almost_equal(w_out, [8])
             assert_array_almost_equal(gd, [0])
+
+    def test_complex_coef(self):
+        # gh-19586: handle complex coef TFs
+        #
+        # for g(z) = (alpha*z+1)/(1+conjugate(alpha)), group delay is
+        # given by function below.
+        #
+        # def gd_expr(w, alpha):
+        #     num = 1j*(abs(alpha)**2-1)*np.exp(1j*w)
+        #     den = (alpha*np.exp(1j*w)+1)*(np.exp(1j*w)+np.conj(alpha))
+        #     return -np.imag(num/den)
+
+        # arbitrary non-real alpha
+        alpha = -0.6143077933232609+0.3355978770229421j
+        # 8 points from from -pi to pi
+        wref = np.array([-3.141592653589793 ,
+                         -2.356194490192345 ,
+                         -1.5707963267948966,
+                         -0.7853981633974483,
+                         0.                ,
+                         0.7853981633974483,
+                         1.5707963267948966,
+                         2.356194490192345 ])
+        gdref =  array([0.18759548150354619,
+                        0.17999770352712252,
+                        0.23598047471879877,
+                        0.46539443069907194,
+                        1.9511492420564165 ,
+                        3.478129975138865  ,
+                        0.6228594960517333 ,
+                        0.27067831839471224])
+        b = [alpha,1]
+        a = [1, np.conjugate(alpha)]
+        gdtest = group_delay((b,a), wref)[1]
+        # need nulp=10 for Ubuntu x86-64; added 1 for some robustness
+        # on other platforms.
+        assert_array_almost_equal_nulp(gdtest, gdref, nulp=11)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):

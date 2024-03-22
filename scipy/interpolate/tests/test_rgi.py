@@ -703,7 +703,7 @@ class MyValue:
     def __array_interface__(self):
         return None
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         raise RuntimeError("No array representation")
 
 

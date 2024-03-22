@@ -8,6 +8,7 @@ python_sources = [
   'test_deprecations.py',
   'test_csc.py',
   'test_csr.py',
+  'test_dok.py',
   'test_extract.py',
   'test_matrix_io.py',
   'test_minmax1d.py',

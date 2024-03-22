@@ -1,0 +1,130 @@
+==========================
+SciPy 1.14.0 Release Notes
+==========================
+
+.. note:: SciPy 1.14.0 is not released yet!
+
+.. contents::
+
+SciPy 1.14.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and better
+documentation. There have been a number of deprecations and API changes
+in this release, which are documented below. All users are encouraged to
+upgrade to this release, as there are a large number of bug-fixes and
+optimizations. Before upgrading, we recommend that users check that
+their own code does not use deprecated SciPy functionality (to do so,
+run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
+Our development attention will now shift to bug-fix releases on the
+1.14.x branch, and on adding new features on the main branch.
+
+This release requires Python 3.10+ and NumPy 1.22.4 or greater.
+
+For running on PyPy, PyPy3 6.0+ is required.
+
+
+**************************
+Highlights of this release
+**************************
+
+
+************
+New features
+************
+
+`scipy.cluster` improvements
+============================
+
+
+`scipy.interpolate` improvements
+================================
+
+
+`scipy.linalg` improvements
+===========================
+
+
+`scipy.ndimage` improvements
+============================
+
+
+`scipy.optimize` improvements
+=============================
+
+
+`scipy.signal` improvements
+===========================
+
+
+`scipy.sparse` improvements
+===========================
+
+
+
+`scipy.spatial` improvements
+============================
+
+
+`scipy.special` improvements
+============================
+
+
+`scipy.stats` improvements
+==========================
+
+Hypothesis Tests
+----------------
+
+
+Sample statistics
+-----------------
+
+
+Statistical Distributions
+-------------------------
+
+
+Other
+-----
+
+
+
+
+*******************
+Deprecated features
+*******************
+
+`scipy.linalg` deprecations
+===========================
+
+
+`scipy.spatial` deprecations
+============================
+
+
+
+******************************
+Backwards incompatible changes
+******************************
+
+*************
+Other changes
+*************
+
+
+
+*******
+Authors
+*******
+
+
+
+************************
+Issues closed for 1.14.0
+************************
+
+
+************************
+Pull requests for 1.14.0
+************************
+
+
