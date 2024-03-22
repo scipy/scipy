@@ -31,9 +31,9 @@ static volatile sf_action_t sf_error_actions[] = {
     SF_ERROR_IGNORE  /* SF_ERROR__LAST */
 };
 
-static sf_callback_t sf_error_callback;
+static sf_callback_t sf_error_callback = NULL;
 
-static sf_callback_fpe_t sf_error_callback_fpe;
+static sf_callback_fpe_t sf_error_callback_fpe = NULL;
 
 void sf_error_set_action(sf_error_t code, sf_action_t action) { sf_error_actions[(int) code] = action; }
 
@@ -66,7 +66,9 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
         snprintf(msg, 2048, "scipy.special/%s: %s", func_name, sf_error_messages[(int) code]);
     }
 
-    sf_error_callback(action, msg);
+    if (sf_error_callback != NULL) {
+        sf_error_callback(action, msg);
+    }
 }
 
 void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
@@ -82,17 +84,19 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
 #define UFUNC_FPE_INVALID 8
 
 void sf_error_check_fpe(const char *func_name) {
-    int status = sf_error_callback_fpe();
-    if (status & UFUNC_FPE_DIVIDEBYZERO) {
-        sf_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
-    }
-    if (status & UFUNC_FPE_UNDERFLOW) {
-        sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
-    }
-    if (status & UFUNC_FPE_OVERFLOW) {
-        sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
-    }
-    if (status & UFUNC_FPE_INVALID) {
-        sf_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
+    if (sf_error_callback_fpe != NULL) {
+        int status = sf_error_callback_fpe();
+        if (status & UFUNC_FPE_DIVIDEBYZERO) {
+            sf_error(func_name, SF_ERROR_SINGULAR, "floating point division by zero");
+        }
+        if (status & UFUNC_FPE_UNDERFLOW) {
+            sf_error(func_name, SF_ERROR_UNDERFLOW, "floating point underflow");
+        }
+        if (status & UFUNC_FPE_OVERFLOW) {
+            sf_error(func_name, SF_ERROR_OVERFLOW, "floating point overflow");
+        }
+        if (status & UFUNC_FPE_INVALID) {
+            sf_error(func_name, SF_ERROR_DOMAIN, "floating point invalid value");
+        }
     }
 }
