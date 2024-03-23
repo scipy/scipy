@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "special/gamma.h"
+#include "special/legendre.h"
 #include "special/specfun.h"
 #include "special/trig.h"
 #include "special/zeta.h"
@@ -152,6 +153,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *kerp = SpecFun_NewUFunc({special::kerp<float>, special::kerp<double>}, "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
+
+    PyObject *_lpn = SpecFun_NewGUFunc({special::lpn}, 2, "_lpn", nullptr, "()->(n),(n)");
+    PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 
     PyObject *mathieu_a =
         SpecFun_NewUFunc({special::cem_cva<float>, special::cem_cva<double>}, "mathieu_a", mathieu_a_doc);
