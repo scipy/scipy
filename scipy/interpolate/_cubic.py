@@ -511,7 +511,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
     """
 
     def __init__(self, x, y, axis=0, *, method: Literal["akima", "makima"]="akima", 
-                 extrapolate:bool=None):
+                 extrapolate:bool | None = None):
         if method not in {"akima", "makima"}:
             raise NotImplementedError(f"`method`={method} is unsupported.")
         # Original implementation in MATLAB by N. Shamsundar (BSD licensed), see
