@@ -3160,7 +3160,7 @@ index 1afb1900f1..d817e51ad8 100644
  c  if n=nmax we locate the knots as for interpolation.
            if(n.eq.nmax) go to 10
  c  test whether we cannot further increase the number of knots.
-        """
+        """  # NOQA: E501
         x = np.arange(8)
         y = np.sin(x*np.pi/8)
         k = 3
