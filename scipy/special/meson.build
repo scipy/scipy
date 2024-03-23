@@ -152,7 +152,8 @@ py3.extension_module('_special_ufuncs',
   link_args: version_link_args,
   install: true,
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_specfun',
@@ -233,7 +234,8 @@ py3.extension_module('_ufuncs',
     cephes_lib
   ],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
@@ -271,7 +273,8 @@ py3.extension_module('_ufuncs_cxx',
     link_with: [sf_error_state_lib, cephes_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_ellip_harm_2',
@@ -282,7 +285,8 @@ py3.extension_module('_ellip_harm_2',
   link_args: version_link_args,
   dependencies: [lapack, np_dep],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('cython_special',
@@ -304,7 +308,8 @@ py3.extension_module('cython_special',
     cephes_lib
   ],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_comb',
