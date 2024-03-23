@@ -129,7 +129,8 @@ special_error_lib = shared_library('special_error',
   ['sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
-  install: true
+  install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special',
 )
 
 cephes_lib = static_library('cephes',
