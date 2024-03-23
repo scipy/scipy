@@ -3109,7 +3109,10 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
 
     As noted, `resample` uses FFT transformations, which can be very
     slow if the number of input or output samples is large and prime;
-    see `scipy.fft.fft`.
+    see `scipy.fft.fft`. In such cases, it can be faster to use the polyphase
+    method in `scipy.signal.resample_poly`. If you need to set the number
+    of samples in the resampled signal to a specific value, you can use
+    `scipy.signal.resample_poly` before using `resample`.
 
     Examples
     --------
@@ -3128,6 +3131,24 @@ def resample(x, num, t=None, axis=0, window=None, domain='time'):
     >>> plt.plot(x, y, 'go-', xnew, f, '.-', 10, y[0], 'ro')
     >>> plt.legend(['data', 'resampled'], loc='best')
     >>> plt.show()
+
+    If you need to set the number of samples in the resampled signal to a 
+    specific value, you can use `scipy.signal.resample_poly` before using 
+    `resample`. Consider the following example where ``len(x)`` is a large 
+    prime number:
+
+    >>> N, num = 55949, 5000
+    >>> freq = 100
+    >>> x = np.linspace(0, 1, N)
+    >>> y = np.cos(2 * np.pi * freq * x)
+
+    In this case
+
+    >>> f = signal.resample(signal.resample_poly(y, 1, N // num), num)
+
+    runs significantly faster than
+
+    >>> f = signal.resample(y, num)
     """
 
     if domain not in ('time', 'freq'):
