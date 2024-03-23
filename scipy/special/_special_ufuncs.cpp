@@ -7,6 +7,7 @@
 #include "special/kelvin.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
+#include "special/legendre.h"
 #include "special/specfun.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
@@ -246,6 +247,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyObject *kerp = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::kerp), static_cast<func_d_d_t>(special::kerp)},
                                       "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
+
+    PyObject *_lpn = SpecFun_NewGUFunc({special::lpn}, 2, "_lpn", nullptr, "()->(n),(n)");
+    PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 
     PyObject *mathieu_a =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)},

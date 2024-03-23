@@ -16,6 +16,10 @@ cdef extern from "special/par_cyl.h" nogil:
     void specfun_pbdv 'special::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'special::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
+import numpy as np
+
+from ._special_ufuncs import _lpn
+
 cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
@@ -417,22 +421,15 @@ def lpmn(int m, int n, double x):
     return pm, pd
 
 
-def lpn(int n, double z):
+def lpn(n, z):
     """
     Compute Legendre polynomials Pn(x) and their derivatives
     Pn'(x). This is a wrapper for the function 'specfun_lpn'.
     """
-    cdef double *ppn
-    cdef double *ppd
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
 
-    pn = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    pd = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    ppn = <cnp.float64_t *>cnp.PyArray_DATA(pn)
-    ppd = <cnp.float64_t *>cnp.PyArray_DATA(pd)
-    specfun_lpn(n, z, ppn, ppd)
-    return pn, pd
+    pn = np.zeros((n + 1,) + np.shape(z), dtype = np.float64)
+    pd = np.zeros((n + 1,) + np.shape(z), dtype = np.float64)
+    return _lpn(z, out = (pn, pd))
 
 
 def lqmn(int m, int n, double x):

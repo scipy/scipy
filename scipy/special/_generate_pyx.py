@@ -78,7 +78,7 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_sinpi', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
+    '_cospi', '_sinpi', '_lpn', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
     'gammaln', 'it2i0k0', 'it2j0y0', 'it2struve0', 'itairy',
     'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'kei', 'keip',
     'kelvin', 'ker', 'kerp', 'mathieu_a', 'mathieu_b',
