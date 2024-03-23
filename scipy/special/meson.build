@@ -140,10 +140,11 @@ cephes_lib = static_library('cephes',
 )
 
 py3.extension_module('_special_ufuncs',
-  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
+  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep],
   link_args: version_link_args,
+  link_with: [special_error_lib],
   install: true,
   subdir: 'scipy/special'
 )
