@@ -1868,7 +1868,7 @@ class _TestLinearFilter:
     @pytest.mark.parametrize("b", [1.0, [1.0], np.array(1.0)])
     def test_scalar_input(self, a, b):
         data = np.random.randn(10)
-        assert_array_almost_equal(
+        assert_allclose(
             lfilter(np.array([1.0]), np.array([1.0]), data),
             lfilter(b, a, data))
 
