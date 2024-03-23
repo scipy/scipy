@@ -142,6 +142,7 @@ py3.extension_module('_special_ufuncs',
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
   install: true,
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   subdir: 'scipy/special'
 )
 
