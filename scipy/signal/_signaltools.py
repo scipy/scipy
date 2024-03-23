@@ -2087,6 +2087,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
