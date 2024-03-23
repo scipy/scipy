@@ -39,7 +39,9 @@ void sf_error_set_action(sf_error_t code, sf_action_t action) { sf_error_actions
 
 sf_action_t sf_error_get_action(sf_error_t code) { return sf_error_actions[(int) code]; }
 
-void sf_error_set_callback(sf_callback_t callback) { sf_error_callback = callback; }
+void sf_error_set_callback(sf_callback_t callback) {
+    sf_error_callback = callback;
+}
 
 void sf_error_set_callback_fpe(sf_callback_fpe_t callback_fpe) { sf_error_callback_fpe = callback_fpe; }
 
