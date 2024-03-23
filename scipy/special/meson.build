@@ -109,6 +109,7 @@ sf_error_state_lib = shared_library('sf_error_state',
   include_directories: ['../_lib', '../_build_utils/src'],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special',
 )
 
 ufuncs_sources = [
