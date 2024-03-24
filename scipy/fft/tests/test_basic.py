@@ -451,6 +451,7 @@ class TestFFTThreadSafe:
 
 
 @skip_xp_backends(np_only=True)
+@pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
