@@ -6,6 +6,21 @@
 #include "sf_error.h"
 
 
+const char *sf_error_messages[] = {
+    "no error",
+    "singularity",
+    "underflow",
+    "overflow",
+    "too slow convergence",
+    "loss of precision",
+    "no result obtained",
+    "domain error",
+    "invalid input argument",
+    "other error",
+    NULL
+};
+
+
 extern int wrap_PyUFunc_getfperr(void);
 
 
@@ -23,7 +38,7 @@ void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list
     if ((int)code < 0 || (int)code >= 10) {
 	code = SF_ERROR_OTHER;
     }
-    action = sf_error_get_action(code);
+    action = scipy_sf_error_get_action(code);
     if (action == SF_ERROR_IGNORE) {
         return;
     }
