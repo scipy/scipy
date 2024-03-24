@@ -2046,7 +2046,6 @@ def lpn(n, z):
     _lpn(z, out = (np.moveaxis(pn, 0, -1),
         np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
 
-
     return pn, pd
 
 
