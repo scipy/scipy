@@ -2043,7 +2043,13 @@ def lpn(n, z):
 
     pn = np.zeros(z.shape + (n1 + 1,), dtype = z.dtype)
     pd = np.zeros_like(pn)
-    return _lpn(z, out = (pn, pd))
+    _lpn(z, out = (pn, pd))
+
+    # put the new axis before the other axes
+    pn = np.moveaxis(pn, -1, 0)
+    pd = np.moveaxis(pd, -1, 0)
+
+    return pn, pd
 
 
 def lqn(n, z):
