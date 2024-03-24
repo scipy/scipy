@@ -1,3 +1,6 @@
+// Created by SciPy developers in 2024 running make_single_header.py
+// See https://github.com/kokkos/mdspan
+
 #ifndef _MDSPAN_SINGLE_HEADER_INCLUDE_GUARD_
 #define _MDSPAN_SINGLE_HEADER_INCLUDE_GUARD_
 
