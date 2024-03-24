@@ -55,5 +55,5 @@ dependencies:
   - doit>=0.36.0
   - pydevtool
   # For linting
-  - ruff
+  - ruff>=0.0.292
   - cython-lint
