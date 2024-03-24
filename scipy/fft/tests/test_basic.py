@@ -12,8 +12,8 @@ from scipy._lib._array_api import (
     array_namespace, size, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-skip_if_array_api = pytest.mark.skip_if_array_api
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 # Expected input dtypes. Note that `scipy.fft` is more flexible for numpy,
@@ -71,7 +71,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.ifft(fft.fft(x, norm=norm), norm=norm), x)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_fft2(self, xp):
         x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
@@ -82,7 +82,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.fft2(x, norm="forward"), expect / (30 * 20))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_ifft2(self, xp):
         x = xp.asarray(random((30, 20)) + 1j*random((30, 20)))
@@ -93,7 +93,7 @@ class TestFFT1D:
                         expect * xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.ifft2(x, norm="forward"), expect * (30 * 20))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_fftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
@@ -104,7 +104,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
         xp_assert_close(fft.fftn(x, norm="forward"), expect / (30 * 20 * 10))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_ifftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
@@ -135,7 +135,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.irfft(fft.rfft(x, norm=norm), norm=norm), x)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_rfft2(self, xp):
         x = xp.asarray(random((30, 20)), dtype=xp.float64)
@@ -146,7 +146,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30 * 20, dtype=xp.float64)))
         xp_assert_close(fft.rfft2(x, norm="forward"), expect / (30 * 20))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_irfft2(self, xp):
         x = xp.asarray(random((30, 20)))
@@ -154,7 +154,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.irfft2(fft.rfft2(x, norm=norm), norm=norm), x)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_rfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
@@ -165,7 +165,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64)))
         xp_assert_close(fft.rfftn(x, norm="forward"), expect / (30 * 20 * 10))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_irfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -196,7 +196,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.ihfft(fft.hfft(x_herm, norm=norm), norm=norm), x_herm)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_hfft2(self, xp):
         x = xp.asarray(random((30, 20)))
@@ -204,7 +204,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.hfft2(fft.ihfft2(x, norm=norm), norm=norm), x)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_ihfft2(self, xp):
         x = xp.asarray(random((30, 20)), dtype=xp.float64)
@@ -217,7 +217,7 @@ class TestFFT1D:
         )
         xp_assert_close(fft.ihfft2(x, norm="forward"), expect * (30 * 20))
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_hfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)))
@@ -225,7 +225,7 @@ class TestFFT1D:
         for norm in ["backward", "ortho", "forward"]:
             xp_assert_close(fft.hfftn(fft.ihfftn(x, norm=norm), norm=norm), x)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     def test_ihfftn(self, xp):
         x = xp.asarray(random((30, 20, 10)), dtype=xp.float64)
@@ -248,19 +248,19 @@ class TestFFT1D:
             tr_op = xp_test.permute_dims(op(x, axes=a), axes=a)
             xp_assert_close(op_tr, tr_op)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn, fft.rfftn, fft.irfftn])
     def test_axes_standard(self, op, xp):
         self._check_axes(op, xp)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     @pytest.mark.parametrize("op", [fft.hfftn, fft.ihfftn])
     def test_axes_non_standard(self, op, xp):
         self._check_axes(op, xp)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     @pytest.mark.parametrize("op", [fft.fftn, fft.ifftn,
                                     fft.rfftn, fft.irfftn])
@@ -280,7 +280,7 @@ class TestFFT1D:
                                          axes=a)
             xp_assert_close(op_tr, tr_op)
 
-    @skip_if_array_api('torch',
+    @skip_xp_backends('torch',
                        reasons=['torch.fft not yet implemented by array-api-compat'])
     @pytest.mark.parametrize("op", [fft.fft2, fft.ifft2,
                                     fft.rfft2, fft.irfft2,
@@ -323,7 +323,7 @@ class TestFFT1D:
                     tmp = back(tmp, n=n, norm=norm)
                     xp_assert_close(xp_test.linalg.vector_norm(tmp), x_norm)
 
-    @skip_if_array_api(np_only=True)
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.float16, np.longdouble])
     def test_dtypes_nonstandard(self, dtype):
         x = random(30).astype(dtype)
@@ -361,7 +361,7 @@ class TestFFT1D:
         rtol = {"complex64": 1.2e-4, "complex128": 1e-8}[dtype]
         xp_assert_close(res_fft, x, rtol=rtol, atol=0)
 
-@skip_if_array_api(np_only=True)
+@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize(
         "dtype",
         [np.float32, np.float64, np.longdouble,
@@ -450,7 +450,7 @@ class TestFFTThreadSafe:
         self._test_mtsame(fft.ihfft, a, xp=xp)
 
 
-@skip_if_array_api(np_only=True)
+@skip_xp_backends(np_only=True)
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft])
 def test_multiprocess(func):
     # Test that fft still works after fork (gh-10422)
@@ -463,7 +463,7 @@ def test_multiprocess(func):
         assert_allclose(x, expect)
 
 
-@skip_if_array_api('torch',
+@skip_xp_backends('torch',
                    reasons=['torch.fft not yet implemented by array-api-compat'])
 class TestIRFFTN:
 
@@ -478,7 +478,7 @@ class TestIRFFTN:
         fft.irfftn(a, axes=axes)
 
 
-@skip_if_array_api('torch',
+@skip_xp_backends('torch',
                    reasons=['torch.fft not yet implemented by array-api-compat'])
 @pytest.mark.parametrize("func", [fft.fft, fft.ifft, fft.rfft, fft.irfft,
                                   fft.fftn, fft.ifftn,
