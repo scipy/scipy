@@ -1119,6 +1119,22 @@ const char *kerp_doc = R"(
 
     )";
 
+const char *lpn_doc = R"(
+    Legendre function of the first kind.
+
+    Compute sequence of Legendre functions of the first kind (polynomials),
+    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
+
+    See also special.legendre for polynomial class.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    )";
+
 const char *mathieu_a_doc = R"(
     mathieu_a(m, q, out=None)
 

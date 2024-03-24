@@ -2033,18 +2033,13 @@ def lpn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
         n1 = n
-    if iscomplex(z):
-        pn, pd = _specfun.clpn(n1, z)
-    else:
-        pn, pd = _specfun.lpn(n1, z)
-    return pn[:(n+1)], pd[:(n+1)]
+
+    return _specfun.lpn(n1, z)
 
 
 def lqn(n, z):

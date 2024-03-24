@@ -53,33 +53,6 @@
 #define M_SQRT1_2 0.707106781186547524401
 #endif
 
-namespace std {
-
-inline constexpr size_t dynamic_extent = numeric_limits<size_t>::max();
-
-// TODO: Do we want this?
-template <typename T, size_t Extent = dynamic_extent>
-class span {
-  public:
-    using size_type = size_t;
-
-  private:
-    T *m_data;
-    size_t m_count;
-
-  public:
-    constexpr span() noexcept : m_data(nullptr), m_count(0) {}
-
-    template <typename It>
-    span(It first, size_t count) : m_data(first), m_count(count) {}
-
-    T *data() { return m_data; }
-
-    constexpr size_type size() const noexcept { return m_count; }
-};
-
-} // namespace std
-
 #ifdef __CUDACC__
 #define SPECFUN_HOST_DEVICE __host__ __device__
 

@@ -427,8 +427,10 @@ def lpn(n, z):
     Pn'(x). This is a wrapper for the function 'specfun_lpn'.
     """
 
-    pn = np.zeros((n + 1,) + np.shape(z), dtype = np.float64)
-    pd = np.zeros((n + 1,) + np.shape(z), dtype = np.float64)
+    z = np.asarray(z)
+
+    pn = np.zeros(np.shape(z) + (n + 1,), dtype = z.dtype)
+    pd = np.zeros_like(pn)
     return _lpn(z, out = (pn, pd))
 
 

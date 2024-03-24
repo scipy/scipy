@@ -50,6 +50,24 @@ struct arity_of<Res(Args...)> {
 template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
+template <typename F, size_t I>
+struct gufunc_dims;
+
+template <typename Res, typename... Args, size_t I>
+struct gufunc_dims<Res(Args...), I> {
+    static constexpr size_t value = 0;
+};
+
+template <typename Res, typename T, size_t... Extents, typename... Args>
+struct gufunc_dims<Res(std::mdspan<T, std::extents<size_t, Extents...>>, Args...), 0> {
+    static constexpr size_t value = sizeof...(Extents);
+};
+
+template <typename Res, typename T, size_t... Extents, typename... Args, size_t I>
+struct gufunc_dims<Res(std::mdspan<T, std::extents<size_t, Extents...>>, Args...), I> {
+    static constexpr size_t value = sizeof...(Extents) + gufunc_dims<Res(Args...), I - 1>::value;
+};
+
 // Maps a C++ type to a NumPy type identifier.
 template <typename T>
 struct npy_type;
@@ -94,8 +112,8 @@ struct npy_type<npy_cdouble> {
     static constexpr int value = NPY_COMPLEX128;
 };
 
-template <typename T>
-struct npy_type<std::span<T>> {
+template <typename T, typename Extents>
+struct npy_type<std::mdspan<T, Extents>> {
     static constexpr int value = npy_type<T>::value;
 };
 
@@ -105,9 +123,22 @@ void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp 
     dst = *reinterpret_cast<T *>(src);
 }
 
-template <typename T>
-void from_pointer(char *src, std::span<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst = {reinterpret_cast<T *>(src), static_cast<size_t>(dimensions[1])};
+#include <iostream>
+
+template <typename T, typename Index, size_t... Extents>
+void from_pointer(char *src, std::mdspan<T, std::extents<Index, Extents...>> &dst, const npy_intp *dimensions,
+                  const npy_intp *steps) {
+    npy_intp strides[sizeof...(Extents)];
+    for (npy_uintp i = 0; i < sizeof...(Extents); ++i) {
+        strides[i] = steps[i] / sizeof(T);
+    }
+
+    std::array<npy_intp, sizeof...(Extents)> exts;
+    for (npy_uintp i = 0; i < sizeof...(Extents); ++i) {
+        exts[i] = dimensions[i];
+    }
+
+    dst = {reinterpret_cast<T *>(src), {exts, strides}};
 }
 
 // Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
@@ -141,7 +172,8 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
         const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
 
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            *reinterpret_cast<Res *>(args[sizeof...(Args)]) = func(from_pointer<Args>(args[I], dimensions, steps)...);
+            *reinterpret_cast<Res *>(args[sizeof...(Args)]) =
+                func(from_pointer<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -162,7 +194,8 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
         const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
 
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(from_pointer<Args>(args[I], dimensions, steps)...);
+            func(from_pointer<Args>(args[I], dimensions + 1,
+                                    steps + sizeof...(Args) + gufunc_dims<void(Args...), I>::value)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];

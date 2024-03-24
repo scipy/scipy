@@ -96,6 +96,7 @@ extern const char *keip_doc;
 extern const char *kelvin_doc;
 extern const char *ker_doc;
 extern const char *kerp_doc;
+extern const char *lpn_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -248,7 +249,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
 
-    PyObject *_lpn = SpecFun_NewGUFunc({special::lpn}, 2, "_lpn", nullptr, "()->(n),(n)");
+    PyObject *_lpn = SpecFun_NewGUFunc({special::lpn, special::clpn}, 2, "_lpn", lpn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 
     PyObject *mathieu_a =
