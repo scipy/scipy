@@ -107,7 +107,7 @@ class _MWU:
 
     def build_u_freqs_array(self, maxu):
         """
-        Build all the array of frequences for u from 0 to maxu.
+        Build all the array of frequencies for u from 0 to maxu.
         Assumptions:
           n1 <= n2
           maxu <= n1 * n2 / 2
@@ -326,7 +326,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     .. [2] Mann-Whitney U Test, Wikipedia,
            http://en.wikipedia.org/wiki/Mann-Whitney_U_test
     .. [3] Andreas Löffler,
-           "Über eine Partition der nat. Zahlen und ihr Anwndung beim U-Test",
+           "Über eine Partition der nat. Zahlen und ihr Anwendung beim U-Test",
            Wiss. Z. Univ. Halle, XXXII'83 pp. 87-89.
     .. [4] Rosie Shier, "Statistics: 2.3 The Mann-Whitney U Test", Mathematics
            Learning Support Centre, 2004.
