@@ -53,7 +53,6 @@ print*, 'opt lwork =', lwork
 deallocate(work)
 allocate(work(1:lwork))
 
-
 call dggev(jobvl, jobvr, n, a, lda, b, ldb, alphar, alphai, beta, vl, ldvl, vr, ldvr, work, lwork, info)
 
 print*

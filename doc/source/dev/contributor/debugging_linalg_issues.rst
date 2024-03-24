@@ -4,7 +4,7 @@ Debugging linear algebra related issues
 =======================================
 
 Linear algebra related bug reports are among the most challenging issues to
-diagnose and address. This is not only because linear algebra can be can be
+diagnose and address. This is not only because linear algebra can be
 challenging mathematically/algorithmically (that is true for many parts of
 SciPy), but because BLAS/LAPACK libraries are a complex build-time as well as
 runtime dependency - and we support a significant number of BLAS/LAPACK
@@ -58,7 +58,9 @@ conda-forge and Debian may be building against stub libraries (typically
 in such cases, plain ``blas`` and ``lapack`` will be reported even if for
 example OpenBLAS or MKL is installed in the environment. For such installs,
 `threadpoolctl <https://github.com/joblib/threadpoolctl>`__ will usually be
-able to report what the actual BLAS library in use is::
+able to report what the actual BLAS library in use is (except it doesn't report
+on plain Netlib BLAS, see
+`threadpoolctl#159 <https://github.com/joblib/threadpoolctl/issues/159>`__)::
 
     $ python -m threadpoolctl -i scipy.linalg
     [
@@ -191,7 +193,7 @@ The interface looks like::
     $ update-alternatives --config libblas.so.3
     $ update-alternatives --config liblapack.so.3
 
-Which will open a menu in the terminal with all available libraries to choose from.
+which will open a menu in the terminal with all available libraries to choose from.
 Because the interface and available options are likely to vary across distros,
 we link here to `the Debian documentation for BLAS/LAPACK switching
 <https://wiki.debian.org/DebianScience/LinearAlgebraLibraries>`__ and avoid
@@ -215,7 +217,7 @@ can detect. There are a few limitations at the time of writing (March 2024),
 primarily: no support for Windows, no support for macOS Accelerate (the updated
 version, with ``NEWLAPACK`` symbols). If those limitations don't matter for
 you, FlexiBLAS can be a quite useful tool for efficient debugging, including
-for versions of OpenBlAS and other BLAS libraries that you have to build from
+for versions of OpenBLAS and other BLAS libraries that you have to build from
 source.
 
 Once you have everything set up, the development experience is::
@@ -261,6 +263,7 @@ Build OpenBLAS::
 
 Build FlexiBLAS::
 
+    $ cd flexiblas
     $ mkdir build && cd build
     $ # Note: this will also pick up the libraries in your system/env libdir
     $ cmake .. -DEXTRA="OpenBLAS" -DLAPACK_API_VERSION=3.9.0 \
@@ -272,6 +275,7 @@ Build FlexiBLAS::
 
 We're now ready to build SciPy against FlexiBLAS::
 
+    $ export PKG_CONFIG_PATH=$PWD/flexiblas-setup/built-libs/lib/pkgconfig/
     $ cd scipy
     $ python dev.py build -C-Dblas=flexiblas -C-Dlapack=flexiblas
     ...
@@ -283,6 +287,12 @@ its repository::
 
     $ FLEXIBLAS=OpenBLAS python dev.py test -s linalg
     $ FLEXIBLAS=NETLIB python dev.py test -s linalg
+    $ python dev.py test -s linalg  # uses the default (NETLIB)
+
+This backend switching can also be done inside a Python interpreter with
+``threadpoolctl`` (see `its README
+<https://github.com/joblib/threadpoolctl#switching-the-flexiblas-backend>`__
+for details).
 
 Other libraries available on the system can be inspected with::
 
@@ -328,9 +338,15 @@ address the problem.
 To get from a Python reproducer which uses a ``scipy`` function with NumPy
 arrays as input to a C/Fortran reproducer, it is necessary to find the code
 path taken in SciPy and determine which exact BLAS or LAPACK function is
-called, and with what inputs. This can then be reproduced in C/Fortran
-by defining some integer/float variables and arrays (typically small arrays
-with hardcoded numbers are enough).
+called, and with what inputs (note: the answer may be contained in the
+``.pyf.src`` f2py signature files; looking into the generated
+``_flapackmodule.c`` in the build directory may be useful too). This can then
+be reproduced in C/Fortran by defining some integer/float variables and arrays
+(typically small arrays with hardcoded numbers are enough).
+
+Argument lists of BLAS and LAPACK functions can be looked up in for example
+`the Netlib LAPACK docs <https://www.netlib.org/lapack/explore-html/>`__ or the
+`Reference-LAPACK/lapack repository <https://github.com/Reference-LAPACK/lapack>`__.
 
 Below a reproducer is shown for an issue in reference LAPACK, which was
 reported as a SciPy issue in `scipy#11577
@@ -370,9 +386,6 @@ build of OpenBLAS:
           -L$PWD/../flexiblas-setup/built-libs/lib -lopenblas
         $ ./a.out  # to run the reproducer
 
-    For reference BLAS/LAPACK, the ``-lopenblas`` should be replaced with
-    ``-lblas -llapack``.
-
   .. tab-item:: Fortran
     :sync: Fortran
 
@@ -383,8 +396,35 @@ build of OpenBLAS:
           -L$PWD/../flexiblas-setup/built-libs/lib -lopenblas
         $ ./a.out  # to run the reproducer
 
-Alternatively (and probably more robust), use a small ``meson.build`` file to
-automate this and avoid the manual paths:
+For reference BLAS/LAPACK, the ``-lopenblas`` should be replaced with
+``-lblas -llapack``.
+
+Note that the explicit paths are only needed for libraries in non-standard
+locations (like the ones we built in this guide). For building against a
+package manager-installed library for which the shared library and headers are
+on the normal compiler search path (e.g., in ``/usr/lib`` and ``/usr/include``,
+or inside a conda env when using compilers from the same env), they can be left out:
+
+.. tab-set::
+
+  .. tab-item:: C
+    :sync: C
+
+    ::
+
+        $ gcc ggev_repro_gh_11577.c -lopenblas
+        $ ./a.out  # to run the reproducer
+
+  .. tab-item:: Fortran
+    :sync: Fortran
+
+    ::
+
+        $ gfortran ggev_repro_gh_11577.f90 -lopenblas
+        $ ./a.out  # to run the reproducer
+
+Alternatively (and probably a more robust way), use a small ``meson.build``
+file to automate this and avoid the manual paths:
 
 .. tab-set::
 
