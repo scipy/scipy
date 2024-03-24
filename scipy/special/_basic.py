@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
-                      _stirling2_inexact)
+                      _stirling2_inexact, _lpn)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -2039,7 +2039,11 @@ def lpn(n, z):
     else:
         n1 = n
 
-    return _specfun.lpn(n1, z)
+    z = np.asarray(z)
+
+    pn = np.zeros(z.shape + (n1 + 1,), dtype = z.dtype)
+    pd = np.zeros_like(pn)
+    return _lpn(z, out = (pn, pd))
 
 
 def lqn(n, z):

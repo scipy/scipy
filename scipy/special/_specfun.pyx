@@ -421,19 +421,6 @@ def lpmn(int m, int n, double x):
     return pm, pd
 
 
-def lpn(n, z):
-    """
-    Compute Legendre polynomials Pn(x) and their derivatives
-    Pn'(x). This is a wrapper for the function 'specfun_lpn'.
-    """
-
-    z = np.asarray(z)
-
-    pn = np.zeros(np.shape(z) + (n + 1,), dtype = z.dtype)
-    pd = np.zeros_like(pn)
-    return _lpn(z, out = (pn, pd))
-
-
 def lqmn(int m, int n, double x):
     """
     Purpose: Compute the associated Legendre functions of the
