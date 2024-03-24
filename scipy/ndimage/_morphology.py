@@ -2275,8 +2275,7 @@ def distance_transform_cdt(input, metric='chessboard', return_distances=True,
 
     rank = dt.ndim
     if return_indices:
-        sz = numpy.prod(dt.shape, axis=0)
-        ft = numpy.arange(sz, dtype=numpy.int32)
+        ft = numpy.arange(dt.size, dtype=numpy.int32)
         ft.shape = dt.shape
     else:
         ft = None
