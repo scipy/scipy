@@ -2,19 +2,6 @@
 
 #include "sf_error_state.h"
 
-const char *sf_error_messages[] = {
-    "no error",
-    "singularity",
-    "underflow",
-    "overflow",
-    "too slow convergence",
-    "loss of precision",
-    "no result obtained",
-    "domain error",
-    "invalid input argument",
-    "other error",
-    NULL
-};
 
 /* If this isn't volatile clang tries to optimize it away */
 static volatile sf_action_t sf_error_actions[] = {
@@ -32,13 +19,13 @@ static volatile sf_action_t sf_error_actions[] = {
 };
 
 
-void sf_error_set_action(sf_error_t code, sf_action_t action)
+void scipy_sf_error_set_action(sf_error_t code, sf_action_t action)
 {
     sf_error_actions[(int)code] = action;
 }
 
 
-sf_action_t sf_error_get_action(sf_error_t code)
+sf_action_t scipy_sf_error_get_action(sf_error_t code)
 {
     return sf_error_actions[(int)code];
 }
