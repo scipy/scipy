@@ -51,22 +51,26 @@ template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
 template <typename F, size_t I>
-struct gufunc_dims;
+struct argument_rank;
 
 template <typename Res, typename... Args, size_t I>
-struct gufunc_dims<Res(Args...), I> {
+struct argument_rank<Res(Args...), I> {
     static constexpr size_t value = 0;
 };
 
-template <typename Res, typename T, size_t... Extents, typename... Args>
-struct gufunc_dims<Res(std::mdspan<T, std::extents<size_t, Extents...>>, Args...), 0> {
-    static constexpr size_t value = sizeof...(Extents);
+template <typename Res, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename... Args>
+struct argument_rank<Res(std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>, Args...), 0> {
+    static constexpr size_t value = Extents::rank();
 };
 
-template <typename Res, typename T, size_t... Extents, typename... Args, size_t I>
-struct gufunc_dims<Res(std::mdspan<T, std::extents<size_t, Extents...>>, Args...), I> {
-    static constexpr size_t value = sizeof...(Extents) + gufunc_dims<Res(Args...), I - 1>::value;
+template <typename Res, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename... Args,
+          size_t I>
+struct argument_rank<Res(std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>, Args...), I> {
+    static constexpr size_t value = Extents::rank() + argument_rank<Res(Args...), I - 1>::value;
 };
+
+template <typename T, size_t N>
+constexpr size_t argument_rank_v = argument_rank<T, N>::value;
 
 // Maps a C++ type to a NumPy type identifier.
 template <typename T>
@@ -112,8 +116,8 @@ struct npy_type<npy_cdouble> {
     static constexpr int value = NPY_COMPLEX128;
 };
 
-template <typename T, typename Extents>
-struct npy_type<std::mdspan<T, Extents>> {
+template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
+struct npy_type<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
     static constexpr int value = npy_type<T>::value;
 };
 
@@ -123,18 +127,16 @@ void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp 
     dst = *reinterpret_cast<T *>(src);
 }
 
-#include <iostream>
-
-template <typename T, typename Index, size_t... Extents>
-void from_pointer(char *src, std::mdspan<T, std::extents<Index, Extents...>> &dst, const npy_intp *dimensions,
-                  const npy_intp *steps) {
-    npy_intp strides[sizeof...(Extents)];
-    for (npy_uintp i = 0; i < sizeof...(Extents); ++i) {
+template <typename T, typename Extents, typename AccessorPolicy>
+void from_pointer(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
+                  const npy_intp *dimensions, const npy_intp *steps) {
+    std::array<npy_intp, Extents::rank()> strides;
+    for (npy_uintp i = 0; i < strides.size(); ++i) {
         strides[i] = steps[i] / sizeof(T);
     }
 
-    std::array<npy_intp, sizeof...(Extents)> exts;
-    for (npy_uintp i = 0; i < sizeof...(Extents); ++i) {
+    std::array<npy_intp, Extents::rank()> exts;
+    for (npy_uintp i = 0; i < exts.size(); ++i) {
         exts[i] = dimensions[i];
     }
 
@@ -195,7 +197,7 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
 
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             func(from_pointer<Args>(args[I], dimensions + 1,
-                                    steps + sizeof...(Args) + gufunc_dims<void(Args...), I>::value)...);
+                                    steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];

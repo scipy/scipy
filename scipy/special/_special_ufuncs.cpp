@@ -25,10 +25,11 @@
 
 using namespace std;
 
-// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
-// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
-// already in such a context.
-extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
+using lpn_ddd_t = void (*)(double, mdspan<double, dextents<int, 1>, layout_stride>,
+                           mdspan<double, dextents<int, 1>, layout_stride>);
+using lpn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<int, 1>, layout_stride>,
+                           mdspan<complex<double>, dextents<int, 1>, layout_stride>);
+extern const char *lpn_doc;
 
 // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 // And also the following modifiers
@@ -96,7 +97,6 @@ extern const char *keip_doc;
 extern const char *kelvin_doc;
 extern const char *ker_doc;
 extern const char *kerp_doc;
-extern const char *lpn_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -125,6 +125,11 @@ extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
+
+// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
+// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
+// already in such a context.
+extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT,
@@ -249,8 +254,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       "kerp", kerp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
 
-    PyObject *_lpn =
-        SpecFun_NewGUFunc({special::lpn<double>, special::lpn<complex<double>>}, 2, "_lpn", lpn_doc, "()->(np1),(np1)");
+    PyObject *_lpn = SpecFun_NewGUFunc({static_cast<lpn_ddd_t>(special::lpn), static_cast<lpn_DDD_t>(special::lpn)}, 2,
+                                       "_lpn", lpn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 
     PyObject *mathieu_a =
