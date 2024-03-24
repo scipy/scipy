@@ -60,7 +60,7 @@ class TestFFT1D:
                         expect / xp.sqrt(xp.asarray(30, dtype=xp.float64)),)
         xp_assert_close(fft.fft(x, norm="forward"), expect / 30)
 
-    @skip_if_array_api(np_only=True, reasons=['some backends allow `n=0`'])
+    @skip_xp_backends(np_only=True, reasons=['some backends allow `n=0`'])
     def test_fft_n(self, xp):
         x = xp.asarray([1, 2, 3], dtype=xp.complex128)
         assert_raises(ValueError, fft.fft, x, 0)
