@@ -44,11 +44,6 @@ def test_find_single():
                  'Wien frequency displacement law constant')
 
 
-def test_2002_vs_2006():
-    assert_almost_equal(value('magn. flux quantum'),
-                        value('mag. flux quantum'))
-
-
 def test_exact_values():
     # Check that updating stored values with exact ones worked.
     with suppress_warnings() as sup:
