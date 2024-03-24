@@ -13229,3 +13229,7 @@ add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
     """)
+
+add_newdoc("_abs_sq", r"""
+    Internal function, use `abs_sq` instead.
+    """)
