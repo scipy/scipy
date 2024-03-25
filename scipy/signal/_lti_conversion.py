@@ -5,7 +5,7 @@ from one representation to another.
 import numpy
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
-                   asarray, prod, zeros, array, outer) # noqa: F401
+                   asarray, zeros, array, outer)
 from scipy import linalg
 
 from ._filter_design import tf2zpk, zpk2tf, normalize
