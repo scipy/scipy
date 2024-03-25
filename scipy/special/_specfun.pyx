@@ -24,8 +24,6 @@ from ._special_ufuncs import _lpmn
 cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
-    void specfun_clpmn 'special::specfun::clpmn'(ccomplex[double] z, int m, int n, int ntype, ccomplex[double] *cpm, ccomplex[double] *cpd)
-    void specfun_clpn 'special::specfun::clpn'(int n, ccomplex[double] z, ccomplex[double] *cpn, ccomplex[double] *cpd)
     void specfun_clqmn 'special::specfun::clqmn'(ccomplex[double] z, int m, int n, ccomplex[double] *cqm, ccomplex[double] *cqd)
     void specfun_clqn 'special::specfun::clqn'(int n, ccomplex[double] z, ccomplex[double] *cqn, ccomplex[double] *cqd)
     void specfun_cpbdn 'special::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
@@ -36,8 +34,6 @@ cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
     void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
     void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
-    void specfun_lpmn 'special::specfun::lpmn'(int m, int n, double x, double *pm, double *pd)
-    void specfun_lpn 'special::specfun::lpn'(int n, double x, double *pn, double *pd)
     void specfun_lqmn 'special::specfun::lqmn'(double x, int m, int n, double *qm, double *qd)
     void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
     void specfun_rctj 'special::specfun::rctj'(int n, double x, int *nm, double *rj, double *dj)
@@ -106,27 +102,6 @@ def cerzo(int nt):
     zzo = <ccomplex[double] *>cnp.PyArray_DATA(zo)
     specfun_cerzo(nt, zzo)
     return zo
-
-
-def clpmn(int m, int n, ccomplex[double] z, int ntype):
-    """
-    Compute the associated Legendre functions Pmn(z) and their derivatives
-    Pmn'(z) for a complex argument. This is a wrapper for the function
-    'specfun_clpmn'.
-    """
-    cdef ccomplex[double] *ccpm
-    cdef ccomplex[double] *ccpd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
-
-    # specfun_clpmn initializes the array internally
-    cpm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    cpd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    ccpm = <ccomplex[double] *>cnp.PyArray_DATA(cpm)
-    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
-    specfun_clpmn(z, m, n, ntype, ccpm, ccpd)
-    return cpm, cpd
 
 
 def clqmn(int m, int n, ccomplex[double] z):
@@ -380,19 +355,6 @@ def lamv(double v, double x):
     ddl = <cnp.float64_t *>cnp.PyArray_DATA(dl)
     specfun_lamv(v, x, &vm, vvl, ddl)
     return vm, vl, dl
-
-
-def lpmn(int m, int n, double x):
-    """
-    Compute the associated Legendre functions Pmn(x) and their
-    derivatives Pmn'(x) for real argument. This is a wrapper for
-    the function 'specfun_lpmn'.
-    """
-
-    pm = np.zeros((m + 1, n + 1), dtype = np.float64)
-    pd = np.zeros_like(pm)
-    _lpmn(x, out = (pm, pd))
-    return pm, pd
 
 
 def lqmn(int m, int n, double x):

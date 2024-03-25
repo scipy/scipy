@@ -64,7 +64,6 @@ const char *bei_doc = R"(
 
     )";
 
-
 const char *beip_doc = R"(
     beip(x, out=None)
 
@@ -171,7 +170,6 @@ const char *berp_doc = R"(
         https://dlmf.nist.gov/10#PT5
 
     )";
-
 
 const char *exp1_doc = R"(
     exp1(z, out=None)
@@ -339,7 +337,6 @@ const char *expi_doc = R"(
     (-0.21938393439552062-0j)
 
     )";
-
 
 const char *gammaln_doc = R"(
     gammaln(x, out=None)
@@ -1132,6 +1129,111 @@ const char *lpn_doc = R"(
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+
+    )";
+
+const char *lpmn_doc = R"(
+    Sequence of associated Legendre functions of the first kind.
+
+    Computes the associated Legendre function of the first kind of order m and
+    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
+    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    This function takes a real argument ``z``. For complex arguments ``z``
+    use clpmn instead.
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float
+        Input value.
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders 0..m and degrees 0..n
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders 0..m and degrees 0..n
+
+    See Also
+    --------
+    clpmn: associated Legendre functions of the first kind for complex z
+
+    Notes
+    -----
+    In the interval (-1, 1), Ferrer's function of the first kind is
+    returned. The phase convention used for the intervals (1, inf)
+    and (-inf, -1) is such that the result is always real.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/14.3
+
+    )";
+
+const char *clpmn_doc = R"(
+    Associated Legendre function of the first kind for complex arguments.
+
+    Computes the associated Legendre function of the first kind of order m and
+    degree n, ``Pmn(z)`` = :math:`P_n^m(z)`, and its derivative, ``Pmn'(z)``.
+    Returns two arrays of size ``(m+1, n+1)`` containing ``Pmn(z)`` and
+    ``Pmn'(z)`` for all orders from ``0..m`` and degrees from ``0..n``.
+
+    Parameters
+    ----------
+    m : int
+       ``|m| <= n``; the order of the Legendre function.
+    n : int
+       where ``n >= 0``; the degree of the Legendre function.  Often
+       called ``l`` (lower case L) in descriptions of the associated
+       Legendre function
+    z : float or complex
+        Input value.
+    type : int, optional
+       takes values 2 or 3
+       2: cut on the real axis ``|x| > 1``
+       3: cut on the real axis ``-1 < x < 1`` (default)
+
+    Returns
+    -------
+    Pmn_z : (m+1, n+1) array
+       Values for all orders ``0..m`` and degrees ``0..n``
+    Pmn_d_z : (m+1, n+1) array
+       Derivatives for all orders ``0..m`` and degrees ``0..n``
+
+    See Also
+    --------
+    lpmn: associated Legendre functions of the first kind for real z
+
+    Notes
+    -----
+    By default, i.e. for ``type=3``, phase conventions are chosen according
+    to [1]_ such that the function is analytic. The cut lies on the interval
+    (-1, 1). Approaching the cut from above or below in general yields a phase
+    factor with respect to Ferrer's function of the first kind
+    (cf. `lpmn`).
+
+    For ``type=2`` a cut at ``|x| > 1`` is chosen. Approaching the real values
+    on the interval (-1, 1) in the complex plane yields Ferrer's function
+    of the first kind.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/14.21
 
     )";
 
