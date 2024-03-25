@@ -7,81 +7,40 @@
 namespace special {
 
 // Translated into C++ by SciPy developers in 2024.
-// Original comments appear below.
 //
 // ===============================================
-// Purpose: Compute Legendre polynomials Pn(x)
-//          and their derivatives Pn'(x)
-// Input :  x --- Argument of Pn(x)
-//          n --- Degree of Pn(x) ( n = 0,1,...)
-// Output:  PN(n) --- Pn(x)
-//          PD(n) --- Pn'(x)
+// Purpose: Compute Legendre polynomials Pn(z)
+//          and their derivatives Pn'(z)
+// Input :  x --- Argument of Pn(z)
+//          n --- Degree of Pn(z) ( n = 0,1,...)
+// Output:  PN(n) --- Pn(z)
+//          PD(n) --- Pn'(z)
 // ===============================================
 
 template <typename T>
-void lpn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
+void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
          std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pd) {
+    int n = pn.extent(0) - 1;
+
     pn[0] = 1;
-    pn[1] = x;
+    pn[1] = z;
     pd[0] = 0;
     pd[1] = 1;
 
     T p0 = 1;
-    T p1 = x;
+    T p1 = z;
     T pf;
-    for (int k = 2; k < pn.size(); k++) {
-        pf = (2 * k - 1) * x * p1 / k - (k - 1) * p0 / k;
-        pn[k] = pf;
-        if (fabs(x) == 1.0) {
-            pd[k] = 0.5 * pow(x, k + 1) * k * (k + 1);
+    for (int k = 2; k <= n; k++) {
+        pf = static_cast<T>(2 * k - 1) * z * p1 / static_cast<T>(k) - static_cast<T>(k - 1) * p0 / static_cast<T>(k);
+        pn(k) = pf;
+        if (std::abs(std::real(z)) == 1.0 && std::imag(z) == 0) {
+            pd(k) = pow(std::real(z), k + 1) * k * (k + 1) / 2;
         } else {
-            pd[k] = k * (p1 - x * pf) / (1 - x * x);
+            pd(k) = static_cast<T>(k) * (p1 - z * pf) / (static_cast<T>(1) - z * z);
         }
         p0 = p1;
         p1 = pf;
     }
-}
-
-// Translated into C++ by SciPy developers in 2024.
-// Original comments appear below.
-//
-// ==================================================
-// Purpose: Compute Legendre polynomials Pn(z) and
-//          their derivatives Pn'(z) for a complex
-//          argument
-// Input :  x --- Real part of z
-//          y --- Imaginary part of z
-//          n --- Degree of Pn(z), n = 0,1,2,...
-// Output:  CPN(n) --- Pn(z)
-//          CPD(n) --- Pn'(z)
-// ==================================================
-
-template <>
-void lpn(std::complex<double> z, std::mdspan<std::complex<double>, std::dextents<int, 1>, std::layout_stride> cpn,
-         std::mdspan<std::complex<double>, std::dextents<int, 1>, std::layout_stride> cpd) {
-    int n = cpn.size() - 1;
-
-    int k;
-    std::complex<double> cp0, cp1, cpf;
-
-    cpn[0] = 1.0;
-    cpn[1] = z;
-    cpd[0] = 0.0;
-    cpd[1] = 1.0;
-    cp0 = 1.0;
-    cp1 = z;
-    for (k = 2; k <= n; k++) {
-        cpf = (2.0 * k - 1.0) / k * z * cp1 - (k - 1.0) / k * cp0;
-        cpn[k] = cpf;
-        if (z == 1.0) {
-            cpd[k] = 0.5 * pow(z.real(), k + 1) * k * (k + 1.0);
-        } else {
-            cpd[k] = static_cast<double>(k) * (cp1 - z * cpf) / (1.0 - z * z);
-        }
-        cp0 = cp1;
-        cp1 = cpf;
-    }
-    return;
 }
 
 // Translated into C++ by SciPy developers in 2024.
