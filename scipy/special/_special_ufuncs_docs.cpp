@@ -1145,13 +1145,7 @@ const char *lpmn_doc = R"(
 
     Parameters
     ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : float
+    z : array_like
         Input value.
 
     Returns
@@ -1191,15 +1185,9 @@ const char *clpmn_doc = R"(
 
     Parameters
     ----------
-    m : int
-       ``|m| <= n``; the order of the Legendre function.
-    n : int
-       where ``n >= 0``; the degree of the Legendre function.  Often
-       called ``l`` (lower case L) in descriptions of the associated
-       Legendre function
-    z : float or complex
+    z : array_like
         Input value.
-    type : int, optional
+    type : int
        takes values 2 or 3
        2: cut on the real axis ``|x| > 1``
        3: cut on the real axis ``-1 < x < 1`` (default)
