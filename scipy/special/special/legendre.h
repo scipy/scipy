@@ -2,7 +2,6 @@
 
 #include "config.h"
 #include "mdspan.h"
-#include "specfun/specfun.h"
 
 namespace special {
 
@@ -406,7 +405,101 @@ void lqmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qm,
     int m = qm.extent(0) - 1;
     int n = qm.extent(1) - 1;
 
-    specfun::lqmn(x, m, n, qm.data_handle(), qd.data_handle());
+    double q0, q1, q10, qf, qf0, qf1, qf2, xs, xq;
+    int i, j, k, km, ls;
+
+    if (fabs(x) == 1.0) {
+        for (i = 0; i < (m + 1); i++) {
+            for (j = 0; j < (n + 1); j++) {
+                qm(j, i) = 1e300;
+                qd(j, i) = 1e300;
+            }
+        }
+        return;
+    }
+    ls = 1;
+    if (fabs(x) > 1.0) {
+        ls = -1;
+    }
+    xs = ls * (1.0 - x * x);
+    xq = sqrt(xs);
+    q0 = 0.5 * log(fabs((x + 1.0) / (x - 1.0)));
+    if (fabs(x) < 1.0001) {
+        qm(0, 0) = q0;
+        qm(0, 1) = x * q0 - 1.0;
+        qm(1, 0) = -1.0 / xq;
+        qm(1, 1) = -ls * xq * (q0 + x / (1. - x * x));
+        for (i = 0; i <= 1; i++) {
+            for (j = 2; j <= n; j++) {
+                qm(i, j) = ((2.0 * j - 1.) * x * qm(i, j - 1) - (j + i - 1) * qm(i, j - 2)) / (j - i);
+            }
+        }
+        /* 15 */
+        for (i = 2; i <= m; i++) {
+            for (j = 0; j <= n; j++) {
+                qm(i, j) = -2.0 * (i - 1.0) * x / xq * qm(i - 1, j) - ls * (j + i - 1.0) * (j - i + 2.0) * qm(i - 2, j);
+            }
+        }
+    } else {
+        if (fabs(x) > 1.1) {
+            km = 40 + m + n;
+        } else {
+            km = (40 + m + n) * ((int) (-1. - 1.8 * log(x - 1.)));
+        }
+        qf2 = 0.0;
+        qf1 = 1.0;
+        qf0 = 0.0;
+        for (k = km; k >= 0; k--) {
+            qf0 = ((2.0 * k + 3.0) * x * qf1 - (k + 2.0) * qf2) / (k + 1.0);
+            if (k <= n) {
+                qm(0, k) = qf0;
+            }
+            qf2 = qf1;
+            qf1 = qf0;
+        }
+
+        for (k = 0; k <= n; k++) {
+            qm(0, k) *= q0 / qf0;
+        }
+
+        qf2 = 0.0;
+        qf1 = 1.0;
+        for (k = km; k >= 0; k--) {
+            qf0 = ((2.0 * k + 3.0) * x * qf1 - (k + 1.0) * qf2) / (k + 2.0);
+            if (k <= n) {
+                qm(1, k) = qf0;
+            }
+            qf2 = qf1;
+            qf1 = qf0;
+        }
+
+        q10 = -1.0 / xq;
+        for (k = 0; k <= n; k++) {
+            qm(1, k) *= q10 / qf0;
+        }
+
+        for (j = 0; j <= n; j++) {
+            q0 = qm(0, j);
+            q1 = qm(1, j);
+            for (i = 0; i <= (m - 2); i++) {
+                qf = -2. * (i + 1.) * x / xq * q1 + (j - i) * (j + i + 1.) * q0;
+                qm(i + 2, j) = qf;
+                q0 = q1;
+                q1 = qf;
+            }
+        }
+    }
+
+    qd(0, 0) = ls / xs;
+    for (j = 1; j <= n; j++) {
+        qd(0, j) = ls * j * (qm(0, j - 1) - x * qm(0, j)) / xs;
+    }
+
+    for (i = 1; i <= m; i++) {
+        for (j = 0; j <= n; j++) {
+            qd(i, j) = ls * i * x / xs * qm(i, j) + (i + j) * (j - i + 1.) / xq * qm(i - 1, j);
+        }
+    }
 }
 
 // =======================================================
