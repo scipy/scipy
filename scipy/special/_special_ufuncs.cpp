@@ -90,6 +90,22 @@ using clpmn_DDD_t = void (*)(complex<double>, long, mdspan<complex<double>, dext
                              mdspan<complex<double>, dextents<int, 2>, layout_stride>);
 extern const char *clpmn_doc;
 
+using lqn_fff_t = void (*)(float, mdspan<float, dextents<int, 1>, layout_stride>,
+                           mdspan<float, dextents<int, 1>, layout_stride>);
+using lqn_ddd_t = void (*)(double, mdspan<double, dextents<int, 1>, layout_stride>,
+                           mdspan<double, dextents<int, 1>, layout_stride>);
+using lqn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<int, 1>, layout_stride>,
+                           mdspan<complex<float>, dextents<int, 1>, layout_stride>);
+using lqn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<int, 1>, layout_stride>,
+                           mdspan<complex<double>, dextents<int, 1>, layout_stride>);
+
+// using lqmn_fff_t = void (*)(float, mdspan<float, dextents<int, 2>, layout_stride>,
+//                           mdspan<float, dextents<int, 2>, layout_stride>);
+using lqmn_ddd_t = void (*)(double, mdspan<double, dextents<int, 2>, layout_stride>,
+                            mdspan<double, dextents<int, 2>, layout_stride>);
+using lqmn_DDD_t = void (*)(std::complex<double>, mdspan<std::complex<double>, dextents<int, 2>, layout_stride>,
+                            mdspan<std::complex<double>, dextents<int, 2>, layout_stride>);
+
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
 extern const char *bei_doc;
@@ -283,6 +299,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         SpecFun_NewGUFunc({static_cast<clpmn_FFF_t>(special::clpmn), static_cast<clpmn_DDD_t>(special::clpmn)}, 2,
                           "_clpmn", clpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_clpmn", _clpmn);
+
+    PyObject *_lqn = SpecFun_NewGUFunc({static_cast<lqn_fff_t>(special::lqn), static_cast<lqn_ddd_t>(special::lqn),
+                                        static_cast<lqn_FFF_t>(special::lqn), static_cast<lqn_DDD_t>(special::lqn)},
+                                       2, "_lqn", nullptr, "()->(np1),(np1)");
+    PyModule_AddObjectRef(_special_ufuncs, "_lqn", _lqn);
+
+    PyObject *_lqmn =
+        SpecFun_NewGUFunc({static_cast<lqmn_ddd_t>(special::lqmn), static_cast<lqmn_DDD_t>(special::lqmn)}, 2, "_lqmn",
+                          nullptr, "()->(mp1,np1),(mp1,np1)");
+    PyModule_AddObjectRef(_special_ufuncs, "_lqmn", _lqmn);
 
     PyObject *mathieu_a =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)},

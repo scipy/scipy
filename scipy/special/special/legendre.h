@@ -231,4 +231,202 @@ void clpmn(std::complex<T> z, long ntype, std::mdspan<std::complex<T>, std::dext
     }
 }
 
+// ====================================================
+// Purpose: Compute Legendre functions Qn(x) & Qn'(x)
+// Input :  x  --- Argument of Qn(x)
+//          n  --- Degree of Qn(x)  ( n = 0,1,2,…)
+// Output:  QN(n) --- Qn(x)
+//          QD(n) --- Qn'(x)
+// ====================================================
+
+template <typename T>
+void lqn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> qn,
+         std::mdspan<T, std::dextents<int, 1>, std::layout_stride> qd) {
+    int n = qn.size() - 1;
+
+    T x2, q0, q1, qf, qc1, qc2, qr, qf0, qf1, qf2;
+    const T eps = 1.0e-14;
+
+    if (fabs(x) == 1.0) {
+        for (int k = 0; k <= n; k++) {
+            qn[k] = 1.0e300;
+            qd[k] = 1.0e300;
+        }
+        return;
+    }
+
+    if (x <= 1.021) {
+        x2 = fabs((1.0 + x) / (1.0 - x));
+        q0 = 0.5 * log(x2);
+        q1 = x * q0 - 1.0;
+        qn[0] = q0;
+        qn[1] = q1;
+        qd[0] = 1.0 / (1.0 - x * x);
+        qd[1] = qn[0] + x * qd[0];
+
+        for (int k = 2; k <= n; k++) {
+            qf = ((2.0 * k - 1.0) * x * q1 - (k - 1.0) * q0) / k;
+            qn[k] = qf;
+            qd[k] = (qn[k - 1] - x * qf) * k / (1.0 - x * x);
+            q0 = q1;
+            q1 = qf;
+        }
+    } else {
+        qc1 = 0.0;
+        qc2 = 1.0 / x;
+
+        for (int j = 1; j <= n; j++) {
+            qc2 *= j / ((2.0 * j + 1.0) * x);
+            if (j == n - 1)
+                qc1 = qc2;
+        }
+
+        for (int l = 0; l <= 1; l++) {
+            int nl = n + l;
+            qf = 1.0;
+            qr = 1.0;
+
+            for (int k = 1; k <= 500; k++) {
+                qr = qr * (0.5 * nl + k - 1.0) * (0.5 * (nl - 1) + k) / ((nl + k - 0.5) * k * x * x);
+                qf += qr;
+                if (fabs(qr / qf) < eps)
+                    break;
+            }
+
+            if (l == 0) {
+                qn[n - 1] = qf * qc1;
+            } else {
+                qn[n] = qf * qc2;
+            }
+        }
+
+        qf2 = qn[n];
+        qf1 = qn[n - 1];
+
+        for (int k = n; k >= 2; k--) {
+            qf0 = ((2 * k - 1.0) * x * qf1 - k * qf2) / (k - 1.0);
+            qn[k - 2] = qf0;
+            qf2 = qf1;
+            qf1 = qf0;
+        }
+
+        qd[0] = 1.0 / (1.0 - x * x);
+
+        for (int k = 1; k <= n; k++) {
+            qd[k] = k * (qn[k - 1] - x * qn[k]) / (1.0 - x * x);
+        }
+    }
+}
+
+// ==================================================
+// Purpose: Compute the Legendre functions Qn(z) and
+//          their derivatives Qn'(z) for a complex
+//          argument
+// Input :  x --- Real part of z
+//          y --- Imaginary part of z
+//          n --- Degree of Qn(z), n = 0,1,2,...
+// Output:  CQN(n) --- Qn(z)
+//          CQD(n) --- Qn'(z)
+// ==================================================
+
+template <typename T>
+void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 1>, std::layout_stride> cqn,
+         std::mdspan<std::complex<T>, std::dextents<int, 1>, std::layout_stride> cqd) {
+    int n = cqn.size() - 1;
+
+    std::complex<T> cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
+
+    if (std::real(z) == 1) {
+        for (int k = 0; k <= n; ++k) {
+            cqn(k) = 1e300;
+            cqd(k) = 1e300;
+        }
+        return;
+    }
+    int ls = ((std::abs(z) > 1.0) ? -1 : 1);
+
+    cq0 = std::log(static_cast<T>(ls) * (static_cast<T>(1) + z) / (static_cast<T>(1) - z)) / static_cast<T>(2);
+    cq1 = z * cq0 - static_cast<T>(1);
+
+    cqn(0) = cq0;
+    cqn(1) = cq1;
+
+    if (std::abs(z) < 1.0001) {
+        cqf0 = cq0;
+        cqf1 = cq1;
+        for (int k = 2; k <= n; k++) {
+            cqf2 = (static_cast<T>(2 * k - 1) * z * cqf1 - static_cast<T>(k - 1) * cqf0) / static_cast<T>(k);
+            cqn(k) = cqf2;
+            cqf0 = cqf1;
+            cqf1 = cqf2;
+        }
+    } else {
+        int km;
+        if (std::abs(z) > 1.1) {
+            km = 40 + n;
+        } else {
+            km = (int) ((40 + n) * floor(-1.0 - 1.8 * log(std::abs(z - static_cast<T>(1)))));
+        }
+
+        cqf2 = 0.0;
+        cqf1 = 1.0;
+        for (int k = km; k >= 0; k--) {
+            cqf0 = (static_cast<T>(2 * k + 3) * z * cqf1 - static_cast<T>(k + 2) * cqf2) / static_cast<T>(k + 1);
+            if (k <= n) {
+                cqn[k] = cqf0;
+            }
+            cqf2 = cqf1;
+            cqf1 = cqf0;
+        }
+        for (int k = 0; k <= n; ++k) {
+            cqn[k] *= cq0 / cqf0;
+        }
+    }
+    cqd(0) = (cqn(1) - z * cqn(0)) / (z * z - static_cast<T>(1));
+
+    for (int k = 1; k <= n; ++k) {
+        cqd(k) = (static_cast<T>(k) * z * cqn(k) - static_cast<T>(k) * cqn(k - 1)) / (z * z - static_cast<T>(1));
+    }
+}
+
+// ==========================================================
+// Purpose: Compute the associated Legendre functions of the
+//          second kind, Qmn(x) and Qmn'(x)
+// Input :  x  --- Argument of Qmn(x)
+//          m  --- Order of Qmn(x)  ( m = 0,1,2,… )
+//          n  --- Degree of Qmn(x) ( n = 0,1,2,… )
+//          mm --- Physical dimension of QM and QD
+// Output:  QM(m,n) --- Qmn(x)
+//          QD(m,n) --- Qmn'(x)
+// ==========================================================
+
+template <typename T>
+void lqmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qm,
+          std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qd) {
+    int m = qm.extent(0) - 1;
+    int n = qm.extent(1) - 1;
+    specfun::lqmn(x, m, n, qm.data_handle(), qd.data_handle());
+}
+
+// =======================================================
+// Purpose: Compute the associated Legendre functions of
+//          the second kind, Qmn(z) and Qmn'(z), for a
+//          complex argument
+// Input :  x  --- Real part of z
+//          y  --- Imaginary part of z
+//          m  --- Order of Qmn(z)  ( m = 0,1,2,… )
+//          n  --- Degree of Qmn(z) ( n = 0,1,2,… )
+//          mm --- Physical dimension of CQM and CQD
+// Output:  CQM(m,n) --- Qmn(z)
+//          CQD(m,n) --- Qmn'(z)
+// =======================================================
+
+template <typename T>
+void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cqm,
+          std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cqd) {
+    int m = cqm.extent(0) - 1;
+    int n = cqm.extent(1) - 1;
+    specfun::clqmn(z, m, n, cqm.data_handle(), cqd.data_handle());
+}
+
 } // namespace special

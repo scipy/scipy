@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
-                      _stirling2_inexact, _lpn, _lpmn, _clpmn)
+                      _stirling2_inexact, _lpn, _lpmn, _clpmn, _lqn, _lqmn)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -1927,9 +1927,12 @@ def lqmn(m, n, z):
     nn = max(1, n)
 
     if iscomplex(z):
-        q, qd = _specfun.clqmn(mm, nn, z)
+        q = np.zeros((mm + 1, nn + 1), dtype = np.complex128)
     else:
-        q, qd = _specfun.lqmn(mm, nn, z)
+        q = np.zeros((mm + 1, nn + 1), dtype = np.float64)
+    qd = np.zeros_like(q)
+    _lqmn(z, out = (q, qd))
+
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
 
@@ -2083,10 +2086,14 @@ def lqn(n, z):
         n1 = 1
     else:
         n1 = n
+
     if iscomplex(z):
-        qn, qd = _specfun.clqn(n1, z)
+        qn = np.zeros((n1 + 1), dtype=np.complex128)
     else:
-        qn, qd = _specfun.lqnb(n1, z)
+        qn = np.zeros((n1 + 1), dtype=np.float64)
+    qd = np.zeros_like(qn)
+    _lqn(z, out = (qn, qd))
+
     return qn[:(n+1)], qd[:(n+1)]
 
 
