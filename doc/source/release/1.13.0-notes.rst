@@ -51,6 +51,9 @@ New features
 - The Modified Akima Interpolation has been added to
   ``interpolate.Akima1DInterpolator``, available via the new ``method``
   argument.
+- New method ``BSpline.insert_knot`` inserts a knot into a ``BSpline` instance.
+  This routine is similar to the module-level `scipy.interpolate.insert`
+  function, and works with the BSpline objects instead of ``tck`` tuples.
 - ``RegularGridInterpolator`` gained the functionality to compute derivatives
   in place. For instance, ``RegularGridInterolator((x, y), values,
   method="cubic")(xi, nu=(1, 1))`` evaluates the mixed second derivative,
