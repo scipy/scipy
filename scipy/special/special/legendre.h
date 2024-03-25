@@ -17,8 +17,8 @@ namespace special {
 // ===============================================
 
 template <typename T>
-void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
-         std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pd) {
+void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> pn,
+         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> pd) {
     int n = pn.extent(0) - 1;
 
     pn(0) = 1;
@@ -60,8 +60,8 @@ void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
 // =====================================================
 
 template <typename T>
-void lpmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> pm,
-          std::mdspan<T, std::dextents<int, 2>, std::layout_stride> pd) {
+void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> pm,
+          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
@@ -145,8 +145,9 @@ void lpmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> pm,
 // =========================================================
 
 template <typename T>
-void clpmn(std::complex<T> z, long ntype, std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cpm,
-           std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cpd) {
+void clpmn(std::complex<T> z, long ntype,
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> cpm,
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> cpd) {
     int m = cpm.extent(0) - 1;
     int n = cpm.extent(1) - 1;
 
@@ -239,8 +240,8 @@ void clpmn(std::complex<T> z, long ntype, std::mdspan<std::complex<T>, std::dext
 // ====================================================
 
 template <typename T>
-void lqn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> qn,
-         std::mdspan<T, std::dextents<int, 1>, std::layout_stride> qd) {
+void lqn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> qn,
+         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> qd) {
     int n = qn.size() - 1;
 
     T x2, q0, q1, qf, qc1, qc2, qr, qf0, qf1, qf2;
@@ -329,8 +330,8 @@ void lqn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> qn,
 // ==================================================
 
 template <typename T>
-void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 1>, std::layout_stride> cqn,
-         std::mdspan<std::complex<T>, std::dextents<int, 1>, std::layout_stride> cqd) {
+void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> cqn,
+         std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, std::layout_stride> cqd) {
     int n = cqn.size() - 1;
 
     std::complex<T> cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
@@ -400,8 +401,8 @@ void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 1>, 
 // ==========================================================
 
 template <typename T>
-void lqmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qm,
-          std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qd) {
+void lqmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> qm,
+          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> qd) {
     int m = qm.extent(0) - 1;
     int n = qm.extent(1) - 1;
 
@@ -516,8 +517,8 @@ void lqmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qm,
 // =======================================================
 
 template <typename T>
-void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cqm,
-          std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cqd) {
+void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> cqm,
+          std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, std::layout_stride> cqd) {
     int m = cqm.extent(0) - 1;
     int n = cqm.extent(1) - 1;
 
