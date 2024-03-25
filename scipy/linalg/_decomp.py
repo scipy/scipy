@@ -1482,6 +1482,17 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
+    if a1.size == 0:
+        h3 = hessenberg(numpy.eye(3, dtype=a1.dtype))
+        h = numpy.empty(a1.shape, dtype=h3.dtype)
+        if not calc_q:
+            return h
+        else:
+            h3, q3 = hessenberg(numpy.eye(3, dtype=a1.dtype), calc_q=True)
+            q = numpy.empty(a1.shape, dtype=q3.dtype)
+            h = numpy.empty(a1.shape, dtype=h3.dtype)
+            return h, q
+
     # if 2x2 or smaller: already in Hessenberg
     if a1.shape[0] <= 2:
         if calc_q:

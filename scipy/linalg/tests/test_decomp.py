@@ -2235,6 +2235,21 @@ class TestHessenberg:
         assert_array_almost_equal(q2, np.eye(2))
         assert_array_almost_equal(h2, b)
 
+    @pytest.mark.parametrize('dt', [int, float, float32, complex, complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        h = hessenberg(a)
+        assert h.shape == (0, 0)
+        assert h.dtype == hessenberg(np.eye(3, dtype=dt)).dtype
+
+        h, q = hessenberg(a, calc_q=True)
+        h3, q3 = hessenberg(a, calc_q=True)
+        assert h.shape == (0, 0)
+        assert h.dtype == h3.dtype
+
+        assert q.shape == (0, 0)
+        assert q.dtype == q3.dtype
+
 
 blas_provider = blas_version = None
 if CONFIG is not None:
