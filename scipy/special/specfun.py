@@ -22,7 +22,6 @@ __all__ = [  # noqa: F822
     'lamn',
     'lamv',
     'lpmn',
-    'lpn',
     'lqmn',
     'lqnb',
     'pbdv',
