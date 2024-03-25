@@ -2870,6 +2870,16 @@ class HalfspaceIntersection(_QhullUser):
         of halfspaces is also not possible after `close` has been called.
 
         """
+        # We check for non-feasibility of incremental additions
+        # in a manner similar to `qh_sethalfspace`
+        halfspaces = np.atleast_2d(halfspaces)
+        dims = halfspaces.shape[1] - 1
+        for halfspace in halfspaces:
+            dist = halfspace[-1]
+            dist += np.dot(halfspace[:dims], self.interior_point[:dims])
+            if dist > 0:
+                msg = f"feasible point is not clearly inside halfspace: {halfspace}"
+                raise QhullError(msg)
         self._add_points(halfspaces, restart, self.interior_point)
 
     @property
