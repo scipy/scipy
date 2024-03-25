@@ -9,7 +9,6 @@ __all__ = [  # noqa: F822
     'bernob',
     'cerzo',
     'clpmn',
-    'clpn',
     'clqmn',
     'clqn',
     'cpbdn',

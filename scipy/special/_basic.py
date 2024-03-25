@@ -13,7 +13,7 @@ from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
-                      _stirling2_inexact, _lpn)
+                      _stirling2_inexact, _lpn, _lpmn)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -1774,7 +1774,11 @@ def lpmn(m, n, z):
                 fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
-    p, pd = _specfun.lpmn(mp, n, z)
+
+    p = np.zeros((mp + 1, int(n) + 1), dtype = np.float64)
+    pd = np.zeros_like(p)
+    _lpmn(z, out = (p, pd))
+
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr

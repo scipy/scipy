@@ -2,6 +2,7 @@
 
 #include "config.h"
 #include "mdspan.h"
+#include "specfun/specfun.h"
 
 namespace special {
 
@@ -87,6 +88,14 @@ void lpn(std::complex<double> z, std::mdspan<std::complex<double>, std::dextents
         cp1 = cpf;
     }
     return;
+}
+
+void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pm,
+          std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pd) {
+    int m = pm.extent(0) - 1;
+    int n = pm.extent(1) - 1;
+
+    return specfun::lpmn(m, n, x, pm.data_handle(), pd.data_handle());
 }
 
 } // namespace special

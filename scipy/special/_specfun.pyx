@@ -19,6 +19,7 @@ cdef extern from "special/par_cyl.h" nogil:
 import numpy as np
 
 from ._special_ufuncs import _lpn
+from ._special_ufuncs import _lpmn
 
 cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
@@ -387,18 +388,10 @@ def lpmn(int m, int n, double x):
     derivatives Pmn'(x) for real argument. This is a wrapper for
     the function 'specfun_lpmn'.
     """
-    cdef double *cpm
-    cdef double *cpd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
 
-    # specfun_clpmn initializes the array internally
-    pm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    pd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    cpm = <cnp.float64_t *>cnp.PyArray_DATA(pm)
-    cpd = <cnp.float64_t *>cnp.PyArray_DATA(pd)
-    specfun_lpmn(m, n, x, cpm, cpd)
+    pm = np.zeros((m + 1, n + 1), dtype = np.float64)
+    pd = np.zeros_like(pm)
+    _lpmn(x, out = (pm, pd))
     return pm, pd
 
 
