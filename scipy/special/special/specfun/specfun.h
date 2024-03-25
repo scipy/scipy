@@ -4203,40 +4203,6 @@ inline void lpmns(int m, int n, double x, double* pm, double* pd) {
 }
 
 
-inline void lpn(int n, double x, double *pn, double *pd) {
-
-    // ===============================================
-    // Purpose: Compute Legendre polynomials Pn(x)
-    //          and their derivatives Pn'(x)
-    // Input :  x --- Argument of Pn(x)
-    //          n --- Degree of Pn(x) ( n = 0,1,...)
-    // Output:  PN(n) --- Pn(x)
-    //          PD(n) --- Pn'(x)
-    // ===============================================
-
-    int k;
-    double p0, p1, pf;
-    pn[0] = 1.0;
-    pn[1] = x;
-    pd[0] = 0.0;
-    pd[1] = 1.0;
-    p0 = 1.0;
-    p1 = x;
-    for (k = 2; k <= n; k++) {
-        pf = (2.0*k - 1.0)/k*x*p1 - (k - 1.0)/k*p0;
-        pn[k] = pf;
-        if (fabs(x) == 1.0) {
-            pd[k] = 0.5*pow(x, k+1)*k*(k+1);
-        } else {
-            pd[k] = k*(p1 - x*pf)/(1.0 - x*x);
-        }
-        p0 = p1;
-        p1 = pf;
-    }
-    return;
-}
-
-
 inline double lpmv(double x, int m, double v) {
 
     // =======================================================
