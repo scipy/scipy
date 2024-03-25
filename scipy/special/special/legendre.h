@@ -34,7 +34,7 @@ void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
         pf = static_cast<T>(2 * k - 1) * z * p1 / static_cast<T>(k) - static_cast<T>(k - 1) * p0 / static_cast<T>(k);
         pn(k) = pf;
         if (std::abs(std::real(z)) == 1.0 && std::imag(z) == 0) {
-            pd(k) = pow(std::real(z), k + 1) * k * (k + 1) / 2;
+            pd(k) = std::pow(std::real(z), k + 1) * k * (k + 1) / 2;
         } else {
             pd(k) = static_cast<T>(k) * (p1 - z * pf) / (static_cast<T>(1) - z * z);
         }

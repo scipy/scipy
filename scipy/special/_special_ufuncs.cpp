@@ -29,6 +29,8 @@ using lpn_fff_t = void (*)(float, mdspan<float, dextents<int, 1>, layout_stride>
                            mdspan<float, dextents<int, 1>, layout_stride>);
 using lpn_ddd_t = void (*)(double, mdspan<double, dextents<int, 1>, layout_stride>,
                            mdspan<double, dextents<int, 1>, layout_stride>);
+using lpn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<int, 1>, layout_stride>,
+                           mdspan<complex<float>, dextents<int, 1>, layout_stride>);
 using lpn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<int, 1>, layout_stride>,
                            mdspan<complex<double>, dextents<int, 1>, layout_stride>);
 extern const char *lpn_doc;
@@ -264,7 +266,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
 
     PyObject *_lpn = SpecFun_NewGUFunc({static_cast<lpn_fff_t>(special::lpn), static_cast<lpn_ddd_t>(special::lpn),
-                                        static_cast<lpn_DDD_t>(special::lpn)},
+                                        static_cast<lpn_FFF_t>(special::lpn), static_cast<lpn_DDD_t>(special::lpn)},
                                        2, "_lpn", lpn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 

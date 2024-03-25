@@ -1753,6 +1753,8 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
+    m = _nonneg_int_or_fail(m, 'm', strict=False)
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
@@ -1777,7 +1779,7 @@ def lpmn(m, n, z):
 
     z = np.asarray(z)
 
-    p = np.zeros((mp + 1, int(n) + 1) + z.shape, dtype = np.float64)
+    p = np.zeros((mp + 1, n + 1) + z.shape, dtype = np.float64)
     pd = np.zeros_like(p)
     _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
         np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
@@ -1843,6 +1845,8 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
+    m = _nonneg_int_or_fail(m, 'm', strict=False)
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
