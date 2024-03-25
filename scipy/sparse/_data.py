@@ -5,6 +5,7 @@
     as self but with a different data array
 
 """
+
 import math
 import numpy as np
 
