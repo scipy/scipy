@@ -4094,8 +4094,8 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
     //          PD(m,n) --- Pmn'(x)
     // =====================================================
 
-    int i, j, ls;
-    double xq, xs;
+    int i, ls;
+    double xq;
 
     ls = (fabs(x) > 1.0 ? -1 : 1);
     xq = sqrt(ls * (1.0 - x * x));
@@ -4103,7 +4103,7 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
     if (x < -1.0) {
         xq = -xq;
     }
-    xs = ls * (1.0 - x * x);
+
     /* 30 */
     for (i = 1; i <= m; ++i) {
         pm[i * (n + 2)] = -ls * (2.0 * i - 1.0) * xq * pm[(i - 1)*(n + 2)];
@@ -4112,28 +4112,6 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
     for (i = 0; i <= (m > (n-1) ? n - 1: m); i++) {
         pm[i * (n + 2) + 1] = (2.0*i+1.0)*x*pm[i * (n + 2)];
     }
-    /* 40 */
-    for (i = 0; i <= m; i++) {
-        for (j = i + 2; j <= n; j++) {
-            pm[i * (n + 1) + j] = ((2.0 * j - 1.0) * x * pm[i * (n + 1) + j - 1]
-                                  - (i + j - 1.0) * pm[i * (n + 1) + j - 2]) / (j - i);
-        }
-    }
-
-    pd[0] = 0.0;
-    /* 45 */
-    for (j = 1; j <= n; j++) {
-        pd[j] = ls * j * (pm[j-1] - x * pm[j]) / xs;
-    }
-
-    /* 50 */
-    for (i = 1; i <= m; i++) {
-        for (j = i; j <= n; j++) {
-            pd[i * (n + 1) + j] = ls * i * x * pm[i * (n + 1) + j] / xs + (j + i) * (j - i + 1.0)
-                                  / xq * pm[(i - 1) * (n + 1) + j];
-        }
-    }
-    return;
 }
 
 

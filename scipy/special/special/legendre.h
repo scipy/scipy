@@ -96,7 +96,32 @@ void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_strid
         return;
     }
 
+    int ls = (fabs(x) > 1.0 ? -1 : 1);
+    double xq = sqrt(ls * (1.0 - x * x));
+    // Ensure connection to the complex-valued function for |x| > 1
+    if (x < -1.0) {
+        xq = -xq;
+    }
+    double xs = ls * (1.0 - x * x);
+
     specfun::lpmn(m, n, x, pm.data_handle(), pd.data_handle());
+
+    for (int i = 0; i <= m; i++) {
+        for (int j = i + 2; j <= n; j++) {
+            pm(i, j) = ((2.0 * j - 1.0) * x * pm(i, j - 1) - (i + j - 1.0) * pm(i, j - 2)) / (j - i);
+        }
+    }
+
+    pd(0, 0) = 0.0;
+    for (int j = 1; j <= n; j++) {
+        pd(0, j) = ls * j * (pm(0, j - 1) - x * pm(0, j)) / xs;
+    }
+
+    for (int i = 1; i <= m; i++) {
+        for (int j = i; j <= n; j++) {
+            pd(i, j) = ls * i * x * pm(i, j) / xs + (j + i) * (j - i + 1.0) / xq * pm(i - 1, j);
+        }
+    }
 }
 
 // Translated into C++ by SciPy developers in 2024.
