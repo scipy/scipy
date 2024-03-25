@@ -251,6 +251,7 @@ class TestDualAnnealing:
     @pytest.mark.parametrize('method, atol', [
         ('Nelder-Mead', 2e-5),
         ('COBYLA', 1e-5),
+        ('COBYQA', 1e-8),
         ('Powell', 1e-8),
         ('CG', 1e-8),
         ('BFGS', 1e-8),

@@ -273,8 +273,8 @@ class _BenchOptimizers(Benchmark):
 
         # L-BFGS-B, BFGS, trust-constr, SLSQP can use gradients, but examine
         # performance when numerical differentiation is used.
-        fonly_methods = ["COBYLA", 'Powell', 'nelder-mead', 'L-BFGS-B', 'BFGS',
-                         'trust-constr', 'SLSQP']
+        fonly_methods = ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
+                         'L-BFGS-B', 'BFGS', 'trust-constr', 'SLSQP']
         for method in fonly_methods:
             if method not in methods:
                 continue
@@ -316,7 +316,7 @@ class BenchSmoothUnbounded(Benchmark):
         ['rosenbrock_slow', 'rosenbrock_nograd', 'rosenbrock', 'rosenbrock_tight',
          'simple_quadratic', 'asymmetric_quadratic',
          'sin_1d', 'booth', 'beale', 'LJ'],
-        ["COBYLA", 'Powell', 'nelder-mead',
+        ["COBYLA", 'COBYQA', 'Powell', 'nelder-mead',
          'L-BFGS-B', 'BFGS', 'CG', 'TNC', 'SLSQP',
          "Newton-CG", 'dogleg', 'trust-ncg', 'trust-exact',
          'trust-krylov', 'trust-constr'],
@@ -599,7 +599,8 @@ class BenchDFO(Benchmark):
 
     params = [
         list(range(53)),  # adjust which problems to solve
-        ["COBYLA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B", "BFGS",
+        ["COBYLA", "COBYQA", "SLSQP", "Powell", "nelder-mead", "L-BFGS-B",
+         "BFGS",
          "trust-constr"],  # note: methods must also be listed in bench_run
         ["mean_nfev", "min_obj"],  # defined in average_results
     ]

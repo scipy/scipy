@@ -46,12 +46,12 @@ def shgo(
         Any additional fixed parameters needed to completely specify the
         objective function.
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
+        Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
         See the tutorial [5]_ for further details on specifying constraints.
 
         .. note::
 
-           Only COBYLA, SLSQP, and trust-constr local minimize methods
+           Only COBYLA, COBYQA, SLSQP, and trust-constr local minimize methods
            currently support constraint arguments. If the ``constraints``
            sequence used in the local optimization problem is not defined in
            ``minimizer_kwargs`` and a constrained method is used then the
@@ -273,8 +273,9 @@ def shgo(
     The local search method may be specified using the ``minimizer_kwargs``
     parameter which is passed on to ``scipy.optimize.minimize``. By default,
     the ``SLSQP`` method is used. In general, it is recommended to use the
-    ``SLSQP`` or ``COBYLA`` local minimization if inequality constraints
-    are defined for the problem since the other methods do not use constraints.
+    ``SLSQP``, ``COBYLA``, or ``COBYQA`` local minimization if inequality
+    constraints are defined for the problem since the other methods do not use
+    constraints.
 
     The ``halton`` and ``sobol`` method points are generated using
     `scipy.stats.qmc`. Any other QMC method could be used.
@@ -541,7 +542,7 @@ class SHGO:
             # self.constraints is used to create Complex, so need
             # to be stored internally in old-style.
             # `minimize` takes care of normalising these constraints
-            # for slsqp/cobyla/trust-constr.
+            # for slsqp/cobyla/cobyqa/trust-constr.
             self.constraints = standardize_constraints(
                 constraints,
                 np.empty(self.dim, float),
@@ -576,6 +577,7 @@ class SHGO:
 
         if (
             self.minimizer_kwargs['method'].lower() in ('slsqp', 'cobyla',
+                                                        'cobyqa',
                                                         'trust-constr')
             and (
                 minimizer_kwargs is not None and
@@ -626,6 +628,7 @@ class SHGO:
             'l-bfgs-b': ['jac', 'bounds'],
             'tnc': ['jac', 'bounds'],
             'cobyla': ['constraints', 'catol'],
+            'cobyqa': ['bounds', 'constraints', 'feasibility_tol'],
             'slsqp': ['jac', 'bounds', 'constraints'],
             'dogleg': ['jac', 'hess'],
             'trust-ncg': ['jac', 'hess', 'hessp'],
