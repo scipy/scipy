@@ -1164,7 +1164,7 @@ def minimum_phase(h: np.ndarray,
         spectrum that is designed to match the original (only supported when
         ``method='homomorphic'``).
 
-        .. versionadded:: 1.12.0
+        .. versionadded:: 1.14.0
 
     Returns
     -------
@@ -1273,7 +1273,7 @@ def minimum_phase(h: np.ndarray,
     >>> plt.show()
 
     The impulse response and group delay plot depict the 75 sample delay of the linear
-    phase filter `h`. The phase should also be linear in the stop band—due to the small
+    phase filter `h`. The phase should also be linear in the stop band--due to the small
     magnitude, numeric noise dominates there. Furthermore, the plots show that the
     minimum phase filters clearly show a reduced (negative) phase slope in the pass and
     transition band. The plots also illustrate that the filter with parameters
