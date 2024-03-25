@@ -3,6 +3,7 @@
 from math import ceil, log
 import operator
 import warnings
+from typing import Literal
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -1127,7 +1128,9 @@ def _dhtm(mag):
     return recon
 
 
-def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
+def minimum_phase(h: np.ndarray,
+                  method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
+                  n_fft: int | None = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1135,7 +1138,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
     h : array
         Linear-phase FIR filter coefficients.
     method : {'hilbert', 'homomorphic'}
-        The method to use:
+        The provided methods are:
 
             'homomorphic' (default)
                 This method [4]_ [5]_ works best with filters with an
@@ -1222,48 +1225,61 @@ def minimum_phase(h, method='homomorphic', n_fft=None, *, half=True):
 
     Examples
     --------
-    Create an optimal linear-phase filter, then convert it to minimum phase:
+    Create an optimal linear-phase low-pass filter `h` with a transition band of
+    [0.2, 0.3] (assuming a Nyquist frequency of 1):
 
     >>> import numpy as np
     >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
     >>> import matplotlib.pyplot as plt
     >>> freq = [0, 0.2, 0.3, 1.0]
     >>> desired = [1, 0]
-    >>> h_linear = remez(151, freq, desired, fs=2.)
+    >>> h_linear = remez(151, freq, desired, fs=2)
 
     Convert it to minimum phase:
 
-    >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
-    >>> h_min_hil = minimum_phase(h_linear, method='hilbert')
-    >>> h_min_hom_full = minimum_phase(h_linear, method='homomorphic', half=False)
+    >>> h_hil = minimum_phase(h_linear, method='hilbert')
+    >>> h_hom = minimum_phase(h_linear, method='homomorphic')
+    >>> h_hom_full = minimum_phase(h_linear, method='homomorphic', half=False)
 
-    Compare the three filters:
+    Compare the impulse and frequency response of the four filters:
 
-    >>> fig, axs = plt.subplots(4, figsize=(4, 8), layout="constrained")
-    >>> for h, style, color, label in (
-    ...         (h_linear, '-', 'k', 'Linear'),
-    ...         (h_min_hom, '-', 'r', 'Min-Hom'),
-    ...         (h_min_hil, '-', 'c', 'Min-Hil'),
-    ...         (h_min_hom_full, ':', 'r', 'Min-Hom Full'),
-    ...         ):
-    ...     w, H = freqz(h)
-    ...     w, gd = group_delay((h, 1))
-    ...     w /= np.pi
-    ...     axs[0].plot(h, color=color, linestyle=style)
-    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style, label=label)
-    ...     axs[2].plot(w, 20 * np.log10(np.abs(H)), color=color, linestyle=style)
-    ...     axs[3].plot(w, gd, color=color, linestyle=style)
-    >>> for ax in axs:
-    ...     ax.grid(True, color='0.5')
-    ...     ax.fill_between(freq[1:3], *ax.get_ylim(), color='#ffeeaa', zorder=1)
-    >>> axs[0].set(xlim=[0, len(h_linear) - 1], ylabel='Amplitude', xlabel='Samples')
-    >>> axs[1].legend(title='Phase')
-    >>> for ax, ylim in zip(axs[1:], ([0, 1.1], [-150, 10], [-60, 60])):
-    ...     ax.set(xlim=[0, 1], ylim=ylim, xlabel='Frequency')
-    >>> axs[1].set(ylabel='Magnitude')
-    >>> axs[2].set(ylabel='Magnitude (dB)')
-    >>> axs[3].set(ylabel='Group delay')
+    >>> fig0, ax0 = plt.subplots(figsize=(6, 3), tight_layout=True)
+    >>> fig1, axs = plt.subplots(3, sharex='all', figsize=(6, 6), tight_layout=True)
+    >>> ax0.set_title("Impulse response")
+    >>> ax0.set(xlabel='Samples', ylabel='Amplitude', xlim=(0, len(h_linear) - 1))
+    >>> axs[0].set_title("Frequency Response")
+    >>> axs[0].set(xlim=(0, .65), ylabel="Magnitude / dB")
+    >>> axs[1].set(ylabel="Phase / rad")
+    >>> axs[2].set(ylabel="Group Delay / samples", ylim=(-31, 81),
+    ...             xlabel='Normalized Frequency (Nyqist frequency: 1)')
+    >>> for h, lb in ((h_linear,   f'Linear ({len(h_linear)})'),
+    ...               (h_hil,      f'Min-Hilbert ({len(h_hil)})'),
+    ...               (h_hom,      f'Min-Homomorphic ({len(h_hom)})'),
+    ...               (h_hom_full, f'Min-Homom. Full ({len(h_hom_full)})')):
+    ...     w_H, H = freqz(h, fs=2)
+    ...     w_gd, gd = group_delay((h, 1), fs=2)
+    ...
+    ...     alpha = 1.0 if lb == 'linear' else 0.5  # full opacity for 'linear' line
+    ...     ax0.plot(h, '.-', alpha=alpha, label=lb)
+    ...     axs[0].plot(w_H, 20 * np.log10(np.abs(H)), alpha=alpha)
+    ...     axs[1].plot(w_H, np.unwrap(np.angle(H)), alpha=alpha, label=lb)
+    ...     axs[2].plot(w_gd, gd, alpha=alpha)
+    >>> ax0.grid(True)
+    >>> ax0.legend(title='Filter Phase (Order)')
+    >>> axs[1].legend(title='Filter Phase (Order)', loc='lower right')
+    >>> for ax_ in axs:  # shade transition band:
+    ...     ax_.axvspan(freq[1], freq[2], color='y', alpha=.25)
+    ...     ax_.grid(True)
+    >>> plt.show()
 
+    The impulse response and group delay plot depict the 75 sample delay of the linear
+    phase filter `h`. The phase should also be linear in the stop band—due to the small
+    magnitude, numeric noise dominates there. Furthermore, the plots show that the
+    minimum phase filters clearly show a reduced (negative) phase slope in the pass and
+    transition band. The plots also illustrate that the filter with parameters
+    ``method='homomorphic', half=False`` has same order and magnitude response as the
+    linear filter `h` wheras the other minimum phase filters have only half the order
+    and the square root  of the magnitude response.
     """
     h = np.asarray(h)
     if np.iscomplexobj(h):
