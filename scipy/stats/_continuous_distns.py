@@ -3196,7 +3196,7 @@ class genextreme_gen(rv_continuous):
         # skewness
         sk1 = _lazywhere(c >= -1./3,
                          (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2gm12:
+                         lambda c, g1, g2, g3, g2mg12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
@@ -3393,8 +3393,8 @@ class gamma_gen(rv_continuous):
         floc = kwds.get('floc', None)
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or floc is None
-                or method.lower() == 'mm'):
+        if (isinstance(data, CensoredData) or
+                floc is None and method.lower() != 'mm'):
             # loc is not fixed or we're not doing standard MLE.
             # Use the default fit method.
             return super().fit(data, *args, **kwds)
@@ -3407,9 +3407,7 @@ class gamma_gen(rv_continuous):
 
         _remove_optimizer_parameters(kwds)
 
-        # Special case: loc is fixed.
-
-        if f0 is not None and fscale is not None:
+        if f0 is not None and floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
             # Without this check, this function would just return the
             # parameters that were given.
@@ -3422,6 +3420,34 @@ class gamma_gen(rv_continuous):
         if not np.isfinite(data).all():
             raise ValueError("The data contains non-finite values.")
 
+        # Use explicit formulas for mm (gh-19884)
+        if method.lower() == 'mm':
+            m1 = np.mean(data)
+            m2 = np.var(data)
+            m3 = np.mean((data - m1) ** 3)
+            a, loc, scale = f0, floc, fscale
+            # Three unknowns
+            if a is None and loc is None and scale is None:
+                scale = m3 / (2 * m2)
+            # Two unknowns
+            if loc is None and scale is None:
+                scale = np.sqrt(m2 / a)
+            if a is None and scale is None:
+                scale = m2 / (m1 - loc)
+            if a is None and loc is None:
+                a = m2 / (scale ** 2)
+            # One unknown
+            if a is None:
+                a = (m1 - loc) / scale
+            if loc is None:
+                loc = m1 - a * scale
+            if scale is None:
+                scale = (m1 - loc) / a
+            return a, loc, scale
+
+        # Special case: loc is fixed.
+
+        # NB: data == loc is ok if a >= 1; the below check is more strict.
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
 
@@ -4698,14 +4724,26 @@ class invgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
-                    \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
+        f(x; \mu) = \frac{1}{\sqrt{2 \pi x^3}}
+                    \exp\left(-\frac{(x-\mu)^2}{2 \mu^2 x}\right)
 
-    for :math:`x >= 0` and :math:`\mu > 0`.
+    for :math:`x \ge 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
+
+    A common shape-scale parameterization of the inverse Gaussian distribution
+    has density
+
+    .. math::
+
+        f(x; \nu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\nu)^2}{2 \nu^2 x}\right)
+
+    Using ``nu`` for :math:`\nu` and ``lam`` for :math:`\lambda`, this
+    parameterization is equivalent to the one above with ``mu = nu/lam``,
+    ``loc = 0``, and ``scale = lam``.
 
     %(example)s
 
@@ -6304,6 +6342,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
@@ -6335,11 +6377,45 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # Specialize MLE only when location is known.
+        if floc is None:
+            return super(type(self), self).fit(data, *args, **kwds)
+
+        # Raise an error if any observation has zero likelihood.
+        if np.any(data <= floc):
+            raise FitDataError("loglaplace", lower=floc, upper=np.inf)
+
+        # Remove location from data.
+        if floc != 0:
+            data = data - floc
+
+        # When location is zero, the log-Laplace distribution is related to
+        # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
+        # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
+        # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
@@ -8176,6 +8252,10 @@ class powerlaw_gen(rv_continuous):
 
     def _sf(self, p, a):
         return -sc.powm1(p, a)
+
+    def _munp(self, n, a):
+        # The following expression is correct for all real n (provided a > 0).
+        return a / (a + n)
 
     def _stats(self, a):
         return (a / (a + 1.0),
@@ -10422,7 +10502,7 @@ class vonmises_gen(rv_continuous):
 
         f(x, \kappa) = \frac{ \exp(\kappa \cos(x)) }{ 2 \pi I_0(\kappa) }
 
-    for :math:`-\pi \le x \le \pi`, :math:`\kappa > 0`. :math:`I_0` is the
+    for :math:`-\pi \le x \le \pi`, :math:`\kappa \ge 0`. :math:`I_0` is the
     modified Bessel function of order zero (`scipy.special.i0`).
 
     `vonmises` is a circular distribution which does not restrict the
@@ -10453,39 +10533,39 @@ class vonmises_gen(rv_continuous):
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
-    >>> vonmises.pdf(loc, kappa, 0)
+    >>> vonmises.pdf(0, loc=loc, kappa=kappa)
     0.12570826359722018
 
     Verify that the percentile function ``ppf`` inverts the cumulative
     distribution function ``cdf`` up to floating point accuracy.
 
     >>> x = 1
-    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> cdf_value = vonmises.cdf(x, loc=loc, kappa=kappa)
     >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
     >>> x, cdf_value, ppf_value
     (1, 0.31489339900904967, 1.0000000000000004)
 
     Draw 1000 random variates by calling the ``rvs`` method.
 
-    >>> number_of_samples = 1000
-    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+    >>> sample_size = 1000
+    >>> sample = vonmises(loc=loc, kappa=kappa).rvs(sample_size)
 
     Plot the von Mises density on a Cartesian and polar grid to emphasize
-    that is is a circular distribution.
+    that it is a circular distribution.
 
     >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
-    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> vonmises_pdf = vonmises.pdf(x, loc=loc, kappa=kappa)
     >>> ticks = [0, 0.15, 0.3]
 
     The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
-    >>> number_of_bins = int(np.sqrt(number_of_samples))
-    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> number_of_bins = int(np.sqrt(sample_size))
+    >>> left.hist(sample, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
     >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
@@ -10494,14 +10574,17 @@ class vonmises_gen(rv_continuous):
 
     >>> right.plot(x, vonmises_pdf, label="PDF")
     >>> right.set_yticks(ticks)
-    >>> right.hist(samples, density=True, bins=number_of_bins,
+    >>> right.hist(sample, density=True, bins=number_of_bins,
     ...            label="Histogram")
     >>> right.set_title("Polar plot")
     >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("kappa", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("kappa", False, (0, np.inf), (True, False))]
+
+    def _argcheck(self, kappa):
+        return kappa >= 0
 
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)
@@ -10588,13 +10671,40 @@ class vonmises_gen(rv_continuous):
             r = np.sum(np.cos(loc - data))/len(data)
             # See gh-18128 for more information.
 
-            if r > 0:
+            # The function r[0](kappa) := I[1](kappa)/I[0](kappa) is monotonic
+            # increasing from r[0](0) = 0 to r[0](+inf) = 1.  The partial
+            # derivative of the log likelihood function with respect to kappa
+            # is monotonic decreasing in kappa.
+            if r == 1:
+                # All observations are (almost) equal to the mean.  Return
+                # some large kappa such that r[0](kappa) = 1.0 numerically.
+                return 1e16
+            elif r > 0:
                 def solve_for_kappa(kappa):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-                root_res = root_scalar(solve_for_kappa, method="brentq",
-                                       bracket=(np.finfo(float).tiny, 1e16))
-                return root_res.root
+                # The bounds of the root of r[0](kappa) = r are derived from
+                # selected bounds of r[0](x) given in [1, Eq. 11 & 16].  See
+                # gh-20102 for details.
+                #
+                # [1] Amos, D. E. (1973).  Computation of Modified Bessel
+                #     Functions and Their Ratios.  Mathematics of Computation,
+                #     28(125): 239-251.
+                lower_bound = r/(1-r)/(1+r)
+                upper_bound = 2*lower_bound
+
+                # The bounds are violated numerically for certain values of r,
+                # where solve_for_kappa evaluated at the bounds have the same
+                # sign.  This indicates numerical imprecision of i1e()/i0e().
+                # Return the violated bound in this case as it's more accurate.
+                if solve_for_kappa(lower_bound) >= 0:
+                    return lower_bound
+                elif solve_for_kappa(upper_bound) <= 0:
+                    return upper_bound
+                else:
+                    root_res = root_scalar(solve_for_kappa, method="brentq",
+                                           bracket=(lower_bound, upper_bound))
+                    return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
                 # the mean resultant length r can become negative.
@@ -11100,7 +11210,8 @@ class argus_gen(rv_continuous):
     with :math:`\Phi` and :math:`\phi` being the CDF and PDF of a standard
     normal distribution, respectively.
 
-    `argus` takes :math:`\chi` as shape a parameter.
+    `argus` takes :math:`\chi` as shape a parameter. Details about sampling
+    from the ARGUS distribution can be found in [2]_.
 
     %(after_notes)s
 
@@ -11108,6 +11219,9 @@ class argus_gen(rv_continuous):
     ----------
     .. [1] "ARGUS distribution",
            https://en.wikipedia.org/wiki/ARGUS_distribution
+    .. [2] Christoph Baumgarten "Random variate generation by fast numerical
+           inversion in the varying parameter case." Research in Statistics,
+           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
 
     .. versionadded:: 0.19.0
 

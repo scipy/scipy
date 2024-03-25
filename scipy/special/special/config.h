@@ -1,8 +1,5 @@
 #pragma once
 
-#ifdef __CUDACC__
-#define SPECFUN_HOST_DEVICE __host__ __device__
-
 // Define math constants if they are not available
 #ifndef M_E
 #define M_E 2.71828182845904523536
@@ -56,6 +53,9 @@
 #define M_SQRT1_2 0.707106781186547524401
 #endif
 
+#ifdef __CUDACC__
+#define SPECFUN_HOST_DEVICE __host__ __device__
+
 #include <cuda/std/cmath>
 #include <cuda/std/limits>
 
@@ -82,13 +82,30 @@ SPECFUN_HOST_DEVICE inline double pow(double x, double y) { return cuda::std::po
 
 SPECFUN_HOST_DEVICE inline double sin(double x) { return cuda::std::sin(x); }
 
+SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
+
+SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
+
+SPECFUN_HOST_DEVICE inline double cosh(double x) { return cuda::std::cosh(x); }
+
+SPECFUN_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
+
 // Fallback to global namespace for functions unsupported on NVRTC
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
+SPECFUN_HOST_DEVICE inline double ceil(double x) { return cuda::std::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return cuda::std::floor(x); }
+SPECFUN_HOST_DEVICE inline double trunc(double x) { return cuda::std::trunc(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return cuda::std::fma(x, y, z); }
+SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return cuda::std::copysign(x, y); }
+SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return cuda::std::modf(value, iptr); }
+
 #else
+SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
+SPECFUN_HOST_DEVICE inline double trunc(double x) { return ::trunc(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return ::fma(x, y, z); }
+SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return ::copysign(x, y); }
+SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return ::modf(value, iptr); }
 #endif
 
 template <typename T>
@@ -121,6 +138,11 @@ SPECFUN_HOST_DEVICE T norm(const complex<T> &z) {
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> sqrt(const complex<T> &z) {
     return thrust::sqrt(z);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
+    return thrust::conj(z);
 }
 
 } // namespace std

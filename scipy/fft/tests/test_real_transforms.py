@@ -1,17 +1,17 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
 import pytest
+import math
 
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn
 import scipy.fft as fft
 from scipy import fftpack
-from scipy.conftest import (
-    array_api_compatible,
-    skip_if_array_api_gpu
-)
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import copy, xp_assert_close
 
-import math
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 SQRT_2 = math.sqrt(2)
 
 # scipy.fft wraps the fftpack versions but with normalized inverse transforms.
@@ -19,8 +19,7 @@ SQRT_2 = math.sqrt(2)
 # fftpack/test_real_transforms.py
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("n", [2, 3, 4, 5, 10, 16])
@@ -43,6 +42,8 @@ def test_identity_1d(forward, backward, type, n, axis, norm, orthogonalize, xp):
     xp_assert_close(z2, x)
 
 
+@skip_xp_backends(np_only=True,
+                   reasons=['`overwrite_x` only supported for NumPy backend.'])
 @pytest.mark.parametrize("forward, backward", [(dct, idct), (dst, idst)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("dtype", [np.float16, np.float32, np.float64,
@@ -67,8 +68,7 @@ def test_identity_1d_overwrite(forward, backward, type, dtype, axis, norm,
         assert_allclose(z, x_orig, rtol=1e-6, atol=1e-6)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
@@ -115,6 +115,8 @@ def test_identity_nd(forward, backward, type, shape, axes, norm,
     xp_assert_close(z2, x)
 
 
+@skip_xp_backends(np_only=True,
+                   reasons=['`overwrite_x` only supported for NumPy backend.'])
 @pytest.mark.parametrize("forward, backward", [(dctn, idctn), (dstn, idstn)])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("shape, axes",
@@ -148,8 +150,7 @@ def test_identity_nd_overwrite(forward, backward, type, shape, axes, dtype,
         assert_array_equal(y, y_orig)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("func", ['dct', 'dst', 'dctn', 'dstn'])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 @pytest.mark.parametrize("norm", [None, 'backward', 'ortho', 'forward'])
@@ -162,8 +163,7 @@ def test_fftpack_equivalience(func, type, norm, xp):
     xp_assert_close(fft_res, fftpack_res)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("func", [dct, dst, dctn, dstn])
 @pytest.mark.parametrize("type", [1, 2, 3, 4])
 def test_orthogonalize_default(func, type, xp):
@@ -180,8 +180,7 @@ def test_orthogonalize_default(func, type, xp):
         xp_assert_close(a, b)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func, type", [
     (dct, 4), (dst, 1), (dst, 4)])
@@ -193,8 +192,7 @@ def test_orthogonalize_noop(func, type, norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 def test_orthogonalize_dct1(norm, xp):
     x = xp.asarray(np.random.rand(100))
@@ -211,8 +209,7 @@ def test_orthogonalize_dct1(norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst2(func, norm, xp):
@@ -224,8 +221,7 @@ def test_orthogonalize_dcst2(func, norm, xp):
     xp_assert_close(y1, y2)
 
 
-@skip_if_array_api_gpu
-@array_api_compatible
+@skip_xp_backends(cpu_only=True)
 @pytest.mark.parametrize("norm", ["backward", "ortho", "forward"])
 @pytest.mark.parametrize("func", [dct, dst])
 def test_orthogonalize_dcst3(func, norm, xp):

@@ -1318,7 +1318,7 @@ class TestMood:
         assert_allclose(p2, p1/2)
         assert_allclose(p3, 1 - p1/2)
 
-        with pytest.raises(ValueError, match="alternative must be..."):
+        with pytest.raises(ValueError, match="`alternative` must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
@@ -1636,6 +1636,26 @@ class TestWilcoxon:
         d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
+    @pytest.mark.parametrize('size', [3, 5, 10])
+    def test_permutation_method(self, size):
+        rng = np.random.default_rng(92348034828501345)
+        x = rng.random(size=size)
+        res = stats.wilcoxon(x, method=stats.PermutationMethod())
+        ref = stats.wilcoxon(x, method='exact')
+        assert_equal(res.statistic, ref.statistic)
+        assert_equal(res.pvalue, ref.pvalue)
+
+        x = rng.random(size=size*10)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        ref = stats.wilcoxon(x, method=pm)
+        rng = np.random.default_rng(59234803482850134)
+        pm = stats.PermutationMethod(n_resamples=99, random_state=rng)
+        res = stats.wilcoxon(x, method=pm)
+
+        assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
+        assert_equal(res.pvalue, ref.pvalue)  # random_state used
+
 
 class TestKstat:
     def test_moments_normal_distribution(self):
@@ -1812,6 +1832,12 @@ class TestBoxcox_llf:
         llf = stats.boxcox_llf(-8, data)
         # The expected value was computed with mpmath.
         assert_allclose(llf, -17.93934208579061)
+
+    def test_instability_gh20021(self):
+        data = [2003, 1950, 1997, 2000, 2009]
+        llf = stats.boxcox_llf(1e-8, data)
+        # The expected value was computed with mpsci, set mpmath.mp.dps=100
+        assert_allclose(llf, -15.32401272869016598)
 
 
 # This is the data from github user Qukaiyi, given as an example

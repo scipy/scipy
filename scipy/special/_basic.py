@@ -8,9 +8,8 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
-                   imag, sqrt, where, mgrid, sin, place, issubdtype,
-                   extract, inexact, nan, zeros, sinc)
+from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
+                   sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
@@ -781,10 +780,10 @@ def y1p_zeros(nt, complex=False):
     >>> from scipy.special import y1p_zeros
     >>> y1grad_roots, y1_values = y1p_zeros(4)
     >>> with np.printoptions(precision=5):
-    ...     print(f"Y1' Roots: {y1grad_roots}")
-    ...     print(f"Y1 values: {y1_values}")
-    Y1' Roots: [ 3.68302+0.j  6.9415 +0.j 10.1234 +0.j 13.28576+0.j]
-    Y1 values: [ 0.41673+0.j -0.30317+0.j  0.25091+0.j -0.21897+0.j]
+    ...     print(f"Y1' Roots: {y1grad_roots.real}")
+    ...     print(f"Y1 values: {y1_values.real}")
+    Y1' Roots: [ 3.68302  6.9415  10.1234  13.28576]
+    Y1 values: [ 0.41673 -0.30317  0.25091 -0.21897]
 
     `y1p_zeros` can be used to calculate the extremal points of :math:`Y_1`
     directly. Here we plot :math:`Y_1` and the first four extrema.
@@ -1595,7 +1594,7 @@ def mathieu_even_coef(m, q):
 
     .. math:: \mathrm{ce}_{2n}(z, q) = \sum_{k=0}^{\infty} A_{(2n)}^{(2k)} \cos 2kz
 
-    .. math:: \mathrm{ce}_{2n+1}(z, q) = 
+    .. math:: \mathrm{ce}_{2n+1}(z, q) =
               \sum_{k=0}^{\infty} A_{(2n+1)}^{(2k+1)} \cos (2k+1)z
 
     This function returns the coefficients :math:`A_{(2n)}^{(2k)}` for even
@@ -1856,7 +1855,7 @@ def clpmn(m, n, z, type=3):
                 fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
-    p, pd = _specfun.clpmn(mp, n, real(z), imag(z), type)
+    p, pd = _specfun.clpmn(mp, n, z, type)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
@@ -2817,7 +2816,7 @@ def _range_prod(lo, hi, k=1):
         return hi
 
 
-def _exact_factorialx_array(n, k=1):
+def _factorialx_array_exact(n, k=1):
     """
     Exact computation of factorial for an array.
 
@@ -2884,6 +2883,56 @@ def _exact_factorialx_array(n, k=1):
         out = out.astype(np.float64)
         out[np.isnan(n)] = np.nan
     return out
+
+
+def _factorialx_array_approx(n, k):
+    """
+    Calculate approximation to multifactorial for array n and integer k.
+
+    Ensure we only call _factorialx_approx_core where necessary/required.
+    """
+    result = zeros(n.shape)
+    # keep nans as nans
+    place(result, np.isnan(n), np.nan)
+    # only compute where n >= 0 (excludes nans), everything else is 0
+    cond = (n >= 0)
+    n_to_compute = extract(cond, n)
+    place(result, cond, _factorialx_approx_core(n_to_compute, k=k))
+    return result
+
+
+def _factorialx_approx_core(n, k):
+    """
+    Core approximation to multifactorial for array n and integer k.
+    """
+    if k == 1:
+        # shortcut for k=1
+        result = gamma(n + 1)
+        if isinstance(n, np.ndarray):
+            # gamma does not maintain 0-dim arrays
+            result = np.array(result)
+        return result
+
+    n_mod_k = n % k
+    # scalar case separately, unified handling would be inefficient for arrays;
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if not isinstance(n, np.ndarray):
+        return (
+            np.power(k, (n - n_mod_k) / k)
+            * gamma(n / k + 1) / gamma(n_mod_k / k + 1)
+            * max(n_mod_k, 1)
+        )
+
+    # factor that's independent of the residue class (see factorialk docstring)
+    result = np.power(k, n / k) * gamma(n / k + 1)
+    # factor dependent on residue r (for `r=0` it's 1, so we skip `r=0`
+    # below and thus also avoid evaluating `max(r, 1)`)
+    def corr(k, r): return np.power(k, -r / k) / gamma(r / k + 1) * r
+    for r in np.unique(n_mod_k):
+        if r == 0:
+            continue
+        result[n_mod_k == r] *= corr(k, r)
+    return result
 
 
 def factorial(n, exact=False):
@@ -2953,7 +3002,7 @@ def factorial(n, exact=False):
             msg = ("Non-integer values of `n` together with `exact=True` are "
                    "deprecated. Either ensure integer `n` or use `exact=False`.")
             warnings.warn(msg, DeprecationWarning, stacklevel=2)
-        return _ufuncs._factorial(n)
+        return _factorialx_approx_core(n, k=1)
 
     # arrays & array-likes
     n = asarray(n)
@@ -2972,13 +3021,8 @@ def factorial(n, exact=False):
         raise ValueError(msg)
 
     if exact:
-        return _exact_factorialx_array(n)
-    # exact=False case
-    res = _ufuncs._factorial(n)
-    if isinstance(n, np.ndarray):
-        # _ufuncs._factorial does not maintain 0-dim arrays
-        return np.array(res)
-    return res
+        return _factorialx_array_exact(n, k=1)
+    return _factorialx_array_approx(n, k=1)
 
 
 def factorial2(n, exact=False):
@@ -3015,15 +3059,6 @@ def factorial2(n, exact=False):
     105
 
     """
-    def _approx(n):
-        # main factor that both even/odd approximations share
-        val = np.power(2, n / 2) * gamma(n / 2 + 1)
-        mask = np.ones_like(n, dtype=np.float64)
-        mask[n % 2 == 1] = sqrt(2 / pi)
-        # analytical continuation (based on odd integers)
-        # is scaled down by a factor of sqrt(2 / pi)
-        # compared to the value of even integers.
-        return val * mask
 
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
@@ -3040,7 +3075,7 @@ def factorial2(n, exact=False):
         # general integer case
         if exact:
             return _range_prod(1, n, k=2)
-        return _approx(n)
+        return _factorialx_approx_core(n, k=2)
     # arrays & array-likes
     n = asarray(n)
     if n.size == 0:
@@ -3049,16 +3084,11 @@ def factorial2(n, exact=False):
     if not np.issubdtype(n.dtype, np.integer):
         raise ValueError("factorial2 does not support non-integral arrays")
     if exact:
-        return _exact_factorialx_array(n, k=2)
-    # approximation
-    vals = zeros(n.shape)
-    cond = (n >= 0)
-    n_to_compute = extract(cond, n)
-    place(vals, cond, _approx(n_to_compute))
-    return vals
+        return _factorialx_array_exact(n, k=2)
+    return _factorialx_array_approx(n, k=2)
 
 
-def factorialk(n, k, exact=True):
+def factorialk(n, k, exact=None):
     """Multifactorial of n of order k, n(!!...!).
 
     This is the multifactorial of n skipping k values.  For example,
@@ -3074,36 +3104,62 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int or array_like
-        Calculate multifactorial. If `n` < 0, the return value is 0.
+        Calculate multifactorial. If ``n < 0``, the return value is 0.
     k : int
         Order of multifactorial.
     exact : bool, optional
         If exact is set to True, calculate the answer exactly using
-        integer arithmetic.
+        integer arithmetic, otherwise use an approximation (faster,
+        but yields floats instead of integers)
+
+        .. warning::
+           The default value for ``exact`` will be changed to
+           ``False`` in SciPy 1.15.0.
 
     Returns
     -------
     val : int
         Multifactorial of `n`.
 
-    Raises
-    ------
-    NotImplementedError
-        Raises when exact is False
-
     Examples
     --------
     >>> from scipy.special import factorialk
-    >>> factorialk(5, 1, exact=True)
+    >>> factorialk(5, k=1, exact=True)
     120
-    >>> factorialk(5, 3, exact=True)
+    >>> factorialk(5, k=3, exact=True)
     10
+    >>> factorialk([5, 7, 9], k=3, exact=True)
+    array([ 10,  28, 162])
+    >>> factorialk([5, 7, 9], k=3, exact=False)
+    array([ 10.,  28., 162.])
 
+    Notes
+    -----
+    While less straight-forward than for the double-factorial, it's possible to
+    calculate a general approximation formula of n!(k) by studying ``n`` for a given
+    remainder ``r < k`` (thus ``n = m * k + r``, resp. ``r = n % k``), which can be
+    put together into something valid for all integer values ``n >= 0`` & ``k > 0``::
+
+      n!(k) = k ** ((n - r)/k) * gamma(n/k + 1) / gamma(r/k + 1) * max(r, 1)
+
+    This is the basis of the approximation when ``exact=False``. Compare also [1].
+
+    References
+    ----------
+    .. [1] Complex extension to multifactorial
+            https://en.wikipedia.org/wiki/Double_factorial#Alternative_extension_of_the_multifactorial
     """
     if not np.issubdtype(type(k), np.integer) or k < 1:
         raise ValueError(f"k must be a positive integer, received: {k}")
-    if not exact:
-        raise NotImplementedError
+    if exact is None:
+        msg = (
+            "factorialk will default to `exact=False` starting from SciPy "
+            "1.15.0. To avoid behaviour changes due to this, explicitly "
+            "specify either `exact=False` (faster, returns floats), or the "
+            "past default `exact=True` (slower, lossless result as integer)."
+        )
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        exact = True
 
     helpmsg = ""
     if k in {1, 2}:
@@ -3122,7 +3178,10 @@ def factorialk(n, k, exact=True):
             return 0
         elif n in {0, 1}:
             return 1
-        return _range_prod(1, n, k=k)
+        # general integer case
+        if exact:
+            return _range_prod(1, n, k=k)
+        return _factorialx_approx_core(n, k=k)
     # arrays & array-likes
     n = asarray(n)
     if n.size == 0:
@@ -3131,7 +3190,9 @@ def factorialk(n, k, exact=True):
     if not np.issubdtype(n.dtype, np.integer):
         msg = "factorialk does not support non-integral arrays!"
         raise ValueError(msg + helpmsg)
-    return _exact_factorialx_array(n, k=k)
+    if exact:
+        return _factorialx_array_exact(n, k=k)
+    return _factorialx_array_approx(n, k=k)
 
 
 def stirling2(N, K, *, exact=False):
@@ -3142,7 +3203,7 @@ def stirling2(N, K, *, exact=False):
 
     The values this function returns are calculated using a dynamic
     program which avoids redundant computation across the subproblems
-    in the solution. For array-like input, this implementation also 
+    in the solution. For array-like input, this implementation also
     avoids redundant computation across the different Stirling number
     calculations.
 

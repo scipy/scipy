@@ -1239,7 +1239,7 @@ def test_save_unicode_field(tmpdir):
 
 def test_save_custom_array_type(tmpdir):
     class CustomArray:
-        def __array__(self):
+        def __array__(self, dtype=None, copy=None):
             return np.arange(6.0).reshape(2, 3)
     a = CustomArray()
     filename = os.path.join(str(tmpdir), 'test.mat')
@@ -1327,3 +1327,13 @@ def test_gh_17992(tmp_path):
             new_dict)
     assert_allclose(new_dict["data"][0][0], array_one)
     assert_allclose(new_dict["data"][0][1], array_two)
+
+
+def test_gh_19659(tmp_path):
+    d = {
+        "char_array": np.array([list("char"), list("char")], dtype="U1"),
+        "string_array": np.array(["string", "string"]),
+        }
+    outfile = tmp_path / "tmp.mat"
+    # should not error:
+    savemat(outfile, d, format="4")

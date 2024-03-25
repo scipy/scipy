@@ -1,14 +1,17 @@
 # Copyright (C) 2009, Pauli Virtanen <pav@iki.fi>
 # Distributed under the same license as SciPy.
 
+import inspect
 import sys
+import warnings
+
 import numpy as np
-from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 from numpy import asarray, dot, vdot
+
+from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
-import inspect
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
@@ -16,7 +19,7 @@ from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 __all__ = [
     'broyden1', 'broyden2', 'anderson', 'linearmixing',
     'diagbroyden', 'excitingmixing', 'newton_krylov',
-    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian']
+    'BroydenFirst', 'KrylovJacobian', 'InverseJacobian', 'NoConvergence']
 
 #------------------------------------------------------------------------------
 # Utility functions
@@ -24,6 +27,8 @@ __all__ = [
 
 
 class NoConvergence(Exception):
+    """Exception raised when nonlinear solver fails to converge within the specified
+    `maxiter`."""
     pass
 
 
@@ -419,8 +424,12 @@ class Jacobian:
             if value is not None:
                 setattr(self, name, kw[name])
 
-        if hasattr(self, 'todense'):
-            self.__array__ = lambda: self.todense()
+
+        if hasattr(self, "todense"):
+            def __array__(self, dtype=None, copy=None):
+                if dtype is not None:
+                    raise ValueError(f"`dtype` must be None, was {dtype}")
+                return self.todense()
 
     def aspreconditioner(self):
         return InverseJacobian(self)
@@ -673,7 +682,15 @@ class LowRankMatrix:
         if len(self.cs) > c.size:
             self.collapse()
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
+        if dtype is not None:
+            warnings.warn("LowRankMatrix is scipy-internal code, `dtype` "
+                          f"should only be None but was {dtype} (not handled)",
+                          stacklevel=3)
+        if copy is not None:
+            warnings.warn("LowRankMatrix is scipy-internal code, `copy` "
+                          f"should only be None but was {copy} (not handled)",
+                          stacklevel=3)
         if self.collapsed is not None:
             return self.collapsed
 

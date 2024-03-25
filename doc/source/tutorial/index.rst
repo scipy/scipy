@@ -41,9 +41,7 @@ Subpackage          Description
 `stats`             Statistical distributions and functions
 ==================  ======================================================
 
-SciPy subpackages need to be imported separately, for example::
-
-    >>> from scipy import linalg, optimize
+For guidance on organizing and importing functions from SciPy subpackages, refer to the `Guidelines for Importing Functions from SciPy <https://scipy.github.io/devdocs/reference/index.html#guidelines-for-importing-functions-from-scipy>`_.
 
 Below, you can find the complete user guide organized by subpackages.
 

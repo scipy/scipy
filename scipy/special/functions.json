@@ -10,10 +10,10 @@
         }
     },
     "_cospi": {
-	"cephes.h": {
+    	"cephes.h": {
 	    "cospi": "d->d"
-	},
-        "_trig.pxd": {
+        },
+        "_special.h++": {
             "ccospi": "D->D"
         }
     },
@@ -59,7 +59,7 @@
 	"cephes.h": {
 	    "sinpi": "d->d"
 	},
-        "_trig.pxd": {
+        "_special.h++": {
             "csinpi": "D->D"
         }
     },
@@ -634,7 +634,7 @@
         }
     },
     "gamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
             "cgamma": "D->D"
         },
         "cephes.h": {
@@ -969,7 +969,7 @@
         }
     },
     "loggamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
 	    "loggamma_real": "d->d",
             "loggamma": "D->D"
         }
@@ -1267,7 +1267,7 @@
         }
     },
     "psi": {
-        "_digamma.pxd": {
+        "_special.h++": {
             "cdigamma": "D->D",
             "digamma": "d->d"
         }
@@ -1283,7 +1283,7 @@
         }
     },
     "rgamma": {
-        "_loggamma.pxd": {
+        "_special.h++": {
             "crgamma": "D->D"
         },
         "cephes.h": {

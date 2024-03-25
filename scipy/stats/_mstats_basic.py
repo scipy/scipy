@@ -88,6 +88,28 @@ def _chk_size(a, b):
     return (a, b, na)
 
 
+def _ttest_finish(df, t, alternative):
+    """Common code between all 3 t-test functions."""
+    # We use ``stdtr`` directly here to preserve masked arrays
+
+    if alternative == 'less':
+        pval = special.stdtr(df, t)
+    elif alternative == 'greater':
+        pval = special.stdtr(df, -t)
+    elif alternative == 'two-sided':
+        pval = special.stdtr(df, -np.abs(t))*2
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+
+    if t.ndim == 0:
+        t = t[()]
+    if pval.ndim == 0:
+        pval = pval[()]
+
+    return t, pval
+
+
 def argstoarray(*args):
     """
     Constructs a 2D array from a group of sequences.
@@ -672,7 +694,7 @@ def spearmanr(x, y=None, use_ties=True, axis=None, nan_policy='propagate',
             # errors before taking the square root
             t = rs * np.sqrt((dof / ((rs+1.0) * (1.0-rs))).clip(0))
 
-        t, prob = scipy.stats._stats_py._ttest_finish(dof, t, alternative)
+        t, prob = _ttest_finish(dof, t, alternative)
 
         # For backwards compatibility, return scalars when comparing 2 columns
         if rs.shape == (2, 2):
@@ -890,12 +912,12 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
         var_s /= 18.
         var_s += (v1 + v2)
         z = (C-D)/np.sqrt(var_s)
-        _, prob = scipy.stats._stats_py._normtest_finish(z, alternative)
+        prob = scipy.stats._stats_py._get_pvalue(z, distributions.norm, alternative)
     else:
         raise ValueError("Unknown method "+str(method)+" specified, please "
                          "use auto, exact or asymptotic.")
 
-    res = scipy.stats._stats_py.SignificanceResult(tau, prob)
+    res = scipy.stats._stats_py.SignificanceResult(tau[()], prob[()])
     res.correlation = tau
     return res
 
@@ -946,7 +968,7 @@ def kendalltau_seasonal(x):
     z_tot_ind = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(var_szn.sum())
     z_tot_dep = msign(S_tot) * (abs(S_tot)-1) / ma.sqrt(covmat.sum())
 
-    prob_szn = special.erfc(abs(z_szn)/np.sqrt(2))
+    prob_szn = special.erfc(abs(z_szn.data)/np.sqrt(2))
     prob_tot_ind = special.erfc(abs(z_tot_ind)/np.sqrt(2))
     prob_tot_dep = special.erfc(abs(z_tot_dep)/np.sqrt(2))
 
@@ -1368,7 +1390,7 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x - popmean) / ma.sqrt(svar / n)
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_1sampResult(t, prob)
 
 
@@ -1452,7 +1474,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = (x1-x2) / denom
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_indResult(t, prob)
 
 
@@ -1513,7 +1535,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
     with np.errstate(divide='ignore', invalid='ignore'):
         t = dm / denom
 
-    t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+    t, prob = _ttest_finish(df, t, alternative)
     return Ttest_relResult(t, prob)
 
 
@@ -2957,8 +2979,9 @@ def skewtest(a, axis=0, alternative='two-sided'):
     alpha = ma.sqrt(2.0/(W2-1))
     y = ma.where(y == 0, 1, y)
     Z = delta*ma.log(y/alpha + ma.sqrt((y/alpha)**2+1))
+    pvalue = scipy.stats._stats_py._get_pvalue(Z, distributions.norm, alternative)
 
-    return SkewtestResult(*scipy.stats._stats_py._normtest_finish(Z, alternative))
+    return SkewtestResult(Z[()], pvalue[()])
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -3030,10 +3053,9 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
     term2 = np.ma.where(denom > 0, ma.power((1-2.0/A)/denom, 1/3.0),
                         -ma.power(-(1-2.0/A)/denom, 1/3.0))
     Z = (term1 - term2) / np.sqrt(2/(9.0*A))
+    pvalue = scipy.stats._stats_py._get_pvalue(Z, distributions.norm, alternative)
 
-    return KurtosistestResult(
-        *scipy.stats._stats_py._normtest_finish(Z, alternative)
-    )
+    return KurtosistestResult(Z[()], pvalue[()])
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -3192,7 +3214,7 @@ def mquantiles(a, prob=list([.25,.5,.75]), alphap=.4, betap=.4, axis=None,
         condition = (limit[0] < data) & (data < limit[1])
         data[~condition.filled(True)] = masked
 
-    p = np.array(prob, copy=False, ndmin=1)
+    p = np.atleast_1d(np.asarray(prob))
     m = alphap + p*(1.-alphap-betap)
     # Computes quantiles along axis (or globally)
     if (axis is None):
@@ -3492,7 +3514,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     >>> brunnermunzel(x1, x2)
     BrunnerMunzelResult(statistic=1.4723186918922935, pvalue=0.15479415300426624)  # may vary
 
-    """
+    """  # noqa: E501
     x = ma.asarray(x).compressed().view(ndarray)
     y = ma.asarray(y).compressed().view(ndarray)
     nx = len(x)

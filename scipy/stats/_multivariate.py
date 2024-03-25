@@ -4158,7 +4158,7 @@ class unitary_group_gen(multi_rv_generic):
     Parameters
     ----------
     dim : scalar
-        Dimension of matrices
+        Dimension of matrices, must be greater than 1.
     seed : {None, int, np.random.RandomState, np.random.Generator}, optional
         Used for drawing random variates.
         If `seed` is `None`, the `~np.random.RandomState` singleton is used.
@@ -5009,7 +5009,7 @@ class multivariate_hypergeom_gen(multi_rv_generic):
            http://www.randomservices.org/random/urn/MultiHypergeometric.html
     .. [2] Thomas J. Sargent and John Stachurski, 2020,
            Multivariate Hypergeometric Distribution
-           https://python.quantecon.org/_downloads/pdf/multi_hyper.pdf
+           https://python.quantecon.org/multi_hyper.html
     """
     def __init__(self, seed=None):
         super().__init__(seed)

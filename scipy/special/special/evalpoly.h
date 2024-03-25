@@ -1,3 +1,8 @@
+/* Translated from Cython into C++ by SciPy developers in 2024.
+ *
+ * Original author: Josh Wilson, 2016.
+ */
+
 /* Evaluate polynomials.
  *
  * All of the coefficients are stored in reverse order, i.e. if the

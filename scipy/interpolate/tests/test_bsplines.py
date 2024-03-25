@@ -13,12 +13,16 @@ from scipy.interpolate import (
         CubicSpline, NdBSpline, make_smoothing_spline, RegularGridInterpolator,
 )
 import scipy.linalg as sl
+import scipy.sparse.linalg as ssl
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
                                          _make_interp_per_full_matr)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy._lib._util import AxisError
+
+# XXX: move to the interpolate namespace
+from scipy.interpolate._ndbspline import make_ndbspl
 
 from scipy.interpolate import dfitpack
 from scipy.interpolate import _bsplines as _b
@@ -612,6 +616,127 @@ class TestBSpline:
 
         b = BSpline(t=t, c=c, k=0)
         assert_allclose(b(xx), 3)
+
+
+class TestInsert:
+
+    @pytest.mark.parametrize('xval', [0.0, 1.0, 2.5, 4, 6.5, 7.0])
+    def test_insert(self, xval):
+        # insert a knot, incl edges (0.0, 7.0) and exactly at an existing knot (4.0)
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl)     # FITPACK
+        spl_1 = spl.insert_knot(xval)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        # knot insertion preserves values, unless multiplicity >= k+1
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+        # ... repeat with ndim > 1
+        y1 = np.cos(x)**3
+        spl_y1 = make_interp_spline(x, y1, k=3)
+        spl_yy = make_interp_spline(x, np.c_[y, y1], k=3)
+        spl_yy1 = spl_yy.insert_knot(xval)
+
+        assert_allclose(spl_yy1.t, spl_1.t, atol=1e-15)
+        assert_allclose(spl_yy1.c, np.c_[spl.insert_knot(xval).c,
+                                         spl_y1.insert_knot(xval).c], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl_yy(xx), spl_yy1(xx), atol=1e-15)
+
+
+    @pytest.mark.parametrize(
+        'xval, m', [(0.0, 2), (1.0, 3), (1.5, 5), (4, 2), (7.0, 2)]
+    )
+    def test_insert_multi(self, xval, m):
+        x = np.arange(8)
+        y = np.sin(x)**3
+        spl = make_interp_spline(x, y, k=3)
+
+        spl_1f = insert(xval, spl, m=m)
+        spl_1 = spl.insert_knot(xval, m)
+
+        assert_allclose(spl_1.t, spl_1f.t, atol=1e-15)
+        assert_allclose(spl_1.c, spl_1f.c[:-spl.k-1], atol=1e-15)
+
+        xx = x if xval != x[-1] else x[:-1]
+        xx = np.r_[xx, 0.5*(x[1:] + x[:-1])]
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+    def test_insert_random(self):
+        rng = np.random.default_rng(12345)
+        n, k = 11, 3
+
+        t = np.sort(rng.uniform(size=n+k+1))
+        c = rng.uniform(size=(n, 3, 2))
+        spl = BSpline(t, c, k)
+
+        xv = rng.uniform(low=t[k+1], high=t[-k-1])
+        spl_1 = spl.insert_knot(xv)
+
+        xx = rng.uniform(low=t[k+1], high=t[-k-1], size=33)
+        assert_allclose(spl(xx), spl_1(xx), atol=1e-15)
+
+    @pytest.mark.parametrize('xv', [0, 0.1, 2.0, 4.0, 4.5,      # l.h. edge
+                                    5.5, 6.0, 6.1, 7.0]         # r.h. edge
+    )
+    def test_insert_periodic(self, xv):
+        x = np.arange(8)
+        y = np.sin(x)**3
+        tck = splrep(x, y, k=3)
+        spl = BSpline(*tck, extrapolate="periodic")
+
+        spl_1 = spl.insert_knot(xv)
+        tf, cf, k = insert(xv, spl.tck, per=True)
+
+        assert_allclose(spl_1.t, tf, atol=1e-15)
+        assert_allclose(spl_1.c[:-k-1], cf[:-k-1], atol=1e-15)
+
+        xx = np.random.default_rng(1234).uniform(low=0, high=7, size=41)
+        assert_allclose(spl_1(xx), splev(xx, (tf, cf, k)), atol=1e-15)
+
+    def test_insert_periodic_too_few_internal_knots(self):
+        # both FITPACK and spl.insert_knot raise when there's not enough
+        # internal knots to make a periodic extension.
+        # Below the internal knots are 2, 3,    , 4, 5 
+        #                                     ^
+        #                              2, 3, 3.5, 4, 5
+        #   so two knots from each side from the new one, while need at least
+        #   from either left or right.
+        xv = 3.5
+        k = 3
+        t = np.array([0]*(k+1) + [2, 3, 4, 5] + [7]*(k+1))
+        c = np.ones(len(t) - k - 1)
+        spl = BSpline(t, c, k, extrapolate="periodic")
+
+        with assert_raises(ValueError):
+            insert(xv, (t, c, k), per=True)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(xv)
+
+    def test_insert_no_extrap(self):
+        k = 3
+        t = np.array([0]*(k+1) + [2, 3, 4, 5] + [7]*(k+1))
+        c = np.ones(len(t) - k - 1)
+        spl = BSpline(t, c, k)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(-1)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(8)
+
+        with assert_raises(ValueError):
+            spl.insert_knot(3, m=0)
 
 
 def test_knots_multiplicity():
@@ -1908,7 +2033,6 @@ class TestNdBSpline:
         t2, c2, kx, ky = self.make_2d_mixed()
         xi = [(1.4, 4.5), (2.5, 2.4), (4.5, 3.5)]
         target = [x**3 * (y**2 + 2*y) for (x, y) in xi]
-
         bspl2 = NdBSpline(t2, c2, k=(kx, ky))
         assert bspl2(xi).shape == (len(xi), )
         assert_allclose(bspl2(xi),
@@ -1930,6 +2054,14 @@ class TestNdBSpline:
         der = bspl2(xi, nu=(0, 0))
         assert_allclose(der,
                         [x**3 * (y**2 + 2*y) for x, y in xi], atol=1e-14)
+
+        with assert_raises(ValueError):
+            # all(nu >= 0)
+            der = bspl2(xi, nu=(-1, 0))
+
+        with assert_raises(ValueError):
+            # len(nu) == ndim
+            der = bspl2(xi, nu=(-1, 0, 1))
 
     def test_2D_mixed_random(self):
         rng = np.random.default_rng(12345)
@@ -2162,6 +2294,166 @@ class TestNdBSpline:
         bspl3_ = NdBSpline(t3, c3, k=3)
 
         assert bspl3((1, 2, 3)) == bspl3_((1, 2, 3))
+
+    def test_design_matrix(self):
+        t3, c3, k = self.make_3d_case()
+
+        xi = np.asarray([[1, 2, 3], [4, 5, 6]])
+        dm = NdBSpline(t3, c3, k).design_matrix(xi, t3, k)
+        dm1 = NdBSpline.design_matrix(xi, t3, [k, k, k])
+        assert dm.shape[0] == xi.shape[0]
+        assert_allclose(dm.todense(), dm1.todense(), atol=1e-16)
+
+        with assert_raises(ValueError):
+            NdBSpline.design_matrix([1, 2, 3], t3, [k]*3)
+
+        with assert_raises(ValueError, match="Data and knots*"):
+            NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
+
+
+class TestMakeND:
+    def test_2D_separable_simple(self):
+        x = np.arange(6)
+        y = np.arange(6) + 0.5
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        bspl = make_ndbspl((x, y), values, k=1)
+        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+
+        # test the coefficients vs outer product of 1D coefficients
+        spl_x = make_interp_spline(x, x**3, k=1)
+        spl_y = make_interp_spline(y, y**3 + 2*y, k=1)
+        cc = spl_x.c[:, None] * spl_y.c[None, :]
+        assert_allclose(cc, bspl.c, atol=1e-11, rtol=0)
+
+        # test against RGI
+        from scipy.interpolate import RegularGridInterpolator as RGI
+        rgi = RGI((x, y), values, method='linear')
+        assert_allclose(rgi(xi), bspl(xi), atol=1e-14)
+
+    def test_2D_separable_trailing_dims(self):
+        # test `c` with trailing dimensions, i.e. c.ndim > ndim
+        x = np.arange(6)
+        y = np.arange(6)
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        # make values4.shape = (6, 6, 4)
+        values = x[:, None]**3 * (y**3 + 2*y)[None, :]
+        values4 = np.dstack((values, values, values, values))
+        bspl = make_ndbspl((x, y), values4, k=3, solver=ssl.spsolve)
+
+        result = bspl(xi)
+        target = np.dstack((values, values, values, values))
+        assert result.shape == (36, 4)
+        assert_allclose(result.reshape(6, 6, 4),
+                        target, atol=1e-14)
+
+        # now two trailing dimensions
+        values22 = values4.reshape((6, 6, 2, 2))
+        bspl = make_ndbspl((x, y), values22, k=3, solver=ssl.spsolve)
+
+        result = bspl(xi)
+        assert result.shape == (36, 2, 2)
+        assert_allclose(result.reshape(6, 6, 2, 2),
+                        target.reshape((6, 6, 2, 2)), atol=1e-14)
+
+    @pytest.mark.parametrize('k', [(3, 3), (1, 1), (3, 1), (1, 3), (3, 5)])
+    def test_2D_mixed(self, k):
+        # make a 2D separable spline w/ len(tx) != len(ty)
+        x = np.arange(6)
+        y = np.arange(7) + 1.5
+        xi = [(a, b) for a, b in itertools.product(x, y)]
+
+        values = (x**3)[:, None] * (y**2 + 2*y)[None, :]
+        bspl = make_ndbspl((x, y), values, k=k, solver=ssl.spsolve)
+        assert_allclose(bspl(xi), values.ravel(), atol=1e-15)
+
+    def _get_sample_2d_data(self):
+        # from test_rgi.py::TestIntepN
+        x = np.array([.5, 2., 3., 4., 5.5, 6.])
+        y = np.array([.5, 2., 3., 4., 5.5, 6.])
+        z = np.array(
+            [
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 3, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+            ]
+        )
+        return x, y, z
+
+    def test_2D_vs_RGI_linear(self):
+        x, y, z = self._get_sample_2d_data()
+        bspl = make_ndbspl((x, y), z, k=1)
+        rgi = RegularGridInterpolator((x, y), z, method='linear')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_2D_vs_RGI_cubic(self):
+        x, y, z = self._get_sample_2d_data()
+        bspl = make_ndbspl((x, y), z, k=3, solver=ssl.spsolve)
+        rgi = RegularGridInterpolator((x, y), z, method='cubic_legacy')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    @pytest.mark.parametrize('solver', [ssl.gmres, ssl.gcrotmk])
+    def test_2D_vs_RGI_cubic_iterative(self, solver):
+        # same as `test_2D_vs_RGI_cubic`, only with an iterative solver.
+        # Note the need to add an explicit `rtol` solver_arg to achieve the
+        # target accuracy of 1e-14. (the relation between solver atol/rtol
+        # and the accuracy of the final result is not direct and needs experimenting)
+        x, y, z = self._get_sample_2d_data()
+        bspl = make_ndbspl((x, y), z, k=3, solver=solver, rtol=1e-6)
+        rgi = RegularGridInterpolator((x, y), z, method='cubic_legacy')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_2D_vs_RGI_quintic(self):
+        x, y, z = self._get_sample_2d_data()
+        bspl = make_ndbspl((x, y), z, k=5, solver=ssl.spsolve)
+        rgi = RegularGridInterpolator((x, y), z, method='quintic_legacy')
+
+        xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    @pytest.mark.parametrize(
+        'k, meth', [(1, 'linear'), (3, 'cubic_legacy'), (5, 'quintic_legacy')]
+    )
+    def test_3D_random_vs_RGI(self, k, meth):
+        rndm = np.random.default_rng(123456)
+        x = np.cumsum(rndm.uniform(size=6))
+        y = np.cumsum(rndm.uniform(size=7))
+        z = np.cumsum(rndm.uniform(size=8))
+        values = rndm.uniform(size=(6, 7, 8))
+
+        bspl = make_ndbspl((x, y, z), values, k=k, solver=ssl.spsolve)
+        rgi = RegularGridInterpolator((x, y, z), values, method=meth)
+
+        xi = np.random.uniform(low=0.7, high=2.1, size=(11, 3))
+        assert_allclose(bspl(xi), rgi(xi), atol=1e-14)
+
+    def test_solver_err_not_converged(self):
+        x, y, z = self._get_sample_2d_data()
+        solver_args = {'maxiter': 1}
+        with assert_raises(ValueError, match='solver'):
+            make_ndbspl((x, y), z, k=3, **solver_args)
+
+        with assert_raises(ValueError, match='solver'):
+            make_ndbspl((x, y), np.dstack((z, z)), k=3, **solver_args)
 
 
 class TestFpchec:

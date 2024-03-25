@@ -2087,6 +2087,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2131,9 +2132,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
             raise NotImplementedError("input type '%s' not supported" % dtype)
 
         b = np.array(b, dtype=dtype)
-        a = np.array(a, dtype=dtype, copy=False)
+        a = np.asarray(a, dtype=dtype)
         b /= a[0]
-        x = np.array(x, dtype=dtype, copy=False)
+        x = np.asarray(x, dtype=dtype)
 
         out_full = np.apply_along_axis(lambda y: np.convolve(b, y), axis, x)
         ind = out_full.ndim * [slice(None)]

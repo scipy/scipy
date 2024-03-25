@@ -3,10 +3,8 @@ import json
 import os
 import warnings
 import tempfile
-from functools import wraps
 
 import numpy as np
-import numpy.array_api
 import numpy.testing as npt
 import pytest
 import hypothesis
@@ -29,6 +27,9 @@ def pytest_configure(config):
     except Exception:
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
+    config.addinivalue_line("markers",
+        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
+        "mark the desired skip configuration for the `skip_xp_backends` fixture.")
 
 
 def _get_mark(item, name):
@@ -108,7 +109,11 @@ xp_available_backends = {'numpy': np}
 
 if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     # fill the dict of backends with available libraries
-    xp_available_backends.update({'numpy.array_api': numpy.array_api})
+    try:
+        import array_api_strict
+        xp_available_backends.update({'array_api_strict': array_api_strict})
+    except ImportError:
+        pass
 
     try:
         import torch  # type: ignore[import]
@@ -146,62 +151,64 @@ if 'cupy' in xp_available_backends:
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
-skip_if_array_api = pytest.mark.skipif(
-    SCIPY_ARRAY_API,
-    reason="do not run with Array API on",
-)
 
+@pytest.fixture
+def skip_xp_backends(xp, request):
+    """
+    Skip based on the ``skip_xp_backends`` marker.
 
-def skip_if_array_api_gpu(func):
-    reason = "do not run with Array API on and not on CPU"
-    # method gets there as a function so we cannot use inspect.ismethod
-    if '.' in func.__qualname__:
-        @wraps(func)
-        def wrapped(self, *args, **kwargs):
-            xp = kwargs["xp"]
-            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
-                if xp.__name__ == 'cupy':
+    Parameters
+    ----------
+    *backends : tuple
+        Backends to skip, e.g. ``("array_api_strict", "torch")``.
+        These are overriden when ``np_only`` is ``True``, and are not
+        necessary to provide for non-CPU backends when ``cpu_only`` is ``True``.
+    reasons : list, optional
+        A list of reasons for each skip. When ``np_only`` is ``True``,
+        this should be a singleton list. Otherwise, this should be a list
+        of reasons, one for each corresponding backend in ``backends``.
+        If unprovided, default reasons are used. Note that it is not possible
+        to specify a custom reason with ``cpu_only``. Default: ``None``.
+    np_only : bool, optional
+        When ``True``, the test is skipped for all backends other
+        than the default NumPy backend. There is no need to provide
+        any ``backends`` in this case. To specify a reason, pass a
+        singleton list to ``reasons``. Default: ``False``.
+    cpu_only : bool, optional
+        When ``True``, the test is skipped on non-CPU devices.
+        There is no need to provide any ``backends`` in this case,
+        but any ``backends`` will also be skipped on the CPU.
+        Default: ``False``.
+    """
+    if "skip_xp_backends" not in request.keywords:
+        return
+    backends = request.keywords["skip_xp_backends"].args
+    kwargs = request.keywords["skip_xp_backends"].kwargs
+    np_only = kwargs.get("np_only", False)
+    cpu_only = kwargs.get("cpu_only", False)
+    if np_only:
+        reasons = kwargs.get("reasons", ["do not run with non-NumPy backends."])
+        reason = reasons[0]
+        if xp.__name__ != 'numpy':
+            pytest.skip(reason=reason)
+        return
+    if cpu_only:
+        reason = "do not run with `SCIPY_ARRAY_API` set and not on CPU"
+        if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
+            if xp.__name__ == 'cupy':
+                pytest.skip(reason=reason)
+            elif xp.__name__ == 'torch':
+                if 'cpu' not in torch.empty(0).device.type:
                     pytest.skip(reason=reason)
-                elif xp.__name__ == 'torch':
-                    if 'cpu' not in torch.empty(0).device.type:
-                        pytest.skip(reason=reason)
-            return func(self, *args, **kwargs)
-    else:
-        @wraps(func)
-        def wrapped(*args, **kwargs):
-            xp = kwargs["xp"]
-            if SCIPY_ARRAY_API and SCIPY_DEVICE != 'cpu':
-                if xp.__name__ == 'cupy':
-                    pytest.skip(reason=reason)
-                elif xp.__name__ == 'torch':
-                    if 'cpu' not in torch.empty(0).device.type:
-                        pytest.skip(reason=reason)
-            return func(*args, **kwargs)
-    return wrapped
-
-
-def skip_if_array_api_backend(backend):
-    def wrapper(func):
-        reason = (
-            f"do not run with Array API backend: {backend}"
-        )
-        # method gets there as a function so we cannot use inspect.ismethod
-        if '.' in func.__qualname__:
-            @wraps(func)
-            def wrapped(self, *args, **kwargs):
-                xp = kwargs["xp"]
-                if xp.__name__ == backend:
-                    pytest.skip(reason=reason)
-                return func(self, *args, **kwargs)
-        else:
-            @wraps(func)
-            def wrapped(*args, **kwargs):
-                xp = kwargs["xp"]
-                if xp.__name__ == backend:
-                    pytest.skip(reason=reason)
-                return func(*args, **kwargs)
-        return wrapped
-    return wrapper
+    if backends is not None:
+        reasons = kwargs.get("reasons", False)
+        for i, backend in enumerate(backends):
+            if xp.__name__ == backend:
+                if not reasons:
+                    reason = f"do not run with array API backend: {backend}"
+                else:
+                    reason = reasons[i]
+                pytest.skip(reason=reason)
 
 
 # Following the approach of NumPy's conftest.py...

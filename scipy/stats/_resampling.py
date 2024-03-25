@@ -817,6 +817,21 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
             The values of the test statistic generated under the null
             hypothesis.
 
+    .. warning::
+        The p-value is calculated by counting the elements of the null
+        distribution that are as extreme or more extreme than the observed
+        value of the statistic. Due to the use of finite precision arithmetic,
+        some statistic functions return numerically distinct values when the
+        theoretical values would be exactly equal. In some cases, this could
+        lead to a large error in the calculated p-value. `monte_carlo_test`
+        guards against this by considering elements in the null distribution
+        that are "close" (within a relative tolerance of 100 times the
+        floating point epsilon of inexact dtypes) to the observed
+        value of the test statistic as equal to the observed value of the
+        test statistic. However, the user is advised to inspect the null
+        distribution to assess whether this method of comparison is
+        appropriate, and if not, calculate the p-value manually.
+
     References
     ----------
 
@@ -897,7 +912,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     (data, rvs, statistic, vectorized,
      n_resamples, batch, alternative, axis) = args
 
-    # Some statistics return plain floats; ensure they're at least np.float64
+    # Some statistics return plain floats; ensure they're at least a NumPy float
     observed = np.asarray(statistic(*data, axis=-1))[()]
 
     n_observations = [sample.shape[-1] for sample in data]
@@ -911,13 +926,19 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     null_distribution = np.concatenate(null_distribution)
     null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
 
+    # relative tolerance for detecting numerically distinct but
+    # theoretically equal values in the null distribution
+    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
+            else np.finfo(observed.dtype).eps*100)
+    gamma = np.abs(eps * observed)
+
     def less(null_distribution, observed):
-        cmps = null_distribution <= observed
+        cmps = null_distribution <= observed + gamma
         pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
-        cmps = null_distribution >= observed
+        cmps = null_distribution >= observed - gamma
         pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
@@ -1497,7 +1518,8 @@ def permutation_test(data, statistic, *, permutation_type='independent',
         theoretical values would be exactly equal. In some cases, this could
         lead to a large error in the calculated p-value. `permutation_test`
         guards against this by considering elements in the null distribution
-        that are "close" (within a factor of ``1+1e-14``) to the observed
+        that are "close" (within a relative tolerance of 100 times the
+        floating point epsilon of inexact dtypes) to the observed
         value of the test statistic as equal to the observed value of the
         test statistic. However, the user is advised to inspect the null
         distribution to assess whether this method of comparison is
@@ -1678,8 +1700,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
-    eps = 1e-14
-    gamma = np.maximum(eps, np.abs(eps * observed))
+    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
+            else np.finfo(observed.dtype).eps*100)
+    gamma = np.abs(eps * observed)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma

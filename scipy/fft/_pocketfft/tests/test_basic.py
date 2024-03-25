@@ -222,7 +222,7 @@ class _TestIFFTBase:
             n = 2**i
             x = np.arange(n)
             y = ifft(x.astype(self.cdt))
-            y2 = numpy.fft.ifft(x)
+            y2 = numpy.fft.ifft(x.astype(self.cdt))
             assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)
             y = ifft(x)
             assert_allclose(y,y2, rtol=self.rtol, atol=self.atol)
@@ -853,7 +853,7 @@ class FakeArray2:
     def __init__(self, data):
         self._data = data
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         return self._data
 
 # TODO: Is this test actually valuable? The behavior it's testing shouldn't be

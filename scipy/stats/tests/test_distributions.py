@@ -221,7 +221,6 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
-    @pytest.mark.xslow
     def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
@@ -247,8 +246,38 @@ class TestVonMises:
         assert scale_fit == 1
         assert -np.pi < loc_fit < np.pi
 
+    def test_vonmises_kappa_0_gh18166(self):
+        # Check that kappa = 0 is supported.
+        dist = stats.vonmises(0)
+        assert_allclose(dist.pdf(0), 1 / (2 * np.pi), rtol=1e-15)
+        assert_allclose(dist.cdf(np.pi/2), 0.75, rtol=1e-15)
+        assert_allclose(dist.sf(-np.pi/2), 0.75, rtol=1e-15)
+        assert_allclose(dist.ppf(0.9), np.pi*0.8, rtol=1e-15)
+        assert_allclose(dist.mean(), 0, atol=1e-15)
+        assert_allclose(dist.expect(), 0, atol=1e-15)
+        assert np.all(np.abs(dist.rvs(size=10, random_state=1234)) <= np.pi)
 
-def _assert_less_or_close_loglike(dist, data, func=None, **kwds):
+    def test_vonmises_fit_equal_data(self):
+        # When all data are equal, expect kappa = 1e16.
+        kappa, loc, scale = stats.vonmises.fit([0])
+        assert kappa == 1e16 and loc == 0 and scale == 1
+
+    def test_vonmises_fit_bounds(self):
+        # For certain input data, the root bracket is violated numerically.
+        # Test that this situation is handled.  The input data below are
+        # crafted to trigger the bound violation for the current choice of
+        # bounds and the specific way the bounds and the objective function
+        # are computed.
+
+        # Test that no exception is raised when the lower bound is violated.
+        scipy.stats.vonmises.fit([0, 3.7e-08], floc=0)
+
+        # Test that no exception is raised when the upper bound is violated.
+        scipy.stats.vonmises.fit([np.pi/2*(1-4.86e-9)], floc=0)
+
+
+def _assert_less_or_close_loglike(dist, data, func=None, maybe_identical=False,
+                                  **kwds):
     """
     This utility function checks that the negative log-likelihood function
     (or `func`) of the result computed using dist.fit() is less than or equal
@@ -261,6 +290,13 @@ def _assert_less_or_close_loglike(dist, data, func=None, **kwds):
 
     mle_analytical = dist.fit(data, **kwds)
     numerical_opt = super(type(dist), dist).fit(data, **kwds)
+
+    # Sanity check that the analytical MLE is actually executed.
+    # Due to floating point arithmetic, the generic MLE is unlikely
+    # to produce the exact same result as the analytical MLE.
+    if not maybe_identical:
+        assert np.any(mle_analytical != numerical_opt)
+
     ll_mle_analytical = func(mle_analytical, data)
     ll_numerical_opt = func(numerical_opt, data)
     assert (ll_mle_analytical <= ll_numerical_opt or
@@ -1177,7 +1213,10 @@ class TestHalfNorm:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.halfnorm, data, **kwds)
+        # Numerical result may equal analytical result if the initial guess
+        # computed from moment condition is already optimal.
+        _assert_less_or_close_loglike(stats.halfnorm, data, **kwds,
+                                      maybe_identical=True)
 
     def test_fit_error(self):
         # `floc` bigger than the minimal data point
@@ -1270,7 +1309,10 @@ class TestHalfLogistic:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.halflogistic, data, **kwds)
+        # Numerical result may equal analytical result if the initial guess
+        # computed from moment condition is already optimal.
+        _assert_less_or_close_loglike(stats.halflogistic, data, **kwds,
+                                      maybe_identical=True)
 
     def test_fit_bad_floc(self):
         msg = r" Maximum likelihood estimation with 'halflogistic' requires"
@@ -3078,6 +3120,43 @@ class TestLogLaplace:
                1151387.578354072, 1640845512466.0906]
         assert_allclose(stats.loglaplace.isf(q, c), ref, rtol=1e-14)
 
+    @pytest.mark.parametrize('r', [1, 2, 3, 4])
+    def test_moments_stats(self, r):
+        mom = 'mvsk'[r - 1]
+        c = np.arange(0.5, r + 0.5, 0.5)
+
+        # r-th non-central moment is infinite if |r| >= c.
+        assert_allclose(stats.loglaplace.moment(r, c), np.inf)
+
+        # r-th non-central moment is non-finite (inf or nan) if r >= c.
+        assert not np.any(np.isfinite(stats.loglaplace.stats(c, moments=mom)))
+
+    @pytest.mark.parametrize("c", [0.5, 1.0, 2.0])
+    @pytest.mark.parametrize("loc, scale", [(-1.2, 3.45)])
+    @pytest.mark.parametrize("fix_c", [True, False])
+    @pytest.mark.parametrize("fix_scale", [True, False])
+    def test_fit_analytic_mle(self, c, loc, scale, fix_c, fix_scale):
+        # Test that the analytical MLE produces no worse result than the
+        # generic (numerical) MLE.
+
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.loglaplace.rvs(c, loc=loc, scale=scale, size=100,
+                                    random_state=rng)
+
+        kwds = {'floc': loc}
+        if fix_c:
+            kwds['fc'] = c
+        if fix_scale:
+            kwds['fscale'] = scale
+        nfree = 3 - len(kwds)
+
+        if nfree == 0:
+            error_msg = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises((RuntimeError, ValueError), match=error_msg):
+                stats.loglaplace.fit(data, **kwds)
+            return
+
+        _assert_less_or_close_loglike(stats.loglaplace, data, **kwds)
 
 class TestPowerlaw:
 
@@ -3110,7 +3189,11 @@ class TestPowerlaw:
             kwds['floc'] = np.nextafter(data.min(), -np.inf)
         if fix_scale:
             kwds['fscale'] = rvs_scale
-        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds)
+
+        # Numerical result may equal analytical result if some code path
+        # of the analytical routine makes use of numerical optimization.
+        _assert_less_or_close_loglike(stats.powerlaw, data, **kwds,
+                                      maybe_identical=True)
 
     def test_problem_case(self):
         # An observed problem with the test method indicated that some fixed
@@ -4263,7 +4346,10 @@ class TestLognorm:
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
-        _assert_less_or_close_loglike(stats.lognorm, data, **kwds)
+        # Numerical result may equal analytical result if some code path
+        # of the analytical routine makes use of numerical optimization.
+        _assert_less_or_close_loglike(stats.lognorm, data, **kwds,
+                                      maybe_identical=True)
 
     def test_isf(self):
         # reference values were computed via the reference distribution, e.g.
@@ -4671,6 +4757,41 @@ class TestGamma:
         #     return float(mp.digamma(x) * (mp.one - x) + x + mp.loggamma(x))
 
         assert_allclose(stats.gamma.entropy(a), ref, rtol=rtol)
+
+    @pytest.mark.parametrize("a", [1e-2, 1, 1e2])
+    @pytest.mark.parametrize("loc", [1e-2, 0, 1e2])
+    @pytest.mark.parametrize('scale', [1e-2, 1, 1e2])
+    @pytest.mark.parametrize('fix_a', [True, False])
+    @pytest.mark.parametrize('fix_loc', [True, False])
+    @pytest.mark.parametrize('fix_scale', [True, False])
+    def test_fit_mm(self, a, loc, scale, fix_a, fix_loc, fix_scale):
+        rng = np.random.default_rng(6762668991392531563)
+        data = stats.gamma.rvs(a, loc=loc, scale=scale, size=100,
+                               random_state=rng)
+
+        kwds = {}
+        if fix_a:
+            kwds['fa'] = a
+        if fix_loc:
+            kwds['floc'] = loc
+        if fix_scale:
+            kwds['fscale'] = scale
+        nfree = 3 - len(kwds)
+
+        if nfree == 0:
+            error_msg = "All parameters fixed. There is nothing to optimize."
+            with pytest.raises(ValueError, match=error_msg):
+                stats.gamma.fit(data, method='mm', **kwds)
+            return
+
+        theta = stats.gamma.fit(data, method='mm', **kwds)
+        dist = stats.gamma(*theta)
+        if nfree >= 1:
+            assert_allclose(dist.mean(), np.mean(data))
+        if nfree >= 2:
+            assert_allclose(dist.moment(2), np.mean(data**2))
+        if nfree >= 3:
+            assert_allclose(dist.moment(3), np.mean(data**3))
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
@@ -8888,7 +9009,7 @@ def test_histogram_non_uniform():
 
     # Omitting density produces a warning for non-uniform bins...
     message = "Bin widths are not constant. Assuming..."
-    with assert_warns(RuntimeWarning, match=message):
+    with pytest.warns(RuntimeWarning, match=message):
         dist = stats.rv_histogram((counts, bins))
         assert dist.median() == 1001/2  # default is like `density=True`
 

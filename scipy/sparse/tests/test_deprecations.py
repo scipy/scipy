@@ -22,9 +22,6 @@ def test_array_api_deprecations():
         X.getmaxprint()
 
     with pytest.deprecated_call(match=msg):
-        X.getnnz()
-
-    with pytest.deprecated_call(match=msg):
         X.getH()
 
     with pytest.deprecated_call(match=msg):
@@ -32,3 +29,14 @@ def test_array_api_deprecations():
 
     with pytest.deprecated_call(match=msg):
         X.getrow(1).todense()
+
+
+def test_dok_deprecations():
+    X = sp.sparse.dok_array([
+        [0,1,3],
+        [2,0,0]
+    ])
+    msg = "1.16.0"
+
+    with pytest.deprecated_call(match=msg):
+        X.conjtransp()

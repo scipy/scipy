@@ -52,7 +52,7 @@ def _as2d(ar):
     if ar.ndim == 2:
         return ar
     else:  # Assume 1!
-        aux = np.array(ar, copy=False)
+        aux = np.asarray(ar)
         aux.shape = (ar.shape[0], 1)
         return aux
 
