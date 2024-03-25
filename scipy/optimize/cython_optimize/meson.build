@@ -1,35 +1,33 @@
-# Needed to trick Cython, it won't do a relative import outside a package
-_dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
-  output: [
-    '__init__.py',
-    'c_zeros.pxd',
-    '_zeros.pxd'
-  ],
-  input: [
-    '__init__.py',
-    'c_zeros.pxd',
-    '_zeros.pxd'
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
+_dummy_init_cyoptimize = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('c_zeros.pxd'),
+  fs.copyfile('_zeros.pxd'),
+]
 
-# FIXME: generated .pyx which has relative cimport in it doesn't work yet (see
-#        https://github.com/mesonbuild/meson/issues/8961)
 _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
   command: [
-    py3, tempita, '@INPUT@', '-o', '@OUTDIR@',
-    '--ignore', _dummy_init_cyoptimize
+    tempita, '@INPUT@', '-o', '@OUTDIR@',
+    '--ignore', _dummy_init_cyoptimize[0]
   ]
 )
 
-_zeros = py3.extension_module('_zeros',
-   [_zeros_pyx, _cython_tree, _dummy_init_optimize, _dummy_init_cyoptimize],
-   include_directories: inc_np,
-   dependencies: [py3_dep],
-   install: true,
-   subdir: 'scipy/optimize/cython_optimize'
+cy_opt_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree,
+    cython_optimize_pxd,
+    _dummy_init_optimize,
+    _dummy_init_cyoptimize])
+
+py3.extension_module('_zeros',
+  cy_opt_gen.process(_zeros_pyx),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/optimize/cython_optimize'
 )
 
 py3.install_sources([
@@ -37,6 +35,5 @@ py3.install_sources([
     '_zeros.pxd',
     'c_zeros.pxd'
   ],
-  pure: false,
   subdir: 'scipy/optimize/cython_optimize'
 )

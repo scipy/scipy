@@ -66,7 +66,10 @@ class ConsistencyTests:
         i = ii[np.argmax(dd)]
         assert_almost_equal(d**2, np.sum((x-self.data[i])**2))
         eps = 1e-8
-        assert_equal(np.sum(np.sum((self.data-x[np.newaxis, :])**2, axis=1) < d**2+eps), m)
+        assert_equal(
+            np.sum(np.sum((self.data-x[np.newaxis, :])**2, axis=1) < d**2+eps),
+            m,
+        )
 
     def test_points_near(self):
         x = self.x
@@ -79,7 +82,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d**2, np.sum((x-self.data[near_i])**2))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 2) < d**2+eps), hits)
 
     def test_points_near_l1(self):
@@ -93,7 +96,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], 1))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, 1) < d+eps), hits)
 
     def test_points_near_linf(self):
@@ -107,7 +110,7 @@ class ConsistencyTests:
                 continue
             hits += 1
             assert_almost_equal(near_d, self.distance(x, self.data[near_i], np.inf))
-            assert_(near_d < d+eps, "near_d=%g should be less than %g" % (near_d, d))
+            assert_(near_d < d+eps, f"near_d={near_d:g} should be less than {d:g}")
         assert_equal(np.sum(self.distance(self.data, x, np.inf) < d+eps), hits)
 
     def test_approx(self):
@@ -216,47 +219,10 @@ class Test_vectorization_KDTree:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-    @pytest.mark.parametrize('r', [0.8, 1.1])
-    def test_single_query_all_neighbors(self, r):
-        np.random.seed(1234)
-        point = np.random.rand(self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-        assert isinstance(d, list)
-        assert isinstance(i, list)
-
-        assert_array_equal(np.array(d) <= r, True)  # All within bounds
-        # results are sorted by distance
-        assert all(a <= b for a, b in zip(d, d[1:]))
-        assert_allclose(  # Distances are correct
-            d, minkowski_distance(point, self.kdtree.data[i, :]))
-
-        # Compare to brute force
-        dist = minkowski_distance(point, self.kdtree.data)
-        assert_array_equal(sorted(i), (dist <= r).nonzero()[0])
-
-    def test_vectorized_query_all_neighbors(self):
-        query_shape = (2, 4)
-        r = 1.1
-        np.random.seed(1234)
-        points = np.random.rand(*query_shape, self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
-        assert_equal(np.shape(d), query_shape)
-        assert_equal(np.shape(i), query_shape)
-
-        for idx in np.ndindex(query_shape):
-            dist, ind = d[idx], i[idx]
-            assert isinstance(dist, list)
-            assert isinstance(ind, list)
-
-            assert_array_equal(np.array(dist) <= r, True)  # All within bounds
-            # results are sorted by distance
-            assert all(a <= b for a, b in zip(dist, dist[1:]))
-            assert_allclose(  # Distances are correct
-                dist, minkowski_distance(
-                    points[idx], self.kdtree.data[ind]))
-
+    def test_query_raises_for_k_none(self):
+        x = 1.0
+        with pytest.raises(ValueError, match="k must be an integer or*"):
+            self.kdtree.query(x, k=None)
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
@@ -373,11 +339,15 @@ class _Test_random_ball_periodic(ball_consistency):
         c = np.ones(self.T.n, dtype=bool)
         l = self.T.query_ball_point(self.x + 1.0, self.d, p=self.p, eps=self.eps)
         c[l] = False
-        assert_(np.all(self.distance(self.data[c], self.x, self.p) >= self.d/(1.+self.eps)))
+        assert np.all(
+            self.distance(self.data[c], self.x, self.p) >= self.d/(1.+self.eps)
+        )
 
         l = self.T.query_ball_point(self.x - 1.0, self.d, p=self.p, eps=self.eps)
         c[l] = False
-        assert_(np.all(self.distance(self.data[c], self.x, self.p) >= self.d/(1.+self.eps)))
+        assert np.all(
+            self.distance(self.data[c], self.x, self.p) >= self.d/(1.+self.eps)
+        )
 
 
 @KDTreeTest
@@ -475,23 +445,6 @@ def test_query_ball_point_multithreading(kdtree_type):
             assert_array_equal(l1[i], l3[i])
 
 
-def test_n_jobs():
-    # Test for the deprecated argument name "n_jobs" aliasing "workers"
-    points = np.random.randn(50, 2)
-    T = cKDTree(points)
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query_ball_point(points, 0.003, n_jobs=1)
-
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query(points, 1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query(points, 1, workers=1, n_jobs=1)
-
-
 class two_trees_consistency:
 
     def distance(self, a, b, p):
@@ -501,14 +454,16 @@ class two_trees_consistency:
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             for j in l:
-                assert_(self.distance(self.data1[i], self.data2[j], self.p) <= self.d*(1.+self.eps))
+                assert (self.distance(self.data1[i], self.data2[j], self.p)
+                        <= self.d*(1.+self.eps))
 
     def test_found_all(self):
         r = self.T1.query_ball_tree(self.T2, self.d, p=self.p, eps=self.eps)
         for i, l in enumerate(r):
             c = np.ones(self.T2.n, dtype=bool)
             c[l] = False
-            assert_(np.all(self.distance(self.data2[c], self.data1[i], self.p) >= self.d/(1.+self.eps)))
+            assert np.all(self.distance(self.data2[c], self.data1[i], self.p)
+                          >= self.d/(1.+self.eps))
 
 
 @KDTreeTest
@@ -595,7 +550,8 @@ class Test_rectangle:
         assert_almost_equal(self.rect.max_distance_point([0.5, 0.5]), 1/np.sqrt(2))
 
     def test_max_one_side(self):
-        assert_almost_equal(self.rect.max_distance_point([0.5, 1.5]), np.hypot(0.5, 1.5))
+        assert_almost_equal(self.rect.max_distance_point([0.5, 1.5]),
+                            np.hypot(0.5, 1.5))
 
     def test_max_two_sides(self):
         assert_almost_equal(self.rect.max_distance_point([2, 2]), 2*np.sqrt(2))
@@ -665,9 +621,11 @@ class sparse_distance_matrix_consistency:
         r = self.T1.query_ball_tree(self.T2, self.r)
         for i, l in enumerate(r):
             for j in l:
-                assert_almost_equal(M[i, j],
-                                    self.distance(self.T1.data[i], self.T2.data[j], self.p),
-                                    decimal=14)
+                assert_almost_equal(
+                    M[i, j],
+                    self.distance(self.T1.data[i], self.T2.data[j], self.p),
+                    decimal=14
+                )
         for ((i, j), d) in M.items():
             assert_(j in r[i])
 
@@ -836,6 +794,20 @@ def test_kdtree_query_pairs(kdtree_type):
     assert_array_equal(l0, l2)
 
 
+def test_query_pairs_eps(kdtree_type):
+    spacing = np.sqrt(2)
+    # irrational spacing to have potential rounding errors
+    x_range = np.linspace(0, 3 * spacing, 4)
+    y_range = np.linspace(0, 3 * spacing, 4)
+    xy_array = [(xi, yi) for xi in x_range for yi in y_range]
+    tree = kdtree_type(xy_array)
+    pairs_eps = tree.query_pairs(r=spacing, eps=.1)
+    # result: 24 with eps, 16 without due to rounding
+    pairs = tree.query_pairs(r=spacing * 1.01)
+    # result: 24
+    assert_equal(pairs, pairs_eps)
+
+
 def test_ball_point_ints(kdtree_type):
     # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
@@ -872,10 +844,7 @@ def test_kdtree_build_modes(kdtree_type):
 
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
-    try:
-        import cPickle as pickle  # type: ignore[import]
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -889,10 +858,7 @@ def test_kdtree_pickle(kdtree_type):
 
 def test_kdtree_pickle_boxsize(kdtree_type):
     # test if it is possible to pickle a periodic KDTree
-    try:
-        import cPickle as pickle
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -1504,3 +1470,64 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_kdtree_nan():
+    vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
+    n = len(vals)
+    data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(data)
+
+
+def test_nonfinite_inputs_gh_18223():
+    rng = np.random.default_rng(12345)
+    coords = rng.uniform(size=(100, 3), low=0.0, high=0.1)
+    t = KDTree(coords, balanced_tree=False, compact_nodes=False)
+    bad_coord = [np.nan for _ in range(3)]
+
+    with pytest.raises(ValueError, match="must be finite"):
+        t.query(bad_coord)
+    with pytest.raises(ValueError, match="must be finite"):
+        t.query_ball_point(bad_coord, 1)
+
+    coords[0, :] = np.nan
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=False)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=True, compact_nodes=True)
+    with pytest.raises(ValueError, match="must be finite"):
+        KDTree(coords, balanced_tree=False, compact_nodes=False)
+
+
+@pytest.mark.parametrize("incantation", [cKDTree, KDTree])
+def test_gh_18800(incantation):
+    # our prohibition on non-finite values
+    # in kd-tree workflows means we need
+    # coercion to NumPy arrays enforced
+
+    class ArrLike(np.ndarray):
+        def __new__(cls, input_array):
+            obj = np.asarray(input_array).view(cls)
+            # we override all() to mimic the problem
+            # pandas DataFrames encountered in gh-18800
+            obj.all = None
+            return obj
+
+        def __array_finalize__(self, obj):
+            if obj is None:
+                return
+            self.all = getattr(obj, 'all', None)
+
+    points = [
+        [66.22, 32.54],
+        [22.52, 22.39],
+        [31.01, 81.21],
+        ]
+    arr = np.array(points)
+    arr_like = ArrLike(arr)
+    tree = incantation(points, 10)
+    tree.query(arr_like, 1)
+    tree.query_ball_point(arr_like, 200)

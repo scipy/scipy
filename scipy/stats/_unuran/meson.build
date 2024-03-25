@@ -1,3 +1,8 @@
+_unuran_pxd = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('unuran.pxd'),
+]
+
 unuran_sources = [
   '../../_lib/unuran/unuran/src/distr/cemp.c',
   '../../_lib/unuran/unuran/src/distr/condi.c',
@@ -34,6 +39,7 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/distributions/c_logistic.c',
   '../../_lib/unuran/unuran/src/distributions/c_lognormal.c',
   '../../_lib/unuran/unuran/src/distributions/c_lomax.c',
+  '../../_lib/unuran/unuran/src/distributions/c_meixner.c',
   '../../_lib/unuran/unuran/src/distributions/c_normal.c',
   '../../_lib/unuran/unuran/src/distributions/c_normal_gen.c',
   '../../_lib/unuran/unuran/src/distributions/c_pareto.c',
@@ -46,6 +52,7 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/distributions/c_student_gen.c',
   '../../_lib/unuran/unuran/src/distributions/c_triangular.c',
   '../../_lib/unuran/unuran/src/distributions/c_uniform.c',
+  '../../_lib/unuran/unuran/src/distributions/c_vg.c',
   '../../_lib/unuran/unuran/src/distributions/c_weibull.c',
   '../../_lib/unuran/unuran/src/distributions/d_binomial.c',
   '../../_lib/unuran/unuran/src/distributions/d_binomial_gen.c',
@@ -108,13 +115,15 @@ unuran_sources = [
   '../../_lib/unuran/unuran/src/parser/functparser.c',
   '../../_lib/unuran/unuran/src/parser/parser.c',
   '../../_lib/unuran/unuran/src/parser/stringparser.c',
-  '../../_lib/unuran/unuran/src/specfunct/gamma.c',
-  '../../_lib/unuran/unuran/src/specfunct/igam.c',
-  '../../_lib/unuran/unuran/src/specfunct/incbet.c',
-  '../../_lib/unuran/unuran/src/specfunct/log1p.c',
-  '../../_lib/unuran/unuran/src/specfunct/ndtr.c',
-  '../../_lib/unuran/unuran/src/specfunct/ndtri.c',
-  '../../_lib/unuran/unuran/src/specfunct/polevl.c',
+  '../../_lib/unuran/unuran/src/specfunct/bessel_asympt.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_gamma.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_igam.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_incbet.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_ndtr.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_ndtri.c',
+  '../../_lib/unuran/unuran/src/specfunct/cephes_polevl.c',
+  '../../_lib/unuran/unuran/src/specfunct/cgamma.c',
+  '../../_lib/unuran/unuran/src/specfunct/hypot.c',
   '../../_lib/unuran/unuran/src/tests/chi2test.c',
   '../../_lib/unuran/unuran/src/tests/correlation.c',
   '../../_lib/unuran/unuran/src/tests/countpdf.c',
@@ -159,7 +168,7 @@ unuran_include_dirs = [
   '../../_lib/unuran/unuran/src/tests'
 ]
 
-unuran_version = '15:0:0'  # TODO: grab from configure.ac file
+unuran_version = '16:0:0'  # taken from `_lib/unuran/unuran/configure.ac`
 
 unuran_defines = [
   '-DHAVE_ALARM=1',
@@ -182,6 +191,7 @@ unuran_defines = [
   '-DHAVE_POW=1',
   '-DHAVE_SIGNAL=1',
   '-DHAVE_SQRT=1',
+  '-DHAVE_STDIO_H=1',
   '-DHAVE_STDINT_H=1',
   '-DHAVE_STDLIB_H=1',
   '-DHAVE_STRCHR=1',
@@ -196,22 +206,30 @@ unuran_defines = [
   '-DPACKAGE_TARNAME=unuran',
   '-DPACKAGE_URL=',
   '-DPACKAGE_VERSION=' + unuran_version,
-  '-DSTDC_HEADERS=1',
   '-DUNUR_ENABLE_INFO=1',
   '-DVERSION=' + unuran_version,
   '-DHAVE_CONFIG_H=1',
-  '-D_ISOC99_SOURCE=1'
+  '-D_ISOC99_SOURCE=1',
+  '-DHAVE_DECL_HYPOT=1'
 ]
 
+# Cython pyx -> c generator with _lib_pxd dependency, because the unuran
+# code depends on _lib/_ccallback_c
+unuran_cython_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _lib_pxd, _stats_pxd, _unuran_pxd]
+)
 
-statlib = py3.extension_module('unuran_wrapper',
+py3.extension_module('unuran_wrapper',
   [
-    _stats_gen_pyx[7],  # unuran_wrapper.pyx
+    unuran_cython_gen.process('unuran_wrapper.pyx'),
     unuran_sources
   ],
-  c_args: unuran_defines,
-  dependencies: [py3_dep, _lib_pxd_dep],
-  include_directories: [inc_np, unuran_include_dirs],
+  c_args: [unuran_defines, cython_c_args],
+  include_directories: [unuran_include_dirs],
+  dependencies: np_dep,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats/_unuran'
 )
@@ -219,9 +237,7 @@ statlib = py3.extension_module('unuran_wrapper',
 
 py3.install_sources([
     '__init__.py',
-    'unuran.pxd',
     'unuran_wrapper.pyi',
   ],
-  pure: false,
   subdir: 'scipy/stats/_unuran'
 )

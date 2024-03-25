@@ -57,6 +57,7 @@ method in the distribution object:
     10
 
 .. plot::
+    :alt: " "
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats.sampling import DiscreteAliasUrn

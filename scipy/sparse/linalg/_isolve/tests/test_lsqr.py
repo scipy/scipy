@@ -4,7 +4,6 @@ import pytest
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg import lsqr
-from time import time
 
 # Set up a test problem
 n = 35
@@ -20,21 +19,26 @@ for jj in range(5):
 
 b = normal(size=n)
 
-tol = 1e-10
+# tolerance for atol/btol keywords of lsqr()
+tol = 2e-10
+# tolerances for testing the results of the lsqr() call with assert_allclose
+# These tolerances are a bit fragile - see discussion in gh-15301.
+atol_test = 4e-10
+rtol_test = 2e-8
 show = False
 maxit = None
 
 
-def test_basic():
+def test_lsqr_basic():
     b_copy = b.copy()
     xo, *_ = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
     assert_array_equal(b_copy, b)
 
     svx = np.linalg.solve(G, b)
-    assert_allclose(xo, svx, atol=tol, rtol=tol)
+    assert_allclose(xo, svx, atol=atol_test, rtol=rtol_test)
 
     # Now the same but with damp > 0.
-    # This is equivalent to solving the extented system:
+    # This is equivalent to solving the extended system:
     # ( G      ) @ x = ( b )
     # ( damp*I )       ( 0 )
     damp = 1.5
@@ -44,7 +48,7 @@ def test_basic():
     Gext = np.r_[G, damp * np.eye(G.shape[1])]
     bext = np.r_[b, np.zeros(G.shape[1])]
     svx, *_ = np.linalg.lstsq(Gext, bext, rcond=None)
-    assert_allclose(xo, svx, atol=tol, rtol=tol)
+    assert_allclose(xo, svx, atol=atol_test, rtol=rtol_test)
 
 
 def test_gh_2466():
@@ -114,35 +118,3 @@ def test_initialization():
     x = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit, x0=x0)
     assert_allclose(x_ref[0], x[0])
     assert_array_equal(b_copy, b)
-
-
-if __name__ == "__main__":
-    svx = np.linalg.solve(G, b)
-
-    tic = time()
-    X = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
-    xo = X[0]
-    phio = X[3]
-    psio = X[7]
-    k = X[2]
-    chio = X[8]
-    mg = np.amax(G - G.T)
-    if mg > 1e-14:
-        sym = 'No'
-    else:
-        sym = 'Yes'
-
-    print('LSQR')
-    print("Is linear operator symmetric? " + sym)
-    print("n: %3g  iterations:   %3g" % (n, k))
-    print("Norms computed in %.2fs by LSQR" % (time() - tic))
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e " % (chio, phio, psio))
-    print("Residual norms computed directly:")
-    print(" ||x||  %9.4e  ||r|| %9.4e  ||Ar||  %9.4e" % (norm(xo),
-                                                         norm(G*xo - b),
-                                                         norm(G.T*(G*xo-b))))
-    print("Direct solution norms:")
-    print(" ||x||  %9.4e  ||r|| %9.4e " % (norm(svx), norm(G*svx - b)))
-    print("")
-    print(" || x_{direct} - x_{LSQR}|| %9.4e " % norm(svx-xo))
-    print("")

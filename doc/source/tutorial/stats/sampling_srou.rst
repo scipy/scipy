@@ -38,7 +38,7 @@ Now, we can use the `rvs` method to generate samples from the distribution:
 
     >>> rvs = rng.rvs(10)
 
-If the CDF at mode is avaialble, it can be set to improve the performace of `rvs`:
+If the CDF at mode is available, it can be set to improve the performance of `rvs`:
 
     >>> from scipy.stats import norm
     >>> rng = SimpleRatioUniforms(dist, mode=0,
@@ -51,6 +51,7 @@ We can check that the samples are from the given distribution by visualizing
 its histogram:
 
 .. plot::
+    :alt: " "
 
     >>> from scipy.stats.sampling import SimpleRatioUniforms
     >>> from scipy.stats import norm

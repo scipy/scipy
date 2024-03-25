@@ -8,24 +8,25 @@
 
 import numpy as np
 
-from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
-from ._sputils import isscalarlike, validateaxis, matrix
+from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
 
 
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
-class _data_matrix(spmatrix):
+class _data_matrix(_spbase):
     def __init__(self):
-        spmatrix.__init__(self)
+        _spbase.__init__(self)
 
-    def _get_dtype(self):
+    @property
+    def dtype(self):
         return self.data.dtype
 
-    def _set_dtype(self, newtype):
+    @dtype.setter
+    def dtype(self, newtype):
         self.data.dtype = newtype
-    dtype = property(fget=_get_dtype, fset=_set_dtype)
 
     def _deduped_data(self):
         if hasattr(self, 'sum_duplicates'):
@@ -46,8 +47,8 @@ class _data_matrix(spmatrix):
 
     def __neg__(self):
         if self.dtype.kind == 'b':
-            raise NotImplementedError('negating a sparse boolean '
-                                      'matrix is not supported')
+            raise NotImplementedError('negating a boolean sparse array is not '
+                                      'supported')
         return self._with_data(-self.data)
 
     def __imul__(self, other):  # self *= other
@@ -68,35 +69,37 @@ class _data_matrix(spmatrix):
     def astype(self, dtype, casting='unsafe', copy=True):
         dtype = np.dtype(dtype)
         if self.dtype != dtype:
-            return self._with_data(
-                self._deduped_data().astype(dtype, casting=casting, copy=copy),
-                copy=copy)
+            matrix = self._with_data(
+                self.data.astype(dtype, casting=casting, copy=True),
+                copy=True
+            )
+            return matrix._with_data(matrix._deduped_data(), copy=False)
         elif copy:
             return self.copy()
         else:
             return self
 
-    astype.__doc__ = spmatrix.astype.__doc__
+    astype.__doc__ = _spbase.astype.__doc__
 
-    def conj(self, copy=True):
+    def conjugate(self, copy=True):
         if np.issubdtype(self.dtype, np.complexfloating):
-            return self._with_data(self.data.conj(), copy=copy)
+            return self._with_data(self.data.conjugate(), copy=copy)
         elif copy:
             return self.copy()
         else:
             return self
 
-    conj.__doc__ = spmatrix.conj.__doc__
+    conjugate.__doc__ = _spbase.conjugate.__doc__
 
     def copy(self):
         return self._with_data(self.data.copy(), copy=True)
 
-    copy.__doc__ = spmatrix.copy.__doc__
+    copy.__doc__ = _spbase.copy.__doc__
 
     def count_nonzero(self):
         return np.count_nonzero(self._deduped_data())
 
-    count_nonzero.__doc__ = spmatrix.count_nonzero.__doc__
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """
@@ -104,12 +107,25 @@ class _data_matrix(spmatrix):
 
         Parameters
         ----------
-        n : n is a scalar
+        n : scalar
+            n is a non-zero scalar (nonzero avoids dense ones creation)
+            If zero power is desired, special case it to use `np.ones`
 
         dtype : If dtype is not specified, the current dtype will be preserved.
+
+        Raises
+        ------
+        NotImplementedError : if n is a zero scalar
+            If zero power is desired, special case it to use
+            `np.ones(A.shape, dtype=A.dtype)`
         """
         if not isscalarlike(n):
             raise NotImplementedError("input is not scalar")
+        if not n:
+            raise NotImplementedError(
+                "zero power is not supported as it would densify the matrix.\n"
+                "Use `np.ones(A.shape, dtype=A.dtype)` for this case."
+            )
 
         data = self._deduped_data()
         if dtype is not None:
@@ -133,8 +149,8 @@ for npfunc in _ufuncs_with_fixed_point_at_zero:
             result = op(self._deduped_data())
             return self._with_data(result, copy=True)
 
-        method.__doc__ = ("Element-wise %s.\n\n"
-                          "See `numpy.%s` for more information." % (name, name))
+        method.__doc__ = (f"Element-wise {name}.\n\n"
+                          f"See `numpy.{name}` for more information.")
         method.__name__ = name
 
         return method
@@ -165,6 +181,7 @@ class _minmax_mixin:
         if N == 0:
             raise ValueError("zero-size array to reduction operation")
         M = self.shape[1 - axis]
+        idx_dtype = self._get_index_dtype(maxval=M)
 
         mat = self.tocsc() if axis == 0 else self.tocsr()
         mat.sum_duplicates()
@@ -179,21 +196,24 @@ class _minmax_mixin:
 
         if axis == 0:
             return self._coo_container(
-                (value, (np.zeros(len(value)), major_index)),
+                (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
                 dtype=self.dtype, shape=(1, M)
             )
         else:
             return self._coo_container(
-                (value, (major_index, np.zeros(len(value)))),
+                (value, (major_index, np.zeros(len(value), dtype=idx_dtype))),
                 dtype=self.dtype, shape=(M, 1)
             )
 
     def _min_or_max(self, axis, out, min_or_max):
         if out is not None:
-            raise ValueError(("Sparse matrices do not support "
-                              "an 'out' parameter."))
+            raise ValueError("Sparse arrays do not support an 'out' parameter.")
 
         validateaxis(axis)
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
         if axis is None:
             if 0 in self.shape:
@@ -215,10 +235,9 @@ class _minmax_mixin:
         else:
             raise ValueError("axis out of range")
 
-    def _arg_min_or_max_axis(self, axis, op, compare):
+    def _arg_min_or_max_axis(self, axis, argmin_or_argmax, compare):
         if self.shape[axis] == 0:
-            raise ValueError("Can't apply the operation along a zero-sized "
-                             "dimension.")
+            raise ValueError("Cannot apply the operation along a zero-sized dimension.")
 
         if axis < 0:
             axis += 2
@@ -236,71 +255,80 @@ class _minmax_mixin:
             p, q = mat.indptr[i:i + 2]
             data = mat.data[p:q]
             indices = mat.indices[p:q]
-            am = op(data)
-            m = data[am]
-            if compare(m, zero) or q - p == line_size:
-                ret[i] = indices[am]
+            extreme_index = argmin_or_argmax(data)
+            extreme_value = data[extreme_index]
+            if compare(extreme_value, zero) or q - p == line_size:
+                ret[i] = indices[extreme_index]
             else:
                 zero_ind = _find_missing_index(indices, line_size)
-                if m == zero:
-                    ret[i] = min(am, zero_ind)
+                if extreme_value == zero:
+                    ret[i] = min(extreme_index, zero_ind)
                 else:
                     ret[i] = zero_ind
 
         if axis == 1:
             ret = ret.reshape(-1, 1)
 
-        return matrix(ret)
+        return self._ascontainer(ret)
 
-    def _arg_min_or_max(self, axis, out, op, compare):
+    def _arg_min_or_max(self, axis, out, argmin_or_argmax, compare):
         if out is not None:
-            raise ValueError("Sparse matrices do not support "
-                             "an 'out' parameter.")
+            raise ValueError("Sparse types do not support an 'out' parameter.")
 
         validateaxis(axis)
 
-        if axis is None:
-            if 0 in self.shape:
-                raise ValueError("Can't apply the operation to "
-                                 "an empty matrix.")
+        if self.ndim == 1:
+            if axis not in (None, 0, -1):
+                raise ValueError("axis out of range")
+            axis = None  # avoid calling special axis case. no impact on 1d
 
-            if self.nnz == 0:
-                return 0
-            else:
-                zero = self.dtype.type(0)
-                mat = self.tocoo()
-                mat.sum_duplicates()
-                am = op(mat.data)
-                m = mat.data[am]
+        if axis is not None:
+            return self._arg_min_or_max_axis(axis, argmin_or_argmax, compare)
 
-                if compare(m, zero):
-                    # cast to Python int to avoid overflow
-                    # and RuntimeError
-                    return int(mat.row[am])*mat.shape[1] + int(mat.col[am])
-                else:
-                    size = np.prod(mat.shape)
-                    if size == mat.nnz:
-                        return am
-                    else:
-                        ind = mat.row * mat.shape[1] + mat.col
-                        zero_ind = _find_missing_index(ind, size)
-                        if m == zero:
-                            return min(zero_ind, am)
-                        else:
-                            return zero_ind
+        if 0 in self.shape:
+            raise ValueError("Cannot apply the operation to an empty matrix.")
 
-        return self._arg_min_or_max_axis(axis, op, compare)
+        if self.nnz == 0:
+            return 0
+
+        zero = self.dtype.type(0)
+        mat = self.tocoo()
+        # Convert to canonical form: no duplicates, sorted indices.
+        mat.sum_duplicates()
+        extreme_index = argmin_or_argmax(mat.data)
+        extreme_value = mat.data[extreme_index]
+        num_col = mat.shape[-1]
+
+        # If the min value is less than zero, or max is greater than zero,
+        # then we do not need to worry about implicit zeros.
+        if compare(extreme_value, zero):
+            # cast to Python int to avoid overflow and RuntimeError
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
+
+        # Cheap test for the rare case where we have no implicit zeros.
+        size = np.prod(self.shape)
+        if size == mat.nnz:
+            return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
+
+        # At this stage, any implicit zero could be the min or max value.
+        # After sum_duplicates(), the `row` and `col` arrays are guaranteed to
+        # be sorted in C-order, which means the linearized indices are sorted.
+        linear_indices = mat.row * num_col + mat.col
+        first_implicit_zero_index = _find_missing_index(linear_indices, size)
+        if extreme_value == zero:
+            return min(first_implicit_zero_index, extreme_index)
+        return first_implicit_zero_index
 
     def max(self, axis=None, out=None):
         """
-        Return the maximum of the matrix or maximum along an axis.
+        Return the maximum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the maximum over all the matrix elements, returning
+            compute the maximum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -317,7 +345,7 @@ class _minmax_mixin:
 
         See Also
         --------
-        min : The minimum value of a sparse matrix along a given axis.
+        min : The minimum value of a sparse array/matrix along a given axis.
         numpy.matrix.max : NumPy's implementation of 'max' for matrices
 
         """
@@ -325,14 +353,14 @@ class _minmax_mixin:
 
     def min(self, axis=None, out=None):
         """
-        Return the minimum of the matrix or maximum along an axis.
+        Return the minimum of the array/matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
 
         Parameters
         ----------
         axis : {-2, -1, 0, 1, None} optional
             Axis along which the sum is computed. The default is to
-            compute the minimum over all the matrix elements, returning
+            compute the minimum over all elements, returning
             a scalar (i.e., `axis` = `None`).
 
         out : None, optional
@@ -349,11 +377,87 @@ class _minmax_mixin:
 
         See Also
         --------
-        max : The maximum value of a sparse matrix along a given axis.
+        max : The maximum value of a sparse array/matrix along a given axis.
         numpy.matrix.min : NumPy's implementation of 'min' for matrices
 
         """
         return self._min_or_max(axis, out, np.minimum)
+
+    def nanmax(self, axis=None, out=None):
+        """
+        Return the maximum of the array/matrix or maximum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the maximum is computed. The default is to
+            compute the maximum over all elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except
+            for the default value, as this argument is not used.
+
+        Returns
+        -------
+        amax : coo_matrix or scalar
+            Maximum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmin : The minimum value of a sparse array/matrix along a given axis,
+                 ignoring NaNs.
+        max : The maximum value of a sparse array/matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmax : NumPy's implementation of 'nanmax'.
+
+        """
+        return self._min_or_max(axis, out, np.fmax)
+
+    def nanmin(self, axis=None, out=None):
+        """
+        Return the minimum of the array/matrix or minimum along an axis, ignoring any
+        NaNs. This takes all elements into account, not just the non-zero
+        ones.
+
+        .. versionadded:: 1.11.0
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Axis along which the minimum is computed. The default is to
+            compute the minimum over all elements, returning
+            a scalar (i.e., `axis` = `None`).
+
+        out : None, optional
+            This argument is in the signature *solely* for NumPy
+            compatibility reasons. Do not pass in anything except for
+            the default value, as this argument is not used.
+
+        Returns
+        -------
+        amin : coo_matrix or scalar
+            Minimum of `a`. If `axis` is None, the result is a scalar value.
+            If `axis` is given, the result is a sparse.coo_matrix of dimension
+            ``a.ndim - 1``.
+
+        See Also
+        --------
+        nanmax : The maximum value of a sparse array/matrix along a given axis,
+                 ignoring NaNs.
+        min : The minimum value of a sparse array/matrix along a given axis,
+              propagating NaNs.
+        numpy.nanmin : NumPy's implementation of 'nanmin'.
+
+        """
+        return self._min_or_max(axis, out, np.fmin)
 
     def argmax(self, axis=None, out=None):
         """Return indices of maximum elements along an axis.

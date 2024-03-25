@@ -1,4 +1,3 @@
-# distutils: language=c++
 # cython: language_level=3
 
 from libc.stdio cimport FILE
@@ -30,13 +29,14 @@ cdef extern from "Highs.h":
         # split up for cython below
         #const HighsModelStatus& getModelStatus(const bool scaled_model = False) const
         const HighsModelStatus & getModelStatus() const
-        const HighsModelStatus & getModelStatus(const bool scaled_model) const
 
         const HighsInfo& getHighsInfo "getInfo" () const
         string modelStatusToString(const HighsModelStatus model_status) const
         #HighsStatus getHighsInfoValue(const string& info, int& value)
         HighsStatus getHighsInfoValue(const string& info, double& value) const
         const HighsOptions& getHighsOptions() const
+
+        const HighsLp& getLp() const
 
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
@@ -52,3 +52,5 @@ cdef extern from "Highs.h":
         HighsStatus setHighsOptionValueDbl "setOptionValue" (const string & option, const double value)
 
         string primalDualStatusToString(const int primal_dual_status)
+
+        void resetGlobalScheduler(bool blocking)

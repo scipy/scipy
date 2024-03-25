@@ -352,7 +352,7 @@ class BaseQRdelete(BaseQRdeltas):
     # handle any non negative strides. (only row and column vector
     # operations are used.) p column delete require fortran ordered
     # Q and R and will make a copy as necessary.  Economic qr row deletes
-    # requre a contigous q.
+    # require a contiguous q.
 
     def base_non_simple_strides(self, adjust_strides, ks, p, which,
                                 overwriteable):
@@ -529,7 +529,7 @@ class BaseQRdelete(BaseQRdeltas):
         self.base_overwrite_qr('row', 3, True, True, 'economic')
 
     def test_overwrite_qr_p_col(self):
-        # only F orderd q and r can be overwritten for cols
+        # only F ordered q and r can be overwritten for cols
         # full and eco share code paths
         self.base_overwrite_qr('col', 3, False, True)
 
@@ -576,12 +576,13 @@ class BaseQRdelete(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0 = self.generate('tall')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'row')
             assert_raises(ValueError, qr_delete, q, r0, 0, 2, 'row')
             assert_raises(ValueError, qr_delete, q, r0, 0, 1, 'col')
@@ -1120,12 +1121,13 @@ class BaseQRinsert(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0, u0 = self.generate('sqr', which='row')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             u = u0.real.astype(dtype)
             assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'row')
             assert_raises(ValueError, qr_insert, q, r0, u0, 0, 'col')
@@ -1485,7 +1487,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_allclose(r3, r, rtol=self.rtol, atol=self.atol)
 
     def test_overwrite_qruv_rank_1_economic(self):
-        # updating economic decompositions can overwrite any contigous r,
+        # updating economic decompositions can overwrite any contiguous r,
         # and positively strided r and u. V is only ever read.
         # only checking C and F contiguous.
         a, q0, r0, u0, v0 = self.generate('tall', 'economic')
@@ -1553,12 +1555,13 @@ class BaseQRupdate(BaseQRdeltas):
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
-               'float16', 'longdouble', 'longcomplex',
+               'float16', 'longdouble', 'clongdouble',
                'bool']
         a, q0, r0, u0, v0 = self.generate('tall')
         for dtype in dts:
             q = q0.real.astype(dtype)
-            r = r0.real.astype(dtype)
+            with np.errstate(invalid="ignore"):
+                r = r0.real.astype(dtype)
             u = u0.real.astype(dtype)
             v = v0.real.astype(dtype)
             assert_raises(ValueError, qr_update, q, r0, u0, v0)

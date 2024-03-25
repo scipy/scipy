@@ -8,8 +8,24 @@ Build a npz containing all data files in the directory.
 import os
 import numpy as np
 import argparse
+from stat import ST_MTIME
 
-from distutils.util import newer  # type: ignore
+
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
 
 
 def main():
@@ -22,9 +38,7 @@ def main():
     args = p.parse_args()
 
     if not args.outdir:
-        # We're dealing with a distutils build here, write in-place:
-        inp = os.path.normpath(args.dirname)
-        outp = inp + ".npz"
+        raise ValueError("Missing `--outdir` argument to makenpz.py")
     else:
         inp = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                            '..', 'tests', 'data', args.dirname)
@@ -38,6 +52,8 @@ def main():
     # Find source files
     files = []
     for dirpath, dirnames, filenames in os.walk(inp):
+        dirnames.sort()
+        filenames.sort()
         for fn in filenames:
             if fn.endswith('.txt'):
                 key = dirpath[len(inp)+1:] + '-' + fn[:-4]
@@ -49,7 +65,7 @@ def main():
         try:
             old_data = np.load(outp)
             try:
-                changed = set(old_data.keys()) != set(key for key, _ in files)
+                changed = set(old_data.keys()) != {key for key, _ in files}
             finally:
                 old_data.close()
         except OSError:

@@ -1,7 +1,7 @@
 This directory contains numerical data for testing special functions.
 The data is in version control as text files.
 
-The data is automatically packed into npz files by setup.py.
+The data is automatically packed into npz files by `special/meson.build`
 The npz files should not be checked in version control.
 
 The data in gsl is computed using the GNU scientific library, the data

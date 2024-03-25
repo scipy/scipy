@@ -1,20 +1,20 @@
 _csparsetools_pyx = custom_target('_csparsetools_pyx',
   output: '_csparsetools.pyx',
   input: '_csparsetools.pyx.in',
-  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_csparsetools',
-  _csparsetools_pyx,
-  include_directories: inc_np,
-  dependencies: py3_dep,
+  cython_gen.process(_csparsetools_pyx),
+  c_args: cython_c_args,
+  dependencies: np_dep,
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/sparse'
 )
 
 python_sources = [
   '__init__.py',
-  '_arrays.py',
   '_base.py',
   '_bsr.py',
   '_compressed.py',
@@ -29,6 +29,7 @@ python_sources = [
   '_index.py',
   '_lil.py',
   '_matrix_io.py',
+  '_matrix.py',
   '_spfuncs.py',
   '_sputils.py',
   'base.py',
@@ -51,7 +52,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/sparse'
 )
 

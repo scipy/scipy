@@ -2,16 +2,11 @@
 # Use the `scipy.io.matlab` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _mio5
-
+from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'MatFile4Reader', 'MatFile4Writer', 'SYS_LITTLE_ENDIAN',
-    'VarHeader4', 'VarReader4', 'VarWriter4', 'arr_to_2d', 'mclass_info',
-    'mdtypes_template', 'miDOUBLE', 'miINT16', 'miINT32', 'miSINGLE',
-    'miUINT16', 'miUINT8', 'mxCHAR_CLASS', 'mxFULL_CLASS', 'mxSPARSE_CLASS',
-    'np_to_mtypes', 'order_codes', 'BytesIO', 'native_code',
+    'mclass_info', 'mxCHAR_CLASS', 'mxSPARSE_CLASS',
+    'BytesIO', 'native_code',
     'swapped_code', 'MatFileReader', 'docfiller', 'matdims',
     'read_dtype', 'arr_to_chars', 'arr_dtype_number', 'MatWriteError',
     'MatReadError', 'MatReadWarning', 'VarReader5', 'MatlabObject',
@@ -28,13 +23,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.io.matlab.mio5 is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.io.matlab instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.io.matlab` namespace, "
-                  "the `scipy.io.matlab.mio5` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_mio5, name)
+    return _sub_module_deprecation(sub_package="io.matlab", module="mio5",
+                                   private_modules=["_mio5"], all=__all__,
+                                   attribute=name)

@@ -1,4 +1,3 @@
-# distutils: language=c++
 # cython: language_level=3
 
 import numpy as np
@@ -7,31 +6,20 @@ from scipy.optimize import OptimizeWarning
 from warnings import warn
 import numbers
 
-from libc.stdio cimport stdout
 from libcpp.string cimport string
-from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
+from libcpp.cast cimport reinterpret_cast
 
-from .HighsIO cimport (
-    kWarning,
-)
 from .HConst cimport (
+    HIGHS_CONST_INF,
+
     HighsModelStatus,
     HighsModelStatusNOTSET,
-    HighsModelStatusLOAD_ERROR,
     HighsModelStatusMODEL_ERROR,
-    HighsModelStatusMODEL_EMPTY,
-    HighsModelStatusPRESOLVE_ERROR,
-    HighsModelStatusSOLVE_ERROR,
-    HighsModelStatusPOSTSOLVE_ERROR,
-    HighsModelStatusINFEASIBLE,
-    HighsModelStatusUNBOUNDED,
     HighsModelStatusOPTIMAL,
-    HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
     HighsModelStatusREACHED_TIME_LIMIT,
     HighsModelStatusREACHED_ITERATION_LIMIT,
 
-    PrimalDualStatusSTATUS_FEASIBLE_POINT,
     HighsOptionTypeBOOL,
     HighsOptionTypeINT,
     HighsOptionTypeDOUBLE,
@@ -41,12 +29,13 @@ from .HConst cimport (
     HighsBasisStatusLOWER,
     HighsBasisStatusUPPER,
 
-    MatrixFormatkColwise
+    MatrixFormatkColwise,
+    HighsVarType,
 )
 from .Highs cimport Highs
 from .HighsStatus cimport (
     HighsStatus,
-    HighsStatusToString,
+    highsStatusToString,
     HighsStatusError,
     HighsStatusWarning,
     HighsStatusOK,
@@ -77,7 +66,8 @@ cdef OptionRecord * _r = NULL
 for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
 
-cdef str _opt_warning(string name, val, valid_set=None):
+
+cdef str _opt_warning(string name, val, valid_set=None) noexcept:
     cdef OptionRecord * r = _ref_opt_lookup[name]
 
     # BOOL
@@ -122,7 +112,7 @@ cdef str _opt_warning(string name, val, valid_set=None):
            'See documentation for valid options. '
            'Using default.' % (name.decode(), str(val)))
 
-cdef apply_options(dict options, Highs & highs):
+cdef apply_options(dict options, Highs & highs) noexcept:
     '''Take options from dictionary and apply to HiGHS object.'''
 
     # Initialize for error checking
@@ -135,9 +125,9 @@ cdef apply_options(dict options, Highs & highs):
             'dual_simplex_cleanup_strategy',
             'ipm_iteration_limit',
             'keep_n_rows',
-            'max_threads',
+            'threads',
+            'mip_max_nodes',
             'highs_debug_level',
-            'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
             'simplex_dualise_strategy',
@@ -158,6 +148,9 @@ cdef apply_options(dict options, Highs & highs):
                 opt_status = highs.setHighsOptionValueInt(opt.encode(), val)
                 if opt_status != HighsStatusOK:
                     warn(_opt_warning(opt.encode(), val), OptimizeWarning)
+                else:
+                    if opt == "threads":
+                        highs.resetGlobalScheduler(blocking=True)
 
     # Do all the doubles
     for opt in set([
@@ -173,7 +166,8 @@ cdef apply_options(dict options, Highs & highs):
             'simplex_initial_condition_tolerance',
             'small_matrix_value',
             'start_crossover_tolerance',
-            'time_limit'
+            'time_limit',
+            'mip_rel_gap'
     ]):
         val = options.get(opt, None)
         if val is not None:
@@ -238,6 +232,9 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
+ctypedef HighsVarType* HighsVarType_ptr
+
+
 def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
@@ -247,6 +244,7 @@ def _highs_wrapper(
         double[::1] rhs,
         double[::1] lb,
         double[::1] ub,
+        np.uint8_t[::1] integrality,
         dict options):
     '''Solve linear programs using HiGHS [1]_.
 
@@ -336,14 +334,14 @@ def _highs_wrapper(
             - less_infeasible_DSE_choose_row : bool
                 Undocumented advanced option.
 
-            - max_threads : int
+            - threads : int
                 Maximum number of threads in parallel execution.
 
             - message_level : int {0, 1, 2, 4, 7}
                 Verbosity level, corresponds to:
 
                     - ``0``: ``ML_NONE``
-                        All messaging to stdout is supressed.
+                        All messaging to stdout is suppressed.
 
                     - ``1``: ``ML_VERBOSE``
                         Includes a once-per-iteration report on simplex/ipm
@@ -362,9 +360,6 @@ def _highs_wrapper(
                 ``message_level`` behaves like a bitmask, i.e., any
                 combination of levels is possible using the bit-or
                 operator.
-
-            - min_threads : int
-                Minimum number of threads in parallel execution.
 
             - mps_parser_type_free : bool
                 Use free format MPS parsing.
@@ -518,7 +513,7 @@ def _highs_wrapper(
                 Slack variables.
 
             - ``lambda`` : list
-                Lagrange multipliers assoicated with the constraints
+                Lagrange multipliers associated with the constraints
                 Ax = b.
 
             - ``s`` : list
@@ -558,14 +553,14 @@ def _highs_wrapper(
 
     References
     ----------
-    .. [1] https://www.maths.ed.ac.uk/hall/HiGHS
+    .. [1] https://highs.dev/
     .. [2] https://www.maths.ed.ac.uk/hall/HiGHS/HighsOptions.html
     '''
-
 
     cdef int numcol = c.size
     cdef int numrow = rhs.size
     cdef int numnz = avalue.size
+    cdef int numintegrality = integrality.size
 
     # Fill up a HighsLp object
     cdef HighsLp lp
@@ -584,6 +579,13 @@ def _highs_wrapper(
     lp.a_matrix_.start_.resize(numcol + 1)
     lp.a_matrix_.index_.resize(numnz)
     lp.a_matrix_.value_.resize(numnz)
+
+    # only need to set integrality if it's not's empty
+    cdef HighsVarType * integrality_ptr = NULL
+    if numintegrality > 0:
+        lp.integrality_.resize(numintegrality)
+        integrality_ptr = reinterpret_cast[HighsVarType_ptr](&integrality[0])
+        lp.integrality_.assign(integrality_ptr, integrality_ptr + numcol)
 
     # Explicitly create pointers to pass to HiGHS C++ API;
     # do checking to make sure null memory-views are not
@@ -617,6 +619,7 @@ def _highs_wrapper(
         lp.col_cost_.empty()
         lp.col_lower_.empty()
         lp.col_upper_.empty()
+        lp.integrality_.empty()
     if numnz > 0:
         astart_ptr = &astart[0]
         aindex_ptr = &aindex[0]
@@ -645,32 +648,45 @@ def _highs_wrapper(
             }
 
     # Solve the LP
-    highs.setBasis()
     cdef HighsStatus run_status = highs.run()
     if run_status == HighsStatusError:
         return {
             'status': <int> highs.getModelStatus(),
-            'message': HighsStatusToString(run_status).decode(),
+            'message': highsStatusToString(run_status).decode(),
         }
 
     # Extract what we need from the solution
     cdef HighsModelStatus model_status = highs.getModelStatus()
-    cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
-    cdef HighsModelStatus unscaled_model_status = model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
     cdef HighsBasis basis
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
-                                                           # marg_bnds[1, :]: upper
 
-    # If the status is bad, don't look up the solution
-    if model_status != HighsModelStatusOPTIMAL:
+    # Failure modes:
+    #     LP: if we have anything other than an Optimal status, it
+    #         is unsafe (and unhelpful) to read any results
+    #    MIP: has a non-Optimal status or has timed out/reached max iterations
+    #             1) If not Optimal/TimedOut/MaxIter status, there is no solution
+    #             2) If TimedOut/MaxIter status, there may be a feasible solution.
+    #                if the objective function value is not Infinity, then the
+    #                current solution is feasible and can be returned.  Else, there
+    #                is no solution.
+    mipFailCondition = model_status not in {
+        HighsModelStatusOPTIMAL,
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    } or (model_status in {
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    } and (info.objective_function_value == HIGHS_CONST_INF))
+    lpFailCondition = model_status != HighsModelStatusOPTIMAL
+    if (highs.getLp().isMip() and mipFailCondition) or (not highs.getLp().isMip() and lpFailCondition):
         return {
             'status': <int> model_status,
             'message': f'model_status is {highs.modelStatusToString(model_status).decode()}; '
-                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status)}',
+                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status).decode()}',
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'fun': None,
@@ -689,10 +705,9 @@ def _highs_wrapper(
             elif HighsBasisStatusUPPER == basis.col_status[ii]:
                 marg_bnds[1, ii] = solution.col_dual[ii]
 
-        return {
+        res = {
             'status': <int> model_status,
             'message': highs.modelStatusToString(model_status).decode(),
-            'unscaled_status': <int> unscaled_model_status,
 
             # Primal solution
             'x': [solution.col_value[ii] for ii in range(numcol)],
@@ -710,3 +725,12 @@ def _highs_wrapper(
             'ipm_nit': info.ipm_iteration_count,
             'crossover_nit': info.crossover_iteration_count,
         }
+
+        if highs.getLp().isMip():
+            res.update({
+                'mip_node_count': info.mip_node_count,
+                'mip_dual_bound': info.mip_dual_bound,
+                'mip_gap': info.mip_gap,
+            })
+
+        return res

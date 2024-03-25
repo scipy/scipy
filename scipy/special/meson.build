@@ -1,187 +1,39 @@
 # TODO: 64-bit BLAS and LAPACK
 
-_ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
-  output: [
-    '__init__.py',
-    '_agm.pxd',
-    '_boxcox.pxd',
-    '_cephes.pxd',
-    '_complexstuff.pxd',
-    '_convex_analysis.pxd',
-    '_cunity.pxd',
-    '_digamma.pxd',
-    '_ellip_harm.pxd',
-    '_ellip_harm_2.pxd',
-    '_ellipk.pxd',
-    '_evalpoly.pxd',
-    '_exprel.pxd',
-    '_factorial.pxd',
-    '_hyp0f1.pxd',
-    '_hyp2f1.pxd',
-    '_hypergeometric.pxd',
-    '_lambertw.pxd',
-    '_legacy.pxd',
-    '_loggamma.pxd',
-    '_ndtri_exp.pxd',
-    '_sici.pxd',
-    '_spence.pxd',
-    '_spherical_bessel.pxd',
-    '_trig.pxd',
-    '_wright_bessel.pxd',
-    '_xlogy.pxd',
-    'orthogonal_eval.pxd',
-    'sf_error.pxd',
-    'sph_harm.pxd',
-    '_cython_special.pxi',
-    '_cython_special_custom.pxi',
-    '_ufuncs_extra_code.pxi',
-    '_ufuncs_extra_code_common.pxi',
-  ],
-  input: [
-    '__init__.py',
-    '_agm.pxd',
-    '_boxcox.pxd',
-    '_cephes.pxd',
-    '_complexstuff.pxd',
-    '_convex_analysis.pxd',
-    '_cunity.pxd',
-    '_digamma.pxd',
-    '_ellip_harm.pxd',
-    '_ellip_harm_2.pxd',
-    '_ellipk.pxd',
-    '_evalpoly.pxd',
-    '_exprel.pxd',
-    '_factorial.pxd',
-    '_hyp0f1.pxd',
-    '_hyp2f1.pxd',
-    '_hypergeometric.pxd',
-    '_lambertw.pxd',
-    '_legacy.pxd',
-    '_loggamma.pxd',
-    '_ndtri_exp.pxd',
-    '_sici.pxd',
-    '_spence.pxd',
-    '_spherical_bessel.pxd',
-    '_trig.pxd',
-    '_wright_bessel.pxd',
-    '_xlogy.pxd',
-    'orthogonal_eval.pxd',
-    'sf_error.pxd',
-    'sph_harm.pxd',
-    '_cython_special.pxi',
-    '_cython_special_custom.pxi',
-    '_ufuncs_extra_code.pxi',
-    '_ufuncs_extra_code_common.pxi'
-  ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
-
-_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
-
-amos_sources = [
-  'amos/dgamln.f',
-  'amos/zabs.f',
-  'amos/zacai.f',
-  'amos/zacon.f',
-  'amos/zairy.f',
-  'amos/zasyi.f',
-  'amos/zbesh.f',
-  'amos/zbesi.f',
-  'amos/zbesj.f',
-  'amos/zbesk.f',
-  'amos/zbesy.f',
-  'amos/zbinu.f',
-  'amos/zbiry.f',
-  'amos/zbknu.f',
-  'amos/zbuni.f',
-  'amos/zbunk.f',
-  'amos/zdiv.f',
-  'amos/zexp.f',
-  'amos/zkscl.f',
-  'amos/zlog.f',
-  'amos/zmlri.f',
-  'amos/zmlt.f',
-  'amos/zrati.f',
-  'amos/zs1s2.f',
-  'amos/zseri.f',
-  'amos/zshch.f',
-  'amos/zsqrt.f',
-  'amos/zuchk.f',
-  'amos/zunhj.f',
-  'amos/zuni1.f',
-  'amos/zuni2.f',
-  'amos/zunik.f',
-  'amos/zunk1.f',
-  'amos/zunk2.f',
-  'amos/zuoik.f',
-  'amos/zwrsk.f'
-]
-
-cdflib_sources = [
-  'cdflib/algdiv.f',
-  'cdflib/alngam.f',
-  'cdflib/alnrel.f',
-  'cdflib/apser.f',
-  'cdflib/basym.f',
-  'cdflib/bcorr.f',
-  'cdflib/betaln.f',
-  'cdflib/bfrac.f',
-  'cdflib/bgrat.f',
-  'cdflib/bpser.f',
-  'cdflib/bratio.f',
-  'cdflib/brcmp1.f',
-  'cdflib/brcomp.f',
-  'cdflib/bup.f',
-  'cdflib/cdfbet.f',
-  'cdflib/cdfbin.f',
-  'cdflib/cdfchi.f',
-  'cdflib/cdfchn.f',
-  'cdflib/cdff.f',
-  'cdflib/cdffnc.f',
-  'cdflib/cdfgam.f',
-  'cdflib/cdfnbn.f',
-  'cdflib/cdfnor.f',
-  'cdflib/cdfpoi.f',
-  'cdflib/cdft.f',
-  'cdflib/cdftnc.f',
-  'cdflib/cumbet.f',
-  'cdflib/cumbin.f',
-  'cdflib/cumchi.f',
-  'cdflib/cumchn.f',
-  'cdflib/cumf.f',
-  'cdflib/cumfnc.f',
-  'cdflib/cumgam.f',
-  'cdflib/cumnbn.f',
-  'cdflib/cumnor.f',
-  'cdflib/cumpoi.f',
-  'cdflib/cumt.f',
-  'cdflib/cumtnc.f',
-  'cdflib/devlpl.f',
-  'cdflib/dinvnr.f',
-  'cdflib/dinvr.f',
-  'cdflib/dt1.f',
-  'cdflib/dzror.f',
-  'cdflib/erf.f',
-  'cdflib/erfc1.f',
-  'cdflib/esum.f',
-  'cdflib/exparg.f',
-  'cdflib/fpser.f',
-  'cdflib/gam1.f',
-  'cdflib/gaminv.f',
-  'cdflib/gamln.f',
-  'cdflib/gamln1.f',
-  'cdflib/gamma_fort.f',
-  'cdflib/grat1.f',
-  'cdflib/gratio.f',
-  'cdflib/gsumln.f',
-  'cdflib/ipmpar.f',
-  'cdflib/psi_fort.f',
-  'cdflib/rcomp.f',
-  'cdflib/rexp.f',
-  'cdflib/rlog.f',
-  'cdflib/rlog1.f',
-  'cdflib/spmpar.f',
-  'cdflib/stvaln.f'
+_ufuncs_pxi_pxd_sources = [
+  fs.copyfile('__init__.py'),
+  fs.copyfile('_agm.pxd'),
+  fs.copyfile('_boxcox.pxd'),
+  fs.copyfile('_cdflib.pxd'),
+  fs.copyfile('_cdflib_wrappers.pxd'),
+  fs.copyfile('_cephes.pxd'),
+  fs.copyfile('_complexstuff.pxd'),
+  fs.copyfile('_convex_analysis.pxd'),
+  fs.copyfile('_cunity.pxd'),
+  fs.copyfile('_digamma.pxd'),
+  fs.copyfile('_ellip_harm.pxd'),
+  fs.copyfile('_ellip_harm_2.pxd'),
+  fs.copyfile('_ellipk.pxd'),
+  fs.copyfile('_exprel.pxd'),
+  fs.copyfile('_factorial.pxd'),
+  fs.copyfile('_hyp0f1.pxd'),
+  fs.copyfile('_hyp2f1.pxd'),
+  fs.copyfile('_hypergeometric.pxd'),
+  fs.copyfile('_legacy.pxd'),
+  fs.copyfile('_ndtri_exp.pxd'),
+  fs.copyfile('_sici.pxd'),
+  fs.copyfile('_spence.pxd'),
+  fs.copyfile('_spherical_bessel.pxd'),
+  fs.copyfile('_trig.pxd'),
+  fs.copyfile('_wright_bessel.pxd'),
+  fs.copyfile('_xlogy.pxd'),
+  fs.copyfile('orthogonal_eval.pxd'),
+  fs.copyfile('sf_error.pxd'),
+  fs.copyfile('sph_harm.pxd'),
+  fs.copyfile('_cython_special.pxi'),
+  fs.copyfile('_cython_special_custom.pxi'),
+  fs.copyfile('_ufuncs_extra_code.pxi'),
+  fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
 cephes_sources = [
@@ -252,17 +104,17 @@ cephes_sources = [
   'cephes/zetac.c'
 ]
 
-mach_sources = [
-  'mach/d1mach.f',
-  'mach/i1mach.f',
-  'mach/xerror.f'
-]
+amos_lib = static_library('_amos',
+  ['_amos.c'],
+  c_args: use_math_defines,
+  include_directories: ['../_lib', '../_build_utils/src'],
+)
 
 ufuncs_sources = [
   '_cosine.c',
+  'scaled_exp1.c',
   'amos_wrappers.c',
-  'cdf_wrappers.c',
-  'specfun_wrappers.c',
+  'specfun_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -271,65 +123,48 @@ ufuncs_cxx_sources = [
   '_wright.cxx',
   'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
-  'sf_error.c',
+  'sf_error.cc',
   'wright.cc'
 ]
-
-
-if is_windows
-  use_math_defines = ['-D_USE_MATH_DEFINES']
-else
-  use_math_defines = []
-endif
 
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: py3_dep
+  include_directories: ['../_lib', '../_build_utils/src'],
+  dependencies: [py3_dep, np_dep],
 )
 
-amos_lib = static_library('amos',
-  amos_sources,
-  fortran_args: '-Wno-maybe-uninitialized'
-)
-
-cdflib_lib = static_library('cdflib',
-  cdflib_sources,
-  fortran_args: [
-    '-Wno-maybe-uninitialized',
-    '-Wno-unused-label',
-    '-Wno-intrinsic-shadow'
-  ]
-)
-
-mach_lib = static_library('mach',
-  mach_sources,
-  fortran_args: ['-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized']
-)
-
-specfun_lib = static_library('specfun',
-  'specfun/specfun.f',
-  fortran_args: '-Wno-maybe-uninitialized'
-)
-
-specfun_module = custom_target('specfun_module',
-  output: '_specfunmodule.c',
-  input: 'specfun.pyf',
-  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
-py3.extension_module('_specfun',
-  [specfun_module, fortranobject_c],
-  c_args: numpy_nodepr_api,
-  include_directories: [inc_np, inc_f2py],
-  dependencies: py3_dep,
-  link_with: specfun_lib,
-  link_language: 'fortran',
+py3.extension_module('_special_ufuncs',
+  ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  dependencies: [np_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
 
+py3.extension_module('_specfun',
+  [cython_gen_cpp.process('_specfun.pyx')],
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special'
+)
+
+py3.extension_module('_cdflib',
+  cython_gen.process('_cdflib.pyx'),
+  c_args: cython_c_args,
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special'
+)
+
+# TODO: this installs all generated files, while we want to install only:
+#       _ufuncs.pyi, cython_special.pxd
+#       There's no good way around this currently, because py3.install_sources
+#       doesn't accept generated targets. See TODO near the end of
+#       scipy/linalg/meson.build for more details.
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
@@ -342,40 +177,49 @@ cython_special = custom_target('cython_special',
     'cython_special.pxd'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special',
+  install_tag: 'devel',
 )
 
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+cython_special_pxd = custom_target('_dummy_cython_special.pxd',
+  output: '_dummy_cython_special.pxd',
+  input: cython_special[7],
+  command: [py3, '-c', '"@INPUT@"'],
+)
 
-# FIXME: the generated ninja.build file is missing the dependency between
-#       copying these files into the build dir and the `.pyx -> .c` stage.
-#       For the `.c -> .so` stage the dependency (see `||` in the `build.ninja`
-#       file) is picked up correctly. This only shows up when running the build
-#       with `-j 1` (when the steps are run in parallel, the copying of sources
-#       seems to always happen quickly enough. This will likely only be fixed
-#       by the "structured sources" PR on the Meson repo.
+# pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
+uf_cython_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
+
+uf_cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd])
+
 py3.extension_module('_ufuncs',
   [
     ufuncs_sources,
-    cython_special[0],  # _ufuncs.pyx
+    uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
-    py3_dep,
     lapack,
     npymath_lib,
-    _ufuncs_pxi_pxd_dep,  # This is not added correctly by Meson (see above)
-    cython_tree
+    np_dep,
   ],
+  link_args: version_link_args,
   link_with: [
     amos_lib,
-    cdflib_lib,
-    cephes_lib,
-    mach_lib,
-    specfun_lib
+    cephes_lib
   ],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/special'
 )
 
@@ -396,69 +240,72 @@ ellint_files = [
 
 ellint_dep = declare_dependency(sources: ellint_files)
 
+ufuncs_cxx_cpp_args = [
+  cython_cpp_args,
+  '-DBOOST_MATH_STANDALONE=1',
+  '-DCYTHON_EXTERN_C=extern "C"',
+  '-DSP_SPECFUN_ERROR', # For error handling in special functions.
+]
+
 py3.extension_module('_ufuncs_cxx',
-  [ufuncs_cxx_sources, cython_special[2], _cython_tree],
-  cpp_args: [numpy_nodepr_api, use_math_defines],
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep, ellint_dep],
-  override_options: ['cython_language=cpp'],
+  [ufuncs_cxx_sources,
+    uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
+    ],
+  cpp_args: ufuncs_cxx_cpp_args,
+  include_directories: ['../_lib/boost_math/include', '../_lib',
+                        '../_build_utils/src'],
+  link_args: version_link_args,
+    link_with: [cephes_lib],
+  dependencies: [np_dep, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
 
-cython_special_pxd = declare_dependency(sources: cython_special)
-special_pxd = declare_dependency(sources: _cython_tree)
-
-_ellip_harm_pyx = custom_target('_ellip_harm_pyx',
-  output: '_ellip_harm_2.pyx',
-  input: '_ellip_harm_2.pyx',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
-
 py3.extension_module('_ellip_harm_2',
-  [_ellip_harm_pyx, 'sf_error.c'],
-  c_args: numpy_nodepr_api,
-  include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, lapack, special_pxd],
+  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
+  c_args: cython_c_args,
+  include_directories: ['../_lib', '../_build_utils/src'],
+  link_args: version_link_args,
+  dependencies: [lapack, np_dep],
   install: true,
   subdir: 'scipy/special'
 )
 
 py3.extension_module('cython_special',
   [
-    cython_special[6],  # cython_special.pyx
+    uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
+    'scaled_exp1.c',
     'amos_wrappers.c',
-    'cdf_wrappers.c',
-    'specfun_wrappers.c',
+    'specfun_wrappers.cpp',
     'sf_error.c'
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
-  include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
-  dependencies: [py3_dep, npymath_lib, lapack],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
+  link_args: version_link_args,
+  dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     amos_lib,
-    cdflib_lib,
-    cephes_lib,
-    mach_lib,
-    specfun_lib
+    cephes_lib
   ],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/special'
 )
 
 py3.extension_module('_comb',
-  '_comb.pyx',
-  dependencies: py3_dep,
+  cython_gen.process('_comb.pyx'),
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
 
-py3.extension_module('_test_round',
-  '_test_round.pyx',
-  include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib],
+dd_dep = declare_dependency(sources: ['cephes/dd_real.c'])
+
+py3.extension_module('_test_internal',
+  cython_gen.process('_test_internal.pyx'),
+  include_directories: ['cephes', '../_lib', '../_build_utils/src'],
+  dependencies: [np_dep, dd_dep],
+  link_args: version_link_args,
   install: true,
   subdir: 'scipy/special'
 )
@@ -468,7 +315,7 @@ py3.extension_module('_test_round',
 npz_files = [
   [
     '_data_boost',
-    'tests/data/boost/acosh_data_ipp/acosh_data.txt',
+    'tests/data/boost/assoc_legendre_p_ipp/assoc_legendre_p.txt',
     'boost',
     'boost.npz'
   ],
@@ -495,10 +342,38 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() + '/scipy/special/tests/data'
+    install_dir: py3.get_install_dir() / 'scipy/special/tests/data',
+    install_tag: 'python-runtime',
   )
 endforeach
 
+
+# Headers for special functions in `special` library (temporary name) are
+# included in both build and install dirs for development purposes. Not public!
+special_sources = [
+  'special/config.h',
+  'special/error.h',
+  'special/evalpoly.h',
+  'special/lambertw.h',
+  'special/binom.h',
+  'special/trig.h',
+  'special/zlog1.h',
+  'special/loggamma.h',
+  'special/digamma.h'
+]
+
+special_cephes_sources = [
+  'special/cephes/const.h',
+  'special/cephes/polevl.h',
+  'special/cephes/beta.h',
+  'special/cephes/gamma.h',
+  'special/cephes/trig.h',
+  'special/cephes/zeta.h',
+  'special/cephes/psi.h'
+]
+
+py3.install_sources(special_sources, subdir: 'scipy/special/special')
+py3.install_sources(special_cephes_sources, subdir: 'scipy/special/special/cephes')
 
 python_sources = [
   '__init__.py',
@@ -509,12 +384,16 @@ python_sources = [
   '_logsumexp.py',
   '_mptestutils.py',
   '_orthogonal.py',
+  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_support_alternative_backends.py',
+  '_test_internal.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',
+  'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
   'specfun.py',
@@ -523,16 +402,8 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/special'
 )
-
-# FIXME: fails with "Argument must be string or file."
-#py3.install_sources(
-#    cython_special[7],  # cython_special.pxd
-#    pure: false,
-#    subdir: 'scipy/special'
-#)
 
 subdir('tests')
 subdir('_precompute')

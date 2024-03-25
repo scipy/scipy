@@ -92,15 +92,14 @@ static double Q[] = {
     2.49999999999888314361E-1
 };
 
-double ellpe(x)
-double x;
+double ellpe(double x)
 {
     x = 1.0 - x;
     if (x <= 0.0) {
 	if (x == 0.0)
 	    return (1.0);
 	sf_error("ellpe", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
     if (x > 1.0) {
         return ellpe(1.0 - 1/x) * sqrt(x);

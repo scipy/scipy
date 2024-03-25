@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 refguide_check.py [OPTIONS] [-- ARGS]
 
@@ -7,7 +7,7 @@ correspond to the objects included in the reference guide.
 
 Example of usage::
 
-    $ python refguide_check.py optimize
+    $ python3 refguide_check.py optimize
 
 Note that this is a helper script to be able to check if things are missing;
 the output of this script does need to be checked manually.  In some cases
@@ -19,7 +19,7 @@ in docstrings. This is different from doctesting [we do not aim to have
 scipy docstrings doctestable!], this is just to make sure that code in
 docstrings is valid python::
 
-    $ python refguide_check.py --doctests optimize
+    $ python3 refguide_check.py --doctests optimize
 
 """
 import copy
@@ -39,28 +39,18 @@ from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
 import docutils.core
 import numpy as np
-import sphinx
 from docutils.parsers.rst import directives
-from pkg_resources import parse_version
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
 
-if parse_version(sphinx.__version__) >= parse_version('1.5'):
-    # Enable specific Sphinx directives
-    from sphinx.directives.other import SeeAlso, Only
-    directives.register_directive('seealso', SeeAlso)
-    directives.register_directive('only', Only)
-else:
-    # Remove sphinx directives that don't run without Sphinx environment.
-    # Sphinx < 1.5 installs all directives on import...
-    directives._directives.pop('versionadded', None)
-    directives._directives.pop('versionchanged', None)
-    directives._directives.pop('moduleauthor', None)
-    directives._directives.pop('sectionauthor', None)
-    directives._directives.pop('codeauthor', None)
-    directives._directives.pop('toctree', None)
 
+# Enable specific Sphinx directives
+from sphinx.directives.other import SeeAlso, Only
+directives.register_directive('seealso', SeeAlso)
+directives.register_directive('only', Only)
 
 BASE_MODULE = "scipy"
 
@@ -69,6 +59,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -115,10 +106,19 @@ DOCTEST_SKIPLIST = set([
     'scipy.stats.kstwobign',  # inaccurate cdf or ppf
     'scipy.stats.levy_stable',
     'scipy.special.sinc',  # comes from numpy
-    'scipy.misc.who',  # comes from numpy
+    'scipy.fft.fftfreq',
+    'scipy.fft.rfftfreq',
+    'scipy.fft.fftshift',
+    'scipy.fft.ifftshift',
+    'scipy.fftpack.fftfreq',
+    'scipy.fftpack.fftshift',
+    'scipy.fftpack.ifftshift',
+    'scipy.integrate.trapezoid',
+    'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
-    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
+    'scipy.special.errstate',
+    'scipy.special.seterr',
 ])
 
 # these names are not required to be present in ALL despite being in
@@ -126,7 +126,6 @@ DOCTEST_SKIPLIST = set([
 REFGUIDE_ALL_SKIPLIST = [
     r'scipy\.sparse\.csgraph',
     r'scipy\.sparse\.linalg',
-    r'scipy\.spatial\.distance',
     r'scipy\.linalg\.blas\.[sdczi].*',
     r'scipy\.linalg\.lapack\.[sdczi].*',
 ]
@@ -144,7 +143,7 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
-    r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace
@@ -196,7 +195,10 @@ def find_names(module, names_dict):
     module_name = module.__name__
 
     for line in module.__doc__.splitlines():
-        res = re.search(r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$", line)
+        res = re.search(
+            r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$",
+            line
+        )
         if res:
             module_name = res.group(1)
             continue
@@ -205,7 +207,6 @@ def find_names(module, names_dict):
             res = re.match(pattern, line)
             if res is not None:
                 name = res.group(1)
-                entry = '.'.join([module_name, name])
                 names_dict.setdefault(module_name, set()).add(name)
                 break
 
@@ -238,7 +239,9 @@ def get_all_dict(module):
         else:
             not_deprecated.append(name)
 
-    others = set(dir(module)).difference(set(deprecated)).difference(set(not_deprecated))
+    others = (set(dir(module))
+              .difference(set(deprecated))
+              .difference(set(not_deprecated)))
 
     return not_deprecated, deprecated, others
 
@@ -268,8 +271,9 @@ def compare(all_dict, others, names, module_name):
 
     return only_all, only_ref, missing
 
+
 def is_deprecated(f):
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         warnings.simplefilter("error")
         try:
             f(**{"not a kwarg":None})
@@ -278,6 +282,7 @@ def is_deprecated(f):
         except Exception:
             pass
         return False
+
 
 def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
@@ -303,7 +308,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
         return [(None, True, output)]
     else:
         if len(only_all) > 0:
-            output += "ERROR: objects in %s.__all__ but not in refguide::\n\n" % module_name
+            output += (
+                f"ERROR: objects in {module_name}.__all__ but not in refguide::\n\n"
+            )
             for name in sorted(only_all):
                 output += "    " + name + "\n"
 
@@ -311,7 +318,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
             output += "the function listing in __init__.py for this module\n"
 
         if len(only_ref) > 0:
-            output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
+            output += (
+                f"ERROR: objects in refguide but not in {module_name}.__all__::\n\n"
+            )
             for name in sorted(only_ref):
                 output += "    " + name + "\n"
 
@@ -333,10 +342,10 @@ def validate_rst_syntax(text, name, dots=True):
     if text is None:
         if dots:
             output_dot('E')
-        return False, "ERROR: %s: no documentation" % (name,)
+        return False, f"ERROR: {name}: no documentation"
 
     ok_unknown_items = set([
-        'mod', 'currentmodule', 'autosummary', 'data',
+        'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
         'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
@@ -374,16 +383,24 @@ def validate_rst_syntax(text, name, dots=True):
         if not lines:
             continue
 
-        m = re.match(r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$', lines[0])
+        m = re.match(
+            r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$',
+            lines[0]
+        )
         if m:
             if m.group(1) in ok_unknown_items:
                 continue
 
-        m = re.match(r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines), re.S)
+        m = re.match(
+            r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines),
+            re.S
+        )
         if m:
             continue
 
-        output += name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        output += (
+            name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        )
         success = False
 
     if not success:
@@ -408,12 +425,7 @@ def check_rest(module, names, dots=True):
 
     Returns: [(name, success_flag, output), ...]
     """
-
-    try:
-        skip_types = (dict, str, unicode, float, int)
-    except NameError:
-        # python 3
-        skip_types = (dict, str, float, int)
+    skip_types = (dict, str, float, int)
 
     results = []
 
@@ -427,7 +439,7 @@ def check_rest(module, names, dots=True):
         obj = getattr(module, name, None)
 
         if obj is None:
-            results.append((full_name, False, "%s has no docstring" % (full_name,)))
+            results.append((full_name, False, f"{full_name} has no docstring"))
             continue
         elif isinstance(obj, skip_types):
             continue
@@ -444,10 +456,11 @@ def check_rest(module, names, dots=True):
                                 traceback.format_exc()))
                 continue
 
-        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        m = re.search(".*?([\x00-\x09\x0b-\x1f]).*", text)
         if m:
-            msg = ("Docstring contains a non-printable character %r! "
-                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            msg = ("Docstring contains a non-printable character "
+                   f"{m.group(1)!r} in the line\n\n{m.group(0)!r}\n\n"
+                   "Maybe forgot r\"\"\"?")
             results.append((full_name, False, msg))
             continue
 
@@ -461,7 +474,9 @@ def check_rest(module, names, dots=True):
         else:
             file_full_name = full_name
 
-        results.append((full_name,) + validate_rst_syntax(text, file_full_name, dots=dots))
+        results.append(
+            (full_name,) + validate_rst_syntax(text, file_full_name, dots=dots)
+        )
 
     return results
 
@@ -469,7 +484,7 @@ def check_rest(module, names, dots=True):
 ### Doctest helpers ####
 
 # the namespace to run examples in
-DEFAULT_NAMESPACE = {'np': np}
+DEFAULT_NAMESPACE = {}
 
 # the namespace to do checks in
 CHECK_NAMESPACE = {
@@ -503,7 +518,7 @@ def try_convert_namedtuple(got):
     regex = (r'[\w\d_]+\(' +
              ', '.join([r'[\w\d_]+=(.+)']*num) +
              r'\)')
-    grp = re.findall(regex, got.replace('\n', ' '))
+    grp = re.findall(regex, " ".join(got.split()))
     # fold it back to a tuple
     got_again = '(' + ', '.join(grp[0]) + ')'
     return got_again
@@ -548,6 +563,7 @@ class DTRunner(doctest.DocTestRunner):
         self._report_item_name(out)
         return doctest.DocTestRunner.report_failure(self, out, test,
                                                     example, got)
+
 
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
@@ -603,7 +619,7 @@ class Checker(doctest.OutputChecker):
             # Maybe we're printing a numpy array? This produces invalid python
             # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
             # values. So, reinsert commas and retry.
-            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            # TODO: handle (1) abbreviation (`print(np.arange(10000))`), and
             #              (2) n-dim arrays with n > 1
             s_want = want.strip()
             s_got = got.strip()
@@ -643,7 +659,6 @@ class Checker(doctest.OutputChecker):
                 return False
             else:
                 return self.check_output(want_again, got_again, optionflags)
-
 
         # ... and defer to numpy
         try:
@@ -865,6 +880,58 @@ def init_matplotlib():
         HAVE_MATPLOTLIB = False
 
 
+def check_dist_keyword_names():
+    # Look for collisions between names of distribution shape parameters and
+    # keywords of distribution methods. See gh-5982.
+    distnames = set(distdata[0] for distdata in distcont + distdiscrete)
+    mod_results = []
+    for distname in distnames:
+        dist = getattr(stats, distname)
+
+        method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
+        method_names = [method[0] for method in method_members
+                        if not method[0].startswith('_')]
+        for methodname in method_names:
+            method = getattr(dist, methodname)
+            try:
+                params = NumpyDocString(method.__doc__)['Parameters']
+            except TypeError:
+                result = (f'stats.{distname}.{methodname}', False,
+                          "Method parameters are not documented properly.")
+                mod_results.append(result)
+                continue
+
+            if not dist.shapes:  # can't have collision if there are no shapes
+                continue
+            shape_names = dist.shapes.split(', ')
+
+            param_names1 = set(param.name for param in params)
+            param_names2 = set(inspect.signature(method).parameters)
+            param_names = param_names1.union(param_names2)
+
+            # # Disabling this check in this PR;
+            # # these discrepancies are a separate issue.
+            # no_doc_params = {'args', 'kwds', 'kwargs'}  # no need to document
+            # undoc_params = param_names2 - param_names1 - no_doc_params
+            # if un_doc_params:
+            #     result = (f'stats.{distname}.{methodname}', False,
+            #               f'Parameter(s) {undoc_params} are not documented.')
+            #     mod_results.append(result)
+            #     continue
+
+            intersection = param_names.intersection(shape_names)
+
+            if intersection:
+                message = ("Distribution/method keyword collision: "
+                           f"{intersection} ")
+                result = (f'stats.{distname}.{methodname}', False, message)
+            else:
+                result = (f'stats.{distname}.{methodname}', True, '')
+            mod_results.append(result)
+
+    return mod_results
+
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_names", metavar="SUBMODULES", default=[],
@@ -895,7 +962,12 @@ def main(argv):
                 module_names.append(name)
 
     for submodule_name in module_names:
-        module_name = BASE_MODULE + '.' + submodule_name
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
+
         __import__(module_name)
         module = sys.modules[module_name]
 
@@ -931,6 +1003,8 @@ def main(argv):
         if args.doctests:
             mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
                                           doctest_warnings=args.doctest_warnings)
+        if module.__name__ == 'scipy.stats':
+            mod_results += check_dist_keyword_names()
 
         for v in mod_results:
             assert isinstance(v, tuple), v
@@ -944,7 +1018,7 @@ def main(argv):
     if not args.skip_tutorial:
         base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
         tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
-        print('\nChecking tutorial files at %s:' % os.path.relpath(tut_path, os.getcwd()))
+        print(f'\nChecking tutorial files at {os.path.relpath(tut_path, os.getcwd())}:')
         for filename in sorted(glob.glob(tut_path)):
             if dots:
                 sys.stderr.write('\n')

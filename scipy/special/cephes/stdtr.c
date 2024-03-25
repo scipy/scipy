@@ -89,16 +89,14 @@
 
 extern double MACHEP;
 
-double stdtr(k, t)
-int k;
-double t;
+double stdtr(int k, double t)
 {
     double x, rk, z, f, tz, p, xsqk;
     int j;
 
     if (k <= 0) {
 	sf_error("stdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     if (t == 0)
@@ -139,7 +137,7 @@ double t;
 	    }
 	    p += f * xsqk / z;
 	}
-	p *= 2.0 / NPY_PI;
+	p *= 2.0 / M_PI;
     }
 
 
@@ -169,16 +167,14 @@ double t;
     return (p);
 }
 
-double stdtri(k, p)
-int k;
-double p;
+double stdtri(int k, double p)
 {
     double t, rk, z;
     int rflg;
 
     if (k <= 0 || p <= 0.0 || p >= 1.0) {
 	sf_error("stdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+	return (NAN);
     }
 
     rk = k;
@@ -201,7 +197,7 @@ double p;
     z = incbi(0.5 * rk, 0.5, 2.0 * p);
 
     if (DBL_MAX * z < rk)
-	return (rflg * NPY_INFINITY);
+	return (rflg * INFINITY);
     t = sqrt(rk / z - rk);
     return (rflg * t);
 }

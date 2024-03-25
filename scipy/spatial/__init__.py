@@ -5,6 +5,11 @@ Spatial algorithms and data structures (:mod:`scipy.spatial`)
 
 .. currentmodule:: scipy.spatial
 
+.. toctree::
+   :hidden:
+
+   spatial.distance
+
 Spatial transformations
 =======================
 
@@ -18,6 +23,9 @@ Nearest-neighbor queries
    KDTree      -- class for efficient nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster implementation)
    Rectangle
+
+Distance metrics
+================
 
 Distance metrics are contained in the :mod:`scipy.spatial.distance` submodule.
 
@@ -97,7 +105,7 @@ Warnings / Errors used in :mod:`scipy.spatial`
    :toctree: generated/
 
    QhullError
-"""
+"""  # noqa: E501
 
 from ._kdtree import *
 from ._ckdtree import *
@@ -111,9 +119,10 @@ from ._geometric_slerp import geometric_slerp
 from . import ckdtree, kdtree, qhull
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance', 'transform']
 
 from . import distance, transform
+
+__all__ += ['distance', 'transform']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

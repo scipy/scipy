@@ -9,16 +9,17 @@ __all__ = ['root']
 
 import numpy as np
 
-ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
-                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
-                'df-sane']
-
 from warnings import warn
 
 from ._optimize import MemoizeJac, OptimizeResult, _check_unknown_options
 from ._minpack_py import _root_hybr, leastsq
 from ._spectral import _root_df_sane
 from . import _nonlin as nonlin
+
+
+ROOT_METHODS = ['hybr', 'lm', 'broyden1', 'broyden2', 'anderson',
+                'linearmixing', 'diagbroyden', 'excitingmixing', 'krylov',
+                'df-sane']
 
 
 def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
@@ -132,6 +133,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     The following functions define a system of nonlinear equations and its
     jacobian.
 
+    >>> import numpy as np
     >>> def fun(x):
     ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
     ...             0.5 * (x[1] - x[0])**3 + x[1]]
@@ -197,6 +199,16 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     >>> plt.show()
 
     """
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        _wrapped_fun.nfev += 1
+        return fun(*fargs)
+
+    _wrapped_fun.nfev = 0
+
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -206,7 +218,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     if callback is not None and meth in ('hybr', 'lm'):
         warn('Method %s does not accept callback.' % method,
-             RuntimeWarning)
+             RuntimeWarning, stacklevel=2)
 
     # fun also returns the Jacobian
     if not callable(jac) and meth in ('hybr', 'lm'):
@@ -231,29 +243,30 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
             options.setdefault('fatol', np.inf)
 
     if meth == 'hybr':
-        sol = _root_hybr(fun, x0, args=args, jac=jac, **options)
+        sol = _root_hybr(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'lm':
-        sol = _root_leastsq(fun, x0, args=args, jac=jac, **options)
+        sol = _root_leastsq(_wrapped_fun, x0, args=args, jac=jac, **options)
     elif meth == 'df-sane':
         _warn_jac_unused(jac, method)
-        sol = _root_df_sane(fun, x0, args=args, callback=callback,
+        sol = _root_df_sane(_wrapped_fun, x0, args=args, callback=callback,
                             **options)
     elif meth in ('broyden1', 'broyden2', 'anderson', 'linearmixing',
                   'diagbroyden', 'excitingmixing', 'krylov'):
         _warn_jac_unused(jac, method)
-        sol = _root_nonlin_solve(fun, x0, args=args, jac=jac,
+        sol = _root_nonlin_solve(_wrapped_fun, x0, args=args, jac=jac,
                                  _method=meth, _callback=callback,
                                  **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 
+    sol.nfev = _wrapped_fun.nfev
     return sol
 
 
 def _warn_jac_unused(jac, method):
     if jac is not None:
-        warn('Method %s does not use the jacobian (jac).' % (method,),
-             RuntimeWarning)
+        warn(f'Method {method} does not use the jacobian (jac).',
+             RuntimeWarning, stacklevel=2)
 
 
 def _root_leastsq(fun, x0, args=(), jac=None,
@@ -289,18 +302,28 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     diag : sequence
         N positive entries that serve as a scale factors for the variables.
     """
+    nfev = 0
+    def _wrapped_fun(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        nonlocal nfev
+        nfev += 1
+        return fun(*fargs)
 
     _check_unknown_options(unknown_options)
-    x, cov_x, info, msg, ier = leastsq(fun, x0, args=args, Dfun=jac,
-                                       full_output=True,
+    x, cov_x, info, msg, ier = leastsq(_wrapped_fun, x0, args=args,
+                                       Dfun=jac, full_output=True,
                                        col_deriv=col_deriv, xtol=xtol,
                                        ftol=ftol, gtol=gtol,
                                        maxfev=maxiter, epsfcn=eps,
                                        factor=factor, diag=diag)
     sol = OptimizeResult(x=x, message=msg, status=ier,
                          success=ier in (1, 2, 3, 4), cov_x=cov_x,
-                         fun=info.pop('fvec'))
+                         fun=info.pop('fvec'), method="lm")
     sol.update(info)
+    sol.nfev = nfev
     return sol
 
 
@@ -330,7 +353,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                 }[_method]
 
     if args:
-        if jac:
+        if jac is True:
             def f(x):
                 return fun(x, *args)[0]
         else:
@@ -347,7 +370,7 @@ def _root_nonlin_solve(fun, x0, args=(), jac=None,
                                   line_search=line_search,
                                   callback=_callback, full_output=True,
                                   raise_exception=False)
-    sol = OptimizeResult(x=x)
+    sol = OptimizeResult(x=x, method=_method)
     sol.update(info)
     return sol
 
@@ -361,8 +384,7 @@ def _root_broyden1_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -439,8 +461,7 @@ def _root_broyden2_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -504,8 +525,7 @@ def _root_anderson_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -546,8 +566,7 @@ def _root_linearmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, ``NoConvergence`` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -583,8 +602,7 @@ def _root_diagbroyden_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -620,8 +638,7 @@ def _root_excitingmixing_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -660,8 +677,7 @@ def _root_krylov_doc():
     disp : bool, optional
         Print status to stdout on every iteration.
     maxiter : int, optional
-        Maximum number of iterations to make. If more are needed to
-        meet convergence, `NoConvergence` is raised.
+        Maximum number of iterations to make.
     ftol : float, optional
         Relative tolerance for the residual. If omitted, not used.
     fatol : float, optional
@@ -684,11 +700,12 @@ def _root_krylov_doc():
 
         rdiff : float, optional
             Relative step size to use in numerical differentiation.
-        method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-            Krylov method to use to approximate the Jacobian.
-            Can be a string, or a function implementing the same
-            interface as the iterative solvers in
-            `scipy.sparse.linalg`.
+        method : str or callable, optional
+            Krylov method to use to approximate the Jacobian.  Can be a string,
+            or a function implementing the same interface as the iterative
+            solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+            ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+            ``'tfqmr'``.
 
             The default is `scipy.sparse.linalg.lgmres`.
         inner_M : LinearOperator or InverseJacobian

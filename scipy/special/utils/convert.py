@@ -57,7 +57,7 @@ def _raw_data(line):
 
 def parse_ipp_file(filename):
     print(filename)
-    with open(filename, 'r') as a:
+    with open(filename) as a:
         lines = a.readlines()
     data = {}
     i = 0

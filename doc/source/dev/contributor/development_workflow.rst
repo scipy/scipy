@@ -1,5 +1,3 @@
-:orphan:
-
 .. _development-workflow:
 
 ====================
@@ -9,11 +7,11 @@ Development workflow
 *Note: consider watching* `SciPy Development Workflow`_ *before or after
 reading to see an example of fixing a bug and submitting a pull request.*
 
-In :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you created your own
-fork (copy) of the SciPy repository, cloned the repository on your own machine,
-and built SciPy from this source code. Before getting started here,
-there are two other things you need to do just once before you start modifying
-SciPy.
+This guide assumes that you have created your own fork (copy) of the SciPy
+repository, cloned the repository on your own machine, and built SciPy from this
+source code. If you haven't, check the :ref:`building-from-source` pages appropriate to your
+system. Before getting started here, there are two other things you need to do
+just once before you start modifying SciPy.
 
 #. In a terminal, introduce yourself to Git::
 
@@ -81,43 +79,41 @@ commits from the ``upstream`` repository::
 
    git fetch upstream
 
-Then, create a new branch based on the master branch of the upstream
+Then, create a new branch based on the main branch of the upstream
 repository::
 
-   git checkout -b my-new-feature upstream/master
+   git checkout -b my-new-feature upstream/main
 
-Equivalently, you might want to keep the master branch of your own repository
+Equivalently, you might want to keep the main branch of your own repository
 up to date and create a new branch based on that::
 
-   git checkout master
-   git rebase upstream/master
+   git checkout main
+   git rebase upstream/main
    git checkout -b my-new-feature
 
 In order, these commands
 
-#. ensure that the ``master`` branch of your local repository is checked out,
+#. ensure that the ``main`` branch of your local repository is checked out,
 
-#. apply all the latest changes from the ``upstream/master`` (main SciPy
-   repository master branch) to your local ``master`` branch, and
+#. apply all the latest changes from the ``upstream/main`` (main SciPy
+   repository main branch) to your local ``main`` branch, and
 
-#. create and check out a new branch (``-b``) based on your local ``master``
+#. create and check out a new branch (``-b``) based on your local ``main``
    branch.
 
 In any case, it's important that your feature branch include the latest
-changes from the upstream master to help avoid
+changes from the upstream main to help avoid
 `merge conflicts <https://help.github.com/en/articles/resolving-a-merge-conflict-using-the-command-line>`_
 when it's time to submit a pull request.
 
 It's also a good idea to build this branch and run tests before continuing.
-Assuming you've followed :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`
-to set up your development environment, you'll need to activate your
-development virtual environment, perform an in-place build, and run tests::
+Assuming you've followed one of the :ref:`building-from-source` pages to set up
+your development environment, you'll need to activate your development
+environment and then run tests (note that the ``dev.py test`` command will
+perform a build automatically if needed)::
 
-   conda activate name-of-your-virtual-environment
-   python setup.py build_ext --inplace
-   python runtests.py -v
-
-Otherwise, see :ref:`building`, :ref:`runtests` for more information.
+   conda activate scipy-dev
+   python dev.py test -v
 
 .. _editing-workflow:
 
@@ -211,7 +207,7 @@ In more detail
 
 It may be the case that while you were working on your edits, new commits have
 been added to ``upstream`` that affect your work. In this case, follow the
-:ref:`rebasing-on-master` instructions to apply those changes to your branch.
+:ref:`rebasing-on-main` instructions to apply those changes to your branch.
 
 .. _writing-the-commit-message:
 
@@ -275,7 +271,7 @@ Checklist before submitting a PR
    :ref:`license-considerations`.
 -  Are there unit tests with good code coverage? See
    `NumPy/SciPy Testing Guidelines`_.
--  Do all unit tests pass locally? See :ref:`runtests`.
+-  Do all unit tests pass locally? See :ref:`the-dev-py-interface`.
 -  Do all public function have docstrings including examples? See the
    `numpydoc docstring guide`_.
 -  Does the documentation render correctly? See :ref:`rendering-documentation`.
@@ -285,12 +281,10 @@ Checklist before submitting a PR
 -  Is the docstring of the new functionality tagged with
    ``.. versionadded:: X.Y.Z`` (where ``X.Y.Z`` is the version number of the
    next release? See the ``updating``, ``workers``, and ``constraints``
-   documentation of |differential_evolution|_, for example. You can get the
-   next version number from the most recent release notes on `the wiki`_ or
-   from the ``MAJOR`` and ``MINOR`` version number variables in |setup.py|_.
+   documentation of |differential_evolution|_, for example.
 -  In case of larger additions, is there a tutorial or more extensive
    module-level description? Tutorial files are in ``doc/source/tutorial``.
--  If compiled code is added, is it integrated correctly via ``setup.py``?
+-  If new files are added, are they integrated correctly via ``meson.build``?
    See :ref:`compiled-code` for more information.
 
 .. include:: ../gitwash/git_links.inc
@@ -308,7 +302,4 @@ Checklist before submitting a PR
 .. _the wiki: https://github.com/scipy/scipy/wiki
 
 .. |differential_evolution| replace:: ``differential_evolution``
-.. _differential_evolution: https://github.com/scipy/scipy/blob/master/scipy/optimize/_differentialevolution.py
-
-.. |setup.py| replace:: ``setup.py``
-.. _setup.py: https://github.com/scipy/scipy/blob/master/setup.py
+.. _differential_evolution: https://github.com/scipy/scipy/blob/main/scipy/optimize/_differentialevolution.py

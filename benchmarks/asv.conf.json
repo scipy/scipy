@@ -21,8 +21,7 @@
     // "install_command": ["in-dir={env_dir} python -mpip install {wheel_file}"],
     // "uninstall_command": ["return-code=any python -mpip uninstall -y {project}"],
     // "build_command": [
-    //     "python setup.py build",
-    //     "PIP_NO_BUILD_ISOLATION=false python -mpip wheel --no-deps --no-index -w {build_cache_dir} {build_dir}"
+    //     "PIP_NO_BUILD_ISOLATION=false python -m pip install . --no-deps --no-index -w {build_cache_dir} {build_dir}"
     // ],
 
     // The base URL to "how a commit for the project.
@@ -38,10 +37,11 @@
     // version.
     "matrix": {
         "numpy": [],
-        "Cython": ["0.29.21"],
+        "Cython": [],
         "pytest": [],
         "pythran": [],
         "pybind11": [],
+        "meson-python": [],
     },
 
     // The directory (relative to the current directory) that benchmarks are
@@ -58,6 +58,7 @@
     // determined by looking for tools on the PATH environment
     // variable.
     // "environment_type": "virtualenv",
+    "environment_type": "mamba",
     "build_cache_size": 10,
 
     // The directory (relative to the current directory) that raw benchmark

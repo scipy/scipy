@@ -1,5 +1,3 @@
-:orphan:
-
 .. _adding-cython:
 
 Adding Cython to SciPy
@@ -23,14 +21,15 @@ code with Cython:
 
 #. Include your code in a file with a ``.pyx``
    extension rather than a ``.py`` extension. All files with a ``.pyx``
-   extension are automatically converted by Cython to ``.c`` files when
-   SciPy is built.
+   extension are automatically converted by Cython to ``.c`` or ``.cpp``
+   files when SciPy is built.
 
-#. Add an extension from this ``.c`` file to the
-   configuration of the subpackage in which your code lives. Typically,
-   this is very easy: add a single, formulaic line to the subpackage’s
-   ``setup.py`` file. Once added as an extension, the ``.c`` code will be
-   compiled by your C compiler to machine code when SciPy is built.
+#. Add the new ``.pyx`` file to the ``meson.build`` build configuration
+   of the subpackage in which your code lives. Typically, there are already
+   other ``.pyx`` patterns present (if not, look in another submodule) so
+   there's an example to follow for what exact content to add to
+   ``meson.build``.
+
 
 Example
 -------
@@ -49,20 +48,34 @@ written in Cython; the only way so far that we can tell they are Cython
 classes is that they are defined in a file with a ``.pyx`` extension.
 
 Even in ``/scipy/optimize/_bglu_dense.pyx``, most of the code resembles
-Python. The most notable differences are the presence of |cimport|_,
-|cdef|_, and `Cython decorators`_. None of these are strictly
+Python. The most notable differences are the presence of ``cimport``,
+``cdef``, and `Cython decorators`_. None of these are strictly
 necessary. Without them, the pure Python code can still be compiled by
 Cython. The Cython language extensions are \*just\* tweaks to improve
 performance. This ``.pyx`` file is automatically converted to a ``.c``
 file by Cython when SciPy is built.
 
-The only thing left is to add an extension from this ``.c`` file using
-|distutils|_. This takes just a single line in |optimize-setup|_:
-``config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])``,
-``_bglu_dense.c`` is the source and ``_bglu_dense`` is the name of the
-extension (for consistency). When SciPy is built, ``_bglu_dense.c`` will
-be compiled to machine code, and we will be able to import the ``LU``
-and ``BGLU`` classes from the extension ``_bglu_dense``.
+The only thing left is to add the build configuration, which will look
+something like:
+
+.. code:: meson
+
+    _bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
+
+    py3.extension_module('_bglu_dense',
+      _bglu_dense_c,
+      c_args: cython_c_args,
+      dependencies: np_dep,
+      link_args: version_link_args,
+      install: true,
+      subdir: 'scipy/optimize'
+    )
+
+When SciPy is built, ``_bglu_dense.pyx`` will be transpiled by ``cython``
+to C code, and then that generated C file is treated by Meson like any other C
+code in SciPy - producing an extension modules that we will be able to import
+and use the ``LU`` and ``BGLU`` classes from.
+
 
 Exercise
 --------
@@ -101,22 +114,13 @@ Exercise
 
 #. Save your ``.py`` file to a ``.pyx`` file, e.g. \ ``mycython.pyx``.
 
-#. Build SciPy. Note that a ``.c`` file has been added to the
-   ``/scipy/optimize`` directory.
+#. Add the ``.pyx`` to ``scipy/optimize/meson.build``, in the way described in
+   the previous section.
 
-#. Somewhere near similar lines, add an extension from your ``.c`` file
-   to ``/scipy/optimize/setup.py``. e.g.:
+#. Rebuild SciPy. Note that an extension module (a ``.so`` or ``.pyd`` file)
+   has been added to the ``build/scipy/optimize/`` directory.
 
-   ::
-
-      config.add_extension('_group_columns', sources=['_group_columns.c'],)  # was already here
-      config.add_extension('mycython', sources=['mycython.c'],)  # this was new
-      config.add_extension('_bglu_dense', sources=['_bglu_dense.c'])  # was already there
-
-#. Rebuild SciPy. Note that a ``.so`` file has been added to the
-   ``/scipy/optimize`` directory.
-
-#. Time it:
+#. Time it, e.g. by dropping into IPython with ``python dev.py ipython`` and then:
 
    ::
 
@@ -181,24 +185,12 @@ the alternative is many low-level operations in Python.
 .. _Cython website: https://cython.org/
 .. _Cython documentation: http://docs.cython.org/en/latest/
 
-.. |cimport| replace:: ``cimport``
-.. _cimport: https://cython.readthedocs.io/en/latest/src/userguide/sharing_declarations.html
-
-.. |cdef| replace:: ``cdef``
-.. _cdef: https://github.com/scipy/scipy/blob/master/scipy/optimize/setup.py
-
 .. _Cython decorators: https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html
 
 .. |linprog-rs| replace:: ``scipy.optimize._linprog_rs.py``
-.. _linprog-rs: https://github.com/scipy/scipy/blob/master/scipy/optimize/_linprog_rs.py
+.. _linprog-rs: https://github.com/scipy/scipy/blob/main/scipy/optimize/_linprog_rs.py
 
 .. |bglu-dense| replace:: ``/scipy/optimize/_bglu_dense.pyx``
-.. _bglu-dense: https://github.com/scipy/scipy/blob/master/scipy/optimize/_bglu_dense.pyx
-
-.. |distutils| replace:: ``numpy.distutils``
-.. _distutils: https://docs.scipy.org/doc/numpy/reference/distutils.html
-
-.. |optimize-setup| replace:: ``scipy/optimize/setup.py``
-.. _optimize-setup: https://github.com/scipy/scipy/blob/master/scipy/optimize/setup.py
+.. _bglu-dense: https://github.com/scipy/scipy/blob/main/scipy/optimize/_bglu_dense.pyx
 
 .. _Cythonizing SciPy Code: https://youtu.be/K9bF7cjUJ7c

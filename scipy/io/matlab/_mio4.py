@@ -119,7 +119,7 @@ class VarReader4:
         if M not in (0, 1):
             warnings.warn("We do not support byte ordering '%s'; returned "
                           "data may be corrupt" % order_codes[M],
-                          UserWarning)
+                          UserWarning, stacklevel=3)
         O, rest = divmod(rest, 100)  # unused, should be 0
         if O != 0:
             raise ValueError('O in MOPT integer should be 0, wrong format?')
@@ -518,7 +518,7 @@ class VarWriter4:
             raise TypeError('Cannot save object arrays in Mat4')
         elif dtt is np.void:
             raise TypeError('Cannot save void type arrays')
-        elif dtt in (np.unicode_, np.string_):
+        elif dtt in (np.str_, np.bytes_):
             self.write_char(arr, name)
             return
         self.write_numeric(arr, name)
@@ -546,7 +546,8 @@ class VarWriter4:
             self.write_bytes(arr)
 
     def write_char(self, arr, name):
-        arr = arr_to_chars(arr)
+        if arr.dtype.type == np.str_ and arr.dtype.itemsize != np.dtype('U1').itemsize:
+            arr = arr_to_chars(arr)
         arr = arr_to_2d(arr, self.oned_as)
         dims = arr.shape
         self.write_header(

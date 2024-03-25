@@ -93,6 +93,8 @@ py_filter2d(PyObject *obj, PyObject *args)
 	    goto error;
 	}
 	callback_data[i] = PyFloat_AsDouble(item);
+        Py_DECREF(item);
+        item = NULL;
 	if (PyErr_Occurred()) goto error;
     }
 
@@ -170,7 +172,8 @@ static struct PyModuleDef _ctest = {
 };
 
 
-PyObject *PyInit__ctest(void)
+PyMODINIT_FUNC
+PyInit__ctest(void)
 {
     return PyModule_Create(&_ctest);
 }

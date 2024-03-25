@@ -1,10 +1,15 @@
 import pytest
-from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
-                         boltzmann, skellam, zipf, zipfian, binom, nbinom,
-                         nchypergeom_fisher, nchypergeom_wallenius, randint)
+import itertools
+
+from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,
+                         bernoulli, boltzmann, skellam, zipf, zipfian, binom,
+                         nbinom, nchypergeom_fisher, nchypergeom_wallenius,
+                         randint)
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from numpy.testing import (
+    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+)
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
@@ -140,6 +145,15 @@ def test_betabinom_a_and_b_unity():
     assert_almost_equal(p, expected)
 
 
+@pytest.mark.parametrize('dtypes', itertools.product(*[(int, float)]*3))
+def test_betabinom_stats_a_and_b_integers_gh18026(dtypes):
+    # gh-18026 reported that `betabinom` kurtosis calculation fails when some
+    # parameters are integers. Check that this is resolved.
+    n_type, a_type, b_type = dtypes
+    n, a, b = n_type(10), a_type(2), b_type(3)
+    assert_allclose(betabinom.stats(n, a, b, moments='k'), -0.6904761904761907)
+
+
 def test_betabinom_bernoulli():
     # test limiting case that betabinom(1, a, b) = bernoulli(a / (a + b))
     a = 2.3
@@ -152,12 +166,12 @@ def test_betabinom_bernoulli():
 
 def test_issue_10317():
     alpha, n, p = 0.9, 10, 1
-    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_11134():
     alpha, n, p = 0.95, 10, 0
-    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_7406():
@@ -221,6 +235,20 @@ def test_issue_6682():
     # options(digits=16)
     # print(pnbinom(250, 50, 32/63, lower.tail=FALSE))
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
+
+
+def test_issue_19747():
+    # test that negative k does not raise an error in nbinom.logcdf
+    result = nbinom.logcdf([5, -1, 1], 5, 0.5)
+    reference = [-0.47313352, -np.inf, -2.21297293]
+    assert_allclose(result, reference)
+
+
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
 def test_skellam_gh11474():
@@ -324,7 +352,7 @@ class TestZipfian:
                         [mean, var, skew, kurtosis])
 
 
-class TestNCH():
+class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed
     shape = (2, 4, 3)
     max_m = 100
@@ -367,7 +395,7 @@ class TestNCH():
                 return t1 * t2 * w**x
 
             def P(k):
-                return sum((f(y)*y**k for y in range(xl, xu + 1)))
+                return sum(f(y)*y**k for y in range(xl, xu + 1))
 
             P0 = P(0)
             P1 = P(1)
@@ -415,8 +443,11 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
-                        mean(N, m1, n, w), rtol=2e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                            mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -426,8 +457,14 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
-                        variance(N, m1, n, w), rtol=5e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(
+                nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
+                variance(N, m1, n, w),
+                rtol=5e-2
+            )
 
         @np.vectorize
         def pmf(x, N, m1, n, w):
@@ -453,7 +490,7 @@ class TestNCH():
 
         atol, rtol = 1e-6, 1e-6
         i = np.abs(pmf1 - pmf0) < atol + rtol*np.abs(pmf0)
-        assert(i.sum() > np.prod(shape) / 2)  # works at least half the time
+        assert i.sum() > np.prod(shape) / 2  # works at least half the time
 
         # for those that fail, discredit the naive implementation
         for N, m1, n, w in zip(N[~i], m1[~i], n[~i], w[~i]):
@@ -533,3 +570,60 @@ def test_nbinom_11465(mu, q, expected):
     # options(digits=16)
     # pnbinom(mu=10, size=20, q=120, log.p=TRUE)
     assert_allclose(nbinom.logcdf(q, n, p), expected)
+
+
+def test_gh_17146():
+    # Check that discrete distributions return PMF of zero at non-integral x.
+    # See gh-17146.
+    x = np.linspace(0, 1, 11)
+    p = 0.8
+    pmf = bernoulli(p).pmf(x)
+    i = (x % 1 == 0)
+    assert_allclose(pmf[-1], p)
+    assert_allclose(pmf[0], 1-p)
+    assert_equal(pmf[~i], 0)
+
+
+class TestBetaNBinom:
+    @pytest.mark.parametrize('x, n, a, b, ref',
+                            [[5, 5e6, 5, 20, 1.1520944824139114e-107],
+                            [100, 50, 5, 20, 0.002855762954310226],
+                            [10000, 1000, 5, 20, 1.9648515726019154e-05]])
+    def test_betanbinom_pmf(self, x, n, a, b, ref):
+        # test that PMF stays accurate in the distribution tails
+        # reference values computed with mpmath
+        # from mpmath import mp
+        # mp.dps = 500
+        # def betanbinom_pmf(k, n, a, b):
+        #     k = mp.mpf(k)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     n = mp.mpf(n)
+        #     return float(mp.binomial(n + k - mp.one, k)
+        #                  * mp.beta(a + n, b + k) / mp.beta(a, b))
+        assert_allclose(betanbinom.pmf(x, n, a, b), ref, rtol=1e-10)
+
+
+    @pytest.mark.parametrize('n, a, b, ref',
+                            [[10000, 5000, 50, 0.12841520515722202],
+                            [10, 9, 9, 7.9224400871459695],
+                            [100, 1000, 10, 1.5849602176622748]])
+    def test_betanbinom_kurtosis(self, n, a, b, ref):
+        # reference values were computed via mpmath
+        # from mpmath import mp
+        # def kurtosis_betanegbinom(n, a, b):
+        #     n = mp.mpf(n)
+        #     a = mp.mpf(a)
+        #     b = mp.mpf(b)
+        #     four = mp.mpf(4.)
+        #     mean = n * b / (a - mp.one)
+        #     var = (n * b * (n + a - 1.) * (a + b - 1.)
+        #            / ((a - 2.) * (a - 1.)**2.))
+        #     def f(k):
+        #         return (mp.binomial(n + k - mp.one, k)
+        #                 * mp.beta(a + n, b + k) / mp.beta(a, b)
+        #                 * (k - mean)**four)
+        #      fourth_moment = mp.nsum(f, [0, mp.inf])
+        #      return float(fourth_moment/var**2 - 3.)
+        assert_allclose(betanbinom.stats(n, a, b, moments="k"),
+                        ref, rtol=3e-15)

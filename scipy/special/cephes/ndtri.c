@@ -38,8 +38,8 @@
  * ERROR MESSAGES:
  *
  *   message         condition    value returned
- * ndtri domain       x < 0        NPY_NAN
- * ndtri domain       x > 1        NPY_NAN
+ * ndtri domain       x < 0        NAN
+ * ndtri domain       x > 1        NAN
  *
  */
 
@@ -131,21 +131,20 @@ static double Q2[8] = {
     6.79019408009981274425E-9,
 };
 
-double ndtri(y0)
-double y0;
+double ndtri(double y0)
 {
     double x, y, z, y2, x0, x1;
     int code;
 
     if (y0 == 0.0) {
-	return -NPY_INFINITY;
+	return -INFINITY;
     }
     if (y0 == 1.0) {
-	return NPY_INFINITY;
+	return INFINITY;
     }
     if (y0 < 0.0 || y0 > 1.0) {
 	sf_error("ndtri", SF_ERROR_DOMAIN, NULL);
-	return NPY_NAN;
+	return NAN;
     }
     code = 1;
     y = y0;

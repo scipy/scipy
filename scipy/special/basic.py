@@ -2,10 +2,7 @@
 # Use the `scipy.special` namespace for importing the functions
 # included below.
 
-import warnings
-from . import _basic
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv)
+from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
@@ -34,7 +31,6 @@ __all__ = [  # noqa: F822
     'h2vp',
     'hankel1',
     'hankel2',
-    'hyp0f1',
     'iv',
     'ivp',
     'jn_zeros',
@@ -59,7 +55,6 @@ __all__ = [  # noqa: F822
     'mathieu_b',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'ndtri',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -87,13 +82,6 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.special.basic is deprecated and has no attribute "
-            f"{name}. Try looking in scipy.special instead.")
-
-    warnings.warn(f"Please use `{name}` from the `scipy.special` namespace, "
-                  "the `scipy.special.basic` namespace is deprecated.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_basic, name)
+    return _sub_module_deprecation(sub_package="special", module="basic",
+                                   private_modules=["_basic", "_ufuncs"], all=__all__,
+                                   attribute=name)

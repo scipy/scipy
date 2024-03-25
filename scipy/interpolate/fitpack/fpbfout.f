@@ -1,4 +1,5 @@
-      subroutine fpbfou(t,n,par,ress,resc)
+      recursive subroutine fpbfou(t,n,par,ress,resc)
+      implicit none
 c  subroutine fpbfou calculates the integrals
 c                    /t(n-3)
 c    ress(j) =      !        nj,4(x)*sin(par*x) dx    and

@@ -16,18 +16,18 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
         and all elements are summed.
 
         .. versionadded:: 0.11.0
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result
-        will broadcast correctly against the original array.
-
-        .. versionadded:: 0.15.0
     b : array-like, optional
         Scaling factor for exp(`a`) must be of the same shape as `a` or
         broadcastable to `a`. These values may be negative in order to
         implement subtraction.
 
         .. versionadded:: 0.12.0
+    keepdims : bool, optional
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result
+        will broadcast correctly against the original array.
+
+        .. versionadded:: 0.15.0
     return_sign : bool, optional
         If this is set to True, the result will be a pair containing sign
         information; if False, results that are negative will be returned
@@ -40,11 +40,14 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned.
+        is returned. If ``return_sign`` is True, ``res`` contains the log of
+        the absolute value of the argument.
     sgn : ndarray
-        If return_sign is True, this will be an array of floating-point
-        numbers matching res and +1, 0, or -1 depending on the sign
-        of the result. If False, only one result is returned.
+        If ``return_sign`` is True, this will be an array of floating-point
+        numbers matching res containing +1, 0, -1 (for real-valued inputs)
+        or a complex phase (for complex inputs). This gives the sign of the
+        argument of the logarithm in ``res``.
+        If ``return_sign`` is False, only one result is returned.
 
     See Also
     --------
@@ -58,11 +61,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import logsumexp
     >>> a = np.arange(10)
-    >>> np.log(np.sum(np.exp(a)))
-    9.4586297444267107
     >>> logsumexp(a)
+    9.4586297444267107
+    >>> np.log(np.sum(np.exp(a)))
     9.4586297444267107
 
     With weights
@@ -96,7 +100,9 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
 
-    a_max = np.amax(a, axis=axis, keepdims=True)
+    # Scale by real part for complex inputs, because this affects
+    # the magnitude of the exponential.
+    a_max = np.amax(a.real, axis=axis, keepdims=True)
 
     if a_max.ndim > 0:
         a_max[~np.isfinite(a_max)] = 0
@@ -113,8 +119,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     with np.errstate(divide='ignore'):
         s = np.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
-            sgn = np.sign(s)
-            s *= sgn  # /= makes more sense but we need zero -> zero
+            # For complex, use the numpy>=2.0 convention for sign.
+            if np.issubdtype(s.dtype, np.complexfloating):
+                sgn = s / np.where(s == 0, 1, abs(s))
+            else:
+                sgn = np.sign(s)
+            s = abs(s)
         out = np.log(s)
 
     if not keepdims:
@@ -128,8 +138,7 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
 
 def softmax(x, axis=None):
-    r"""
-    Softmax function
+    r"""Compute the softmax function.
 
     The softmax function transforms each element of a collection by
     computing the exponential of each element divided by the sum of the
@@ -161,10 +170,20 @@ def softmax(x, axis=None):
 
     The `softmax` function is the gradient of `logsumexp`.
 
+    The implementation uses shifting to avoid overflow. See [1]_ for more
+    details.
+
     .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] P. Blanchard, D.J. Higham, N.J. Higham, "Accurately computing the
+       log-sum-exp and softmax functions", IMA Journal of Numerical Analysis,
+       Vol.41(4), :doi:`10.1093/imanum/draa038`.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import softmax
     >>> np.set_printoptions(precision=5)
 
@@ -182,7 +201,7 @@ def softmax(x, axis=None):
            [  1.21863e-05,   2.68421e-01,   7.29644e-01,   3.31258e-05]])
 
     >>> m.sum()
-    1.0000000000000002
+    1.0
 
     Compute the softmax transformation along the first axis (i.e., the
     columns).
@@ -209,16 +228,20 @@ def softmax(x, axis=None):
     array([ 1.,  1.,  1.])
 
     """
-
-    # compute in log space for numerical stability
-    return np.exp(x - logsumexp(x, axis=axis, keepdims=True))
+    x = _asarray_validated(x, check_finite=False)
+    x_max = np.amax(x, axis=axis, keepdims=True)
+    exp_x_shifted = np.exp(x - x_max)
+    return exp_x_shifted / np.sum(exp_x_shifted, axis=axis, keepdims=True)
 
 
 def log_softmax(x, axis=None):
-    r"""
-    Logarithm of softmax function::
+    r"""Compute the logarithm of the softmax function.
+
+    In principle::
 
         log_softmax(x) = log(softmax(x))
+
+    but using a more accurate implementation.
 
     Parameters
     ----------
@@ -244,6 +267,7 @@ def log_softmax(x, axis=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_softmax
     >>> from scipy.special import softmax
     >>> np.set_printoptions(precision=5)

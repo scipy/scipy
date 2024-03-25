@@ -1,6 +1,5 @@
 """Tools for spectral analysis.
 """
-
 import numpy as np
 from scipy import fft as sp_fft
 from . import _signaltools
@@ -60,6 +59,14 @@ def lombscargle(x,
     ValueError
         If the input arrays `x` and `y` do not have the same shape.
 
+    See Also
+    --------
+    istft: Inverse Short Time Fourier Transform
+    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
+    welch: Power spectral density by Welch's method
+    spectrogram: Spectrogram by Welch's method
+    csd: Cross spectral density by Welch's method
+
     Notes
     -----
     This subroutine calculates the periodogram using a slightly
@@ -83,16 +90,9 @@ def lombscargle(x,
            periodogram using graphics processing units.", The Astrophysical
            Journal Supplement Series, vol 191, pp. 247-253, 2010
 
-    See Also
-    --------
-    istft: Inverse Short Time Fourier Transform
-    check_COLA: Check whether the Constant OverLap Add (COLA) constraint is met
-    welch: Power spectral density by Welch's method
-    spectrogram: Spectrogram by Welch's method
-    csd: Cross spectral density by Welch's method
-
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
 
@@ -134,9 +134,9 @@ def lombscargle(x,
     >>> plt.show()
 
     """
-    x = np.asarray(x, dtype=np.float64)
-    y = np.asarray(y, dtype=np.float64)
-    freqs = np.asarray(freqs, dtype=np.float64)
+    x = np.ascontiguousarray(x, dtype=np.float64)
+    y = np.ascontiguousarray(y, dtype=np.float64)
+    freqs = np.ascontiguousarray(freqs, dtype=np.float64)
 
     assert x.ndim == 1
     assert y.ndim == 1
@@ -169,7 +169,8 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         passed to `get_window` to generate the window values, which are
         DFT-even by default. See `get_window` for a list of windows and
         required parameters. If `window` is array_like it will be used
-        directly as the window and its length must be nperseg. Defaults
+        directly as the window and its length must be equal to the length
+        of the axis over which the periodogram is computed. Defaults
         to 'boxcar'.
     nfft : int, optional
         Length of the FFT used. If `None` the length of `x` will be
@@ -186,7 +187,7 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -201,17 +202,22 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
     Pxx : ndarray
         Power spectral density or power spectrum of `x`.
 
-    Notes
-    -----
-    .. versionadded:: 0.12.0
-
     See Also
     --------
     welch: Estimate power spectral density using Welch's method
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
 
+    Notes
+    -----
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the magnitude (squared) spectrum.
+
+    .. versionadded:: 0.12.0
+
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -281,6 +287,11 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         nperseg = nfft
         nfft = None
 
+    if hasattr(window, 'size'):
+        if window.size != nperseg:
+            raise ValueError('the size of the window must be the same size '
+                             'of the input on the specified axis')
+
     return welch(x, fs=fs, window=window, nperseg=nperseg, noverlap=0,
                  nfft=nfft, detrend=detrend, return_onesided=return_onesided,
                  scaling=scaling, axis=axis)
@@ -332,7 +343,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the power spectral density ('density')
-        where `Pxx` has units of V**2/Hz and computing the power
+        where `Pxx` has units of V**2/Hz and computing the squared magnitude
         spectrum ('spectrum') where `Pxx` has units of V**2, if `x`
         is measured in V and `fs` is measured in Hz. Defaults to
         'density'
@@ -367,6 +378,10 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     If `noverlap` is 0, this method is equivalent to Bartlett's method
     [2]_.
 
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of the power spectral density and
+    the (squared) magnitude spectrum.
+
     .. versionadded:: 0.12.0
 
     References
@@ -380,6 +395,7 @@ def welch(x, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -537,6 +553,9 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     signal power, while not over counting any of the data. Narrower
     windows may require a larger overlap.
 
+    Consult the :ref:`tutorial_SpectralAnalysis` section of the :ref:`user_guide`
+    for a discussion of the scalings of a spectral density and an (amplitude) spectrum.
+
     .. versionadded:: 0.16.0
 
     References
@@ -550,6 +569,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -577,26 +597,26 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     >>> plt.show()
 
     """
-    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
-                                     detrend, return_onesided, scaling, axis,
-                                     mode='psd')
+    freqs, _, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap,
+                                     nfft, detrend, return_onesided, scaling,
+                                     axis, mode='psd')
 
     # Average over windows.
     if len(Pxy.shape) >= 2 and Pxy.size > 0:
         if Pxy.shape[-1] > 1:
             if average == 'median':
                 # np.median must be passed real arrays for the desired result
+                bias = _median_bias(Pxy.shape[-1])
                 if np.iscomplexobj(Pxy):
                     Pxy = (np.median(np.real(Pxy), axis=-1)
                            + 1j * np.median(np.imag(Pxy), axis=-1))
-                    Pxy /= _median_bias(Pxy.shape[-1])
                 else:
-                    Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+                    Pxy = np.median(Pxy, axis=-1)
+                Pxy /= bias
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
-                raise ValueError('average must be "median" or "mean", got %s'
-                                 % (average,))
+                raise ValueError(f'average must be "median" or "mean", got {average}')
         else:
             Pxy = np.reshape(Pxy, Pxy.shape[:-1])
 
@@ -606,10 +626,18 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    """Compute a spectrogram with consecutive Fourier transforms.
+    """Compute a spectrogram with consecutive Fourier transforms (legacy function).
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
+
+    .. legacy:: function
+
+        :class:`ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features also including a :meth:`~ShortTimeFFT.spectrogram` method.
+        A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of
+        the :ref:`user_guide`.
 
     Parameters
     ----------
@@ -677,6 +705,9 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method.
     csd: Cross spectral density by Welch's method.
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features,
+                  which also includes a :meth:`~ShortTimeFFT.spectrogram`
+                  method.
 
     Notes
     -----
@@ -688,6 +719,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     It is for this reason that the default window is a Tukey window with
     1/8th of a window's length overlap at each end.
 
+
     .. versionadded:: 0.16.0
 
     References
@@ -697,6 +729,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> from scipy.fft import fftshift
     >>> import matplotlib.pyplot as plt
@@ -736,8 +769,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     """
     modelist = ['psd', 'complex', 'magnitude', 'angle', 'phase']
     if mode not in modelist:
-        raise ValueError('unknown value for mode {}, must be one of {}'
-                         .format(mode, modelist))
+        raise ValueError(f'unknown value for mode {mode}, must be one of {modelist}')
 
     # need to set default for nperseg before setting default for noverlap below
     window, nperseg = _triage_segments(window, nperseg,
@@ -957,6 +989,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
 
     Confirm NOLA condition for rectangular window of 75% (3/4) overlap:
@@ -1024,11 +1057,18 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
-         axis=-1):
-    r"""Compute the Short Time Fourier Transform (STFT).
+         axis=-1, scaling='spectrum'):
+    r"""Compute the Short Time Fourier Transform (legacy function).
 
     STFTs can be used as a way of quantifying the change of a
     nonstationary signal's frequency and phase content over time.
+
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
 
     Parameters
     ----------
@@ -1081,6 +1121,13 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
+    scaling: {'spectrum', 'psd'}
+        The default 'spectrum' scaling allows each frequency line of `Zxx` to
+        be interpreted as a magnitude spectrum. The 'psd' option scales each
+        line to a power spectral density - it allows to calculate the signal's
+        energy by numerically integrating over ``abs(Zxx)**2``.
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -1095,6 +1142,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     See Also
     --------
     istft: Inverse Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
@@ -1127,6 +1175,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     choice of `window`, `nperseg`, and `noverlap` satisfy this constraint can
     be tested with `check_NOLA`.
 
+
     .. versionadded:: 0.19.0
 
     References
@@ -1139,6 +1188,7 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1168,10 +1218,28 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
 
+    Compare the energy of the signal `x` with the energy of its STFT:
+
+    >>> E_x = sum(x**2) / fs  # Energy of x
+    >>> # Calculate a two-sided STFT with PSD scaling:
+    >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000, return_onesided=False,
+    ...                         scaling='psd')
+    >>> # Integrate numerically over abs(Zxx)**2:
+    >>> df, dt = f[1] - f[0], t[1] - t[0]
+    >>> E_Zxx = sum(np.sum(Zxx.real**2 + Zxx.imag**2, axis=0) * df) * dt
+    >>> # The energy is the same, but the numerical errors are quite large:
+    >>> np.isclose(E_x, E_Zxx, rtol=1e-2)
+    True
+
     """
+    if scaling == 'psd':
+        scaling = 'density'
+    elif scaling != 'spectrum':
+        raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
+
     freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided,
-                                        scaling='spectrum', axis=axis,
+                                        scaling=scaling, axis=axis,
                                         mode='stft', boundary=boundary,
                                         padded=padded)
 
@@ -1179,8 +1247,16 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
 
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
-    r"""Perform the inverse Short Time Fourier transform (iSTFT).
+          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
+          scaling='spectrum'):
+    r"""Perform the inverse Short Time Fourier transform (legacy function).
+
+    .. legacy:: function
+
+        `ShortTimeFFT` is a newer STFT / ISTFT implementation with more
+        features. A :ref:`comparison <tutorial_stft_legacy_stft>` between the
+        implementations can be found in the :ref:`tutorial_stft` section of the
+        :ref:`user_guide`.
 
     Parameters
     ----------
@@ -1235,6 +1311,11 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     freq_axis : int, optional
         Where the frequency axis of the STFT is located; the default is
         the penultimate axis (i.e. ``axis=-2``).
+    scaling: {'spectrum', 'psd'}
+        The default 'spectrum' scaling allows each frequency line of `Zxx` to
+        be interpreted as a magnitude spectrum. The 'psd' option scales each
+        line to a power spectral density - it allows to calculate the signal's
+        energy by numerically integrating over ``abs(Zxx)**2``.
 
     Returns
     -------
@@ -1246,6 +1327,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     See Also
     --------
     stft: Short Time Fourier Transform
+    ShortTimeFFT: Newer STFT/ISTFT implementation providing more features.
     check_COLA: Check whether the Constant OverLap Add (COLA) constraint
                 is met
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
@@ -1273,6 +1355,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     the mean squared error between the STFT of the returned signal and
     the modified STFT.
 
+
     .. versionadded:: 0.19.0
 
     References
@@ -1285,6 +1368,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1409,7 +1493,7 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if len(win.shape) != 1:
             raise ValueError('window must be 1-D')
         if win.shape[0] != nperseg:
-            raise ValueError('window must have length of {0}'.format(nperseg))
+            raise ValueError(f'window must have length of {nperseg}')
 
     ifunc = sp_fft.irfft if input_onesided else sp_fft.ifft
     xsubs = ifunc(Zxx, axis=-2, n=nfft)[..., :nperseg, :]
@@ -1422,7 +1506,12 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.result_type(win, xsubs) != xsubs.dtype:
         win = win.astype(xsubs.dtype)
 
-    xsubs *= win.sum()  # This takes care of the 'spectrum' scaling
+    if scaling == 'spectrum':
+        xsubs *= win.sum()
+    elif scaling == 'psd':
+        xsubs *= np.sqrt(fs * sum(win**2))
+    else:
+        raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
 
     # Construct the output from the ifft segments
     # This loop could perhaps be vectorized/strided somehow...
@@ -1438,7 +1527,11 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 
     # Divide out normalization where non-tiny
     if np.sum(norm > 1e-10) != len(norm):
-        warnings.warn("NOLA condition failed, STFT may not be invertible")
+        warnings.warn(
+            "NOLA condition failed, STFT may not be invertible."
+            + (" Possibly due to missing boundary" if not boundary else ""),
+            stacklevel=2
+        )
     x /= np.where(norm > 1e-10, norm, 1.0)
 
     if input_onesided:
@@ -1536,6 +1629,7 @@ def coherence(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -1677,7 +1771,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{0}', must be one of: {1}"
+        raise ValueError("Unknown boundary option '{}', must be one of: {}"
                          .format(boundary, list(boundary_funcs.keys())))
 
     # If x and y are the same object we can save ourselves some computation.
@@ -1812,15 +1906,16 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     if return_onesided:
         if np.iscomplexobj(x):
             sides = 'twosided'
-            warnings.warn('Input data is complex, switching to '
-                          'return_onesided=False')
+            warnings.warn('Input data is complex, switching to return_onesided=False',
+                          stacklevel=3)
         else:
             sides = 'onesided'
             if not same_data:
                 if np.iscomplexobj(y):
                     sides = 'twosided'
                     warnings.warn('Input data is complex, switching to '
-                                  'return_onesided=False')
+                                  'return_onesided=False',
+                                  stacklevel=3)
     else:
         sides = 'twosided'
 
@@ -1892,16 +1987,15 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
 
     .. versionadded:: 0.16.0
     """
-    # Created strided array of data segments
+    # Created sliding window view of array
     if nperseg == 1 and noverlap == 0:
         result = x[..., np.newaxis]
     else:
-        # https://stackoverflow.com/a/5568169
         step = nperseg - noverlap
-        shape = x.shape[:-1]+((x.shape[-1]-noverlap)//step, nperseg)
-        strides = x.strides[:-1]+(step*x.strides[-1], x.strides[-1])
-        result = np.lib.stride_tricks.as_strided(x, shape=shape,
-                                                 strides=strides)
+        result = np.lib.stride_tricks.sliding_window_view(
+            x, window_shape=nperseg, axis=-1, writeable=True
+        )
+        result = result[..., 0::step, :]
 
     # Detrend each data segment individually
     result = detrend_func(result)
@@ -1959,9 +2053,9 @@ def _triage_segments(window, nperseg, input_length):
         if nperseg is None:
             nperseg = 256  # then change to default
         if nperseg > input_length:
-            warnings.warn('nperseg = {0:d} is greater than input length '
-                          ' = {1:d}, using nperseg = {1:d}'
-                          .format(nperseg, input_length))
+            warnings.warn(f'nperseg = {nperseg:d} is greater than input length '
+                          f' = {input_length:d}, using nperseg = {input_length:d}',
+                          stacklevel=3)
             nperseg = input_length
         win = get_window(window, nperseg)
     else:

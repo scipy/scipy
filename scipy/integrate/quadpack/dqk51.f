@@ -1,4 +1,4 @@
-      subroutine dqk51(f,a,b,result,abserr,resabs,resasc)
+      recursive subroutine dqk51(f,a,b,result,abserr,resabs,resasc)
 c***begin prologue  dqk51
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

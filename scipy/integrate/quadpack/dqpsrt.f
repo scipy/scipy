@@ -1,4 +1,5 @@
-      subroutine dqpsrt(limit,last,maxerr,ermax,elist,iord,nrmax)
+      recursive subroutine dqpsrt(limit,last,maxerr,ermax,elist,iord,
+     *   nrmax)
 c***begin prologue  dqpsrt
 c***refer to  dqage,dqagie,dqagpe,dqawse
 c***routines called  (none)

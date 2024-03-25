@@ -5,6 +5,15 @@ Linear algebra (:mod:`scipy.linalg`)
 
 .. currentmodule:: scipy.linalg
 
+.. toctree::
+   :hidden:
+
+   linalg.blas
+   linalg.cython_blas
+   linalg.cython_lapack
+   linalg.interpolative
+   linalg.lapack
+
 Linear algebra functions.
 
 .. eventually, we should replace the numpy.linalg HTML link with just `numpy.linalg`
@@ -36,12 +45,9 @@ Basics
    norm - Matrix and vector norm
    lstsq - Solve a linear least-squares problem
    pinv - Pseudo-inverse (Moore-Penrose) using lstsq
-   pinv2 - Pseudo-inverse using svd
    pinvh - Pseudo-inverse of hermitian matrix
    kron - Kronecker product of two arrays
    khatri_rao - Khatri-Rao product of two arrays
-   tril - Construct a lower-triangular matrix from a given matrix
-   triu - Construct an upper-triangular matrix from a given matrix
    orthogonal_procrustes - Solve an orthogonal Procrustes problem
    matrix_balance - Balance matrix entries with a similarity transformation
    subspace_angles - Compute the subspace angles between two matrices
@@ -171,7 +177,6 @@ Special Matrices
    pascal - Pascal matrix
    invpascal - Inverse Pascal matrix
    toeplitz - Toeplitz matrix
-   tri - Construct a matrix filled with ones at and below a given diagonal
 
 Low-level routines
 ==================
@@ -220,7 +225,7 @@ from ._decomp_cossin import *
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
     decomp, decomp_cholesky, decomp_lu, decomp_qr, decomp_svd, decomp_schur,
-    basic, misc, special_matrices, flinalg, matfuncs
+    basic, misc, special_matrices, matfuncs,
 )
 
 __all__ = [s for s in dir() if not s.startswith('_')]

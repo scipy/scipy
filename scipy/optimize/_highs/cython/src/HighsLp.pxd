@@ -1,12 +1,12 @@
-# distutils: language=c++
 # cython: language_level=3
 
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-from .HConst cimport HighsBasisStatus, ObjSense
+from .HConst cimport HighsBasisStatus, ObjSense, HighsVarType
 from .HighsSparseMatrix cimport HighsSparseMatrix
+
 
 cdef extern from "HighsLp.h" nogil:
     # From HiGHS/src/lp_data/HighsLp.h
@@ -30,7 +30,9 @@ cdef extern from "HighsLp.h" nogil:
         vector[string] row_names_
         vector[string] col_names_
 
-        vector[int] integrality_
+        vector[HighsVarType] integrality_
+
+        bool isMip() const
 
     cdef cppclass HighsSolution:
         vector[double] col_value

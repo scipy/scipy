@@ -1,5 +1,5 @@
-      subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,ksave,result,
-     *   abserr,neval,resabs,resasc,momcom,chebmo)
+      recursive subroutine dqc25f(f,a,b,omega,integr,nrmom,maxp1,
+     *   ksave,result,abserr,neval,resabs,resasc,momcom,chebmo)
 c***begin prologue  dqc25f
 c***date written   810101   (yymmdd)
 c***revision date  830518   (yymmdd)

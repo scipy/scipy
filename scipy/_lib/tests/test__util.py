@@ -1,18 +1,22 @@
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
-import os
+import re
 import math
 from fractions import Fraction
 
 import numpy as np
 from numpy.testing import assert_equal, assert_
 import pytest
-from pytest import raises as assert_raises, deprecated_call
+from pytest import raises as assert_raises
+import hypothesis.extra.numpy as npst
+from hypothesis import given, strategies, reproduce_failure  # noqa: F401
+from scipy.conftest import array_api_compatible
 
-import scipy
+from scipy._lib._array_api import xp_assert_equal
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
-                              rng_integers, _validate_int)
+                              rng_integers, _validate_int, _rename_parameter,
+                              _contains_nan, _rng_html_rewrite, _lazywhere)
 
 
 def test__aligned_zeros():
@@ -62,11 +66,9 @@ def test_check_random_state():
     rsi = check_random_state(None)
     assert_equal(type(rsi), np.random.RandomState)
     assert_raises(ValueError, check_random_state, 'a')
-    if hasattr(np.random, 'Generator'):
-        # np.random.Generator is only available in NumPy >= 1.17
-        rg = np.random.Generator(np.random.PCG64())
-        rsi = check_random_state(rg)
-        assert_equal(type(rsi), np.random.Generator)
+    rg = np.random.Generator(np.random.PCG64())
+    rsi = check_random_state(rg)
+    assert_equal(type(rsi), np.random.Generator)
 
 
 def test_getfullargspec_no_self():
@@ -138,54 +140,6 @@ def test_mapwrapper_parallel():
         # because it didn't create it
         out = p.map(np.sin, in_arg)
         assert_equal(list(out), out_arg)
-
-
-# get our custom ones and a few from the "import *" cases
-@pytest.mark.parametrize(
-    'key', ('ifft', 'diag', 'arccos', 'randn', 'rand', 'array'))
-def test_numpy_deprecation(key):
-    """Test that 'from numpy import *' functions are deprecated."""
-    if key in ('ifft', 'diag', 'arccos'):
-        arg = [1.0, 0.]
-    elif key == 'finfo':
-        arg = float
-    else:
-        arg = 2
-    func = getattr(scipy, key)
-    match = r'scipy\.%s is deprecated.*2\.0\.0' % key
-    with deprecated_call(match=match) as dep:
-        func(arg)  # deprecated
-    # in case we catch more than one dep warning
-    fnames = [os.path.splitext(d.filename)[0] for d in dep.list]
-    basenames = [os.path.basename(fname) for fname in fnames]
-    assert 'test__util' in basenames
-    if key in ('rand', 'randn'):
-        root = np.random
-    elif key == 'ifft':
-        root = np.fft
-    else:
-        root = np
-    func_np = getattr(root, key)
-    func_np(arg)  # not deprecated
-    assert func_np is not func
-    # classes should remain classes
-    if isinstance(func_np, type):
-        assert isinstance(func, type)
-
-
-def test_numpy_deprecation_functionality():
-    # Check that the deprecation wrappers don't break basic NumPy
-    # functionality
-    with deprecated_call():
-        x = scipy.array([1, 2, 3], dtype=scipy.float64)
-        assert x.dtype == scipy.float64
-        assert x.dtype == np.float64
-
-        x = scipy.finfo(scipy.float32)
-        assert x.eps == np.finfo(np.float32).eps
-
-        assert scipy.float64 == np.float64
-        assert issubclass(np.float64, scipy.float64)
 
 
 def test_rng_integers():
@@ -262,3 +216,193 @@ class TestValidateInt:
         with pytest.raises(ValueError, match='n must be an integer not '
                                              'less than 0'):
             _validate_int(-1, 'n', 0)
+
+
+class TestRenameParameter:
+    # check that wrapper `_rename_parameter` for backward-compatible
+    # keyword renaming works correctly
+
+    # Example method/function that still accepts keyword `old`
+    @_rename_parameter("old", "new")
+    def old_keyword_still_accepted(self, new):
+        return new
+
+    # Example method/function for which keyword `old` is deprecated
+    @_rename_parameter("old", "new", dep_version="1.9.0")
+    def old_keyword_deprecated(self, new):
+        return new
+
+    def test_old_keyword_still_accepted(self):
+        # positional argument and both keyword work identically
+        res1 = self.old_keyword_still_accepted(10)
+        res2 = self.old_keyword_still_accepted(new=10)
+        res3 = self.old_keyword_still_accepted(old=10)
+        assert res1 == res2 == res3 == 10
+
+        # unexpected keyword raises an error
+        message = re.escape("old_keyword_still_accepted() got an unexpected")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(unexpected=10)
+
+        # multiple values for the same parameter raises an error
+        message = re.escape("old_keyword_still_accepted() got multiple")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(10, new=10)
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(10, old=10)
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(new=10, old=10)
+
+    def test_old_keyword_deprecated(self):
+        # positional argument and both keyword work identically,
+        # but use of old keyword results in DeprecationWarning
+        dep_msg = "Use of keyword argument `old` is deprecated"
+        res1 = self.old_keyword_deprecated(10)
+        res2 = self.old_keyword_deprecated(new=10)
+        with pytest.warns(DeprecationWarning, match=dep_msg):
+            res3 = self.old_keyword_deprecated(old=10)
+        assert res1 == res2 == res3 == 10
+
+        # unexpected keyword raises an error
+        message = re.escape("old_keyword_deprecated() got an unexpected")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_deprecated(unexpected=10)
+
+        # multiple values for the same parameter raises an error and,
+        # if old keyword is used, results in DeprecationWarning
+        message = re.escape("old_keyword_deprecated() got multiple")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_deprecated(10, new=10)
+        with pytest.raises(TypeError, match=message), \
+                pytest.warns(DeprecationWarning, match=dep_msg):
+            self.old_keyword_deprecated(10, old=10)
+        with pytest.raises(TypeError, match=message), \
+                pytest.warns(DeprecationWarning, match=dep_msg):
+            self.old_keyword_deprecated(new=10, old=10)
+
+
+class TestContainsNaNTest:
+
+    def test_policy(self):
+        data = np.array([1, 2, 3, np.nan])
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
+        assert contains_nan
+        assert nan_policy == "propagate"
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
+        assert contains_nan
+        assert nan_policy == "omit"
+
+        msg = "The input contains nan values"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="raise")
+
+        msg = "nan_policy must be one of"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="nan")
+
+    def test_contains_nan_1d(self):
+        data1 = np.array([1, 2, 3])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([1, 2, 3, np.nan])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([np.nan, 2, 3, np.nan])
+        assert _contains_nan(data3)[0]
+
+        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
+        assert not _contains_nan(data4)[0]
+
+        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        assert _contains_nan(data5)[0]
+
+    def test_contains_nan_2d(self):
+        data1 = np.array([[1, 2], [3, 4]])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([[1, 2], [3, np.nan]])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
+        assert not _contains_nan(data3)[0]
+
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]
+
+
+def test__rng_html_rewrite():
+    def mock_str():
+        lines = [
+            'np.random.default_rng(8989843)',
+            'np.random.default_rng(seed)',
+            'np.random.default_rng(0x9a71b21474694f919882289dc1559ca)',
+            ' bob ',
+        ]
+        return lines
+
+    res = _rng_html_rewrite(mock_str)()
+    ref = [
+        'np.random.default_rng()',
+        'np.random.default_rng(seed)',
+        'np.random.default_rng()',
+        ' bob ',
+    ]
+
+    assert res == ref
+
+
+class TestLazywhere:
+    n_arrays = strategies.integers(min_value=1, max_value=3)
+    rng_seed = strategies.integers(min_value=1000000000, max_value=9999999999)
+    dtype = strategies.sampled_from((np.float32, np.float64))
+    p = strategies.floats(min_value=0, max_value=1)
+    data = strategies.data()
+
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
+    @array_api_compatible
+    @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
+    def test_basic(self, n_arrays, rng_seed, dtype, p, data, xp):
+        mbs = npst.mutually_broadcastable_shapes(num_shapes=n_arrays+1,
+                                                 min_side=0)
+        input_shapes, result_shape = data.draw(mbs)
+        cond_shape, *shapes = input_shapes
+        fillvalue = xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=tuple())))
+        arrays = [xp.asarray(data.draw(npst.arrays(dtype=dtype, shape=shape)))
+                  for shape in shapes]
+
+        def f(*args):
+            return sum(arg for arg in args)
+
+        def f2(*args):
+            return sum(arg for arg in args) / 2
+
+        rng = np.random.default_rng(rng_seed)
+        cond = xp.asarray(rng.random(size=cond_shape) > p)
+
+        res1 = _lazywhere(cond, arrays, f, fillvalue)
+        res2 = _lazywhere(cond, arrays, f, f2=f2)
+
+        # Ensure arrays are at least 1d to follow sane type promotion rules.
+        if xp == np:
+            cond, fillvalue, *arrays = np.atleast_1d(cond, fillvalue, *arrays)
+
+        ref1 = xp.where(cond, f(*arrays), fillvalue)
+        ref2 = xp.where(cond, f(*arrays), f2(*arrays))
+
+        if xp == np:
+            ref1 = ref1.reshape(result_shape)
+            ref2 = ref2.reshape(result_shape)
+            res1 = xp.asarray(res1)[()]
+            res2 = xp.asarray(res2)[()]
+
+        isinstance(res1, type(xp.asarray([])))
+        xp_assert_equal(res1, ref1)
+        assert_equal(res1.shape, ref1.shape)
+        assert_equal(res1.dtype, ref1.dtype)
+
+        isinstance(res2, type(xp.asarray([])))
+        xp_assert_equal(res2, ref2)
+        assert_equal(res2.shape, ref2.shape)
+        assert_equal(res2.dtype, ref2.dtype)
