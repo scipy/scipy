@@ -513,16 +513,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             other = other.reshape((1, other.shape[0])).T  # Note: converts to CSC
         K2, N = other._shape
 
-        # find new_shape
+        # find new_shape: (M, N), (M,), (N,) or ()
+        new_shape = ()
         if self.ndim == 2:
-            if o_ndim == 2:
-                new_shape = (M, N)
-            else:
-                new_shape = (M,)
-        elif o_ndim == 2:
-            new_shape = (N,)
-        else:
-            new_shape = ()
+            new_shape += (M,)
+        if o_ndim == 2:
+            new_shape += (N,)
 
         major_dim = self._swap((M, N))[0]
         other = self.__class__(other)  # convert to this format

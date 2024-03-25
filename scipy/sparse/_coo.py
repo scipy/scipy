@@ -355,7 +355,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
 
         if self.ndim == 1:
-            indices = self.coords[0]
+            indices = self.coords[0].copy() if copy else self.coords[0]
             nnz = len(indices)
             indptr = np.array([0, nnz], dtype=idx_dtype)
             data = self.data.copy() if copy else self.data
