@@ -24,8 +24,7 @@ import numpy as np
 from scipy.sparse import csc_matrix
 from ._fortran_format_parser import FortranFormatParser, IntFormat, ExpFormat
 
-__all__ = ["MalformedHeader", "hb_read", "hb_write", "HBInfo", "HBFile",
-           "HBMatrixType"]
+__all__ = ["hb_read", "hb_write"]
 
 
 class MalformedHeader(Exception):

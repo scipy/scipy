@@ -4,10 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'mminfo', 'mmread', 'mmwrite', 'MMFile',
-    'coo_matrix', 'asstr'
-]
+__all__ = ["mminfo", "mmread", "mmwrite"]  # noqa: F822
 
 
 def __dir__():

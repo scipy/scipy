@@ -15,12 +15,6 @@ from ._lsq import least_squares
 from ._lsq.least_squares import prepare_bounds
 from scipy.optimize._minimize import Bounds
 
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import dot, eye, take  # noqa: F401
-from numpy.linalg import inv  # noqa: F401
-
-error = _minpack.error
-
 __all__ = ['fsolve', 'leastsq', 'fixed_point', 'curve_fit']
 
 

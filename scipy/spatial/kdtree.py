@@ -9,7 +9,6 @@ __all__ = [  # noqa: F822
     'KDTree',
     'Rectangle',
     'cKDTree',
-    'cKDTreeNode',
     'distance_matrix',
     'minkowski_distance',
     'minkowski_distance_p',

@@ -7,8 +7,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'spline_filter', 'gauss_spline',
     'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval',
-    'zeros_like', 'array', 'arctan2',
-    'tan', 'arange', 'floor', 'exp', 'greater', 'add',
     'cspline2d', 'sepfir2d'
 ]
 
