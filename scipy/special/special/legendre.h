@@ -405,6 +405,7 @@ void lqmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qm,
           std::mdspan<T, std::dextents<int, 2>, std::layout_stride> qd) {
     int m = qm.extent(0) - 1;
     int n = qm.extent(1) - 1;
+
     specfun::lqmn(x, m, n, qm.data_handle(), qd.data_handle());
 }
 
@@ -427,7 +428,112 @@ void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 2>,
     int m = cqm.extent(0) - 1;
     int n = cqm.extent(1) - 1;
 
-    specfun::clqmn(z, m, n, cqm.data_handle(), cqd.data_handle());
+    int i, j, k, km, ls;
+    std::complex<T> cq0, cq1, cq10, cqf0 = 0, cqf, cqf1, cqf2, zq, zs;
+
+    if ((std::abs(std::real(z)) == 1) && (std::imag(z) == 0)) {
+        for (i = 0; i < (m + 1); i++) {
+            for (j = 0; j < (n + 1); j++) {
+                cqm(i, j) = 1e300;
+                cqd(i, j) = 1e300;
+            }
+        }
+
+        return;
+    }
+
+    T xc = std::abs(z);
+    ls = 0;
+    if ((std::imag(z) == 0) || (xc < 1)) {
+        ls = 1;
+    }
+    if (xc > 1) {
+        ls = -1;
+    }
+    zs = static_cast<T>(ls) * (static_cast<T>(1) - z * z);
+    zq = std::sqrt(zs);
+
+    cq0 = std::log(static_cast<T>(ls) * (static_cast<T>(1) + z) / (static_cast<T>(1) - z)) / static_cast<T>(2);
+    if (xc < 1.0001) {
+        cqm(0, 0) = cq0;
+        cqm(1, 0) = -static_cast<T>(1) / zq;
+        cqm(0, 1) = z * cq0 - static_cast<T>(1);
+        cqm(1, 1) = -zq * (cq0 + z / (static_cast<T>(1) - z * z));
+
+        for (i = 0; i <= 1; i++) {
+            for (j = 2; j <= n; j++) {
+                cqm(i, j) =
+                    (static_cast<T>(2 * j - 1) * z * cqm(i, j - 1) - static_cast<T>(j + i - 1) * cqm(i, j - 2)) /
+                    static_cast<T>(j - i);
+            }
+        }
+
+        for (i = 2; i <= m; i++) {
+            for (j = 0; j <= n; j++) {
+                cqm(i, j) = -2 * static_cast<T>(i - 1) * z / zq * cqm(i - 1, j) -
+                            static_cast<T>(ls * (j + i - 1) * (j - i + 2)) * cqm(i - 2, j);
+            }
+        }
+    } else {
+        if (xc > 1.1) {
+            km = 40 + m + n;
+        } else {
+            km = (40 + m + n) * ((int) (-1.0 - 1.8 * log(xc - 1.)));
+        }
+        cqf2 = 0.0;
+        cqf1 = 1.0;
+        for (k = km; k >= 0; k--) {
+            cqf0 = (static_cast<T>(2 * k + 3) * z * cqf1 - static_cast<T>(k + 2) * cqf2) / static_cast<T>(k + 1);
+            if (k <= n) {
+                cqm(0, k) = cqf0;
+            }
+            cqf2 = cqf1;
+            cqf1 = cqf0;
+        }
+
+        for (k = 0; k <= n; k++) {
+            cqm(0, k) *= cq0 / cqf0;
+        }
+
+        cqf2 = 0.0;
+        cqf1 = 1.0;
+        for (k = km; k >= 0; k--) {
+            cqf0 = (static_cast<T>(2 * k + 3) * z * cqf1 - static_cast<T>(k + 1) * cqf2) / static_cast<T>(k + 2);
+            if (k <= n) {
+                cqm(1, k) = cqf0;
+            }
+            cqf2 = cqf1;
+            cqf1 = cqf0;
+        }
+
+        cq10 = -static_cast<T>(1) / zq;
+        for (k = 0; k <= n; k++) {
+            cqm(1, k) *= cq10 / cqf0;
+        }
+
+        for (j = 0; j <= n; j++) {
+            cq0 = cqm(0, j);
+            cq1 = cqm(1, j);
+            for (i = 0; i <= (m - 2); i++) {
+                cqf = -static_cast<T>(2 * (i + 1)) * z / zq * cq1 + static_cast<T>((j - i) * (j + i + 1)) * cq0;
+                cqm(i + 2, j) = cqf;
+                cq0 = cq1;
+                cq1 = cqf;
+            }
+        }
+
+        cqd(0, 0) = static_cast<T>(ls) / zs;
+        for (j = 1; j <= n; j++) {
+            cqd(0, j) = ls * static_cast<T>(j) * (cqm(0, j - 1) - z * cqm(0, j)) / zs;
+        }
+
+        for (i = 1; i <= m; i++) {
+            for (j = 0; j <= n; j++) {
+                cqd(i, j) = static_cast<T>(ls * i) * z / zs * cqm(i, j) +
+                            static_cast<T>((i + j) * (j - i + 1)) / zq * cqm(i - 1, j);
+            }
+        }
+    }
 }
 
 } // namespace special
