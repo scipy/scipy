@@ -90,12 +90,93 @@ void lpn(std::complex<double> z, std::mdspan<std::complex<double>, std::dextents
     return;
 }
 
+// Translated into C++ by SciPy developers in 2024.
+// Original comments appear below.
+//
+// =====================================================
+// Purpose: Compute the associated Legendre functions
+//          Pmn(x) and their derivatives Pmn'(x) for
+//          real argument
+// Input :  x  --- Argument of Pmn(x)
+//          m  --- Order of Pmn(x),  m = 0,1,2,...,n
+//          n  --- Degree of Pmn(x), n = 0,1,2,...,N
+//          mm --- Physical dimension of PM and PD
+// Output:  PM(m,n) --- Pmn(x)
+//          PD(m,n) --- Pmn'(x)
+// =====================================================
+
 void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pm,
           std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
-    return specfun::lpmn(m, n, x, pm.data_handle(), pd.data_handle());
+    int i, j, ls;
+    double xq, xs;
+
+    for (i = 0; i <= m; i++) {
+        for (j = 0; j <= n; j++) {
+            pm(i, j) = 0;
+            pd(i, j) = 0;
+        }
+    }
+
+    pm(0, 0) = 1;
+
+    if (n == 0) {
+        return;
+    }
+
+    if (fabs(x) == 1.0) {
+        for (i = 1; i <= n; i++) {
+            pm(0, i) = pow(x, i);
+            pd(0, i) = 0.5 * i * (i + 1.0) * pow(x, i + 1);
+        }
+
+        for (i = 1; i <= m; i++) {
+            for (j = 1; j <= n; j++) {
+                if (i == 1) {
+                    pd(i, j) = INFINITY;
+                } else if (i == 2) {
+                    pd(i, j) = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
+                }
+            }
+        }
+        return;
+    }
+
+    ls = (fabs(x) > 1.0 ? -1 : 1);
+    xq = sqrt(ls * (1.0 - x * x));
+    // Ensure connection to the complex-valued function for |x| > 1
+    if (x < -1.0) {
+        xq = -xq;
+    }
+    xs = ls * (1.0 - x * x);
+    /* 30 */
+    for (i = 1; i <= m; ++i) {
+        pm(i, 0) = -ls * (2.0 * i - 1.0) * xq * pm(i - 1, 0);
+    }
+    /* 35 */
+    for (i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
+        pm(i, 1) = (2.0 * i + 1.0) * x * pm(i, 0);
+    }
+    /* 40 */
+    for (i = 0; i <= m; i++) {
+        for (j = i + 2; j <= n; j++) {
+            pm(i, j) = ((2.0 * j - 1.0) * x * pm(i, j - 1) - (i + j - 1.0) * pm(i, j - 2)) / (j - i);
+        }
+    }
+
+    pd(0, 0) = 0.0;
+    /* 45 */
+    for (j = 1; j <= n; j++) {
+        pd(0, j) = ls * j * (pm(0, j - 1) - x * pm(0, j)) / xs;
+    }
+    /* 50 */
+    for (i = 1; i <= m; i++) {
+        for (j = i; j <= n; j++) {
+            pd(i, j) = ls * i * x * pm(i, j) / xs + (j + i) * (j - i + 1.0) / xq * pm(i - 1, j);
+        }
+    }
 }
 
 } // namespace special

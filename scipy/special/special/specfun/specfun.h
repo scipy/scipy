@@ -4170,6 +4170,7 @@ inline void lamv(double v, double x, double *vm, double *vl, double *dl) {
 }
 
 
+<<<<<<< HEAD
 inline void lpmn(int m, int n, double x, double *pm, double *pd) {
 
     // =====================================================
@@ -4258,6 +4259,9 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
 
 template <typename T>
 void lpmns(int m, int n, T x, T* pm, T* pd) {
+=======
+inline void lpmns(int m, int n, double x, double* pm, double* pd) {
+>>>>>>> 656c1c8b1 (Translated lpmn)
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Pmn(x)

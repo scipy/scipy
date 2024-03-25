@@ -1775,9 +1775,11 @@ def lpmn(m, n, z):
     else:
         mp = m
 
-    p = np.zeros((mp + 1, int(n) + 1), dtype = np.float64)
+    z = np.asarray(z)
+
+    p = np.zeros((mp + 1, int(n) + 1) + z.shape, dtype = np.float64)
     pd = np.zeros_like(p)
-    _lpmn(z, out = (p, pd))
+    _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)), np.moveaxis(pd, (0, 1), (-2, -1))))
 
     if (m < 0):
         p = p * fixarr
