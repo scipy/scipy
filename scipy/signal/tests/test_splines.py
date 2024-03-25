@@ -8,7 +8,7 @@ from pytest import raises
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
-import scipy.signal._splines as sp
+from scipy.signal._splines import symiirorder1
 from scipy import signal
 
 
@@ -73,3 +73,72 @@ class TestSymIIR:
         # Test that symiirorder1_ic fails when |z1| >= 1
         assert_raises(ValueError, symiirorder1_ic, x, 1.0, -1)
         assert_raises(ValueError, symiirorder1_ic, x, 2.0, -1)
+
+    @pytest.mark.parametrize(
+        'dtype', [np.float32, np.float64, np.complex64, np.complex128])
+    @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
+    def test_symiir1(self, dtype, precision):
+        c_precision = precision
+        if precision == -1.0:
+            if dtype in {np.float32, np.complex64}:
+                c_precision = 1e-6
+            else:
+                c_precision = 1e-11
+
+        # Test for a low-pass filter with c0 = 0.15 and z1 = 0.85
+        # using an unit step over 200 samples.
+        c0 = 0.15
+        z1 = 0.85
+        n = 200
+        signal = np.ones(n, dtype=dtype)
+
+        # Find the initial condition. See test_symiir1_ic for a detailed
+        # explanation
+        n_exp = int(np.ceil(np.log(c_precision) / np.log(z1)))
+        initial = np.asarray((1 - z1 ** n_exp) / (1 - z1), dtype=dtype)
+        initial = 1 + z1 * initial
+
+        # Forward pass
+        # The transfer function for the system 1 / (1 - z1 * z^-1) when
+        # applied to an unit step with initial conditions y0 is
+        # 1 / (1 - z1 * z^-1) * (z^-1 / (1 - z^-1) + y0)
+
+        # Solving the inverse Z-transform for the given expression yields:
+        # y[n] = y0 * z1**n * u[n] +
+        #        -z1 / (1 - z1) * z1**(k - 1) * u[k - 1] +
+        #        1 / (1 - z1) * u[k - 1]
+        # d is the Kronecker delta function, and u is the unit step
+
+        # y0 * z1**n * u[n]
+        pos = np.arange(n, dtype=dtype)
+        comp1 = initial * z1**pos
+
+        # -z1 / (1 - z1) * z1**(k - 1) * u[k - 1]
+        comp2 = np.zeros(n, dtype=dtype)
+        comp2[1:] = -z1 / (1 - z1) * z1**pos[:-1]
+
+        # 1 / (1 - z1) * u[k - 1]
+        comp3 = np.zeros(n, dtype=dtype)
+        comp3[1:] = 1 / (1 - z1)
+
+        expected_fwd = comp1 + comp2 + comp3
+
+        # Reverse condition
+        sym_cond = -c0 / (z1 - 1.0) * expected_fwd[-1]
+
+        # Backward pass
+        # The transfer function for the forward result is equivalent to
+        # the forward system times c0 / (1 - z1 * z).
+
+        # Computing a closed form for the complete expression is difficult
+        # The result will be computed iteratively from the difference equation
+        exp_out = np.zeros(n, dtype=dtype)
+        exp_out[0] = sym_cond
+
+        for i in range(1, n):
+            exp_out[i] = c0 * expected_fwd[n - 1 - i] + z1 * exp_out[i - 1]
+
+        exp_out = exp_out[::-1]
+
+        out = symiirorder1(signal, c0, z1, precision)
+        assert_allclose(out, exp_out, atol=4e-6, rtol=6e-7)
