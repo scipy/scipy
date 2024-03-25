@@ -5,7 +5,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence',
+    'periodogram', 'welch', 'lombscargle', 'csd', 'coherence', 'cyclic_sd',
     'spectrogram', 'stft', 'istft', 'check_COLA', 'check_NOLA',
     'sp_fft', 'get_window', 'const_ext', 'even_ext',
     'odd_ext', 'zero_ext'

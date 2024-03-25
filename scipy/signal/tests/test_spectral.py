@@ -11,7 +11,7 @@ from scipy import signal
 from scipy.fft import fftfreq, rfftfreq, fft, irfft
 from scipy.integrate import trapezoid
 from scipy.signal import (periodogram, welch, lombscargle, coherence,
-                          spectrogram, check_COLA, check_NOLA)
+                          cyclic_sd, spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
 from scipy.signal._spectral_py import _spectral_helper
 
@@ -916,6 +916,41 @@ class TestCoherence:
         assert_allclose(f, f1)
         assert_allclose(C, C1)
 
+class TestCyclicSd:
+    def test_identical_input(self):
+        rs = np.random.RandomState(526057773)
+        x = rs.standard_normal(50)
+        fs, nperseg, noverlap = 1, 16, 12
+
+        f, Pxx = cyclic_sd(x, x, fs=fs, alpha=0.5, nperseg=nperseg,
+                           noverlap=noverlap)
+        assert_allclose(f, fftfreq(nperseg, 1/fs))
+        assert_array_equal(Pxx.shape, (nperseg,))
+
+        cyclic_sd(x, x, fs=fs, alpha=0.4, sym=False, nperseg=nperseg,
+                  noverlap=noverlap, nfft=nperseg, window='hamming',
+                  detrend=False, scaling='spectrum', average='median')
+
+        with pytest.raises(ValueError, match='Cyclic frequency must be'):
+            cyclic_sd(x, x, fs=fs, alpha=fs)
+
+        with pytest.raises(ValueError, match='In case nperseg is defined,'):
+            cyclic_sd(x, x, fs=fs, alpha=0.3, nperseg=10)
+
+    def test_multidim_inputs(self):
+        rs = np.random.RandomState(526057773)
+        n_dim0, n_dim1, n_dim2 = 2, 50, 60
+        x = rs.standard_normal((n_dim0, n_dim1, n_dim2))
+        y = rs.standard_normal((n_dim0, n_dim1, n_dim2))
+        nperseg, noverlap = 16, 12
+
+        _, Pxy = cyclic_sd(x, y, fs=1, alpha=0.5, axis=1,
+                           nperseg=nperseg, noverlap=noverlap)
+        assert_array_equal(Pxy.shape, (n_dim0, nperseg, n_dim2))
+
+        _, Pxy = cyclic_sd(x, y, fs=1, alpha=0.4, axis=2, sym=False,
+                           nperseg=nperseg, noverlap=noverlap)
+        assert_array_equal(Pxy.shape, (n_dim0, n_dim1, nperseg))
 
 class TestSpectrogram:
     def test_average_all_segments(self):

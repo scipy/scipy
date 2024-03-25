@@ -276,6 +276,7 @@ Spectral analysis
    coherence      -- Compute the magnitude squared coherence, using Welch's method.
    spectrogram    -- Compute the spectrogram (legacy).
    lombscargle    -- Computes the Lomb-Scargle periodogram.
+   cyclic_sd      -- Computes the cross cyclic spectral density.
    vectorstrength -- Computes the vector strength.
    ShortTimeFFT   -- Interface for calculating the \
                      :ref:`Short Time Fourier Transform <tutorial_stft>` and \
