@@ -33,7 +33,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
             or np.issubdtype(A.dtype, np.floating)):
         message = "`A` must be of floating or complex floating data type."
         raise ValueError(message)
-    if np.prod(A.shape) == 0:
+    if A.size == 0:
         message = "`A` must not be empty."
         raise ValueError(message)
 

@@ -70,13 +70,12 @@ the same shared library.
 
 import itertools
 import json
+import math
 import os
 from stat import ST_MTIME
 import argparse
 import re
 import textwrap
-
-import numpy
 
 special_ufuncs = [
     '_cospi', '_sinpi', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
@@ -950,7 +949,7 @@ class FusedFunc(Func):
         all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = [len(x) for x in all_codes]
-        last = numpy.prod(codelens) - 1
+        last = math.prod(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
             for n, fused_type in enumerate(fused_types):
