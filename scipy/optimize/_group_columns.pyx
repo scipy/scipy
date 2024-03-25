@@ -15,7 +15,7 @@ np.import_array()
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def group_dense(int m, int n, const int[:, :] A):
-    cdef int [:, :] B = A.T  # Transposed view for convenience.
+    cdef const int [:, :] B = A.T  # Transposed view for convenience.
 
     cdef int [:] groups = np.full(n, -1, dtype=np.int32)
     cdef int current_group = 0
