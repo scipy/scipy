@@ -14,7 +14,7 @@ np.import_array()
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def group_dense(int m, int n, int [:, :] A):
+def group_dense(int m, int n, const int[:, :] A):
     cdef int [:, :] B = A.T  # Transposed view for convenience.
 
     cdef int [:] groups = np.full(n, -1, dtype=np.int32)
@@ -62,7 +62,7 @@ def group_dense(int m, int n, int [:, :] A):
 
 
 @cython.wraparound(False)
-def group_sparse(int m, int n, int [:] indices, int [:] indptr):
+def group_sparse(int m, int n, const int[:] indices, const int[:] indptr):
     cdef int [:] groups = np.full(n, -1, dtype=np.int32)
     cdef int current_group = 0
 
