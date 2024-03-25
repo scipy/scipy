@@ -785,6 +785,7 @@ class TestShgoArguments:
         numpy.testing.assert_allclose(res_new_bounds.x,
                                       res_old_bounds.x)
 
+    @pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
     def test_19_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 
