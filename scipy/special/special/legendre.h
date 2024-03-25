@@ -426,6 +426,7 @@ void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<int, 2>,
           std::mdspan<std::complex<T>, std::dextents<int, 2>, std::layout_stride> cqd) {
     int m = cqm.extent(0) - 1;
     int n = cqm.extent(1) - 1;
+
     specfun::clqmn(z, m, n, cqm.data_handle(), cqd.data_handle());
 }
 
