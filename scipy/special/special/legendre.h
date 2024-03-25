@@ -66,6 +66,36 @@ void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_strid
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
+    for (int i = 0; i < m + 1; ++i) {
+        for (int j = 0; j < n + 1; ++j) {
+            pm(i, j) = 0;
+            pd(i, j) = 0;
+        }
+    }
+
+    pm(0, 0) = 1;
+    if (n == 0) {
+        return;
+    }
+
+    if (fabs(x) == 1.0) {
+        for (int i = 1; i <= n; i++) {
+            pm(0, i) = pow(x, i);
+            pd(0, i) = 0.5 * i * (i + 1.0) * pow(x, i + 1);
+        }
+
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (i == 1) {
+                    pd(1, j) = std::numeric_limits<double>::infinity();
+                } else if (i == 2) {
+                    pd(2, j) = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
+                }
+            }
+        }
+        return;
+    }
+
     specfun::lpmn(m, n, x, pm.data_handle(), pd.data_handle());
 }
 

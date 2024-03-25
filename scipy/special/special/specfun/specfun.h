@@ -4097,36 +4097,6 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
     int i, j, ls;
     double xq, xs;
 
-
-    for (i = 0; i < (m + 1)*(n + 1); i++) {
-            pm[i] = 0.0;
-            pd[i] = 0.0;
-    }
-
-    pm[0] = 1.0;
-
-    if (n == 0) {
-        return;
-    }
-
-    if (fabs(x) == 1.0) {
-        for (i = 1; i <= n; i++) {
-            pm[i] = pow(x, i);
-            pd[i] = 0.5 * i * (i + 1.0) * pow(x, i + 1);
-        }
-
-        for (i = 1; i <= m; i++) {
-            for (j = 1; j <= n; j++) {
-                if (i == 1) {
-                    pd[n + 1 + j] = INFINITY;
-                } else if (i == 2) {
-                    pd[2*n + 2 + j] = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
-                }
-            }
-        }
-        return;
-    }
-
     ls = (fabs(x) > 1.0 ? -1 : 1);
     xq = sqrt(ls * (1.0 - x * x));
     // Ensure connection to the complex-valued function for |x| > 1
@@ -4155,6 +4125,7 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
     for (j = 1; j <= n; j++) {
         pd[j] = ls * j * (pm[j-1] - x * pm[j]) / xs;
     }
+
     /* 50 */
     for (i = 1; i <= m; i++) {
         for (j = i; j <= n; j++) {
