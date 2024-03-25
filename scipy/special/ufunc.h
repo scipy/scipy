@@ -111,6 +111,9 @@ struct npy_type<std::complex<double>> {
     static constexpr int value = NPY_COMPLEX128;
 };
 
+
+#include <iostream>
+
 template <>
 struct npy_type<npy_cdouble> {
     static constexpr int value = NPY_COMPLEX128;

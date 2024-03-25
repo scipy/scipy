@@ -1280,30 +1280,6 @@ inline void clpmn(std::complex<double> z, int m, int n, int ntype, std::complex<
     double x = z.real();
     double y = z.imag();
 
-    for (i = 0; i < (m+1)*(n+1); i++) {
-            cpm[i] = 0.0;
-            cpd[i] = 0.0;
-    }
-    cpm[0] = 1.0;
-    if (n == 0) {
-        return;
-    }
-    if ((fabs(x) == 1.0) && (y == 0.0)) {
-        for (i = 1; i <= n; i++) {
-            cpm[i] = pow(x, i);
-            cpd[i] = 0.5*i*(i+1)*pow(x, i+1);
-        }
-        for (i = 1; i <= m; i++) {
-            for (j = 1; j <= n; j++) {
-                if (i == 1) {
-                    cpd[i*(n+1) + j] = INFINITY;
-                } else if (i == 2) {
-                    cpd[i*(n+1) + j] = -0.25*(j+2)*(j+1)*j*(j-1)*pow(x, j+1);
-                }
-            }
-        }
-        return;
-    }
     if (ntype == 2) {
         // sqrt(1 - z**2) with branch cut on |x|>1
         zs = (1.0 - z*z);
@@ -1324,25 +1300,7 @@ inline void clpmn(std::complex<double> z, int m, int n, int ntype, std::complex<
         // DLMF 14.10.7
         cpm[i*(n + 2) + 1] = (2.*i + 1)*z*cpm[i*(n + 2)];
     }
-    for (i = 0; i <= m; i++) {
-        for (j = i+2; j <= n; j++) {
-            // DLMF 14.10.3
-            cpm[i*(n + 1) + j] = ((2.*j - 1)*z*cpm[i*(n + 1) + j-1] - static_cast<double>(i+j-1)*cpm[i*(n+1) + j-2])/static_cast<double>(j-i);
-        }
-    }
-    cpd[0] = 0.0;
-    for (j = 1; j <= n; j++) {
-        // DLMF 14.10.5
-        cpd[j] = ls*static_cast<double>(j)*(z*cpm[j] - cpm[j-1])/zs;
-    }
-    for (i = 1; i <= m; i++) {
-        for (j = i; j <= n; j++) {
-            // derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
-            // derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
-            cpd[i * (n + 1) + j] = static_cast<double>(ls)*(-static_cast<double>(i)*z*cpm[i * (n + 1) + j]/zs +
-                                   (j+i)*(j-i+1.0)/zq*cpm[(i - 1)*(n + 1) + j]);
-        }
-    }
+
     return;
 }
 

@@ -89,7 +89,76 @@ void clpmn(std::complex<double> z, long ntype,
     int m = cpm.extent(0) - 1;
     int n = cpm.extent(1) - 1;
 
+    for (int i = 0; i <= m; ++i) {
+        for (int j = 0; j <= n; ++j) {
+            cpm(i, j) = 0.0;
+            cpd(i, j) = 0.0;
+        }
+    }
+
+    cpm(0, 0) = 1.0;
+    if (n == 0) {
+        return;
+    }
+
+    if ((std::abs(std::real(z)) == 1.0) && (std::imag(z) == 0.0)) {
+        for (int i = 1; i <= n; i++) {
+            cpm(0, i) = pow(std::real(z), i);
+            cpd(0, i) = 0.5 * i * (i + 1) * pow(std::real(z), i + 1);
+        }
+        for (int i = 1; i <= m; i++) {
+            for (int j = 1; j <= n; j++) {
+                if (i == 1) {
+                    cpd(i, j) = INFINITY;
+                } else if (i == 2) {
+                    cpd(i, j) = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(std::real(z), j + 1);
+                }
+            }
+        }
+        return;
+    }
+
+    std::complex<double> zq, zs;
+    int ls;
+    if (ntype == 2) {
+        // sqrt(1 - z**2) with branch cut on |x|>1
+        zs = (1.0 - z * z);
+        zq = -std::sqrt(zs);
+        ls = -1;
+    } else {
+        // sqrt(z**2 - 1) with branch cut between [-1, 1]
+        zs = (z * z - 1.0);
+        zq = std::sqrt(zs);
+        if (std::real(z) < 0.) {
+            zq = -zq;
+        }
+        ls = 1;
+    }
+
     specfun::clpmn(z, m, n, ntype, cpm.data_handle(), cpd.data_handle());
+
+    for (int i = 0; i <= m; i++) {
+        for (int j = i + 2; j <= n; j++) {
+            // DLMF 14.10.3
+            cpm(i, j) = ((2. * j - 1) * z * cpm(i, j - 1) - static_cast<double>(i + j - 1) * cpm(i, j - 2)) /
+                        static_cast<double>(j - i);
+        }
+    }
+
+    cpd(0, 0) = 0.0;
+    for (int j = 1; j <= n; j++) {
+        // DLMF 14.10.5
+        cpd(0, j) = ls * static_cast<double>(j) * (z * cpm(0, j) - cpm(0, j - 1)) / zs;
+    }
+
+    for (int i = 1; i <= m; i++) {
+        for (int j = i; j <= n; j++) {
+            // derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+            // derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+            cpd(i, j) = static_cast<double>(ls) *
+                        (-static_cast<double>(i) * z * cpm(i, j) / zs + (j + i) * (j - i + 1.0) / zq * cpm(i - 1, j));
+        }
+    }
 }
 
 } // namespace special
