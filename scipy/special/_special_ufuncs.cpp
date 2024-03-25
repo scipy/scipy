@@ -78,6 +78,8 @@ using func_dddd_dpdp_t = void (*)(double, double, double, double, double *, doub
 
 using func_fffff_fpfp_t = void (*)(float, float, float, float, float, float *, float *);
 using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, double *, double *);
+using lpmn_fff_t = void (*)(float, mdspan<float, dextents<int, 2>, layout_stride>,
+                            mdspan<float, dextents<int, 2>, layout_stride>);
 using lpmn_ddd_t = void (*)(double, mdspan<double, dextents<int, 2>, layout_stride>,
                             mdspan<double, dextents<int, 2>, layout_stride>);
 extern const char *lpmn_doc;
@@ -273,7 +275,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
 
     PyObject *_lpmn =
-        SpecFun_NewGUFunc({static_cast<lpmn_ddd_t>(special::lpmn)}, 2, "_lpmn", lpmn_doc, "()->(mp1,np1),(mp1,np1)");
+        SpecFun_NewGUFunc({static_cast<lpmn_fff_t>(special::lpmn), static_cast<lpmn_ddd_t>(special::lpmn)}, 2, "_lpmn",
+                          lpmn_doc, "()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_lpmn", _lpmn);
 
     PyObject *_clpmn =

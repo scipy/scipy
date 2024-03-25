@@ -35,7 +35,7 @@ void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
         for (int k = 2; k <= n; k++) {
             pf = (static_cast<T>(2 * k - 1) * z * p1 - static_cast<T>(k - 1) * p0) / static_cast<T>(k);
             pn(k) = pf;
-            if (std::abs(std::real(z)) == 1.0 && std::imag(z) == 0) {
+            if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
                 pd(k) = std::pow(std::real(z), k + 1) * k * (k + 1) / 2;
             } else {
                 pd(k) = static_cast<T>(k) * (p1 - z * pf) / (static_cast<T>(1) - z * z);
@@ -61,8 +61,9 @@ void lpn(T z, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pm,
-          std::mdspan<double, std::dextents<int, 2>, std::layout_stride> pd) {
+template <typename T>
+void lpmn(T x, std::mdspan<T, std::dextents<int, 2>, std::layout_stride> pm,
+          std::mdspan<T, std::dextents<int, 2>, std::layout_stride> pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
@@ -78,48 +79,53 @@ void lpmn(double x, std::mdspan<double, std::dextents<int, 2>, std::layout_strid
         return;
     }
 
-    if (fabs(x) == 1.0) {
+    if (std::abs(x) == 1) {
         for (int i = 1; i <= n; i++) {
-            pm(0, i) = pow(x, i);
-            pd(0, i) = 0.5 * i * (i + 1.0) * pow(x, i + 1);
+            pm(0, i) = std::pow(x, i);
+            pd(0, i) = i * (i + 1) * std::pow(x, i + 1) / 2;
         }
 
         for (int i = 1; i <= m; i++) {
             for (int j = 1; j <= n; j++) {
                 if (i == 1) {
-                    pd(1, j) = std::numeric_limits<double>::infinity();
+                    pd(1, j) = std::numeric_limits<T>::infinity();
                 } else if (i == 2) {
-                    pd(2, j) = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
+                    pd(2, j) = -(j + 2) * (j + 1) * j * (j - 1) * std::pow(x, j + 1) / 4;
                 }
             }
         }
         return;
     }
 
-    int ls = (fabs(x) > 1.0 ? -1 : 1);
-    double xq = sqrt(ls * (1.0 - x * x));
+    int ls = (std::abs(x) > 1 ? -1 : 1);
+    T xq = std::sqrt(ls * (1 - x * x));
     // Ensure connection to the complex-valued function for |x| > 1
-    if (x < -1.0) {
+    if (x < -1) {
         xq = -xq;
     }
-    double xs = ls * (1.0 - x * x);
+    T xs = ls * (1 - x * x);
 
-    specfun::lpmn(m, n, x, pm.data_handle(), pd.data_handle());
+    for (int i = 1; i <= m; ++i) {
+        pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
+    }
+    for (int i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
+        pm(i, i + 1) = (2 * i + 1) * x * pm(i, i);
+    }
 
     for (int i = 0; i <= m; i++) {
         for (int j = i + 2; j <= n; j++) {
-            pm(i, j) = ((2.0 * j - 1.0) * x * pm(i, j - 1) - (i + j - 1.0) * pm(i, j - 2)) / (j - i);
+            pm(i, j) = ((2 * j - 1) * x * pm(i, j - 1) - (i + j - 1) * pm(i, j - 2)) / (j - i);
         }
     }
 
-    pd(0, 0) = 0.0;
+    pd(0, 0) = 0;
     for (int j = 1; j <= n; j++) {
         pd(0, j) = ls * j * (pm(0, j - 1) - x * pm(0, j)) / xs;
     }
 
     for (int i = 1; i <= m; i++) {
         for (int j = i; j <= n; j++) {
-            pd(i, j) = ls * i * x * pm(i, j) / xs + (j + i) * (j - i + 1.0) / xq * pm(i - 1, j);
+            pd(i, j) = ls * i * x * pm(i, j) / xs + (j + i) * (j - i + 1) / xq * pm(i - 1, j);
         }
     }
 }

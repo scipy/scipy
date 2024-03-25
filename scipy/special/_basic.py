@@ -1779,7 +1779,7 @@ def lpmn(m, n, z):
 
     z = np.asarray(z)
 
-    p = np.zeros((mp + 1, n + 1) + z.shape, dtype = np.float64)
+    p = np.zeros((mp + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.zeros_like(p)
     _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
         np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
@@ -1867,9 +1867,12 @@ def clpmn(m, n, z, type=3):
     else:
         mp = m
 
-    p = np.empty((mp + 1, n + 1), dtype = np.complex128)
-    pd = np.empty((mp + 1, n + 1), dtype = np.complex128)
-    _clpmn(z, type, out = (p, pd))
+    z = np.asarray(z)
+
+    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
+    pd = np.zeros_like(p)
+    _clpmn(z, type, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     if (m < 0):
         p = p * fixarr
@@ -2049,14 +2052,10 @@ def lpn(n, z):
 
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if (n < 1):
-        n1 = 1
-    else:
-        n1 = n
 
     z = np.asarray(z)
 
-    pn = np.zeros((n1 + 1,) + z.shape, dtype = z.dtype)
+    pn = np.zeros((n + 1,) + z.shape, dtype=z.dtype)
     pd = np.zeros_like(pn)
     _lpn(z, out = (np.moveaxis(pn, 0, -1),
         np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
