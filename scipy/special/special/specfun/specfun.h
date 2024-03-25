@@ -1257,6 +1257,133 @@ inline double chgus(double x, double a, double b, int *id) {
 }
 
 
+inline void clpmn(std::complex<double> z, int m, int n, int ntype, std::complex<double> *cpm, std::complex<double> *cpd) {
+
+    // =========================================================
+    // Purpose: Compute the associated Legendre functions Pmn(z)
+    //          and their derivatives Pmn'(z) for a complex
+    //          argument
+    // Input :  x     --- Real part of z
+    //          y     --- Imaginary part of z
+    //          m     --- Order of Pmn(z),  m = 0,1,2,...,n
+    //          n     --- Degree of Pmn(z), n = 0,1,2,...,N
+    //          mm    --- Physical dimension of CPM and CPD
+    //          ntype --- type of cut, either 2 or 3
+    // Output:  CPM(m,n) --- Pmn(z)
+    //          CPD(m,n) --- Pmn'(z)
+    //
+    // SciPy mod: C translation uses a contiguous memory block
+    // =========================================================
+
+    int i, j, ls;
+    std::complex<double> zq, zs;
+    double x = z.real();
+    double y = z.imag();
+
+    for (i = 0; i < (m+1)*(n+1); i++) {
+            cpm[i] = 0.0;
+            cpd[i] = 0.0;
+    }
+    cpm[0] = 1.0;
+    if (n == 0) {
+        return;
+    }
+    if ((fabs(x) == 1.0) && (y == 0.0)) {
+        for (i = 1; i <= n; i++) {
+            cpm[i] = pow(x, i);
+            cpd[i] = 0.5*i*(i+1)*pow(x, i+1);
+        }
+        for (i = 1; i <= m; i++) {
+            for (j = 1; j <= n; j++) {
+                if (i == 1) {
+                    cpd[i*(n+1) + j] = INFINITY;
+                } else if (i == 2) {
+                    cpd[i*(n+1) + j] = -0.25*(j+2)*(j+1)*j*(j-1)*pow(x, j+1);
+                }
+            }
+        }
+        return;
+    }
+    if (ntype == 2) {
+        // sqrt(1 - z**2) with branch cut on |x|>1
+        zs = (1.0 - z*z);
+        zq = -std::sqrt(zs);
+        ls = -1;
+    } else {
+        // sqrt(z**2 - 1) with branch cut between [-1, 1]
+        zs = (z*z - 1.0);
+        zq = std::sqrt(zs);
+        if (x < 0.) { zq = -zq; }
+        ls = 1;
+    }
+    for (i = 1; i <= m; i++) {
+        // DLMF 14.7.15
+        cpm[i*(n + 2)] = (2.*i - 1.)*zq*cpm[(i-1)*(n+2)];
+    }
+    for (i = 0; i <= (m > n-1 ? n-1 : m); i++) {
+        // DLMF 14.10.7
+        cpm[i*(n + 2) + 1] = (2.*i + 1)*z*cpm[i*(n + 2)];
+    }
+    for (i = 0; i <= m; i++) {
+        for (j = i+2; j <= n; j++) {
+            // DLMF 14.10.3
+            cpm[i*(n + 1) + j] = ((2.*j - 1)*z*cpm[i*(n + 1) + j-1] - static_cast<double>(i+j-1)*cpm[i*(n+1) + j-2])/static_cast<double>(j-i);
+        }
+    }
+    cpd[0] = 0.0;
+    for (j = 1; j <= n; j++) {
+        // DLMF 14.10.5
+        cpd[j] = ls*static_cast<double>(j)*(z*cpm[j] - cpm[j-1])/zs;
+    }
+    for (i = 1; i <= m; i++) {
+        for (j = i; j <= n; j++) {
+            // derivative of DLMF 14.7.11 & DLMF 14.10.6 for type 3
+            // derivative of DLMF 14.7.8 & DLMF 14.10.1 for type 2
+            cpd[i * (n + 1) + j] = static_cast<double>(ls)*(-static_cast<double>(i)*z*cpm[i * (n + 1) + j]/zs +
+                                   (j+i)*(j-i+1.0)/zq*cpm[(i - 1)*(n + 1) + j]);
+        }
+    }
+    return;
+}
+
+
+inline void clpn(int n, std::complex<double> z, std::complex<double> *cpn, std::complex<double> *cpd) {
+
+    // ==================================================
+    // Purpose: Compute Legendre polynomials Pn(z) and
+    //          their derivatives Pn'(z) for a complex
+    //          argument
+    // Input :  x --- Real part of z
+    //          y --- Imaginary part of z
+    //          n --- Degree of Pn(z), n = 0,1,2,...
+    // Output:  CPN(n) --- Pn(z)
+    //          CPD(n) --- Pn'(z)
+    // ==================================================
+
+    int k;
+    std::complex<double> cp0, cp1, cpf;
+
+    cpn[0] = 1.0;
+    cpn[1] = z;
+    cpd[0] = 0.0;
+    cpd[1] = 1.0;
+    cp0 = 1.0;
+    cp1 = z;
+    for (k = 2; k <= n; k++) {
+        cpf = (2.0 * k -1.0) / k * z * cp1 - (k - 1.0) / k * cp0;
+        cpn[k] = cpf;
+        if (z == 1.0) {
+            cpd[k] = 0.5 * pow(z.real() , k+1) * k * (k + 1.0);
+        } else {
+            cpd[k] = static_cast<double>(k) * (cp1 - z * cpf) / (1.0 - z * z);
+        }
+        cp0 = cp1;
+        cp1 = cpf;
+    }
+    return;
+}
+
+
 inline void clqmn(std::complex<double> z, int m, int n, std::complex<double> *cqm, std::complex<double> *cqd) {
 
     // =======================================================
@@ -4043,6 +4170,92 @@ inline void lamv(double v, double x, double *vm, double *vl, double *dl) {
 }
 
 
+inline void lpmn(int m, int n, double x, double *pm, double *pd) {
+
+    // =====================================================
+    // Purpose: Compute the associated Legendre functions
+    //          Pmn(x) and their derivatives Pmn'(x) for
+    //          real argument
+    // Input :  x  --- Argument of Pmn(x)
+    //          m  --- Order of Pmn(x),  m = 0,1,2,...,n
+    //          n  --- Degree of Pmn(x), n = 0,1,2,...,N
+    //          mm --- Physical dimension of PM and PD
+    // Output:  PM(m,n) --- Pmn(x)
+    //          PD(m,n) --- Pmn'(x)
+    // =====================================================
+
+    int i, j, ls;
+    double xq, xs;
+
+
+    for (i = 0; i < (m + 1)*(n + 1); i++) {
+            pm[i] = 0.0;
+            pd[i] = 0.0;
+    }
+
+    pm[0] = 1.0;
+
+    if (n == 0) {
+        return;
+    }
+
+    if (fabs(x) == 1.0) {
+        for (i = 1; i <= n; i++) {
+            pm[i] = pow(x, i);
+            pd[i] = 0.5 * i * (i + 1.0) * pow(x, i + 1);
+        }
+
+        for (i = 1; i <= m; i++) {
+            for (j = 1; j <= n; j++) {
+                if (i == 1) {
+                    pd[n + 1 + j] = INFINITY;
+                } else if (i == 2) {
+                    pd[2*n + 2 + j] = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
+                }
+            }
+        }
+        return;
+    }
+
+    ls = (fabs(x) > 1.0 ? -1 : 1);
+    xq = sqrt(ls * (1.0 - x * x));
+    // Ensure connection to the complex-valued function for |x| > 1
+    if (x < -1.0) {
+        xq = -xq;
+    }
+    xs = ls * (1.0 - x * x);
+    /* 30 */
+    for (i = 1; i <= m; ++i) {
+        pm[i * (n + 2)] = -ls * (2.0 * i - 1.0) * xq * pm[(i - 1)*(n + 2)];
+    }
+    /* 35 */
+    for (i = 0; i <= (m > (n-1) ? n - 1: m); i++) {
+        pm[i * (n + 2) + 1] = (2.0*i+1.0)*x*pm[i * (n + 2)];
+    }
+    /* 40 */
+    for (i = 0; i <= m; i++) {
+        for (j = i + 2; j <= n; j++) {
+            pm[i * (n + 1) + j] = ((2.0 * j - 1.0) * x * pm[i * (n + 1) + j - 1]
+                                  - (i + j - 1.0) * pm[i * (n + 1) + j - 2]) / (j - i);
+        }
+    }
+
+    pd[0] = 0.0;
+    /* 45 */
+    for (j = 1; j <= n; j++) {
+        pd[j] = ls * j * (pm[j-1] - x * pm[j]) / xs;
+    }
+    /* 50 */
+    for (i = 1; i <= m; i++) {
+        for (j = i; j <= n; j++) {
+            pd[i * (n + 1) + j] = ls * i * x * pm[i * (n + 1) + j] / xs + (j + i) * (j - i + 1.0)
+                                  / xq * pm[(i - 1) * (n + 1) + j];
+        }
+    }
+    return;
+}
+
+
 <<<<<<< HEAD
 inline void lpmn(int m, int n, double x, double *pm, double *pd) {
 
@@ -4198,6 +4411,40 @@ inline void lpmns(int m, int n, double x, double* pm, double* pd) {
     for (k = 1; k <= n; k++) {
         pm[k] *= coef;
         pd[k] *= coef;
+    }
+    return;
+}
+
+
+inline void lpn(int n, double x, double *pn, double *pd) {
+
+    // ===============================================
+    // Purpose: Compute Legendre polynomials Pn(x)
+    //          and their derivatives Pn'(x)
+    // Input :  x --- Argument of Pn(x)
+    //          n --- Degree of Pn(x) ( n = 0,1,...)
+    // Output:  PN(n) --- Pn(x)
+    //          PD(n) --- Pn'(x)
+    // ===============================================
+
+    int k;
+    double p0, p1, pf;
+    pn[0] = 1.0;
+    pn[1] = x;
+    pd[0] = 0.0;
+    pd[1] = 1.0;
+    p0 = 1.0;
+    p1 = x;
+    for (k = 2; k <= n; k++) {
+        pf = (2.0*k - 1.0)/k*x*p1 - (k - 1.0)/k*p0;
+        pn[k] = pf;
+        if (fabs(x) == 1.0) {
+            pd[k] = 0.5*pow(x, k+1)*k*(k+1);
+        } else {
+            pd[k] = k*(p1 - x*pf)/(1.0 - x*x);
+        }
+        p0 = p1;
+        p1 = pf;
     }
     return;
 }
