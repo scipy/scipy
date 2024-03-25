@@ -6,10 +6,6 @@
 
 namespace special {
 
-template <typename T>
-void lpn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
-         std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pd);
-
 // Translated into C++ by SciPy developers in 2024.
 // Original comments appear below.
 //
@@ -22,26 +18,24 @@ void lpn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
 //          PD(n) --- Pn'(x)
 // ===============================================
 
-template <>
-void lpn(double x, std::mdspan<double, std::dextents<int, 1>, std::layout_stride> pn,
-         std::mdspan<double, std::dextents<int, 1>, std::layout_stride> pd) {
-    int n = pn.size() - 1;
-
-    int k;
-    double p0, p1, pf;
-    pn[0] = 1.0;
+template <typename T>
+void lpn(T x, std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pn,
+         std::mdspan<T, std::dextents<int, 1>, std::layout_stride> pd) {
+    pn[0] = 1;
     pn[1] = x;
-    pd[0] = 0.0;
-    pd[1] = 1.0;
-    p0 = 1.0;
-    p1 = x;
-    for (k = 2; k <= n; k++) {
-        pf = (2.0 * k - 1.0) / k * x * p1 - (k - 1.0) / k * p0;
+    pd[0] = 0;
+    pd[1] = 1;
+
+    T p0 = 1;
+    T p1 = x;
+    T pf;
+    for (int k = 2; k < pn.size(); k++) {
+        pf = (2 * k - 1) * x * p1 / k - (k - 1) * p0 / k;
         pn[k] = pf;
         if (fabs(x) == 1.0) {
             pd[k] = 0.5 * pow(x, k + 1) * k * (k + 1);
         } else {
-            pd[k] = k * (p1 - x * pf) / (1.0 - x * x);
+            pd[k] = k * (p1 - x * pf) / (1 - x * x);
         }
         p0 = p1;
         p1 = pf;
