@@ -135,7 +135,26 @@ void clpmn(std::complex<double> z, long ntype,
         ls = 1;
     }
 
-    specfun::clpmn(z, m, n, ntype, cpm.data_handle(), cpd.data_handle());
+    /*
+        for (int i = 1; i <= m; i++) {
+            // DLMF 14.7.15
+            cpm[i*(n + 2)] = (2.*i - 1.)*zq*cpm[(i-1)*(n+2)];
+        }
+        for (int i = 0; i <= (m > n-1 ? n-1 : m); i++) {
+            // DLMF 14.10.7
+            cpm[i*(n + 2) + 1] = (2.*i + 1)*z*cpm[i*(n + 2)];
+        }
+    */
+
+    for (int i = 1; i <= m; i++) {
+        // DLMF 14.7.15
+        cpm(i, i) = (2. * i - 1.) * zq * cpm(i - 1, i - 1);
+    }
+
+    for (int i = 0; i <= (m > n - 1 ? n - 1 : m); i++) {
+        // DLMF 14.10.7
+        cpm(i, i + 1) = (2. * i + 1) * z * cpm(i, i);
+    }
 
     for (int i = 0; i <= m; i++) {
         for (int j = i + 2; j <= n; j++) {

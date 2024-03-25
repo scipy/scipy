@@ -1257,54 +1257,6 @@ inline double chgus(double x, double a, double b, int *id) {
 }
 
 
-inline void clpmn(std::complex<double> z, int m, int n, int ntype, std::complex<double> *cpm, std::complex<double> *cpd) {
-
-    // =========================================================
-    // Purpose: Compute the associated Legendre functions Pmn(z)
-    //          and their derivatives Pmn'(z) for a complex
-    //          argument
-    // Input :  x     --- Real part of z
-    //          y     --- Imaginary part of z
-    //          m     --- Order of Pmn(z),  m = 0,1,2,...,n
-    //          n     --- Degree of Pmn(z), n = 0,1,2,...,N
-    //          mm    --- Physical dimension of CPM and CPD
-    //          ntype --- type of cut, either 2 or 3
-    // Output:  CPM(m,n) --- Pmn(z)
-    //          CPD(m,n) --- Pmn'(z)
-    //
-    // SciPy mod: C translation uses a contiguous memory block
-    // =========================================================
-
-    int i, j, ls;
-    std::complex<double> zq, zs;
-    double x = z.real();
-    double y = z.imag();
-
-    if (ntype == 2) {
-        // sqrt(1 - z**2) with branch cut on |x|>1
-        zs = (1.0 - z*z);
-        zq = -std::sqrt(zs);
-        ls = -1;
-    } else {
-        // sqrt(z**2 - 1) with branch cut between [-1, 1]
-        zs = (z*z - 1.0);
-        zq = std::sqrt(zs);
-        if (x < 0.) { zq = -zq; }
-        ls = 1;
-    }
-    for (i = 1; i <= m; i++) {
-        // DLMF 14.7.15
-        cpm[i*(n + 2)] = (2.*i - 1.)*zq*cpm[(i-1)*(n+2)];
-    }
-    for (i = 0; i <= (m > n-1 ? n-1 : m); i++) {
-        // DLMF 14.10.7
-        cpm[i*(n + 2) + 1] = (2.*i + 1)*z*cpm[i*(n + 2)];
-    }
-
-    return;
-}
-
-
 inline void clpn(int n, std::complex<double> z, std::complex<double> *cpn, std::complex<double> *cpd) {
 
     // ==================================================
