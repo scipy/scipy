@@ -360,3 +360,16 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+def scipy_namespace_for(xp):
+    if is_numpy(xp):
+        import scipy
+        return scipy
+    elif is_cupy(xp):
+        import cupyx  # type: ignore[Import]
+        return cupyx.scipy
+    elif is_jax(xp):
+        import jax
+        return jax.scipy
+    else:
+        return None
