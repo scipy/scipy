@@ -23,6 +23,8 @@ from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 from libc.stdio cimport FILE
 
+from scipy.linalg.cython_lapack cimport dgetrf, dgetrs, dgecon
+
 np.import_array()
 
 
@@ -170,6 +172,8 @@ cdef extern from "qhull_src/src/libqhull_r.h":
     coordT* qh_sethalfspace_all(qhT *, int dim, int count, coordT* halfspaces, pointT *feasible)
 
 cdef extern from "qhull_misc.h":
+    ctypedef int CBLAS_INT   # actual type defined in the header file
+    void qhull_misc_lib_check()
     int qh_new_qhull_scipy(qhT *, int dim, int numpoints, realT *points,
                            boolT ismalloc, char* qhull_cmd, void *outfile,
                            void *errfile, coordT* feaspoint) nogil
@@ -200,20 +204,6 @@ cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
 from libc.stdlib cimport qsort
-
-#------------------------------------------------------------------------------
-# LAPACK interface
-#------------------------------------------------------------------------------
-
-cdef extern from "qhull_misc.h":
-    ctypedef int CBLAS_INT   # actual type defined in the header file
-    void qhull_misc_lib_check()
-    void qh_dgetrf(CBLAS_INT *m, CBLAS_INT *n, double *a, CBLAS_INT *lda, CBLAS_INT *ipiv,
-                   CBLAS_INT *info) nogil
-    void qh_dgetrs(char *trans, CBLAS_INT *n, CBLAS_INT *nrhs, double *a, CBLAS_INT *lda,
-                   CBLAS_INT *ipiv, double *b, CBLAS_INT *ldb, CBLAS_INT *info) nogil
-    void qh_dgecon(char *norm, CBLAS_INT *n, double *a, CBLAS_INT *lda, double *anorm,
-                   double *rcond, double *work, CBLAS_INT *iwork, CBLAS_INT *info) nogil
 
 
 #------------------------------------------------------------------------------
@@ -1113,12 +1103,12 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
             nrhs = ndim
             lda = ndim
             ldb = ndim
-            qh_dgetrf(&n, &n, <double*>T.data, &lda, ipiv, &info)
+            dgetrf(&n, &n, <double*>T.data, &lda, ipiv, &info)
 
             # Check condition number
             if info == 0:
-                qh_dgecon("1", &n, <double*>T.data, &lda, &anorm, &rcond,
-                          work, iwork, &info)
+                dgecon("1", &n, <double*>T.data, &lda, &anorm, &rcond,
+                       work, iwork, &info)
 
                 if rcond < rcond_limit:
                     # The transform seems singular
@@ -1126,7 +1116,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
 
             # Compute transform
             if info == 0:
-                qh_dgetrs("N", &n, &nrhs, <double*>T.data, &lda, ipiv,
+                dgetrs("N", &n, &nrhs, <double*>T.data, &lda, ipiv,
                           (<double*>Tinvs.data) + ndim*(ndim+1)*isimplex,
                           &ldb, &info)
 
