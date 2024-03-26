@@ -4501,7 +4501,7 @@ class PearsonRResult(PearsonRResultBase):
 
 def _move_axis_to_end(x, source, xp):
     axes = list(range(x.ndim))
-    temp =  axes.pop(source)
+    temp = axes.pop(source)
     axes = axes + [temp]
     return xp.permute_dims(x, axes)
 

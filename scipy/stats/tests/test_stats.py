@@ -348,6 +348,7 @@ class TestPearsonrWilkinson:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_if_array_api")
+@pytest.mark.skip_if_array_api(cpu_only=True)
 class TestPearsonr:
     @pytest.mark.skip_if_array_api(np_only=True)
     def test_pearsonr_result_attributes(self):
