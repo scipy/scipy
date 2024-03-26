@@ -22,13 +22,13 @@ void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> pn,
     pn(0) = 1;
     pd(0) = 0;
 
-    if (pn.size() > 1) {
+    if (pn.extent(0) > 1) {
         pn(1) = z;
         pd(1) = 1;
 
         T p0 = 1;
         T p1 = z;
-        for (int k = 2; k < pn.size(); k++) {
+        for (int k = 2; k < pn.extent(0); k++) {
             T pf = (static_cast<T>(2 * k - 1) * z * p1 - static_cast<T>(k - 1) * p0) / static_cast<T>(k);
             pn(k) = pf;
             if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
