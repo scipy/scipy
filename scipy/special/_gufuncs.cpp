@@ -35,6 +35,7 @@ using lqn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdi
                            mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
 using lqn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>,
                            mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
+extern const char *lqn_doc;
 
 using lqmn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>,
                             mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
@@ -44,6 +45,7 @@ using lqmn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrd
                             mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
 using lqmn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
                             mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+extern const char *lqmn_doc;
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
@@ -83,13 +85,13 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *_lqn = SpecFun_NewGUFunc({static_cast<lqn_fff_t>(special::lqn), static_cast<lqn_ddd_t>(special::lqn),
                                         static_cast<lqn_FFF_t>(special::lqn), static_cast<lqn_DDD_t>(special::lqn)},
-                                       2, "_lqn", nullptr, "()->(np1),(np1)");
+                                       2, "_lqn", lqn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_gufuncs, "_lqn", _lqn);
 
     PyObject *_lqmn =
         SpecFun_NewGUFunc({static_cast<lqmn_fff_t>(special::lqmn), static_cast<lqmn_ddd_t>(special::lqmn),
                            static_cast<lqmn_FFF_t>(special::lqmn), static_cast<lqmn_DDD_t>(special::lqmn)},
-                          2, "_lqmn", nullptr, "()->(mp1,np1),(mp1,np1)");
+                          2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
 
     return _gufuncs;
