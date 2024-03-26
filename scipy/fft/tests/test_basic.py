@@ -374,6 +374,7 @@ def test_fft_with_order(dtype, order, fft):
         raise ValueError
 
 
+@skip_xp_backends(cpu_only=True)
 class TestFFTThreadSafe:
     threads = 16
     input_shape = (800, 200)
