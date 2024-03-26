@@ -144,9 +144,24 @@ jobs:
         run: |
           python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
 
+          # Create a tempory directory for storing DLL's to add to the wheel.
+          $tempDir = Join-Path $env:RUNNER_TEMP "shared_libs"
+          New-Item -ItemType Directory -Force -Path $tempDir
+
           # Vendor openblas.dll and the DLL's it depends on into the wheel 
+          Copy-Item "c:\opt\openblas\openblas_dll\*.dll" -Destination $tempDir
+
+          # A shared library for special function error handling is installed to the wheel in
+          # scipy/special/libsf_error_state.dll. It is not currently possible (2024-03-25) to
+          # embed shared libraries in a wheel on windows in such a way. Instead, we extract
+          # the contents of the wheel to a temporary directory and use delvewheel to add it to
+          # the wheel.
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
-          delvewheel repair --add-path c:\opt\openblas\openblas_dll -w dist $env:wheel_name
+          New-Item -ItemType Directory -Force -Path $tempdir\wheel_contents
+          Expand-Archive -Path $env:wheel_name -DestinationPath $tempDir\wheel_contents
+          Copy-Item $tempDir\wheel_contents\scipy\special\libsf_error_state.dll -Destination $tempDir
+
+          delvewheel repair --add-path $tempDir -w dist $env:wheel_name
           
           python -m pip install $env:wheel_name
 
