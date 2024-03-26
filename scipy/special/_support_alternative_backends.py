@@ -3,6 +3,7 @@ import sys
 import functools
 
 import numpy as np
+import scipy
 from scipy._lib._array_api import (
     array_namespace, scipy_namespace_for, is_numpy, is_torch
 )
@@ -23,7 +24,7 @@ def get_array_special_func(f_name, xp, n_array_args):
         f = getattr(_ufuncs, f_name, None)
     elif is_torch(xp):
         f = getattr(xp.special, f_name, None)
-    elif spx:
+    elif spx is not scipy:
         f = getattr(spx.special, f_name, None)
     else:
         f_scipy = getattr(_ufuncs, f_name, None)

@@ -362,14 +362,14 @@ def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
 
 def scipy_namespace_for(xp):
-    if is_numpy(xp):
-        import scipy
-        return scipy
-    elif is_cupy(xp):
+
+    if is_cupy(xp):
         import cupyx  # type: ignore[Import]
         return cupyx.scipy
-    elif is_jax(xp):
-        import jax
+
+    if is_jax(xp):
+        import jax  # type: ignore[Import]
         return jax.scipy
-    else:
-        return None
+
+    import scipy
+    return scipy
