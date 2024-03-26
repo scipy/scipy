@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -1953,12 +1952,6 @@ if CONFIG is not None:
 
 
 class TestQZ:
-    @pytest.mark.xfail(
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < "0.3.21.dev",
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
-    )
     def test_qz_single(self):
         rng = np.random.RandomState(12345)
         n = 5
