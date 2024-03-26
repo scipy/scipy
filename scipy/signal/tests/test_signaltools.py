@@ -25,7 +25,7 @@ from scipy.signal import (
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
-    residuez)
+    residuez, envelope)
 from scipy.signal.windows import hann
 from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
@@ -3693,3 +3693,48 @@ class TestUniqueRoots:
         unique, multiplicity = unique_roots(p, 2)
         assert_almost_equal(unique, [np.min(p)], decimal=15)
         assert_equal(multiplicity, [100])
+
+class TestEnvelope:
+    def test_bad_args(self):
+        msg = "Input array must be a 1D array"
+
+        with assert_raises(ValueError, match=msg):
+            x = 0
+            envelope(x)
+
+        with assert_raises(ValueError, match=msg):
+            x = [[0, 1, 2], [3, 4, 5]]
+            envelope(x)
+
+        with assert_raises(ValueError, match=msg):
+            x = np.array([[0, 1], [2, 3]])
+            envelope(x)
+
+        msg = 'If N is not None, it must be a positive integer.'
+        x = np.array([0, 1, 2, 3, 4, 5])
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=-1)
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=0)
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, N=[0, 1])
+
+        msg = ('N cannot be None when using the rms method; '
+               'it must specify the sliding window length.')
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='rms')
+
+        msg = ('N cannot be None when using the peak method; it must specify '
+               'the minimal horizontal distance between neighbouring peaks')
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='peak')
+
+        msg = 'linear is not a valid method'
+
+        with assert_raises(ValueError, match=msg):
+            envelope(x, method='linear')
