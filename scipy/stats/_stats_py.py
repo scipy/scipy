@@ -78,7 +78,7 @@ from scipy.stats._mstats_basic import (  # noqa: F401
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
-           'tmin', 'tmax', 'tstd', 'tsem', 'moment',
+           'tmin', 'tmax', 'tstd', 'tsem', 'rms', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera',
            'scoreatpercentile', 'percentileofscore',
@@ -881,6 +881,62 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     sd = np.sqrt(np.nanvar(a, ddof=ddof, axis=axis))
     n_obs = (~np.isnan(a)).sum(axis=axis)
     return sd / np.sqrt(n_obs, dtype=sd.dtype)
+
+
+def rms(a, *, axis=0):
+    r"""Return an array of the root-mean-square value of the passed array.
+
+    The root-mean-square is also called the "quadratic mean".
+
+    Parameters
+    ----------
+    a : array_like
+        n-dimensional array of which to find rms.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+
+    Returns
+    -------
+    rms : ndarray
+        Array of rms values.
+
+    Notes
+    -----
+    Input `a` is converted to an `np.ndarray` before taking the rms.
+    To avoid the possibility of unexpected conversions, convert `a` to an
+    `np.ndarray` of the desired type before using `rms`.
+
+    For complex inputs, the absolute value is taken first:
+    ``sqrt(mean(abs(a)**2))``._[1]
+
+    References
+    ----------
+    .. [1] Smith, J. O. (2007). "Mathematics of the Discrete Fourier Transform
+       (DFT): With Audio Applications".
+       https://ccrma.stanford.edu/~jos/st/Other_Lp_Norms.html
+
+    Examples
+    --------
+    >>> a = np.array([[6, 8, 3, 0],
+    ...               [3, 2, 1, 7],
+    ...               [8, 1, 8, 4],
+    ...               [5, 3, 0, 5],
+    ...               [4, 7, 5, 9]])
+    >>> from scipy import stats
+    >>> stats.rms(a)
+    array([5.47722558, 5.03984127, 4.44971909, 5.84807661])
+
+    To get rms of whole array, specify ``axis=None``:
+
+    >>> stats.rms(a, axis=None)
+    5.229722745997153
+
+    """
+    if np.ndim(a) == 0:
+        axis = None
+
+    return np.sqrt((np.abs(a) ** 2).mean(axis=axis))
 
 
 #####################################

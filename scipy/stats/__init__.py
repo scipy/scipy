@@ -253,6 +253,7 @@ Summary statistics
    tmax              --
    tstd              --
    tsem              --
+   rms               -- Root-mean-square
    variation         -- Coefficient of variation
    find_repeats
    rankdata
