@@ -655,6 +655,8 @@ class TestMinimumPhase:
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
         assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+        with pytest.raises(ValueError, match="is only supported when"):
+            minimum_phase(np.ones(3), method='hilbert', half=False)
 
     def test_homomorphic(self):
         # check that it can recover frequency responses of arbitrary
@@ -669,9 +671,12 @@ class TestMinimumPhase:
         rng = np.random.RandomState(0)
         for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
             h = rng.randn(n)
-            h_new = minimum_phase(np.convolve(h, h[::-1]))
-            assert_allclose(np.abs(fft(h_new)),
-                            np.abs(fft(h)), rtol=1e-4)
+            h_linear = np.convolve(h, h[::-1])
+            h_new = minimum_phase(h_linear)
+            assert_allclose(np.abs(fft(h_new)), np.abs(fft(h)), rtol=1e-4)
+            h_new = minimum_phase(h_linear, half=False)
+            assert len(h_linear) == len(h_new)
+            assert_allclose(np.abs(fft(h_new)), np.abs(fft(h_linear)), rtol=1e-4)
 
     def test_hilbert(self):
         # compare to MATLAB output of reference implementation

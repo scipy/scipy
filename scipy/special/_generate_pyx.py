@@ -78,6 +78,15 @@ import textwrap
 
 import numpy
 
+special_ufuncs = [
+    '_cospi', '_sinpi', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
+    'gammaln', 'it2i0k0', 'it2j0y0', 'it2struve0', 'itairy',
+    'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'kei', 'keip',
+    'kelvin', 'ker', 'kerp', 'mathieu_a', 'mathieu_b',
+    'mathieu_cem', 'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1',
+    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', '_zeta'
+]
+
 # -----------------------------------------------------------------------------
 # Extra code
 # -----------------------------------------------------------------------------
@@ -95,11 +104,13 @@ UFUNCS_EXTRA_CODE = """\
 include "_ufuncs_extra_code.pxi"
 """
 
-UFUNCS_EXTRA_CODE_BOTTOM = """\
+UFUNCS_EXTRA_CODE_BOTTOM = f"""\
 #
 # Aliases
 #
 jn = jv
+
+from ._special_ufuncs import ({', '.join(special_ufuncs)})
 """
 
 CYTHON_SPECIAL_PXD = """\
@@ -367,9 +378,8 @@ def generate_loop(func_inputs, func_outputs, func_retval,
             func_retval != "v" and len(func_outputs)+1 == len(ufunc_outputs)):
         raise ValueError("Function retval and ufunc outputs don't match")
 
-    name = "loop_{}_{}_{}_As_{}_{}".format(
-        func_retval, func_inputs, func_outputs, ufunc_inputs, ufunc_outputs
-        )
+    name = (f"loop_{func_retval}_{func_inputs}_{func_outputs}"
+            f"_As_{ufunc_inputs}_{ufunc_outputs}")
     body = (f"cdef void {name}(char **args, np.npy_intp *dims, np.npy_intp *steps, "
             f"void *data) noexcept nogil:\n")
     body += "    cdef np.npy_intp i, n = dims[0]\n"
@@ -1240,8 +1250,8 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
         # check function signature at compile time
         proto_name = '_proto_%s_t' % var_name
         defs.append("ctypedef %s" % (cy_proto.replace('(*)', proto_name)))
-        defs.append("cdef {} *{}_var = &{}".format(
-            proto_name, proto_name, ufunc.cython_func_name(c_name, specialized=True)))
+        defs.append(f"cdef {proto_name} *{proto_name}_var = "
+                    f"&{ufunc.cython_func_name(c_name, specialized=True)}")
     else:
         # redeclare the function, so that the assumed
         # signature is checked at compile time
@@ -1295,10 +1305,10 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
                 cxx_defs.extend(item_defs)
                 cxx_defs_h.extend(item_defs_h)
 
-                cxx_defs.append("cdef void *_export_{} = <void*>{}".format(
-                    var_name,
-                    ufunc.cython_func_name(c_name, specialized=True, override=False)
-                ))
+                func_name = ufunc.cython_func_name(
+                    c_name, specialized=True, override=False
+                )
+                cxx_defs.append(f"cdef void *_export_{var_name} = <void*>{func_name}")
                 cxx_pxd_defs.append(f"cdef void *_export_{var_name}")
 
                 # let cython grab the function pointer from the c++ shared library
@@ -1325,7 +1335,11 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
             f"'{ufunc.name}'"
             for ufunc in ufuncs if not ufunc.name.startswith('_')
         ]
-        + ["'geterr'", "'seterr'", "'errstate'", "'jn'"]
+        + ["'geterr'", "'seterr'", "'errstate'", "'jn'"] +
+        [
+            f"'{name}'"
+            for name in special_ufuncs if not name.startswith('_')
+        ]
     )
     module_all = '__all__ = [{}]'.format(', '.join(all_ufuncs))
 
@@ -1428,12 +1442,12 @@ def generate_fused_funcs(modname, ufunc_fn_prefix, fused_funcs):
         f.write("\n\n".join(bench_aux))
 
 
-def generate_ufuncs_type_stubs(module_name: str, ufuncs: list[Ufunc]):
+def generate_ufuncs_type_stubs(module_name: str, ufunc_names: list[str]):
     stubs, module_all = [], []
-    for ufunc in ufuncs:
-        stubs.append(f'{ufunc.name}: np.ufunc')
-        if not ufunc.name.startswith('_'):
-            module_all.append(f"'{ufunc.name}'")
+    for ufunc_name in ufunc_names:
+        stubs.append(f'{ufunc_name}: np.ufunc')
+        if not ufunc_name.startswith('_'):
+            module_all.append(f"'{ufunc_name}'")
     # jn is an alias for jv.
     module_all.append("'jn'")
     stubs.append('jn: np.ufunc')
@@ -1508,17 +1522,19 @@ def main(outdir):
         print("scipy/special/_generate_pyx.py: all files up-to-date")
         return
 
-    ufuncs, fused_funcs = [], []
+    ufuncs, ufuncs_type_stubs, fused_funcs = [], [], []
     with open('functions.json') as data:
         functions = json.load(data)
     for f, sig in functions.items():
-        ufuncs.append(Ufunc(f, sig))
+        if (f not in special_ufuncs):
+            ufuncs.append(Ufunc(f, sig))
+        ufuncs_type_stubs.append(f)
         fused_funcs.append(FusedFunc(f, sig))
     generate_ufuncs(os.path.join(outdir, "_ufuncs"),
                     os.path.join(outdir, "_ufuncs_cxx"),
                     ufuncs)
     generate_ufuncs_type_stubs(os.path.join(outdir, "_ufuncs"),
-                               ufuncs)
+                               ufuncs_type_stubs)
     generate_fused_funcs(os.path.join(outdir, "cython_special"),
                          os.path.join(outdir, "_ufuncs"),
                          fused_funcs)
