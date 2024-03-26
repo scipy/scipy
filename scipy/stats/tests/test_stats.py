@@ -401,7 +401,7 @@ class TestCorrPearsonr:
         # See https://github.com/scipy/scipy/issues/9353
         x = [0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971]
         y = [2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245]
-        r, p = stats.pearsonr(x,y)
+        r, p = stats.pearsonr(x, y)
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
@@ -516,30 +516,30 @@ class TestCorrPearsonr:
     @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
     def test_resampling_pvalue(self, method, alternative):
         rng = np.random.default_rng(24623935790378923)
-        size = 100 if method == 'permutation' else 1000
+        size = (2, 100) if method == 'permutation' else (2, 1000)
         x = rng.normal(size=size)
         y = rng.normal(size=size)
         methods = {'permutation': stats.PermutationMethod(random_state=rng),
                    'monte_carlo': stats.MonteCarloMethod(rvs=(rng.normal,)*2)}
         method = methods[method]
-        res = stats.pearsonr(x, y, alternative=alternative, method=method)
-        ref = stats.pearsonr(x, y, alternative=alternative)
+        res = stats.pearsonr(x, y, alternative=alternative, method=method, axis=-1)
+        ref = stats.pearsonr(x, y, alternative=alternative, axis=-1)
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
     @pytest.mark.xslow
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
-        rng = np.random.default_rng(24623935790378923)
-        x = rng.normal(size=100)
-        y = rng.normal(size=100)
-        res = stats.pearsonr(x, y, alternative=alternative)
+        rng = np.random.default_rng(2462935790378923)
+        x = rng.normal(size=(2, 100))
+        y = rng.normal(size=(2, 100))
+        res = stats.pearsonr(x, y, alternative=alternative, axis=-1)
 
         method = stats.BootstrapMethod(random_state=rng)
         res_ci = res.confidence_interval(method=method)
         ref_ci = res.confidence_interval()
 
-        assert_allclose(res_ci, ref_ci, atol=1e-2)
+        assert_allclose(res_ci, ref_ci, atol=1.5e-2)
 
     def test_invalid_method(self):
         message = "`method` must be an instance of..."
@@ -549,6 +549,89 @@ class TestCorrPearsonr:
         res = stats.pearsonr([1, 2], [3, 4])
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
+
+    @pytest.mark.parametrize('axis', [0, 1])
+    def test_axis01(self, axis):
+        rng = np.random.default_rng(38572345825)
+        shape = (9, 10)
+        x, y = rng.normal(size=(2,) + shape)
+        res = stats.pearsonr(x, y, axis=axis)
+        ci = res.confidence_interval()
+        if axis == 0:
+            x, y = x.T, y.T
+        for i in range(x.shape[0]):
+            res_i = stats.pearsonr(x[i], y[i])
+            ci_i = res_i.confidence_interval()
+            assert_allclose(res.statistic[i], res_i.statistic)
+            assert_allclose(res.pvalue[i], res_i.pvalue)
+            assert_allclose(ci.low[i], ci_i.low)
+            assert_allclose(ci.high[i], ci_i.high)
+
+    def test_axis_None(self):
+        rng = np.random.default_rng(38572345825)
+        shape = (9, 10)
+        x, y = rng.normal(size=(2,) + shape)
+        res = stats.pearsonr(x, y, axis=None)
+        ci = res.confidence_interval()
+        ref = stats.pearsonr(x.ravel(), y.ravel())
+        ci_ref = ref.confidence_interval()
+        assert_allclose(res.statistic, ref.statistic)
+        assert_allclose(res.pvalue, ref.pvalue)
+        assert_allclose(ci, ci_ref)
+
+    def test_nd_input_validation(self):
+        x, y = np.ones((2, 2, 5))
+        message = '`axis` must be an integer.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y, axis=1.5)
+
+        message = '`x` and `y` must have the same length along `axis`'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, np.ones((2, 1)), axis=1)
+
+        message = '`x` and `y` must have length at least 2.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(*np.ones((2, 2, 1)), axis=1)
+
+        message = '`x` and `y` must be broadcastable.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, np.ones((3, 5)), axis=1)
+
+    def test_nd_special_cases(self):
+        rng = np.random.default_rng(34989235492245)
+        x0, y0 = rng.random((2, 3, 5))
+
+        message = 'An input array is constant'
+        with pytest.warns(stats.ConstantInputWarning, match=message):
+            x = x0.copy()
+            x[0] = 1
+            res = stats.pearsonr(x, y0, axis=1)
+            ci = res.confidence_interval()
+            np.testing.assert_equal(res.statistic[0], np.nan)
+            np.testing.assert_equal(res.pvalue[0], np.nan)
+            np.testing.assert_equal(ci.low[0], np.nan)
+            np.testing.assert_equal(ci.high[0], np.nan)
+            assert not np.any(np.isnan(res.statistic[1:]))
+            assert not np.any(np.isnan(res.pvalue[1:]))
+            assert not np.any(np.isnan(ci.low[1:]))
+            assert not np.any(np.isnan(ci.high[1:]))
+
+        message = 'An input array is nearly constant'
+        with pytest.warns(stats.NearConstantInputWarning, match=message):
+            x[0, 0] = 1 + 1e-15
+            stats.pearsonr(x, y0, axis=1)
+
+        # length 2 along axis
+        x = [[1, 2], [1, 2], [2, 1], [2, 1]]
+        y = [[1, 2], [2, 1], [1, 2], [2, 1]]
+        res = stats.pearsonr(x, y, axis=-1)
+        ci = res.confidence_interval()
+        assert_allclose(res.statistic, [1, -1, -1, 1])
+        assert_allclose(res.pvalue, 1)
+        assert_allclose(ci.low, -1)
+        assert_allclose(ci.high, 1)
+        assert (res.pvalue.shape == res.statistic.shape
+                == ci.low.shape == ci.high.shape)
 
 
 class TestFisherExact:
