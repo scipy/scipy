@@ -137,6 +137,15 @@ py3.extension_module('_special_ufuncs',
   subdir: 'scipy/special'
 )
 
+py3.extension_module('_gufuncs',
+  ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  dependencies: [np_dep],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special'
+)
+
 py3.extension_module('_specfun',
   [cython_gen_cpp.process('_specfun.pyx')],
   dependencies: [np_dep],

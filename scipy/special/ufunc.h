@@ -12,6 +12,7 @@
 #include <numpy/ufuncobject.h>
 
 #include "sf_error.h"
+#include "special/mdspan.h"
 
 // Initializes Python and NumPy.
 inline bool SpecFun_Initialize() {

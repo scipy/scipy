@@ -4,10 +4,13 @@
 #include "special/bessel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
+<<<<<<< HEAD
 #include "special/kelvin.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/legendre.h"
+=======
+>>>>>>> 8c07933a0 (Put the gufuncs in their module)
 #include "special/specfun.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
@@ -191,6 +194,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
     PyObject *_sinpi =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
                           static_cast<func_F_F_t>(special::sinpi), static_cast<func_D_D_t>(special::sinpi)},
@@ -222,6 +226,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                           2, "_lqmn", nullptr, "()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_special_ufuncs, "_lqmn", _lqmn);
 
+=======
+>>>>>>> 8c07933a0 (Put the gufuncs in their module)
     PyObject *_sinpi = SpecFun_NewUFunc({static_cast<float (*)(float)>(special::sinpi),
                                          static_cast<double (*)(double)>(special::sinpi),
                                          static_cast<complex<float> (*)(complex<float>)>(special::sinpi),
