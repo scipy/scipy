@@ -1928,10 +1928,10 @@ def lqmn(m, n, z):
     nn = max(1, n)
 
     if iscomplex(z):
-        q = np.zeros((mm + 1, nn + 1), dtype = np.complex128)
+        q = np.empty((mm + 1, nn + 1), dtype = np.complex128)
     else:
-        q = np.zeros((mm + 1, nn + 1), dtype = np.float64)
-    qd = np.zeros_like(q)
+        q = np.empty((mm + 1, nn + 1), dtype = np.float64)
+    qd = np.empty_like(q)
     _lqmn(z, out = (q, qd))
 
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
@@ -2089,10 +2089,10 @@ def lqn(n, z):
         n1 = n
 
     if iscomplex(z):
-        qn = np.zeros((n1 + 1), dtype=np.complex128)
+        qn = np.empty((n1 + 1), dtype=np.complex128)
     else:
-        qn = np.zeros((n1 + 1), dtype=np.float64)
-    qd = np.zeros_like(qn)
+        qn = np.empty((n1 + 1), dtype=np.float64)
+    qd = np.empty_like(qn)
     _lqn(z, out = (qn, qd))
 
     return qn[:(n+1)], qd[:(n+1)]
