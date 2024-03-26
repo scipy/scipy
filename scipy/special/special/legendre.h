@@ -16,9 +16,9 @@ namespace special {
 //          PD(n) --- Pn'(z)
 // ===============================================
 
-template <typename T, typename... Policies>
-void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> pn,
-         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> pd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> pn,
+         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> pd) {
     pn(0) = 1;
     pd(0) = 0;
 
@@ -57,9 +57,9 @@ void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> pn,
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-template <typename T, typename... Policies>
-void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> pm,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> pd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> pm,
+          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies1...> pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
@@ -142,10 +142,10 @@ void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> pm,
 //          CPD(m,n) --- Pmn'(z)
 // =========================================================
 
-template <typename T, typename... Policies>
+template <typename T, typename... Policies0, typename... Policies1>
 void clpmn(std::complex<T> z, long ntype,
-           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies...> cpm,
-           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies...> cpd) {
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies0...> cpm,
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies1...> cpd) {
     int m = cpm.extent(0) - 1;
     int n = cpm.extent(1) - 1;
 
@@ -237,9 +237,9 @@ void clpmn(std::complex<T> z, long ntype,
 //          QD(n) --- Qn'(x)
 // ====================================================
 
-template <typename T, typename... Policies>
-void lqn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> qn,
-         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> qd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lqn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> qn,
+         std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> qd) {
     int n = qn.size() - 1;
 
     T x2, q0, q1, qf, qc1, qc2, qr, qf0, qf1, qf2;
@@ -327,9 +327,9 @@ void lqn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies...> qn,
 //          CQD(n) --- Qn'(z)
 // ==================================================
 
-template <typename T, typename... Policies>
-void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, Policies...> cqn,
-         std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, Policies...> cqd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, Policies0...> cqn,
+         std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 1>, Policies1...> cqd) {
     int n = cqn.size() - 1;
 
     std::complex<T> cq0, cq1, cqf0 = 0.0, cqf1, cqf2;
@@ -398,9 +398,9 @@ void lqn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrd
 //          QD(m,n) --- Qmn'(x)
 // ==========================================================
 
-template <typename T, typename... Policies>
-void lqmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> qm,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> qd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lqmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> qm,
+          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies1...> qd) {
     int m = qm.extent(0) - 1;
     int n = qm.extent(1) - 1;
 
@@ -514,9 +514,9 @@ void lqmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies...> qm,
 //          CQD(m,n) --- Qmn'(z)
 // =======================================================
 
-template <typename T, typename... Policies>
-void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies...> cqm,
-          std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies...> cqd) {
+template <typename T, typename... Policies0, typename... Policies1>
+void lqmn(std::complex<T> z, std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies0...> cqm,
+          std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies1...> cqd) {
     int m = cqm.extent(0) - 1;
     int n = cqm.extent(1) - 1;
 
