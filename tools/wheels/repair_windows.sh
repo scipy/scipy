@@ -20,13 +20,19 @@ pushd scipy*
 for f in $(find ./scipy* -name '*.pyd'); do strip $f; done
 
 
+# the libopenblas.dll is placed into this directory in the cibw_before_build
+# script.
+cp /c/opt/openblas/openblas_dll/*.dll ..
+# Shared library for special function error handling must be copied out of
+# the wheel and then reincluded with delvewheel. One cannot currently embed
+# a shared library in a wheel directly on Windows.
+cp ./scipy/special/libsf_error_state.dll ..
+
 # now repack the wheel and overwrite the original
 wheel pack .
 mv -fv *.whl $WHEEL
 
 cd $DEST_DIR
-rm -rf tmp
+delvewheel repair --add-path tmp -w $DEST_DIR $WHEEL
 
-# the libopenblas.dll is placed into this directory in the cibw_before_build
-# script.
-delvewheel repair --add-path /c/opt/openblas/openblas_dll -w $DEST_DIR $WHEEL
+rm -rf tmp
