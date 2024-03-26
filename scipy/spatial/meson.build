@@ -80,7 +80,7 @@ py3.extension_module('_distance_wrap',
 
 py3.extension_module('_distance_pybind',
   ['src/distance_pybind.cpp'],
-  include_directories: ['src/', '../_build_utils/src'],
+  include_directories: ['src/'],
   dependencies: [np_dep, pybind11_dep],
   link_args: version_link_args,
   install: true,
