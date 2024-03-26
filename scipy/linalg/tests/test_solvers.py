@@ -472,7 +472,8 @@ class TestSolveDiscreteAre:
          np.array([[0], [1]]),
          np.eye(2),
          np.array([[1]]),
-         "Presumed issue with OpenBLAS, see gh-16926"),
+#         "Presumed issue with OpenBLAS, see gh-16926"),
+        None),
         # TEST CASE 16 : darex #13
         (np.array([[16, 10, -2],
                   [10, 13, -8],
@@ -480,7 +481,8 @@ class TestSolveDiscreteAre:
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         "Issue with OpenBLAS, see gh-16926"),
+#         "Issue with OpenBLAS, see gh-16926"),
+        None),
         # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],
@@ -625,7 +627,8 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         "Presumed issue with OpenBLAS, see gh-16926"),
+#         "Presumed issue with OpenBLAS, see gh-16926"),
+         None),
         # user-reported (under PR-6616) 20-Jan-2017
         # tests against the case where E is None but S is provided
         (mat20170120['A'],
