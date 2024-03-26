@@ -1782,8 +1782,11 @@ def lpmn(m, n, z):
 
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
-    _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-        np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+    if isscalar(z):
+        _lpmn(z, out = (p, pd))
+    else:
+        _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     if (m < 0):
         p = p * fixarr
@@ -1872,8 +1875,11 @@ def clpmn(m, n, z, type=3):
 
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
-    _clpmn(z, type, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-        np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+    if isscalar(z):
+        _clpmn(z, type, out = (p, pd))
+    else:
+        _clpmn(z, type, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     if (m < 0):
         p = p * fixarr
@@ -2061,8 +2067,11 @@ def lpn(n, z):
 
     pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
     pd = np.empty_like(pn)
-    _lpn(z, out = (np.moveaxis(pn, 0, -1),
-        np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
+    if isscalar(z):
+        _lpn(z, out = (pn, pd))
+    else:
+        _lpn(z, out = (np.moveaxis(pn, 0, -1),
+            np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
 
     return pn, pd
 
