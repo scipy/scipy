@@ -18,9 +18,10 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size,
     numpy as np_compat,
+    device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size', 'device']
 
 
 # To enable array API and strict array-like input validation
@@ -206,6 +207,8 @@ def is_cupy(xp):
 def is_torch(xp):
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
+def is_array_api_strict(xp):
+    return xp.__name__ == 'array_api_strict'
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
@@ -354,3 +357,25 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+def get_xp_devices(xp):
+    """Returns a list of available devices for the given namespace."""
+    if is_torch(xp):
+        devices = ['cpu']
+        import torch # type: ignore[import]
+        num_cuda = torch.cuda.device_count()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        if torch.backends.mps.is_available():
+            devices += ['mps']
+        return devices
+
+    if is_cupy(xp):
+        devices = []
+        import cupy # type: ignore[import]
+        num_cuda = cupy.cuda.runtime.getDeviceCount()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        return devices
+
+    return [None]
