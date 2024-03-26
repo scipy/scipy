@@ -75,8 +75,9 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     volatile PyArrayObject *Py_X = NULL;
     volatile PyArrayObject *nzvals = NULL;
     volatile PyArrayObject *colind = NULL, *rowptr = NULL;
-    volatile int N, nnz;
-    volatile int info;
+    volatile int N;
+    volatile int_t nnz;
+    volatile int_t info;
     volatile int csc = 0;
     volatile int *perm_r = NULL, *perm_c = NULL;
     volatile SuperMatrix A = { 0 }, B = { 0 }, L = { 0 }, U = { 0 };
@@ -93,12 +94,21 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
     };
 
     /* Get input arguments */
+#if defined ( _LONGINT )    
+    if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iLO!O!O!O|iO", kwlist,
+				     &N, &nnz, &PyArray_Type, &nzvals,
+				     &PyArray_Type, &colind, &PyArray_Type,
+				     &rowptr, &Py_B, &csc, &option_dict)) {
+	return NULL;
+    }
+#else
     if (!PyArg_ParseTupleAndKeywords(args, kwdict, "iiO!O!O!O|iO", kwlist,
 				     &N, &nnz, &PyArray_Type, &nzvals,
 				     &PyArray_Type, &colind, &PyArray_Type,
 				     &rowptr, &Py_B, &csc, &option_dict)) {
 	return NULL;
     }
+#endif     
 
     if (!_CHECK_INTEGER(colind) || !_CHECK_INTEGER(rowptr)) {
 	PyErr_SetString(PyExc_TypeError,
@@ -166,14 +176,14 @@ static PyObject *Py_gssv(PyObject * self, PyObject * args,
 	goto fail;
     }
     else {
-	perm_c = intMalloc(N);
-	perm_r = intMalloc(N);
+	perm_c = (int*)intMalloc((int_t)N);
+	perm_r = (int*)intMalloc((int_t)N);
 	StatInit((SuperLUStat_t*)&stat);
 
 	/* Compute direct inverse of sparse Matrix */
 	gssv(type, (superlu_options_t*)&options, (SuperMatrix*)&A, (int*)perm_c, (int*)perm_r,
              (SuperMatrix*)&L, (SuperMatrix*)&U, (SuperMatrix*)&B, (SuperLUStat_t*)&stat,
-             (int*)&info);
+             (int_t*)&info);
         SLU_END_THREADS;
     }
 
@@ -203,7 +213,8 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 			  PyObject * keywds)
 {
     /* default value for SuperLU parameters */
-    int N, nnz;
+    int N;
+    int_t nnz;
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A = { 0 };
     PyObject *result;
@@ -216,7 +227,17 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
         "csc_construct_func", "options", "ilu",
 	NULL
     };
-
+#if defined ( _LONGINT )
+    int res =
+	PyArg_ParseTupleAndKeywords(args, keywds, "iLO!O!O!O|Oi", kwlist,
+				    &N, &nnz,
+				    &PyArray_Type, &nzvals,
+				    &PyArray_Type, &rowind,
+				    &PyArray_Type, &colptr,
+                                    &py_csc_construct_func,
+				    &option_dict,
+				    &ilu);
+#else
     int res =
 	PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!O|Oi", kwlist,
 				    &N, &nnz,
@@ -226,15 +247,20 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
                                     &py_csc_construct_func,
 				    &option_dict,
 				    &ilu);
+#endif 
 
     if (!res)
 	return NULL;
 
+#if 0
     if (!_CHECK_INTEGER(colptr) || !_CHECK_INTEGER(rowind)) {
 	PyErr_SetString(PyExc_TypeError,
 			"rowind and colptr must be of type cint");
 	return NULL;
     }
+#endif 
+
+
 
     type = PyArray_TYPE((PyArrayObject*)nzvals);
     if (!CHECK_SLU_TYPE(type)) {

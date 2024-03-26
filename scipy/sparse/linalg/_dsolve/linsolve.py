@@ -7,6 +7,7 @@ from scipy.sparse import (issparse,
 from scipy.sparse._sputils import is_pydata_spmatrix, convert_pydata_sparse_to_scipy
 from scipy.linalg import LinAlgError
 import copy
+import os 
 
 from . import _superlu
 
@@ -130,15 +131,17 @@ def _safe_downcast_indices(A):
     # check for safe downcasting
     max_value = np.iinfo(np.intc).max
 
-    if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
-        raise ValueError("indptr values too large for SuperLU")
-
     if max(*A.shape) > max_value:  # only check large enough arrays
-        if np.any(A.indices > max_value):
-            raise ValueError("indices values too large for SuperLU")
+        raise ValueError("matrix size too large for SuperLU")
 
-    indices = A.indices.astype(np.intc, copy=False)
-    indptr = A.indptr.astype(np.intc, copy=False)
+    # if A.indptr[-1] > max_value:  # indptr[-1] is max b/c indptr always sorted
+    if int(os.environ['XSDK_INDEX_SIZE'])==64:  
+        indptr = A.indptr.astype(np.longlong, copy=False)
+        indices = A.indices.astype(np.longlong, copy=False)
+    else:
+        indptr = A.indptr.astype(np.intc, copy=False)
+        indices = A.indices.astype(np.intc, copy=False)
+
     return indices, indptr
 
 def spsolve(A, b, permc_spec=None, use_umfpack=True):
@@ -403,7 +406,6 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     >>> B.solve(A.dot(x))
     array([ 1.,  2.,  3.])
     """
-
     if is_pydata_spmatrix(A):
         def csc_construct_func(*a, cls=type(A)):
             return cls.from_scipy_sparse(csc_matrix(*a))

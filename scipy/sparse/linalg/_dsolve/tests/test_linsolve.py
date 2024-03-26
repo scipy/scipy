@@ -22,7 +22,7 @@ import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import ComplexWarning
-
+import os
 
 sup_sparse_efficiency = suppress_warnings()
 sup_sparse_efficiency.filter(SparseEfficiencyWarning)
@@ -497,8 +497,11 @@ class TestSplu:
             assert_(abs(r - b).max() < 1e3*eps, msg)
 
         for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
-            for idx_dtype in [np.int32, np.int64]:
-                self._smoketest(splu, check, dtype, idx_dtype)
+            if int(os.environ['XSDK_INDEX_SIZE'])==64:  
+                idx_dtype=np.int64
+            else:
+                idx_dtype=np.int32
+            self._smoketest(splu, check, dtype, idx_dtype)
 
     @sup_sparse_efficiency
     def test_spilu_smoketest(self):
@@ -515,8 +518,11 @@ class TestSplu:
                 errors.append(err)
 
         for dtype in [np.float32, np.float64, np.complex64, np.complex128]:
-            for idx_dtype in [np.int32, np.int64]:
-                self._smoketest(spilu, check, dtype, idx_dtype)
+            if int(os.environ['XSDK_INDEX_SIZE'])==64:  
+                idx_dtype=np.int64
+            else:
+                idx_dtype=np.int32
+            self._smoketest(spilu, check, dtype, idx_dtype)
 
         assert_(max(errors) > 1e-5)
 
@@ -561,6 +567,7 @@ class TestSplu:
         b = ones(n)
         x = lu.solve(b)
         assert_almost_equal(dot(a, x), b)
+        # print(np.linalg.norm(dot(a, x)-b))
 
     def test_splu_perm(self):
         # Test the permutation vectors exposed by splu.
@@ -803,3 +810,12 @@ class TestSpsolveTriangular:
                                                unit_diagonal=True)
                         A.setdiag(1)
                         assert_array_almost_equal(A.dot(x), b)
+
+
+# if __name__ == "__main__":
+#     print("start the test...")
+#     tst = TestSplu()
+#     tst.setup_method()
+#     print("before test_threads_parallel ...")
+#     tst.test_threads_parallel()
+#     print("done!")
