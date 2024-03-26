@@ -12,7 +12,7 @@ py3.extension_module('_test_fortran',
   c_args: [Wno_unused_variable],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/io'
