@@ -347,10 +347,10 @@ class TestPearsonrWilkinson:
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_if_array_api")
-@pytest.mark.skip_if_array_api(cpu_only=True)
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True)
 class TestPearsonr:
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     def test_pearsonr_result_attributes(self):
         res = stats.pearsonr(X, X)
         attributes = ('correlation', 'pvalue')
@@ -485,7 +485,7 @@ class TestPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
             [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),
              ('less', 0.8370999312316, -1, 0.985600937290653, 1),
@@ -524,7 +524,7 @@ class TestPearsonr:
         xp_assert_equal(low, -one)
         xp_assert_equal(high, one)
 
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     def test_input_validation(self):
         x = [1, 2, 3]
         y = [4, 5]
@@ -552,7 +552,7 @@ class TestPearsonr:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
 
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
@@ -569,7 +569,7 @@ class TestPearsonr:
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(2462935790378923)
@@ -583,7 +583,7 @@ class TestPearsonr:
 
         assert_allclose(res_ci, ref_ci, atol=1.5e-2)
 
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('axis', [0, 1])
     def test_axis01(self, axis, xp):
         rng = np.random.default_rng(38572345825)
@@ -601,7 +601,7 @@ class TestPearsonr:
             assert_allclose(ci.low[i], ci_i.low)
             assert_allclose(ci.high[i], ci_i.high)
 
-    @pytest.mark.skip_if_array_api(np_only=True)
+    @pytest.mark.skip_xp_backends(np_only=True)
     def test_axis_None(self, xp):
         rng = np.random.default_rng(38572345825)
         shape = (9, 10)
