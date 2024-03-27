@@ -134,8 +134,10 @@ def prev_fast_len(target, real=False):
 
 # Directly wrap the c-function prev_good_size but take the docstring etc.,
 # from the prev_fast_len function above
+_sig_prev_fast_len = inspect.signature(prev_fast_len)
 prev_fast_len = update_wrapper(lru_cache()(_helper.prev_good_size), prev_fast_len)
 prev_fast_len.__wrapped__ = _helper.prev_good_size
+prev_fast_len.__signature__ = _sig_prev_fast_len
 
 
 def _init_nd_shape_and_axes(x, shape, axes):
