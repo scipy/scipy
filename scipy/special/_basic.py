@@ -8,7 +8,7 @@ import math
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
-from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where,
+from numpy import (pi, asarray, floor, isscalar, sqrt, where,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
 from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
