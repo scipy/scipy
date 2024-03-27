@@ -708,8 +708,10 @@ def _nan_allsame(a, axis, keepdims=False):
 
 
 def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None, xp=np):
-
+                  policies=None):
+    # _contains_nan expects `xp` to be an array-api compatible namespace
+    # (e.g. from scipy._lib.array_api_compat).
+    xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
     if not_numpy:
@@ -720,7 +722,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
 
-    inexact = ('float' in str(a.dtype) or 'complex' in str(a.dtype))
+    inexact = xp.isdtype(a.dtype, "real floating") or xp.isdtype(a.dtype, "complex floating")
     if inexact or (is_numpy(xp) and np.issubdtype(a.dtype, np.inexact)):
         # The summation method avoids creating another (potentially huge) array
         if use_summation:

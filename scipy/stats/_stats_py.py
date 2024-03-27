@@ -1029,14 +1029,11 @@ def _moment(a, moment, axis, *, mean=None):
     if a.size == 0:
         return xp.mean(a, axis=axis)
 
-    # again, how do we determine non-NumPy dtypes?
-    dtype_name = str(a.dtype).split('.')[-1]
-    if 'int' in dtype_name:
+    if xp.isdtype(a.dtype, "integral"):
         dtype = xp.float64
-        dtype_name = 'float64'
         a = xp.asarray(a, dtype=dtype)
     else:
-        dtype = getattr(xp, dtype_name)
+        dtype = a.dtype
 
     if moment == 0 or (moment == 1 and mean is None):
         # By definition the zeroth moment is always 1, and the first *central*
@@ -1044,8 +1041,10 @@ def _moment(a, moment, axis, *, mean=None):
         shape = list(a.shape)
         del shape[axis]
 
-        return (xp.ones(shape, dtype=dtype) if moment == 0
-                else xp.zeros(shape, dtype=dtype))[()]
+        temp = (xp.ones(shape, dtype=dtype) if moment == 0
+                else xp.zeros(shape, dtype=dtype))
+        return temp[()] if temp.ndim == 0 else temp
+
     else:
         # Exponentiation by squares: form exponent sequence
         n_list = [moment]
@@ -1059,11 +1058,11 @@ def _moment(a, moment, axis, *, mean=None):
 
         # Starting point for exponentiation by squares
         mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
-                else xp.asarray(mean, dtype=dtype)[()])
+                else xp.asarray(mean, dtype=dtype))
+        mean = mean[()] if mean.ndim == 0 else mean
         a_zero_mean = a - mean
 
-        # I don't know how I'm supposed to do this with array API
-        eps = np.finfo(getattr(np, dtype_name)).resolution * 10
+        eps = xp.finfo(dtype).eps * 10
 
         with np.errstate(divide='ignore', invalid='ignore'):
             rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
