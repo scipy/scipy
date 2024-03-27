@@ -29,6 +29,8 @@ const char *lpmn_doc = R"(
     ----------
     z : array_like
         Input value.
+    m : array_like
+        Sign of the order m.
 
     Returns
     -------
@@ -73,6 +75,8 @@ const char *clpmn_doc = R"(
        takes values 2 or 3
        2: cut on the real axis ``|x| > 1``
        3: cut on the real axis ``-1 < x < 1`` (default)
+    m : array_like
+        Sign of the order m.
 
     Returns
     -------
