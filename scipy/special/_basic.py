@@ -1725,7 +1725,7 @@ def lpmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float
+    z : array_like
         Input value.
 
     Returns
@@ -1759,9 +1759,7 @@ def lpmn(m, n, z):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    if iscomplex(z):
+    if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
 
     if (m < 0):
@@ -1800,7 +1798,7 @@ def clpmn(m, n, z, type=3):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : float or complex
+    z : array_like, float or complex
         Input value.
     type : int, optional
        takes values 2 or 3
@@ -1844,8 +1842,6 @@ def clpmn(m, n, z, type=3):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
     if (m < 0):
@@ -1884,7 +1880,7 @@ def lqmn(m, n, z):
        where ``n >= 0``; the degree of the Legendre function.  Often
        called ``l`` (lower case L) in descriptions of the associated
        Legendre function
-    z : complex
+    z : array_like, complex
         Input value.
 
     Returns
@@ -1905,8 +1901,6 @@ def lqmn(m, n, z):
         raise ValueError("m must be a non-negative integer.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
     m = int(m)
     n = int(n)
 
@@ -1914,12 +1908,18 @@ def lqmn(m, n, z):
     mm = max(1, m)
     nn = max(1, n)
 
-    if iscomplex(z):
-        q = np.empty((mm + 1, nn + 1), dtype = np.complex128)
+    z = np.asarray(z)
+
+    if np.iscomplexobj(z):
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.complex128)
     else:
-        q = np.empty((mm + 1, nn + 1), dtype = np.float64)
+        q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.float64)
     qd = np.empty_like(q)
-    _lqmn(z, out = (q, qd))
+    if (z.ndim == 0):
+        _lqmn(z, out = (q, qd))
+    else:
+        _lqmn(z, out = (np.moveaxis(q, (0, 1), (-2, -1)),
+            np.moveaxis(qd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
@@ -2043,8 +2043,6 @@ def lpn(n, z):
 
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
 
     z = np.asarray(z)
 
@@ -2072,20 +2070,24 @@ def lqn(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
-    if not (isscalar(n) and isscalar(z)):
-        raise ValueError("arguments must be scalars.")
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if (n < 1):
         n1 = 1
     else:
         n1 = n
 
-    if iscomplex(z):
-        qn = np.empty((n1 + 1), dtype=np.complex128)
+    z = np.asarray(z)
+
+    if np.iscomplexobj(z):
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.complex128)
     else:
-        qn = np.empty((n1 + 1), dtype=np.float64)
+        qn = np.empty((n1 + 1,) + z.shape, dtype=np.float64)
     qd = np.empty_like(qn)
-    _lqn(z, out = (qn, qd))
+    if (z.ndim == 0):
+        _lqn(z, out = (qn, qd))
+    else:
+        _lqn(z, out = (np.moveaxis(qn, 0, -1),
+            np.moveaxis(qd, 0, -1))) # new axes must be last for the ufunc
 
     return qn[:(n+1)], qd[:(n+1)]
 
