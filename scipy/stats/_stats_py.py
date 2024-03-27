@@ -999,31 +999,31 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     2.0
 
     """
-    moment = order  # parameter was renamed
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp)
 
-    # for array_like moment input, return a value for each.
-    if not np.isscalar(moment):
+    # for array_like order input, return a value for each.
+    if not np.isscalar(order):
         # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
+        calculate_mean = center is None and np.any(np.asarray(order) > 1)
         mean = a.mean(axis, keepdims=True) if calculate_mean else None
         mmnt = []
-        for i in moment:
+        for i in order:
             if center is None and i > 1:
                 mmnt.append(_moment(a, i, axis, mean=mean))
             else:
                 mmnt.append(_moment(a, i, axis, mean=center))
         return np.array(mmnt)
     else:
-        return _moment(a, moment, axis, mean=center)
+        return _moment(a, order, axis, mean=center)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
-def _moment(a, moment, axis, *, mean=None):
+def _moment(a, order, axis, *, mean=None):
     xp = array_namespace(a)
 
-    if np.abs(moment - np.round(moment)) > 0:
-        raise ValueError("All moment parameters must be integers")
+    if np.abs(order - np.round(order)) > 0:
+        raise ValueError("All elements of `order` must be integral.")
 
     # moment of empty array is the same regardless of order
     if a.size == 0:
@@ -1035,20 +1035,20 @@ def _moment(a, moment, axis, *, mean=None):
     else:
         dtype = a.dtype
 
-    if moment == 0 or (moment == 1 and mean is None):
+    if order == 0 or (order == 1 and mean is None):
         # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
 
-        temp = (xp.ones(shape, dtype=dtype) if moment == 0
+        temp = (xp.ones(shape, dtype=dtype) if order == 0
                 else xp.zeros(shape, dtype=dtype))
         return temp[()] if temp.ndim == 0 else temp
 
     else:
         # Exponentiation by squares: form exponent sequence
-        n_list = [moment]
-        current_n = moment
+        n_list = [order]
+        current_n = order
         while current_n > 2:
             if current_n % 2:
                 current_n = (current_n - 1) / 2
