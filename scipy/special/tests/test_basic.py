@@ -29,8 +29,6 @@ from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
         array_equal)
 
-import mpmath as mp
-
 import pytest
 from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal,
