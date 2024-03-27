@@ -2031,7 +2031,8 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
         result = x[..., xp.newaxis]
     else:
         step = nperseg - noverlap
-        result = xp.lib.stride_tricks.sliding_window_view(
+        # TODO: what to do about np.lib here for array API?
+        result = np.lib.stride_tricks.sliding_window_view(
             x, window_shape=nperseg, axis=-1, writeable=True
         )
         result = result[..., 0::step, :]
