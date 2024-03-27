@@ -10,9 +10,7 @@ cython_linalg = custom_target('cython_linalg',
     'cython_blas.pxd',
     'cython_lapack.pxd',
     '_blas_subroutines.h',
-    '_lapack_subroutines.h',
-    '_blas_subroutine_wrappers.f',
-    '_lapack_subroutine_wrappers.f'
+    '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -20,6 +18,8 @@ cython_linalg = custom_target('cython_linalg',
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
   ],
+  # Set PYTHONPATH to import from _build_utils/_wrappers_common.py
+  env: {'PYTHONPATH': meson.global_source_root() / 'scipy/_build_utils'},
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
@@ -58,7 +58,7 @@ linalg_cython_gen = generator(cython,
 
 # fblas
 fblas_module = custom_target('fblas_module',
-  output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
+  output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
@@ -69,17 +69,16 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   fblas_module,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
-  override_options: ['b_lto=false'],
+  dependencies: [lapack, blas, fortranobject_dep],
+  link_with: [g77_abi_wrappers],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
 # flapack
 
 flapack_module = custom_target('flapack_module',
-  output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
+  output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
   command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
@@ -90,10 +89,9 @@ py3.extension_module('_flapack',
   flapack_module,
   c_args: [Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep, g77_abi_wrappers],
-  override_options: ['b_lto=false'],
+  dependencies: [lapack, blas, fortranobject_dep],
+  link_with: [g77_abi_wrappers],
   install: true,
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
@@ -180,29 +178,17 @@ py3.extension_module('_matfuncs_sqrtm_triu',
   subdir: 'scipy/linalg'
 )
 
-fwrappers = static_library('fwrappers',
-  [
-    cython_linalg[4],
-    cython_linalg[5],
-    cython_linalg[6],
-    cython_linalg[7],
-  ],
-  dependencies: g77_abi_wrappers,
-  override_options: ['b_lto=false'],
-)
-
 cython_blas = py3.extension_module('cython_blas',
   [
     linalg_cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
     cython_linalg[4],  # _blas_subroutines.h
   ],
   c_args: cython_c_args,
-  link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
+  link_with: [g77_abi_wrappers],
   install: true,
   include_directories: ['../_build_utils/src'],
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
@@ -212,12 +198,11 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
   ],
   c_args: cython_c_args,
-  link_with: fwrappers,
   link_args: version_link_args,
   dependencies: [lapack, blas, np_dep],
+  link_with: [g77_abi_wrappers],
   install: true,
   include_directories: ['../_build_utils/src'],
-  link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 

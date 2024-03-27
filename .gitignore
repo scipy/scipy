@@ -94,6 +94,7 @@ build-install/
 .doit.db.dir
 .doit.db.db
 .doit.db
+doc/source/.jupyterlite.doit.db
 
 # Logs and databases #
 ######################

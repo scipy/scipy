@@ -159,7 +159,8 @@ def setup_openblas(plat=get_plat(), ilp64=get_ilp64(), nightly=False):
         path to extracted files on success, otherwise indicates what went wrong
         To determine success, do ``os.path.exists(msg)``
     '''
-    _, tmp = mkstemp()
+    fd, tmp = mkstemp()
+    os.close(fd)
     if not plat:
         raise ValueError('unknown platform')
     openblas_version = "HEAD" if nightly else OPENBLAS_LONG

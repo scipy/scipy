@@ -259,6 +259,27 @@ class TestRootLM:
         assert_array_almost_equal(final_flows, np.ones(4))
 
 
+class TestNfev:
+    def zero_f(self, y):
+        self.nfev += 1
+        return y**2-3
+
+    @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
+                                        'broyden2', 'anderson',
+                                        'linearmixing', 'diagbroyden',
+                                        'excitingmixing', 'krylov',
+                                        'df-sane'])
+    def test_root_nfev(self, method):
+        self.nfev = 0
+        solution = optimize.root(self.zero_f, 100, method=method)
+        assert solution.nfev == self.nfev
+
+    def test_fsolve_nfev(self):
+        self.nfev = 0
+        x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
+        assert info['nfev'] == self.nfev
+
+
 class TestLeastSq:
     def setup_method(self):
         x = np.linspace(0, 10, 40)

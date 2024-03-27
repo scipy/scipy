@@ -5,6 +5,9 @@
 Discrete Statistical Distributions
 ==================================
 
+Overview
+========
+
 Discrete random variables take on only a countable number of values.
 The commonly used distributions are included in SciPy and described in
 this document. Each discrete distribution can take one extra integer
@@ -251,7 +254,8 @@ If :math:`n<0` or :math:`k<0` or :math:`k>n` we define :math:`\left(\begin{array
 
 
 Discrete Distributions in `scipy.stats`
----------------------------------------
+=======================================
+
 .. toctree::
    :maxdepth: 1
 

@@ -1,8 +1,5 @@
 #pragma once
 
-#ifdef __CUDACC__
-#define SPECFUN_HOST_DEVICE __host__ __device__
-
 // Define math constants if they are not available
 #ifndef M_E
 #define M_E 2.71828182845904523536
@@ -55,6 +52,9 @@
 #ifndef M_SQRT1_2
 #define M_SQRT1_2 0.707106781186547524401
 #endif
+
+#ifdef __CUDACC__
+#define SPECFUN_HOST_DEVICE __host__ __device__
 
 #include <cuda/std/cmath>
 #include <cuda/std/limits>

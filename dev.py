@@ -122,6 +122,7 @@ from doit.cmd_base import ModuleTaskLoader
 from doit.reporter import ZeroReporter
 from doit.exceptions import TaskError
 from doit.api import run_tasks
+from doit import task_params
 from pydevtool.cli import UnifiedContext, CliGroup, Task
 from rich.console import Console
 from rich.panel import Panel
@@ -738,8 +739,8 @@ class Test(Task):
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
         with working_dir(dirs.site):
-            print("Running tests for {} version:{}, installed at:{}".format(
-                        PROJECT_MODULE, version, mod_path))
+            print(f"Running tests for {PROJECT_MODULE} version:{version}, "
+                  f"installed at:{mod_path}")
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
             result = runner(  # scipy._lib._testutils:PytestTester
@@ -906,14 +907,17 @@ def emit_cmdstr(cmd):
     console.print(f"{EMOJI.cmd} [cmd] {cmd}")
 
 
-def task_lint():
+@task_params([{"name": "fix", "default": False}])
+def task_lint(fix):
     # Lint just the diff since branching off of main using a
     # stricter configuration.
     # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    cmd = str(Dirs().root / 'tools' / 'lint.py') + ' --diff-against=main'
+    if fix:
+        cmd += ' --fix'
     return {
         'basename': 'lint',
-        'actions': [str(Dirs().root / 'tools' / 'lint.py') +
-                    ' --diff-against=main'],
+        'actions': [cmd],
         'doc': 'Lint only files modified since last commit (stricter rules)',
     }
 
@@ -941,9 +945,14 @@ def task_check_test_name():
 class Lint:
     """:dash: Run linter on modified files and check for
     disallowed Unicode characters and possibly-invalid test names."""
-    def run():
+    fix = Option(
+        ['--fix'], default=False, is_flag=True, help='Attempt to auto-fix errors'
+    )
+
+    @classmethod
+    def run(cls, fix):
         run_doit_task({
-            'lint': {},
+            'lint': {'fix': fix},
             'unicode-check': {},
             'check-testname': {},
         })
