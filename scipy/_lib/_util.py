@@ -722,7 +722,8 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
 
-    inexact = xp.isdtype(a.dtype, "real floating") or xp.isdtype(a.dtype, "complex floating")
+    inexact = (xp.isdtype(a.dtype, "real floating")
+               or xp.isdtype(a.dtype, "complex floating"))
     if inexact or (is_numpy(xp) and np.issubdtype(a.dtype, np.inexact)):
         # The summation method avoids creating another (potentially huge) array
         if use_summation:

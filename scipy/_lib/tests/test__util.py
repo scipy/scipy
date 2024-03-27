@@ -1,3 +1,4 @@
+import os
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import re
@@ -12,13 +13,13 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible
 
-from scipy._lib._array_api import (xp_assert_equal, is_numpy, array_namespace,
-                                   copy as xp_copy)
+from scipy._lib._array_api import xp_assert_equal, is_numpy, copy as xp_copy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 def test__aligned_zeros():
     niter = 10
@@ -303,7 +304,7 @@ class TestContainsNaNTest:
         with pytest.raises(ValueError, match=msg):
             _contains_nan(data, nan_policy="nan")
 
-    def test_contains_nan_1d(self):
+    def test_contains_nan(self):
         data1 = np.array([1, 2, 3])
         assert not _contains_nan(data1)[0]
 
@@ -313,24 +314,25 @@ class TestContainsNaNTest:
         data3 = np.array([np.nan, 2, 3, np.nan])
         assert _contains_nan(data3)[0]
 
-        # data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
-        # assert not _contains_nan(data4)[0]
-        #
-        # data5 = np.array([1, 2, "3", np.nan], dtype='object')
-        # assert _contains_nan(data5)[0]
+        data4 = np.array([[1, 2], [3, 4]])
+        assert not _contains_nan(data4)[0]
 
-    def test_contains_nan_2d(self):
-        data1 = np.array([[1, 2], [3, 4]])
+        data5 = np.array([[1, 2], [3, np.nan]])
+        assert _contains_nan(data5)[0]
+
+    @pytest.mark.skipif(_SCIPY_ARRAY_API)
+    def test_contains_nan_with_strings(self):
+        data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
         assert not _contains_nan(data1)[0]
 
-        data2 = np.array([[1, 2], [3, np.nan]])
+        data2 = np.array([1, 2, "3", np.nan], dtype='object')
         assert _contains_nan(data2)[0]
 
-        # data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
-        # assert not _contains_nan(data3)[0]
-        #
-        # data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        # assert _contains_nan(data4)[0]
+        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
+        assert not _contains_nan(data3)[0]
+
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]
 
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])

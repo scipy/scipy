@@ -41,6 +41,7 @@ from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -2507,6 +2508,7 @@ class TestMode:
         assert_equal(res.count.ravel(), ref.count.ravel())
         assert res.count.shape == (1, 1)
 
+    @pytest.mark.skipif(_SCIPY_ARRAY_API)
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
     def test_gh16955(self, nan_policy):
         # Check that bug reported in gh-16955 is resolved
@@ -2815,6 +2817,7 @@ class TestZmapZscore:
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
+    @pytest.mark.skipif(_SCIPY_ARRAY_API)
     def test_gzscore_masked_array(self):
         x = np.array([1, 2, -1, 3, 4])
         mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
@@ -2823,6 +2826,7 @@ class TestZmapZscore:
                     1.136670895503])
         assert_allclose(desired, z)
 
+    @pytest.mark.skipif(_SCIPY_ARRAY_API)
     def test_zscore_masked_element_0_gh19039(self):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
