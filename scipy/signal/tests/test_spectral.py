@@ -18,18 +18,16 @@ from scipy.signal._spectral_py import _spectral_helper
 from scipy.signal.tests._scipy_spectral_test_shim import stft_compare as stft
 from scipy.signal.tests._scipy_spectral_test_shim import istft_compare as istft
 from scipy.signal.tests._scipy_spectral_test_shim import csd_compare as csd
-from scipy.conftest import array_api_compatible, skip_if_array_api_backend
-from scipy._lib.array_api_compat import array_api_compat
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy, size
 
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 class TestPeriodogram:
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict"])
     def test_real_onesided_even(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -41,12 +39,9 @@ class TestPeriodogram:
         q /= 8
         xp_assert_close(p, q)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict"])
     def test_real_onesided_odd(self, xp):
         x = xp.zeros(15)
         x[0] = 1
@@ -57,12 +52,9 @@ class TestPeriodogram:
         q *= 2.0/15.0
         xp_assert_close(p, q, atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict"])
     def test_real_twosided(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -72,12 +64,9 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict"])
     def test_real_spectrum(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -86,12 +75,9 @@ class TestPeriodogram:
         xp_assert_close(f, xp.linspace(0, 0.5, 9))
         xp_assert_close(p, q/16.0)
 
-    # dtype casting issue for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_even(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -103,12 +89,9 @@ class TestPeriodogram:
         q /= 8
         xp_assert_close(p, q)
 
-    # dtype casting issue for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_odd(self, xp):
         x = xp.zeros(15, dtype=xp.int64)
         x[0] = 1
@@ -119,12 +102,9 @@ class TestPeriodogram:
         q *= 2.0/15.0
         xp_assert_close(p, q, atol=1e-15)
 
-    # dtype casting issue for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -134,13 +114,9 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q)
 
-    # xp.mean() requires real types so skip
-    # for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "xp.mean() requires real types for array_api_strict"])
     def test_complex(self, xp):
         x = xp.zeros(16, dtype=xp.complex128)
         x[0] = 1.0 + 2.0j
@@ -150,7 +126,6 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q, check_dtype=False)
 
-    @array_api_compatible
     def test_unk_scaling(self, xp):
         assert_raises(ValueError, periodogram, xp.zeros(4, dtype=xp.complex128),
                 scaling='foo')
@@ -159,15 +134,10 @@ class TestPeriodogram:
         sys.maxsize <= 2**32,
         reason="On some 32-bit tolerance issue"
     )
-    # torch hits nulp device coercion until
-    # we have nulp-style array API tests
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict",
+                               "torch hits nulp device coercion"])
     def test_nd_axis_m1(self, xp):
         x = xp.zeros(20, dtype=xp.float64)
         x = xp.reshape(x, (2, 1, 10))
@@ -182,15 +152,10 @@ class TestPeriodogram:
         sys.maxsize <= 2**32,
         reason="On some 32-bit tolerance issue"
     )
-    # torch hits nulp device coercion until
-    # we have nulp-style array API tests
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict",
+                               "torch hits nulp device coercion"])
     def test_nd_axis_0(self, xp):
         x = xp.zeros(20, dtype=xp.float64)
         x = xp.reshape(x, (10, 2, 1))
@@ -201,15 +166,10 @@ class TestPeriodogram:
         f0, p0 = periodogram(x[:,0,0])
         assert_array_almost_equal_nulp(p0, p[:,1,0])
 
-    # torch hits nulp device coercion until
-    # we have nulp-style array API tests
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict",
+                               "torch hits nulp device coercion"])
     def test_window_external(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -222,12 +182,9 @@ class TestPeriodogram:
         assert_raises(ValueError, periodogram, x,
                       10, win_err)  # win longer than signal
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_padded_fft(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -237,7 +194,6 @@ class TestPeriodogram:
         xp_assert_close(p, pp[::2])
         assert pp.shape == (17,)
 
-    @array_api_compatible
     def test_empty_input(self, xp):
         f, p = periodogram([])
         assert_array_equal(f.shape, (0,))
@@ -247,19 +203,15 @@ class TestPeriodogram:
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    @array_api_compatible
     def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
             f, p = periodogram(xp.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_short_nfft(self, xp):
         x = xp.zeros(18)
         x[0] = 1
@@ -271,12 +223,9 @@ class TestPeriodogram:
         q /= 8
         xp_assert_close(p, q)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_nfft_is_xshape(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -288,12 +237,9 @@ class TestPeriodogram:
         q /= 8
         xp_assert_close(p, q)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_real_onesided_even_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -305,12 +251,9 @@ class TestPeriodogram:
         q /= 8
         xp_assert_close(p, q)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_real_onesided_odd_32(self, xp):
         x = xp.zeros(15, dtype=xp.float32)
         x[0] = 1
@@ -321,12 +264,9 @@ class TestPeriodogram:
         q *= 2.0/15.0
         xp_assert_close(p, q, atol=1e-7)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "no moveaxis in array_api_strict"])
     def test_real_twosided_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -336,13 +276,9 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q)
 
-    # xp.mean() requires real types so skip
-    # for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "xp.mean() rqeuires real types for array_api_strict"])
     def test_complex_32(self, xp):
         x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
@@ -352,7 +288,6 @@ class TestPeriodogram:
         q[0] = 0
         xp_assert_close(p, q)
 
-    @array_api_compatible
     def test_shorter_window_error(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -364,12 +299,9 @@ class TestPeriodogram:
 
 
 class TestWelch:
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_real_onesided_even(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -380,12 +312,9 @@ class TestWelch:
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         xp_assert_close(f, xp.linspace(0, 0.5, 5))
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_real_onesided_odd(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -396,12 +325,9 @@ class TestWelch:
                       0.17072113])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_real_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.float64)
         x[0] = 1
@@ -413,12 +339,9 @@ class TestWelch:
                       dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_real_spectrum(self, xp):
         x = xp.zeros(16, dtype=xp.float64)
         x[0] = 1
@@ -429,12 +352,9 @@ class TestWelch:
                       0.02083333], dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # dtype casting issues with numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_onesided_even(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -445,12 +365,9 @@ class TestWelch:
                       0.11111111])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # casting issues with numpy.array_api backend
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_onesided_odd(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -461,12 +378,9 @@ class TestWelch:
                       0.17072113])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # casting issues with numpy.array_api backend
-    @skip_if_array_api_backend("numpy.array_api")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "dtype casting issue for array_api_strict"])
     def test_integer_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -477,14 +391,9 @@ class TestWelch:
                       0.11111111, 0.11111111, 0.11111111, 0.07638889])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # xp.mean() requires real types so skip
-    # for backends that enforce that requirement
-    # for now
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "xp.mean() requires real types for array_api_strict"])
     def test_complex(self, xp):
         x = xp.zeros(16, dtype=xp.complex128)
         x[0] = 1.0 + 2.0j
@@ -495,28 +404,21 @@ class TestWelch:
                       0.55555556, 0.55555556, 0.55555556, 0.38194444], dtype=xp.float64)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    @array_api_compatible
     def test_unk_scaling(self, xp):
         assert_raises(ValueError, welch, xp.zeros(4, dtype=xp.complex128),
                       scaling='foo', nperseg=4)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_detrend_linear(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10, detrend='linear')
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_no_detrending(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = welch(x, nperseg=10, detrend=False)
@@ -524,24 +426,18 @@ class TestWelch:
         xp_assert_close(f1, f2, atol=1e-15)
         xp_assert_close(p1, p2, atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_detrend_external(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = welch(x, nperseg=10,
                      detrend=lambda seg: signal.detrend(seg, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_detrend_external_nd_m1(self, xp):
         x = xp.arange(40, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2,2,10))
@@ -549,12 +445,9 @@ class TestWelch:
                      detrend=lambda seg: signal.detrend(seg, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_detrend_external_nd_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2, 1, 10))
@@ -563,12 +456,9 @@ class TestWelch:
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_nd_axis_m1(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2,1,10))
@@ -578,12 +468,9 @@ class TestWelch:
         f0, p0 = welch(x[0,0,:], nperseg=10)
         xp_assert_close(p0[None,:], p[1,:], atol=1e-13, rtol=1e-13)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_nd_axis_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (10,2,1))
@@ -593,13 +480,10 @@ class TestWelch:
         f0, p0 = welch(x[:,0,0], nperseg=10)
         xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13)
 
-    @array_api_compatible
-    @skip_if_array_api_backend('torch')
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict",
+                               "TODO: skip torch"])
     def test_window_external(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -619,7 +503,6 @@ class TestWelch:
         assert_raises(ValueError, welch, x,
                       10, win_err, nperseg=None)  # win longer than signal
 
-    @array_api_compatible
     def test_empty_input(self, xp):
         val = xp.asarray([])
         f, p = welch(val)
@@ -630,19 +513,15 @@ class TestWelch:
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    @array_api_compatible
     def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
             f, p = welch(xp.empty(shape), axis=1)
             assert_array_equal(f.shape, shape)
             assert_array_equal(p.shape, shape)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_short_data(self, xp):
         x = xp.zeros(8)
         x[0] = 1
@@ -659,18 +538,14 @@ class TestWelch:
         xp_assert_close(f1, f2)
         xp_assert_close(p1, p2)
 
-    @array_api_compatible
     def test_window_long_or_nd(self, xp):
         assert_raises(ValueError, welch, xp.zeros(4), 1, xp.asarray([1,1,1,1,1]))
         assert_raises(ValueError, welch, xp.zeros(4), 1,
                       xp.reshape(xp.arange(6), (2,3)))
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_nondefault_noverlap(self, xp):
         x = xp.zeros(64)
         x[::8] = 1
@@ -679,20 +554,15 @@ class TestWelch:
                       1./6.])
         xp_assert_close(p, q, atol=1e-12)
 
-    @array_api_compatible
     def test_bad_noverlap(self, xp):
         assert_raises(ValueError, welch, xp.zeros(4), 1, 'hann', 2, 7)
 
-    @array_api_compatible
     def test_nfft_too_short(self, xp):
         assert_raises(ValueError, welch, xp.ones(12), nfft=3, nperseg=4)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_real_onesided_even_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -704,12 +574,9 @@ class TestWelch:
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert p.dtype == q.dtype
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_real_onesided_odd_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -721,12 +588,9 @@ class TestWelch:
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert p.dtype == q.dtype
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available for array_api_strict"])
     def test_real_twosided_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -739,14 +603,9 @@ class TestWelch:
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
         assert p.dtype == q.dtype
 
-    # xp.mean() requires real types so skip
-    # for backends that enforce that requirement
-    # for now
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "xp.mean() requires real types for array_api_strict"])
     def test_complex_32(self, xp):
         x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
@@ -759,12 +618,9 @@ class TestWelch:
         assert_(p.dtype == q.dtype,
                 f'dtype mismatch, {p.dtype}, {q.dtype}')
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_padded_freqs(self, xp):
         x = xp.zeros(12)
 
@@ -783,12 +639,9 @@ class TestWelch:
         xp_assert_close(fodd, f, check_namespace=False, check_dtype=False)
         xp_assert_close(feven, f, check_namespace=False, check_dtype=False)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_window_correction(self, xp):
         A = 20
         fs = 1e4
@@ -812,12 +665,9 @@ class TestWelch:
                                              array_api_compat.to_device(freq, "cpu"))),
                             A*np.sqrt(2)/2, rtol=1e-3)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
@@ -835,12 +685,9 @@ class TestWelch:
             xp_assert_equal(p_flat, p_plus.squeeze(), err_msg=a)
             xp_assert_equal(p_flat, p_minus.squeeze(), err_msg=a-x.ndim)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict"])
     def test_average(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -855,14 +702,10 @@ class TestWelch:
 
 
 class TestCSD:
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_pad_shorter_x(self, xp):
         x = xp.zeros(8)
         y = xp.zeros(12)
@@ -874,14 +717,10 @@ class TestCSD:
         xp_assert_close(f1, f)
         xp_assert_close(c1, c)
 
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_pad_shorter_y(self, xp):
         x = xp.zeros(12)
         y = xp.zeros(8)
@@ -893,14 +732,10 @@ class TestCSD:
         xp_assert_close(f1, f)
         xp_assert_close(c1, c)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_onesided_even(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -911,14 +746,10 @@ class TestCSD:
                         0.11111111])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_onesided_odd(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -929,14 +760,10 @@ class TestCSD:
                         0.17072113])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_twosided(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -947,14 +774,10 @@ class TestCSD:
                         0.11111111, 0.11111111, 0.11111111, 0.07638889])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis absent from array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_spectrum(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -965,14 +788,10 @@ class TestCSD:
                         0.02083333])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # type casting error with numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "type casting error with array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_integer_onesided_even(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -983,14 +802,10 @@ class TestCSD:
                         0.11111111])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # type casting error with numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "type casting error with array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_integer_onesided_odd(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -1001,14 +816,10 @@ class TestCSD:
                         0.17072113])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # type casting error with numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "type casting error with array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_integer_twosided(self, xp):
         x = xp.zeros(16, dtype=xp.int64)
         x[0] = 1
@@ -1019,14 +830,10 @@ class TestCSD:
                         0.11111111, 0.11111111, 0.11111111, 0.07638889])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # xp.mean() requires real input for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "xp.mean() requires real input for array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_complex(self, xp):
         x = xp.zeros(16, dtype=xp.complex128)
         x[0] = 1.0 + 2.0j
@@ -1037,32 +844,23 @@ class TestCSD:
                         0.55555556, 0.55555556, 0.55555556, 0.38194444])
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    @array_api_compatible
     def test_unk_scaling(self, xp):
         assert_raises(ValueError, csd, xp.zeros(4, dtype=xp.complex128),
                       xp.ones(4, dtype=xp.complex128), scaling='foo', nperseg=4)
 
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_detrend_linear(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = csd(x, x, nperseg=10, detrend='linear')
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_no_detrending(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f1, p1 = csd(x, x, nperseg=10, detrend=False)
@@ -1070,28 +868,20 @@ class TestCSD:
         xp_assert_close(f1, f2, atol=1e-15)
         xp_assert_close(p1, p2, atol=1e-15)
 
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_detrend_external(self, xp):
         x = xp.arange(10, dtype=xp.float64) + 0.04
         f, p = csd(x, x, nperseg=10,
                    detrend=lambda seg: signal.detrend(seg, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_detrend_external_nd_m1(self, xp):
         x = xp.arange(40, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2, 2, 10))
@@ -1099,14 +889,10 @@ class TestCSD:
                    detrend=lambda seg: signal.detrend(seg, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_detrend_external_nd_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2, 1, 10))
@@ -1115,14 +901,10 @@ class TestCSD:
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         xp_assert_close(p, xp.zeros_like(p), atol=1e-15)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_nd_axis_m1(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (2, 1, 10))
@@ -1132,14 +914,10 @@ class TestCSD:
         f0, p0 = csd(x[0,0,:], x[0,0,:], nperseg=10)
         xp_assert_close(p0[xp.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13, check_dtype=False)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_nd_axis_0(self, xp):
         x = xp.arange(20, dtype=xp.float64) + 0.04
         x = xp.reshape(x, (10, 2, 1))
@@ -1149,14 +927,10 @@ class TestCSD:
         f0, p0 = csd(x[:,0,0], x[:,0,0], nperseg=10)
         xp_assert_close(p0, p[:,1,0], atol=1e-13, rtol=1e-13, check_dtype=False)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array_api_compat cupy doesn't support fft",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_window_external(self, xp):
         x = xp.zeros(16)
         x[0] = 1
@@ -1175,14 +949,10 @@ class TestCSD:
         assert_raises(ValueError, csd, x, x,
               10, win_err, nperseg=None)  # because win longer than signal
 
-    # torch max() expects reduction dim to be specified...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # the empty list input causes issues for CuPy
-    # (array-like support)
-    @skip_if_array_api_backend('cupy')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["array-like support issues for CuPy",
+                               "moveaxis not available in array_api_strict",
+                               "torch max() expects reduction dim to be specified"])
     def test_empty_input(self, xp):
         f, p = csd([], xp.zeros(10))
         assert f.shape == (0,)
@@ -1205,11 +975,9 @@ class TestCSD:
         assert f.shape == (5,0)
         assert p.shape == (5,0)
 
-    # torch max() expects reduction dim to be specified...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("array_api_strict", "torch",
+                      reasons=["moveaxis not available in array_api_strict",
+                               "torch max() expects reduction dim to be specified"])
     def test_empty_input_other_axis(self, xp):
         for shape in [(3,0), (0,5,2)]:
             f, p = csd(xp.empty(shape), xp.empty(shape), axis=1)
@@ -1224,14 +992,10 @@ class TestCSD:
         assert f.shape == (10, 0, 3)
         assert p.shape == (10, 0, 3)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_short_data(self, xp):
         x = xp.zeros(8)
         x[0] = 1
@@ -1249,21 +1013,16 @@ class TestCSD:
         xp_assert_close(f1, f2)
         xp_assert_close(p1, p2)
 
-    @array_api_compatible
     def test_window_long_or_nd(self, xp):
         assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1,
                       xp.asarray([1,1,1,1,1]))
         assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1,
                       xp.reshape(xp.arange(6), (2, 3)))
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_nondefault_noverlap(self, xp):
         x = xp.zeros(64)
         x[::8] = 1
@@ -1272,24 +1031,18 @@ class TestCSD:
                         1./6.])
         xp_assert_close(p, q, atol=1e-12)
 
-    @array_api_compatible
     def test_bad_noverlap(self, xp):
         assert_raises(ValueError, csd, xp.zeros(4), xp.ones(4), 1, 'hann',
                       2, 7)
 
-    @array_api_compatible
     def test_nfft_too_short(self, xp):
         assert_raises(ValueError, csd, xp.ones(12), xp.zeros(12), nfft=3,
                       nperseg=4)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_onesided_even_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -1300,14 +1053,10 @@ class TestCSD:
                         0.11111111], xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_onesided_odd_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -1318,14 +1067,10 @@ class TestCSD:
                         0.17072113], xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not available in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_real_twosided_32(self, xp):
         x = xp.zeros(16, dtype=xp.float32)
         x[0] = 1
@@ -1337,14 +1082,10 @@ class TestCSD:
                         0.07638889], xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # xp.mean() requires real input for numpy.array_api
-    @skip_if_array_api_backend("numpy.array_api")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "xp.mean requires real input for array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_complex_32(self, xp):
         x = xp.zeros(16, dtype=xp.complex64)
         x[0] = 1.0 + 2.0j
@@ -1355,14 +1096,10 @@ class TestCSD:
                         0.55555558, 0.55555552, 0.55555552, 0.38194442], xp.float32)
         xp_assert_close(p, q, atol=1e-7, rtol=1e-7)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_padded_freqs(self, xp):
         x = xp.zeros(12)
         y = xp.ones(12)
@@ -1382,14 +1119,10 @@ class TestCSD:
         xp_assert_close(fodd, f)
         xp_assert_close(feven, f)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict", "torch",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict",
+                               "torch hits messy np.pad codepath"])
     def test_copied_data(self, xp):
         x = np.random.randn(64)
         x = xp.asarray(x)
@@ -1409,12 +1142,9 @@ class TestCSD:
 
 
 class TestCoherence:
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict"])
     def test_identical_input(self, xp):
         x = np.random.randn(20)
         x = xp.asarray(x)
@@ -1427,12 +1157,9 @@ class TestCoherence:
         xp_assert_close(f, f1)
         xp_assert_close(C, C1, check_dtype=False)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict"])
     def test_phase_shifted_input(self, xp):
         x = np.random.randn(20)
         x = xp.asarray(x)
@@ -1447,12 +1174,9 @@ class TestCoherence:
 
 
 class TestSpectrogram:
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict"])
     def test_average_all_segments(self, xp):
         x = np.random.randn(1024)
         x = xp.asarray(x)
@@ -1467,12 +1191,9 @@ class TestSpectrogram:
         xp_assert_close(f, fw)
         xp_assert_close(xp.mean(P, axis=-1), Pw)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict"])
     def test_window_external(self, xp):
         x = np.random.randn(1024)
         x = xp.asarray(x)
@@ -1493,12 +1214,9 @@ class TestSpectrogram:
         assert_raises(ValueError, spectrogram, x,
                       fs, win_err, nperseg=None)  # win longer than signal
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "array_api_strict",
+                      reasons=["lack of fft support in array_api_compat cupy",
+                               "moveaxis not availabe in array_api_strict"])
     def test_short_data(self, xp):
         x = np.random.randn(1024)
         x = xp.asarray(x)
@@ -1521,14 +1239,8 @@ class TestSpectrogram:
         xp_assert_close(p1, p3)
 
 class TestLombscargle:
-    # _lombscargle is a Cython function, so we currently
-    # have to skip backends across the board here
-    # (there's an expectation of contiguous memory
-    # layout as well)
-    @skip_if_array_api_backend("numpy.array_api")
-    @skip_if_array_api_backend("cupy")
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends(np_only=True,
+                      reasons=["_lombscargle is a Cython function"])
     def test_frequency(self, xp):
         """Test if frequency location of peak corresponds to frequency of
         generated input signal.
@@ -1562,14 +1274,8 @@ class TestLombscargle:
         delta = f[1] - f[0]
         assert_(w - f[xp.argmax(P)] < (delta/2.))
 
-    # _lombscargle is a Cython function, so we currently
-    # have to skip backends across the board here
-    # (there's an expectation of contiguous memory
-    # layout as well)
-    @skip_if_array_api_backend("numpy.array_api")
-    @skip_if_array_api_backend("cupy")
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends(np_only=True,
+                      reasons=["_lombscargle is a Cython function"])
     def test_amplitude(self, xp):
         # Test if height of peak in normalized Lomb-Scargle periodogram
         # corresponds to amplitude of the generated input signal.
@@ -1604,12 +1310,9 @@ class TestLombscargle:
         # frequency is less than accuracy
         xp_assert_close(xp.max(pgram), ampl, rtol=0.035)
 
-    # here we only need to skip cupy and torch backends
-    # for the _lombscargle Cython function (I'm a little
-    # surprised numpy.array_api squeezed through here)
-    @skip_if_array_api_backend("cupy")
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends("cupy", "torch",
+                      reasons=["_lombscargle is a Cython function",
+                               "_lombscargle is a Cython function"])
     def test_precenter(self, xp):
         # Test if precenter gives the same result as manually precentering.
 
@@ -1641,14 +1344,8 @@ class TestLombscargle:
         # check if centering worked
         xp_assert_close(pgram, pgram2)
 
-    # _lombscargle is a Cython function, so we currently
-    # have to skip backends across the board here
-    # (there's an expectation of contiguous memory
-    # layout as well)
-    @skip_if_array_api_backend("numpy.array_api")
-    @skip_if_array_api_backend("cupy")
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends(np_only=True,
+                      reasons=["_lombscargle is a Cython function"])
     def test_normalize(self, xp):
         # Test normalize option of Lomb-Scarge.
 
@@ -1680,32 +1377,27 @@ class TestLombscargle:
         xp_assert_close(pgram * 2 / (x @ x), pgram2)
         xp_assert_close(xp.max(pgram2), 1.0, rtol=0.35)
 
-    # skips for Cython code in _lombscargle
-    @skip_if_array_api_backend("torch")
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy",
+                      reasons=["_lombscargle is a Cython function",
+                               "_lombscargle is a Cython function"])
     def test_wrong_shape(self, xp):
         t = xp.linspace(0, 1, 1)
         x = xp.linspace(0, 1, 2)
         f = xp.linspace(0, 1, 3)
         assert_raises(ValueError, lombscargle, t, x, f)
 
-    # skips for Cython code in _lombscargle
-    @skip_if_array_api_backend("torch")
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy",
+                      reasons=["_lombscargle is a Cython function",
+                               "_lombscargle is a Cython function"])
     def test_zero_division(self, xp):
         t = xp.zeros(1)
         x = xp.zeros(1)
         f = xp.zeros(1)
         assert_raises(ZeroDivisionError, lombscargle, t, x, f)
 
-    # here, CuPy is skipped because of Cython usage
-    # in _lombscargle, but "torch" gets skipped
-    # because of `endpoint` usage in linspace!
-    @skip_if_array_api_backend("torch")
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy",
+                      reasons=["endpoint usage in linspace",
+                               "_lombscargle is a Cython function"])
     def test_lombscargle_atan_vs_atan2(self, xp):
         # https://github.com/scipy/scipy/issues/3787
         # This raised a ZeroDivisionError.
@@ -1716,14 +1408,10 @@ class TestLombscargle:
 
 
 class TestSTFT:
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+                      reasons=["torch hits messy np.pad codepath",
+                               "lack of fft support in array_api_compat",
+                               "moveaxis not available in array_api_strict"])
     def test_input_validation(self, xp):
 
         def chk_VE(match):
@@ -1806,7 +1494,6 @@ class TestSTFT:
         with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
             istft(z, scaling=scaling)
 
-    @array_api_compatible
     def test_check_COLA(self, xp):
         settings = [
                     ('boxcar', 10, 0),
@@ -1831,7 +1518,6 @@ class TestSTFT:
                             check_namespace=False,
                             check_shape=False)
 
-    @array_api_compatible
     def test_check_NOLA(self, xp):
         settings_pass = [
                     ('boxcar', 10, 0),
@@ -1882,14 +1568,10 @@ class TestSTFT:
                             check_namespace=check_namespace,
                             check_shape=False)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+                      reasons=["torch hits messy np.pad codepath",
+                               "lack of fft support in array_api_compat",
+                               "moveaxis not available in array_api_strict"])
     def test_average_all_segments(self, xp):
         np.random.seed(1234)
         x = np.random.randn(1024)
@@ -1911,14 +1593,10 @@ class TestSTFT:
         xp_assert_close(f, fw)
         xp_assert_close(xp.mean(xp.abs(Z)**2, axis=-1), Pw)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+                      reasons=["torch hits messy np.pad codepath",
+                               "lack of fft support in array_api_compat",
+                               "moveaxis not available in array_api_strict"])
     def test_permute_axes(self, xp):
         np.random.seed(1234)
         x = np.random.randn(1024)
@@ -1943,15 +1621,10 @@ class TestSTFT:
         xp_assert_close(Z1, Z2[:, 0, 0, :])
         xp_assert_close(x1, x2[:, 0, 0])
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
-    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+                      reasons=["torch hits messy np.pad codepath",
+                               "lack of fft support in array_api_compat",
+                               "moveaxis not available in array_api_strict"])
     def test_roundtrip_real(self, scaling, xp):
         np.random.seed(1234)
 
@@ -1983,18 +1656,10 @@ class TestSTFT:
             xp_assert_close(t, tr, err_msg=msg, check_dtype=False)
             xp_assert_close(x, xr, err_msg=msg)
 
-    # for torch, we end up in a situation where x.imag is called
-    # but x is real; I think torch may formally be standard compliant
-    # in erroring out here based on:
-    # https://data-apis.org/array-api/latest/API_specification/generated/array_api.imag.html?highlight=imag#array_api.imag
-    # but skip for now
-    @skip_if_array_api_backend('torch')
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch errors out where x.imag is called but x is real (this may be standard compliant though: https://data-apis.org/array-api/latest/API_specification/generated/array_api.imag.html?highlight=imag#array_api.imag)",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_not_nola(self, xp):
         np.random.seed(1234)
 
@@ -2024,14 +1689,10 @@ class TestSTFT:
             with pytest.raises(AssertionError):
                 xp_assert_close(x, xr[:len(x)], err_msg=msg)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_nola_not_cola(self, xp):
         np.random.seed(1234)
 
@@ -2063,14 +1724,10 @@ class TestSTFT:
             xp_assert_close(t, tr[:len(t)], err_msg=msg, check_dtype=False)
             xp_assert_close(x, xr[:len(x)], err_msg=msg)
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_float32(self, xp):
         np.random.seed(1234)
 
@@ -2091,7 +1748,6 @@ class TestSTFT:
             xp_assert_close(t, t, err_msg=msg)
             xp_assert_close(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
 
-    @array_api_compatible
     @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_complex(self, scaling, xp):
         np.random.seed(1234)
@@ -2138,14 +1794,10 @@ class TestSTFT:
         xp_assert_close(t, tr, err_msg=msg, check_namespace=False, check_dtype=False)
         xp_assert_close(x, xr, err_msg=msg)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_boundary_extension(self, xp):
         np.random.seed(1234)
 
@@ -2180,14 +1832,10 @@ class TestSTFT:
                 xp_assert_close(x, xr, err_msg=msg)
                 xp_assert_close(x, xr_ext, err_msg=msg)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_padded_signal(self, xp):
         np.random.seed(1234)
 
@@ -2211,14 +1859,10 @@ class TestSTFT:
             xp_assert_close(t, tr[:t.size], err_msg=msg, check_dtype=False)
             xp_assert_close(x, xr[:x.size], err_msg=msg)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_padded_FFT(self, xp):
         np.random.seed(1234)
 
@@ -2255,14 +1899,10 @@ class TestSTFT:
             xp_assert_close(x, xr, err_msg=msg)
             xp_assert_close(xc, xcr, err_msg=msg)
 
-    # torch hits a messy np.pad codepath...
-    @skip_if_array_api_backend("torch")
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch hits messy np.pad codepath",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_axis_rolling(self, xp):
         np.random.seed(1234)
 
@@ -2290,15 +1930,10 @@ class TestSTFT:
         xp_assert_close(x_flat, x_transpose_m, err_msg='istft transpose minus')
         xp_assert_close(x_flat, x_transpose_p, err_msg='istft transpose plus')
 
-    # moveaxis not available in numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # torch seems to have an issue with a slice that
-    # has a negative step?
-    @skip_if_array_api_backend("torch")
-    # skip cupy because array_api_compat doesn't support
-    # fft at this time
-    @skip_if_array_api_backend("cupy")
-    @array_api_compatible
+    @skip_xp_backends("torch", "cupy", "array_api_strict",
+            reasons=["torch has issue with slice with negative step",
+                     "lack of fft support in array_api_compat",
+                     "moveaxis not available in array_api_strict"])
     def test_roundtrip_scaling(self, xp):
         """Verify behavior of scaling parameter. """
         # Create 1024 sample cosine signal with amplitude 2:
