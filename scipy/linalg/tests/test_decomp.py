@@ -1,6 +1,5 @@
 import itertools
 import platform
-import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
@@ -57,22 +56,6 @@ def _random_hermitian_matrix(n, posdef=False, dtype=float):
 REAL_DTYPES = [np.float32, np.float64]
 COMPLEX_DTYPES = [np.complex64, np.complex128]
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
-
-
-def clear_fuss(ar, fuss_binary_bits=7):
-    """Clears trailing `fuss_binary_bits` of mantissa of a floating number"""
-    x = np.asanyarray(ar)
-    if np.iscomplexobj(x):
-        return clear_fuss(x.real) + 1j * clear_fuss(x.imag)
-
-    significant_binary_bits = np.finfo(x.dtype).nmant
-    x_mant, x_exp = np.frexp(x)
-    f = 2.0**(significant_binary_bits - fuss_binary_bits)
-    x_mant *= f
-    np.rint(x_mant, out=x_mant)
-    x_mant /= f
-
-    return np.ldexp(x_mant, x_exp)
 
 
 # XXX: This function should not be defined here, but somewhere in
@@ -238,11 +221,18 @@ class TestEig:
                 assert_allclose(res[:, i], 0,
                                 rtol=1e-13, atol=1e-13, err_msg=msg)
 
+        # try to consistently order eigenvalues, including complex conjugate pairs
         w_fin = w[isfinite(w)]
         wt_fin = wt[isfinite(wt)]
-        perm = argsort(clear_fuss(w_fin))
-        permt = argsort(clear_fuss(wt_fin))
-        assert_allclose(w[perm], wt[permt],
+
+        # prune noise in the real parts
+        w_fin = -1j * np.real_if_close(1j*w_fin, tol=1e-10)
+        wt_fin = -1j * np.real_if_close(1j*wt_fin, tol=1e-10)
+
+        perm = argsort(w_fin)
+        permt = argsort(wt_fin)
+
+        assert_allclose(w_fin[perm], wt_fin[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
 
         length = np.empty(len(vr))
@@ -1962,12 +1952,6 @@ if CONFIG is not None:
 
 
 class TestQZ:
-    @pytest.mark.xfail(
-        sys.platform == 'darwin' and
-        blas_provider == 'openblas' and
-        blas_version < "0.3.21.dev",
-        reason="gges[float32] broken for OpenBLAS on macOS, see gh-16949"
-    )
     def test_qz_single(self):
         rng = np.random.RandomState(12345)
         n = 5
