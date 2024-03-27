@@ -1760,10 +1760,8 @@ def lpmn(m, n, z):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    if not isscalar(z):
-        raise ValueError("z must be scalar.")
-    if iscomplex(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
+#    if iscomplex(z):
+ #       raise ValueError("Argument must be real. Use clpmn instead.")
 
     if (m < 0):
         m_sign = -1
