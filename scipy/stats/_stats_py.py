@@ -941,7 +941,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     ----------
     a : array_like
        Input array.
-    order : int or array_like of ints, optional
+    order : int or 1-D array_like of ints, optional
        Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -1002,18 +1002,26 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp)
 
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.asarray(a, dtype=xp.float64)
+
+    order = xp.asarray(order, dtype=a.dtype)
+    if xp.any(order != xp.round(order)):
+        raise ValueError("All elements of `order` must be integral.")
+    order = order[()] if order.ndim == 0 else order
+
     # for array_like order input, return a value for each.
-    if not np.isscalar(order):
+    if order.ndim > 0:
         # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and np.any(np.asarray(order) > 1)
-        mean = a.mean(axis, keepdims=True) if calculate_mean else None
+        calculate_mean = center is None and xp.any(order > 1)
+        mean = xp.mean(a, axis, keepdims=True) if calculate_mean else None
         mmnt = []
         for i in order:
             if center is None and i > 1:
                 mmnt.append(_moment(a, i, axis, mean=mean))
             else:
                 mmnt.append(_moment(a, i, axis, mean=center))
-        return np.array(mmnt)
+        return xp.asarray(mmnt)
     else:
         return _moment(a, order, axis, mean=center)
 
@@ -1021,9 +1029,6 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, order, axis, *, mean=None):
     xp = array_namespace(a)
-
-    if np.abs(order - np.round(order)) > 0:
-        raise ValueError("All elements of `order` must be integral.")
 
     # moment of empty array is the same regardless of order
     if a.size == 0:

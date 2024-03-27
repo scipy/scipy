@@ -3420,7 +3420,7 @@ class TestMoments:
     def test_moment_array_api(self, xp, order, axis):
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))
-        res = _moment(xp.asarray(x), order, axis)
+        res = stats.moment(xp.asarray(x), order, axis, _no_deco=True)
         ref = xp.asarray(_moment(x, order, axis))
         xp_assert_close(res, ref)
 
