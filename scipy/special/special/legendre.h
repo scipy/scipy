@@ -463,8 +463,8 @@ void lqmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> qm
     if (fabs(x) == 1.0) {
         for (i = 0; i < (m + 1); i++) {
             for (j = 0; j < (n + 1); j++) {
-                qm(j, i) = 1e300;
-                qd(j, i) = 1e300;
+                qm(i, j) = 1e300;
+                qd(i, j) = 1e300;
             }
         }
         return;
