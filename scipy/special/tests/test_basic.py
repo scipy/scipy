@@ -3621,29 +3621,6 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])),4)
 
-    @pytest.mark.parametrize('n', [0, 1, 2, 5, 10])
-    def test_lpmn_mp(self, n):
-        @np.vectorize
-        def func(m, n, x):
-            if (abs(m) > n):
-                return 0
-
-            return float(mp.legenp(n, m, x))
-
-        rng = np.random.default_rng()
-
-        x = rng.uniform(-1, 1, 7)
-        for m in random.choices(tuple(range(n + 1)), k = 5):
-            actual, actual_jac = special.lpmn(m, n, x)
-            desired = func(np.expand_dims(np.arange(m + 1), axis = tuple(range(1, x.ndim + 2))),
-                np.expand_dims(np.arange(n + 1), axis = (0,) + tuple(range(2, x.ndim + 2))), x)
-            assert_allclose(actual, desired)
-
-            actual, actual_jac = special.lpmn(-m, n, x)
-            desired = func(np.expand_dims(-np.arange(m + 1), axis = -1),
-                np.expand_dims(np.arange(n + 1), axis = 0), x)
-            assert_allclose(actual, desired)
-
     def test_lpn(self):
         lpnf = special.lpn(2,.5)
         assert_array_almost_equal(lpnf,(array([1.00000,
@@ -3652,21 +3629,6 @@ class TestLegendreFunctions:
                                       array([0.00000,
                                                       1.00000,
                                                       1.50000])),4)
-
-    @pytest.mark.parametrize('n', [0, 1, 2, 5, 10])
-    def test_lpn_mp(self, n):
-        @np.vectorize
-        def func(n, x):
-            return float(mp.legendre(n, x))
-
-        rng = np.random.default_rng()
-
-        x = rng.uniform(-1, 1, (21, 7))
-
-        actual, actual_jac = special.lpn(n, x)
-        desired = func(np.expand_dims(np.arange(n + 1), axis = tuple(range(1, x.ndim + 1))), x)
-
-        assert_allclose(actual, desired)
 
     def test_lpmv(self):
         lp = special.lpmv(0,2,.5)

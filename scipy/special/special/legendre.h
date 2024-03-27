@@ -58,7 +58,7 @@ void lpn(T z, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> pn,
 // =====================================================
 
 template <typename T, typename... Policies0, typename... Policies1>
-void lpmn(T x, long m_sign, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> pm,
+void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> pm,
           std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies1...> pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
@@ -124,6 +124,15 @@ void lpmn(T x, long m_sign, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Pol
             pd(i, j) = ls * i * x * pm(i, j) / xs + (j + i) * (j - i + 1) / xq * pm(i - 1, j);
         }
     }
+}
+
+template <typename T, typename... Policies0, typename... Policies1>
+void lpmn(T x, long m_sign, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> pm,
+          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies1...> pd) {
+    lpmn(x, pm, pd);
+
+    int m = pm.extent(0) - 1;
+    int n = pm.extent(1) - 1;
 
     if (m_sign < 0) {
         for (int j = 0; j < n + 1; ++j) {
@@ -141,12 +150,6 @@ void lpmn(T x, long m_sign, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Pol
             }
         }
     }
-}
-
-template <typename T, typename... Policies0, typename... Policies1>
-void lpmn(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies0...> pm,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 2>, Policies1...> pd) {
-    lpmn(x, 1, pm, pd);
 }
 
 // Translated into C++ by SciPy developers in 2024.
