@@ -142,19 +142,21 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-```python
+```{eval-rst}
+.. try_examples::
+
     >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
-    >>> 
+    ...
     >>> class StandardNormal:
     ...     def pdf(self, x: float) -> float:
     ...         # note that the normalization constant isn't required
     ...         return exp(-0.5 * x*x)
     ...     def dpdf(self, x: float) -> float:
     ...         return -x * exp(-0.5 * x*x)
-    ... 
+    ...
     >>> dist = StandardNormal()
-    >>> 
+    ...
     >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
 ```
@@ -188,7 +190,11 @@ In the above example, we have set up an object of the
 standard normal distribution. Now, we can start sampling from our
 distribution by calling the `rvs` method:
 
-```python
+```{eval-rst}
+.. try_examples::
+
+    >>> from scipy.stats.sampling import TransformedDensityRejection
+    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
     >>> rng.rvs()
     -1.526829048388144
     >>> rng.rvs((5, 3))
@@ -213,15 +219,15 @@ mystnb:
     >>> from scipy.stats import norm
     >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from math import exp
-    >>> 
+    >>>
     >>> class StandardNormal:
     ...     def pdf(self, x: float) -> float:
     ...         # note that the normalization constant isn't required
     ...         return exp(-0.5 * x*x)
     ...     def dpdf(self, x: float) -> float:
     ...         return -x * exp(-0.5 * x*x)
-    ... 
-    >>> 
+    ...
+    >>>
     >>> dist = StandardNormal()
     >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
@@ -258,7 +264,7 @@ mystnb:
   {class}`~.stats.sampling.TransformedDensityRejection` would not be the same
   even for the same `random_state`:
 
-  ```python
+  ```{eval-rst}
     >>> from scipy.stats.sampling import norm, TransformedDensityRejection
     >>> from copy import copy
     >>> dist = StandardNormal()
@@ -274,7 +280,10 @@ mystnb:
 
 We can pass a `domain` parameter to truncate the distribution:
 
-```python
+```{eval-rst}
+.. try_examples::
+
+    >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
     >>> rng.rvs((5, 3))
     array([[-0.99865691,  0.38104014,  0.31633526],
