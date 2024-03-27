@@ -255,6 +255,33 @@ void clpmn(std::complex<T> z, long ntype,
     }
 }
 
+template <typename T, typename... Policies0, typename... Policies1>
+void clpmn(std::complex<T> z, long ntype, long m_sign,
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies0...> cpm,
+           std::mdspan<std::complex<T>, std::dextents<std::ptrdiff_t, 2>, Policies1...> cpd) {
+    clpmn(z, ntype, cpm, cpd);
+
+    int m = cpm.extent(0) - 1;
+    int n = cpm.extent(1) - 1;
+
+    if (m_sign < 0) {
+        for (int j = 0; j < n + 1; ++j) {
+            for (int i = 0; i < m + 1; ++i) {
+                T fac = 0;
+                if (i <= j) {
+                    fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
+                    if (ntype == 2) {
+                        fac *= std::pow(-1, i);
+                    }
+                }
+
+                cpm(i, j) *= fac;
+                cpd(i, j) *= fac;
+            }
+        }
+    }
+}
+
 // ====================================================
 // Purpose: Compute Legendre functions Qn(x) & Qn'(x)
 // Input :  x  --- Argument of Qn(x)

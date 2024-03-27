@@ -21,10 +21,12 @@ using lpmn_dldd_t = void (*)(double, long, mdspan<double, dextents<ptrdiff_t, 2>
                              mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
 extern const char *lpmn_doc;
 
-using clpmn_FFF_t = void (*)(complex<float>, long, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>,
-                             mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using clpmn_DDD_t = void (*)(complex<double>, long, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
-                             mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+using clpmn_FllFF_t = void (*)(complex<float>, long, long,
+                               mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>,
+                               mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
+using clpmn_DllDD_t = void (*)(complex<double>, long, long,
+                               mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
+                               mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 extern const char *clpmn_doc;
 
 using lqn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>,
@@ -79,8 +81,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "_lpmn", _lpmn);
 
     PyObject *_clpmn =
-        SpecFun_NewGUFunc({static_cast<clpmn_FFF_t>(special::clpmn), static_cast<clpmn_DDD_t>(special::clpmn)}, 2,
-                          "_clpmn", clpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
+        SpecFun_NewGUFunc({static_cast<clpmn_FllFF_t>(special::clpmn), static_cast<clpmn_DllDD_t>(special::clpmn)}, 2,
+                          "_clpmn", clpmn_doc, "(),(),()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_clpmn", _clpmn);
 
     PyObject *_lqn = SpecFun_NewGUFunc({static_cast<lqn_fff_t>(special::lqn), static_cast<lqn_ddd_t>(special::lqn),

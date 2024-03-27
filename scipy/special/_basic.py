@@ -1838,7 +1838,6 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
-    m = _nonneg_int_or_fail(m, 'm', strict=False)
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -1850,29 +1849,21 @@ def clpmn(m, n, z, type=3):
         raise ValueError("type must be either 2 or 3.")
     if (m < 0):
         mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if type == 2:
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+        m_sign = -1
     else:
         mp = m
+        m_sign = 1
 
     z = np.asarray(z)
 
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _clpmn(z, type, out = (p, pd))
+        _clpmn(z, type, m_sign, out = (p, pd))
     else:
-        _clpmn(z, type, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _clpmn(z, type, m_sign, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
     return p, pd
 
 
