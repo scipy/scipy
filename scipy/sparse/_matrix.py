@@ -112,7 +112,7 @@ class spmatrix:
         """
         return self._getrow(i)
 
-    def todense(self):
+    def todense(self, order=None, out=None):
         """
         Return a dense representation of this sparse matrix.
 
@@ -142,4 +142,4 @@ class spmatrix:
             with the appropriate values and returned wrapped in a
             `numpy.matrix` object that shares the same memory.
         """
-        return self.todense()
+        return self.todense(order, out)
