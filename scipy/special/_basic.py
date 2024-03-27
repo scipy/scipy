@@ -1770,6 +1770,8 @@ def lpmn(m, n, z):
         m_abs = m
 
     z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
 
     p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
@@ -1852,6 +1854,8 @@ def clpmn(m, n, z, type=3):
         m_sign = 1
 
     z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.complex128)
 
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
@@ -1909,6 +1913,8 @@ def lqmn(m, n, z):
     nn = max(1, n)
 
     z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
 
     if np.iscomplexobj(z):
         q = np.empty((mm + 1, nn + 1) + z.shape, dtype = np.complex128)
@@ -2045,6 +2051,8 @@ def lpn(n, z):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
     z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(np.float64)
 
     pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
     pd = np.empty_like(pn)
@@ -2077,6 +2085,8 @@ def lqn(n, z):
         n1 = n
 
     z = np.asarray(z)
+    if (not np.issubdtype(z.dtype, np.inexact)):
+        z = z.astype(float)
 
     if np.iscomplexobj(z):
         qn = np.empty((n1 + 1,) + z.shape, dtype=np.complex128)
