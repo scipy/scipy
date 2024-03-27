@@ -11,7 +11,7 @@
 build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
-    "Cython>=3.0.8",  # when updating version, also update check in meson.build
+    "Cython>=3.0.8",        # when updating version, also update check in meson.build
     "pybind11>=2.10.4",
     "pythran>=0.14.0",
 
@@ -42,10 +42,10 @@ name = "scipy"
 version = "1.14.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
-license = {file = "LICENSE.txt"}
+license = { file = "LICENSE.txt" }
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
-    {name = "SciPy Developers", email = "scipy-dev@python.org"},
+    { name = "SciPy Developers", email = "scipy-dev@python.org" },
 ]
 # Note: Python and NumPy upper version bounds should be set correctly in
 # release branches, see:
@@ -110,7 +110,7 @@ dev = [
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
-    "ruff",
+    "ruff>=0.0.292",
     "cython-lint>=0.12.2",
     "rich-click",
     "doit>=0.36.0",
@@ -133,7 +133,15 @@ skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
 build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
-test-requires = ["pytest==7.4.3", "pytest-cov", "pytest-xdist", "mpmath", "threadpoolctl", "pooch", "hypothesis"]
+test-requires = [
+    "pytest==7.4.3",
+    "pytest-cov",
+    "pytest-xdist",
+    "mpmath",
+    "threadpoolctl",
+    "pooch",
+    "hypothesis",
+]
 test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
@@ -159,4 +167,4 @@ select = "*-win_amd64"
 # Don't use double backslash for path separators, they don't get passed
 # to the build correctly
 # environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
-environment = { PKG_CONFIG_PATH="c:/opt/64/lib/pkgconfig" }
+environment = { PKG_CONFIG_PATH = "c:/opt/64/lib/pkgconfig" }
