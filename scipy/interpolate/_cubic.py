@@ -425,7 +425,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         .. versionadded:: 1.13.0
 
     extrapolate : {bool, None}, optional
-        If True, determines whether to extrapolate to out-of-bounds points 
+        If bool, determines whether to extrapolate to out-of-bounds points 
         based on first and last intervals, or to return NaNs. If None, 
         ``extrapolate`` is set to False.
         
