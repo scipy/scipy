@@ -142,4 +142,4 @@ class spmatrix:
             with the appropriate values and returned wrapped in a
             `numpy.matrix` object that shares the same memory.
         """
-        return self.todense(order, out)
+        return super().todense(order, out)
