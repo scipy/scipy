@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.linalg import solve
+from scipy.linalg import solve, LinAlgWarning
 import warnings
 
 __all__ = ['nnls']
