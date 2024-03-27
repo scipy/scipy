@@ -2559,7 +2559,8 @@ class TestMode:
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
     def test_raise_non_numeric_gh18254(self):
-        message = "Argument `a` is not recognized as numeric."
+        message = ("...only boolean and numerical dtypes..." if _SCIPY_ARRAY_API
+                   else "Argument `a` is not recognized as numeric.")
 
         class ArrLike:
             def __init__(self, x):
@@ -3420,7 +3421,7 @@ class TestMoments:
     def test_moment_array_api(self, xp, order, axis):
         rng = np.random.default_rng(34823589259425)
         x = rng.random(size=(5, 6, 7))
-        res = stats.moment(xp.asarray(x), order, axis, _no_deco=True)
+        res = stats.moment(xp.asarray(x), order, axis)
         ref = xp.asarray(_moment(x, order, axis))
         xp_assert_close(res, ref)
 

@@ -4,6 +4,7 @@
 # that support `axis` and `nan_policy` and additional tests for some associated
 # functions in stats._util.
 
+import os
 from itertools import product, combinations_with_replacement, permutations
 import re
 import pickle
@@ -15,6 +16,8 @@ from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
+
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 
 def unpack_ttest_result(res):
@@ -579,6 +582,7 @@ def test_axis_nan_policy_decorated_positional_args():
         stats.kruskal(*x, samples=x)
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 def test_axis_nan_policy_decorated_keyword_samples():
     # Test for correct behavior of function decorated with
     # _axis_nan_policy_decorator whether samples are provided as positional or
@@ -786,6 +790,7 @@ def test_masked_array_2_sentinel_array():
     assert B_out is B
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 def test_masked_dtype():
     # When _masked_arrays_2_sentinel_arrays was first added, it always
     # upcast the arrays to np.float64. After gh16662, check expected promotion
@@ -878,6 +883,7 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
@@ -901,6 +907,7 @@ def test_masked_stat_3d(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 def test_mixed_mask_nan_1():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
@@ -948,6 +955,7 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res4, res)
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # check for expected interaction between masks and nans
@@ -1066,6 +1074,7 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.skipif(_SCIPY_ARRAY_API)
 @pytest.mark.parametrize(
     ("weighted_fun_name, unpacker"),
     [

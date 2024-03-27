@@ -2,6 +2,7 @@
 #
 # Further enhancements and tests added by numerous SciPy developers.
 #
+import os
 import warnings
 import sys
 from functools import partial
@@ -21,6 +22,8 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
+
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 distcont = dict(distcont)  # type: ignore
 
@@ -190,7 +193,8 @@ class TestShapiro:
 
     def test_not_enough_values(self):
         assert_raises(ValueError, stats.shapiro, [1, 2])
-        assert_raises(ValueError, stats.shapiro, np.array([[], [2]], dtype=object))
+        error_type = TypeError if _SCIPY_ARRAY_API else ValueError
+        assert_raises(error_type, stats.shapiro, np.array([[], [2]], dtype=object))
 
     def test_bad_arg(self):
         # Length of x is less than 3.

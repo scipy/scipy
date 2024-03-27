@@ -4,12 +4,15 @@
 # that support `axis` and `nan_policy`, including a decorator that
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
+import os
 import numpy as np
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
+from scipy._lib._array_api import array_namespace, is_numpy
 import inspect
 
+_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 def _broadcast_arrays(arrays, axis=None):
     """
@@ -391,6 +394,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         def axis_nan_policy_wrapper(*args, _no_deco=False, **kwds):
 
             if _no_deco:  # for testing, decorator does nothing
+                return hypotest_fun_in(*args, **kwds)
+
+            # Temporarily skipping the decorator entirely if using array API
+            if len(args)==0 or not is_numpy(array_namespace(args[0])):
                 return hypotest_fun_in(*args, **kwds)
 
             # We need to be flexible about whether position or keyword
