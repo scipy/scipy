@@ -302,9 +302,38 @@ def expm(A):
     elif a.dtype == np.float16:
         a = a.astype(np.float32)
 
-    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
-    # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
-    # here until we have a more stable implementation.
+    # Explicit formula for 2x2 case (formula (2.2) in [1]).
+    if a.shape[-2:] == (2, 2): 
+        norm = np.max(np.abs(np.linalg.norm(a)).astype(int))
+
+        # Normalizing the matrix to prevent cosh from overflowing.
+        if norm < 1:
+            norm = 1
+        a = a / norm
+
+        a1, a2, a3, a4 = (a[..., [0], [0]], 
+                       a[..., [0], [1]], 
+                       a[..., [1], [0]], 
+                       a[..., [1], [1]]) 
+        
+        # Using np.emath.sqrt because np.sqrt doesn't work with negative values
+        mu = np.emath.sqrt((a1-a4)**2 + 4*a2*a3)/2.
+  
+        eApD2 = np.exp((a1+a4)/2.) 
+        AmD2 = (a1 - a4)/2. 
+        coshMu = np.cosh(mu) 
+        sinchMu = np.ones_like(coshMu) 
+        mask = mu != 0 
+        sinchMu[mask] = np.sinh(mu[mask]) / mu[mask] 
+        eA = np.empty((a.shape), dtype=mu.dtype) 
+        eA[..., [0], [0]] = eApD2 * (coshMu + AmD2*sinchMu) 
+        eA[..., [0], [1]] = eApD2 * a2 * sinchMu 
+        eA[..., [1], [0]] = eApD2 * a3 * sinchMu 
+        eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu) 
+        if np.isrealobj(a): 
+            return np.linalg.matrix_power(eA.real, norm) 
+        return np.linalg.matrix_power(eA, norm) 
+
 
     n = a.shape[-1]
     eA = np.empty(a.shape, dtype=a.dtype)
