@@ -21,7 +21,6 @@ import functools
 import itertools
 import operator
 import platform
-import random
 import sys
 
 import numpy as np
