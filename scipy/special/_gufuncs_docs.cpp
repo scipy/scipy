@@ -131,7 +131,7 @@ const char *lqmn_doc = R"(
 
     Parameters
     ----------
-    z : complex
+    z : array_like
         Input value.
 
     Returns

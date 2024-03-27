@@ -1754,14 +1754,15 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
-#    m = _nonneg_int_or_fail(m, 'm', strict=False)
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-#    if iscomplex(z):
- #       raise ValueError("Argument must be real. Use clpmn instead.")
+    if not isscalar(z):
+        raise ValueError("z must be scalar.")
+    if iscomplex(z):
+        raise ValueError("Argument must be real. Use clpmn instead.")
 
     if (m < 0):
         m_sign = -1
@@ -2042,6 +2043,8 @@ def lpn(n, z):
 
     """
     n = _nonneg_int_or_fail(n, 'n', strict=False)
+    if not isscalar(z):
+        raise ValueError("z must be scalar.")
 
     z = np.asarray(z)
 
