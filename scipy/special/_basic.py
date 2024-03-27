@@ -1754,7 +1754,7 @@ def lpmn(m, n, z):
            https://dlmf.nist.gov/14.3
 
     """
-    m = _nonneg_int_or_fail(m, 'm', strict=False)
+#    m = _nonneg_int_or_fail(m, 'm', strict=False)
     n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -1764,33 +1764,24 @@ def lpmn(m, n, z):
         raise ValueError("z must be scalar.")
     if iscomplex(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
+
     if (m < 0):
-        mp = -m
-        mf, nf = mgrid[0:mp+1, 0:n+1]
-        with _ufuncs.errstate(all='ignore'):
-            if abs(z) < 1:
-                # Ferrer function; DLMF 14.9.3
-                fixarr = where(mf > nf, 0.0,
-                               (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
-            else:
-                # Match to clpmn; DLMF 14.9.13
-                fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
+        m_sign = -1
+        m_abs = -m
     else:
-        mp = m
+        m_sign = 1
+        m_abs = m
 
     z = np.asarray(z)
 
-    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.float64)
+    p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _lpmn(z, out = (p, pd))
+        _lpmn(z, m_sign, out = (p, pd))
     else:
-        _lpmn(z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _lpmn(z, m_sign, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
-    if (m < 0):
-        p = p * fixarr
-        pd = pd * fixarr
     return p, pd
 
 
