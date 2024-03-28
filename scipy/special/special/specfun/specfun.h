@@ -89,7 +89,6 @@ void clpn(int, std::complex<double>, std::complex<double> *, std::complex<double
 
 void cyzo(int, int, int, std::complex<double>*, std::complex<double> *);
 
-void cbk(int, int, double, double, double, double *, double *);
 void cerf(std::complex<double>, std::complex<double> *, std::complex<double> *);
 std::complex<double> cgama(std::complex<double>, int);
 double chgubi(double, double, double, int *);
@@ -109,30 +108,34 @@ void fcszo(int, int, std::complex<double> *);
 double gaih(double);
 double gam0(double);
 double gamma2(double);
-void gmn(int, int, double, double, double *, double *, double *);
+
+template <typename T>
+void gmn(int, int, T, T, T *, T *, T *);
+
 void jynb(int, double, int *, double *, double *, double *, double *);
 void jynbh(int, int, double, int *, double *, double *);
 void jyndd(int, double, double *, double *, double *, double *, double *, double *);
-void kmn(int, int, double, double, int, double *, double *, double *, double *);
+
 double lpmv0(double, int, double);
-void lpmns(int, int, double, double *, double *);
-void lqmns(int, int, double, double *, double *);
 int msta1(double, int);
 int msta2(double, int, int);
 double psi_spec(double);
-void qstar(int, int, double, double, double *, double *, double *);
 double refine(int, int, double, double);
-void rmn1(int, int, double, double, int, double *, double *, double *);
-void rmn2l(int, int, double, double, int, double *, double *, double *, int *);
-void rmn2so(int, int, double, double, double, int, double *, double *, double *);
-void rmn2sp(int, int, double, double, double, int, double *, double *, double *);
-void sckb(int, int, double, double *, double *);
-void sdmn(int, int, double, double, int, double *);
-void sphj(double, int, int *, double *, double *);
-void sphy(double, int, int *, double *, double *);
+
+template <typename T>
+void sckb(int, int, T, T *, T *);
+
+template <typename T>
+void sdmn(int, int, T, T, int, T *);
+
+template <typename T>
+void sphj(T, int, int *, T *, T *);
+
+template <typename T>
+void sphy(T, int, int *, T *, T *);
+
 double vvla(double, double);
 double vvsa(double, double);
-
 
 
 inline void airyb(double x, double* ai, double* bi, double* ad, double* bd) {
@@ -439,7 +442,8 @@ inline void airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *x
 }
 
 
-inline void aswfa(double x, int m, int n, double c, int kd, double cv, double *s1f, double *s1d) {
+template <typename T>
+void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
 
     // ===========================================================
     // Purpose: Compute the prolate and oblate spheroidal angular
@@ -459,10 +463,10 @@ inline void aswfa(double x, int m, int n, double c, int kd, double cv, double *s
     // ===========================================================
 
     int ip, k, nm, nm2;
-    double a0, d0, d1, r, su1, su2, x0, x1;
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *df = (double *) calloc(200, sizeof(double));
-    const double eps = 1e-14;
+    T a0, d0, d1, r, su1, su2, x0, x1;
+    T *ck = (T *) calloc(200, sizeof(T));
+    T *df = (T *) calloc(200, sizeof(T));
+    const T eps = 1e-14;
     x0 = x;
     x = fabs(x);
     ip = ((n-m) % 2 == 0 ? 0 : 1);
@@ -582,17 +586,18 @@ inline void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 }
 
 
-inline void cbk(int m, int n, double c, double cv, double qt, double *ck, double *bk) {
-    const double eps = 1.0e-14;
+template <typename T>
+inline void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
+    const T eps = 1.0e-14;
 
     int i, i1, ip, j, k, n2, nm;
-    double r1, s1, sw, t;
+    T r1, s1, sw, t;
 
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
-    double *u = (double *) calloc(200, sizeof(double));
-    double *v = (double *) calloc(200, sizeof(double));
-    double *w = (double *) calloc(200, sizeof(double));
+    T *u = (T *) calloc(200, sizeof(T));
+    T *v = (T *) calloc(200, sizeof(T));
+    T *w = (T *) calloc(200, sizeof(T));
 
     u[0] = 0.0;
     n2 = nm - 2;
@@ -3568,7 +3573,8 @@ inline double gamma2(double x) {
 }
 
 
-inline void gmn(int m, int n, double c, double x, double *bk, double *gf, double *gd) {
+template <typename T>
+inline void gmn(int m, int n, T c, T x, T *bk, T *gf, T *gd) {
 
     // ===========================================================
     // Purpose: Compute gmn(-ic,ix) and its derivative for oblate
@@ -3576,8 +3582,8 @@ inline void gmn(int m, int n, double c, double x, double *bk, double *gf, double
     // ===========================================================
 
     int ip, k, nm;
-    double xm, gf0, gw, gd0, gd1;
-    const double eps = 1.0e-14;
+    T xm, gf0, gw, gd0, gd1;
+    const T eps = 1.0e-14;
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
     xm = pow(1.0 + x * x, -0.5 * m);
@@ -5218,7 +5224,8 @@ inline void klvnzo(int nt, int kd, double *zo) {
 }
 
 
-inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *dn, double *ck1, double *ck2) {
+template <typename T>
+inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
 
     // ===================================================
     // Purpose: Compute the expansion coefficients of the
@@ -5227,16 +5234,16 @@ inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *d
     // ===================================================
 
     int nm, nn, ip, k, i, l, j;
-    double cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
+    T cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    double *u =  (double *) malloc((nn + 4) * sizeof(double));
-    double *v =  (double *) malloc((nn + 4) * sizeof(double));
-    double *w =  (double *) malloc((nn + 4) * sizeof(double));
-    double *tp = (double *) malloc((nn + 4) * sizeof(double));
-    double *rk = (double *) malloc((nn + 4) * sizeof(double));
+    T *u =  (T *) malloc((nn + 4) * sizeof(T));
+    T *v =  (T *) malloc((nn + 4) * sizeof(T));
+    T *w =  (T *) malloc((nn + 4) * sizeof(T));
+    T *tp = (T *) malloc((nn + 4) * sizeof(T));
+    T *rk = (T *) malloc((nn + 4) * sizeof(T));
 
-    const double eps = 1.0e-14;
+    const T eps = 1.0e-14;
 
     cs = c * c * kd;
     *ck1 = 0.0;
@@ -5690,7 +5697,8 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
 }
 
 
-inline void lpmns(int m, int n, double x, double* pm, double* pd) {
+template <typename T>
+void lpmns(int m, int n, T x, T* pm, T* pd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Pmn(x)
@@ -5703,7 +5711,7 @@ inline void lpmns(int m, int n, double x, double* pm, double* pd) {
     // ========================================================
 
     int k;
-    double coef, x0, pm0, pm1, pm2, pmk;
+    T coef, x0, pm0, pm1, pm2, pmk;
     for (k = 0; k <= n; k++) {
         pm[k] = 0.0;
         pd[k] = 0.0;
@@ -6163,7 +6171,8 @@ inline void lqnb(int n, double x, double* qn, double* qd) {
 }
 
 
-inline void lqmns(int m, int n, double x, double *qm, double *qd) {
+template <typename T>
+inline void lqmns(int m, int n, T x, T *qm, T *qd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Qmn(x)
@@ -6176,7 +6185,7 @@ inline void lqmns(int m, int n, double x, double *qm, double *qd) {
     // ========================================================
 
     int l, ls, k, km;
-    double xq, q0, q00, q10, q01, q11, qf0, qf1, qm0, qm1, qg0, qg1, qh0, qh1,\
+    T xq, q0, q00, q10, q01, q11, qf0, qf1, qm0, qm1, qg0, qg1, qh0, qh1,\
            qh2, qmk, q0l, q1l, qf2, val;
 
     val = 0.0;
@@ -6631,7 +6640,8 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
 }
 
 
-inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd) {
+template <typename T>
+void pbdv(T x, T v, T *dv, T *dp, T *pdf, T *pdd) {
 
     // ====================================================
     // Purpose: Compute parabolic cylinder functions Dv(x)
@@ -6650,7 +6660,7 @@ inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double
     // ====================================================
 
     int ja, k, l, m, nk, nv, na;
-    double xa, vh, ep, f, f0, f1, v0, v1, v2, pd, pd0, pd1, s0;
+    T xa, vh, ep, f, f0, f1, v0, v1, v2, pd, pd0, pd1, s0;
 
     xa = fabs(x);
     vh = v;
@@ -6758,7 +6768,8 @@ inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double
 }
 
 
-inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd) {
+template <typename T>
+inline void pbvv(T x, T v, T *vv, T *vp, T *pvf, T *pvd) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder functions Vv(x)
@@ -6777,9 +6788,9 @@ inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double
     // ===================================================
 
     int ja, k, kv, l, m, na, nv;
-    double f, f0, f1, pv0, q2p, qe, s0, v0, v1, v2, vh, xa;
+    T f, f0, f1, pv0, q2p, qe, s0, v0, v1, v2, vh, xa;
 
-    const double pi = 3.141592653589793;
+    const T pi = 3.141592653589793;
 
     xa = fabs(x);
     vh = v;
@@ -6892,7 +6903,8 @@ inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double
 }
 
 
-inline void pbwa(double a, double x, double *w1f, double *w1d, double *w2f, double *w2d) {
+template <typename T>
+void pbwa(T a, T x, T *w1f, T *w1d, T *w2f, T *w2d) {
 
     // ======================================================
     // Purpose: Compute parabolic cylinder functions W(a,±x)
@@ -6908,19 +6920,19 @@ inline void pbwa(double a, double x, double *w1f, double *w1d, double *w2f, doub
     // ======================================================
 
     int k, L1, L2;
-    double d[80], d1, d2, dl, f1, f2, g1, g2, h[100], h0, h1, hl, r, r1,\
+    T d[80], d1, d2, dl, f1, f2, g1, g2, h[100], h0, h1, hl, r, r1,\
            y1d, y2d, y1f, y2f;
-    std::complex<double> ug, vg;
-    const double eps = 1e-15;
-    const double p0 = 0.59460355750136;
+    std::complex<T> ug, vg;
+    const T eps = 1e-15;
+    const T p0 = 0.59460355750136;
 
     if (a == 0.0) {
         g1 = 3.625609908222;
         g2 = 1.225416702465;
     } else {
-        ug = cgama(std::complex<double>(0.25, 0.5*a), 1);
+        ug = cgama(std::complex<T>(0.25, 0.5*a), 1);
         g1 = std::abs(ug);
-        vg = cgama(std::complex<double>(0.75, 0.5*a), 1);
+        vg = cgama(std::complex<T>(0.75, 0.5*a), 1);
         g2 = std::abs(vg);
     }
     f1 = sqrt(g1/g2);
@@ -7043,10 +7055,11 @@ inline double psi_spec(double x) {
 }
 
 
-inline void qstar(int m, int n, double c, double ck1, double *ck, double *qs, double *qt) {
+template <typename T>
+inline void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     int ip, i, l, k;
-    double r, s, sk, qs0;
-    double *ap = (double *) malloc(200*sizeof(double));
+    T r, s, sk, qs0;
+    T *ap = (T *) malloc(200*sizeof(T));
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
     r = 1.0 / pow(ck[0], 2);
     ap[0] = r;
@@ -7221,7 +7234,8 @@ inline double refine(int kd, int m, double q, double a) {
 }
 
 
-inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r1f, double *r1d) {
+template <typename T>
+inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
 
     // =======================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7233,13 +7247,13 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
     //          functions of the first kind
     // =======================================================
 
-    double a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
+    T a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
     int ip, j, k, l, lg, nm, nm1, nm2, np;
 
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *dj = (double *) calloc(252, sizeof(double));
-    double *sj = (double *) calloc(252, sizeof(double));
-    const double eps = 1.0e-14;
+    T *ck = (T *) calloc(200, sizeof(T));
+    T *dj = (T *) calloc(252, sizeof(T));
+    T *sj = (T *) calloc(252, sizeof(T));
+    const T eps = 1.0e-14;
 
     nm1 = (int)((n - m) / 2);
     ip = (n - m == 2 * nm1 ? 0 : 1);
@@ -7301,7 +7315,7 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(nm2, cx, &nm2, sj, dj);
+    sphj(static_cast<T>(nm2), cx, &nm2, sj, dj);
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -7353,7 +7367,8 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
 }
 
 
-inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *R2f, double *R2d, int *Id) {
+template <typename T>
+inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id) {
 
     // ========================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7366,10 +7381,10 @@ inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *
 
 
     int ip, nm1, nm, nm2, np, j, k, l, lg, id1, id2;
-    double a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
-    const double eps = 1.0e-14;
-    double *sy = (double *) calloc(252, sizeof(double));
-    double *dy = (double *) calloc(252, sizeof(double));
+    T a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
+    const T eps = 1.0e-14;
+    T *sy = (T *) calloc(252, sizeof(T));
+    T *dy = (T *) calloc(252, sizeof(T));
 
     ip = 1;
     nm1 = (int)((n - m) / 2);
@@ -7463,7 +7478,8 @@ inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *
 }
 
 
-inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+template <typename T>
+inline void rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // =============================================================
     // Purpose: Compute oblate radial functions of the second kind
@@ -7480,18 +7496,18 @@ inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *
     // =============================================================
 
     int nm, ip, j;
-    double ck1, ck2, r1f, r1d, qs, qt, sum, sw, gf, gd, h0;
-    const double eps = 1.0e-14;
-    const double pi = 3.141592653589793;
+    T ck1, ck2, r1f, r1d, qs, qt, sum, sw, gf, gd, h0;
+    const T eps = 1.0e-14;
+    const T pi = 3.141592653589793;
 
     if (fabs(df[0]) <= 1.0e-280) {
         *r2f = 1.0e+300;
         *r2d = 1.0e+300;
         return;
     }
-    double *bk = (double *) calloc(200, sizeof(double));
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *dn = (double *) calloc(200, sizeof(double));
+    T *bk = (T *) calloc(200, sizeof(double));
+    T *ck = (T *) calloc(200, sizeof(double));
+    T *dn = (T *) calloc(200, sizeof(double));
 
     nm = 25 + (int)((n - m) / 2 + c);
     ip = (n - m) % 2;
@@ -7531,7 +7547,8 @@ inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *
 }
 
 
-inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+template <typename T>
+void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // ======================================================
     // Purpose: Compute prolate spheroidal radial function
@@ -7546,15 +7563,15 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
     // ======================================================
 
     int k, j, j1, j2, l1, ki, nm3, sum, sdm;
-    double ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
+    T ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2;
 
-    double *pm = (double *) malloc(252*sizeof(double));
-    double *pd = (double *) malloc(252*sizeof(double));
-    double *qm = (double *) malloc(252*sizeof(double));
-    double *qd = (double *) malloc(252*sizeof(double));
-    double *dn = (double *) malloc(201*sizeof(double));
-    const double eps = 1.0e-14;
+    T *pm = (T *) malloc(252*sizeof(T));
+    T *pd = (T *) malloc(252*sizeof(T));
+    T *qm = (T *) malloc(252*sizeof(T));
+    T *qd = (T *) malloc(252*sizeof(T));
+    T *dn = (T *) malloc(201*sizeof(T));
+    const T eps = 1.0e-14;
 
     nm1 = (n - m) / 2;
     nm = 25.0 + nm1 + c;
@@ -7656,7 +7673,8 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
 }
 
 
-inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+template <typename T>
+inline void rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==============================================================
     // Purpose: Compute prolate spheriodal radial functions of the
@@ -7686,7 +7704,7 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
     //          of the second kind for a small argument
     // ==============================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    T *df = (T *) malloc(200*sizeof(double));
     int id, kd = 1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7705,7 +7723,8 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
 }
 
 
-inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+template <typename T>
+void rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==========================================================
     // Purpose: Compute oblate radial functions of the first
@@ -7735,7 +7754,7 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
     //          the second kind for a small argument
     // ==========================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    T *df = (T *) malloc(200*sizeof(T));
     int id, kd = -1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7757,7 +7776,8 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
 }
 
 
-inline void sckb(int m, int n, double c, double *df, double *ck) {
+template <typename T>
+void sckb(int m, int n, T c, T *df, T *ck) {
 
     // ======================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7772,7 +7792,7 @@ inline void sckb(int m, int n, double c, double *df, double *ck) {
     // ======================================================
 
     int i, ip, i1, i2, k, nm;
-    double reg, fac, sw, r, d1, d2, d3, sum, r1;
+    T reg, fac, sw, r, d1, d2, d3, sum, r1;
 
     if (c <= 1.0e-10) {
         c = 1.0e-10;
@@ -7812,7 +7832,8 @@ inline void sckb(int m, int n, double c, double *df, double *ck) {
 }
 
 
-inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
+template <typename T>
+void sdmn(int m, int n, T c, T cv, int kd, T *df) {
 
     // =====================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7830,7 +7851,7 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
     // =====================================================
 
     int nm, ip, k, kb;
-    double cs, dk0, dk1, dk2, d2k, f, fs, f1, f0, fl, f2, su1,\
+    T cs, dk0, dk1, dk2, d2k, f, fs, f1, f0, fl, f2, su1,\
            su2, sw, r1, r3, r4, s0;
 
     nm = 25 + (int)(0.5 * (n - m) + c);
@@ -7843,9 +7864,9 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
         return;
     }
 
-    double *a = (double *) calloc(nm + 2, sizeof(double));
-    double *d = (double *) calloc(nm + 2, sizeof(double));
-    double *g = (double *) calloc(nm + 2, sizeof(double));
+    T *a = (T *) calloc(nm + 2, sizeof(double));
+    T *d = (T *) calloc(nm + 2, sizeof(double));
+    T *g = (T *) calloc(nm + 2, sizeof(double));
     cs = c*c*kd;
     ip = (n - m) % 2;
 
@@ -7967,7 +7988,8 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
 }
 
 
-inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
+template <typename T>
+void segv(int m, int n, T c, int kd, T *cv, T *eg) {
 
     // =========================================================
     // Purpose: Compute the characteristic values of spheroidal
@@ -7984,7 +8006,7 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
 
 
     int i, icm, j, k, k1, l, nm, nm1;
-    double cs, dk0, dk1, dk2, d2k, s, t, t1, x1, xa, xb;
+    T cs, dk0, dk1, dk2, d2k, s, t, t1, x1, xa, xb;
     // eg[<=200] is supplied by the caller
 
     if (c < 1e-10) {
@@ -7996,14 +8018,14 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
     }
 
     // TODO: Following array sizes should be decided dynamically
-    double *a = (double *) calloc(300, sizeof(double));
-    double *b = (double *) calloc(100, sizeof(double));
-    double *cv0 = (double *) calloc(100, sizeof(double));
-    double *d = (double *) calloc(300, sizeof(double));
-    double *e = (double *) calloc(300, sizeof(double));
-    double *f = (double *) calloc(300, sizeof(double));
-    double *g = (double *) calloc(300, sizeof(double));
-    double *h = (double *) calloc(100, sizeof(double));
+    T *a = (T *) calloc(300, sizeof(T));
+    T *b = (T *) calloc(100, sizeof(T));
+    T *cv0 = (T *) calloc(100, sizeof(T));
+    T *d = (T *) calloc(300, sizeof(T));
+    T *e = (T *) calloc(300, sizeof(T));
+    T *f = (T *) calloc(300, sizeof(T));
+    T *g = (T *) calloc(300, sizeof(T));
+    T *h = (T *) calloc(100, sizeof(T));
     icm = (n-m+2)/2;
     nm = 10 + (int)(0.5*(n-m)+c);
     cs = c*c*kd;
@@ -8084,7 +8106,8 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
 }
 
 
-inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
+template <typename T>
+void sphj(T x, int n, int *nm, T *sj, T *dj) {
 
     //  MODIFIED to ALLOW N=0 CASE (ALSO IN SPHY)
     //
@@ -8102,7 +8125,7 @@ inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
     //  =======================================================
 
     int k, m;
-    double cs, f, f0, f1, sa, sb;
+    T cs, f, f0, f1, sa, sb;
 
     *nm = n;
     if (fabs(x) < 1e-100) {
@@ -8152,7 +8175,8 @@ inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
 }
 
 
-inline void sphy(double x, int n, int *nm, double *sy, double *dy) {
+template <typename T>
+inline void sphy(T x, int n, int *nm, T *sy, T *dy) {
 
     // ======================================================
     // Purpose: Compute spherical Bessel functions yn(x) and
@@ -8164,7 +8188,7 @@ inline void sphy(double x, int n, int *nm, double *sy, double *dy) {
     //          NM --- Highest order computed
     // ======================================================
 
-    double f, f0, f1;
+    T f, f0, f1;
 
     if (x < 1.0e-60) {
         for (int k = 0; k <= n; ++k) {

@@ -553,7 +553,7 @@ def sdmn(int m, int n, double c, double cv, int kd):
     return df
 
 
-def segv(int m, int n, int c, int kd):
+def segv(int m, int n, double c, int kd):
     """
     Compute the characteristic values of spheroidal wave functions.
     This is a wrapper for the function 'specfun_segv'.
