@@ -206,6 +206,9 @@ def is_cupy(xp):
 def is_torch(xp):
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
+def is_jax(xp):
+    return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
+
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
@@ -280,6 +283,7 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -297,6 +301,7 @@ def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -316,6 +321,7 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+    # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
@@ -354,3 +360,16 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+def scipy_namespace_for(xp):
+
+    if is_cupy(xp):
+        import cupyx  # type: ignore[Import]
+        return cupyx.scipy
+
+    if is_jax(xp):
+        import jax  # type: ignore[Import]
+        return jax.scipy
+
+    import scipy
+    return scipy

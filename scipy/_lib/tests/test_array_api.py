@@ -7,6 +7,8 @@ from scipy._lib._array_api import (
 )
 import scipy._lib.array_api_compat.numpy as np_compat
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
@@ -51,6 +53,9 @@ class TestArrayAPI:
         array_namespace(1, 2, 3)
         array_namespace(1)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_copy(self, xp):
         for _xp in [xp, None]:

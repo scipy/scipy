@@ -129,6 +129,14 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     except ImportError:
         pass
 
+    try:
+        import jax.numpy  # type: ignore[import]
+        xp_available_backends.update({'jax.numpy': jax.numpy})
+        jax.config.update("jax_enable_x64", True)
+        jax.config.update("jax_default_device", jax.devices(SCIPY_DEVICE)[0])
+    except ImportError:
+        pass
+
     # by default, use all available backends
     if SCIPY_ARRAY_API.lower() not in ("1", "true"):
         SCIPY_ARRAY_API_ = json.loads(SCIPY_ARRAY_API)
@@ -198,8 +206,13 @@ def skip_xp_backends(xp, request):
             if xp.__name__ == 'cupy':
                 pytest.skip(reason=reason)
             elif xp.__name__ == 'torch':
-                if 'cpu' not in torch.empty(0).device.type:
+                if 'cpu' not in xp.empty(0).device.type:
                     pytest.skip(reason=reason)
+            elif xp.__name__ == 'jax.numpy':
+                for d in xp.empty(0).devices():
+                    if 'cpu' not in d.device_kind:
+                        pytest.skip(reason=reason)
+
     if backends is not None:
         reasons = kwargs.get("reasons", False)
         for i, backend in enumerate(backends):
