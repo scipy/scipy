@@ -114,6 +114,7 @@ SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(nu
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
 SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num); }
 SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return cuda::std::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return cuda::std::fmod(x, y); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
@@ -128,6 +129,7 @@ SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
 SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num); }
 SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return ::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return ::fmod(x, y); }
 #endif
 
 template <typename T>
