@@ -708,10 +708,11 @@ def _nan_allsame(a, axis, keepdims=False):
 
 
 def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None):
+                  policies=None, *, xp=None):
     # _contains_nan expects `xp` to be an array-api compatible namespace
     # (e.g. from scipy._lib.array_api_compat).
-    xp = array_namespace(a)
+    if xp is None:
+        xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
     if not_numpy:
