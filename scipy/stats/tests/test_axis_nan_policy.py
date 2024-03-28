@@ -582,7 +582,6 @@ def test_axis_nan_policy_decorated_positional_args():
         stats.kruskal(*x, samples=x)
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 def test_axis_nan_policy_decorated_keyword_samples():
     # Test for correct behavior of function decorated with
     # _axis_nan_policy_decorator whether samples are provided as positional or

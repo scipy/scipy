@@ -2510,7 +2510,6 @@ class TestMode:
         assert_equal(res.count.ravel(), ref.count.ravel())
         assert res.count.shape == (1, 1)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit'])
     def test_gh16955(self, nan_policy):
         # Check that bug reported in gh-16955 is resolved
@@ -2525,7 +2524,8 @@ class TestMode:
         # was deprecated, so check for the appropriate error.
         my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
         test = np.zeros(10, dtype=my_dtype)
-        with pytest.raises(TypeError, match="Argument `a` is not..."):
+        message = "Argument `a` is not....|An argument has dtype..."
+        with pytest.raises(TypeError, match=message):
             stats.mode(test, nan_policy=nan_policy)
 
     def test_gh9955(self):
