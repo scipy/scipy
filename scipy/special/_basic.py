@@ -1762,6 +1762,7 @@ def lpmn(m, n, z):
     if np.iscomplexobj(z):
         raise ValueError("Argument must be real. Use clpmn instead.")
 
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
         m_sign = -1
         m_abs = -m
@@ -1839,13 +1840,14 @@ def clpmn(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
     if not isscalar(m) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
+
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
         mp = -m
         m_sign = -1
@@ -1905,9 +1907,8 @@ def lqmn(m, n, z):
         raise ValueError("m must be a non-negative integer.")
     if not isscalar(n) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
-    m = int(m)
-    n = int(n)
 
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     # Ensure neither m nor n == 0
     mm = max(1, m)
     nn = max(1, n)
