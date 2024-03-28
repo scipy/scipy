@@ -2,10 +2,10 @@ import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack, issparse
 from scipy._lib._util import VisibleDeprecationWarning
-from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
+from ._highs._highs_wrapper import _highs_wrapper
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
-from ._linprog_highs import _highs_to_scipy_status_message
+from ._linprog_highs import HighsStatusMapping
 
 
 def _constraints_to_components(constraints):
@@ -377,8 +377,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     # Convert to scipy-style status and message
     highs_status = highs_res.get('status', None)
     highs_message = highs_res.get('message', None)
-    status, message = _highs_to_scipy_status_message(highs_status,
-                                                     highs_message)
+    hstat = HighsStatusMapping()
+    status, message = hstat.get_scipy_status(highs_status,
+                                             highs_message)
     res['status'] = status
     res['message'] = message
     res['success'] = (status == 0)
