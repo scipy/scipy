@@ -38,6 +38,8 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy, is_numpy
+from scipy.conftest import array_api_compatible
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -229,7 +231,7 @@ class TestTrimmedStats:
                             significant=self.dprec)
 
 
-class TestCorrPearsonr:
+class TestPearsonrWilkinson:
     """ W.II.D. Compute a correlation matrix on all the variables.
 
         All the correlations, except for ZERO and MISS, should be exactly 1.
@@ -343,113 +345,138 @@ class TestCorrPearsonr:
         r = y[0]
         assert_approx_equal(r,1.0)
 
+
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True)
+class TestPearsonr:
+    @pytest.mark.skip_xp_backends(np_only=True)
     def test_pearsonr_result_attributes(self):
         res = stats.pearsonr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
         assert_equal(res.correlation, res.statistic)
 
-    def test_r_almost_exactly_pos1(self):
-        a = arange(3.0)
+    def test_r_almost_exactly_pos1(self, xp):
+        a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
 
-        assert_allclose(r, 1.0, atol=1e-15)
+        xp_assert_close(r, xp.asarray(1.0), atol=1e-15)
         # With n = len(a) = 3, the error in prob grows like the
         # square root of the error in r.
-        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
+        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
-    def test_r_almost_exactly_neg1(self):
-        a = arange(3.0)
+    def test_r_almost_exactly_neg1(self, xp):
+        a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
 
-        assert_allclose(r, -1.0, atol=1e-15)
+        xp_assert_close(r, xp.asarray(-1.0), atol=1e-15)
         # With n = len(a) = 3, the error in prob grows like the
         # square root of the error in r.
-        assert_allclose(prob, 0.0, atol=np.sqrt(2*np.spacing(1.0)))
+        xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
-    def test_basic(self):
+    def test_basic(self, xp):
         # A basic test, with a correlation coefficient
         # that is not 1 or -1.
-        a = array([-1, 0, 1])
-        b = array([0, 0, 3])
+        a = xp.asarray([-1, 0, 1])
+        b = xp.asarray([0, 0, 3])
         r, prob = stats.pearsonr(a, b)
-        assert_approx_equal(r, np.sqrt(3)/2)
-        assert_approx_equal(prob, 1/3)
+        xp_assert_close(r, xp.asarray(np.sqrt(3)/2))
+        xp_assert_close(prob, xp.asarray(1/3, dtype=xp.float64))
 
-    def test_constant_input(self):
+    def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
         msg = "An input array is constant"
         with pytest.warns(stats.ConstantInputWarning, match=msg):
-            r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
-            assert_equal(r, np.nan)
-            assert_equal(p, np.nan)
+            x = xp.asarray([0.667, 0.667, 0.667])
+            y = xp.asarray([0.123, 0.456, 0.789])
+            r, p = stats.pearsonr(x, y)
+            xp_assert_close(r, xp.asarray(xp.nan))
+            xp_assert_close(p, xp.asarray(xp.nan))
 
-    def test_near_constant_input(self):
+    @pytest.mark.parametrize('dtype', ['float32', 'float64'])
+    def test_near_constant_input(self, xp, dtype):
+        npdtype = getattr(np, dtype)
+        dtype = getattr(xp, dtype)
         # Near constant input (but not constant):
-        x = [2, 2, 2 + np.spacing(2)]
-        y = [3, 3, 3 + 6*np.spacing(3)]
+        x = xp.asarray([2, 2, 2 + np.spacing(2, dtype=npdtype)], dtype=dtype)
+        y = xp.asarray([3, 3, 3 + 6*np.spacing(3, dtype=npdtype)], dtype=dtype)
         msg = "An input array is nearly constant; the computed"
         with pytest.warns(stats.NearConstantInputWarning, match=msg):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
-            r, p = stats.pearsonr(x, y)
+            stats.pearsonr(x, y)
 
-    def test_very_small_input_values(self):
+    def test_very_small_input_values(self, xp):
         # Very small values in an input.  A naive implementation will
         # suffer from underflow.
         # See https://github.com/scipy/scipy/issues/9353
-        x = [0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971]
-        y = [2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245]
+        x = xp.asarray([0.004434375, 0.004756007, 0.003911996, 0.0038005, 0.003409971],
+                       dtype=xp.float64)
+        y = xp.asarray([2.48e-188, 7.41e-181, 4.09e-208, 2.08e-223, 2.66e-245],
+                       dtype=xp.float64)
         r, p = stats.pearsonr(x, y)
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        assert_allclose(r, 0.7272930540750450)
-        assert_allclose(p, 0.1637805429533202)
+        xp_assert_close(r, xp.asarray(0.7272930540750450, dtype=xp.float64))
+        xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64))
 
-    def test_very_large_input_values(self):
+    def test_very_large_input_values(self, xp):
         # Very large values in an input.  A naive implementation will
         # suffer from overflow.
         # See https://github.com/scipy/scipy/issues/8980
-        x = 1e90*np.array([0, 0, 0, 1, 1, 1, 1])
-        y = 1e90*np.arange(7)
+        x = 1e90*xp.asarray([0, 0, 0, 1, 1, 1, 1], dtype=xp.float64)
+        y = 1e90*xp.arange(7, dtype=xp.float64)
 
         r, p = stats.pearsonr(x, y)
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        assert_allclose(r, 0.8660254037844386)
-        assert_allclose(p, 0.011724811003954638)
+        xp_assert_close(r, xp.asarray(0.8660254037844386, dtype=xp.float64))
+        xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
 
-    def test_extremely_large_input_values(self):
+    def test_extremely_large_input_values(self, xp):
         # Extremely large values in x and y.  These values would cause the
         # product sigma_x * sigma_y to overflow if the two factors were
         # computed independently.
-        x = np.array([2.3e200, 4.5e200, 6.7e200, 8e200])
-        y = np.array([1.2e199, 5.5e200, 3.3e201, 1.0e200])
+        x = xp.asarray([2.3e200, 4.5e200, 6.7e200, 8e200], dtype=xp.float64)
+        y = xp.asarray([1.2e199, 5.5e200, 3.3e201, 1.0e200], dtype=xp.float64)
         r, p = stats.pearsonr(x, y)
 
         # The expected values were computed using mpmath with 80 digits
         # of precision.
-        assert_allclose(r, 0.351312332103289)
-        assert_allclose(p, 0.648687667896711)
+        xp_assert_close(r, xp.asarray(0.351312332103289, dtype=xp.float64))
+        xp_assert_close(p, xp.asarray(0.648687667896711, dtype=xp.float64))
 
-    def test_length_two_pos1(self):
+    def test_length_two_pos1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
-        res = stats.pearsonr([1, 2], [3, 5])
+        x = xp.asarray([1., 2.])
+        y = xp.asarray([3., 5.])
+        res = stats.pearsonr(x, y)
         r, p = res
-        assert_equal(r, 1)
-        assert_equal(p, 1)
-        assert_equal(res.confidence_interval(), (-1, 1))
+        one = xp.asarray(1.)
+        xp_assert_equal(r, one)
+        xp_assert_equal(p, one)
+        low, high = res.confidence_interval()
+        xp_assert_equal(low, -one)
+        xp_assert_equal(high, one)
 
-    def test_length_two_neg2(self):
+    def test_length_two_neg1(self, xp):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
-        r, p = stats.pearsonr([2, 1], [3, 5])
-        assert_equal(r, -1)
-        assert_equal(p, 1)
+        x = xp.asarray([2., 1.])
+        y = xp.asarray([3., 5.])
+        res = stats.pearsonr(x, y)
+        r, p = res
+        one = xp.asarray(1.)
+        xp_assert_equal(r, -one)
+        xp_assert_equal(p, one)
+        low, high = res.confidence_interval()
+        xp_assert_equal(low, -one)
+        xp_assert_equal(high, one)
 
     # Expected values computed with R 3.6.2 cor.test, e.g.
     # options(digits=16)
@@ -458,6 +485,7 @@ class TestCorrPearsonr:
     # cor.test(x, y, method = "pearson", alternative = "g")
     # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh, sign',
             [('two-sided', 0.325800137536, -0.814938968841, 0.99230697523, 1),
              ('less', 0.8370999312316, -1, 0.985600937290653, 1),
@@ -474,44 +502,58 @@ class TestCorrPearsonr:
         ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
-    def test_negative_correlation_pvalue_gh17795(self):
-        x = np.arange(10)
+    def test_negative_correlation_pvalue_gh17795(self, xp):
+        x = xp.arange(10.)
         y = -x
         test_greater = stats.pearsonr(x, y, alternative='greater')
         test_less = stats.pearsonr(x, y, alternative='less')
-        assert_allclose(test_greater.pvalue, 1)
-        assert_allclose(test_less.pvalue, 0, atol=1e-20)
+        xp_assert_close(test_greater.pvalue, xp.asarray(1.))
+        xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
-    def test_length3_r_exactly_negative_one(self):
-        x = [1, 2, 3]
-        y = [5, -4, -13]
+    def test_length3_r_exactly_negative_one(self, xp):
+        x = xp.asarray([1, 2, 3])
+        y = xp.asarray([5, -4, -13])
         res = stats.pearsonr(x, y)
 
         # The expected r and p are exact.
         r, p = res
-        assert_allclose(r, -1.0)
-        assert_allclose(p, 0.0, atol=1e-7)
+        one = xp.asarray(1.0, dtype=xp.float64)
+        xp_assert_close(r, -one)
+        xp_assert_close(p, 0*one, atol=1e-7)
+        low, high = res.confidence_interval()
+        xp_assert_equal(low, -one)
+        xp_assert_equal(high, one)
 
-        assert_equal(res.confidence_interval(), (-1, 1))
-
-    def test_unequal_lengths(self):
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_input_validation(self):
         x = [1, 2, 3]
         y = [4, 5]
-        assert_raises(ValueError, stats.pearsonr, x, y)
+        message = '`x` and `y` must have the same length along `axis`.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
 
-    def test_len1(self):
         x = [1]
         y = [2]
-        assert_raises(ValueError, stats.pearsonr, x, y)
+        message = '`x` and `y` must have length at least 2.'
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr(x, y)
 
-    def test_complex_data(self):
         x = [-1j, -2j, -3.0j]
         y = [-1j, -2j, -3.0j]
         message = 'This function does not support complex data'
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y)
 
-    @pytest.mark.xslow
+        message = "`method` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
+
+        res = stats.pearsonr([1, 2], [3, 4])
+        with pytest.raises(ValueError, match=message):
+            res.confidence_interval(method="exact")
+
+    @pytest.mark.skip_xp_backends(np_only=True)
+    @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     @pytest.mark.parametrize('method', ('permutation', 'monte_carlo'))
     def test_resampling_pvalue(self, method, alternative):
@@ -527,7 +569,7 @@ class TestCorrPearsonr:
         assert_allclose(res.statistic, ref.statistic, rtol=1e-15)
         assert_allclose(res.pvalue, ref.pvalue, rtol=1e-2, atol=1e-3)
 
-    @pytest.mark.xslow
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
     def test_bootstrap_ci(self, alternative):
         rng = np.random.default_rng(2462935790378923)
@@ -541,17 +583,9 @@ class TestCorrPearsonr:
 
         assert_allclose(res_ci, ref_ci, atol=1.5e-2)
 
-    def test_invalid_method(self):
-        message = "`method` must be an instance of..."
-        with pytest.raises(ValueError, match=message):
-            stats.pearsonr([1, 2], [3, 4], method="asymptotic")
-
-        res = stats.pearsonr([1, 2], [3, 4])
-        with pytest.raises(ValueError, match=message):
-            res.confidence_interval(method="exact")
-
+    @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.parametrize('axis', [0, 1])
-    def test_axis01(self, axis):
+    def test_axis01(self, axis, xp):
         rng = np.random.default_rng(38572345825)
         shape = (9, 10)
         x, y = rng.normal(size=(2,) + shape)
@@ -567,7 +601,8 @@ class TestCorrPearsonr:
             assert_allclose(ci.low[i], ci_i.low)
             assert_allclose(ci.high[i], ci_i.high)
 
-    def test_axis_None(self):
+    @pytest.mark.skip_xp_backends(np_only=True)
+    def test_axis_None(self, xp):
         rng = np.random.default_rng(38572345825)
         shape = (9, 10)
         x, y = rng.normal(size=(2,) + shape)
@@ -579,42 +614,50 @@ class TestCorrPearsonr:
         assert_allclose(res.pvalue, ref.pvalue)
         assert_allclose(ci, ci_ref)
 
-    def test_nd_input_validation(self):
-        x, y = np.ones((2, 2, 5))
+    def test_nd_input_validation(self, xp):
+        x = y = xp.ones((2, 5))
         message = '`axis` must be an integer.'
         with pytest.raises(ValueError, match=message):
             stats.pearsonr(x, y, axis=1.5)
 
         message = '`x` and `y` must have the same length along `axis`'
         with pytest.raises(ValueError, match=message):
-            stats.pearsonr(x, np.ones((2, 1)), axis=1)
+            stats.pearsonr(x, xp.ones((2, 1)), axis=1)
 
         message = '`x` and `y` must have length at least 2.'
         with pytest.raises(ValueError, match=message):
-            stats.pearsonr(*np.ones((2, 2, 1)), axis=1)
+            stats.pearsonr(xp.ones((2, 1)), xp.ones((2, 1)), axis=1)
 
         message = '`x` and `y` must be broadcastable.'
         with pytest.raises(ValueError, match=message):
-            stats.pearsonr(x, np.ones((3, 5)), axis=1)
+            stats.pearsonr(x, xp.ones((3, 5)), axis=1)
 
-    def test_nd_special_cases(self):
+        message = '`method` must be `None` if arguments are not NumPy arrays.'
+        if not is_numpy(xp):
+            x = xp.arange(10)
+            with pytest.raises(ValueError, match=message):
+                stats.pearsonr(x, x, method=stats.PermutationMethod())
+
+    def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0, y0 = rng.random((2, 3, 5))
+        x0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
+        y0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
-            x = x0.copy()
-            x[0] = 1
+            x = copy(x0)
+            x[0, ...] = 1
             res = stats.pearsonr(x, y0, axis=1)
             ci = res.confidence_interval()
-            np.testing.assert_equal(res.statistic[0], np.nan)
-            np.testing.assert_equal(res.pvalue[0], np.nan)
-            np.testing.assert_equal(ci.low[0], np.nan)
-            np.testing.assert_equal(ci.high[0], np.nan)
-            assert not np.any(np.isnan(res.statistic[1:]))
-            assert not np.any(np.isnan(res.pvalue[1:]))
-            assert not np.any(np.isnan(ci.low[1:]))
-            assert not np.any(np.isnan(ci.high[1:]))
+            nan = xp.asarray(xp.nan, dtype=xp.float64)
+            xp_assert_equal(res.statistic[0], nan)
+            xp_assert_equal(res.pvalue[0], nan)
+            xp_assert_equal(ci.low[0], nan)
+            xp_assert_equal(ci.high[0], nan)
+            assert not xp.any(xp.isnan(res.statistic[1:]))
+            assert not xp.any(xp.isnan(res.pvalue[1:]))
+            assert not xp.any(xp.isnan(ci.low[1:]))
+            assert not xp.any(xp.isnan(ci.high[1:]))
 
         message = 'An input array is nearly constant'
         with pytest.warns(stats.NearConstantInputWarning, match=message):
@@ -622,16 +665,30 @@ class TestCorrPearsonr:
             stats.pearsonr(x, y0, axis=1)
 
         # length 2 along axis
-        x = [[1, 2], [1, 2], [2, 1], [2, 1]]
-        y = [[1, 2], [2, 1], [1, 2], [2, 1]]
+        x = xp.asarray([[1, 2], [1, 2], [2, 1], [2, 1.]])
+        y = xp.asarray([[1, 2], [2, 1], [1, 2], [2, 1.]])
+        ones = xp.ones(4)
         res = stats.pearsonr(x, y, axis=-1)
         ci = res.confidence_interval()
-        assert_allclose(res.statistic, [1, -1, -1, 1])
-        assert_allclose(res.pvalue, 1)
-        assert_allclose(ci.low, -1)
-        assert_allclose(ci.high, 1)
-        assert (res.pvalue.shape == res.statistic.shape
-                == ci.low.shape == ci.high.shape)
+        xp_assert_close(res.statistic, xp.asarray([1, -1, -1, 1.]))
+        xp_assert_close(res.pvalue, ones)
+        xp_assert_close(ci.low, -ones)
+        xp_assert_close(ci.high, ones)
+
+    @pytest.mark.parametrize('axis', [0, 1, None])
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_array_api(self, xp, axis, alternative):
+        x, y = rng.normal(size=(2, 10, 11))
+        res = stats.pearsonr(xp.asarray(x), xp.asarray(y),
+                             axis=axis, alternative=alternative)
+        ref = stats.pearsonr(x, y, axis=axis, alternative=alternative)
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue))
+
+        res_ci = res.confidence_interval()
+        ref_ci = ref.confidence_interval()
+        xp_assert_close(res_ci.low, xp.asarray(ref_ci.low))
+        xp_assert_close(res_ci.high, xp.asarray(ref_ci.high))
 
 
 class TestFisherExact:
