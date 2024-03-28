@@ -16,6 +16,7 @@
 #include "special/cephes/beta.h"
 #include "special/cephes/cbrt.h"
 #include "special/cephes/chdtr.h"
+#include "special/cephes/expn.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
 #include "special/cephes/hyperg.h"
@@ -270,4 +271,8 @@ inline double cephes_expm1(double x) {
 
 inline double cephes_cosm1(double x) {
     return special::cephes::cosm1(x);
+}
+
+inline double cephes_expn(int n, double x) {
+    return special::cephes::expn(n, x);
 }
