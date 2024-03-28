@@ -29,6 +29,7 @@ from scipy.signal._arraytools import const_ext, even_ext, odd_ext, zero_ext
 from scipy.signal._short_time_fft import FFT_MODE_TYPE
 from scipy.signal._spectral_py import _spectral_helper, _triage_segments, \
     _median_bias
+from scipy._lib._array_api import array_namespace, is_complex, xp_assert_close, size
 
 
 def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
@@ -43,6 +44,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
     This function is meant to be solely used by `stft_compare()`.
     """
+    xp = array_namespace(x)
     if scaling not in ('psd', 'spectrum'):  # same errors as in original stft:
         raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
 
@@ -57,7 +59,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
         raise ValueError(f"Unknown boundary option '{boundary}', must be one" +
                          f" of: {list(boundary_funcs.keys())}")
     if x.size == 0:
-        return np.empty(x.shape), np.empty(x.shape), np.empty(x.shape)
+        return xp.empty(x.shape), xp.empty(x.shape), xp.empty(x.shape)
 
     if nperseg is not None:  # if specified by user
         nperseg = int(nperseg)
@@ -98,7 +100,7 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     if padded:
         # Pad to integer number of windowed segments
         # I.e make x.shape[-1] = nperseg + (nseg-1)*nstep, with integer nseg
-        x = np.moveaxis(x, axis, -1)
+        x = xp.moveaxis(x, axis, -1)
 
         # This is an edge case where shortTimeFFT returns one more time slice
         # than the Scipy stft() shorten to remove last time slice:
@@ -107,13 +109,13 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
 
         nadd = (-(x.shape[-1]-nperseg) % nstep) % nperseg
         zeros_shape = list(x.shape[:-1]) + [nadd]
-        x = np.concatenate((x, np.zeros(zeros_shape)), axis=-1)
-        x = np.moveaxis(x, -1, axis)
+        x = xp.concatenate((x, xp.zeros(zeros_shape)), axis=-1)
+        x = xp.moveaxis(x, -1, axis)
 
     #  ... end original _spectral_helper() code.
     scale_to = {'spectrum': 'magnitude', 'psd': 'psd'}[scaling]
 
-    if np.iscomplexobj(x) and return_onesided:
+    if is_complex(x, xp=xp) and return_onesided:
         return_onesided = False
     # using cast() to make mypy happy:
     fft_mode = cast(FFT_MODE_TYPE, 'onesided' if return_onesided else 'twosided')
@@ -133,8 +135,8 @@ def _stft_wrapper(x, fs=1.0, window='hann', nperseg=256, noverlap=None,
     detr = None if detrend is False else detrend
     Sxx = ST.stft_detrend(x, detr, p0, p1, k_offset=k_off, axis=axis)
     t = ST.t(nn, 0, p1 - p0, k_offset=0 if boundary is not None else k_off)
-    if x.dtype in (np.float32, np.complex64):
-        Sxx = Sxx.astype(np.complex64)
+    if x.dtype in (xp.float32, xp.complex64):
+        Sxx = Sxx.astype(xp.complex64)
 
     # workaround for test_average_all_segments() - seems to be buggy behavior:
     if boundary is None and padded is False:
@@ -275,18 +277,19 @@ def _csd_test_shim(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
    wrapper `_spect_helper_csd()` returns the same values as `_spectral_helper`.
    This function should only be usd by csd() in (unit) testing.
    """
+    xp = array_namespace(y)
     freqs, t, Pxy = _spectral_helper(x, y, fs, window, nperseg, noverlap, nfft,
                                      detrend, return_onesided, scaling, axis,
                                      mode='psd')
     freqs1, Pxy1 = _spect_helper_csd(x, y, fs, window, nperseg, noverlap, nfft,
                                      detrend, return_onesided, scaling, axis)
 
-    np.testing.assert_allclose(freqs1, freqs)
-    amax_Pxy = max(np.abs(Pxy).max(), 1) if Pxy.size else 1
-    atol = np.finfo(Pxy.dtype).resolution * amax_Pxy  # needed for large Pxy
+    xp_assert_close(freqs1, freqs, check_namespace=False)
+    amax_Pxy = max(xp.max(xp.abs(Pxy)), 1) if Pxy.size else 1
+    atol = xp.finfo(Pxy.dtype).resolution * amax_Pxy  # needed for large Pxy
     # for c_ in range(Pxy.shape[-1]):
     #    np.testing.assert_allclose(Pxy1[:, c_], Pxy[:, c_], atol=atol)
-    np.testing.assert_allclose(Pxy1, Pxy, atol=atol)
+    xp_assert_close(Pxy1, Pxy, atol=atol, check_dtype=False)
     return freqs, t, Pxy
 
 
@@ -300,14 +303,15 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     for testing the ShortTimeFFT implementation.
     """
 
+    xp = array_namespace(y)
     # The following lines are taken from the original _spectral_helper():
     same_data = y is x
     axis = int(axis)
 
     # Ensure we have np.arrays, get outdtype
-    x = np.asarray(x)
+    x = xp.asarray(x)
     if not same_data:
-        y = np.asarray(y)
+        y = xp.asarray(y)
     #     outdtype = np.result_type(x, y, np.complex64)
     # else:
     #     outdtype = np.result_type(x, np.complex64)
@@ -319,17 +323,18 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         xouter.pop(axis)
         youter.pop(axis)
         try:
-            outershape = np.broadcast(np.empty(xouter), np.empty(youter)).shape
+            outershape = xp.broadcast_arrays(xp.empty(xouter),
+                                             xp.empty(youter))[0].shape
         except ValueError as e:
             raise ValueError('x and y cannot be broadcast together.') from e
 
     if same_data:
-        if x.size == 0:
-            return np.empty(x.shape), np.empty(x.shape)
+        if size(x) == 0:
+            return xp.empty(x.shape), xp.empty(x.shape)
     else:
-        if x.size == 0 or y.size == 0:
+        if size(x) == 0 or size(y) == 0:
             outshape = outershape + (min([x.shape[axis], y.shape[axis]]),)
-            emptyout = np.moveaxis(np.empty(outshape), -1, axis)
+            emptyout = xp.moveaxis(xp.empty(outshape), -1, axis)
             return emptyout, emptyout
 
     if nperseg is not None:  # if specified by user
@@ -356,7 +361,7 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         raise ValueError('noverlap must be less than nperseg.')
     nstep = nperseg - noverlap
 
-    if np.iscomplexobj(x) and return_onesided:
+    if is_complex(x, xp=xp) and return_onesided:
         return_onesided = False
 
     # using cast() to make mypy happy:
@@ -377,9 +382,9 @@ def _spect_helper_csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     # Hence, the doubling of the square is implemented here:
     if return_onesided:
         f_axis = Pxy.ndim - 1 + axis if axis < 0 else axis
-        Pxy = np.moveaxis(Pxy, f_axis, -1)
+        Pxy = xp.moveaxis(Pxy, f_axis, -1)
         Pxy[..., 1:-1 if SFT.mfft % 2 == 0 else None] *= 2
-        Pxy = np.moveaxis(Pxy, -1, f_axis)
+        Pxy = xp.moveaxis(Pxy, -1, f_axis)
 
     return SFT.f, Pxy
 
@@ -482,7 +487,7 @@ def csd_compare(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     freqs0, Pxy0 = csd(**kw)
     freqs1, Pxy1 = _csd_wrapper(**kw)
 
-    assert_allclose(freqs1, freqs0)
-    assert_allclose(Pxy1, Pxy0)
-    assert_allclose(freqs1, freqs0)
+    xp_assert_close(freqs1, freqs0)
+    xp_assert_close(Pxy1, Pxy0)
+    xp_assert_close(freqs1, freqs0)
     return freqs0, Pxy0

@@ -3,6 +3,10 @@ Functions for acting on a axis of an array.
 """
 import numpy as np
 
+from scipy._lib._array_api import (
+    array_namespace,
+)
+
 
 def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     """Take a slice along axis 'axis' from 'a'.
@@ -142,6 +146,8 @@ def even_ext(x, n, axis=-1):
     >>> plt.legend(loc='best')
     >>> plt.show()
     """
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     if n < 1:
         return x
     if n > x.shape[axis] - 1:
@@ -150,10 +156,10 @@ def even_ext(x, n, axis=-1):
                          % (n, x.shape[axis] - 1))
     left_ext = axis_slice(x, start=n, stop=0, step=-1, axis=axis)
     right_ext = axis_slice(x, start=-2, stop=-(n + 2), step=-1, axis=axis)
-    ext = np.concatenate((left_ext,
-                          x,
-                          right_ext),
-                         axis=axis)
+    ext = xp.concat((left_ext,
+                     x,
+                     right_ext),
+                     axis=axis)
     return ext
 
 
@@ -240,10 +246,11 @@ def zero_ext(x, n, axis=-1):
     """
     if n < 1:
         return x
+    xp = array_namespace(x)
     zeros_shape = list(x.shape)
     zeros_shape[axis] = n
-    zeros = np.zeros(zeros_shape, dtype=x.dtype)
-    ext = np.concatenate((zeros, x, zeros), axis=axis)
+    zeros = xp.zeros(zeros_shape, dtype=x.dtype)
+    ext = xp.concat((zeros, x, zeros), axis=axis)
     return ext
 
 
