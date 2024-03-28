@@ -1,6 +1,8 @@
 #include "specfun_wrappers.h"
 #include "special/fresnel.h"
+#include "special/kelvin.h"
 #include "special/sphd_wave.h"
+#include "special/struve.h"
 #include "special/specfun.h"
 
 extern "C" {

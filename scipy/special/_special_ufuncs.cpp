@@ -3,6 +3,8 @@
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/specfun.h"
+#include "special/kelvin.h"
+#include "special/struve.h"
 #include "special/sphd_wave.h"
 #include "special/trig.h"
 #include "special/zeta.h"
