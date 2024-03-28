@@ -7,12 +7,14 @@
 #
 #     "pybind11>=2.4.3,<2.5.0",
 
+# Run tools/generate_requirements.txt when making changes to any dependencies
+
 [build-system]
 build-backend = 'mesonpy'
 requires = [
     "meson-python>=0.15.0",
     "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.10.4",
+    "pybind11>=2.12.0",     # when updating version, also update check in scipy/meson.build
     "pythran>=0.14.0",
 
     # When numpy 2.0.0rc1 comes out, we should update this to build against 2.0,
