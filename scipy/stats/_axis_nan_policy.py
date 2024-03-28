@@ -393,8 +393,15 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
-            # Temporarily skipping the decorator entirely if using array API
-            if len(args)==0 or not is_numpy(array_namespace(args[0])):
+            # For now, skip the decorator entirely if using array API. In the future,
+            # we'll probably want to use it for `keepdims`, `axis` tuples, etc.
+            if len(args) == 0:  # extract sample from `kwds` if there are no `args`
+                used_kwd_samples = list(set(kwds).intersection(set(kwd_samples)))
+                temp = used_kwd_samples[:1]
+            else:
+                temp = args[0]
+
+            if not is_numpy(array_namespace(temp)):
                 return hypotest_fun_in(*args, **kwds)
 
             # We need to be flexible about whether position or keyword
