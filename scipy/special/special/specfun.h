@@ -129,21 +129,6 @@ void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
     }
 }
 
-template <>
-inline void itairy(float xf, float *aptf, float *bptf, float *antf, float *bntf) {
-    double x = xf;
-    double apt;
-    double bpt;
-    double ant;
-    double bnt;
-    itairy(x, &apt, &bpt, &ant, &bnt);
-
-    *aptf = apt;
-    *bptf = bpt;
-    *antf = ant;
-    *bntf = bnt;
-}
-
 template <typename T>
 T exp1(T x) {
     T out = specfun::e1xb(x);
@@ -151,14 +136,10 @@ T exp1(T x) {
     return out;
 }
 
-inline std::complex<double> cexp1(std::complex<double> z) {
-    std::complex<double> outz;
-    std::complex<double> z99(z.real(), z.imag());
-
-    std::complex<double> outz99 = specfun::e1z(z99);
-    outz.real(outz99.real());
-    outz.imag(outz99.imag());
-    SPECFUN_ZCONVINF("cexp1", outz);
+template <typename T>
+std::complex<T> exp1(std::complex<T> z) {
+    std::complex<T> outz = specfun::e1z(z);
+    SPECFUN_ZCONVINF("exp1", outz);
     return outz;
 }
 
@@ -169,13 +150,9 @@ T expi(T x) {
     return out;
 }
 
-inline std::complex<double> cexpi(std::complex<double> z) {
-    std::complex<double> outz;
-    std::complex<double> z99(z.real(), z.imag());
-
-    std::complex<double> outz99 = specfun::eixz(z99);
-    outz.real(outz99.real());
-    outz.imag(outz99.imag());
+template <typename T>
+std::complex<T> expi(std::complex<T> z) {
+    std::complex<T> outz = specfun::eixz(z);
     SPECFUN_ZCONVINF("cexpi", outz);
     return outz;
 }
@@ -244,12 +221,6 @@ T ber(T x) {
     return Be.real();
 }
 
-template <>
-inline float ber(float xf) {
-    double x = xf;
-    return ber(x);
-}
-
 template <typename T>
 T bei(T x) {
     std::complex<T> Be;
@@ -258,17 +229,12 @@ T bei(T x) {
     if (x < 0) {
         x = -x;
     }
+
     specfun::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
     Be.real(ber);
     Be.imag(bei);
     SPECFUN_ZCONVINF("bei", Be);
     return Be.imag();
-}
-
-template <>
-inline float bei(float xf) {
-    double x = xf;
-    return bei(x);
 }
 
 template <typename T>
@@ -330,12 +296,6 @@ T berp(T x) {
     return Bep.real();
 }
 
-template <>
-inline float berp(float xf) {
-    double x = xf;
-    return berp(x);
-}
-
 template <typename T>
 T beip(T x) {
     std::complex<T> Bep;
@@ -356,12 +316,6 @@ T beip(T x) {
     return Bep.imag();
 }
 
-template <>
-float beip(float xf) {
-    double x = xf;
-    return beip(x);
-}
-
 template <typename T>
 T kerp(T x) {
     std::complex<T> Kep;
@@ -377,12 +331,6 @@ T kerp(T x) {
     return Kep.real();
 }
 
-template <>
-inline float kerp(float xf) {
-    double x = xf;
-    return kerp(x);
-}
-
 template <typename T>
 T keip(T x) {
     std::complex<T> Kep;
@@ -396,12 +344,6 @@ T keip(T x) {
     Kep.imag(hei);
     SPECFUN_ZCONVINF("keip", Kep);
     return Kep.imag();
-}
-
-template <>
-inline float keip(float xf) {
-    double x = xf;
-    return keip(x);
 }
 
 template <typename T>
@@ -501,16 +443,6 @@ void it2j0y0(T x, T *j0int, T *y0int) {
     }
 }
 
-template <>
-inline void it2j0y0(float xf, float *j0intf, float *y0intf) {
-    double x = xf;
-    double j0int, y0int;
-    it2j0y0(x, &j0int, &y0int);
-
-    *j0intf = j0int;
-    *y0intf = y0int;
-}
-
 /* Integrals of modified bessel functions */
 
 template <typename T>
@@ -551,16 +483,6 @@ void it2i0k0(T x, T *i0int, T *k0int) {
     if (flag) {
         *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
-}
-
-template <>
-inline void it2i0k0(float xf, float *i0intf, float *k0intf) {
-    double x = xf;
-    double i0int, k0int;
-    it2i0k0(x, &i0int, &k0int);
-
-    *i0intf = i0int;
-    *k0intf = k0int;
 }
 
 /* Fresnel integrals of complex numbers */

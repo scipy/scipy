@@ -2914,7 +2914,8 @@ inline double dvsa(double x, double va) {
 }
 
 
-inline double e1xb(double x) {
+template <typename T>
+T e1xb(T x) {
 
     // ============================================
     // Purpose: Compute exponential integral E1(x)
@@ -2923,8 +2924,8 @@ inline double e1xb(double x) {
     // ============================================
 
     int k, m;
-    double e1, r, t, t0;
-    const double ga = 0.5772156649015328;
+    T e1, r, t, t0;
+    const T ga = 0.5772156649015328;
 
     if (x == 0.0) {
         e1 = 1e300;
@@ -2950,7 +2951,8 @@ inline double e1xb(double x) {
 }
 
 
-inline std::complex<double> e1z(std::complex<double> z) {
+template <typename T>
+std::complex<T> e1z(std::complex<T> z) {
 
     // ====================================================
     // Purpose: Compute complex exponential integral E1(z)
@@ -2958,15 +2960,15 @@ inline std::complex<double> e1z(std::complex<double> z) {
     // Output:  CE1 --- E1(z)
     // ====================================================
 
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015328;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015328;
     int k;
-    std::complex<double> ce1, cr, zc, zd, zdc;
-    double x = z.real();
-    double a0 = std::abs(z);
+    std::complex<T> ce1, cr, zc, zd, zdc;
+    T x = z.real();
+    T a0 = std::abs(z);
     // Continued fraction converges slowly near negative real axis,
     // so use power series in a wedge around it until radius 40.0
-    double xt = -2.0*fabs(z.imag());
+    T xt = -2.0*fabs(z.imag());
 
     if (a0 == 0.0) { return 1e300; }
     if ((a0 < 5.0) || ((x < xt) && (a0 < 40.0))) {
@@ -2974,14 +2976,14 @@ inline std::complex<double> e1z(std::complex<double> z) {
         ce1 = 1.0;
         cr = 1.0;
         for (k = 1; k < 501; k++) {
-            cr = -cr*z*(k / pow(k + 1.0, 2));
+            cr = -cr*z*static_cast<T>(k / std::pow(k + 1, 2));
             ce1 += cr;
             if (std::abs(cr) < std::abs(ce1)*1e-15) { break; }
         }
         if ((x <= 0.0) && (z.imag() == 0.0)) {
             //Careful on the branch cut -- use the sign of the imaginary part
             // to get the right sign on the factor if pi.
-            ce1 = -el - std::log(-z) + z*ce1 - copysign(pi, z.imag())*std::complex<double>(0.0, 1.0);
+            ce1 = -el - std::log(-z) + z*ce1 - copysign(pi, z.imag())*std::complex<T>(0.0, 1.0);
         } else {
             ce1 = -el - std::log(z) + z*ce1;
         }
@@ -2991,29 +2993,30 @@ inline std::complex<double> e1z(std::complex<double> z) {
         // E1 = exp(-z) * ----- ----- ----- ----- ----- ----- ----- ...
         //                Z +   1 +   Z +   1 +   Z +   1 +   Z +
         zc = 0.0;
-        zd = 1.0 / z;
+        zd = static_cast<T>(1) / z;
         zdc = zd;
         zc += zdc;
         for (k = 1; k < 501; k++) {
-            zd = 1.0 / (zd*static_cast<double>(k) + 1.0);
-            zdc *= (1.0*zd - 1.0);
+            zd = static_cast<T>(1) / (zd*static_cast<T>(k) + static_cast<T>(1));
+            zdc *= (zd - static_cast<T>(1));
             zc += zdc;
 
-            zd = 1.0 / (zd*static_cast<double>(k) + z);
-            zdc *= (z*zd - 1.0);
+            zd = static_cast<T>(1) / (zd*static_cast<T>(k) + z);
+            zdc *= (z*zd - static_cast<T>(1));
             zc += zdc;
             if ((std::abs(zdc) <= std::abs(zc)*1e-15) && (k > 20)) { break; }
         }
         ce1 = std::exp(-z)*zc;
         if ((x <= 0.0) && (z.imag() == 0.0)) {
-            ce1 -= pi*std::complex<double>(0.0, 1.0);
+            ce1 -= pi*std::complex<T>(0.0, 1.0);
         }
     }
     return ce1;
 }
 
 
-inline double eix(double x) {
+template <typename T>
+T eix(T x) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3021,8 +3024,8 @@ inline double eix(double x) {
     // Output:  EI --- Ei(x)
     // ============================================
 
-    const double ga = 0.5772156649015328;
-    double ei, r;
+    const T ga = 0.5772156649015328;
+    T ei, r;
 
     if (x == 0.0) {
         ei = -1.0e+300;
@@ -3053,7 +3056,8 @@ inline double eix(double x) {
 }
 
 
-inline std::complex<double> eixz(std::complex<double> z) {
+template <typename T>
+std::complex<T> eixz(std::complex<T> z) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3061,16 +3065,16 @@ inline std::complex<double> eixz(std::complex<double> z) {
     // Output:  EI --- Ei(x)
     // ============================================
 
-    std::complex<double> cei;
-    const double pi = 3.141592653589793;
+    std::complex<T> cei;
+    const T pi = 3.141592653589793;
     cei = - e1z(-z);
     if (z.imag() > 0.0) {
-        cei += std::complex<double>(0.0, pi);
+        cei += std::complex<T>(0.0, pi);
     } else if (z.imag() < 0.0 ) {
-        cei -= std::complex<double>(0.0, pi);
+        cei -= std::complex<T>(0.0, pi);
     } else {
         if (z.real() > 0.0) {
-            cei += std::complex<double>(0.0, copysign(pi, z.imag()));
+            cei += std::complex<T>(0.0, copysign(pi, z.imag()));
         }
     }
     return cei;
@@ -4065,7 +4069,8 @@ inline std::complex<double> hygfz(double a, double b, double c, std::complex<dou
 }
 
 
-inline void itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
+template <typename T>
+void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
 
     // ======================================================
     // Purpose: Compute the integrals of Airy fnctions with
@@ -4078,17 +4083,17 @@ inline void itairy(double x, double *apt, double *bpt, double *ant, double *bnt)
     // ======================================================
 
     int k, l;
-    double fx, gx, r, su1, su2, su3, su4, su5, su6, xp6, xe, xr1, xr2;
+    T fx, gx, r, su1, su2, su3, su4, su5, su6, xp6, xe, xr1, xr2;
 
-    const double pi = 3.141592653589793;
-    const double c1 = 0.355028053887817;
-    const double c2 = 0.258819403792807;
-    const double sr3 = 1.732050807568877;
-    const double q0 = 1.0 / 3.0;
-    const double q1 = 2.0 / 3.0;
-    const double q2 = 1.4142135623730951;
-    const double eps = 1e-5;
-    static const double a[16] = {
+    const T pi = 3.141592653589793;
+    const T c1 = 0.355028053887817;
+    const T c2 = 0.258819403792807;
+    const T sr3 = 1.732050807568877;
+    const T q0 = 1.0 / 3.0;
+    const T q1 = 2.0 / 3.0;
+    const T q2 = 1.4142135623730951;
+    const T eps = 1e-5;
+    static const T a[16] = {
         0.569444444444444    , 0.891300154320988    , 0.226624344493027e+01, 0.798950124766861e+01,
         0.360688546785343e+02, 0.198670292131169e+03, 0.129223456582211e+04, 0.969483869669600e+04,
         0.824184704952483e+05, 0.783031092490225e+06, 0.822210493622814e+07, 0.945557399360556e+08,
@@ -4466,7 +4471,8 @@ inline double itth0(double x) {
 }
 
 
-inline void ittika(double x, double *tti, double *ttk) {
+template <typename T>
+void ittika(T x, T *tti, T *ttk) {
 
     // =========================================================
     // Purpose: Integrate [I0(t)-1]/t with respect to t from 0
@@ -4477,10 +4483,10 @@ inline void ittika(double x, double *tti, double *ttk) {
     // =========================================================
 
     int k;
-    double b1, e0, r, r2, rc, rs;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    static const double c[8] = {
+    T b1, e0, r, r2, rc, rs;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    static const T c[8] = {
         1.625, 4.1328125, 1.45380859375, 6.553353881835, 3.6066157150269,
         2.3448727161884, 1.7588273098916,1.4950639538279
     };
@@ -4537,7 +4543,8 @@ inline void ittika(double x, double *tti, double *ttk) {
 }
 
 
-inline void ittjya(double x, double *ttj, double *tty) {
+template <typename T>
+inline void ittjya(T x, T *ttj, T *tty) {
 
     // =========================================================
     // Purpose: Integrate [1-J0(t)]/t with respect to t from 0
@@ -4548,9 +4555,9 @@ inline void ittjya(double x, double *ttj, double *tty) {
     // =========================================================
 
     int k, l;
-    double a0, bj0, bj1, by0, by1, e0, b1, g0, g1, px, qx, r, r0, r1, r2, rs, t, vt, xk;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
+    T a0, bj0, bj1, by0, by1, e0, b1, g0, g1, px, qx, r, r0, r1, r2, rs, t, vt, xk;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
 
     if (x == 0.0) {
         *ttj = 0.0;
@@ -5132,8 +5139,9 @@ L25:
 }
 
 
-inline void klvna(double x, double *ber, double *bei, double *ger, double *gei,
-                   double *der, double *dei, double *her, double *hei) {
+template <typename T>
+ void klvna(T x, T *ber, T *bei, T *ger, T *gei,
+                   T *der, T *dei, T *her, T *hei) {
 
     // ======================================================
     // Purpose: Compute Kelvin functions ber x, bei x, ker x
@@ -5150,11 +5158,11 @@ inline void klvna(double x, double *ber, double *bei, double *ger, double *gei,
     // ================================================
 
     int k, km, m;
-    double gs, r, x2, x4, pp1, pn1, qp1, qn1, r1, pp0, pn0, qp0, qn0, r0,\
+    T gs, r, x2, x4, pp1, pn1, qp1, qn1, r1, pp0, pn0, qp0, qn0, r0,\
            fac, xt, cs, ss, xd, xe1, xe2, xc1, xc2, cp0, cn0, sp0, sn0, rc, rs;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    const double eps = 1.0e-15;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    const T eps = 1.0e-15;
 
     if (x == 0.0) {
         *ber = 1.0;
