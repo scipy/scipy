@@ -499,6 +499,29 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_neldermead_x0_ub(self):
+        # checks whether minimisation occurs correctly for entries where
+        # x0 == ub
+        # gh19991
+        def quad(x):
+            return np.sum(x**2)
+
+        res = optimize.minimize(
+            quad,
+            [1],
+            bounds=[(0, 1.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0])
+
+        res = optimize.minimize(
+            quad,
+            [1, 2],
+            bounds=[(0, 1.), (1, 3.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0, 1])
+
     def test_ncg_negative_maxiter(self):
         # Regression test for gh-8241
         opts = {'maxiter': -1}
