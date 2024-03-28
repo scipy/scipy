@@ -51,7 +51,7 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:

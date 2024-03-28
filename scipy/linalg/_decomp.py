@@ -215,6 +215,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, vr_n = eig(numpy.eye(2, dtype=a1.dtype))
+        w = numpy.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        w = _make_eigvals(w, None, homogeneous_eigvals)
+        vl = numpy.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        vr = numpy.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        if not (left or right):
+            return w
+        if left:
+            if right:
+                return w, vl, vr
+            return w, vl
+        return w, vr
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
@@ -244,7 +260,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
@@ -469,6 +484,18 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eigh(numpy.eye(2, dtype=a1.dtype))
+
+        w = numpy.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = numpy.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     cplx = True if iscomplexobj(a1) else False
     n = a1.shape[0]
@@ -592,8 +619,8 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
             return w, v
     else:
         if info < -1:
-            raise LinAlgError('Illegal value in argument {} of internal {}'
-                              ''.format(-info, drv.typecode + pfx + driver))
+            raise LinAlgError(f'Illegal value in argument {-info} of internal '
+                              f'{drv.typecode + pfx + driver}')
         elif info > n:
             raise LinAlgError(f'The leading minor of order {info-n} of B is not '
                               'positive definite. The factorization of B '
@@ -781,8 +808,21 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected a 2-D array')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eig_banded(numpy.array([[0, 0], [1, 1]], dtype=a1.dtype))
+
+        w = numpy.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = numpy.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
+
     del select_range
     if select == 0:
         if a1.dtype.char in 'GFD':
@@ -1446,6 +1486,17 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
+
+    if a1.size == 0:
+        h3 = hessenberg(numpy.eye(3, dtype=a1.dtype))
+        h = numpy.empty(a1.shape, dtype=h3.dtype)
+        if not calc_q:
+            return h
+        else:
+            h3, q3 = hessenberg(numpy.eye(3, dtype=a1.dtype), calc_q=True)
+            q = numpy.empty(a1.shape, dtype=q3.dtype)
+            h = numpy.empty(a1.shape, dtype=h3.dtype)
+            return h, q
 
     # if 2x2 or smaller: already in Hessenberg
     if a1.shape[0] <= 2:

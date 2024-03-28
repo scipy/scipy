@@ -17,7 +17,6 @@ python_sources = [
   'test_lapack.py',
   'test_matfuncs.py',
   'test_matmul_toeplitz.py',
-  'test_misc.py',
   'test_procrustes.py',
   'test_sketches.py',
   'test_solve_toeplitz.py',

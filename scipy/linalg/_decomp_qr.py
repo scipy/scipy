@@ -131,7 +131,34 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
         a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError("expected a 2-D array")
+
     M, N = a1.shape
+
+    # accommodate empty arrays
+    if a1.size == 0:
+        K = min(M, N)
+
+        if mode not in ['economic', 'raw']:
+            Q = numpy.empty_like(a1, shape=(M, M))
+            Q[...] = numpy.identity(M)
+            R = numpy.empty_like(a1)
+        else:
+            Q = numpy.empty_like(a1, shape=(M, K))
+            R = numpy.empty_like(a1, shape=(K, N))
+
+        if pivoting:
+            Rj = R, numpy.arange(N, dtype=numpy.int32)
+        else:
+            Rj = R,
+
+        if mode == 'r':
+            return Rj
+        elif mode == 'raw':
+            qr = numpy.empty_like(a1, shape=(M, N))
+            tau = numpy.zeros_like(a1, shape=(K,))
+            return ((qr, tau),) + Rj
+        return (Q,) + Rj
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if pivoting:
@@ -279,6 +306,10 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]
 
+    # accommodate empty arrays
+    if c.size == 0:
+        return (numpy.empty_like(c),) + raw[1:]
+
     gor_un_mqr, = get_lapack_funcs(('ormqr',), (Q,))
     if gor_un_mqr.typecode in ('s', 'd'):
         trans = "T"
@@ -399,7 +430,25 @@ def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
         a1 = numpy.asarray(a)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
+
     M, N = a1.shape
+
+    # accommodate empty arrays
+    if a1.size == 0:
+        K = min(M, N)
+
+        if not mode == 'economic':
+            R = numpy.empty_like(a1)
+            Q = numpy.empty_like(a1, shape=(N, N))
+            Q[...] = numpy.identity(N)
+        else:
+            R = numpy.empty_like(a1, shape=(M, K))
+            Q = numpy.empty_like(a1, shape=(K, N))
+
+        if mode == 'r':
+            return R
+        return R, Q
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     gerqf, = get_lapack_funcs(('gerqf',), (a1,))

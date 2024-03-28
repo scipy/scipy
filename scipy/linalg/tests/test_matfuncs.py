@@ -238,6 +238,17 @@ class TestLogM:
         a.flags.writeable = False
         logm(a)
 
+    @pytest.mark.xfail(reason="ValueError: attempt to get argmax of an empty sequence")
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        log_a = logm(a)
+        a0 = np.eye(2, dtype=dt)
+        log_a0 = logm(a0)
+
+        assert log_a.shape == (0, 0)
+        assert log_a.dtype == log_a0.dtype
+
 
 class TestSqrtM:
     def test_round_trip_random_float(self):
@@ -490,6 +501,16 @@ class TestSqrtM:
             M = np.array([[2j, 4], [0, -2j]], dtype=np.complex256)
             assert sqrtm(M).dtype == np.complex256
 
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        s = sqrtm(a)
+        a0 = np.eye(2, dtype=dt)
+        s0 = sqrtm(a0)
+
+        assert s.shape == (0, 0)
+        assert s.dtype == s0.dtype
+
 
 class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
@@ -685,11 +706,13 @@ class TestExpM:
         elt = expm(1)
         assert_allclose(elt, np.array([[np.e]]))
 
-    def test_empty_matrix_input(self):
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_matrix_input(self, dt):
         # handle gh-11082
-        A = np.zeros((0, 0))
+        A = np.zeros((0, 0), dtype=dt)
         result = expm(A)
         assert result.size == 0
+        assert result.dtype == A.dtype
 
     def test_2x2_input(self):
         E = np.e
@@ -1011,3 +1034,14 @@ class TestKhatriRao:
                           for k in range(b.shape[1])]).T
 
         assert_array_equal(res1, res2)
+
+    def test_empty(self):
+        a = np.empty((0, 2))
+        b = np.empty((3, 2))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((0, 2)))
+
+        a = np.empty((3, 0))
+        b = np.empty((5, 0))
+        res = khatri_rao(a, b)
+        assert_allclose(res, np.empty((15, 0)))

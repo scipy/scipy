@@ -1,6 +1,7 @@
 """Cholesky decomposition functions."""
 
-from numpy import asarray_chkfinite, asarray, atleast_2d
+import numpy as np
+from numpy import asarray_chkfinite, asarray, atleast_2d, empty_like
 
 # Local imports
 from ._misc import LinAlgError, _datacopied
@@ -27,7 +28,8 @@ def _cholesky(a, lower=False, overwrite_a=False, clean=True,
 
     # Quick return for square empty array
     if a1.size == 0:
-        return a1.copy(), lower
+        dt = cholesky(np.eye(1, dtype=a1.dtype)).dtype
+        return empty_like(a1, dtype=dt), lower
 
     overwrite_a = overwrite_a or _datacopied(a1, a)
     potrf, = get_lapack_funcs(('potrf',), (a1,))
@@ -198,10 +200,17 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     else:
         b1 = asarray(b)
         c = asarray(c)
+
     if c.ndim != 2 or c.shape[0] != c.shape[1]:
         raise ValueError("The factored matrix c is not square.")
     if c.shape[1] != b1.shape[0]:
         raise ValueError(f"incompatible dimensions ({c.shape} and {b1.shape})")
+
+    # accommodate empty arrays
+    if b1.size == 0:
+        dt = cho_solve((np.eye(2, dtype=b1.dtype), True),
+                        np.ones(2, dtype=c.dtype)).dtype
+        return empty_like(b1, dtype=dt)
 
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
@@ -278,6 +287,11 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     else:
         ab = asarray(ab)
 
+    # accommodate square empty matrices
+    if ab.size == 0:
+        dt = cholesky_banded(np.array([[0, 0], [1, 1]], dtype=ab.dtype)).dtype
+        return empty_like(ab, dtype=dt)
+
     pbtrf, = get_lapack_funcs(('pbtrf',), (ab,))
     c, info = pbtrf(ab, lower=lower, overwrite_ab=overwrite_ab)
     if info > 0:
@@ -345,6 +359,12 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     # Validate shapes.
     if cb.shape[-1] != b.shape[0]:
         raise ValueError("shapes of cb and b are not compatible.")
+
+    # accommodate empty arrays
+    if b.size == 0:
+        m = cholesky_banded(np.array([[0, 0], [1, 1]], dtype=cb.dtype))
+        dt = cho_solve_banded((m, True), np.ones(2, dtype=b.dtype)).dtype
+        return empty_like(b, dtype=dt)
 
     pbtrs, = get_lapack_funcs(('pbtrs',), (cb, b))
     x, info = pbtrs(cb, b, lower=lower, overwrite_b=overwrite_b)
