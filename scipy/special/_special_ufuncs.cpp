@@ -1,5 +1,6 @@
 #include <cmath>
 
+#include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/specfun.h"
 #include "special/sphd_wave.h"

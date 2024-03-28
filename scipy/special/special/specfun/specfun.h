@@ -3453,161 +3453,6 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
 }
 
 
-inline void ffk(int ks, double x, double *fr, double *fi, double *fm, double *fa,
-         double *gr, double *gi, double *gm, double *ga) {
-
-    // =======================================================
-    // Purpose: Compute modified Fresnel integrals F±(x)
-    //          and K±(x)
-    // Input :  x   --- Argument of F±(x) and K±(x)
-    //          KS  --- Sign code
-    //                  KS=0 for calculating F+(x) and K+(x)
-    //                  KS=1 for calculating F_(x) and K_(x)
-    // Output:  FR  --- Re[F±(x)]
-    //          FI  --- Im[F±(x)]
-    //          FM  --- |F±(x)|
-    //          FA  --- Arg[F±(x)]  (Degs.)
-    //          GR  --- Re[K±(x)]
-    //          GI  --- Im[K±(x)]
-    //          GM  --- |K±(x)|
-    //          GA  --- Arg[K±(x)]  (Degs.)
-    // ======================================================
-
-    const double srd = 57.29577951308233;
-    const double eps = 1.0e-15;
-    const double pi = 3.141592653589793;
-    const double pp2 = 1.2533141373155;
-    const double p2p = 0.7978845608028654;
-
-    double fi0, c1, s1, cs, ss, xa, x2, x4, xc, xf, xf0, xf1, xg, xp, xq, xq2, xr, xs, xsu, xw;
-
-    xa = fabs(x);
-    x2 = x * x;
-    x4 = x2 * x2;
-
-    if (x == 0.0) {
-        *fr = 0.5 * sqrt(0.5 * pi);
-        *fi = pow(-1, ks) * (*fr);
-        *fm = sqrt(0.25 * pi);
-        *fa = pow(-1, ks) * 45.0;
-        *gr = 0.5;
-        *gi = 0.0;
-        *gm = 0.5;
-        *ga = 0.0;
-    } else {
-        if (xa <= 2.5) {
-            xr = p2p * xa;
-            c1 = xr;
-
-            for (int k = 1; k <= 50; ++k) {
-                xr = -0.5 * xr * (4.0 * k - 3.0) / k / (2.0 * k - 1.0) / (4.0 * k + 1.0) * x4;
-                c1 += xr;
-                if (fabs(xr / c1) < eps)
-                    break;
-            }
-
-            s1 = p2p * xa * xa * xa / 3.0;
-            xr = s1;
-
-            for (int k = 1; k <= 50; ++k) {
-                xr = -0.5 * xr * (4.0 * k - 1.0) / k / (2.0 * k + 1.0) / (4.0 * k + 3.0) * x4;
-                s1 += xr;
-                if (fabs(xr / s1) < eps)
-                    break;
-            }
-
-            *fr = pp2 * (0.5 - c1);
-            fi0 = pp2 * (0.5 - s1);
-            *fi = pow(-1, ks) * fi0;
-        } else if (xa < 5.5) {
-            int m = (int)(42 + 1.75 * x2);
-            xsu = 0.0;
-            xc = 0.0;
-            xs = 0.0;
-            xf1 = 0.0;
-            xf0 = 1.0e-100;
-
-            for (int k = m; k >= 0; --k) {
-                xf = (2.0 * k + 3.0) * xf0 / x2 - xf1;
-                if (k % 2 == 0) {
-                    xc += xf;
-                } else {
-                    xs += xf;
-                }
-                xsu += (2.0 * k + 1.0) * xf * xf;
-                xf1 = xf0;
-                xf0 = xf;
-            }
-
-            xq = sqrt(xsu);
-            xw = p2p * xa / xq;
-            c1 = xc * xw;
-            s1 = xs * xw;
-        } else {
-            xr = 1.0;
-            xf = 1.0;
-
-            for (int k = 1; k <= 12; ++k) {
-                xr = -0.25 * xr * (4.0 * k - 1.0) * (4.0 * k - 3.0) / x4;
-                xf += xr;
-            }
-
-            xr = 1.0 / (2.0 * xa * xa);
-            xg = xr;
-
-            for (int k = 1; k <= 12; ++k) {
-                xr = -0.25 * xr * (4.0 * k + 1.0) * (4.0 * k - 1.0) / x4;
-                xg += xr;
-            }
-
-            c1 = 0.5 + (xf * sin(x2) - xg * cos(x2)) / sqrt(2.0 * pi) / xa;
-            s1 = 0.5 - (xf * cos(x2) + xg * sin(x2)) / sqrt(2.0 * pi) / xa;
-        }
-
-        *fr = pp2 * (0.5 - c1);
-        fi0 = pp2 * (0.5 - s1);
-        *fi = pow(-1, ks) * fi0;
-        *fm = std::abs(std::complex<double>(*fr, *fi));
-
-        if (*fr >= 0.0) {
-            *fa = srd * atan((*fi) / (*fr));
-        } else if (*fi > 0.0) {
-            *fa = srd * (atan((*fi) / (*fr)) + pi);
-        } else if (*fi < 0.0) {
-            *fa = srd * (atan((*fi) / (*fr)) - pi);
-        }
-
-        xp = x2 + pi / 4.0;
-        cs = cos(xp);
-        ss = sin(xp);
-        xq2 = 1.0 / sqrt(pi);
-
-        *gr = xq2 * ((*fr) * cs + fi0 * ss);
-        *gi = pow(-1, ks) * xq2 * (fi0 * cs - (*fr) * ss);
-        *gm = sqrt((*gr) * (*gr) + (*gi) * (*gi));
-
-        if (*gr >= 0.0) {
-            *ga = srd * atan((*gi) / (*gr));
-        } else if (*gi > 0.0) {
-            *ga = srd * (atan((*gi) / (*gr)) + pi);
-        } else if (*gi < 0.0) {
-            *ga = srd * (atan((*gi) / (*gr)) - pi);
-        }
-
-        if (x < 0.0) {
-            *fr = pp2 - (*fr);
-            *fi = pow(-1, ks) * pp2 - (*fi);
-            *fm = sqrt((*fr) * (*fr) + (*fi) * (*fi));
-            *fa = srd * atan((*fi) / (*fr));
-            *gr = cos(x2) - (*gr);
-            *gi = -pow(-1, ks) * sin(x2) - (*gi);
-            *gm = sqrt((*gr) * (*gr) + (*gi) * (*gi));
-            *ga = srd * atan((*gi) / (*gr));
-        }
-    }
-}
-
-
 inline double gaih(double x) {
 
     // =====================================================
@@ -4175,7 +4020,8 @@ void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
 }
 
 
-inline void itika(double x, double *ti, double *tk) {
+template <typename T>
+inline void itika(T x, T *ti, T *tk) {
 
     // =======================================================
     // Purpose: Integrate modified Bessel functions I0(t) and
@@ -4186,14 +4032,14 @@ inline void itika(double x, double *ti, double *tk) {
     // =======================================================
 
     int k;
-    double rc1, rc2, e0, b1, b2, rs, r, tw, x2;
-    static const double a[10] = {
+    T rc1, rc2, e0, b1, b2, rs, r, tw, x2;
+    static const T a[10] = {
         0.625, 1.0078125, 2.5927734375, 9.1868591308594,
         4.1567974090576e+1, 2.2919635891914e+2,1.491504060477e+3,
         1.1192354495579e+4, 9.515939374212e+4,9.0412425769041e+5
     };
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
 
     if (x == 0.0) {
         *ti = 0.0;
@@ -4252,14 +4098,13 @@ inline void itika(double x, double *ti, double *tk) {
 }
 
 
-inline void itjya(double x, double *tj, double *ty) {
-
-
+template <typename T>
+void itjya(T x, T *tj, T *ty) {
     int k;
-    double a[18], a0, a1, af, bf, bg, r, r2, rc, rs, ty1, ty2, x2, xp;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    const double eps = 1.0e-12;
+    T a[18], a0, a1, af, bf, bg, r, r2, rc, rs, ty1, ty2, x2, xp;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    const T eps = 1.0e-12;
 
     if (x == 0.0) {
         *tj = 0.0;

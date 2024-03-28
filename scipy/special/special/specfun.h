@@ -251,12 +251,6 @@ inline T ker(T x) {
     return Ke.real();
 }
 
-template <>
-inline float ker(float xf) {
-    double x = xf;
-    return ker(x);
-}
-
 template <typename T>
 T kei(T x) {
     std::complex<T> Ke;
@@ -269,11 +263,6 @@ T kei(T x) {
     Ke.imag(gei);
     SPECFUN_ZCONVINF("kei", Ke);
     return Ke.imag();
-}
-
-template <>
-float kei(float x) {
-    return kei(static_cast<double>(x));
 }
 
 template <typename T>
@@ -379,22 +368,6 @@ void kelvin(T x, std::complex<T> *Be, std::complex<T> *Ke, std::complex<T> *Bep,
     }
 }
 
-template <>
-inline void kelvin(float xf, std::complex<float> *Bef, std::complex<float> *Kef, std::complex<float> *Bepf,
-                   std::complex<float> *Kepf) {
-    double x = xf;
-    std::complex<double> Be;
-    std::complex<double> Ke;
-    std::complex<double> Bep;
-    std::complex<double> Kep;
-    kelvin(x, &Be, &Ke, &Bep, &Kep);
-
-    *Bef = Be;
-    *Kef = Ke;
-    *Bepf = Bep;
-    *Kepf = Kep;
-}
-
 /* Integrals of bessel functions */
 
 /* int(j0(t),t=0..x) */
@@ -413,17 +386,6 @@ void it1j0y0(T x, T *j0int, T *y0int) {
         *j0int = -(*j0int);
         *y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
-}
-
-template <>
-inline void it1j0y0(float xf, float *j0intf, float *y0intf) {
-    double x = xf;
-    double j0int;
-    double y0int;
-    it1j0y0(x, &j0int, &y0int);
-
-    *j0intf = j0int;
-    *y0intf = y0int;
 }
 
 /* int((1-j0(t))/t,t=0..x) */
@@ -458,17 +420,6 @@ void it1i0k0(T x, T *i0int, T *k0int) {
         *i0int = -(*i0int);
         *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
-}
-
-template <>
-inline void it1i0k0(float xf, float *i0intf, float *k0intf) {
-    double x = xf;
-    double i0int;
-    double k0int;
-    it1i0k0(x, &i0int, &k0int);
-
-    *i0intf = i0int;
-    *k0intf = k0int;
 }
 
 template <typename T>
@@ -1113,52 +1064,6 @@ inline void oblate_radial2(double m, double n, double c, double cv, double x, do
     } else {
         specfun::rswfo(static_cast<int>(m), static_cast<int>(n), c, x, cv, kf, &r1f, &r1d, r2f, r2d);
     }
-}
-
-template <typename T>
-void modified_fresnel_plus(T x, std::complex<T> *Fplus, std::complex<T> *Kplus) {
-    int ks = 0;
-    T fr = 0.0, gr = 0.0, fi = 0.0, gi = 0.0, fa = 0.0, ga = 0.0, fm = 0.0, gm = 0.0;
-
-    specfun::ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
-    Fplus->real(fr);
-    Fplus->imag(fi);
-    Kplus->real(gr);
-    Kplus->imag(gi);
-}
-
-template <>
-inline void modified_fresnel_plus(float xf, std::complex<float> *Fplusf, std::complex<float> *Kplusf) {
-    double x = xf;
-    std::complex<double> Fplus = *Fplusf;
-    std::complex<double> Kplus = *Kplusf;
-    modified_fresnel_plus(x, &Fplus, &Kplus);
-
-    *Fplusf = Fplus;
-    *Kplusf = Kplus;
-}
-
-template <typename T>
-void modified_fresnel_minus(T x, std::complex<T> *Fminus, std::complex<T> *Kminus) {
-    int ks = 1;
-    T fr = 0.0, gr = 0.0, fi = 0.0, gi = 0.0, fa = 0.0, ga = 0.0, fm = 0.0, gm = 0.0;
-
-    specfun::ffk(ks, x, &fr, &fi, &fm, &fa, &gr, &gi, &gm, &ga);
-    Fminus->real(fr);
-    Fminus->imag(fi);
-    Kminus->real(gr);
-    Kminus->imag(gi);
-}
-
-template <>
-inline void modified_fresnel_minus(float xf, std::complex<float> *Fminusf, std::complex<float> *Kminusf) {
-    double x = xf;
-    std::complex<double> Fminus = *Fminusf;
-    std::complex<double> Kminus = *Kminusf;
-    modified_fresnel_minus(x, &Fminus, &Kminus);
-
-    *Fminusf = Fminus;
-    *Kminusf = Kminus;
 }
 
 } // namespace special

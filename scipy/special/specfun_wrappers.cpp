@@ -1,4 +1,5 @@
 #include "specfun_wrappers.h"
+#include "special/fresnel.h"
 #include "special/specfun.h"
 
 extern "C" {
