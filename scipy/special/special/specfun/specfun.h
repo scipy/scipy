@@ -110,10 +110,8 @@ double gam0(double);
 double gamma2(double);
 
 template <typename T>
-void gmn(int, int, T, T, T *, T *, T *);
+void jynbh(int, int, T, int *, T *, T *);
 
-void jynb(int, double, int *, double *, double *, double *, double *);
-void jynbh(int, int, double, int *, double *, double *);
 void jyndd(int, double, double *, double *, double *, double *, double *, double *);
 
 double lpmv0(double, int, double);
@@ -3116,7 +3114,8 @@ inline void eulerb(int n, double *en) {
 }
 
 
-inline void fcoef(int kd, int m, double q, double a, double *fc) {
+template <typename T>
+void fcoef(int kd, int m, T q, T a, T *fc) {
 
     // =====================================================
     // Purpose: Compute expansion coefficients for Mathieu
@@ -3140,7 +3139,7 @@ inline void fcoef(int kd, int m, double q, double a, double *fc) {
     // =====================================================
 
     int i, k, j, jm = 0, km, kb;
-    double f1, fnan, qm, s, f, u, v, f2, f3, sp, ss, s0;
+    T f1, fnan, qm, s, f, u, v, f2, f3, sp, ss, s0;
 
     for (i = 0; i < 251; ++i) { fc[i] = 0.0; }
 
@@ -4395,7 +4394,7 @@ void ittika(T x, T *tti, T *ttk) {
 
 
 template <typename T>
-inline void ittjya(T x, T *ttj, T *tty) {
+void ittjya(T x, T *ttj, T *tty) {
 
     // =========================================================
     // Purpose: Integrate [1-J0(t)]/t with respect to t from 0
@@ -4625,7 +4624,8 @@ L30:
 }
 
 
-inline void jynb(int n, double x, int *nm, double *bj, double *dj, double *by, double *dy) {
+template <typename T>
+void jynb(int n, T x, int *nm, T *bj, T *dj, T *by, T *dy) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x) and
@@ -4665,7 +4665,8 @@ inline void jynb(int n, double x, int *nm, double *bj, double *dj, double *by, d
 }
 
 
-inline void jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
+template <typename T>
+void jynbh(int n, int nmin, T x, int *nm, T *bj, T *by) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x)
@@ -4681,16 +4682,16 @@ inline void jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
     // =====================================================
 
     int k, m, ky;
-    double pi = 3.141592653589793;
-    double r2p = 0.63661977236758;
-    double bs, s0, su, sv, f2, f1, f;
-    double bj0, bj1, ec, by0, by1, bjk, byk;
-    double p0, q0, cu, t1, p1, q1, t2;
+    T pi = 3.141592653589793;
+    T r2p = 0.63661977236758;
+    T bs, s0, su, sv, f2, f1, f;
+    T bj0, bj1, ec, by0, by1, bjk, byk;
+    T p0, q0, cu, t1, p1, q1, t2;
 
-    double a[4] = { -0.0703125, 0.112152099609375, -0.5725014209747314, 0.6074042001273483e+01 };
-    double b[4] = { 0.0732421875, -0.2271080017089844, 0.1727727502584457e+01, -0.2438052969955606e+02 };
-    double a1[4] = { 0.1171875, -0.144195556640625, 0.6765925884246826, -0.6883914268109947e+01 };
-    double b1[4] = { -0.1025390625, 0.2775764465332031, -0.1993531733751297e+01, 0.2724882731126854e+02 };
+    T a[4] = { -0.0703125, 0.112152099609375, -0.5725014209747314, 0.6074042001273483e+01 };
+    T b[4] = { 0.0732421875, -0.2271080017089844, 0.1727727502584457e+01, -0.2438052969955606e+02 };
+    T a1[4] = { 0.1171875, -0.144195556640625, 0.6765925884246826, -0.6883914268109947e+01 };
+    T b1[4] = { -0.1025390625, 0.2775764465332031, -0.1993531733751297e+01, 0.2724882731126854e+02 };
 
     *nm = n;
     if (x < 1.0e-100) {
@@ -6396,7 +6397,8 @@ inline int msta2(double x, int n, int mp) {
 }
 
 
-inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
+template <typename T>
+void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
 
     // ===============================================================
     // Purpose: Compute Mathieu functions cem(x,q) and sem(x,q)
@@ -6415,9 +6417,9 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
     // ===============================================================
 
     int kd = 0, km = 0, ic, k;
-    double a, qm, xr;
-    const double eps = 1.0e-14;
-    const double rd = 1.74532925199433e-2;
+    T a, qm, xr;
+    const T eps = 1.0e-14;
+    const T rd = 1.74532925199433e-2;
 
     if (kf == 1 && m == 2 * (int)(m / 2)) { kd = 1; }
     if (kf == 1 && m != 2 * (int)(m / 2)) { kd = 2; }
@@ -6440,7 +6442,7 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
         return;
     }
 
-    double *fg = (double *) calloc(251, sizeof(double));
+    T *fg = (T *) calloc(251, sizeof(T));
     fcoef(kd, m, q, a, fg);
 
     ic = (int)(m / 2) + 1;
@@ -6481,7 +6483,8 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
 }
 
 
-inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double *d1r, double *f2r, double *d2r) {
+template <typename T>
+void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
 
     // ==============================================================
     // Purpose: Compute modified Mathieu functions of the first and
@@ -6510,8 +6513,8 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
     //          derivatives
     // ==============================================================
 
-    double eps = 1.0e-14;
-    double a, qm, c1, c2, u1, u2, w1, w2;
+    T eps = 1.0e-14;
+    T a, qm, c1, c2, u1, u2, w1, w2;
     int kd, km, ic, k, nm = 0;
 
     if ((kf == 1) && (m % 2 == 0)) { kd = 1; }
@@ -6537,15 +6540,15 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
     }
 
     // allocate memory after a possible NAN return
-    double *fg = (double *) calloc(251, sizeof(double));
-    double *bj1 = (double *) calloc(252, sizeof(double));
-    double *dj1 = (double *) calloc(252, sizeof(double));
-    double *bj2 = (double *) calloc(252, sizeof(double));
-    double *dj2 = (double *) calloc(252, sizeof(double));
-    double *by1 = (double *) calloc(252, sizeof(double));
-    double *dy1 = (double *) calloc(252, sizeof(double));
-    double *by2 = (double *) calloc(252, sizeof(double));
-    double *dy2 = (double *) calloc(252, sizeof(double));
+    T *fg = (T *) calloc(251, sizeof(T));
+    T *bj1 = (T *) calloc(252, sizeof(T));
+    T *dj1 = (T *) calloc(252, sizeof(T));
+    T *bj2 = (T *) calloc(252, sizeof(T));
+    T *dj2 = (T *) calloc(252, sizeof(T));
+    T *by1 = (T *) calloc(252, sizeof(T));
+    T *dy1 = (T *) calloc(252, sizeof(T));
+    T *by2 = (T *) calloc(252, sizeof(T));
+    T *dy2 = (T *) calloc(252, sizeof(T));
 
     fcoef(kd, m, q, a, fg);
     ic = (int)(m / 2) + 1;
@@ -7056,7 +7059,7 @@ inline double psi_spec(double x) {
 
 
 template <typename T>
-inline void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
+void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     int ip, i, l, k;
     T r, s, sk, qs0;
     T *ap = (T *) malloc(200*sizeof(T));

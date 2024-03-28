@@ -238,7 +238,7 @@ T bei(T x) {
 }
 
 template <typename T>
-inline T ker(T x) {
+T ker(T x) {
     std::complex<T> Ke;
     T ber, bei, ger, gei, der, dei, her, hei;
     if (x < 0) {
@@ -471,14 +471,6 @@ T cem_cva(T m, T q) {
     return specfun::cva2(kd, int_m, q);
 }
 
-template <>
-inline float cem_cva(float mf, float qf) {
-    double m = mf;
-    double q = qf;
-
-    return cem_cva(m, q);
-}
-
 template <typename T>
 T sem_cva(T m, T q) {
     int int_m, kd = 4;
@@ -500,14 +492,6 @@ T sem_cva(T m, T q) {
         kd = 3;
     }
     return specfun::cva2(kd, int_m, q);
-}
-
-template <>
-inline float sem_cva(float mf, float qf) {
-    double m = mf;
-    double q = qf;
-
-    return sem_cva(m, q);
 }
 
 /* Mathieu functions */
@@ -539,19 +523,6 @@ inline void cem(T m, T q, T x, T *csf, T *csd) {
             specfun::mtu0(kf, int_m, q, x, csf, csd);
         }
     }
-}
-
-template <>
-inline void cem(float mf, float qf, float xf, float *csff, float *csdf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double csf;
-    double csd;
-    cem(m, q, x, &csf, &csd);
-
-    *csff = csf;
-    *csdf = csd;
 }
 
 template <typename T>
@@ -586,19 +557,6 @@ void sem(T m, T q, T x, T *csf, T *csd) {
     }
 }
 
-template <>
-inline void sem(float mf, float qf, float xf, float *csff, float *csdf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double csf;
-    double csd;
-    sem(m, q, x, &csf, &csd);
-
-    *csff = csf;
-    *csdf = csd;
-}
-
 template <typename T>
 void mcm1(T m, T q, T x, T *f1r, T *d1r) {
     int int_m, kf = 1, kc = 1;
@@ -612,19 +570,6 @@ void mcm1(T m, T q, T x, T *f1r, T *d1r) {
         int_m = (int) m;
         specfun::mtu12(kf, kc, int_m, q, x, f1r, d1r, &f2r, &d2r);
     }
-}
-
-template <>
-inline void mcm1(float mf, float qf, float xf, float *f1rf, float *d1rf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double f1r;
-    double d1r;
-    mcm1(m, q, x, &f1r, &d1r);
-
-    *f1rf = f1r;
-    *d1rf = d1r;
 }
 
 template <typename T>
@@ -642,19 +587,6 @@ void msm1(T m, T q, T x, T *f1r, T *d1r) {
     }
 }
 
-template <>
-inline void msm1(float mf, float qf, float xf, float *f1rf, float *d1rf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double f1r;
-    double d1r;
-    msm1(m, q, x, &f1r, &d1r);
-
-    *f1rf = f1r;
-    *d1rf = d1r;
-}
-
 template <typename T>
 void mcm2(T m, T q, T x, T *f2r, T *d2r) {
     int int_m, kf = 1, kc = 2;
@@ -670,21 +602,8 @@ void mcm2(T m, T q, T x, T *f2r, T *d2r) {
     }
 }
 
-template <>
-inline void mcm2(float mf, float qf, float xf, float *f2rf, float *d2rf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double f2r;
-    double d2r;
-    mcm2(m, q, x, &f2r, &d2r);
-
-    *f2rf = f2r;
-    *d2rf = d2r;
-}
-
 template <typename T>
-inline void msm2(T m, T q, T x, T *f2r, T *d2r) {
+void msm2(T m, T q, T x, T *f2r, T *d2r) {
     int int_m, kf = 2, kc = 2;
     T f1r = 0.0, d1r = 0.0;
 
@@ -696,19 +615,6 @@ inline void msm2(T m, T q, T x, T *f2r, T *d2r) {
         int_m = (int) m;
         specfun::mtu12(kf, kc, int_m, q, x, &f1r, &d1r, f2r, d2r);
     }
-}
-
-template <>
-inline void msm2(float mf, float qf, float xf, float *f2rf, float *d2rf) {
-    double m = mf;
-    double q = qf;
-    double x = xf;
-    double f2r;
-    double d2r;
-    msm2(m, q, x, &f2r, &d2r);
-
-    *f2rf = f2r;
-    *d2rf = d2r;
 }
 
 inline double pmv(double m, double v, double x) {
@@ -804,307 +710,6 @@ void pbvv(T v, T x, T *pvf, T *pvd) {
             specfun::pbvv(x, v, vv, vp, pvf, pvd);
             free(vv);
         }
-    }
-}
-
-template <typename T>
-T prolate_segv(T m, T n, T c) {
-    int kd = 1;
-    int int_m, int_n;
-    T cv = 0.0, *eg;
-
-    if ((m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("prolate_segv", SF_ERROR_OTHER, "memory allocation error");
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    free(eg);
-    return cv;
-}
-
-template <typename T>
-T oblate_segv(T m, T n, T c) {
-    int kd = -1;
-    int int_m, int_n;
-    T cv = 0.0, *eg;
-
-    if ((m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("oblate_segv", SF_ERROR_OTHER, "memory allocation error");
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    free(eg);
-    return cv;
-}
-
-template <typename T>
-T prolate_aswfa_nocv(T m, T n, T c, T x, T *s1d) {
-    int kd = 1;
-    int int_m, int_n;
-    T cv = 0.0, s1f, *eg;
-
-    if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("prolate_aswfa_nocv", SF_ERROR_DOMAIN, NULL);
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("prolate_aswfa_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
-    free(eg);
-    return s1f;
-}
-
-template <typename T>
-void prolate_aswfa_nocv(T m, T n, T c, T x, T *s1f, T *s1d) {
-    *s1f = prolate_aswfa_nocv(m, n, c, x, s1d);
-}
-
-template <typename T>
-T oblate_aswfa_nocv(T m, T n, T c, T x, T *s1d) {
-    int kd = -1;
-    int int_m, int_n;
-    T cv = 0.0, s1f = 0.0, *eg;
-
-    if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("oblate_aswfa_nocv", SF_ERROR_DOMAIN, NULL);
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("oblate_aswfa_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::aswfa(x, int_m, int_n, c, kd, cv, &s1f, s1d);
-    free(eg);
-    return s1f;
-}
-
-template <typename T>
-inline void prolate_aswfa(T m, T n, T c, T cv, T x, T *s1f, T *s1d) {
-    if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("prolate_aswfa", SF_ERROR_DOMAIN, NULL);
-        *s1f = std::numeric_limits<T>::quiet_NaN();
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-    } else {
-        specfun::aswfa(x, static_cast<int>(m), static_cast<int>(n), c, 1, cv, s1f, s1d);
-    }
-}
-
-template <typename T>
-void oblate_aswfa(T m, T n, T c, T cv, T x, T *s1f, T *s1d) {
-    if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("oblate_aswfa", SF_ERROR_DOMAIN, NULL);
-        *s1f = std::numeric_limits<T>::quiet_NaN();
-        *s1d = std::numeric_limits<T>::quiet_NaN();
-    } else {
-        specfun::aswfa(x, static_cast<int>(m), static_cast<int>(n), c, -1, cv, s1f, s1d);
-    }
-}
-
-template <typename T>
-T prolate_radial1_nocv(T m, T n, T c, T x, T *r1d) {
-    int kf = 1, kd = 1;
-    T r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
-    if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("prolate_radial1_nocv", SF_ERROR_DOMAIN, NULL);
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("prolate_radial1_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
-    free(eg);
-    return r1f;
-}
-
-template <typename T>
-void prolate_radial1_nocv(T m, T n, T c, T x, T *r1f, T *r1d) {
-    *r1f = prolate_radial1_nocv(m, n, c, x, r1d);
-}
-
-template <typename T>
-T prolate_radial2_nocv(T m, T n, T c, T x, T *r2d) {
-    int kf = 2, kd = 1;
-    T r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
-    if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("prolate_radial2_nocv", SF_ERROR_DOMAIN, NULL);
-        *r2d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("prolate_radial2_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *r2d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
-    free(eg);
-    return r2f;
-}
-
-template <typename T>
-void prolate_radial2_nocv(T m, T n, T c, T x, T *r2f, T *r2d) {
-    *r2f = prolate_radial2_nocv(m, n, c, x, r2d);
-}
-
-template <typename T>
-void prolate_radial1(T m, T n, T c, T cv, T x, T *r1f, T *r1d) {
-    int kf = 1;
-    T r2f = 0.0, r2d = 0.0;
-    int int_m, int_n;
-
-    if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("prolate_radial1", SF_ERROR_DOMAIN, NULL);
-        *r1f = std::numeric_limits<T>::quiet_NaN();
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-    } else {
-        int_m = (int) m;
-        int_n = (int) n;
-        specfun::rswfp(int_m, int_n, c, x, cv, kf, r1f, r1d, &r2f, &r2d);
-    }
-}
-
-template <typename T>
-void prolate_radial2(T m, T n, T c, T cv, T x, T *r2f, T *r2d) {
-    int kf = 2;
-    T r1f = 0.0, r1d = 0.0;
-    int int_m, int_n;
-
-    if ((x <= 1.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("prolate_radial2", SF_ERROR_DOMAIN, NULL);
-        *r2f = std::numeric_limits<double>::quiet_NaN();
-        *r2d = std::numeric_limits<double>::quiet_NaN();
-    } else {
-        int_m = (int) m;
-        int_n = (int) n;
-        specfun::rswfp(int_m, int_n, c, x, cv, kf, &r1f, &r1d, r2f, r2d);
-    }
-}
-
-template <typename T>
-T oblate_radial1_nocv(T m, T n, T c, T x, T *r1d) {
-    int kf = 1, kd = -1;
-    T r2f = 0.0, r2d = 0.0, r1f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
-    if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("oblate_radial1_nocv", SF_ERROR_DOMAIN, NULL);
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("oblate_radial1_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, r1d, &r2f, &r2d);
-    free(eg);
-    return r1f;
-}
-
-template <typename T>
-void oblate_radial1_nocv(T m, T n, T c, T x, T *r1f, T *r1d) {
-    *r1f = oblate_radial1_nocv(m, n, c, x, r1d);
-}
-
-template <typename T>
-T oblate_radial2_nocv(T m, T n, T c, T x, T *r2d) {
-    int kf = 2, kd = -1;
-    T r1f = 0.0, r1d = 0.0, r2f = 0.0, cv = 0.0, *eg;
-    int int_m, int_n;
-
-    if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n)) || ((n - m) > 198)) {
-        set_error("oblate_radial2_nocv", SF_ERROR_DOMAIN, NULL);
-        *r2d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    int_m = (int) m;
-    int_n = (int) n;
-    eg = (T *) malloc(sizeof(T) * (n - m + 2));
-    if (eg == NULL) {
-        set_error("oblate_radial2_nocv", SF_ERROR_OTHER, "memory allocation error");
-        *r2d = std::numeric_limits<T>::quiet_NaN();
-        return std::numeric_limits<T>::quiet_NaN();
-    }
-    specfun::segv(int_m, int_n, c, kd, &cv, eg);
-    specfun::rswfo(int_m, int_n, c, x, cv, kf, &r1f, &r1d, &r2f, r2d);
-    free(eg);
-    return r2f;
-}
-
-template <typename T>
-void oblate_radial2_nocv(T m, T n, T c, T x, T *r2f, T *r2d) {
-    *r2f = oblate_radial1_nocv(m, n, c, x, r2d);
-}
-
-template <typename T>
-inline void oblate_radial1(T m, T n, T c, T cv, T x, T *r1f, T *r1d) {
-    int kf = 1;
-    T r2f = 0.0, r2d = 0.0;
-
-    if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("oblate_radial1", SF_ERROR_DOMAIN, NULL);
-        *r1f = std::numeric_limits<T>::quiet_NaN();
-        *r1d = std::numeric_limits<T>::quiet_NaN();
-    } else {
-        specfun::rswfo(static_cast<int>(m), static_cast<int>(n), c, x, cv, kf, r1f, r1d, &r2f, &r2d);
-    }
-}
-
-template <typename T>
-inline void oblate_radial2(T m, T n, T c, T cv, T x, T *r2f, T *r2d) {
-    int kf = 2;
-    T r1f = 0.0, r1d = 0.0;
-
-    if ((x < 0.0) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
-        set_error("oblate_radial2", SF_ERROR_DOMAIN, NULL);
-        *r2f = std::numeric_limits<T>::quiet_NaN();
-        *r2d = std::numeric_limits<T>::quiet_NaN();
-    } else {
-        specfun::rswfo(static_cast<int>(m), static_cast<int>(n), c, x, cv, kf, &r1f, &r1d, r2f, r2d);
     }
 }
 

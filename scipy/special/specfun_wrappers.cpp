@@ -1,5 +1,6 @@
 #include "specfun_wrappers.h"
 #include "special/fresnel.h"
+#include "special/sphd_wave.h"
 #include "special/specfun.h"
 
 extern "C" {
