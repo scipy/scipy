@@ -159,9 +159,9 @@ class TestLineSearch:
         def derphi(alpha):
             return 2 * (alpha - 5)
 
-        s, _, _, _ = assert_warns(LineSearchWarning,
-                                  ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
-        assert s is None
+        alpha_star, _, _, derphi_star = ls.scalar_search_wolfe2(phi, derphi, amax=0.001)
+        assert alpha_star is None  # Not converged
+        assert derphi_star is None  # Not converged
 
     def test_scalar_search_wolfe2_regression(self):
         # Regression test for gh-12157
