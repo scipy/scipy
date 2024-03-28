@@ -123,7 +123,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
         if full_matrices:
             if max_mn*max_mn > numpy.iinfo(numpy.int32).max:
                 raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
-                                 f" would incur integer overflow in LAPACK.")
+                                  " would incur integer overflow in LAPACK.")
         else:
             sz = max(m * min_mn, n * min_mn)
             if max(m * min_mn, n * min_mn) > numpy.iinfo(numpy.int32).max:
