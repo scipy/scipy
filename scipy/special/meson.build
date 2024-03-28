@@ -104,6 +104,16 @@ cephes_sources = [
   'cephes/zetac.c'
 ]
 
+
+sf_error_state_lib = shared_library('sf_error_state',
+  ['sf_error_state.c'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special',
+)
+                                    
+
 amos_lib = static_library('_amos',
   ['_amos.c'],
   c_args: use_math_defines,
@@ -138,9 +148,12 @@ py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [np_dep],
+  link_with: [sf_error_state_lib],
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/special'
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_specfun',
@@ -216,11 +229,13 @@ py3.extension_module('_ufuncs',
   ],
   link_args: version_link_args,
   link_with: [
+    sf_error_state_lib,
     amos_lib,
     cephes_lib
   ],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
@@ -255,20 +270,23 @@ py3.extension_module('_ufuncs_cxx',
   include_directories: ['../_lib/boost_math/include', '../_lib',
                         '../_build_utils/src'],
   link_args: version_link_args,
-    link_with: [cephes_lib],
+    link_with: [sf_error_state_lib, cephes_lib],
   dependencies: [np_dep, ellint_dep],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
   c_args: cython_c_args,
   include_directories: ['../_lib', '../_build_utils/src'],
+  link_with: [sf_error_state_lib],
   link_args: version_link_args,
   dependencies: [lapack, np_dep],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('cython_special',
@@ -285,11 +303,13 @@ py3.extension_module('cython_special',
   link_args: version_link_args,
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
+    sf_error_state_lib,
     amos_lib,
     cephes_lib
   ],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 py3.extension_module('_comb',
