@@ -18,12 +18,48 @@ from ._compressed import _cs_matrix
 class _csr_base(_cs_matrix):
     _format = 'csr'
 
+    # override IndexMixin.__getitem__ for 1d case until fully implemented
+    def __getitem__(self, key):
+        if self.ndim == 2:
+            return super().__getitem__(key)
+
+        if isinstance(key, tuple) and len(key) == 1:
+            key = key[0]
+        INT_TYPES = (int, np.integer)
+        if isinstance(key, INT_TYPES):
+            if key < 0:
+                key += self.shape[-1]
+            if key < 0 or key >= self.shape[-1]:
+                raise IndexError('index value out of bounds')
+            return self._get_int(key)
+        else:
+            raise IndexError('array/slice index for 1d csr_array not yet supported')
+
+    # override IndexMixin.__setitem__ for 1d case until fully implemented
+    def __setitem__(self, key, value):
+        if self.ndim == 2:
+            return super().__setitem__(key, value)
+
+        if isinstance(key, tuple) and len(key) == 1:
+            key = key[0]
+        INT_TYPES = (int, np.integer)
+        if isinstance(key, INT_TYPES):
+            if key < 0:
+                key += self.shape[-1]
+            if key < 0 or key >= self.shape[-1]:
+                raise IndexError('index value out of bounds')
+            return self._set_int(key, value)
+        else:
+            raise IndexError('array index for 1d csr_array not yet provided')
+
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
             raise ValueError("Sparse arrays/matrices do not support "
                               "an 'axes' parameter because swapping "
                               "dimensions is the only logical permutation.")
 
+        if self.ndim == 1:
+            return self.copy() if copy else self
         M, N = self.shape
         return self._csc_container((self.data, self.indices,
                                     self.indptr), shape=(N, M), copy=copy)
@@ -31,6 +67,8 @@ class _csr_base(_cs_matrix):
     transpose.__doc__ = _spbase.transpose.__doc__
 
     def tolil(self, copy=False):
+        if self.ndim != 2:
+            raise ValueError("Cannot convert a 1d sparse array to lil format")
         lil = self._lil_container(self.shape, dtype=self.dtype)
 
         self.sum_duplicates()
@@ -56,13 +94,16 @@ class _csr_base(_cs_matrix):
     tocsr.__doc__ = _spbase.tocsr.__doc__
 
     def tocsc(self, copy=False):
+        if self.ndim != 2:
+            raise ValueError("Cannot convert a 1d sparse array to csc format")
+        M, N = self.shape
         idx_dtype = self._get_index_dtype((self.indptr, self.indices),
-                                    maxval=max(self.nnz, self.shape[0]))
-        indptr = np.empty(self.shape[1] + 1, dtype=idx_dtype)
+                                    maxval=max(self.nnz, M))
+        indptr = np.empty(N + 1, dtype=idx_dtype)
         indices = np.empty(self.nnz, dtype=idx_dtype)
         data = np.empty(self.nnz, dtype=upcast(self.dtype))
 
-        csr_tocsc(self.shape[0], self.shape[1],
+        csr_tocsc(M, N,
                   self.indptr.astype(idx_dtype),
                   self.indices.astype(idx_dtype),
                   self.data,
@@ -77,6 +118,8 @@ class _csr_base(_cs_matrix):
     tocsc.__doc__ = _spbase.tocsc.__doc__
 
     def tobsr(self, blocksize=None, copy=True):
+        if self.ndim != 2:
+            raise ValueError("Cannot convert a 1d sparse array to bsr format")
         if blocksize is None:
             from ._spfuncs import estimate_blocksize
             return self.tobsr(blocksize=estimate_blocksize(self))
@@ -121,22 +164,38 @@ class _csr_base(_cs_matrix):
         return x
 
     def __iter__(self):
+        if self.ndim == 1:
+            zero = self.dtype.type(0)
+            u = 0
+            for v, d in zip(self.indices, self.data):
+                for _ in range(v - u):
+                    yield zero
+                yield d
+                u = v + 1
+            for _ in range(self.shape[0] - u):
+                yield zero
+            return
+
         indptr = np.zeros(2, dtype=self.indptr.dtype)
-        shape = (1, self.shape[1])
+        # return 1d (sparray) or 2drow (spmatrix)
+        shape = self.shape[1:] if isinstance(self, sparray) else (1, self.shape[1])
         i0 = 0
         for i1 in self.indptr[1:]:
             indptr[1] = i1 - i0
             indices = self.indices[i0:i1]
             data = self.data[i0:i1]
-            yield self.__class__(
-                (data, indices, indptr), shape=shape, copy=True
-            )
+            yield self.__class__((data, indices, indptr), shape=shape, copy=True)
             i0 = i1
 
     def _getrow(self, i):
         """Returns a copy of row i of the matrix, as a (1 x n)
         CSR matrix (row vector).
         """
+        if self.ndim == 1:
+            if i not in (0, -1):
+                raise IndexError(f'index ({i}) out of range')
+            return self.reshape((1, self.shape[0]), copy=True)
+
         M, N = self.shape
         i = int(i)
         if i < 0:
@@ -149,9 +208,10 @@ class _csr_base(_cs_matrix):
                               dtype=self.dtype, copy=False)
 
     def _getcol(self, i):
-        """Returns a copy of column i of the matrix, as a (m x 1)
-        CSR matrix (column vector).
+        """Returns a copy of column i. A (m x 1) sparse array (column vector).
         """
+        if self.ndim == 1:
+            raise ValueError("getcol not provided for 1d arrays. Use indexing A[j]")
         M, N = self.shape
         i = int(i)
         if i < 0:

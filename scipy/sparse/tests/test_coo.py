@@ -163,10 +163,10 @@ def test_1d_row_and_col():
 
 def test_1d_toformats():
     res = coo_array([1, -2, -3])
-    for f in [res.tocsc, res.tocsr, res.todia, res.tolil, res.tobsr]:
+    for f in [res.tobsr, res.tocsc, res.todia, res.tolil]:
         with pytest.raises(ValueError, match='Cannot convert'):
             f()
-    for f in [res.tocoo, res.todok]:
+    for f in [res.tocoo, res.tocsr, res.todok]:
         assert np.array_equal(f().toarray(), res.toarray())
 
 
@@ -235,11 +235,10 @@ def test_1d_add_dense():
 def test_1d_add_sparse():
     den_a = np.array([0, -2, -3, 0])
     den_b = np.array([0, 1, 2, 3])
-    # Currently this routes through CSR format, so 1d sparse addition
-    # isn't supported.
-    with pytest.raises(ValueError,
-                       match='Cannot convert a 1d sparse array'):
-        coo_array(den_a) + coo_array(den_b)
+    dense_sum = den_a + den_b
+    # this routes through CSR format
+    sparse_sum = coo_array(den_a) + coo_array(den_b)
+    assert np.array_equal(dense_sum, sparse_sum.toarray())
 
 
 def test_1d_matmul_vector():
