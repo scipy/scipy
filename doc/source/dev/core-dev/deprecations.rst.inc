@@ -7,8 +7,8 @@ There are various reasons for wanting to remove existing functionality: it's
 buggy, the API isn't understandable, it's superseded by functionality with
 better performance, it needs to be moved to another SciPy submodule, etc.
 
-In general it's not a good idea to remove something without warning users about
-that removal first.  Therefore this is what should be done before removing
+In general, it's not a good idea to remove something without warning users about
+that removal first.  Therefore, this is what should be done before removing
 something from the public API:
 
 #. Propose to deprecate the functionality on the scipy-dev mailing list and get
@@ -28,4 +28,3 @@ when running the test suite so they don't pollute the output.
 It's possible that there is reason to want to ignore this deprecation policy
 for a particular deprecation; this can always be discussed on the scipy-dev
 mailing list.
-
