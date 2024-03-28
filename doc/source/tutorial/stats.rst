@@ -21,7 +21,7 @@ Note: This documentation is work in progress.
 
    stats/probability_distributions
    stats/hypothesis_tests
-   stats/sampling
+   stats/sampling.md
    stats/kernel_density_estimation
    stats/multiscale_graphcorr
    stats/quasi_monte_carlo
