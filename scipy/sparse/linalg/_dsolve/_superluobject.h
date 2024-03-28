@@ -52,9 +52,9 @@ extern PyTypeObject SuperLUType;
 extern PyTypeObject SuperLUGlobalType;
 
 int DenseSuper_from_Numeric(SuperMatrix *, PyObject *);
-int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
+int NRFormat_from_spMatrix(SuperMatrix *, int, int, int_t, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
-int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
+int NCFormat_from_spMatrix(SuperMatrix *, int, int, int_t, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
                      PyObject **L_csc, PyObject **U_csc,
@@ -121,7 +121,7 @@ jmp_buf *superlu_python_jmpbuf(void);
     superlu_options_t *a, SuperMatrix *b,                           \
     int c, int d, int *e, void *f, int g,                           \
     int *h, int *i, SuperMatrix *j, SuperMatrix *k,                 \
-    GlobalLU_t *l, SuperLUStat_t *m, int *n
+    GlobalLU_t *l, SuperLUStat_t *m, int_t *n
 #define gstrf_ARGS_REF a,b,c,d,e,f,g,h,i,j,k,l,m,n
 
 #define gsitrf_ARGS gstrf_ARGS
@@ -136,7 +136,7 @@ jmp_buf *superlu_python_jmpbuf(void);
 #define gssv_ARGS                                               \
     superlu_options_t *a, SuperMatrix *b, int *c, int *d,       \
     SuperMatrix *e, SuperMatrix *f, SuperMatrix *g,             \
-    SuperLUStat_t *h, int *i
+    SuperLUStat_t *h, int_t *i
 #define gssv_ARGS_REF a,b,c,d,e,f,g,h,i
 
 #define Create_Dense_Matrix_ARGS                               \
@@ -145,8 +145,8 @@ jmp_buf *superlu_python_jmpbuf(void);
 #define Create_Dense_Matrix_ARGS_REF a,b,c,d,e,f,g,h
 
 #define Create_CompRow_Matrix_ARGS              \
-    SuperMatrix *a, int b, int c, int d,        \
-    void *e, int *f, int *g,                    \
+    SuperMatrix *a, int b, int c, int_t d,        \
+    void *e, int_t *f, int_t *g,                    \
     Stype_t h, Dtype_t i, Mtype_t j
 #define Create_CompRow_Matrix_ARGS_REF a,b,c,d,e,f,g,h,i,j
 

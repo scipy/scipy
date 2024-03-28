@@ -324,7 +324,7 @@ int DenseSuper_from_Numeric(SuperMatrix *X, PyObject *PyX)
 
 /* Natively handles Compressed Sparse Row and CSC */
 
-int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
+int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int_t nnz,
                            PyArrayObject * nzvals, PyArrayObject * colind,
                            PyArrayObject * rowptr, int typenum)
 {
@@ -332,8 +332,6 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     volatile jmp_buf *jmpbuf_ptr;
 
     ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowptr), NPY_INT) &&
           PyArray_NDIM(nzvals) == 1 &&
           PyArray_NDIM(colind) == 1 &&
           PyArray_NDIM(rowptr) == 1 &&
@@ -361,8 +359,8 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
         }
         Create_CompRow_Matrix(PyArray_TYPE(nzvals),
                               A, m, n, nnz, PyArray_DATA((PyArrayObject*)nzvals),
-                              (int *) PyArray_DATA((PyArrayObject*)colind),
-                              (int *) PyArray_DATA((PyArrayObject*)rowptr),
+                              (int_t *) PyArray_DATA((PyArrayObject*)colind),
+                              (int_t *) PyArray_DATA((PyArrayObject*)rowptr),
                               SLU_NR,
                               NPY_TYPECODE_TO_SLU(PyArray_TYPE((PyArrayObject*)nzvals)),
                               SLU_GE);
@@ -371,24 +369,15 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
     return 0;
 }
 
-int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
+int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int_t nnz,
                            PyArrayObject * nzvals, PyArrayObject * rowind,
                            PyArrayObject * colptr, int typenum)
 {
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
 
-    ok = (PyArray_EquivTypenums(PyArray_TYPE(nzvals), typenum) &&
-          PyArray_EquivTypenums(PyArray_TYPE(rowind), NPY_INT) &&
-          PyArray_EquivTypenums(PyArray_TYPE(colptr), NPY_INT) &&
-          PyArray_NDIM(nzvals) == 1 &&
-          PyArray_NDIM(rowind) == 1 &&
-          PyArray_NDIM(colptr) == 1 &&
-          PyArray_IS_C_CONTIGUOUS(nzvals) &&
-          PyArray_IS_C_CONTIGUOUS(rowind) &&
-          PyArray_IS_C_CONTIGUOUS(colptr) &&
-          nnz <= PyArray_DIM(nzvals, 0) &&
-          nnz <= PyArray_DIM(rowind, 0) &&
+    ok = ((int_t)nnz <= (int_t)PyArray_DIM(nzvals, 0) &&
+          (int_t)nnz <= (int_t)PyArray_DIM(rowind, 0) &&
           n+1 <= PyArray_DIM(colptr, 0));
     if (!ok) {
         PyErr_SetString(PyExc_ValueError,
@@ -408,7 +397,7 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
         }
         Create_CompCol_Matrix(PyArray_TYPE(nzvals),
                               A, m, n, nnz, PyArray_DATA(nzvals),
-                              (int *) PyArray_DATA(rowind), (int *) PyArray_DATA(colptr),
+                              (int_t *) PyArray_DATA(rowind), (int_t *) PyArray_DATA(colptr),
                               SLU_NC,
                               NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
                               SLU_GE);
@@ -423,8 +412,8 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
  */
 
 static int LU_to_csc(SuperMatrix *L, SuperMatrix *U,
-                     int *U_indices, int *U_indptr, char *U_data,
-                     int *L_indices, int *L_indptr, char *L_data,
+                     int_t *U_indices, int_t *U_indptr, char *U_data,
+                     int_t *L_indices, int_t *L_indptr, char *L_data,
                      Dtype_t dtype);
 
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
@@ -479,11 +468,11 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     /* Copy data over */
     ok = LU_to_csc(
         L, U,
-        (int*)PyArray_DATA((PyArrayObject*)L_indices),
-        (int*)PyArray_DATA((PyArrayObject*)L_indptr),
+        (int_t*)PyArray_DATA((PyArrayObject*)L_indices),
+        (int_t*)PyArray_DATA((PyArrayObject*)L_indptr),
         (void*)PyArray_DATA((PyArrayObject*)L_data),
-        (int*)PyArray_DATA((PyArrayObject*)U_indices),
-        (int*)PyArray_DATA((PyArrayObject*)U_indptr),
+        (int_t*)PyArray_DATA((PyArrayObject*)U_indices),
+        (int_t*)PyArray_DATA((PyArrayObject*)U_indptr),
         (void*)PyArray_DATA((PyArrayObject*)U_data),
         L->Dtype
         );
@@ -551,16 +540,16 @@ fail:
  */
 static int
 LU_to_csc(SuperMatrix *L, SuperMatrix *U,
-          int *L_rowind, int *L_colptr, char *L_data,
-          int *U_rowind, int *U_colptr, char *U_data,
+          int_t *L_rowind, int_t *L_colptr, char *L_data,
+          int_t *U_rowind, int_t *U_colptr, char *U_data,
           Dtype_t dtype)
 {
     SCformat *Lstore;
     NCformat *Ustore;
     npy_intp elsize;
-    int isup, icol, icolstart, icolend, iptr, istart, iend;
+    int_t isup, icol, icolstart, icolend, iptr, istart, iend;
     char *src, *dst;
-    int U_nnz, L_nnz;
+    int_t U_nnz, L_nnz;
 
     Ustore = (NCformat*)U->Store;
     Lstore = (SCformat*)L->Store;
@@ -719,9 +708,9 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     }
 
     /* Calculate and apply minimum degree ordering */
-    etree = intMalloc(n);
-    self->perm_r = intMalloc(n);
-    self->perm_c = intMalloc(n);
+    etree = (int*)intMalloc((int_t)n);
+    self->perm_r = (int*)intMalloc((int_t)n);
+    self->perm_c = (int*)intMalloc((int_t)n);
     StatInit((SuperLUStat_t *)&stat);
 
     /* calc column permutation */
@@ -756,14 +745,14 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
                (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
                (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
                (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
-               (SuperLUStat_t*)&stat, (int*)&info);
+               (SuperLUStat_t*)&stat, (int_t*)&info);
     }
     else {
         gstrf(SLU_TYPECODE_TO_NPY(A->Dtype),
               (superlu_options_t*)&options, (SuperMatrix*)&AC, relax, panel_size,
               (int*)etree, NULL, lwork, self->perm_c, self->perm_r,
               (SuperMatrix*)&self->L, (SuperMatrix*)&self->U, (GlobalLU_t*)Glu_ptr,
-              (SuperLUStat_t*)&stat, (int*)&info);
+              (SuperLUStat_t*)&stat, (int_t*)&info);
     }
 
     SLU_END_THREADS;
