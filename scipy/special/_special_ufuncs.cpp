@@ -90,6 +90,7 @@ extern const char *mathieu_modsem2_doc;
 extern const char *mathieu_sem_doc;
 extern const char *modfresnelm_doc;
 extern const char *modfresnelp_doc;
+extern const char *obl_ang1_doc;
 extern const char *_zeta_doc;
 
 static PyModuleDef _special_ufuncs_def = {
@@ -267,7 +268,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *obl_ang1 = SpecFun_NewUFunc({static_cast<func_ffff_fpfp_t>(special::oblate_aswfa_nocv),
                                            static_cast<func_dddd_dpdp_t>(special::oblate_aswfa_nocv)},
-                                          2, "obl_ang1", nullptr);
+                                          2, "obl_ang1", obl_ang1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "obl_ang1", obl_ang1);
 
     return _special_ufuncs;
