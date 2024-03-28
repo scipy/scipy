@@ -142,3 +142,68 @@ class TestSymIIR:
 
         out = symiirorder1(signal, c0, z1, precision)
         assert_allclose(out, exp_out, atol=4e-6, rtol=6e-7)
+
+    @pytest.mark.parametrize(
+        'dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
+    def test_symiir2_initial_fwd(self, dtype, precision):
+        c_precision = precision
+        if precision == -1.0:
+            if dtype in {np.float32, np.complex64}:
+                c_precision = 1e-6
+            else:
+                c_precision = 1e-11
+
+        # Compute the initial conditions for a order-two symmetrical low-pass
+        # filter with r = 0.5 and omega = pi / 3 for an unit step input.
+        r = np.asarray(0.5, dtype=dtype)
+        omega = np.asarray(np.pi / 3.0, dtype=dtype)
+        cs = 1 - 2 * r * np.cos(omega) + r**2
+
+        # The index n for the initial condition is bound from 0 to the
+        # first position where sin(omega * (n + 2)) = 0 => omega * (n + 2) = pi
+        # For omega = pi / 3, the maximum initial condition occurs when
+        # sqrt(3) / 2 * r**n < precision.
+        # => n = log(2 * sqrt(3) / 3 * precision) / log(r)
+        ub = np.ceil(np.log(c_precision / np.sin(omega)) / np.log(c_precision))
+        lb = np.ceil(np.pi / omega) - 2
+        n_exp = min(ub, lb)
+
+        # The forward initial condition for a filter of order two is:
+        # \frac{cs}{\sin(\omega)} \sum_{n = 0}^{N - 1} {
+        #    r^(n + 1) \sin{\omega(n + 2)}} + cs
+        # The closed expression for this sum is:
+        # s[n] = 2 * r * np.cos(omega) -
+        #        r**2 - r**(n + 2) * np.sin(omega * (n + 3)) / np.sin(omega) +
+        #        r**(n + 3) * np.sin(omega * (n + 2)) / np.sin(omega) + cs
+        fwd_initial_1 = (
+            cs +
+            2 * r * np.cos(omega) -
+            r**2 -
+            r**(n_exp + 2) * np.sin(omega * (n_exp + 3)) / np.sin(omega) +
+            r**(n_exp + 3) * np.sin(omega * (n_exp + 2)) / np.sin(omega))
+
+        # The second initial condition is given by
+        # s[n] = 1 / np.sin(omega) * (
+        #        r**2 * np.sin(3 * omega) -
+        #        r**3 * np.sin(2 * omega) -
+        #        r**(n + 3) * np.sin(omega * (n + 4)) +
+        #        r**(n + 4) * np.sin(omega * (n + 3)))
+        ub = np.ceil(np.log(c_precision / np.sin(omega)) / np.log(c_precision))
+        lb = np.ceil(np.pi / omega) - 3
+        n_exp = min(ub, lb)
+
+        fwd_initial_2 = (
+            cs + cs * 2 * r * np.cos(omega) +
+            (r**2 * np.sin(3 * omega) -
+             r**3 * np.sin(2 * omega) -
+             r**(n_exp + 3) * np.sin(omega * (n_exp + 4)) +
+             r**(n_exp + 4) * np.sin(omega * (n_exp + 3))) / np.sin(omega))
+
+        expected = np.r_[fwd_initial_1, fwd_initial_2]
+
+        n = 100
+        signal = np.ones(n, dtype=dtype)
+
+        out = symiirorder2_ic_fwd(signal, r, omega, precision)
+        assert_allclose(out, expected, atol=4e-6, rtol=6e-7)
