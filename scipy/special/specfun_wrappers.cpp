@@ -1,5 +1,11 @@
 #include "specfun_wrappers.h"
+#include "special/fresnel.h"
+#include "special/kelvin.h"
+#include "special/mathieu.h"
+#include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sphd_wave.h"
+#include "special/struve.h"
 
 extern "C" {
 
@@ -25,14 +31,14 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
 double exp1_wrap(double x) { return special::exp1(x); }
 
 npy_cdouble cexp1_wrap(npy_cdouble z) {
-    std::complex<double> res = special::cexp1({npy_creal(z), npy_cimag(z)});
+    std::complex<double> res = special::exp1(std::complex<double>{npy_creal(z), npy_cimag(z)});
     return npy_cpack(res.real(), res.imag());
 }
 
 double expi_wrap(double x) { return special::expi(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) {
-    std::complex<double> res = special::cexpi({npy_creal(z), npy_cimag(z)});
+    std::complex<double> res = special::expi(std::complex<double>{npy_creal(z), npy_cimag(z)});
     return npy_cpack(res.real(), res.imag());
 }
 

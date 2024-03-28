@@ -89,7 +89,6 @@ void clpn(int, std::complex<double>, std::complex<double> *, std::complex<double
 
 void cyzo(int, int, int, std::complex<double>*, std::complex<double> *);
 
-void cbk(int, int, double, double, double, double *, double *);
 void cerf(std::complex<double>, std::complex<double> *, std::complex<double> *);
 std::complex<double> cgama(std::complex<double>, int);
 double chgubi(double, double, double, int *);
@@ -109,30 +108,32 @@ void fcszo(int, int, std::complex<double> *);
 double gaih(double);
 double gam0(double);
 double gamma2(double);
-void gmn(int, int, double, double, double *, double *, double *);
-void jynb(int, double, int *, double *, double *, double *, double *);
-void jynbh(int, int, double, int *, double *, double *);
+
+template <typename T>
+void jynbh(int, int, T, int *, T *, T *);
+
 void jyndd(int, double, double *, double *, double *, double *, double *, double *);
-void kmn(int, int, double, double, int, double *, double *, double *, double *);
+
 double lpmv0(double, int, double);
-void lpmns(int, int, double, double *, double *);
-void lqmns(int, int, double, double *, double *);
 int msta1(double, int);
 int msta2(double, int, int);
 double psi_spec(double);
-void qstar(int, int, double, double, double *, double *, double *);
 double refine(int, int, double, double);
-void rmn1(int, int, double, double, int, double *, double *, double *);
-void rmn2l(int, int, double, double, int, double *, double *, double *, int *);
-void rmn2so(int, int, double, double, double, int, double *, double *, double *);
-void rmn2sp(int, int, double, double, double, int, double *, double *, double *);
-void sckb(int, int, double, double *, double *);
-void sdmn(int, int, double, double, int, double *);
-void sphj(double, int, int *, double *, double *);
-void sphy(double, int, int *, double *, double *);
+
+template <typename T>
+void sckb(int, int, T, T *, T *);
+
+template <typename T>
+void sdmn(int, int, T, T, int, T *);
+
+template <typename T>
+void sphj(T, int, int *, T *, T *);
+
+template <typename T>
+void sphy(T, int, int *, T *, T *);
+
 double vvla(double, double);
 double vvsa(double, double);
-
 
 
 inline void airyb(double x, double* ai, double* bi, double* ad, double* bd) {
@@ -439,7 +440,8 @@ inline void airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *x
 }
 
 
-inline void aswfa(double x, int m, int n, double c, int kd, double cv, double *s1f, double *s1d) {
+template <typename T>
+void aswfa(T x, int m, int n, T c, int kd, T cv, T *s1f, T *s1d) {
 
     // ===========================================================
     // Purpose: Compute the prolate and oblate spheroidal angular
@@ -459,10 +461,10 @@ inline void aswfa(double x, int m, int n, double c, int kd, double cv, double *s
     // ===========================================================
 
     int ip, k, nm, nm2;
-    double a0, d0, d1, r, su1, su2, x0, x1;
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *df = (double *) calloc(200, sizeof(double));
-    const double eps = 1e-14;
+    T a0, d0, d1, r, su1, su2, x0, x1;
+    T *ck = (T *) calloc(200, sizeof(T));
+    T *df = (T *) calloc(200, sizeof(T));
+    const T eps = 1e-14;
     x0 = x;
     x = fabs(x);
     ip = ((n-m) % 2 == 0 ? 0 : 1);
@@ -582,17 +584,18 @@ inline void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 }
 
 
-inline void cbk(int m, int n, double c, double cv, double qt, double *ck, double *bk) {
-    const double eps = 1.0e-14;
+template <typename T>
+void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
+    const T eps = 1.0e-14;
 
     int i, i1, ip, j, k, n2, nm;
-    double r1, s1, sw, t;
+    T r1, s1, sw, t;
 
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
-    double *u = (double *) calloc(200, sizeof(double));
-    double *v = (double *) calloc(200, sizeof(double));
-    double *w = (double *) calloc(200, sizeof(double));
+    T *u = (T *) calloc(200, sizeof(T));
+    T *v = (T *) calloc(200, sizeof(T));
+    T *w = (T *) calloc(200, sizeof(T));
 
     u[0] = 0.0;
     n2 = nm - 2;
@@ -2914,7 +2917,8 @@ inline double dvsa(double x, double va) {
 }
 
 
-inline double e1xb(double x) {
+template <typename T>
+T e1xb(T x) {
 
     // ============================================
     // Purpose: Compute exponential integral E1(x)
@@ -2923,8 +2927,8 @@ inline double e1xb(double x) {
     // ============================================
 
     int k, m;
-    double e1, r, t, t0;
-    const double ga = 0.5772156649015328;
+    T e1, r, t, t0;
+    const T ga = 0.5772156649015328;
 
     if (x == 0.0) {
         e1 = 1e300;
@@ -2950,7 +2954,8 @@ inline double e1xb(double x) {
 }
 
 
-inline std::complex<double> e1z(std::complex<double> z) {
+template <typename T>
+std::complex<T> e1z(std::complex<T> z) {
 
     // ====================================================
     // Purpose: Compute complex exponential integral E1(z)
@@ -2958,15 +2963,15 @@ inline std::complex<double> e1z(std::complex<double> z) {
     // Output:  CE1 --- E1(z)
     // ====================================================
 
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015328;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015328;
     int k;
-    std::complex<double> ce1, cr, zc, zd, zdc;
-    double x = z.real();
-    double a0 = std::abs(z);
+    std::complex<T> ce1, cr, zc, zd, zdc;
+    T x = z.real();
+    T a0 = std::abs(z);
     // Continued fraction converges slowly near negative real axis,
     // so use power series in a wedge around it until radius 40.0
-    double xt = -2.0*fabs(z.imag());
+    T xt = -2.0*fabs(z.imag());
 
     if (a0 == 0.0) { return 1e300; }
     if ((a0 < 5.0) || ((x < xt) && (a0 < 40.0))) {
@@ -2974,14 +2979,14 @@ inline std::complex<double> e1z(std::complex<double> z) {
         ce1 = 1.0;
         cr = 1.0;
         for (k = 1; k < 501; k++) {
-            cr = -cr*z*(k / pow(k + 1.0, 2));
+            cr = -cr*z*static_cast<T>(k / std::pow(k + 1, 2));
             ce1 += cr;
             if (std::abs(cr) < std::abs(ce1)*1e-15) { break; }
         }
         if ((x <= 0.0) && (z.imag() == 0.0)) {
             //Careful on the branch cut -- use the sign of the imaginary part
             // to get the right sign on the factor if pi.
-            ce1 = -el - std::log(-z) + z*ce1 - copysign(pi, z.imag())*std::complex<double>(0.0, 1.0);
+            ce1 = -el - std::log(-z) + z*ce1 - copysign(pi, z.imag())*std::complex<T>(0.0, 1.0);
         } else {
             ce1 = -el - std::log(z) + z*ce1;
         }
@@ -2991,29 +2996,30 @@ inline std::complex<double> e1z(std::complex<double> z) {
         // E1 = exp(-z) * ----- ----- ----- ----- ----- ----- ----- ...
         //                Z +   1 +   Z +   1 +   Z +   1 +   Z +
         zc = 0.0;
-        zd = 1.0 / z;
+        zd = static_cast<T>(1) / z;
         zdc = zd;
         zc += zdc;
         for (k = 1; k < 501; k++) {
-            zd = 1.0 / (zd*static_cast<double>(k) + 1.0);
-            zdc *= (1.0*zd - 1.0);
+            zd = static_cast<T>(1) / (zd*static_cast<T>(k) + static_cast<T>(1));
+            zdc *= (zd - static_cast<T>(1));
             zc += zdc;
 
-            zd = 1.0 / (zd*static_cast<double>(k) + z);
-            zdc *= (z*zd - 1.0);
+            zd = static_cast<T>(1) / (zd*static_cast<T>(k) + z);
+            zdc *= (z*zd - static_cast<T>(1));
             zc += zdc;
             if ((std::abs(zdc) <= std::abs(zc)*1e-15) && (k > 20)) { break; }
         }
         ce1 = std::exp(-z)*zc;
         if ((x <= 0.0) && (z.imag() == 0.0)) {
-            ce1 -= pi*std::complex<double>(0.0, 1.0);
+            ce1 -= pi*std::complex<T>(0.0, 1.0);
         }
     }
     return ce1;
 }
 
 
-inline double eix(double x) {
+template <typename T>
+T eix(T x) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3021,8 +3027,8 @@ inline double eix(double x) {
     // Output:  EI --- Ei(x)
     // ============================================
 
-    const double ga = 0.5772156649015328;
-    double ei, r;
+    const T ga = 0.5772156649015328;
+    T ei, r;
 
     if (x == 0.0) {
         ei = -1.0e+300;
@@ -3053,7 +3059,8 @@ inline double eix(double x) {
 }
 
 
-inline std::complex<double> eixz(std::complex<double> z) {
+template <typename T>
+std::complex<T> eixz(std::complex<T> z) {
 
     // ============================================
     // Purpose: Compute exponential integral Ei(x)
@@ -3061,16 +3068,16 @@ inline std::complex<double> eixz(std::complex<double> z) {
     // Output:  EI --- Ei(x)
     // ============================================
 
-    std::complex<double> cei;
-    const double pi = 3.141592653589793;
+    std::complex<T> cei;
+    const T pi = 3.141592653589793;
     cei = - e1z(-z);
     if (z.imag() > 0.0) {
-        cei += std::complex<double>(0.0, pi);
+        cei += std::complex<T>(0.0, pi);
     } else if (z.imag() < 0.0 ) {
-        cei -= std::complex<double>(0.0, pi);
+        cei -= std::complex<T>(0.0, pi);
     } else {
         if (z.real() > 0.0) {
-            cei += std::complex<double>(0.0, copysign(pi, z.imag()));
+            cei += std::complex<T>(0.0, copysign(pi, z.imag()));
         }
     }
     return cei;
@@ -3107,7 +3114,8 @@ inline void eulerb(int n, double *en) {
 }
 
 
-inline void fcoef(int kd, int m, double q, double a, double *fc) {
+template <typename T>
+void fcoef(int kd, int m, T q, T a, T *fc) {
 
     // =====================================================
     // Purpose: Compute expansion coefficients for Mathieu
@@ -3131,7 +3139,7 @@ inline void fcoef(int kd, int m, double q, double a, double *fc) {
     // =====================================================
 
     int i, k, j, jm = 0, km, kb;
-    double f1, fnan, qm, s, f, u, v, f2, f3, sp, ss, s0;
+    T f1, fnan, qm, s, f, u, v, f2, f3, sp, ss, s0;
 
     for (i = 0; i < 251; ++i) { fc[i] = 0.0; }
 
@@ -3449,161 +3457,6 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
 }
 
 
-inline void ffk(int ks, double x, double *fr, double *fi, double *fm, double *fa,
-         double *gr, double *gi, double *gm, double *ga) {
-
-    // =======================================================
-    // Purpose: Compute modified Fresnel integrals F±(x)
-    //          and K±(x)
-    // Input :  x   --- Argument of F±(x) and K±(x)
-    //          KS  --- Sign code
-    //                  KS=0 for calculating F+(x) and K+(x)
-    //                  KS=1 for calculating F_(x) and K_(x)
-    // Output:  FR  --- Re[F±(x)]
-    //          FI  --- Im[F±(x)]
-    //          FM  --- |F±(x)|
-    //          FA  --- Arg[F±(x)]  (Degs.)
-    //          GR  --- Re[K±(x)]
-    //          GI  --- Im[K±(x)]
-    //          GM  --- |K±(x)|
-    //          GA  --- Arg[K±(x)]  (Degs.)
-    // ======================================================
-
-    const double srd = 57.29577951308233;
-    const double eps = 1.0e-15;
-    const double pi = 3.141592653589793;
-    const double pp2 = 1.2533141373155;
-    const double p2p = 0.7978845608028654;
-
-    double fi0, c1, s1, cs, ss, xa, x2, x4, xc, xf, xf0, xf1, xg, xp, xq, xq2, xr, xs, xsu, xw;
-
-    xa = fabs(x);
-    x2 = x * x;
-    x4 = x2 * x2;
-
-    if (x == 0.0) {
-        *fr = 0.5 * sqrt(0.5 * pi);
-        *fi = pow(-1, ks) * (*fr);
-        *fm = sqrt(0.25 * pi);
-        *fa = pow(-1, ks) * 45.0;
-        *gr = 0.5;
-        *gi = 0.0;
-        *gm = 0.5;
-        *ga = 0.0;
-    } else {
-        if (xa <= 2.5) {
-            xr = p2p * xa;
-            c1 = xr;
-
-            for (int k = 1; k <= 50; ++k) {
-                xr = -0.5 * xr * (4.0 * k - 3.0) / k / (2.0 * k - 1.0) / (4.0 * k + 1.0) * x4;
-                c1 += xr;
-                if (fabs(xr / c1) < eps)
-                    break;
-            }
-
-            s1 = p2p * xa * xa * xa / 3.0;
-            xr = s1;
-
-            for (int k = 1; k <= 50; ++k) {
-                xr = -0.5 * xr * (4.0 * k - 1.0) / k / (2.0 * k + 1.0) / (4.0 * k + 3.0) * x4;
-                s1 += xr;
-                if (fabs(xr / s1) < eps)
-                    break;
-            }
-
-            *fr = pp2 * (0.5 - c1);
-            fi0 = pp2 * (0.5 - s1);
-            *fi = pow(-1, ks) * fi0;
-        } else if (xa < 5.5) {
-            int m = (int)(42 + 1.75 * x2);
-            xsu = 0.0;
-            xc = 0.0;
-            xs = 0.0;
-            xf1 = 0.0;
-            xf0 = 1.0e-100;
-
-            for (int k = m; k >= 0; --k) {
-                xf = (2.0 * k + 3.0) * xf0 / x2 - xf1;
-                if (k % 2 == 0) {
-                    xc += xf;
-                } else {
-                    xs += xf;
-                }
-                xsu += (2.0 * k + 1.0) * xf * xf;
-                xf1 = xf0;
-                xf0 = xf;
-            }
-
-            xq = sqrt(xsu);
-            xw = p2p * xa / xq;
-            c1 = xc * xw;
-            s1 = xs * xw;
-        } else {
-            xr = 1.0;
-            xf = 1.0;
-
-            for (int k = 1; k <= 12; ++k) {
-                xr = -0.25 * xr * (4.0 * k - 1.0) * (4.0 * k - 3.0) / x4;
-                xf += xr;
-            }
-
-            xr = 1.0 / (2.0 * xa * xa);
-            xg = xr;
-
-            for (int k = 1; k <= 12; ++k) {
-                xr = -0.25 * xr * (4.0 * k + 1.0) * (4.0 * k - 1.0) / x4;
-                xg += xr;
-            }
-
-            c1 = 0.5 + (xf * sin(x2) - xg * cos(x2)) / sqrt(2.0 * pi) / xa;
-            s1 = 0.5 - (xf * cos(x2) + xg * sin(x2)) / sqrt(2.0 * pi) / xa;
-        }
-
-        *fr = pp2 * (0.5 - c1);
-        fi0 = pp2 * (0.5 - s1);
-        *fi = pow(-1, ks) * fi0;
-        *fm = std::abs(std::complex<double>(*fr, *fi));
-
-        if (*fr >= 0.0) {
-            *fa = srd * atan((*fi) / (*fr));
-        } else if (*fi > 0.0) {
-            *fa = srd * (atan((*fi) / (*fr)) + pi);
-        } else if (*fi < 0.0) {
-            *fa = srd * (atan((*fi) / (*fr)) - pi);
-        }
-
-        xp = x2 + pi / 4.0;
-        cs = cos(xp);
-        ss = sin(xp);
-        xq2 = 1.0 / sqrt(pi);
-
-        *gr = xq2 * ((*fr) * cs + fi0 * ss);
-        *gi = pow(-1, ks) * xq2 * (fi0 * cs - (*fr) * ss);
-        *gm = sqrt((*gr) * (*gr) + (*gi) * (*gi));
-
-        if (*gr >= 0.0) {
-            *ga = srd * atan((*gi) / (*gr));
-        } else if (*gi > 0.0) {
-            *ga = srd * (atan((*gi) / (*gr)) + pi);
-        } else if (*gi < 0.0) {
-            *ga = srd * (atan((*gi) / (*gr)) - pi);
-        }
-
-        if (x < 0.0) {
-            *fr = pp2 - (*fr);
-            *fi = pow(-1, ks) * pp2 - (*fi);
-            *fm = sqrt((*fr) * (*fr) + (*fi) * (*fi));
-            *fa = srd * atan((*fi) / (*fr));
-            *gr = cos(x2) - (*gr);
-            *gi = -pow(-1, ks) * sin(x2) - (*gi);
-            *gm = sqrt((*gr) * (*gr) + (*gi) * (*gi));
-            *ga = srd * atan((*gi) / (*gr));
-        }
-    }
-}
-
-
 inline double gaih(double x) {
 
     // =====================================================
@@ -3719,7 +3572,8 @@ inline double gamma2(double x) {
 }
 
 
-inline void gmn(int m, int n, double c, double x, double *bk, double *gf, double *gd) {
+template <typename T>
+inline void gmn(int m, int n, T c, T x, T *bk, T *gf, T *gd) {
 
     // ===========================================================
     // Purpose: Compute gmn(-ic,ix) and its derivative for oblate
@@ -3727,8 +3581,8 @@ inline void gmn(int m, int n, double c, double x, double *bk, double *gf, double
     // ===========================================================
 
     int ip, k, nm;
-    double xm, gf0, gw, gd0, gd1;
-    const double eps = 1.0e-14;
+    T xm, gf0, gw, gd0, gd1;
+    const T eps = 1.0e-14;
     ip = ((n - m) % 2 == 0 ? 0 : 1);
     nm = 25 + (int)(0.5 * (n - m) + c);
     xm = pow(1.0 + x * x, -0.5 * m);
@@ -4065,7 +3919,8 @@ inline std::complex<double> hygfz(double a, double b, double c, std::complex<dou
 }
 
 
-inline void itairy(double x, double *apt, double *bpt, double *ant, double *bnt) {
+template <typename T>
+void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
 
     // ======================================================
     // Purpose: Compute the integrals of Airy fnctions with
@@ -4078,17 +3933,17 @@ inline void itairy(double x, double *apt, double *bpt, double *ant, double *bnt)
     // ======================================================
 
     int k, l;
-    double fx, gx, r, su1, su2, su3, su4, su5, su6, xp6, xe, xr1, xr2;
+    T fx, gx, r, su1, su2, su3, su4, su5, su6, xp6, xe, xr1, xr2;
 
-    const double pi = 3.141592653589793;
-    const double c1 = 0.355028053887817;
-    const double c2 = 0.258819403792807;
-    const double sr3 = 1.732050807568877;
-    const double q0 = 1.0 / 3.0;
-    const double q1 = 2.0 / 3.0;
-    const double q2 = 1.4142135623730951;
-    const double eps = 1e-5;
-    static const double a[16] = {
+    const T pi = 3.141592653589793;
+    const T c1 = 0.355028053887817;
+    const T c2 = 0.258819403792807;
+    const T sr3 = 1.732050807568877;
+    const T q0 = 1.0 / 3.0;
+    const T q1 = 2.0 / 3.0;
+    const T q2 = 1.4142135623730951;
+    const T eps = 1e-5;
+    static const T a[16] = {
         0.569444444444444    , 0.891300154320988    , 0.226624344493027e+01, 0.798950124766861e+01,
         0.360688546785343e+02, 0.198670292131169e+03, 0.129223456582211e+04, 0.969483869669600e+04,
         0.824184704952483e+05, 0.783031092490225e+06, 0.822210493622814e+07, 0.945557399360556e+08,
@@ -4170,7 +4025,8 @@ inline void itairy(double x, double *apt, double *bpt, double *ant, double *bnt)
 }
 
 
-inline void itika(double x, double *ti, double *tk) {
+template <typename T>
+void itika(T x, T *ti, T *tk) {
 
     // =======================================================
     // Purpose: Integrate modified Bessel functions I0(t) and
@@ -4181,14 +4037,14 @@ inline void itika(double x, double *ti, double *tk) {
     // =======================================================
 
     int k;
-    double rc1, rc2, e0, b1, b2, rs, r, tw, x2;
-    static const double a[10] = {
+    T rc1, rc2, e0, b1, b2, rs, r, tw, x2;
+    static const T a[10] = {
         0.625, 1.0078125, 2.5927734375, 9.1868591308594,
         4.1567974090576e+1, 2.2919635891914e+2,1.491504060477e+3,
         1.1192354495579e+4, 9.515939374212e+4,9.0412425769041e+5
     };
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
 
     if (x == 0.0) {
         *ti = 0.0;
@@ -4247,14 +4103,13 @@ inline void itika(double x, double *ti, double *tk) {
 }
 
 
-inline void itjya(double x, double *tj, double *ty) {
-
-
+template <typename T>
+void itjya(T x, T *tj, T *ty) {
     int k;
-    double a[18], a0, a1, af, bf, bg, r, r2, rc, rs, ty1, ty2, x2, xp;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    const double eps = 1.0e-12;
+    T a[18], a0, a1, af, bf, bg, r, r2, rc, rs, ty1, ty2, x2, xp;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    const T eps = 1.0e-12;
 
     if (x == 0.0) {
         *tj = 0.0;
@@ -4312,161 +4167,8 @@ inline void itjya(double x, double *tj, double *ty) {
 }
 
 
-inline double itsh0(double x) {
-
-    // ===================================================
-    // Purpose: Evaluate the integral of Struve function
-    //          H0(t) with respect to t from 0 and x
-    // Input :  x   --- Upper limit  ( x ≥ 0 )
-    // Output:  TH0 --- Integration of H0(t) from 0 and x
-    // ===================================================
-
-    int k;
-    double a[25], a0, a1, af, bf, bg, r, rd, s, s0, th0, ty, xp;
-    const double pi = 3.141592653589793;
-    const double el = 0.57721566490153;
-
-    r = 1.0;
-    if (x <= 30.0) {
-        s = 0.5;
-        for (k = 1; k < 101; k++) {
-            rd = 1.0;
-            if (k == 1) { rd = 0.5; }
-            r = -r*rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
-            s += r;
-            if (fabs(r) < fabs(s)*1.0e-12) { break; }
-        }
-        th0 = 2.0 / pi * x * x * s;
-    } else {
-        s = 1.0;
-        for (k = 1; k < 13; k++) {
-            r = -r*k/(k+1.0)*pow((2.0*k+1.0)/x, 2);
-            s += r;
-            if (fabs(r) < fabs(s)*1.0e-12) { break; }
-        }
-        s0 = s / (pi*x*x) + 2.0 / pi *(log(2.0*x) + el);
-        a0 = 1.0;
-        a1 = 5.0 / 8.0;
-        a[0] = a1;
-        for (k = 1; k < 21; k++) {
-            af=((1.5*(k+0.5)*(k+5.0/6.0)*a1-0.5*(k+0.5)*(k+0.5)*(k-0.5)*a0))/(k+1.0);
-            a[k] = af;
-            a0 = a1;
-            a1 = af;
-        }
-        bf = 1.0;
-        r = 1.0;
-        for (k = 1; k < 11; k++) {
-            r = -r / (x*x);
-            bf += a[2*k - 1]*r;
-        }
-        bg = a[0]*x;
-        r = 1.0 / x;
-        for (k = 1; k < 10; k++) {
-            r = -r / (x*x);
-            bg += a[2*k]*r;
-        }
-        xp = x + 0.25*pi;
-        ty = sqrt(2.0/(pi*x))*(bg*cos(xp) - bf*sin(xp));
-        th0 = ty + s0;
-    }
-    return th0;
-}
-
-
-inline double itsl0(double x) {
-
-    // ===========================================================
-    // Purpose: Evaluate the integral of modified Struve function
-    //          L0(t) with respect to t from 0 to x
-    // Input :  x   --- Upper limit  ( x ≥ 0 )
-    // Output:  TL0 --- Integration of L0(t) from 0 to x
-    // ===========================================================
-
-    int k;
-    double a[18], a0, a1, af, r, rd, s, s0, ti, tl0;
-    const double pi = 3.141592653589793;
-    const double el = 0.57721566490153;
-    r = 1.0;
-    if (x <= 20.0) {
-        s=0.5;
-        for (k = 1; k < 101; k++) {
-            rd = 1.0;
-            if (k == 1) { rd=0.5; }
-            r = r*rd*k/(k+1.0)*pow(x/(2.0*k+1.0), 2);
-            s += r;
-            if (fabs(r/s) < 1.0e-12) { break; }
-        }
-        tl0=2.0/pi*x*x*s;
-    } else {
-        s = 1.0;
-        for (k = 1; k < 11; k++) {
-            r = r*k/(k + 1.0)*pow((2.0*k + 1.0)/x, 2);
-            s += r;
-            if (fabs(r/s) < 1.0e-12) { break; }
-        }
-        s0 = -s/(pi*x*x)+2.0/pi*(log(2.0*x)+el);
-        a0 = 1.0;
-        a1 = 5.0/8.0;
-        a[0] = a1;
-        for (k = 1; k < 11; k++) {
-            af=((1.5*(k+.50)*(k+5.0/6.0)*a1-0.5*pow(k+0.5, 2)*(k-0.5)*a0))/(k+1.0);
-            a[k] = af;
-            a0 = a1;
-            a1 = af;
-        }
-        ti = 1.0;
-        r = 1.0;
-        for (k = 1; k < 11; k++) {
-            r = r / x;
-            ti += a[k-1]*r;
-        }
-        tl0 = ti/sqrt(2*pi*x)*exp(x) + s0;
-    }
-    return tl0;
-}
-
-
-inline double itth0(double x) {
-
-    // ===========================================================
-    // Purpose: Evaluate the integral H0(t)/t with respect to t
-    //          from x to infinity
-    // Input :  x   --- Lower limit  ( x ≥ 0 )
-    // Output:  TTH --- Integration of H0(t)/t from x to infinity
-    // ===========================================================
-
-    int k;
-    double f0, g0, r, s, t, tth, tty, xt;
-    const double pi = 3.141592653589793;
-    s=1.0;
-    r=1.0;
-    if (x < 24.5) {
-        for (k = 1; k < 61; k++) {
-            r = -r*x*x*(2.0*k - 1.0)/pow(2.0*k + 1.0, 3);
-            s += r;
-            if (fabs(r) < fabs(s)*1.0e-12) { break; }
-        }
-        tth = pi/2.0 - 2.0/pi*x*s;
-    } else {
-        for (k = 1; k < 11; k++) {
-            r = -r*pow(2.0*k-1.0, 3)/((2.0*k+1.0)*x*x);
-            s += r;
-            if (fabs(r) < fabs(s)*1.0e-12) { break; }
-        }
-        tth = 2.0/(pi*x)*s;
-        t = 8.0 / x;
-        xt = x + 0.25*pi;
-        f0 = (((((0.18118e-2*t-0.91909e-2)*t+0.017033)*t-0.9394e-3)*t-0.051445)*t-0.11e-5)*t+0.7978846;
-        g0 = (((((-0.23731e-2*t+0.59842e-2)*t+0.24437e-2)*t-0.0233178)*t+0.595e-4)*t+0.1620695)*t;
-        tty = (f0*sin(xt) - g0*cos(xt))/(sqrt(x)*x);
-        tth = tth + tty;
-    }
-    return tth;
-}
-
-
-inline void ittika(double x, double *tti, double *ttk) {
+template <typename T>
+void ittika(T x, T *tti, T *ttk) {
 
     // =========================================================
     // Purpose: Integrate [I0(t)-1]/t with respect to t from 0
@@ -4477,10 +4179,10 @@ inline void ittika(double x, double *tti, double *ttk) {
     // =========================================================
 
     int k;
-    double b1, e0, r, r2, rc, rs;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    static const double c[8] = {
+    T b1, e0, r, r2, rc, rs;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    static const T c[8] = {
         1.625, 4.1328125, 1.45380859375, 6.553353881835, 3.6066157150269,
         2.3448727161884, 1.7588273098916,1.4950639538279
     };
@@ -4537,7 +4239,8 @@ inline void ittika(double x, double *tti, double *ttk) {
 }
 
 
-inline void ittjya(double x, double *ttj, double *tty) {
+template <typename T>
+void ittjya(T x, T *ttj, T *tty) {
 
     // =========================================================
     // Purpose: Integrate [1-J0(t)]/t with respect to t from 0
@@ -4548,9 +4251,9 @@ inline void ittjya(double x, double *ttj, double *tty) {
     // =========================================================
 
     int k, l;
-    double a0, bj0, bj1, by0, by1, e0, b1, g0, g1, px, qx, r, r0, r1, r2, rs, t, vt, xk;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
+    T a0, bj0, bj1, by0, by1, e0, b1, g0, g1, px, qx, r, r0, r1, r2, rs, t, vt, xk;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
 
     if (x == 0.0) {
         *ttj = 0.0;
@@ -4767,7 +4470,8 @@ L30:
 }
 
 
-inline void jynb(int n, double x, int *nm, double *bj, double *dj, double *by, double *dy) {
+template <typename T>
+void jynb(int n, T x, int *nm, T *bj, T *dj, T *by, T *dy) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x) and
@@ -4807,7 +4511,8 @@ inline void jynb(int n, double x, int *nm, double *bj, double *dj, double *by, d
 }
 
 
-inline void jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
+template <typename T>
+void jynbh(int n, int nmin, T x, int *nm, T *bj, T *by) {
 
     // =====================================================
     // Purpose: Compute Bessel functions Jn(x), Yn(x)
@@ -4823,16 +4528,16 @@ inline void jynbh(int n, int nmin, double x, int *nm, double *bj, double *by) {
     // =====================================================
 
     int k, m, ky;
-    double pi = 3.141592653589793;
-    double r2p = 0.63661977236758;
-    double bs, s0, su, sv, f2, f1, f;
-    double bj0, bj1, ec, by0, by1, bjk, byk;
-    double p0, q0, cu, t1, p1, q1, t2;
+    T pi = 3.141592653589793;
+    T r2p = 0.63661977236758;
+    T bs, s0, su, sv, f2, f1, f;
+    T bj0, bj1, ec, by0, by1, bjk, byk;
+    T p0, q0, cu, t1, p1, q1, t2;
 
-    double a[4] = { -0.0703125, 0.112152099609375, -0.5725014209747314, 0.6074042001273483e+01 };
-    double b[4] = { 0.0732421875, -0.2271080017089844, 0.1727727502584457e+01, -0.2438052969955606e+02 };
-    double a1[4] = { 0.1171875, -0.144195556640625, 0.6765925884246826, -0.6883914268109947e+01 };
-    double b1[4] = { -0.1025390625, 0.2775764465332031, -0.1993531733751297e+01, 0.2724882731126854e+02 };
+    T a[4] = { -0.0703125, 0.112152099609375, -0.5725014209747314, 0.6074042001273483e+01 };
+    T b[4] = { 0.0732421875, -0.2271080017089844, 0.1727727502584457e+01, -0.2438052969955606e+02 };
+    T a1[4] = { 0.1171875, -0.144195556640625, 0.6765925884246826, -0.6883914268109947e+01 };
+    T b1[4] = { -0.1025390625, 0.2775764465332031, -0.1993531733751297e+01, 0.2724882731126854e+02 };
 
     *nm = n;
     if (x < 1.0e-100) {
@@ -5132,8 +4837,9 @@ L25:
 }
 
 
-inline void klvna(double x, double *ber, double *bei, double *ger, double *gei,
-                   double *der, double *dei, double *her, double *hei) {
+template <typename T>
+ void klvna(T x, T *ber, T *bei, T *ger, T *gei,
+                   T *der, T *dei, T *her, T *hei) {
 
     // ======================================================
     // Purpose: Compute Kelvin functions ber x, bei x, ker x
@@ -5150,11 +4856,11 @@ inline void klvna(double x, double *ber, double *bei, double *ger, double *gei,
     // ================================================
 
     int k, km, m;
-    double gs, r, x2, x4, pp1, pn1, qp1, qn1, r1, pp0, pn0, qp0, qn0, r0,\
+    T gs, r, x2, x4, pp1, pn1, qp1, qn1, r1, pp0, pn0, qp0, qn0, r0,\
            fac, xt, cs, ss, xd, xe1, xe2, xc1, xc2, cp0, cn0, sp0, sn0, rc, rs;
-    const double pi = 3.141592653589793;
-    const double el = 0.5772156649015329;
-    const double eps = 1.0e-15;
+    const T pi = 3.141592653589793;
+    const T el = 0.5772156649015329;
+    const T eps = 1.0e-15;
 
     if (x == 0.0) {
         *ber = 1.0;
@@ -5365,7 +5071,8 @@ inline void klvnzo(int nt, int kd, double *zo) {
 }
 
 
-inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *dn, double *ck1, double *ck2) {
+template <typename T>
+inline void kmn(int m, int n, T c, T cv, int kd, T *df, T *dn, T *ck1, T *ck2) {
 
     // ===================================================
     // Purpose: Compute the expansion coefficients of the
@@ -5374,16 +5081,16 @@ inline void kmn(int m, int n, double c, double cv, int kd, double *df, double *d
     // ===================================================
 
     int nm, nn, ip, k, i, l, j;
-    double cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
+    T cs, gk0, gk1, gk2, gk3, t, r, dnp, su0, sw, r1, r2, r3, sa0, r4, r5, g0, sb0;
     nm = 25 + (int)(0.5 * (n - m) + c);
     nn = nm + m;
-    double *u =  (double *) malloc((nn + 4) * sizeof(double));
-    double *v =  (double *) malloc((nn + 4) * sizeof(double));
-    double *w =  (double *) malloc((nn + 4) * sizeof(double));
-    double *tp = (double *) malloc((nn + 4) * sizeof(double));
-    double *rk = (double *) malloc((nn + 4) * sizeof(double));
+    T *u =  (T *) malloc((nn + 4) * sizeof(T));
+    T *v =  (T *) malloc((nn + 4) * sizeof(T));
+    T *w =  (T *) malloc((nn + 4) * sizeof(T));
+    T *tp = (T *) malloc((nn + 4) * sizeof(T));
+    T *rk = (T *) malloc((nn + 4) * sizeof(T));
 
-    const double eps = 1.0e-14;
+    const T eps = 1.0e-14;
 
     cs = c * c * kd;
     *ck1 = 0.0;
@@ -5837,7 +5544,8 @@ inline void lpmn(int m, int n, double x, double *pm, double *pd) {
 }
 
 
-inline void lpmns(int m, int n, double x, double* pm, double* pd) {
+template <typename T>
+void lpmns(int m, int n, T x, T* pm, T* pd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Pmn(x)
@@ -5850,7 +5558,7 @@ inline void lpmns(int m, int n, double x, double* pm, double* pd) {
     // ========================================================
 
     int k;
-    double coef, x0, pm0, pm1, pm2, pmk;
+    T coef, x0, pm0, pm1, pm2, pmk;
     for (k = 0; k <= n; k++) {
         pm[k] = 0.0;
         pd[k] = 0.0;
@@ -6310,7 +6018,8 @@ inline void lqnb(int n, double x, double* qn, double* qd) {
 }
 
 
-inline void lqmns(int m, int n, double x, double *qm, double *qd) {
+template <typename T>
+inline void lqmns(int m, int n, T x, T *qm, T *qd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Qmn(x)
@@ -6323,7 +6032,7 @@ inline void lqmns(int m, int n, double x, double *qm, double *qd) {
     // ========================================================
 
     int l, ls, k, km;
-    double xq, q0, q00, q10, q01, q11, qf0, qf1, qm0, qm1, qg0, qg1, qh0, qh1,\
+    T xq, q0, q00, q10, q01, q11, qf0, qf1, qm0, qm1, qg0, qg1, qh0, qh1,\
            qh2, qmk, q0l, q1l, qf2, val;
 
     val = 0.0;
@@ -6534,7 +6243,8 @@ inline int msta2(double x, int n, int mp) {
 }
 
 
-inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
+template <typename T>
+void mtu0(int kf, int m, T q, T x, T *csf, T *csd) {
 
     // ===============================================================
     // Purpose: Compute Mathieu functions cem(x,q) and sem(x,q)
@@ -6553,9 +6263,9 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
     // ===============================================================
 
     int kd = 0, km = 0, ic, k;
-    double a, qm, xr;
-    const double eps = 1.0e-14;
-    const double rd = 1.74532925199433e-2;
+    T a, qm, xr;
+    const T eps = 1.0e-14;
+    const T rd = 1.74532925199433e-2;
 
     if (kf == 1 && m == 2 * (int)(m / 2)) { kd = 1; }
     if (kf == 1 && m != 2 * (int)(m / 2)) { kd = 2; }
@@ -6578,7 +6288,7 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
         return;
     }
 
-    double *fg = (double *) calloc(251, sizeof(double));
+    T *fg = (T *) calloc(251, sizeof(T));
     fcoef(kd, m, q, a, fg);
 
     ic = (int)(m / 2) + 1;
@@ -6619,7 +6329,8 @@ inline void mtu0(int kf, int m, double q, double x, double *csf, double *csd) {
 }
 
 
-inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double *d1r, double *f2r, double *d2r) {
+template <typename T>
+void mtu12(int kf, int kc, int m, T q, T x, T *f1r, T *d1r, T *f2r, T *d2r) {
 
     // ==============================================================
     // Purpose: Compute modified Mathieu functions of the first and
@@ -6648,8 +6359,8 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
     //          derivatives
     // ==============================================================
 
-    double eps = 1.0e-14;
-    double a, qm, c1, c2, u1, u2, w1, w2;
+    T eps = 1.0e-14;
+    T a, qm, c1, c2, u1, u2, w1, w2;
     int kd, km, ic, k, nm = 0;
 
     if ((kf == 1) && (m % 2 == 0)) { kd = 1; }
@@ -6675,15 +6386,15 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
     }
 
     // allocate memory after a possible NAN return
-    double *fg = (double *) calloc(251, sizeof(double));
-    double *bj1 = (double *) calloc(252, sizeof(double));
-    double *dj1 = (double *) calloc(252, sizeof(double));
-    double *bj2 = (double *) calloc(252, sizeof(double));
-    double *dj2 = (double *) calloc(252, sizeof(double));
-    double *by1 = (double *) calloc(252, sizeof(double));
-    double *dy1 = (double *) calloc(252, sizeof(double));
-    double *by2 = (double *) calloc(252, sizeof(double));
-    double *dy2 = (double *) calloc(252, sizeof(double));
+    T *fg = (T *) calloc(251, sizeof(T));
+    T *bj1 = (T *) calloc(252, sizeof(T));
+    T *dj1 = (T *) calloc(252, sizeof(T));
+    T *bj2 = (T *) calloc(252, sizeof(T));
+    T *dj2 = (T *) calloc(252, sizeof(T));
+    T *by1 = (T *) calloc(252, sizeof(T));
+    T *dy1 = (T *) calloc(252, sizeof(T));
+    T *by2 = (T *) calloc(252, sizeof(T));
+    T *dy2 = (T *) calloc(252, sizeof(T));
 
     fcoef(kd, m, q, a, fg);
     ic = (int)(m / 2) + 1;
@@ -6778,7 +6489,8 @@ inline void mtu12(int kf, int kc, int m, double q, double x, double *f1r, double
 }
 
 
-inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double *pdd) {
+template <typename T>
+void pbdv(T x, T v, T *dv, T *dp, T *pdf, T *pdd) {
 
     // ====================================================
     // Purpose: Compute parabolic cylinder functions Dv(x)
@@ -6797,7 +6509,7 @@ inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double
     // ====================================================
 
     int ja, k, l, m, nk, nv, na;
-    double xa, vh, ep, f, f0, f1, v0, v1, v2, pd, pd0, pd1, s0;
+    T xa, vh, ep, f, f0, f1, v0, v1, v2, pd, pd0, pd1, s0;
 
     xa = fabs(x);
     vh = v;
@@ -6905,7 +6617,8 @@ inline void pbdv(double x, double v, double *dv, double *dp, double *pdf, double
 }
 
 
-inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double *pvd) {
+template <typename T>
+inline void pbvv(T x, T v, T *vv, T *vp, T *pvf, T *pvd) {
 
     // ===================================================
     // Purpose: Compute parabolic cylinder functions Vv(x)
@@ -6924,9 +6637,9 @@ inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double
     // ===================================================
 
     int ja, k, kv, l, m, na, nv;
-    double f, f0, f1, pv0, q2p, qe, s0, v0, v1, v2, vh, xa;
+    T f, f0, f1, pv0, q2p, qe, s0, v0, v1, v2, vh, xa;
 
-    const double pi = 3.141592653589793;
+    const T pi = 3.141592653589793;
 
     xa = fabs(x);
     vh = v;
@@ -7039,7 +6752,8 @@ inline void pbvv(double x, double v, double *vv, double *vp, double *pvf, double
 }
 
 
-inline void pbwa(double a, double x, double *w1f, double *w1d, double *w2f, double *w2d) {
+template <typename T>
+void pbwa(T a, T x, T *w1f, T *w1d, T *w2f, T *w2d) {
 
     // ======================================================
     // Purpose: Compute parabolic cylinder functions W(a,±x)
@@ -7055,19 +6769,19 @@ inline void pbwa(double a, double x, double *w1f, double *w1d, double *w2f, doub
     // ======================================================
 
     int k, L1, L2;
-    double d[80], d1, d2, dl, f1, f2, g1, g2, h[100], h0, h1, hl, r, r1,\
+    T d[80], d1, d2, dl, f1, f2, g1, g2, h[100], h0, h1, hl, r, r1,\
            y1d, y2d, y1f, y2f;
-    std::complex<double> ug, vg;
-    const double eps = 1e-15;
-    const double p0 = 0.59460355750136;
+    std::complex<T> ug, vg;
+    const T eps = 1e-15;
+    const T p0 = 0.59460355750136;
 
     if (a == 0.0) {
         g1 = 3.625609908222;
         g2 = 1.225416702465;
     } else {
-        ug = cgama(std::complex<double>(0.25, 0.5*a), 1);
+        ug = cgama(std::complex<T>(0.25, 0.5*a), 1);
         g1 = std::abs(ug);
-        vg = cgama(std::complex<double>(0.75, 0.5*a), 1);
+        vg = cgama(std::complex<T>(0.75, 0.5*a), 1);
         g2 = std::abs(vg);
     }
     f1 = sqrt(g1/g2);
@@ -7190,10 +6904,11 @@ inline double psi_spec(double x) {
 }
 
 
-inline void qstar(int m, int n, double c, double ck1, double *ck, double *qs, double *qt) {
+template <typename T>
+void qstar(int m, int n, T c, T ck1, T *ck, T *qs, T *qt) {
     int ip, i, l, k;
-    double r, s, sk, qs0;
-    double *ap = (double *) malloc(200*sizeof(double));
+    T r, s, sk, qs0;
+    T *ap = (T *) malloc(200*sizeof(T));
     ip = ((n - m) == 2 * ((n - m) / 2) ? 0 : 1);
     r = 1.0 / pow(ck[0], 2);
     ap[0] = r;
@@ -7368,7 +7083,8 @@ inline double refine(int kd, int m, double q, double a) {
 }
 
 
-inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r1f, double *r1d) {
+template <typename T>
+inline void rmn1(int m, int n, T c, T x, int kd, T *df, T *r1f, T *r1d) {
 
     // =======================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7380,13 +7096,13 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
     //          functions of the first kind
     // =======================================================
 
-    double a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
+    T a0, b0, cx, r, r0, r1, r2, r3, reg, sa0, suc, sud, sum, sw, sw1;
     int ip, j, k, l, lg, nm, nm1, nm2, np;
 
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *dj = (double *) calloc(252, sizeof(double));
-    double *sj = (double *) calloc(252, sizeof(double));
-    const double eps = 1.0e-14;
+    T *ck = (T *) calloc(200, sizeof(T));
+    T *dj = (T *) calloc(252, sizeof(T));
+    T *sj = (T *) calloc(252, sizeof(T));
+    const T eps = 1.0e-14;
 
     nm1 = (int)((n - m) / 2);
     ip = (n - m == 2 * nm1 ? 0 : 1);
@@ -7448,7 +7164,7 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
 
     cx = c * x;
     nm2 = 2 * nm + m;
-    sphj(nm2, cx, &nm2, sj, dj);
+    sphj(static_cast<T>(nm2), cx, &nm2, sj, dj);
 
     a0 = pow(1.0 - kd / (x * x), 0.5 * m) / suc;
     *r1f = 0.0;
@@ -7500,7 +7216,8 @@ inline void rmn1(int m, int n, double c, double x, int kd, double *df, double *r
 }
 
 
-inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *R2f, double *R2d, int *Id) {
+template <typename T>
+inline void rmn2l(int m, int n, T c, T x, int Kd, T *Df, T *R2f, T *R2d, int *Id) {
 
     // ========================================================
     // Purpose: Compute prolate and oblate spheroidal radial
@@ -7513,10 +7230,10 @@ inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *
 
 
     int ip, nm1, nm, nm2, np, j, k, l, lg, id1, id2;
-    double a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
-    const double eps = 1.0e-14;
-    double *sy = (double *) calloc(252, sizeof(double));
-    double *dy = (double *) calloc(252, sizeof(double));
+    T a0, b0, cx, reg, r0, r, suc, sud, sw, eps1, eps2;
+    const T eps = 1.0e-14;
+    T *sy = (T *) calloc(252, sizeof(T));
+    T *dy = (T *) calloc(252, sizeof(T));
 
     ip = 1;
     nm1 = (int)((n - m) / 2);
@@ -7610,7 +7327,8 @@ inline void rmn2l(int m, int n, double c, double x, int Kd, double *Df, double *
 }
 
 
-inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+template <typename T>
+inline void rmn2so(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // =============================================================
     // Purpose: Compute oblate radial functions of the second kind
@@ -7627,18 +7345,18 @@ inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *
     // =============================================================
 
     int nm, ip, j;
-    double ck1, ck2, r1f, r1d, qs, qt, sum, sw, gf, gd, h0;
-    const double eps = 1.0e-14;
-    const double pi = 3.141592653589793;
+    T ck1, ck2, r1f, r1d, qs, qt, sum, sw, gf, gd, h0;
+    const T eps = 1.0e-14;
+    const T pi = 3.141592653589793;
 
     if (fabs(df[0]) <= 1.0e-280) {
         *r2f = 1.0e+300;
         *r2d = 1.0e+300;
         return;
     }
-    double *bk = (double *) calloc(200, sizeof(double));
-    double *ck = (double *) calloc(200, sizeof(double));
-    double *dn = (double *) calloc(200, sizeof(double));
+    T *bk = (T *) calloc(200, sizeof(double));
+    T *ck = (T *) calloc(200, sizeof(double));
+    T *dn = (T *) calloc(200, sizeof(double));
 
     nm = 25 + (int)((n - m) / 2 + c);
     ip = (n - m) % 2;
@@ -7678,7 +7396,8 @@ inline void rmn2so(int m, int n, double c, double x, double cv, int kd, double *
 }
 
 
-inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *df, double *r2f, double *r2d) {
+template <typename T>
+void rmn2sp(int m, int n, T c, T x, T cv, int kd, T *df, T *r2f, T *r2d) {
 
     // ======================================================
     // Purpose: Compute prolate spheroidal radial function
@@ -7693,15 +7412,15 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
     // ======================================================
 
     int k, j, j1, j2, l1, ki, nm3, sum, sdm;
-    double ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
+    T ip, nm1, nm, nm2, su0, sw, sd0, su1, sd1, sd2, ga, r1, r2, r3,\
            sf, gb, spl, gc, sd, r4, spd1, spd2, su2, ck1, ck2;
 
-    double *pm = (double *) malloc(252*sizeof(double));
-    double *pd = (double *) malloc(252*sizeof(double));
-    double *qm = (double *) malloc(252*sizeof(double));
-    double *qd = (double *) malloc(252*sizeof(double));
-    double *dn = (double *) malloc(201*sizeof(double));
-    const double eps = 1.0e-14;
+    T *pm = (T *) malloc(252*sizeof(T));
+    T *pd = (T *) malloc(252*sizeof(T));
+    T *qm = (T *) malloc(252*sizeof(T));
+    T *qd = (T *) malloc(252*sizeof(T));
+    T *dn = (T *) malloc(201*sizeof(T));
+    const T eps = 1.0e-14;
 
     nm1 = (n - m) / 2;
     nm = 25.0 + nm1 + c;
@@ -7803,7 +7522,8 @@ inline void rmn2sp(int m, int n, double c, double x, double cv, int kd, double *
 }
 
 
-inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+template <typename T>
+inline void rswfp(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==============================================================
     // Purpose: Compute prolate spheriodal radial functions of the
@@ -7833,7 +7553,7 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
     //          of the second kind for a small argument
     // ==============================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    T *df = (T *) malloc(200*sizeof(double));
     int id, kd = 1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7852,7 +7572,8 @@ inline void rswfp(int m, int n, double c, double x, double cv, int kf, double *r
 }
 
 
-inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r1f, double *r1d, double *r2f, double *r2d) {
+template <typename T>
+void rswfo(int m, int n, T c, T x, T cv, int kf, T *r1f, T *r1d, T *r2f, T *r2d) {
 
     // ==========================================================
     // Purpose: Compute oblate radial functions of the first
@@ -7882,7 +7603,7 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
     //          the second kind for a small argument
     // ==========================================================
 
-    double *df = (double *) malloc(200*sizeof(double));
+    T *df = (T *) malloc(200*sizeof(T));
     int id, kd = -1;
 
     sdmn(m, n, c, cv, kd, df);
@@ -7904,7 +7625,8 @@ inline void rswfo(int m, int n, double c, double x, double cv, int kf, double *r
 }
 
 
-inline void sckb(int m, int n, double c, double *df, double *ck) {
+template <typename T>
+void sckb(int m, int n, T c, T *df, T *ck) {
 
     // ======================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7919,7 +7641,7 @@ inline void sckb(int m, int n, double c, double *df, double *ck) {
     // ======================================================
 
     int i, ip, i1, i2, k, nm;
-    double reg, fac, sw, r, d1, d2, d3, sum, r1;
+    T reg, fac, sw, r, d1, d2, d3, sum, r1;
 
     if (c <= 1.0e-10) {
         c = 1.0e-10;
@@ -7959,7 +7681,8 @@ inline void sckb(int m, int n, double c, double *df, double *ck) {
 }
 
 
-inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
+template <typename T>
+void sdmn(int m, int n, T c, T cv, int kd, T *df) {
 
     // =====================================================
     // Purpose: Compute the expansion coefficients of the
@@ -7977,7 +7700,7 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
     // =====================================================
 
     int nm, ip, k, kb;
-    double cs, dk0, dk1, dk2, d2k, f, fs, f1, f0, fl, f2, su1,\
+    T cs, dk0, dk1, dk2, d2k, f, fs, f1, f0, fl, f2, su1,\
            su2, sw, r1, r3, r4, s0;
 
     nm = 25 + (int)(0.5 * (n - m) + c);
@@ -7990,9 +7713,9 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
         return;
     }
 
-    double *a = (double *) calloc(nm + 2, sizeof(double));
-    double *d = (double *) calloc(nm + 2, sizeof(double));
-    double *g = (double *) calloc(nm + 2, sizeof(double));
+    T *a = (T *) calloc(nm + 2, sizeof(double));
+    T *d = (T *) calloc(nm + 2, sizeof(double));
+    T *g = (T *) calloc(nm + 2, sizeof(double));
     cs = c*c*kd;
     ip = (n - m) % 2;
 
@@ -8114,7 +7837,8 @@ inline void sdmn(int m, int n, double c, double cv, int kd, double *df) {
 }
 
 
-inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
+template <typename T>
+void segv(int m, int n, T c, int kd, T *cv, T *eg) {
 
     // =========================================================
     // Purpose: Compute the characteristic values of spheroidal
@@ -8131,7 +7855,7 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
 
 
     int i, icm, j, k, k1, l, nm, nm1;
-    double cs, dk0, dk1, dk2, d2k, s, t, t1, x1, xa, xb;
+    T cs, dk0, dk1, dk2, d2k, s, t, t1, x1, xa, xb;
     // eg[<=200] is supplied by the caller
 
     if (c < 1e-10) {
@@ -8143,14 +7867,14 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
     }
 
     // TODO: Following array sizes should be decided dynamically
-    double *a = (double *) calloc(300, sizeof(double));
-    double *b = (double *) calloc(100, sizeof(double));
-    double *cv0 = (double *) calloc(100, sizeof(double));
-    double *d = (double *) calloc(300, sizeof(double));
-    double *e = (double *) calloc(300, sizeof(double));
-    double *f = (double *) calloc(300, sizeof(double));
-    double *g = (double *) calloc(300, sizeof(double));
-    double *h = (double *) calloc(100, sizeof(double));
+    T *a = (T *) calloc(300, sizeof(T));
+    T *b = (T *) calloc(100, sizeof(T));
+    T *cv0 = (T *) calloc(100, sizeof(T));
+    T *d = (T *) calloc(300, sizeof(T));
+    T *e = (T *) calloc(300, sizeof(T));
+    T *f = (T *) calloc(300, sizeof(T));
+    T *g = (T *) calloc(300, sizeof(T));
+    T *h = (T *) calloc(100, sizeof(T));
     icm = (n-m+2)/2;
     nm = 10 + (int)(0.5*(n-m)+c);
     cs = c*c*kd;
@@ -8231,7 +7955,8 @@ inline void segv(int m, int n, double c, int kd, double *cv, double *eg) {
 }
 
 
-inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
+template <typename T>
+void sphj(T x, int n, int *nm, T *sj, T *dj) {
 
     //  MODIFIED to ALLOW N=0 CASE (ALSO IN SPHY)
     //
@@ -8249,7 +7974,7 @@ inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
     //  =======================================================
 
     int k, m;
-    double cs, f, f0, f1, sa, sb;
+    T cs, f, f0, f1, sa, sb;
 
     *nm = n;
     if (fabs(x) < 1e-100) {
@@ -8299,7 +8024,8 @@ inline void sphj(double x, int n, int *nm, double *sj, double *dj) {
 }
 
 
-inline void sphy(double x, int n, int *nm, double *sy, double *dy) {
+template <typename T>
+inline void sphy(T x, int n, int *nm, T *sy, T *dy) {
 
     // ======================================================
     // Purpose: Compute spherical Bessel functions yn(x) and
@@ -8311,7 +8037,7 @@ inline void sphy(double x, int n, int *nm, double *sy, double *dy) {
     //          NM --- Highest order computed
     // ======================================================
 
-    double f, f0, f1;
+    T f, f0, f1;
 
     if (x < 1.0e-60) {
         for (int k = 0; k <= n; ++k) {

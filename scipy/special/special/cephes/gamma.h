@@ -242,8 +242,9 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
-        SPECFUN_HOST_DEVICE double lgam_sgn(double x, int *sign) {
-            double p, q, u, w, z;
+        template <typename T>
+        SPECFUN_HOST_DEVICE T lgam_sgn(T x, int *sign) {
+            T p, q, u, w, z;
             int i;
 
             *sign = 1;
@@ -259,7 +260,7 @@ namespace cephes {
                 if (p == q) {
                 lgsing:
                     set_error("lgam", SF_ERROR_SINGULAR, NULL);
-                    return (std::numeric_limits<double>::infinity());
+                    return (std::numeric_limits<T>::infinity());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -334,7 +335,8 @@ namespace cephes {
     } // namespace detail
 
     /* Logarithm of Gamma function */
-    SPECFUN_HOST_DEVICE double lgam(double x) {
+    template <typename T>
+    SPECFUN_HOST_DEVICE T lgam(T x) {
         int sign;
         return detail::lgam_sgn(x, &sign);
     }
