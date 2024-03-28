@@ -894,11 +894,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def _moment_outputs(kwds):
-    moment = np.atleast_1d(kwds.get('order', 1))
-    if moment.size == 0:
+    order = np.atleast_1d(kwds.get('order', 1))
+    if order.size == 0:
         raise ValueError("'order' must be a scalar or a non-empty 1D "
                          "list/array.")
-    return len(moment)
+    return len(order)
 
 
 def _moment_result_object(*args):
@@ -1012,6 +1012,12 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         a = xp.asarray(a)
 
     order = xp.asarray(order, dtype=a.dtype)
+    if xp_size(order) == 0:
+        # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
+        # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
+        # is a non-NumPy array, so we need to check again. When the decoratpor is
+        # updated for array API compatibility, we can remove this second check.
+        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
     if xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
     order = order[()] if order.ndim == 0 else order

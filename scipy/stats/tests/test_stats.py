@@ -3171,7 +3171,6 @@ class TestMoments:
     scalar_testcase = 4.
     np.random.seed(1234)
     testcase_moment_accuracy = np.random.rand(42)
-    testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
         expect = np.asarray(expect)
@@ -3282,27 +3281,63 @@ class TestMoments:
                          order=order)
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
-    def test_moment_propagate_nan(self):
+    @array_api_compatible
+    def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = np.arange(8).reshape(2, -1).astype(float)
+        a = xp.asarray(a)
         a[1, 0] = np.nan
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
+        xp_assert_close(mm, xp.asarray([1.25, np.nan], dtype=xp.float64), atol=1e-15)
 
-    def test_moment_empty_order(self):
+    @array_api_compatible
+    def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
         with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
                                              r" non-empty 1D list/array."):
-            stats.moment([1, 2, 3, 4], order=[])
+            stats.moment(xp.asarray([1, 2, 3, 4]), order=[])
 
-    def test_rename_moment_order(self):
+    @array_api_compatible
+    def test_rename_moment_order(self, xp):
         # Parameter 'order' was formerly known as 'moment'. The old name
         # has not been deprecated, so it must continue to work.
-        x = np.arange(10)
+        x = xp.arange(10)
         res = stats.moment(x, moment=3)
         ref = stats.moment(x, order=3)
-        np.testing.assert_equal(res, ref)
+        xp_assert_equal(res, ref)
+
+    def test_moment_accuracy(self):
+        # 'moment' must have a small enough error compared to the slower
+        #  but very accurate numpy.power() implementation.
+        tc_no_mean = self.testcase_moment_accuracy - \
+                     np.mean(self.testcase_moment_accuracy)
+        assert_allclose(np.power(tc_no_mean, 42).mean(),
+                        stats.moment(self.testcase_moment_accuracy, 42))
+
+    @array_api_compatible
+    @pytest.mark.parametrize('order', [0, 1, 2, 3])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    @pytest.mark.parametrize('center', [None, 0])
+    def test_moment_array_api(self, xp, order, axis, center):
+        rng = np.random.default_rng(34823589259425)
+        x = rng.random(size=(5, 6, 7))
+        res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
+        ref = xp.asarray(_moment(x, order, axis, mean=center))
+        xp_assert_close(res, ref)
+
+
+class TestSkewKurtosis:
+    scalar_testcase = 4.
+    testcase = [1., 2., 3., 4.]
+    testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
+
+    def test_empty_1d(self):
+        message = r"Mean of empty slice\.|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.skew([])
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.kurtosis([])
 
     def test_skewness(self):
         # Scalar test case
@@ -3351,6 +3386,16 @@ class TestMoments:
             # similarly, from gh-11086:
             assert np.isnan(stats.skew([14.3]*7))
             assert np.isnan(stats.skew(1 + np.arange(-3, 4)*1e-16))
+
+    def test_precision_loss_gh15554(self):
+        # gh-15554 was one of several issues that have reported problems with
+        # constant or near-constant input. We can't always fix these, but
+        # make sure there's a warning.
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            rng = np.random.default_rng(34095309370)
+            a = rng.random(size=(100, 10))
+            a[:, 0] = 1.01
+            stats.skew(a)[0]
 
     def test_kurtosis(self):
         # Scalar test case
@@ -3406,42 +3451,6 @@ class TestMoments:
             assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
             assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
-
-    def test_moment_accuracy(self):
-        # 'moment' must have a small enough error compared to the slower
-        #  but very accurate numpy.power() implementation.
-        tc_no_mean = self.testcase_moment_accuracy - \
-                     np.mean(self.testcase_moment_accuracy)
-        assert_allclose(np.power(tc_no_mean, 42).mean(),
-                        stats.moment(self.testcase_moment_accuracy, 42))
-
-    def test_precision_loss_gh15554(self):
-        # gh-15554 was one of several issues that have reported problems with
-        # constant or near-constant input. We can't always fix these, but
-        # make sure there's a warning.
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            rng = np.random.default_rng(34095309370)
-            a = rng.random(size=(100, 10))
-            a[:, 0] = 1.01
-            stats.skew(a)[0]
-
-    def test_empty_1d(self):
-        message = r"Mean of empty slice\.|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.skew([])
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.kurtosis([])
-
-    @array_api_compatible
-    @pytest.mark.parametrize('order', [0, 1, 2, 3])
-    @pytest.mark.parametrize('axis', [-1, 0, 1])
-    @pytest.mark.parametrize('center', [None, 0])
-    def test_moment_array_api(self, xp, order, axis, center):
-        rng = np.random.default_rng(34823589259425)
-        x = rng.random(size=(5, 6, 7))
-        res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
-        ref = xp.asarray(_moment(x, order, axis, mean=center))
-        xp_assert_close(res, ref)
 
 
 @hypothesis.strategies.composite
