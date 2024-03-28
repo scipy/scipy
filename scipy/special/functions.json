@@ -1284,9 +1284,7 @@
     },
     "rgamma": {
         "_special.h++": {
-            "crgamma": "D->D"
-        },
-        "cephes.h": {
+            "crgamma": "D->D",
             "rgamma": "d->d"
         }
     },
@@ -1470,7 +1468,7 @@
         }
     },
     "wright_bessel": {
-        "_wright_bessel.pxd": {
+        "_special.h++": {
             "wright_bessel_scalar": "ddd->d"
         }
     },
