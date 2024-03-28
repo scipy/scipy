@@ -136,7 +136,7 @@ build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
 test-requires = [
-    "pytest==7.4.3",
+    "pytest",
     "pytest-cov",
     "pytest-xdist",
     "mpmath",
