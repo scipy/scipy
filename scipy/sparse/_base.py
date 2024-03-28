@@ -948,13 +948,12 @@ class _spbase:
 
         Returns
         -------
-        arr : numpy.matrix, 2-D
-            A NumPy matrix object with the same shape and containing
-            the same data represented by the sparse array/matrix, with the
-            requested memory order. If `out` was passed and was an
-            array (rather than a `numpy.matrix`), it will be filled
-            with the appropriate values and returned wrapped in a
-            `numpy.matrix` object that shares the same memory.
+        arr : ndarray, 2-D
+            An array with the same shape and containing the same
+            data represented by the sparse array/matrix, with the requested
+            memory order. If `out` was passed, the same object is
+            returned after being modified in-place to contain the
+            appropriate values.
         """
         return self._ascontainer(self.toarray(order=order, out=out))
 
