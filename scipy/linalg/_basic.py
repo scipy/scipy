@@ -1523,7 +1523,7 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    s, u = _decomp.eigh(a, lower=lower, check_finite=False)
+    s, u = _decomp.eigh(a, lower=lower, check_finite=False, driver='ev')
     t = u.dtype.char.lower()
     maxS = np.max(np.abs(s))
 

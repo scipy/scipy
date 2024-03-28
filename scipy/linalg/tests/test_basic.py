@@ -1493,6 +1493,14 @@ class TestPinvSymmetric:
         a_pinv = pinvh(a.tolist())
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
 
+    def test_zero_eigenvalue(self):
+        # https://github.com/scipy/scipy/issues/12515
+        # the SYEVR eigh driver may give the zero eigenvalue > eps
+        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        p = pinvh(a)
+        assert_allclose(p @ a @ p, p, atol=1e-15)
+        assert_allclose(a @ p @ a, a, atol=1e-15)
+
     def test_atol_rtol(self):
         n = 12
         # get a random ortho matrix for shuffling
