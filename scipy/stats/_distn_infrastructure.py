@@ -1047,8 +1047,8 @@ class rv_generic:
         discrete = kwds.pop('discrete', None)
         rndm = kwds.pop('random_state', None)
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
-        cond = self._argcheck(*args) and (scale >= 0)
-        if not cond:
+        cond = logical_and(self._argcheck(*args), (scale >= 0))
+        if not cond.all():
             message = ("Domain error in arguments. The `scale` parameter must "
                        "be positive for all distributions, and many "
                        "distributions have restrictions on shape parameters. "
@@ -1056,7 +1056,7 @@ class rv_generic:
                        "documentation for details.")
             raise ValueError(message)
 
-        if not scale: 
+        if not scale.any():
             return loc*ones(size, 'd')
 
         # extra gymnastics needed for a custom random_state
