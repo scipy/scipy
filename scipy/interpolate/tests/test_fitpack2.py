@@ -13,6 +13,7 @@ from scipy.interpolate._fitpack2 import (UnivariateSpline,
         LSQSphereBivariateSpline, SmoothSphereBivariateSpline,
         RectSphereBivariateSpline)
 
+from scipy.interpolate import make_splrep
 
 class TestUnivariateSpline:
     def test_linear_constant(self):
@@ -23,6 +24,10 @@ class TestUnivariateSpline:
         assert_array_almost_equal(lut.get_coeffs(),[3,3])
         assert_almost_equal(lut.get_residual(),0.0)
         assert_array_almost_equal(lut([1,1.5,2]),[3,3,3])
+
+        spl = make_splrep(x, y, k=1, s=len(x))
+        assert_allclose(spl.t[1:-1], lut.get_knots(), atol=1e-15)
+        assert_allclose(spl.c, lut.get_coeffs(), atol=1e-15)
 
     def test_preserve_shape(self):
         x = [1, 2, 3]
