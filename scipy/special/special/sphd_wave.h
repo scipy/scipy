@@ -102,7 +102,7 @@ T oblate_aswfa_nocv(T m, T n, T c, T x, T *s1d) {
 }
 
 template <typename T>
-inline void prolate_aswfa(T m, T n, T c, T cv, T x, T *s1f, T *s1d) {
+void prolate_aswfa(T m, T n, T c, T cv, T x, T *s1f, T *s1d) {
     if ((x >= 1) || (x <= -1) || (m < 0) || (n < m) || (m != floor(m)) || (n != floor(n))) {
         set_error("prolate_aswfa", SF_ERROR_DOMAIN, NULL);
         *s1f = std::numeric_limits<T>::quiet_NaN();
@@ -278,7 +278,7 @@ void oblate_radial2_nocv(T m, T n, T c, T x, T *r2f, T *r2d) {
 }
 
 template <typename T>
-inline void oblate_radial1(T m, T n, T c, T cv, T x, T *r1f, T *r1d) {
+void oblate_radial1(T m, T n, T c, T cv, T x, T *r1f, T *r1d) {
     int kf = 1;
     T r2f = 0.0, r2d = 0.0;
 
@@ -292,7 +292,7 @@ inline void oblate_radial1(T m, T n, T c, T cv, T x, T *r1f, T *r1d) {
 }
 
 template <typename T>
-inline void oblate_radial2(T m, T n, T c, T cv, T x, T *r2f, T *r2d) {
+void oblate_radial2(T m, T n, T c, T cv, T x, T *r2f, T *r2d) {
     int kf = 2;
     T r1f = 0.0, r1d = 0.0;
 

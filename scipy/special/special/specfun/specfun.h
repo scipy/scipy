@@ -585,7 +585,7 @@ inline void bjndd(double x, int n, double *bj, double *dj, double *fj) {
 
 
 template <typename T>
-inline void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
+void cbk(int m, int n, T c, T cv, T qt, T *ck, T *bk) {
     const T eps = 1.0e-14;
 
     int i, i1, ip, j, k, n2, nm;
@@ -4026,7 +4026,7 @@ void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
 
 
 template <typename T>
-inline void itika(T x, T *ti, T *tk) {
+void itika(T x, T *ti, T *tk) {
 
     // =======================================================
     // Purpose: Integrate modified Bessel functions I0(t) and

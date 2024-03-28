@@ -496,7 +496,7 @@ T sem_cva(T m, T q) {
 
 /* Mathieu functions */
 template <typename T>
-inline void cem(T m, T q, T x, T *csf, T *csd) {
+void cem(T m, T q, T x, T *csf, T *csd) {
     int int_m, kf = 1, sgn;
     T f = 0.0, d = 0.0;
     if ((m < 0) || (m != floor(m))) {
