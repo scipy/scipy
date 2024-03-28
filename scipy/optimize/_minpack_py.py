@@ -155,6 +155,16 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     array([ True,  True])
 
     """
+    def _wrapped_func(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        _wrapped_func.nfev += 1
+        return func(*fargs)
+
+    _wrapped_func.nfev = 0
+
     options = {'col_deriv': col_deriv,
                'xtol': xtol,
                'maxfev': maxfev,
@@ -163,7 +173,9 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'factor': factor,
                'diag': diag}
 
-    res = _root_hybr(func, x0, args, jac=fprime, **options)
+    res = _root_hybr(_wrapped_func, x0, args, jac=fprime, **options)
+    res.nfev = _wrapped_func.nfev
+
     if full_output:
         x = res['x']
         info = {k: res.get(k)
@@ -878,7 +890,8 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     ...     popt, pcov = curve_fit(func, xdata, ydata, method = 'trf')
     ... except RuntimeError as e:
     ...     print(e)
-    Optimal parameters not found: The maximum number of function evaluations is exceeded.
+    Optimal parameters not found: The maximum number of function evaluations is
+    exceeded.
 
     If parameter scale is roughly known beforehand, it can be defined in
     `x_scale` argument:

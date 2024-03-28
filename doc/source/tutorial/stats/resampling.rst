@@ -91,13 +91,16 @@ approximation. Also, it's easy for demons to invent questions for which
 analytical approximations (let alone exact answers) are unavailable. In
 such cases, a computational approach is the only way to go.
 
+Resampling and Monte Carlo methods tutorials
+--------------------------------------------
+
 Although it's best to use an exact approach when it's available,
 learning to use computational statistics techniques can improve the
 accuracy of `scipy.stats` features that rely on analytical
 approximations, dramatically extend your statistical analysis
 capabilities, and even improve your understanding of statistics.
 The following tutorials will help you get started with the resampling
-and Monte Carlo methods in `scipy.stats.`
+and Monte Carlo methods in `scipy.stats`.
 
 1. `Monte Carlo Hypothesis Tests <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_1.ipynb>`_
 2. `Permutation Tests <https://nbviewer.org/github/scipy/scipy-cookbook/blob/main/ipython/ResamplingAndMonteCarloMethods/resampling_tutorial_2.ipynb>`_

@@ -78,7 +78,7 @@ class TestGetSet1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of cs[cr] format is expensive",
+                "Changing the sparsity structure of .* is expensive"
             )
             A[0] = dtype(0)
             A[1] = dtype(3)
@@ -114,7 +114,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             A[np.array(6)] = dtype(4.0)  # scalar index
             A[np.array(6)] = dtype(2.0)  # overwrite with scalar index
@@ -207,7 +207,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             for C in [A, B]:
                 C[0:1] = 1
@@ -225,7 +225,7 @@ class TestSlicingAndFancy1D:
             with np.testing.suppress_warnings() as sup:
                 sup.filter(
                     sp.sparse.SparseEfficiencyWarning,
-                    "Changing the sparsity structure of cs[cr] format is expensive"
+                    "Changing the sparsity structure of .* is expensive"
                 )
                 A[idx] = 1
             B = np.zeros(shape)
@@ -239,7 +239,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             B[0] = 2
             B[1] = 0
@@ -267,7 +267,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             B[0] = 5
             B[2] = 7
@@ -289,7 +289,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             for j, a in enumerate(slices):
                 A[a] = j
@@ -450,7 +450,7 @@ class TestSlicingAndFancy1D:
             with np.testing.suppress_warnings() as sup:
                 sup.filter(
                     sp.sparse.SparseEfficiencyWarning,
-                   "Changing the sparsity structure of cs[cr] format is expensive"
+                    "Changing the sparsity structure of .* is expensive"
                 )
                 B[j] = 1
                 with check_remains_sorted(A):
@@ -468,7 +468,7 @@ class TestSlicingAndFancy1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-               "Changing the sparsity structure of cs[cr] format is expensive"
+                "Changing the sparsity structure of .* is expensive"
             )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
