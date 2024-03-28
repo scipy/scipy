@@ -64,7 +64,6 @@ const char *bei_doc = R"(
 
     )";
 
-
 const char *beip_doc = R"(
     beip(x, out=None)
 
@@ -171,7 +170,6 @@ const char *berp_doc = R"(
         https://dlmf.nist.gov/10#PT5
 
     )";
-
 
 const char *exp1_doc = R"(
     exp1(z, out=None)
@@ -339,7 +337,6 @@ const char *expi_doc = R"(
     (-0.21938393439552062-0j)
 
     )";
-
 
 const char *gammaln_doc = R"(
     gammaln(x, out=None)
