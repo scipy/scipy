@@ -15,7 +15,10 @@ from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
+xp_skip_reason = ('Test involves masked and/or object arrays, '
+                  'which are not allowed when SCIPY_ARRAY_API=1')
 
 def unpack_ttest_result(res):
     low, high = res.confidence_interval()
@@ -786,6 +789,7 @@ def test_masked_array_2_sentinel_array():
     assert B_out is B
 
 
+@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 def test_masked_dtype():
     # When _masked_arrays_2_sentinel_arrays was first added, it always
     # upcast the arrays to np.float64. After gh16662, check expected promotion
@@ -878,6 +882,7 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
+@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
@@ -901,6 +906,7 @@ def test_masked_stat_3d(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 def test_mixed_mask_nan_1():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
@@ -948,6 +954,7 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res4, res)
 
 
+@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # check for expected interaction between masks and nans
@@ -1066,6 +1073,7 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
 @pytest.mark.parametrize(
     ("weighted_fun_name, unpacker"),
     [

@@ -36,9 +36,14 @@ from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import _permutation_distribution_t
+from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
+                                   is_torch, SCIPY_ARRAY_API)
 
+xp_skip_reason = ('Test involves masked and/or object arrays, '
+                  'which are not allowed when SCIPY_ARRAY_API=1')
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -2519,7 +2524,8 @@ class TestMode:
         # was deprecated, so check for the appropriate error.
         my_dtype = np.dtype([('asdf', np.uint8), ('qwer', np.float64, (3,))])
         test = np.zeros(10, dtype=my_dtype)
-        with pytest.raises(TypeError, match="Argument `a` is not..."):
+        message = "Argument `a` is not....|An argument has dtype..."
+        with pytest.raises(TypeError, match=message):
             stats.mode(test, nan_policy=nan_policy)
 
     def test_gh9955(self):
@@ -2555,7 +2561,8 @@ class TestMode:
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
     def test_raise_non_numeric_gh18254(self):
-        message = "Argument `a` is not recognized as numeric."
+        message = ("...only boolean and numerical dtypes..." if SCIPY_ARRAY_API
+                   else "Argument `a` is not recognized as numeric.")
 
         class ArrLike:
             def __init__(self, x):
@@ -2813,6 +2820,7 @@ class TestZmapZscore:
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
+    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
     def test_gzscore_masked_array(self):
         x = np.array([1, 2, -1, 3, 4])
         mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
@@ -2821,6 +2829,7 @@ class TestZmapZscore:
                     1.136670895503])
         assert_allclose(desired, z)
 
+    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
     def test_zscore_masked_element_0_gh19039(self):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
@@ -3158,11 +3167,10 @@ class TestMoments:
         https://www.mathworks.com/help/stats/skewness.html
         Note that both test cases came from here.
     """
-    testcase = [1,2,3,4]
+    testcase = [1., 2., 3., 4.]
     scalar_testcase = 4.
     np.random.seed(1234)
     testcase_moment_accuracy = np.random.rand(42)
-    testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
     def _assert_equal(self, actual, expect, *, shape=None, dtype=None):
         expect = np.asarray(expect)
@@ -3173,66 +3181,77 @@ class TestMoments:
             dtype = expect.dtype
         assert actual.dtype == dtype
 
+    @array_api_compatible
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('m, c', product((0, 1, 2, 3), (None, 0, 1)))
-    def test_moment_center_scalar_moment(self, size, m, c):
+    def test_moment_center_scalar_moment(self, size, m, c, xp):
         rng = np.random.default_rng(6581432544381372042)
-        x = rng.random(size=size)
+        x = xp.asarray(rng.random(size=size))
         res = stats.moment(x, m, center=c)
-        c = np.mean(x, axis=0) if c is None else c
-        ref = np.sum((x - c)**m, axis=0)/len(x)
-        assert_allclose(res, ref, atol=1e-16)
+        c = xp.mean(x, axis=0) if c is None else c
+        ref = xp.sum((x - c)**m, axis=0)/x.shape[0]
+        xp_assert_close(res, ref, atol=1e-16)
 
+    @array_api_compatible
     @pytest.mark.parametrize('size', [10, (10, 2)])
     @pytest.mark.parametrize('c', (None, 0, 1))
-    def test_moment_center_array_moment(self, size, c):
+    def test_moment_center_array_moment(self, size, c, xp):
         rng = np.random.default_rng(1706828300224046506)
-        x = rng.random(size=size)
+        x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
-        ref = [stats.moment(x, i, center=c) for i in m]
-        assert_equal(res, ref)
+        xp = array_namespace(x)
+        ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
+        xp_assert_equal(res, ref)
 
-    def test_moment(self):
+    @array_api_compatible
+    def test_moment(self, xp):
         # mean((testcase-mean(testcase))**power,axis=0),axis=0))**power))
-        y = stats.moment(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
-        y = stats.moment(self.testcase, 0)
-        assert_approx_equal(y, 1.0)
-        y = stats.moment(self.testcase, 1)
-        assert_approx_equal(y, 0.0, 10)
-        y = stats.moment(self.testcase, 2)
-        assert_approx_equal(y, 1.25)
-        y = stats.moment(self.testcase, 3)
-        assert_approx_equal(y, 0.0)
-        y = stats.moment(self.testcase, 4)
-        assert_approx_equal(y, 2.5625)
+        testcase = xp.asarray(self.testcase)
+
+        y = stats.moment(xp.asarray(self.scalar_testcase))
+        xp_assert_close(y, xp.asarray(0.0))
+
+        y = stats.moment(testcase, 0)
+        xp_assert_close(y, xp.asarray(1.0))
+        y = stats.moment(testcase, 1)
+        xp_assert_close(y, xp.asarray(0.0))
+        y = stats.moment(testcase, 2)
+        xp_assert_close(y, xp.asarray(1.25))
+        y = stats.moment(testcase, 3)
+        xp_assert_close(y, xp.asarray(0.0))
+        y = stats.moment(testcase, 4)
+        xp_assert_close(y, xp.asarray(2.5625))
 
         # check array_like input for moment
-        y = stats.moment(self.testcase, [1, 2, 3, 4])
-        assert_allclose(y, [0, 1.25, 0, 2.5625])
+        y = stats.moment(testcase, [1, 2, 3, 4])
+        xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
         # check moment input consists only of integers
-        y = stats.moment(self.testcase, 0.0)
-        assert_approx_equal(y, 1.0)
-        assert_raises(ValueError, stats.moment, self.testcase, 1.2)
-        y = stats.moment(self.testcase, [1.0, 2, 3, 4.0])
-        assert_allclose(y, [0, 1.25, 0, 2.5625])
+        y = stats.moment(testcase, 0.0)
+        xp_assert_close(y, xp.asarray(1.0))
+        message = 'All elements of `order` must be integral.'
+        with pytest.raises(ValueError, match=message):
+            stats.moment(testcase, 1.2)
+        y = stats.moment(testcase, [1.0, 2, 3, 4.0])
+        xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
         # test empty input
         message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
-            y = stats.moment([])
-            self._assert_equal(y, np.nan, dtype=np.float64)
-            y = stats.moment(np.array([], dtype=np.float32))
-            self._assert_equal(y, np.nan, dtype=np.float32)
-            y = stats.moment(np.zeros((1, 0)), axis=0)
-            self._assert_equal(y, [], shape=(0,), dtype=np.float64)
-            y = stats.moment([[]], axis=1)
-            self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
-            y = stats.moment([[]], order=[0, 1], axis=0)
-            self._assert_equal(y, [], shape=(2, 0))
+            np.mean([])  # lazy way of ignoring warnings
+            y = stats.moment(xp.asarray([]))
+            xp_assert_equal(y, xp.asarray(xp.nan))
+            y = stats.moment(xp.asarray([], dtype=xp.float32))
+            xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
+            y = stats.moment(xp.zeros((1, 0)), axis=0)
+            xp_assert_equal(y, xp.empty((0,)))
+            y = stats.moment(xp.asarray([[]]), axis=1)
+            xp_assert_equal(y, xp.asarray([xp.nan]))
+            y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
+            xp_assert_equal(y, xp.empty((2, 0)))
 
+    def test_nan_policy(self):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.moment(x, 2), np.nan)
@@ -3240,45 +3259,85 @@ class TestMoments:
         assert_raises(ValueError, stats.moment, x, nan_policy='raise')
         assert_raises(ValueError, stats.moment, x, nan_policy='foobar')
 
-    @pytest.mark.parametrize('dtype', [np.float32, np.float64, np.complex128])
+    @array_api_compatible
+    @pytest.mark.parametrize('dtype', ['float32', 'float64', 'complex128'])
     @pytest.mark.parametrize('expect, order', [(0, 1), (1, 0)])
-    def test_constant_moments(self, dtype, expect, order):
-        x = np.random.rand(5).astype(dtype)
+    def test_constant_moments(self, dtype, expect, order, xp):
+        if dtype=='complex128' and is_torch(xp):
+            pytest.skip()
+        dtype = getattr(xp, dtype)
+        x = xp.asarray(np.random.rand(5), dtype=dtype)
         y = stats.moment(x, order=order)
-        self._assert_equal(y, expect, dtype=dtype)
+        xp_assert_equal(y, xp.asarray(expect, dtype=dtype))
 
-        y = stats.moment(np.broadcast_to(x, (6, 5)), axis=0, order=order)
-        self._assert_equal(y, expect, shape=(5,), dtype=dtype)
+        y = stats.moment(xp.broadcast_to(x, (6, 5)), axis=0, order=order)
+        xp_assert_equal(y, xp.full((5,), expect, dtype=dtype))
 
-        y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
+        y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=2,
                          order=order)
-        self._assert_equal(y, expect, shape=(1, 2, 4, 5), dtype=dtype)
+        xp_assert_equal(y, xp.full((1, 2, 4, 5), expect, dtype=dtype))
 
-        y = stats.moment(np.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
+        y = stats.moment(xp.broadcast_to(x, (1, 2, 3, 4, 5)), axis=None,
                          order=order)
-        self._assert_equal(y, expect, shape=(), dtype=dtype)
+        xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
-    def test_moment_propagate_nan(self):
+    @array_api_compatible
+    def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = np.arange(8).reshape(2, -1).astype(float)
+        a = xp.asarray(a)
         a[1, 0] = np.nan
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
+        xp_assert_close(mm, xp.asarray([1.25, np.nan], dtype=xp.float64), atol=1e-15)
 
-    def test_moment_empty_order(self):
+    @array_api_compatible
+    def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
         with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
                                              r" non-empty 1D list/array."):
-            stats.moment([1, 2, 3, 4], order=[])
+            stats.moment(xp.asarray([1, 2, 3, 4]), order=[])
 
-    def test_rename_moment_order(self):
+    @array_api_compatible
+    def test_rename_moment_order(self, xp):
         # Parameter 'order' was formerly known as 'moment'. The old name
         # has not been deprecated, so it must continue to work.
-        x = np.arange(10)
+        x = xp.arange(10)
         res = stats.moment(x, moment=3)
         ref = stats.moment(x, order=3)
-        np.testing.assert_equal(res, ref)
+        xp_assert_equal(res, ref)
+
+    def test_moment_accuracy(self):
+        # 'moment' must have a small enough error compared to the slower
+        #  but very accurate numpy.power() implementation.
+        tc_no_mean = self.testcase_moment_accuracy - \
+                     np.mean(self.testcase_moment_accuracy)
+        assert_allclose(np.power(tc_no_mean, 42).mean(),
+                        stats.moment(self.testcase_moment_accuracy, 42))
+
+    @array_api_compatible
+    @pytest.mark.parametrize('order', [0, 1, 2, 3])
+    @pytest.mark.parametrize('axis', [-1, 0, 1])
+    @pytest.mark.parametrize('center', [None, 0])
+    def test_moment_array_api(self, xp, order, axis, center):
+        rng = np.random.default_rng(34823589259425)
+        x = rng.random(size=(5, 6, 7))
+        res = stats.moment(xp.asarray(x), order, axis=axis, center=center)
+        ref = xp.asarray(_moment(x, order, axis, mean=center))
+        xp_assert_close(res, ref)
+
+
+class TestSkewKurtosis:
+    scalar_testcase = 4.
+    testcase = [1., 2., 3., 4.]
+    testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
+
+    def test_empty_1d(self):
+        message = r"Mean of empty slice\.|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.skew([])
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.kurtosis([])
 
     def test_skewness(self):
         # Scalar test case
@@ -3327,6 +3386,16 @@ class TestMoments:
             # similarly, from gh-11086:
             assert np.isnan(stats.skew([14.3]*7))
             assert np.isnan(stats.skew(1 + np.arange(-3, 4)*1e-16))
+
+    def test_precision_loss_gh15554(self):
+        # gh-15554 was one of several issues that have reported problems with
+        # constant or near-constant input. We can't always fix these, but
+        # make sure there's a warning.
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            rng = np.random.default_rng(34095309370)
+            a = rng.random(size=(100, 10))
+            a[:, 0] = 1.01
+            stats.skew(a)[0]
 
     def test_kurtosis(self):
         # Scalar test case
@@ -3382,31 +3451,6 @@ class TestMoments:
             assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
             assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
             assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
-
-    def test_moment_accuracy(self):
-        # 'moment' must have a small enough error compared to the slower
-        #  but very accurate numpy.power() implementation.
-        tc_no_mean = self.testcase_moment_accuracy - \
-                     np.mean(self.testcase_moment_accuracy)
-        assert_allclose(np.power(tc_no_mean, 42).mean(),
-                        stats.moment(self.testcase_moment_accuracy, 42))
-
-    def test_precision_loss_gh15554(self):
-        # gh-15554 was one of several issues that have reported problems with
-        # constant or near-constant input. We can't always fix these, but
-        # make sure there's a warning.
-        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            rng = np.random.default_rng(34095309370)
-            a = rng.random(size=(100, 10))
-            a[:, 0] = 1.01
-            stats.skew(a)[0]
-
-    def test_empty_1d(self):
-        message = r"Mean of empty slice\.|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.skew([])
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.kurtosis([])
 
 
 @hypothesis.strategies.composite
@@ -8758,3 +8802,25 @@ class TestExpectile:
         for alpha in np.r_[0, alpha_seq, 1 - alpha_seq[:-1:-1], 1]:
             e_list.append(stats.expectile(x, alpha=alpha))
         assert np.all(np.diff(e_list) > 0)
+
+
+@array_api_compatible
+def test_chk_asarray(xp):
+    rng = np.random.default_rng(2348923425434)
+    x0 = rng.random(size=(2, 3, 4))
+    x = xp.asarray(x0)
+
+    axis = 1
+    x_out, axis_out = _chk_asarray(x, axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(x0))
+    assert_equal(axis_out, axis)
+
+    axis = None
+    x_out, axis_out = _chk_asarray(x, axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(x0.ravel()))
+    assert_equal(axis_out, 0)
+
+    axis = 2
+    x_out, axis_out = _chk_asarray(x[0, 0, 0], axis=axis, xp=xp)
+    xp_assert_equal(x_out, xp.asarray(np.atleast_1d(x0[0, 0, 0])))
+    assert_equal(axis_out, axis)

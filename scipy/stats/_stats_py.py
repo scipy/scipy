@@ -68,6 +68,8 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace
+from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
@@ -100,16 +102,19 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'expectile']
 
 
-def _chk_asarray(a, axis):
+def _chk_asarray(a, axis, *, xp=None):
+    if xp is None:
+        xp = array_namespace(a)
+
     if axis is None:
-        a = np.ravel(a)
+        a = xp.reshape(a, (-1,))
         outaxis = 0
     else:
-        a = np.asarray(a)
+        a = xp.asarray(a)
         outaxis = axis
 
     if a.ndim == 0:
-        a = np.atleast_1d(a)
+        a = xp.reshape(a, (-1,))
 
     return a, outaxis
 
@@ -889,11 +894,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def _moment_outputs(kwds):
-    moment = np.atleast_1d(kwds.get('order', 1))
-    if moment.size == 0:
+    order = np.atleast_1d(kwds.get('order', 1))
+    if order.size == 0:
         raise ValueError("'order' must be a scalar or a non-empty 1D "
                          "list/array.")
-    return len(moment)
+    return len(order)
 
 
 def _moment_result_object(*args):
@@ -940,7 +945,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     ----------
     a : array_like
        Input array.
-    order : int or array_like of ints, optional
+    order : int or 1-D array_like of ints, optional
        Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -998,51 +1003,68 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     2.0
 
     """
-    moment = order  # parameter was renamed
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
-    # for array_like moment input, return a value for each.
-    if not np.isscalar(moment):
-        # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
-        mean = a.mean(axis, keepdims=True) if calculate_mean else None
-        mmnt = []
-        for i in moment:
-            if center is None and i > 1:
-                mmnt.append(_moment(a, i, axis, mean=mean))
-            else:
-                mmnt.append(_moment(a, i, axis, mean=center))
-        return np.array(mmnt)
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.asarray(a, dtype=xp.float64)
     else:
-        return _moment(a, moment, axis, mean=center)
+        a = xp.asarray(a)
+
+    order = xp.asarray(order, dtype=a.dtype)
+    if xp_size(order) == 0:
+        # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
+        # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
+        # is a non-NumPy array, so we need to check again. When the decoratpor is
+        # updated for array API compatibility, we can remove this second check.
+        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
+    if xp.any(order != xp.round(order)):
+        raise ValueError("All elements of `order` must be integral.")
+    order = order[()] if order.ndim == 0 else order
+
+    # for array_like order input, return a value for each.
+    if order.ndim > 0:
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and xp.any(order > 1)
+        mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in order:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean)[np.newaxis, ...])
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center)[np.newaxis, ...])
+        return xp.concat(mmnt, axis=0)
+    else:
+        return _moment(a, order, axis, mean=center)
 
 
 # Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
-def _moment(a, moment, axis, *, mean=None):
-    if np.abs(moment - np.round(moment)) > 0:
-        raise ValueError("All moment parameters must be integers")
+def _moment(a, order, axis, *, mean=None):
+    xp = array_namespace(a)
+
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.asarray(a, dtype=xp.float64)
+
+    dtype = a.dtype
 
     # moment of empty array is the same regardless of order
-    if a.size == 0:
-        return np.mean(a, axis=axis)
+    if xp_size(a) == 0:
+        return xp.mean(a, axis=axis)
 
-    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
-
-    if moment == 0 or (moment == 1 and mean is None):
+    if order == 0 or (order == 1 and mean is None):
         # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
 
-        if len(shape) == 0:
-            return dtype(1.0 if moment == 0 else 0.0)
-        else:
-            return (np.ones(shape, dtype=dtype) if moment == 0
-                    else np.zeros(shape, dtype=dtype))
+        temp = (xp.ones(shape, dtype=dtype) if order == 0
+                else xp.zeros(shape, dtype=dtype))
+        return temp[()] if temp.ndim == 0 else temp
+
     else:
         # Exponentiation by squares: form exponent sequence
-        n_list = [moment]
-        current_n = moment
+        n_list = [order]
+        current_n = order
         while current_n > 2:
             if current_n % 2:
                 current_n = (current_n - 1) / 2
@@ -1051,16 +1073,18 @@ def _moment(a, moment, axis, *, mean=None):
             n_list.append(current_n)
 
         # Starting point for exponentiation by squares
-        mean = (a.mean(axis, keepdims=True) if mean is None
-                else np.asarray(mean, dtype=dtype)[()])
+        mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
+                else xp.asarray(mean, dtype=dtype))
+        mean = mean[()] if mean.ndim == 0 else mean
         a_zero_mean = a - mean
 
-        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        eps = xp.finfo(dtype).eps * 10
+
         with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
-                              keepdims=True) / np.abs(mean)
+            rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                              keepdims=True) / xp.abs(mean)
         with np.errstate(invalid='ignore'):
-            precision_loss = np.any(rel_diff < eps)
+            precision_loss = xp.any(rel_diff < eps)
         n = a.shape[axis] if axis is not None else a.size
         if precision_loss and n > 1:
             message = ("Precision loss occurred in moment calculation due to "
@@ -1069,7 +1093,7 @@ def _moment(a, moment, axis, *, mean=None):
             warnings.warn(message, RuntimeWarning, stacklevel=4)
 
         if n_list[-1] == 1:
-            s = a_zero_mean.copy()
+            s = xp.asarray(a_zero_mean, copy=True)
         else:
             s = a_zero_mean**2
 
@@ -1078,7 +1102,7 @@ def _moment(a, moment, axis, *, mean=None):
             s = s**2
             if n % 2:
                 s *= a_zero_mean
-        return np.mean(s, axis)
+        return xp.mean(s, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None):
