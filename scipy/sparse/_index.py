@@ -42,59 +42,70 @@ class IndexMixin:
             else:  # assume array idx
                 res = self._get_array(idx)
 
-        else:  # 2D array
-            ixtypes = tuple(
-                0 if isinstance(ix, INT_TYPES) else 1 if isinstance(ix, slice) else 2
-                for ix in index
-            )
+            # package the result and return
+            if not isinstance(self, sparray):
+                return res
+            if res.shape == () and new_shape != ():
+                return self.__class__([res], shape=new_shape, dtype=self.dtype)
+            return res.reshape(new_shape)
 
-            if ixtypes[0] == 0:
-                if ixtypes[1] == 0:
-                    res = self._get_intXint(*index)
-                elif ixtypes[1] == 1:
-                    res = self._get_intXslice(*index)
-                elif ixtypes[1] == 2:
-                    res = self._get_intXarray(*index)
-            elif ixtypes[0] == 1:
-                if ixtypes[1] == 0:
-                    res = self._get_sliceXint(*index)
-                if ixtypes[1] == 1:
-                    res = self._get_sliceXslice(*index)
-                if ixtypes[1] == 2:
-                    res = self._get_sliceXarray(*index)
-            elif ixtypes[0] == 2:
-                row, col = index
-                if ixtypes[1] == 0:
-                    res = self._get_arrayXint(*index)
-                elif ixtypes[1] == 1:
-                    res = self._get_arrayXslice(*index)
+        # 2D array
+        row, col = index
+
+        # Dispatch to specialized methods.
+        if isinstance(row, INT_TYPES):
+            if isinstance(col, INT_TYPES):
+                res = self._get_intXint(row, col)
+            elif isinstance(col, slice):
+                res = self._get_intXslice(row, col)
+            elif col.ndim == 1:
+                res = self._get_intXarray(row, col)
+            elif col.ndim == 2:
+                res = self._get_intXarray(row, col)
+            else:
+                raise IndexError('index results in >2 dimensions')
+        elif isinstance(row, slice):
+            if isinstance(col, INT_TYPES):
+                res = self._get_sliceXint(row, col)
+            elif isinstance(col, slice):
+                if row == slice(None) and row == col:
+                    res = self.copy()
+                res = self._get_sliceXslice(row, col)
+            elif col.ndim == 1:
+                res = self._get_sliceXarray(row, col)
+            else:
+                raise IndexError('index results in >2 dimensions')
+        else:
+            if isinstance(col, INT_TYPES):
+                res = self._get_arrayXint(row, col)
+            elif isinstance(col, slice):
+                res = self._get_arrayXslice(row, col)
+            # arrayXarray preprocess
+            elif row.ndim == 2 and row.shape[1] == 1\
+                and (col.ndim == 1 or col.shape[0] == 1):
+                # outer indexing
+                res = self._get_columnXarray(row[:, 0], col.ravel())
+            else:
+                # inner indexing
+                row, col = _broadcast_arrays(row, col)
+                if row.shape != col.shape:
+                    raise IndexError('number of row and column indices differ')
+                if row.size == 0:
+                    res = self.__class__(np.atleast_2d(row).shape, dtype=self.dtype)
                 else:
-                    # arrayXarray preprocess
-                    if row.ndim == 2 and row.shape[1] == 1\
-                        and (col.ndim == 1 or col.shape[0] == 1):
-                        # outer indexing
-                        res = self._get_columnXarray(row[:, 0], col.ravel())
-                    else:
-                        # inner indexing
-                        row, col = _broadcast_arrays(*(np.array(ix) for ix in index))
-                        if row.shape != col.shape:
-                            raise IndexError('number of row and column indices differ')
-                        if row.size == 0:
-                            row_shape = np.atleast_2d(row).shape
-                            res = self.__class__(row_shape, dtype=self.dtype)
-                        else:
-                            res = self._get_arrayXarray(row, col)
+                    res = self._get_arrayXarray(row, col)
 
+        # package the result and return
         if not isinstance(self, sparray):
             return res
-        if self.format == 'lil' and len(new_shape) != 2:
+        if not hasattr(self, '_get_int') and len(new_shape) != 2:
             return res.tocoo().reshape(new_shape)
         if res.shape == () and new_shape != ():
             return self.__class__([res], shape=new_shape, dtype=self.dtype)
         return res.reshape(new_shape)
 
     def __setitem__(self, key, x):
-        index, new_shape = self._validate_indices(key)
+        index, _ = self._validate_indices(key)
 
         # 1D array
         if len(index) == 1:
@@ -111,7 +122,7 @@ class IndexMixin:
                 return
 
             if isinstance(idx, slice):
-                # Note: Python `range` does not blow up memory even if shape is large
+                # Note: Python `range` does not use lots of memory
                 idx_range = range(*idx.indices(self.shape[0]))
                 N = len(idx_range)
                 if N == 1 and x.size == 1:
@@ -136,7 +147,6 @@ class IndexMixin:
             return
 
         # 2D array
-
         row, col = index
 
         if isinstance(row, INT_TYPES) and isinstance(col, INT_TYPES):
@@ -320,15 +330,6 @@ class IndexMixin:
             x[x < 0] += length
         return x
 
-    def _get_int(self, idx):
-        raise NotImplementedError()
-
-    def _get_slice(self, idx):
-        raise NotImplementedError()
-
-    def _get_array(self, idx):
-        raise NotImplementedError()
-
     def _getrow(self, i):
         """Return a copy of row i of the matrix, as a (1 x n) row vector.
         """
@@ -379,15 +380,6 @@ class IndexMixin:
         raise NotImplementedError()
 
     def _get_arrayXarray(self, row, col):
-        raise NotImplementedError()
-
-    def _set_int(self, idx, x):
-        raise NotImplementedError()
-
-    def _set_slice(self, idx, x):
-        raise NotImplementedError()
-
-    def _set_array(self, idx, x):
         raise NotImplementedError()
 
     def _set_intXint(self, row, col, x):
