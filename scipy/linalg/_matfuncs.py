@@ -6,6 +6,7 @@ from itertools import product
 import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
+from numpy.lib.scimath import sqrt as csqrt
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
@@ -304,7 +305,7 @@ def expm(A):
 
     # Explicit formula for 2x2 case (formula (2.2) in [1]).
     if a.shape[-2:] == (2, 2): 
-        norm = np.max(np.abs(np.linalg.norm(a)).astype(int))
+        norm = np.max(np.linalg.norm(a).astype(int))
 
         # Normalizing the matrix to prevent cosh from overflowing.
         if norm < 1:
@@ -316,8 +317,7 @@ def expm(A):
                        a[..., [1], [0]], 
                        a[..., [1], [1]]) 
         
-        # Using np.emath.sqrt because np.sqrt doesn't work with negative values
-        mu = np.emath.sqrt((a1-a4)**2 + 4*a2*a3)/2.
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2. # csqrt slow but handles neg.vals 
   
         eApD2 = np.exp((a1+a4)/2.) 
         AmD2 = (a1 - a4)/2. 
@@ -332,7 +332,7 @@ def expm(A):
         eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu) 
         if np.isrealobj(a): 
             return np.linalg.matrix_power(eA.real, norm) 
-        return np.linalg.matrix_power(eA, norm) 
+        return np.linalg.matrix_power(eA, norm).astype(a.dtype) 
 
 
     n = a.shape[-1]
