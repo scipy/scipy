@@ -1125,7 +1125,7 @@ class TestPower:
 
     def test_vectorization(self):
         # Test that `power` is vectorized as expected
-        rng = np.random.default_rng(254952548345528)
+        rng = np.random.default_rng(25495254834552)
 
         # Single vectorized call
         popmeans = np.array([0, 0.2])

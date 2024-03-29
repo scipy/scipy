@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
@@ -1064,7 +1062,7 @@ def _power_iv(rvs, test, n_observations, significance, vectorized,
 
 
 def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
-          n_resamples=9999, batch=None, kwargs=None):
+          n_resamples=10000, batch=None, kwargs=None):
     r"""Simulate the power of a hypothesis test under an alternative hypothesis.
 
     Parameters
@@ -1114,7 +1112,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
         If ``None`` (default), `vectorized` will be set ``True`` if ``axis`` is
         a parameter of `test`. Use of a vectorized test typically reduces
         computation time.
-    n_resamples : int, default: 9999
+    n_resamples : int, default: 10000
         Number of samples drawn from each of the callables of `rvs`.
         Equivalently, the number tests performed under the alternative
         hypothesis to approximate the power.
@@ -1135,12 +1133,23 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
 
     Notes
     -----
+    The power is simulated as follows:
+    - Draw many random samples (or sets of samples), each of the size(s)
+      specified by `n_observations`, under the alternative specified by
+      `rvs`.
+    - For each sample (or set of samples), compute the p-value according to
+      `test`. These p-values are recorded in the ``pvalues`` attribute of
+      the result object.
+    - Compute the proportion of p-values that are less than the `significance`
+      level. This is the power recorded in the ``power`` attribute of the
+      result object.
+
     Suppose that `significance` is an array with shape ``shape1``, the elements
     of `kwargs` and `n_observations` are mutually broadcastable to shape ``shape2``,
     and `test` returns an array of p-values of shape ``shape3``. Then the result
     object ``power`` attribute will be of shape ``shape1 + shape2 + shape3``, and
     the ``pvalues`` attribute will be of shape ``shape2 + shape3 + (n_resamples,)``.
-    
+
     Examples
     --------
     Suppose we wish to simulate the power of the independent sample t-test
@@ -1163,7 +1172,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     >>> rvs = (rvs1, rvs2)
     >>> res = stats.power(test, rvs, n_observations, significance=0.05)
     >>> res.power
-    0.611061106110611
+    0.6116
 
     With samples of size 10 and 12, respectively, the power of the t-test
     with a significance threshold of 0.05 is approximately 60% under the chosen
@@ -1199,33 +1208,50 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     >>> ax.set_title('Simulated Power of `ttest_ind`, Varying Effect Size')
     >>> plt.show()
 
-    Now, suppose we wish to test whether SciPy's independent sample t-test
-    is implemented correctly. Specifically, we wish to determine whether the
-    Type I error rate of the test matches the nominal level under the null
-    hypothesis. The null hypothesis of the test is that the samples were
-    independently drawn from normal distributions with the same mean. To answer
-    our question, we can consider the null hypothesis to be a true *alternative*
-    hypothesis and calculate the power.
+    We can also use `power` to estimate the Type I error rate (also referred to by the
+    ambiguous term "size") of a test and assess whether it matches the nominal level.
+    For example, the null hypothesis of `jarque_bera` is that the sample was drawn from
+    a distribution with the same skewness and kurtosis as the normal distribution. To
+    estimate the Type I error rate, we can consider the null hypothesis to be a true
+    *alternative* hypothesis and calculate the power.
 
-    >>> test = stats.ttest_ind
-    >>> n_observations = (10, 12)
-    >>> rvs = (rng.normal, rng.normal)
-    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
-    >>> res.power
-    0.0537053705370537
+    >>> test = stats.jarque_bera
+    >>> n_observations = 10
+    >>> rvs = rng.normal
+    >>> significance = np.linspace(0.0001, 0.1, 1000)
+    >>> res = stats.power(test, rvs, n_observations, significance=significance)
+    >>> size = res.power
 
-    The simulated power nearly matches our significance threshold, as expected.
-    Moreover, the p-values are uniformly distributed under the null hypothesis:
+    As shown below, the Type I error rate of the test is far below the nominal level
+    for such a small sample, as mentioned in its documentation.
 
     >>> ax = plt.subplot()
-    >>> ecdf = stats.ecdf(res.pvalues)
-    >>> ecdf.cdf.plot(ax)
-    >>> ax.plot([0, 1], [0, 1], '--')
-    >>> ax.set_xlabel('p-value')
-    >>> ax.set_ylabel('CDF')
-    >>> ax.set_title('Empirical CDF of p-values under H0')
-    >>> ax.legend(('`ttest_ind` p-values', 'uniform distribution'))
+    >>> ax.plot(significance, size)
+    >>> ax.plot([0, 0.1], [0, 0.1], '--')
+    >>> ax.set_xlabel('nominal significance level')
+    >>> ax.set_ylabel('estimated test size (Type I error rate)')
+    >>> ax.set_title('Estimated test size vs nominal significance level')
+    >>> ax.set_aspect('equal', 'box')
+    >>> ax.legend(('`ttest_1samp`', 'ideal test'))
     >>> plt.show()
+
+    As one might expect from such a conservative test, the power is quite low with
+    respect to some alternatives. For example, the power of the test under the
+    alternative that the sample was drawn from the Laplace distribution may not
+    be much greater than the Type I error rate.
+
+    >>> rvs = rng.laplace
+    >>> significance = np.linspace(0.0001, 0.1, 1000)
+    >>> res = stats.power(test, rvs, n_observations, significance=0.05)
+    >>> print(res.power)
+    0.0587
+
+    This is not a mistake in SciPy's implementation; it is simply due to the fact
+    that the null distribution of the test statistic is derived under the assumption
+    that the sample size is large (i.e. approaches infinity), and this asymptotic
+    approximation is not accurate for small samples. In such cases, resampling
+    and Monte Carlo methods (e.g. `permutation_test`, `goodness_of_fit`,
+    `monte_carlo_test`) may be more appropriate.
 
     """
     tmp = _power_iv(rvs, test, n_observations, significance,
