@@ -692,12 +692,10 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_isf(x, a, b)
+        return sc.betaincinv(a, b, 1 - x)
 
     def _ppf(self, q, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_ppf(q, a, b)
+        return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
         return (
@@ -2289,7 +2287,7 @@ class f_gen(rv_continuous):
     the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
-    
+
     The probability density function for `f` is:
 
     .. math::
