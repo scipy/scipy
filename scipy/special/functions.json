@@ -521,13 +521,13 @@
         }
     },
     "exp10": {
-        "cephes.h": {
-            "exp10": "d->d"
+        "_special.h++": {
+            "cephes_exp10": "d->d"
         }
     },
     "exp2": {
-        "cephes.h": {
-            "exp2": "d->d"
+        "_special.h++": {
+            "cephes_exp2": "d->d"
         }
     },
     "expit": {

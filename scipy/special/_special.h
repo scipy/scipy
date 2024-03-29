@@ -24,6 +24,8 @@
 #include "special/cephes/ellpe.h"
 #include "special/cephes/ellpk.h"
 #include "special/cephes/ellpj.h"
+#include "special/cephes/exp10.h"
+#include "special/cephes/exp2.h"
 #include "special/cephes/expn.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
@@ -356,4 +358,12 @@ inline double cephes_btdtr(double a, double b, double x) {
 
 inline double cephes_erfcinv(double y) {
     return special::cephes::erfcinv(y);
+}
+
+inline double cephes_exp10(double x) {
+    return special::cephes::exp10(x);
+}
+
+inline double cephes_exp2(double x) {
+    return special::cephes::exp2(x);
 }
