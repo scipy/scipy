@@ -156,6 +156,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         {static_cast<func_ff_f_t>(special::zeta), static_cast<func_dd_d_t>(special::zeta)}, "_zeta", _zeta_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
+
+/*
+    "airy": {
+        "amos_wrappers.h": {
+            "airy_wrap": "d*dddd->*i",
+            "cairy_wrap": "D*DDDD->*i"
+        }
+    },
+*/
+
     PyObject *bei = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::bei), static_cast<func_d_d_t>(special::bei)},
                                      "bei", bei_doc);
     PyModule_AddObjectRef(_special_ufuncs, "bei", bei);
