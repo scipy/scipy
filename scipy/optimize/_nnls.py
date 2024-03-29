@@ -1,6 +1,6 @@
 import numpy as np
-from scipy.linalg import solve
-
+from scipy.linalg import solve, LinAlgWarning
+import warnings
 
 __all__ = ['nnls']
 
@@ -112,43 +112,47 @@ def _nnls(A, b, maxiter=None, tol=None):
 
     # Initialize vars
     x = np.zeros(n, dtype=np.float64)
-
+    s = np.zeros(n, dtype=np.float64)
     # Inactive constraint switches
     P = np.zeros(n, dtype=bool)
 
     # Projected residual
-    resid = Atb.copy().astype(np.float64)  # x=0. Skip (-AtA @ x) term
+    w = Atb.copy().astype(np.float64)  # x=0. Skip (-AtA @ x) term
 
     # Overall iteration counter
     # Outer loop is not counted, inner iter is counted across outer spins
     iter = 0
 
-    while (not P.all()) and (resid[~P] > tol).any():  # B
+    while (not P.all()) and (w[~P] > tol).any():  # B
         # Get the "most" active coeff index and move to inactive set
-        resid[P] = -np.inf
-        k = np.argmax(resid)  # B.2
+        k = np.argmax(w * (~P))  # B.2
         P[k] = True  # B.3
 
         # Iteration solution
-        s = np.zeros(n, dtype=np.float64)
-        P_ind = P.nonzero()[0]
-        s[P] = solve(AtA[P_ind[:, None], P_ind[None, :]], Atb[P],
-                     assume_a='sym', check_finite=False)  # B.4
+        s[:] = 0.
+        # B.4
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', message='Ill-conditioned matrix',
+                                    category=LinAlgWarning)
+            s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym', check_finite=False)
 
         # Inner loop
-        while (iter < maxiter) and (s[P].min() <= tol):  # C.1
-            alpha_ind = ((s < tol) & P).nonzero()
-            alpha = (x[alpha_ind] / (x[alpha_ind] - s[alpha_ind])).min()  # C.2
+        while (iter < maxiter) and (s[P].min() < 0):  # C.1
+            iter += 1
+            inds = P * (s < 0)
+            alpha = (x[inds] / (x[inds] - s[inds])).min()  # C.2
             x *= (1 - alpha)
             x += alpha*s
-            P[x < tol] = False
-            s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym',
-                         check_finite=False)
+            P[x <= tol] = False
+            with warnings.catch_warnings():
+                warnings.filterwarnings('ignore', message='Ill-conditioned matrix',
+                                        category=LinAlgWarning)
+                s[P] = solve(AtA[np.ix_(P, P)], Atb[P], assume_a='sym',
+                             check_finite=False)
             s[~P] = 0  # C.6
-            iter += 1
 
         x[:] = s[:]
-        resid = Atb - AtA @ x
+        w[:] = Atb - AtA @ x
 
         if iter == maxiter:
             # Typically following line should return
