@@ -97,6 +97,7 @@
 
 #include "../config.h"
 #include "../error.h"
+#include "const.h"
 #include "polevl.h"
 #include "trig.h"
 
@@ -111,9 +112,6 @@ namespace cephes {
                                       1.18139785222060435552E-2,  3.58236398605498653373E-2, -2.34591795718243348568E-1,
                                       7.14304917030273074085E-2,  1.00000000000000000320E0};
 
-        constexpr double MAXGAM = 171.624376956302725;
-        constexpr double LOGPI = 1.14472988584940017414;
-
         /* Stirling's formula for the Gamma function */
         constexpr double gamma_STIR[5] = {
             7.87311395793093628397E-4, -2.29549961613378126380E-4, -2.68132617805781232825E-3,
@@ -121,7 +119,7 @@ namespace cephes {
         };
 
         constexpr double MAXSTIR = 143.01608;
-        constexpr double SQTPI = 2.50662827463100050242E0;
+
 
         /* Gamma function computed by Stirling's formula.
          * The polynomial STIR is valid for 33 <= x <= 172.
@@ -141,7 +139,7 @@ namespace cephes {
             } else {
                 y = std::pow(x, x - 0.5) / y;
             }
-            y = SQTPI * y * w;
+            y = SQRTPI * y * w;
             return (y);
         }
     } // namespace detail

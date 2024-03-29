@@ -166,7 +166,7 @@ namespace cephes {
         q = polevl(z, detail::j1_QP, 7) / p1evl(z, detail::j1_QQ, 7);
         xn = x - detail::THPIO4;
         p = p * std::cos(xn) - w * q * std::sin(xn);
-        return (p * detail::SQ2OPI / std::sqrt(x));
+        return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 
     SPECFUN_HOST_DEVICE inline double y1(double x) {
@@ -192,7 +192,7 @@ namespace cephes {
         q = polevl(z, detail::j1_QP, 7) / p1evl(z, detail::j1_QQ, 7);
         xn = x - detail::THPIO4;
         p = p * std::sin(xn) + w * q * std::cos(xn);
-        return (p * detail::SQ2OPI / std::sqrt(x));
+        return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 } // namespace cephes
 } // namespace special

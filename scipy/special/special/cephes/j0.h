@@ -183,7 +183,7 @@ namespace cephes {
         q = polevl(q, detail::j0_QP, 7) / p1evl(q, detail::j0_QQ, 7);
         xn = x - M_PI_4;
         p = p * std::cos(xn) - w * q * std::sin(xn);
-        return (p * detail::SQ2OPI / std::sqrt(x));
+        return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 
     /*                                                     y0() 2  */
@@ -218,7 +218,7 @@ namespace cephes {
         q = polevl(z, detail::j0_QP, 7) / p1evl(z, detail::j0_QQ, 7);
         xn = x - M_PI_4;
         p = p * std::sin(xn) + w * q * std::cos(xn);
-        return (p * detail::SQ2OPI / std::sqrt(x));
+        return (p * detail::SQRT2OPI / std::sqrt(x));
     }
 
 } // namespace cephes

@@ -65,12 +65,15 @@ namespace cephes {
         constexpr double MACHEP = 1.11022302462515654042E-16;  // 2**-53
         constexpr double MAXLOG = 7.09782712893383996732E2;    // log(DBL_MAX)
         constexpr double MINLOG = -7.451332191019412076235E2;  // log 2**-1022
-        constexpr double SQ1OPI = 5.64189583547756286948E-1;   // sqrt( 1/pi)
-        constexpr double SQ2OPI = 7.9788456080286535587989E-1; // sqrt( 2/pi )
+        constexpr double SQRT1OPI = 5.64189583547756286948E-1;   // sqrt( 1/pi)
+        constexpr double SQRT2OPI = 7.9788456080286535587989E-1; // sqrt( 2/pi )
         constexpr double LOGSQ2 = 3.46573590279972654709E-1;   // log(2)/2
         constexpr double THPIO4 = 2.35619449019234492885;      // 3*pi/4
         constexpr double SQRT3 = 1.732050807568877293527;      // sqrt(3)
         constexpr double PI180 = 1.74532925199432957692E-2;    // pi/180
+        constexpr double SQRTPI = 2.50662827463100050242E0;     // sqrt(pi)
+        constexpr double LOGPI = 1.14472988584940017414;       // log(pi)
+        constexpr double MAXGAM = 171.624376956302725;
 
         // Following two added by SciPy developers.
         // Euler's constant

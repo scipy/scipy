@@ -15,6 +15,7 @@
 
 #include "special/cephes/besselpoly.h"
 #include "special/cephes/beta.h"
+#include "special/cephes/bdtr.h"
 #include "special/cephes/cbrt.h"
 #include "special/cephes/chdtr.h"
 #include "special/cephes/ellie.h"
@@ -36,8 +37,11 @@
 #include "special/cephes/k1.h"
 #include "special/cephes/igam.h"
 #include "special/cephes/igami.h"
+#include "special/cephes/incbet.h"
+#include "special/cephes/incbi.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/ndtr.h"
+#include "special/cephes/ndtri.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
 #include "special/cephes/sindg.h"
@@ -320,3 +324,28 @@ inline double cephes_tandg(double x) {
 inline double cephes_cotdg(double x) {
     return special::cephes::cotdg(x);
 }
+
+inline double cephes_ndtri(double x) {
+    return special::cephes::ndtri(x);
+}
+
+inline double cephes_bdtr(double k, int n, double p) {
+    return special::cephes::bdtr(k, n, p);
+}
+
+inline double cephes_bdtri(double k, int n, double y) {
+    return special::cephes::bdtri(k, n, y);
+}
+
+inline double cephes_bdtrc(double k, int n, double p) {
+    return special::cephes::bdtrc(k, n, p);
+}
+
+inline double cephes_btdtri(double aa, double bb, double yy0) {
+    return special::cephes::incbi(aa, bb, yy0);
+}
+
+inline double cephes_btdtr(double a, double b, double x) {
+    return special::cephes::incbet(a, b, x);
+}
+

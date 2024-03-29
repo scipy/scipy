@@ -141,24 +141,24 @@
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtr": "did->d"
+        "_special.h++": {
+            "cephes_bdtr": "did->d"
         }
     },
     "bdtrc": {
         "_legacy.pxd": {
             "bdtrc_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtrc": "did->d"
+        "_special.h++": {
+            "cephes_bdtrc": "did->d"
         }
     },
     "bdtri": {
         "_legacy.pxd": {
             "bdtri_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtri": "did->d"
+        "_special.h++": {
+            "cephes_bdtri": "did->d"
         }
     },
     "bdtrik": {
@@ -225,13 +225,13 @@
         }
     },
     "btdtr": {
-        "cephes.h": {
-            "btdtr": "ddd->d"
+        "_special.h++": {
+            "cephes_btdtr": "ddd->d"
         }
     },
     "btdtri": {
-        "cephes.h": {
-            "incbi": "ddd->d"
+        "_special.h++": {
+            "cephes_btdtri": "ddd->d"
         }
     },
     "btdtria": {
@@ -900,8 +900,8 @@
         }
     },
     "ndtri": {
-        "cephes.h": {
-            "ndtri": "d->d"
+        "_special.h++": {
+            "cephes_ndtri": "d->d"
         }
     },
     "nrdtrimn": {

@@ -182,7 +182,7 @@ namespace cephes {
             t = std::sqrt(-x);
             zeta = -2.0 * x * t / 3.0;
             t = std::sqrt(t);
-            k = detail::SQ1OPI / t;
+            k = detail::SQRT1OPI / t;
             z = 1.0 / zeta;
             zz = z * z;
             uf = 1.0 + zz * polevl(zz, detail::airy_AFN, 8) / p1evl(zz, detail::airy_AFD, 9);
@@ -194,7 +194,7 @@ namespace cephes {
             *bi = k * (g * uf + f * ug);
             uf = 1.0 + zz * polevl(zz, detail::airy_APFN, 8) / p1evl(zz, detail::airy_APFD, 9);
             ug = z * polevl(zz, detail::airy_APGN, 10) / p1evl(zz, detail::airy_APGD, 10);
-            k = detail::SQ1OPI * t;
+            k = detail::SQRT1OPI * t;
             *aip = -k * (g * uf + f * ug);
             *bip = k * (f * uf - g * ug);
             return (0);
@@ -209,14 +209,14 @@ namespace cephes {
             k = 2.0 * t * g;
             z = 1.0 / zeta;
             f = polevl(z, detail::airy_AN, 7) / polevl(z, detail::airy_AD, 7);
-            *ai = detail::SQ1OPI * f / k;
-            k = -0.5 * detail::SQ1OPI * t / g;
+            *ai = detail::SQRT1OPI * f / k;
+            k = -0.5 * detail::SQRT1OPI * t / g;
             f = polevl(z, detail::airy_APN, 7) / polevl(z, detail::airy_APD, 7);
             *aip = f * k;
 
             if (x > 8.3203353) { /* zeta > 16 */
                 f = z * polevl(z, detail::airy_BN16, 4) / p1evl(z, detail::airy_BD16, 5);
-                k = detail::SQ1OPI * g;
+                k = detail::SQRT1OPI * g;
                 *bi = k * (1.0 + f) / t;
                 f = z * polevl(z, detail::airy_BPPN, 4) / p1evl(z, detail::airy_BPPD, 5);
                 *bip = k * t * (1.0 + f);
