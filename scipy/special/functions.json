@@ -559,18 +559,18 @@
         }
     },
     "fdtr": {
-        "cephes.h": {
-            "fdtr": "ddd->d"
+        "_special.h++": {
+            "cephes_fdtr": "ddd->d"
         }
     },
     "fdtrc": {
-        "cephes.h": {
-            "fdtrc": "ddd->d"
+        "_special.h++": {
+            "cephes_fdtrc": "ddd->d"
         }
     },
     "fdtri": {
-        "cephes.h": {
-            "fdtri": "ddd->d"
+        "_special.h++": {
+            "cephes_fdtri": "ddd->d"
         }
     },
     "fdtridfd": {
