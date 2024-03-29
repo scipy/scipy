@@ -1136,6 +1136,7 @@ def power(test, rvs, n_observations, *, significance=0.01, vectorized=None,
     Notes
     -----
     The power is simulated as follows:
+
     - Draw many random samples (or sets of samples), each of the size(s)
       specified by `n_observations`, under the alternative specified by
       `rvs`.
