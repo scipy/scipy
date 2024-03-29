@@ -336,14 +336,14 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
     //      (2) CFS for computing Fresnel integral S(z)
     // ==============================================================
 
-    int i, j, it, nr;
+    int it, nr;
     double psq, px, py, w, w0;
     std::complex<double> z, zp, zf, zd, zfd, zgd, zq, zw;
     const double pi = 3.141592653589793;
     psq = 0.0;
     w = 0.0;
 
-    for (nr = 1; nr <= nt; ++nr) {
+    for (int nr = 1; nr <= nt; ++nr) {
         if (kf == 1)
             psq = sqrt(4.0 * nr - 1.0);
         if (kf == 2)
@@ -376,14 +376,14 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
             }
 
             zp = 1.0;
-            for (i = 1; i < nr; i++)
+            for (int i = 1; i < nr; i++)
                 zp *= (z - zo[i - 1]);
 
             zfd = zf / zp;
             zq = 0.0;
-            for (i = 1; i < nr; i++) {
+            for (int i = 1; i < nr; i++) {
                 zw = 1.0;
-                for (j = 1; j < nr; j++) {
+                for (int j = 1; j < nr; j++) {
                     if (j == i) {
                         continue;
                     }
