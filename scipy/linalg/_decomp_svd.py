@@ -108,13 +108,13 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
+    m, n = a1.shape
 
     # accommodate empty matrix
     if a1.size == 0:
         u0, s0, v0 = svd(numpy.eye(2, dtype=a1.dtype))
 
         s = numpy.empty_like(a1, shape=(0,), dtype=s0.dtype)
-        m, n = a1.shape
         if full_matrices:
             u = numpy.empty_like(a1, shape=(m, m), dtype=u0.dtype)
             u[...] = numpy.identity(m)
