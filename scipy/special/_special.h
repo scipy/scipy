@@ -5,6 +5,7 @@
 
 
 #include "special/binom.h"
+#include "special/ellipk.h"
 #include "special/hyp2f1.h"
 #include "special/lambertw.h"
 #include "special/loggamma.h"
@@ -16,6 +17,11 @@
 #include "special/cephes/beta.h"
 #include "special/cephes/cbrt.h"
 #include "special/cephes/chdtr.h"
+#include "special/cephes/ellie.h"
+#include "special/cephes/ellik.h"
+#include "special/cephes/ellpe.h"
+#include "special/cephes/ellpk.h"
+#include "special/cephes/ellpj.h"
 #include "special/cephes/expn.h"
 #include "special/cephes/gamma.h"
 #include "special/cephes/hyp2f1.h"
@@ -104,6 +110,10 @@ inline npy_cdouble hyp2f1_complex(double a, double b, double c, npy_cdouble zp) 
 
 inline double wright_bessel_scalar(double a, double b, double x) {
     return special::wright_bessel(a, b, x);
+}
+
+inline double ellipk(double m) {
+    return special::ellipk(m);
 }
 
 
@@ -275,4 +285,20 @@ inline double cephes_cosm1(double x) {
 
 inline double cephes_expn(int n, double x) {
     return special::cephes::expn(n, x);
+}
+
+inline double cephes_ellpe(double x) {
+    return special::cephes::ellpe(x);
+}
+
+inline double cephes_ellpk(double x) {
+    return special::cephes::ellpk(x);
+}
+
+inline double cephes_ellie(double phi, double m) {
+    return special::cephes::ellie(phi, m);
+}
+
+inline double cephes_ellik(double phi, double m) {
+    return special::cephes::ellik(phi, m);
 }

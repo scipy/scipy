@@ -288,3 +288,7 @@ double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *b
 double cephes_jv_wrap(double v, double x) {
         return special::cephes::jv(v, x);
 }
+
+int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph) {
+    return special::cephes::ellpj(u, m, sn, cn, dn, ph);
+}

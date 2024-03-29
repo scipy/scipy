@@ -306,32 +306,32 @@
         }
     },
     "ellipe": {
-        "cephes.h": {
-            "ellpe": "d->d"
+        "_special.h++": {
+            "cephes_ellpe": "d->d"
         }
     },
     "ellipeinc": {
-        "cephes.h": {
-            "ellie": "dd->d"
+        "_special.h++": {
+            "cephes_ellie": "dd->d"
         }
     },
     "ellipj": {
-        "cephes.h": {
-            "ellpj": "dd*dddd->*i"
+        "special_c_wrappers.h": {
+            "cephes_ellpj_wrap": "dd*dddd->*i"
         }
     },
     "ellipkinc": {
-        "cephes.h": {
-            "ellik": "dd->d"
+        "_special.h++": {
+            "cephes_ellik": "dd->d"
         }
     },
     "ellipkm1": {
-        "cephes.h": {
-            "ellpk": "d->d"
-        }
+        "_special.h++": {
+            "cephes_ellpk": "d->d"
+         }
     },
     "ellipk": {
-	"_ellipk.pxd": {
+	"_special.h++": {
 	    "ellipk": "d->d"
 	}
     },

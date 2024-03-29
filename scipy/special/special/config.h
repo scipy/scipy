@@ -91,11 +91,15 @@ SPECFUN_HOST_DEVICE inline double cos(double x) { return cuda::std::cos(x); }
 
 SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
 
+SPECFUN_HOST_DEVICE inline double atan(double x) { return cuda::std::atan(x); }
+
 SPECFUN_HOSt_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
 
 SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
 
 SPECFUN_HOST_DEVICE inline double cosh(double x) { return cuda::std::cosh(x); }
+
+SPECFUN_HOST_DEVICE inline double asinh(double x) { return cuda::std::asinh(x); }
 
 SPECFUN_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x); }
 
