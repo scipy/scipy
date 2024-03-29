@@ -49,6 +49,7 @@
 #include "special/cephes/ndtr.h"
 #include "special/cephes/ndtri.h"
 #include "special/cephes/poch.h"
+#include "special/cephes/pdtr.h"
 #include "special/cephes/rgamma.h"
 #include "special/cephes/sindg.h"
 #include "special/cephes/tandg.h"
@@ -402,3 +403,16 @@ inline double cephes_nbdtrc(int k, int n, double p) {
 inline double cephes_nbdtri(int k, int n, double p) {
     return special::cephes::nbdtri(k, n, p);
 }
+
+inline double cephes_pdtr(double k, double m) {
+    return special::cephes::pdtr(k, m);
+}
+
+inline double cephes_pdtrc(double k, double m) {
+    return special::cephes::pdtrc(k, m);
+}
+
+inline double cephes_pdtri(int k, double y) {
+    return special::cephes::pdtri(k, y);
+}
+

@@ -919,21 +919,21 @@
         }
     },
     "pdtr": {
-        "cephes.h": {
-            "pdtr": "dd->d"
+        "_special.h++": {
+            "cephes_pdtr": "dd->d"
         }
     },
     "pdtrc": {
-        "cephes.h": {
-            "pdtrc": "dd->d"
+        "_special.h++": {
+            "cephes_pdtrc": "dd->d"
         }
     },
     "pdtri": {
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "pdtri": "id->d"
+        "_special.h++": {
+            "cephes_pdtri": "id->d"
         }
     },
     "pdtrik": {
