@@ -70,6 +70,7 @@ namespace cephes {
         constexpr double LOGSQ2 = 3.46573590279972654709E-1;   // log(2)/2
         constexpr double THPIO4 = 2.35619449019234492885;      // 3*pi/4
         constexpr double SQRT3 = 1.732050807568877293527;      // sqrt(3)
+        constexpr double PI180 = 1.74532925199432957692E-2;    // pi/180
 
         // Following two added by SciPy developers.
         // Euler's constant

@@ -40,6 +40,8 @@
 #include "special/cephes/ndtr.h"
 #include "special/cephes/poch.h"
 #include "special/cephes/rgamma.h"
+#include "special/cephes/sindg.h"
+#include "special/cephes/tandg.h"
 #include "special/cephes/trig.h"
 #include "special/cephes/unity.h"
 #include "special/cephes/zeta.h"
@@ -301,4 +303,20 @@ inline double cephes_ellie(double phi, double m) {
 
 inline double cephes_ellik(double phi, double m) {
     return special::cephes::ellik(phi, m);
+}
+
+inline double cephes_sindg(double x) {
+    return special::cephes::sindg(x);
+}
+
+inline double cephes_cosdg(double x) {
+    return special::cephes::cosdg(x);
+}
+
+inline double cephes_tandg(double x) {
+    return special::cephes::tandg(x);
+}
+
+inline double cephes_cotdg(double x) {
+    return special::cephes::cotdg(x);
 }

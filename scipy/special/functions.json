@@ -285,8 +285,8 @@
             "chndtrix": "ddd->d"        }
     },
     "cosdg": {
-        "cephes.h": {
-            "cosdg": "d->d"
+        "_special.h++": {
+            "cephes_cosdg": "d->d"
         }
     },
     "cosm1": {
@@ -295,8 +295,8 @@
         }
     },
     "cotdg": {
-        "cephes.h": {
-            "cotdg": "d->d"
+        "_special.h++": {
+            "cephes_cotdg": "d->d"
         }
     },
     "dawsn": {
@@ -1000,8 +1000,8 @@
         }
     },
     "sindg": {
-        "cephes.h": {
-            "sindg": "d->d"
+        "_special.h++": {
+            "cephes_sindg": "d->d"
         }
     },
     "smirnov": {
@@ -1077,8 +1077,8 @@
         }
     },
     "tandg": {
-        "cephes.h": {
-            "tandg": "d->d"
+        "_special.h++": {
+            "cephes_tandg": "d->d"
         }
     },
     "tklmbda": {
