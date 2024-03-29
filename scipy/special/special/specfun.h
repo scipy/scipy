@@ -28,12 +28,6 @@
 
 namespace special {
 
-template <typename T>
-T sem_cva(T m, T q);
-
-template <typename T>
-void sem(T m, T q, T x, T *csf, T *csd);
-
 inline std::complex<double> chyp2f1(double a, double b, double c, std::complex<double> z) {
     int l0 = ((c == floor(c)) && (c < 0));
     int l1 = ((fabs(1 - z.real()) < 1e-15) && (z.imag() == 0) && (c - a - b <= 0));
@@ -96,26 +90,6 @@ inline double hyp1f1(double a, double b, double x) {
 }
 
 template <typename T>
-void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
-    T tmp;
-    int flag = 0;
-
-    if (x < 0) {
-        x = -x;
-        flag = 1;
-    }
-    specfun::itairy(x, apt, bpt, ant, bnt);
-    if (flag) { /* negative limit -- switch signs and roles */
-        tmp = *apt;
-        *apt = -*ant;
-        *ant = -tmp;
-        tmp = *bpt;
-        *bpt = -*bnt;
-        *bnt = -tmp;
-    }
-}
-
-template <typename T>
 T exp1(T x) {
     T out = specfun::e1xb(x);
     SPECFUN_CONVINF("exp1", out);
@@ -144,83 +118,6 @@ std::complex<T> expi(std::complex<T> z) {
 }
 
 inline std::complex<double> cerf(std::complex<double> z) { return specfun::cerror(z); }
-
-/* Integrals of bessel functions */
-
-/* int(j0(t),t=0..x) */
-/* int(y0(t),t=0..x) */
-
-template <typename T>
-void it1j0y0(T x, T *j0int, T *y0int) {
-    int flag = 0;
-
-    if (x < 0) {
-        x = -x;
-        flag = 1;
-    }
-    specfun::itjya(x, j0int, y0int);
-    if (flag) {
-        *j0int = -(*j0int);
-        *y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
-    }
-}
-
-/* int((1-j0(t))/t,t=0..x) */
-/* int(y0(t)/t,t=x..inf) */
-
-template <typename T>
-void it2j0y0(T x, T *j0int, T *y0int) {
-    int flag = 0;
-
-    if (x < 0) {
-        x = -x;
-        flag = 1;
-    }
-    specfun::ittjya(x, j0int, y0int);
-    if (flag) {
-        *y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
-    }
-}
-
-/* Integrals of modified bessel functions */
-
-template <typename T>
-void it1i0k0(T x, T *i0int, T *k0int) {
-    int flag = 0;
-
-    if (x < 0) {
-        x = -x;
-        flag = 1;
-    }
-    specfun::itika(x, i0int, k0int);
-    if (flag) {
-        *i0int = -(*i0int);
-        *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
-    }
-}
-
-template <typename T>
-void it2i0k0(T x, T *i0int, T *k0int) {
-    int flag = 0;
-
-    if (x < 0) {
-        x = -x;
-        flag = 1;
-    }
-    specfun::ittika(x, i0int, k0int);
-    if (flag) {
-        *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
-    }
-}
-
-/* Fresnel integrals of complex numbers */
-
-inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::complex<double> *zfc) {
-    std::complex<double> zfd;
-
-    specfun::cfs(z, zfs, &zfd);
-    specfun::cfc(z, zfc, &zfd);
-}
 
 inline double pmv(double m, double v, double x) {
     int int_m;

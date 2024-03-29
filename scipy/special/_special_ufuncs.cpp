@@ -1,5 +1,7 @@
 #include <cmath>
 
+#include "special/airy.h"
+#include "special/bessel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/kelvin.h"

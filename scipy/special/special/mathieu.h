@@ -4,6 +4,12 @@
 
 namespace special {
 
+template <typename T>
+T sem_cva(T m, T q);
+
+template <typename T>
+void sem(T m, T q, T x, T *csf, T *csd);
+
 /* Mathieu functions */
 /* Characteristic values */
 template <typename T>

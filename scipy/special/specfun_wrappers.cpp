@@ -1,4 +1,6 @@
 #include "specfun_wrappers.h"
+#include "special/airy.h"
+#include "special/bessel.h"
 #include "special/fresnel.h"
 #include "special/kelvin.h"
 #include "special/mathieu.h"

@@ -129,6 +129,15 @@ namespace detail {
 
 } // namespace detail
 
+/* Fresnel integrals of complex numbers */
+
+inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::complex<double> *zfc) {
+    std::complex<double> zfd;
+
+    specfun::cfs(z, zfs, &zfd);
+    specfun::cfc(z, zfc, &zfd);
+}
+
 template <typename T>
 void modified_fresnel_plus(T x, std::complex<T> *Fplus, std::complex<T> *Kplus) {
     detail::ffk(0, x, *Fplus, *Kplus);
