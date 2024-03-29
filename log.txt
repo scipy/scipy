@@ -1,0 +1,154 @@
+💻  ninja -C /home/melissa/projects/scipy/build -j6
+ninja: Entering directory `/home/melissa/projects/scipy/build'
+[1/82] Generating scipy/linalg/_dummy_cython_blas.pxd with a custom command
+[2/46] Generating scipy/special/_dummy_cython_special.pxd with a custom command
+[3/31] Generating scipy/stats/_dummy_stats_gen_pyx with a custom command
+[4/4] Generating scipy/generate-version with a custom command
+fatal: bad revision '^v1.12.0'
+Build OK
+💻  meson install -C build --only-changed
+# for testing
+# @echo installed scipy 33be539 matches git version 33be539; exit 1
+mkdir -p build/html build/doctrees
+LANG=C /home/melissa/micromamba/envs/scipy-dev/bin/python -msphinx -WT --keep-going  -b html -d build/doctrees -j1  source build/html 
+Running Sphinx v7.2.6
+SciPy (VERSION 1.14.0.dev)
+loading pickled environment... done
+[autosummary] generating autosummary for: building/blas_lapack.rst, building/compilers_and_options.rst, building/cross_compilation.rst, building/distutils_equivalents.rst, building/index.rst, building/introspecting_a_build.rst, building/redistributable_binaries.rst, building/understanding_meson.rst, dev/api-dev/api-dev-toc.rst, dev/api-dev/array_api.rst, ..., tutorial/stats/probability_distributions.rst, tutorial/stats/quasi_monte_carlo.rst, tutorial/stats/resampling.rst, tutorial/stats/sampling.md, tutorial/stats/sampling_dau.rst, tutorial/stats/sampling_dgt.rst, tutorial/stats/sampling_hinv.rst, tutorial/stats/sampling_pinv.rst, tutorial/stats/sampling_srou.rst, tutorial/stats/sampling_tdr.rst
+[autosummary] generating autosummary for: /home/melissa/projects/scipy/doc/source/reference/generated/scipy.LowLevelCallable.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.optimize.LbfgsInvHessProduct.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.optimize.OptimizeResult.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.optimize.RootResults.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.bsr_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.bsr_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.coo_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.coo_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.csc_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.csc_matrix.rst, ..., /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.csr_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.dia_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.dia_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.dok_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.dok_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.lil_array.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.lil_matrix.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.sparse.linalg.LaplacianNd.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.stats._result_classes.PearsonRResult.rst, /home/melissa/projects/scipy/doc/source/reference/generated/scipy.stats._result_classes.TtestResult.rst
+myst v2.0.0: MdParserConfig(commonmark_only=False, gfm_only=False, enable_extensions=set(), disable_syntax=[], all_links_external=False, url_schemes=('http', 'https', 'mailto', 'ftp'), ref_domains=None, fence_as_directive=set(), number_code_blocks=[], title_to_header=False, heading_anchors=0, heading_slug_func=None, html_meta={}, footnote_transition=False, words_per_minute=200, substitutions={}, linkify_fuzzy_links=True, dmath_allow_labels=True, dmath_allow_space=True, dmath_allow_digits=True, dmath_double_inline=False, update_mathjax=True, mathjax_classes='tex2jax_process|mathjax_process|math|output_area', enable_checkboxes=False, suppress_warnings=[], highlight_code_blocks=True)
+myst-nb v1.0.0: NbParserConfig(custom_formats={}, metadata_key='mystnb', cell_metadata_key='mystnb', kernel_rgx_aliases={}, eval_name_regex='^[a-zA-Z_][a-zA-Z0-9_]*$', execution_mode='auto', execution_cache_path='', execution_excludepatterns=['_contents/*.ipynb'], execution_timeout=30, execution_in_temp=False, execution_allow_errors=False, execution_raise_on_error=False, execution_show_tb=False, merge_streams=False, render_plugin='default', remove_code_source=False, remove_code_outputs=False, code_prompt_show='Show code cell {type}', code_prompt_hide='Hide code cell {type}', number_source_lines=False, output_stderr='show', render_text_lexer='myst-ansi', render_error_lexer='ipythontb', render_image_options={}, render_figure_options={}, render_markdown_format='commonmark', output_folder='build', append_css=True, metadata_to_fm=False)
+Using jupyter-cache at: /home/melissa/projects/scipy/doc/build/.jupyter_cache
+The default value for `navigation_with_keys` will change to `False` in the next release. If you wish to preserve the old behavior for your site, set `navigation_with_keys=True` in the `html_theme_options` dict in your `conf.py` file. Be aware that `navigation_with_keys = True` has negative accessibility implications: https://github.com/pydata/pydata-sphinx-theme/issues/1492
+building [mo]: targets for 0 po files that are out of date
+writing output... 
+building [html]: targets for 21 source files that are out of date
+updating environment: 0 added, 21 changed, 0 removed
+[2Kreading sources... [  5%] reference/generated/scipy.LowLevelCallable[2Kreading sources... [ 10%] reference/generated/scipy.optimize.LbfgsInvHessProduct[2Kreading sources... [ 14%] reference/generated/scipy.optimize.OptimizeResult[2Kreading sources... [ 19%] reference/generated/scipy.optimize.RootResults[2Kreading sources... [ 24%] reference/generated/scipy.sparse.bsr_array[2Kreading sources... [ 29%] reference/generated/scipy.sparse.bsr_matrix[2Kreading sources... [ 33%] reference/generated/scipy.sparse.coo_array[2Kreading sources... [ 38%] reference/generated/scipy.sparse.coo_matrix[2Kreading sources... [ 43%] reference/generated/scipy.sparse.csc_array[2Kreading sources... [ 48%] reference/generated/scipy.sparse.csc_matrix[2Kreading sources... [ 52%] reference/generated/scipy.sparse.csr_array[2Kreading sources... [ 57%] reference/generated/scipy.sparse.csr_matrix[2Kreading sources... [ 62%] reference/generated/scipy.sparse.dia_array[2Kreading sources... [ 67%] reference/generated/scipy.sparse.dia_matrix[2Kreading sources... [ 71%] reference/generated/scipy.sparse.dok_array[2Kreading sources... [ 76%] reference/generated/scipy.sparse.dok_matrix[2Kreading sources... [ 81%] reference/generated/scipy.sparse.lil_array[2Kreading sources... [ 86%] reference/generated/scipy.sparse.lil_matrix[2Kreading sources... [ 90%] reference/generated/scipy.sparse.linalg.LaplacianNd[2Kreading sources... [ 95%] reference/generated/scipy.stats._result_classes.PearsonRResult[2Kreading sources... [100%] reference/generated/scipy.stats._result_classes.TtestResult
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... done
+preparing documents... done
+copying assets... copying static files... done
+copying extra files... done
+done
+[2Kwriting output... [  4%] indexsuff='.rst'
+[2Kwriting output... [  7%] reference/generated/scipy.LowLevelCallablesuff='.rst'
+[2Kwriting output... [ 11%] reference/generated/scipy.optimize.LbfgsInvHessProductsuff='.rst'
+[2Kwriting output... [ 15%] reference/generated/scipy.optimize.OptimizeResultsuff='.rst'
+[2Kwriting output... [ 19%] reference/generated/scipy.optimize.RootResultssuff='.rst'
+[2Kwriting output... [ 22%] reference/generated/scipy.sparse.bsr_arraysuff='.rst'
+[2Kwriting output... [ 26%] reference/generated/scipy.sparse.bsr_matrixsuff='.rst'
+[2Kwriting output... [ 30%] reference/generated/scipy.sparse.coo_arraysuff='.rst'
+[2Kwriting output... [ 33%] reference/generated/scipy.sparse.coo_matrixsuff='.rst'
+[2Kwriting output... [ 37%] reference/generated/scipy.sparse.csc_arraysuff='.rst'
+[2Kwriting output... [ 41%] reference/generated/scipy.sparse.csc_matrixsuff='.rst'
+[2Kwriting output... [ 44%] reference/generated/scipy.sparse.csr_arraysuff='.rst'
+[2Kwriting output... [ 48%] reference/generated/scipy.sparse.csr_matrixsuff='.rst'
+[2Kwriting output... [ 52%] reference/generated/scipy.sparse.dia_arraysuff='.rst'
+[2Kwriting output... [ 56%] reference/generated/scipy.sparse.dia_matrixsuff='.rst'
+[2Kwriting output... [ 59%] reference/generated/scipy.sparse.dok_arraysuff='.rst'
+[2Kwriting output... [ 63%] reference/generated/scipy.sparse.dok_matrixsuff='.rst'
+[2Kwriting output... [ 67%] reference/generated/scipy.sparse.lil_arraysuff='.rst'
+[2Kwriting output... [ 70%] reference/generated/scipy.sparse.lil_matrixsuff='.rst'
+[2Kwriting output... [ 74%] reference/generated/scipy.sparse.linalg.LaplacianNdsuff='.rst'
+[2Kwriting output... [ 78%] reference/generated/scipy.stats._result_classes.PearsonRResultsuff='.rst'
+[2Kwriting output... [ 81%] reference/generated/scipy.stats._result_classes.TtestResultsuff='.rst'
+[2Kwriting output... [ 85%] reference/main_namespacesuff='.rst'
+[2Kwriting output... [ 89%] reference/optimizesuff='.rst'
+[2Kwriting output... [ 93%] reference/sparsesuff='.rst'
+[2Kwriting output... [ 96%] reference/sparse.linalgsuff='.rst'
+[2Kwriting output... [100%] reference/stats._result_classessuff='.rst'
+
+generating indices... genindex suff=None
+done
+writing additional pages... search suff=None
+done
+[2Kcopying images... [ 25%] _static/index_user_guide.svg[2Kcopying images... [ 50%] _static/index_api.svg[2Kcopying images... [ 75%] _static/index_getting_started.svg[2Kcopying images... [100%] _static/index_contribute.svg
+dumping search index in English (code: en)... done
+dumping object inventory... done
+static:jupyter-lite.json
+.  pre_status:static:jupyter-lite.json
+    tarball:         jupyterlite-app-0.2.3.tgz 9MB
+    output:          /home/melissa/projects/scipy/doc/build/html/lite
+    lite dir:        /home/melissa/projects/scipy/doc/source
+    apps:            notebooks, edit, lab, repl, tree, consoles
+    sourcemaps:      True
+    unused packages: True
+archive:archive
+contents:contents
+icons:icons
+lite:jupyter-lite.json
+mimetypes:jupyter-lite.json
+serve:contents
+settings:overrides
+translation:translation
+.  status:archive:archive
+.  status:contents:contents
+    contents: 13 files
+.  status:icons:icons
+    favicon files: 7 files
+.  status:lite:jupyter-lite.json
+.  status:mimetypes:jupyter-lite.json
+    filetypes:         26 
+.  status:serve:contents
+    url: http://127.0.0.1:8000/
+    server: tornado
+    headers:
+.  status:settings:overrides
+    overrides.json: 0
+.  status:translation:translation
+    translation files: 2 files
+static:output_dir
+-- pre_init:static:output_dir
+static:unpack
+-- init:static:unpack
+federated_extensions:copy:ext:jupyterlab-jupytext
+federated_extensions:copy:ext:jupyterlab_pygments
+-- pre_build:federated_extensions:copy:ext:jupyterlab-jupytext
+-- pre_build:federated_extensions:copy:ext:jupyterlab_pygments
+contents:copy:0476b733_05ab_4a0a_becf_d56ba5091ee0.ipynb
+contents:copy:30f5f074_ecda_4f3d_bea7_27e797ec8627.ipynb
+contents:copy:41d68acc_8524_42da_a26a_57d85f49344f.ipynb
+contents:copy:4336d230_4d50_46f5_b1d8_44db2e7d1f40.ipynb
+contents:copy:48fd6aef_ea07_4633_b1f6_e4676a955b21.ipynb
+contents:copy:6fa9359f_f912_4c43_859a_e7153072690e.ipynb
+contents:copy:7c4de321_71fe_43aa_af2f_9c6c28820898.ipynb
+contents:copy:7ee3188b_7d9f_4f9e_a5c5_1bde8d8a6d2e.ipynb
+contents:copy:915b979c_3649_42b2_880c_cd531c232d0e.ipynb
+contents:copy:992b2aaa_d3ec_4707_ad0d_3ae035fc0a86.ipynb
+contents:copy:b0229e9a_d838_462c_8ac4_ab5de6f54d23.ipynb
+contents:copy:f04c357e_7c4a_4362_b9c0_71e379ccaae6.ipynb
+contents:copy:f6fe5bcb_332a_44b6_b3bf_e0787bc898c7.ipynb
+icons:copy
+translation:copy
+.  build:contents:copy:0476b733_05ab_4a0a_becf_d56ba5091ee0.ipynb
+.  build:contents:copy:30f5f074_ecda_4f3d_bea7_27e797ec8627.ipynb
+.  build:contents:copy:41d68acc_8524_42da_a26a_57d85f49344f.ipynb
+.  build:contents:copy:4336d230_4d50_46f5_b1d8_44db2e7d1f40.ipynb
+.  build:contents:copy:48fd6aef_ea07_4633_b1f6_e4676a955b21.ipynb
+.  build:contents:copy:6fa9359f_f912_4c43_859a_e7153072690e.ipynb
+.  build:contents:copy:7c4de321_71fe_43aa_af2f_9c6c28820898.ipynb
+.  build:contents:copy:7ee3188b_7d9f_4f9e_a5c5_1bde8d8a6d2e.ipynb
+.  build:contents:copy:915b979c_3649_42b2_880c_cd531c232d0e.ipynb
+.  build:contents:copy:992b2aaa_d3ec_4707_ad0d_3ae035fc0a86.ipynb
+.  build:contents:copy:b0229e9a_d838_462c_8ac4_ab5de6f54d23.ipynb
+.  build:contents:copy:f04c357e_7c4a_4362_b9c0_71e379ccaae6.ipynb
+.  build:contents:copy:f6fe5bcb_332a_44b6_b3bf_e0787bc898c7.ipynb
+.  build:icons:copy
+-- build:translation:copy
+contents:contents:.
+federated_extensions:patch
+federated_extensions:settings
+mimetypes:patch
+.  post_build:contents:contents:.
+-- post_build:federated_extensions:patch
+-- post_build:federated_extensions:settings
+-- post_build:mimetypes:patch
+[jupyterlite-sphinx] Running JupyterLite build
+[jupyterlite-sphinx] JupyterLite build done
+build succeeded.
+
+The HTML pages are in build/html.
+Installing, see meson-install.log...
+Installation OK
