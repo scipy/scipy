@@ -50,7 +50,7 @@
  *                     n < k
  *                     x < 0, x > 1
  */
-/*							bdtrc()
+/*							bdtrc()
  *
  *	Complemented binomial distribution
  *
@@ -97,7 +97,7 @@
  *   message         condition      value returned
  * bdtrc domain      x<0, x>1, n<k       0.0
  */
-/*							bdtri()
+/*							bdtri()
  *
  *	Inverse binomial distribution
  *
@@ -141,9 +141,8 @@
  * bdtri domain     k < 0, n <= k         0.0
  *                  x < 0, x > 1
  */
-
-/*                                                             bdtr() */
 
+/*                                                             bdtr() */
 
 /*
  * Cephes Math Library Release 2.3:  March, 1995
@@ -164,32 +163,31 @@ namespace cephes {
     SPECFUN_HOST_DEVICE inline double bdtrc(double k, int n, double p) {
         double dk, dn;
         double fk = std::floor(k);
-        
+
         if (std::isnan(p) || std::isnan(k)) {
             return std::numeric_limits<double>::quiet_NaN();
         }
-        
+
         if (p < 0.0 || p > 1.0 || n < fk) {
             set_error("bdtrc", SF_ERROR_DOMAIN, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
-        
+
         if (fk < 0) {
             return 1.0;
         }
-        
+
         if (fk == n) {
             return 0.0;
         }
-        
+
         dn = n - fk;
         if (k == 0) {
             if (p < .01)
                 dk = -expm1(dn * std::log1p(-p));
             else
                 dk = 1.0 - std::pow(1.0 - p, dn);
-        }
-        else {
+        } else {
             dk = fk + 1;
             dk = incbet(dk, dn, p);
         }
@@ -216,14 +214,12 @@ namespace cephes {
         dn = n - fk;
         if (fk == 0) {
             dk = std::pow(1.0 - p, dn);
-        }
-        else {
+        } else {
             dk = fk + 1.;
             dk = incbet(dn, dk, 1.0 - p);
         }
         return dk;
     }
-
 
     SPECFUN_HOST_DEVICE inline double bdtri(double k, int n, double y) {
         double p, dn, dk;
@@ -247,22 +243,20 @@ namespace cephes {
         if (fk == 0) {
             if (y > 0.8) {
                 p = -expm1(std::log1p(y - 1.0) / dn);
-            }
-            else {
+            } else {
                 p = 1.0 - std::pow(y, 1.0 / dn);
             }
-        }
-        else {
+        } else {
             dk = fk + 1;
             p = incbet(dn, dk, 0.5);
             if (p > 0.5) {
                 p = incbi(dk, dn, 1.0 - y);
             } else {
-                p = 1.0 - incbi(dn, dk, y); 
+                p = 1.0 - incbi(dn, dk, y);
             }
         }
         return p;
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

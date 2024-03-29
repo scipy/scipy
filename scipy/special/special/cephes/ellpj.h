@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     ellpj.c
  *
  *     Jacobian Elliptic Functions
@@ -56,9 +55,8 @@
  * Accuracy deteriorates when u is large.
  *
  */
-
-/*                                                     ellpj.c         */
 
+/*                                                     ellpj.c         */
 
 /*
  * Cephes Math Library Release 2.0:  April, 1987
@@ -144,8 +142,7 @@ namespace cephes {
             t = c[i] * std::sin(phi) / a[i];
             b = phi;
             phi = (std::asin(t) + phi) / 2.0;
-        }
-        while (--i);
+        } while (--i);
 
         *sn = std::sin(phi);
         t = std::cos(phi);
@@ -153,14 +150,13 @@ namespace cephes {
         dnfac = std::cos(phi - b);
         /* See discussion after DLMF 22.20.5 */
         if (std::abs(dnfac) < 0.1) {
-            *dn = std::sqrt(1 - m*(*sn)*(*sn));
-        }
-        else {
+            *dn = std::sqrt(1 - m * (*sn) * (*sn));
+        } else {
             *dn = t / dnfac;
         }
         *ph = phi;
         return (0);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

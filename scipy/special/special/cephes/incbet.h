@@ -56,7 +56,6 @@
  * incbet domain      x<0, x>1          0.0
  * incbet underflow                     0.0
  */
-
 
 /*
  * Cephes Math Library, Release 2.3:  March, 1995
@@ -70,7 +69,6 @@
 #include "beta.h"
 #include "const.h"
 
-
 namespace special {
 namespace cephes {
 
@@ -78,7 +76,6 @@ namespace cephes {
 
         constexpr double incbet_big = 4.503599627370496e15;
         constexpr double incbet_biginv = 2.22044604925031308085e-16;
-
 
         /* Power series for incomplete beta integral.
          * Use when b*x is small and x not too close to 1.  */
@@ -108,9 +105,8 @@ namespace cephes {
             if ((a + b) < MAXGAM && std::abs(u) < MAXLOG) {
                 t = 1.0 / beta(a, b);
                 s = s * t * std::pow(x, a);
-            }
-            else {
-                t = -lbeta(a,b) + u + std::log(s);
+            } else {
+                t = -lbeta(a, b) + u + std::log(s);
                 if (t < MINLOG) {
                     s = 0.0;
                 } else {
@@ -196,8 +192,7 @@ namespace cephes {
                     qkm2 *= incbet_big;
                     qkm1 *= incbet_big;
                 }
-            }
-            while (++n < 300);
+            } while (++n < 300);
 
         cdone:
             return (ans);
@@ -216,7 +211,8 @@ namespace cephes {
             k4 = a + 1.0;
             k5 = 1.0;
             k6 = a + b;
-            k7 = a + 1.0;;
+            k7 = a + 1.0;
+            ;
             k8 = a + 2.0;
 
             pkm2 = 0.0;
@@ -237,7 +233,7 @@ namespace cephes {
                 pkm1 = pk;
                 qkm2 = qkm1;
                 qkm1 = qk;
-                
+
                 xk = (z * k5 * k6) / (k7 * k8);
                 pk = pkm1 + pkm2 * xk;
                 qk = qkm1 + qkm2 * xk;
@@ -251,8 +247,7 @@ namespace cephes {
                 if (r != 0) {
                     t = std::abs((ans - r) / r);
                     ans = r;
-                }
-                else {
+                } else {
                     t = 1.0;
                 }
                 if (t < thresh) {
@@ -280,19 +275,17 @@ namespace cephes {
                     qkm2 *= incbet_big;
                     qkm1 *= incbet_big;
                 }
-            }
-            while (++n < 300);
+            } while (++n < 300);
         cdone:
             return (ans);
         }
 
-    }
-
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double incbet(double aa, double bb, double xx) {
         double a, b, t, x, xc, w, y;
         int flag;
-        
+
         if (aa <= 0.0 || bb <= 0.0)
             goto domerr;
 
@@ -321,8 +314,7 @@ namespace cephes {
             b = aa;
             xc = xx;
             x = w;
-        }
-        else {
+        } else {
             a = aa;
             b = bb;
             xc = w;
@@ -357,7 +349,7 @@ namespace cephes {
             goto done;
         }
         /* Resort to logarithms.  */
-        y += t - lbeta(a,b);
+        y += t - lbeta(a, b);
         y += std::log(w / a);
         if (y < detail::MINLOG) {
             t = 0.0;
@@ -375,7 +367,5 @@ namespace cephes {
         return (t);
     }
 
-}
-}
-
-
+} // namespace cephes
+} // namespace special

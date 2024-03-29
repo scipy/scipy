@@ -120,7 +120,6 @@ namespace cephes {
 
         constexpr double MAXSTIR = 143.01608;
 
-
         /* Gamma function computed by Stirling's formula.
          * The polynomial STIR is valid for 33 <= x <= 172.
          */

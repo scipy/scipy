@@ -1,6 +1,5 @@
 #pragma once
 
-
 // Define math constants if they are not available
 #ifndef M_E
 #define M_E 2.71828182845904523536

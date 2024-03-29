@@ -104,7 +104,7 @@ namespace cephes {
                                        -15548960784.0000000, 2051482776.00000000,  -114876376.000000000,
                                        2170626.00000000000,  -8166.00000000000000, 1.00000000000000000};
         constexpr const double *expn_A[] = {expn_A0, expn_A1, expn_A2, expn_A3,  expn_A4,  expn_A5, expn_A6,
-            expn_A7, expn_A8, expn_A9, expn_A10, expn_A11, expn_A12};
+                                            expn_A7, expn_A8, expn_A9, expn_A10, expn_A11, expn_A12};
         constexpr int expn_Adegs[] = {0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
 
         /* Asymptotic expansion for large n, DLMF 8.20(ii) */
@@ -138,7 +138,7 @@ namespace cephes {
 
             return expfac * res;
         }
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE double expn(int n, double x) {
         double ans, r, t, yk, xk;
@@ -146,14 +146,14 @@ namespace cephes {
         double psi, z;
         int i, k;
         constexpr double big = 1.44115188075855872E+17;
-        
+
         if (std::isnan(x)) {
             return std::numeric_limits<double>::quiet_NaN();
         } else if (n < 0 || x < 0) {
             set_error("expn", SF_ERROR_DOMAIN, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
-        
+
         if (x > detail::MAXLOG) {
             return (0.0);
         }
@@ -185,7 +185,7 @@ namespace cephes {
             pkm1 = 1.0;
             qkm1 = x + n;
             ans = pkm1 / qkm1;
-        
+
             do {
                 k += 1;
                 if (k & 1) {
@@ -215,7 +215,7 @@ namespace cephes {
                     qkm1 /= big;
                 }
             } while (t > detail::MACHEP);
-        
+
             ans *= std::exp(-x);
             return ans;
         }

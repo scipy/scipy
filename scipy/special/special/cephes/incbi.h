@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     incbi()
  *
  *      Inverse of incomplete beta integral
@@ -42,7 +41,6 @@
  * With a = .5, b constrained to half-integer or integer values:
  *    IEEE      0,1    .5,10000   10000    8.3e-11   1.0e-11
  */
-
 
 /*
  * Cephes Math Library Release 2.4:  March,1996
@@ -64,7 +62,6 @@ namespace cephes {
     SPECFUN_HOST_DEVICE inline double incbi(double aa, double bb, double yy0) {
         double a, b, y0, d, y, x, x0, x1, lgm, yp, di, dithresh, yl, yh, xt;
         int i, rflg, dir, nflg;
-
 
         i = 0;
         if (yy0 <= 0) {
@@ -88,8 +85,7 @@ namespace cephes {
             x = a / (a + b);
             y = incbet(a, b, x);
             goto ihalve;
-        }
-        else {
+        } else {
             dithresh = 1.0e-4;
         }
         /* approximation to inverse function */
@@ -102,19 +98,17 @@ namespace cephes {
             b = aa;
             y0 = 1.0 - yy0;
             yp = -yp;
-        }
-        else {
+        } else {
             rflg = 0;
             a = aa;
             b = bb;
             y0 = yy0;
         }
-        
+
         lgm = (yp * yp - 3.0) / 6.0;
         x = 2.0 / (1.0 / (2.0 * a - 1.0) + 1.0 / (2.0 * b - 1.0));
-        d = yp * std::sqrt(x + lgm) / x
-            - (1.0 / (2.0 * b - 1.0) - 1.0 / (2.0 * a - 1.0))
-            * (lgm + 5.0 / 6.0 - 2.0 / (3.0 * x));
+        d = yp * std::sqrt(x + lgm) / x -
+            (1.0 / (2.0 * b - 1.0) - 1.0 / (2.0 * a - 1.0)) * (lgm + 5.0 / 6.0 - 2.0 / (3.0 * x));
         d = 2.0 * d;
         if (d < detail::MINLOG) {
             x = 1.0;
@@ -175,8 +169,7 @@ namespace cephes {
                         a = aa;
                         b = bb;
                         y0 = yy0;
-                    }
-                    else {
+                    } else {
                         rflg = 1;
                         a = bb;
                         b = aa;
@@ -296,5 +289,5 @@ namespace cephes {
         return (x);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

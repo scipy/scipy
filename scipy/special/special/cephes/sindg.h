@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     sindg.c
  *
  *     Circular sine of angle in degrees
@@ -41,7 +40,7 @@
  * sindg total loss   x > 1.0e14 (IEEE)     0.0
  *
  */
-/*							cosdg.c
+/*							cosdg.c
  *
  *	Circular cosine of angle in degrees
  *
@@ -74,7 +73,7 @@
  *  See also sin().
  *
  */
-
+
 /* Cephes Math Library Release 2.0:  April, 1987
  * Copyright 1985, 1987 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140 */
@@ -90,31 +89,18 @@ namespace special {
 namespace cephes {
 
     namespace detail {
-    
 
-        constexpr double sincof[] = {
-            1.58962301572218447952E-10,
-            -2.50507477628503540135E-8,
-            2.75573136213856773549E-6,
-            -1.98412698295895384658E-4,
-            8.33333333332211858862E-3,
-            -1.66666666666666307295E-1
-        };
+        constexpr double sincof[] = {1.58962301572218447952E-10, -2.50507477628503540135E-8,
+                                     2.75573136213856773549E-6,  -1.98412698295895384658E-4,
+                                     8.33333333332211858862E-3,  -1.66666666666666307295E-1};
 
-        constexpr double coscof[] = {
-            1.13678171382044553091E-11,
-            -2.08758833757683644217E-9,
-            2.75573155429816611547E-7,
-            -2.48015872936186303776E-5,
-            1.38888888888806666760E-3,
-            -4.16666666666666348141E-2,
-            4.99999999999999999798E-1
-        };
+        constexpr double coscof[] = {1.13678171382044553091E-11, -2.08758833757683644217E-9, 2.75573155429816611547E-7,
+                                     -2.48015872936186303776E-5, 1.38888888888806666760E-3,  -4.16666666666666348141E-2,
+                                     4.99999999999999999798E-1};
 
-        
         constexpr double sindg_lossth = 1.0e14;
 
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double sindg(double x) {
         double y, z, zz;
@@ -126,49 +112,47 @@ namespace cephes {
             x = -x;
             sign = -1;
         }
-        
+
         if (x > detail::sindg_lossth) {
             set_error("sindg", SF_ERROR_NO_RESULT, NULL);
             return (0.0);
         }
 
-        y = std::floor(x / 45.0);	/* integer part of x/M_PI_4 */
+        y = std::floor(x / 45.0); /* integer part of x/M_PI_4 */
 
         /* strip high bits of integer part to prevent integer overflow */
         z = std::ldexp(y, -4);
-        z = std::floor(z);		/* integer part of y/8 */
-        z = y - std::ldexp(z, 4);	/* y - 16 * (y/16) */
+        z = std::floor(z);        /* integer part of y/8 */
+        z = y - std::ldexp(z, 4); /* y - 16 * (y/16) */
 
-        j = z;			/* convert to integer for tests on the phase angle */
+        j = z; /* convert to integer for tests on the phase angle */
         /* map zeros to origin */
         if (j & 1) {
             j += 1;
             y += 1.0;
         }
-        j = j & 07;			/* octant modulo 360 degrees */
+        j = j & 07; /* octant modulo 360 degrees */
         /* reflect in x axis */
         if (j > 3) {
             sign = -sign;
             j -= 4;
         }
-        
-        z = x - y * 45.0;		/* x mod 45 degrees */
-        z *= detail::PI180;			/* multiply by pi/180 to convert to radians */
+
+        z = x - y * 45.0;   /* x mod 45 degrees */
+        z *= detail::PI180; /* multiply by pi/180 to convert to radians */
         zz = z * z;
 
         if ((j == 1) || (j == 2)) {
             y = 1.0 - zz * polevl(zz, detail::coscof, 6);
-        }
-        else {
+        } else {
             y = z + z * (zz * polevl(zz, detail::sincof, 5));
         }
 
         if (sign < 0)
             y = -y;
-        
+
         return (y);
     }
-
 
     SPECFUN_HOST_DEVICE inline double cosdg(double x) {
         double y, z, zz;
@@ -186,12 +170,12 @@ namespace cephes {
 
         y = std::floor(x / 45.0);
         z = std::ldexp(y, -4);
-        z = std::floor(z);		/* integer part of y/8 */
-        z = y - std::ldexp(z, 4);	/* y - 16 * (y/16) */
+        z = std::floor(z);        /* integer part of y/8 */
+        z = y - std::ldexp(z, 4); /* y - 16 * (y/16) */
 
         /* integer and fractional part modulo one octant */
         j = z;
-        if (j & 1) {		/* map zeros to origin */
+        if (j & 1) { /* map zeros to origin */
             j += 1;
             y += 1.0;
         }
@@ -204,15 +188,14 @@ namespace cephes {
         if (j > 1)
             sign = -sign;
 
-        z = x - y * 45.0;		/* x mod 45 degrees */
-        z *= detail::PI180;			/* multiply by pi/180 to convert to radians */
+        z = x - y * 45.0;   /* x mod 45 degrees */
+        z *= detail::PI180; /* multiply by pi/180 to convert to radians */
 
         zz = z * z;
 
         if ((j == 1) || (j == 2)) {
             y = z + z * (zz * polevl(zz, detail::sincof, 5));
-        }
-        else {
+        } else {
             y = 1.0 - zz * polevl(zz, detail::coscof, 6);
         }
 
@@ -221,7 +204,6 @@ namespace cephes {
 
         return (y);
     }
-
 
     /* Degrees, minutes, seconds to radians: */
 
@@ -235,5 +217,5 @@ namespace cephes {
         return (((d * 60.0 + m) * 60.0 + s) * detail::sindg_P64800);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

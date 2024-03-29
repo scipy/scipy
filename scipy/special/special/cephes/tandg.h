@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     tandg.c
  *
  *     Circular tangent of argument in degrees
@@ -39,7 +38,7 @@
  * tandg total loss   x > 1.0e14 (IEEE)     0.0
  * tandg singularity  x = 180 k  +  90     INFINITY
  */
-/*							cotdg.c
+/*							cotdg.c
  *
  *	Circular cotangent of argument in degrees
  *
@@ -68,7 +67,7 @@
  * cotdg total loss   x > 1.0e14 (IEEE)     0.0
  * cotdg singularity  x = 180 k            INFINITY
  */
-
+
 /*
  * Cephes Math Library Release 2.0:  April, 1987
  * Copyright 1984, 1987 by Stephen L. Moshier
@@ -82,71 +81,59 @@
 namespace special {
 namespace cephes {
 
-        
     namespace detail {
         constexpr double tandg_lossth = 1.0e14;
 
+        SPECFUN_HOST_DEVICE inline double tancot(double xx, int cotflg) {
+            double x;
+            int sign;
 
-       SPECFUN_HOST_DEVICE inline double tancot(double xx, int cotflg) {
-           double x;
-           int sign;
+            /* make argument positive but save the sign */
+            if (xx < 0) {
+                x = -xx;
+                sign = -1;
+            } else {
+                x = xx;
+                sign = 1;
+            }
 
-           /* make argument positive but save the sign */
-           if (xx < 0) {
-               x = -xx;
-               sign = -1;
-           }
-           else {
-               x = xx;
-               sign = 1;
-           }
+            if (x > detail::tandg_lossth) {
+                sf_error("tandg", SF_ERROR_NO_RESULT, NULL);
+                return 0.0;
+            }
 
-           if (x > detail::tandg_lossth) {
-               sf_error("tandg", SF_ERROR_NO_RESULT, NULL);
-               return 0.0;
-           }
+            /* modulo 180 */
+            x = x - 180.0 * std::floor(x / 180.0);
+            if (cotflg) {
+                if (x <= 90.0) {
+                    x = 90.0 - x;
+                } else {
+                    x = x - 90.0;
+                    sign *= -1;
+                }
+            } else {
+                if (x > 90.0) {
+                    x = 180.0 - x;
+                    sign *= -1;
+                }
+            }
+            if (x == 0.0) {
+                return 0.0;
+            } else if (x == 45.0) {
+                return sign * 1.0;
+            } else if (x == 90.0) {
+                set_error((cotflg ? "cotdg" : "tandg"), SF_ERROR_SINGULAR, NULL);
+                return std::numeric_limits<double>::infinity();
+            }
+            /* x is now transformed into [0, 90) */
+            return sign * std::tan(x * detail::PI180);
+        }
 
-           /* modulo 180 */
-           x = x - 180.0 * std::floor(x / 180.0);
-           if (cotflg) {
-               if (x <= 90.0) {
-                   x = 90.0 - x;
-               }
-               else {
-                   x = x - 90.0;
-                   sign *= -1;
-               }
-           }
-           else {
-               if (x > 90.0) {
-                   x = 180.0 - x;
-                   sign *= -1;
-               }
-           }
-           if (x == 0.0) {
-               return 0.0;
-           }
-           else if (x == 45.0) {
-               return sign * 1.0;
-           }
-           else if (x == 90.0) {
-               set_error((cotflg ? "cotdg" : "tandg"), SF_ERROR_SINGULAR, NULL);
-               return std::numeric_limits<double>::infinity();
-           }
-           /* x is now transformed into [0, 90) */
-           return sign * std::tan(x * detail::PI180);
-       }
+    } // namespace detail
 
-    }
+    SPECFUN_HOST_DEVICE inline double tandg(double x) { return (detail::tancot(x, 0)); }
 
-    SPECFUN_HOST_DEVICE inline double tandg(double x) {
-        return (detail::tancot(x, 0));
-    }
+    SPECFUN_HOST_DEVICE inline double cotdg(double x) { return (detail::tancot(x, 1)); }
 
-
-    SPECFUN_HOST_DEVICE inline double cotdg(double x) {
-        return (detail::tancot(x, 1));
-    }
-
-}
-}
+} // namespace cephes
+} // namespace special
