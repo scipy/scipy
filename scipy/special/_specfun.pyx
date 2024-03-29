@@ -3,8 +3,20 @@ from libcpp.complex cimport complex as ccomplex
 cimport numpy as cnp
 cnp.import_array()
 
+cdef extern from "special/airy.h" nogil:
+    void specfun_airyzo 'special::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
+
+cdef extern from "special/fresnel.h" nogil:
+    void specfun_fcszo 'special::fcszo'(int kf, int nt, ccomplex[double] *zo)
+
+cdef extern from "special/kelvin.h" nogil:
+    void specfun_klvnzo 'special::klvnzo'(int nt, int kd, double *zo)
+
+cdef extern from "special/par_cyl.h" nogil:
+    void specfun_pbdv 'special::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv 'special::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
+
 cdef extern from "special/specfun/specfun.h" nogil:
-    void specfun_airyzo 'special::specfun::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
     void specfun_clpmn 'special::specfun::clpmn'(ccomplex[double] z, int m, int n, int ntype, ccomplex[double] *cpm, ccomplex[double] *cpd)
@@ -15,18 +27,14 @@ cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_cyzo 'special::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
     void specfun_eulerb 'special::specfun::eulerb'(int n, double *en)
     void specfun_fcoef 'special::specfun::fcoef'(int kd, int m, double q, double a, double *fc)
-    void specfun_fcszo 'special::specfun::fcszo'(int kf, int nt, ccomplex[double] *zo)
     void specfun_jdzo 'special::specfun::jdzo'(int nt, double *zo, int *n, int *m, int *p)
     void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
-    void specfun_klvnzo 'special::specfun::klvnzo'(int nt, int kd, double *zo)
     void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
     void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
     void specfun_lpmn 'special::specfun::lpmn'(int m, int n, double x, double *pm, double *pd)
     void specfun_lpn 'special::specfun::lpn'(int n, double x, double *pn, double *pd)
     void specfun_lqmn 'special::specfun::lqmn'(double x, int m, int n, double *qm, double *qd)
     void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
-    void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
-    void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
     void specfun_rctj 'special::specfun::rctj'(int n, double x, int *nm, double *rj, double *dj)
     void specfun_rcty 'special::specfun::rcty'(int n, double x, int *nm, double *ry, double *dy)
     void specfun_sdmn 'special::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
@@ -553,7 +561,7 @@ def sdmn(int m, int n, double c, double cv, int kd):
     return df
 
 
-def segv(int m, int n, int c, int kd):
+def segv(int m, int n, double c, int kd):
     """
     Compute the characteristic values of spheroidal wave functions.
     This is a wrapper for the function 'specfun_segv'.

@@ -1,5 +1,13 @@
 #include "specfun_wrappers.h"
+#include "special/airy.h"
+#include "special/bessel.h"
+#include "special/fresnel.h"
+#include "special/kelvin.h"
+#include "special/mathieu.h"
+#include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sphd_wave.h"
+#include "special/struve.h"
 
 extern "C" {
 
@@ -25,14 +33,14 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
 double exp1_wrap(double x) { return special::exp1(x); }
 
 npy_cdouble cexp1_wrap(npy_cdouble z) {
-    std::complex<double> res = special::cexp1({npy_creal(z), npy_cimag(z)});
+    std::complex<double> res = special::exp1(std::complex<double>{npy_creal(z), npy_cimag(z)});
     return npy_cpack(res.real(), res.imag());
 }
 
 double expi_wrap(double x) { return special::expi(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) {
-    std::complex<double> res = special::cexpi({npy_creal(z), npy_cimag(z)});
+    std::complex<double> res = special::expi(std::complex<double>{npy_creal(z), npy_cimag(z)});
     return npy_cpack(res.real(), res.imag());
 }
 
@@ -151,11 +159,17 @@ double prolate_segv_wrap(double m, double n, double c) { return special::prolate
 double oblate_segv_wrap(double m, double n, double c) { return special::oblate_segv(m, n, c); }
 
 double prolate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1d) {
-    return special::prolate_aswfa_nocv(m, n, c, x, s1d);
+    double s1f;
+    special::prolate_aswfa_nocv(m, n, c, x, &s1f, s1d);
+
+    return s1f;
 }
 
 double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1d) {
-    return special::oblate_aswfa_nocv(m, n, c, x, s1d);
+    double s1f;
+    special::oblate_aswfa_nocv(m, n, c, x, &s1f, s1d);
+
+    return s1f;
 }
 
 int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d) {
@@ -169,11 +183,17 @@ int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double 
 }
 
 double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d) {
-    return special::prolate_radial1_nocv(m, n, c, x, r1d);
+    double r1f;
+    special::prolate_radial1_nocv(m, n, c, x, &r1f, r1d);
+
+    return r1f;
 }
 
 double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double *r2d) {
-    return special::prolate_radial2_nocv(m, n, c, x, r2d);
+    double r2f;
+    special::prolate_radial2_nocv(m, n, c, x, &r2f, r2d);
+
+    return r2f;
 }
 
 int prolate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
@@ -187,11 +207,17 @@ int prolate_radial2_wrap(double m, double n, double c, double cv, double x, doub
 }
 
 double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d) {
-    return special::oblate_radial1_nocv(m, n, c, x, r1d);
+    double r1f;
+    special::oblate_radial1_nocv(m, n, c, x, &r1f, r1d);
+
+    return r1f;
 }
 
 double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *r2d) {
-    return special::oblate_radial2_nocv(m, n, c, x, r2d);
+    double r2f;
+    special::oblate_radial2_nocv(m, n, c, x, &r2f, r2d);
+
+    return r2f;
 }
 
 int oblate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
