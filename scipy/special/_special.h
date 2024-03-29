@@ -380,5 +380,3 @@ inline double cephes_fdtrc(double a, double b, double x) {
 inline double cephes_fdtri(double a, double b, double x) {
     return special::cephes::fdtri(a, b, x);
 }
-
-
