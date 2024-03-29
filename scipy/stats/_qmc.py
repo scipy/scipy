@@ -780,6 +780,7 @@ def van_der_corput(
         else:
             permutations = np.asarray(permutations)
 
+        permutations = permutations.astype(np.int64)
         return _cy_van_der_corput_scrambled(n, base, start_index,
                                             permutations, workers)
 
@@ -2214,11 +2215,11 @@ class MultivariateNormalQMC:
             engine: QMCEngine | None = None,
             seed: SeedType = None
     ) -> None:
-        mean = np.array(mean, copy=False, ndmin=1)
+        mean = np.asarray(np.atleast_1d(mean))
         d = mean.shape[0]
         if cov is not None:
             # covariance matrix provided
-            cov = np.array(cov, copy=False, ndmin=2)
+            cov = np.asarray(np.atleast_2d(cov))
             # check for square/symmetric cov matrix and mean vector has the
             # same d
             if not mean.shape[0] == cov.shape[0]:
@@ -2315,7 +2316,7 @@ class MultivariateNormalQMC:
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]  # noqa: E501
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -2379,7 +2380,7 @@ class MultinomialQMC:
         *, engine: QMCEngine | None = None,
         seed: SeedType = None
     ) -> None:
-        self.pvals = np.array(pvals, copy=False, ndmin=1)
+        self.pvals = np.atleast_1d(np.asarray(pvals))
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):

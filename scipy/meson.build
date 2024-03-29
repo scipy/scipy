@@ -70,7 +70,11 @@ else
   _incdir_numpy_abs = incdir_numpy
 endif
 inc_np = include_directories(incdir_numpy)
-np_dep = declare_dependency(include_directories: inc_np)
+# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
+# NPY_API_VERSION in order not to break compilation for released SciPy versions
+# when NumPy introduces a new deprecation.
+numpy_nodepr_api = ['-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION']
+np_dep = declare_dependency(include_directories: inc_np, compile_args: numpy_nodepr_api)
 
 incdir_f2py = incdir_numpy / '..' / '..' / 'f2py' / 'src'
 inc_f2py = include_directories(incdir_f2py)
@@ -81,7 +85,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.10.4')
+pybind11_dep = dependency('pybind11', version: '>=2.12.0')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -120,16 +124,6 @@ cpp_args_pythran = [
   '-DPYTHRAN_BLAS_NONE'
 ]
 
-# Don't use the deprecated NumPy C API. Define this to a fixed version instead of
-# NPY_API_VERSION in order not to break compilation for released SciPy versions
-# when NumPy introduces a new deprecation. Use in a meson.build file::
-#
-#   py3.extension_module('_name',
-#     'source_fname',
-#     numpy_nodepr_api)
-#
-numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
-
 # Share this object across multiple modules.
 fortranobject_lib = static_library('_fortranobject',
   fortranobject_c,
@@ -157,7 +151,7 @@ lapack_name = get_option('lapack')
 # First try scipy-openblas, and if found don't look for cblas or lapack, we
 # know what's inside the scipy-openblas wheels already.
 if blas_name == 'openblas' or blas_name == 'auto'
-  blas = dependency('scipy-openblas', required: false)
+  blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
   endif
@@ -167,7 +161,7 @@ endif
 # that too to make the fallback detection with CMake work
 if blas_name == 'openblas'
   blas = dependency(['openblas', 'OpenBLAS'])
-else
+elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
 if blas_name == 'blas'
@@ -205,17 +199,17 @@ uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
-  g77_abi_wrappers = declare_dependency(
-    sources:
-      [
-        '_build_utils/src/wrap_g77_abi_f.f',
-        '_build_utils/src/wrap_g77_abi_c.c'
-      ],
-    include_directories: inc_np,
-    dependencies: [py3_dep, cblas],
+  g77_abi_wrappers = static_library(
+    'g77_abi_wrappers',
+    ['_build_utils/src/wrap_g77_abi.c'],
+    dependencies: [py3_dep, cblas, blas, np_dep],
   )
 else
-  g77_abi_wrappers = declare_dependency(sources: ['_build_utils/src/wrap_dummy_g77_abi.f'])
+  g77_abi_wrappers = static_library(
+    'dummy_g77_abi_wrappers',
+    ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    dependencies: [py3_dep, blas, np_dep],
+  )
 endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
@@ -228,7 +222,8 @@ generate_version = custom_target(
   output: 'version.py',
   input: '../tools/version_utils.py',
   command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
-  install_dir: scipy_dir
+  install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 python_sources = [
@@ -247,11 +242,6 @@ endif
 py3.install_sources(
   python_sources,
   subdir: 'scipy'
-)
-
-py3.install_sources(
-  ['_build_utils/tests/test_scipy_version.py'],
-  subdir: 'scipy/_lib/tests'
 )
 
 # Copy the main __init__.py and pxd files to the build dir.
@@ -278,6 +268,19 @@ cython_gen_cpp = generator(cython,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
+if use_pythran
+  pythran_gen = generator(pythran,
+    arguments : ['-E', '@INPUT@', '-o', '@OUTPUT@'],
+    output : '@BASENAME@.cpp',
+  )
+endif
+
+# Used for templated C code (not Cython code since Cython is path-dependent)
+tempita_gen = generator(tempita,
+  arguments : ['@INPUT@', '--outfile', '@OUTPUT@'],
+  output : '@BASENAME@',
+)
+
 # Check if compiler flags are supported. This is necessary to ensure that SciPy
 # can be built with any supported compiler. We need so many warning flags
 # because we want to be able to build with `-Werror` in CI; that ensures that
@@ -301,7 +304,6 @@ Wno_switch = cc.get_supported_arguments('-Wno-switch')
 Wno_unused_label = cc.get_supported_arguments('-Wno-unused-label')
 Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
-Wno_incompatible_pointer_types = cc.get_supported_arguments('-Wno-incompatible-pointer-types')
 
 # C++ warning flags
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
@@ -410,10 +412,7 @@ if cc.get_id() != 'msvc'
   endif
 endif
 
-# Suppress warning for deprecated Numpy API.
-# (Suppress warning messages emitted by #warning directives).
-# Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += [_cpp_Wno_cpp, use_math_defines]
+cython_c_args += [use_math_defines]
 cython_cpp_args = cython_c_args
 
 compilers = {
@@ -484,6 +483,7 @@ configure_file(
   output: '__config__.py',
   configuration : conf_data,
   install_dir: scipy_dir,
+  install_tag: 'python-runtime',
 )
 
 # Ordering of subdirs: special and linalg come first, because other submodules

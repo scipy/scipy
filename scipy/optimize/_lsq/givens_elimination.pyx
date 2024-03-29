@@ -7,7 +7,7 @@ import numpy as np
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-def givens_elimination(double [:, ::1] S, double [:] v, double [:] diag):
+def givens_elimination(double[:, ::1] S, double[:] v, const double[:] diag):
     """Zero out a diagonal block of a matrix by series of Givens rotations.
 
     The matrix has the structure::

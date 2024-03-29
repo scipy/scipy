@@ -44,8 +44,7 @@ class TestFirwin:
         for freq, expected in expected_response:
             actual = abs(np.sum(h*np.exp(-1.j*np.pi*m*freq)))
             mse = abs(actual-expected)**2
-            assert_(mse < tol, 'response not as expected, mse=%g > %g'
-               % (mse, tol))
+            assert_(mse < tol, f'response not as expected, mse={mse:g} > {tol:g}')
 
     def test_response(self):
         N = 51
@@ -123,6 +122,10 @@ class TestFirwin:
                 'least squares violation')
             self.check_response(hs, [expected_response], 1e-12)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            firwin(51, .5, fs=np.array([10, 20]))
+
 
 class TestFirWinMore:
     """Different author, different style, different tests..."""
@@ -136,7 +139,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -158,7 +162,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.25, 0.5-width/2, 0.5+width/2, 0.75, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
         assert_array_almost_equal(np.abs(response),
@@ -176,7 +181,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.2, 0.3-width/2, 0.3+width/2, 0.5,
                                 0.7-width/2, 0.7+width/2, 0.8, 1.0])
         freqs, response = freqz(taps, worN=np.pi*freq_samples)
@@ -196,7 +202,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 0.1, 0.2-width/2, 0.2+width/2, 0.35,
                                 0.5-width/2, 0.5+width/2, 0.65,
                                 0.8-width/2, 0.8+width/2, 0.9, 1.0])
@@ -220,7 +227,8 @@ class TestFirWinMore:
         # Check the symmetry of taps.
         assert_array_almost_equal(taps[:ntaps//2], taps[ntaps:ntaps-ntaps//2-1:-1])
 
-        # Check the gain at a few samples where we know it should be approximately 0 or 1.
+        # Check the gain at a few samples where
+        # we know it should be approximately 0 or 1.
         freq_samples = np.array([0.0, 200, 300-width/2, 300+width/2, 500,
                                 700-width/2, 700+width/2, 800, 1000])
         freqs, response = freqz(taps, worN=np.pi*freq_samples/nyquist)
@@ -279,6 +287,11 @@ class TestFirWinMore:
             firwin(1, 1, nyq=10)
         with pytest.deprecated_call(match="use keyword arguments"):
             firwin(58, 0.1, 0.03)
+
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            firwin2(51, .5, 1, fs=np.array([10, 20]))
+
 
 class TestFirwin2:
 
@@ -504,6 +517,10 @@ class TestRemez:
             # from test_hilbert
             remez(11, [0.1, 0.4], [1], None)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            remez(11, .1, 1, fs=np.array([10, 20]))
+
 class TestFirls:
 
     def test_bad_args(self):
@@ -623,6 +640,9 @@ class TestFirls:
             # from test_firls
             firls(11, [0, 0.1, 0.4, 0.5], [1, 1, 0, 0], None)
 
+    def test_fs_validation(self):
+        with pytest.raises(ValueError, match="Sampling.*single scalar"):
+            firls(11, .1, 1, fs=np.array([10, 20]))
 
 class TestMinimumPhase:
 
@@ -635,6 +655,8 @@ class TestMinimumPhase:
         assert_raises(ValueError, minimum_phase, np.ones(10), n_fft=8)
         assert_raises(ValueError, minimum_phase, np.ones(10), method='foo')
         assert_warns(RuntimeWarning, minimum_phase, np.arange(3))
+        with pytest.raises(ValueError, match="is only supported when"):
+            minimum_phase(np.ones(3), method='hilbert', half=False)
 
     def test_homomorphic(self):
         # check that it can recover frequency responses of arbitrary
@@ -649,9 +671,12 @@ class TestMinimumPhase:
         rng = np.random.RandomState(0)
         for n in (2, 3, 10, 11, 15, 16, 17, 20, 21, 100, 101):
             h = rng.randn(n)
-            h_new = minimum_phase(np.convolve(h, h[::-1]))
-            assert_allclose(np.abs(fft(h_new)),
-                            np.abs(fft(h)), rtol=1e-4)
+            h_linear = np.convolve(h, h[::-1])
+            h_new = minimum_phase(h_linear)
+            assert_allclose(np.abs(fft(h_new)), np.abs(fft(h)), rtol=1e-4)
+            h_new = minimum_phase(h_linear, half=False)
+            assert len(h_linear) == len(h_new)
+            assert_allclose(np.abs(fft(h_new)), np.abs(fft(h_linear)), rtol=1e-4)
 
     def test_hilbert(self):
         # compare to MATLAB output of reference implementation

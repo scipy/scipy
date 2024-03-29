@@ -22,8 +22,8 @@ from scipy.optimize._minimize import Bounds
 class ReturnShape:
     """This class exists to create a callable that does not have a '__name__' attribute.
 
-    __init__ takes the argument 'shape', which should be a tuple of ints. When an instance
-    is called with a single argument 'x', it returns numpy.ones(shape).
+    __init__ takes the argument 'shape', which should be a tuple of ints.
+    When an instance is called with a single argument 'x', it returns numpy.ones(shape).
     """
 
     def __init__(self, shape):
@@ -257,6 +257,27 @@ class TestRootLM:
         final_flows = optimize.root(pressure_network, initial_guess,
                                     method='lm', args=(Qtot, k)).x
         assert_array_almost_equal(final_flows, np.ones(4))
+
+
+class TestNfev:
+    def zero_f(self, y):
+        self.nfev += 1
+        return y**2-3
+
+    @pytest.mark.parametrize('method', ['hybr', 'lm', 'broyden1',
+                                        'broyden2', 'anderson',
+                                        'linearmixing', 'diagbroyden',
+                                        'excitingmixing', 'krylov',
+                                        'df-sane'])
+    def test_root_nfev(self, method):
+        self.nfev = 0
+        solution = optimize.root(self.zero_f, 100, method=method)
+        assert solution.nfev == self.nfev
+
+    def test_fsolve_nfev(self):
+        self.nfev = 0
+        x, info, ier, mesg = optimize.fsolve(self.zero_f, 100, full_output=True)
+        assert info['nfev'] == self.nfev
 
 
 class TestLeastSq:
@@ -812,11 +833,15 @@ class TestCurveFit:
     def test_curvefit_covariance(self):
 
         def funcp(x, a, b):
-            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                             [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                             [0, 0, 1.0]])
             return rotn.dot(a * np.exp(-b*x))
 
         def jacp(x, a, b):
-            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+            rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                             [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                             [0, 0, 1.0]])
             e = np.exp(-b*x)
             return rotn.dot(np.vstack((e, -a * x * e)).T)
 
@@ -839,7 +864,9 @@ class TestCurveFit:
         #       = ydatap^T Cp^{-1} ydatap
         # Cp^{-1} = R C^{-1} R^T
         # Cp      = R C R^T, since R^-1 = R^T
-        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0], [1./np.sqrt(2), 1./np.sqrt(2), 0], [0, 0, 1.0]])
+        rotn = np.array([[1./np.sqrt(2), -1./np.sqrt(2), 0],
+                         [1./np.sqrt(2), 1./np.sqrt(2), 0],
+                         [0, 0, 1.0]])
         ydatap = rotn.dot(ydata)
         covarp = rotn.dot(covar).dot(rotn.T)
 

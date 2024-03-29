@@ -1,11 +1,12 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING, Union, Sequence
+from typing import TYPE_CHECKING
+from collections.abc import Sequence
 import numpy as np
 
 if TYPE_CHECKING:
     import numpy.typing as npt
 
-_IntegerType = Union[int, np.integer]
+_IntegerType = int | np.integer
 
 
 class Rotation:

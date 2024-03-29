@@ -81,7 +81,8 @@ class GridData(Benchmark):
         self.values = self.func(self.points[:, 0], self.points[:, 1])
 
     def time_evaluation(self, n_grids, method):
-        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y), method=method)
+        interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y),
+                             method=method)
 
 
 class Interpolate1d(Benchmark):
@@ -128,7 +129,8 @@ class Rbf(Benchmark):
     param_names = ['n_samples', 'function']
     params = [
         [10, 50, 100],
-        ['multiquadric', 'inverse', 'gaussian', 'linear', 'cubic', 'quintic', 'thin_plate']
+        ['multiquadric', 'inverse', 'gaussian', 'linear',
+         'cubic', 'quintic', 'thin_plate']
     ]
 
     def setup(self, n_samples, function):
@@ -220,7 +222,8 @@ class BivariateSpline(Benchmark):
         interpolate.SmoothBivariateSpline(self.x, self.y, self.z)
 
     def time_lsq_bivariate_spline(self, n_samples):
-        interpolate.LSQBivariateSpline(self.x, self.y, self.z, self.xknots.flat, self.yknots.flat)
+        interpolate.LSQBivariateSpline(self.x, self.y, self.z,
+                                       self.xknots.flat, self.yknots.flat)
 
 
 class Interpolate(Benchmark):
@@ -285,6 +288,47 @@ class RegularGridInterpolator(Benchmark):
         )
 
     def time_rgi(self, ndim, max_coord_size, n_samples, flipped):
+        self.interp(self.xi)
+
+
+class RGI_Cubic(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="cubic".
+    """
+    param_names = ['ndim', 'n_samples', 'method']
+    params = [
+        [2],
+        [10, 40, 100, 200, 400],
+        ['cubic', 'cubic_legacy']
+    ]
+
+    def setup(self, ndim, n_samples, method):
+        rng = np.random.default_rng(314159)
+
+        self.points = [np.sort(rng.random(size=n_samples))
+                       for _ in range(ndim)]
+        self.values = rng.random(size=[n_samples]*ndim)
+
+        # choose in-bounds sample points xi
+        bounds = [(p.min(), p.max()) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples)
+              for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi_setup_interpolator(self, ndim, n_samples, method):
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+            method=method
+        )
+
+    def time_rgi(self, ndim, n_samples, method):
         self.interp(self.xi)
 
 
@@ -376,14 +420,19 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
     https://github.com/scipy/scipy/pull/18376 for discussion
     """
     def __init__(self, points, xi, tol=1e-6, maxiter=400, **kwargs):
-        interpolate.CloughTocher2DInterpolator.__init__(self, points, None, tol=tol, maxiter=maxiter)
+        interpolate.CloughTocher2DInterpolator.__init__(self, points, None,
+                                                        tol=tol, maxiter=maxiter)
         self.xi = None
         self._preprocess_xi(*xi)
-        self.simplices, self.c = interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
+        self.simplices, self.c = (
+            interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
+        )
 
     def _preprocess_xi(self, *args):
         if self.xi is None:
-            self.xi, self.interpolation_points_shape = interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
+            self.xi, self.interpolation_points_shape = (
+                interpolate.CloughTocher2DInterpolator._preprocess_xi(self, *args)
+            )
         return self.xi, self.interpolation_points_shape
     
     def _find_simplicies(self, xi):

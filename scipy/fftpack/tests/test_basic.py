@@ -294,8 +294,7 @@ class _TestRFFTBase:
                 return getattr(self.data, item)
             except AttributeError as e:
                 raise AttributeError("'MockSeries' object "
-                                      "has no attribute '{attr}'".
-                                      format(attr=item)) from e
+                                      f"has no attribute '{item}'") from e
 
     def test_non_ndarray_with_dtype(self):
         x = np.array([1., 2., 3., 4., 5.])
@@ -744,7 +743,7 @@ class FakeArray2:
     def __init__(self, data):
         self._data = data
 
-    def __array__(self):
+    def __array__(self, dtype=None, copy=None):
         return self._data
 
 

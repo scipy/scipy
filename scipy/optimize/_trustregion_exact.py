@@ -344,7 +344,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                     quadratic_term = np.dot(p, np.dot(H, p))
 
                     # Check stop criteria
-                    relative_error = (step_len**2 * s_min**2) / (quadratic_term + lambda_current*tr_radius**2)
+                    relative_error = ((step_len**2 * s_min**2)
+                                      / (quadratic_term + lambda_current*tr_radius**2))
                     if relative_error <= self.k_hard:
                         p += step_len * z_min
                         break
@@ -370,8 +371,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                         lambda_lb = max(lambda_lb, lambda_new)
 
                         # Update damping factor
-                        lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                             lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                        lambda_current = max(
+                            np.sqrt(lambda_lb * lambda_ub),
+                            lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                        )
 
                 else:  # Outside boundary
                     # Check stop criteria
@@ -398,7 +401,8 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 step_len = tr_radius
 
                 # Check stop criteria
-                if step_len**2 * s_min**2 <= self.k_hard * lambda_current * tr_radius**2:
+                if (step_len**2 * s_min**2
+                    <= self.k_hard * lambda_current * tr_radius**2):
                     p = step_len * z_min
                     break
 
@@ -407,8 +411,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 lambda_lb = max(lambda_lb, lambda_current - s_min**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
             else:  # Unsuccessful factorization
 
@@ -420,8 +426,10 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
                 lambda_lb = max(lambda_lb, lambda_current + delta/v_norm**2)
 
                 # Update damping factor
-                lambda_current = max(np.sqrt(lambda_lb * lambda_ub),
-                                     lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb))
+                lambda_current = max(
+                    np.sqrt(lambda_lb * lambda_ub),
+                    lambda_lb + self.UPDATE_COEFF*(lambda_ub-lambda_lb)
+                )
 
         self.lambda_lb = lambda_lb
         self.lambda_current = lambda_current

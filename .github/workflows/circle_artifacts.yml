@@ -1,8 +1,12 @@
+name: Redirect circleci artifacts
+
 on: [status]
 jobs:
   circleci_artifacts_redirector_job:
     runs-on: ubuntu-22.04
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[skip circle]')  && github.event.context == 'ci/circleci: build_docs'"
+    if: >
+      github.repository == 'scipy/scipy'
+      && github.event.context == 'ci/circleci: build_docs'
     name: Run CircleCI artifacts redirector
     steps:
       - name: GitHub Action step

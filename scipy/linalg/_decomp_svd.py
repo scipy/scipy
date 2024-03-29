@@ -114,8 +114,22 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if not isinstance(lapack_driver, str):
         raise TypeError('lapack_driver must be a string')
     if lapack_driver not in ('gesdd', 'gesvd'):
-        raise ValueError('lapack_driver must be "gesdd" or "gesvd", not "%s"'
-                         % (lapack_driver,))
+        message = f'lapack_driver must be "gesdd" or "gesvd", not "{lapack_driver}"'
+        raise ValueError(message)
+
+    if lapack_driver == 'gesdd' and compute_uv:
+        # XXX: revisit int32 when ILP64 lapack becomes a thing
+        max_mn, min_mn = (m, n) if m > n else (n, m)
+        if full_matrices:
+            if max_mn*max_mn > numpy.iinfo(numpy.int32).max:
+                raise ValueError(f"Indexing a matrix size {max_mn} x {max_mn} "
+                                  " would incur integer overflow in LAPACK.")
+        else:
+            sz = max(m * min_mn, n * min_mn)
+            if max(m * min_mn, n * min_mn) > numpy.iinfo(numpy.int32).max:
+                raise ValueError(f"Indexing a matrix of {sz} elements would "
+                                  "incur an in integer overflow in LAPACK.")
+
     funcs = (lapack_driver, lapack_driver + '_lwork')
     gesXd, gesXd_lwork = get_lapack_funcs(funcs, (a1,), ilp64='preferred')
 
@@ -474,7 +488,7 @@ def subspace_angles(A, B):
         raise ValueError(f'expected 2D array, got shape {B.shape}')
     if len(B) != len(QA):
         raise ValueError('A and B must have the same number of rows, got '
-                         '{} and {}'.format(QA.shape[0], B.shape[0]))
+                         f'{QA.shape[0]} and {B.shape[0]}')
     QB = orth(B)
     del B
 
