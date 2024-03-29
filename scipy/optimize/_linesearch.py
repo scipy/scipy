@@ -414,7 +414,7 @@ def scalar_search_wolfe2(phi, derphi, phi0=None,
             return True
 
     for i in range(maxiter):
-        if alpha1 == 0 or (amax is not None and alpha0 == amax):
+        if alpha1 == 0 or (amax is not None and alpha0 > amax):
             # alpha1 == 0: This shouldn't happen. Perhaps the increment has
             # slipped below machine precision?
             alpha_star = None
