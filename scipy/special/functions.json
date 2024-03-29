@@ -410,8 +410,8 @@
         }
     },
     "erfcinv": {
-        "cephes.h": {
-            "erfcinv": "d->d"
+        "_special.h++": {
+            "cephes_erfcinv": "d->d"
         }
     },
     "eval_chebyc": {
@@ -776,7 +776,7 @@
         "_cunity.pxd": {
             "clog1p": "D->D"
         },
-        "cephes.h": {
+        "_special.h++": {
             "cephes_log1p": "d->d"
         }
     },
@@ -963,8 +963,8 @@
         }
     },
     "radian": {
-        "cephes.h": {
-            "radian": "ddd->d"
+        "_special.h++": {
+            "cephes_radian": "ddd->d"
         }
     },
     "rel_entr": {

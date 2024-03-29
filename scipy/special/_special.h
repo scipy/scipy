@@ -18,6 +18,7 @@
 #include "special/cephes/bdtr.h"
 #include "special/cephes/cbrt.h"
 #include "special/cephes/chdtr.h"
+#include "special/cephes/erfinv.h"
 #include "special/cephes/ellie.h"
 #include "special/cephes/ellik.h"
 #include "special/cephes/ellpe.h"
@@ -325,6 +326,10 @@ inline double cephes_cotdg(double x) {
     return special::cephes::cotdg(x);
 }
 
+inline double cephes_radian(double d, double m, double s) {
+    return special::cephes::radian(d, m, s);
+}
+
 inline double cephes_ndtri(double x) {
     return special::cephes::ndtri(x);
 }
@@ -349,3 +354,6 @@ inline double cephes_btdtr(double a, double b, double x) {
     return special::cephes::incbet(a, b, x);
 }
 
+inline double cephes_erfcinv(double y) {
+    return special::cephes::erfcinv(y);
+}
