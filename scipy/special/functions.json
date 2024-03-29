@@ -622,13 +622,13 @@
         }
     },
     "gdtr": {
-        "cephes.h": {
-            "gdtr": "ddd->d"
+        "_special.h++": {
+            "cephes_gdtr": "ddd->d"
         }
     },
     "gdtrc": {
-        "cephes.h": {
-            "gdtrc": "ddd->d"
+        "_special.h++": {
+            "cephes_gdtrc": "ddd->d"
         }
     },
     "gdtria": {

@@ -29,6 +29,7 @@
 #include "special/cephes/expn.h"
 #include "special/cephes/fdtr.h"
 #include "special/cephes/gamma.h"
+#include "special/cephes/gdtr.h"
 #include "special/cephes/hyp2f1.h"
 #include "special/cephes/hyperg.h"
 #include "special/cephes/i0.h"
@@ -377,6 +378,14 @@ inline double cephes_fdtrc(double a, double b, double x) {
     return special::cephes::fdtrc(a, b, x);
 }
 
-inline double cephes_fdtri(double a, double b, double x) {
-    return special::cephes::fdtri(a, b, x);
+inline double cephes_fdtri(double a, double b, double y) {
+    return special::cephes::fdtri(a, b, y);
+}
+
+inline double cephes_gdtr(double a, double b, double x) {
+    return special::cephes::gdtr(a, b, x);
+}
+
+inline double cephes_gdtrc(double a, double b, double x) {
+    return special::cephes::gdtrc(a, b, x);
 }
