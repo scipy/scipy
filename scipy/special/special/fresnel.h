@@ -5,6 +5,180 @@
 namespace special {
 namespace detail {
 
+    inline void cfc(std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
+
+        // =========================================================
+        // Purpose: Compute complex Fresnel integral C(z) and C'(z)
+        // Input :  z --- Argument of C(z)
+        // Output:  ZF --- C(z)
+        //          ZD --- C'(z)
+        // =========================================================
+
+        int k, m;
+        double wa0, wa;
+        std::complex<double> c, cr, cf, cf0, cf1, cg, d;
+        const double eps = 1.0e-14;
+        const double pi = 3.141592653589793;
+
+        double w0 = std::abs(z);
+        std::complex<double> zp = 0.5 * pi * z * z;
+        std::complex<double> zp2 = zp * zp;
+        std::complex<double> z0 = 0.0;
+
+        if (z == z0) {
+            c = z0;
+        } else if (w0 <= 2.5) {
+            cr = z;
+            c = cr;
+            wa0 = 0.0;
+            for (k = 1; k <= 80; k++) {
+                cr = -0.5 * cr * (4.0 * k - 3.0) / static_cast<double>(k) / (2.0 * k - 1.0) / (4.0 * k + 1.0) * zp2;
+                c += cr;
+                wa = std::abs(c);
+                if ((fabs((wa - wa0) / wa) < eps) && (k > 10)) {
+                    *zf = c;
+                    *zd = std::cos(0.5 * pi * z * z);
+                    return;
+                }
+                wa0 = wa;
+            }
+        } else if ((w0 > 2.5) && (w0 < 4.5)) {
+            m = 85;
+            c = z0;
+            cf1 = z0;
+            cf0 = 1.0e-100;
+            for (k = m; k >= 0; k--) {
+                cf = (2.0 * k + 3.0) * cf0 / zp - cf1;
+                if (k % 2 == 0) {
+                    c += cf;
+                }
+                cf1 = cf0;
+                cf0 = cf;
+            }
+            c *= 2.0 / (pi * z) * std::sin(zp) / cf;
+        } else {
+            // See comment at CFS(), use C(z) = iC(-iz)
+            if ((z.imag() > -z.real()) && (z.imag() <= z.real())) {
+                // right quadrant
+                d = 0.5;
+            } else if ((z.imag() > z.real()) && (z.imag() >= -z.real())) {
+                // upper quadrant
+                d = std::complex<double>(0, 0.5);
+            } else if ((z.imag() < -z.real()) && (z.imag() >= z.real())) {
+                // left quadrant
+                d = -0.5;
+            } else {
+                d = std::complex<double>(0, -0.5);
+            }
+            cr = 1.0;
+            cf = 1.0;
+            for (k = 1; k <= 20; k++) {
+                cr = -0.25 * cr * (4.0 * k - 1.0) * (4.0 * k - 3.0) / zp2;
+                cf += cr;
+            }
+            cr = 1.0 / (pi * z * z);
+            cg = cr;
+            for (k = 1; k <= 12; k++) {
+                cr = -0.25 * cr * (4.0 * k + 1.0) * (4.0 * k - 1.0) / zp2;
+                cg += cr;
+            }
+            c = d + (cf * std::sin(zp) - cg * std::cos(zp)) / (pi * z);
+        }
+        *zf = c;
+        *zd = std::cos(0.5 * pi * z * z);
+        return;
+    }
+
+    inline void cfs(std::complex<double> z, std::complex<double> *zf, std::complex<double> *zd) {
+
+        // =========================================================
+        // Purpose: Compute complex Fresnel Integral S(z) and S'(z)
+        // Input :  z  --- Argument of S(z)
+        // Output:  ZF --- S(z)
+        //          ZD --- S'(z)
+        // =========================================================
+
+        int k, m;
+        double wb0, wb;
+        std::complex<double> s, cr, cf, cf0, cf1, cg, d;
+        const double eps = 1.0e-14;
+        const double pi = 3.141592653589793;
+
+        double w0 = std::abs(z);
+        std::complex<double> zp = 0.5 * pi * z * z;
+        std::complex<double> zp2 = zp * zp;
+        std::complex<double> z0 = 0.0;
+
+        if (z == z0) {
+            s = z0;
+        } else if (w0 <= 2.5) {
+            s = z * zp / 3.0;
+            cr = s;
+            wb0 = 0.0;
+            for (k = 1; k <= 80; k++) {
+                cr = -0.5 * cr * (4.0 * k - 1.0) / static_cast<double>(k) / (2.0 * k + 1.0) / (4.0 * k + 3.0) * zp2;
+                s += cr;
+                wb = std::abs(s);
+                if ((fabs(wb - wb0) < eps) && (k > 10)) {
+                    *zf = s;
+                    *zd = std::sin(0.5 * pi * z * z);
+                    return;
+                }
+                wb0 = wb;
+            }
+        } else if ((w0 > 2.5) && (w0 < 4.5)) {
+            m = 85;
+            s = z0;
+            cf1 = z0;
+            cf0 = 1.0e-100;
+            for (k = m; k >= 0; k--) {
+                cf = (2.0 * k + 3.0) * cf0 / zp - cf1;
+                if (k % 2 == 1) {
+                    s += cf;
+                }
+                cf1 = cf0;
+                cf0 = cf;
+            }
+            s = 2.0 / (pi * z) * std::sin(zp) / cf * s;
+        } else {
+            // Auxiliary functions f(z) and g(z) can be computed using an
+            // asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
+            // as sometimes suggested. Use the symmetry S(z) = -iS(-iz).
+            // Interestingly, most of the expansion code is the same across
+            // the quadrants. (The forth power in Z is the equalizer here.)
+            // Only one constant has to be adapted.
+            if ((z.imag() > -z.real()) && (z.imag() <= z.real())) {
+                // right quadrant
+                d = 0.5;
+            } else if ((z.imag() > z.real()) && (z.imag() >= -z.real())) {
+                // upper quadrant
+                d = std::complex<double>(0, -0.5);
+            } else if ((z.imag() < -z.real()) && (z.imag() >= z.real())) {
+                // left quadrant
+                d = -0.5;
+            } else {
+                d = std::complex<double>(0, 0.5);
+            }
+            cr = 1.0;
+            cf = 1.0;
+            for (k = 1; k <= 20; k++) {
+                cr = -0.25 * cr * (4.0 * k - 1.0) * (4.0 * k - 3.0) / zp2;
+                cf += cr;
+            }
+            cr = 1.0;
+            cg = 1.0;
+            for (k = 1; k <= 12; k++) {
+                cr = -0.25 * cr * (4.0 * k + 1.0) * (4.0 * k - 1.0) / zp2;
+                cg += cr;
+            }
+            cg = cg / (pi * z * z);
+            s = d - (cf * std::cos(zp) + cg * std::sin(zp)) / (pi * z);
+        }
+        *zf = s;
+        *zd = std::sin(0.5 * pi * z * z);
+        return;
+    }
+
     template <typename T>
     void ffk(int ks, T x, std::complex<T> &f, std::complex<T> &g) {
 
@@ -134,8 +308,8 @@ namespace detail {
 inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::complex<double> *zfc) {
     std::complex<double> zfd;
 
-    specfun::cfs(z, zfs, &zfd);
-    specfun::cfc(z, zfc, &zfd);
+    detail::cfs(z, zfs, &zfd);
+    detail::cfc(z, zfc, &zfd);
 }
 
 template <typename T>
@@ -146,6 +320,85 @@ void modified_fresnel_plus(T x, std::complex<T> *Fplus, std::complex<T> *Kplus) 
 template <typename T>
 void modified_fresnel_minus(T x, std::complex<T> *Fminus, std::complex<T> *Kminus) {
     detail::ffk(1, x, *Fminus, *Kminus);
+}
+
+inline void fcszo(int kf, int nt, std::complex<double> *zo) {
+
+    // ===============================================================
+    // Purpose: Compute the complex zeros of Fresnel integral C(z)
+    //          or S(z) using modified Newton's iteration method
+    // Input :  KF  --- Function code
+    //                  KF=1 for C(z) or KF=2 for S(z)
+    //          NT  --- Total number of zeros
+    // Output:  ZO(L) --- L-th zero of C(z) or S(z)
+    // Routines called:
+    //      (1) CFC for computing Fresnel integral C(z)
+    //      (2) CFS for computing Fresnel integral S(z)
+    // ==============================================================
+
+    int i, j, it, nr;
+    double psq, px, py, w, w0;
+    std::complex<double> z, zp, zf, zd, zfd, zgd, zq, zw;
+    const double pi = 3.141592653589793;
+    psq = 0.0;
+    w = 0.0;
+
+    for (nr = 1; nr <= nt; ++nr) {
+        if (kf == 1)
+            psq = sqrt(4.0 * nr - 1.0);
+        if (kf == 2)
+            psq = 2.0 * sqrt(nr);
+
+        px = psq - log(pi * psq) / (pi * pi * psq * psq * psq);
+        py = log(pi * psq) / (pi * psq);
+        z = std::complex<double>(px, py);
+
+        if (kf == 2) {
+            if (nr == 2) {
+                z = std::complex<double>(2.8334, 0.2443);
+            }
+            if (nr == 3) {
+                z = std::complex<double>(3.4674, 0.2185);
+            }
+            if (nr == 4) {
+                z = std::complex<double>(4.0025, 0.2008);
+            }
+        }
+
+        it = 0;
+        do {
+            it++;
+            if (kf == 1) {
+                detail::cfc(z, &zf, &zd);
+            }
+            if (kf == 2) {
+                detail::cfs(z, &zf, &zd);
+            }
+
+            zp = 1.0;
+            for (i = 1; i < nr; i++)
+                zp *= (z - zo[i - 1]);
+
+            zfd = zf / zp;
+            zq = 0.0;
+            for (i = 1; i < nr; i++) {
+                zw = 1.0;
+                for (j = 1; j < nr; j++) {
+                    if (j == i) {
+                        continue;
+                    }
+                    zw *= (z - zo[j - 1]);
+                }
+                zq += zw;
+            }
+            zgd = (zd - zq * zfd) / zp;
+            z -= zfd / zgd;
+            w0 = w;
+            w = std::abs(z);
+        } while ((it <= 50) && (fabs((w - w0) / w) > 1.0e-12));
+        zo[nr - 1] = z;
+    }
+    return;
 }
 
 } // namespace special
