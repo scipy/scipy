@@ -10,17 +10,14 @@ import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-from scipy.conftest import array_api_compatible
+from scipy.conftest import array_api_compatible, skip_array_api_invalid_arg
 
-from scipy._lib._array_api import (xp_assert_equal, is_numpy, copy as xp_copy,
-                                   SCIPY_ARRAY_API)
+from scipy._lib._array_api import xp_assert_equal, is_numpy, copy as xp_copy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
-xp_skip_reason = ('Test involves masked and/or object arrays, '
-                  'which are not allowed when SCIPY_ARRAY_API=1')
 
 def test__aligned_zeros():
     niter = 10
@@ -321,7 +318,7 @@ class TestContainsNaNTest:
         data5 = np.array([[1, 2], [3, np.nan]])
         assert _contains_nan(data5)[0]
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+    @skip_array_api_invalid_arg
     def test_contains_nan_with_strings(self):
         data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
         assert not _contains_nan(data1)[0]

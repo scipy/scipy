@@ -38,12 +38,10 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
-from scipy.conftest import array_api_compatible
+from scipy.conftest import array_api_compatible, skip_array_api_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API)
 
-xp_skip_reason = ('Test involves masked and/or object arrays, '
-                  'which are not allowed when SCIPY_ARRAY_API=1')
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -2875,7 +2873,7 @@ class TestZmapZscore:
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+    @skip_array_api_invalid_arg
     def test_gzscore_masked_array(self):
         x = np.array([1, 2, -1, 3, 4])
         mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
@@ -2884,7 +2882,7 @@ class TestZmapZscore:
                     1.136670895503])
         assert_allclose(desired, z)
 
-    @pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+    @skip_array_api_invalid_arg
     def test_zscore_masked_element_0_gh19039(self):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)

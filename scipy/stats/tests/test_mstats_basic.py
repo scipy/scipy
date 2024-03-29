@@ -20,10 +20,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
-from scipy._lib._array_api import SCIPY_ARRAY_API
-
-xp_skip_reason = ('Test involves masked and/or object arrays, '
-                  'which are not allowed when SCIPY_ARRAY_API=1')
+from scipy.conftest import skip_array_api_invalid_arg
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -59,7 +56,7 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     assert_equal(x.dtype, dtype)
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestGeoMean:
     def test_1d(self):
         a = [1, 2, 3, 4]
@@ -120,7 +117,7 @@ class TestGeoMean:
         check_equal_gmean(np.ma.array(a), desired)
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestHarMean:
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
@@ -491,7 +488,7 @@ class TestCorr:
         check_named_results(res, attributes, ma=True)
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestTrimming:
 
     def test_trim(self):
@@ -612,7 +609,7 @@ class TestTrimming:
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
@@ -828,7 +825,7 @@ class TestPercentile:
         assert_equal(mstats.scoreatpercentile(x, 50), [1, 1, 1])
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestVariability:
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
@@ -861,7 +858,7 @@ class TestVariability:
         assert_almost_equal(desired, y, decimal=12)
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestMisc:
 
     def test_obrientransform(self):
@@ -1530,7 +1527,7 @@ class TestDescribe:
         assert_allclose(result.kurtosis, [-1.3, -2.0])
 
 
-@pytest.mark.skipif(SCIPY_ARRAY_API, reason=xp_skip_reason)
+@skip_array_api_invalid_arg
 class TestCompareWithStats:
     """
     Class to compare mstats results with stats results.
