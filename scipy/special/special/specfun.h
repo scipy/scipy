@@ -35,23 +35,15 @@ template <typename T>
 void sem(T m, T q, T x, T *csf, T *csd);
 
 inline std::complex<double> chyp2f1(double a, double b, double c, std::complex<double> z) {
-    std::complex<double> outz;
-    std::complex<double> z99;
-    std::complex<double> outz99;
-    int l1, l0, isfer = 0;
-
-    l0 = ((c == floor(c)) && (c < 0));
-    l1 = ((fabs(1 - z.real()) < 1e-15) && (z.imag() == 0) && (c - a - b <= 0));
+    int l0 = ((c == floor(c)) && (c < 0));
+    int l1 = ((fabs(1 - z.real()) < 1e-15) && (z.imag() == 0) && (c - a - b <= 0));
     if (l0 || l1) {
         set_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
-        outz.real(std::numeric_limits<double>::infinity());
-        outz.imag(0.0);
-        return outz;
+        return std::numeric_limits<double>::infinity();
     }
-    z99 = std::complex<double>(z.real(), z.imag());
-    outz99 = specfun::hygfz(a, b, c, z99, &isfer);
-    outz.real(outz99.real());
-    outz.imag(outz99.imag());
+
+    int isfer = 0;
+    std::complex<double> outz = specfun::hygfz(a, b, c, z, &isfer);
     if (isfer == 3) {
         set_error("chyp2f1", SF_ERROR_OVERFLOW, NULL);
         outz.real(std::numeric_limits<double>::infinity());
@@ -67,18 +59,12 @@ inline std::complex<double> chyp2f1(double a, double b, double c, std::complex<d
 }
 
 inline std::complex<double> chyp1f1(double a, double b, std::complex<double> z) {
-    std::complex<double> outz;
-    std::complex<double> outz99;
-    std::complex<double> z99(z.real(), z.imag());
-
-    outz99 = specfun::cchg(a, b, z99);
-    outz.real(outz99.real());
-    outz.imag(outz99.imag());
-
+    std::complex<double> outz = specfun::cchg(a, b, z);
     if (outz.real() == 1e300) {
         set_error("chyp1f1", SF_ERROR_OVERFLOW, NULL);
         outz.real(std::numeric_limits<double>::infinity());
     }
+
     return outz;
 }
 
@@ -157,16 +143,7 @@ std::complex<T> expi(std::complex<T> z) {
     return outz;
 }
 
-inline std::complex<double> cerf(std::complex<double> z) {
-    std::complex<double> outz;
-    std::complex<double> z99(z.real(), z.imag());
-
-    std::complex<double> outz99 = specfun::cerror(z99);
-    outz.real(outz99.real());
-    outz.imag(outz99.imag());
-    return outz;
-}
-
+inline std::complex<double> cerf(std::complex<double> z) { return specfun::cerror(z); }
 
 /* Integrals of bessel functions */
 
@@ -244,7 +221,6 @@ inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::comp
     specfun::cfs(z, zfs, &zfd);
     specfun::cfc(z, zfc, &zfd);
 }
-
 
 inline double pmv(double m, double v, double x) {
     int int_m;
