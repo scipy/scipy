@@ -45,6 +45,7 @@
 #include "special/cephes/incbet.h"
 #include "special/cephes/incbi.h"
 #include "special/cephes/lanczos.h"
+#include "special/cephes/nbdtr.h"
 #include "special/cephes/ndtr.h"
 #include "special/cephes/ndtri.h"
 #include "special/cephes/poch.h"
@@ -388,4 +389,16 @@ inline double cephes_gdtr(double a, double b, double x) {
 
 inline double cephes_gdtrc(double a, double b, double x) {
     return special::cephes::gdtrc(a, b, x);
+}
+
+inline double cephes_nbdtr(int k, int n, double p) {
+    return special::cephes::nbdtr(k, n, p);
+}
+
+inline double cephes_nbdtrc(int k, int n, double p) {
+    return special::cephes::nbdtrc(k, n, p);
+}
+
+inline double cephes_nbdtri(int k, int n, double p) {
+    return special::cephes::nbdtri(k, n, p);
 }

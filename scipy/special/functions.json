@@ -820,24 +820,24 @@
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtr": "iid->d"
+        "_special.h++": {
+            "cephes_nbdtr": "iid->d"
         }
     },
     "nbdtrc": {
         "_legacy.pxd": {
             "nbdtrc_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtrc": "iid->d"
+        "_special.h++": {
+            "cephes_nbdtrc": "iid->d"
         }
     },
     "nbdtri": {
         "_legacy.pxd": {
             "nbdtri_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtri": "iid->d"
+        "_special.h++": {
+            "cephes_nbdtri": "iid->d"
         }
     },
     "nbdtrik": {
