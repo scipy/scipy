@@ -143,6 +143,7 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/common/__init__.py',
     'array_api_compat/array_api_compat/common/_aliases.py',
+    'array_api_compat/array_api_compat/common/_fft.py',
     'array_api_compat/array_api_compat/common/_helpers.py',
     'array_api_compat/array_api_compat/common/_linalg.py',
     'array_api_compat/array_api_compat/common/_typing.py',
@@ -155,6 +156,7 @@ py3.install_sources(
     'array_api_compat/array_api_compat/cupy/__init__.py',
     'array_api_compat/array_api_compat/cupy/_aliases.py',
     'array_api_compat/array_api_compat/cupy/_typing.py',
+    'array_api_compat/array_api_compat/cupy/fft.py',
     'array_api_compat/array_api_compat/cupy/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/cupy',
@@ -162,9 +164,26 @@ py3.install_sources(
 
 py3.install_sources(
   [
+    'array_api_compat/array_api_compat/dask/__init__.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/dask/',
+)
+
+py3.install_sources(
+  [
+    'array_api_compat/array_api_compat/dask/array/__init__.py',
+    'array_api_compat/array_api_compat/dask/array/_aliases.py',
+    'array_api_compat/array_api_compat/dask/array/linalg.py',
+  ],
+  subdir: 'scipy/_lib/array_api_compat/dask/array',
+)
+
+py3.install_sources(
+  [
     'array_api_compat/array_api_compat/numpy/__init__.py',
     'array_api_compat/array_api_compat/numpy/_aliases.py',
     'array_api_compat/array_api_compat/numpy/_typing.py',
+    'array_api_compat/array_api_compat/numpy/fft.py',
     'array_api_compat/array_api_compat/numpy/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/numpy',
@@ -174,6 +193,7 @@ py3.install_sources(
   [
     'array_api_compat/array_api_compat/torch/__init__.py',
     'array_api_compat/array_api_compat/torch/_aliases.py',
+    'array_api_compat/array_api_compat/torch/fft.py',
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',

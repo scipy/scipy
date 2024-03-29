@@ -69,6 +69,7 @@ Henkelmann; parts of the code for simplify_cells=True adapted from
 http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
 
+import math
 import os
 import time
 import sys
@@ -728,7 +729,7 @@ class VarWriter5:
             # transpose here, because we're flattening the array, before
             # we write the bytes. The bytes have to be written in
             # Fortran order.
-            n_chars = np.prod(shape)
+            n_chars = math.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order

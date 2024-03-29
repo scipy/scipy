@@ -1645,11 +1645,11 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
+    size = math.prod(mysize)
+    lMean = correlate(im, np.ones(mysize), 'same') / size
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
-            np.prod(mysize, axis=0) - lMean ** 2)
+    lVar = (correlate(im ** 2, np.ones(mysize), 'same') / size - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:

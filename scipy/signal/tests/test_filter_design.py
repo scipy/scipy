@@ -4252,9 +4252,9 @@ class TestGroupDelay:
         b = [alpha,1]
         a = [1, np.conjugate(alpha)]
         gdtest = group_delay((b,a), wref)[1]
-        # need nulp=10 for Ubuntu x86-64; added 1 for some robustness
-        # on other platforms.
-        assert_array_almost_equal_nulp(gdtest, gdref, nulp=11)
+        # need nulp=14 for macOS arm64 wheel builds; added 2 for some
+        # robustness on other platforms.
+        assert_array_almost_equal_nulp(gdtest, gdref, nulp=16)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):
