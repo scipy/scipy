@@ -32,3 +32,5 @@ fa9f13e6906e7d00510d593f7f982db30e4e4f14
 ecef3490da68a0c53ba543c618bab0c8e15dccee
 # Change to indent width of 4 in clang-format (gh-19660)
 852776a3fe0f3d08c0bed9174f6ac33f653a8677
+# Style cleanup in `pyproject.toml`
+7b921fd28659b02544bfb46368ddadd1048b37aa

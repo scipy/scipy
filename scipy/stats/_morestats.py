@@ -1251,7 +1251,7 @@ def boxcox_normmax(
     """
     x = np.asarray(x)
 
-    if np.any(~np.isfinite(x) | (x < 0)):
+    if not np.all(np.isfinite(x) & (x >= 0)):
         message = ("The `x` argument of `boxcox_normmax` must contain "
                    "only positive, finite, real numbers.")
         raise ValueError(message)

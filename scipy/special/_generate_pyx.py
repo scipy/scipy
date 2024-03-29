@@ -83,7 +83,10 @@ special_ufuncs = [
     'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'kei', 'keip',
     'kelvin', 'ker', 'kerp', 'mathieu_a', 'mathieu_b',
     'mathieu_cem', 'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1',
-    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', '_zeta'
+    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1',
+    'obl_ang1_cv', 'obl_cv', 'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv',
+    'pbdv', 'pbvv', 'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1',
+    'pro_rad1_cv', 'pro_rad2', 'pro_rad2_cv', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------
