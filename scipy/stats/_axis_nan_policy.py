@@ -11,6 +11,7 @@ from scipy._lib._util import _contains_nan, AxisError, _get_nan
 from scipy._lib._array_api import array_namespace, is_numpy
 import inspect
 
+
 def _broadcast_arrays(arrays, axis=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
