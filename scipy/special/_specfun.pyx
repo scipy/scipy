@@ -6,9 +6,6 @@ cnp.import_array()
 cdef extern from "special/airy.h" nogil:
     void specfun_airyzo 'special::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
-cdef extern from "special/bessel.h" nogil:
-    void specfun_rcty 'special::rcty'(int n, double x, double *ry, double *dy)
-
 cdef extern from "special/fresnel.h" nogil:
     void specfun_fcszo 'special::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
@@ -30,7 +27,6 @@ cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
     void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
     void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
-    void specfun_lqmn 'special::specfun::lqmn'(double x, int m, int n, double *qm, double *qd)
     void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
     void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
