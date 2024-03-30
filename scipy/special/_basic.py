@@ -14,7 +14,7 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._gufuncs import _lpn, _lpmn, _clpmn, _lqn, _lqmn
+from ._gufuncs import _lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -1339,7 +1339,11 @@ def riccati_jn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rctj(n1, x)
+
+    jn = np.empty((n1 + 1,), dtype = np.float64)
+    jnp = np.empty_like(jn)
+
+    _rctj(x, out = (jn, jnp))
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -1391,8 +1395,12 @@ def riccati_yn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = _specfun.rcty(n1, x)
-    return jn[:(n+1)], jnp[:(n+1)]
+
+    yn = np.empty((n1 + 1,), dtype = np.float64)
+    ynp = np.empty_like(yn)
+    _rcty(x, out = (yn, ynp))
+
+    return yn[:(n+1)], ynp[:(n+1)]
 
 
 def erf_zeros(nt):

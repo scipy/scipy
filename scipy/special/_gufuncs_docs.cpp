@@ -152,3 +152,83 @@ const char *lqmn_doc = R"(
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     )";
+
+const char *rctj_doc = R"(
+    Compute Ricatti-Bessel function of the first kind and its derivative.
+
+    The Ricatti-Bessel function of the first kind is defined as :math:`x
+    j_n(x)`, where :math:`j_n` is the spherical Bessel function of the first
+    kind of order :math:`n`.
+
+    This function computes the value and first derivative of the
+    Ricatti-Bessel function for all orders up to and including `n`.
+
+    Parameters
+    ----------
+    x : ndarray
+        Argument at which to evaluate
+
+    Returns
+    -------
+    jn : ndarray
+        Value of j0(x), ..., jn(x)
+    jnp : ndarray
+        First derivative j0'(x), ..., jn'(x)
+
+    Notes
+    -----
+    The computation is carried out via backward recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           https://dlmf.nist.gov/10.51.E1
+
+    )";
+
+const char *rcty_doc = R"(
+    Compute Ricatti-Bessel function of the second kind and its derivative.
+
+    The Ricatti-Bessel function of the second kind is defined as :math:`x
+    y_n(x)`, where :math:`y_n` is the spherical Bessel function of the second
+    kind of order :math:`n`.
+
+    This function computes the value and first derivative of the function for
+    all orders up to and including `n`.
+
+    Parameters
+    ----------
+    x : ndarray
+        Argument at which to evaluate
+
+    Returns
+    -------
+    yn : ndarray
+        Value of y0(x), ..., yn(x)
+    ynp : ndarray
+        First derivative y0'(x), ..., yn'(x)
+
+    Notes
+    -----
+    The computation is carried out via ascending recurrence, using the
+    relation DLMF 10.51.1 [2]_.
+
+    Wrapper for a Fortran routine created by Shanjie Zhang and Jianming
+    Jin [1]_.
+
+    References
+    ----------
+    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
+           Functions", John Wiley and Sons, 1996.
+           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
+    .. [2] NIST Digital Library of Mathematical Functions.
+           https://dlmf.nist.gov/10.51.E1
+
+    )";

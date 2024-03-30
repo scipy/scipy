@@ -6,6 +6,9 @@ cnp.import_array()
 cdef extern from "special/airy.h" nogil:
     void specfun_airyzo 'special::airyzo'(int nt, int kf, double *xa, double *xb, double *xc, double *xd)
 
+cdef extern from "special/bessel.h" nogil:
+    void specfun_rcty 'special::rcty'(int n, double x, double *ry, double *dy)
+
 cdef extern from "special/fresnel.h" nogil:
     void specfun_fcszo 'special::fcszo'(int kf, int nt, ccomplex[double] *zo)
 
@@ -31,8 +34,6 @@ cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
     void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
-    void specfun_rctj 'special::specfun::rctj'(int n, double x, int *nm, double *rj, double *dj)
-    void specfun_rcty 'special::specfun::rcty'(int n, double x, int *nm, double *ry, double *dy)
     void specfun_sdmn 'special::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
     void specfun_segv 'special::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
 
@@ -341,44 +342,6 @@ def pbvv(double v, double x):
     dvp = <cnp.float64_t *>cnp.PyArray_DATA(vp)
     specfun_pbvv(x, v, dvv, dvp, &pvf, &pvd)
     return vv, vp, pvf, pvd
-
-    
-def rctj(int n, double x):
-    """
-    Compute Riccati-Bessel functions of the first kind and their
-    derivatives. This is a wrapper for the function 'specfun_rctj'.
-    """
-    cdef int nm
-    cdef double *rrj
-    cdef double *ddj
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    rj = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    dj = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    rrj = <cnp.float64_t *>cnp.PyArray_DATA(rj)
-    ddj = <cnp.float64_t *>cnp.PyArray_DATA(dj)
-    specfun_rctj(n, x, &nm, rrj, ddj)
-    return nm, rj, dj
-
-
-def rcty(int n, double x):
-    """
-    Compute Riccati-Bessel functions of the second kind and their
-    derivatives This is a wrapper for the function 'specfun_rcty'.
-    """
-    cdef int nm
-    cdef double *rry
-    cdef double *ddy
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    ry = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    dy = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    rry = <cnp.float64_t *>cnp.PyArray_DATA(ry)
-    ddy = <cnp.float64_t *>cnp.PyArray_DATA(dy)
-    specfun_rcty(n, x, &nm, rry, ddy)
-    return nm, ry, dy
 
 
 def sdmn(int m, int n, double c, double cv, int kd):
