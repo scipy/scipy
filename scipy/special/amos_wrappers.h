@@ -17,8 +17,6 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-int ierr_to_sferr( int nz, int ierr);
-void set_nan_if_no_computation_done(npy_cdouble *var, int ierr);
 int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
 int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
 int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
@@ -44,15 +42,6 @@ npy_cdouble cbesh_wrap1_e( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2( double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2_e( double v, npy_cdouble z);
 double sin_pi(double x);
-/* 
-int cairy_(double *, int *, int *, doublecomplex *, int *, int *);
-int cbiry_(doublecomplex *, int *, int *, doublecomplex *, int *, int *);
-int cbesi_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, int *);
-int cbesj_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, int *);
-int cbesk_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, int *);
-int cbesy_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, doublecomplex *, int *);
-int cbesh_(doublecomplex *, double *, int *, int *, int *, doublecomplex *, int *, int *);
-*/
 
 #ifdef __cplusplus
 }  /* extern "C" */
