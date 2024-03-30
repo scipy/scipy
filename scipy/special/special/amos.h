@@ -1,6 +1,7 @@
 #pragma once
 
 #include "amos/amos.h"
+#include "config.h"
 
 #define DO_SFERR(name, varp)                                                                                           \
     do {                                                                                                               \
