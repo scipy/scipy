@@ -1,6 +1,5 @@
 #pragma once
 
-#include "mdspan.h"
 #include "specfun.h"
 
 namespace special {
@@ -401,9 +400,8 @@ void it2i0k0(T x, T *i0int, T *k0int) {
     }
 }
 
-template <typename T, typename... Policies0, typename... Policies1>
-void rctj(T x, int *nm, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> rj,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> dj) {
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rctj(T x, int *nm, OutputVec1 rj, OutputVec2 dj) {
 
     // ========================================================
     // Purpose: Compute Riccati-Bessel functions of the first
@@ -469,16 +467,14 @@ void rctj(T x, int *nm, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policie
     }
 }
 
-template <typename T, typename... Policies0, typename... Policies1>
-void rctj(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> rj,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> dj) {
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rctj(T x, OutputVec1 rj, OutputVec2 dj) {
     int nm;
     rctj(x, &nm, rj, dj);
 }
 
-template <typename T, typename... Policies0, typename... Policies1>
-void rcty(T x, int *nm, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> ry,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> dy) {
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rcty(T x, int *nm, OutputVec1 ry, OutputVec2 dy) {
 
     // ========================================================
     // Purpose: Compute Riccati-Bessel functions of the second
@@ -528,9 +524,8 @@ void rcty(T x, int *nm, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policie
     return;
 }
 
-template <typename T, typename... Policies0, typename... Policies1>
-void rcty(T x, std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies0...> ry,
-          std::mdspan<T, std::dextents<std::ptrdiff_t, 1>, Policies1...> dy) {
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rcty(T x, OutputVec1 ry, OutputVec2 dy) {
     int nm;
     rcty(x, &nm, ry, dy);
 }
