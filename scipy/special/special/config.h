@@ -56,6 +56,7 @@
 #ifdef __CUDACC__
 #define SPECFUN_HOST_DEVICE __host__ __device__
 
+#include <cuda/std/algorithm>
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
 #include <cuda/std/limits>
@@ -141,6 +142,11 @@ SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
 }
 
 template <typename T>
+SPECFUN_HOST_DEVICE const T& clamp(const T  &v, const T &lo, const T &hi) {
+    return cuda::std::clamp(v, lo, hi);
+}
+
+template <typename T>
 using numeric_limits = cuda::std::numeric_limits<T>;
 
 // Must use thrust for complex types in order to support CuPy
@@ -177,7 +183,6 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
     return thrust::conj(z);
 }
 
-<<<<<<< HEAD
 template <typename T>
 SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const complex<T> &y) {
     return thrust::pow(x, y);
@@ -192,13 +197,11 @@ SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
 template <typename T>
 using is_floating_point = cuda::std::is_floating_point<T>;
 using uint64_t = cuda::std::uint64_t;
-=======
+
 // Other types and utilities
 using cuda::std::is_floating_point;
 using cuda::std::pair;
 using cuda::std::uint64_t;
-using swap = thrust::swap;
->>>>>>> 7a21e3304b (Add new functions to config.h)
 
 #define SPECFUN_ASSERT(a)
 
