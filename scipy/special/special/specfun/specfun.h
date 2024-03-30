@@ -3853,72 +3853,8 @@ inline void lamv(double v, double x, double *vm, double *vl, double *dl) {
 }
 
 
-inline void lpmn(int m, int n, double x, double *pm, double *pd) {
-
-    // =====================================================
-    // Purpose: Compute the associated Legendre functions
-    //          Pmn(x) and their derivatives Pmn'(x) for
-    //          real argument
-    // Input :  x  --- Argument of Pmn(x)
-    //          m  --- Order of Pmn(x),  m = 0,1,2,...,n
-    //          n  --- Degree of Pmn(x), n = 0,1,2,...,N
-    //          mm --- Physical dimension of PM and PD
-    // Output:  PM(m,n) --- Pmn(x)
-    //          PD(m,n) --- Pmn'(x)
-    // =====================================================
-
-    int i, j, ls;
-    double xq, xs;
-
-
-    for (i = 0; i < (m + 1)*(n + 1); i++) {
-            pm[i] = 0.0;
-            pd[i] = 0.0;
-    }
-
-    pm[0] = 1.0;
-
-    if (n == 0) {
-        return;
-    }
-
-    if (fabs(x) == 1.0) {
-        for (i = 1; i <= n; i++) {
-            pm[i] = pow(x, i);
-            pd[i] = 0.5 * i * (i + 1.0) * pow(x, i + 1);
-        }
-
-        for (i = 1; i <= m; i++) {
-            for (j = 1; j <= n; j++) {
-                if (i == 1) {
-                    pd[n + 1 + j] = INFINITY;
-                } else if (i == 2) {
-                    pd[2*n + 2 + j] = -0.25 * (j + 2) * (j + 1) * j * (j - 1) * pow(x, j + 1);
-                }
-            }
-        }
-        return;
-    }
-
-    ls = (fabs(x) > 1.0 ? -1 : 1);
-    xq = sqrt(ls * (1.0 - x * x));
-    // Ensure connection to the complex-valued function for |x| > 1
-    if (x < -1.0) {
-        xq = -xq;
-    }
-    xs = ls * (1.0 - x * x);
-    /* 30 */
-    for (i = 1; i <= m; ++i) {
-        pm[i * (n + 2)] = -ls * (2.0 * i - 1.0) * xq * pm[(i - 1)*(n + 2)];
-    }
-    /* 35 */
-    for (i = 0; i <= (m > (n-1) ? n - 1: m); i++) {
-        pm[i * (n + 2) + 1] = (2.0*i+1.0)*x*pm[i * (n + 2)];
-    }
-}
-
-
-inline void lpmns(int m, int n, double x, double* pm, double* pd) {
+template <typename T>
+void lpmns(int m, int n, T x, T* pm, T* pd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Pmn(x)
@@ -4160,7 +4096,8 @@ inline double lpmv0(double v, int m, double x) {
 }
 
 
-inline void lqmns(int m, int n, double x, double *qm, double *qd) {
+template <typename T>
+inline void lqmns(int m, int n, T x, T *qm, T *qd) {
 
     // ========================================================
     // Purpose: Compute associated Legendre functions Qmn(x)

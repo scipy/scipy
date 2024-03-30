@@ -4,13 +4,10 @@
 #include "special/bessel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
-<<<<<<< HEAD
 #include "special/kelvin.h"
+#include "special/legendre.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
-#include "special/legendre.h"
-=======
->>>>>>> 8c07933a0 (Put the gufuncs in their module)
 #include "special/specfun.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
@@ -27,16 +24,6 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 using namespace std;
-
-using lpn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
-using lpn_ddd_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
-using lpn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
-using lpn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
-extern const char *lpn_doc;
 
 // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 // And also the following modifiers
@@ -81,39 +68,6 @@ using func_dddd_dpdp_t = void (*)(double, double, double, double, double *, doub
 
 using func_fffff_fpfp_t = void (*)(float, float, float, float, float, float *, float *);
 using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, double *, double *);
-using lpmn_fff_t = void (*)(float, mdspan<float, dextents<int, 2>, layout_stride>,
-                            mdspan<float, dextents<int, 2>, layout_stride>);
-using lpmn_ddd_t = void (*)(double, mdspan<double, dextents<int, 2>, layout_stride>,
-                            mdspan<double, dextents<int, 2>, layout_stride>);
-using lpmn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using lpmn_ddd_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-extern const char *lpmn_doc;
-
-using clpmn_FFF_t = void (*)(complex<float>, long, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>,
-                             mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using clpmn_DDD_t = void (*)(complex<double>, long, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
-                             mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
-extern const char *clpmn_doc;
-
-using lqn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
-using lqn_ddd_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
-using lqn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
-using lqn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>,
-                           mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
-
-using lqmn_fff_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using lqmn_ddd_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-using lqmn_FFF_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using lqmn_DDD_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
-                            mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
@@ -193,47 +147,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "_cospi", _cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     PyObject *_sinpi =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
                           static_cast<func_F_F_t>(special::sinpi), static_cast<func_D_D_t>(special::sinpi)},
                          "_sinpi", _sinpi_doc);
-=======
-    PyObject *_lpn = SpecFun_NewGUFunc({static_cast<lpn_fff_t>(special::lpn), static_cast<lpn_ddd_t>(special::lpn),
-                                        static_cast<lpn_FFF_t>(special::lpn), static_cast<lpn_DDD_t>(special::lpn)},
-                                       2, "_lpn", lpn_doc, "()->(np1),(np1)");
-    PyModule_AddObjectRef(_special_ufuncs, "_lpn", _lpn);
-
-    PyObject *_lpmn =
-        SpecFun_NewGUFunc({static_cast<lpmn_fff_t>(special::lpmn), static_cast<lpmn_ddd_t>(special::lpmn)}, 2, "_lpmn",
-                          lpmn_doc, "()->(mp1,np1),(mp1,np1)");
-    PyModule_AddObjectRef(_special_ufuncs, "_lpmn", _lpmn);
-
-    PyObject *_clpmn =
-        SpecFun_NewGUFunc({static_cast<clpmn_FFF_t>(special::clpmn), static_cast<clpmn_DDD_t>(special::clpmn)}, 2,
-                          "_clpmn", clpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
-    PyModule_AddObjectRef(_special_ufuncs, "_clpmn", _clpmn);
-
-    PyObject *_lqn = SpecFun_NewGUFunc({static_cast<lqn_fff_t>(special::lqn), static_cast<lqn_ddd_t>(special::lqn),
-                                        static_cast<lqn_FFF_t>(special::lqn), static_cast<lqn_DDD_t>(special::lqn)},
-                                       2, "_lqn", nullptr, "()->(np1),(np1)");
-    PyModule_AddObjectRef(_special_ufuncs, "_lqn", _lqn);
-
-    PyObject *_lqmn =
-        SpecFun_NewGUFunc({static_cast<lqmn_fff_t>(special::lqmn), static_cast<lqmn_ddd_t>(special::lqmn),
-                           static_cast<lqmn_FFF_t>(special::lqmn), static_cast<lqmn_DDD_t>(special::lqmn)},
-                          2, "_lqmn", nullptr, "()->(mp1,np1),(mp1,np1)");
-    PyModule_AddObjectRef(_special_ufuncs, "_lqmn", _lqmn);
-
-=======
->>>>>>> 8c07933a0 (Put the gufuncs in their module)
-    PyObject *_sinpi = SpecFun_NewUFunc({static_cast<float (*)(float)>(special::sinpi),
-                                         static_cast<double (*)(double)>(special::sinpi),
-                                         static_cast<complex<float> (*)(complex<float>)>(special::sinpi),
-                                         static_cast<complex<double> (*)(complex<double>)>(special::sinpi)},
-                                        "_sinpi", _sinpi_doc);
->>>>>>> 782e4ba13 (Switch int to ptrdiff_t)
     PyModule_AddObjectRef(_special_ufuncs, "_sinpi", _sinpi);
 
     PyObject *_zeta = SpecFun_NewUFunc(

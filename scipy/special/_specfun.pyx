@@ -16,14 +16,6 @@ cdef extern from "special/par_cyl.h" nogil:
     void specfun_pbdv 'special::detail::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
     void specfun_pbvv 'special::detail::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
 
-import numpy as np
-
-from ._special_ufuncs import _lpn
-from ._special_ufuncs import _lpmn
-import numpy as np
-
-from ._special_ufuncs import _lqn
-
 cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
