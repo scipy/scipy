@@ -1,3 +1,4 @@
+import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 import pytest
@@ -99,6 +100,21 @@ class TestCholesky:
         a = np.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
         c = cholesky(a)
         xp_assert_close(c.T @ c, a.astype(np.float64))
+
+    @pytest.mark.xslow
+    def test_int_overflow(self):
+       # regression test for
+       # https://github.com/scipy/scipy/issues/17436
+       # the problem was an int overflow in zeroing out
+       # the unused triangular part
+       n = 47_000
+       x = np.eye(n, dtype=np.float64, order='F')
+       x[:4, :4] = np.array([[4, -2, 3, -1],
+                             [-2, 4, -3, 1],
+                             [3, -3, 5, 0],
+                             [-1, 1, 0, 5]])
+
+       cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
 
 
 class TestCholeskyBanded:

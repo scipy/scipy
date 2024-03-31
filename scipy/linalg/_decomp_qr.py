@@ -55,8 +55,8 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     pivoting : bool, optional
         Whether or not factorization should include pivoting for rank-revealing
         qr decomposition. If pivoting, compute the decomposition
-        ``A P = Q R`` as above, but where P is chosen such that the diagonal
-        of R is non-increasing.
+        ``A[:, P] = Q @ R`` as above, but where P is chosen such that the 
+        diagonal of R is non-increasing.
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
@@ -283,7 +283,7 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     """
     if mode not in ['left', 'right']:
         raise ValueError("Mode argument can only be 'left' or 'right' but "
-                         "not '{}'".format(mode))
+                         f"not '{mode}'")
     c = numpy.asarray_chkfinite(c)
     if c.ndim < 2:
         onedim = True
@@ -299,11 +299,11 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
     if mode == 'left':
         if c.shape[0] != min(M, N + overwrite_c*(M-N)):
             raise ValueError('Array shapes are not compatible for Q @ c'
-                             ' operation: {} vs {}'.format(a.shape, c.shape))
+                             f' operation: {a.shape} vs {c.shape}')
     else:
         if M != c.shape[1]:
             raise ValueError('Array shapes are not compatible for c @ Q'
-                             ' operation: {} vs {}'.format(c.shape, a.shape))
+                             f' operation: {c.shape} vs {a.shape}')
 
     raw = qr(a, overwrite_a, None, "raw", pivoting)
     Q, tau = raw[0]

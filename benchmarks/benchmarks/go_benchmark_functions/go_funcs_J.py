@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from numpy import sum, asarray, arange, exp
 from .go_benchmark import Benchmark
 

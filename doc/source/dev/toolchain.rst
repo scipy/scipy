@@ -129,13 +129,13 @@ Currently, SciPy wheels are being built as follows:
 ================    ==============================   ==============================   =============================
 Linux x86            ``ubuntu-22.04``                 GCC 10.2.1                       ``cibuildwheel``
 Linux arm            ``docker-builder-arm64``         GCC 11.3.0                       ``cibuildwheel``
-OSX x86              ``macOS-11``                     clang-13/gfortran 11.3.0         ``cibuildwheel``
-OSX arm              ``macos-monterey-xcode:14``      clang-13.1.6/gfortran 12.1.0     ``cibuildwheel``
+OSX x86_64           ``macOS-11``                     clang-13/gfortran 11.3.0         ``cibuildwheel``
+OSX arm64            ``macos-14``                     clang-15.0.0/gfortran 13.2.0     ``cibuildwheel``
 Windows              ``windows-2019``                 GCC 10.3 (rtools)                ``cibuildwheel``
 ================    ==============================   ==============================   =============================
 
 Note that the OSX wheels additionally vendor gfortran 11.3.0 for x86_64,
-and gfortran 12.1.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
+and gfortran 13.2.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
 
 
 C Compilers
@@ -412,12 +412,13 @@ Building the Documentation
 ====================  =================================================
  Tool                 Version
 ====================  =================================================
-Sphinx                Whatever recent versions work. >= 2.0.
-PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
-Sphinx-Design         Whatever recent versions work. >= 0.2.0.
-numpydoc              Whatever recent versions work. >= 0.8.0.
-matplotlib            Generally suggest >= 2.0.
+Sphinx                Whatever recent versions work. >= 5.0.
+PyData Sphinx theme   Whatever recent versions work. >= 0.15.2.
+Sphinx-Design         Whatever recent versions work. >= 0.4.0.
+numpydoc              Whatever recent versions work. >= 1.5.0.
+matplotlib            Generally suggest >= 3.5.
 MyST-NB               Whatever recent versions work. >= 0.17.1
+jupyterlite-sphinx    Whatever recent versions work. >= 0.12.0
 ====================  =================================================
 
 .. note::

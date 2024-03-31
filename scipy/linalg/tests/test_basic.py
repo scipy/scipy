@@ -813,8 +813,8 @@ class TestSolve:
             if assume_a == 'her' and not is_complex:
                 continue
 
-            err_msg = ("Failed for size: {}, assume_a: {},"
-                       "dtype: {}".format(size, assume_a, dtype))
+            err_msg = (f"Failed for size: {size}, assume_a: {assume_a},"
+                       f"dtype: {dtype}")
 
             a = np.random.randn(size, size).astype(dtype)
             b = np.random.randn(size).astype(dtype)
@@ -1308,8 +1308,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.float32:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1344,8 +1344,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == n, 'expected efficient rank {}, '
-                                    'got {}'.format(n, r))
+                            assert_(r == n, f'expected efficient rank {n}, '
+                                    f'got {r}')
                             if dtype is np.complex64:
                                 assert_allclose(
                                           dot(a, x), b,
@@ -1379,8 +1379,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                           x, direct_lstsq(a, b, cmplx=0),
                                           rtol=25 * _eps_cast(a1.dtype),
@@ -1409,8 +1409,8 @@ class TestLstsq:
                                         overwrite_b=overwrite)
                             x = out[0]
                             r = out[2]
-                            assert_(r == m, 'expected efficient rank {}, '
-                                    'got {}'.format(m, r))
+                            assert_(r == m, f'expected efficient rank {m}, '
+                                    f'got {r}')
                             assert_allclose(
                                       x, direct_lstsq(a, b, cmplx=1),
                                       rtol=25 * _eps_cast(a1.dtype),
@@ -1619,6 +1619,14 @@ class TestPinvSymmetric:
         a = np.dot(a, a.T)
         a_pinv = pinvh(a.tolist())
         assert_array_almost_equal(np.dot(a, a_pinv), np.eye(3))
+
+    def test_zero_eigenvalue(self):
+        # https://github.com/scipy/scipy/issues/12515
+        # the SYEVR eigh driver may give the zero eigenvalue > eps
+        a = np.array([[1,-1, 0], [-1, 2, -1], [0, -1, 1]])
+        p = pinvh(a)
+        assert_allclose(p @ a @ p, p, atol=1e-15)
+        assert_allclose(a @ p @ a, a, atol=1e-15)
 
     def test_atol_rtol(self):
         n = 12

@@ -16,6 +16,7 @@ from numpy.polynomial.polynomial import polyvalfromroots
 from scipy import special, optimize, fft as sp_fft
 from scipy.special import comb
 from scipy._lib._util import float_factorial
+from scipy.signal._arraytools import _validate_fs
 
 
 __all__ = ['findfreqs', 'freqs', 'freqz', 'tf2zpk', 'zpk2tf', 'normalize',
@@ -431,6 +432,8 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
     b = atleast_1d(b)
     a = atleast_1d(a)
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if worN is None:
         # For backwards compatibility
         worN = 512
@@ -478,7 +481,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi,
         h = (npp_polyval(zm1, b, tensor=False) /
              npp_polyval(zm1, a, tensor=False))
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     if plot is not None:
         plot(w, h)
@@ -571,6 +574,8 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     """
     z, p = map(atleast_1d, (z, p))
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if whole:
         lastpoint = 2 * pi
     else:
@@ -588,7 +593,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     zm1 = exp(1j * w)
     h = k * polyvalfromroots(zm1, z) / polyvalfromroots(zm1, p)
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, h
 
@@ -646,7 +651,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     When such a case arises the warning is raised and the group delay
     is set to 0 at those frequencies.
 
-    For the details of numerical computation of the group delay refer to [1]_.
+    For the details of numerical computation of the group delay refer to [1]_ or [2]_.
 
     .. versionadded:: 0.16.0
 
@@ -654,6 +659,10 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     ----------
     .. [1] Richard G. Lyons, "Understanding Digital Signal Processing,
            3rd edition", p. 830.
+    .. [2] Julius O. Smith III, "Numerical Computation of Group Delay",
+           in "Introduction to Digital Filters with Audio Applications",
+           online book, 2007,
+           https://ccrma.stanford.edu/~jos/fp/Numerical_Computation_Group_Delay.html
 
     Examples
     --------
@@ -673,6 +682,8 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         # For backwards compatibility
         w = 512
 
+    fs = _validate_fs(fs, allow_none=False)
+
     if _is_int_type(w):
         if whole:
             w = np.linspace(0, 2 * pi, w, endpoint=False)
@@ -683,7 +694,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
         w = 2*pi*w/fs
 
     b, a = map(np.atleast_1d, system)
-    c = np.convolve(b, a[::-1])
+    c = np.convolve(b, conjugate(a[::-1]))
     cr = c * np.arange(c.size)
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
@@ -708,7 +719,7 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
             stacklevel=2
         )
 
-    w = w*fs/(2*pi)
+    w = w*(fs/(2*pi))
 
     return w, gd
 
@@ -838,6 +849,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     sos, n_sections = _validate_sos(sos)
     if n_sections == 0:
@@ -1544,8 +1556,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
 
     valid_pairings = ['nearest', 'keep_odd', 'minimal']
     if pairing not in valid_pairings:
-        raise ValueError('pairing must be one of %s, not %s'
-                         % (valid_pairings, pairing))
+        raise ValueError(f'pairing must be one of {valid_pairings}, not {pairing}')
 
     if analog and pairing != 'minimal':
         raise ValueError('for analog zpk2sos conversion, '
@@ -1801,7 +1812,8 @@ def normalize(b, a):
     # Trim leading zeros of numerator
     if leading_zeros > 0:
         warnings.warn("Badly conditioned filter coefficients (numerator): the "
-                      "results may be meaningless", BadCoefficients)
+                      "results may be meaningless",
+                      BadCoefficients, stacklevel=2)
         # Make sure at least one column remains
         if leading_zeros == num.shape[1]:
             leading_zeros -= 1
@@ -2200,7 +2212,7 @@ def bilinear(b, a, fs=1.0):
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.grid(True)
     """
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
     a, b = map(atleast_1d, (a, b))
     D = len(a) - 1
     N = len(b) - 1
@@ -2380,10 +2392,11 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     wp = atleast_1d(wp)
     ws = atleast_1d(ws)
 
+    fs = _validate_fs(fs, allow_none=True)
+
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
         raise ValueError("wp and ws must have one or two elements each, and"
-                         "the same shape, got %s and %s"
-                         % (wp.shape, ws.shape))
+                         f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
         raise ValueError("Values for wp, ws must be greater than 0")
@@ -2394,7 +2407,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
             raise ValueError("Values for wp, ws must be less than fs/2"
-                             " (fs={} -> fs/2={})".format(fs, fs/2))
+                             f" (fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
@@ -2549,6 +2562,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     ftype, btype, output = (x.lower() for x in (ftype, btype, output))
     Wn = asarray(Wn)
     if fs is not None:
@@ -2731,6 +2745,8 @@ def bilinear_zpk(z, p, k, fs):
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
+
+    fs = _validate_fs(fs, allow_none=False)
 
     degree = _relative_degree(z, p)
 
@@ -3949,6 +3965,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     """
     _validate_gpass_gstop(gpass, gstop)
+    fs = _validate_fs(fs, allow_none=True)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
     nat, passb = _find_nat_freq(stopb, passb, gpass, gstop, filter_type, 'butter')
@@ -3964,7 +3981,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     except ZeroDivisionError:
         W0 = 1.0
         warnings.warn("Order is zero...check input parameters.",
-                      RuntimeWarning, 2)
+                      RuntimeWarning, stacklevel=2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -4070,6 +4087,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4164,6 +4182,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4286,7 +4305,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
     >>> plt.show()
 
     """
-
+    fs = _validate_fs(fs, allow_none=True)
     _validate_gpass_gstop(gpass, gstop)
     wp, ws, filter_type = _validate_wp_ws(wp, ws, fs, analog)
     passb, stopb = _pre_warp(wp, ws, analog)
@@ -4363,12 +4382,13 @@ def cheb1ap(N, rp):
 
 def cheb2ap(N, rs):
     """
-    Return (z,p,k) for Nth-order Chebyshev type I analog lowpass filter.
+    Return (z,p,k) for Nth-order Chebyshev type II analog lowpass filter.
 
-    The returned filter prototype has `rs` decibels of ripple in the stopband.
+    The returned filter prototype has attenuation of at least ``rs`` decibels
+    in the stopband.
 
     The filter's angular (e.g. rad/s) cutoff frequency is normalized to 1,
-    defined as the point at which the gain first reaches ``-rs``.
+    defined as the point at which the attenuation first reaches ``rs``.
 
     See Also
     --------
@@ -5112,6 +5132,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
         Numerator (``b``) and denominator (``a``) polynomials
         of the IIR filter.
     """
+    fs = _validate_fs(fs, allow_none=False)
 
     # Guarantee that the inputs are floats
     w0 = float(w0)
@@ -5295,13 +5316,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # Convert w0, Q, and fs to float
     w0 = float(w0)
     Q = float(Q)
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     if not 0 < w0 < fs / 2:
-        raise ValueError("w0 must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, w0))
+        raise ValueError(f"w0 must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {w0}.")
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
@@ -5462,14 +5483,14 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     # Set sampling rate if not passed
     if fs is None:
         fs = 2
-    fs = float(fs)
+    fs = _validate_fs(fs, allow_none=False)
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
     filter_types = ['fir', 'iir']
     if not 0 < freq < fs / 2:
-        raise ValueError("The frequency must be between 0 and {}"
-                         " (nyquist), but given {}.".format(fs / 2, freq))
+        raise ValueError(f"The frequency must be between 0 and {fs / 2}"
+                         f" (nyquist), but given {freq}.")
     if ftype not in filter_types:
         raise ValueError('ftype must be either fir or iir.')
 
@@ -5507,9 +5528,9 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
     elif ftype == 'iir':
         # Raise warning if order and/or numtaps is passed
         if order is not None:
-            warnings.warn('order is not used for IIR gammatone filter.')
+            warnings.warn('order is not used for IIR gammatone filter.', stacklevel=2)
         if numtaps is not None:
-            warnings.warn('numtaps is not used for IIR gammatone filter.')
+            warnings.warn('numtaps is not used for IIR gammatone filter.', stacklevel=2)
 
         # Gammatone impulse response settings
         T = 1./fs

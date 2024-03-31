@@ -319,14 +319,12 @@ class VectorFunction:
                  finite_diff_rel_step, finite_diff_jac_sparsity,
                  finite_diff_bounds, sparse_jacobian):
         if not callable(jac) and jac not in FD_METHODS:
-            raise ValueError("`jac` must be either callable or one of {}."
-                             .format(FD_METHODS))
+            raise ValueError(f"`jac` must be either callable or one of {FD_METHODS}.")
 
         if not (callable(hess) or hess in FD_METHODS
                 or isinstance(hess, HessianUpdateStrategy)):
             raise ValueError("`hess` must be either callable,"
-                             "HessianUpdateStrategy or one of {}."
-                             .format(FD_METHODS))
+                             f"HessianUpdateStrategy or one of {FD_METHODS}.")
 
         if jac in FD_METHODS and hess in FD_METHODS:
             raise ValueError("Whenever the Jacobian is estimated via "

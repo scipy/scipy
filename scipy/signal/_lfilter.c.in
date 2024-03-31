@@ -6,6 +6,7 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_signal_ARRAY_API
 #define NO_IMPORT_ARRAY
 #include <numpy/ndarrayobject.h>
+#include "npy_2_compat.h"
 
 #include "_sigtools.h"
 
@@ -340,7 +341,7 @@ zfill(const PyArrayObject * x, npy_intp nx, char *xzfilled, npy_intp nxzfilled)
 {
     char *xzero;
     npy_intp i, nxl;
-    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyDataType_GetArrFuncs(PyArray_DESCR((PyArrayObject *)x))->copyswap;
 
     nxl = PyArray_ITEMSIZE(x);
 
@@ -384,7 +385,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     npy_intp na, nb, nal, nbl;
     npy_intp nfilt;
     char *azfilled, *bzfilled, *zfzfilled, *yoyo;
-    PyArray_CopySwapFunc *copyswap = PyArray_DESCR((PyArrayObject *)x)->f->copyswap;
+    PyArray_CopySwapFunc *copyswap = PyDataType_GetArrFuncs(PyArray_DESCR((PyArrayObject *)x))->copyswap;
 
     itx = (PyArrayIterObject *) PyArray_IterAllButAxis((PyObject *) x,
                                                        &axis);
@@ -443,7 +444,7 @@ RawFilter(const PyArrayObject * b, const PyArrayObject * a,
     }
     /* Initialize zero filled buffers to 0, so that we can use
      * Py_XINCREF/Py_XDECREF on it for object arrays (necessary for
-     * copyswap to work correctly). Stricly speaking, it is not needed for
+     * copyswap to work correctly). Strictly speaking, it is not needed for
      * fundamental types (as values are copied instead of pointers, without
      * refcounts), but oh well...
      */

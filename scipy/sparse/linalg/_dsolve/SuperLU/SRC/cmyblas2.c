@@ -18,6 +18,7 @@ at the top-level directory.
  * and Lawrence Berkeley National Lab.
  * November 15, 1997
  * </pre>
+ * <pre>
  * Purpose:
  *     Level 2 BLAS operations: solves and matvec, written in C.
  * Note:
@@ -112,12 +113,7 @@ void clsolve ( int ldm, int ncol, singlecomplex *M, singlecomplex *rhs )
  * stored in a 2-dim array M(1:ldm,1:ncol). The solution will be returned
  * in the rhs vector.
  */
-void
-cusolve ( ldm, ncol, M, rhs )
-int ldm;	/* in */
-int ncol;	/* in */
-singlecomplex *M;	/* in */
-singlecomplex *rhs;	/* modified */
+void cusolve (int ldm, int ncol, singlecomplex *M, singlecomplex *rhs)
 {
     singlecomplex xj, temp;
     int jcol, j, irow;
@@ -144,13 +140,7 @@ singlecomplex *rhs;	/* modified */
  *
  * The input matrix is M(1:nrow,1:ncol); The product is returned in Mxvec[].
  */
-void cmatvec ( ldm, nrow, ncol, M, vec, Mxvec )
-int ldm;	/* in -- leading dimension of M */
-int nrow;	/* in */ 
-int ncol;	/* in */
-singlecomplex *M;	/* in */
-singlecomplex *vec;	/* in */
-singlecomplex *Mxvec;	/* in/out */
+void cmatvec (int ldm, int nrow, int ncol, singlecomplex *M, singlecomplex *vec, singlecomplex *Mxvec)
 {
     singlecomplex vi0, vi1, vi2, vi3;
     singlecomplex *M0, temp;

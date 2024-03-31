@@ -42,9 +42,9 @@ import numpy as np
 from docutils.parsers.rst import directives
 
 from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString  # noqa
-from scipy.stats._distr_params import distcont, distdiscrete  # noqa
-from scipy import stats  # noqa
+from numpydoc.docscrape import NumpyDocString
+from scipy.stats._distr_params import distcont, distdiscrete
+from scipy import stats
 
 
 # Enable specific Sphinx directives
@@ -117,9 +117,8 @@ DOCTEST_SKIPLIST = set([
     'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
-    'scipy.signal.bspline',
-    'scipy.signal.cubic',
-    'scipy.signal.quadratic',
+    'scipy.special.errstate',
+    'scipy.special.seterr',
 ])
 
 # these names are not required to be present in ALL despite being in
@@ -196,7 +195,10 @@ def find_names(module, names_dict):
     module_name = module.__name__
 
     for line in module.__doc__.splitlines():
-        res = re.search(r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$", line)
+        res = re.search(
+            r"^\s*\.\. (?:currentmodule|module):: ([a-z0-9A-Z_.]+)\s*$",
+            line
+        )
         if res:
             module_name = res.group(1)
             continue
@@ -237,7 +239,9 @@ def get_all_dict(module):
         else:
             not_deprecated.append(name)
 
-    others = set(dir(module)).difference(set(deprecated)).difference(set(not_deprecated))
+    others = (set(dir(module))
+              .difference(set(deprecated))
+              .difference(set(not_deprecated)))
 
     return not_deprecated, deprecated, others
 
@@ -304,7 +308,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
         return [(None, True, output)]
     else:
         if len(only_all) > 0:
-            output += "ERROR: objects in %s.__all__ but not in refguide::\n\n" % module_name
+            output += (
+                f"ERROR: objects in {module_name}.__all__ but not in refguide::\n\n"
+            )
             for name in sorted(only_all):
                 output += "    " + name + "\n"
 
@@ -312,7 +318,9 @@ def check_items(all_dict, names, deprecated, others, module_name, dots=True):
             output += "the function listing in __init__.py for this module\n"
 
         if len(only_ref) > 0:
-            output += "ERROR: objects in refguide but not in %s.__all__::\n\n" % module_name
+            output += (
+                f"ERROR: objects in refguide but not in {module_name}.__all__::\n\n"
+            )
             for name in sorted(only_ref):
                 output += "    " + name + "\n"
 
@@ -334,7 +342,7 @@ def validate_rst_syntax(text, name, dots=True):
     if text is None:
         if dots:
             output_dot('E')
-        return False, "ERROR: %s: no documentation" % (name,)
+        return False, f"ERROR: {name}: no documentation"
 
     ok_unknown_items = set([
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
@@ -375,16 +383,24 @@ def validate_rst_syntax(text, name, dots=True):
         if not lines:
             continue
 
-        m = re.match(r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$', lines[0])
+        m = re.match(
+            r'.*Unknown (?:interpreted text role|directive type) "(.*)".*$',
+            lines[0]
+        )
         if m:
             if m.group(1) in ok_unknown_items:
                 continue
 
-        m = re.match(r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines), re.S)
+        m = re.match(
+            r'.*Error in "math" directive:.*unknown option: "label"', " ".join(lines),
+            re.S
+        )
         if m:
             continue
 
-        output += name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        output += (
+            name + lines[0] + "::\n    " + "\n    ".join(lines[1:]).rstrip() + "\n"
+        )
         success = False
 
     if not success:
@@ -423,7 +439,7 @@ def check_rest(module, names, dots=True):
         obj = getattr(module, name, None)
 
         if obj is None:
-            results.append((full_name, False, "%s has no docstring" % (full_name,)))
+            results.append((full_name, False, f"{full_name} has no docstring"))
             continue
         elif isinstance(obj, skip_types):
             continue
@@ -458,7 +474,9 @@ def check_rest(module, names, dots=True):
         else:
             file_full_name = full_name
 
-        results.append((full_name,) + validate_rst_syntax(text, file_full_name, dots=dots))
+        results.append(
+            (full_name,) + validate_rst_syntax(text, file_full_name, dots=dots)
+        )
 
     return results
 
@@ -601,7 +619,7 @@ class Checker(doctest.OutputChecker):
             # Maybe we're printing a numpy array? This produces invalid python
             # code: `print(np.arange(3))` produces "[0 1 2]" w/o commas between
             # values. So, reinsert commas and retry.
-            # TODO: handle (1) abberivation (`print(np.arange(10000))`), and
+            # TODO: handle (1) abbreviation (`print(np.arange(10000))`), and
             #              (2) n-dim arrays with n > 1
             s_want = want.strip()
             s_got = got.strip()
@@ -1000,7 +1018,7 @@ def main(argv):
     if not args.skip_tutorial:
         base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
         tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
-        print('\nChecking tutorial files at %s:' % os.path.relpath(tut_path, os.getcwd()))
+        print(f'\nChecking tutorial files at {os.path.relpath(tut_path, os.getcwd())}:')
         for filename in sorted(glob.glob(tut_path)):
             if dots:
                 sys.stderr.write('\n')

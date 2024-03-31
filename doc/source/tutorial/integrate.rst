@@ -48,8 +48,8 @@ function, method, or class instance). Notice the use of a lambda-
 function in this case as the argument. The next two arguments are the
 limits of integration. The return value is a tuple, with the first
 element holding the estimated value of the integral and the second
-element holding an upper bound on the error. Notice, that in this
-case, the true value of this integral is
+element holding an estimate of the absolute integration error. 
+Notice, that in this case, the true value of this integral is
 
 .. math::
 
@@ -63,7 +63,7 @@ where
 
 is the Fresnel sine integral. Note that the numerically-computed integral is
 within :math:`1.04\times10^{-11}` of the exact result --- well below the
-reported error bound.
+reported error estimate.
 
 
 If the function to integrate takes additional parameters, they can be provided
@@ -317,7 +317,7 @@ of order 2 or less.
 >>> x = np.array([1,3,4])
 >>> y1 = f1(x)
 >>> from scipy import integrate
->>> I1 = integrate.simpson(y1, x)
+>>> I1 = integrate.simpson(y1, x=x)
 >>> print(I1)
 21.0
 
@@ -331,7 +331,7 @@ This corresponds exactly to
 whereas integrating the second function
 
 >>> y2 = f2(x)
->>> I2 = integrate.simpson(y2, x)
+>>> I2 = integrate.simpson(y2, x=x)
 >>> print(I2)
 61.5
 

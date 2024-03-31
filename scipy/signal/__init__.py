@@ -25,9 +25,6 @@ B-splines
 .. autosummary::
    :toctree: generated/
 
-   bspline        -- B-spline basis function of order n.
-   cubic          -- B-spline basis function of order 3.
-   quadratic      -- B-spline basis function of order 2.
    gauss_spline   -- Gaussian approximation to the B-spline basis function.
    cspline1d      -- Coefficients for 1-D cubic (3rd order) B-spline.
    qspline1d      -- Coefficients for 1-D quadratic (2nd order) B-spline.
@@ -172,11 +169,8 @@ Continuous-time linear systems
    TransferFunction -- Linear time invariant system in transfer function form.
    ZerosPolesGain   -- Linear time invariant system in zeros, poles, gain form.
    lsim             -- Continuous-time simulation of output to linear system.
-   lsim2            -- Like lsim, but `scipy.integrate.odeint` is used.
    impulse          -- Impulse response of linear, time-invariant (LTI) system.
-   impulse2         -- Like impulse, but `scipy.integrate.odeint` is used.
    step             -- Step response of continuous-time LTI system.
-   step2            -- Like step, but `scipy.integrate.odeint` is used.
    freqresp         -- Frequency response of a continuous-time LTI system.
    bode             -- Bode magnitude and phase data (continuous-time LTI).
 
@@ -280,7 +274,7 @@ Spectral analysis
    welch          -- Compute a periodogram using Welch's method.
    csd            -- Compute the cross spectral density, using Welch's method.
    coherence      -- Compute the magnitude squared coherence, using Welch's method.
-   spectrogram    -- Compute the spectrogram.
+   spectrogram    -- Compute the spectrogram (legacy).
    lombscargle    -- Computes the Lomb-Scargle periodogram.
    vectorstrength -- Computes the vector strength.
    ShortTimeFFT   -- Interface for calculating the \
@@ -309,14 +303,13 @@ repeatedly generate the same chirp signal with every call.  In these cases,
 use the classes to create a reusable function instead.
 
 """
-import warnings
 
 from . import _sigtools, windows
 from ._waveforms import *
 from ._max_len_seq import max_len_seq
 from ._upfirdn import upfirdn
 
-from ._spline import (  # noqa: F401
+from ._spline import (
     cspline2d,
     qspline2d,
     sepfir2d,
@@ -344,53 +337,9 @@ from . import (
     spectral, signaltools, waveforms, wavelets, spline
 )
 
-# deal with * -> windows.* doc-only soft-deprecation
-deprecated_windows = ('boxcar', 'triang', 'parzen', 'bohman', 'blackman',
-                      'nuttall', 'blackmanharris', 'flattop', 'bartlett',
-                      'barthann', 'hamming', 'kaiser', 'gaussian',
-                      'general_gaussian', 'chebwin', 'cosine',
-                      'hann', 'exponential', 'tukey')
-
-
-def deco(name):
-    f = getattr(windows, name)
-    # Add deprecation to docstring
-
-    def wrapped(*args, **kwargs):
-        warnings.warn(f"Importing {name} from 'scipy.signal' is deprecated "
-                      "and will raise an error in SciPy 1.13.0. Please use "
-                      f"'scipy.signal.windows.{name}' or the convenience "
-                      "function 'scipy.signal.get_window' instead.",
-                      DeprecationWarning, stacklevel=2)
-        return f(*args, **kwargs)
-
-    wrapped.__name__ = name
-    wrapped.__module__ = 'scipy.signal'
-    if hasattr(f, '__qualname__'):
-        wrapped.__qualname__ = f.__qualname__
-
-    if f.__doc__:
-        lines = f.__doc__.splitlines()
-        for li, line in enumerate(lines):
-            if line.strip() == 'Parameters':
-                break
-        else:
-            raise RuntimeError('dev error: badly formatted doc')
-        spacing = ' ' * line.find('P')
-        lines.insert(li, ('{0}.. warning:: scipy.signal.{1} is deprecated,\n'
-                          '{0}             use scipy.signal.windows.{1} '
-                          'instead.\n'.format(spacing, name)))
-        wrapped.__doc__ = '\n'.join(lines)
-
-    return wrapped
-
-
-for name in deprecated_windows:
-    locals()[name] = deco(name)
-
-del deprecated_windows, name, deco
-
-__all__ = [s for s in dir() if not s.startswith('_') and s != "warnings"]
+__all__ = [
+    s for s in dir() if not s.startswith("_")
+]
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

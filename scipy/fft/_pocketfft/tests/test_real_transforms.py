@@ -1,5 +1,5 @@
 from os.path import join, dirname
-from typing import Callable, Dict, Tuple, Union, Type
+from typing import Callable, Union
 
 import numpy as np
 from numpy.testing import (
@@ -25,11 +25,8 @@ def is_longdouble_binary_compatible():
         return False
 
 
-def get_reference_data():
-    ref = getattr(globals(), '__reference_data', None)
-    if ref is not None:
-        return ref
-
+@pytest.fixture(scope="module")
+def reference_data():
     # Matlab reference data
     MDATA = np.load(join(fftpack_test_dir, 'test.npz'))
     X = [MDATA['x%d' % i] for i in range(MDATA_COUNT)]
@@ -61,51 +58,55 @@ def get_reference_data():
         'Y': Y
     }
 
-    globals()['__reference_data'] = ref
-    return ref
+    yield ref
+
+    if is_longdouble_binary_compatible():
+        FFTWDATA_LONGDOUBLE.close()
+    FFTWDATA_SINGLE.close()
+    FFTWDATA_DOUBLE.close()
+    MDATA.close()
 
 
 @pytest.fixture(params=range(FFTWDATA_COUNT))
-def fftwdata_size(request):
-    return get_reference_data()['FFTWDATA_SIZES'][request.param]
+def fftwdata_size(request, reference_data):
+    return reference_data['FFTWDATA_SIZES'][request.param]
 
 @pytest.fixture(params=range(MDATA_COUNT))
-def mdata_x(request):
-    return get_reference_data()['X'][request.param]
+def mdata_x(request, reference_data):
+    return reference_data['X'][request.param]
 
 
 @pytest.fixture(params=range(MDATA_COUNT))
-def mdata_xy(request):
-    ref = get_reference_data()
-    y = ref['Y'][request.param]
-    x = ref['X'][request.param]
+def mdata_xy(request, reference_data):
+    y = reference_data['Y'][request.param]
+    x = reference_data['X'][request.param]
     return x, y
 
 
-def fftw_dct_ref(type, size, dt):
+def fftw_dct_ref(type, size, dt, reference_data):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.float64:
-        data = get_reference_data()['FFTWDATA_DOUBLE']
+        data = reference_data['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = get_reference_data()['FFTWDATA_SINGLE']
+        data = reference_data['FFTWDATA_SINGLE']
     elif dt == np.longdouble:
-        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
+        data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dct_%d_%d' % (type, size)]).astype(dt)
     return x, y, dt
 
 
-def fftw_dst_ref(type, size, dt):
+def fftw_dst_ref(type, size, dt, reference_data):
     x = np.linspace(0, size-1, size).astype(dt)
     dt = np.result_type(np.float32, dt)
     if dt == np.float64:
-        data = get_reference_data()['FFTWDATA_DOUBLE']
+        data = reference_data['FFTWDATA_DOUBLE']
     elif dt == np.float32:
-        data = get_reference_data()['FFTWDATA_SINGLE']
+        data = reference_data['FFTWDATA_SINGLE']
     elif dt == np.longdouble:
-        data = get_reference_data()['FFTWDATA_LONGDOUBLE']
+        data = reference_data['FFTWDATA_LONGDOUBLE']
     else:
         raise ValueError()
     y = (data['dst_%d_%d' % (type, size)]).astype(dt)
@@ -195,12 +196,12 @@ def test_complex(transform, dtype):
     assert_array_almost_equal(x, y)
 
 
-DecMapType = Dict[
-    Tuple[Callable[..., np.ndarray], Union[Type[np.floating], Type[int]], int],
+DecMapType = dict[
+    tuple[Callable[..., np.ndarray], Union[type[np.floating], type[int]], int],
     int,
 ]
 
-# map (tranform, dtype, type) -> decimal
+# map (transform, dtype, type) -> decimal
 dec_map: DecMapType = {
     # DCT
     (dct, np.float64, 1): 13,
@@ -265,8 +266,8 @@ for k,v in dec_map.copy().items():
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
 class TestDCT:
-    def test_definition(self, rdt, type, fftwdata_size):
-        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
+    def test_definition(self, rdt, type, fftwdata_size, reference_data):
+        x, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
         y = dct(x, type=type)
         assert_equal(y.dtype, dt)
         dec = dec_map[(dct, rdt, type)]
@@ -340,8 +341,8 @@ def test_dct4_definition_ortho(mdata_x, rdt):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idct_definition(fftwdata_size, rdt, type):
-    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt)
+def test_idct_definition(fftwdata_size, rdt, type, reference_data):
+    xr, yr, dt = fftw_dct_ref(type, fftwdata_size, rdt, reference_data)
     x = idct(yr, type=type)
     dec = dec_map[(idct, rdt, type)]
     assert_equal(x.dtype, dt)
@@ -350,8 +351,8 @@ def test_idct_definition(fftwdata_size, rdt, type):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_definition(fftwdata_size, rdt, type):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
+def test_definition(fftwdata_size, rdt, type, reference_data):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     y = dst(xr, type=type)
     dec = dec_map[(dst, rdt, type)]
     assert_equal(y.dtype, dt)
@@ -384,8 +385,8 @@ def test_dst4_definition_ortho(rdt, mdata_x):
 
 @pytest.mark.parametrize('rdt', [np.longdouble, np.float64, np.float32, int])
 @pytest.mark.parametrize('type', [1, 2, 3, 4])
-def test_idst_definition(fftwdata_size, rdt, type):
-    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt)
+def test_idst_definition(fftwdata_size, rdt, type, reference_data):
+    xr, yr, dt = fftw_dst_ref(type, fftwdata_size, rdt, reference_data)
     x = idst(yr, type=type)
     dec = dec_map[(idst, rdt, type)]
     assert_equal(x.dtype, dt)

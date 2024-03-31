@@ -646,7 +646,7 @@ Spheroidal wave functions
 
    pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
    pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
-   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the second kind and its derivative.
    obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
    obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
    obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.
@@ -768,7 +768,7 @@ Convenience functions
    exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
    sinc      -- Return the sinc function.
 
-"""
+"""  # noqa: E501
 
 import warnings
 
@@ -779,8 +779,8 @@ from ._ufuncs import *
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa
-    gammaln, gammainc, gammaincc, logit, expit)  # noqa
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,
+    gammaln, gammainc, gammaincc, logit, expit)
 
 from . import _basic
 from ._basic import *
@@ -852,3 +852,12 @@ def btdtri(*args, **kwargs):  # type: ignore [no-redef]
 
 
 btdtri.__doc__ = _ufuncs.btdtri.__doc__  # type: ignore [misc]
+
+
+def _get_include():
+    """This function is for development purposes only.
+
+    This function could disappear or its behavior could change at any time.
+    """
+    import os
+    return os.path.dirname(__file__)

@@ -100,10 +100,14 @@ def test_indexing(A):
     with pytest.raises(NotImplementedError):
         A[[1, 2], 1]
 
-    assert isinstance(A[[0]], scipy.sparse.sparray), "Expected sparse array, got sparse matrix"
-    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), "Expected ndarray, got sparse array"
-    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), "Expected sparse array, got something else"
+    assert isinstance(A[[0]], scipy.sparse.sparray), \
+           "Expected sparse array, got sparse matrix"
+    assert isinstance(A[1, [[1, 2]]], scipy.sparse.sparray), \
+           "Expected ndarray, got sparse array"
+    assert isinstance(A[[[1, 2]], 1], scipy.sparse.sparray), \
+           "Expected ndarray, got sparse array"
+    assert isinstance(A[:, [1, 2]], scipy.sparse.sparray), \
+           "Expected sparse array, got something else"
 
 
 @parametrize_sparrays
@@ -140,10 +144,16 @@ def test_matmul(A):
     assert np.all((A @ A.T).todense() == A.dot(A.T).todense())
 
 
-@parametrize_square_sparrays
-def test_pow(B):
-    assert isinstance((B**0), scipy.sparse.sparray), "Expected array, got matrix"
-    assert isinstance((B**2), scipy.sparse.sparray), "Expected array, got matrix"
+@parametrize_sparrays
+def test_power_operator(A):
+    assert isinstance((A**2), scipy.sparse.sparray), "Expected array, got matrix"
+
+    # https://github.com/scipy/scipy/issues/15948
+    npt.assert_equal((A**2).todense(), (A.todense())**2)
+
+    # power of zero is all ones (dense) so helpful msg exception
+    with pytest.raises(NotImplementedError, match="zero power"):
+        A**0
 
 
 @parametrize_sparrays
@@ -332,7 +342,11 @@ def test_splu():
         [4, 3, 2, 1],
     ])
     LU = spla.splu(X)
-    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+    npt.assert_allclose(
+        LU.solve(np.array([1, 2, 3, 4])),
+        np.asarray([1, 0, 0, 0], dtype=np.float64),
+        rtol=1e-14, atol=3e-16
+    )
 
 
 def test_spilu():
@@ -343,13 +357,11 @@ def test_spilu():
         [4, 3, 2, 1],
     ])
     LU = spla.spilu(X)
-    npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
-
-
-@parametrize_sparrays
-def test_power_operator(A):
-    # https://github.com/scipy/scipy/issues/15948
-    npt.assert_equal((A**2).todense(), (A.todense())**2)
+    npt.assert_allclose(
+        LU.solve(np.array([1, 2, 3, 4])),
+        np.asarray([1, 0, 0, 0], dtype=np.float64),
+        rtol=1e-14, atol=3e-16
+    )
 
 
 @pytest.mark.parametrize(

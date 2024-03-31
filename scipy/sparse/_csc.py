@@ -138,8 +138,9 @@ class _csc_base(_cs_matrix):
         return self._major_slice(col)._minor_index_fancy(row)
 
     # these functions are used by the parent class (_cs_matrix)
-    # to remove redudancy between csc_array and csr_matrix
-    def _swap(self, x):
+    # to remove redundancy between csc_array and csr_matrix
+    @staticmethod
+    def _swap(x):
         """swap the members of x if this is a column-oriented matrix
         """
         return x[1], x[0]

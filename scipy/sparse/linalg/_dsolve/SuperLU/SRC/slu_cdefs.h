@@ -83,20 +83,14 @@ at the top-level directory.
 #include <fortran.h>
 #endif
 
-/* Define my integer type int_t */
-typedef int int_t; /* default */
-
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && (_MSC_VER < 1900)
-#include "msc_stdint.h"
-#else
 #include <stdint.h>
-#endif
 #include <string.h>
 #include "slu_Cnames.h"
+#include "superlu_config.h"
 #include "supermatrix.h"
 #include "slu_util.h"
 #include "slu_scomplex.h"
@@ -111,64 +105,63 @@ extern "C" {
 /*! \brief Driver routines */
 extern void
 cgssv(superlu_options_t *, SuperMatrix *, int *, int *, SuperMatrix *,
-      SuperMatrix *, SuperMatrix *, SuperLUStat_t *, int *);
+      SuperMatrix *, SuperMatrix *, SuperLUStat_t *, int_t *info);
 extern void
 cgssvx(superlu_options_t *, SuperMatrix *, int *, int *, int *,
        char *, float *, float *, SuperMatrix *, SuperMatrix *,
-       void *, int, SuperMatrix *, SuperMatrix *,
+       void *, int_t lwork, SuperMatrix *, SuperMatrix *,
        float *, float *, float *, float *,
-       GlobalLU_t *, mem_usage_t *, SuperLUStat_t *, int *);
+       GlobalLU_t *, mem_usage_t *, SuperLUStat_t *, int_t *info);
     /* ILU */
 extern void
 cgsisv(superlu_options_t *, SuperMatrix *, int *, int *, SuperMatrix *,
       SuperMatrix *, SuperMatrix *, SuperLUStat_t *, int *);
 extern void
-cgsisx(superlu_options_t *, SuperMatrix *, int *, int *, int *,
-       char *, float *, float *, SuperMatrix *, SuperMatrix *,
-       void *, int, SuperMatrix *, SuperMatrix *, float *, float *,
-       GlobalLU_t *, mem_usage_t *, SuperLUStat_t *, int *);
+cgsisx(superlu_options_t *options, SuperMatrix *A, int *perm_c, int *perm_r,
+       int *etree, char *equed, float *R, float *C,
+       SuperMatrix *L, SuperMatrix *U, void *work, int_t lwork,
+       SuperMatrix *B, SuperMatrix *X, float *recip_pivot_growth, float *rcond,
+       GlobalLU_t *Glu, mem_usage_t *mem_usage, SuperLUStat_t *stat, int_t *info);
 
 
 /*! \brief Supernodal LU factor related */
 extern void
-cCreate_CompCol_Matrix(SuperMatrix *, int, int, int, singlecomplex *,
-		       int *, int *, Stype_t, Dtype_t, Mtype_t);
+cCreate_CompCol_Matrix(SuperMatrix *, int, int, int_t, singlecomplex *,
+		       int_t *, int_t *, Stype_t, Dtype_t, Mtype_t);
 extern void
-cCreate_CompRow_Matrix(SuperMatrix *, int, int, int, singlecomplex *,
-		       int *, int *, Stype_t, Dtype_t, Mtype_t);
+cCreate_CompRow_Matrix(SuperMatrix *, int, int, int_t, singlecomplex *,
+		       int_t *, int_t *, Stype_t, Dtype_t, Mtype_t);
+extern void cCompRow_to_CompCol(int, int, int_t, singlecomplex*, int_t*, int_t*,
+		                   singlecomplex **, int_t **, int_t **);
 extern void
 cCopy_CompCol_Matrix(SuperMatrix *, SuperMatrix *);
 extern void
 cCreate_Dense_Matrix(SuperMatrix *, int, int, singlecomplex *, int,
 		     Stype_t, Dtype_t, Mtype_t);
 extern void
-cCreate_SuperNode_Matrix(SuperMatrix *, int, int, int, singlecomplex *, 
-		         int *, int *, int *, int *, int *,
+cCreate_SuperNode_Matrix(SuperMatrix *, int, int, int_t, singlecomplex *, 
+		         int_t *, int_t *, int_t *, int *, int *,
 			 Stype_t, Dtype_t, Mtype_t);
 extern void
 cCopy_Dense_Matrix(int, int, singlecomplex *, int, singlecomplex *, int);
 
-extern void    countnz (const int, int *, int *, int *, GlobalLU_t *);
-extern void    ilu_countnz (const int, int *, int *, GlobalLU_t *);
-extern void    fixupL (const int, const int *, GlobalLU_t *);
-
-extern void    callocateA (int, int, singlecomplex **, int **, int **);
+extern void    callocateA (int, int_t, singlecomplex **, int_t **, int_t **);
 extern void    cgstrf (superlu_options_t*, SuperMatrix*,
-                       int, int, int*, void *, int, int *, int *, 
+                       int, int, int*, void *, int_t, int *, int *, 
                        SuperMatrix *, SuperMatrix *, GlobalLU_t *,
-		       SuperLUStat_t*, int *);
-extern int     csnode_dfs (const int, const int, const int *, const int *,
-			     const int *, int *, int *, GlobalLU_t *);
+		       SuperLUStat_t*, int_t *info);
+extern int_t   csnode_dfs (const int, const int, const int_t *, const int_t *,
+			     const int_t *, int_t *, int *, GlobalLU_t *);
 extern int     csnode_bmod (const int, const int, const int, singlecomplex *,
                               singlecomplex *, GlobalLU_t *, SuperLUStat_t*);
 extern void    cpanel_dfs (const int, const int, const int, SuperMatrix *,
 			   int *, int *, singlecomplex *, int *, int *, int *,
-			   int *, int *, int *, int *, GlobalLU_t *);
+			   int_t *, int *, int *, int_t *, GlobalLU_t *);
 extern void    cpanel_bmod (const int, const int, const int, const int,
                            singlecomplex *, singlecomplex *, int *, int *,
 			   GlobalLU_t *, SuperLUStat_t*);
 extern int     ccolumn_dfs (const int, const int, int *, int *, int *, int *,
-			   int *, int *, int *, int *, int *, GlobalLU_t *);
+			   int *, int_t *, int *, int *, int_t *, GlobalLU_t *);
 extern int     ccolumn_bmod (const int, const int, singlecomplex *,
 			   singlecomplex *, int *, int *, int,
                            GlobalLU_t *, SuperLUStat_t*);
@@ -177,8 +170,8 @@ extern int     ccopy_to_ucol (int, int, int *, int *, int *,
 extern int     cpivotL (const int, const double, int *, int *, 
                          int *, int *, int *, GlobalLU_t *, SuperLUStat_t*);
 extern void    cpruneL (const int, const int *, const int, const int,
-			  const int *, const int *, int *, GlobalLU_t *);
-extern void    creadmt (int *, int *, int *, singlecomplex **, int **, int **);
+			  const int *, const int *, int_t *, GlobalLU_t *);
+extern void    creadmt (int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    cGenXtrue (int, int, singlecomplex *, int);
 extern void    cFillRHS (trans_t, int, singlecomplex *, int, SuperMatrix *,
 			  SuperMatrix *);
@@ -186,18 +179,17 @@ extern void    cgstrs (trans_t, SuperMatrix *, SuperMatrix *, int *, int *,
                         SuperMatrix *, SuperLUStat_t*, int *);
 /* ILU */
 extern void    cgsitrf (superlu_options_t*, SuperMatrix*, int, int, int*,
-		        void *, int, int *, int *, SuperMatrix *, SuperMatrix *,
-                        GlobalLU_t *, SuperLUStat_t*, int *);
-extern int     cldperm(int, int, int, int [], int [], singlecomplex [],
+		        void *, int_t, int *, int *, SuperMatrix *, SuperMatrix *,
+                        GlobalLU_t *, SuperLUStat_t*, int_t *info);
+extern int     cldperm(int, int, int_t, int_t [], int_t [], singlecomplex [],
                         int [],	float [], float []);
-extern int     ilu_csnode_dfs (const int, const int, const int *, const int *,
-			       const int *, int *, GlobalLU_t *);
+extern int     ilu_csnode_dfs (const int, const int, const int_t *, const int_t *,
+			       const int_t *, int *, GlobalLU_t *);
 extern void    ilu_cpanel_dfs (const int, const int, const int, SuperMatrix *,
 			       int *, int *, singlecomplex *, float *, int *, int *,
-			       int *, int *, int *, int *, GlobalLU_t *);
+			       int *, int *, int *, int_t *, GlobalLU_t *);
 extern int     ilu_ccolumn_dfs (const int, const int, int *, int *, int *,
-				int *, int *, int *, int *, int *,
-				GlobalLU_t *);
+				int *, int *, int *, int *, int_t *, GlobalLU_t *);
 extern int     ilu_ccopy_to_ucol (int, int, int *, int *, int *,
                                   singlecomplex *, int, milu_t, double, int,
                                   singlecomplex *, int *, GlobalLU_t *, float *);
@@ -235,28 +227,26 @@ extern int     sp_cgemm (char *, char *, int, int, int, singlecomplex,
 extern         float smach(char *);   /* from C99 standard, in float.h */
 
 /*! \brief Memory-related */
-extern int     cLUMemInit (fact_t, void *, int, int, int, int, int,
+extern int_t   cLUMemInit (fact_t, void *, int_t, int, int, int_t, int,
                             float, SuperMatrix *, SuperMatrix *,
                             GlobalLU_t *, int **, singlecomplex **);
 extern void    cSetRWork (int, int, singlecomplex *, singlecomplex **, singlecomplex **);
 extern void    cLUWorkFree (int *, singlecomplex *, GlobalLU_t *);
-extern int     cLUMemXpand (int, int, MemType, int *, GlobalLU_t *);
+extern int_t   cLUMemXpand (int, int_t, MemType, int_t *, GlobalLU_t *);
 
-extern singlecomplex  *complexMalloc(int);
-extern singlecomplex  *complexCalloc(int);
-extern float  *floatMalloc(int);
-extern float  *floatCalloc(int);
-extern int     cmemory_usage(const int, const int, const int, const int);
+extern singlecomplex  *complexMalloc(size_t);
+extern singlecomplex  *complexCalloc(size_t);
+extern float  *floatMalloc(size_t);
+extern float  *floatCalloc(size_t);
+extern int_t   cmemory_usage(const int_t, const int_t, const int_t, const int);
 extern int     cQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 extern int     ilu_cQuerySpace (SuperMatrix *, SuperMatrix *, mem_usage_t *);
 
 /*! \brief Auxiliary routines */
-extern void    creadhb(FILE *, int *, int *, int *, singlecomplex **, int **, int **);
-extern void    creadrb(int *, int *, int *, singlecomplex **, int **, int **);
-extern void    creadtriple(int *, int *, int *, singlecomplex **, int **, int **);
-extern void    creadMM(FILE *, int *, int *, int *, singlecomplex **, int **, int **);
-extern void    cCompRow_to_CompCol(int, int, int, singlecomplex*, int*, int*,
-		                   singlecomplex **, int **, int **);
+extern void    creadhb(FILE *, int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
+extern void    creadrb(int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
+extern void    creadtriple(int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
+extern void    creadMM(FILE *, int *, int *, int_t *, singlecomplex **, int_t **, int_t **);
 extern void    cfill (singlecomplex *, int, singlecomplex);
 extern void    cinf_norm_error (int, SuperMatrix *, singlecomplex *);
 extern float  sqselect(int, float *, int);
@@ -266,7 +256,7 @@ extern float  sqselect(int, float *, int);
 extern void    cPrint_CompCol_Matrix(char *, SuperMatrix *);
 extern void    cPrint_SuperNode_Matrix(char *, SuperMatrix *);
 extern void    cPrint_Dense_Matrix(char *, SuperMatrix *);
-extern void    cprint_lu_col(char *, int, int, int *, GlobalLU_t *);
+extern void    cprint_lu_col(char *, int, int, int_t *, GlobalLU_t *);
 extern int     print_double_vec(char *, int, double *);
 extern void    ccheck_tempv(int, singlecomplex *);
 
@@ -281,6 +271,10 @@ extern int ctrsm_(char*, char*, char*, char*, int*, int*,
                   singlecomplex*, singlecomplex*, int*, singlecomplex*, int*);
 extern int cgemv_(char *, int *, int *, singlecomplex *, singlecomplex *a, int *,
                   singlecomplex *, int *, singlecomplex *, singlecomplex *, int *);
+
+extern void cusolve(int, int, singlecomplex*, singlecomplex*);
+extern void clsolve(int, int, singlecomplex*, singlecomplex*);
+extern void cmatvec(int, int, int, singlecomplex*, singlecomplex*, singlecomplex*);
 
 #ifdef __cplusplus
   }

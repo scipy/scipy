@@ -7,6 +7,7 @@ from libc.math cimport INFINITY
 
 
 from scipy.sparse import issparse
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 np.import_array()
 
@@ -133,6 +134,7 @@ def maximum_bipartite_matching(graph, perm_type='row'):
      [2 0 0 3]]
 
     """
+    graph = convert_pydata_sparse_to_scipy(graph)
     if not issparse(graph):
         raise TypeError("graph must be sparse")
     if graph.format not in ("csr", "csc", "coo"):
@@ -450,6 +452,7 @@ def min_weight_full_bipartite_matching(biadjacency_matrix, maximize=False):
     28.0
 
     """
+    biadjacency_matrix = convert_pydata_sparse_to_scipy(biadjacency_matrix)
     if not issparse(biadjacency_matrix):
         raise TypeError("graph must be sparse")
     if biadjacency_matrix.format not in ("csr", "csc", "coo"):
@@ -701,7 +704,7 @@ cdef ITYPE_t[:] _lapjvsp(ITYPE_t[:] first,
     # but to avoid goto statements, and convoluted logic to break out
     # of nested loops, we extract the body of the loop instead. The
     # function thus corresponds to lines 109--154 in the Pascal code,
-    # with lines 155 and 156 seperated into two separate functions below.
+    # with lines 155 and 156 separated into two separate functions below.
     td1 = -1
     for l in range(l0):
         td1 = _lapjvsp_single_l(l, nc, d, ok, free, first, kk, cc, v, lab,

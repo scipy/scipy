@@ -260,8 +260,7 @@ def _check_level(label, expected, actual):
         return
     # Check types are as expected
     assert_(types_compatible(expected, actual),
-            "Expected type %s, got %s at %s" %
-            (type(expected), type(actual), label))
+            f"Expected type {type(expected)}, got {type(actual)} at {label}")
     # A field in a record array may not be an ndarray
     # A scalar from a record array will be type np.void
     if not isinstance(expected,
@@ -270,9 +269,7 @@ def _check_level(label, expected, actual):
         return
     # This is an ndarray-like thing
     assert_(expected.shape == actual.shape,
-            msg='Expected shape {}, got {} at {}'.format(expected.shape,
-                                                     actual.shape,
-                                                     label))
+            msg=f'Expected shape {expected.shape}, got {actual.shape} at {label}')
     ex_dtype = expected.dtype
     if ex_dtype.hasobject:  # array of objects
         if isinstance(expected, MatlabObject):
@@ -1242,7 +1239,7 @@ def test_save_unicode_field(tmpdir):
 
 def test_save_custom_array_type(tmpdir):
     class CustomArray:
-        def __array__(self):
+        def __array__(self, dtype=None, copy=None):
             return np.arange(6.0).reshape(2, 3)
     a = CustomArray()
     filename = os.path.join(str(tmpdir), 'test.mat')
@@ -1304,11 +1301,11 @@ def test_deprecation():
     """Test that access to previous attributes still works."""
     # This should be accessible immediately from scipy.io import
     with assert_warns(DeprecationWarning):
-        scipy.io.matlab.mio5_params.MatlabOpaque  # noqa
+        scipy.io.matlab.mio5_params.MatlabOpaque
 
     # These should be importable but warn as well
     with assert_warns(DeprecationWarning):
-        from scipy.io.matlab.miobase import MatReadError  # noqa
+        from scipy.io.matlab.miobase import MatReadError  # noqa: F401
 
 
 def test_gh_17992(tmp_path):
@@ -1330,3 +1327,13 @@ def test_gh_17992(tmp_path):
             new_dict)
     assert_allclose(new_dict["data"][0][0], array_one)
     assert_allclose(new_dict["data"][0][1], array_two)
+
+
+def test_gh_19659(tmp_path):
+    d = {
+        "char_array": np.array([list("char"), list("char")], dtype="U1"),
+        "string_array": np.array(["string", "string"]),
+        }
+    outfile = tmp_path / "tmp.mat"
+    # should not error:
+    savemat(outfile, d, format="4")

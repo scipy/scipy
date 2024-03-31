@@ -27,7 +27,7 @@ cdef double von_mises_cdf_series(double k, double x, unsigned int p) noexcept:
     V = 0
     for n in range(p - 1, 0, -1):
         sn, cn = sn * c - cn * s, cn * c + sn * s
-        R = 1. / (2 * n / k + R)
+        R = k / (2 * n + k * R)
         V = R * (sn / n + V)
 
     with cython.cdivision(True):
@@ -381,7 +381,7 @@ cdef _expected_covar(float64_t[:, :] distx, float64_t[:, :] disty,
                      int64_t[:, :] rank_distx, int64_t[:, :] rank_disty,
                      float64_t[:, :] cov_xy, float64_t[:] expectx,
                      float64_t[:] expecty):
-    # summing up the the element-wise product of A and B based on the ranks,
+    # summing up the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
     cdef intp_t n = distx.shape[0]
     cdef float64_t a, b
@@ -428,7 +428,7 @@ def _local_covariance(distx, disty, rank_distx, rank_disty):
     cdef ndarray expectx = np.zeros(nx)
     cdef ndarray expecty = np.zeros(ny)
 
-    # summing up the the element-wise product of A and B based on the ranks,
+    # summing up the element-wise product of A and B based on the ranks,
     # yields the local family of covariances
     expectx, expecty = _expected_covar(distx, disty, rank_distx, rank_disty,
                                        cov_xy, expectx, expecty)

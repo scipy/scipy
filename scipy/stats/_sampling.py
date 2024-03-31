@@ -796,7 +796,7 @@ class FastGeneratorInversion:
         overwritten. Hence, a different stream of random numbers is generated
         even if the same seed is used.
         """
-        # note: we cannot use self._rng.rvs directy in case
+        # note: we cannot use self._rng.rvs directly in case
         # self._mirror_uniform is true
         u = self.random_state.uniform(size=size)
         if self._mirror_uniform:
@@ -1285,7 +1285,7 @@ class RatioUniforms:
 
         # loop until N rvs have been generated: expected runtime is finite.
         # to avoid infinite loop, raise exception if not a single rv has been
-        # generated after 50000 tries. even if the expected numer of iterations
+        # generated after 50000 tries. even if the expected number of iterations
         # is 1000, the probability of this event is (1-1/1000)**50000
         # which is of order 10e-22
         while simulated < N:

@@ -35,21 +35,21 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
 */
 
 /* If the active version has the name "dev", style it orange */
-#version_switcher_button[data-active-version-name*="dev"] {
+.version-switcher__button[data-active-version-name*="dev"] {
   background-color: #E69F00;
   border-color: #E69F00;
   color: white;
 }
 
 /* green for `stable` */
-#version_switcher_button[data-active-version-name*="stable"] {
+.version-switcher__button[data-active-version-name*="stable"] {
   background-color: #009E73;
   border-color: #009E73;
   color: white;
 }
 
 /* red for `old` */
-#version_switcher_button:not([data-active-version-name*="stable"]):not([data-active-version-name*="dev"]):not([data-active-version-name*="pull"]) {
+.version-switcher__button:not([data-active-version-name*="stable"]):not([data-active-version-name*="dev"]):not([data-active-version-name*="pull"]) {
   background-color: #980F0F;
   border-color: #980F0F;
   color: white;
@@ -73,8 +73,8 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
 }
 
 .sd-card .sd-card-img-top {
-  height: 52px;
-  width: 52px;
+  height: 60px;
+  width: 60px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -109,7 +109,7 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
   font-size: 0.9rem;
   border-radius: 0.5rem;
   max-width: 120px;
-  padding: 0.5rem 0rem;
+  padding: 0.5rem !important;
 }
 
 .custom-button a {
@@ -121,7 +121,6 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
   margin-bottom: 0rem;
   color: #484848;
 }
-
 
 /* Dark theme tweaking
 
@@ -156,6 +155,10 @@ html[data-theme=dark] .sd-card .sd-card-footer {
   background-color:var(--pst-color-background);
 }
 
+html[data-theme=dark] .sd-card img[src*='.svg'] {
+  filter: invert(0.82) brightness(0.8) contrast(1.2);
+}
+
 /* Dropdowns from sphinx-design */
 
 .sd-dropdown.sd-card {
@@ -185,3 +188,36 @@ div.admonition-legacy {
 .admonition-legacy.admonition > .admonition-title:after {
   background-color: var(--pst-color-warning);
 }
+
+/* extra breathing room for logo image */
+.navbar-brand.logo {
+    margin-right: 0.5rem;
+}
+
+.try_examples_button {
+    color: white;
+    background-color: #0054a6;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 10px;
+    margin-bottom: 5px;
+    box-shadow: 0 2px 5px rgba(108,108,108,0.2);
+    font-weight: bold;
+    font-size: small;
+}
+
+.try_examples_button:hover {
+background-color: #0066cc;
+transform: scale(1.02);
+box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+cursor: pointer;
+}
+
+.try_examples_button_container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+

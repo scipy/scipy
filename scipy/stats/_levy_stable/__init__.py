@@ -220,9 +220,9 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate pdf using Nolan's methods as detailed in [NO].
-    """
+def _pdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate pdf using Nolan's methods as detailed in [NO]."""
 
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
@@ -341,9 +341,9 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
     )
 
 
-def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps, x_tol_near_zeta):
-    """Calculate cdf using Nolan's methods as detailed in [NO].
-    """
+def _cdf_single_value_piecewise_post_rounding_Z0(x0, alpha, beta, quad_eps,
+                                                 x_tol_near_zeta):
+    """Calculate cdf using Nolan's methods as detailed in [NO]."""
     _nolan = Nolan(alpha, beta, x0)
     zeta = _nolan.zeta
     xi = _nolan.xi
@@ -803,7 +803,7 @@ class levy_stable_gen(rv_continuous):
 
     """
     # Configurable options as class variables
-    # (accesible from self by attribute lookup).
+    # (accessible from self by attribute lookup).
     parameterization = "S1"
     pdf_default_method = "piecewise"
     cdf_default_method = "piecewise"
@@ -837,8 +837,8 @@ class levy_stable_gen(rv_continuous):
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
-        discrete = kwds.pop("discrete", None)  # noqa
-        rndm = kwds.pop("random_state", None)  # noqa
+        kwds.pop("discrete", None)
+        kwds.pop("random_state", None)
         (alpha, beta), delta, gamma, size = self._parse_args_rvs(*args, **kwds)
 
         # shift location for this parameterisation (S1)
@@ -953,7 +953,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Density calculations experimental for FFT method."
                     + " Use combination of piecewise and dni methods instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1093,7 +1093,7 @@ class levy_stable_gen(rv_continuous):
                 warnings.warn(
                     "Cumulative density calculations experimental for FFT"
                     + " method. Use piecewise method instead.",
-                    RuntimeWarning,
+                    RuntimeWarning, stacklevel=3,
                 )
                 _alpha, _beta = pair
                 _x = data_subset[:, (0,)]
@@ -1172,7 +1172,7 @@ def pdf_from_cf_with_fft(cf, h=0.01, q=9, level=3):
     h : Optional[float]
         Step size for Newton-Cotes integration. Default: 0.01
     q : Optional[int]
-        Use 2**q steps when peforming Newton-Cotes integration.
+        Use 2**q steps when performing Newton-Cotes integration.
         The infinite integral in the inverse Fourier transform will then
         be restricted to the interval [-2**q * h / 2, 2**q * h / 2]. Setting
         the number of steps equal to a power of 2 allows the fft to be
