@@ -1009,12 +1009,14 @@ class TestInv:
         xp_assert_close(a @ a_inv, xp.eye(2), atol=1e-15)
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestDet:
 
-    def setup_method(self):
+    def setup_method(self, xp):
         self.rng = np.random.default_rng(1680305949878959)
 
-    def test_1x1_all_singleton_dims(self):
+    def test_1x1_all_singleton_dims(self, xp):
         a = np.array([[1]])
         deta = det(a)
         assert deta.dtype.char == 'd'
@@ -1031,7 +1033,7 @@ class TestDet:
         assert np.isscalar(deta)
         assert deta == 1.+3.j
 
-    def test_1by1_stacked_input_output(self):
+    def test_1by1_stacked_input_output(self, xp):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
         deta = det(a)
         assert deta.dtype.char == 'd'
@@ -1044,7 +1046,6 @@ class TestDet:
         assert deta.shape == (4, 5)
         assert_allclose(deta, np.squeeze(a))
 
-    @array_api_compatible
     @pytest.mark.parametrize('shape', [[2, 2], [20, 20], [3, 2, 20, 20]])
     def test_simple_det_shapes_real_complex(self, shape, xp):
         a = self.rng.uniform(-1., 1., size=shape)
@@ -1056,7 +1057,6 @@ class TestDet:
         d3, d4 = det(xp.asarray(b)), xp.asarray(np.linalg.det(b))
         xp_assert_close(d3, d4)
 
-    @array_api_compatible
     def test_for_known_det_values(self, xp):
         # Hadamard8
         a = np.array([[1., 1, 1, 1, 1, 1, 1, 1],
@@ -1102,7 +1102,7 @@ class TestDet:
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
                                      if x not in 'gG'])
-    def test_sample_compatible_dtype_input(self, typ):
+    def test_sample_compatible_dtype_input(self, typ, xp):
         n = 4
         a = self.rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64, np.complex128))
@@ -1123,13 +1123,12 @@ class TestDet:
         with assert_raises(TypeError, match=msg):
             det(np.array([[100, 200]]*2, dtype='timedelta64[s]'))
 
-    @array_api_compatible
     def test_empty_edge_cases(self, xp):
         xp_assert_close(det(xp.empty([0, 0])), xp.asarray(1.))
         xp_assert_close(det(xp.empty([0, 0, 0])), xp.asarray([]))
         xp_assert_close(det(xp.empty([3, 0, 0])), xp.asarray([1., 1., 1.]))
 
-    def test_empty_edge_cases_errors(self):
+    def test_empty_edge_cases_errors(self, xp):
         with assert_raises(ValueError, match='Last 2 dimensions'):
             det(np.empty([0, 0, 3]))
         with assert_raises(ValueError, match='at least two-dimensional'):
@@ -1139,7 +1138,7 @@ class TestDet:
         with assert_raises(ValueError, match='Last 2 dimensions'):
             det(np.array([[[]]]))
 
-    def test_overwrite_a(self):
+    def test_overwrite_a(self, xp):
         # If all conditions are met then input should be overwritten;
         #   - dtype is one of 'fdFD'
         #   - C-contiguous
@@ -1150,19 +1149,17 @@ class TestDet:
         assert_allclose(deta, 0.)
         assert not (a == ac).all()
 
-    def test_readonly_array(self):
+    def test_readonly_array(self, xp):
         a = np.array([[2., 0., 1.], [5., 3., -1.], [1., 1., 1.]])
         a.setflags(write=False)
         # overwrite_a will be overridden
         assert_allclose(det(a, overwrite_a=True), 10.)
 
-    @array_api_compatible
     def test_simple_check_finite(self, xp):
         a = xp.asarray([[1, 2], [3, xp.inf]])
         with assert_raises(ValueError, match='array must not contain'):
             det(a)
     
-    @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
         a = [[2, 4], [1, 3]]
@@ -1172,10 +1169,12 @@ class TestDet:
         # float64 for numpy, float32 for other backends
         xp_assert_close(d1, d2, rtol=rtol, check_dtype=False)
 
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[2, 4], [1, 3]], dtype=dtype)
-        xp_assert_close(det(a), np.asarray(2, np.float64))
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        a = xp.asarray([[2, 4], [1, 3]], dtype=dtype)
+        xp_assert_close(det(a), xp.asarray(2, xp.float64))
 
 
 def direct_lstsq(a, b, cmplx=0):
