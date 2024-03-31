@@ -41,6 +41,8 @@ from scipy._lib._util import AxisError
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal, copy, is_numpy
 from scipy.conftest import array_api_compatible
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -348,15 +350,18 @@ class TestPearsonrWilkinson:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 class TestPearsonr:
-    @pytest.mark.skip_xp_backends(np_only=True)
+    @skip_xp_backends(np_only=True)
     def test_pearsonr_result_attributes(self):
         res = stats.pearsonr(X, X)
         attributes = ('correlation', 'pvalue')
         check_named_results(res, attributes)
         assert_equal(res.correlation, res.statistic)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_r_almost_exactly_pos1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, a)
@@ -366,6 +371,9 @@ class TestPearsonr:
         # square root of the error in r.
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_r_almost_exactly_neg1(self, xp):
         a = xp.arange(3.0)
         r, prob = stats.pearsonr(a, -a)
@@ -375,6 +383,9 @@ class TestPearsonr:
         # square root of the error in r.
         xp_assert_close(prob, xp.asarray(0.0), atol=np.sqrt(2*np.spacing(1.0)))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_basic(self, xp):
         # A basic test, with a correlation coefficient
         # that is not 1 or -1.
@@ -384,6 +395,9 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(np.sqrt(3)/2))
         xp_assert_close(prob, xp.asarray(1/3, dtype=xp.float64))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_constant_input(self, xp):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
@@ -395,6 +409,9 @@ class TestPearsonr:
             xp_assert_close(r, xp.asarray(xp.nan))
             xp_assert_close(p, xp.asarray(xp.nan))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     @pytest.mark.parametrize('dtype', ['float32', 'float64'])
     def test_near_constant_input(self, xp, dtype):
         npdtype = getattr(np, dtype)
@@ -408,6 +425,9 @@ class TestPearsonr:
             # (The exact value of r would be 1.)
             stats.pearsonr(x, y)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_very_small_input_values(self, xp):
         # Very small values in an input.  A naive implementation will
         # suffer from underflow.
@@ -423,6 +443,9 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.7272930540750450, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.1637805429533202, dtype=xp.float64))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_very_large_input_values(self, xp):
         # Very large values in an input.  A naive implementation will
         # suffer from overflow.
@@ -437,6 +460,9 @@ class TestPearsonr:
         xp_assert_close(r, xp.asarray(0.8660254037844386, dtype=xp.float64))
         xp_assert_close(p, xp.asarray(0.011724811003954638, dtype=xp.float64))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_extremely_large_input_values(self, xp):
         # Extremely large values in x and y.  These values would cause the
         # product sigma_x * sigma_y to overflow if the two factors were
@@ -502,6 +528,9 @@ class TestPearsonr:
         ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_negative_correlation_pvalue_gh17795(self, xp):
         x = xp.arange(10.)
         y = -x
@@ -510,6 +539,9 @@ class TestPearsonr:
         xp_assert_close(test_greater.pvalue, xp.asarray(1.))
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_length3_r_exactly_negative_one(self, xp):
         x = xp.asarray([1, 2, 3])
         y = xp.asarray([5, -4, -13])
@@ -638,6 +670,9 @@ class TestPearsonr:
             with pytest.raises(ValueError, match=message):
                 stats.pearsonr(x, x, method=stats.PermutationMethod())
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
         x0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
@@ -675,6 +710,9 @@ class TestPearsonr:
         xp_assert_close(ci.low, -ones)
         xp_assert_close(ci.high, ones)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=['JAX arrays do not support item assignment'],
+                      cpu_only=True)
     @pytest.mark.parametrize('axis', [0, 1, None])
     @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
     def test_array_api(self, xp, axis, alternative):
