@@ -1,5 +1,6 @@
 """Cholesky decomposition functions."""
 
+import numpy as np
 from numpy import asarray_chkfinite, asarray, atleast_2d
 
 # Local imports
@@ -91,7 +92,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     if check_finite:
         a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
-        c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
+        c, _ = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
                              clean=True, check_finite=False)
         return c
     if hasattr(xp, 'linalg'):
@@ -99,8 +100,8 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         dtype = xp.result_type(a, xp.float32)
         a = xp.astype(a, dtype)
         return xp.linalg.cholesky(a, upper=upper)
-    a = asarray(a)
-    c, lower = _cholesky(a, lower=lower, clean=True, check_finite=False)
+    a = np.asarray(a)
+    c, _ = _cholesky(a, lower=lower, clean=True, check_finite=False)
     return xp.asarray(c)
 
 
