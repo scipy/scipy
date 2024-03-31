@@ -24,6 +24,8 @@ from scipy._lib.deprecation import _NoValue
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, size as _size, array_namespace
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
 DTYPES = REAL_DTYPES + COMPLEX_DTYPES
@@ -493,42 +495,38 @@ class TestSolveHBanded:
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestSolve:
 
-    def setup_method(self):
+    def setup_method(self, xp):
         np.random.seed(1234)
 
-    @array_api_compatible
     def test_20Feb04_bug(self, xp):
         a = xp.asarray([[1, 1], [1.0, 0]])  # ok
         x0 = solve(a, xp.asarray([1, 0j]))
-        xp_test = array_namespace(x0)
         # complex64 for torch, complex128 for other backends
-        xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
+        xp_assert_close(xp.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
 
         # gives failure with clapack.zgesv(..,rowmajor=0)
         a = xp.asarray([[1, 1], [1.2, 0]])
         b = xp.asarray([1, 0j])
         x0 = solve(a, b)
         # complex64 for torch, complex128 for other backends
-        xp_assert_close(xp_test.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
+        xp_assert_close(xp.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
 
-    @array_api_compatible
     def test_simple(self, xp):
         a = xp.asarray([[1., 20], [-30, 4]])
-        xp_test = array_namespace(a)
         for b in ([[1., 0], [0, 1]],
                   [1., 0],
                   [[2., 1], [-30, 4]]
                   ):
             b = xp.asarray(b)
             x = solve(a, b)
-            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15)
+            xp_assert_close(xp.matmul(a, x), b, atol=1e-15)
 
-    @array_api_compatible
     def test_simple_complex(self, xp):
         a = xp.asarray([[5, 2], [2j, 4]])
-        xp_test = array_namespace(a)
         for b in ([1j, 0],
                   [[1j, 1j], [0, 2]],
                   [1, 0j],
@@ -536,9 +534,11 @@ class TestSolve:
                   ):
             b = xp.asarray(b)
             x = solve(a, b)
-            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-7)
+            xp_assert_close(xp.matmul(a, x), b, atol=1e-7)
 
-    def test_simple_pos(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_pos(self, xp):
         a = [[2, 3], [3, 5]]
         for lower in [0, 1]:
             for b in ([[1, 0], [0, 1]],
@@ -547,7 +547,9 @@ class TestSolve:
                 x = solve(a, b, assume_a='pos', lower=lower)
                 assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_pos_complexb(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_pos_complexb(self, xp):
         a = [[5, 2], [2, 4]]
         for b in ([1j, 0],
                   [[1j, 1j], [0, 2]],
@@ -555,7 +557,9 @@ class TestSolve:
             x = solve(a, b, assume_a='pos')
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_sym(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_sym(self, xp):
         a = [[2, 3], [3, -5]]
         for lower in [0, 1]:
             for b in ([[1, 0], [0, 1]],
@@ -564,7 +568,9 @@ class TestSolve:
                 x = solve(a, b, assume_a='sym', lower=lower)
                 assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_sym_complexb(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_sym_complexb(self, xp):
         a = [[5, 2], [2, -4]]
         for b in ([1j, 0],
                   [[1j, 1j], [0, 2]]
@@ -572,7 +578,9 @@ class TestSolve:
             x = solve(a, b, assume_a='sym')
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_sym_complex(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_sym_complex(self, xp):
         a = [[5, 2+1j], [2+1j, -4]]
         for b in ([1j, 0],
                   [1, 0],
@@ -581,7 +589,9 @@ class TestSolve:
             x = solve(a, b, assume_a='sym')
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_her_actuallysym(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_her_actuallysym(self, xp):
         a = [[2, 3], [3, -5]]
         for lower in [0, 1]:
             for b in ([[1, 0], [0, 1]],
@@ -591,7 +601,9 @@ class TestSolve:
                 x = solve(a, b, assume_a='her', lower=lower)
                 assert_array_almost_equal(dot(a, x), b)
 
-    def test_simple_her(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_simple_her(self, xp):
         a = [[5, 2+1j], [2-1j, -4]]
         for b in ([1j, 0],
                   [1, 0],
@@ -600,7 +612,6 @@ class TestSolve:
             x = solve(a, b, assume_a='her')
             assert_array_almost_equal(dot(a, x), b)
 
-    @array_api_compatible
     def test_nils_20Feb04(self, xp):
         n = 2
         A = xp.asarray(random([n, n]) + random([n, n])*1j)
@@ -612,7 +623,6 @@ class TestSolve:
             X[:, i] = solve(A, r)
         xp_assert_close(X, Ainv)
 
-    @array_api_compatible
     def test_random(self, xp):
         n = 20
         a = xp.asarray(random([n, n]))
@@ -623,19 +633,19 @@ class TestSolve:
             x = solve(a, b)
             xp_assert_close(a @ x, b)
 
-    @array_api_compatible
     def test_random_complex(self, xp):
         n = 20
         a = xp.asarray(random([n, n]) + 1j * random([n, n]))
-        xp_test = array_namespace(a)
         for i in range(n):
             a[i, i] = 20 * (.1 + a[i, i])
         for i in range(2):
             b = xp.asarray(random([n, 3]))
             x = solve(a, b)
-            xp_assert_close(xp_test.matmul(a, x), xp.asarray(b, dtype=xp.complex128))
+            xp_assert_close(xp.matmul(a, x), xp.asarray(b, dtype=xp.complex128))
 
-    def test_random_sym(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_random_sym(self, xp):
         n = 20
         a = random([n, n])
         for i in range(n):
@@ -647,7 +657,9 @@ class TestSolve:
             x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
-    def test_random_sym_complex(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_random_sym_complex(self, xp):
         n = 20
         a = random([n, n])
         a = a + 1j*random([n, n])
@@ -660,24 +672,21 @@ class TestSolve:
             x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
-    @array_api_compatible
     def test_check_finite(self, xp):
         a = xp.asarray([[1., 20], [-30, 4]])
-        xp_test = array_namespace(a)
         for b in ([[1., 0], [0, 1]], [1., 0],
                   [[2., 1], [-30, 4]]):
             b = xp.asarray(b)
             x = solve(a, b, check_finite=False)
-            xp_assert_close(xp_test.matmul(a, x), b, atol=1e-15)
+            xp_assert_close(xp.matmul(a, x), b, atol=1e-15)
 
-    def test_scalar_a_and_1D_b(self):
+    def test_scalar_a_and_1D_b(self, xp):
         a = 1
         b = [1, 2, 3]
         x = solve(a, b)
         assert_array_almost_equal(x.ravel(), b)
         assert_(x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape')
 
-    @array_api_compatible
     def test_simple2(self, xp):
         a = np.array([[1.80, 2.88, 2.05, -0.89],
                       [525.00, -295.00, -95.00, -380.00],
@@ -695,7 +704,6 @@ class TestSolve:
         xp_assert_close(x,
                         xp.asarray([[1., -1, 3, -5], [3, 2, 4, 1]], dtype=xp.float64).T)
 
-    @array_api_compatible
     def test_simple_complex2(self, xp):
         a = np.array([[-1.34+2.55j, 0.28+3.17j, -6.39-2.20j, 0.72-0.92j],
                       [-1.70-14.10j, 33.10-1.50j, -1.50+13.40j, 12.90+13.80j],
@@ -715,7 +723,9 @@ class TestSolve:
                                        [-4-5.j, -3+4.j],
                                        [6.j, 2-3.j]], dtype=xp.complex128))
 
-    def test_hermitian(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_hermitian(self, xp):
         # An upper triangular matrix will be used for hermitian matrix a
         a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
                       [0, -4.63, -1.84+0.03j, 2.21+0.21j],
@@ -735,14 +745,16 @@ class TestSolve:
         x = solve(a.conj().T, b, assume_a='her', lower=True)
         assert_array_almost_equal(x, res)
 
-    def test_pos_and_sym(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
+    def test_pos_and_sym(self, xp):
         A = np.arange(1, 10).reshape(3, 3)
         x = solve(np.tril(A)/9, np.ones(3), assume_a='pos')
         assert_array_almost_equal(x, [9., 1.8, 1.])
         x = solve(np.tril(A)/9, np.ones(3), assume_a='sym')
         assert_array_almost_equal(x, [9., 1.8, 1.])
 
-    def test_singularity(self):
+    def test_singularity(self, xp):
         a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
                       [1, 1, 1, 0, 0, 0, 1, 0, 1],
                       [0, 1, 1, 0, 0, 0, 1, 0, 1],
@@ -755,14 +767,13 @@ class TestSolve:
         b = np.arange(9)[:, None]
         assert_raises(LinAlgError, solve, a, b)
 
-    def test_ill_condition_warning(self):
+    def test_ill_condition_warning(self, xp):
         a = np.array([[1, 1], [1+1e-16, 1-1e-16]])
         b = np.ones(2)
         with warnings.catch_warnings():
             warnings.simplefilter('error')
             assert_raises(LinAlgWarning, solve, a, b)
 
-    @array_api_compatible
     def test_empty_rhs(self, xp):
         a = xp.eye(2)
         b = xp.asarray([[], []])
@@ -770,40 +781,40 @@ class TestSolve:
         assert_(_size(x) == 0, 'Returned array is not empty')
         assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
 
-    def test_multiple_rhs(self):
+    def test_multiple_rhs(self, xp):
         a = np.eye(2)
         b = np.random.rand(2, 3, 4)
         x = solve(a, b)
         assert_array_almost_equal(x, b)
 
-    def test_transposed_keyword(self):
+    def test_transposed_keyword(self, xp):
         A = np.arange(9).reshape(3, 3) + 1
         x = solve(np.tril(A)/9, np.ones(3), transposed=True)
         assert_array_almost_equal(x, [1.2, 0.2, 1])
         x = solve(np.tril(A)/9, np.ones(3), transposed=False)
         assert_array_almost_equal(x, [9, -5.4, -1.2])
 
-    def test_transposed_notimplemented(self):
+    def test_transposed_notimplemented(self, xp):
         a = np.eye(3).astype(complex)
         with assert_raises(NotImplementedError):
             solve(a, a, transposed=True)
 
-    def test_nonsquare_a(self):
+
+    def test_nonsquare_a(self, xp):
         assert_raises(ValueError, solve, [1, 2], 1)
 
-    @array_api_compatible
     def test_eye_ones(self, xp):
         xp_assert_close(solve(xp.eye(3), xp.ones(3)), xp.ones(3))
-        
-    def test_size_mismatch_with_1D_b(self):
+
+    def test_size_mismatch_with_1D_b(self, xp):
         assert_raises(ValueError, solve, np.eye(3), np.ones(4))
 
-    def test_assume_a_keyword(self):
+    def test_assume_a_keyword(self, xp):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
     @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
                              "crash on Windows (gh-8064)")
-    def test_all_type_size_routine_combinations(self):
+    def test_all_type_size_routine_combinations(self, xp):
         sizes = [10, 100]
         assume_as = ['gen', 'sym', 'pos', 'her']
         dtypes = [np.float32, np.float64, np.complex64, np.complex128]
@@ -850,22 +861,24 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
                 
-    @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
         a = xp.asarray([[1, 20], [-30, 4]], dtype=getattr(xp, dtype))
-        xp_test = array_namespace(a)
         b = xp.asarray([[1, 0], [0, 1]], dtype=getattr(xp, dtype))
         x = solve(a, b)
         atol = 1e-15 if dtype == "float64" else 1e-7
-        xp_assert_close(xp_test.matmul(a, x), b, atol=atol)
+        xp_assert_close(xp.matmul(a, x), b, atol=atol)
 
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 20], [-30, 4]], dtype=dtype)
-        b = np.asarray([[1, 0], [0, 1]], dtype=dtype)
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1, 20], [-30, 4]], dtype=dtype)
+        b = xp.asarray([[1, 0], [0, 1]], dtype=dtype)
         x = solve(a, b)
-        xp_assert_close(a @ x, b.astype(np.float64), atol=1e-15)
+        xp_test = array_namespace(b) # np<2.0 does not have `xp.astype`
+        xp_assert_close(a @ x, xp_test.astype(b, xp.float64), atol=1e-15)
 
 
 class TestSolveTriangular:

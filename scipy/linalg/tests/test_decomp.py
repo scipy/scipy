@@ -944,6 +944,7 @@ class TestEigh:
         assert_allclose(v_dep, v)
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
 class _CheckSVD:
 
     lapack_driver = 'gesdd'

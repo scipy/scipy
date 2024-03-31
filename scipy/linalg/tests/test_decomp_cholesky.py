@@ -17,9 +17,10 @@ from scipy._lib._array_api import xp_assert_close
 skip_xp_backends = pytest.mark.skip_xp_backends
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestCholesky:
 
-    @array_api_compatible
     def test_simple(self, xp):
         a = xp.asarray([[8., 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a)
@@ -28,7 +29,6 @@ class TestCholesky:
         a = c @ c.T
         xp_assert_close(cholesky(a, lower=True), c)
 
-    @array_api_compatible
     def test_check_finite(self, xp):
         a = xp.asarray([[8., 2, 3], [2, 9, 3], [3, 3, 6]])
         c = cholesky(a, check_finite=False)
@@ -37,7 +37,6 @@ class TestCholesky:
         a = c @ c.T
         xp_assert_close(cholesky(a, lower=True, check_finite=False), c)
 
-    @array_api_compatible
     def test_simple_complex(self, xp):
         m = xp.asarray([[3+1j, 3+4j, 5], [0, 2+2j, 2+7j], [0, 0, 7+4j]])
         a = xp.conj(m).T @ m
@@ -48,7 +47,6 @@ class TestCholesky:
         a = c @ xp.conj(c).T
         xp_assert_close(cholesky(a, lower=True), c)
 
-    @array_api_compatible
     def test_random(self, xp):
         n = 20
         for k in range(2):
@@ -64,7 +62,6 @@ class TestCholesky:
             a = c @ c.T
             xp_assert_close(cholesky(a, lower=True), c)
 
-    @array_api_compatible
     def test_random_complex(self, xp):
         n = 20
         for k in range(2):
@@ -80,7 +77,6 @@ class TestCholesky:
             a = c @ xp.conj(c).T
             xp_assert_close(cholesky(a, lower=True), c)
 
-    @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
         a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=getattr(xp, dtype))
@@ -88,24 +84,26 @@ class TestCholesky:
         rtol = 1e-7 if dtype == "float64" else 1e-6
         xp_assert_close(c.T @ c, xp.asarray(a, dtype=getattr(xp, dtype)), rtol=rtol)
 
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
+    def test_dtypes_nonstandard(self, dtype, xp):
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
         c = cholesky(a)
-        xp_assert_close(c.T @ c, a.astype(np.float64))
+        xp_assert_close(c.T @ c, a.astype(xp.float64))
 
+    @skip_xp_backends(np_only=True)
     @pytest.mark.xslow
-    def test_int_overflow(self):
+    def test_int_overflow(self, xp):
        # regression test for
        # https://github.com/scipy/scipy/issues/17436
        # the problem was an int overflow in zeroing out
        # the unused triangular part
        n = 47_000
-       x = np.eye(n, dtype=np.float64, order='F')
-       x[:4, :4] = np.array([[4, -2, 3, -1],
-                             [-2, 4, -3, 1],
-                             [3, -3, 5, 0],
-                             [-1, 1, 0, 5]])
+       x = xp.eye(n, dtype=xp.float64, order='F')
+       x[:4, :4] = xp.asarray([[4, -2, 3, -1],
+                               [-2, 4, -3, 1],
+                               [3, -3, 5, 0],
+                               [-1, 1, 0, 5]])
 
        cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
 
