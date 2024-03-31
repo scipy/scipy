@@ -397,6 +397,11 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     often performs worse than the rest except when very few eigenvalues are
     requested for large arrays though there is still no performance guarantee.
 
+    Note that the underlying LAPACK algorithms are different depending on whether
+    `eigvals_only` is True or False --- thus the eigenvalues may differ
+    depending on whether eigenvectors are requested or not. The difference is
+    generally of the order of machine epsilon times the largest eigenvalue,
+    so is likely only visible for zero or nearly zero eigenvalues.
 
     For the generalized problem, normalization with respect to the given
     type argument::

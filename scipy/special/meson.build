@@ -104,16 +104,10 @@ cephes_sources = [
   'cephes/zetac.c'
 ]
 
-amos_lib = static_library('_amos',
-  ['_amos.c'],
-  c_args: use_math_defines,
-  include_directories: ['../_lib', '../_build_utils/src'],
-)
-
 ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
-  'amos_wrappers.c',
+  'amos_wrappers.cpp',
   'specfun_wrappers.cpp',
   'sf_error.c'
 ]
@@ -216,7 +210,6 @@ py3.extension_module('_ufuncs',
   ],
   link_args: version_link_args,
   link_with: [
-    amos_lib,
     cephes_lib
   ],
   install: true,
@@ -276,7 +269,7 @@ py3.extension_module('cython_special',
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
     'scaled_exp1.c',
-    'amos_wrappers.c',
+    'amos_wrappers.cpp',
     'specfun_wrappers.cpp',
     'sf_error.c'
   ],
@@ -285,7 +278,6 @@ py3.extension_module('cython_special',
   link_args: version_link_args,
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
-    amos_lib,
     cephes_lib
   ],
   install: true,

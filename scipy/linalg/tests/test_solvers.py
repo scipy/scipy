@@ -472,7 +472,7 @@ class TestSolveDiscreteAre:
          np.array([[0], [1]]),
          np.eye(2),
          np.array([[1]]),
-         "Presumed issue with OpenBLAS, see gh-16926"),
+        None),
         # TEST CASE 16 : darex #13
         (np.array([[16, 10, -2],
                   [10, 13, -8],
@@ -480,7 +480,7 @@ class TestSolveDiscreteAre:
          np.eye(3),
          1e6 * np.eye(3),
          1e6 * np.eye(3),
-         "Issue with OpenBLAS, see gh-16926"),
+        None),
         # TEST CASE 17 : darex #14
         (np.array([[1 - 1/1e8, 0, 0, 0],
                   [1, 0, 0, 0],
@@ -507,10 +507,18 @@ class TestSolveDiscreteAre:
     # If the test is failing use "None" for that entry.
     #
     min_decimal = (12, 14, 13, 14, 13, 16, 18, 14, 14, 13,
-                   14, 13, 13, 14, 12, 2, 5, 6, 10)
+                   14, 13, 13, 14, 12, 2, 4, 6, 10)
     max_tol = [1.5 * 10**-ind for ind in min_decimal]
     # relaxed tolerance in gh-18012 after bump to OpenBLAS
     max_tol[11] = 2.5e-13
+
+    # relaxed tolerance in gh-20335 for linux-aarch64 build on Cirrus
+    # with OpenBLAS from ubuntu jammy
+    max_tol[15] = 2.0e-2
+
+    # relaxed tolerance in gh-20335 for OpenBLAS 3.20 on ubuntu jammy
+    # bump not needed for OpenBLAS 3.26
+    max_tol[16] = 2.0e-4
 
     @pytest.mark.parametrize("j, case", enumerate(cases))
     def test_solve_discrete_are(self, j, case):
@@ -625,7 +633,7 @@ def test_solve_generalized_discrete_are():
                    [7.093648e-01, 6.797027e-01, 1.189977e-01],
                    [7.546867e-01, 6.550980e-01, 4.983641e-01]]),
          np.ones((3, 2)),
-         "Presumed issue with OpenBLAS, see gh-16926"),
+         None),
         # user-reported (under PR-6616) 20-Jan-2017
         # tests against the case where E is None but S is provided
         (mat20170120['A'],

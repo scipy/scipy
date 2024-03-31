@@ -70,13 +70,12 @@ the same shared library.
 
 import itertools
 import json
+import math
 import os
 from stat import ST_MTIME
 import argparse
 import re
 import textwrap
-
-import numpy
 
 special_ufuncs = [
     '_cospi', '_sinpi', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
@@ -84,7 +83,10 @@ special_ufuncs = [
     'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'kei', 'keip',
     'kelvin', 'ker', 'kerp', 'mathieu_a', 'mathieu_b',
     'mathieu_cem', 'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1',
-    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', '_zeta'
+    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1',
+    'obl_ang1_cv', 'obl_cv', 'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv',
+    'pbdv', 'pbvv', 'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1',
+    'pro_rad1_cv', 'pro_rad2', 'pro_rad2_cv', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------
@@ -950,7 +952,7 @@ class FusedFunc(Func):
         all_codes = tuple([codes for _unused, codes in fused_types])
 
         codelens = [len(x) for x in all_codes]
-        last = numpy.prod(codelens) - 1
+        last = math.prod(codelens) - 1
         for m, codes in enumerate(itertools.product(*all_codes)):
             fused_codes, decs = [], []
             for n, fused_type in enumerate(fused_types):
