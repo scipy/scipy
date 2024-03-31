@@ -232,6 +232,24 @@ def extract_tarfile_to(tarfileobj, target_path, archive_path):
             yield member
 
     tarfileobj.extractall(target_path, members=get_members())
+    reformat_pkg_file(target_path=target_path)
+
+
+def reformat_pkg_file(target_path):
+    # attempt to deal with:
+    # https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
+    pattern = os.path.join(target_path, "**", "*openblas*.pc")
+    pkg_path = glob.glob(pattern, recursive=True)[0]
+    new_pkg_lines = []
+    with open(pkg_path) as pkg_orig:
+        for line in pkg_orig:
+            if line.startswith("Libs:"):
+                new_line = line.replace("$(libprefix}", "${libprefix}")
+                new_pkg_lines.append(new_line)
+            else:
+                new_pkg_lines.append(line)
+    with open(pkg_path, "w") as new_pkg:
+        new_pkg.writelines(new_pkg_lines)
 
 
 def make_init(dirname):
