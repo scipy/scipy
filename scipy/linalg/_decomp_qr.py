@@ -6,7 +6,7 @@ from .lapack import get_lapack_funcs
 from ._misc import _datacopied
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_args
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
 )
 
 __all__ = ['qr', 'qr_multiply', 'rq']
@@ -124,7 +124,7 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _qr(a, overwrite_a=overwrite_a, lwork=lwork, mode=mode,
                    pivoting=pivoting)

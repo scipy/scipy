@@ -1097,7 +1097,7 @@ class TestDet:
         assert isinstance(det(a), (np.float64, np.complex128))
 
     def test_incompatible_dtype_input(self):
-        pytest.xfail("as_xparray raises a different exception for string dtypes, "
+        pytest.xfail("_asarray raises a different exception for string dtypes, "
                      "see gh-91276")
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'

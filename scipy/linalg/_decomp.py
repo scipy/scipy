@@ -29,7 +29,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_args
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
 )
 
 _I = numpy.array(1j, dtype='F')
@@ -450,7 +450,7 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=eigvals_only,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,
@@ -1062,7 +1062,7 @@ def eigvalsh(a, b=None, *, lower=True, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _eigh(a, b=b, lower=lower, eigvals_only=True,
                      overwrite_a=overwrite_a, overwrite_b=overwrite_b,

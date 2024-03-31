@@ -37,10 +37,12 @@ try:
 except ImportError:
     CONFIG = None
 
-from scipy.conftest import (
-    array_api_compatible, skip_if_array_api, skip_if_array_api_backend
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import (
+    size, array_namespace, xp_assert_close, SCIPY_ARRAY_API
 )
-from scipy._lib._array_api import size, array_namespace, xp_assert_close
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -864,14 +866,14 @@ class TestEigh:
         w, z = eigh(a)
         w, z = eigh(a, b)
 
-    @skip_if_array_api
     def test_eigh_of_sparse(self):
         # This tests the rejection of inputs that eigh cannot currently handle.
         import scipy.sparse
         a = scipy.sparse.identity(2).tocsc()
         b = np.atleast_2d(a)
-        assert_raises(ValueError, eigh, a)
-        assert_raises(ValueError, eigh, b)
+        error_type = TypeError if SCIPY_ARRAY_API else ValueError
+        assert_raises(error_type, eigh, a)
+        assert_raises(error_type, eigh, b)
 
     @pytest.mark.parametrize('dtype_', DTYPES)
     @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
@@ -946,9 +948,7 @@ class _CheckSVD:
 
     lapack_driver = 'gesdd'
 
-    @skip_if_array_api_backend('numpy.array_api')
-    @skip_if_array_api_backend('cupy')
-    @skip_if_array_api_backend('torch')
+    @skip_xp_backends(np_only=True)
     def test_degenerate(self, xp):
         assert_raises(TypeError, svd, [[1.]], lapack_driver=1.)
         assert_raises(ValueError, svd, [[1.]], lapack_driver='foo')
@@ -965,9 +965,7 @@ class _CheckSVD:
             sigma[i, i] = s[i]
         xp_assert_close(u @ sigma @ vh, a, atol=atol)
 
-    @skip_if_array_api_backend('numpy.array_api')
-    @skip_if_array_api_backend('cupy')
-    @skip_if_array_api_backend('torch')
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("dtype", [np.int32, np.int64])
     def test_dtypes_nonstandard(self, dtype, xp):
         a = np.asarray([[1, 2, 3], [1, 20, 3], [2, 5, 6]], dtype=dtype)

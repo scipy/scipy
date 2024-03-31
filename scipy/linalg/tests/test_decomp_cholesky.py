@@ -11,8 +11,10 @@ from scipy.linalg import (
 
 from scipy.linalg._testutils import assert_no_overwrite
 
-from scipy.conftest import array_api_compatible, skip_if_array_api_backend
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 class TestCholesky:
@@ -35,10 +37,6 @@ class TestCholesky:
         a = c @ c.T
         xp_assert_close(cholesky(a, lower=True, check_finite=False), c)
 
-    # https://github.com/numpy/numpy/issues/24451
-    @skip_if_array_api_backend('numpy.array_api')
-    # https://github.com/data-apis/array-api-compat/issues/54
-    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_simple_complex(self, xp):
         m = xp.asarray([[3+1j, 3+4j, 5], [0, 2+2j, 2+7j], [0, 0, 7+4j]])
@@ -66,10 +64,6 @@ class TestCholesky:
             a = c @ c.T
             xp_assert_close(cholesky(a, lower=True), c)
 
-    # https://github.com/numpy/numpy/issues/24451
-    @skip_if_array_api_backend('numpy.array_api')
-    # https://github.com/data-apis/array-api-compat/issues/54
-    @skip_if_array_api_backend('cupy')
     @array_api_compatible
     def test_random_complex(self, xp):
         n = 20

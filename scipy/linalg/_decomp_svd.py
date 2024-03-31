@@ -8,7 +8,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from ._decomp import _asarray_validated
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_args
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
 )
 
 __all__ = ['svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space']
@@ -111,7 +111,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _svd(a, full_matrices=full_matrices, compute_uv=compute_uv,
                     overwrite_a=overwrite_a, lapack_driver=lapack_driver)
@@ -264,7 +264,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _svdvals(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):

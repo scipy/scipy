@@ -17,7 +17,7 @@ from ._cythonized_array_utils import find_det_from_lu
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 from scipy._lib._array_api import (
-    array_namespace, is_numpy, as_xparray, xp_unsupported_args
+    array_namespace, is_numpy, _asarray, xp_unsupported_args
 )
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -148,8 +148,8 @@ def solve(a, b, lower=False, overwrite_a=False,
     """
     xp = array_namespace(a, b)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
-        b = as_xparray(b, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
+        b = _asarray(b, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _solve(a, b, lower=lower, overwrite_a=overwrite_a,
                       overwrite_b=overwrite_b, assume_a=assume_a, transposed=transposed)
@@ -969,7 +969,7 @@ def inv(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _inv(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
@@ -1072,7 +1072,7 @@ def det(a, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _det(a, overwrite_a=overwrite_a)
     if hasattr(xp, 'linalg'):
@@ -1479,7 +1479,7 @@ def pinv(a, *, atol=None, rtol=None, return_rank=False, check_finite=True,
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         return _pinv(a, atol=atol, rtol=rtol, return_rank=return_rank,
                      cond=cond, rcond=rcond)

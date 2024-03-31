@@ -6,7 +6,7 @@ from numpy import asarray_chkfinite, asarray, atleast_2d
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
 
-from scipy._lib._array_api import array_namespace, is_numpy, as_xparray
+from scipy._lib._array_api import array_namespace, is_numpy, _asarray
 
 __all__ = ['cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
            'cho_solve_banded']
@@ -89,7 +89,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
     """
     xp = array_namespace(a)
     if check_finite:
-        a = as_xparray(a, check_finite=True, xp=xp)
+        a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         c, lower = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
                              clean=True, check_finite=False)
