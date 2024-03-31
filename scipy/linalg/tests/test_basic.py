@@ -545,7 +545,7 @@ class TestSolve:
                       [1, 0]
                       ):
                 x = solve(a, b, assume_a='pos', lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
+                xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -555,7 +555,7 @@ class TestSolve:
                   [[1j, 1j], [0, 2]],
                   ):
             x = solve(a, b, assume_a='pos')
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -566,7 +566,7 @@ class TestSolve:
                       [1, 0]
                       ):
                 x = solve(a, b, assume_a='sym', lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
+                xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -576,7 +576,7 @@ class TestSolve:
                   [[1j, 1j], [0, 2]]
                   ):
             x = solve(a, b, assume_a='sym')
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -587,7 +587,7 @@ class TestSolve:
                   [[1j, 1j], [0, 2]]
                   ):
             x = solve(a, b, assume_a='sym')
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -599,7 +599,7 @@ class TestSolve:
                       [1j, 0],
                       ):
                 x = solve(a, b, assume_a='her', lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
+                xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -610,7 +610,7 @@ class TestSolve:
                   [[1j, 1j], [0, 2]]
                   ):
             x = solve(a, b, assume_a='her')
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     def test_nils_20Feb04(self, xp):
         n = 2
@@ -655,7 +655,7 @@ class TestSolve:
         for i in range(4):
             b = random([n])
             x = solve(a, b, assume_a="pos")
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -670,7 +670,7 @@ class TestSolve:
         b = random([n])+2j*random([n])
         for i in range(2):
             x = solve(a, b, assume_a="pos")
-            assert_array_almost_equal(dot(a, x), b)
+            xp_assert_close(dot(a, x), b)
 
     def test_check_finite(self, xp):
         a = xp.asarray([[1., 20], [-30, 4]])
@@ -684,8 +684,8 @@ class TestSolve:
         a = 1
         b = [1, 2, 3]
         x = solve(a, b)
-        assert_array_almost_equal(x.ravel(), b)
-        assert_(x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape')
+        xp_assert_close(x.ravel(), b)
+        assert x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape'
 
     def test_simple2(self, xp):
         a = np.array([[1.80, 2.88, 2.05, -0.89],
@@ -727,32 +727,32 @@ class TestSolve:
                       reasons=["`assume_a` is only supported for NumPy arrays"])
     def test_hermitian(self, xp):
         # An upper triangular matrix will be used for hermitian matrix a
-        a = np.array([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
-                      [0, -4.63, -1.84+0.03j, 2.21+0.21j],
-                      [0, 0, -8.87, 1.58-0.90j],
-                      [0, 0, 0, -1.36]])
-        b = np.array([[2.98-10.18j, 28.68-39.89j],
-                      [-9.58+3.88j, -24.79-8.40j],
-                      [-0.77-16.05j, 4.23-70.02j],
-                      [7.79+5.48j, -35.39+18.01j]])
-        res = np.array([[2.+1j, -8+6j],
-                        [3.-2j, 7-2j],
-                        [-1+2j, -1+5j],
-                        [1.-1j, 3-4j]])
+        a = xp.asarray([[-1.84, 0.11-0.11j, -1.78-1.18j, 3.91-1.50j],
+                        [0, -4.63, -1.84+0.03j, 2.21+0.21j],
+                        [0, 0, -8.87, 1.58-0.90j],
+                        [0, 0, 0, -1.36]])
+        b = xp.asarray([[2.98-10.18j, 28.68-39.89j],
+                        [-9.58+3.88j, -24.79-8.40j],
+                        [-0.77-16.05j, 4.23-70.02j],
+                        [7.79+5.48j, -35.39+18.01j]])
+        res = xp.asarray([[2.+1j, -8+6j],
+                          [3.-2j, 7-2j],
+                          [-1+2j, -1+5j],
+                          [1.-1j, 3-4j]])
         x = solve(a, b, assume_a='her')
-        assert_array_almost_equal(x, res)
+        xp_assert_close(x, res)
         # Also conjugate a and test for lower triangular data
         x = solve(a.conj().T, b, assume_a='her', lower=True)
-        assert_array_almost_equal(x, res)
+        xp_assert_close(x, res)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
     def test_pos_and_sym(self, xp):
         A = np.arange(1, 10).reshape(3, 3)
         x = solve(np.tril(A)/9, np.ones(3), assume_a='pos')
-        assert_array_almost_equal(x, [9., 1.8, 1.])
+        xp_assert_close(x, [9., 1.8, 1.])
         x = solve(np.tril(A)/9, np.ones(3), assume_a='sym')
-        assert_array_almost_equal(x, [9., 1.8, 1.])
+        xp_assert_close(x, [9., 1.8, 1.])
 
     def test_singularity(self, xp):
         a = np.array([[1, 0, 0, 0, 0, 0, 1, 0, 1],
@@ -778,21 +778,21 @@ class TestSolve:
         a = xp.eye(2)
         b = xp.asarray([[], []])
         x = solve(a, b)
-        assert_(_size(x) == 0, 'Returned array is not empty')
-        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+        assert _size(x) == 0, 'Returned array is not empty'
+        assert x.shape == (2, 0), 'Returned empty array shape is wrong'
 
     def test_multiple_rhs(self, xp):
         a = np.eye(2)
         b = np.random.rand(2, 3, 4)
         x = solve(a, b)
-        assert_array_almost_equal(x, b)
+        xp_assert_close(x, b)
 
     def test_transposed_keyword(self, xp):
         A = np.arange(9).reshape(3, 3) + 1
         x = solve(np.tril(A)/9, np.ones(3), transposed=True)
-        assert_array_almost_equal(x, [1.2, 0.2, 1])
+        xp_assert_close(x, [1.2, 0.2, 1])
         x = solve(np.tril(A)/9, np.ones(3), transposed=False)
-        assert_array_almost_equal(x, [9, -5.4, -1.2])
+        xp_assert_close(x, [9, -5.4, -1.2])
 
     def test_transposed_notimplemented(self, xp):
         a = np.eye(3).astype(complex)
@@ -812,6 +812,8 @@ class TestSolve:
     def test_assume_a_keyword(self, xp):
         assert_raises(ValueError, solve, 1, 1, assume_a='zxcv')
 
+    @skip_xp_backends(np_only=True,
+                      reasons=["`assume_a` is only supported for NumPy arrays"])
     @pytest.mark.skip(reason="Failure on OS X (gh-7500), "
                              "crash on Windows (gh-8064)")
     def test_all_type_size_routine_combinations(self, xp):
@@ -848,7 +850,7 @@ class TestSolve:
                     tol *= 10
 
             x = solve(a, b, assume_a=assume_a)
-            assert_allclose(a.dot(x), b,
+            xp_assert_close(a.dot(x), b,
                             atol=tol * size,
                             rtol=tol * size,
                             err_msg=err_msg)
@@ -856,7 +858,7 @@ class TestSolve:
             if assume_a == 'sym' and dtype not in (np.complex64,
                                                    np.complex128):
                 x = solve(a, b, assume_a=assume_a, transposed=True)
-                assert_allclose(a.dot(x), b,
+                xp_assert_close(a.dot(x), b,
                                 atol=tol * size,
                                 rtol=tol * size,
                                 err_msg=err_msg)
