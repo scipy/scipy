@@ -2,6 +2,7 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
+import numpy as np
 from numpy import array, dot, zeros_like, empty
 from numpy.random import random
 from scipy.linalg import (
@@ -102,11 +103,11 @@ class TestCholesky:
        # the problem was an int overflow in zeroing out
        # the unused triangular part
        n = 47_000
-       x = xp.eye(n, dtype=xp.float64, order='F')
-       x[:4, :4] = xp.asarray([[4, -2, 3, -1],
-                               [-2, 4, -3, 1],
-                               [3, -3, 5, 0],
-                               [-1, 1, 0, 5]])
+       x = np.eye(n, dtype=np.float64, order='F')
+       x[:4, :4] = np.array([[4, -2, 3, -1],
+                             [-2, 4, -3, 1],
+                             [3, -3, 5, 0],
+                             [-1, 1, 0, 5]])
 
        cholesky(x, check_finite=False, overwrite_a=True)  # should not segfault
 
