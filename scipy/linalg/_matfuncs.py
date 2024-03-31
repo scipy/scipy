@@ -305,20 +305,25 @@ def expm(A):
 
     # Explicit formula for 2x2 case (formula (2.2) in [1]).
     if a.shape[-2:] == (2, 2): 
-        norm = np.max(np.linalg.norm(a).astype(int))
-
-        # Normalizing the matrix to prevent cosh from overflowing.
-        if norm < 1:
-            norm = 1
-        a = a / norm
-
+        threshold = 700
         a1, a2, a3, a4 = (a[..., [0], [0]], 
                        a[..., [0], [1]], 
                        a[..., [1], [0]], 
                        a[..., [1], [1]]) 
-        
-        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2. # csqrt slow but handles neg.vals 
-  
+        mu = csqrt((a1-a4)**2 + 4*a2*a3)/2.  # csqrt slow but handles neg.vals
+        m = (mu > threshold).reshape(mu.shape[:-1])
+
+        if m.any():
+            norms = np.linalg.norm(a[m], axis=(-2, -1)).astype(int)
+            a[m] = a[m] / norms
+            a1, a2, a3, a4 = (a[..., [0], [0]], 
+                       a[..., [0], [1]], 
+                       a[..., [1], [0]], 
+                       a[..., [1], [1]]) 
+
+            norms = norms.reshape(np.prod(norms.shape))
+            mu = csqrt((a1-a4)**2 + 4*a2*a3)/2. 
+
         eApD2 = np.exp((a1+a4)/2.) 
         AmD2 = (a1 - a4)/2. 
         coshMu = np.cosh(mu) 
@@ -330,9 +335,13 @@ def expm(A):
         eA[..., [0], [1]] = eApD2 * a2 * sinchMu 
         eA[..., [1], [0]] = eApD2 * a3 * sinchMu 
         eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu) 
+
+        if m.any():
+            eA[m] = np.array([np.linalg.matrix_power(matrix, norm) for matrix, norm in zip(eA[m], norms)])
+
         if np.isrealobj(a): 
-            return np.linalg.matrix_power(eA.real, norm) 
-        return np.linalg.matrix_power(eA, norm).astype(a.dtype) 
+            return eA.real 
+        return eA
 
 
     n = a.shape[-1]
