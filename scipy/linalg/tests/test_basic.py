@@ -22,7 +22,9 @@ from scipy.linalg.blas import HAS_ILP64
 from scipy._lib.deprecation import _NoValue
 
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close, size as _size, array_namespace
+from scipy._lib._array_api import (
+    xp_assert_close, size as _size, array_namespace, SCIPY_ARRAY_API
+)
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -1016,6 +1018,8 @@ class TestDet:
     def setup_method(self, xp):
         self.rng = np.random.default_rng(1680305949878959)
 
+    # TODO: translate to use the new assertions. Tricky with the different dtypes.
+    @skip_xp_backends(np_only=True)
     def test_1x1_all_singleton_dims(self, xp):
         a = np.array([[1]])
         deta = det(a)
@@ -1033,6 +1037,8 @@ class TestDet:
         assert np.isscalar(deta)
         assert deta == 1.+3.j
 
+    # TODO: translate to use the new assertions. Tricky with the different dtypes.
+    @skip_xp_backends(np_only=True)
     def test_1by1_stacked_input_output(self, xp):
         a = self.rng.random([4, 5, 1, 1], dtype=np.float32)
         deta = det(a)
@@ -1099,6 +1105,7 @@ class TestDet:
         a = xp.asarray(a)
         xp_assert_close(det(a), xp.asarray(9., dtype=xp.complex128))
 
+    @skip_xp_backends(np_only=True, reasons="Uses non-standard dtypes")
     # g and G dtypes are handled differently in windows and other platforms
     @pytest.mark.parametrize('typ', [x for x in np.typecodes['All'][:20]
                                      if x not in 'gG'])
@@ -1107,9 +1114,8 @@ class TestDet:
         a = self.rng.random([n, n]).astype(typ)  # value is not important
         assert isinstance(det(a), (np.float64, np.complex128))
 
-    def test_incompatible_dtype_input(self):
-        pytest.xfail("_asarray raises a different exception for string dtypes, "
-                     "see gh-91276")
+    @pytest.mark.skipif(SCIPY_ARRAY_API, "Different error messages in array API mode")
+    def test_incompatible_dtype_input(self, xp):
         # Double backslashes needed for escaping pytest regex.
         msg = 'cannot be cast to float\\(32, 64\\)'
 
@@ -1128,15 +1134,17 @@ class TestDet:
         xp_assert_close(det(xp.empty([0, 0, 0])), xp.asarray([]))
         xp_assert_close(det(xp.empty([3, 0, 0])), xp.asarray([1., 1., 1.]))
 
+    @skip_xp_backends(np_only=True,
+                      reasons=["Different error messages for different backends"])
     def test_empty_edge_cases_errors(self, xp):
         with assert_raises(ValueError, match='Last 2 dimensions'):
-            det(np.empty([0, 0, 3]))
+            det(xp.empty([0, 0, 3]))
         with assert_raises(ValueError, match='at least two-dimensional'):
-            det(np.array([]))
+            det(xp.asarray([]))
         with assert_raises(ValueError, match='Last 2 dimensions'):
-            det(np.array([[]]))
+            det(xp.asarray([[]]))
         with assert_raises(ValueError, match='Last 2 dimensions'):
-            det(np.array([[[]]]))
+            det(xp.asarray([[[]]]))
 
     def test_overwrite_a(self, xp):
         # If all conditions are met then input should be overwritten;
@@ -1153,7 +1161,7 @@ class TestDet:
         a = np.array([[2., 0., 1.], [5., 3., -1.], [1., 1., 1.]])
         a.setflags(write=False)
         # overwrite_a will be overridden
-        assert_allclose(det(a, overwrite_a=True), 10.)
+        xp_assert_close(det(a, overwrite_a=True), 10.)
 
     def test_simple_check_finite(self, xp):
         a = xp.asarray([[1, 2], [3, xp.inf]])
@@ -1962,9 +1970,9 @@ class TestMatrix_Balance:
             assert_allclose(solve(y, A).dot(y), x)
 
 
+@array_api_compatible
 class TestNonStandardParams:
 
-    @array_api_compatible
     def test_solve(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([[1, 20], [-30, 4]], dtype=xp.float32)
@@ -1975,7 +1983,6 @@ class TestNonStandardParams:
             assert_raises(ValueError, solve, x, y, assume_a='sym')
             assert_raises(ValueError, solve, x, y, transposed=True)
 
-    @array_api_compatible
     def test_pinv(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=xp.float32)
