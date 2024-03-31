@@ -884,7 +884,7 @@ def _load_libsf_error_state():
         try:
             from ctypes import WinDLL
             basedir = os.path.dirname(__file__)
-        except:
+        except:  # noqa: E722
             pass
         else:
             dll_path = os.path.join(basedir, "libsf_error_state.dll")
