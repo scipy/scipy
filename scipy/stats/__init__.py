@@ -475,6 +475,7 @@ Masked statistics functions
 
 .. toctree::
 
+   masked_array
    stats.mstats
 
 
@@ -631,6 +632,7 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._masked_array import masked_array
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
