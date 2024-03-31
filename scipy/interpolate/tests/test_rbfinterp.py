@@ -369,6 +369,7 @@ class _TestRBFInterpolator:
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
         for kernel, deg in _NAME_TO_MIN_DEGREE.items():
+            # Only test for kernels that its minimum degree is not 0.
             if deg >= 1:
                 match = f'`degree` should not be below {deg}'
                 with pytest.warns(Warning, match=match):
