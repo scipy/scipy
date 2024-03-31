@@ -6,7 +6,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, is_jax
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -32,6 +32,13 @@ def test_dispatch_to_unrecognize_library():
 @pytest.mark.parametrize('f_name_n_args', array_special_func_map.items())
 def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
+
+    if is_jax(xp):
+        if f_name == 'ndtri':
+            pytest.skip("google/jax#20430")
+        if f_name in ['gammainc', 'gammaincc']:
+            pytest.skip("google/jax#20507")
+
     f = getattr(special, f_name)
 
     mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
