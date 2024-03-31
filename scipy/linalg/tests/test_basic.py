@@ -501,7 +501,7 @@ class TestSolveHBanded:
 @array_api_compatible
 class TestSolve:
 
-    def setup_method(self, xp):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_20Feb04_bug(self, xp):
@@ -951,7 +951,7 @@ class TestSolveTriangular:
 @array_api_compatible
 class TestInv:
 
-    def setup_method(self, xp):
+    def setup_method(self):
         np.random.seed(1234)
 
     def test_simple(self, xp):
@@ -1006,6 +1006,7 @@ class TestInv:
                       reasons=["Integer dtypes only supported for NumPy arrays"])
     @pytest.mark.parametrize("dtype", ["int32", "int64"])
     def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         a = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         a_inv = inv(a)
         xp_assert_close(a @ a_inv, xp.eye(2), atol=1e-15)
@@ -1015,7 +1016,7 @@ class TestInv:
 @array_api_compatible
 class TestDet:
 
-    def setup_method(self, xp):
+    def setup_method(self):
         self.rng = np.random.default_rng(1680305949878959)
 
     # TODO: translate to use the new assertions. Tricky with the different dtypes.
@@ -1181,6 +1182,7 @@ class TestDet:
                       reasons=["Integer dtypes only supported for NumPy arrays"])
     @pytest.mark.parametrize("dtype", ["int32", "int64"])
     def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         a = xp.asarray([[2, 4], [1, 3]], dtype=dtype)
         xp_assert_close(det(a), xp.asarray(2, xp.float64))
 
@@ -1482,26 +1484,24 @@ class TestLstsq:
             assert_equal(s, np.empty((0,)))
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestPinv:
 
     def setup_method(self):
         np.random.seed(1234)
 
-    @array_api_compatible
     def test_simple_real(self, xp):
         a = xp.asarray([[1., 2, 3], [4, 5, 6], [7, 8, 10]])
-        xp_test = array_namespace(a)
         a_pinv = pinv(a)
-        xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3), atol=1e-5)
+        xp_assert_close(a @ a_pinv, xp.eye(3), atol=1e-5)
 
-    @array_api_compatible
     def test_simple_complex(self, xp):
         a = (xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=xp.complex128)
              + 1j*xp.asarray([[10, 8, 7], [6, 5, 4], [3, 2, 1]], dtype=xp.complex128))
         a_pinv = pinv(a)
         xp_assert_close(a @ a_pinv, xp.eye(3, dtype=xp.complex128), atol=1e-5)
 
-    @array_api_compatible
     def test_simple_singular(self, xp):
         a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=xp.float64)
         a_pinv = pinv(a)
@@ -1511,7 +1511,6 @@ class TestPinv:
         expected = xp.asarray(expected)
         xp_assert_close(a_pinv, expected, atol=1e-6)
 
-    @array_api_compatible
     def test_simple_cols(self, xp):
         a = xp.asarray([[1, 2, 3], [4, 5, 6]], dtype=xp.float64)
         a_pinv = pinv(a)
@@ -1521,7 +1520,6 @@ class TestPinv:
         expected = xp.asarray(expected)
         xp_assert_close(a_pinv, expected, rtol=1e-6)
 
-    @array_api_compatible
     def test_simple_rows(self, xp):
         a = xp.asarray([[1, 2], [3, 4], [5, 6]], dtype=xp.float64)
         a_pinv = pinv(a)
@@ -1530,20 +1528,21 @@ class TestPinv:
         expected = xp.asarray(expected)
         xp_assert_close(a_pinv, expected, rtol=1e-5)
 
-    @array_api_compatible
     def test_check_finite(self, xp):
         a = xp.asarray([[1, 2, 3], [4, 5, 6.], [7, 8, 10]])
         a_pinv = pinv(a, check_finite=False)
         xp_assert_close(a @ a_pinv, xp.eye(3), atol=1e-5)
 
-    def test_native_list_argument(self):
-        a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
+    def test_native_list_argument(self, xp):
+        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
         a_pinv = pinv(a)
         expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
                           [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
                           [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
-        assert_array_almost_equal(a_pinv, expected)
+        expected = xp.asarray(expected)
+        xp_assert_close(a_pinv, expected)
 
+    @skip_xp_backends(np_only=True, reasons=["`atol` only supported for NumPy arrays"])
     def test_atol_rtol(self):
         n = 12
         # get a random ortho matrix for shuffling
@@ -1571,36 +1570,40 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=["`cond`, `rcond` only supported for NumPy arrays"])
     @pytest.mark.parametrize("cond", [1, None, _NoValue])
     @pytest.mark.parametrize("rcond", [1, None, _NoValue])
-    def test_cond_rcond_deprecation(self, cond, rcond):
+    def test_cond_rcond_deprecation(self, cond, rcond, xp):
         if cond is _NoValue and rcond is _NoValue:
             # the defaults if cond/rcond aren't set -> no warning
-            pinv(np.ones((2,2)), cond=cond, rcond=rcond)
+            pinv(xp.ones((2,2)), cond=cond, rcond=rcond)
         else:
             # at least one of cond/rcond has a user-supplied value -> warn
             with pytest.deprecated_call(match='"cond" and "rcond"'):
-                pinv(np.ones((2,2)), cond=cond, rcond=rcond)
+                pinv(xp.ones((2,2)), cond=cond, rcond=rcond)
 
-    def test_positional_deprecation(self):
+    @skip_xp_backends(np_only=True, reasons=["`atol` only supported for NumPy arrays"])
+    def test_positional_deprecation(self, xp):
         with pytest.deprecated_call(match="use keyword arguments"):
-            pinv(np.ones((2,2)), 0., 1e-10)
+            pinv(xp.ones((2,2)), 0., 1e-10)
 
-    @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=getattr(xp, dtype))
-        xp_test = array_namespace(a)
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
         a_pinv = pinv(a)
         atol = 1e-13 if dtype == "float64" else 1e-4
-        xp_assert_close(xp_test.matmul(a, a_pinv), xp.eye(3, dtype=getattr(xp, dtype)),
-                        atol=atol)
+        xp_assert_close(xp.matmul(a, a_pinv), xp.eye(3, dtype=dtype), atol=atol)
 
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         a = np.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
         a_pinv = pinv(a)
-        xp_assert_close(a @ a_pinv, np.eye(3), atol=1e-13)
+        xp_assert_close(a @ a_pinv, xp.eye(3), atol=1e-13)
 
 
 class TestPinvSymmetric:
