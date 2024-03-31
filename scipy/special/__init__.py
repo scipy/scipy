@@ -881,6 +881,8 @@ def _load_libsf_error_state():
     """  # noqa: E501
     import os
     if os.name == "nt":
+        # convention for storing / loading the DLL from
+        # numpy/.libs/, if present
         try:
             from ctypes import WinDLL
             basedir = os.path.dirname(__file__)
