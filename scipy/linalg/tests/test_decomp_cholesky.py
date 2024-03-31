@@ -2,7 +2,6 @@ import pytest
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
 
-import numpy as np
 from numpy import array, dot, zeros_like, empty
 from numpy.random import random
 from scipy.linalg import (
@@ -79,15 +78,17 @@ class TestCholesky:
 
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=getattr(xp, dtype))
+        dtype = getattr(xp, dtype)
+        a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
         c = cholesky(a)
         rtol = 1e-7 if dtype == "float64" else 1e-6
-        xp_assert_close(c.T @ c, xp.asarray(a, dtype=getattr(xp, dtype)), rtol=rtol)
+        xp_assert_close(c.T @ c, xp.asarray(a, dtype=dtype), rtol=rtol)
 
     @skip_xp_backends(np_only=True,
                       reasons=["Integer dtypes only supported for NumPy arrays"])
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
     def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
         c = cholesky(a)
         xp_assert_close(c.T @ c, a.astype(xp.float64))
