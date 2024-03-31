@@ -626,13 +626,13 @@ def _eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
             return w, v
     else:
         if info < -1:
-            raise LinAlgError('Illegal value in argument {} of internal {}'
-                              ''.format(-info, drv.typecode + pfx + driver))
+            d = drv.typecode + pfx + driver
+            raise LinAlgError(f'Illegal value in argument {-info} of internal {d}')
         elif info > n:
             raise LinAlgError(f'The leading minor of order {info-n} of B is not '
-                              'positive definite. The factorization of B '
-                              'could not be completed and no eigenvalues '
-                              'or eigenvectors were computed.')
+                              f'positive definite. The factorization of B '
+                              f'could not be completed and no eigenvalues '
+                              f'or eigenvectors were computed.')
         else:
             drv_err = {'ev': 'The algorithm failed to converge; {} '
                              'off-diagonal elements of an intermediate '
