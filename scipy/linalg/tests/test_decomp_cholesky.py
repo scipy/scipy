@@ -84,14 +84,16 @@ class TestCholesky:
         rtol = 1e-7 if dtype == "float64" else 1e-6
         xp_assert_close(c.T @ c, xp.asarray(a, dtype=getattr(xp, dtype)), rtol=rtol)
 
-    @skip_xp_backends(np_only=True)
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
     @pytest.mark.parametrize("dtype", [np.int32, np.int64])
     def test_dtypes_nonstandard(self, dtype, xp):
         a = xp.asarray([[8, 2, 3], [2, 9, 3], [3, 3, 6]], dtype=dtype)
         c = cholesky(a)
         xp_assert_close(c.T @ c, a.astype(xp.float64))
 
-    @skip_xp_backends(np_only=True)
+    @skip_xp_backends(np_only=True,
+                      reasons=["`order='F'` only supported for NumPy arrays"])
     @pytest.mark.xslow
     def test_int_overflow(self, xp):
        # regression test for
