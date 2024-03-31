@@ -945,22 +945,21 @@ class TestSolveTriangular:
         assert_array_almost_equal(sol, [1, 0])
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
 class TestInv:
 
-    def setup_method(self):
+    def setup_method(self, xp):
         np.random.seed(1234)
 
-    @array_api_compatible
     def test_simple(self, xp):
         a = xp.asarray([[1., 2], [3, 4]])
         a_inv = inv(a)
-        xp_test = array_namespace(a)
-        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2), atol=1e-15)
+        xp_assert_close(xp.matmul(a, a_inv), xp.eye(2), atol=1e-15)
         a = xp.asarray([[1., 2, 3], [4, 5, 6], [7, 8, 10]])
         a_inv = inv(a)
-        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(3), atol=1e-5)
+        xp_assert_close(xp.matmul(a, a_inv), xp.eye(3), atol=1e-5)
 
-    @array_api_compatible
     def test_random(self, xp):
         n = 20
         for i in range(4):
@@ -970,7 +969,6 @@ class TestInv:
             a_inv = inv(a)
             xp_assert_close(a @ a_inv, xp.eye(n, dtype=xp.float64), atol=1e-15)
 
-    @array_api_compatible
     def test_simple_complex(self, xp):
         a = xp.asarray([[1, 2], [3, 4j]])
         a_inv = inv(a)
@@ -978,7 +976,6 @@ class TestInv:
         xp_assert_close(a @ a_inv, xp.asarray([[1, 0], [0, 1]]), atol=1e-7,
                         check_dtype=False)
 
-    @array_api_compatible
     def test_random_complex(self, xp):
         n = 20
         for i in range(4):
@@ -988,7 +985,6 @@ class TestInv:
             a_inv = inv(a)
             xp_assert_close(a @ a_inv, xp.eye(n, dtype=xp.complex128), atol=1e-15)
 
-    @array_api_compatible
     def test_check_finite(self, xp):
         a = xp.asarray([[1., 2], [3, 4]])
         xp_test = array_namespace(a)
@@ -996,21 +992,21 @@ class TestInv:
         xp_assert_close(xp_test.matmul(a, a_inv), xp.asarray([[1., 0], [0, 1]]),
                         atol=1e-15)
 
-    @array_api_compatible
     @pytest.mark.parametrize("dtype", ["float32", "float64"])
     def test_dtypes_standard(self, dtype, xp):
         a = xp.asarray([[1, 2], [3, 4]], dtype=getattr(xp, dtype))
         a_inv = inv(a)
-        xp_test = array_namespace(a)
         atol = 1e-14 if dtype == "float64" else 1e-5
-        xp_assert_close(xp_test.matmul(a, a_inv), xp.eye(2, dtype=getattr(xp, dtype)),
+        xp_assert_close(xp.matmul(a, a_inv), xp.eye(2, dtype=getattr(xp, dtype)),
                         atol=atol)
 
-    @pytest.mark.parametrize("dtype", [np.int32, np.int64])
-    def test_dtypes_nonstandard(self, dtype):
-        a = np.asarray([[1, 2], [3, 4]], dtype=dtype)
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
+    @pytest.mark.parametrize("dtype", ["int32", "int64"])
+    def test_dtypes_nonstandard(self, dtype, xp):
+        a = xp.asarray([[1, 2], [3, 4]], dtype=dtype)
         a_inv = inv(a)
-        xp_assert_close(a @ a_inv, np.eye(2), atol=1e-15)
+        xp_assert_close(a @ a_inv, xp.eye(2), atol=1e-15)
 
 
 class TestDet:
