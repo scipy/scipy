@@ -238,8 +238,10 @@ def extract_tarfile_to(tarfileobj, target_path, archive_path):
 def reformat_pkg_file(target_path):
     # attempt to deal with:
     # https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
-    pattern = os.path.join(target_path, "**", "*openblas*.pc")
-    pkg_path = glob.glob(pattern, recursive=True)[0]
+    for root, dirs, files in os.walk(target_path):
+        for name in files:
+            if name.endswith(".pc") and "openblas" in name:
+                pkg_path = os.path.join(root, name)
     new_pkg_lines = []
     with open(pkg_path) as pkg_orig:
         for line in pkg_orig:

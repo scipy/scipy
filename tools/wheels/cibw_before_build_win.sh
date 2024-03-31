@@ -36,4 +36,4 @@ else
 fi
 # attempt to deal with:
 # https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
-python -c "import tools.openblas_support as obs; obs.reformat_pkg_file('/c/opt/')"
+python -c "import tools.openblas_support as obs; obs.reformat_pkg_file('C:/opt/')"
