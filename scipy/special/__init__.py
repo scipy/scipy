@@ -472,9 +472,6 @@ Legendre functions
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
-The following functions do not accept NumPy arrays (they are not
-universal functions):
-
 .. autosummary::
    :toctree: generated/
 
