@@ -1235,7 +1235,10 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         structure = numpy.asarray(structure, dtype=numpy.float64)
         separable = False
         if footprint is None:
-            footprint = numpy.ones(structure.shape, bool)
+            if size is None:
+                size = structure.shape
+                separable = True
+            footprint = numpy.ones(structure.shape, dtype=bool)
         else:
             footprint = numpy.asarray(footprint, dtype=bool)
     input = numpy.asarray(input)

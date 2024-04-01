@@ -1936,6 +1936,14 @@ class TestNdimageMorphology:
         assert_array_almost_equal([[1, 1, 0, 0, 0],
                                    [1, 2, 0, 2, 0],
                                    [4, 4, 2, 2, 0]], output)
+    
+    def test_grey_erosion04(self):
+        im = numpy.random.rand(50, 50)
+        filt_sz = 7
+        kernel = numpy.ones((filt_sz, filt_sz))
+        output_with_kernel = ndimage.grey_erosion(im, structure=kernel)
+        output_with_sz = ndimage.grey_erosion(im, (filt_sz, filt_sz))
+        assert_array_almost_equal(output_with_kernel, output_with_sz)
 
     def test_grey_dilation01(self):
         array = numpy.array([[3, 2, 5, 1, 4],
@@ -2125,7 +2133,7 @@ class TestNdimageMorphology:
                                 [0, 1, 1, 0, 0, 0, 1],
                                 [0, 0, 0, 1, 1, 1, 1]], dtype=numpy.bool_)
 
-        output = ndimage.white_tophat(array, structure=structure)
+        output = ndimage.white_tophat(array, size = 3, structure=structure)
         assert_array_equal(expected, output)
 
     def test_white_tophat04(self):
@@ -2275,7 +2283,7 @@ class TestDilateFix:
         self.dilated3x3 = dilated3x3.view(numpy.uint8)
 
     def test_dilation_square_structure(self):
-        result = ndimage.grey_dilation(self.array, structure=self.sq3x3)
+        result = ndimage.grey_dilation(self.array, size=3, structure=self.sq3x3)
         # +1 accounts for difference between grey and binary dilation
         assert_array_almost_equal(result, self.dilated3x3 + 1)
 
