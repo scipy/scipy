@@ -425,7 +425,7 @@ class TestGetSet1D:
         with np.testing.suppress_warnings() as sup:
             sup.filter(
                 sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive",
+                "Changing the sparsity structure of a cs.* is expensive",
             )
             A[0] = dtype(0)
             A[1] = dtype(3)
