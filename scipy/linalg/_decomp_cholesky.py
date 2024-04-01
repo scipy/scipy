@@ -94,7 +94,7 @@ def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
         a = _asarray(a, check_finite=True, xp=xp)
     if is_numpy(xp):
         c, _ = _cholesky(a, lower=lower, overwrite_a=overwrite_a,
-                             clean=True, check_finite=False)
+                         clean=True, check_finite=False)
         return c
     if hasattr(xp, 'linalg'):
         upper = not lower

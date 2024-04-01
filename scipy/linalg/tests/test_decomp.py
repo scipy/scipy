@@ -2038,8 +2038,11 @@ class TestQR:
         atol = 1e-15 if dtype == "float64" else 1e-6
         xp_assert_close(q.T @ q, xp.eye(3, dtype=dtype), atol=atol)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=["Integer dtypes only supported for NumPy arrays"])
     @pytest.mark.parametrize("dtype", ["int32", "int64"])
     def test_dtypes_nonstandard(self, dtype, xp):
+        dtype = getattr(xp, dtype)
         a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]], dtype=dtype)
         q, _ = qr(a)
         xp_assert_close(q.T @ q, xp.eye(3), atol=1e-15)
@@ -3317,9 +3320,9 @@ class TestCDF2RDF:
         assert_raises(ValueError, cdf2rdf, w, v)
 
 
+@array_api_compatible
 class TestNonStandardParams:
 
-    @array_api_compatible
     def test_eigh(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([[1, 2], [2, 7]], dtype=xp.float32)
@@ -3337,7 +3340,6 @@ class TestNonStandardParams:
             assert_raises(ValueError, eigh, x, subset_by_value=True)
             assert_raises(ValueError, eigh, x, driver='evd')
 
-    @array_api_compatible
     def test_eigvalsh(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([[6, 3, 1, 5], [3, 0, 5, 1],
@@ -3355,7 +3357,6 @@ class TestNonStandardParams:
             assert_raises(ValueError, eigvalsh, x, subset_by_value=True)
             assert_raises(ValueError, eigvalsh, x, driver='evd')
 
-    @array_api_compatible
     def test_qr(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([(3, 3)], dtype=xp.float32)
@@ -3365,7 +3366,6 @@ class TestNonStandardParams:
             assert_raises(ValueError, qr, x, mode='r')
             assert_raises(ValueError, qr, x, pivoting=True)
 
-    @array_api_compatible
     def test_svd(self, xp):
         if xp.__name__ != 'numpy':
             x = xp.asarray([(3, 3)], dtype=xp.float32)
