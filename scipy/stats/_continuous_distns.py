@@ -678,7 +678,7 @@ class beta_gen(rv_continuous):
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
         with np.errstate(over='ignore'):
-            return _boost._beta_pdf(x, a, b)
+            return scu._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -686,10 +686,10 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return _boost._beta_cdf(x, a, b)
+        return sc.betainc(a, b, x)
 
     def _sf(self, x, a, b):
-        return _boost._beta_sf(x, a, b)
+        return scu._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
         return sc.betaincinv(a, b, 1 - x)
@@ -698,11 +698,42 @@ class beta_gen(rv_continuous):
         return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
+        a_plus_b = np.add(a, b)
+        _beta_mean = np.divide(a, a_plus_b)
+        _beta_variance = np.divide(
+            np.multiply(a, b),
+            np.multiply(
+                np.square(a_plus_b),
+                np.add(a_plus_b, 1)
+            )
+        )
+        _beta_skewness = np.divide(
+            np.multiply(
+                np.multiply(2, np.subtract(b, a)),
+                np.sqrt(np.add(a_plus_b, 1))
+            ),
+            np.multiply(
+                np.add(a_plus_b, 2),
+                np.sqrt(np.multiply(a, b))
+            )
+        )
+        _beta_kurtosis_excess = np.divide(
+            np.multiply(6, np.subtract(
+                np.multiply(np.square(np.subtract(a, b)),
+                            np.add(a_plus_b, 1)),
+                np.multiply(np.multiply(a, b),
+                            np.add(a_plus_b, 2))
+            )),
+            np.multiply(
+                np.multiply(np.multiply(a, b),
+                            np.add(a_plus_b, 2)),
+                np.add(a_plus_b, 3))
+        )
         return (
-            _boost._beta_mean(a, b),
-            _boost._beta_variance(a, b),
-            _boost._beta_skewness(a, b),
-            _boost._beta_kurtosis_excess(a, b))
+            _beta_mean,
+            _beta_variance,
+            _beta_skewness,
+            _beta_kurtosis_excess)
 
     def _fitstart(self, data):
         if isinstance(data, CensoredData):
