@@ -145,8 +145,8 @@ jobs:
           python -m build --no-isolation -x -Csetup-args="-Duse-pythran=false"
 
           # Vendor openblas.dll and the DLL's it depends on into the wheel
-          # Ignore, libsf_error_state.dll for special function error handling. This
-          # will be loaded later using ctypes in scipy/special/__init__.py.
+          # Ignore `libsf_error_state.dll` for special function error handling;
+          # it will be loaded using ctypes in scipy/special/__init__.py.
           $env:wheel_name=Get-ChildItem -Path dist/* -Include *.whl
           delvewheel repair --add-path c:\opt\openblas\openblas_dll --no-dll libsf_error_state.dll -w dist $env:wheel_name
           
