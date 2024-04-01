@@ -3,6 +3,7 @@
 import pytest
 
 import numpy as np
+from numpy.testing import assert_equal, assert_allclose
 
 from scipy.sparse import coo_array, csr_array
 from scipy.sparse._sputils import isscalarlike
@@ -49,22 +50,22 @@ class TestArithmetic1D:
             assert isinstance(a @ a.tocoo(), np.ndarray)
             for m in [a, b, c]:
                 assert m @ m == a.toarray() @ a.toarray()
-                assert np.array_equal(m.dtype, mytype)
-                assert np.array_equal(toarray(m).dtype, mytype)
+                assert m.dtype == mytype
+                assert toarray(m).dtype == mytype
 
     def test_abs(self, spcreator):
         A = np.array([-1, 0, 17, 0, -5, 0, 1, -4, 0, 0, 0, 0], 'd')
-        assert np.array_equal(abs(A), abs(spcreator(A)).toarray())
+        assert_equal(abs(A), abs(spcreator(A)).toarray())
 
     def test_round(self, spcreator):
         A = np.array([-1.35, 0.56, 17.25, -5.98], 'd')
         Asp = spcreator(A)
-        assert np.array_equal(np.around(A, decimals=1), round(Asp, ndigits=1).toarray())
+        assert_equal(np.around(A, decimals=1), round(Asp, ndigits=1).toarray())
 
     def test_elementwise_power(self, spcreator):
         A = np.array([-4, -3, -2, -1, 0, 1, 2, 3, 4], 'd')
         Asp = spcreator(A)
-        assert np.array_equal(np.power(A, 2), Asp.power(2).toarray())
+        assert_equal(np.power(A, 2), Asp.power(2).toarray())
 
         # element-wise power function needs a scalar power
         with pytest.raises(NotImplementedError, match='input is not scalar'):
@@ -73,22 +74,22 @@ class TestArithmetic1D:
     def test_real(self, spcreator):
         D = np.array([1 + 3j, 2 - 4j])
         A = spcreator(D)
-        assert np.array_equal(A.real.toarray(), D.real)
+        assert_equal(A.real.toarray(), D.real)
 
     def test_imag(self, spcreator):
         D = np.array([1 + 3j, 2 - 4j])
         A = spcreator(D)
-        assert np.array_equal(A.imag.toarray(), D.imag)
+        assert_equal(A.imag.toarray(), D.imag)
 
     def test_mul_scalar(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
-            assert np.array_equal(dat * 2, (datsp * 2).toarray())
-            assert np.array_equal(dat * 17.3, (datsp * 17.3).toarray())
+            assert_equal(dat * 2, (datsp * 2).toarray())
+            assert_equal(dat * 17.3, (datsp * 17.3).toarray())
 
     def test_rmul_scalar(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
-            assert np.array_equal(2 * dat, (2 * datsp).toarray())
-            assert np.array_equal(17.3 * dat, (17.3 * datsp).toarray())
+            assert_equal(2 * dat, (2 * datsp).toarray())
+            assert_equal(17.3 * dat, (17.3 * datsp).toarray())
 
     def test_sub(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
@@ -96,24 +97,24 @@ class TestArithmetic1D:
                 # boolean array subtraction deprecated in 1.9.0
                 continue
 
-            assert np.array_equal((datsp - datsp).toarray(), np.zeros(4))
-            assert np.array_equal((datsp - 0).toarray(), dat)
+            assert_equal((datsp - datsp).toarray(), np.zeros(4))
+            assert_equal((datsp - 0).toarray(), dat)
 
             A = spcreator([1, -4, 0, 2], dtype='d')
-            assert np.array_equal((datsp - A).toarray(), dat - A.toarray())
-            assert np.array_equal((A - datsp).toarray(), A.toarray() - dat)
+            assert_equal((datsp - A).toarray(), dat - A.toarray())
+            assert_equal((A - datsp).toarray(), A.toarray() - dat)
 
             # test broadcasting
-            assert np.array_equal(datsp.toarray() - dat[0], dat - dat[0])
+            assert_equal(datsp.toarray() - dat[0], dat - dat[0])
 
     def test_add0(self, spcreator, datsp_math_dtypes):
         for dtype, dat, datsp in datsp_math_dtypes[spcreator]:
             # Adding 0 to a sparse matrix
-            assert np.array_equal((datsp + 0).toarray(), dat)
+            assert_equal((datsp + 0).toarray(), dat)
             # use sum (which takes 0 as a starting value)
             sumS = sum([k * datsp for k in range(1, 3)])
             sumD = sum([k * dat for k in range(1, 3)])
-            assert np.allclose(sumS.toarray(), sumD)
+            assert_allclose(sumS.toarray(), sumD)
 
     def test_elementwise_multiply(self, spcreator):
         # real/real
@@ -121,20 +122,20 @@ class TestArithmetic1D:
         B = np.array([0, 7, -1])
         Asp = spcreator(A)
         Bsp = spcreator(B)
-        assert np.allclose(Asp.multiply(Bsp).toarray(), A * B)  # sparse/sparse
-        assert np.allclose(Asp.multiply(B).toarray(), A * B)  # sparse/dense
+        assert_allclose(Asp.multiply(Bsp).toarray(), A * B)  # sparse/sparse
+        assert_allclose(Asp.multiply(B).toarray(), A * B)  # sparse/dense
 
         # complex/complex
         C = np.array([1 - 2j, 0 + 5j, -1 + 0j])
         D = np.array([5 + 2j, 7 - 3j, -2 + 1j])
         Csp = spcreator(C)
         Dsp = spcreator(D)
-        assert np.allclose(Csp.multiply(Dsp).toarray(), C * D)  # sparse/sparse
-        assert np.allclose(Csp.multiply(D).toarray(), C * D)  # sparse/dense
+        assert_allclose(Csp.multiply(Dsp).toarray(), C * D)  # sparse/sparse
+        assert_allclose(Csp.multiply(D).toarray(), C * D)  # sparse/dense
 
         # real/complex
-        assert np.allclose(Asp.multiply(Dsp).toarray(), A * D)  # sparse/sparse
-        assert np.allclose(Asp.multiply(D).toarray(), A * D)  # sparse/dense
+        assert_allclose(Asp.multiply(Dsp).toarray(), A * D)  # sparse/sparse
+        assert_allclose(Asp.multiply(D).toarray(), A * D)  # sparse/dense
 
     def test_elementwise_multiply_broadcast(self, spcreator):
         A = np.array([4])
@@ -179,7 +180,7 @@ class TestArithmetic1D:
                         i.multiply(j)
                     continue
                 sp_mult = i.multiply(j)
-                assert np.allclose(sp_mult.toarray(), dense_mult)
+                assert_allclose(sp_mult.toarray(), dense_mult)
 
         # sparse/dense
         for i in sp1dmatrices:
@@ -194,7 +195,7 @@ class TestArithmetic1D:
                         i.multiply(j)
                     continue
                 sp_mult = i.multiply(j)
-                assert np.allclose(toarray(sp_mult), dense_mult)
+                assert_allclose(toarray(sp_mult), dense_mult)
 
     def test_elementwise_divide(self, spcreator, dat1d):
         datsp = spcreator(dat1d)
@@ -212,7 +213,7 @@ class TestArithmetic1D:
         B = np.array([5 + 2j, 7 - 3j, -2 + 1j])
         Asp = spcreator(A)
         Bsp = spcreator(B)
-        assert np.allclose(Asp / Bsp, A / B)
+        assert_allclose(Asp / Bsp, A / B)
 
         # integer
         A = np.array([1, 2, 3])
@@ -220,7 +221,7 @@ class TestArithmetic1D:
         Asp = spcreator(A)
         Bsp = spcreator(B)
         with np.errstate(divide='ignore'):
-            assert np.array_equal(Asp / Bsp, A / B)
+            assert_equal(Asp / Bsp, A / B)
 
         # mismatching sparsity patterns
         A = np.array([0, 1])
@@ -228,7 +229,7 @@ class TestArithmetic1D:
         Asp = spcreator(A)
         Bsp = spcreator(B)
         with np.errstate(divide='ignore', invalid='ignore'):
-            assert np.array_equal(Asp / Bsp, A / B)
+            assert_equal(Asp / Bsp, A / B)
 
     def test_pow(self, spcreator):
         A = np.array([1, 0, 2, 0])
@@ -243,8 +244,8 @@ class TestArithmetic1D:
         for exponent in [1, 2, 3, 2.2]:
             ret_sp = B**exponent
             ret_np = A**exponent
-            assert np.array_equal(ret_sp.toarray(), ret_np)
-            assert np.array_equal(ret_sp.dtype, ret_np.dtype)
+            assert_equal(ret_sp.toarray(), ret_np)
+            assert_equal(ret_sp.dtype, ret_np.dtype)
 
     def test_dot_scalar(self, spcreator, dat1d):
         A = spcreator(dat1d)
@@ -252,7 +253,7 @@ class TestArithmetic1D:
         actual = A.dot(scalar)
         expected = A * scalar
 
-        assert np.allclose(actual.toarray(), expected.toarray())
+        assert_allclose(actual.toarray(), expected.toarray())
 
     def test_matmul(self, spcreator):
         Msp = spcreator([2, 0, 3.0])
@@ -260,16 +261,16 @@ class TestArithmetic1D:
         col = np.array([[1, 2, 3]]).T
 
         # check sparse @ dense 2d column
-        assert np.allclose(Msp @ col, Msp.toarray() @ col)
+        assert_allclose(Msp @ col, Msp.toarray() @ col)
 
         # check sparse1d @ sparse2d, sparse1d @ dense2d, dense1d @ sparse2d
-        assert np.allclose((Msp @ B).toarray(), (Msp @ B).toarray())
-        assert np.allclose(Msp.toarray() @ B, (Msp @ B).toarray())
-        assert np.allclose(Msp @ B.toarray(), (Msp @ B).toarray())
+        assert_allclose((Msp @ B).toarray(), (Msp @ B).toarray())
+        assert_allclose(Msp.toarray() @ B, (Msp @ B).toarray())
+        assert_allclose(Msp @ B.toarray(), (Msp @ B).toarray())
 
         # check sparse1d @ dense1d, sparse1d @ sparse1d
         V = np.array([0, 0, 1])
-        assert np.allclose(Msp @ V, Msp.toarray() @ V)
+        assert_allclose(Msp @ V, Msp.toarray() @ V)
 
         Vsp = spcreator(V)
         Msp_Vsp = Msp @ Vsp
@@ -277,10 +278,10 @@ class TestArithmetic1D:
         assert Msp_Vsp.shape == ()
 
         # output is 0-dim ndarray
-        assert np.allclose(np.array(3), Msp_Vsp)
-        assert np.allclose(np.array(3), Msp.toarray() @ Vsp)
-        assert np.allclose(np.array(3), Msp @ Vsp.toarray())
-        assert np.allclose(np.array(3), Msp.toarray() @ Vsp.toarray())
+        assert_allclose(np.array(3), Msp_Vsp)
+        assert_allclose(np.array(3), Msp.toarray() @ Vsp)
+        assert_allclose(np.array(3), Msp @ Vsp.toarray())
+        assert_allclose(np.array(3), Msp.toarray() @ Vsp.toarray())
 
         # check error on matrix-scalar
         with pytest.raises(ValueError, match='Scalar operands are not allowed'):
@@ -298,9 +299,9 @@ class TestArithmetic1D:
             # Manually add to avoid upcasting from scalar
             # multiplication.
             sum1 = (dat + dat + dat) - datsp
-            assert np.array_equal(sum1, dat + dat)
+            assert_equal(sum1, dat + dat)
             sum2 = (datsp + datsp + datsp) - dat
-            assert np.array_equal(sum2, dat + dat)
+            assert_equal(sum2, dat + dat)
 
     def test_size_zero_matrix_arithmetic(self, spcreator):
         # Test basic matrix arithmetic with shapes like 0, (1, 0), (0, 3), etc.
@@ -316,22 +317,22 @@ class TestArithmetic1D:
             asp.__add__(dsp)
 
         # matrix product.
-        assert np.equal(asp.dot(asp), np.dot(a, a))
+        assert_equal(asp.dot(asp), np.dot(a, a))
 
         # bad matrix products
         with pytest.raises(ValueError, match='dimension mismatch'):
             asp.dot(f)
 
         # elemente-wise multiplication
-        assert np.array_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
+        assert_equal(asp.multiply(asp).toarray(), np.multiply(a, a))
 
-        assert np.array_equal(asp.multiply(a).toarray(), np.multiply(a, a))
+        assert_equal(asp.multiply(a).toarray(), np.multiply(a, a))
 
-        assert np.array_equal(asp.multiply(6).toarray(), np.multiply(a, 6))
+        assert_equal(asp.multiply(6).toarray(), np.multiply(a, 6))
 
         # bad element-wise multiplication
         with pytest.raises(ValueError, match='inconsistent shapes'):
             asp.multiply(f)
 
         # Addition
-        assert np.array_equal(asp.__add__(asp).toarray(), a.__add__(a))
+        assert_equal(asp.__add__(asp).toarray(), a.__add__(a))
