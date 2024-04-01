@@ -23,7 +23,7 @@ from scipy._lib.deprecation import _NoValue
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    xp_assert_close, size as _size, array_namespace, SCIPY_ARRAY_API
+    array_namespace, is_torch, SCIPY_ARRAY_API, size as _size, xp_assert_close,
 )
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -538,17 +538,17 @@ class TestSolve:
         np.random.seed(1234)
 
     def test_20Feb04_bug(self, xp):
-        a = xp.asarray([[1, 1], [1.0, 0]])  # ok
+        a = xp.asarray([[1, 1], [1.0, 0]], dtype=xp.complex64)  # ok
         x0 = solve(a, xp.asarray([1, 0j]))
         # complex64 for torch, complex128 for other backends
-        xp_assert_close(xp.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
+        xp_assert_close(a @ x0, xp.asarray([1, 0]), check_dtype=False)
 
         # gives failure with clapack.zgesv(..,rowmajor=0)
-        a = xp.asarray([[1, 1], [1.2, 0]])
+        a = xp.asarray([[1, 1], [1.2, 0]], dtype=xp.complex64)
         b = xp.asarray([1, 0j])
         x0 = solve(a, b)
         # complex64 for torch, complex128 for other backends
-        xp_assert_close(xp.matmul(a, x0), xp.asarray([1, 0]), check_dtype=False)
+        xp_assert_close(a @ x0, xp.asarray([1, 0]), check_dtype=False)
 
     def test_simple(self, xp):
         a = xp.asarray([[1., 20], [-30, 4]])
@@ -569,6 +569,9 @@ class TestSolve:
                   ):
             b = xp.asarray(b)
             x = solve(a, b)
+            if is_torch(xp):
+                pytest.xfail("`matmul` fails for final choice of `b` due to "
+                             "`complex64` `a` and `complex128` `x`.")
             xp_assert_close(a @ x, b, atol=1e-7)
 
     @skip_xp_backends(np_only=True,
@@ -576,12 +579,12 @@ class TestSolve:
     def test_simple_pos(self, xp):
         a = xp.asarray([[2, 3], [3, 5]])
         for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]],
-                      [1, 0]
+            for b in ([[1., 0], [0, 1]],
+                      [1., 0]
                       ):
                 b = xp.asarray(b)
                 x = solve(a, b, assume_a='pos', lower=lower)
-                xp_assert_close(a @ x, b)
+                xp_assert_close(a @ x, b, atol=1e-14)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -599,12 +602,12 @@ class TestSolve:
     def test_simple_sym(self, xp):
         a = xp.asarray([[2, 3], [3, -5]])
         for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]],
-                      [1, 0]
+            for b in ([[1., 0], [0, 1]],
+                      [1., 0]
                       ):
                 b = xp.asarray(b)
                 x = solve(a, b, assume_a='sym', lower=lower)
-                xp_assert_close(a @ x, b)
+                xp_assert_close(a @ x, b, atol=1e-14)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -613,7 +616,7 @@ class TestSolve:
         for b in ([1j, 0],
                   [[1j, 1j], [0, 2]]
                   ):
-            b = xp.asarray(b)
+            b = xp.asarray(b, dtype=xp.complex128)
             x = solve(a, b, assume_a='sym')
             xp_assert_close(a @ x, b)
 
@@ -625,7 +628,7 @@ class TestSolve:
                   [1, 0],
                   [[1j, 1j], [0, 2]]
                   ):
-            b = xp.asarray(b)
+            b = xp.asarray(b, dtype=xp.complex128)
             x = solve(a, b, assume_a='sym')
             xp_assert_close(a @ x, b)
 
@@ -634,13 +637,13 @@ class TestSolve:
     def test_simple_her_actuallysym(self, xp):
         a = xp.asarray([[2, 3], [3, -5]])
         for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]],
-                      [1, 0],
+            for b in ([[1., 0], [0, 1]],
+                      [1., 0],
                       [1j, 0],
                       ):
                 b = xp.asarray(b)
                 x = solve(a, b, assume_a='her', lower=lower)
-                xp_assert_close(a @ x, b)
+                xp_assert_close(a @ x, b, atol=1e-14)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
@@ -650,7 +653,7 @@ class TestSolve:
                   [1, 0],
                   [[1j, 1j], [0, 2]]
                   ):
-            b = xp.asarray(b)
+            b = xp.asarray(b, dtype=xp.complex128)
             x = solve(a, b, assume_a='her')
             xp_assert_close(a @ x, b)
 
@@ -722,9 +725,11 @@ class TestSolve:
             x = solve(a, b, check_finite=False)
             xp_assert_close(a @ x, b, atol=1e-15)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=['`a` must be at least 2-D for alternative backends'])
     def test_scalar_a_and_1D_b(self, xp):
-        a = 1
-        b = [1, 2, 3]
+        a = xp.asarray(1)
+        b = xp.asarray([1., 2, 3])
         x = solve(a, b)
         xp_assert_close(x.ravel(), b)
         assert x.shape == (3,), 'Scalar_a_1D_b test returned wrong shape'
@@ -1641,14 +1646,15 @@ class TestPinv:
         a_pinv = pinv(a, check_finite=False)
         xp_assert_close(a @ a_pinv, xp.eye(3), atol=1e-5)
 
+    @skip_xp_backends(np_only=True,
+                      reasons=["test for native lists which always use NumPy"])
     def test_native_list_argument(self, xp):
-        a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+        a = [[1., 2, 3], [4, 5, 6], [7, 8, 9]]
         a_pinv = pinv(a)
         expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
                           [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
                           [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
-        expected = xp.asarray(expected)
-        xp_assert_close(a_pinv, expected)
+        xp_assert_close(a_pinv, expected, atol=1e-7)
 
     @skip_xp_backends(np_only=True, reasons=["`atol` only supported for NumPy arrays"])
     def test_atol_rtol(self):

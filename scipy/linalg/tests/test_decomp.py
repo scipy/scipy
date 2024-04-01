@@ -1289,10 +1289,10 @@ class TestSVDVals:
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt, xp):
         for a in xp.asarray([[]]), xp.empty((2, 0)), xp.ones((0, 3)):
-            a = xp.asarray(a, dt)
+            a = xp.asarray(a, dtype=dt)
             s = svdvals(a)
             assert size(s) == 0
-            s0 = svdvals(np.eye(2, dtype=dt))
+            s0 = svdvals(xp.eye(2, dtype=dt))
             assert s.dtype == s0.dtype
 
     def test_simple(self, xp):
@@ -1406,12 +1406,16 @@ class TestQR:
         qc, r = qr_multiply(a, xp.eye(3))
         xp_assert_close(q, qc)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_pivoting(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3], [5, 3, 6]])
+        a = xp.asarray([[8., 2, 3], [2, 9, 3], [5, 3, 6]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, eye(3))
+        xp_assert_close(q.T @ q, eye(3), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
         xp_assert_close(q, q2)
@@ -1445,12 +1449,16 @@ class TestQR:
         xp_assert_close(q.T @ q, xp.eye(2), atol=1e-6)
         xp_assert_close(q @ r, a, rtol=1e-6)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_trap_pivoting(self, xp):
-        a = xp.asarray([[8, 2, 3], [2, 9, 3]])
+        a = xp.asarray([[8., 2, 3], [2, 9, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, xp.eye(2))
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
         xp_assert_close(q, q2)
@@ -1463,13 +1471,17 @@ class TestQR:
         xp_assert_close(q.T @ q, xp.eye(3), atol=1e-6)
         xp_assert_close(q @ r, a, rtol=1e-6)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_tall_pivoting(self, xp):
         # full version pivoting
-        a = xp.asarray([[8, 2], [2, 9], [5, 3]])
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, xp.eye(3))
+        xp_assert_close(q.T @ q, xp.eye(3), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
         xp_assert_close(q, q2)
@@ -1484,13 +1496,17 @@ class TestQR:
         assert_equal(q.shape, (3, 2))
         assert_equal(r.shape, (2, 2))
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_tall_e_pivoting(self, xp):
         # economy version pivoting
-        a = xp.asarray([[8, 2], [2, 9], [5, 3]])
+        a = xp.asarray([[8., 2], [2, 9], [5, 3]])
         q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, xp.eye(2))
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p], mode='economic')
         xp_assert_close(q, q2)
@@ -1563,13 +1579,17 @@ class TestQR:
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_fat_pivoting(self, xp):
         # full version pivoting
-        a = xp.asarray([[8, 2, 5], [2, 9, 3]])
+        a = xp.asarray([[8., 2, 5], [2, 9, 3]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, xp.eye(2))
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
@@ -1586,13 +1606,17 @@ class TestQR:
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_fat_e_pivoting(self, xp):
         # economy version pivoting
-        a = xp.asarray([[8, 2, 3], [2, 9, 5]])
+        a = xp.asarray([[8., 2, 3], [2, 9, 5]])
         q, r, p = qr(a, pivoting=True, mode='economic')
         d = abs(diag(r))
         assert xp.all(d[1:] <= d[:-1])
-        xp_assert_close(q.T @ q, xp.eye(2))
+        xp_assert_close(q.T @ q, xp.eye(2), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         assert_equal(q.shape, (2, 2))
         assert_equal(r.shape, (2, 3))
@@ -1737,12 +1761,16 @@ class TestQR:
         qc, r = qr_multiply(a, c, conjugate=True)
         xp_assert_close(c @ q.conj(), qc)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_simple_complex_pivoting(self, xp):
         a = array([[3, 3+4j, 5], [5, 2, 2+7j], [3, 2, 7]])
         q, r, p = qr(a, pivoting=True)
         d = abs(diag(r))
         assert np.all(d[1:] <= d[:-1])
-        xp_assert_close(q.conj().T @ q, eye(3))
+        xp_assert_close(q.conj().T @ q, eye(3, dtype=xp.complex128), atol=1e-14)
         xp_assert_close(q @ r, a[:, p])
         q2, r2 = qr(a[:, p])
         xp_assert_close(q, q2)
@@ -1811,6 +1839,10 @@ class TestQR:
             cq, _ = qr_multiply(a, xp.eye(n))
             xp_assert_close(q, cq)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_random_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
@@ -1819,7 +1851,7 @@ class TestQR:
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert xp.all(d[1:] <= d[:-1])
-            xp_assert_close(q.T @ q, xp.eye(n))
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14)
             xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
             xp_assert_close(q, q2)
@@ -1872,6 +1904,10 @@ class TestQR:
             cq, _ = qr_multiply(a, xp.eye(m))
             xp_assert_close(cq, q)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_random_tall_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         # full version pivoting
@@ -1879,10 +1915,11 @@ class TestQR:
         n = 100
         for _ in range(2):
             a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert_(np.all(d[1:] <= d[:-1]))
-            xp_assert_close(q.T @ q, xp.eye(m))
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14)
             xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
             xp_assert_close(q, q2)
@@ -1901,6 +1938,10 @@ class TestQR:
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (n, n))
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_random_tall_e_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         # economy version pivoting
@@ -1908,10 +1949,11 @@ class TestQR:
         n = 100
         for _ in range(2):
             a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True, mode='economic')
             d = abs(diag(r))
             assert np.all(d[1:] <= d[:-1])
-            xp_assert_close(q.T @ q, xp.eye(n))
+            xp_assert_close(q.T @ q, xp.eye(n), atol=1e-14)
             xp_assert_close(q @ r, a[:, p])
             assert_equal(q.shape, (m, n))
             assert_equal(r.shape, (n, n))
@@ -1929,16 +1971,21 @@ class TestQR:
             xp_assert_close(q.T @ q, xp.eye(m, dtype=xp.float64), atol=1e-14)
             xp_assert_close(q @ r, a)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_random_trap_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         m = 100
         n = 200
         for k in range(2):
             a = rng.random([m, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert np.all(d[1:] <= d[:-1])
-            xp_assert_close(q.T @ q, xp.eye(m))
+            xp_assert_close(q.T @ q, xp.eye(m), atol=1e-14)
             xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
             xp_assert_close(q, q2)
@@ -1963,6 +2010,7 @@ class TestQR:
         n = 20
         for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
+            a = xp.asarray(a)
             q, _ = qr(a)
             c = rng.random([n]) + 1j*rng.random([n])
             qc, _ = qr_multiply(a, c, "left")
@@ -1979,6 +2027,7 @@ class TestQR:
         n = 20
         for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
+            a = xp.asarray(a)
             q, _ = qr(a)
             c = rng.random([n]) + 1j*rng.random([n])
             cq, _ = qr_multiply(a, c)
@@ -1986,15 +2035,20 @@ class TestQR:
             cq, _ = qr_multiply(a, xp.eye(n))
             xp_assert_close(q, cq)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     def test_random_complex_pivoting(self, xp):
         rng = np.random.RandomState(1234)
         n = 20
         for _ in range(2):
             a = rng.random([n, n]) + 1j*rng.random([n, n])
+            a = xp.asarray(a)
             q, r, p = qr(a, pivoting=True)
             d = abs(diag(r))
             assert np.all(d[1:] <= d[:-1])
-            xp_assert_close(q.conj().T @ q, xp.eye(n))
+            xp_assert_close(q.conj().T @ q, xp.eye(n, dtype=xp.complex128), atol=1e-14)
             xp_assert_close(q @ r, a[:, p])
             q2, r2 = qr(a[:, p])
             xp_assert_close(q, q2)
@@ -2048,6 +2102,7 @@ class TestQR:
         xp_assert_close(q.T @ q, xp.eye(3), atol=1e-15)
 
     # TODO: update for array API
+    @skip_xp_backends(np_only=True)
     @pytest.mark.parametrize("m", [0, 1, 2])
     @pytest.mark.parametrize("n", [0, 1, 2])
     @pytest.mark.parametrize("pivoting", [False, True])
@@ -2100,19 +2155,24 @@ class TestQR:
             assert_equal(p.shape, (n,))
             assert_equal(p.dtype, np.int32)
 
+    @skip_xp_backends(
+            np_only=True,
+            reasons=["`pivoting` only supported for NumPy arrays"]
+    )
     @pytest.mark.parametrize(("m", "n"), [(0, 0), (0, 2), (2, 0)])
     def test_empty(self, m, n, xp):
         k = min(m, n)
 
         a = np.empty((m, n))
+        a = xp.asarray(a)
         q, r = qr(a)
-        xp_assert_close(q, xp.identity(m))
+        xp_assert_close(q, xp.eye(m))
         xp_assert_close(r, xp.empty((m, n)))
 
         q, r, p = qr(a, pivoting=True)
-        xp_assert_close(q, xp.identity(m))
+        xp_assert_close(q, xp.eye(m))
         xp_assert_close(r, xp.empty((m, n)))
-        xp_assert_close(p, xp.arange(n))
+        xp_assert_close(p, xp.arange(n, dtype=xp.int32))
 
         r, = qr(a, mode='r')
         xp_assert_close(r, xp.empty((m, n)))
