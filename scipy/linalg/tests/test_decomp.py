@@ -1126,7 +1126,7 @@ class _CheckSVD:
             sigma = xp.zeros((u.shape[0], vh.shape[0]), dtype=s.dtype)
             for i in range(s.shape[0]):
                 sigma[i, i] = s[i]
-            xp_test = array_namespace(sigma)
+            xp_test = array_namespace(sigma) # np<2.0 does not have `xp.astype`
             sigma = xp_test.astype(sigma, u.dtype)
             xp_assert_close(u @ sigma @ vh, a)
 
@@ -1150,7 +1150,7 @@ class _CheckSVD:
                     sigma = xp.zeros((u.shape[1], vh.shape[0]), dtype=s.dtype)
                     for i in range(s.shape[0]):
                         sigma[i, i] = s[i]
-                    xp_test = array_namespace(sigma)
+                    xp_test = array_namespace(sigma) # np<2.0 does not have `xp.astype`
                     sigma = xp_test.astype(sigma, u.dtype)
                     xp_assert_close(u @ sigma @ vh, a)
 

@@ -283,13 +283,7 @@ def svdvals(a, overwrite_a=False, check_finite=True):
 
 
 def _svdvals(a, overwrite_a=False):
-    a = _asarray_validated(a, check_finite=False)
-    if a.size:
-        return _svd(a, compute_uv=0, overwrite_a=overwrite_a)
-    elif len(a.shape) != 2:
-        raise ValueError('expected matrix')
-    else:
-        return numpy.empty(0)
+    return _svd(a, compute_uv=0, overwrite_a=overwrite_a)
 
 
 def diagsvd(s, M, N):

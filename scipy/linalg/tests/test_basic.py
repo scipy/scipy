@@ -1036,10 +1036,10 @@ class TestInv:
     def test_simple(self, xp):
         a = xp.asarray([[1., 2], [3, 4]])
         a_inv = inv(a)
-        xp_assert_close(xp.matmul(a, a_inv), xp.eye(2), atol=1e-15)
+        xp_assert_close(a @ a_inv, xp.eye(2), atol=1e-15)
         a = xp.asarray([[1., 2, 3], [4, 5, 6], [7, 8, 10]])
         a_inv = inv(a)
-        xp_assert_close(xp.matmul(a, a_inv), xp.eye(3), atol=1e-5)
+        xp_assert_close(a @ a_inv, xp.eye(3), atol=1e-5)
 
     def test_random(self, xp):
         n = 20
@@ -1708,7 +1708,7 @@ class TestPinv:
         a = xp.asarray([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=dtype)
         a_pinv = pinv(a)
         atol = 1e-13 if dtype == "float64" else 1e-4
-        xp_assert_close(xp.matmul(a, a_pinv), xp.eye(3, dtype=dtype), atol=atol)
+        xp_assert_close(a @ a_pinv, xp.eye(3, dtype=dtype), atol=atol)
 
     @skip_xp_backends(np_only=True,
                       reasons=["Integer dtypes only supported for NumPy arrays"])
