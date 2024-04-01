@@ -72,6 +72,50 @@ add_newdoc("_cosine_invcdf",
 
     """)
 
+add_newdoc(
+    "_beta_pdf",
+    """
+    _beta_pdf(x, a, b)
+
+    Probability density function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the regularized incomplete beta function
+
+    """)
+
+add_newdoc(
+    "_beta_sf",
+    """
+    _beta_sf(x, a, b)
+
+    Survival function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the regularized incomplete beta function
+
+    """)
+
 add_newdoc("sph_harm",
     r"""
     sph_harm(m, n, theta, phi, out=None)
