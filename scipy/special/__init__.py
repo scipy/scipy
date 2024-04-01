@@ -774,8 +774,8 @@ import warnings
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
-from . import _ufuncs
-from ._ufuncs import *
+from . import _ufuncs  # type: ignore[import]
+from ._ufuncs import *  # type: ignore[import]
 
 # Replace some function definitions from _ufuncs to add Array API support
 from ._support_alternative_backends import (

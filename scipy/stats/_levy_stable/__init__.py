@@ -14,7 +14,7 @@ import scipy.special as sc
 from scipy._lib._util import _lazywhere
 from .._distn_infrastructure import rv_continuous, _ShapeInfo
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
-from .levyst import Nolan
+from .levyst import Nolan  # type: ignore[import]
 from scipy._lib.doccer import inherit_docstring_from
 
 

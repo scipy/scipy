@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
 
 def mgc_plot(x, y, sim_name):

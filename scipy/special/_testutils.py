@@ -5,7 +5,7 @@ from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy.special as sc
 
@@ -315,7 +315,9 @@ class FuncData:
         else:
             is_complex = ""
         if self.dataname:
-            return "<Data for {}{}: {}>".format(self.func.__name__, is_complex,
-                                            os.path.basename(self.dataname))
+            return (
+                f"<Data for {self.func.__name__}{is_complex}: "
+                f"{os.path.basename(self.dataname)}>"
+            )
         else:
             return f"<Data for {self.func.__name__}{is_complex}>"

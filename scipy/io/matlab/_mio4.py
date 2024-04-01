@@ -11,7 +11,7 @@ import scipy.sparse
 from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       convert_dtypes, arr_to_chars, arr_dtype_number)
 
-from ._mio_utils import squeeze_element, chars_to_strings
+from ._mio_utils import squeeze_element, chars_to_strings  # type: ignore[import]
 from functools import reduce
 
 

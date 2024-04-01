@@ -3,7 +3,7 @@ import pickle
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import numpy.ma.testutils as ma_npt
 

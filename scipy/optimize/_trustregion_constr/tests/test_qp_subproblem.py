@@ -10,7 +10,7 @@ from scipy.optimize._trustregion_constr.qp_subproblem \
 from scipy.optimize._trustregion_constr.projections \
     import projections
 from numpy.testing import TestCase, assert_array_almost_equal, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 
 
 class TestEQPDirectFactorization(TestCase):

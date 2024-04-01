@@ -33,7 +33,7 @@
 
 import numpy as np
 
-from ._upfirdn_apply import _output_len, _apply, mode_enum
+from ._upfirdn_apply import _output_len, _apply, mode_enum  # type: ignore[import]
 
 __all__ = ['upfirdn', '_output_len']
 

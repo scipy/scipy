@@ -16,7 +16,7 @@ References
 from collections import namedtuple
 
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 from scipy.stats import qmc
 
 n_conv = 99

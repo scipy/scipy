@@ -2,7 +2,7 @@
 Unit tests for optimization routines from _root.py.
 """
 from numpy.testing import assert_, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises, warns as assert_warns
 import numpy as np
 

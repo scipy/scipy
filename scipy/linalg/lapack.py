@@ -824,7 +824,7 @@ All functions
 
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
-from scipy.linalg import _flapack
+from scipy.linalg import _flapack  # type: ignore[import]
 from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
@@ -841,7 +841,7 @@ except ImportError:
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None
-from scipy.linalg._flapack import *  # noqa: E402, F403
+from scipy.linalg._flapack import *  # noqa: E402, F403  # type: ignore[import]
 del empty_module
 
 __all__ = ['get_lapack_funcs']

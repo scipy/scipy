@@ -12,8 +12,8 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
 from . import _decomp, _decomp_svd
-from ._solve_toeplitz import levinson
-from ._cythonized_array_utils import find_det_from_lu
+from ._solve_toeplitz import levinson  # type: ignore[import]
+from ._cythonized_array_utils import find_det_from_lu  # type: ignore[import]
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',

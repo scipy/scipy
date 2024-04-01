@@ -1,12 +1,12 @@
 from numpy.testing import assert_equal, assert_
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import time
-import pytest
+import pytest  # type: ignore[import]
 import ctypes
 import threading
-from scipy._lib import _ccallback_c as _test_ccallback_cython
-from scipy._lib import _test_ccallback
+from scipy._lib import _ccallback_c as _test_ccallback_cython  # type: ignore[import]
+from scipy._lib import _test_ccallback  # type: ignore[import]
 from scipy._lib._ccallback import LowLevelCallable
 
 try:

@@ -18,8 +18,8 @@ if exc.error:
 
 
 with safe_import() as exc:
-    import pyfftw.interfaces.numpy_fft as pyfftw_fft
-    import pyfftw
+    import pyfftw.interfaces.numpy_fft as pyfftw_fft  # type: ignore[import]
+    import pyfftw  # type: ignore[import]
     pyfftw.interfaces.cache.enable()
     has_pyfftw = True
 if exc.error:

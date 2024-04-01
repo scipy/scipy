@@ -1,10 +1,10 @@
 import numpy as np
 from numpy.testing import assert_array_equal
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.sparse import csr_matrix, csc_matrix
 from scipy.sparse.csgraph import maximum_flow
-from scipy.sparse.csgraph._flow import (
+from scipy.sparse.csgraph._flow import (  # type: ignore[import]
     _add_reverse_edges, _make_edge_pointers, _make_tails
 )
 

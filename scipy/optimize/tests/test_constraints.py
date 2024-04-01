@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import TestCase, assert_array_equal
 import scipy.sparse as sps

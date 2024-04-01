@@ -4,7 +4,7 @@ import time
 
 import numpy as np
 from numpy.testing import assert_equal
-import pytest
+import pytest  # type: ignore[import]
 import scipy.interpolate
 
 

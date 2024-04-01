@@ -1,11 +1,11 @@
 from __future__ import annotations
 from typing import Callable
 
-import pytest
+import pytest  # type: ignore[import]
 from itertools import product
 from numpy.testing import assert_allclose, suppress_warnings
 from scipy import special
-from scipy.special import cython_special
+from scipy.special import cython_special  # type: ignore[import]
 
 
 bint_points = [True, False]

@@ -3,8 +3,8 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_, assert_equal,
                            assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_allclose)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 
 def test_kde_1d():

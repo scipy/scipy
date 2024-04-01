@@ -33,7 +33,7 @@ import operator
 
 import numpy
 from . import _ni_support
-from . import _nd_image
+from . import _nd_image  # type: ignore[import]
 from . import _filters
 
 __all__ = ['iterate_structure', 'generate_binary_structure', 'binary_erosion',

@@ -7,7 +7,7 @@ import pickle
 from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_almost_equal, assert_equal,
                            assert_array_less, assert_)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs

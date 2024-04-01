@@ -26,13 +26,13 @@ __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
 
 import warnings
 import numpy as np
-from . import _fitpack
+from . import _fitpack  # type: ignore[import]
 from numpy import (atleast_1d, array, ones, zeros, sqrt, ravel, transpose,
                    empty, iinfo, asarray)
 
 # Try to replace _fitpack interface with
 #  f2py-generated version
-from . import dfitpack
+from . import dfitpack  # type: ignore[import]
 
 
 dfitpack_int = dfitpack.types.intvar.dtype

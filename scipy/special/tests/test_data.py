@@ -2,7 +2,7 @@ import importlib.resources
 
 import numpy as np
 from numpy.testing import suppress_warnings
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.special import (
     lpn, lpmn, lpmv, lqn, lqmn, sph_harm, eval_legendre, eval_hermite,

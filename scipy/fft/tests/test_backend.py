@@ -6,7 +6,7 @@ from scipy.fft import _fftlog, _pocketfft, set_backend
 from scipy.fft.tests import mock_backend
 
 from numpy.testing import assert_allclose, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 
 fnames = ('fft', 'fft2', 'fftn',
           'ifft', 'ifft2', 'ifftn',

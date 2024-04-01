@@ -9,7 +9,7 @@ import numpy as np
 
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_equal, assert_)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.io.arff import loadarff
 from scipy.io.arff._arffread import read_header, ParseArffError

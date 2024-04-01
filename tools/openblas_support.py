@@ -78,7 +78,7 @@ def get_linux(arch):
     # at the packaging tags. If packaging isn't installed (it's not by default)
     # fallback to sysconfig (which may be flakier)
     try:
-        from packaging.tags import sys_tags
+        from packaging.tags import sys_tags  # type: ignore[import]
         tags = list(sys_tags())
         plat = tags[0].platform
     except ImportError:

@@ -1,5 +1,5 @@
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_array_almost_equal
 from scipy.sparse import csr_array
 from scipy.sparse.csgraph import (breadth_first_tree, depth_first_tree,

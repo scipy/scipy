@@ -4,7 +4,7 @@
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            suppress_warnings)
 
-import pytest
+import pytest  # type: ignore[import]
 from platform import python_implementation
 
 import numpy as np

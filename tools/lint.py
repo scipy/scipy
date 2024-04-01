@@ -2,7 +2,7 @@
 import os
 import sys
 import subprocess
-import packaging.version
+import packaging.version  # type: ignore[import]
 from argparse import ArgumentParser
 
 

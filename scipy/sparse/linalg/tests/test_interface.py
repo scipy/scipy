@@ -4,7 +4,7 @@
 from functools import partial
 from itertools import product
 import operator
-from pytest import raises as assert_raises, warns
+from pytest import raises as assert_raises, warns  # type: ignore[import]
 from numpy.testing import assert_, assert_equal
 
 import numpy as np

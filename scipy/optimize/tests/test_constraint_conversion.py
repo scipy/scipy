@@ -5,7 +5,7 @@ Unit test for constraint conversion
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_allclose, assert_warns, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from scipy.optimize import (NonlinearConstraint, LinearConstraint,
                             OptimizeWarning, minimize, BFGS)
 from .test_minimize_constrained import (Maratos, HyperbolicIneq, Rosenbrock,

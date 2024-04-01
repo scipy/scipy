@@ -2,13 +2,13 @@ from io import StringIO
 import warnings
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal, assert_allclose
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix, yen,
                                   NegativeCycleError)
 import scipy.sparse
 from scipy.io import mmread
-import pytest
+import pytest  # type: ignore[import]
 
 directed_G = np.array([[0, 3, 3, 0, 0],
                        [0, 0, 0, 2, 4],

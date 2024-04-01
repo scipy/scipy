@@ -3,10 +3,10 @@ from itertools import product
 import numpy as np
 import random
 import functools
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.stats as stats
 from scipy.stats import distributions

@@ -4,10 +4,10 @@ from scipy.datasets._utils import _clear_cache
 from scipy.datasets import ascent, face, electrocardiogram, download_all
 from numpy.testing import assert_equal, assert_almost_equal
 import os
-import pytest
+import pytest  # type: ignore[import]
 
 try:
-    import pooch
+    import pooch  # type: ignore[import]
 except ImportError:
     raise ImportError("Missing optional dependency 'pooch' required "
                       "for scipy.datasets module. Please use pip or "

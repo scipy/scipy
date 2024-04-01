@@ -5,7 +5,7 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,

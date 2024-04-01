@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from numpy.fft import fft, ifft
 

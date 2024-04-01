@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_array_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.signal._arraytools import (axis_slice, axis_reverse,
      odd_ext, even_ext, const_ext, zero_ext)

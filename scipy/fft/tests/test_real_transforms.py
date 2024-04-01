@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal
-import pytest
+import pytest  # type: ignore[import]
 import math
 
 from scipy.fft import dct, idct, dctn, idctn, dst, idst, dstn, idstn

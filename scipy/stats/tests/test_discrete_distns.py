@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 import itertools
 
 from scipy.stats import (betabinom, betanbinom, hypergeom, nhypergeom,

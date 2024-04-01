@@ -1,6 +1,6 @@
 import warnings
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch

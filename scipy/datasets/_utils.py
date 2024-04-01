@@ -3,7 +3,7 @@ import shutil
 from ._registry import method_files_map
 
 try:
-    import platformdirs
+    import platformdirs  # type: ignore[import]
 except ImportError:
     platformdirs = None  # type: ignore[assignment]
 

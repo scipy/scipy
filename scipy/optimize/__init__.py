@@ -424,7 +424,7 @@ from ._slsqp_py import fmin_slsqp
 from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
-from ._lsap import linear_sum_assignment
+from ._lsap import linear_sum_assignment  # type: ignore[import]
 from ._differentialevolution import differential_evolution
 from ._lsq import least_squares, lsq_linear
 from ._isotonic import isotonic_regression

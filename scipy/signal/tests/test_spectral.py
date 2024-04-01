@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import (assert_, assert_approx_equal,
                            assert_allclose, assert_array_equal, assert_equal,
                            assert_array_almost_equal_nulp, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 from scipy import signal

@@ -1,6 +1,6 @@
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_array_almost_equal, assert_array_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import numpy as np
 from numpy import array, transpose, dot, conjugate, zeros_like, empty

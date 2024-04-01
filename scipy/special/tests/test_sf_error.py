@@ -3,11 +3,11 @@ import warnings
 
 import numpy as np
 from numpy.testing import assert_, assert_equal, IS_PYPY
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.special as sc
-from scipy.special._ufuncs import _sf_error_test_function
+from scipy.special._ufuncs import _sf_error_test_function  # type: ignore[import]
 
 _sf_error_code_map = {
     # skip 'ok'

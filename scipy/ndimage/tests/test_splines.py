@@ -1,6 +1,6 @@
 """Tests for spline filtering."""
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
 from numpy.testing import assert_almost_equal
 

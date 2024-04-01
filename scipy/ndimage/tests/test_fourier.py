@@ -3,7 +3,7 @@ from numpy import fft
 from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
                            assert_equal)
 
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy import ndimage
 

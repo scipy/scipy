@@ -3,7 +3,7 @@ import copy
 import numpy as np
 
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.linalg import svd, null_space
 from scipy.sparse import csc_matrix, issparse, spdiags, random

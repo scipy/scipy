@@ -16,7 +16,7 @@
 #
 #    return res
 
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 

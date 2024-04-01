@@ -2,7 +2,7 @@ import numpy.testing as npt
 from numpy.testing import assert_allclose
 
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy import stats
 from .common_tests import (check_normalization, check_moment,

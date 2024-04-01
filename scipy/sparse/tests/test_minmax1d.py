@@ -1,6 +1,6 @@
 """Test of min-max 1D features of sparse array classes"""
 
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 

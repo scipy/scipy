@@ -1,7 +1,7 @@
 from itertools import product
 from numpy.testing import (assert_, assert_allclose, assert_array_less,
                            assert_equal, assert_no_warnings, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 import numpy as np
 from scipy.optimize._numdiff import group_columns

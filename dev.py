@@ -118,16 +118,16 @@ from dataclasses import dataclass
 
 import click
 from click import Option, Argument
-from doit.cmd_base import ModuleTaskLoader
-from doit.reporter import ZeroReporter
-from doit.exceptions import TaskError
-from doit.api import run_tasks
-from doit import task_params
-from pydevtool.cli import UnifiedContext, CliGroup, Task
-from rich.console import Console
-from rich.panel import Panel
-from rich.theme import Theme
-from rich_click import rich_click
+from doit.cmd_base import ModuleTaskLoader  # type: ignore[import]
+from doit.reporter import ZeroReporter  # type: ignore[import]
+from doit.exceptions import TaskError  # type: ignore[import]
+from doit.api import run_tasks  # type: ignore[import]
+from doit import task_params  # type: ignore[import]
+from pydevtool.cli import UnifiedContext, CliGroup, Task  # type: ignore[import]
+from rich.console import Console  # type: ignore[import]
+from rich.panel import Panel  # type: ignore[import]
+from rich.theme import Theme  # type: ignore[import]
+from rich_click import rich_click  # type: ignore[import]
 
 DOIT_CONFIG = {
     'verbosity': 2,
@@ -807,7 +807,7 @@ class Bench(Task):
         env['MKL_NUM_THREADS'] = '1'
 
         # Limit memory usage
-        from benchmarks.common import set_mem_rlimit
+        from benchmarks.common import set_mem_rlimit  # type: ignore[import]
         try:
             set_mem_rlimit()
         except (ImportError, RuntimeError):
@@ -975,7 +975,7 @@ class Mypy(Task):
         dirs = Dirs(args)
 
         try:
-            import mypy.api
+            import mypy.api  # type: ignore[import]
         except ImportError as e:
             raise RuntimeError(
                 "Mypy not found. Please install it by running "
@@ -1169,7 +1169,7 @@ class Ipython(Python):
     @classmethod
     def run(cls, pythonpath, **kwargs):
         cls._setup(pythonpath, **kwargs)
-        import IPython
+        import IPython  # type: ignore[import]
         IPython.embed(user_ns={})
 
 
@@ -1391,7 +1391,7 @@ def _cpu_count_affinity(os_cpu_count):
     # On PyPy and possibly other platforms, os.sched_getaffinity does not exist
     # or raises NotImplementedError, let's try with the psutil if installed.
     try:
-        import psutil
+        import psutil  # type: ignore[import]
 
         p = psutil.Process()
         if hasattr(p, "cpu_affinity"):

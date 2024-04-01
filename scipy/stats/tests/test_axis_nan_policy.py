@@ -7,7 +7,7 @@
 from itertools import product, combinations_with_replacement, permutations
 import re
 import pickle
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings

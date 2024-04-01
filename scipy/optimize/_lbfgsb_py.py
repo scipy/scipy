@@ -35,7 +35,7 @@ Functions
 
 import numpy as np
 from numpy import array, asarray, float64, zeros
-from . import _lbfgsb
+from . import _lbfgsb  # type: ignore[import]
 from ._optimize import (MemoizeJac, OptimizeResult, _call_callback_maybe_halt,
                         _wrap_callback, _check_unknown_options,
                         _prepare_scalar_function)
@@ -176,8 +176,9 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     Solve a linear regression problem via `fmin_l_bfgs_b`. To do this, first we define
     an objective function ``f(m, b) = (y - y_model)**2``, where `y` describes the
     observations and `y_model` the prediction of the linear model as
-    ``y_model = m*x + b``. The bounds for the parameters, ``m`` and ``b``, are arbitrarily
-    chosen as ``(0,5)`` and ``(5,10)`` for this example.
+    ``y_model = m*x + b``.
+    The bounds for the parameters, ``m`` and ``b``, are arbitrarily chosen as
+    ``(0,5)`` and ``(5,10)`` for this example.
 
     >>> import numpy as np
     >>> from scipy.optimize import fmin_l_bfgs_b
@@ -201,8 +202,8 @@ def fmin_l_bfgs_b(func, x0, fprime=None, args=(),
     array([1.99999999, 3.00000006]), 1.7746231151323805e-14  # may vary
 
     The optimized parameters in ``x_opt`` agree with the ground truth parameters
-    ``m`` and ``b``. Next, let us perform a bound contrained optimization using the `bounds`
-    parameter. 
+    ``m`` and ``b``.
+    Next, let us perform a bound contrained optimization using the `bounds` parameter. 
 
     >>> bounds = [(0, 5), (5, 10)]
     >>> x_opt, f_op, info = fmin_l_bfgs_b(func, x0=initial_values, args=(X, Y),

@@ -9,7 +9,7 @@ __all__ = ['diff',
            'shift']
 
 from numpy import pi, asarray, sin, cos, sinh, cosh, tanh, iscomplexobj
-from . import convolve
+from . import convolve  # type: ignore[import]
 
 from scipy.fft._pocketfft.helper import _datacopied
 

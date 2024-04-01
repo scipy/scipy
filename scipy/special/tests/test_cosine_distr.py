@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
-import pytest
-from scipy.special._ufuncs import _cosine_cdf, _cosine_invcdf
+import pytest  # type: ignore[import]
+from scipy.special._ufuncs import _cosine_cdf, _cosine_invcdf  # type: ignore[import]
 
 
 # These values are (x, p) where p is the expected exact value of

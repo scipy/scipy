@@ -13,7 +13,7 @@ from ._data import _data_matrix
 from ._sputils import (
     isshape, upcast_char, getdtype, get_sum_dtype, validateaxis, check_shape
 )
-from ._sparsetools import dia_matvec
+from ._sparsetools import dia_matvec  # type: ignore[import]
 
 
 class _dia_base(_data_matrix):

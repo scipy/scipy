@@ -33,8 +33,8 @@
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_, assert_warns
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.cluster.hierarchy
 from scipy.cluster.hierarchy import (
@@ -46,7 +46,7 @@ from scipy.cluster.hierarchy import (
     set_link_color_palette, cut_tree, optimal_leaf_ordering,
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
-from scipy.cluster._hierarchy import Heap
+from scipy.cluster._hierarchy import Heap  # type: ignore[import]
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, xp_assert_equal
 
@@ -56,11 +56,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     have_matplotlib = True
 except Exception:
     have_matplotlib = False

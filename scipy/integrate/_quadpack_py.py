@@ -4,7 +4,7 @@ import sys
 import warnings
 from functools import partial
 
-from . import _quadpack
+from . import _quadpack  # type: ignore[import]
 import numpy as np
 
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]

@@ -7,8 +7,8 @@ from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
                            assert_equal, assert_,
                            assert_allclose, assert_warns, suppress_warnings)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from numpy import array, spacing, sin, pi, sort, sqrt
 from scipy.signal import (argrelextrema, BadCoefficients, bessel, besselap, bilinear,
@@ -25,7 +25,7 @@ from scipy.signal._filter_design import (_cplxreal, _cplxpair, _norm_factor,
                                         _bessel_poly, _bessel_zeros)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = None
 

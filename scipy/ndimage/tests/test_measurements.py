@@ -10,7 +10,7 @@ from numpy.testing import (
     assert_equal,
     suppress_warnings,
 )
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.ndimage as ndimage
 

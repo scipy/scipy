@@ -115,8 +115,8 @@ from typing import Optional, Callable
 from functools import partial
 from scipy._lib._util import _asarray_validated
 
-from . import _distance_wrap
-from . import _hausdorff
+from . import _distance_wrap  # type: ignore[import]
+from . import _hausdorff  # type: ignore[import]
 from ..linalg import norm
 from ..special import rel_entr
 

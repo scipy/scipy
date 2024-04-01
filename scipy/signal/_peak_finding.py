@@ -7,7 +7,7 @@ import numpy as np
 from scipy.signal._wavelets import _cwt, _ricker
 from scipy.stats import scoreatpercentile
 
-from ._peak_finding_utils import (
+from ._peak_finding_utils import (  # type: ignore[import]
     _local_maxima_1d,
     _select_by_peak_distance,
     _peak_prominences,

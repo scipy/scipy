@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 from numpy.linalg import lstsq

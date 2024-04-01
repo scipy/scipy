@@ -108,8 +108,8 @@ Warnings / Errors used in :mod:`scipy.spatial`
 """  # noqa: E501
 
 from ._kdtree import *
-from ._ckdtree import *
-from ._qhull import *
+from ._ckdtree import *  # type: ignore[import]
+from ._qhull import *  # type: ignore[import]
 from ._spherical_voronoi import SphericalVoronoi
 from ._plotutils import *
 from ._procrustes import procrustes

@@ -6,8 +6,8 @@ Modified for Array API, 2023
 """
 from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
 from numpy.testing import assert_equal
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 import numpy as np
 import sys
 from scipy.conftest import array_api_compatible

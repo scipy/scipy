@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 import operator
-from . import _zeros
+from . import _zeros  # type: ignore[import]
 from ._optimize import OptimizeResult
 import numpy as np
 

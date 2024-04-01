@@ -1,6 +1,6 @@
 """Test of 1D aspects of sparse array classes"""
 
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 

@@ -2,10 +2,10 @@ import queue
 import threading
 import multiprocessing
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.random import random
 from numpy.testing import assert_array_almost_equal, assert_allclose
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 import scipy.fft as fft
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (

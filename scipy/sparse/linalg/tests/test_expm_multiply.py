@@ -3,7 +3,7 @@ from functools import partial
 from itertools import product
 
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import (assert_allclose, assert_, assert_equal,
                            suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning

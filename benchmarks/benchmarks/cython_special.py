@@ -5,7 +5,7 @@ from scipy import special
 from .common import with_attributes, safe_import
 
 with safe_import():
-    from scipy.special import cython_special
+    from scipy.special import cython_special  # type: ignore[import]
 
 
 FUNC_ARGS = {

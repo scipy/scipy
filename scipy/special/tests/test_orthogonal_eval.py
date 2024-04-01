@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_, assert_allclose
-import pytest
+import pytest  # type: ignore[import]
 
-from scipy.special import _ufuncs
+from scipy.special import _ufuncs  # type: ignore[import]
 import scipy.special._orthogonal as orth
 from scipy.special._testutils import FuncData
 

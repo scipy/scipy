@@ -5,7 +5,7 @@ import itertools
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_
 from pytest import raises as assert_raises
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.interpolate import (
         BSpline, BPoly, PPoly, make_interp_spline, make_lsq_spline, _bspl,

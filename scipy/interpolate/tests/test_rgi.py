@@ -1,11 +1,11 @@
 import itertools
 
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 
 from numpy.testing import (assert_allclose, assert_equal, assert_warns,
                            assert_array_almost_equal, assert_array_equal)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,

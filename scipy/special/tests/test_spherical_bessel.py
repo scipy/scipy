@@ -4,7 +4,7 @@
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_allclose,
                            assert_array_almost_equal, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from numpy import sin, cos, sinh, cosh, exp, inf, nan, r_, pi
 
 from scipy.special import spherical_jn, spherical_yn, spherical_in, spherical_kn

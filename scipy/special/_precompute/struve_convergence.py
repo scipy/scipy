@@ -32,9 +32,9 @@ Black dashed line
 
 """
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
-import mpmath
+import mpmath  # type: ignore[import]
 
 
 def err_metric(a, b, atol=1e-290):
@@ -44,9 +44,9 @@ def err_metric(a, b, atol=1e-290):
 
 
 def do_plot(is_h=True):
-    from scipy.special._ufuncs import (_struve_power_series,
-                                       _struve_asymp_large_z,
-                                       _struve_bessel_series)
+    from scipy.special._ufuncs import (  # type: ignore[import]
+        _struve_power_series, _struve_asymp_large_z, _struve_bessel_series,
+    )
 
     vs = np.linspace(-1000, 1000, 91)
     zs = np.sort(np.r_[1e-5, 1.0, np.linspace(0, 700, 91)[1:]])

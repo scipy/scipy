@@ -13,10 +13,10 @@ from scipy.optimize._dual_annealing import ObjectiveFunWrapper
 from scipy.optimize._dual_annealing import StrategyChain
 from scipy.optimize._dual_annealing import VisitingDistribution
 from scipy.optimize import rosen, rosen_der
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy._lib._util import check_random_state
 
 

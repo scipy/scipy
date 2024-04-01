@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy import stats
@@ -379,7 +379,7 @@ class TestSurvival:
         res = stats.ecdf(sample)
 
         try:
-            import matplotlib.pyplot as plt  # noqa: F401
+            import matplotlib.pyplot as plt  # noqa: F401  # type: ignore[import]
             res.sf.plot()  # no other errors occur
         except (ModuleNotFoundError, ImportError):
             # Avoid trying to call MPL with numpy 2.0-dev, because that fails

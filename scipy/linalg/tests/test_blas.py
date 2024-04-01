@@ -3,7 +3,7 @@
 #
 
 import math
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_,
                            assert_array_almost_equal, assert_allclose)

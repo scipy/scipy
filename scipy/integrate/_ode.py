@@ -86,7 +86,7 @@ import warnings
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
 from . import _vode
-from . import _dop
+from . import _dop  # type: ignore[import]
 from . import _lsoda
 
 
@@ -1009,9 +1009,11 @@ class vode(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
-                          stacklevel=2)
+            warnings.warn(
+                f'{self.__class__.__name__:s}: '
+                f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                stacklevel=2
+            )
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2
@@ -1178,9 +1180,11 @@ class dopri5(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
-                          stacklevel=2)
+            warnings.warn(
+                f'{self.__class__.__name__:s}: '
+                f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                stacklevel=2
+            )
             self.success = 0
         return y, x
 
@@ -1348,9 +1352,11 @@ class lsoda(IntegratorBase):
         self.istate = istate
         if istate < 0:
             unexpected_istate_msg = f'Unexpected istate={istate:d}'
-            warnings.warn('{:s}: {:s}'.format(self.__class__.__name__,
-                          self.messages.get(istate, unexpected_istate_msg)),
-                          stacklevel=2)
+            warnings.warn(
+                f'{self.__class__.__name__:s}: '
+                f'{self.messages.get(istate, unexpected_istate_msg):s}',
+                stacklevel=2
+            )
             self.success = 0
         else:
             self.call_args[3] = 2  # upgrade istate from 1 to 2

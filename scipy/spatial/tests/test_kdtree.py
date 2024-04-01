@@ -5,12 +5,12 @@ import os
 from numpy.testing import (assert_equal, assert_array_equal, assert_,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose)
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 from platform import python_implementation
 import numpy as np
 from scipy.spatial import KDTree, Rectangle, distance_matrix, cKDTree
-from scipy.spatial._ckdtree import cKDTreeNode
+from scipy.spatial._ckdtree import cKDTreeNode  # type: ignore[import]
 from scipy.spatial import minkowski_distance
 
 import itertools

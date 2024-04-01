@@ -1,5 +1,5 @@
 # mypy: disable-error-code="attr-defined"
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal

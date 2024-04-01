@@ -13,12 +13,17 @@ from ._matrix import spmatrix
 from ._data import _data_matrix, _minmax_mixin
 from ._compressed import _cs_matrix
 from ._base import issparse, _formats, _spbase, sparray
-from ._sputils import (isshape, getdtype, getdata, to_native, upcast,
-                       check_shape)
-from . import _sparsetools
-from ._sparsetools import (bsr_matvec, bsr_matvecs, csr_matmat_maxnnz,
-                           bsr_matmat, bsr_transpose, bsr_sort_indices,
-                           bsr_tocsr)
+from ._sputils import isshape, getdtype, getdata, to_native, upcast, check_shape
+from . import _sparsetools  # type: ignore[import]
+from ._sparsetools import (  # type: ignore[import]
+    bsr_matvec,
+    bsr_matvecs,
+    csr_matmat_maxnnz,
+    bsr_matmat,
+    bsr_transpose,
+    bsr_sort_indices,
+    bsr_tocsr,
+)
 
 
 class _bsr_base(_cs_matrix, _minmax_mixin):
@@ -94,8 +99,8 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')
                     if tuple(blocksize) != self.data.shape[1:]:
-                        raise ValueError('mismatching blocksize={} vs {}'.format(
-                            blocksize, self.data.shape[1:]))
+                        raise ValueError(f'mismatching blocksize={blocksize} vs '
+                                         f'{self.data.shape[1:]}')
             else:
                 raise ValueError('unrecognized bsr_array constructor usage')
         else:

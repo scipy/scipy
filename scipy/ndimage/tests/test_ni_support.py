@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 from .._ni_support import _get_output

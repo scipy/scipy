@@ -1,7 +1,7 @@
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
-from scipy.special import _test_internal
+from scipy.special import _test_internal  # type: ignore[import]
 
 
 @pytest.mark.skipif(not _test_internal.have_fenv(), reason="no fenv()")

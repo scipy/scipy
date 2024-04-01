@@ -64,7 +64,7 @@ class PytestTester:
 
     def __call__(self, label="fast", verbose=1, extra_argv=None, doctests=False,
                  coverage=False, tests=None, parallel=None):
-        import pytest
+        import pytest  # type: ignore[import]
 
         module = sys.modules[self.module_name]
         module_path = os.path.abspath(module.__path__[0])
@@ -195,7 +195,7 @@ def check_free_memory(free_mb):
     """
     Check *free_mb* of memory is available, otherwise do pytest.skip
     """
-    import pytest
+    import pytest  # type: ignore[import]
 
     try:
         mem_free = _parse_size(os.environ['SCIPY_AVAILABLE_MEM'])
@@ -232,7 +232,7 @@ def _get_mem_available():
     Get information about memory available, not counting swap.
     """
     try:
-        import psutil
+        import psutil  # type: ignore[import]
         return psutil.virtual_memory().available
     except (ImportError, AttributeError):
         pass

@@ -4,8 +4,8 @@ from numpy.testing import assert_equal, assert_allclose
 from numpy.testing import (assert_, assert_almost_equal,
                            assert_array_almost_equal)
 
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 import scipy.stats as stats
 
 

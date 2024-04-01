@@ -8,7 +8,7 @@ Run: python _download_all.py <download_dir>
 
 import argparse
 try:
-    import pooch
+    import pooch  # type: ignore[import]
 except ImportError:
     pooch = None
 

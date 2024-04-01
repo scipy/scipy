@@ -1,11 +1,11 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_, assert_array_equal, assert_allclose
 
 try:
-    import matplotlib
+    import matplotlib  # type: ignore[import]
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt
+    import matplotlib.pyplot as plt  # type: ignore[import]
     has_matplotlib = True
 except Exception:
     has_matplotlib = False

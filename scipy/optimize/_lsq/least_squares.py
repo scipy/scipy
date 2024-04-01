@@ -6,7 +6,7 @@ from numpy.linalg import norm
 
 from scipy.sparse import issparse
 from scipy.sparse.linalg import LinearOperator
-from scipy.optimize import _minpack, OptimizeResult
+from scipy.optimize import _minpack, OptimizeResult  # type: ignore[import]
 from scipy.optimize._numdiff import approx_derivative, group_columns
 from scipy.optimize._minimize import Bounds
 
@@ -777,8 +777,8 @@ def least_squares(
         raise ValueError("`tr_solver` must be None, 'exact' or 'lsmr'.")
 
     if loss not in IMPLEMENTED_LOSSES and not callable(loss):
-        raise ValueError("`loss` must be one of {} or a callable."
-                         .format(IMPLEMENTED_LOSSES.keys()))
+        msg = f"`loss` must be one of {IMPLEMENTED_LOSSES.keys()} or a callable."
+        raise ValueError(msg)
 
     if method == 'lm' and loss != 'linear':
         raise ValueError("method='lm' supports only 'linear' loss function.")
@@ -959,9 +959,9 @@ def least_squares(
 
     if verbose >= 1:
         print(result.message)
-        print("Function evaluations {}, initial cost {:.4e}, final cost "
-              "{:.4e}, first-order optimality {:.2e}."
-              .format(result.nfev, initial_cost, result.cost,
-                      result.optimality))
+        print(f"Function evaluations {result.nfev}, "
+              f"initial cost {initial_cost:.4e}, "
+              f"final cost {result.cost:.4e}, "
+              f"first-order optimality {result.optimality:.2e}.")
 
     return result

@@ -8,7 +8,7 @@ import numpy as np
 
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
-from ._sparsetools import csc_tocsr, expandptr
+from ._sparsetools import csc_tocsr, expandptr  # type: ignore[import]
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix

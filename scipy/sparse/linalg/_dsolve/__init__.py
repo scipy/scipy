@@ -56,7 +56,7 @@ Example session::
 #del umfpack
 
 from .linsolve import *
-from ._superlu import SuperLU
+from ._superlu import SuperLU  # type: ignore[import]
 from . import _add_newdocs
 from . import linsolve
 

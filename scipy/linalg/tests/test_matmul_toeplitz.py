@@ -4,7 +4,7 @@
 import numpy as np
 from scipy.linalg import toeplitz, matmul_toeplitz
 
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from numpy.testing import assert_allclose
 
 

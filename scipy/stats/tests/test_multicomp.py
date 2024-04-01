@@ -1,7 +1,7 @@
 import copy
 
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose
 
 from scipy import stats

@@ -16,7 +16,7 @@ from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal,
                            assert_no_warnings, assert_warns,
                            assert_array_less, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 from scipy import optimize

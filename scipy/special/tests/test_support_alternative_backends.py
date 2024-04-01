@@ -1,6 +1,8 @@
-import pytest
-from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-import hypothesis.extra.numpy as npst
+import pytest  # type: ignore[import]
+from hypothesis import (  # noqa: F401  # type: ignore[import]
+    given, strategies, reproduce_failure,
+)
+import hypothesis.extra.numpy as npst  # type: ignore[import]
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
@@ -10,7 +12,7 @@ from scipy._lib._array_api import xp_assert_close
 from scipy._lib.array_api_compat import numpy as np
 
 try:
-    import array_api_strict
+    import array_api_strict  # type: ignore[import]
     HAVE_ARRAY_API_STRICT = True
 except ImportError:
     HAVE_ARRAY_API_STRICT = False

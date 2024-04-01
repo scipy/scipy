@@ -9,7 +9,7 @@ from itertools import product
 # Local imports
 from ._misc import _datacopied, LinAlgWarning
 from .lapack import get_lapack_funcs
-from ._decomp_lu_cython import lu_dispatcher
+from ._decomp_lu_cython import lu_dispatcher  # type: ignore[import]
 
 lapack_cast_dict = {x: ''.join([y for y in 'fdFD' if np.can_cast(x, y)])
                     for x in np.typecodes['All']}

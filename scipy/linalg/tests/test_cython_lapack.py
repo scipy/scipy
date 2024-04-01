@@ -1,5 +1,5 @@
 from numpy.testing import assert_allclose
-from scipy.linalg import cython_lapack as cython_lapack
+from scipy.linalg import cython_lapack as cython_lapack  # type: ignore[import]
 from scipy.linalg import lapack
 
 

@@ -7,8 +7,8 @@ from numpy.testing import (
     assert_allclose,
     assert_array_equal
 )
-import pytest
-from pytest import raises, warns
+import pytest  # type: ignore[import]
+from pytest import raises, warns  # type: ignore[import]
 
 from scipy.signal._peak_finding import (
     argrelmax,
@@ -21,7 +21,9 @@ from scipy.signal._peak_finding import (
     _identify_ridge_lines
 )
 from scipy.signal.windows import gaussian
-from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
+from scipy.signal._peak_finding_utils import (  # type: ignore[import]
+    _local_maxima_1d, PeakPropertyWarning
+)
 
 
 def _gen_gaussians(center_locs, sigmas, total_length):

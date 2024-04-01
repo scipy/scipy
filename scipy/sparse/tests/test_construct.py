@@ -4,8 +4,8 @@ import numpy as np
 from numpy import array
 from numpy.testing import (assert_equal, assert_,
         assert_array_equal, assert_array_almost_equal_nulp)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import check_random_state
 

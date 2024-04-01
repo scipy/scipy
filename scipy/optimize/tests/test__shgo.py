@@ -6,8 +6,8 @@ import numpy as np
 import time
 from multiprocessing import Pool
 from numpy.testing import assert_allclose, IS_PYPY
-import pytest
-from pytest import raises as assert_raises, warns
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises, warns  # type: ignore[import]
 from scipy.optimize import (shgo, Bounds, minimize_scalar, minimize, rosen,
                             rosen_der, rosen_hess, NonlinearConstraint)
 from scipy.optimize._constraints import new_constraint_to_old

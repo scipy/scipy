@@ -14,7 +14,7 @@ from ._base import _spbase, sparray, issparse
 from ._index import IndexMixin, INT_TYPES, _broadcast_arrays
 from ._sputils import (getdtype, isshape, isscalarlike, upcast_scalar,
                        check_shape, check_reshape_kwargs)
-from . import _csparsetools
+from . import _csparsetools  # type: ignore[import]
 
 
 class _lil_base(_spbase, IndexMixin):

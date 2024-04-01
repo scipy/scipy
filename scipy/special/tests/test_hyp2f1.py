@@ -6,7 +6,7 @@ return the same branch as scipy's on the standard branch cut.
 """
 
 import sys
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from typing import NamedTuple
 from numpy.testing import assert_allclose
@@ -16,7 +16,7 @@ from scipy.special._testutils import check_version, MissingModule
 
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule("mpmath")
 

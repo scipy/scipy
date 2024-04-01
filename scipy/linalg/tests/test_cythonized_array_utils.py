@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.linalg import bandwidth, issymmetric, ishermitian
-import pytest
-from pytest import raises
+import pytest  # type: ignore[import]
+from pytest import raises  # type: ignore[import]
 
 
 def test_bandwidth_dtypes():

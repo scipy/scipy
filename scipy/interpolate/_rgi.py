@@ -7,9 +7,9 @@ import numpy as np
 
 import scipy.sparse.linalg as ssl
 
-from .interpnd import _ndim_coords_from_arrays
+from .interpnd import _ndim_coords_from_arrays  # type: ignore[import]
 from ._cubic import PchipInterpolator
-from ._rgi_cython import evaluate_linear_2d, find_indices
+from ._rgi_cython import evaluate_linear_2d, find_indices  # type: ignore[import]
 from ._bsplines import make_interp_spline
 from ._fitpack2 import RectBivariateSpline
 from ._ndbspline import make_ndbspl

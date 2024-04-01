@@ -1,5 +1,5 @@
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 from scipy import stats
 
 x1 = np.array([-7, -5, 1, 4, 5], dtype=float)

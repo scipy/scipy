@@ -12,10 +12,10 @@ from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from . import _fitpack_py
-from . import dfitpack
+from . import dfitpack  # type: ignore[import]
 from ._polyint import _Interpolator1D
-from . import _ppoly
-from .interpnd import _ndim_coords_from_arrays
+from . import _ppoly  # type: ignore[import]
+from .interpnd import _ndim_coords_from_arrays  # type: ignore[import]
 from ._bsplines import make_interp_spline, BSpline
 
 
@@ -915,8 +915,8 @@ class _PPolyBase:
         if x.shape[0] != c.shape[1]:
             raise ValueError(f"Shapes of x {x.shape} and c {c.shape} are incompatible")
         if c.shape[2:] != self.c.shape[2:] or c.ndim != self.c.ndim:
-            raise ValueError("Shapes of c {} and self.c {} are incompatible"
-                             .format(c.shape, self.c.shape))
+            msg = f"Shapes of c {c.shape} and self.c {self.c.shape} are incompatible"
+            raise ValueError(msg)
 
         if c.size == 0:
             return
@@ -1969,8 +1969,8 @@ class BPoly(_PPolyBase):
         """
         ya, yb = np.asarray(ya), np.asarray(yb)
         if ya.shape[1:] != yb.shape[1:]:
-            raise ValueError('Shapes of ya {} and yb {} are incompatible'
-                             .format(ya.shape, yb.shape))
+            msg = f'Shapes of ya {ya.shape} and yb {yb.shape} are incompatible'
+            raise ValueError(msg)
 
         dta, dtb = ya.dtype, yb.dtype
         if (np.issubdtype(dta, np.complexfloating) or

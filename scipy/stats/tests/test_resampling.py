@@ -1,5 +1,5 @@
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats

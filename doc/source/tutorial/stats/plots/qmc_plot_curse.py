@@ -3,7 +3,7 @@
 It presents a saturated design in 1, 2 and 3 dimensions for a
 given discretization.
 """
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 import numpy as np
 
 disc = 10

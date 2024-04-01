@@ -39,7 +39,7 @@ import os
 
 import numpy
 from warnings import warn
-from scipy.odr import __odrpack
+from scipy.odr import __odrpack  # type: ignore[import]
 
 __all__ = ['odr', 'OdrWarning', 'OdrError', 'OdrStop',
            'Data', 'RealData', 'Model', 'Output', 'ODR',

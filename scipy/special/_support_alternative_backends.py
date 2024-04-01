@@ -4,10 +4,10 @@ import functools
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_cupy, is_torch, is_numpy
-from . import _ufuncs
+from . import _ufuncs  # type: ignore[import]
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
-from ._ufuncs import (
+from ._ufuncs import (  # type: ignore[import]
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa: F401
     gammaln, gammainc, gammaincc, logit, expit)  # noqa: F401
 

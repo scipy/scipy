@@ -17,8 +17,8 @@ import inspect
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
-from ._highs._highs_wrapper import _highs_wrapper
-from ._highs._highs_constants import (
+from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
+from ._highs._highs_constants import (  # type: ignore[import]
     CONST_INF,
     MESSAGE_LEVEL_NONE,
     HIGHS_OBJECTIVE_SENSE_MINIMIZE,

@@ -3,7 +3,7 @@ import time
 import traceback
 
 from numpy.testing import assert_
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy._lib._threadsafety import ReentrancyLock, non_reentrant, ReentrancyError
 

@@ -9,7 +9,7 @@ import numpy as np
 from scipy._lib._util import copy_if_needed
 
 # good_size is exposed (and used) from this import
-from .pypocketfft import good_size
+from .pypocketfft import good_size  # type: ignore[import]
 
 
 __all__ = ['good_size', 'set_workers', 'get_workers']

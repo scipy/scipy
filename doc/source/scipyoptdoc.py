@@ -21,7 +21,7 @@ Produces output similar to autodoc, except
 
 """
 import sys
-import sphinx
+import sphinx  # type: ignore[import]
 import inspect
 import textwrap
 import pydoc
@@ -29,9 +29,9 @@ import pydoc
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
-from numpydoc.numpydoc import mangle_docstrings
-from docutils.statemachine import ViewList
-from sphinx.domains.python import PythonDomain
+from numpydoc.numpydoc import mangle_docstrings  # type: ignore[import]
+from docutils.statemachine import ViewList  # type: ignore[import]
+from sphinx.domains.python import PythonDomain  # type: ignore[import]
 from scipy._lib._util import getfullargspec_no_self
 
 

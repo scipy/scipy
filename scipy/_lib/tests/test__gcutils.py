@@ -7,7 +7,7 @@ from scipy._lib._gcutils import (set_gc_state, gc_state, assert_deallocated,
 
 from numpy.testing import assert_equal
 
-import pytest
+import pytest  # type: ignore[import]
 
 
 def test_set_gc_state():

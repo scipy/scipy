@@ -36,7 +36,7 @@ from scipy._lib._util import normalize_axis_index
 
 from scipy import special
 from . import _ni_support
-from . import _nd_image
+from . import _nd_image  # type: ignore[import]
 from ._ni_docstrings import docfiller
 
 
@@ -596,9 +596,9 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
         if matrix.shape[0] == input.ndim + 1:
             exptd = [0] * input.ndim + [1]
             if not numpy.all(matrix[input.ndim] == exptd):
-                msg = ('Expected homogeneous transformation matrix with '
-                       'shape {} for image shape {}, but bottom row was '
-                       'not equal to {}'.format(matrix.shape, input.shape, exptd))
+                msg = (f'Expected homogeneous transformation matrix with '
+                       f'shape {matrix.shape} for image shape {input.shape}, '
+                       f'but bottom row was not equal to {exptd}')
                 raise ValueError(msg)
         # assume input is homogeneous coordinate transformation matrix
         offset = matrix[:input.ndim, input.ndim]
@@ -848,8 +848,8 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
             suggest_mode = 'grid-wrap'
         if suggest_mode is not None:
             warnings.warn(
-                ("It is recommended to use mode = {} instead of {} when "
-                 "grid_mode is True.").format(suggest_mode, mode),
+                (f"It is recommended to use mode = {suggest_mode} instead of {mode} "
+                 f"when grid_mode is True."),
                 stacklevel=2
             )
     mode = _ni_support._extend_mode_to_code(mode)

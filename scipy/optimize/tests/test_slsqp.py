@@ -3,8 +3,8 @@ Unit test for SLSQP optimization.
 """
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_allclose, assert_equal)
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 import numpy as np
 
 from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint

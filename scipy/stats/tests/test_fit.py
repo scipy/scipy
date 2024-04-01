@@ -2,7 +2,7 @@ import os
 import numpy as np
 import numpy.testing as npt
 from numpy.testing import assert_allclose, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 from scipy import stats
 from scipy.optimize import differential_evolution
 

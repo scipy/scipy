@@ -14,7 +14,7 @@ import functools
 from threading import RLock
 
 import numpy as np
-from scipy.optimize import _cobyla as cobyla
+from scipy.optimize import _cobyla as cobyla  # type: ignore[import]
 from ._optimize import (OptimizeResult, _check_unknown_options,
     _prepare_scalar_function)
 try:

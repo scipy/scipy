@@ -166,7 +166,7 @@ class FitResult:
         >>> plt.show()
         """
         try:
-            import matplotlib  # noqa: F401
+            import matplotlib  # noqa: F401  # type: ignore[import]
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ModuleNotFoundError(message) from exc
@@ -180,7 +180,7 @@ class FitResult:
         plot = plots[plot_type.lower()]
 
         if ax is None:
-            import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt  # type: ignore[import]
             ax = plt.gca()
 
         fit_params = np.atleast_1d(self.params)
@@ -188,7 +188,7 @@ class FitResult:
         return plot(ax=ax, fit_params=fit_params)
 
     def _hist_plot(self, ax, fit_params):
-        from matplotlib.ticker import MaxNLocator
+        from matplotlib.ticker import MaxNLocator  # type: ignore[import]
 
         support = self._dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self._data)

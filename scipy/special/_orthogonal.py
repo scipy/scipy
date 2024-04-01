@@ -84,7 +84,7 @@ from scipy.special import airy
 # Local imports.
 # There is no .pyi file for _specfun
 from . import _specfun  # type: ignore
-from . import _ufuncs
+from . import _ufuncs  # type: ignore[import]
 _gam = _ufuncs.gamma
 
 _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',

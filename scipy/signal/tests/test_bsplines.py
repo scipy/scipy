@@ -3,8 +3,8 @@ import numpy as np
 from numpy import array
 from numpy.testing import (assert_allclose, assert_array_equal,
                            assert_almost_equal)
-import pytest
-from pytest import raises
+import pytest  # type: ignore[import]
+from pytest import raises  # type: ignore[import]
 
 import scipy.signal._bsplines as bsp
 from scipy import signal

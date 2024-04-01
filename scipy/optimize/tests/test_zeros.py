@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 
 from functools import lru_cache
 

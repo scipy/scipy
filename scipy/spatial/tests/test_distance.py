@@ -45,7 +45,7 @@ from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
                            assert_almost_equal, assert_allclose,
                            break_cycles, IS_PYPY)
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy.spatial.distance
 

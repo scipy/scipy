@@ -1,7 +1,7 @@
 import numpy as np
 
-from ._ufuncs import _ellip_harm
-from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm
+from ._ufuncs import _ellip_harm  # type: ignore[import]
+from ._ellip_harm_2 import _ellipsoid, _ellipsoid_norm  # type: ignore[import]
 
 
 def ellip_harm(h2, k2, n, p, s, signm=1, signn=1):

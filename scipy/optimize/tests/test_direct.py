@@ -3,7 +3,7 @@ Unit test for DIRECT optimization algorithm.
 """
 from numpy.testing import (assert_allclose,
                            assert_array_less)
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from scipy.optimize import direct, Bounds
 

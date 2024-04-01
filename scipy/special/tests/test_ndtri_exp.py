@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy.special import log_ndtr, ndtri_exp

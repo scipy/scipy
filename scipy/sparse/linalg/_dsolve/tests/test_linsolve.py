@@ -8,8 +8,8 @@ from numpy.testing import (
         assert_array_almost_equal, assert_almost_equal,
         assert_equal, assert_array_equal, assert_, assert_allclose,
         assert_warns, suppress_warnings)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.linalg
 from scipy.linalg import norm, inv
@@ -30,7 +30,7 @@ sup_sparse_efficiency.filter(SparseEfficiencyWarning)
 # scikits.umfpack is not a SciPy dependency but it is optionally used in
 # dsolve, so check whether it's available
 try:
-    import scikits.umfpack as umfpack
+    import scikits.umfpack as umfpack  # type: ignore[import]
     has_umfpack = True
 except ImportError:
     has_umfpack = False

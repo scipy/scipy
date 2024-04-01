@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 from scipy.integrate import odeint
-import scipy.integrate._test_odeint_banded as banded5x5
+import scipy.integrate._test_odeint_banded as banded5x5  # type: ignore[import]
 
 
 def rhs(y, t):

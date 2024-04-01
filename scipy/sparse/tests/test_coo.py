@@ -1,5 +1,5 @@
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from scipy.sparse import coo_array
 
 

@@ -6,10 +6,10 @@ import tempfile
 
 import numpy as np
 import numpy.testing as npt
-import pytest
-import hypothesis
+import pytest  # type: ignore[import]
+import hypothesis  # type: ignore[import]
 
-from scipy._lib._fpumode import get_fpu_mode
+from scipy._lib._fpumode import get_fpu_mode  # type: ignore[import]
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
@@ -23,7 +23,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers",
         "xfail_on_32bit: mark test as failing on 32-bit platforms")
     try:
-        import pytest_timeout  # noqa:F401
+        import pytest_timeout  # noqa: F401  # type: ignore[import]
     except Exception:
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
@@ -60,7 +60,7 @@ def pytest_runtest_setup(item):
         sup.filter(pytest.PytestUnraisableExceptionWarning)
 
         try:
-            from threadpoolctl import threadpool_limits
+            from threadpoolctl import threadpool_limits  # type: ignore[import]
 
             HAS_THREADPOOLCTL = True
         except Exception:  # observed in gh-14441: (ImportError, AttributeError)
@@ -110,7 +110,7 @@ xp_available_backends = {'numpy': np}
 if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     # fill the dict of backends with available libraries
     try:
-        import array_api_strict
+        import array_api_strict  # type: ignore[import]
         xp_available_backends.update({'array_api_strict': array_api_strict})
     except ImportError:
         pass

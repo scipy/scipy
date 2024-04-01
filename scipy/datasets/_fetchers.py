@@ -2,7 +2,7 @@ from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 
 try:
-    import pooch
+    import pooch  # type: ignore[import]
 except ImportError:
     pooch = None
     data_fetcher = None

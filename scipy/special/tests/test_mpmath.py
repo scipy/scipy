@@ -5,7 +5,7 @@ Test SciPy functions versus mpmath, if available.
 import numpy as np
 from numpy.testing import assert_, assert_allclose
 from numpy import pi
-import pytest
+import pytest  # type: ignore[import]
 import itertools
 
 from scipy._lib import _pep440
@@ -18,12 +18,12 @@ from scipy.special._mptestutils import (
     Arg, FixedArg, ComplexArg, IntArg, assert_mpmath_equal,
     nonfunctional_tooslow, trace_args, time_limited, exception_to_nan,
     inf_to_nan)
-from scipy.special._ufuncs import (
+from scipy.special._ufuncs import (  # type: ignore[import]
     _sinpi, _cospi, _lgam1p, _lanczos_sum_expg_scaled, _log1pmx,
     _igam_fac)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule('mpmath')
 

@@ -14,7 +14,7 @@ from scipy.sparse.linalg import MatrixRankWarning
 from scipy.linalg import LinAlgWarning
 from scipy._lib._util import VisibleDeprecationWarning
 import scipy.sparse
-import pytest
+import pytest  # type: ignore[import]
 
 has_umfpack = True
 try:

@@ -1,9 +1,9 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose, suppress_warnings
 
-from scipy.special._ufuncs import _sinpi as sinpi
-from scipy.special._ufuncs import _cospi as cospi
+from scipy.special._ufuncs import _sinpi as sinpi  # type: ignore[import]
+from scipy.special._ufuncs import _cospi as cospi  # type: ignore[import]
 
 
 def test_integer_real_part():

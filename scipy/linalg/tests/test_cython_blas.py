@@ -1,7 +1,6 @@
 import numpy as np
-from numpy.testing import (assert_allclose,
-                           assert_equal)
-import scipy.linalg.cython_blas as blas
+from numpy.testing import assert_allclose, assert_equal
+import scipy.linalg.cython_blas as blas  # type: ignore[import]
 
 class TestDGEMM:
     

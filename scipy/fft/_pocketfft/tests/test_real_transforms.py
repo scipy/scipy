@@ -4,8 +4,8 @@ from typing import Callable, Union
 import numpy as np
 from numpy.testing import (
     assert_array_almost_equal, assert_equal, assert_allclose)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.fft._pocketfft.realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
@@ -412,8 +412,10 @@ def test_overwrite(routine, dtype, shape, axis, type, norm, overwrite_x):
     x2 = x.copy()
     routine(x2, type, None, axis, norm, overwrite_x=overwrite_x)
 
-    sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
-        routine.__name__, x.dtype, x.shape, None, axis, overwrite_x)
+    sig = (
+        f"{routine.__name__}({x.dtype}{x.shape!r}, "
+        f"{None!r}, axis={axis!r}, overwrite_x={overwrite_x!r})"
+    )
     if not overwrite_x:
         assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 

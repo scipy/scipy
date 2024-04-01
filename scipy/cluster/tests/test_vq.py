@@ -6,12 +6,12 @@ import numpy as np
 from numpy.testing import (
     assert_array_equal, assert_equal, assert_, suppress_warnings
 )
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
-from scipy.cluster import _vq
+from scipy.cluster import _vq  # type: ignore[import]
 from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 

@@ -14,11 +14,11 @@ from contextlib import contextmanager
 import numpy as np
 
 from numpy.testing import assert_, assert_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
-from scipy.io.matlab._streams import (make_stream,
-    GenericStream, ZlibInputStream,
-    _read_into, _read_string, BLOCK_SIZE)
+from scipy.io.matlab._streams import (  # type: ignore[import]
+    make_stream, GenericStream, ZlibInputStream, _read_into, _read_string, BLOCK_SIZE
+)
 
 
 @contextmanager

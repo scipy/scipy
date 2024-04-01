@@ -14,7 +14,7 @@ import numpy as np
 from scipy._lib._util import check_random_state, rng_integers
 from ._sputils import upcast, get_index_dtype, isscalarlike
 
-from ._sparsetools import csr_hstack
+from ._sparsetools import csr_hstack  # type: ignore[import]
 from ._bsr import bsr_matrix, bsr_array
 from ._coo import coo_matrix, coo_array
 from ._csc import csc_matrix, csc_array

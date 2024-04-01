@@ -1,4 +1,4 @@
-from . import _ccallback_c
+from . import _ccallback_c  # type: ignore[import]
 
 import ctypes
 
@@ -16,7 +16,7 @@ def _import_cffi():
         return
 
     try:
-        import cffi
+        import cffi  # type: ignore[import]
         ffi = cffi.FFI()
         CData = ffi.CData
     except ImportError:

@@ -1,7 +1,7 @@
 from itertools import product
 import numpy as np
 from numpy.testing import assert_allclose
-from pytest import raises
+from pytest import raises  # type: ignore[import]
 from scipy.spatial.transform import Rotation, RotationSpline
 from scipy.spatial.transform._rotation_spline import (
     _angular_rate_to_rotvec_dot_matrix,

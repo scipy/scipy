@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 import scipy.sparse as sp

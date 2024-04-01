@@ -1,7 +1,7 @@
 """
 Unit tests for TNC optimization routine from tnc.py
 """
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose, assert_equal
 
 import numpy as np

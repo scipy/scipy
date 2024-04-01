@@ -3,7 +3,7 @@ from numpy.linalg import norm
 from numpy.testing import assert_equal, assert_allclose, assert_
 from scipy.sparse.linalg._isolve import minres
 
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 
 def get_sample_problem():

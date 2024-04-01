@@ -2,7 +2,7 @@ import numpy
 import numpy as np
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
                            assert_array_almost_equal)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 from scipy import ndimage

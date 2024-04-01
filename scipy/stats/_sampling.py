@@ -5,7 +5,7 @@ from scipy import stats
 from scipy import special as sc
 from ._qmc import (check_random_state as check_random_state_qmc,
                    Halton, QMCEngine)
-from ._unuran.unuran_wrapper import NumericalInversePolynomial
+from ._unuran.unuran_wrapper import NumericalInversePolynomial  # type: ignore[import]
 from scipy._lib._util import check_random_state
 
 

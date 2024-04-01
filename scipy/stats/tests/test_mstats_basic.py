@@ -12,7 +12,7 @@ from numpy.ma import masked, nomask
 import scipy.stats.mstats as mstats
 from scipy import stats
 from .common_tests import check_named_results
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_array_almost_equal,

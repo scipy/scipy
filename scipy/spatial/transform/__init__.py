@@ -16,7 +16,7 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from ._rotation import Rotation, Slerp
+from ._rotation import Rotation, Slerp  # type: ignore[import]
 from ._rotation_spline import RotationSpline
 
 # Deprecated namespaces, to be removed in v2.0.0

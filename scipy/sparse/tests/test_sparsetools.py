@@ -5,13 +5,19 @@ import threading
 
 import numpy as np
 from numpy.testing import assert_equal, assert_, assert_allclose
-from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
-                          bsr_matrix, dia_matrix)
+from scipy.sparse import (
+    _sparsetools,  # type: ignore[import]
+    coo_matrix,
+    csr_matrix,
+    csc_matrix,
+    bsr_matrix,
+    dia_matrix,
+)
 from scipy.sparse._sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 
 def int_to_int8(n):

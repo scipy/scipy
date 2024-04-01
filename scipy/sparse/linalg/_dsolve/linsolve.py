@@ -12,7 +12,7 @@ from . import _superlu
 
 noScikit = False
 try:
-    import scikits.umfpack as umfpack
+    import scikits.umfpack as umfpack  # type: ignore[import]
 except ImportError:
     noScikit = True
 
@@ -731,8 +731,9 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                 f'A is singular: diagonal {i} is zero.')
         if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
-                'A is not triangular: A[{}, {}] is nonzero.'
-                ''.format(i, A.indices[A_diagonal_index_row_i]))
+                f'A is not triangular: A[{i}, '
+                f'{A.indices[A_diagonal_index_row_i]}] is nonzero.'
+            )
 
         # Incorporate off-diagonal entries.
         A_column_indices_in_row_i = A.indices[A_off_diagonal_indices_row_i]

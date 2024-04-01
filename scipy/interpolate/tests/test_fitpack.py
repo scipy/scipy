@@ -4,15 +4,15 @@ import os
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_,
                            assert_almost_equal, assert_array_almost_equal)
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 from scipy._lib._testutils import check_free_memory
 
 from scipy.interpolate import RectBivariateSpline
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate.dfitpack import regrid_smth  # type: ignore[import]
 from scipy.interpolate._fitpack2 import dfitpack_int
 
 

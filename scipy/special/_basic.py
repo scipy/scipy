@@ -10,12 +10,24 @@ from collections import defaultdict
 from heapq import heapify, heappop
 from numpy import (pi, asarray, floor, isscalar, iscomplex, sqrt, where, mgrid,
                    sin, place, issubdtype, extract, inexact, nan, zeros, sinc)
-from . import _ufuncs
-from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, poch, binom,
-                      _stirling2_inexact)
+from . import _ufuncs  # type: ignore[import]
+from ._ufuncs import (  # type: ignore[import]
+    mathieu_a,
+    mathieu_b,
+    iv,
+    jv,
+    gamma,
+    psi,
+    hankel1, 
+    hankel2,
+    yv,
+    kv,
+    poch,
+    binom,
+    _stirling2_inexact,
+)
 from . import _specfun
-from ._comb import _comb_int
+from ._comb import _comb_int  # type: ignore[import]
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 

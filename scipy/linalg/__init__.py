@@ -201,7 +201,7 @@ Low-level routines
 """  # noqa: E501
 
 from ._misc import *
-from ._cythonized_array_utils import *
+from ._cythonized_array_utils import *  # type: ignore[import]
 from ._basic import *
 from ._decomp import *
 from ._decomp_lu import *
@@ -218,7 +218,7 @@ from .lapack import *
 from ._special_matrices import *
 from ._solvers import *
 from ._procrustes import *
-from ._decomp_update import *
+from ._decomp_update import *  # type: ignore[import]
 from ._sketches import *
 from ._decomp_cossin import *
 

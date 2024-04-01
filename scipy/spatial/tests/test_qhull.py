@@ -4,10 +4,10 @@ import copy
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_, assert_allclose, assert_array_equal)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
-import scipy.spatial._qhull as qhull
+import scipy.spatial._qhull as qhull  # type: ignore[import]
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 

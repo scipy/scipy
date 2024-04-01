@@ -1,5 +1,5 @@
 import warnings
-from . import _minpack
+from . import _minpack  # type: ignore[import]
 
 import numpy as np
 from numpy import (atleast_1d, triu, shape, transpose, zeros, prod, greater,

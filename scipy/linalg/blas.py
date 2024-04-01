@@ -210,7 +210,7 @@ __all__ = ['get_blas_funcs', 'find_best_blas_type']
 import numpy as _np
 import functools
 
-from scipy.linalg import _fblas
+from scipy.linalg import _fblas  # type: ignore[import]
 try:
     from scipy.linalg import _cblas
 except ImportError:
@@ -225,7 +225,7 @@ except ImportError:
 
 # Expose all functions (only fblas --- cblas is an implementation detail)
 empty_module = None
-from scipy.linalg._fblas import *  # noqa: E402, F403
+from scipy.linalg._fblas import *  # noqa: E402, F403  # type: ignore[import]
 del empty_module
 
 # all numeric dtypes '?bBhHiIlLqQefdgFDGO' that are safe to be converted to

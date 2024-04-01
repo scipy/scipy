@@ -2,7 +2,7 @@ from numpy.testing import (assert_, assert_equal, assert_almost_equal,
                            assert_array_almost_equal, assert_array_equal,
                            assert_allclose, suppress_warnings)
 from pytest import raises as assert_raises
-import pytest
+import pytest  # type: ignore[import]
 
 from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np

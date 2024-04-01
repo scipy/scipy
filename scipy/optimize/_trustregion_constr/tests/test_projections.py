@@ -7,7 +7,7 @@ from numpy.testing import (TestCase, assert_array_almost_equal,
                            assert_equal, assert_allclose)
 
 try:
-    from sksparse.cholmod import cholesky_AAt  # noqa: F401
+    from sksparse.cholmod import cholesky_AAt  # noqa: F401  # type: ignore[import]
     sksparse_available = True
     available_sparse_methods = ("NormalEquation", "AugmentedSystem")
 except ImportError:

@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_array_equal,
         assert_array_almost_equal_nulp, assert_almost_equal)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.special import gammaln, multigammaln
 

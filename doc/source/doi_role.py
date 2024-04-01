@@ -14,9 +14,9 @@
     :license: BSD.
 """
 
-from docutils import nodes, utils
+from docutils import nodes, utils  # type: ignore[import]
 
-from sphinx.util.nodes import split_explicit_title
+from sphinx.util.nodes import split_explicit_title  # type: ignore[import]
 
 
 def doi_role(typ, rawtext, text, lineno, inliner, options={}, content=[]):

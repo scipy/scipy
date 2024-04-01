@@ -11,8 +11,8 @@ import re
 import warnings
 from collections import namedtuple
 from itertools import product
-import hypothesis.extra.numpy as npst
-import hypothesis
+import hypothesis.extra.numpy as npst  # type: ignore[import]
+import hypothesis  # type: ignore[import]
 import contextlib
 
 from numpy.testing import (assert_, assert_equal,
@@ -20,8 +20,8 @@ from numpy.testing import (assert_, assert_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
                            assert_array_less)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np

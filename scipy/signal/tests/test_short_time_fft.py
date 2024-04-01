@@ -22,7 +22,7 @@ from itertools import product
 from typing import cast, get_args, Literal
 
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose, assert_equal
 from scipy.fft import fftshift
 from scipy.stats import norm as normal_distribution  # type: ignore

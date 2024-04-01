@@ -4,7 +4,7 @@ import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
                            suppress_warnings)
 from pytest import raises as assert_raises
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial._qhull as qhull

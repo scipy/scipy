@@ -9,7 +9,7 @@ import importlib
 import warnings
 from importlib import import_module
 
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy
 

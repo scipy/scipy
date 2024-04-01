@@ -1,7 +1,7 @@
 """Multiple MC to show how it can be bad."""
 import numpy as np
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
 
 rng = np.random.default_rng()

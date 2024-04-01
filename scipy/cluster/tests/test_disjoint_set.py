@@ -1,5 +1,5 @@
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 import numpy as np
 from scipy.cluster.hierarchy import DisjointSet
 import string

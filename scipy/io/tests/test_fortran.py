@@ -8,10 +8,10 @@ import re
 
 from numpy.testing import assert_equal, assert_allclose
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.io import (FortranFile,
-                      _test_fortran,
+                      _test_fortran,  # type: ignore[import]
                       FortranEOFError,
                       FortranFormattingError)
 

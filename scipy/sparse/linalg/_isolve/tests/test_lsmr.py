@@ -19,7 +19,7 @@ Dept of MS&E, Stanford University.
 from numpy import array, arange, eye, zeros, ones, transpose, hstack
 from numpy.linalg import norm
 from numpy.testing import assert_allclose
-import pytest
+import pytest  # type: ignore[import]
 from scipy.sparse import coo_matrix
 from scipy.sparse.linalg._interface import aslinearoperator
 from scipy.sparse.linalg import lsmr

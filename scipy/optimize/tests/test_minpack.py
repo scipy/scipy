@@ -2,7 +2,7 @@
 Unit tests for optimization routines from minpack.py.
 """
 import warnings
-import pytest
+import pytest  # type: ignore[import]
 
 from numpy.testing import (assert_, assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,

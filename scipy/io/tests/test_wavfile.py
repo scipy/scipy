@@ -5,8 +5,8 @@ from io import BytesIO
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
                            break_cycles, suppress_warnings, IS_PYPY)
-import pytest
-from pytest import raises, warns
+import pytest  # type: ignore[import]
+from pytest import raises, warns  # type: ignore[import]
 
 from scipy.io import wavfile
 

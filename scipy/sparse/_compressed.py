@@ -9,10 +9,17 @@ from scipy._lib._util import _prune_array, copy_if_needed
 
 from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
-from . import _sparsetools
-from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
-                           csr_sample_values, csr_row_index, csr_row_slice,
-                           csr_column_index1, csr_column_index2)
+from . import _sparsetools  # type: ignore[import]
+from ._sparsetools import (  # type: ignore[import]
+    get_csr_submatrix,
+    csr_sample_offsets,
+    csr_todense,
+    csr_sample_values,
+    csr_row_index,
+    csr_row_slice,
+    csr_column_index1,
+    csr_column_index2,
+)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
                        getdtype, isscalarlike, isintlike, downcast_intp_index,

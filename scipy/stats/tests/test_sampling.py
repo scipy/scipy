@@ -1,6 +1,6 @@
 import threading
 import pickle
-import pytest
+import pytest  # type: ignore[import]
 from copy import deepcopy
 import platform
 import sys
@@ -17,7 +17,7 @@ from scipy.stats.sampling import (
     SimpleRatioUniforms,
     UNURANError
 )
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy import stats
 from scipy import special
 from scipy.stats import chisquare, cramervonmises

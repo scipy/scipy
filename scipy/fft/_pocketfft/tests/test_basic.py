@@ -3,8 +3,8 @@
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less,
                            assert_allclose)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
                                   rfft, irfft, rfftn, irfftn,
                                   hfft, ihfft, hfftn, ihfftn)
@@ -870,8 +870,10 @@ class TestOverwrite:
         for fake in [lambda x: x, FakeArray, FakeArray2]:
             routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
-            sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
-                routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+            sig = (
+                f"{routine.__name__}({x.dtype}{x.shape!r}, "
+                f"{fftsize!r}, axis={axis!r}, overwrite_x={overwrite_x!r})"
+            )
             if not should_overwrite:
                 assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 

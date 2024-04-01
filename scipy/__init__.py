@@ -48,7 +48,7 @@ from numpy import __version__ as __numpy_version__
 
 
 try:
-    from scipy.__config__ import show as show_config
+    from scipy.__config__ import show as show_config  # type: ignore[import]
 except ImportError as e:
     msg = """Error importing SciPy: you cannot import SciPy while
     being in scipy source directory; please exit the SciPy source
@@ -56,7 +56,7 @@ except ImportError as e:
     raise ImportError(msg) from e
 
 
-from scipy.version import version as __version__
+from scipy.version import version as __version__  # type: ignore[import]
 
 
 # Allow distributors to run custom init code

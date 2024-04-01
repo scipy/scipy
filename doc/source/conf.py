@@ -5,13 +5,13 @@ import re
 import sys
 import warnings
 from datetime import date
-from docutils import nodes
-from docutils.parsers.rst import Directive
+from docutils import nodes  # type: ignore[import]
+from docutils.parsers.rst import Directive  # type: ignore[import]
 
-import matplotlib
-import matplotlib.pyplot as plt
-from numpydoc.docscrape_sphinx import SphinxDocString
-from sphinx.util import inspect
+import matplotlib  # type: ignore[import]
+import matplotlib.pyplot as plt  # type: ignore[import]
+from numpydoc.docscrape_sphinx import SphinxDocString  # type: ignore[import]
+from sphinx.util import inspect  # type: ignore[import]
 
 import scipy
 from scipy._lib._util import _rng_html_rewrite
@@ -38,7 +38,7 @@ os.environ['_SCIPY_BUILDING_DOC'] = 'True'
 
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
-import numpydoc.docscrape as np_docscrape  # noqa: E402
+import numpydoc.docscrape as np_docscrape  # noqa: E402  # type: ignore[import]
 
 extensions = [
     'sphinx.ext.autodoc',

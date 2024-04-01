@@ -3,13 +3,13 @@
 # do not go here.
 
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy import stats
 from numpy.testing import assert_allclose
 import scipy.stats.tests.test_generation.reference_distributions as rd
-import mpmath
-from mpmath import mp
+import mpmath  # type: ignore[import]
+from mpmath import mp  # type: ignore[import]
 
 def test_basic():
 

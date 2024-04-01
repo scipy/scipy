@@ -92,13 +92,13 @@ class EmpiricalDistributionFunction:
             Objects representing the plotted data
         """
         try:
-            import matplotlib  # noqa: F401
+            import matplotlib  # noqa: F401  # type: ignore[import]
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ModuleNotFoundError(message) from exc
 
         if ax is None:
-            import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt  # type: ignore[import]
             ax = plt.gca()
 
         kwargs = {'where': 'post'}

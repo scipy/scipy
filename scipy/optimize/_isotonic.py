@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from ._optimize import OptimizeResult
-from ._pava_pybind import pava
+from ._pava_pybind import pava  # type: ignore[import]
 
 if TYPE_CHECKING:
     import numpy.typing as npt

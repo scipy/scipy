@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy.stats import (binned_statistic, binned_statistic_2d,
                          binned_statistic_dd)
 from scipy._lib._util import check_random_state

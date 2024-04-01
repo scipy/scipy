@@ -1,4 +1,4 @@
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy._lib._pep440 import Version, parse
 
 

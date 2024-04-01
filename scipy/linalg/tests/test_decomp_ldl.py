@@ -5,8 +5,8 @@ from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
 from numpy.random import rand, randint, seed
 from scipy.linalg import ldl
 from scipy._lib._util import ComplexWarning
-import pytest
-from pytest import raises as assert_raises, warns
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises, warns  # type: ignore[import]
 
 
 def test_args():

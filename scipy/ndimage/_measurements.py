@@ -31,8 +31,8 @@
 import numpy
 import numpy as np
 from . import _ni_support
-from . import _ni_label
-from . import _nd_image
+from . import _ni_label  # type: ignore[import]
+from . import _nd_image  # type: ignore[import]
 from . import _morphology
 
 __all__ = ['label', 'find_objects', 'labeled_comprehension', 'sum', 'mean',

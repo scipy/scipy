@@ -37,18 +37,18 @@ from argparse import ArgumentParser
 from contextlib import contextmanager, redirect_stderr
 from doctest import NORMALIZE_WHITESPACE, ELLIPSIS, IGNORE_EXCEPTION_DETAIL
 
-import docutils.core
+import docutils.core  # type: ignore[import]
 import numpy as np
-from docutils.parsers.rst import directives
+from docutils.parsers.rst import directives  # type: ignore[import]
 
-from numpydoc.docscrape_sphinx import get_doc_object
-from numpydoc.docscrape import NumpyDocString
+from numpydoc.docscrape_sphinx import get_doc_object  # type: ignore[import]
+from numpydoc.docscrape import NumpyDocString  # type: ignore[import]
 from scipy.stats._distr_params import distcont, distdiscrete
 from scipy import stats
 
 
 # Enable specific Sphinx directives
-from sphinx.directives.other import SeeAlso, Only
+from sphinx.directives.other import SeeAlso, Only  # type: ignore[import]
 directives.register_directive('seealso', SeeAlso)
 directives.register_directive('only', Only)
 
@@ -771,7 +771,7 @@ def check_doctests(module, verbose, ns=None,
         results.append((full_name, success, output))
 
         if HAVE_MATPLOTLIB:
-            import matplotlib.pyplot as plt
+            import matplotlib.pyplot as plt  # type: ignore[import]
             plt.close('all')
 
     return results
@@ -863,7 +863,7 @@ def check_doctests_testfile(fname, verbose, ns=None,
     results.append((full_name, success, output))
 
     if HAVE_MATPLOTLIB:
-        import matplotlib.pyplot as plt
+        import matplotlib.pyplot as plt  # type: ignore[import]
         plt.close('all')
 
     return results
@@ -873,7 +873,7 @@ def init_matplotlib():
     global HAVE_MATPLOTLIB
 
     try:
-        import matplotlib
+        import matplotlib  # type: ignore[import]
         matplotlib.use('Agg')
         HAVE_MATPLOTLIB = True
     except ImportError:

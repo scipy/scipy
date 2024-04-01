@@ -9,7 +9,7 @@ from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
 from numpy.testing import (
     assert_, assert_array_almost_equal,
     assert_allclose, assert_array_equal, assert_equal, assert_warns)
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------

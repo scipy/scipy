@@ -90,7 +90,7 @@ from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
                       MatReadError, MatReadWarning)
 
 # Reader object for matlab 5 format variables
-from ._mio5_utils import VarReader5
+from ._mio5_utils import VarReader5  # type: ignore[import]
 
 # Constants and helper objects
 from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
@@ -99,7 +99,7 @@ from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
                           mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
                           mxDOUBLE_CLASS, mclass_info, mat_struct)
 
-from ._streams import ZlibInputStream
+from ._streams import ZlibInputStream  # type: ignore[import]
 
 
 def _has_struct(elem):

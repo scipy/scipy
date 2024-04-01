@@ -2,7 +2,7 @@
 Check the SciPy config is valid.
 """
 import scipy
-import pytest
+import pytest  # type: ignore[import]
 from unittest.mock import patch
 
 pytestmark = pytest.mark.skipif(

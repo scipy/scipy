@@ -36,12 +36,12 @@ import numpy as np
 from itertools import product
 
 from numpy.testing import assert_equal, assert_allclose
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 
 from scipy.signal import upfirdn, firwin
 from scipy.signal._upfirdn import _output_len, _upfirdn_modes
-from scipy.signal._upfirdn_apply import _pad_test
+from scipy.signal._upfirdn_apply import _pad_test  # type: ignore[import]
 
 
 def upfirdn_naive(x, h, up=1, down=1):

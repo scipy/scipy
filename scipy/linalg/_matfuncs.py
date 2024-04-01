@@ -15,7 +15,7 @@ from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
-from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
+from ._matfuncs_expm import pick_pade_structure, pade_UV_calc  # type: ignore[import]
 
 # deprecated imports to be removed in SciPy 1.13.0
 from numpy import single  # noqa: F401

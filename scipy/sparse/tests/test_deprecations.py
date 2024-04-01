@@ -1,5 +1,5 @@
 import scipy as sp
-import pytest
+import pytest  # type: ignore[import]
 
 
 def test_array_api_deprecations():

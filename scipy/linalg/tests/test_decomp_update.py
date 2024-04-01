@@ -2,10 +2,12 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_, assert_allclose, assert_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy import linalg
-import scipy.linalg._decomp_update as _decomp_update
-from scipy.linalg._decomp_update import qr_delete, qr_update, qr_insert
+import scipy.linalg._decomp_update as _decomp_update  # type: ignore[import]
+from scipy.linalg._decomp_update import (  # type: ignore[import]
+    qr_delete, qr_update, qr_insert,
+)
 
 def assert_unitary(a, rtol=None, atol=None, assert_sqr=True):
     if rtol is None:

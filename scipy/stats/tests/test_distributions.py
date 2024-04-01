@@ -14,8 +14,8 @@ from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
                            assert_array_less, suppress_warnings, IS_PYPY)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import numpy
 import numpy as np

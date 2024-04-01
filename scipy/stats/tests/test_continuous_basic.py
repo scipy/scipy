@@ -1,8 +1,8 @@
 import sys
 import numpy as np
 import numpy.testing as npt
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 from scipy.integrate import IntegrationWarning
 import itertools
 

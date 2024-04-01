@@ -177,7 +177,7 @@ def run_monitored(code):
 
 def get_mem_info():
     """Get information about available memory"""
-    import psutil
+    import psutil  # type: ignore[import]
     vm = psutil.virtual_memory()
     return {
         "memtotal": vm.total,

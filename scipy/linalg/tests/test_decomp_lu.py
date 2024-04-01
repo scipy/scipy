@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 import numpy as np

@@ -4,7 +4,7 @@ import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy.special import erf, erfc
@@ -12,9 +12,9 @@ from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
 import ctypes.util
-from scipy._lib._ccallback_c import sine_ctypes
+from scipy._lib._ccallback_c import sine_ctypes  # type: ignore[import]
 
-import scipy.integrate._test_multivariate as clib_test
+import scipy.integrate._test_multivariate as clib_test  # type: ignore[import]
 
 
 def assert_quad(value_and_err, tabled_value, error_tolerance=1.5e-8):

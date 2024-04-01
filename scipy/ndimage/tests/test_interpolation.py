@@ -4,7 +4,7 @@ import numpy
 from numpy.testing import (assert_, assert_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose,
                            suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 import scipy.ndimage as ndimage
 

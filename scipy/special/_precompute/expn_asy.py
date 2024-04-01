@@ -10,8 +10,8 @@ Sources
 import os
 
 try:
-    import sympy
-    from sympy import Poly
+    import sympy  # type: ignore[import]
+    from sympy import Poly  # type: ignore[import]
     x = sympy.symbols('x')
 except ImportError:
     pass

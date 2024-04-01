@@ -1,4 +1,4 @@
-from ._trlib import TRLIBQuadraticSubproblem
+from ._trlib import TRLIBQuadraticSubproblem  # type: ignore[import]
 
 __all__ = ['TRLIBQuadraticSubproblem', 'get_trlib_quadratic_subproblem']
 

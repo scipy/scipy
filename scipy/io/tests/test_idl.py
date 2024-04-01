@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_, suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.io import readsav
 from scipy.io import _idl

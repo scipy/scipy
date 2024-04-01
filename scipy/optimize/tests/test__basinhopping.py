@@ -5,8 +5,8 @@ import copy
 
 from numpy.testing import (assert_almost_equal, assert_equal, assert_,
                            assert_allclose)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 import numpy as np
 from numpy import cos, sin
 

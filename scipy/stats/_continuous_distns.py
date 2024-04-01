@@ -17,10 +17,10 @@ from scipy import optimize
 from scipy import integrate
 import scipy.special as sc
 
-import scipy.special._ufuncs as scu
+import scipy.special._ufuncs as scu  # type: ignore[import]
 from scipy._lib._util import _lazyselect, _lazywhere
 
-from . import _stats
+from . import _stats  # type: ignore[import]
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (

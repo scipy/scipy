@@ -3,7 +3,7 @@ Author: Ondrej Certik
 May 2007
 """
 from numpy.testing import assert_
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.optimize import _nonlin as nonlin, root
 from scipy.sparse import csr_array

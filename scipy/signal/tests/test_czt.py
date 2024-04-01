@@ -3,7 +3,7 @@
 '''
 A unit test module for czt.py
 '''
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose
 from scipy.fft import fft
 from scipy.signal import (czt, zoom_fft, czt_points, CZT, ZoomFFT)

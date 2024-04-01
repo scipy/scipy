@@ -34,8 +34,8 @@ from scipy.linalg.interpolative import interp_decomp
 
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 import sys
 _IS_32BIT = (sys.maxsize < 2**32)
 

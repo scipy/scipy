@@ -3,7 +3,7 @@ import sys
 import os
 import argparse
 
-from Cython import Tempita as tempita
+from Cython import Tempita as tempita  # type: ignore[import]
 # XXX: If this import ever fails (does it really?), vendor either
 # cython.tempita or numpy/npy_tempita.
 

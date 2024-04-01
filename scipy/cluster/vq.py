@@ -73,7 +73,7 @@ from scipy._lib._array_api import (
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
 
-from . import _vq
+from . import _vq  # type: ignore[import]
 
 __docformat__ = 'restructuredtext'
 

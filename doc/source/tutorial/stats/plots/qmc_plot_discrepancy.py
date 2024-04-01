@@ -2,7 +2,7 @@
 import numpy as np
 from scipy.stats import qmc
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
 space_1 = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
 space_2 = np.array([[1, 5], [2, 4], [3, 3], [4, 2], [5, 1], [6, 6]])

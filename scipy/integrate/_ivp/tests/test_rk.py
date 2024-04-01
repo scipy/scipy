@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose, assert_
 import numpy as np
 from scipy.integrate import RK23, RK45, DOP853

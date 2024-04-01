@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 
 
 def test_cython_api_deprecation():

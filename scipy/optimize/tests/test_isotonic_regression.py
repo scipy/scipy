@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 
-from scipy.optimize._pava_pybind import pava
+from scipy.optimize._pava_pybind import pava  # type: ignore[import]
 from scipy.optimize import isotonic_regression
 
 

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.sparse import csr_matrix, issparse
 from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
-from scipy.sparse.csgraph._tools import (
+from scipy.sparse.csgraph._tools import (  # type: ignore[import]
     csgraph_to_dense, csgraph_from_dense,
     csgraph_masked_from_dense, csgraph_from_masked
 )

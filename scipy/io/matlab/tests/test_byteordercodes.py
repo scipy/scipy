@@ -3,7 +3,7 @@
 import sys
 
 from numpy.testing import assert_
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises # type: ignore[import]
 
 import scipy.io.matlab._byteordercodes as sibc
 

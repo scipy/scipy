@@ -36,7 +36,7 @@ import operator
 
 from scipy._lib._util import normalize_axis_index
 from . import _ni_support
-from . import _nd_image
+from . import _nd_image  # type: ignore[import]
 from . import _ni_docstrings
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',

@@ -5,7 +5,7 @@ from decimal import Decimal
 from itertools import product
 from math import gcd
 
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 from numpy.testing import (
     assert_equal,

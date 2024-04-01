@@ -20,7 +20,7 @@ from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
-from ._sosfilt import _sosfilt
+from ._sosfilt import _sosfilt  # type: ignore[import]
 
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',

@@ -2,7 +2,7 @@ from itertools import product
 
 import numpy as np
 from numpy.testing import assert_array_equal, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 
 from scipy.sparse import csr_matrix, coo_matrix, diags
 from scipy.sparse.csgraph import (

@@ -1,5 +1,5 @@
 import numpy as np
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 import scipy.sparse.linalg._isolve.utils as utils
 

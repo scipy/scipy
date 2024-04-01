@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from numpy.testing import assert_array_almost_equal, assert_allclose
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 
 from scipy.linalg import solve_sylvester

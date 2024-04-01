@@ -2,7 +2,7 @@ import os
 import numpy as np
 import tempfile
 
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 from numpy.testing import assert_equal, assert_
 
 from scipy.sparse import (sparray, csc_matrix, csr_matrix, bsr_matrix, dia_matrix,

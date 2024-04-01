@@ -2,7 +2,7 @@
 
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 from scipy.fftpack import ifft, fft, fftn, ifftn, rfft, irfft, fft2
 
@@ -759,8 +759,10 @@ class TestOverwrite:
         for fake in [lambda x: x, FakeArray, FakeArray2]:
             routine(fake(x2), fftsize, axis, overwrite_x=overwrite_x)
 
-            sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
-                routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+            sig = (
+                f"{routine.__name__}({x.dtype}{x.shape!r}, "
+                f"{fftsize!r}, axis={axis!r}, overwrite_x={overwrite_x!r})"
+            )
             if not overwrite_x:
                 assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 

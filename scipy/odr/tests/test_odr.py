@@ -7,8 +7,8 @@ from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
                            assert_equal, assert_warns,
                            assert_allclose)
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.odr import (Data, Model, ODR, RealData, OdrStop, OdrWarning,
                        multilinear, exponential, unilinear, quadratic,

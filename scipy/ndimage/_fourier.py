@@ -31,7 +31,7 @@
 import numpy
 from scipy._lib._util import normalize_axis_index
 from . import _ni_support
-from . import _nd_image
+from . import _nd_image  # type: ignore[import]
 
 __all__ = ['fourier_gaussian', 'fourier_uniform', 'fourier_ellipsoid',
            'fourier_shift']

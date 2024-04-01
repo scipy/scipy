@@ -1,7 +1,7 @@
 import numpy as np
 
 from numpy.testing import assert_equal
-from pytest import raises as assert_raises
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.io._harwell_boeing import (
         FortranFormatParser, IntFormat, ExpFormat, BadFortranFormat)

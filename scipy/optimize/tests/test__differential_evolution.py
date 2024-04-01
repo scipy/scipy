@@ -16,8 +16,8 @@ from scipy import stats
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
                            assert_string_equal, assert_, suppress_warnings)
-from pytest import raises as assert_raises, warns
-import pytest
+from pytest import raises as assert_raises, warns  # type: ignore[import]
+import pytest  # type: ignore[import]
 
 
 class TestDifferentialEvolutionSolver:

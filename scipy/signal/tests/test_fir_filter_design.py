@@ -2,8 +2,8 @@ import numpy as np
 from numpy.testing import (assert_almost_equal, assert_array_almost_equal,
                            assert_equal, assert_,
                            assert_allclose, assert_warns)
-from pytest import raises as assert_raises
-import pytest
+from pytest import raises as assert_raises  # type: ignore[import]
+import pytest  # type: ignore[import]
 
 from scipy.fft import fft
 from scipy.special import sinc

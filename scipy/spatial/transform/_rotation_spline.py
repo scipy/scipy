@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import solve_banded
-from ._rotation import Rotation
+from ._rotation import Rotation  # type: ignore[import]
 
 
 def _create_skew_matrix(x):
@@ -375,10 +375,10 @@ class RotationSpline:
             raise ValueError("`times` must be 1-dimensional.")
 
         if len(times) != len(rotations):
-            raise ValueError("Expected number of rotations to be equal to "
-                             "number of timestamps given, got {} rotations "
-                             "and {} timestamps."
-                             .format(len(rotations), len(times)))
+            raise ValueError(
+                f"Expected number of rotations to be equal to number of timestamps "
+                f"given, got {len(rotations)} rotations and {len(times)} timestamps."
+            )
 
         dt = np.diff(times)
         if np.any(dt <= 0):

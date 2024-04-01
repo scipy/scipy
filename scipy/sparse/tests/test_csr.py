@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
 from scipy.sparse import csr_matrix, csc_matrix, csr_array, csc_array, hstack
 from scipy import sparse
-import pytest
+import pytest  # type: ignore[import]
 
 
 def _check_csr_rowslice(i, sl, X, Xcsr):

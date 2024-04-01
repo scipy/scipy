@@ -1,6 +1,6 @@
 from scipy import fft
 import numpy as np
-import pytest
+import pytest  # type: ignore[import]
 from numpy.testing import assert_allclose
 import multiprocessing
 import os

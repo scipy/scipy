@@ -2,8 +2,8 @@ from os.path import join, dirname
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_equal
-import pytest
-from pytest import raises as assert_raises
+import pytest  # type: ignore[import]
+from pytest import raises as assert_raises  # type: ignore[import]
 
 from scipy.fftpack._realtransforms import (
     dct, idct, dst, idst, dctn, idctn, dstn, idstn)
@@ -695,8 +695,10 @@ class TestOverwrite:
         x2 = x.copy()
         routine(x2, type, fftsize, axis, norm, overwrite_x=overwrite_x)
 
-        sig = "{}({}{!r}, {!r}, axis={!r}, overwrite_x={!r})".format(
-            routine.__name__, x.dtype, x.shape, fftsize, axis, overwrite_x)
+        sig = (
+            f"{routine.__name__}({x.dtype}{x.shape!r}, "
+            f"{fftsize!r}, axis={axis!r}, overwrite_x={overwrite_x!r})"
+        )
         if not overwrite_x:
             assert_equal(x2, x, err_msg="spurious overwrite in %s" % sig)
 

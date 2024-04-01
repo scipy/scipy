@@ -12,7 +12,7 @@ from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
                            assert_, assert_allclose, assert_equal,
                            suppress_warnings)
-import pytest
+import pytest  # type: ignore[import]
 from pytest import raises as assert_raises
 import re
 from scipy import optimize, stats, special

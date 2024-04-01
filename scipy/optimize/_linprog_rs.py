@@ -22,8 +22,8 @@ from numpy.linalg import LinAlgError
 
 from scipy.linalg import solve
 from ._optimize import _check_unknown_options
-from ._bglu_dense import LU
-from ._bglu_dense import BGLU as BGLU
+from ._bglu_dense import LU  # type: ignore[import]
+from ._bglu_dense import BGLU as BGLU  # type: ignore[import]
 from ._linprog_util import _postsolve
 from ._optimize import OptimizeResult
 

@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import _lbfgsb, minimize
+from scipy.optimize import _lbfgsb, minimize  # type: ignore[import]
 
 
 def objfun(x):

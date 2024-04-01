@@ -5,7 +5,7 @@ __all__ = ['count_blocks','estimate_blocksize']
 
 from ._base import issparse
 from ._csr import csr_array
-from ._sparsetools import csr_count_blocks
+from ._sparsetools import csr_count_blocks  # type: ignore[import]
 
 
 def estimate_blocksize(A,efficiency=0.7):

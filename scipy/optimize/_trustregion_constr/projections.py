@@ -5,7 +5,7 @@ from scipy.sparse.linalg import LinearOperator
 import scipy.linalg
 import scipy.sparse.linalg
 try:
-    from sksparse.cholmod import cholesky_AAt
+    from sksparse.cholmod import cholesky_AAt  # type: ignore[import]
     sksparse_available = True
 except ImportError:
     import warnings

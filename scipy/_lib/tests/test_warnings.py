@@ -12,7 +12,7 @@ import tokenize
 
 import scipy
 
-import pytest
+import pytest  # type: ignore[import]
 
 
 class ParseCall(ast.NodeVisitor):

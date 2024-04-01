@@ -11,7 +11,7 @@ import numpy as np
 from numpy import array, identity, dot, sqrt
 from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
                            assert_array_less, assert_array_equal, assert_warns)
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,

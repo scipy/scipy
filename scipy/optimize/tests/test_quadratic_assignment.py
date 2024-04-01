@@ -1,4 +1,4 @@
-import pytest
+import pytest  # type: ignore[import]
 import numpy as np
 from scipy.optimize import quadratic_assignment, OptimizeWarning
 from scipy.optimize._qap import _calc_score as _score

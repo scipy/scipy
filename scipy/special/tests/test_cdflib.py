@@ -21,7 +21,7 @@ import itertools
 
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-import pytest
+import pytest  # type: ignore[import]
 
 import scipy.special as sp
 from scipy.special._testutils import (
@@ -30,7 +30,7 @@ from scipy.special._mptestutils import (
     Arg, IntArg, get_args, mpf2float, assert_mpmath_equal)
 
 try:
-    import mpmath
+    import mpmath  # type: ignore[import]
 except ImportError:
     mpmath = MissingModule('mpmath')
 

@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_equal, assert_equal
-import pytest
+import pytest  # type: ignore[import]
 import scipy.sparse
 import scipy.sparse.linalg
 from scipy.sparse.linalg import lsqr

@@ -6,7 +6,7 @@ from scipy.linalg import qr, solve_triangular
 from scipy.sparse.linalg import lsmr
 from scipy.optimize import OptimizeResult
 
-from .givens_elimination import givens_elimination
+from .givens_elimination import givens_elimination  # type: ignore[import]
 from .common import (
     EPS, step_size_to_bound, find_active_constraints, in_bounds,
     make_strictly_feasible, build_quadratic_1d, evaluate_quadratic,

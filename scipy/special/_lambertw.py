@@ -1,4 +1,4 @@
-from ._ufuncs import _lambertw
+from ._ufuncs import _lambertw  # type: ignore[import]
 
 import numpy as np
 

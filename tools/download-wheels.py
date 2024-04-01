@@ -11,7 +11,7 @@ import urllib
 import urllib.request
 
 import urllib3
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup  # type: ignore[import]
 
 __version__ = '0.1'
 

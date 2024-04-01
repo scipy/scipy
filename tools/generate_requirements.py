@@ -5,10 +5,10 @@ import sys
 from pathlib import Path
 
 try:  # standard module since Python 3.11
-    import tomllib as toml
+    import tomllib as toml  # type: ignore[import]
 except ImportError:
     try:  # available for older Python via pip
-        import tomli as toml
+        import tomli as toml  # type: ignore[import]
     except ImportError:
         sys.exit("Please install `tomli` first: `{mamba, pip} install tomli`")
 

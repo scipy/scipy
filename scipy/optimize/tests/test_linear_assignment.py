@@ -2,7 +2,7 @@
 # License: BSD
 
 from numpy.testing import assert_array_equal
-import pytest
+import pytest  # type: ignore[import]
 
 import numpy as np
 

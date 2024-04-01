@@ -67,7 +67,7 @@
 
 import numpy as np
 import scipy.special
-import scipy.special._ufuncs as scu
+import scipy.special._ufuncs as scu  # type: ignore[import]
 from scipy._lib._finite_differences import _derivative
 
 _E128 = 128
