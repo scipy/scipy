@@ -19,6 +19,8 @@
 #include "boost/math/special_functions/hypergeometric_1F1.hpp"
 #include "boost/math/special_functions/hypergeometric_pFq.hpp"
 
+#include "boost/math/distributions.hpp"
+
 
 template<typename Real>
 static inline
@@ -195,6 +197,57 @@ ibetac_inv_double(double a, double b, double p)
     return ibetac_inv_wrap(a, b, p);
 }
 
+// patch for boost::math::beta_distribution throwing exception for
+// x = 1, beta < 1 as well as x = 0, alpha < 1
+template<typename Real>
+Real beta_pdf_wrap(const Real x, const Real a, const Real b)
+{
+    if (std::isfinite(x)) {
+        if ((x >= 1) && (b < 1)) {
+            // x>1 should really be 0, but rv_continuous will do that for us
+            return INFINITY;
+        }
+        else if ((x <= 0) && (a < 1)) {
+            return INFINITY;
+        }
+        return boost::math::pdf(
+            boost::math::beta_distribution<Real>(a, b), x);
+    }
+    return NAN;
+}
+
+float
+beta_pdf_float(float x, float a, float b)
+{
+    return beta_pdf_wrap(x, a, b);
+}
+
+double
+beta_pdf_double(double x, double a, double b)
+{
+    return beta_pdf_wrap(x, a, b);
+}
+
+template<typename Real>
+Real
+beta_sf_wrap(const Real x, const Real a, const Real b)
+{
+    return boost::math::cdf(
+        boost::math::complement(boost::math::beta_distribution<Real>(a, b), x));
+}
+
+float
+beta_sf_float(float x, float a, float b)
+{
+    return beta_sf_wrap(x, a, b);
+}
+
+double
+beta_sf_double(double x, double a, double b)
+{
+    return beta_sf_wrap(x, a, b);
+}
+
 
 template<typename Real>
 static inline
@@ -276,7 +329,7 @@ Real powm1_wrap(Real x, Real y)
         z = NAN;
     } catch (const std::overflow_error& e) {
         sf_error("powm1", SF_ERROR_OVERFLOW, NULL);
-        
+
         // See: https://en.cppreference.com/w/cpp/numeric/math/pow
         if (x > 0) {
             if (y < 0) {
