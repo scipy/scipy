@@ -438,7 +438,8 @@ def test_events():
         assert_(np.all(e < 5))
 
         # Test that the y_event matches solution
-        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[0][0]), res.y_events[0][0],
+                           rtol=1e-3, atol=1e-6)
 
     # Test in backward direction.
     event_rational_1.direction = 0
@@ -515,8 +516,49 @@ def test_events():
         e = compute_error(yc, yc_true, 1e-3, 1e-6)
         assert_(np.all(e < 5))
 
-        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0], rtol=1e-3, atol=1e-6)
-        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0], rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[1][0]), res.y_events[1][0],
+                           rtol=1e-3, atol=1e-6)
+        assert np.allclose(sol_rational(res.t_events[2][0]), res.y_events[2][0],
+                           rtol=1e-3, atol=1e-6)
+
+
+def _get_harmonic_oscillator():
+    def f(t, y):
+        return [y[1], -y[0]]
+
+    def event(t, y):
+        return y[0]
+
+    return f, event
+
+
+@pytest.mark.parametrize('n_events', [3, 4])
+def test_event_terminal_integer(n_events):
+    f, event = _get_harmonic_oscillator()
+    event.terminal = n_events
+    res = solve_ivp(f, (0, 100), [1, 0], events=event)
+    assert len(res.t_events[0]) == n_events
+    assert len(res.y_events[0]) == n_events
+    assert_allclose(res.y_events[0][:, 0], 0, atol=1e-14)
+
+
+def test_event_terminal_iv():
+    f, event = _get_harmonic_oscillator()
+    args = (f, (0, 100), [1, 0])
+
+    event.terminal = None
+    res = solve_ivp(*args, events=event)
+    event.terminal = 0
+    ref = solve_ivp(*args, events=event)
+    assert_allclose(res.t_events, ref.t_events)
+
+    message = "The `terminal` attribute..."
+    event.terminal = -1
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(*args, events=event)
+    event.terminal = 3.5
+    with pytest.raises(ValueError, match=message):
+        solve_ivp(*args, events=event)
 
 
 def test_max_step():

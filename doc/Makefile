@@ -35,7 +35,7 @@ help:
 	@echo "  show      to show the HTML output"
 
 clean:
-	-rm -rf build/* source/reference/generated
+	-rm -rf build/* source/reference/generated source/.jupyterlite.doit.db
 
 
 #------------------------------------------------------------------------------
@@ -75,7 +75,7 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install -r ../doc_requirements.txt
+	$(CURDIR)/build/env/bin/python -mpip install -r ../requirements/doc.txt
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 

@@ -58,8 +58,6 @@
  * A "singularity" message is printed on overflow or
  * in cases not addressed (such as x < -1).
  */
-
-/*                                                      hyp2f1  */
 
 
 /*
@@ -79,14 +77,274 @@
 
 extern double MACHEP;
 
-static double hyt2f1(double a, double b, double c, double x, double *loss);
-static double hys2f1(double a, double b, double c, double x, double *loss);
-static double hyp2f1ra(double a, double b, double c, double x,
-		       double *loss);
-static double hyp2f1_neg_c_equal_bc(double a, double b, double x);
 
-double hyp2f1(a, b, c, x)
-double a, b, c, x;
+/* hys2f1 and hyp2f1ra depend on each other, so we need this prototype */
+static double hyp2f1ra(double a, double b, double c, double x, double *loss);
+
+
+/* Defining power series expansion of Gauss hypergeometric function */
+/* The `loss` parameter estimates loss of significance */
+static double hys2f1(double a, double b, double c, double x, double *loss)
+{
+    double f, g, h, k, m, s, u, umax;
+    int i;
+    int ib, intflag = 0;
+
+    if (fabs(b) > fabs(a)) {
+	/* Ensure that |a| > |b| ... */
+	f = b;
+	b = a;
+	a = f;
+    }
+
+    ib = round(b);
+
+    if (fabs(b - ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
+	/* .. except when `b` is a smaller negative integer */
+	f = b;
+	b = a;
+	a = f;
+	intflag = 1;
+    }
+
+    if ((fabs(a) > fabs(c) + 1 || intflag) && fabs(c - a) > 2 && fabs(a) > 2) {
+	/* |a| >> |c| implies that large cancellation error is to be expected.
+	 *
+	 * We try to reduce it with the recurrence relations
+	 */
+	return hyp2f1ra(a, b, c, x, loss);
+    }
+
+    i = 0;
+    umax = 0.0;
+    f = a;
+    g = b;
+    h = c;
+    s = 1.0;
+    u = 1.0;
+    k = 0.0;
+    do {
+	if (fabs(h) < EPS) {
+	    *loss = 1.0;
+	    return INFINITY;
+	}
+	m = k + 1.0;
+	u = u * ((f + k) * (g + k) * x / ((h + k) * m));
+	s += u;
+	k = fabs(u);		/* remember largest term summed */
+	if (k > umax)
+	    umax = k;
+	k = m;
+	if (++i > MAX_ITERATIONS) {	/* should never happen */
+	    *loss = 1.0;
+	    return (s);
+	}
+    }
+    while (s == 0 || fabs(u / s) > MACHEP);
+
+    /* return estimated relative error */
+    *loss = (MACHEP * umax) / fabs(s) + (MACHEP * i);
+
+    return (s);
+}
+
+
+/* Apply transformations for |x| near 1 then call the power series */
+static double hyt2f1(double a, double b, double c, double x, double *loss)
+{
+    double p, q, r, s, t, y, w, d, err, err1;
+    double ax, id, d1, d2, e, y1;
+    int i, aid, sign;
+
+    int ia, ib, neg_int_a = 0, neg_int_b = 0;
+
+    ia = round(a);
+    ib = round(b);
+
+    if (a <= 0 && fabs(a - ia) < EPS) {	/* a is a negative integer */
+	neg_int_a = 1;
+    }
+
+    if (b <= 0 && fabs(b - ib) < EPS) {	/* b is a negative integer */
+	neg_int_b = 1;
+    }
+
+    err = 0.0;
+    s = 1.0 - x;
+    if (x < -0.5 && !(neg_int_a || neg_int_b)) {
+	if (b > a)
+	    y = pow(s, -a) * hys2f1(a, c - b, c, -x / s, &err);
+
+	else
+	    y = pow(s, -b) * hys2f1(c - a, b, c, -x / s, &err);
+
+	goto done;
+    }
+
+    d = c - a - b;
+    id = round(d);		/* nearest integer to d */
+
+    if (x > 0.9 && !(neg_int_a || neg_int_b)) {
+	if (fabs(d - id) > EPS) {
+	    int sgngam;
+
+	    /* test for integer c-a-b */
+	    /* Try the power series first */
+	    y = hys2f1(a, b, c, x, &err);
+	    if (err < ETHRESH)
+		goto done;
+	    /* If power series fails, then apply AMS55 #15.3.6 */
+	    q = hys2f1(a, b, 1.0 - d, s, &err);
+            sign = 1;
+            w = lgam_sgn(d, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(c-a, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(c-b, &sgngam);
+            sign *= sgngam;
+	    q *= sign * exp(w);
+	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
+            sign = 1;
+            w = lgam_sgn(-d, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(a, &sgngam);
+            sign *= sgngam;
+            w -= lgam_sgn(b, &sgngam);
+            sign *= sgngam;
+	    r *= sign * exp(w);
+	    y = q + r;
+
+	    q = fabs(q);	/* estimate cancellation error */
+	    r = fabs(r);
+	    if (q > r)
+		r = q;
+	    err += err1 + (MACHEP * r) / y;
+
+	    y *= gamma(c);
+	    goto done;
+	}
+	else {
+	    /* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12
+	     *
+	     * Although AMS55 does not explicitly state it, this expansion fails
+	     * for negative integer a or b, since the psi and Gamma functions
+	     * involved have poles.
+	     */
+
+	    if (id >= 0.0) {
+		e = d;
+		d1 = d;
+		d2 = 0.0;
+		aid = id;
+	    }
+	    else {
+		e = -d;
+		d1 = 0.0;
+		d2 = d;
+		aid = -id;
+	    }
+
+	    ax = log(s);
+
+	    /* sum for t = 0 */
+	    y = psi(1.0) + psi(1.0 + e) - psi(a + d1) - psi(b + d1) - ax;
+	    y /= gamma(e + 1.0);
+
+	    p = (a + d1) * (b + d1) * s / gamma(e + 2.0);	/* Poch for t=1 */
+	    t = 1.0;
+	    do {
+		r = psi(1.0 + t) + psi(1.0 + t + e) - psi(a + t + d1)
+		    - psi(b + t + d1) - ax;
+		q = p * r;
+		y += q;
+		p *= s * (a + t + d1) / (t + 1.0);
+		p *= (b + t + d1) / (t + 1.0 + e);
+		t += 1.0;
+		if (t > MAX_ITERATIONS) {	/* should never happen */
+		    sf_error("hyp2f1", SF_ERROR_SLOW, NULL);
+		    *loss = 1.0;
+		    return NAN;
+		}
+	    }
+	    while (y == 0 || fabs(q / y) > EPS);
+
+	    if (id == 0.0) {
+		y *= gamma(c) / (gamma(a) * gamma(b));
+		goto psidon;
+	    }
+
+	    y1 = 1.0;
+
+	    if (aid == 1)
+		goto nosum;
+
+	    t = 0.0;
+	    p = 1.0;
+	    for (i = 1; i < aid; i++) {
+		r = 1.0 - e + t;
+		p *= s * (a + t + d2) * (b + t + d2) / r;
+		t += 1.0;
+		p /= t;
+		y1 += p;
+	    }
+	  nosum:
+	    p = gamma(c);
+	    y1 *= gamma(e) * p / (gamma(a + d1) * gamma(b + d1));
+
+	    y *= p / (gamma(a + d2) * gamma(b + d2));
+	    if ((aid & 1) != 0)
+		y = -y;
+
+	    q = pow(s, id);	/* s to the id power */
+	    if (id > 0.0)
+		y *= q;
+	    else
+		y1 *= q;
+
+	    y += y1;
+	  psidon:
+	    goto done;
+	}
+
+    }
+
+    /* Use defining power series if no special cases */
+    y = hys2f1(a, b, c, x, &err);
+
+  done:
+    *loss = err;
+    return (y);
+}
+
+
+/*
+    15.4.2 Abramowitz & Stegun.
+*/
+static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
+{
+    double k;
+    double collector = 1;
+    double sum = 1;
+    double collector_max = 1;
+
+    if (!(fabs(b) < 1e5)) {
+        return NAN;
+    }
+
+    for (k = 1; k <= -b; k++) {
+        collector *= (a + k - 1)*x/k;
+        collector_max = fmax(fabs(collector), collector_max);
+        sum += collector;
+    }
+
+    if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
+        return NAN;
+    }
+
+    return sum;
+}
+
+double hyp2f1(double a, double b, double c, double x)
 {
     double d, d1, d2, e;
     double p, q, r, s, y, ax;
@@ -274,255 +532,6 @@ double a, b, c, x;
 }
 
 
-
-
-
-
-/* Apply transformations for |x| near 1
- * then call the power series
- */
-static double hyt2f1(a, b, c, x, loss)
-double a, b, c, x;
-double *loss;
-{
-    double p, q, r, s, t, y, w, d, err, err1;
-    double ax, id, d1, d2, e, y1;
-    int i, aid, sign;
-
-    int ia, ib, neg_int_a = 0, neg_int_b = 0;
-
-    ia = round(a);
-    ib = round(b);
-
-    if (a <= 0 && fabs(a - ia) < EPS) {	/* a is a negative integer */
-	neg_int_a = 1;
-    }
-
-    if (b <= 0 && fabs(b - ib) < EPS) {	/* b is a negative integer */
-	neg_int_b = 1;
-    }
-
-    err = 0.0;
-    s = 1.0 - x;
-    if (x < -0.5 && !(neg_int_a || neg_int_b)) {
-	if (b > a)
-	    y = pow(s, -a) * hys2f1(a, c - b, c, -x / s, &err);
-
-	else
-	    y = pow(s, -b) * hys2f1(c - a, b, c, -x / s, &err);
-
-	goto done;
-    }
-
-    d = c - a - b;
-    id = round(d);		/* nearest integer to d */
-
-    if (x > 0.9 && !(neg_int_a || neg_int_b)) {
-	if (fabs(d - id) > EPS) {
-	    int sgngam;
-
-	    /* test for integer c-a-b */
-	    /* Try the power series first */
-	    y = hys2f1(a, b, c, x, &err);
-	    if (err < ETHRESH)
-		goto done;
-	    /* If power series fails, then apply AMS55 #15.3.6 */
-	    q = hys2f1(a, b, 1.0 - d, s, &err);
-            sign = 1;
-            w = lgam_sgn(d, &sgngam);
-            sign *= sgngam;
-            w -= lgam_sgn(c-a, &sgngam);
-            sign *= sgngam;
-            w -= lgam_sgn(c-b, &sgngam);
-            sign *= sgngam;
-	    q *= sign * exp(w);
-	    r = pow(s, d) * hys2f1(c - a, c - b, d + 1.0, s, &err1);
-            sign = 1;
-            w = lgam_sgn(-d, &sgngam);
-            sign *= sgngam;
-            w -= lgam_sgn(a, &sgngam);
-            sign *= sgngam;
-            w -= lgam_sgn(b, &sgngam);
-            sign *= sgngam;
-	    r *= sign * exp(w);
-	    y = q + r;
-
-	    q = fabs(q);	/* estimate cancellation error */
-	    r = fabs(r);
-	    if (q > r)
-		r = q;
-	    err += err1 + (MACHEP * r) / y;
-
-	    y *= gamma(c);
-	    goto done;
-	}
-	else {
-	    /* Psi function expansion, AMS55 #15.3.10, #15.3.11, #15.3.12
-	     *
-	     * Although AMS55 does not explicitly state it, this expansion fails
-	     * for negative integer a or b, since the psi and Gamma functions
-	     * involved have poles.
-	     */
-
-	    if (id >= 0.0) {
-		e = d;
-		d1 = d;
-		d2 = 0.0;
-		aid = id;
-	    }
-	    else {
-		e = -d;
-		d1 = 0.0;
-		d2 = d;
-		aid = -id;
-	    }
-
-	    ax = log(s);
-
-	    /* sum for t = 0 */
-	    y = psi(1.0) + psi(1.0 + e) - psi(a + d1) - psi(b + d1) - ax;
-	    y /= gamma(e + 1.0);
-
-	    p = (a + d1) * (b + d1) * s / gamma(e + 2.0);	/* Poch for t=1 */
-	    t = 1.0;
-	    do {
-		r = psi(1.0 + t) + psi(1.0 + t + e) - psi(a + t + d1)
-		    - psi(b + t + d1) - ax;
-		q = p * r;
-		y += q;
-		p *= s * (a + t + d1) / (t + 1.0);
-		p *= (b + t + d1) / (t + 1.0 + e);
-		t += 1.0;
-		if (t > MAX_ITERATIONS) {	/* should never happen */
-		    sf_error("hyp2f1", SF_ERROR_SLOW, NULL);
-		    *loss = 1.0;
-		    return NAN;
-		}
-	    }
-	    while (y == 0 || fabs(q / y) > EPS);
-
-	    if (id == 0.0) {
-		y *= gamma(c) / (gamma(a) * gamma(b));
-		goto psidon;
-	    }
-
-	    y1 = 1.0;
-
-	    if (aid == 1)
-		goto nosum;
-
-	    t = 0.0;
-	    p = 1.0;
-	    for (i = 1; i < aid; i++) {
-		r = 1.0 - e + t;
-		p *= s * (a + t + d2) * (b + t + d2) / r;
-		t += 1.0;
-		p /= t;
-		y1 += p;
-	    }
-	  nosum:
-	    p = gamma(c);
-	    y1 *= gamma(e) * p / (gamma(a + d1) * gamma(b + d1));
-
-	    y *= p / (gamma(a + d2) * gamma(b + d2));
-	    if ((aid & 1) != 0)
-		y = -y;
-
-	    q = pow(s, id);	/* s to the id power */
-	    if (id > 0.0)
-		y *= q;
-	    else
-		y1 *= q;
-
-	    y += y1;
-	  psidon:
-	    goto done;
-	}
-
-    }
-
-    /* Use defining power series if no special cases */
-    y = hys2f1(a, b, c, x, &err);
-
-  done:
-    *loss = err;
-    return (y);
-}
-
-
-
-
-
-/* Defining power series expansion of Gauss hypergeometric function */
-
-static double hys2f1(a, b, c, x, loss)
-double a, b, c, x;
-double *loss;			/* estimates loss of significance */
-{
-    double f, g, h, k, m, s, u, umax;
-    int i;
-    int ib, intflag = 0;
-
-    if (fabs(b) > fabs(a)) {
-	/* Ensure that |a| > |b| ... */
-	f = b;
-	b = a;
-	a = f;
-    }
-
-    ib = round(b);
-
-    if (fabs(b - ib) < EPS && ib <= 0 && fabs(b) < fabs(a)) {
-	/* .. except when `b` is a smaller negative integer */
-	f = b;
-	b = a;
-	a = f;
-	intflag = 1;
-    }
-
-    if ((fabs(a) > fabs(c) + 1 || intflag) && fabs(c - a) > 2
-	&& fabs(a) > 2) {
-	/* |a| >> |c| implies that large cancellation error is to be expected.
-	 *
-	 * We try to reduce it with the recurrence relations
-	 */
-	return hyp2f1ra(a, b, c, x, loss);
-    }
-
-    i = 0;
-    umax = 0.0;
-    f = a;
-    g = b;
-    h = c;
-    s = 1.0;
-    u = 1.0;
-    k = 0.0;
-    do {
-	if (fabs(h) < EPS) {
-	    *loss = 1.0;
-	    return INFINITY;
-	}
-	m = k + 1.0;
-	u = u * ((f + k) * (g + k) * x / ((h + k) * m));
-	s += u;
-	k = fabs(u);		/* remember largest term summed */
-	if (k > umax)
-	    umax = k;
-	k = m;
-	if (++i > MAX_ITERATIONS) {	/* should never happen */
-	    *loss = 1.0;
-	    return (s);
-	}
-    }
-    while (s == 0 || fabs(u / s) > MACHEP);
-
-    /* return estimated relative error */
-    *loss = (MACHEP * umax) / fabs(s) + (MACHEP * i);
-
-    return (s);
-}
-
-
 /*
  * Evaluate hypergeometric function by two-term recurrence in `a`.
  *
@@ -532,8 +541,7 @@ double *loss;			/* estimates loss of significance */
  *
  * AMS55 #15.2.10
  */
-static double hyp2f1ra(double a, double b, double c, double x,
-		       double *loss)
+static double hyp2f1ra(double a, double b, double c, double x, double *loss)
 {
     double f2, f1, f0;
     int n;
@@ -594,32 +602,4 @@ static double hyp2f1ra(double a, double b, double c, double x,
     }
 
     return f0;
-}
-
-
-/*
-    15.4.2 Abramowitz & Stegun.
-*/
-static double hyp2f1_neg_c_equal_bc(double a, double b, double x)
-{
-    double k;
-    double collector = 1;
-    double sum = 1;
-    double collector_max = 1;
-
-    if (!(fabs(b) < 1e5)) {
-        return NAN;
-    }
-
-    for (k = 1; k <= -b; k++) {
-        collector *= (a + k - 1)*x/k;
-        collector_max = fmax(fabs(collector), collector_max);
-        sum += collector;
-    }
-
-    if (1e-16 * (1 + collector_max/fabs(sum)) > 1e-7) {
-        return NAN;
-    }
-
-    return sum;
 }

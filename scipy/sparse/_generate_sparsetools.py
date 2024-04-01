@@ -175,7 +175,7 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 %(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
@@ -397,9 +397,6 @@ def main():
         if options.outdir:
             # Used by Meson (options.outdir == scipy/sparse/sparsetools)
             outdir = os.path.join(os.getcwd(), options.outdir)
-        else:
-            # Used by setup.py
-            outdir = os.path.join(os.path.dirname(__file__), 'sparsetools')
 
         dst = os.path.join(outdir,
                            unit_name + '_impl.h')
@@ -422,12 +419,15 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += f"NPY_VISIBILITY_HIDDEN PyObject *{name}_method(PyObject *, PyObject *);\n"
+        method_defs += (f"PyObject *{name}"
+                        f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""
     for name in names:
-        method_struct += """
-        {"%(name)s", (PyCFunction)%(name)s_method, METH_VARARGS, NULL},""" % dict(name=name)
+        method_struct += ("""
+            {{"{name}", (PyCFunction){name}_method, METH_VARARGS, NULL}},"""
+            .format(**dict(name=name))
+        )
     method_struct += """
         {NULL, NULL, 0, NULL}
     };"""

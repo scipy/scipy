@@ -118,7 +118,8 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
             if x[i][0] != x[i][-1]:
                 if not quiet:
                     warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
-                                                 (i, m, i)))
+                                                 (i, m, i)),
+                                  stacklevel=2)
                 x[i][-1] = x[i][0]
     if not 0 < idim < 11:
         raise TypeError('0 < idim < 11 must hold')
@@ -188,10 +189,11 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if ier <= 0 and not quiet:
         warnings.warn(RuntimeWarning(_iermess[ier][0] +
                                      "\tk=%d n=%d m=%d fp=%f s=%f" %
-                                     (k, len(t), m, fp, s)))
+                                     (k, len(t), m, fp, s)),
+                      stacklevel=2)
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
-            warnings.warn(RuntimeWarning(_iermess[ier][0]))
+            warnings.warn(RuntimeWarning(_iermess[ier][0]), stacklevel=2)
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -279,10 +281,10 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     if ier <= 0 and not quiet:
         _mess = (_iermess[ier][0] + "\tk=%d n=%d m=%d fp=%f s=%f" %
                  (k, len(t), m, fp, s))
-        warnings.warn(RuntimeWarning(_mess))
+        warnings.warn(RuntimeWarning(_mess), stacklevel=2)
     if ier > 0 and not full_output:
         if ier in [1, 2, 3]:
-            warnings.warn(RuntimeWarning(_iermess[ier][0]))
+            warnings.warn(RuntimeWarning(_iermess[ier][0]), stacklevel=2)
         else:
             try:
                 raise _iermess[ier][1](_iermess[ier][0])
@@ -374,7 +376,8 @@ def sproot(tck, mest=10):
         if ier == 0:
             return z[:m]
         if ier == 1:
-            warnings.warn(RuntimeWarning("The number of zeros exceeds mest"))
+            warnings.warn(RuntimeWarning("The number of zeros exceeds mest"),
+                          stacklevel=2)
             return z[:m]
         raise TypeError("Unknown error")
 
@@ -586,12 +589,12 @@ def bisplrep(x, y, z, w=None, xb=None, xe=None, yb=None, ye=None,
         _mess = (_iermess2[ierm][0] +
                  "\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
                  (kx, ky, len(tx), len(ty), m, fp, s))
-        warnings.warn(RuntimeWarning(_mess))
+        warnings.warn(RuntimeWarning(_mess), stacklevel=2)
     if ierm > 0 and not full_output:
         if ier in [1, 2, 3, 4, 5]:
             _mess = ("\n\tkx,ky=%d,%d nx,ny=%d,%d m=%d fp=%f s=%f" %
                      (kx, ky, len(tx), len(ty), m, fp, s))
-            warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess))
+            warnings.warn(RuntimeWarning(_iermess2[ierm][0] + _mess), stacklevel=2)
         else:
             try:
                 raise _iermess2[ierm][1](_iermess2[ierm][0])
@@ -744,8 +747,8 @@ def splder(tck, n=1):
     t, c, k = tck
 
     if n > k:
-        raise ValueError(("Order of derivative (n = {!r}) must be <= "
-                          "order of spline (k = {!r})").format(n, tck[2]))
+        raise ValueError(f"Order of derivative (n = {n!r}) must be <= "
+                         f"order of spline (k = {tck[2]!r})")
 
     # Extra axes for the trailing dims of the `c` array:
     sh = (slice(None),) + ((None,)*len(c.shape[1:]))
@@ -756,7 +759,7 @@ def splder(tck, n=1):
                 # See e.g. Schumaker, Spline Functions: Basic Theory, Chapter 5
 
                 # Compute the denominator in the differentiation formula.
-                # (and append traling dims, if necessary)
+                # (and append trailing dims, if necessary)
                 dt = t[k+1:-1] - t[1:-k-1]
                 dt = dt[sh]
                 # Compute the new coefficients

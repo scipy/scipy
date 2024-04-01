@@ -204,7 +204,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
     (1.0, 7, 8)
 
 
-    """  # noqa
+    """  # noqa: E501
     if not isinstance(args, tuple):
         args = (args,)
 
@@ -286,7 +286,7 @@ def root_scalar(f, args=(), method=None, bracket=None,
                 sol = optzeros.RootResults(root=e._x,
                                            iterations=np.nan,
                                            function_calls=e._function_calls,
-                                           flag=str(e))
+                                           flag=str(e), method=method)
             else:
                 raise
 

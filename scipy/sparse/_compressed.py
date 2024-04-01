@@ -5,7 +5,7 @@ from warnings import warn
 import operator
 
 import numpy as np
-from scipy._lib._util import _prune_array
+from scipy._lib._util import _prune_array, copy_if_needed
 
 from ._base import _spbase, issparse, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
@@ -15,12 +15,14 @@ from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                       getdtype, isscalarlike, isintlike, downcast_intp_index, get_sum_dtype, check_shape,
-                       is_pydata_spmatrix)
+                       getdtype, isscalarlike, isintlike, downcast_intp_index,
+                       get_sum_dtype, check_shape, is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
-    """base matrix class for compressed row- and column-oriented matrices"""
+    """
+    base array/matrix class for compressed row- and column-oriented arrays/matrices
+    """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
         _data_matrix.__init__(self)
@@ -30,7 +32,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 arg1 = arg1.copy()
             else:
                 arg1 = arg1.asformat(self.format)
-            self._set_self(arg1)
+            self.indptr, self.indices, self.data, self._shape = (
+                arg1.indptr, arg1.indices, arg1.data, arg1._shape
+            )
 
         elif isinstance(arg1, tuple):
             if isshape(arg1):
@@ -48,10 +52,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    other = self.__class__(
-                        self._coo_container(arg1, shape=shape, dtype=dtype)
-                    )
-                    self._set_self(other)
+                    coo = self._coo_container(arg1, shape=shape, dtype=dtype)
+                    arrays = coo._coo_to_compressed(self._swap)
+                    self.indptr, self.indices, self.data, self._shape = arrays
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -65,24 +68,25 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                                                 maxval=maxval,
                                                 check_contents=True)
 
-                    self.indices = np.array(indices, copy=copy,
-                                            dtype=idx_dtype)
+                    if not copy:
+                        copy = copy_if_needed
+                    self.indices = np.array(indices, copy=copy, dtype=idx_dtype)
                     self.indptr = np.array(indptr, copy=copy, dtype=idx_dtype)
                     self.data = np.array(data, copy=copy, dtype=dtype)
                 else:
-                    raise ValueError("unrecognized {}_matrix "
-                                     "constructor usage".format(self.format))
+                    raise ValueError(f"unrecognized {self.format}_matrix "
+                                     "constructor usage")
 
         else:
             # must be dense
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
-                raise ValueError("unrecognized {}_matrix constructor usage"
-                                 "".format(self.format)) from e
-            self._set_self(self.__class__(
-                self._coo_container(arg1, dtype=dtype)
-            ))
+                msg = f"unrecognized {self.format}_matrix constructor usage"
+                raise ValueError(msg) from e
+            coo = self._coo_container(arg1, dtype=dtype)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, self._shape = arrays
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -96,8 +100,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 except Exception as e:
                     raise ValueError('unable to infer matrix dimensions') from e
                 else:
-                    self._shape = check_shape(self._swap((major_dim,
-                                                          minor_dim)))
+                    self._shape = check_shape(self._swap((major_dim, minor_dim)))
 
         if dtype is not None:
             self.data = self.data.astype(dtype, copy=False)
@@ -121,19 +124,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
-    def _set_self(self, other, copy=False):
-        """take the member variables of other and assign them to self"""
-
-        if copy:
-            other = other.copy()
-
-        self.data = other.data
-        self.indices = other.indices
-        self.indptr = other.indptr
-        self._shape = check_shape(other.shape)
-
     def check_format(self, full_check=True):
-        """Check whether the matrix respects the CSR or CSC format.
+        """Check whether the array/matrix respects the CSR or CSC format.
 
         Parameters
         ----------
@@ -150,11 +142,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # index arrays should have integer data types
         if self.indptr.dtype.kind != 'i':
-            warn("indptr array has non-integer dtype ({})"
-                 "".format(self.indptr.dtype.name), stacklevel=3)
+            warn(f"indptr array has non-integer dtype ({self.indptr.dtype.name})",
+                 stacklevel=3)
         if self.indices.dtype.kind != 'i':
-            warn("indices array has non-integer dtype ({})"
-                 "".format(self.indices.dtype.name), stacklevel=3)
+            warn(f"indices array has non-integer dtype ({self.indices.dtype.name})",
+                 stacklevel=3)
 
         # check array shapes
         for x in [self.data.ndim, self.indices.ndim, self.indptr.ndim]:
@@ -163,8 +155,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # check index pointer
         if (len(self.indptr) != major_dim + 1):
-            raise ValueError("index pointer size ({}) should be ({})"
-                             "".format(len(self.indptr), major_dim + 1))
+            raise ValueError(
+                f"index pointer size ({len(self.indptr)}) should be ({major_dim + 1})"
+                )
         if (self.indptr[0] != 0):
             raise ValueError("index pointer should start with 0")
 
@@ -181,11 +174,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             # check format validity (more expensive)
             if self.nnz > 0:
                 if self.indices.max() >= minor_dim:
-                    raise ValueError("{} index values must be < {}"
-                                     "".format(minor_name, minor_dim))
+                    raise ValueError(f"{minor_name} index values must be < {minor_dim}")
                 if self.indices.min() < 0:
-                    raise ValueError("{} index values must be >= 0"
-                                     "".format(minor_name))
+                    raise ValueError(f"{minor_name} index values must be >= 0")
                 if np.diff(self.indptr).min() < 0:
                     raise ValueError("index pointer values must form a "
                                      "non-decreasing sequence")
@@ -248,7 +239,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             return all_true - res
         else:
-            return False
+            return NotImplemented
 
     def __ne__(self, other):
         # Scalar other.
@@ -282,7 +273,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 other = other.asformat(self.format)
             return self._binopt(other, '_ne_')
         else:
-            return True
+            return NotImplemented
 
     def _inequality(self, other, op, op_name, bad_scalar_msg):
         # Scalar other.
@@ -290,7 +281,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if 0 == other and op_name in ('_le_', '_ge_'):
                 raise NotImplementedError(" >= and <= don't work with 0.")
             elif op(0, other):
-                warn(bad_scalar_msg, SparseEfficiencyWarning)
+                warn(bad_scalar_msg, SparseEfficiencyWarning, stacklevel=3)
                 other_arr = np.empty(self.shape, dtype=np.result_type(other))
                 other_arr.fill(other)
                 other_arr = self.__class__(other_arr)
@@ -311,12 +302,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return self._binopt(other, op_name)
 
             warn("Comparing sparse matrices using >= and <= is inefficient, "
-                 "using <, >, or !=, instead.", SparseEfficiencyWarning)
+                 "using <, >, or !=, instead.",
+                 SparseEfficiencyWarning, stacklevel=3)
             all_true = self.__class__(np.ones(self.shape, dtype=np.bool_))
             res = self._binopt(other, '_gt_' if op_name == '_le_' else '_lt_')
             return all_true - res
         else:
-            raise ValueError("Operands could not be compared.")
+            return NotImplemented
 
     def __lt__(self, other):
         return self._inequality(other, operator.lt, '_lt_',
@@ -348,8 +340,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     def _add_dense(self, other):
         if other.shape != self.shape:
-            raise ValueError('Incompatible shapes ({} and {})'
-                             .format(self.shape, other.shape))
+            raise ValueError(f'Incompatible shapes ({self.shape} and {other.shape})')
         dtype = upcast_char(self.dtype.char, other.dtype.char)
         order = self._swap('CF')[0]
         result = np.array(other, dtype=dtype, order=order, copy=True)
@@ -365,7 +356,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         return self._binopt(other, '_minus_')
 
     def multiply(self, other):
-        """Point-wise multiplication by another matrix, vector, or
+        """Point-wise multiplication by another array/matrix, vector, or
         scalar.
         """
         # Scalar multiplication.
@@ -376,6 +367,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             if self.shape == other.shape:
                 other = self.__class__(other)
                 return self._binopt(other, '_elmul_')
+            if other.ndim == 1:
+                raise TypeError("broadcast from a 1d array not yet supported")
             # Single element.
             elif other.shape == (1, 1):
                 return self._mul_scalar(other.toarray()[0, 0])
@@ -383,37 +376,37 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return other._mul_scalar(self.toarray()[0, 0])
             # A row times a column.
             elif self.shape[1] == 1 and other.shape[0] == 1:
-                return self._mul_sparse_matrix(other.tocsc())
+                return self._matmul_sparse(other.tocsc())
             elif self.shape[0] == 1 and other.shape[1] == 1:
-                return other._mul_sparse_matrix(self.tocsc())
+                return other._matmul_sparse(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[1], other.shape[1])
                 )
-                return self._mul_sparse_matrix(other)
+                return self._matmul_sparse(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[1], self.shape[1])
                 )
-                return other._mul_sparse_matrix(copy)
+                return other._matmul_sparse(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 other = self._dia_container(
                     (other.toarray().ravel(), [0]),
                     shape=(other.shape[0], other.shape[0])
                 )
-                return other._mul_sparse_matrix(self)
+                return other._matmul_sparse(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
                 copy = self._dia_container(
                     (self.toarray().ravel(), [0]),
                     shape=(self.shape[0], self.shape[0])
                 )
-                return copy._mul_sparse_matrix(other)
+                return copy._matmul_sparse(other)
             else:
                 raise ValueError("inconsistent shapes")
 
@@ -425,6 +418,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return np.multiply(self.toarray(), other)
         # Single element / wrapped object.
         if other.size == 1:
+            if other.dtype == np.object_:
+                # 'other' not convertible to ndarray.
+                return NotImplemented
             return self._mul_scalar(other.flat[0])
         # Fast case for trivial sparse matrix.
         elif self.shape == (1, 1):
@@ -479,7 +475,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     # Multiplication handlers #
     ###########################
 
-    def _mul_vector(self, other):
+    def _matmul_vector(self, other):
         M, N = self.shape
 
         # output array
@@ -492,7 +488,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_multivector(self, other):
+    def _matmul_multivector(self, other):
         M, N = self.shape
         n_vecs = other.shape[1]  # number of column vectors
 
@@ -506,7 +502,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         return result
 
-    def _mul_sparse_matrix(self, other):
+    def _matmul_sparse(self, other):
         M, K1 = self.shape
         K2, N = other.shape
 
@@ -599,13 +595,13 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     #####################
 
     def sum(self, axis=None, dtype=None, out=None):
-        """Sum the matrix over the given axis.  If the axis is None, sum
+        """Sum the array/matrix over the given axis.  If the axis is None, sum
         over both rows and columns, returning a scalar.
         """
         # The _spbase base class already does axis=0 and axis=1 efficiently
         # so we only do the case axis=None here
         if (not hasattr(self, 'blocksize') and
-                axis in self._swap(((1, -1), (0, 2)))[0]):
+                axis in self._swap(((1, -1), (0, -2)))[0]):
             # faster than multiplication for large minor axis in CSC/CSR
             res_dtype = get_sum_dtype(self.dtype)
             ret = np.zeros(len(self.indptr) - 1, dtype=res_dtype)
@@ -690,7 +686,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _major_index_fancy(self, idx):
         """Index along the major axis where idx is an array of ints.
         """
-        idx_dtype = self.indices.dtype
+        idx_dtype = self._get_index_dtype((self.indptr, self.indices))
         indices = np.asarray(idx, dtype=idx_dtype).ravel()
 
         _, N = self._swap(self.shape)
@@ -699,16 +695,23 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         if M == 0:
             return self.__class__(new_shape, dtype=self.dtype)
 
-        row_nnz = self.indptr[indices + 1] - self.indptr[indices]
-        idx_dtype = self.indices.dtype
+        row_nnz = (self.indptr[indices + 1] - self.indptr[indices]).astype(idx_dtype)
+
         res_indptr = np.zeros(M+1, dtype=idx_dtype)
         np.cumsum(row_nnz, out=res_indptr[1:])
 
         nnz = res_indptr[-1]
         res_indices = np.empty(nnz, dtype=idx_dtype)
         res_data = np.empty(nnz, dtype=self.dtype)
-        csr_row_index(M, indices, self.indptr, self.indices, self.data,
-                      res_indices, res_data)
+        csr_row_index(
+            M,
+            indices,
+            self.indptr.astype(idx_dtype, copy=False),
+            self.indices.astype(idx_dtype, copy=False),
+            self.data,
+            res_indices,
+            res_data
+        )
 
         return self.__class__((res_data, res_indices, res_indptr),
                               shape=new_shape, copy=False)
@@ -756,7 +759,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     def _minor_index_fancy(self, idx):
         """Index along the minor axis where idx is an array of ints.
         """
-        idx_dtype = self.indices.dtype
+        idx_dtype = self._get_index_dtype((self.indices, self.indptr))
+        indices = self.indices.astype(idx_dtype, copy=False)
+        indptr = self.indptr.astype(idx_dtype, copy=False)
+
         idx = np.asarray(idx, dtype=idx_dtype).ravel()
 
         M, N = self._swap(self.shape)
@@ -767,9 +773,17 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
         # pass 1: count idx entries and compute new indptr
         col_offsets = np.zeros(N, dtype=idx_dtype)
-        res_indptr = np.empty_like(self.indptr)
-        csr_column_index1(k, idx, M, N, self.indptr, self.indices,
-                          col_offsets, res_indptr)
+        res_indptr = np.empty_like(self.indptr, dtype=idx_dtype)
+        csr_column_index1(
+            k,
+            idx,
+            M,
+            N,
+            indptr,
+            indices,
+            col_offsets,
+            res_indptr,
+        )
 
         # pass 2: copy indices/data for selected idxs
         col_order = np.argsort(idx).astype(idx_dtype, copy=False)
@@ -777,7 +791,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         res_indices = np.empty(nnz, dtype=idx_dtype)
         res_data = np.empty(nnz, dtype=self.dtype)
         csr_column_index2(col_order, col_offsets, len(self.indices),
-                          self.indices, self.data, res_indices, res_data)
+                          indices, self.data, res_indices, res_data)
         return self.__class__((res_data, res_indices, res_indptr),
                               shape=new_shape, copy=False)
 
@@ -861,9 +875,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 max_index = min(M + k, N)
             else:
                 max_index = min(M + k, N, len(values))
-            i = np.arange(max_index, dtype=self.indices.dtype)
+            i = np.arange(-k, max_index - k, dtype=self.indices.dtype)
             j = np.arange(max_index, dtype=self.indices.dtype)
-            i -= k
 
         else:
             if broadcast:
@@ -871,13 +884,50 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 max_index = min(M, N - k, len(values))
             i = np.arange(max_index, dtype=self.indices.dtype)
-            j = np.arange(max_index, dtype=self.indices.dtype)
-            j += k
+            j = np.arange(k, k + max_index, dtype=self.indices.dtype)
 
         if not broadcast:
             values = values[:len(i)]
 
-        self[i, j] = values
+        x = np.atleast_1d(np.asarray(values, dtype=self.dtype)).ravel()
+        if x.squeeze().shape != i.squeeze().shape:
+            x = np.broadcast_to(x, i.shape)
+        if x.size == 0:
+            return
+
+        M, N = self._swap((M, N))
+        i, j = self._swap((i, j))
+        n_samples = x.size
+        offsets = np.empty(n_samples, dtype=self.indices.dtype)
+        ret = csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                                 i, j, offsets)
+        if ret == 1:
+            # rinse and repeat
+            self.sum_duplicates()
+            csr_sample_offsets(M, N, self.indptr, self.indices, n_samples,
+                               i, j, offsets)
+        if -1 not in offsets:
+            # only affects existing non-zero cells
+            self.data[offsets] = x
+            return
+
+        mask = (offsets <= -1)
+        # Boundary between csc and convert to coo
+        # The value 0.001 is justified in gh-19962#issuecomment-1920499678
+        if mask.sum() < self.nnz * 0.001:
+            # create new entries
+            i = i[mask]
+            j = j[mask]
+            self._insert_many(i, j, x[mask])
+            # replace existing entries
+            mask = ~mask
+            self.data[offsets[mask]] = x[mask]
+        else:
+            # convert to coo for _set_diag
+            coo = self.tocoo()
+            coo._setdiag(values, k)
+            arrays = coo._coo_to_compressed(self._swap)
+            self.indptr, self.indices, self.data, _ = arrays
 
     def _prepare_indices(self, i, j):
         M, N = self._swap(self.shape)
@@ -892,8 +942,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise IndexError('index (%d) out of range (< -%d)' %
                                  (idx, bound))
 
-        i = np.array(i, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
-        j = np.array(j, dtype=self.indices.dtype, copy=False, ndmin=1).ravel()
+        i = np.atleast_1d(np.asarray(i, dtype=self.indices.dtype)).ravel()
+        j = np.atleast_1d(np.asarray(j, dtype=self.indices.dtype)).ravel()
         check_bounds(i, M)
         check_bounds(j, N)
         return i, j, M, N
@@ -905,7 +955,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         duplicate entries.
         """
         i, j, M, N = self._prepare_indices(i, j)
-        x = np.array(x, dtype=self.dtype, copy=False, ndmin=1).ravel()
+        x = np.atleast_1d(np.asarray(x, dtype=self.dtype)).ravel()
 
         n_samples = x.size
         offsets = np.empty(n_samples, dtype=self.indices.dtype)
@@ -923,8 +973,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn("Changing the sparsity structure of a {}_matrix is expensive."
-                 " lil_matrix is more efficient.".format(self.format),
+            warn(f"Changing the sparsity structure of a {self.format}_matrix is"
+                 " expensive. lil and dok are more efficient.",
                  SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1
@@ -1038,11 +1088,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         minor_indices = self.indices
         major_indices = np.empty(len(minor_indices), dtype=self.indices.dtype)
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
-        row, col = self._swap((major_indices, minor_indices))
+        coords = self._swap((major_indices, minor_indices))
 
         return self._coo_container(
-            (self.data, (row, col)), self.shape, copy=copy,
-            dtype=self.dtype
+            (self.data, coords), self.shape, copy=copy, dtype=self.dtype
         )
 
     tocoo.__doc__ = _spbase.tocoo.__doc__
@@ -1071,7 +1120,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     ##############################################################
 
     def eliminate_zeros(self):
-        """Remove zero entries from the matrix
+        """Remove zero entries from the array/matrix
 
         This is an *in place* operation.
         """
@@ -1082,7 +1131,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
     @property
     def has_canonical_format(self) -> bool:
-        """Whether the matrix has sorted indices and no duplicates
+        """Whether the array/matrix has sorted indices and no duplicates
 
         Returns
             - True: if the above applies
@@ -1110,7 +1159,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             self.has_sorted_indices = True
 
     def sum_duplicates(self):
-        """Eliminate duplicate matrix entries by adding them together
+        """Eliminate duplicate entries by adding them together
 
         This is an *in place* operation.
         """
@@ -1130,7 +1179,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         """Whether the indices are sorted
 
         Returns
-            - True: if the indices of the matrix are in sorted order
+            - True: if the indices of the array/matrix are in sorted order
             - False: otherwise
         """
         # first check to see if result was cached
@@ -1147,7 +1196,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
 
     def sorted_indices(self):
-        """Return a copy of this matrix with sorted indices
+        """Return a copy of this array/matrix with sorted indices
         """
         A = self.copy()
         A.sort_indices()
@@ -1158,7 +1207,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         # return self.toother().toother()
 
     def sort_indices(self):
-        """Sort the indices of this matrix *in place*
+        """Sort the indices of this array/matrix *in place*
         """
 
         if not self.has_sorted_indices:
@@ -1188,8 +1237,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             new_M, rm = divmod(shape[0], bm)
             new_N, rn = divmod(shape[1], bn)
             if rm or rn:
-                raise ValueError("shape must be divisible into {} blocks. "
-                                 "Got {}".format(self.blocksize, shape))
+                raise ValueError(f"shape must be divisible into {self.blocksize}"
+                                 f" blocks. Got {shape}")
             M, N = self.shape[0] // bm, self.shape[1] // bn
         else:
             new_M, new_N = self._swap(shape)
@@ -1311,8 +1360,7 @@ def _process_slice(sl, num):
             sl += num
         i0, i1 = sl, sl + 1
         if i0 < 0 or i1 > num:
-            raise IndexError('index out of bounds: 0 <= %d < %d <= %d' %
-                             (i0, i1, num))
+            raise IndexError(f'index out of bounds: 0 <= {i0} < {i1} <= {num}')
     else:
         raise TypeError('expected slice or scalar')
 

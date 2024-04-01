@@ -4,7 +4,6 @@
 # cython: cdivision=True
 # cython: cpow=True
 
-# distutils: language = c++
 
 import numpy as np
 cimport numpy as np
@@ -394,7 +393,7 @@ cdef _cy_van_der_corput_threaded_loop(Py_ssize_t istart,
 def _cy_van_der_corput_scrambled(Py_ssize_t n,
                                  long base,
                                  long start_index,
-                                 long[:,::1] permutations,
+                                 np.int64_t[:,::1] permutations,
                                  unsigned int workers):
     sequence = np.zeros(n)
 
@@ -428,7 +427,7 @@ cdef _cy_van_der_corput_scrambled_loop(Py_ssize_t istart,
                                        Py_ssize_t istop,
                                        long base,
                                        long start_index,
-                                       long[:,::1] permutations,
+                                       np.int64_t[:,::1] permutations,
                                        double[::1] sequence_view):
 
     cdef:

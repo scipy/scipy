@@ -1,5 +1,3 @@
-# distutils: language = c++
-
 from ._biasedurn cimport CFishersNCHypergeometric, StochasticLib3
 cimport numpy as np
 import numpy as np

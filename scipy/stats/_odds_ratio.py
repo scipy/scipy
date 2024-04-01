@@ -268,7 +268,7 @@ class OddsRatioResult:
         .. [2] H. Sahai and A. Khurshid (1996), Statistics in Epidemiology:
                Methods, Techniques, and Applications, CRC Press LLC, Boca
                Raton, Florida.
-        .. [3] Alan Agresti, An Introduction to Categorical Data Analyis
+        .. [3] Alan Agresti, An Introduction to Categorical Data Analysis
                (second edition), Wiley, Hoboken, NJ, USA (2007).
         """
         if alternative not in ['two-sided', 'less', 'greater']:
@@ -385,7 +385,7 @@ def odds_ratio(table, *, kind='conditional'):
     In epidemiology, individuals are classified as "exposed" or
     "unexposed" to some factor or treatment. If the occurrence of some
     illness is under study, those who have the illness are often
-    classifed as "cases", and those without it are "noncases".  The
+    classified as "cases", and those without it are "noncases".  The
     counts of the occurrences of these classes gives a contingency
     table::
 
@@ -401,7 +401,7 @@ def odds_ratio(table, *, kind='conditional'):
     between being exposed and being a case.
 
     Interchanging the rows or columns of the contingency table inverts
-    the odds ratio, so it is import to understand the meaning of labels
+    the odds ratio, so it is important to understand the meaning of labels
     given to the rows and columns of the table when interpreting the
     odds ratio.
 

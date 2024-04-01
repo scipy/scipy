@@ -156,8 +156,7 @@ class NominalAttribute(Attribute):
         elif data_str == '?':
             return data_str
         else:
-            raise ValueError("{} value not in {}".format(str(data_str),
-                                                     str(self.values)))
+            raise ValueError(f"{str(data_str)} value not in {str(self.values)}")
 
     def __str__(self):
         msg = self.name + ",{"
@@ -422,18 +421,19 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
     """
     if csv_sniffer_has_bug_last_field():
         # Reuses code from the csv module
-        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'
+        right_regex = r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'  # noqa: E501
 
-        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",
+        for restr in (r'(?P<delim>[^\w\n"\'])(?P<space> ?)(?P<quote>["\']).*?(?P=quote)(?P=delim)',  # ,".*?",  # noqa: E501
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?P<delim>[^\w\n"\'])(?P<space> ?)',  # .*?",  # noqa: E501
                       right_regex,  # ,".*?"
-                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)
+                      r'(?:^|\n)(?P<quote>["\']).*?(?P=quote)(?:$|\n)'):  # ".*?" (no delim, no space)  # noqa: E501
             regexp = re.compile(restr, re.DOTALL | re.MULTILINE)
             matches = regexp.findall(sniff_line)
             if matches:
                 break
 
-        # If it does not match the expression that was bugged, then this bug does not apply
+        # If it does not match the expression that was bugged,
+        # then this bug does not apply
         if restr != right_regex:
             return
 
@@ -453,8 +453,7 @@ def workaround_csv_sniffer_bug_last_field(sniff_line, dialect, delimiters):
         space = bool(m[n])
 
         dq_regexp = re.compile(
-            r"((%(delim)s)|^)\W*%(quote)s[^%(delim)s\n]*%(quote)s[^%(delim)s\n]*%(quote)s\W*((%(delim)s)|$)" %
-            {'delim': re.escape(delim), 'quote': quote}, re.MULTILINE
+            rf"(({re.escape(delim)})|^)\W*{quote}[^{re.escape(delim)}\n]*{quote}[^{re.escape(delim)}\n]*{quote}\W*(({re.escape(delim)})|$)", re.MULTILINE  # noqa: E501
         )
 
         doublequote = bool(dq_regexp.search(sniff_line))
@@ -825,7 +824,7 @@ def _loadarff(ofile):
     meta = MetaData(rel, attr)
 
     # XXX The following code is not great
-    # Build the type descriptor descr and the list of convertors to convert
+    # Build the type descriptor descr and the list of converters to convert
     # each attribute to the suitable type (which should match the one in
     # descr).
 

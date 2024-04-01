@@ -310,7 +310,7 @@ class UnivariateSpline:
             if ier == 1:
                 self._set_class(LSQUnivariateSpline)
             message = _curfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=3)
 
     def _set_class(self, cls):
         self._spline_class = cls
@@ -346,7 +346,8 @@ class UnivariateSpline:
         data = self._data
         if data[6] == -1:
             warnings.warn('smoothing factor unchanged for'
-                          'LSQ spline with fixed knots')
+                          'LSQ spline with fixed knots',
+                          stacklevel=2)
             return
         args = data[:6] + (s,) + data[7:]
         data = dfitpack.fpcurf1(*args)
@@ -1223,8 +1224,8 @@ class BivariateSpline(_BivariateSplineBase):
         ...     return np.exp(-np.sqrt((x / 2) ** 2 + y**2))
 
         We sample the function on a coarse grid and set up the interpolator. Note that
-        the default ``indexing="xy"`` of meshgrid would result in an unexpected (transposed)
-        result after interpolation.
+        the default ``indexing="xy"`` of meshgrid would result in an unexpected
+        (transposed) result after interpolation.
 
         >>> xarr = np.linspace(-3, 3, 21)
         >>> yarr = np.linspace(-3, 3, 21)
@@ -1300,7 +1301,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
     -----
     The class is not meant to be instantiated directly from the data to be
     interpolated or smoothed. As a result, its ``fp`` attribute and
-    ``get_residual`` method are inherited but overriden; ``AttributeError`` is
+    ``get_residual`` method are inherited but overridden; ``AttributeError`` is
     raised when they are accessed.
 
     The other inherited attributes can be used as usual.
@@ -1416,7 +1417,7 @@ class SmoothBivariateSpline(BivariateSpline):
             pass
         else:
             message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
 
         self.fp = fp
         self.tck = tx[:nx], ty[:ny], c[:(nx-kx-1)*(ny-ky-1)]
@@ -1516,7 +1517,7 @@ class LSQBivariateSpline(BivariateSpline):
                 message = _surfit_messages.get(-3) % (deficiency)
             else:
                 message = _surfit_messages.get(ier, 'ier=%s' % (ier))
-            warnings.warn(message)
+            warnings.warn(message, stacklevel=2)
         self.fp = fp
         self.tck = tx1[:nx], ty1[:ny], c
         self.degrees = kx, ky
@@ -1691,8 +1692,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
         Examples
         --------
 
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
@@ -1761,8 +1763,9 @@ class SphereBivariateSpline(_BivariateSplineBase):
 
         Examples
         --------
-        Suppose that we want to use splines to interpolate a bivariate function on a sphere.
-        The value of the function is known on a grid of longitudes and colatitudes.
+        Suppose that we want to use splines to interpolate a bivariate function on a
+        sphere. The value of the function is known on a grid of longitudes and
+        colatitudes.
 
         >>> import numpy as np
         >>> from scipy.interpolate import RectSphereBivariateSpline
@@ -2111,7 +2114,7 @@ ERROR: on entry, the input data are controlled on validity
                          8<=nv<=min(nvest,mv+7)
                          v(1)<tv(5)<tv(6)<...<tv(nv-4)<v(1)+2*pi
                          the schoenberg-whitney conditions, i.e. there must be
-                         subset of grid co-ordinates uu(p) and vv(q) such that
+                         subset of grid coordinates uu(p) and vv(q) such that
                             tu(p) < uu(p) < tu(p+4) ,p=1,...,nu-4
                             (iopt(2)=1 and iopt(3)=1 also count for a uu-value
                             tv(q) < vv(q) < tv(q+4) ,q=1,...,nv-4

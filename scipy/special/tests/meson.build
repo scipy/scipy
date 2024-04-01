@@ -40,10 +40,12 @@ python_sources = [
   'test_round.py',
   'test_sf_error.py',
   'test_sici.py',
+  'test_specfun.py',
   'test_spence.py',
   'test_spfun_stats.py',
   'test_sph_harm.py',
   'test_spherical_bessel.py',
+  'test_support_alternative_backends.py',
   'test_trig.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
@@ -54,4 +56,9 @@ python_sources = [
 py3.install_sources(
   python_sources,
   subdir: 'scipy/special/tests'
+)
+
+py3.install_sources(
+  'data/__init__.py',
+  subdir: 'scipy/special/tests/data'
 )

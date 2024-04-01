@@ -562,7 +562,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     wi : array_like, optional
         The barycentric weights for the chosen interpolation points `xi`.
         If absent or None, the weights will be computed from `xi` (default).
-        This allows for the re-use of the weights `wi` if several interpolants
+        This allows for the reuse of the weights `wi` if several interpolants
         are being calculated using the same nodes `xi`, without re-computation.
     random_state : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
@@ -617,7 +617,7 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
     >>> axs[0].legend(axs[0].get_lines()[::-1], labels, bbox_to_anchor=(0., 1.02, 1., .102),
     ...               loc='lower left', ncols=3, mode="expand", borderaxespad=0., frameon=False)
     >>> plt.show()
-    """
+    """ # numpy/numpydoc#87  # noqa: E501
 
     def __init__(self, xi, yi=None, axis=0, *, wi=None, random_state=None):
         super().__init__(xi, yi, axis)
@@ -701,6 +701,13 @@ class BarycentricInterpolator(_Interpolator1DWithDerivatives):
             If `yi` is not given, the y values will be supplied later. `yi`
             should be given if and only if the interpolator has y values
             specified.
+
+        Notes
+        -----
+        The new points added by `add_xi` are not randomly permuted
+        so there is potential for numerical instability,
+        especially for a large number of points. If this
+        happens, please reconstruct interpolation from scratch instead.
         """
         if yi is not None:
             if self.yi is None:

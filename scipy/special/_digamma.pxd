@@ -17,12 +17,6 @@ from ._trig cimport sinpi, cospi
 from ._cephes cimport zeta, psi
 from . cimport sf_error
 
-# Use the asymptotic series for z away from the negative real axis
-# with abs(z) > smallabsz.
-DEF smallabsz = 16
-# Use the reflection principle for z with z.real < 0 that are within
-# smallimag of the negative real axis.
-DEF smallimag = 6
 # Relative tolerance for series
 DEF tol = 2.220446092504131e-16
 # All of the following were computed with mpmath
@@ -69,6 +63,12 @@ cdef inline double complex cdigamma(double complex z) noexcept nogil:
         double absz = zabs(z)
         double complex res = 0
         double complex init
+        # Use the asymptotic series for z away from the negative real axis
+        # with abs(z) > smallabsz.
+        int smallabsz = 16
+        # Use the reflection principle for z with z.real < 0 that are within
+        # smallimag of the negative real axis.
+        # int smallimag = 6  # unused below except in a comment
 
     if z.real <= 0 and ceil(z.real) == z:
         # Poles

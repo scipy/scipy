@@ -1,20 +1,14 @@
-import warnings
-
-from numpy import (logical_and, asarray, pi, zeros_like,
-                   piecewise, array, arctan2, tan, ones, arange, floor,
-                   r_, atleast_1d)
-from numpy import (sqrt, exp, greater, less, cos, add, sin, less_equal,
-                   greater_equal)
+from numpy import (asarray, pi, zeros_like,
+                   array, arctan2, tan, ones, arange, floor,
+                   r_, atleast_1d, sqrt, exp, greater, cos, add, sin)
 
 # From splinemodule.c
 from ._spline import cspline2d, sepfir2d
 from ._signaltools import lfilter, sosfilt, lfiltic
 
-from scipy.special import comb
-from scipy._lib._util import float_factorial
 from scipy.interpolate import BSpline
 
-__all__ = ['spline_filter', 'bspline', 'gauss_spline', 'cubic', 'quadratic',
+__all__ = ['spline_filter', 'gauss_spline',
            'cspline1d', 'qspline1d', 'cspline1d_eval', 'qspline1d_eval']
 
 
@@ -34,11 +28,11 @@ def spline_filter(Iin, lmbda=5.0):
     Returns
     -------
     res : ndarray
-        filterd input data
+        filtered input data
 
     Examples
     --------
-    We can filter an multi dimentional signal (ex: 2D image) using cubic
+    We can filter an multi dimensional signal (ex: 2D image) using cubic
     B-spline filter:
 
     >>> import numpy as np
@@ -76,152 +70,6 @@ def spline_filter(Iin, lmbda=5.0):
 
 _splinefunc_cache = {}
 
-
-def _bspline_piecefunctions(order):
-    """Returns the function defined over the left-side pieces for a bspline of
-    a given order.
-
-    The 0th piece is the first one less than 0. The last piece is a function
-    identical to 0 (returned as the constant 0). (There are order//2 + 2 total
-    pieces).
-
-    Also returns the condition functions that when evaluated return boolean
-    arrays for use with `numpy.piecewise`.
-    """
-    try:
-        return _splinefunc_cache[order]
-    except KeyError:
-        pass
-
-    def condfuncgen(num, val1, val2):
-        if num == 0:
-            return lambda x: logical_and(less_equal(x, val1),
-                                         greater_equal(x, val2))
-        elif num == 2:
-            return lambda x: less_equal(x, val2)
-        else:
-            return lambda x: logical_and(less(x, val1),
-                                         greater_equal(x, val2))
-
-    last = order // 2 + 2
-    if order % 2:
-        startbound = -1.0
-    else:
-        startbound = -0.5
-    condfuncs = [condfuncgen(0, 0, startbound)]
-    bound = startbound
-    for num in range(1, last - 1):
-        condfuncs.append(condfuncgen(1, bound, bound - 1))
-        bound = bound - 1
-    condfuncs.append(condfuncgen(2, 0, -(order + 1) / 2.0))
-
-    # final value of bound is used in piecefuncgen below
-
-    # the functions to evaluate are taken from the left-hand side
-    #  in the general expression derived from the central difference
-    #  operator (because they involve fewer terms).
-
-    fval = float_factorial(order)
-
-    def piecefuncgen(num):
-        Mk = order // 2 - num
-        if (Mk < 0):
-            return 0  # final function is 0
-        coeffs = [(1 - 2 * (k % 2)) * float(comb(order + 1, k, exact=1)) / fval
-                  for k in range(Mk + 1)]
-        shifts = [-bound - k for k in range(Mk + 1)]
-
-        def thefunc(x):
-            res = 0.0
-            for k in range(Mk + 1):
-                res += coeffs[k] * (x + shifts[k]) ** order
-            return res
-        return thefunc
-
-    funclist = [piecefuncgen(k) for k in range(last)]
-
-    _splinefunc_cache[order] = (funclist, condfuncs)
-
-    return funclist, condfuncs
-
-
-msg_bspline = """`scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
-removed in SciPy 1.13.
-
-The exact equivalent (for a float array `x`) is
-
->>> from scipy.interpolate import BSpline
->>> knots = np.arange(-(n+1)/2, (n+3)/2)
->>> out = BSpline.basis_element(knots)(x)
->>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
-"""
-
-
-def bspline(x, n):
-    """
-    .. deprecated:: 1.11.0
-
-        `scipy.signal.bspline` is deprecated in SciPy 1.11 and will be
-        removed in SciPy 1.13.
-
-        The exact equivalent (for a float array `x`) is::
-
-            >>> import numpy as np
-            >>> from scipy.interpolate import BSpline
-            >>> knots = np.arange(-(n+1)/2, (n+3)/2)
-            >>> out = BSpline.basis_element(knots)(x)
-            >>> out[(x < knots[0]) | (x > knots[-1])] = 0.0
-
-    B-spline basis function of order n.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-    n : int
-        The order of the spline. Must be non-negative, i.e., n >= 0
-
-    Returns
-    -------
-    res : ndarray
-        B-spline basis function values
-
-    See Also
-    --------
-    cubic : A cubic B-spline.
-    quadratic : A quadratic B-spline.
-
-    Notes
-    -----
-    Uses numpy.piecewise and automatic function-generator.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    warnings.warn(msg_bspline, DeprecationWarning, stacklevel=2)
-
-    ax = -abs(asarray(x, dtype=float))
-    # number of pieces on the left-side is (n+1)/2
-    funclist, condfuncs = _bspline_piecefunctions(n)
-    condlist = [func(ax) for func in condfuncs]
-    return piecewise(ax, condlist, funclist)
 
 def gauss_spline(x, n):
     r"""Gaussian approximation to B-spline basis function of order n.
@@ -262,96 +110,15 @@ def gauss_spline(x, n):
     distribution:
 
     >>> import numpy as np
-    >>> from scipy.signal import gauss_spline, bspline
+    >>> from scipy.signal import gauss_spline
     >>> knots = np.array([-1.0, 0.0, -1.0])
     >>> gauss_spline(knots, 3)
     array([0.15418033, 0.6909883, 0.15418033])  # may vary
-
-    >>> bspline(knots, 3)
-    array([0.16666667, 0.66666667, 0.16666667])  # may vary
 
     """
     x = asarray(x)
     signsq = (n + 1) / 12.0
     return 1 / sqrt(2 * pi * signsq) * exp(-x ** 2 / 2 / signsq)
-
-
-msg_cubic = """`scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
-removed in SciPy 1.13.
-
-The exact equivalent (for a float array `x`) is
-
->>> from scipy.interpolate import BSpline
->>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
->>> out[(x < -2 | (x > 2)] = 0.0
-"""
-
-
-def cubic(x):
-    """
-    .. deprecated:: 1.11.0
-
-        `scipy.signal.cubic` is deprecated in SciPy 1.11 and will be
-        removed in SciPy 1.13.
-
-        The exact equivalent (for a float array `x`) is::
-
-            >>> from scipy.interpolate import BSpline
-            >>> out = BSpline.basis_element([-2, -1, 0, 1, 2])(x)
-            >>> out[(x < -2 | (x > 2)] = 0.0
-
-    A cubic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 3)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Cubic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    quadratic : A quadratic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    warnings.warn(msg_cubic, DeprecationWarning, stacklevel=2)
-
-    ax = abs(asarray(x, dtype=float))
-    res = zeros_like(ax)
-    cond1 = less(ax, 1)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 2.0 / 3 - 1.0 / 2 * ax1 ** 2 * (2 - ax1)
-    cond2 = ~cond1 & less(ax, 2)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = 1.0 / 6 * (2 - ax2) ** 3
-    return res
 
 
 def _cubic(x):
@@ -360,84 +127,6 @@ def _cubic(x):
     out = b(x)
     out[(x < -2) | (x > 2)] = 0
     return out
-
-
-msg_quadratic = """`scipy.signal.quadratic` is deprecated in SciPy 1.11 and
-will be removed in SciPy 1.13.
-
-The exact equivalent (for a float array `x`) is
-
->>> from scipy.interpolate import BSpline
->>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
->>> out[(x < -1.5 | (x > 1.5)] = 0.0
-"""
-
-
-def quadratic(x):
-    """
-    .. deprecated:: 1.11.0
-
-        `scipy.signal.quadratic` is deprecated in SciPy 1.11 and
-        will be removed in SciPy 1.13.
-
-        The exact equivalent (for a float array `x`) is::
-
-            >>> from scipy.interpolate import BSpline
-            >>> out = BSpline.basis_element([-1.5, -0.5, 0.5, 1.5])(x)
-            >>> out[(x < -1.5 | (x > 1.5)] = 0.0
-
-    A quadratic B-spline.
-
-    This is a special case of `bspline`, and equivalent to ``bspline(x, 2)``.
-
-    Parameters
-    ----------
-    x : array_like
-        a knot vector
-
-    Returns
-    -------
-    res : ndarray
-        Quadratic B-spline basis function values
-
-    See Also
-    --------
-    bspline : B-spline basis function of order n
-    cubic : A cubic B-spline.
-
-    Examples
-    --------
-    We can calculate B-Spline basis function of several orders:
-
-    >>> import numpy as np
-    >>> from scipy.signal import bspline, cubic, quadratic
-    >>> bspline(0.0, 1)
-    1
-
-    >>> knots = [-1.0, 0.0, -1.0]
-    >>> bspline(knots, 2)
-    array([0.125, 0.75, 0.125])
-
-    >>> np.array_equal(bspline(knots, 2), quadratic(knots))
-    True
-
-    >>> np.array_equal(bspline(knots, 3), cubic(knots))
-    True
-
-    """
-    warnings.warn(msg_quadratic, DeprecationWarning, stacklevel=2)
-
-    ax = abs(asarray(x, dtype=float))
-    res = zeros_like(ax)
-    cond1 = less(ax, 0.5)
-    if cond1.any():
-        ax1 = ax[cond1]
-        res[cond1] = 0.75 - ax1 ** 2
-    cond2 = ~cond1 & less(ax, 1.5)
-    if cond2.any():
-        ax2 = ax[cond2]
-        res[cond2] = (ax2 - 1.5) ** 2 / 2.0
-    return res
 
 
 def _quadratic(x):

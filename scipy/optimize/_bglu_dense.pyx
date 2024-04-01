@@ -78,7 +78,7 @@ cdef void hess_lu(self, double[:, ::1] H, int i, double[:,::1] ops) noexcept:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef void perform_ops(self, double[::1] y, double[:,::1] ops, bint rev = False) noexcept:
+cdef void perform_ops(self, double[::1] y, const double[:,::1] ops, bint rev = False) noexcept:
     """
     Replays operations needed to convert Hessenberg matrix into upper
     triangular form on a vector y. Equivalent to matrix multlication by
@@ -120,7 +120,7 @@ def _consider_refactor(method):
     will be rather high because PLU factorization is slow. For
     some number of factor updates, the average solve time is
     expected to decrease because the updates and solves are fast.
-    However, updates increase the compexity of the factorization,
+    However, updates increase the complexity of the factorization,
     so solve times are expected to increase with each update.
     When the average solve time stops decreasing and begins
     increasing, we perform PLU factorization from scratch rather
