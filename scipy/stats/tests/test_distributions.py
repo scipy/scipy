@@ -2937,6 +2937,66 @@ class TestInvgauss:
         assert_allclose(stats.invgauss.entropy(mu), ref, rtol=5e-14)
 
 
+class TestLandau:
+    def test_precision_pdf(self):
+        # Compare the Landau distribution against the more general
+        # Levy stable distribution, which should be exactly the same.
+
+        for loc in [-99, -5, 0, 5, 99]:
+            for scale in [1]:
+                # Only testing scale=1 because of BUG #19140.
+
+                err_msg = f'landau parameters: loc={loc}, scale={scale}'
+
+                # In the range where most of the weight is located, we find up
+                # to 8 digits of agreement between the two distributions.
+                # Between 188 and 190, the levy_stable PDF has a discrete jump
+                # and this breaks the agreement between the two distributions.
+                x_values = np.linspace(loc-5*scale, loc+180*scale, 999)
+                landau = stats.landau.pdf(x_values, loc=loc, scale=scale)
+                expected = stats.levy_stable(alpha=1, beta=1, loc=loc,
+                                             scale=scale).pdf(x_values)
+                assert_almost_equal(landau, expected, decimal=8, err_msg=err_msg)
+
+                # After the discrete jump, the precision is worse but still good
+                # enough with 5 digits.
+                x_values = np.linspace(loc+180*scale, loc+9999*scale, 99)
+                landau = stats.landau.pdf(x_values, loc=loc, scale=scale)
+                expected = stats.levy_stable(alpha=1, beta=1, loc=loc,
+                                             scale=scale).pdf(x_values)
+                assert_almost_equal(landau, expected, decimal=5, err_msg=err_msg)
+
+    def test_precision_cdf(self):
+        # Compare the Landau distribution against the more general
+        # Levy stable distribution, which should be exactly the same.
+
+        for loc in [-99, -5, 0, 5, 99]:
+            for scale in [1]:
+                # Only testing scale=1 because of BUG #19140.
+
+                err_msg = f'landau parameters: loc={loc}, scale={scale}'
+
+                # In the range where most of the weight is located, we find up
+                # to 7 digits of agreement between the two distributions.
+                # Between 313 and 314, the levy_stable CDF has a discrete jump
+                # to 1 and this breaks the agreement between the two distributions.
+                x_values = np.linspace(loc-5*scale, loc+300*scale, 999)
+                landau = stats.landau.cdf(x_values, loc=loc, scale=scale)
+                expected = stats.levy_stable(alpha=1, beta=1, loc=loc,
+                                             scale=scale).cdf(x_values)
+                assert_almost_equal(landau, expected, decimal=7, err_msg=err_msg)
+
+                # After the previous jump we find less precision, but still
+                # it is good enough for most applications. (Actually the current
+                # implementation of the Landau seems to be slightly better than
+                # the Levi stable with alpha=beta=1).
+                x_values = np.linspace(loc+300*scale, loc+9999*scale, 99)
+                landau = stats.landau.cdf(x_values, loc=loc, scale=scale)
+                expected = stats.levy_stable(alpha=1, beta=1, loc=loc,
+                                             scale=scale).cdf(x_values)
+                assert_almost_equal(landau, expected, decimal=2, err_msg=err_msg)
+
+
 class TestLaplace:
     @pytest.mark.parametrize("rvs_loc", [-5, 0, 1, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 2, 3, 10])
