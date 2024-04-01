@@ -240,6 +240,18 @@
             "ibetac_inv_double": "ddd->d"
         }
     },
+    "_beta_pdf": {
+        "boost_special_functions.h++": {
+            "beta_pdf_float": "fff->f",
+            "beta_pdf_double": "ddd->d"
+        }
+    },
+    "_beta_sf": {
+        "boost_special_functions.h++": {
+            "beta_sf_float": "fff->f",
+            "beta_sf_double": "ddd->d"
+        }
+    },
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"
