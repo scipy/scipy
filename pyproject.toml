@@ -20,18 +20,22 @@ requires = [
     "meson-python>=0.15.0,<0.18.0",
     # The upper bound on Cython is pre-emptive only
     "Cython>=3.0.8,<3.1.0",  # when updating version, also update check in meson.build
-    # TODO: TBD, depending on https://github.com/pybind/pybind11/issues/5009
-    "pybind11>=2.10.4",
+    # The upper bound on pybind11 is pre-emptive only
+    "pybind11>=2.12.0,<2.13.0",
     # The upper bound on Pythran is pre-emptive only
     "pythran>=0.14.0,<0.16.0",
 
-    # numpy requirement for wheel builds for distribution on PyPI - building
-    # against 2.x yields wheels that are also compatible with numpy 1.x at
-    # runtime.
-    # Note that building against numpy 1.x works fine too - users and
-    # redistributors can do this by installing the numpy version they like and
-    # disabling build isolation.
-    "numpy>=2.0.0b1,<2.3",
+    # Comments on numpy build requirement range:
+    #
+    #   1. >=2.0.x is the numpy requirement for wheel builds for distribution
+    #      on PyPI - building against 2.x yields wheels that are also
+    #      ABI-compatible with numpy 1.x at runtime.
+    #   2. Note that building against numpy 1.x works fine too - users and
+    #      redistributors can do this by installing the numpy version they like
+    #      and disabling build isolation.
+    #   3. The <2.3 upper bound is for matching the numpy deprecation policy,
+    #      it should not be loosened.
+    "numpy>=2.0.0rc1,<2.3",
 ]
 
 [project]
