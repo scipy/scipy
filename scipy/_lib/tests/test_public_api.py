@@ -211,6 +211,7 @@ def is_unexpected(name):
 SKIP_LIST = [
     'scipy.conftest',
     'scipy.version',
+    'scipy.special.libsf_error_state'
 ]
 
 
