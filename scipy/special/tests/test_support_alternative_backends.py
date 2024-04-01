@@ -1,13 +1,13 @@
 import pytest
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 import hypothesis.extra.numpy as npst
+import numpy as np
 
 from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
-from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close
-from scipy._lib.array_api_compat import numpy as np
+
+from scipy._lib._array_api import array_api_compatible, xp_assert_close
 
 try:
     import array_api_strict

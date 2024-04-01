@@ -36,7 +36,8 @@ from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
-from scipy._lib._array_api import atleast_nd, array_namespace
+
+from scipy._lib._array_api import array_namespace, atleast_nd
 
 from numpy import inf, array, zeros
 

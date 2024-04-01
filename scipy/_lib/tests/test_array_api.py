@@ -1,18 +1,24 @@
 import numpy as np
 import pytest
 
-from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG,
+    array_api_compatible,
+    array_namespace,
+    _asarray,
+    copy,
+    is_numpy,
+    xp_assert_equal, 
 )
 import scipy._lib.array_api_compat.numpy as np_compat
 
 
+@array_api_compatible
 @pytest.mark.skipif(not _GLOBAL_CONFIG["SCIPY_ARRAY_API"],
         reason="Array API test; set environment variable SCIPY_ARRAY_API=1 to run it")
 class TestArrayAPI:
 
-    def test_array_namespace(self):
+    def test_array_namespace(self, xp):
         x, y = np.array([0, 1, 2]), np.array([0, 1, 2])
         xp = array_namespace(x, y)
         assert 'array_api_compat.numpy' in xp.__name__
@@ -22,7 +28,6 @@ class TestArrayAPI:
         assert 'array_api_compat.numpy' in xp.__name__
         _GLOBAL_CONFIG["SCIPY_ARRAY_API"] = True
 
-    @array_api_compatible
     def test_asarray(self, xp):
         x, y = _asarray([0, 1, 2], xp=xp), _asarray(np.arange(3), xp=xp)
         ref = xp.asarray([0, 1, 2])
@@ -30,7 +35,7 @@ class TestArrayAPI:
         xp_assert_equal(y, ref)
 
     @pytest.mark.filterwarnings("ignore: the matrix subclass")
-    def test_raises(self):
+    def test_raises(self, xp):
         msg = "of type `numpy.ma.MaskedArray` are not supported"
         with pytest.raises(TypeError, match=msg):
             array_namespace(np.ma.array(1), np.array(1))
@@ -45,13 +50,12 @@ class TestArrayAPI:
         with pytest.raises(TypeError, match=msg):
             array_namespace('abc')
 
-    def test_array_likes(self):
+    def test_array_likes(self, xp):
         # should be no exceptions
         array_namespace([0, 1, 2])
         array_namespace(1, 2, 3)
         array_namespace(1)
 
-    @array_api_compatible
     def test_copy(self, xp):
         for _xp in [xp, None]:
             x = xp.asarray([1, 2, 3])
@@ -67,7 +71,6 @@ class TestArrayAPI:
             assert x[2] != y[2]
             assert id(x) != id(y)
 
-    @array_api_compatible
     @pytest.mark.parametrize('dtype', ['int32', 'int64', 'float32', 'float64'])
     @pytest.mark.parametrize('shape', [(), (3,)])
     def test_strict_checks(self, xp, dtype, shape):
@@ -98,7 +101,6 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Shapes do not match."):
                 xp_assert_equal(x, y, **options)
 
-    @array_api_compatible
     def test_check_scalar(self, xp):
         if not is_numpy(xp):
             pytest.skip("Scalars only exist in NumPy")

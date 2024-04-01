@@ -1,4 +1,5 @@
 # Pytest customization
+from __future__ import annotations
 import json
 import os
 import warnings
@@ -12,7 +13,6 @@ import hypothesis
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib import _pep440
-from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 
 def pytest_configure(config):
@@ -106,6 +106,11 @@ def check_fpu_mode(request):
 
 # Array API backend handling
 xp_available_backends = {'numpy': np}
+
+# To enable array API and strict array-like input validation
+SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
+# To control the default device - for use in the test suite only
+SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
 
 if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
     # fill the dict of backends with available libraries

@@ -1,6 +1,7 @@
-from scipy._lib._array_api import array_namespace
 import numpy as np
 from . import _pocketfft
+
+from scipy._lib._array_api import array_namespace
 
 __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
