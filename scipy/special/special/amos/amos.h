@@ -1,8 +1,7 @@
 /*
  *
- * This file accompanied with the header file _amos.h is a
- * C translation of the Fortran code written by D.E. Amos with the
- * following original description:
+ * This file is a C++ translation of the Fortran code written by
+ * D.E. Amos with the following original description:
  *
  *
  * A Portable Package for Bessel Functions of a Complex Argument
