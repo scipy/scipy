@@ -885,7 +885,9 @@ def solve_circulant(c, b, singular='raise', tol=None,
 
     # accommodate empty arrays
     if b.size == 0:
-        return np.empty_like(b)
+        dt = solve_circulant(np.arange(3, dtype=c.dtype),
+                             np.ones(3, dtype=b.dtype)).dtype
+        return np.empty_like(b, dtype=dt)
 
     fc = np.fft.fft(np.moveaxis(c, caxis, -1), axis=-1)
     abs_fc = np.abs(fc)
@@ -1086,10 +1088,11 @@ def det(a, overwrite_a=False, check_finite=True):
 
     # Empty array has determinant 1 because math.
     if min(*a1.shape) == 0:
+        dtyp = np.float64 if a1.dtype.char not in 'FD' else np.complex128
         if a1.ndim == 2:
-            return a1.dtype.type(1.)
+            return dtyp(1.0)
         else:
-            return np.ones(shape=a1.shape[:-2], dtype=a1.dtype)
+            return np.ones(shape=a1.shape[:-2], dtype=dtyp)
 
     # Scalar case
     if a1.shape[-2:] == (1, 1):

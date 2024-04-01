@@ -202,18 +202,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
-    Notes
-    -----
-    ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
-    handling of the edge case of empty ``a``, where it returns an
-    empty sequence:
-
-    >>> import numpy as np
-    >>> a = np.empty((0, 2))
-    >>> from scipy.linalg import svdvals
-    >>> svdvals(a)
-    array([], dtype=float64)
-
     Examples
     --------
     >>> import numpy as np

@@ -1114,9 +1114,13 @@ class TestDet:
         with assert_raises(ValueError, match='Last 2 dimensions'):
             det(np.array([[[]]]))
 
-    @pytest.mark.xfail(reason="det(float32) -> float64, is it a bug?")
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty_dtype(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        d = det(a)
+        assert d.shape == ()
+        assert d.dtype == det(np.eye(2, dtype=dt)).dtype
+
         a = np.empty((3, 0, 0), dtype=dt)
         d = det(a)
         assert d.shape == (3,)
@@ -1873,15 +1877,20 @@ class TestSolveCirculant:
         y = solve(circulant(c), b)
         assert_allclose(x, y)
 
-    def test_empty(self):
-        c = []
-        b = []
+    @pytest.mark.parametrize('dt_c', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_c, dt_b):
+        c = np.array([], dtype=dt_c)
+        b = np.array([], dtype=dt_b)
         x = solve_circulant(c, b)
-        assert_allclose(x, [])
+        assert x.shape == (0,)
+        assert x.dtype == solve_circulant(np.arange(3, dtype=dt_c),
+                                          np.ones(3, dtype=dt_b)).dtype
 
-        b = np.empty((0, 0))
-        x = solve_circulant(c, b)
-        assert_allclose(x, np.empty((0, 0)))
+        b = np.empty((0, 0), dtype=dt_b)
+        x1 = solve_circulant(c, b)
+        assert x1.shape == (0, 0)
+        assert x1.dtype == x.dtype
 
 
 class TestMatrix_Balance:
