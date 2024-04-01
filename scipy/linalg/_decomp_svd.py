@@ -109,6 +109,25 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     if len(a1.shape) != 2:
         raise ValueError('expected matrix')
     m, n = a1.shape
+
+    # accommodate empty matrix
+    if a1.size == 0:
+        u0, s0, v0 = svd(numpy.eye(2, dtype=a1.dtype))
+
+        s = numpy.empty_like(a1, shape=(0,), dtype=s0.dtype)
+        if full_matrices:
+            u = numpy.empty_like(a1, shape=(m, m), dtype=u0.dtype)
+            u[...] = numpy.identity(m)
+            v = numpy.empty_like(a1, shape=(n, n), dtype=v0.dtype)
+            v[...] = numpy.identity(n)
+        else:
+            u = numpy.empty_like(a1, shape=(m, 0), dtype=u0.dtype)
+            v = numpy.empty_like(a1, shape=(0, n), dtype=v0.dtype)
+        if compute_uv:
+            return u, s, v
+        else:
+            return s
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
     if not isinstance(lapack_driver, str):
@@ -183,18 +202,6 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     svd : Compute the full singular value decomposition of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
 
-    Notes
-    -----
-    ``svdvals(a)`` only differs from ``svd(a, compute_uv=False)`` by its
-    handling of the edge case of empty ``a``, where it returns an
-    empty sequence:
-
-    >>> import numpy as np
-    >>> a = np.empty((0, 2))
-    >>> from scipy.linalg import svdvals
-    >>> svdvals(a)
-    array([], dtype=float64)
-
     Examples
     --------
     >>> import numpy as np
@@ -236,14 +243,8 @@ def svdvals(a, overwrite_a=False, check_finite=True):
     array([ 1.,  1.,  1.,  1.])
 
     """
-    a = _asarray_validated(a, check_finite=check_finite)
-    if a.size:
-        return svd(a, compute_uv=0, overwrite_a=overwrite_a,
-                   check_finite=False)
-    elif len(a.shape) != 2:
-        raise ValueError('expected matrix')
-    else:
-        return numpy.empty(0)
+    return svd(a, compute_uv=0, overwrite_a=overwrite_a,
+               check_finite=check_finite)
 
 
 def diagsvd(s, M, N):
@@ -340,7 +341,7 @@ def orth(A, rcond=None):
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s) * rcond
+    tol = numpy.amax(s, initial=0.) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = u[:, :num]
     return Q
@@ -404,7 +405,7 @@ def null_space(A, rcond=None):
     M, N = u.shape[0], vh.shape[1]
     if rcond is None:
         rcond = numpy.finfo(s.dtype).eps * max(M, N)
-    tol = numpy.amax(s) * rcond
+    tol = numpy.amax(s, initial=0.) * rcond
     num = numpy.sum(s > tol, dtype=int)
     Q = vh[num:,:].T.conj()
     return Q

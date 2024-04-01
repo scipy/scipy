@@ -175,6 +175,23 @@ class TestSolveBanded:
         x = solve_banded((l, u), ab, b)
         assert_array_almost_equal(dot(a, x), b)
 
+    @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_ab, dt_b):
+        # ab contains one empty row corresponding to the diagonal
+        ab = np.array([[]], dtype=dt_ab)
+        b = np.array([], dtype=dt_b)
+        x = solve_banded((0, 0), ab, b)
+
+        assert x.shape == (0,)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
+        x = solve_banded((0, 0), ab, b)
+
+        assert x.shape == (0, 0)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
+
 
 class TestSolveHBanded:
 
@@ -490,6 +507,22 @@ class TestSolveHBanded:
         x = solveh_banded(ab, b)
         assert_array_almost_equal(x, [0.0, 1.0, 0.0, 0.0])
 
+    @pytest.mark.parametrize('dt_ab', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_ab, dt_b):
+        # ab contains one empty row corresponding to the diagonal
+        ab = np.array([[]], dtype=dt_ab)
+        b = np.array([], dtype=dt_b)
+        x = solveh_banded(ab, b)
+
+        assert x.shape == (0,)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
+        x = solveh_banded(ab, b)
+
+        assert x.shape == (0, 0)
+        assert x.dtype == solve(np.eye(1, dtype=dt_ab), np.ones(1, dtype=dt_b)).dtype
 
 class TestSolve:
     def setup_method(self):
@@ -737,13 +770,6 @@ class TestSolve:
             warnings.simplefilter('error')
             assert_raises(LinAlgWarning, solve, a, b)
 
-    def test_empty_rhs(self):
-        a = np.eye(2)
-        b = [[], []]
-        x = solve(a, b)
-        assert_(x.size == 0, 'Returned array is not empty')
-        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
-
     def test_multiple_rhs(self):
         a = np.eye(2)
         b = np.random.rand(2, 3, 4)
@@ -821,6 +847,24 @@ class TestSolve:
                                 rtol=tol * size,
                                 err_msg=err_msg)
 
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty(0, dtype=dt_b)
+        x = solve(a, b)
+
+        assert x.size == 0
+        dt_nonempty = solve(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)).dtype
+        assert x.dtype == dt_nonempty
+
+    def test_empty_rhs(self):
+        a = np.eye(2)
+        b = [[], []]
+        x = solve(a, b)
+        assert_(x.size == 0, 'Returned array is not empty')
+        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
 
 class TestSolveTriangular:
 
@@ -883,6 +927,26 @@ class TestSolveTriangular:
         sol = solve_triangular(A, b, lower=True, check_finite=False)
         assert_array_almost_equal(sol, [1, 0])
 
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty(0, dtype=dt_b)
+        x = solve_triangular(a, b)
+
+        assert x.size == 0
+        dt_nonempty = solve_triangular(
+            np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b)
+        ).dtype
+        assert x.dtype == dt_nonempty
+
+    def test_empty_rhs(self):
+        a = np.eye(2)
+        b = [[], []]
+        x = solve_triangular(a, b)
+        assert_(x.size == 0, 'Returned array is not empty')
+        assert_(x.shape == (2, 0), 'Returned empty array shape is wrong')
+
 
 class TestInv:
     def setup_method(self):
@@ -925,6 +989,13 @@ class TestInv:
         a = [[1, 2], [3, 4]]
         a_inv = inv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_inv), [[1, 0], [0, 1]])
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        a_inv = inv(a)
+        assert a_inv.size == 0
+        assert a_inv.dtype == inv(np.eye(2, dtype=dt)).dtype
 
 
 class TestDet:
@@ -1042,6 +1113,18 @@ class TestDet:
             det(np.array([[]]))
         with assert_raises(ValueError, match='Last 2 dimensions'):
             det(np.array([[[]]]))
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty_dtype(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        d = det(a)
+        assert d.shape == ()
+        assert d.dtype == det(np.eye(2, dtype=dt)).dtype
+
+        a = np.empty((3, 0, 0), dtype=dt)
+        d = det(a)
+        assert d.shape == (3,)
+        assert d.dtype == det(np.empty((3, 1, 1), dtype=dt)).dtype
 
     def test_overwrite_a(self):
         # If all conditions are met then input should be overwritten;
@@ -1348,7 +1431,7 @@ class TestLstsq:
                             atol=25 * _eps_cast(a.dtype),
                             err_msg="driver: %s" % lapack_driver)
 
-    def test_zero_size(self):
+    def test_empty(self):
         for a_shape, b_shape in (((0, 2), (0,)),
                                  ((0, 4), (0, 2)),
                                  ((4, 0), (4,)),
@@ -1362,6 +1445,16 @@ class TestLstsq:
             assert_(rank == 0, 'expected rank 0')
             assert_equal(s, np.empty((0,)))
 
+    @pytest.mark.parametrize('dt_a', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty_dtype(self, dt_a, dt_b):
+        a = np.empty((0, 0), dtype=dt_a)
+        b = np.empty(0, dtype=dt_b)
+        x, residues, rank, s = lstsq(a, b)
+
+        assert x.size == 0
+        dt_nonempty = lstsq(np.eye(2, dtype=dt_a), np.ones(2, dtype=dt_b))[0].dtype
+        assert x.dtype == dt_nonempty
 
 class TestPinv:
     def setup_method(self):
@@ -1457,6 +1550,13 @@ class TestPinv:
         with pytest.deprecated_call(match="use keyword arguments"):
             pinv(np.ones((2,2)), 0., 1e-10)
 
+    @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        a_pinv = pinv(a)
+        assert a_pinv.size == 0
+        assert a_pinv.dtype == pinv(np.eye(2, dtype=dt)).dtype
+
 
 class TestPinvSymmetric:
 
@@ -1527,6 +1627,13 @@ class TestPinvSymmetric:
         # adiff1 and adiff2 should be elevated to ~1e-4 due to mismatch
         assert_allclose(norm(adiff1), 1e-4, rtol=0.1)
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
+
+    @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        a_pinv = pinvh(a)
+        assert a_pinv.size == 0
+        assert a_pinv.dtype == pinv(np.eye(2, dtype=dt)).dtype
 
 
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
@@ -1644,6 +1751,17 @@ class TestMatrixNorms:
         assert_allclose(b, c)
         assert_(b.shape == c.shape)
 
+    def test_empty(self):
+        a = np.empty((0, 0))
+        assert_allclose(norm(a), 0.)
+        assert_allclose(norm(a, axis=0), np.zeros((0,)))
+        assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
+        a = np.empty((0, 3))
+        assert_allclose(norm(a), 0.)
+        assert_allclose(norm(a, axis=0), np.zeros((3,)))
+        assert_allclose(norm(a, keepdims=True), np.zeros((1, 1)))
+
 
 class TestOverwrite:
     def test_solve(self):
@@ -1759,6 +1877,21 @@ class TestSolveCirculant:
         y = solve(circulant(c), b)
         assert_allclose(x, y)
 
+    @pytest.mark.parametrize('dt_c', [int, float, np.float32, complex, np.complex64])
+    @pytest.mark.parametrize('dt_b', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt_c, dt_b):
+        c = np.array([], dtype=dt_c)
+        b = np.array([], dtype=dt_b)
+        x = solve_circulant(c, b)
+        assert x.shape == (0,)
+        assert x.dtype == solve_circulant(np.arange(3, dtype=dt_c),
+                                          np.ones(3, dtype=dt_b)).dtype
+
+        b = np.empty((0, 0), dtype=dt_b)
+        x1 = solve_circulant(c, b)
+        assert x1.shape == (0, 0)
+        assert x1.dtype == x.dtype
+
 
 class TestMatrix_Balance:
 
@@ -1823,3 +1956,27 @@ class TestMatrix_Balance:
             ip[p] = np.arange(A.shape[0])
             assert_allclose(y, np.diag(s)[ip, :])
             assert_allclose(solve(y, A).dot(y), x)
+
+    @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+    def test_empty(self, dt):
+        a = np.empty((0, 0), dtype=dt)
+        b, t = matrix_balance(a)
+
+        assert b.size == 0
+        assert t.size == 0
+
+        b_n, t_n = matrix_balance(np.eye(2, dtype=dt))
+        assert b.dtype == b_n.dtype
+        assert t.dtype == t_n.dtype
+
+
+        b, (scale, perm) = matrix_balance(a, separate=True)
+        assert b.size == 0
+        assert scale.size == 0
+        assert perm.size == 0
+
+        b_n, (scale_n, perm_n) = matrix_balance(a, separate=True)
+        assert b.dtype == b_n.dtype
+        assert scale.dtype == scale_n.dtype
+        assert perm.dtype == perm_n.dtype
+
