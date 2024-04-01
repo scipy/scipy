@@ -32,7 +32,6 @@ from ._filter_design import (tf2zpk, zpk2tf, normalize, freqs, freqz, freqs_zpk,
 from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
                              cont2discrete, _atleast_2d_or_none)
 
-import numpy
 import numpy as np
 from numpy import (real, atleast_1d, squeeze, asarray, zeros,
                    dot, transpose, ones, linspace)
@@ -601,12 +600,12 @@ class TransferFunction(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the system's transfer function"""
-        return '{}(\n{},\n{},\ndt: {}\n)'.format(
-            self.__class__.__name__,
-            repr(self.num),
-            repr(self.den),
-            repr(self.dt),
-            )
+        return (
+            f'{self.__class__.__name__}(\n'
+            f'{repr(self.num)},\n'
+            f'{repr(self.den)},\n'
+            f'dt: {repr(self.dt)}\n)'
+        )
 
     @property
     def num(self):
@@ -984,13 +983,13 @@ class ZerosPolesGain(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `ZerosPolesGain` system."""
-        return '{}(\n{},\n{},\n{},\ndt: {}\n)'.format(
-            self.__class__.__name__,
-            repr(self.zeros),
-            repr(self.poles),
-            repr(self.gain),
-            repr(self.dt),
-            )
+        return (
+            f'{self.__class__.__name__}(\n'
+            f'{repr(self.zeros)},\n'
+            f'{repr(self.poles)},\n'
+            f'{repr(self.gain)},\n'
+            f'dt: {repr(self.dt)}\n)'
+        )
 
     @property
     def zeros(self):
@@ -1345,14 +1344,14 @@ class StateSpace(LinearTimeInvariant):
 
     def __repr__(self):
         """Return representation of the `StateSpace` system."""
-        return '{}(\n{},\n{},\n{},\n{},\ndt: {}\n)'.format(
-            self.__class__.__name__,
-            repr(self.A),
-            repr(self.B),
-            repr(self.C),
-            repr(self.D),
-            repr(self.dt),
-            )
+        return (
+            f'{self.__class__.__name__}(\n'
+            f'{repr(self.A)},\n'
+            f'{repr(self.B)},\n'
+            f'{repr(self.C)},\n'
+            f'{repr(self.D)},\n'
+            f'dt: {repr(self.dt)}\n)'
+        )
 
     def _check_binop_other(self, other):
         return isinstance(other, (StateSpace, np.ndarray, float, complex,
@@ -2200,8 +2199,8 @@ def bode(system, w=None, n=100):
     """
     w, y = freqresp(system, w=w, n=n)
 
-    mag = 20.0 * numpy.log10(abs(y))
-    phase = numpy.unwrap(numpy.arctan2(y.imag, y.real)) * 180.0 / numpy.pi
+    mag = 20.0 * np.log10(abs(y))
+    phase = np.unwrap(np.arctan2(y.imag, y.real)) * 180.0 / np.pi
 
     return w, mag, phase
 
@@ -3490,7 +3489,7 @@ def dbode(system, w=None, n=100):
     else:
         dt = system[-1]
 
-    mag = 20.0 * numpy.log10(abs(y))
-    phase = numpy.rad2deg(numpy.unwrap(numpy.angle(y)))
+    mag = 20.0 * np.log10(abs(y))
+    phase = np.rad2deg(np.unwrap(np.angle(y)))
 
     return w / dt, mag, phase
