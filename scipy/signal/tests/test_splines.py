@@ -1,15 +1,25 @@
 # pylint: disable=missing-docstring
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_allclose, assert_array_equal,
-                           assert_almost_equal, assert_raises)
+from numpy.testing import assert_allclose, assert_raises
 import pytest
 from pytest import raises
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
-from scipy.signal._splines import symiirorder1
+from scipy.signal._splines import symiirorder1, symiirorder2
 from scipy import signal
+
+
+def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
+    cssq = cs * cs
+    k = np.abs(k)
+    rsupk = np.power(rsq, k / 2.0)
+
+    c0 = (cssq * (1.0 + rsq) / (1.0 - rsq) /
+          (1 - 2 * rsq * np.cos(2 * omega) + rsq * rsq))
+    gamma = (1.0 - rsq) / (1.0 + rsq) / np.tan(omega)
+    return c0 * rsupk * (np.cos(omega * k) + gamma * np.sin(omega * k))
 
 
 class TestSymIIR:
@@ -200,10 +210,93 @@ class TestSymIIR:
              r**(n_exp + 3) * np.sin(omega * (n_exp + 4)) +
              r**(n_exp + 4) * np.sin(omega * (n_exp + 3))) / np.sin(omega))
 
-        expected = np.r_[fwd_initial_1, fwd_initial_2]
+        expected = np.r_[fwd_initial_1, fwd_initial_2][None, :]
 
         n = 100
         signal = np.ones(n, dtype=dtype)
 
         out = symiirorder2_ic_fwd(signal, r, omega, precision)
         assert_allclose(out, expected, atol=4e-6, rtol=6e-7)
+
+    @pytest.mark.parametrize(
+        'dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
+    def test_symiir2_initial_bwd(self, dtype, precision):
+        c_precision = precision
+        if precision == -1.0:
+            if dtype in {np.float32, np.complex64}:
+                c_precision = 1e-6
+            else:
+                c_precision = 1e-11
+
+        r = np.asarray(0.5, dtype=dtype)
+        omega = np.asarray(np.pi / 3.0, dtype=dtype)
+        cs = 1 - 2 * r * np.cos(omega) + r * r
+        a2 = 2 * r * np.cos(omega)
+        a3 = -r * r
+
+        n = 100
+        signal = np.ones(n, dtype=dtype)
+
+        # Compute initial forward conditions
+        ic = symiirorder2_ic_fwd(signal, r, omega, precision)
+        out = np.zeros(n + 2, dtype=dtype)
+        out[:2] = ic[0]
+
+        # Apply the forward system cs / (1 - a2 * z^-1 - a3 * z^-2))
+        for i in range(2, n + 2):
+            out[i] = cs * signal[i - 2] + a2 * out[i - 1] + a3 * out[i - 2]
+
+        # Find the backward initial conditions
+        ic2 = np.zeros(2, dtype=dtype)
+        idx = np.arange(n)
+
+        diff = (_compute_symiirorder2_bwd_hs(idx, cs, r * r, omega) +
+                _compute_symiirorder2_bwd_hs(idx + 1, cs, r * r, omega))
+        ic2_0_all = np.cumsum(diff * out[:1:-1])
+        pos = np.where(diff ** 2 < c_precision)[0]
+        ic2[0] = ic2_0_all[pos[0]]
+
+        diff = (_compute_symiirorder2_bwd_hs(idx - 1, cs, r * r, omega) +
+                _compute_symiirorder2_bwd_hs(idx + 2, cs, r * r, omega))
+        ic2_1_all = np.cumsum(diff * out[:1:-1])
+        pos = np.where(diff ** 2 < c_precision)[0]
+        ic2[1] = ic2_1_all[pos[0]]
+
+        out_ic = symiirorder2_ic_bwd(out, r, omega, precision)[0]
+        assert_allclose(out_ic, ic2, atol=4e-6, rtol=6e-7)
+
+    @pytest.mark.parametrize(
+        'dtype', [np.float32, np.float64])
+    @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
+    def test_symiir2(self, dtype, precision):
+        r = np.asarray(0.5, dtype=dtype)
+        omega = np.asarray(np.pi / 3.0, dtype=dtype)
+        cs = 1 - 2 * r * np.cos(omega) + r * r
+        a2 = 2 * r * np.cos(omega)
+        a3 = -r * r
+
+        n = 100
+        signal = np.ones(n, dtype=dtype)
+
+        # Compute initial forward conditions
+        ic = symiirorder2_ic_fwd(signal, r, omega, precision)
+        out1 = np.zeros(n + 2, dtype=dtype)
+        out1[:2] = ic[0]
+
+        # Apply the forward system cs / (1 - a2 * z^-1 - a3 * z^-2))
+        for i in range(2, n + 2):
+            out1[i] = cs * signal[i - 2] + a2 * out1[i - 1] + a3 * out1[i - 2]
+
+        # Find the backward initial conditions
+        ic2 = symiirorder2_ic_bwd(out1, r, omega, precision)[0]
+
+        # Apply the system cs / (1 - a2 * z - a3 * z^2)) in backwards
+        exp = np.empty(n, dtype=dtype)
+        exp[-2:] = ic2[::-1]
+
+        for i in range(n - 3, -1, -1):
+            exp[i] = cs * out1[i] + a2 * exp[i + 1] + a3 * exp[i + 2]
+
+        out = symiirorder2(signal, r, omega, precision)
+        assert_allclose(out, exp, atol=4e-6, rtol=6e-7)
