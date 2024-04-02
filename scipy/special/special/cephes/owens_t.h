@@ -15,6 +15,7 @@
  * FAST AND ACCURATE CALCULATION OF OWEN'S T-FUNCTION
  * Journal of Statistical Software, 5 (5), 1-25
  */
+#pragma once
 
 #include "../config.h"
 
