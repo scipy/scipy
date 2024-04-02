@@ -995,8 +995,8 @@
         "_sici.pxd": {
             "csici": "D*DD->*i"
         },
-        "cephes.h": {
-            "sici": "d*dd->*i"
+        "special_c_wrappers.h": {
+            "cephes_sici_wrap": "d*dd->*i"
         }
     },
     "sindg": {
