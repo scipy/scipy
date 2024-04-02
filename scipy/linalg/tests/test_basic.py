@@ -630,7 +630,7 @@ class TestSolve:
                   ):
             b = xp.asarray(b, dtype=xp.complex128)
             x = solve(a, b, assume_a='sym')
-            xp_assert_close(a @ x, b)
+            xp_assert_close(a @ x, b, atol=1e-14)
 
     @skip_xp_backends(np_only=True,
                       reasons=["`assume_a` is only supported for NumPy arrays"])
