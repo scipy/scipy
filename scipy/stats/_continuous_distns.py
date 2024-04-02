@@ -7468,31 +7468,31 @@ class ncx2_gen(rv_continuous):
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
                               f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
+            return _lazywhere(cond, (q, df, nc), f=scu._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_sf,
                               f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):

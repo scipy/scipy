@@ -290,6 +290,113 @@ invgauss_isf_double(double x, double mu, double s)
 }
 
 template<typename Real>
+Real
+ncx2_pdf_wrap(const Real x, const Real k, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::non_central_chi_squared_distribution<Real>(k, l), x);
+    }
+    return NAN; // inf or -inf returns NAN
+}
+
+float
+ncx2_pdf_float(float x, float k, float l)
+{
+    return ncx2_pdf_wrap(x, k, l);
+}
+
+double
+ncx2_pdf_double(double x, double k, double l)
+{
+    return ncx2_pdf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_cdf_wrap(const Real x, const Real k, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::non_central_chi_squared_distribution<Real>(k, l), x);
+    }
+    // -inf => 0, inf => 1
+    return 1 - std::signbit(x);
+}
+
+float
+ncx2_cdf_float(float x, float k, float l)
+{
+    return ncx2_cdf_wrap(x, k, l);
+}
+
+double
+ncx2_cdf_double(double x, double k, double l)
+{
+    return ncx2_cdf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_ppf_wrap(const Real x, const Real k, const Real l)
+{
+    return boost::math::quantile(
+        boost::math::non_central_chi_squared_distribution<Real>(k, l), x);
+}
+
+float
+ncx2_ppf_float(float x, float k, float l)
+{
+    return ncx2_ppf_wrap(x, k, l);
+}
+
+double
+ncx2_ppf_double(double x, double k, double l)
+{
+    return ncx2_ppf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_sf_wrap(const Real x, const Real k, const Real l)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::non_central_chi_squared_distribution<Real>(k, l), x));
+}
+
+float
+ncx2_sf_float(float x, float k, float l)
+{
+    return ncx2_sf_wrap(x, k, l);
+}
+
+double
+ncx2_sf_double(double x, double k, double l)
+{
+    return ncx2_sf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncx2_isf_wrap(const Real x, const Real k, const Real l)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::non_central_chi_squared_distribution<Real>(k, l), x));
+}
+
+float
+ncx2_isf_float(float x, float k, float l)
+{
+    return ncx2_isf_wrap(x, k, l);
+}
+
+double
+ncx2_isf_double(double x, double k, double l)
+{
+    return ncx2_isf_wrap(x, k, l);
+}
+
+template<typename Real>
 static inline
 Real erfinv_wrap(Real x)
 {

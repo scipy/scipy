@@ -137,7 +137,7 @@ add_newdoc(
 add_newdoc(
     "_invgauss_isf",
     """
-    _invgauss_isf(x, mu)
+    _invgauss_isf(x, mu, s)
 
     Inverse survival function of inverse gaussian distribution.
 
@@ -146,6 +146,108 @@ add_newdoc(
     x : array_like
         Positive real-valued
     mu : array_like
+        Positive, real-valued parameters
+    s : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_pdf",
+    """
+    _ncx2_pdf(x, k, l)
+
+    Probability density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_cdf",
+    """
+    _ncx2_cdf(x, k, l)
+
+    Cumulative density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_ppf",
+    """
+    _ncx2_ppf(x, k, l)
+
+    Percent point function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_sf",
+    """
+    _ncx2_sf(x, k, l)
+
+    Survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_isf",
+    """
+    _ncx2_isf(x, k, l)
+
+    Inverse survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
         Positive, real-valued parameters
 
     Returns
