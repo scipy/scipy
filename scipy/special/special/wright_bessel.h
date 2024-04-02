@@ -68,7 +68,7 @@ namespace detail {
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, unsigned int n) {
+    SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
         /* 2. Taylor series expansion in x=0, for large a.
          *
          * Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k + b).
@@ -76,7 +76,8 @@ namespace detail {
          * Use Stirling's formula to find k=k_max, the maximum term.
          * Then use n terms of Taylor series around k_max.
          */
-        unsigned int k_max = std::pow(std::pow(a, -a) * x, 1.0 / (1 + a));
+        int k_max = static_cast<int>(std::pow(std::pow(a, -a) * x, 1.0 / (1 + a)));
+
         int nstart = k_max - n / 2;
         if (nstart < 0) {
             nstart = 0;
@@ -84,7 +85,7 @@ namespace detail {
 
         double res = 0;
         double lnx = std::log(x);
-        for (unsigned int k = nstart; k < nstart + n; k++) {
+        for (int k = nstart; k < nstart + n; k++) {
             res += std::exp(k * lnx - cephes::lgam(k + 1) - cephes::lgam(a * k + b));
         }
 
@@ -647,7 +648,7 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
         return detail::exp_rgamma(x, b);
     }
 
-    const double exp_inf = 709.78271289338403;
+    constexpr double exp_inf = 709.78271289338403;
     int order;
     if ((a <= 1e-3 && b <= 50 && x <= 9) || (a <= 1e-4 && b <= 70 && x <= 100) ||
         (a <= 1e-5 and b <= 170 and x < exp_inf)) {
