@@ -1,5 +1,5 @@
 """Schur decomposition functions."""
-import numpy
+import numpy as np
 from numpy import asarray_chkfinite, single, asarray, array
 from numpy.linalg import norm
 
@@ -120,8 +120,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         a1 = asarray_chkfinite(a)
     else:
         a1 = asarray(a)
-    if numpy.issubdtype(a1.dtype, numpy.integer):
-        a1 = asarray(a, dtype=numpy.dtype("long"))
+    if np.issubdtype(a1.dtype, np.integer):
+        a1 = asarray(a, dtype=np.dtype("long"))
     if len(a1.shape) != 2 or (a1.shape[0] != a1.shape[1]):
         raise ValueError('expected square matrix')
 
@@ -134,20 +134,20 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
 
     # accommodate empty matrix
     if a1.size == 0:
-        t0, z0 = schur(numpy.eye(2, dtype=a1.dtype))
+        t0, z0 = schur(np.eye(2, dtype=a1.dtype))
         if sort is None:
-            return (numpy.empty_like(a1, dtype=t0.dtype),
-                    numpy.empty_like(a1, dtype=z0.dtype))
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype))
         else:
-            return (numpy.empty_like(a1, dtype=t0.dtype),
-                    numpy.empty_like(a1, dtype=z0.dtype), 0)
+            return (np.empty_like(a1, dtype=t0.dtype),
+                    np.empty_like(a1, dtype=z0.dtype), 0)
 
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     gees, = get_lapack_funcs(('gees',), (a1,))
     if lwork is None or lwork == -1:
         # get optimal work array
         result = gees(lambda x: None, a1, lwork=-1)
-        lwork = result[-2][0].real.astype(numpy.int_)
+        lwork = result[-2][0].real.astype(np.int_)
 
     if sort is None:
         sort_t = 0
@@ -192,8 +192,8 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         return result[0], result[-3], result[1]
 
 
-eps = numpy.finfo(float).eps
-feps = numpy.finfo(single).eps
+eps = np.finfo(float).eps
+feps = np.finfo(single).eps
 
 _array_kind = {'b': 0, 'h': 0, 'B': 0, 'i': 0, 'l': 0,
                'f': 0, 'd': 0, 'F': 1, 'D': 1}

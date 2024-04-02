@@ -10,7 +10,7 @@ Functions
 """
 import io
 import sys
-import numpy
+import numpy as np
 import struct
 import warnings
 from enum import IntEnum
@@ -459,15 +459,15 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     if not mmap:
         try:
             count = size if dtype == 'V1' else n_samples
-            data = numpy.fromfile(fid, dtype=dtype, count=count)
+            data = np.fromfile(fid, dtype=dtype, count=count)
         except io.UnsupportedOperation:  # not a C-like file
             fid.seek(start, 0)  # just in case it seeked, though it shouldn't
-            data = numpy.frombuffer(fid.read(size), dtype=dtype)
+            data = np.frombuffer(fid.read(size), dtype=dtype)
 
         if dtype == 'V1':
             # Rearrange raw bytes into smallest compatible numpy dtype
             dt = f'{fmt}i4' if bytes_per_sample == 3 else f'{fmt}i8'
-            a = numpy.zeros((len(data) // bytes_per_sample, numpy.dtype(dt).itemsize),
+            a = np.zeros((len(data) // bytes_per_sample, np.dtype(dt).itemsize),
                             dtype='V1')
             if is_big_endian:
                 a[:, :bytes_per_sample] = data.reshape((-1, bytes_per_sample))
@@ -477,7 +477,7 @@ def _read_data_chunk(fid, format_tag, channels, bit_depth, is_big_endian,
     else:
         if bytes_per_sample in {1, 2, 4, 8}:
             start = fid.tell()
-            data = numpy.memmap(fid, dtype=dtype, mode='c', offset=start,
+            data = np.memmap(fid, dtype=dtype, mode='c', offset=start,
                                 shape=(n_samples,))
             fid.seek(start + size)
         else:
