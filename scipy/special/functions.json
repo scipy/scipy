@@ -1110,31 +1110,31 @@
         }
     },
     "y0": {
-        "cephes.h": {
-            "y0": "d->d"
+        "_special.h++": {
+            "cephes_y0": "d->d"
         }
     },
     "y1": {
-        "cephes.h": {
-            "y1": "d->d"
+        "_special.h++": {
+            "cephes_y1": "d->d"
         }
     },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "yn": "id->d"
+        "_special.h++": {
+            "cephes_yn": "id->d"
         }
     },
     "zetac": {
-        "cephes.h": {
-            "zetac": "d->d"
+        "_special.h++": {
+            "cephes_zetac": "d->d"
         }
     },
     "_riemann_zeta": {
-        "cephes.h": {
-            "riemann_zeta": "d->d"
+        "_special.h++": {
+            "cephes_riemann_zeta": "d->d"
         }
     },
     "wright_bessel": {

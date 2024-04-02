@@ -67,6 +67,7 @@ namespace cephes {
         constexpr double MINLOG = -7.451332191019412076235E2;    // log 2**-1022
         constexpr double SQRT1OPI = 5.64189583547756286948E-1;   // sqrt( 1/pi)
         constexpr double SQRT2OPI = 7.9788456080286535587989E-1; // sqrt( 2/pi )
+        constexpr double SQRT2PI = 0.79788456080286535587989;    // sqrt(2pi) 
         constexpr double LOGSQ2 = 3.46573590279972654709E-1;     // log(2)/2
         constexpr double THPIO4 = 2.35619449019234492885;        // 3*pi/4
         constexpr double SQRT3 = 1.732050807568877293527;        // sqrt(3)

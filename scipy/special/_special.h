@@ -40,6 +40,7 @@
 #include "special/cephes/jv.h"
 #include "special/cephes/k0.h"
 #include "special/cephes/k1.h"
+#include "special/cephes/yn.h"
 #include "special/cephes/igam.h"
 #include "special/cephes/igami.h"
 #include "special/cephes/incbet.h"
@@ -56,6 +57,7 @@
 #include "special/cephes/trig.h"
 #include "special/cephes/unity.h"
 #include "special/cephes/zeta.h"
+#include "special/cephes/zetac.h"
 
 
 inline double binom(double n, double k) {
@@ -228,6 +230,18 @@ inline double cephes_k1e(double x) {
     return special::cephes::k1e(x);
 }
 
+inline double cephes_y0(double x) {
+    return special::cephes::y0(x);
+}
+
+inline double cephes_y1(double x) {
+    return special::cephes::y1(x);
+}
+
+inline double cephes_yn(int n, double x) {
+    return special::cephes::yn(n, x);
+}
+
 inline double cephes_igam(double a, double x) {
     return special::cephes::igam(a, x);
 }
@@ -274,6 +288,14 @@ inline double cephes_rgamma(double x) {
 
 inline double cephes_zeta(double x, double q) {
     return special::cephes::zeta(x, q);
+}
+
+inline double cephes_zetac(double x) {
+    return special::cephes::zetac(x);
+}
+
+inline double cephes_riemann_zeta(double x) {
+    return special::cephes::riemann_zeta(x);
 }
 
 inline double cephes_log1p(double x) {
