@@ -13,8 +13,8 @@ from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.26'
-OPENBLAS_LONG = 'v0.3.26'
+OPENBLAS_V = '0.3.26.dev'
+OPENBLAS_LONG = 'v0.3.26-382-gb1e8ba50'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 NIGHTLY_BASE_LOC = (
     'https://anaconda.org/scientific-python-nightly-wheels/openblas-libs'
@@ -232,6 +232,26 @@ def extract_tarfile_to(tarfileobj, target_path, archive_path):
             yield member
 
     tarfileobj.extractall(target_path, members=get_members())
+    reformat_pkg_file(target_path=target_path)
+
+
+def reformat_pkg_file(target_path):
+    # attempt to deal with:
+    # https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
+    for root, dirs, files in os.walk(target_path):
+        for name in files:
+            if name.endswith(".pc") and "openblas" in name:
+                pkg_path = os.path.join(root, name)
+    new_pkg_lines = []
+    with open(pkg_path) as pkg_orig:
+        for line in pkg_orig:
+            if line.startswith("Libs:"):
+                new_line = line.replace("$(libprefix}", "${libprefix}")
+                new_pkg_lines.append(new_line)
+            else:
+                new_pkg_lines.append(line)
+    with open(pkg_path, "w") as new_pkg:
+        new_pkg.writelines(new_pkg_lines)
 
 
 def make_init(dirname):
