@@ -252,6 +252,18 @@
             "beta_sf_double": "ddd->d"
         }
     },
+    "_invgauss_ppf": {
+        "boost_special_functions.h++": {
+            "invgauss_ppf_float": "fff->f",
+            "invgauss_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_isf": {
+        "boost_special_functions.h++": {
+            "invgauss_isf_float": "fff->f",
+            "invgauss_isf_double": "ddd->d"
+        }
+    },
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"
