@@ -432,6 +432,11 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
+    if precision == -1.0:
+        if signal.dtype.char in {'f', 'F'}:
+            precision = 1e-3
+        else:
+            precision = 1e-6
 
     if lamb > 0:
         raise ValueError('lambda must be negative or zero')
@@ -468,6 +473,12 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
+    if precision == -1.0:
+        if signal.dtype.char in {'f', 'F'}:
+            precision = 1e-3
+        else:
+            precision = 1e-6
+
     if lamb <= 1 / 144.0:
         # Normal cubic spline
         r = -2 + sqrt(3.0)
