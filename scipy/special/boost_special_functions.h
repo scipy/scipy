@@ -22,7 +22,6 @@
 #include "boost/math/distributions.hpp"
 #include <boost/math/distributions/inverse_gaussian.hpp>
 
-
 template<typename Real>
 static inline
 Real ibeta_wrap(Real a, Real b, Real x)
@@ -394,6 +393,173 @@ double
 ncx2_isf_double(double x, double k, double l)
 {
     return ncx2_isf_wrap(x, k, l);
+}
+
+template<typename Real>
+Real
+ncf_pdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::non_central_f_distribution<Real>(v1, v2, l), x);
+    }
+    return NAN; // inf or -inf returns NAN
+}
+
+float
+ncf_pdf_float(float x, float v1, float v2, float l)
+{
+    return ncf_pdf_wrap(x, v1, v2, l);
+}
+
+double
+ncf_pdf_double(double x, double v1, double v2, double l)
+{
+    return ncf_pdf_wrap(x, v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_cdf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::non_central_f_distribution<Real>(v1, v2, l), x);
+    }
+    // -inf => 0, inf => 1
+    return 1.0 - std::signbit(x);
+}
+
+float
+ncf_cdf_float(float x, float v1, float v2, float l)
+{
+    return ncf_cdf_wrap(x, v1, v2, l);
+}
+
+double
+ncf_cdf_double(double x, double v1, double v2, double l)
+{
+    return ncf_cdf_wrap(x, v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_ppf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+{
+    return boost::math::quantile(
+        boost::math::non_central_f_distribution<Real>(v1, v2, l), x);
+}
+
+float
+ncf_ppf_float(float x, float v1, float v2, float l)
+{
+    return ncf_ppf_wrap(x, v1, v2, l);
+}
+
+double
+ncf_ppf_double(double x, double v1, double v2, double l)
+{
+    return ncf_ppf_wrap(x, v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_sf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::non_central_f_distribution<Real>(v1, v2, l), x));
+}
+
+float
+ncf_sf_float(float x, float v1, float v2, float l)
+{
+    return ncf_sf_wrap(x, v1, v2, l);
+}
+
+double
+ncf_sf_double(double x, double v1, double v2, double l)
+{
+    return ncf_sf_wrap(x, v1, v2, l);
+}
+
+template<typename Real>
+Real
+ncf_isf_wrap(const Real x, const Real v1, const Real v2, const Real l)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::non_central_f_distribution<Real>(v1, v2, l), x));
+}
+
+float
+ncf_isf_float(float x, float v1, float v2, float l)
+{
+    return ncf_isf_wrap(x, v1, v2, l);
+}
+
+double
+ncf_isf_double(double x, double v1, double v2, double l)
+{
+    return ncf_isf_wrap(x, v1, v2, l);
+}
+
+#define NCF_RETURN_NAN(v, c) if( v <= c ) { \
+        return NAN; \
+    } \
+
+float
+ncf_mean_float(float v1, float v2, float l)
+{
+    NCF_RETURN_NAN(v2, 2.0);
+    return boost::math::mean(boost::math::non_central_f_distribution<float>(v1, v2, l));
+}
+
+double
+ncf_mean_double(double v1, double v2, double l)
+{
+    NCF_RETURN_NAN(v2, 2.0);
+    return boost::math::mean(boost::math::non_central_f_distribution<double>(v1, v2, l));
+}
+
+float
+ncf_variance_float(float v1, float v2, float l)
+{
+    NCF_RETURN_NAN(v2, 4.0);
+    return boost::math::variance(boost::math::non_central_f_distribution<float>(v1, v2, l));
+}
+
+double
+ncf_variance_double(double v1, double v2, double l)
+{
+    NCF_RETURN_NAN(v2, 4.0);
+    return boost::math::variance(boost::math::non_central_f_distribution<double>(v1, v2, l));
+}
+
+float
+ncf_skewness_float(float v1, float v2, float l)
+{
+    NCF_RETURN_NAN(v2, 6.0);
+    return boost::math::skewness(boost::math::non_central_f_distribution<float>(v1, v2, l));
+}
+
+double
+ncf_skewness_double(double v1, double v2, double l)
+{
+    NCF_RETURN_NAN(v2, 6.0);
+    return boost::math::skewness(boost::math::non_central_f_distribution<double>(v1, v2, l));
+}
+
+float
+ncf_kurtosis_excess_float(float v1, float v2, float l)
+{
+    NCF_RETURN_NAN(v2, 8.0);
+    return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<float>(v1, v2, l));
+}
+
+double
+ncf_kurtosis_excess_double(double v1, double v2, double l)
+{
+    NCF_RETURN_NAN(v2, 8.0);
+    return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<double>(v1, v2, l));
 }
 
 template<typename Real>

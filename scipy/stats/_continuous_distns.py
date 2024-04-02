@@ -7581,21 +7581,21 @@ class ncf_gen(rv_continuous):
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        return _boost._ncf_pdf(x, dfn, dfd, nc)
+        return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return _boost._ncf_cdf(x, dfn, dfd, nc)
+        return scu._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_ppf(q, dfn, dfd, nc)
+            return scu._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
-        return _boost._ncf_sf(x, dfn, dfd, nc)
+        return scu._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_isf(x, dfn, dfd, nc)
+            return scu._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7605,10 +7605,10 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
-        mu = _boost._ncf_mean(dfn, dfd, nc)
-        mu2 = _boost._ncf_variance(dfn, dfd, nc)
-        g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = _boost._ncf_kurtosis_excess(
+        mu = scu._ncf_mean(dfn, dfd, nc)
+        mu2 = scu._ncf_variance(dfn, dfd, nc)
+        g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = scu._ncf_kurtosis_excess(
             dfn, dfd, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
