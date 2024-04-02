@@ -1048,8 +1048,8 @@
         "_spence.pxd": {
             "cspence": "D-> D"
         },
-        "cephes.h": {
-            "spence": "d->d"
+        "_special.h++": {
+            "cephes_spence": "d->d"
         }
     },
     "stdtr": {

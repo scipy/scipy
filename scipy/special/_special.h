@@ -55,6 +55,7 @@
 #include "special/cephes/rgamma.h"
 #include "special/cephes/round.h"
 #include "special/cephes/sindg.h"
+#include "special/cephes/spence.h"
 #include "special/cephes/tandg.h"
 #include "special/cephes/trig.h"
 #include "special/cephes/tukey.h"
@@ -447,6 +448,10 @@ inline double cephes_pdtri(int k, double y) {
 
 inline double cephes_round(double x) {
     return special::cephes::round(x);
+}
+
+inline double cephes_spence(double x) {
+    return special::cephes::spence(x);
 }
 
 inline double cephes_tukeylambdacdf(double x, double lmbda) {
