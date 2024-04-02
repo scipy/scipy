@@ -300,3 +300,7 @@ int cephes_fresnl(double xxa, double *ssa, double *cca) {
 int cephes_sici_wrap(double x, double *si, double *ci){
     return special::cephes::sici(x, si, ci);
 }
+
+int cephes_shichi_wrap(double x, double *si, double *ci){
+    return special::cephes::shichi(x, si, ci);
+}

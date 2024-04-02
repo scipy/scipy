@@ -987,8 +987,8 @@
         "_sici.pxd": {
             "cshichi": "D*DD->*i"
         },
-        "cephes.h": {
-            "shichi": "d*dd->*i"
+        "special_c_wrappers.h": {
+            "cephes_shichi_wrap": "d*dd->*i"
         }
     },
     "sici": {
