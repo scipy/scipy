@@ -3,12 +3,10 @@ import numpy as np
 from numpy import array
 from numpy.testing import assert_allclose, assert_raises
 import pytest
-from pytest import raises
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
 from scipy.signal._splines import symiirorder1, symiirorder2
-from scipy import signal
 
 
 def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
