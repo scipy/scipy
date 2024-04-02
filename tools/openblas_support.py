@@ -237,6 +237,9 @@ def extract_tarfile_to(tarfileobj, target_path, archive_path):
 def reformat_pkg_file(target_path):
     # attempt to deal with:
     # https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
+    # NOTE: this machinery can be removed in the future because the
+    # problem is a simple typo fixed upstream now at:
+    # https://github.com/OpenMathLib/OpenBLAS/pull/4594
     for root, dirs, files in os.walk(target_path):
         for name in files:
             if name.endswith(".pc") and "openblas" in name:

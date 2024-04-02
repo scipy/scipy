@@ -49,7 +49,7 @@ New features
 - The Modified Akima Interpolation has been added to
   ``interpolate.Akima1DInterpolator``, available via the new ``method``
   argument.
-- New method ``BSpline.insert_knot`` inserts a knot into a ``BSpline` instance.
+- New method ``BSpline.insert_knot`` inserts a knot into a ``BSpline`` instance.
   This routine is similar to the module-level `scipy.interpolate.insert`
   function, and works with the BSpline objects instead of ``tck`` tuples.
 - ``RegularGridInterpolator`` gained the functionality to compute derivatives
@@ -326,7 +326,7 @@ Issues closed for 1.13.0
 * `#19774 <https://github.com/scipy/scipy/issues/19774>`__: DOC: Detail what "concatenate" means in the context of \`spatial.transform.Rotation.concatenate\`
 * `#19799 <https://github.com/scipy/scipy/issues/19799>`__: DOC: array types: update array validation guidance
 * `#19813 <https://github.com/scipy/scipy/issues/19813>`__: BUG: typo in specfun.f?
-* `#19819 <https://github.com/scipy/scipy/issues/19819>`__: BUG: In RPFInterpolator, wrong warning message if degree=-1
+* `#19819 <https://github.com/scipy/scipy/issues/19819>`__: BUG: In RBFInterpolator, wrong warning message if degree=-1
 * `#19831 <https://github.com/scipy/scipy/issues/19831>`__: Test failures with OpenBLAS 0.3.26
 * `#19835 <https://github.com/scipy/scipy/issues/19835>`__: DOC: \`fft\` missing from list of subpackages
 * `#19836 <https://github.com/scipy/scipy/issues/19836>`__: DOC: remove incorrect sentence about subpackage imports
