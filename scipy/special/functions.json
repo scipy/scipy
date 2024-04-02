@@ -1082,8 +1082,8 @@
         }
     },
     "tklmbda": {
-        "cephes.h": {
-            "tukeylambdacdf": "dd->d"
+        "_special.h++": {
+            "cephes_tukeylambdacdf": "dd->d"
         }
     },
     "wofz": {

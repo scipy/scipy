@@ -56,6 +56,7 @@
 #include "special/cephes/sindg.h"
 #include "special/cephes/tandg.h"
 #include "special/cephes/trig.h"
+#include "special/cephes/tukey.h"
 #include "special/cephes/unity.h"
 #include "special/cephes/zeta.h"
 #include "special/cephes/zetac.h"
@@ -441,4 +442,8 @@ inline double cephes_pdtrc(double k, double m) {
 
 inline double cephes_pdtri(int k, double y) {
     return special::cephes::pdtri(k, y);
+}
+
+inline double cephes_tukeylambdacdf(double x, double lmbda) {
+    return special::cephes::tukeylambdacdf(x, lmbda);
 }
