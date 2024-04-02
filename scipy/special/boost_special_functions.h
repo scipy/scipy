@@ -230,26 +230,6 @@ beta_pdf_double(double x, double a, double b)
 
 template<typename Real>
 Real
-beta_sf_wrap(const Real x, const Real a, const Real b)
-{
-    return boost::math::cdf(
-        boost::math::complement(boost::math::beta_distribution<Real>(a, b), x));
-}
-
-float
-beta_sf_float(float x, float a, float b)
-{
-    return beta_sf_wrap(x, a, b);
-}
-
-double
-beta_sf_double(double x, double a, double b)
-{
-    return beta_sf_wrap(x, a, b);
-}
-
-template<typename Real>
-Real
 invgauss_ppf_wrap(const Real x, const Real mu, const Real s)
 {
     return boost::math::quantile(

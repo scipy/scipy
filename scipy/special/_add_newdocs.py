@@ -94,27 +94,6 @@ add_newdoc(
     """)
 
 add_newdoc(
-    "_beta_sf",
-    """
-    _beta_sf(x, a, b)
-
-    Survival function of beta distribution.
-
-    Parameters
-    ----------
-    x : array_like
-        Real-valued such that :math:`0 \leq x \leq 1`,
-        the upper limit of integration
-    a, b : array_like
-           Positive, real-valued parameters
-
-    Returns
-    -------
-    scalar or ndarray
-
-    """)
-
-add_newdoc(
     "_invgauss_ppf",
     """
     _invgauss_ppf(x, mu)

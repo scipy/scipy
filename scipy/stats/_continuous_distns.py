@@ -689,7 +689,7 @@ class beta_gen(rv_continuous):
         return sc.betainc(a, b, x)
 
     def _sf(self, x, a, b):
-        return scu._beta_sf(x, a, b)
+        return sc.betaincc(a, b, x)
 
     def _isf(self, x, a, b):
         return sc.betaincinv(a, b, 1 - x)

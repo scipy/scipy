@@ -246,12 +246,6 @@
             "beta_pdf_double": "ddd->d"
         }
     },
-    "_beta_sf": {
-        "boost_special_functions.h++": {
-            "beta_sf_float": "fff->f",
-            "beta_sf_double": "ddd->d"
-        }
-    },
     "_invgauss_ppf": {
         "boost_special_functions.h++": {
             "invgauss_ppf_float": "fff->f",
