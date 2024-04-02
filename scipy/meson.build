@@ -85,7 +85,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.10.4')
+pybind11_dep = dependency('pybind11', version: '>=2.12.0')
 
 # Pythran include directory and build flags
 if use_pythran

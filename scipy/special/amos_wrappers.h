@@ -5,21 +5,17 @@
  *  arguments.
  */
 
-#ifndef _AMOS_WRAPPERS_H
-#define _AMOS_WRAPPERS_H
+#pragma once
+
 #include "Python.h"
 #include "sf_error.h"
 #include "npy_2_complexcompat.h"
-#include "_amos.h"
 #include <numpy/npy_math.h>
 
-#define DO_SFERR(name, varp)                          \
-    do {                                              \
-      if (nz !=0 || ierr != 0) {                      \
-        sf_error(name, ierr_to_sferr(nz, ierr), NULL);\
-        set_nan_if_no_computation_done(varp, ierr);   \
-      }                                               \
-    } while (0)
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
 
 int ierr_to_sferr( int nz, int ierr);
 void set_nan_if_no_computation_done(npy_cdouble *var, int ierr);
@@ -58,9 +54,9 @@ int cbesy_(doublecomplex *, double *, int *, int *, doublecomplex *, int *, doub
 int cbesh_(doublecomplex *, double *, int *, int *, int *, doublecomplex *, int *, int *);
 */
 
-#endif
-
-
+#ifdef __cplusplus
+}  /* extern "C" */
+#endif /* __cplusplus */
 
   
 
