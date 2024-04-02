@@ -7496,11 +7496,25 @@ class ncx2_gen(rv_continuous):
                               f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
+        _ncx2_mean = np.add(df, nc)
+        k_plus_cl = lambda k, l, c: np.add(k, np.multiply(c, l))
+        _ncx2_variance = np.multiply(2.0, k_plus_cl(df, nc, 2.0))
+        _ncx2_skewness = np.divide(
+            np.multiply(
+                np.sqrt(np.power(2.0, 3)),
+                k_plus_cl(df, nc, 3)
+            ),
+            np.sqrt(np.power(k_plus_cl(df, nc, 2.0), 3))
+        )
+        _ncx2_kurtosis_excess = np.divide(
+            np.multiply(12.0, k_plus_cl(df, nc, 4.0)),
+            np.square(k_plus_cl(df, nc, 2.0))
+        )
         return (
-            _boost._ncx2_mean(df, nc),
-            _boost._ncx2_variance(df, nc),
-            _boost._ncx2_skewness(df, nc),
-            _boost._ncx2_kurtosis_excess(df, nc),
+            _ncx2_mean,
+            _ncx2_variance,
+            _ncx2_skewness,
+            _ncx2_kurtosis_excess,
         )
 
 
