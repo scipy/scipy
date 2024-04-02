@@ -979,8 +979,8 @@
         }
     },
     "round": {
-        "cephes.h": {
-            "round": "d->d"
+        "_special.h++": {
+            "cephes_round": "d->d"
         }
     },
     "shichi": {
