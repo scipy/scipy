@@ -914,8 +914,8 @@
         }
     },
     "owens_t": {
-        "cephes.h": {
-            "owens_t": "dd->d"
+        "_special.h++": {
+            "cephes_owens_t": "dd->d"
         }
     },
     "pdtr": {
