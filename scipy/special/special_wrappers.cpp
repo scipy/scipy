@@ -296,3 +296,7 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
 int cephes_fresnl(double xxa, double *ssa, double *cca) {
     return special::cephes::fresnl(xxa, ssa, cca);
 }
+
+int cephes_sici_wrap(double x, double *si, double *ci){
+    return special::cephes::sici(x, si, ci);
+}

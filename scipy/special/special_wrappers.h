@@ -120,6 +120,7 @@ double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *b
 double cephes_jv_wrap(double v, double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl(double xxa, double *ssa, double *cca);
+int cephes_sici_wrap(double x, double *si, double *ci);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -579,7 +579,7 @@
     },
     "fresnel": {
         "special_c_wrappers.h": {
-            "fresnl": "d*dd->*i"
+            "cephes_fresnl_wrap": "d*dd->*i"
         },
         "special_wrappers.h": {
             "cfresnl_wrap": "D*DD->*i"
