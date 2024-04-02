@@ -578,7 +578,7 @@
             "fdtridfd": "ddd->d"        }
     },
     "fresnel": {
-        "cephes.h": {
+        "special_c_wrappers.h": {
             "fresnl": "d*dd->*i"
         },
         "special_wrappers.h": {
