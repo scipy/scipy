@@ -469,7 +469,7 @@ Building the Documentation
 
 ============================  =================================================
  Tool                         Version
-====================          =================================================
+============================  =================================================
 Sphinx                        Whatever recent versions work. >= 5.0.
 PyData Sphinx theme           Whatever recent versions work. >= 0.15.2.
 Sphinx-Design                 Whatever recent versions work. >= 0.4.0.
