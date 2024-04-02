@@ -20,6 +20,7 @@
 #include "boost/math/special_functions/hypergeometric_pFq.hpp"
 
 #include "boost/math/distributions.hpp"
+#include <boost/math/distributions/inverse_gaussian.hpp>
 
 
 template<typename Real>
@@ -248,6 +249,45 @@ beta_sf_double(double x, double a, double b)
     return beta_sf_wrap(x, a, b);
 }
 
+template<typename Real>
+Real
+invgauss_ppf_wrap(const Real x, const Real mu, const Real s)
+{
+    return boost::math::quantile(
+        boost::math::inverse_gaussian_distribution<Real>(mu, s), x);
+}
+
+float
+invgauss_ppf_float(float x, float mu, float s)
+{
+    return invgauss_ppf_wrap(x, mu, s);
+}
+
+double
+invgauss_ppf_double(double x, double mu, double s)
+{
+    return invgauss_ppf_wrap(x, mu, s);
+}
+
+template<typename Real>
+Real
+invgauss_isf_wrap(const Real x, const Real mu, const Real s)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::inverse_gaussian_distribution<Real>(mu, s), x));
+}
+
+float
+invgauss_isf_float(float x, float mu, float s)
+{
+    return invgauss_isf_wrap(x, mu, s);
+}
+
+double
+invgauss_isf_double(double x, double mu, double s)
+{
+    return invgauss_isf_wrap(x, mu, s);
+}
 
 template<typename Real>
 static inline

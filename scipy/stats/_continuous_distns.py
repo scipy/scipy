@@ -4818,9 +4818,9 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = _boost._invgauss_ppf(x, mu, 1)
+            ppf = scu._invgauss_ppf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf

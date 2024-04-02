@@ -90,7 +90,6 @@ add_newdoc(
     Returns
     -------
     scalar or ndarray
-        Value of the regularized incomplete beta function
 
     """)
 
@@ -112,7 +111,46 @@ add_newdoc(
     Returns
     -------
     scalar or ndarray
-        Value of the regularized incomplete beta function
+
+    """)
+
+add_newdoc(
+    "_invgauss_ppf",
+    """
+    _invgauss_ppf(x, mu)
+
+    Percent point function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_invgauss_isf",
+    """
+    _invgauss_isf(x, mu)
+
+    Inverse survival function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
 
     """)
 
