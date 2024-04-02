@@ -50,7 +50,6 @@
  *
  * For IEEE arithmetic, MAXL2 = 1024.
  */
-
 
 /*
  * Cephes Math Library Release 2.3:  March, 1995
@@ -66,7 +65,6 @@ namespace special {
 namespace cephes {
 
     namespace detail {
-        
 
         constexpr double exp2_P[] = {
             2.30933477057345225087E-2,
@@ -83,7 +81,7 @@ namespace cephes {
         constexpr double exp2_MAXL2 = 1024.0;
         constexpr double exp2_MINL2 = -1024.0;
 
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double exp2(double x) {
         double px, xx;
@@ -100,7 +98,7 @@ namespace cephes {
             return (0.0);
         }
 
-        xx = x;			/* save x */
+        xx = x; /* save x */
         /* separate into integer and fractional parts */
         px = std::floor(x + 0.5);
         n = px;
@@ -120,5 +118,5 @@ namespace cephes {
         return (x);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

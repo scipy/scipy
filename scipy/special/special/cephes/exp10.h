@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     exp10.c
  *
  *     Base 10 exponential function
@@ -47,14 +46,13 @@
  * IEEE arithmetic: MAXL10 = 308.2547155599167.
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.2:  January, 1991
  * Copyright 1984, 1991 by Stephen L. Moshier
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 #pragma once
-
 
 #include "../config.h"
 #include "../error.h"
@@ -86,7 +84,7 @@ namespace cephes {
         /* static double MAXL10 = 38.230809449325611792; */
         constexpr double exp10_MAXL10 = 308.2547155599167;
 
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double exp10(double x) {
         double px, xx;
@@ -128,5 +126,5 @@ namespace cephes {
         return (x);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

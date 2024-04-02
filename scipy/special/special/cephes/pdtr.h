@@ -153,7 +153,6 @@ namespace cephes {
         return (igam(v, m));
     }
 
-
     SPECFUN_HOST_DEVICE inline double pdtr(double k, double m) {
         double v;
 
@@ -168,7 +167,6 @@ namespace cephes {
         return (igamc(v, m));
     }
 
-
     SPECFUN_HOST_DEVICE inline double pdtri(int k, double y) {
         double v;
 
@@ -181,5 +179,5 @@ namespace cephes {
         return (v);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

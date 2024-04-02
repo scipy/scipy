@@ -46,7 +46,7 @@
  * gdtr domain         x < 0            0.0
  *
  */
-/*							gdtrc.c
+/*							gdtrc.c
  *
  *	Complemented Gamma distribution function
  *
@@ -90,9 +90,8 @@
  * gdtrc domain         x < 0            0.0
  *
  */
-
-/*                                                     gdtr()  */
 
+/*                                                     gdtr()  */
 
 /*
  * Cephes Math Library Release 2.3:  March,1995
@@ -106,19 +105,17 @@
 #include "igam.h"
 #include "igami.h"
 
-
 namespace special {
 namespace cephes {
-    
+
     SPECFUN_HOST_DEVICE inline double gdtr(double a, double b, double x) {
-        
+
         if (x < 0.0) {
             sf_error("gdtr", SF_ERROR_DOMAIN, NULL);
             return (std::numeric_limits<double>::quiet_NaN());
         }
         return (igam(b, a * x));
     }
-
 
     SPECFUN_HOST_DEVICE inline double gdtrc(double a, double b, double x) {
 
@@ -128,7 +125,6 @@ namespace cephes {
         }
         return (igamc(b, a * x));
     }
-
 
     SPECFUN_HOST_DEVICE inline double gdtri(double a, double b, double y) {
 
@@ -140,5 +136,5 @@ namespace cephes {
         return (igamci(b, 1.0 - y) / a);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

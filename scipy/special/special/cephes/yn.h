@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     yn.c
  *
  *     Bessel function of second kind of integer order
@@ -50,13 +49,12 @@
  * Spot checked against tables for x, n between 0 and 100.
  *
  */
-
+
 /*
  * Cephes Math Library Release 2.8:  June, 2000
  * Copyright 1984, 1987, 2000 by Stephen L. Moshier
  */
 #pragma once
-
 
 #include "../config.h"
 #include "../error.h"
@@ -64,7 +62,6 @@
 #include "const.h"
 #include "j0.h"
 #include "j1.h"
-
 
 namespace special {
 namespace cephes {
@@ -75,16 +72,14 @@ namespace cephes {
 
         if (n < 0) {
             n = -n;
-            if ((n & 1) == 0) {	/* -1**n */
+            if ((n & 1) == 0) { /* -1**n */
                 sign = 1;
             } else {
                 sign = -1;
             }
-        }
-        else {
+        } else {
             sign = 1;
         }
-
 
         if (n == 0) {
             return (sign * y0(x));
@@ -114,12 +109,10 @@ namespace cephes {
             anm1 = an;
             r += 2.0;
             ++k;
-        }
-        while (k < n);
-        
+        } while (k < n);
 
         return (sign * an);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

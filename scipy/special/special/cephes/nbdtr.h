@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     nbdtr.c
  *
  *     Negative binomial distribution
@@ -47,7 +46,7 @@
  * See also incbet.c.
  *
  */
-/*							nbdtrc.c
+/*							nbdtrc.c
  *
  *	Complemented negative binomial distribution
  *
@@ -87,7 +86,7 @@
  *    IEEE     0,100       100000      1.7e-13     8.8e-15
  * See also incbet.c.
  */
-
+
 /*                                                     nbdtrc
  *
  *     Complemented negative binomial distribution
@@ -123,7 +122,7 @@
  *
  * See incbet.c.
  */
-/*							nbdtri
+/*							nbdtri
  *
  *	Functional inverse of negative binomial distribution
  *
@@ -149,7 +148,7 @@
  *    IEEE     0,100       100000      1.5e-14     8.5e-16
  * See also incbi.c.
  */
-
+
 /*
  * Cephes Math Library Release 2.3:  March, 1995
  * Copyright 1984, 1987, 1995 by Stephen L. Moshier
@@ -162,10 +161,9 @@
 #include "incbet.h"
 #include "incbi.h"
 
-
 namespace special {
 namespace cephes {
-    
+
     SPECFUN_HOST_DEVICE inline double nbdtrc(int k, int n, double p) {
         double dk, dn;
 
@@ -183,8 +181,6 @@ namespace cephes {
         return (incbet(dk, dn, 1.0 - p));
     }
 
-
-
     SPECFUN_HOST_DEVICE inline double nbdtr(int k, int n, double p) {
         double dk, dn;
 
@@ -201,8 +197,6 @@ namespace cephes {
         return (incbet(dn, dk, p));
     }
 
-
-    
     SPECFUN_HOST_DEVICE inline double nbdtri(int k, int n, double p) {
         double dk, dn, w;
 
@@ -220,5 +214,5 @@ namespace cephes {
         return (w);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

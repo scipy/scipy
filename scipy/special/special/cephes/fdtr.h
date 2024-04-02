@@ -2,7 +2,6 @@
  * Original header with Copyright information appears below.
  */
 
-
 /*                                                     fdtr.c
  *
  *     F distribution
@@ -166,7 +165,6 @@
  */
 #pragma once
 
-
 #include "../config.h"
 #include "../error.h"
 
@@ -175,11 +173,10 @@
 
 namespace special {
 namespace cephes {
-    
 
     SPECFUN_HOST_DEVICE inline double fdtrc(double a, double b, double x) {
         double w;
-        
+
         if ((a <= 0.0) || (b <= 0.0) || (x < 0.0)) {
             set_error("fdtrc", SF_ERROR_DOMAIN, NULL);
             return std::numeric_limits<double>::quiet_NaN();
@@ -187,7 +184,6 @@ namespace cephes {
         w = b / (b + a * x);
         return incbet(0.5 * b, 0.5 * a, w);
     }
-
 
     SPECFUN_HOST_DEVICE inline double fdtr(double a, double b, double x) {
         double w;
@@ -200,7 +196,6 @@ namespace cephes {
         w = w / (b + w);
         return incbet(0.5 * a, 0.5 * b, w);
     }
-
 
     SPECFUN_HOST_DEVICE inline double fdtri(double a, double b, double y) {
         double w, x;
@@ -217,13 +212,12 @@ namespace cephes {
         if (w > y || y < 0.001) {
             w = incbi(0.5 * b, 0.5 * a, y);
             x = (b - b * w) / (a * w);
-        }
-        else {
+        } else {
             w = incbi(0.5 * a, 0.5 * b, 1.0 - y);
             x = b * w / (a * (1.0 - w));
         }
         return x;
     }
 
-}
-}
+} // namespace cephes
+} // namespace special

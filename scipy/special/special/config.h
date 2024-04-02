@@ -142,7 +142,7 @@ SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
 }
 
 template <typename T>
-SPECFUN_HOST_DEVICE const T& clamp(const T  &v, const T &lo, const T &hi) {
+SPECFUN_HOST_DEVICE const T &clamp(const T &v, const T &lo, const T &hi) {
     return cuda::std::clamp(v, lo, hi);
 }
 
