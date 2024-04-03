@@ -4,7 +4,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
   fs.copyfile('_boxcox.pxd'),
-  fs.copyfile('_cdflib.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_cephes.pxd'),
   fs.copyfile('_complexstuff.pxd'),
@@ -114,6 +113,7 @@ sf_error_state_lib = shared_library('sf_error_state',
 
 ufuncs_sources = [
   '_cosine.c',
+  'cdflib.c',
   'scaled_exp1.c',
   'amos_wrappers.cpp',
   'specfun_wrappers.cpp',
@@ -150,15 +150,6 @@ py3.extension_module('_special_ufuncs',
 
 py3.extension_module('_specfun',
   [cython_gen_cpp.process('_specfun.pyx')],
-  dependencies: [np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special'
-)
-
-py3.extension_module('_cdflib',
-  cython_gen.process('_cdflib.pyx'),
-  c_args: cython_c_args,
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,
@@ -284,6 +275,7 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
+    'cdflib.c',
     'scaled_exp1.c',
     'amos_wrappers.cpp',
     'specfun_wrappers.cpp',
