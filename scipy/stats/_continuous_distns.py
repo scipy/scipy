@@ -9238,7 +9238,7 @@ class skewnorm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
-        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        cdf = scu._skewnorm_cdf(x, 0.0, 1.0, a)
         # for some reason, a isn't broadcasted if some of x are invalid
         a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
@@ -9247,7 +9247,7 @@ class skewnorm_gen(rv_continuous):
         return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
-        return _boost._skewnorm_ppf(x, 0, 1, a)
+        return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
         # Boost's SF is implemented this way. Use whatever customizations
@@ -9255,7 +9255,7 @@ class skewnorm_gen(rv_continuous):
         return self._cdf(-x, -a)
 
     def _isf(self, x, a):
-        return _boost._skewnorm_isf(x, 0, 1, a)
+        return scu._skewnorm_isf(x, 0.0, 1.0, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
