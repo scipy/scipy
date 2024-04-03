@@ -10,6 +10,7 @@ target-version = "py39"
 # Also, `PGH004` which checks for blanket (non-specific) `noqa`s
 # and `B028` which checks that warnings include the `stacklevel` keyword.
 # `B028` added in gh-19623.
+# `ICN001` added in gh-20382 to enforce common conventions for imports
 select = ["E", "F", "PGH004", "UP", "B028", "ICN001"]
 ignore = ["E741"]
 
