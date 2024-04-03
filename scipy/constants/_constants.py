@@ -13,7 +13,7 @@ import math as _math
 from typing import TYPE_CHECKING, Any
 
 from ._codata import value as _cd
-import numpy as _np
+import numpy as _np # noqa: ICN001
 
 if TYPE_CHECKING:
     import numpy.typing as npt

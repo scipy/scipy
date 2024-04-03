@@ -822,7 +822,7 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-import numpy as _np
+import numpy as _np # noqa: ICN001
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
 from re import compile as regex_compile
