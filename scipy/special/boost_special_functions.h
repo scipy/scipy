@@ -683,6 +683,70 @@ nct_kurtosis_excess_double(double v, double l)
 }
 
 template<typename Real>
+Real
+skewnorm_cdf_wrap(const Real x, const Real l, const Real sc, const Real sh)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::skew_normal_distribution<Real>(l, sc, sh), x);
+    }
+    // -inf => 0, inf => 1
+    return 1 - std::signbit(x);
+}
+
+float
+skewnorm_cdf_float(float x, float l, float sc, float sh)
+{
+    return skewnorm_cdf_wrap(x, l, sc, sh);
+}
+
+double
+skewnorm_cdf_double(double x, double l, double sc, double sh)
+{
+    return skewnorm_cdf_wrap(x, l, sc, sh);
+}
+
+template<typename Real>
+Real
+skewnorm_ppf_wrap(const Real x, const Real l, const Real sc, const Real sh)
+{
+    return boost::math::quantile(
+        boost::math::skew_normal_distribution<Real>(l, sc, sh), x);
+}
+
+float
+skewnorm_ppf_float(float x, float l, float sc, float sh)
+{
+    return skewnorm_ppf_wrap(x, l, sc, sh);
+}
+
+double
+skewnorm_ppf_double(double x, double l, double sc, double sh)
+{
+    return skewnorm_ppf_wrap(x, l, sc, sh);
+}
+
+template<typename Real>
+Real
+skewnorm_isf_wrap(const Real x, const Real l, const Real sc, const Real sh)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::skew_normal_distribution<Real>(l, sc, sh), x));
+}
+
+float
+skewnorm_isf_float(float x, float l, float sc, float sh)
+{
+    return skewnorm_isf_wrap(x, l, sc, sh);
+}
+
+double
+skewnorm_isf_double(double x, double l, double sc, double sh)
+{
+    return skewnorm_isf_wrap(x, l, sc, sh);
+}
+
+template<typename Real>
 static inline
 Real erfinv_wrap(Real x)
 {

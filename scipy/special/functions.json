@@ -390,6 +390,24 @@
             "nct_kurtosis_excess_double": "dd->d"
         }
     },
+    "_skewnorm_cdf": {
+        "boost_special_functions.h++": {
+            "skewnorm_cdf_float": "ffff->f",
+            "skewnorm_cdf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_ppf": {
+        "boost_special_functions.h++": {
+            "skewnorm_ppf_float": "ffff->f",
+            "skewnorm_ppf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_isf": {
+        "boost_special_functions.h++": {
+            "skewnorm_isf_float": "ffff->f",
+            "skewnorm_isf_double": "dddd->d"
+        }
+    },
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"
