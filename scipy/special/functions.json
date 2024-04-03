@@ -342,6 +342,54 @@
             "ncf_kurtosis_excess_double": "ddd->d"
         }
     },
+    "_nct_cdf": {
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"
+        }
+    },
+    "_nct_ppf": {
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
+        }
+    },
+    "_nct_sf": {
+        "boost_special_functions.h++": {
+            "nct_sf_float": "fff->f",
+            "nct_sf_double": "ddd->d"
+        }
+    },
+    "_nct_isf": {
+        "boost_special_functions.h++": {
+            "nct_isf_float": "fff->f",
+            "nct_isf_double": "ddd->d"
+        }
+    },
+    "_nct_mean": {
+        "boost_special_functions.h++": {
+            "nct_mean_float": "ff->f",
+            "nct_mean_double": "dd->d"
+        }
+    },
+    "_nct_variance": {
+        "boost_special_functions.h++": {
+            "nct_variance_float": "ff->f",
+            "nct_variance_double": "dd->d"
+        }
+    },
+    "_nct_skewness": {
+        "boost_special_functions.h++": {
+            "nct_skewness_float": "ff->f",
+            "nct_skewness_double": "dd->d"
+        }
+    },
+    "_nct_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nct_kurtosis_excess_float": "ff->f",
+            "nct_kurtosis_excess_double": "dd->d"
+        }
+    },
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"

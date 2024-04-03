@@ -7796,25 +7796,25 @@ class nct_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_ppf(q, df, nc)
+            return scu._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_isf(x, df, nc)
+            return scu._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
-        mu = _boost._nct_mean(df, nc)
-        mu2 = _boost._nct_variance(df, nc)
-        g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
+        mu = scu._nct_mean(df, nc)
+        mu2 = scu._nct_variance(df, nc)
+        g1 = scu._nct_skewness(df, nc) if 's' in moments else None
+        g2 = scu._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 

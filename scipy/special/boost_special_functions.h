@@ -482,64 +482,204 @@ ncf_isf_double(double x, double v1, double v2, double l)
     return ncf_isf_wrap(x, v1, v2, l);
 }
 
-#define NCF_RETURN_NAN(v, c) if( v <= c ) { \
+#define RETURN_NAN(v, c) if( v <= c ) { \
         return NAN; \
     } \
 
 float
 ncf_mean_float(float v1, float v2, float l)
 {
-    NCF_RETURN_NAN(v2, 2.0);
+    RETURN_NAN(v2, 2.0);
     return boost::math::mean(boost::math::non_central_f_distribution<float>(v1, v2, l));
 }
 
 double
 ncf_mean_double(double v1, double v2, double l)
 {
-    NCF_RETURN_NAN(v2, 2.0);
+    RETURN_NAN(v2, 2.0);
     return boost::math::mean(boost::math::non_central_f_distribution<double>(v1, v2, l));
 }
 
 float
 ncf_variance_float(float v1, float v2, float l)
 {
-    NCF_RETURN_NAN(v2, 4.0);
+    RETURN_NAN(v2, 4.0);
     return boost::math::variance(boost::math::non_central_f_distribution<float>(v1, v2, l));
 }
 
 double
 ncf_variance_double(double v1, double v2, double l)
 {
-    NCF_RETURN_NAN(v2, 4.0);
+    RETURN_NAN(v2, 4.0);
     return boost::math::variance(boost::math::non_central_f_distribution<double>(v1, v2, l));
 }
 
 float
 ncf_skewness_float(float v1, float v2, float l)
 {
-    NCF_RETURN_NAN(v2, 6.0);
+    RETURN_NAN(v2, 6.0);
     return boost::math::skewness(boost::math::non_central_f_distribution<float>(v1, v2, l));
 }
 
 double
 ncf_skewness_double(double v1, double v2, double l)
 {
-    NCF_RETURN_NAN(v2, 6.0);
+    RETURN_NAN(v2, 6.0);
     return boost::math::skewness(boost::math::non_central_f_distribution<double>(v1, v2, l));
 }
 
 float
 ncf_kurtosis_excess_float(float v1, float v2, float l)
 {
-    NCF_RETURN_NAN(v2, 8.0);
+    RETURN_NAN(v2, 8.0);
     return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<float>(v1, v2, l));
 }
 
 double
 ncf_kurtosis_excess_double(double v1, double v2, double l)
 {
-    NCF_RETURN_NAN(v2, 8.0);
+    RETURN_NAN(v2, 8.0);
     return boost::math::kurtosis_excess(boost::math::non_central_f_distribution<double>(v1, v2, l));
+}
+
+template<typename Real>
+Real
+nct_cdf_wrap(const Real x, const Real v, const Real l)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::non_central_t_distribution<Real>(v, l), x);
+    }
+    // -inf => 0, inf => 1
+    return 1.0 - std::signbit(x);
+}
+
+float
+nct_cdf_float(float x, float v, float l)
+{
+    return nct_cdf_wrap(x, v, l);
+}
+
+double
+nct_cdf_double(double x, double v, double l)
+{
+    return nct_cdf_wrap(x, v, l);
+}
+
+template<typename Real>
+Real
+nct_ppf_wrap(const Real x, const Real v, const Real l)
+{
+    return boost::math::quantile(
+        boost::math::non_central_t_distribution<Real>(v, l), x);
+}
+
+float
+nct_ppf_float(float x, float v, float l)
+{
+    return nct_ppf_wrap(x, v, l);
+}
+
+double
+nct_ppf_double(double x, double v, double l)
+{
+    return nct_ppf_wrap(x, v, l);
+}
+
+template<typename Real>
+Real
+nct_sf_wrap(const Real x, const Real v, const Real l)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::non_central_t_distribution<Real>(v, l), x));
+}
+
+float
+nct_sf_float(float x, float v, float l)
+{
+    return nct_sf_wrap(x, v, l);
+}
+
+double
+nct_sf_double(double x, double v, double l)
+{
+    return nct_sf_wrap(x, v, l);
+}
+
+template<typename Real>
+Real
+nct_isf_wrap(const Real x, const Real v, const Real l)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::non_central_t_distribution<Real>(v, l), x));
+}
+
+float
+nct_isf_float(float x, float v, float l)
+{
+    return nct_isf_wrap(x, v, l);
+}
+
+double
+nct_isf_double(double x, double v, double l)
+{
+    return nct_isf_wrap(x, v, l);
+}
+
+float
+nct_mean_float(float v, float l)
+{
+    RETURN_NAN(v, 1.0);
+    return boost::math::mean(boost::math::non_central_t_distribution<float>(v, l));
+}
+
+double
+nct_mean_double(double v, double l)
+{
+    RETURN_NAN(v, 1.0);
+    return boost::math::mean(boost::math::non_central_t_distribution<double>(v, l));
+}
+
+float
+nct_variance_float(float v, float l)
+{
+    RETURN_NAN(v, 2.0);
+    return boost::math::variance(boost::math::non_central_t_distribution<float>(v, l));
+}
+
+double
+nct_variance_double(double v, double l)
+{
+    RETURN_NAN(v, 2.0);
+    return boost::math::variance(boost::math::non_central_t_distribution<double>(v, l));
+}
+
+float
+nct_skewness_float(float v, float l)
+{
+    RETURN_NAN(v, 3.0);
+    return boost::math::skewness(boost::math::non_central_t_distribution<float>(v, l));
+}
+
+double
+nct_skewness_double(double v, double l)
+{
+    RETURN_NAN(v, 3.0);
+    return boost::math::skewness(boost::math::non_central_t_distribution<double>(v, l));
+}
+
+float
+nct_kurtosis_excess_float(float v, float l)
+{
+    RETURN_NAN(v, 4.0);
+    return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<float>(v, l));
+}
+
+double
+nct_kurtosis_excess_double(double v, double l)
+{
+    RETURN_NAN(v, 4.0);
+    return boost::math::kurtosis_excess(boost::math::non_central_t_distribution<double>(v, l));
 }
 
 template<typename Real>
