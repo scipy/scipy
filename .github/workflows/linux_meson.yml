@@ -233,7 +233,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.9"
+          python-version: "3.10"
 
       - name: Setup system dependencies
         run: |
@@ -258,7 +258,7 @@ jobs:
       - name: Install test dependencies
         run: |
           # Downgrade numpy to oldest supported version
-          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.22.4"
+          pip install gmpy2 threadpoolctl mpmath pooch pytest pytest-xdist==2.5.0 pytest-timeout hypothesis sparse "numpy==1.23.5"
 
       - name: Run tests
         run: |
@@ -279,9 +279,9 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # Both use numpy 2.0-dev at build time; 3.9 job then downgrades to
+        # Both use numpy 2.x-dev at build time; 3.10 job then downgrades to
         # lowest supported NumPy version in order to test ABI compatibility.
-        python-version: ['3.9', '3.11']
+        python-version: ['3.10', '3.11']
 
     steps:
     - uses: actions/checkout@v4.1.1
@@ -346,9 +346,9 @@ jobs:
       run: ccache -s
 
     - name: Downgrade NumPy from 2.0-dev to lowest supported
-      if: matrix.python-version == '3.9'
+      if: matrix.python-version == '3.10'
       run: |
-        python -m pip install "numpy==1.22.4"
+        python -m pip install "numpy==1.23.5"
 
     - name: Test SciPy
       run: |
@@ -377,13 +377,13 @@ jobs:
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
-        basedir=\$(python3.9 tools/openblas_support.py) && \
+        basedir=\$(python3.10 tools/openblas_support.py) && \
         cp -r \$basedir/lib/* /usr/local/lib && \
         cp \$basedir/include/* /usr/local/include && \
         export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig && \
-        python3.9 -m venv test && \
+        python3.10 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
-        python -m pip install numpy==1.22.4 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
+        python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
