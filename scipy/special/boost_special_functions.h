@@ -22,6 +22,49 @@
 #include "boost/math/distributions.hpp"
 #include <boost/math/distributions/inverse_gaussian.hpp>
 
+// Round up to achieve correct ppf(cdf) round-trips for discrete distributions
+typedef boost::math::policies::policy<
+    boost::math::policies::discrete_quantile<
+        boost::math::policies::integer_round_up > > Policy;
+
+// Raise a RuntimeWarning making users aware that something went wrong during
+// evaluation of the function, but return the best guess
+template <class RealType>
+RealType
+boost::math::policies::user_evaluation_error(const char* function, const char* message, const RealType& val) {
+    std::string msg("Error in function ");
+    std::string haystack {function};
+    const std::string needle {"%1%"};
+    msg += haystack.replace(haystack.find(needle), needle.length(), typeid(RealType).name()) + ": ";
+    // "message" may have %1%, but arguments don't always contain all
+    // required information, so don't call boost::format for now
+    msg += message;
+    PyGILState_STATE save = PyGILState_Ensure();
+    PyErr_WarnEx(PyExc_RuntimeWarning, msg.c_str(), 1);
+    PyGILState_Release(save);
+    return val;
+}
+
+
+template <class RealType>
+RealType
+boost::math::policies::user_overflow_error(const char* function, const char* message, const RealType& val) {
+    std::string msg("Error in function ");
+    std::string haystack {function};
+    const std::string needle {"%1%"};
+    msg += haystack.replace(haystack.find(needle), needle.length(), typeid(RealType).name()) + ": ";
+    // From Boost docs: "overflow and underflow messages do not contain this %1% specifier
+    //                   (since the value of value is immaterial in these cases)."
+    if (message) {
+        msg += message;
+    }
+    PyGILState_STATE save = PyGILState_Ensure();
+    PyErr_SetString(PyExc_OverflowError, msg.c_str());
+    PyGILState_Release(save);
+    return 0;
+}
+
+
 template<typename Real>
 static inline
 Real ibeta_wrap(Real a, Real b, Real x)
@@ -744,6 +787,113 @@ double
 skewnorm_isf_double(double x, double l, double sc, double sh)
 {
     return skewnorm_isf_wrap(x, l, sc, sh);
+}
+
+template<typename Real>
+Real
+binom_pmf_wrap(const Real x, const Real n, const Real p)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::binomial_distribution<Real, Policy>(n, p), x);
+    }
+    return NAN; // inf or -inf returns NAN
+}
+
+float
+binom_pmf_float(float x, float n, float p)
+{
+    return binom_pmf_wrap(x, n, p);
+}
+
+double
+binom_pmf_double(double x, double n, double p)
+{
+    return binom_pmf_wrap(x, n, p);
+}
+
+template<typename Real>
+Real
+binom_cdf_wrap(const Real x, const Real n, const Real p)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::binomial_distribution<Real, Policy>(n, p), x);
+    }
+    // -inf => 0, inf => 1
+    return 1 - std::signbit(x);
+}
+
+float
+binom_cdf_float(float x, float n, float p)
+{
+    return binom_cdf_wrap(x, n, p);
+}
+
+double
+binom_cdf_double(double x, double n, double p)
+{
+    return binom_cdf_wrap(x, n, p);
+}
+
+template<typename Real>
+Real
+binom_ppf_wrap(const Real x, const Real n, const Real p)
+{
+    return boost::math::quantile(
+        boost::math::binomial_distribution<Real, Policy>(n, p), x);
+}
+
+float
+binom_ppf_float(float x, float n, float p)
+{
+    return binom_ppf_wrap(x, n, p);
+}
+
+double
+binom_ppf_double(double x, double n, double p)
+{
+    return binom_ppf_wrap(x, n, p);
+}
+
+template<typename Real>
+Real
+binom_sf_wrap(const Real x, const Real n, const Real p)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::binomial_distribution<Real, Policy>(n, p), x));
+}
+
+float
+binom_sf_float(float x, float n, float p)
+{
+    return binom_sf_wrap(x, n, p);
+}
+
+double
+binom_sf_double(double x, double n, double p)
+{
+    return binom_sf_wrap(x, n, p);
+}
+
+template<typename Real>
+Real
+binom_isf_wrap(const Real x, const Real n, const Real p)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::binomial_distribution<Real, Policy>(n, p), x));
+}
+
+float
+binom_isf_float(float x, float n, float p)
+{
+    return binom_isf_wrap(x, n, p);
+}
+
+double
+binom_isf_double(double x, double n, double p)
+{
+    return binom_isf_wrap(x, n, p);
 }
 
 template<typename Real>

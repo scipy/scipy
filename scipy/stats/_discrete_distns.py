@@ -19,6 +19,7 @@ import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
+import scipy.special._ufuncs as scu
 
 
 def _isintegral(x):
@@ -73,30 +74,38 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return _boost._binom_pdf(x, n, p)
+        return scu._binom_pmf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return _boost._binom_cdf(k, n, p)
+        return scu._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return _boost._binom_sf(k, n, p)
+        return scu._binom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return _boost._binom_isf(x, n, p)
+        return scu._binom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return _boost._binom_ppf(q, n, p)
+        return scu._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        mu = _boost._binom_mean(n, p)
-        var = _boost._binom_variance(n, p)
+        mu = np.multiply(n, p)
+        var = np.subtract(mu, np.multiply(n, np.square(p)))
         g1, g2 = None, None
         if 's' in moments:
-            g1 = _boost._binom_skewness(n, p)
+            pq = np.subtract(p, np.square(p))
+            npq_sqrt = np.sqrt(np.multiply(n, pq))
+            t1 = np.reciprocal(npq_sqrt)
+            t2 = np.divide(np.multiply(2.0, p), npq_sqrt)
+            g1 = np.subtract(t1, t2)
         if 'k' in moments:
-            g2 = _boost._binom_kurtosis_excess(n, p)
+            pq = np.subtract(p, np.square(p))
+            npq = np.multiply(n, pq)
+            t1 = np.reciprocal(npq)
+            t2 = np.divide(6.0, n)
+            g2 = np.subtract(t1, t2)
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
@@ -1164,8 +1173,8 @@ class randint_gen(rv_discrete):
     >>> x = np.arange(low - 5, high + 5)
     >>> ax.plot(x, randint.pmf(x, low, high), 'bo', ms=8, label='randint pmf')
     >>> ax.vlines(x, 0, randint.pmf(x, low, high), colors='b', lw=5, alpha=0.5)
-    
-    Alternatively, the distribution object can be called (as a function) to 
+
+    Alternatively, the distribution object can be called (as a function) to
     fix the shape and location. This returns a "frozen" RV object holding the
     given parameters fixed.
 
@@ -1176,7 +1185,7 @@ class randint_gen(rv_discrete):
     ...           lw=1, label='frozen pmf')
     >>> ax.legend(loc='lower center')
     >>> plt.show()
-    
+
     Check the relationship between the cumulative distribution function
     (``cdf``) and its inverse, the percent point function (``ppf``):
 

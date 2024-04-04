@@ -408,6 +408,36 @@
             "skewnorm_isf_double": "dddd->d"
         }
     },
+    "_binom_pmf": {
+        "boost_special_functions.h++": {
+            "binom_pmf_float": "fff->f",
+            "binom_pmf_double": "ddd->d"
+        }
+    },
+    "_binom_cdf": {
+        "boost_special_functions.h++": {
+            "binom_cdf_float": "fff->f",
+            "binom_cdf_double": "ddd->d"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_float": "fff->f",
+            "binom_ppf_double": "ddd->d"
+        }
+    },
+    "_binom_sf": {
+        "boost_special_functions.h++": {
+            "binom_sf_float": "fff->f",
+            "binom_sf_double": "ddd->d"
+        }
+    },
+    "_binom_isf": {
+        "boost_special_functions.h++": {
+            "binom_isf_float": "fff->f",
+            "binom_isf_double": "ddd->d"
+        }
+    },
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"
