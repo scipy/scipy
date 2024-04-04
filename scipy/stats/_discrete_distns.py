@@ -20,6 +20,7 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 import scipy.special._ufuncs as scu
+import scipy.special._stats_ufuncs as scsu
 
 
 def _isintegral(x):
@@ -74,21 +75,21 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return scu._binom_pmf(x, n, p)
+        return scsu._binom_pmf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return scu._binom_cdf(k, n, p)
+        return scsu._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return scu._binom_sf(k, n, p)
+        return scsu._binom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return scu._binom_isf(x, n, p)
+        return scsu._binom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return scu._binom_ppf(q, n, p)
+        return scsu._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
         mu = np.multiply(n, p)
