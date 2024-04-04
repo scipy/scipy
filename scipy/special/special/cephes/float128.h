@@ -132,18 +132,13 @@ namespace float128 {
 
     }
 
-    SPECFUN_HOST_DEVICE inline int comp(const Float128& a, const Float128& b);
-    SPECFUN_HOST_DEVICE inline int comp(const double a, const Float128& b);
-    SPECFUN_HOST_DEVICE inline int comp(const Float128& a, const double b);
-        
-
     class Float128 {
     public:
         double hi, lo;
 
-    Float128() : hi(0.0), lo(0.0) {}
-    Float128(double high, double low) : hi(high), lo(low) {}
-        explicit Float128(double high) : hi(high), lo(0.0) {}
+        constexpr Float128() : hi(0.0), lo(0.0) {}
+        constexpr Float128(double high, double low) : hi(high), lo(low) {}
+        constexpr explicit Float128(double high) : hi(high), lo(0.0) {}
 
         SPECFUN_HOST_DEVICE inline Float128 operator-() const {
             return Float128(-hi, -lo);
@@ -175,7 +170,7 @@ namespace float128 {
             double s1, s2;
             s1 = detail::two_sum(hi, -rhs, &s2);
             s2 += lo;
-            s1 = quick_two_sum(s1, s2, &s2);
+            s1 = detail::quick_two_sum(s1, s2, &s2);
             return Float128(s1, s2);
         }
 
