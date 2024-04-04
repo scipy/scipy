@@ -18,6 +18,7 @@ from scipy import integrate
 import scipy.special as sc
 
 import scipy.special._ufuncs as scu
+import scipy.special._stats_ufuncs as scsu
 from scipy._lib._util import _lazyselect, _lazywhere
 
 from . import _stats
@@ -678,7 +679,7 @@ class beta_gen(rv_continuous):
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
         with np.errstate(over='ignore'):
-            return scu._beta_pdf(x, a, b)
+            return scsu._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -4818,9 +4819,9 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = scu._invgauss_ppf(x, mu, 1)
+            ppf = scsu._invgauss_ppf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            ppf[i_wt] = scsu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
@@ -4828,9 +4829,9 @@ class invgauss_gen(rv_continuous):
     def _isf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            isf = scu._invgauss_isf(x, mu, 1)
+            isf = scsu._invgauss_isf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            isf[i_wt] = scu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            isf[i_wt] = scsu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(isf)
             isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
@@ -7468,31 +7469,31 @@ class ncx2_gen(rv_continuous):
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_pdf,
+            return _lazywhere(cond, (x, df, nc), f=scsu._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
+            return _lazywhere(cond, (x, df, nc), f=scsu._ncx2_cdf,
                               f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (q, df, nc), f=scu._ncx2_ppf,
+            return _lazywhere(cond, (q, df, nc), f=scsu._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_sf,
+            return _lazywhere(cond, (x, df, nc), f=scsu._ncx2_sf,
                               f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_isf,
+            return _lazywhere(cond, (x, df, nc), f=scsu._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
@@ -7581,21 +7582,21 @@ class ncf_gen(rv_continuous):
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        return scu._ncf_pdf(x, dfn, dfd, nc)
+        return scsu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return scu._ncf_cdf(x, dfn, dfd, nc)
+        return scsu._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._ncf_ppf(q, dfn, dfd, nc)
+            return scsu._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
-        return scu._ncf_sf(x, dfn, dfd, nc)
+        return scsu._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._ncf_isf(x, dfn, dfd, nc)
+            return scsu._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7605,10 +7606,10 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
-        mu = scu._ncf_mean(dfn, dfd, nc)
-        mu2 = scu._ncf_variance(dfn, dfd, nc)
-        g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = scu._ncf_kurtosis_excess(
+        mu = scsu._ncf_mean(dfn, dfd, nc)
+        mu2 = scsu._ncf_variance(dfn, dfd, nc)
+        g1 = scsu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = scsu._ncf_kurtosis_excess(
             dfn, dfd, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
@@ -7796,25 +7797,25 @@ class nct_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
+            return np.clip(scsu._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_ppf(q, df, nc)
+            return scsu._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(scu._nct_sf(x, df, nc), 0, 1)
+            return np.clip(scsu._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scu._nct_isf(x, df, nc)
+            return scsu._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
-        mu = scu._nct_mean(df, nc)
-        mu2 = scu._nct_variance(df, nc)
-        g1 = scu._nct_skewness(df, nc) if 's' in moments else None
-        g2 = scu._nct_kurtosis_excess(df, nc) if 'k' in moments else None
+        mu = scsu._nct_mean(df, nc)
+        mu2 = scsu._nct_variance(df, nc)
+        g1 = scsu._nct_skewness(df, nc) if 's' in moments else None
+        g2 = scsu._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
@@ -9238,7 +9239,7 @@ class skewnorm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
-        cdf = scu._skewnorm_cdf(x, 0.0, 1.0, a)
+        cdf = scsu._skewnorm_cdf(x, 0.0, 1.0, a)
         # for some reason, a isn't broadcasted if some of x are invalid
         a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
@@ -9247,7 +9248,7 @@ class skewnorm_gen(rv_continuous):
         return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
-        return scu._skewnorm_ppf(x, 0.0, 1.0, a)
+        return scsu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
         # Boost's SF is implemented this way. Use whatever customizations
@@ -9255,7 +9256,7 @@ class skewnorm_gen(rv_continuous):
         return self._cdf(-x, -a)
 
     def _isf(self, x, a):
-        return scu._skewnorm_isf(x, 0.0, 1.0, a)
+        return scsu._skewnorm_isf(x, 0.0, 1.0, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)

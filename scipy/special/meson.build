@@ -31,8 +31,10 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('sph_harm.pxd'),
   fs.copyfile('_cython_special.pxi'),
+  fs.copyfile('_cython_special_stats.pxi'),
   fs.copyfile('_cython_special_custom.pxi'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
+  fs.copyfile('_stats_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
 
@@ -202,7 +204,69 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: ['../_lib', '../_build_utils/src', '.'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  dependencies: [
+    lapack,
+    npymath_lib,
+    np_dep,
+  ],
+  link_args: version_link_args,
+  link_with: [
+    cephes_lib
+  ],
+  install: true,
+  subdir: 'scipy/special'
+)
+
+# TODO: this installs all generated files, while we want to install only:
+#       _stats_ufuncs.pyi, stats_cython_special.pxd
+#       There's no good way around this currently, because py3.install_sources
+#       doesn't accept generated targets. See TODO near the end of
+#       scipy/linalg/meson.build for more details.
+stats_cython_special = custom_target('stats_cython_special',
+  output: [
+    '_stats_ufuncs.pyx',
+    '_stats_ufuncs_defs.h',
+    '_stats_ufuncs_cxx.pyx',
+    '_stats_ufuncs_cxx.pxd',
+    '_stats_ufuncs_cxx_defs.h',
+    '_stats_ufuncs.pyi',
+    'stats_cython_special.pyx',
+    'stats_cython_special.pxd'
+  ],
+  input: ['_generate_stats_pyx.py', 'functions_stats.json', '_add_newdocs.py'],
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special',
+  install_tag: 'devel',
+)
+
+# Only needed to establish a dependency; see comments in linalg/meson.build
+# for cython_blas_pxd
+stats_cython_special_pxd = custom_target('_stats_dummy_cython_special.pxd',
+  output: '_stats_dummy_cython_special.pxd',
+  input: stats_cython_special[7],
+  command: [py3, '-c', '"@INPUT@"'],
+)
+
+# pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
+uf_cython_gen = generator(cython,
+  arguments : cython_args,
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, stats_cython_special_pxd])
+
+uf_cython_gen_cpp = generator(cython,
+  arguments : cython_cplus_args,
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, stats_cython_special_pxd])
+
+py3.extension_module('_stats_ufuncs',
+  [
+    ufuncs_sources,
+    uf_cython_gen.process(stats_cython_special[0]),  # _stats_ufuncs.pyx
+  ],
+  c_args: [cython_c_args, Wno_maybe_uninitialized],
+  include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
     npymath_lib,
@@ -236,10 +300,6 @@ ellint_dep = declare_dependency(sources: ellint_files)
 ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
-  '-DBOOST_MATH_DOMAIN_ERROR_POLICY=ignore_error',
-  '-DBOOST_MATH_EVALUATION_ERROR_POLICY=user_error',
-  '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error',
-  '-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false',
   '-DCYTHON_EXTERN_C=extern "C"',
   '-DSP_SPECFUN_ERROR', # For error handling in special functions.
 ]
@@ -247,6 +307,20 @@ ufuncs_cxx_cpp_args = [
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
+    ],
+  cpp_args: ufuncs_cxx_cpp_args,
+  include_directories: ['../_lib/boost_math/include', '../_lib',
+                        '../_build_utils/src'],
+  link_args: version_link_args,
+    link_with: [cephes_lib],
+  dependencies: [np_dep, ellint_dep],
+  install: true,
+  subdir: 'scipy/special'
+)
+
+py3.extension_module('_stats_ufuncs_cxx',
+  [ufuncs_cxx_sources,
+    uf_cython_gen_cpp.process(stats_cython_special[2]),  # _stats_ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['../_lib/boost_math/include', '../_lib',
