@@ -61,8 +61,8 @@
  */
 
 #include "../config.h"
+#include "../error.h"
 #include "const.h"
-#include "error.h"
 #include "gamma.h"
 #include "polevl.h"
 
