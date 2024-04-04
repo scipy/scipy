@@ -71,29 +71,12 @@ all fields of science and technology. The values became available on 20 May
 2019 and replaced the 2014 CODATA set.
 """
 
-# https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
-with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2002.txt') as f:
-    txt2002 = f.read()
-
-# https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
-with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2006.txt') as f:
-    txt2006 = f.read()
-
-# https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
-with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2010.txt') as f:
-    txt2010 = f.read()
-
-# https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
-with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2014.txt') as f:
-    txt2014 = f.read()
-
-# https://physics.nist.gov/cuu/Constants/Table/allascii.txt
-with open(os.path.dirname(os.path.realpath(__file__)) + '/codata_constants_2018.txt') as f:
-    txt2018 = f.read()
-
 physical_constants: dict[str, tuple[float, str, float]] = {}
 
 def parse_constants_2002to2006(d: str) -> dict[str, tuple[float, str, float]]:
+    filepath = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(filepath, d)) as f:
+        d = f.read()    
     constants = {}
     for line in d.split('\n'):
         if line == "":
@@ -118,6 +101,9 @@ def parse_constants_2002to2006(d: str) -> dict[str, tuple[float, str, float]]:
 
 
 def parse_constants_2010toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
+    filepath = os.path.dirname(os.path.realpath(__file__))
+    with open(os.path.join(filepath, d)) as f:
+        d = f.read()    
     constants = {}
     for line in d.split('\n'):
         if line == "":
@@ -134,11 +120,11 @@ def parse_constants_2010toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     return constants
 
 
-_physical_constants_2002 = parse_constants_2002to2006(txt2002)
-_physical_constants_2006 = parse_constants_2002to2006(txt2006)
-_physical_constants_2010 = parse_constants_2010toXXXX(txt2010)
-_physical_constants_2014 = parse_constants_2010toXXXX(txt2014)
-_physical_constants_2018 = parse_constants_2010toXXXX(txt2018)
+_physical_constants_2002 = parse_constants_2002to2006("codata_constants_2002.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
+_physical_constants_2006 = parse_constants_2002to2006("codata_constants_2006.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
+_physical_constants_2010 = parse_constants_2010toXXXX("codata_constants_2010.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
+_physical_constants_2014 = parse_constants_2010toXXXX("codata_constants_2014.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
+_physical_constants_2018 = parse_constants_2010toXXXX("codata_constants_2018.txt") # https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
