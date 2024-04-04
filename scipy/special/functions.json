@@ -108,18 +108,18 @@
         }
     },
     "_struve_asymp_large_z": {
-        "cephes.h": {
-            "struve_asymp_large_z": "ddi*d->d"
+        "special_c_wrappers.h": {
+            "cephes__struve_asymp_large_z": "ddi*d->d"
         }
     },
     "_struve_bessel_series": {
-        "cephes.h": {
-            "struve_bessel_series": "ddi*d->d"
+        "special_c_wrappers.h": {
+            "cephes__struve_bessel_series": "ddi*d->d"
         }
     },
     "_struve_power_series": {
-        "cephes.h": {
-            "struve_power_series": "ddi*d->d"
+        "special_c_wrappers.h": {
+            "cephes__struve_power_series": "ddi*d->d"
         }
     },
     "voigt_profile" : {
@@ -812,8 +812,8 @@
         }
     },
     "modstruve": {
-        "cephes.h": {
-            "struve_l": "dd->d"
+        "_special.h++": {
+            "cephes_struve_l": "dd->d"
         }
     },
     "nbdtr": {
@@ -1072,8 +1072,8 @@
         }
     },
     "struve": {
-        "cephes.h": {
-            "struve_h": "dd->d"
+        "_special.h++": {
+            "cephes_struve_h": "dd->d"
         }
     },
     "tandg": {

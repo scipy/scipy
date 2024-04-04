@@ -507,7 +507,7 @@ namespace cephes {
                 }
             }
             if (k == MAXITER) {
-                sf_error("ikv_temme(temme_ik_series)", SF_ERROR_NO_RESULT, NULL);
+                set_error("ikv_temme(temme_ik_series)", SF_ERROR_NO_RESULT, NULL);
             }
 
             *K = sum;

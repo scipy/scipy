@@ -122,6 +122,9 @@ int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, do
 int cephes_fresnl(double xxa, double *ssa, double *cca);
 int cephes_sici_wrap(double x, double *si, double *ci);
 int cephes_shichi_wrap(double x, double *si, double *ci);
+double cephes__struve_asymp_large_z(double v, double z, int is_h, double *err);
+double cephes__struve_bessel_series(double v, double z, int is_h, double *err);
+double cephes__struve_power_series(double v, double z, int is_h, double *err);
 
 #ifdef __cplusplus
 } /* extern "C" */

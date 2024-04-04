@@ -240,7 +240,7 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
-        SPECFUN_HOST_DEVICE double lgam_sgn(double x, int *sign) {
+        SPECFUN_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
             double p, q, u, w, z;
             int i;
 
@@ -332,13 +332,13 @@ namespace cephes {
     } // namespace detail
 
     /* Logarithm of Gamma function */
-    SPECFUN_HOST_DEVICE double lgam(double x) {
+    SPECFUN_HOST_DEVICE inline double lgam(double x) {
         int sign;
         return detail::lgam_sgn(x, &sign);
     }
 
     /* Sign of the Gamma function */
-    SPECFUN_HOST_DEVICE double gammasgn(double x) {
+    SPECFUN_HOST_DEVICE inline double gammasgn(double x) {
         double fx;
 
         if (std::isnan(x)) {
