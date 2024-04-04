@@ -18,7 +18,7 @@ from scipy import integrate
 import scipy.special as sc
 
 import scipy.special._ufuncs as scu
-import scipy.special._stats_ufuncs as scsu
+import scipy.stats._ufuncs as scsu
 from scipy._lib._util import _lazyselect, _lazywhere
 
 from . import _stats

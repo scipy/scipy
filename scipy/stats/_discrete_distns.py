@@ -20,7 +20,7 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 import scipy.special._ufuncs as scu
-import scipy.special._stats_ufuncs as scsu
+import scipy.stats._ufuncs as scsu
 
 
 def _isintegral(x):
