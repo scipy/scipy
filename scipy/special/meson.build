@@ -210,7 +210,7 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
-  include_directories: ['../_lib', '../_build_utils/src'],
+  include_directories: ['../_lib', '../_build_utils/src', '.'],
   dependencies: [
     lapack,
     npymath_lib,
@@ -246,6 +246,10 @@ ellint_dep = declare_dependency(sources: ellint_files)
 ufuncs_cxx_cpp_args = [
   cython_cpp_args,
   '-DBOOST_MATH_STANDALONE=1',
+  '-DBOOST_MATH_DOMAIN_ERROR_POLICY=ignore_error',
+  '-DBOOST_MATH_EVALUATION_ERROR_POLICY=user_error',
+  '-DBOOST_MATH_OVERFLOW_ERROR_POLICY=user_error',
+  '-DBOOST_MATH_PROMOTE_DOUBLE_POLICY=false',
   '-DCYTHON_EXTERN_C=extern "C"',
   '-DSP_SPECFUN_ERROR', # For error handling in special functions.
 ]
