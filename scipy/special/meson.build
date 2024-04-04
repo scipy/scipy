@@ -203,6 +203,7 @@ py3.extension_module('_ufuncs',
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
