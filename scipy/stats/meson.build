@@ -233,17 +233,17 @@ py3.install_sources([
 )
 
 _ufuncs_pxi_pxd_sources = [
-  fs.copyfile('_cython_special.pxi'),
+  fs.copyfile('_cython_stats.pxi'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi')
 ]
 
 # TODO: this installs all generated files, while we want to install only:
-#       _stats_ufuncs.pyi, stats_cython_special.pxd
+#       _ufuncs.pyi, _cython_stats.pxd
 #       There's no good way around this currently, because py3.install_sources
 #       doesn't accept generated targets. See TODO near the end of
 #       scipy/linalg/meson.build for more details.
-cython_special = custom_target('cython_special',
+cython_stats = custom_target('cython_stats',
   output: [
     '_ufuncs.pyx',
     '_ufuncs_defs.h',
@@ -251,8 +251,8 @@ cython_special = custom_target('cython_special',
     '_ufuncs_cxx.pxd',
     '_ufuncs_cxx_defs.h',
     '_ufuncs.pyi',
-    'cython_special.pyx',
-    'cython_special.pxd'
+    'cython_stats.pyx',
+    'cython_stats.pxd'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
@@ -263,9 +263,9 @@ cython_special = custom_target('cython_special',
 
 # Only needed to establish a dependency; see comments in linalg/meson.build
 # for cython_blas_pxd
-cython_special_pxd = custom_target('_dummy_cython_special.pxd',
-  output: '_dummy_cython_special.pxd',
-  input: cython_special[7],
+cython_stats_pxd = custom_target('_dummy_cython_stats.pxd',
+  output: '_dummy_cython_stats.pxd',
+  input: cython_stats[7],
   command: [py3, '-c', '"@INPUT@"'],
 )
 
@@ -273,16 +273,16 @@ cython_special_pxd = custom_target('_dummy_cython_special.pxd',
 uf_cython_gen = generator(cython,
   arguments : cython_args,
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, _stats_pxd[0]])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_stats_pxd, _stats_pxd[0]])
 
 uf_cython_gen_cpp = generator(cython,
   arguments : cython_cplus_args,
   output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_special_pxd, _stats_pxd[0]])
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources, cython_stats_pxd, _stats_pxd[0]])
 
 py3.extension_module('_ufuncs',
   [
-    uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
+    uf_cython_gen.process(cython_stats[0]),  # _ufuncs.pyx
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src'],
@@ -303,7 +303,7 @@ ufuncs_cxx_cpp_args = [
 
 py3.extension_module('_ufuncs_cxx',
   [
-    uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
+    uf_cython_gen_cpp.process(cython_stats[2]),  # _ufuncs_cxx.pyx
     ],
   cpp_args: ufuncs_cxx_cpp_args,
   include_directories: ['../_lib/boost_math/include', '../_lib',
