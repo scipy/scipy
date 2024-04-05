@@ -712,4 +712,159 @@ binom_isf_double(double x, double n, double p)
     return binom_isf_wrap(x, n, p);
 }
 
+template<typename Real>
+Real
+nbinom_pmf_wrap(const Real x, const Real r, const Real p)
+{
+    if (std::isfinite(x)) {
+        return boost::math::pdf(
+            boost::math::negative_binomial_distribution<Real, Policy>(r, p), x);
+    }
+    return NAN; // inf or -inf returns NAN
+}
+
+float
+nbinom_pmf_float(float x, float r, float p)
+{
+    return nbinom_pmf_wrap(x, r, p);
+}
+
+double
+nbinom_pmf_double(double x, double r, double p)
+{
+    return nbinom_pmf_wrap(x, r, p);
+}
+
+template<typename Real>
+Real
+nbinom_cdf_wrap(const Real x, const Real r, const Real p)
+{
+    if (std::isfinite(x)) {
+        return boost::math::cdf(
+            boost::math::negative_binomial_distribution<Real, Policy>(r, p), x);
+    }
+    // -inf => 0, inf => 1
+    return 1 - std::signbit(x);
+}
+
+float
+nbinom_cdf_float(float x, float r, float p)
+{
+    return nbinom_cdf_wrap(x, r, p);
+}
+
+double
+nbinom_cdf_double(double x, double r, double p)
+{
+    return nbinom_cdf_wrap(x, r, p);
+}
+
+template<typename Real>
+Real
+nbinom_ppf_wrap(const Real x, const Real r, const Real p)
+{
+    return boost::math::quantile(
+        boost::math::negative_binomial_distribution<Real, Policy>(r, p), x);
+}
+
+float
+nbinom_ppf_float(float x, float r, float p)
+{
+    return nbinom_ppf_wrap(x, r, p);
+}
+
+double
+nbinom_ppf_double(double x, double r, double p)
+{
+    return nbinom_ppf_wrap(x, r, p);
+}
+
+template<typename Real>
+Real
+nbinom_sf_wrap(const Real x, const Real r, const Real p)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::negative_binomial_distribution<Real, Policy>(r, p), x));
+}
+
+float
+nbinom_sf_float(float x, float r, float p)
+{
+    return nbinom_sf_wrap(x, r, p);
+}
+
+double
+nbinom_sf_double(double x, double r, double p)
+{
+    return nbinom_sf_wrap(x, r, p);
+}
+
+template<typename Real>
+Real
+nbinom_isf_wrap(const Real x, const Real r, const Real p)
+{
+    return boost::math::quantile(boost::math::complement(
+        boost::math::negative_binomial_distribution<Real, Policy>(r, p), x));
+}
+
+float
+nbinom_isf_float(float x, float r, float p)
+{
+    return nbinom_isf_wrap(x, r, p);
+}
+
+double
+nbinom_isf_double(double x, double r, double p)
+{
+    return nbinom_isf_wrap(x, r, p);
+}
+
+float
+nbinom_mean_float(float r, float p)
+{
+    return boost::math::mean(boost::math::negative_binomial_distribution<float, Policy>(r, p));
+}
+
+double
+nbinom_mean_double(double r, double p)
+{
+    return boost::math::mean(boost::math::negative_binomial_distribution<double, Policy>(r, p));
+}
+
+float
+nbinom_variance_float(float r, float p)
+{
+    return boost::math::variance(boost::math::negative_binomial_distribution<float, Policy>(r, p));
+}
+
+double
+nbinom_variance_double(double r, double p)
+{
+    return boost::math::variance(boost::math::negative_binomial_distribution<double, Policy>(r, p));
+}
+
+float
+nbinom_skewness_float(float r, float p)
+{
+    return boost::math::skewness(boost::math::negative_binomial_distribution<float, Policy>(r, p));
+}
+
+double
+nbinom_skewness_double(double r, double p)
+{
+    return boost::math::skewness(boost::math::negative_binomial_distribution<double, Policy>(r, p));
+}
+
+float
+nbinom_kurtosis_excess_float(float r, float p)
+{
+    return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<float, Policy>(r, p));
+}
+
+double
+nbinom_kurtosis_excess_double(double r, double p)
+{
+    return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<double, Policy>(r, p));
+}
+
 #endif

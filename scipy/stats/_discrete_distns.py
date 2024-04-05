@@ -334,7 +334,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return _boost._nbinom_pdf(x, n, p)
+        return scsu._nbinom_pmf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -342,7 +342,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_cdf(k, n, p)
+        return scsu._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -361,22 +361,22 @@ class nbinom_gen(rv_discrete):
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return _boost._nbinom_sf(k, n, p)
+        return scsu._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nbinom_isf(x, n, p)
+            return scsu._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nbinom_ppf(q, n, p)
+            return scsu._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
         return (
-            _boost._nbinom_mean(n, p),
-            _boost._nbinom_variance(n, p),
-            _boost._nbinom_skewness(n, p),
-            _boost._nbinom_kurtosis_excess(n, p),
+            scsu._nbinom_mean(n, p),
+            scsu._nbinom_variance(n, p),
+            scsu._nbinom_skewness(n, p),
+            scsu._nbinom_kurtosis_excess(n, p),
         )
 
 

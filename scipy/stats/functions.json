@@ -196,5 +196,59 @@
             "binom_isf_float": "fff->f",
             "binom_isf_double": "ddd->d"
         }
+    },
+    "_nbinom_pmf": {
+        "boost_stats_functions.h++": {
+            "nbinom_pmf_float": "fff->f",
+            "nbinom_pmf_double": "ddd->d"
+        }
+    },
+    "_nbinom_cdf": {
+        "boost_stats_functions.h++": {
+            "nbinom_cdf_float": "fff->f",
+            "nbinom_cdf_double": "ddd->d"
+        }
+    },
+    "_nbinom_ppf": {
+        "boost_stats_functions.h++": {
+            "nbinom_ppf_float": "fff->f",
+            "nbinom_ppf_double": "ddd->d"
+        }
+    },
+    "_nbinom_sf": {
+        "boost_stats_functions.h++": {
+            "nbinom_sf_float": "fff->f",
+            "nbinom_sf_double": "ddd->d"
+        }
+    },
+    "_nbinom_isf": {
+        "boost_stats_functions.h++": {
+            "nbinom_isf_float": "fff->f",
+            "nbinom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_mean": {
+        "boost_stats_functions.h++": {
+            "nbinom_mean_float": "ff->f",
+            "nbinom_mean_double": "dd->d"
+        }
+    },
+    "_nbinom_variance": {
+        "boost_stats_functions.h++": {
+            "nbinom_variance_float": "ff->f",
+            "nbinom_variance_double": "dd->d"
+        }
+    },
+    "_nbinom_skewness": {
+        "boost_stats_functions.h++": {
+            "nbinom_skewness_float": "ff->f",
+            "nbinom_skewness_double": "dd->d"
+        }
+    },
+    "_nbinom_kurtosis_excess": {
+        "boost_stats_functions.h++": {
+            "nbinom_kurtosis_excess_float": "ff->f",
+            "nbinom_kurtosis_excess_double": "dd->d"
+        }
     }
 }
