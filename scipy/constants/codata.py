@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'physical_constants', 'value', 'unit', 'precision', 'find',
-    'ConstantWarning', 'parse_constants_2002to2014',
+    'ConstantWarning', 'parse_constants_2002to2006',
     'parse_constants_2010toXXXX', 'k', 'c', 'mu0', 'epsilon0',
     'exact_values', 'key', 'val', 'v'
 
