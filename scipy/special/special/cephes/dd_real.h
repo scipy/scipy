@@ -521,5 +521,15 @@ namespace dd_real {
         return DoubleDouble(man, b1);
     }
 
+    SPECFUN_HOST_DEVICE inline DoubleDouble quiet_NaN() {
+        return DoubleDouble(std::numeric_limits<double>::quiet_NaN(),
+                            std::numeric_limits<double>::quiet_NaN());
+    }
+
+    SPECFUN_HOST_DEVICE inline DoubleDouble infinity() {
+        return DoubleDouble(std::numeric_limits<double>::infinity(),
+                            std::numeric_limits<double>::infinity());
+    }
+
 }
 }
