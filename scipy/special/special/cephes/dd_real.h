@@ -225,6 +225,14 @@ namespace dd_real {
             return (hi == rhs && lo == 0.0);
         }
 
+        SPECFUN_HOST_DEVICE inline bool operator!=(const DoubleDouble& rhs) const {
+            return (hi != rhs.hi) || (lo != rhs.lo);
+        }
+
+        SPECFUN_HOST_DEVICE inline bool operator!=(const double rhs) const {
+            return (hi != rhs) || (lo != 0.0);
+        }
+
         SPECFUN_HOST_DEVICE inline bool operator<(const DoubleDouble& rhs) const {
             if (hi < rhs.hi) {
                 return true;
@@ -315,6 +323,10 @@ namespace dd_real {
 
     SPECFUN_HOST_DEVICE inline bool operator==(const double lhs, const DoubleDouble& rhs) {
         return (lhs == rhs.hi) && (rhs.lo == 0.0);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator!=(const double lhs, const DoubleDouble& rhs) {
+        return (rhs.hi != lhs) || (rhs.lo != 0.0);
     }
 
     SPECFUN_HOST_DEVICE inline bool operator<(const double lhs, const DoubleDouble& rhs) {
