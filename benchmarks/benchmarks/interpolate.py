@@ -424,9 +424,6 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
                                                         tol=tol, maxiter=maxiter)
         self.xi = None
         self._preprocess_xi(*xi)
-        self.simplices, self.c = (
-            interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
-        )
 
     def _preprocess_xi(self, *args):
         if self.xi is None:
@@ -435,9 +432,6 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
             )
         return self.xi, self.interpolation_points_shape
     
-    def _find_simplicies(self, xi):
-        return self.simplices, self.c
-
     def __call__(self, values):
         self._set_values(values)
         return super().__call__(self.xi)

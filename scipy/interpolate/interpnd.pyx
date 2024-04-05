@@ -146,31 +146,6 @@ class NDInterpolatorBase:
         xi = np.ascontiguousarray(xi, dtype=np.float64)
         return self._scale_x(xi), interpolation_points_shape
     
-    @cython.boundscheck(False)
-    @cython.wraparound(False)
-    def _find_simplicies(self, const double[:,::1] xi):
-        cdef int[:] isimplices
-        cdef double[:,:] c
-        cdef qhull.DelaunayInfo_t info
-        cdef double eps, eps_broad
-        cdef int start
-
-        qhull._get_delaunay_info(&info, self.tri, 1, 1, 0)
-
-        eps = 100 * DBL_EPSILON
-        eps_broad = sqrt(eps)
-
-        c = np.zeros((xi.shape[0], NPY_MAXDIMS))
-        isimplices = np.zeros(xi.shape[0], np.int32)
-        with nogil:
-            for i in range(xi.shape[0]):
-                # 1) Find the simplex
-
-                isimplices[i] = qhull._find_simplex(&info, &c[i, 0],
-                                            &xi[i,0],
-                                            &start, eps, eps_broad)
-        return np.copy(isimplices), np.copy(c)
-
     def __call__(self, *args):
         """
         interpolator(xi)
@@ -342,25 +317,32 @@ class LinearNDInterpolator(NDInterpolatorBase):
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
         cdef double_or_complex fill_value
-        cdef int i, j, k, m, ndim, isimplex, nvalues
-        cdef int[:] isimplices
-        cdef double[:,:] c
-
-        isimplices,c = self._find_simplicies(xi)
-
+        cdef double c[NPY_MAXDIMS]
+        cdef int i, j, k, m, ndim, isimplex, start, nvalues
+        cdef qhull.DelaunayInfo_t info
+        cdef double eps, eps_broad
+        
         ndim = xi.shape[1]
         fill_value = self.fill_value
+
+        qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
         out = np.empty((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
+
+        start = 0
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(DBL_EPSILON)
 
         with nogil:
             for i in range(xi.shape[0]):
 
                 # 1) Find the simplex
 
-                isimplex = isimplices[i]
+                isimplex = qhull._find_simplex(&info, c,
+                                               &xi[0,0] + i*ndim,
+                                               &start, eps, eps_broad)
 
                 # 2) Linear barycentric interpolation
 
@@ -376,7 +358,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
                 for j in range(ndim+1):
                     for k in range(nvalues):
                         m = simplices[isimplex,j]
-                        out[i,k] = out[i,k] + c[i, j] * values[m,k]
+                        out[i,k] = out[i,k] + c[j] * values[m,k]
 
         return out
 
@@ -980,16 +962,14 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
         cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
         cdef const int[:,::1] simplices = self.tri.simplices
-        cdef double[:,:] c
+        cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
         cdef double_or_complex w
         cdef double_or_complex fill_value
-        cdef int i, j, k, ndim, isimplex, nvalues
+        cdef int i, j, k, ndim, isimplex, start, nvalues
         cdef qhull.DelaunayInfo_t info
-        cdef int[:] isimplices
-
-        isimplices,c = self._find_simplicies(xi)
+        cdef double eps, eps_broad
 
         ndim = xi.shape[1]
         fill_value = self.fill_value
@@ -1000,11 +980,17 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
+        start = 0
+        eps = 100 * DBL_EPSILON
+        eps_broad = sqrt(eps)
+
         with nogil:
             for i in range(xi.shape[0]):
                 # 1) Find the simplex
 
-                isimplex = isimplices[i]
+                isimplex = qhull._find_simplex(&info, c,
+                                               &xi[i,0],
+                                               &start, eps, eps_broad)
                 
                 # 2) Clough-Tocher interpolation
 
@@ -1020,7 +1006,7 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
                         df[2*j] = grad[simplices[isimplex,j],k,0]
                         df[2*j+1] = grad[simplices[isimplex,j],k,1]
 
-                    w = _clough_tocher_2d_single(&info, isimplex, &c[i, 0], f, df)
+                    w = _clough_tocher_2d_single(&info, isimplex, c, f, df)
                     out[i,k] = w
 
         return out

@@ -3,6 +3,8 @@ from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
 
+from scipy.sparse import csr_matrix
+
 from scipy.interpolate import (griddata, NearestNDInterpolator,
                                LinearNDInterpolator,
                                CloughTocher2DInterpolator)
@@ -169,7 +171,39 @@ class TestGriddata:
                           method=method)
             assert_raises(ValueError, griddata, x, y, xi3,
                           method=method)
+            
+    def test_memory_usage(self):
+        try:
+            import psutil
+        except ModuleNotFoundError:
+            pytest.skip("psutil required to check available memory")
+        if psutil.virtual_memory().available < 8*2**30:
+        # Don't run the test if there is less than 8 gig of RAM available.
+            pytest.skip('insufficient memory available to run this test')
+                
+        shape = (14790, 12816)
+        num_nonzero = 488686
 
+        np.random.seed(0)
+
+        random_rows = np.random.randint(0, shape[0], num_nonzero)
+        random_cols = np.random.randint(0, shape[1], num_nonzero)
+
+        random_values = np.random.rand(num_nonzero).astype(np.float32)
+
+        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)), 
+                                   shape=shape, dtype=np.float32)
+        sparse_matrix = sparse_matrix.toarray()
+
+        coords = np.column_stack(np.nonzero(sparse_matrix))
+        values = sparse_matrix[coords[:, 0], coords[:, 1]]
+        grid_x, grid_y = np.mgrid[0:sparse_matrix.shape[0], 0:sparse_matrix.shape[1]]
+
+        initial_memory = psutil.Process().memory_info().rss
+        griddata(coords, values, (grid_x, grid_y), method='cubic')
+        final_memory = psutil.Process().memory_info().rss
+        memory_used = final_memory - initial_memory
+        assert_allclose(memory_used, 52 * 2 ** 20, atol = 52 * 2 ** 20)
 
 class TestNearestNDInterpolator:
     def test_nearest_options(self):
