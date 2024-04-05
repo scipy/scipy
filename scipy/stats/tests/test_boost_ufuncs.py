@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-from scipy.stats import _boost
 import scipy.stats._ufuncs as scsu
 
 
