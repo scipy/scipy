@@ -31,14 +31,6 @@ namespace dd_real {
             return s;
         }
 
-        /* Computes fl(a-b) and err(a-b).  Assumes |a| >= |b| */
-        SPECFUN_HOST_DEVICE inline double quick_two_diff(double a, double b, double *err) {
-            volatile double s = a - b;
-            volatile double c = a - s;
-            *err = c - b;
-            return s;
-        }
-
         /* Computes fl(a+b) and err(a+b).  */
         SPECFUN_HOST_DEVICE inline double two_sum(double a, double b, double *err) {
             volatile double s = a + b;
@@ -47,35 +39,6 @@ namespace dd_real {
             volatile double e = s - c;
             *err = (a - e) + d;
             return s;
-        }
-
-        /* Computes fl(a-b) and err(a-b).  */
-        SPECFUN_HOST_DEVICE inline double two_diff(double a, double b, double *err) {
-            volatile double s = a - b;
-            volatile double c = s - a;
-            volatile double d = b + c;
-            volatile double e = s - c;
-            *err = (a - e) - d;
-            return s;
-        }
-
-        /* Computes high word and lo word of a */
-        SPECFUN_HOST_DEVICE inline void two_split(double a, double *hi, double *lo) {
-            volatile double temp, tempma;
-            if (a > __DD_SPLIT_THRESH || a < -__DD_SPLIT_THRESH) {
-                a *= 3.7252902984619140625e-09; // 2^-28
-                temp = __DD_SPLITTER * a;
-                tempma = temp - a;
-                *hi = temp - tempma;
-                *lo = a - *hi;
-                *hi *= 268435456.0; // 2^28
-                *lo *= 268435456.0; // 2^28
-            } else {
-                temp = __DD_SPLITTER * a;
-                tempma = temp - a;
-                *hi = temp - tempma;
-                *lo = a - *hi;
-            }
         }
 
         /* Computes fl(a*b) and err(a*b). */
@@ -92,42 +55,12 @@ namespace dd_real {
             return p;
         }
 
-        SPECFUN_HOST_DEVICE inline double two_div(double a, double b, double *err) {
-            volatile double q1, q2;
-            double p1, p2;
-            double s, e;
-
-            q1 = a / b;
-
-            /* Compute  a - q1 * b */
-            p1 = two_prod(q1, b, &p2);
-            s = two_diff(a, p1, &e);
-            e -= p2;
-
-            /* get next approximation */
-            q2 = (s + e) / b;
-
-            return quick_two_sum(q1, q2, err);
-        }
-
         /* Computes the nearest integer to d. */
         SPECFUN_HOST_DEVICE inline double two_nint(double d) {
             if (d == std::floor(d)) {
                 return d;
             }
             return std::floor(d + 0.5);
-        }
-
-        /* Computes the truncated integer. */
-        SPECFUN_HOST_DEVICE inline double two_aint(double d) {
-            return (d >= 0.0 ? std::floor(d) : std::ceil(d));
-        }
-
-
-        /* Compare a and b */
-        SPECFUN_HOST_DEVICE inline int two_comp(const double a, const double b) {
-            /* Works for non-NAN inputs */
-            return (a < b ? -1 : (a > b ? 1 : 0));
         }
 
     }
@@ -345,62 +278,9 @@ namespace dd_real {
         return rhs <= lhs;
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble add(const double lhs, const double rhs) {
-        double s, e;
-        s = detail::two_sum(lhs, rhs, &e);
-        return DoubleDouble(s, e);
-    }
-
-    SPECFUN_HOST_DEVICE inline DoubleDouble sub(const double lhs, const double rhs) {
-        double s, e;
-        s = detail::two_diff(lhs, rhs, &e);
-        return DoubleDouble(s, e);
-    }
-
-    SPECFUN_HOST_DEVICE inline DoubleDouble mul(const double lhs, const double rhs) {
-        double p, e;
-        p = detail::two_prod(lhs, rhs, &e);
-        return DoubleDouble(p, e);
-    }
-
     SPECFUN_HOST_DEVICE inline DoubleDouble mul_pwr2(const DoubleDouble& lhs, double rhs) {
         /* double-double * double,  where double is a power of 2. */
         return DoubleDouble(lhs.hi * rhs, lhs.lo * rhs);
-    }
-
-    SPECFUN_HOST_DEVICE inline DoubleDouble div(const double lhs, const double rhs) {
-        return DoubleDouble(lhs) / DoubleDouble(rhs);
-    }
-
-
-    /* Compare a and b */
-    SPECFUN_HOST_DEVICE inline int comp(const double a, const double b) {
-        /* Works for non-NAN inputs */
-        return (a < b ? -1 : (a > b ? 1 : 0));
-    }
-
-    SPECFUN_HOST_DEVICE inline int comp(const DoubleDouble& a, const DoubleDouble& b) {
-        int cmp = comp(a.hi, b.hi);
-        if (cmp == 0) {
-            cmp = comp(a.lo, b.lo);
-        }
-        return cmp;
-    }
-
-    SPECFUN_HOST_DEVICE inline int comp(const DoubleDouble& a, const double b) {
-        int cmp = comp(a.hi, b);
-        if (cmp == 0) {
-            cmp = comp(a.lo, 0);
-        }
-        return cmp;
-    }
-
-    SPECFUN_HOST_DEVICE inline int comp(const double a, const DoubleDouble& b) {
-        int cmp = comp(a, b.hi);
-        if (cmp == 0) {
-            cmp = comp(0.0, b.lo);
-        }
-        return cmp;
     }
 
     SPECFUN_HOST_DEVICE inline bool isfinite(const DoubleDouble& a) {
