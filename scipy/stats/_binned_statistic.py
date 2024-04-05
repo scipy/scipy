@@ -589,8 +589,13 @@ def binned_statistic_dd(sample, values, statistic='mean',
         dedges = [np.diff(edges[i]) for i in builtins.range(Ndim)]
         binnumbers = binned_statistic_result.binnumber
 
-    # Avoid overflow with double precision. Complex `values` -> `complex128`.
-    result_type = np.result_type(values, np.float64)
+    # If input is a structured/rec array, call the statistic
+    # to get a guess on the result dtype
+    if values.dtype.names is not None:
+        result_type = np.result_type(statistic(values[0]), np.float64)
+    else:
+        # Avoid overflow with double precision. Complex `values` -> `complex128`.
+        result_type = np.result_type(values, np.float64)
     result = np.empty([Vdim, nbin.prod()], dtype=result_type)
 
     if statistic in {'mean', np.mean}:
