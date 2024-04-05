@@ -358,6 +358,7 @@ if np.__version__ < "2":
         'scipy.sparse.csgraph.structural_rank',
         'scipy.sparse.csgraph.construct_dist_matrix',
         'scipy.sparse.csgraph.reconstruct_path',
+        'scipy.ndimage.value_indices',
 ])
 
 # help pytest collection a bit: these names are either private (distributions),
