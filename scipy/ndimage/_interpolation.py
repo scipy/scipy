@@ -41,7 +41,8 @@ from ._ni_docstrings import docfiller
 
 
 __all__ = ['spline_filter1d', 'spline_filter', 'geometric_transform',
-           'map_coordinates', 'affine_transform', 'shift', 'zoom', 'rotate']
+           'map_coordinates', 'affine_transform', 'affine_transform2',
+           'shift', 'zoom', 'rotate']
 
 
 @docfiller
@@ -213,7 +214,7 @@ def _prepad_for_spline_filter(input, mode, cval):
         npad = 12
         if mode == 'grid-constant':
             padded = np.pad(input, npad, mode='constant',
-                               constant_values=cval)
+                            constant_values=cval)
         elif mode == 'nearest':
             padded = np.pad(input, npad, mode='edge')
     else:
@@ -531,6 +532,10 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
     affine_transform : ndarray
         The transformed input.
 
+    See Also
+    --------
+    affine_transform2 : Affine transformations
+
     Notes
     -----
     The given matrix and offset are used to find for each point in the
@@ -628,6 +633,88 @@ def affine_transform(input, matrix, offset=0.0, output_shape=None,
                                       None)
     return output
 
+@docfiller
+def affine_transform2(input, matrix, shift=None, origin=None, output_shape=None,
+                      output=None, order=3,
+                      mode='constant', cval=0.0, prefilter=True):
+    """
+    Apply an affine transformation.
+
+    A ``matrix`` specifiying rotation, scaling and/or transposition can be
+    applied using the forward 'push' transformation. Rotations are centered
+    around the center of the image by default or any ``origin`` can be
+    specified to rotate around. Additionally, a ``shift`` can be applied to
+    center the ``output`` at the coordinates specified with regard to the
+    ``input``.
+
+    Parameters
+    ----------
+    %(input)s
+    matrix : ndarray
+        The coordinate transformation matrix, mapping input
+        coordinates to ouput coordinates via scaling, rotation and/or
+        transposition. If ``ndim`` is the number of
+        dimensions of ``input``, the given matrix must be``(ndim, ndim)``.
+    shift : float or sequence, optional
+        The coordinates of ``input`` to be at the center of the output matrix.
+    origin : float or sequence, optional
+        The coordinates of ``input`` which the ``transform`` is centered
+        around, e.g. the center of rotation. Default is the center of
+        ``input``.
+    output_shape : tuple of ints, optional
+        Shape tuple.
+    %(output)s
+    order : int, optional
+        The order of the spline interpolation, default is 3.
+        The order has to be in the range 0-5.
+    %(mode_interp_constant)s
+    %(cval)s
+    %(prefilter)s
+
+    Returns
+    -------
+    affine_transform : ndarray
+        The transformed input.
+
+    See Also
+    --------
+    affine_transform : Affine transformations
+    """
+    if not (matrix.shape[0] == matrix.shape[1] == input.ndim):
+        raise RuntimeError('matrix has the wrong shape')
+    center = 0.5 * np.array(input.shape)
+    if shift is None:
+        shift = center
+    if origin is None:
+        origin = center
+
+    complex_output = np.iscomplexobj(input)
+    output = _ni_support._get_output(output, input,
+                                        complex_output=complex_output)
+    
+    matrix_inv = np.linalg.inv(matrix)
+
+    # first apply translation to origin
+    affine_trans_pre = np.eye(4)
+    affine_trans_pre[:3, 3] = origin - center
+
+    # next transposition/rotation/scale around origin
+    affine_main = np.eye(4)
+    affine_main[:3, :3] = matrix_inv
+    affine_main[:3, 3] = center - np.dot(matrix_inv, center)
+
+    # finally apply offset
+    affine_trans_post = np.eye(4)
+    # put back to origin and move to shift in post-transform coordinates
+    shift_post = np.dot(shift - origin, matrix.T)
+    affine_trans_post[:3, 3] = shift_post
+    
+    affine = affine_trans_pre @ affine_main @ affine_trans_post
+    affine_transform(input, affine, output=output,
+                     output_shape=output_shape,
+                     order=order, mode=mode, cval=cval,
+                     prefilter=prefilter)
+    return output
 
 @docfiller
 def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
