@@ -120,11 +120,11 @@ def parse_constants_2010toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     return constants
 
 
-_physical_constants_2002 = parse_constants_2002to2006("codata_constants_2002.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
-_physical_constants_2006 = parse_constants_2002to2006("codata_constants_2006.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
-_physical_constants_2010 = parse_constants_2010toXXXX("codata_constants_2010.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
-_physical_constants_2014 = parse_constants_2010toXXXX("codata_constants_2014.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
-_physical_constants_2018 = parse_constants_2010toXXXX("codata_constants_2018.txt") # https://physics.nist.gov/cuu/Constants/Table/allascii.txt
+_physical_constants_2002 = parse_constants_2002to2006("_codata_constants_2002.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2002.txt
+_physical_constants_2006 = parse_constants_2002to2006("_codata_constants_2006.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2006.txt
+_physical_constants_2010 = parse_constants_2010toXXXX("_codata_constants_2010.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2010.txt
+_physical_constants_2014 = parse_constants_2010toXXXX("_codata_constants_2014.txt") # https://physics.nist.gov/cuu/Constants/ArchiveASCII/allascii_2014.txt
+_physical_constants_2018 = parse_constants_2010toXXXX("_codata_constants_2018.txt") # https://physics.nist.gov/cuu/Constants/Table/allascii.txt
 
 physical_constants.update(_physical_constants_2002)
 physical_constants.update(_physical_constants_2006)
