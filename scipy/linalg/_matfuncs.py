@@ -7,6 +7,7 @@ import numpy as np
 from numpy import (dot, diag, prod, logical_not, ravel, transpose,
                    conjugate, absolute, amax, sign, isfinite, triu)
 from numpy.lib.scimath import sqrt as csqrt
+from numpy.linalg import matrix_power
 
 # Local imports
 from scipy.linalg import LinAlgError, bandwidth
@@ -314,13 +315,15 @@ def expm(A):
         m = (mu > threshold).reshape(mu.shape[:-1])
 
         if m.any():
-            norms = np.linalg.norm(a[m], axis=(-2, -1)).astype(int)
+            norms = np.linalg.norm(a[m], axis=(-2, -1))
+
+            # Round norms to their nearest power of 2 representation
+            norms = np.power(2, np.round(np.log2(norms))).astype(int)
             a[m] = a[m] / norms
             a1, a2, a3, a4 = (a[..., [0], [0]], 
                        a[..., [0], [1]], 
                        a[..., [1], [0]], 
                        a[..., [1], [1]]) 
-
             norms = norms.reshape(np.prod(norms.shape))
             mu = csqrt((a1-a4)**2 + 4*a2*a3)/2. 
 
@@ -337,7 +340,7 @@ def expm(A):
         eA[..., [1], [1]] = eApD2 * (coshMu - AmD2*sinchMu) 
 
         if m.any():
-            eA[m] = np.array([np.linalg.matrix_power(matrix, norm) for matrix, norm in zip(eA[m], norms)])
+            eA[m] = np.array([matrix_power(mat, n) for mat, n in zip(eA[m], norms)])
 
         if np.isrealobj(a): 
             return eA.real 
