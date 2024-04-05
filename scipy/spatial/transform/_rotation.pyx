@@ -901,7 +901,25 @@ cdef class Rotation:
     def from_quat(cls, quat, scalar_first=False):
         """Initialize from quaternions.
 
-        3D rotations can be represented using unit-norm quaternions [1]_.
+        Rotations in 3 dimensions can be represented using unit norm
+        quaternions [1]_.
+
+        The 4 components of a quaternion are divided into a scalar part ``w``
+        and a vector part ``(x, y, z)`` and can be expressed frorm the angle
+        ``theta`` and the axis ``n`` of a rotation as follows::
+
+            w = cos(theta / 2)
+            x = sin(theta / 2) * n_x
+            y = sin(theta / 2) * n_y
+            z = sin(theta / 2) * n_z
+
+        There are 2 conventions to store the components in a quaternion:
+
+        - scalar-first -- ``(w, x, y, z)``
+        - scalar-last -- ``(x, y, z, w)``
+
+        The choice is controlled by `scalar_first` argument.
+        By default, it is False and "scalar-last" format is used.
 
         Advanced users may be interested in the "double cover" of 3D space by
         the quaternion representation [2]_. As of version 1.11.0, the
@@ -915,9 +933,7 @@ cdef class Rotation:
         ----------
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion representing an
-            active rotation. The assumed component order depends on `scalar_first`
-            argument: either (x, y, z, w) or (w, x, y, z).
-            Each quaternion will be normalized to unit norm.
+            active rotation. Each quaternion will be normalized to unit norm.
         scalar_first : bool, optional
             Whether the scalar component goes first or last.
             Default is False, i.e. the scalar-last format is assumed.
@@ -1626,14 +1642,30 @@ cdef class Rotation:
     def as_quat(self, canonical=False, scalar_first=False):
         """Represent as quaternions.
 
-        Active rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_. The mapping from quaternions to rotations is
+        Rotations in 3 dimensions can be represented using unit norm
+        quaternions [1]_.
+
+        The 4 components of a quaternion are divided into a scalar part ``w``
+        and a vector part ``(x, y, z)`` and can be expressed frorm the angle
+        ``theta`` and the axis ``n`` of a rotation as follows::
+
+            w = cos(theta / 2)
+            x = sin(theta / 2) * n_x
+            y = sin(theta / 2) * n_y
+            z = sin(theta / 2) * n_z
+
+        There are 2 conventions to store the components in a quaternion:
+
+        - scalar-first -- ``(w, x, y, z)``
+        - scalar-last -- ``(x, y, z, w)``
+
+        The choice is controlled by `scalar_first` argument.
+        By default, it is False and "scalar-last" format is used.
+
+        The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
         rotation. 
-        
-        The component order depends on `scalar_first` argument: either
-        (x, y, z, w) or (w, x, y, z).
 
         Parameters
         ----------
