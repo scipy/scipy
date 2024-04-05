@@ -3,6 +3,8 @@
 
 #include "../config.h"
 
+#include "unity.h"
+
 
 namespace special {
 namespace dd_real {
@@ -409,6 +411,141 @@ namespace dd_real {
     SPECFUN_HOST_DEVICE inline DoubleDouble infinity() {
         return DoubleDouble(std::numeric_limits<double>::infinity(),
                             std::numeric_limits<double>::infinity());
+    }
+
+    namespace detail {
+
+        const DoubleDouble inv_fact[] = {
+            DoubleDouble(1.66666666666666657e-01,  9.25185853854297066e-18),
+            DoubleDouble(4.16666666666666644e-02,  2.31296463463574266e-18),
+            DoubleDouble(8.33333333333333322e-03,  1.15648231731787138e-19),
+            DoubleDouble(1.38888888888888894e-03, -5.30054395437357706e-20),
+            DoubleDouble(1.98412698412698413e-04,  1.72095582934207053e-22),
+            DoubleDouble(2.48015873015873016e-05,  2.15119478667758816e-23),
+            DoubleDouble(2.75573192239858925e-06, -1.85839327404647208e-22),
+            DoubleDouble(2.75573192239858883e-07,  2.37677146222502973e-23),
+            DoubleDouble(2.50521083854417202e-08, -1.44881407093591197e-24),
+            DoubleDouble(2.08767569878681002e-09, -1.20734505911325997e-25),
+            DoubleDouble(1.60590438368216133e-10,  1.25852945887520981e-26),
+            DoubleDouble(1.14707455977297245e-11,  2.06555127528307454e-28),
+            DoubleDouble(7.64716373181981641e-13,  7.03872877733453001e-30),
+            DoubleDouble(4.77947733238738525e-14,  4.39920548583408126e-31),
+            DoubleDouble(2.81145725434552060e-15,  1.65088427308614326e-31)
+        };
+
+                    
+        // Math constants
+        const DoubleDouble E = DoubleDouble(2.718281828459045091e+00, 1.445646891729250158e-16);
+        const DoubleDouble LOG2 = DoubleDouble(6.931471805599452862e-01, 2.319046813846299558e-17);
+        const double EPS = 4.93038065763132e-32; // 2^-104
+    }
+
+    /* Exponential.  Computes exp(x) in double-double precision. */
+    SPECFUN_HOST_DEVICE inline DoubleDouble exp(const DoubleDouble& a) {
+        /* Strategy:  We first reduce the size of x by noting that
+           
+           exp(kr + m * log(2)) = 2^m * exp(r)^k
+           
+           where m and k are integers.  By choosing m appropriately
+           we can make |kr| <= log(2) / 2 = 0.347.  Then exp(r) is
+           evaluated using the familiar Taylor series.  Reducing the
+           argument substantially speeds up the convergence.       */
+        
+        constexpr double k = 512.0;
+        constexpr double inv_k = 1.0 / k;
+        double m;
+        DoubleDouble r, s, t, p;
+        int i = 0;
+        
+        if (a.hi <= -709.0) {
+            return DoubleDouble(0.0);
+        }
+        
+        if (a.hi >= 709.0) {
+            return infinity();
+        }
+        
+        if (a == 0.0) {
+            return DoubleDouble(1.0);
+        }
+        
+        if (a == 1.0) {
+            return detail::E;
+        }
+        
+        m = std::floor(a.hi / detail::LOG2.hi + 0.5);
+        r = mul_pwr2(DoubleDouble(a) - detail::LOG2 * m, inv_k);
+        
+        p = square(r);
+        s = r + mul_pwr2(p, 0.5);
+        p = p - r;
+        t = p * detail::inv_fact[0];
+        do {
+            s = s + t;
+            p = p * r;
+            ++i;
+            t = p * detail::inv_fact[i];
+        } while (std::abs(static_cast<double>(t)) > inv_k * detail::EPS && i < 5);
+        
+        s = s + t;
+
+        for (int i = 0; i < 9; i++) {
+            s = mul_pwr2(s, 2.0) + square(s);
+        }
+        s = s + 1.0;
+        
+        return ldexp(s, static_cast<int>(m));
+    }
+
+    /* Logarithm.  Computes log(x) in double-double precision.
+       This is a natural logarithm (i.e., base e).            */
+    SPECFUN_HOST_DEVICE inline DoubleDouble log(const DoubleDouble& a) {
+        /* Strategy.  The Taylor series for log converges much more
+           slowly than that of exp, due to the lack of the factorial
+           term in the denominator.  Hence this routine instead tries
+           to determine the root of the function
+           
+           f(x) = exp(x) - a
+           
+           using Newton iteration.  The iteration is given by
+           
+           x' = x - f(x)/f'(x)
+           = x - (1 - a * exp(-x))
+           = x + a * exp(-x) - 1.
+       
+           Only one iteration is needed, since Newton's iteration
+           approximately doubles the number of digits per iteration. */
+        DoubleDouble x;
+
+        if (a == 1.0) {
+            return DoubleDouble(0.0);
+        }
+
+        if (a.hi <= 0.0) {
+            return quiet_NaN();
+        }
+
+        x = DoubleDouble(std::log(a.hi)); /* Initial approximation */
+
+        /* x = x + a * exp(-x) - 1.0; */
+        x = x + a * exp(-x) - 1.0;
+        return x;
+    }
+
+    SPECFUN_HOST_DEVICE inline DoubleDouble log1p(const DoubleDouble& a) {
+        DoubleDouble ans;
+        double la, elam1, ll;
+        if (a.hi <= -1.0) {
+            return -infinity();
+        }
+        la = std::log1p(a.hi);
+        elam1 = special::cephes::expm1(la);
+        ll = std::log1p(a.lo / (1 + a.hi));
+        if (a.hi > 0) {
+            ll -= (elam1 - a.hi)/(elam1+1);
+        }
+        ans = DoubleDouble(la) + ll;
+        return ans;
     }
 
 }
