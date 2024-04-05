@@ -919,7 +919,7 @@ cdef class Rotation:
         - scalar-last -- ``(x, y, z, w)``
 
         The choice is controlled by `scalar_first` argument.
-        By default, it is False and "scalar-last" format is used.
+        By default, it is False and "scalar-last" format is assumed.
 
         Advanced users may be interested in the "double cover" of 3D space by
         the quaternion representation [2]_. As of version 1.11.0, the
@@ -1693,8 +1693,8 @@ cdef class Rotation:
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
 
-        A rotation can be represented as a qaternion in either scalar-last (default)
-        or scalar-first order. This is shown for a single rotaiton:
+        A rotation can be represented as a quaternion in either scalar-last
+        (default) or scalar-first order. This is shown for a single rotaiton:
 
         >>> r = R.from_matrix(np.eye(3))
         >>> r.as_quat()
@@ -1702,8 +1702,8 @@ cdef class Rotation:
         >>> r.as_quat(scalar_first=True)
         array([1., 0., 0., 0.])
 
-        When multiple rotations are stored in a single Rotation object, the result
-        will be a 2-dimensional array:
+        When multiple rotations are stored in a single Rotation object, the
+        result will be a 2-dimensional array:
 
         >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
         >>> r.as_quat().shape
