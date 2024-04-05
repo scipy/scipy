@@ -218,8 +218,8 @@ namespace cephes {
 
                 csum = csum + cterm;
 
-                term = cterm.to_double();
-                sum = csum.to_double();
+                term = static_cast<double>(cterm);
+                sum = static_cast<double>(csum);
 
                 if (std::abs(term) > maxterm) {
                     maxterm = std::abs(term);

@@ -276,8 +276,12 @@ namespace dd_real {
             return rhs <= *this;
         }
 
-        SPECFUN_HOST_DEVICE inline double to_double() const {
+        SPECFUN_HOST_DEVICE inline explicit operator double() const {
             return hi;
+        }
+
+        SPECFUN_HOST_DEVICE inline explicit operator int() const {
+            return static_cast<int>(hi);
         }
     };
 
