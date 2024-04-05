@@ -603,7 +603,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    n : array_liks
+    n : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -625,7 +625,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    n : array_liks
+    n : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -647,7 +647,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    n : array_liks
+    n : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -669,7 +669,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    n : array_liks
+    n : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -691,7 +691,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    n : array_liks
+    n : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -713,7 +713,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -735,7 +735,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -757,7 +757,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -779,7 +779,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -801,7 +801,7 @@ add_newdoc(
     ----------
     x : array_like
         Real-valued
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -821,7 +821,7 @@ add_newdoc(
 
     Parameters
     ----------
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -841,7 +841,7 @@ add_newdoc(
 
     Parameters
     ----------
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -861,7 +861,7 @@ add_newdoc(
 
     Parameters
     ----------
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
@@ -881,10 +881,122 @@ add_newdoc(
 
     Parameters
     ----------
-    r : array_liks
+    r : array_like
         Positive, integer-valued parameter
     p : array_like
         Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_pmf",
+    """
+    _hypergeom_pmf(x, r, N, M)
+
+    Probability mass function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_cdf",
+    """
+    _hypergeom_cdf(x, r, N, M)
+
+    Cumulative density function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_hypergeom_sf",
+    """
+    _hypergeom_sf(x, r, N, M)
+
+    Survival function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_hypergeom_mean",
+    """
+    _hypergeom_mean(r, N, M)
+
+    Mean of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_variance",
+    """
+    _hypergeom_variance(r, N, M)
+
+    Mean of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_skewness",
+    """
+    _hypergeom_skewness(r, N, M)
+
+    Skewness of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
 
     Returns
     -------

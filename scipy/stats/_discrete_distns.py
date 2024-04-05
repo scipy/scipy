@@ -647,10 +647,10 @@ class hypergeom_gen(rv_discrete):
         return result
 
     def _pmf(self, k, M, n, N):
-        return _boost._hypergeom_pdf(k, n, N, M)
+        return scsu._hypergeom_pmf(k, n, N, M)
 
     def _cdf(self, k, M, n, N):
-        return _boost._hypergeom_cdf(k, n, N, M)
+        return scsu._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
         M, n, N = 1. * M, 1. * n, 1. * N
@@ -663,9 +663,9 @@ class hypergeom_gen(rv_discrete):
         g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
         g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
         return (
-            _boost._hypergeom_mean(n, N, M),
-            _boost._hypergeom_variance(n, N, M),
-            _boost._hypergeom_skewness(n, N, M),
+            scsu._hypergeom_mean(n, N, M),
+            scsu._hypergeom_variance(n, N, M),
+            scsu._hypergeom_skewness(n, N, M),
             g2,
         )
 
@@ -675,7 +675,7 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        return _boost._hypergeom_sf(k, n, N, M)
+        return scsu._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
         res = []

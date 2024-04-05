@@ -250,5 +250,41 @@
             "nbinom_kurtosis_excess_float": "ff->f",
             "nbinom_kurtosis_excess_double": "dd->d"
         }
+    },
+    "_hypergeom_pmf": {
+        "boost_stats_functions.h++": {
+            "hypergeom_pmf_float": "ffff->f",
+            "hypergeom_pmf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_cdf": {
+        "boost_stats_functions.h++": {
+            "hypergeom_cdf_float": "ffff->f",
+            "hypergeom_cdf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_sf": {
+        "boost_stats_functions.h++": {
+            "hypergeom_sf_float": "ffff->f",
+            "hypergeom_sf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_mean": {
+        "boost_stats_functions.h++": {
+            "hypergeom_mean_float": "fff->f",
+            "hypergeom_mean_double": "ddd->d"
+        }
+    },
+    "_hypergeom_variance": {
+        "boost_stats_functions.h++": {
+            "hypergeom_variance_float": "fff->f",
+            "hypergeom_variance_double": "ddd->d"
+        }
+    },
+    "_hypergeom_skewness": {
+        "boost_stats_functions.h++": {
+            "hypergeom_skewness_float": "fff->f",
+            "hypergeom_skewness_double": "ddd->d"
+        }
     }
 }

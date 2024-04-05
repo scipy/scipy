@@ -867,4 +867,107 @@ nbinom_kurtosis_excess_double(double r, double p)
     return boost::math::kurtosis_excess(boost::math::negative_binomial_distribution<double, Policy>(r, p));
 }
 
+template<typename Real>
+Real
+hypergeom_pmf_wrap(const Real k, const Real n, const Real N, const Real M)
+{
+    if (std::isfinite(k)) {
+        return boost::math::pdf(
+            boost::math::hypergeometric_distribution<Real, Policy>(n, N, M), k);
+    }
+    return NAN; // inf or -inf returns NAN
+}
+
+float
+hypergeom_pmf_float(float k, float n, float N, float M)
+{
+    return hypergeom_pmf_wrap(k, n, N, M);
+}
+
+double
+hypergeom_pmf_double(double k, double n, double N, double M)
+{
+    return hypergeom_pmf_wrap(k, n, N, M);
+}
+
+template<typename Real>
+Real
+hypergeom_cdf_wrap(const Real k, const Real n, const Real N, const Real M)
+{
+    if (std::isfinite(k)) {
+        return boost::math::cdf(
+            boost::math::hypergeometric_distribution<Real, Policy>(n, N, M), k);
+    }
+    // -inf => 0, inf => 1
+    return 1 - std::signbit(k);
+}
+
+float
+hypergeom_cdf_float(float k, float n, float N, float M)
+{
+    return hypergeom_cdf_wrap(k, n, N, M);
+}
+
+double
+hypergeom_cdf_double(double k, double n, double N, double M)
+{
+    return hypergeom_cdf_wrap(k, n, N, M);
+}
+
+template<typename Real>
+Real
+hypergeom_sf_wrap(const Real k, const Real n, const Real N, const Real M)
+{
+    return boost::math::cdf(boost::math::complement(
+        boost::math::hypergeometric_distribution<Real, Policy>(n, N, M), k));
+}
+
+float
+hypergeom_sf_float(float k, float n, float N, float M)
+{
+    return hypergeom_sf_wrap(k, n, N, M);
+}
+
+double
+hypergeom_sf_double(double k, double n, double N, double M)
+{
+    return hypergeom_sf_wrap(k, n, N, M);
+}
+
+float
+hypergeom_mean_float(float n, float N, float M)
+{
+    return boost::math::mean(boost::math::hypergeometric_distribution<float, Policy>(n, N, M));
+}
+
+double
+hypergeom_mean_double(double n, double N, double M)
+{
+    return boost::math::mean(boost::math::hypergeometric_distribution<double, Policy>(n, N, M));
+}
+
+float
+hypergeom_variance_float(float n, float N, float M)
+{
+    return boost::math::variance(boost::math::hypergeometric_distribution<float, Policy>(n, N, M));
+}
+
+double
+hypergeom_variance_double(double n, double N, double M)
+{
+    return boost::math::variance(boost::math::hypergeometric_distribution<double, Policy>(n, N, M));
+}
+
+float
+hypergeom_skewness_float(float n, float N, float M)
+{
+    return boost::math::skewness(boost::math::hypergeometric_distribution<float, Policy>(n, N, M));
+}
+
+double
+hypergeom_skewness_double(double n, double N, double M)
+{
+    return boost::math::skewness(boost::math::hypergeometric_distribution<double, Policy>(n, N, M));
+}
+
 #endif
