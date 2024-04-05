@@ -378,6 +378,7 @@ dt_config.pytest_extra_xfail = {
     "extrapolation_examples.rst": "ReST parser limitation",
     "sampling_pinv.rst": "__cinit__ unexpected argument",
     "sampling_srou.rst": "nan in scalar_power",
+    "probability_distributions.rst": "integration warning",
 }
 
 # tutorials
