@@ -15,7 +15,6 @@ import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
                                     _check_shape, _ShapeInfo)
-import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
