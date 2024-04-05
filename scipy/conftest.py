@@ -342,7 +342,7 @@ dt_config.skiplist = set([
 
 # these are affected by NumPy 2.0 scalar repr: they rely on string comparison
 if np.__version__ < "2":
-    dt_config.skiplist += set([
+    dt_config.skiplist.update(set([
         'scipy.io.hb_read',
         'scipy.io.hb_write',
         'scipy.sparse.csgraph.connected_components',
@@ -359,8 +359,8 @@ if np.__version__ < "2":
         'scipy.sparse.csgraph.construct_dist_matrix',
         'scipy.sparse.csgraph.reconstruct_path',
         'scipy.ndimage.value_indices',
-        'scipy.stats.describe',
-])
+        'scipy.stats.mstats.describe',
+]))
 
 # help pytest collection a bit: these names are either private (distributions),
 # or just do not need doctesting.
