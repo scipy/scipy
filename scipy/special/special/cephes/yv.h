@@ -18,7 +18,6 @@
 namespace special {
 namespace cephes {
 
-
     /*
      * Bessel function of noninteger order
      */
@@ -38,7 +37,7 @@ namespace cephes {
 
         t = M_PI * v;
         y = (std::cos(t) * jv(v, x) - jv(-v, x)) / std::sin(t);
-        
+
         if (std::isinf(y)) {
             if (v > 0) {
                 set_error("yv", SF_ERROR_OVERFLOW, NULL);
@@ -51,7 +50,6 @@ namespace cephes {
         }
 
         return (y);
-
     }
-}
-}
+} // namespace cephes
+} // namespace special

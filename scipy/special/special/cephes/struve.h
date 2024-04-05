@@ -98,7 +98,7 @@ namespace cephes {
         constexpr int STRUVE_MAXITER = 10000;
         constexpr double STRUVE_SUM_EPS = 1e-16; /* be sure we are in the tail of the sum */
         constexpr double STRUVE_SUM_TINY = 1e-100;
-        constexpr double STRUVE_GOOD_EPS =1e-12;
+        constexpr double STRUVE_GOOD_EPS = 1e-12;
         constexpr double STRUVE_ACCEPTABLE_EPS = 1e-7;
         constexpr double STRUVE_ACCEPTABLE_ATOL = 1e-300;
 
@@ -138,8 +138,8 @@ namespace cephes {
             }
 
             /* Evaluate sum */
-            term = -sgn / std::sqrt(M_PI) * std::exp(-special::cephes::lgam(v + 0.5) + (v - 1) * std::log(z / 2))
-                * special::cephes::gammasgn(v + 0.5);
+            term = -sgn / std::sqrt(M_PI) * std::exp(-special::cephes::lgam(v + 0.5) + (v - 1) * std::log(z / 2)) *
+                   special::cephes::gammasgn(v + 0.5);
             sum = term;
             maxterm = 0;
 
@@ -239,7 +239,8 @@ namespace cephes {
             if (sum == 0 && term == 0 && v < 0 && !is_h) {
                 /* Spurious underflow */
                 *err = std::numeric_limits<double>::infinity();
-                return std::numeric_limits<double>::quiet_NaN();;
+                return std::numeric_limits<double>::quiet_NaN();
+                ;
             }
 
             return sum;
@@ -370,15 +371,11 @@ namespace cephes {
             set_error("struve", SF_ERROR_NO_RESULT, NULL);
             return std::numeric_limits<double>::quiet_NaN();
         }
-    }
+    } // namespace detail
 
-    SPECFUN_HOST_DEVICE inline double struve_h(double v, double z) {
-        return detail::struve_hl(v, z, 1);
-    }
+    SPECFUN_HOST_DEVICE inline double struve_h(double v, double z) { return detail::struve_hl(v, z, 1); }
 
-    SPECFUN_HOST_DEVICE inline double struve_l(double v, double z) {
-        return detail::struve_hl(v, z, 0);
-    }
+    SPECFUN_HOST_DEVICE inline double struve_l(double v, double z) { return detail::struve_hl(v, z, 0); }
 
-}
-}
+} // namespace cephes
+} // namespace special
