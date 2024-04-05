@@ -1572,8 +1572,8 @@ class skellam_gen(rv_discrete):
     def _pmf(self, x, mu1, mu2):
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                          scsu._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          scsu._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
             # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
@@ -1581,8 +1581,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          scsu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - scsu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
