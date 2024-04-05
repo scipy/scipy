@@ -3,7 +3,9 @@ from libc.math cimport fabs, exp, floor, isnan, M_PI, NAN, INFINITY
 import cython
 
 from . cimport sf_error
-from ._cephes cimport expm1, poch
+
+cdef extern from "special_c_wrappers.h" nogil:
+    double cephes_poch_wrap(double x, double m)
 
 cdef extern from 'special_wrappers.h':
     double hypU_wrap(double, double, double) nogil
@@ -25,6 +27,6 @@ cdef inline double hyperu(double a, double b, double x) noexcept nogil:
             return INFINITY
         else:
             # DLMF 13.2.14-15 and 13.2.19-21
-            return poch(1.0 - b + a, -a)
+            return cephes_poch_wrap(1.0 - b + a, -a)
 
     return hypU_wrap(a, b, x)

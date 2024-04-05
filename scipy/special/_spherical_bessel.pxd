@@ -40,7 +40,8 @@ cdef extern from "special_wrappers.h":
     npy_cdouble cbesy_wrap(double v, npy_cdouble z) nogil
     double cbesy_wrap_real(double v, double x) nogil
 
-from ._cephes cimport iv
+cdef extern from "special_c_wrappers.h" nogil:
+    double cephes_iv_wrap(double v, double x)
 
 # Fused type wrappers
 
@@ -216,7 +217,7 @@ cdef inline double spherical_in_real(long n, double z) noexcept nogil:
         else:
             return INFINITY
 
-    return sqrt(M_PI_2/z)*iv(n + 0.5, z)
+    return sqrt(M_PI_2/z)*cephes_iv_wrap(n + 0.5, z)
 
 
 @cython.cdivision(True)

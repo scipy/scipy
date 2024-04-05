@@ -1,7 +1,8 @@
 from . cimport sf_error
 
 from libc.math cimport NAN, isnan, isinf, isfinite
-cdef extern from "cephes.h" nogil:
+
+cdef extern from "special_c_wrappers.h" nogil:
     double ndtr(double a)
     double ndtri(double y0)
 

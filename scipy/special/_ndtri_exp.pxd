@@ -106,7 +106,8 @@ cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
     double p1evl(double x, const double coef[], int N) nogil
 
-from ._cephes cimport ndtri
+cdef extern from "special_c_wrappers.h" nogil:
+    double cephes_ndtri_wrap(double x)
 
 @cython.cdivision(True)
 cdef inline double _ndtri_exp_small_y(double y) noexcept nogil:
@@ -167,6 +168,6 @@ cdef inline double ndtri_exp(double y) noexcept nogil:
     elif y < - 2.0:
         return _ndtri_exp_small_y(y)
     elif y > -0.14541345786885906: # log1p(-exp(-2))
-        return -ndtri(-expm1(y))
+        return -cephes_ndtri_wrap(-expm1(y))
     else:
-        return ndtri(exp(y))
+        return cephes_ndtri_wrap(exp(y))
