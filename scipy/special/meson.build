@@ -218,10 +218,12 @@ py3.extension_module('_ufuncs',
   ],
   link_args: version_link_args,
   link_with: [
+    sf_error_state_lib,
     cephes_lib
   ],
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN',
 )
 
 ellint_files = [
