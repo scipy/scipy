@@ -748,28 +748,28 @@
         }
     },
     "_kolmogc": {
-        "cephes.h": {
-            "kolmogc": "d->d"
+        "_special.h++": {
+            "cephes_kolmogc": "d->d"
         }
     },
     "_kolmogci": {
-        "cephes.h": {
-            "kolmogci": "d->d"
+        "_special.h++": {
+            "cephes_kolmogci": "d->d"
         }
     },
     "kolmogi": {
-        "cephes.h": {
-            "kolmogi": "d->d"
+        "_special.h++": {
+            "cephes_kolmogi": "d->d"
         }
     },
     "_kolmogp": {
-        "cephes.h": {
-            "kolmogp": "d->d"
+        "_special.h++": {
+            "cephes_kolmogp": "d->d"
         }
     },
     "kolmogorov": {
-        "cephes.h": {
-            "kolmogorov": "d->d"
+        "_special.h++": {
+            "cephes_kolmogorov": "d->d"
         }
     },
     "log1p": {
@@ -1008,40 +1008,40 @@
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnov": "id->d"
+        "_special.h++": {
+            "cephes_smirnov": "id->d"
         }
     },
     "_smirnovc": {
         "_legacy.pxd": {
             "smirnovc_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovc": "id->d"
+        "_special.h++": {
+            "cephes_smirnovc": "id->d"
         }
     },
     "_smirnovci": {
         "_legacy.pxd": {
             "smirnovci_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovci": "id->d"
+        "_special.h++": {
+            "cephes_smirnovci": "id->d"
         }
     },
     "smirnovi": {
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovi": "id->d"
+        "_special.h++": {
+            "cephes_smirnovi": "id->d"
         }
     },
     "_smirnovp": {
         "_legacy.pxd": {
             "smirnovp_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovp": "id->d"
+        "_special.h++": {
+            "cephes_smirnovp": "id->d"
         }
     },
     "spence": {

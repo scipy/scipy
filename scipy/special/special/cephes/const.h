@@ -75,6 +75,7 @@ namespace cephes {
         constexpr double SQRTPI = 2.50662827463100050242E0;      // sqrt(pi)
         constexpr double LOGPI = 1.14472988584940017414;         // log(pi)
         constexpr double MAXGAM = 171.624376956302725;
+        constexpr double LOGSQRT2PI = 0.9189385332046727; // log(sqrt(pi))
 
         // Following two added by SciPy developers.
         // Euler's constant

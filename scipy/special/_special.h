@@ -45,6 +45,7 @@
 #include "special/cephes/igami.h"
 #include "special/cephes/incbet.h"
 #include "special/cephes/incbi.h"
+#include "special/cephes/kolmogorov.h"
 #include "special/cephes/lanczos.h"
 #include "special/cephes/owens_t.h"
 #include "special/cephes/nbdtr.h"
@@ -269,6 +270,46 @@ inline double cephes_igam_fac(double a, double x) {
 
 inline double cephes_lanczos_sum_expg_scaled(double x) {
     return special::cephes::lanczos_sum_expg_scaled(x);
+}
+
+inline double cephes_kolmogorov(double x) {
+    return special::cephes::kolmogorov(x);
+}
+
+inline double cephes_kolmogc(double x) {
+    return special::cephes::kolmogc(x);
+}
+
+inline double cephes_kolmogi(double x) {
+    return special::cephes::kolmogi(x);
+}
+
+inline double cephes_kolmogci(double x) {
+    return special::cephes::kolmogci(x);
+}
+
+inline double cephes_kolmogp(double x) {
+    return special::cephes::kolmogp(x);
+}
+
+inline double cephes_smirnov(int n, double x) {
+    return special::cephes::smirnov(n, x);
+}
+
+inline double cephes_smirnovc(int n, double x) {
+    return special::cephes::smirnovc(n, x);
+}
+
+inline double cephes_smirnovi(int n, double x) {
+    return special::cephes::smirnovi(n, x);
+}
+
+inline double cephes_smirnovci(int n, double x) {
+    return special::cephes::smirnovci(n, x);
+}
+
+inline double cephes_smirnovp(int n, double x) {
+    return special::cephes::smirnovp(n, x);
 }
 
 inline double cephes_ndtr(double x) {
