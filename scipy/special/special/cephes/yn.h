@@ -109,7 +109,7 @@ namespace cephes {
             anm1 = an;
             r += 2.0;
             ++k;
-        } while (k < n);
+        } while (k < n && std::isfinite(an));
 
         return (sign * an);
     }
