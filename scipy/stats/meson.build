@@ -125,7 +125,6 @@ py3.install_sources([
     '_distr_params.py',
     '_entropy.py',
     '_fit.py',
-    '_generate_pyx_.py',
     '_hypotests.py',
     '_kde.py',
     '_ksstats.py',
