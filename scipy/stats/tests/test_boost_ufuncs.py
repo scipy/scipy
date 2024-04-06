@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
-import scipy.stats._ufuncs as scsu
+import scipy.special._ufuncs as scu
 
 
 type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
@@ -16,14 +16,14 @@ type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
 # It is a spot check of several functions, primarily for
 # checking that the different data types are handled correctly.
 test_data = [
-    (scsu._beta_pdf, (0.5, 2, 3), 1.5),
-    (scsu._beta_pdf, (0, 1, 5), 5.0),
-    (scsu._beta_pdf, (1, 5, 1), 5.0),
-    (scsu._binom_cdf, (1, 3, 0.5), 0.5),
-    (scsu._binom_pmf, (1, 4, 0.5), 0.25),
-    (scsu._hypergeom_cdf, (2, 3, 5, 6), 0.5),
-    (scsu._nbinom_cdf, (1, 4, 0.25), 0.015625),
-    (scsu._ncf_mean, (10, 12, 2.5), 1.5),
+    (scu._beta_pdf, (0.5, 2, 3), 1.5),
+    (scu._beta_pdf, (0, 1, 5), 5.0),
+    (scu._beta_pdf, (1, 5, 1), 5.0),
+    (scu._binom_cdf, (1, 3, 0.5), 0.5),
+    (scu._binom_pmf, (1, 4, 0.5), 0.25),
+    (scu._hypergeom_cdf, (2, 3, 5, 6), 0.5),
+    (scu._nbinom_cdf, (1, 4, 0.25), 0.015625),
+    (scu._ncf_mean, (10, 12, 2.5), 1.5),
 ]
 
 

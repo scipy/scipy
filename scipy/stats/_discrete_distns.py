@@ -19,7 +19,6 @@ from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 import scipy.special._ufuncs as scu
-import scipy.stats._ufuncs as scsu
 
 
 def _isintegral(x):
@@ -74,21 +73,21 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        return scsu._binom_pmf(x, n, p)
+        return scu._binom_pmf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return scsu._binom_cdf(k, n, p)
+        return scu._binom_cdf(k, n, p)
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return scsu._binom_sf(k, n, p)
+        return scu._binom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return scsu._binom_isf(x, n, p)
+        return scu._binom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return scsu._binom_ppf(q, n, p)
+        return scu._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
         mu = np.multiply(n, p)
@@ -333,7 +332,7 @@ class nbinom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # nbinom.pmf(k) = choose(k+n-1, n-1) * p**n * (1-p)**k
-        return scsu._nbinom_pmf(x, n, p)
+        return scu._nbinom_pmf(x, n, p)
 
     def _logpmf(self, x, n, p):
         coeff = gamln(n+x) - gamln(x+1) - gamln(n)
@@ -341,7 +340,7 @@ class nbinom_gen(rv_discrete):
 
     def _cdf(self, x, n, p):
         k = floor(x)
-        return scsu._nbinom_cdf(k, n, p)
+        return scu._nbinom_cdf(k, n, p)
 
     def _logcdf(self, x, n, p):
         k = floor(x)
@@ -360,22 +359,22 @@ class nbinom_gen(rv_discrete):
 
     def _sf(self, x, n, p):
         k = floor(x)
-        return scsu._nbinom_sf(k, n, p)
+        return scu._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scsu._nbinom_isf(x, n, p)
+            return scu._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
         with np.errstate(over='ignore'):  # see gh-17432
-            return scsu._nbinom_ppf(q, n, p)
+            return scu._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
         return (
-            scsu._nbinom_mean(n, p),
-            scsu._nbinom_variance(n, p),
-            scsu._nbinom_skewness(n, p),
-            scsu._nbinom_kurtosis_excess(n, p),
+            scu._nbinom_mean(n, p),
+            scu._nbinom_variance(n, p),
+            scu._nbinom_skewness(n, p),
+            scu._nbinom_kurtosis_excess(n, p),
         )
 
 
@@ -646,10 +645,10 @@ class hypergeom_gen(rv_discrete):
         return result
 
     def _pmf(self, k, M, n, N):
-        return scsu._hypergeom_pmf(k, n, N, M)
+        return scu._hypergeom_pmf(k, n, N, M)
 
     def _cdf(self, k, M, n, N):
-        return scsu._hypergeom_cdf(k, n, N, M)
+        return scu._hypergeom_cdf(k, n, N, M)
 
     def _stats(self, M, n, N):
         M, n, N = 1. * M, 1. * n, 1. * N
@@ -662,9 +661,9 @@ class hypergeom_gen(rv_discrete):
         g2 += 6. * n * N * (M - N) * m * (5. * M - 6)
         g2 /= n * N * (M - N) * m * (M - 2.) * (M - 3.)
         return (
-            scsu._hypergeom_mean(n, N, M),
-            scsu._hypergeom_variance(n, N, M),
-            scsu._hypergeom_skewness(n, N, M),
+            scu._hypergeom_mean(n, N, M),
+            scu._hypergeom_variance(n, N, M),
+            scu._hypergeom_skewness(n, N, M),
             g2,
         )
 
@@ -674,7 +673,7 @@ class hypergeom_gen(rv_discrete):
         return np.sum(entr(vals), axis=0)
 
     def _sf(self, k, M, n, N):
-        return scsu._hypergeom_sf(k, n, N, M)
+        return scu._hypergeom_sf(k, n, N, M)
 
     def _logsf(self, k, M, n, N):
         res = []
@@ -1571,8 +1570,8 @@ class skellam_gen(rv_discrete):
     def _pmf(self, x, mu1, mu2):
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scsu._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                          scsu._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+                          scu._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          scu._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
             # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
@@ -1580,8 +1579,8 @@ class skellam_gen(rv_discrete):
         x = floor(x)
         with np.errstate(over='ignore'):  # see gh-17432
             px = np.where(x < 0,
-                          scsu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                          1 - scsu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                          scu._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                          1 - scu._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
