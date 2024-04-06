@@ -290,7 +290,7 @@ namespace dd_real {
 
         if (hi == a.hi) {
             /* High word is integer already.  Round the low word. */
-            lo = std::floor(a.hi);
+            lo = std::floor(a.lo);
             hi = detail::quick_two_sum(hi, lo, &lo);
         }
 

@@ -412,7 +412,7 @@ namespace cephes {
             nxD = static_cast<double>(n) * dd_real::DoubleDouble(x);
             nxfloorD = dd_real::floor(nxD);
             alphaD = nxD - nxfloorD;
-            alpha = static_cast<double>(alphaD);
+            alpha = alphaD.hi;
             nxfloor = static_cast<int>(nxfloorD);
             SPECFUN_ASSERT(alpha >= 0);
             SPECFUN_ASSERT(alpha <= 1);
