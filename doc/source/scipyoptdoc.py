@@ -20,18 +20,16 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-import os, sys, re, pydoc
+import sys
 import sphinx
 import inspect
-import collections
 import textwrap
-import warnings
+import pydoc
 
 if sphinx.__version__ < '1.0.1':
     raise RuntimeError("Sphinx 1.0.1 or newer is required")
 
 from numpydoc.numpydoc import mangle_docstrings
-from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
 from scipy._lib._util import getfullargspec_no_self
@@ -62,7 +60,8 @@ class ScipyOptimizeInterfaceDomain(PythonDomain):
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
         self.directives = dict(self.directives)
-        self.directives['function'] = wrap_mangling_directive(self.directives['function'])
+        function_directive = self.directives['function']
+        self.directives['function'] = wrap_mangling_directive(function_directive)
 
 
 BLURB = """
@@ -82,7 +81,7 @@ def wrap_mangling_directive(base_directive):
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
+            impl_args, _, _, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
 
             # Format signature taking implementation into account
             args = list(args)
@@ -107,7 +106,7 @@ def wrap_mangling_directive(base_directive):
                 if opt_name in args:
                     continue
                 if j >= len(impl_args) - len(impl_defaults):
-                    options.append((opt_name, impl_defaults[len(impl_defaults) - (len(impl_args) - j)]))
+                    options.append((opt_name, impl_defaults[-len(impl_args) + j]))
                 else:
                     options.append((opt_name, None))
             set_default('options', dict(options))
@@ -122,11 +121,7 @@ def wrap_mangling_directive(base_directive):
                 if arg not in impl_args and arg not in special_args:
                     remove_arg(arg)
 
-            # XXX deprecation that we should fix someday using Signature (?)
-            with warnings.catch_warnings(record=True):
-                warnings.simplefilter('ignore')
-                signature = inspect.formatargspec(
-                    args, varargs, keywords, defaults)
+            signature = str(inspect.signature(obj))
 
             # Produce output
             self.options['noindex'] = True
@@ -135,10 +130,12 @@ def wrap_mangling_directive(base_directive):
             # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
+                # Remap Options to the "Other Parameters" numpydoc section
+                # along with correct heading length
                 if line.strip() == 'Options':
                     line = "Other Parameters"
-                elif line.strip() == "-"*len('Options'):
-                    line = "-"*len("Other Parameters")
+                    new_lines.extend([line, "-"*len(line)])
+                    continue
                 new_lines.append(line)
             # use impl_name instead of name here to avoid duplicate refs
             mangle_docstrings(env.app, 'function', impl_name,

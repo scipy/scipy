@@ -1,5 +1,7 @@
 from ._ufuncs import _lambertw
 
+import numpy as np
+
 
 def lambertw(z, k=0, tol=1e-8):
     r"""
@@ -31,6 +33,10 @@ def lambertw(z, k=0, tol=1e-8):
     w : array
         `w` will have the same shape as `z`.
 
+    See Also
+    --------
+    wrightomega : the Wright Omega function
+
     Notes
     -----
     All branches are supported by `lambertw`:
@@ -56,10 +62,6 @@ def lambertw(z, k=0, tol=1e-8):
 
     The definition, implementation and choice of branches is based on [2]_.
 
-    See Also
-    --------
-    wrightomega : the Wright Omega function
-
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Lambert_W_function
@@ -71,6 +73,7 @@ def lambertw(z, k=0, tol=1e-8):
     --------
     The Lambert W function is the inverse of ``w exp(w)``:
 
+    >>> import numpy as np
     >>> from scipy.special import lambertw
     >>> w = lambertw(1)
     >>> w
@@ -89,8 +92,46 @@ def lambertw(z, k=0, tol=1e-8):
     **Applications to equation-solving**
 
     The Lambert W function may be used to solve various kinds of
-    equations, such as finding the value of the infinite power
-    tower :math:`z^{z^{z^{\ldots}}}`:
+    equations.  We give two examples here.
+
+    First, the function can be used to solve implicit equations of the
+    form
+
+        :math:`x = a + b e^{c x}`
+
+    for :math:`x`.  We assume :math:`c` is not zero.  After a little
+    algebra, the equation may be written
+
+        :math:`z e^z = -b c e^{a c}`
+
+    where :math:`z = c (a - x)`.  :math:`z` may then be expressed using
+    the Lambert W function
+
+        :math:`z = W(-b c e^{a c})`
+
+    giving
+
+        :math:`x = a - W(-b c e^{a c})/c`
+
+    For example,
+
+    >>> a = 3
+    >>> b = 2
+    >>> c = -0.5
+
+    The solution to :math:`x = a + b e^{c x}` is:
+
+    >>> x = a - lambertw(-b*c*np.exp(a*c))/c
+    >>> x
+    (3.3707498368978794+0j)
+
+    Verify that it solves the equation:
+
+    >>> a + b*np.exp(c*x)
+    (3.37074983689788+0j)
+
+    The Lambert W function may also be used find the value of the infinite
+    power tower :math:`z^{z^{z^{\ldots}}}`:
 
     >>> def tower(z, n):
     ...     if n == 0:
@@ -102,4 +143,7 @@ def lambertw(z, k=0, tol=1e-8):
     >>> -lambertw(-np.log(0.5)) / np.log(0.5)
     (0.64118574450498589+0j)
     """
+    # TODO: special expert should inspect this
+    # interception; better place to do it?
+    k = np.asarray(k, dtype=np.dtype("long"))
     return _lambertw(z, k, tol)

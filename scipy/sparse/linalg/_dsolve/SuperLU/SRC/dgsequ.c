@@ -99,7 +99,8 @@ dgsequ(SuperMatrix *A, double *r, double *c, double *rowcnd,
     /* Local variables */
     NCformat *Astore;
     double   *Aval;
-    int i, j, irow;
+    int_t i, j;
+    int   irow;
     double rcmin, rcmax;
     double bignum, smlnum;
     extern double dmach(char *);
@@ -110,8 +111,8 @@ dgsequ(SuperMatrix *A, double *r, double *c, double *rowcnd,
 	 A->Stype != SLU_NC || A->Dtype != SLU_D || A->Mtype != SLU_GE )
 	*info = -1;
     if (*info != 0) {
-	i = -(*info);
-	input_error("dgsequ", &i);
+	int ii = -(*info);
+	input_error("dgsequ", &ii);
 	return;
     }
 

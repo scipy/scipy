@@ -1,9 +1,9 @@
 c       this file contains the following user-callable routines:
 c
-c 
+c
 c       routine idd_random_transf applies rapidly
 c       a random orthogonal matrix to a user-supplied vector.
-c   
+c
 c       routine idd_random_transf_inverse applies rapidly
 c       the inverse of the operator applied
 c       by routine idd_random_transf.
@@ -41,7 +41,7 @@ c
 c       input:
 c       nsteps -- the degree of randomness of the operator
 c                 to be applied
-c       n -- the size of the matrix to be applied     
+c       n -- the size of the matrix to be applied
 c
 c       output:
 c       w -- the first keep elements of w contain all the data
@@ -50,19 +50,19 @@ c            and idd_random_transf_inverse. Please note that
 c            the number of elements used by the present routine
 c            is also equal to keep. This array should be at least
 c            3*nsteps*n + 2*n + n/4 + 50 real*8 elements long.
-c       keep - the number of elements in w actually used 
+c       keep - the number of elements in w actually used
 c              by the present routine; keep is also the number
 c              of elements that must not be changed between the call
 c              to this routine and subsequent calls to routines
 c              idd_random_transf and idd_random_transf_inverse.
 c
 c
-c        . . . allocate memory 
+c        . . . allocate memory
 c
         ninire=2
 c
         ialbetas=10
-        lalbetas=2*n*nsteps+10 
+        lalbetas=2*n*nsteps+10
 c
         iixs=ialbetas+lalbetas
         lixs=n*nsteps/ninire+10
@@ -75,7 +75,7 @@ c
         w(1)=ialbetas+0.1
         w(2)=iixs+0.1
         w(3)=nsteps+0.1
-        w(4)=iww+0.1        
+        w(4)=iww+0.1
         w(5)=n+0.1
 c
         call idd_random_transf_init0(nsteps,n,w(ialbetas),w(iixs))
@@ -83,10 +83,10 @@ c
         return
         end
 c
-c 
-c 
 c
-c 
+c
+c
+c
         subroutine idz_random_transf_init(nsteps,n,w,keep)
         implicit real *8 (a-h,o-z)
         save
@@ -100,7 +100,7 @@ c
 c       input:
 c       nsteps -- the degree of randomness of the operator
 c                 to be applied
-c       n -- the size of the matrix to be applied     
+c       n -- the size of the matrix to be applied
 c
 c       output:
 c       w -- the first keep elements of w contain all the data
@@ -116,12 +116,12 @@ c              to this routine and subsequent calls to routines
 c              idz_random_transf and idz_random_transf_inverse.
 c
 c
-c        . . . allocate memory 
+c        . . . allocate memory
 c
         ninire=2
 c
         ialbetas=10
-        lalbetas=2*n*nsteps+10 
+        lalbetas=2*n*nsteps+10
 c
         igammas=ialbetas+lalbetas
         lgammas=2*n*nsteps+10
@@ -137,7 +137,7 @@ c
         w(1)=ialbetas+0.1
         w(2)=iixs+0.1
         w(3)=nsteps+0.1
-        w(4)=iww+0.1        
+        w(4)=iww+0.1
         w(5)=n+0.1
         w(6)=igammas+0.1
 c
@@ -147,18 +147,18 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf(x,y,w)
         implicit real *8 (a-h,o-z)
         save
         dimension x(*),y(*),w(*)
 c
 c       applies rapidly a random orthogonal matrix
-c       to the user-specified real vector x, 
-c       using the data in array w stored there by a preceding 
+c       to the user-specified real vector x,
+c       using the data in array w stored there by a preceding
 c       call to routine idd_random_transf_init.
 c
 c       input:
@@ -184,18 +184,18 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf_inverse(x,y,w)
         implicit real *8 (a-h,o-z)
         save
         dimension x(*),y(*),w(*)
 c
 c       applies rapidly a random orthogonal matrix
-c       to the user-specified real vector x, 
-c       using the data in array w stored there by a preceding 
+c       to the user-specified real vector x,
+c       using the data in array w stored there by a preceding
 c       call to routine idd_random_transf_init.
 c       The transformation applied by the present routine is
 c       the inverse of the transformation applied
@@ -224,10 +224,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf(x,y,w)
         implicit real *8 (a-h,o-z)
         save
@@ -235,8 +235,8 @@ c
         dimension w(*)
 c
 c       applies rapidly a random unitary matrix
-c       to the user-specified vector x, 
-c       using the data in array w stored there by a preceding 
+c       to the user-specified vector x,
+c       using the data in array w stored there by a preceding
 c       call to routine idz_random_transf_init.
 c
 c       input:
@@ -263,10 +263,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf_inverse(x,y,w)
         implicit real *8 (a-h,o-z)
         save
@@ -275,7 +275,7 @@ c
 c
 c       applies rapidly a random unitary matrix
 c       to the user-specified vector x,
-c       using the data in array w stored there by a preceding 
+c       using the data in array w stored there by a preceding
 c       call to routine idz_random_transf_init.
 c       The transformation applied by the present routine is
 c       the inverse of the transformation applied
@@ -305,10 +305,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf0_inv(nsteps,x,y,n,w2,albetas,iixs)
         implicit real *8 (a-h,o-z)
         save
@@ -337,10 +337,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf00_inv(x,y,n,albetas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -384,10 +384,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf0_inv(nsteps,x,y,n,w2,albetas,
      1      gammas,iixs)
         implicit real *8 (a-h,o-z)
@@ -418,10 +418,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf00_inv(x,y,n,albetas,gammas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -459,10 +459,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf0(nsteps,x,y,n,w2,albetas,iixs)
         implicit real *8 (a-h,o-z)
         save
@@ -490,10 +490,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf00(x,y,n,albetas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -527,10 +527,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf_init0(nsteps,n,albetas,gammas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -549,10 +549,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf_init00(n,albetas,gammas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -612,10 +612,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf0(nsteps,x,y,n,w2,albetas,
      1      gammas,iixs)
         implicit real *8 (a-h,o-z)
@@ -645,10 +645,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idz_random_transf00(x,y,n,albetas,gammas,ixs)
         implicit real *8 (a-h,o-z)
         save
@@ -705,10 +705,10 @@ c
         return
         end
 c
-c 
-c 
-c 
-c 
+c
+c
+c
+c
         subroutine idd_random_transf_init00(n,albetas,ixs)
         implicit real *8 (a-h,o-z)
         save

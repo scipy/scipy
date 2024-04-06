@@ -1,11 +1,16 @@
+_superlu_lib_c_args = ['-DUSE_VENDOR_BLAS=1']
 if is_windows
-  c_args = ['-DNO_TIMER=1']
-else
-  c_args = []
+  _superlu_lib_c_args += ['-DNO_TIMER=1']
 endif
-
-c_args += ['-DUSE_VENDOR_BLAS=1']
-
+_superlu_lib_c_args += [
+  Wno_unused_variable,
+  Wno_parentheses,
+  Wno_unused_label,
+  Wno_implicit_function_declaration,
+  Wno_switch,
+  Wno_unused_result,
+  Wno_maybe_uninitialized,
+]
 superlu_lib = static_library('superlu_lib',
   [
     'SuperLU/SRC/ccolumn_bmod.c',
@@ -33,6 +38,7 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/cpivotL.c',
     'SuperLU/SRC/cpivotgrowth.c',
     'SuperLU/SRC/cpruneL.c',
+    'SuperLU/SRC/creadMM.c',
     'SuperLU/SRC/creadhb.c',
     'SuperLU/SRC/creadrb.c',
     'SuperLU/SRC/creadtriple.c',
@@ -68,6 +74,7 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/dpivotL.c',
     'SuperLU/SRC/dpivotgrowth.c',
     'SuperLU/SRC/dpruneL.c',
+    'SuperLU/SRC/dreadMM.c',
     'SuperLU/SRC/dreadhb.c',
     'SuperLU/SRC/dreadrb.c',
     'SuperLU/SRC/dreadtriple.c',
@@ -143,6 +150,7 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/spivotL.c',
     'SuperLU/SRC/spivotgrowth.c',
     'SuperLU/SRC/spruneL.c',
+    'SuperLU/SRC/sreadMM.c',
     'SuperLU/SRC/sreadhb.c',
     'SuperLU/SRC/sreadrb.c',
     'SuperLU/SRC/sreadtriple.c',
@@ -177,6 +185,7 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zpivotL.c',
     'SuperLU/SRC/zpivotgrowth.c',
     'SuperLU/SRC/zpruneL.c',
+    'SuperLU/SRC/zreadMM.c',
     'SuperLU/SRC/zreadhb.c',
     'SuperLU/SRC/zreadrb.c',
     'SuperLU/SRC/zreadtriple.c',
@@ -186,22 +195,16 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zsp_blas3.c',
     'SuperLU/SRC/zutil.c'
   ],
-  c_args: [
-    '-Wno-unused-variable',
-    '-Wno-parentheses',
-    '-Wno-unused-label',
-    '-Wno-implicit-function-declaration',
-    '-Wno-switch'
-  ],
+  c_args: _superlu_lib_c_args,
   include_directories: ['SuperLU/SRC']
 )
 
-_superlu = py3.extension_module('_superlu',
+py3.extension_module('_superlu',
   ['_superlumodule.c', '_superlu_utils.c', '_superluobject.c'],
-  c_args: numpy_nodepr_api,
   link_with: [superlu_lib],
-  include_directories: [incdir_numpy, 'SuperLU/SRC'],
-  dependencies: [py3_dep, blas, lapack],
+  include_directories: ['SuperLU/SRC'],
+  link_args: version_link_args,
+  dependencies: [lapack, blas, np_dep],
   install: true,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )
@@ -211,7 +214,6 @@ py3.install_sources([
     '_add_newdocs.py',
     'linsolve.py'
   ],
-  pure: false,
   subdir: 'scipy/sparse/linalg/_dsolve'
 )
 

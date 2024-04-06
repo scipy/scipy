@@ -34,6 +34,15 @@ changed_installed_path = {
         'scipy/_lib/tests/test_scipy_version.py'
 }
 
+# We do not want the following tests to be checked
+exception_list_test_files = [
+    "_lib/array_api_compat/tests/test_all.py",
+    "_lib/array_api_compat/tests/test_array_namespace.py",
+    "_lib/array_api_compat/tests/test_common.py",
+    "_lib/array_api_compat/tests/test_isdtype.py",
+    "_lib/array_api_compat/tests/test_vendoring.py",
+]
+
 
 def main(install_dir):
     INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
@@ -45,13 +54,26 @@ def main(install_dir):
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
-        if not test_file in installed_test_files.keys():
+        if test_file in exception_list_test_files:
+            continue
+
+        if test_file not in installed_test_files.keys():
             raise Exception("%s is not installed" % scipy_test_files[test_file])
 
     print("----------- All the test files were installed --------------")
 
+    scipy_pyi_files = get_pyi_files(SCIPY_DIR)
+    installed_pyi_files = get_pyi_files(INSTALLED_DIR)
 
-def get_parent_dir(current_path, levels=1):
+    # Check *.pyi files detected in repo are installed
+    for pyi_file in scipy_pyi_files.keys():
+        if pyi_file not in installed_pyi_files.keys():
+            raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
+
+    print("----------- All the .pyi files were installed --------------")
+
+
+def get_suffix_path(current_path, levels=1):
     current_new = current_path
     for i in range(levels + 1):
         current_new = os.path.dirname(current_new)
@@ -62,13 +84,27 @@ def get_parent_dir(current_path, levels=1):
 def get_test_files(dir):
     test_files = dict()
     for path in glob.glob(f'{dir}/**/test_*.py', recursive=True):
-        suffix_path = get_parent_dir(path, 3)
+        suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
-        test_files[suffix_path] = path
+        if "highspy" not in suffix_path:
+            test_files[suffix_path] = path
 
     return test_files
 
 
+def get_pyi_files(dir):
+    pyi_files = dict()
+    for path in glob.glob(f'{dir}/**/*.pyi', recursive=True):
+        suffix_path = get_suffix_path(path, 2)
+        pyi_files[suffix_path] = path
+
+    return pyi_files
+
+
 if __name__ == '__main__':
+    if not len(sys.argv) == 2:
+        raise ValueError("Incorrect number of input arguments, need "
+                         "check_installation.py relpath/to/installed/scipy")
+
     install_dir = sys.argv[1]
     main(install_dir)

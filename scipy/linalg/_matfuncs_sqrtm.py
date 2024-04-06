@@ -10,18 +10,18 @@ import numpy as np
 
 from scipy._lib._util import _asarray_validated
 
-
 # Local imports
 from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
 from ._decomp_schur import schur, rsf2csf
 
 
+
 class SqrtmError(np.linalg.LinAlgError):
     pass
 
 
-from ._matfuncs_sqrtm_triu import within_block_loop
+from ._matfuncs_sqrtm_triu import within_block_loop  # noqa: E402
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -51,7 +51,7 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
@@ -100,7 +100,7 @@ def _sqrtm_triu(T, blocksize=64):
                                                             jstart:jstop])
 
             # Invoke LAPACK.
-            # For more details, see the solve_sylvester implemention
+            # For more details, see the solve_sylvester implementation
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
@@ -132,7 +132,11 @@ def sqrtm(A, disp=True, blocksize=64):
     Returns
     -------
     sqrtm : (N, N) ndarray
-        Value of the sqrt function at `A`
+        Value of the sqrt function at `A`. The dtype is float or complex.
+        The precision (data size) is determined based on the precision of
+        input `A`. When the dtype is float, the precision is the same as `A`.
+        When the dtype is complex, the precision is double that of `A`. The
+        precision might be clipped by each dtype precision range.
 
     errest : float
         (if disp == False)
@@ -147,6 +151,7 @@ def sqrtm(A, disp=True, blocksize=64):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import sqrtm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> r = sqrtm(a)
@@ -158,6 +163,7 @@ def sqrtm(A, disp=True, blocksize=64):
            [ 1.,  4.]])
 
     """
+    byte_size = np.asarray(A).dtype.itemsize
     A = _asarray_validated(A, check_finite=True, as_inexact=True)
     if len(A.shape) != 2:
         raise ValueError("Non-matrix input to matrix function.")
@@ -166,7 +172,11 @@ def sqrtm(A, disp=True, blocksize=64):
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
-        if not np.array_equal(T, np.triu(T)):
+        d0 = np.diagonal(T)
+        d1 = np.diagonal(T, -1)
+        eps = np.finfo(T.dtype).eps
+        needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
+        if needs_conversion.any():
             T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')
@@ -175,6 +185,16 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
+        if not np.iscomplexobj(X):
+            # float byte size range: f2 ~ f16
+            X = X.astype(f"f{np.clip(byte_size, 2, 16)}", copy=False)
+        else:
+            # complex byte size range: c8 ~ c32.
+            # c32(complex256) might not be supported in some environments.
+            if hasattr(np, 'complex256'):
+                X = X.astype(f"c{np.clip(byte_size*2, 8, 32)}", copy=False)
+            else:
+                X = X.astype(f"c{np.clip(byte_size*2, 8, 16)}", copy=False)
     except SqrtmError:
         failflag = True
         X = np.empty_like(A)

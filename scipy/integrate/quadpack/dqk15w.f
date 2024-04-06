@@ -1,4 +1,4 @@
-      subroutine dqk15w(f,w,p1,p2,p3,p4,kp,a,b,result,abserr,
+      recursive subroutine dqk15w(f,w,p1,p2,p3,p4,kp,a,b,result,abserr,
      *   resabs,resasc)
 c***begin prologue  dqk15w
 c***date written   810101   (yymmdd)

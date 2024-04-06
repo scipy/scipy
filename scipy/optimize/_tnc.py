@@ -36,8 +36,9 @@ from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
 from ._constraints import old_bound_to_new
+from scipy._lib._array_api import atleast_nd, array_namespace
 
-from numpy import inf, array, zeros, asfarray
+from numpy import inf, array, zeros
 
 __all__ = ['fmin_tnc']
 
@@ -282,7 +283,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
-                  maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
+                  maxCGit=-1, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
                   callback=None, finite_diff_rel_step=None, maxfun=None,
                   **unknown_options):
@@ -298,7 +299,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     scale : list of floats
         Scaling factors to apply to each variable. If None, the
         factors are up-low for interval bounded variables and
-        1+|x] fo the others. Defaults to None.
+        1+|x] for the others. Defaults to None.
     offset : float
         Value to subtract from each variable. If None, the
         offsets are (up+low)/2 for interval bounded variables
@@ -310,9 +311,6 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         iteration. If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
         max(1,min(50,n/2)). Defaults to -1.
-    maxiter : int, optional
-        Maximum number of function evaluations. This keyword is deprecated
-        in favor of `maxfun`. Only if `maxfun` is None is this keyword used.
     eta : float
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
@@ -357,7 +355,13 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     fmin = minfev
     pgtol = gtol
 
-    x0 = asfarray(x0).flatten()
+    xp = array_namespace(x0)
+    x0 = atleast_nd(x0, ndim=1, xp=xp)
+    dtype = xp.float64
+    if xp.isdtype(x0.dtype, "real floating"):
+        dtype = x0.dtype
+    x0 = xp.reshape(xp.astype(x0, dtype), -1)
+
     n = len(x0)
 
     if bounds is None:
@@ -408,10 +412,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         offset = array([])
 
     if maxfun is None:
-        if maxiter is not None:
-            maxfun = maxiter
-        else:
-            maxfun = max(100, 10*len(x0))
+        maxfun = max(100, 10*len(x0))
 
     rc, nf, nit, x, funv, jacv = moduleTNC.tnc_minimize(
         func_and_grad, x0, low, up, scale,
@@ -427,30 +428,3 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,
                           nit=nit, status=rc, message=RCSTRINGS[rc],
                           success=(-1 < rc < 3))
-
-
-if __name__ == '__main__':
-    # Examples for TNC
-
-    def example():
-        print("Example")
-
-        # A function to minimize
-        def function(x):
-            f = pow(x[0],2.0)+pow(abs(x[1]),3.0)
-            g = [0,0]
-            g[0] = 2.0*x[0]
-            g[1] = 3.0*pow(abs(x[1]),2.0)
-            if x[1] < 0:
-                g[1] = -g[1]
-            return f, g
-
-        # Optimizer call
-        x, nf, rc = fmin_tnc(function, [-7, 3], bounds=([-10, 1], [10, 10]))
-
-        print("After", nf, "function evaluations, TNC returned:", RCSTRINGS[rc])
-        print("x =", x)
-        print("exact value = [0, 1]")
-        print()
-
-    example()

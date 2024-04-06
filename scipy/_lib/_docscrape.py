@@ -13,7 +13,7 @@ import copy
 import sys
 
 
-def strip_blank_lines(l):  # noqa
+def strip_blank_lines(l):
     "Remove leading and trailing blank lines from a list of lines"
     while l and not l[0].strip():
         del l[0]
@@ -22,7 +22,7 @@ def strip_blank_lines(l):  # noqa
     return l
 
 
-class Reader(object):
+class Reader:
     """A line-based string reader.
 
     """
@@ -56,7 +56,7 @@ class Reader(object):
             return ''
 
     def seek_next_non_empty_line(self):
-        for l in self[self._l:]:  # noqa
+        for l in self[self._l:]:
             if l.strip():
                 break
             else:
@@ -102,7 +102,7 @@ class ParseError(Exception):
     def __str__(self):
         message = self.args[0]
         if hasattr(self, 'docstring'):
-            message = "%s in %r" % (message, self.docstring)
+            message = f"{message} in {self.docstring!r}"
         return message
 
 
@@ -329,7 +329,7 @@ class NumpyDocString(Mapping):
 
     def _parse_index(self, section, content):
         """
-        .. index: default
+        .. index:: default
            :refguide: something, else, and more
 
         """
@@ -373,7 +373,7 @@ class NumpyDocString(Mapping):
         self._parse_summary()
 
         sections = list(self._read_sections())
-        section_names = set([section for section, content in sections])
+        section_names = {section for section, content in sections}
 
         has_returns = 'Returns' in section_names
         has_yields = 'Yields' in section_names
@@ -414,12 +414,11 @@ class NumpyDocString(Mapping):
                 filename = inspect.getsourcefile(self._obj)
             except TypeError:
                 filename = None
-            msg = msg + (" in the docstring of %s in %s."
-                         % (self._obj, filename))
+            msg = msg + (f" in the docstring of {self._obj} in {filename}.")
         if error:
             raise ValueError(msg)
         else:
-            warn(msg)
+            warn(msg, stacklevel=3)
 
     # string conversion routines
 
@@ -486,9 +485,9 @@ class NumpyDocString(Mapping):
             links = []
             for func, role in funcs:
                 if role:
-                    link = ':%s:`%s`' % (role, func)
+                    link = f':{role}:`{func}`'
                 elif func_role:
-                    link = ':%s:`%s`' % (func_role, func)
+                    link = f':{func_role}:`{func}`'
                 else:
                     link = "`%s`_" % func
                 links.append(link)
@@ -518,7 +517,7 @@ class NumpyDocString(Mapping):
             if section == 'default':
                 continue
             output_index = True
-            out += ['   :%s: %s' % (section, ', '.join(references))]
+            out += ['   :{}: {}'.format(section, ', '.join(references))]
         if output_index:
             return out
         else:
@@ -542,12 +541,12 @@ class NumpyDocString(Mapping):
         return '\n'.join(out)
 
 
-def indent(str, indent=4):  # noqa
+def indent(str, indent=4):
     indent_str = ' '*indent
     if str is None:
         return indent_str
     lines = str.split('\n')
-    return '\n'.join(indent_str + l for l in lines)  # noqa
+    return '\n'.join(indent_str + l for l in lines)
 
 
 def dedent_lines(lines):
@@ -589,10 +588,10 @@ class FunctionDoc(NumpyDocString):
         if self._role:
             if self._role not in roles:
                 print("Warning: invalid role %s" % self._role)
-            out += '.. %s:: %s\n    \n\n' % (roles.get(self._role, ''),
+            out += '.. {}:: {}\n    \n\n'.format(roles.get(self._role, ''),
                                              func_name)
 
-        out += super(FunctionDoc, self).__str__(func_role=self._role)
+        out += super().__str__(func_role=self._role)
         return out
 
 
@@ -607,7 +606,7 @@ class ClassDoc(NumpyDocString):
         self._cls = cls
 
         if 'sphinx' in sys.modules:
-            from sphinx.ext.autodoc import ALL  # type: ignore[import]
+            from sphinx.ext.autodoc import ALL
         else:
             ALL = object()
 

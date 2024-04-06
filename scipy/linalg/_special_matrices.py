@@ -1,8 +1,9 @@
 import math
+
 import numpy as np
 from numpy.lib.stride_tricks import as_strided
 
-__all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+__all__ = ['toeplitz', 'circulant', 'hankel',
            'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
            'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
            'fiedler', 'fiedler_companion', 'convolution_matrix']
@@ -11,129 +12,6 @@ __all__ = ['tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
 # -----------------------------------------------------------------------------
 #  matrix construction functions
 # -----------------------------------------------------------------------------
-
-#
-# *Note*: tri{,u,l} is implemented in NumPy, but an important bug was fixed in
-# 2.0.0.dev-1af2f3, the following tri{,u,l} definitions are here for backwards
-# compatibility.
-
-def tri(N, M=None, k=0, dtype=None):
-    """
-    Construct (N, M) matrix filled with ones at and below the kth diagonal.
-
-    The matrix has A[i,j] == 1 for j <= i + k
-
-    Parameters
-    ----------
-    N : int
-        The size of the first dimension of the matrix.
-    M : int or None, optional
-        The size of the second dimension of the matrix. If `M` is None,
-        `M = N` is assumed.
-    k : int, optional
-        Number of subdiagonal below which matrix is filled with ones.
-        `k` = 0 is the main diagonal, `k` < 0 subdiagonal and `k` > 0
-        superdiagonal.
-    dtype : dtype, optional
-        Data type of the matrix.
-
-    Returns
-    -------
-    tri : (N, M) ndarray
-        Tri matrix.
-
-    Examples
-    --------
-    >>> from scipy.linalg import tri
-    >>> tri(3, 5, 2, dtype=int)
-    array([[1, 1, 1, 0, 0],
-           [1, 1, 1, 1, 0],
-           [1, 1, 1, 1, 1]])
-    >>> tri(3, 5, -1, dtype=int)
-    array([[0, 0, 0, 0, 0],
-           [1, 0, 0, 0, 0],
-           [1, 1, 0, 0, 0]])
-
-    """
-    if M is None:
-        M = N
-    if isinstance(M, str):
-        # pearu: any objections to remove this feature?
-        #       As tri(N,'d') is equivalent to tri(N,dtype='d')
-        dtype = M
-        M = N
-    m = np.greater_equal.outer(np.arange(k, N+k), np.arange(M))
-    if dtype is None:
-        return m
-    else:
-        return m.astype(dtype)
-
-
-def tril(m, k=0):
-    """
-    Make a copy of a matrix with elements above the kth diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array_like
-        Matrix whose elements to return
-    k : int, optional
-        Diagonal above which to zero elements.
-        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
-        `k` > 0 superdiagonal.
-
-    Returns
-    -------
-    tril : ndarray
-        Return is the same shape and type as `m`.
-
-    Examples
-    --------
-    >>> from scipy.linalg import tril
-    >>> tril([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 0,  0,  0],
-           [ 4,  0,  0],
-           [ 7,  8,  0],
-           [10, 11, 12]])
-
-    """
-    m = np.asarray(m)
-    out = tri(m.shape[0], m.shape[1], k=k, dtype=m.dtype.char) * m
-    return out
-
-
-def triu(m, k=0):
-    """
-    Make a copy of a matrix with elements below the kth diagonal zeroed.
-
-    Parameters
-    ----------
-    m : array_like
-        Matrix whose elements to return
-    k : int, optional
-        Diagonal below which to zero elements.
-        `k` == 0 is the main diagonal, `k` < 0 subdiagonal and
-        `k` > 0 superdiagonal.
-
-    Returns
-    -------
-    triu : ndarray
-        Return matrix with zeroed elements below the kth diagonal and has
-        same shape and type as `m`.
-
-    Examples
-    --------
-    >>> from scipy.linalg import triu
-    >>> triu([[1,2,3],[4,5,6],[7,8,9],[10,11,12]], -1)
-    array([[ 1,  2,  3],
-           [ 4,  5,  6],
-           [ 0,  8,  9],
-           [ 0,  0, 12]])
-
-    """
-    m = np.asarray(m)
-    out = (1 - tri(m.shape[0], m.shape[1], k - 1, m.dtype.char)) * m
-    return out
 
 
 def toeplitz(c, r=None):
@@ -458,6 +336,12 @@ def kron(a, b):
            [3, 3, 3, 4, 4, 4]])
 
     """
+    # accommodate empty arrays
+    if a.size == 0 or b.size == 0:
+        m = a.shape[0] * b.shape[0]
+        n = a.shape[1] * b.shape[1]
+        return np.empty_like(a, shape=(m, n))
+
     if not a.flags['CONTIGUOUS']:
         a = np.reshape(a, a.shape)
     if not b.flags['CONTIGUOUS']:
@@ -500,6 +384,7 @@ def block_diag(*arrs):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import block_diag
     >>> A = [[1, 0],
     ...      [0, 1]]
@@ -538,7 +423,7 @@ def block_diag(*arrs):
                          "greater than 2: %s" % bad_args)
 
     shapes = np.array([a.shape for a in arrs])
-    out_dtype = np.find_common_type([arr.dtype for arr in arrs], [])
+    out_dtype = np.result_type(*[arr.dtype for arr in arrs])
     out = np.zeros(np.sum(shapes, axis=0), dtype=out_dtype)
 
     r, c = 0, 0
@@ -765,9 +650,9 @@ def invhilbert(n, exact=False):
         for j in range(0, i + 1):
             s = i + j
             invh[i, j] = ((-1) ** s * (s + 1) *
-                          comb(n + i, n - j - 1, exact) *
-                          comb(n + j, n - i - 1, exact) *
-                          comb(s, i, exact) ** 2)
+                          comb(n + i, n - j - 1, exact=exact) *
+                          comb(n + j, n - i - 1, exact=exact) *
+                          comb(s, i, exact=exact) ** 2)
             if i != j:
                 invh[j, i] = invh[i, j]
     return invh
@@ -1007,6 +892,7 @@ def dft(n, scale=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import dft
     >>> np.set_printoptions(precision=2, suppress=True)  # for compact output
     >>> m = dft(5)
@@ -1028,7 +914,7 @@ def dft(n, scale=None):
     """
     if scale not in [None, 'sqrtn', 'n']:
         raise ValueError("scale must be None, 'sqrtn', or 'n'; "
-                         "%r is not valid." % (scale,))
+                         f"{scale!r} is not valid.")
 
     omegas = np.exp(-2j * np.pi * np.arange(n) / n).reshape(-1, 1)
     m = omegas ** np.arange(n)
@@ -1073,6 +959,7 @@ def fiedler(a):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import det, inv, fiedler
     >>> a = [1, 4, 12, 45, 77]
     >>> n = len(a)
@@ -1133,6 +1020,10 @@ def fiedler_companion(a):
     c : (N-1, N-1) ndarray
         Resulting companion matrix
 
+    See Also
+    --------
+    companion
+
     Notes
     -----
     Similar to `companion` the leading coefficient should be nonzero. In the case
@@ -1142,10 +1033,6 @@ def fiedler_companion(a):
 
     .. versionadded:: 1.3.0
 
-    See Also
-    --------
-    companion
-
     References
     ----------
     .. [1] M. Fiedler, " A note on companion matrices", Linear Algebra and its
@@ -1153,6 +1040,7 @@ def fiedler_companion(a):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import fiedler_companion, eigvals
     >>> p = np.poly(np.arange(1, 9, 2))  # [1., -16., 86., -176., 105.]
     >>> fc = fiedler_companion(p)
@@ -1300,6 +1188,7 @@ def convolution_matrix(a, n, mode='full'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import convolution_matrix
     >>> A = convolution_matrix([-1, 4, -2], 5, mode='same')
     >>> A

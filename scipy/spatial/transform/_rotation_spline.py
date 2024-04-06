@@ -278,6 +278,7 @@ class RotationSpline:
     Examples
     --------
     >>> from scipy.spatial.transform import Rotation, RotationSpline
+    >>> import numpy as np
 
     Define the sequence of times and rotations from the Euler angles:
 

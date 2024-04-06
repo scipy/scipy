@@ -18,7 +18,6 @@ import numpy as np
 from numpy.testing import assert_equal, assert_allclose, assert_array_less
 from pytest import raises as assert_raises
 from scipy._lib._util import check_random_state
-from scipy._lib._pep440 import Version
 
 
 class TestDualAnnealing:
@@ -148,8 +147,6 @@ class TestDualAnnealing:
         assert_equal(res1.x, res2.x)
         assert_equal(res1.x, res3.x)
 
-    @pytest.mark.skipif(Version(np.__version__) < Version('1.17'),
-                        reason='Generator not available for numpy, < 1.17')
     def test_rand_gen(self):
         # check that np.random.Generator can be used (numpy >= 1.17)
         # obtain a np.random.Generator object
@@ -180,23 +177,20 @@ class TestDualAnnealing:
                       invalid_bounds)
 
     def test_deprecated_local_search_options_bounds(self):
-        func = lambda x: np.sum((x-5) * (x-1))
+        def func(x):
+            return np.sum((x - 5) * (x - 1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
-        with pytest.warns(DeprecationWarning, match=r"dual_annealing argument "):
-            dual_annealing(
-                func,
-                bounds=bounds,
-                local_search_options={"method": "SLSQP", "bounds": bounds})
 
         with pytest.warns(RuntimeWarning, match=r"Method CG cannot handle "):
             dual_annealing(
                 func,
                 bounds=bounds,
                 minimizer_kwargs={"method": "CG", "bounds": bounds})
-            
+
     def test_minimizer_kwargs_bounds(self):
-        func = lambda x: np.sum((x-5) * (x-1))
+        def func(x):
+            return np.sum((x - 5) * (x - 1))
         bounds = list(zip([-6, -5], [6, 5]))
         # Test bounds can be passed (see gh-10831)
         dual_annealing(
@@ -285,7 +279,8 @@ class TestDualAnnealing:
         assert ret.njev == self.ngev
 
     def test_from_docstring(self):
-        func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+        def func(x):
+            return np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
         lw = [-5.12] * 10
         up = [5.12] * 10
         ret = dual_annealing(func, bounds=list(zip(lw, up)), seed=1234)
@@ -362,6 +357,23 @@ class TestDualAnnealing:
 
         # test that found minima, function evaluations and iterations match
         assert_allclose(ret_bounds_class.x, ret_bounds_list.x, atol=1e-8)
-        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-8)
+        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-7)
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
+
+    def test_callable_jac_with_args_gh11052(self):
+        # dual_annealing used to fail when `jac` was callable and `args` were
+        # used; check that this is resolved. Example is from gh-11052.
+        rng = np.random.default_rng(94253637693657847462)
+        def f(x, power):
+            return np.sum(np.exp(x ** power))
+
+        def jac(x, power):
+            return np.exp(x ** power) * power * x ** (power - 1)
+
+        res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='L-BFGS-B'))
+        res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='L-BFGS-B',
+                                                    jac=jac))
+        assert_allclose(res1.fun, res2.fun, rtol=1e-6)

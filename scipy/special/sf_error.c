@@ -5,6 +5,7 @@
 
 #include "sf_error.h"
 
+
 const char *sf_error_messages[] = {
     "no error",
     "singularity",
@@ -19,49 +20,25 @@ const char *sf_error_messages[] = {
     NULL
 };
 
-/* If this isn't volatile clang tries to optimize it away */
-static volatile sf_action_t sf_error_actions[] = {
-    SF_ERROR_IGNORE, /* SF_ERROR_OK */
-    SF_ERROR_IGNORE, /* SF_ERROR_SINGULAR */
-    SF_ERROR_IGNORE, /* SF_ERROR_UNDERFLOW */
-    SF_ERROR_IGNORE, /* SF_ERROR_OVERFLOW */
-    SF_ERROR_IGNORE, /* SF_ERROR_SLOW */
-    SF_ERROR_IGNORE, /* SF_ERROR_LOSS */
-    SF_ERROR_IGNORE, /* SF_ERROR_NO_RESULT */
-    SF_ERROR_IGNORE, /* SF_ERROR_DOMAIN */
-    SF_ERROR_IGNORE, /* SF_ERROR_ARG */
-    SF_ERROR_IGNORE, /* SF_ERROR_OTHER */
-    SF_ERROR_IGNORE  /* SF_ERROR__LAST */
-};
 
 extern int wrap_PyUFunc_getfperr(void);
 
 
-void sf_error_set_action(sf_error_t code, sf_action_t action)
+void sf_error_v(const char *func_name, sf_error_t code, const char *fmt, va_list ap)
 {
-    sf_error_actions[(int)code] = action;
-}
-
-
-sf_action_t sf_error_get_action(sf_error_t code)
-{
-    return sf_error_actions[(int)code];
-}
-
-
-void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
-{
+    /* Internal function which takes a va_list instead of variadic args.
+     * Makes this easier to wrap in error handling used in special C++
+     * namespace for special function kernels provided by SciPy. */
     PyGILState_STATE save;
     PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
     sf_action_t action;
-    va_list ap;
 
     if ((int)code < 0 || (int)code >= 10) {
 	code = SF_ERROR_OTHER;
     }
-    action = sf_error_get_action(code);
+    action = scipy_sf_error_get_action(code);
     if (action == SF_ERROR_IGNORE) {
         return;
     }
@@ -71,9 +48,7 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
     }
 
     if (fmt != NULL && fmt[0] != '\0') {
-        va_start(ap, fmt);
         PyOS_vsnprintf(info, 1024, fmt, ap);
-        va_end(ap);
         PyOS_snprintf(msg, 2048, "scipy.special/%s: (%s) %s",
                       func_name, sf_error_messages[(int)code], info);
     }
@@ -108,6 +83,9 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 	/* Sentinel, should never get here */
 	py_SpecialFunctionWarning = NULL;
     }
+    /* Done with scipy_special */
+    Py_DECREF(scipy_special);
+
     if (py_SpecialFunctionWarning == NULL) {
 	PyErr_Clear();
 	goto skip_warn;
@@ -133,6 +111,14 @@ void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 #else
 	;
 #endif
+}
+
+
+void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+    sf_error_v(func_name, code, fmt, ap);
+    va_end(ap);
 }
 
 

@@ -95,8 +95,8 @@ extern double MINLOG;
 /* exp() of anything below this returns 0 */
 static const int MIN_EXPABLE = (-708 - 38);
 
-#ifndef NPY_LOGSQRT2PI
-#define NPY_LOGSQRT2PI 0.91893853320467274178032973640561764
+#ifndef LOGSQRT2PI
+#define LOGSQRT2PI 0.91893853320467274178032973640561764
 #endif
 
 /* Struct to hold the CDF, SF and PDF, which are computed simultaneously */
@@ -162,14 +162,14 @@ _kolmogorov(double x)
     double sf, cdf, pdf;
     ThreeProbs ret;
 
-    if (npy_isnan(x)) {
-        RETURN_3PROBS(NPY_NAN, NPY_NAN, NPY_NAN);
+    if (isnan(x)) {
+        RETURN_3PROBS(NAN, NAN, NAN);
     }
     if (x <= 0) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
     /* x <= 0.040611972203751713 */
-    if (x <= (double)NPY_PI/sqrt(-MIN_EXPABLE * 8)) {
+    if (x <= (double)M_PI/sqrt(-MIN_EXPABLE * 8)) {
         RETURN_3PROBS(1.0, 0.0, 0);
     }
 
@@ -180,8 +180,8 @@ _kolmogorov(double x)
          *  w = sqrt(2pi)/x
          *  P = w*u * (1 + u^8 + u^24 + u^48 + ...)
          */
-        double w = sqrt(2 * NPY_PI)/x;
-        double logu8 = -NPY_PI * NPY_PI/(x * x); /* log(u^8) */
+        double w = sqrt(2 * M_PI)/x;
+        double logu8 = -M_PI * M_PI/(x * x); /* log(u^8) */
         double u = exp(logu8/8);
         if (u == 0) {
             /*
@@ -201,7 +201,7 @@ _kolmogorov(double x)
             P = 1 + u8 * P;
             D = 1*1 + u8 * D;
 
-            D = NPY_PI * NPY_PI/4/(x*x) * D - P;
+            D = M_PI * M_PI/4/(x*x) * D - P;
             D *=  w * u/x;
             P = w * u * P;
         }
@@ -256,36 +256,35 @@ _kolmogi(double psf, double pcdf)
 {
     double x, t;
     double xmin = 0;
-    double xmax = NPY_INFINITY;
+    double xmax = INFINITY;
     int iterations;
     double a = xmin, b = xmax;
 
     if (!(psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
         sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
         sf_error("kolmogi", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     if (pcdf == 0.0) {
         return 0.0;
     }
     if (psf == 0.0) {
-        return NPY_INFINITY;
+        return INFINITY;
     }
 
     if (pcdf <= 0.5) {
         /* p ~ (sqrt(2pi)/x) *exp(-pi^2/8x^2).  Generate lower and upper bounds  */
         double logpcdf = log(pcdf);
-        const double SQRT2 = NPY_SQRT2;
-        const double LOGSQRT2 = NPY_LOGSQRT2PI;
-        /* Nnow that 1 >= x >= sqrt(p) */
+        const double SQRT2 = M_SQRT2;
+        /* Now that 1 >= x >= sqrt(p) */
         /* Iterate twice: x <- pi/(sqrt(8) sqrt(log(sqrt(2pi)) - log(x) - log(pdf))) */
-        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf/2 - LOGSQRT2)));
-        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + 0 - LOGSQRT2)));
-        a = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(a) - LOGSQRT2)));
-        b = NPY_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(b) - LOGSQRT2)));
+        a = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + logpcdf/2 - LOGSQRT2PI)));
+        b = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + 0 - LOGSQRT2PI)));
+        a = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(a) - LOGSQRT2PI)));
+        b = M_PI / (2 * SQRT2 * sqrt(-(logpcdf + log(b) - LOGSQRT2PI)));
         x =  (a + b) / 2.0;
     }
     else {
@@ -383,8 +382,8 @@ _kolmogi(double psf, double pcdf)
 double
 kolmogorov(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     return _kolmogorov(x).sf;
 }
@@ -392,8 +391,8 @@ kolmogorov(double x)
 double
 kolmogc(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     return _kolmogorov(x).cdf;
 }
@@ -401,8 +400,8 @@ kolmogc(double x)
 double
 kolmogp(double x)
 {
-    if (npy_isnan(x)) {
-        return NPY_NAN;
+    if (isnan(x)) {
+        return NAN;
     }
     if (x <= 0) {
         return -0.0;
@@ -416,8 +415,8 @@ kolmogp(double x)
 double
 kolmogi(double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _kolmogi(p, 1-p);
 }
@@ -428,8 +427,8 @@ kolmogi(double p)
 double
 kolmogci(double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _kolmogi(1-p, p);
 }
@@ -585,9 +584,9 @@ pow2Scaled_D(double2 a, int m, int *pExponent)
      *              <= 665/(1-y.x[0])
      * Quick check to see if we might need to break up the exponentiation
      */
-    if (m*(y.x[0]-1) / y.x[0] < -_MAX_EXPONENT * NPY_LOGE2) {
+    if (m*(y.x[0]-1) / y.x[0] < -_MAX_EXPONENT * M_LN2) {
         /* Now do it carefully, calling log() */
-        double lg2y = log(y.x[0]) / NPY_LOGE2;
+        double lg2y = log(y.x[0]) / M_LN2;
         double lgAns = m * lg2y;
         if (lgAns <= -_MAX_EXPONENT) {
             maxExpt = (int)(nextPowerOf2(-_MAX_EXPONENT / lg2y + 1)/2);
@@ -724,7 +723,7 @@ _smirnov(int n, double x)
     ThreeProbs ret;
 
     if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
-        RETURN_3PROBS(NPY_NAN, NPY_NAN, NPY_NAN);
+        RETURN_3PROBS(NAN, NAN, NAN);
     }
     if (n == 1) {
         RETURN_3PROBS(1-x, x, 1.0);
@@ -775,10 +774,16 @@ _smirnov(int n, double x)
     /* Special case:  n is so big, take too long to compute */
     if (n > SMIRNOV_MAX_COMPUTE_N) {
         /* p ~ e^(-(6nx+1)^2 / 18n) */
-        double logp = -pow(6*n*x+1.0, 2)/18.0/n;
-        sf = exp(logp);
-        cdf = 1 - sf;
-        pdf = (6 * nx + 1) * 2 * sf/3;
+        double logp = -pow(6.0*n*x+1, 2)/18.0/n;
+        /* Maximise precision for small p-value. */
+        if (logp < -M_LN2) {
+            sf = exp(logp);
+            cdf = 1 - sf;
+        } else {
+            cdf = -expm1(logp);
+            sf = 1 - cdf;
+        }
+        pdf = (6.0*n*x+1) * 2 * sf/3;
         RETURN_3PROBS(sf, cdf, pdf);
     }
     {
@@ -909,11 +914,11 @@ _smirnovi(int n, double psf, double pcdf)
 
     if (!(n > 0 && psf >= 0.0 && pcdf >= 0.0 && pcdf <= 1.0 && psf <= 1.0)) {
         sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     if (fabs(1.0 - pcdf - psf) >  4* DBL_EPSILON) {
         sf_error("smirnovi", SF_ERROR_DOMAIN, NULL);
-        return (NPY_NAN);
+        return (NAN);
     }
     /* STEP 1: Handle psf==0, or pcdf == 0 */
     if (pcdf == 0.0) {
@@ -944,7 +949,7 @@ _smirnovi(int n, double psf, double pcdf)
      */
     maxlogpcdf = logpow4(1, 0.0, n, 0, 1) + logpow4(n, 1, n, 0, n - 1);
     if (logpcdf <= maxlogpcdf) {
-        double xmin = pcdf / NPY_El;
+        double xmin = pcdf / SCIPY_El;
         double xmax = pcdf;
         double P1 = pow4(n, 1, n, 0, n - 1) / n;
         double R = pcdf/P1;
@@ -1073,8 +1078,8 @@ double
 smirnov(int n, double d)
 {
     ThreeProbs probs;
-    if (npy_isnan(d)) {
-        return NPY_NAN;
+    if (isnan(d)) {
+        return NAN;
     }
     probs = _smirnov(n, d);
     return probs.sf;
@@ -1084,8 +1089,8 @@ double
 smirnovc(int n, double d)
 {
     ThreeProbs probs;
-    if (npy_isnan(d)) {
-        return NPY_NAN;
+    if (isnan(d)) {
+        return NAN;
     }
     probs = _smirnov(n, d);
     return probs.cdf;
@@ -1101,7 +1106,7 @@ smirnovp(int n, double d)
 {
     ThreeProbs probs;
     if (!(n > 0 && d >= 0.0 && d <= 1.0)) {
-        return (NPY_NAN);
+        return (NAN);
     }
     if (n == 1) {
          /* Slope is always -1 for n=1, even at d = 1.0 */
@@ -1125,8 +1130,8 @@ smirnovp(int n, double d)
 double
 smirnovi(int n, double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _smirnovi(n, p, 1-p);
 }
@@ -1134,8 +1139,8 @@ smirnovi(int n, double p)
 double
 smirnovci(int n, double p)
 {
-    if (npy_isnan(p)) {
-        return NPY_NAN;
+    if (isnan(p)) {
+        return NAN;
     }
     return _smirnovi(n, 1-p, p);
 }

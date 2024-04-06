@@ -340,7 +340,7 @@ def _inverse_squaring_helper(T0, theta):
     as lines 4--35 in algorithm (3.1) of [1]_, and
     as lines 3--34 in algorithm (4.1) of [2]_.
     The instances of 'goto line 38' in algorithm (3.1) of [1]_
-    probably mean 'goto line 36' and have been intepreted accordingly.
+    probably mean 'goto line 36' and have been interpreted accordingly.
 
     References
     ----------
@@ -367,8 +367,8 @@ def _inverse_squaring_helper(T0, theta):
     s0 = 0
     tmp_diag = np.diag(T)
     if np.count_nonzero(tmp_diag) != n:
-        raise Exception('internal inconsistency')
-    while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
+        raise Exception('Diagonal entries of T must be nonzero')
+    while np.max(np.absolute(tmp_diag - 1), initial=0.) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
 
@@ -442,7 +442,7 @@ def _inverse_squaring_helper(T0, theta):
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
     if not np.array_equal(R, np.triu(R)):
-        raise Exception('internal inconsistency')
+        raise Exception('R is not upper triangular')
     return R, s, m
 
 
@@ -461,7 +461,7 @@ def _fractional_power_pade_constant(i, t):
         j = (i - 1) // 2
         return (-j - t) / (2 * (2*j + 1))
     else:
-        raise Exception('internal error')
+        raise Exception(f'unnexpected value of i, i = {i}')
 
 
 def _fractional_power_pade(R, t, m):
@@ -510,7 +510,7 @@ def _fractional_power_pade(R, t, m):
         Y = solve_triangular(ident + Y, rhs)
     U = ident + Y
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -589,7 +589,7 @@ def _remainder_matrix_power_triu(T, t):
                         f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
                         U[j, j+1] = f12
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -761,7 +761,7 @@ def _logm_triu(T):
     # Construct T0 with the appropriate type,
     # depending on the dtype and the spectrum of T.
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
     if keep_it_real:
         T0 = T
     else:
@@ -813,7 +813,7 @@ def _logm_triu(T):
 
     # Return the logm of the upper triangular matrix.
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -824,7 +824,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
     abs_diag = np.absolute(np.diag(T))
     if np.any(abs_diag == 0):
         exact_singularity_msg = 'The logm input matrix is exactly singular.'
-        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning)
+        warnings.warn(exact_singularity_msg, LogmExactlySingularWarning, stacklevel=3)
         if not inplace:
             T = T.copy()
         n = T.shape[0]
@@ -833,7 +833,7 @@ def _logm_force_nonsingular_triangular_matrix(T, inplace=False):
                 T[i, i] = tri_eps
     elif np.any(abs_diag < tri_eps):
         near_singularity_msg = 'The logm input matrix may be nearly singular.'
-        warnings.warn(near_singularity_msg, LogmNearlySingularWarning)
+        warnings.warn(near_singularity_msg, LogmNearlySingularWarning, stacklevel=3)
     return T
 
 
@@ -866,7 +866,7 @@ def _logm(A):
     try:
         if np.array_equal(A, np.triu(A)):
             A = _logm_force_nonsingular_triangular_matrix(A)
-            if np.min(np.diag(A)) < 0:
+            if np.min(np.diag(A), initial=0.) < 0:
                 A = A.astype(complex)
             return _logm_triu(A)
         else:

@@ -11,7 +11,6 @@ Spherical Voronoi Code
 # Distributed under the same BSD license as SciPy.
 #
 
-import warnings
 import numpy as np
 import scipy
 from . import _voronoi
@@ -112,6 +111,7 @@ class SphericalVoronoi:
     --------
     Do some imports and take some points on a cube:
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.spatial import SphericalVoronoi, geometric_slerp
     >>> from mpl_toolkits.mplot3d import proj3d
@@ -167,15 +167,12 @@ class SphericalVoronoi:
     def __init__(self, points, radius=1, center=None, threshold=1e-06):
 
         if radius is None:
-            radius = 1.
-            warnings.warn('`radius` is `None`. '
-                          'This will raise an error in a future version. '
-                          'Please provide a floating point number '
-                          '(i.e. `radius=1`).',
-                          DeprecationWarning)
+            raise ValueError('`radius` is `None`. '
+                             'Please provide a floating point number '
+                             '(i.e. `radius=1`).')
 
         self.radius = float(radius)
-        self.points = np.array(points).astype(np.double)
+        self.points = np.array(points).astype(np.float64)
         self._dim = self.points.shape[1]
         if center is None:
             self.center = np.zeros(self._dim)
@@ -186,7 +183,7 @@ class SphericalVoronoi:
         self._rank = np.linalg.matrix_rank(self.points - self.points[0],
                                            tol=threshold * self.radius)
         if self._rank < self._dim:
-            raise ValueError("Rank of input points must be at least {0}".format(self._dim))
+            raise ValueError(f"Rank of input points must be at least {self._dim}")
 
         if cKDTree(self.points).query_pairs(threshold * self.radius):
             raise ValueError("Duplicate generators present.")
@@ -307,9 +304,8 @@ class SphericalVoronoi:
         arcs = self.points[self._simplices] - self.center
 
         # Calculate the angle subtended by arcs
-        cosine = np.einsum('ij,ij->i', arcs[:, 0], arcs[:, 1])
-        sine = np.abs(np.linalg.det(arcs))
-        theta = np.arctan2(sine, cosine)
+        d = np.sum((arcs[:, 1] - arcs[:, 0]) ** 2, axis=1)
+        theta = np.arccos(1 - (d / (2 * (self.radius ** 2))))
 
         # Get areas using A = r * theta
         areas = self.radius * theta

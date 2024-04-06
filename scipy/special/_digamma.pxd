@@ -11,18 +11,12 @@
 #
 
 import cython
-from libc.math cimport ceil, fabs, M_PI
-from ._complexstuff cimport number_t, nan, zlog, zabs
+from libc.math cimport ceil, fabs, M_PI, NAN
+from ._complexstuff cimport number_t, zlog, zabs
 from ._trig cimport sinpi, cospi
 from ._cephes cimport zeta, psi
 from . cimport sf_error
 
-# Use the asymptotic series for z away from the negative real axis
-# with abs(z) > smallabsz.
-DEF smallabsz = 16
-# Use the reflection principle for z with z.real < 0 that are within
-# smallimag of the negative real axis.
-DEF smallimag = 6
 # Relative tolerance for series
 DEF tol = 2.220446092504131e-16
 # All of the following were computed with mpmath
@@ -36,7 +30,7 @@ DEF negroot = -0.504083008264455409
 DEF negrootval = 7.2897639029768949e-17
 
 
-cdef inline double digamma(double z) nogil:
+cdef inline double digamma(double z) noexcept nogil:
     """Wrap Cephes' psi to take advantage of the series expansion around
     the smallest negative zero.
 
@@ -48,7 +42,7 @@ cdef inline double digamma(double z) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double complex cdigamma(double complex z) nogil:
+cdef inline double complex cdigamma(double complex z) noexcept nogil:
     """
     Compute the digamma function for complex arguments. The strategy
     is:
@@ -69,11 +63,17 @@ cdef inline double complex cdigamma(double complex z) nogil:
         double absz = zabs(z)
         double complex res = 0
         double complex init
+        # Use the asymptotic series for z away from the negative real axis
+        # with abs(z) > smallabsz.
+        int smallabsz = 16
+        # Use the reflection principle for z with z.real < 0 that are within
+        # smallimag of the negative real axis.
+        # int smallimag = 6  # unused below except in a comment
 
     if z.real <= 0 and ceil(z.real) == z:
         # Poles
         sf_error.error("digamma", sf_error.SINGULAR, NULL)
-        return nan + 1j*nan
+        return NAN + 1j*NAN
     elif zabs(z - negroot) < 0.3:
         # First negative root
         return zeta_series(z, negroot, negrootval)
@@ -113,7 +113,7 @@ cdef inline double complex cdigamma(double complex z) nogil:
 @cython.cdivision(True)
 cdef inline double complex forward_recurrence(double complex z,
                                               double complex psiz,
-                                               int n) nogil:
+                                               int n) noexcept nogil:
     """
     Compute digamma(z + n) using digamma(z) using the recurrence
     relation
@@ -135,7 +135,7 @@ cdef inline double complex forward_recurrence(double complex z,
 @cython.cdivision(True)
 cdef inline double complex backward_recurrence(double complex z,
                                                double complex psiz,
-                                               int n) nogil:
+                                               int n) noexcept nogil:
     """
     Compute digamma(z - n) using digamma(z) and a recurrence
     relation.
@@ -151,7 +151,7 @@ cdef inline double complex backward_recurrence(double complex z,
 
 
 @cython.cdivision(True)
-cdef inline double complex asymptotic_series(double complex z) nogil:
+cdef inline double complex asymptotic_series(double complex z) noexcept nogil:
     """
     Evaluate digamma using an asymptotic series. See
 
@@ -185,7 +185,7 @@ cdef inline double complex asymptotic_series(double complex z) nogil:
     return res
 
 
-cdef inline number_t zeta_series(number_t z, double root, double rootval) nogil:
+cdef inline number_t zeta_series(number_t z, double root, double rootval) noexcept nogil:
     """
     The coefficients of the Taylor series for digamma at any point can
     be expressed in terms of the Hurwitz zeta function. If we

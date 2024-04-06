@@ -1,27 +1,28 @@
 import operator
+from math import prod
 
 import numpy as np
-from numpy.core.multiarray import normalize_axis_index
+from scipy._lib._util import normalize_axis_index
 from scipy.linalg import (get_lapack_funcs, LinAlgError,
                           cholesky_banded, cho_solve_banded,
                           solve, solve_banded)
+from scipy.optimize import minimize_scalar
 from . import _bspl
 from . import _fitpack_impl
-from . import _fitpack as _dierckx
-from scipy._lib._util import prod
-from scipy.special import poch
 from scipy.sparse import csr_array
+from scipy.special import poch
 from itertools import combinations
 
-__all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
+__all__ = ["BSpline", "make_interp_spline", "make_lsq_spline",
+           "make_smoothing_spline"]
 
 
 def _get_dtype(dtype):
     """Return np.complex128 for complex dtypes, np.float64 otherwise."""
     if np.issubdtype(dtype, np.complexfloating):
-        return np.complex_
+        return np.complex128
     else:
-        return np.float_
+        return np.float64
 
 
 def _as_float_array(x, check_finite=False):
@@ -115,6 +116,7 @@ class BSpline:
     derivative
     antiderivative
     integrate
+    insert_knot
     construct_fast
     design_matrix
     from_power_basis
@@ -185,6 +187,7 @@ class BSpline:
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> fig, ax = plt.subplots()
     >>> xx = np.linspace(1.5, 4.5, 50)
     >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
@@ -201,6 +204,7 @@ class BSpline:
     .. [2] Carl de Boor, A practical guide to splines, Springer, 2001.
 
     """
+
     def __init__(self, t, c, k, extrapolate=True, axis=0):
         super().__init__()
 
@@ -233,7 +237,7 @@ class BSpline:
             raise ValueError("Knot vector must be one-dimensional.")
         if n < self.k + 1:
             raise ValueError("Need at least %d knots for degree %d" %
-                    (2*k + 2, k))
+                             (2*k + 2, k))
         if (np.diff(self.t) < 0).any():
             raise ValueError("Knots must be in a non-decreasing order.")
         if len(np.unique(self.t[k:n+1])) < 2:
@@ -298,6 +302,7 @@ class BSpline:
 
         Construct a cubic B-spline:
 
+        >>> import numpy as np
         >>> from scipy.interpolate import BSpline
         >>> b = BSpline.basis_element([0, 1, 2, 3, 4])
         >>> k = b.k
@@ -309,8 +314,8 @@ class BSpline:
         Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
-        >>> t = [-1, 0, 1, 1, 2]
-        >>> b = BSpline.basis_element(t[1:])
+        >>> t = [0, 1, 1, 2]
+        >>> b = BSpline.basis_element(t)
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
 
@@ -331,7 +336,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
-    def design_matrix(cls, x, t, k):
+    def design_matrix(cls, x, t, k, extrapolate=False):
         """
         Returns a design matrix as a CSR format sparse array.
 
@@ -343,19 +348,26 @@ class BSpline:
             Sorted 1D array of knots.
         k : int
             B-spline degree.
+        extrapolate : bool or 'periodic', optional
+            Whether to extrapolate based on the first and last intervals
+            or raise an error. If 'periodic', periodic extrapolation is used.
+            Default is False.
+
+            .. versionadded:: 1.10.0
 
         Returns
         -------
         design_matrix : `csr_array` object
-            Sparse matrix in CSR format where in each row all the basis
-            elements are evaluated at the certain point (first row - x[0],
-            ..., last row - x[-1]).
+            Sparse matrix in CSR format where each row contains all the basis
+            elements of the input row (first row = basis elements of x[0],
+            ..., last row = basis elements x[-1]).
 
         Examples
         --------
         Construct a design matrix for a B-spline
 
         >>> from scipy.interpolate import make_interp_spline, BSpline
+        >>> import numpy as np
         >>> x = np.linspace(0, np.pi * 2, 4)
         >>> y = np.sin(x)
         >>> k = 3
@@ -402,22 +414,53 @@ class BSpline:
         x = _as_float_array(x, True)
         t = _as_float_array(t, True)
 
+        if extrapolate != 'periodic':
+            extrapolate = bool(extrapolate)
+
+        if k < 0:
+            raise ValueError("Spline order cannot be negative.")
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
             raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
                              f"got t={t}.")
         # There are `nt - k - 1` basis elements in a BSpline built on the
         # vector of knots with length `nt`, so to have at least `k + 1` basis
-        # element we need to have at least `2 * k + 2` elements in the vector
+        # elements we need to have at least `2 * k + 2` elements in the vector
         # of knots.
         if len(t) < 2 * k + 2:
             raise ValueError(f"Length t is not enough for k={k}.")
-        # Checks from `find_interval` function
-        if (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1]):
+
+        if extrapolate == 'periodic':
+            # With periodic extrapolation we map x to the segment
+            # [t[k], t[n]].
+            n = t.size - k - 1
+            x = t[k] + (x - t[k]) % (t[n] - t[k])
+            extrapolate = False
+        elif not extrapolate and (
+            (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1])
+        ):
+            # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        n, nt = x.shape[0], t.shape[0]
-        data, idx = _bspl._make_design_matrix(x, t, k)
-        return csr_array((data, idx), (n, nt - k - 1))
+        # Compute number of non-zeros of final CSR array in order to determine
+        # the dtype of indices and indptr of the CSR array.
+        n = x.shape[0]
+        nnz = n * (k + 1)
+        if nnz < np.iinfo(np.int32).max:
+            int_dtype = np.int32
+        else:
+            int_dtype = np.int64
+        # Preallocate indptr and indices
+        indices = np.empty(n * (k + 1), dtype=int_dtype)
+        indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=int_dtype)
+
+        # indptr is not passed to Cython as it is already fully computed
+        data, indices = _bspl._make_design_matrix(
+            x, t, k, extrapolate, indices
+        )
+        return csr_array(
+            (data, indices, indptr),
+            shape=(x.shape[0], t.shape[0] - k - 1)
+        )
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
@@ -445,7 +488,7 @@ class BSpline:
             extrapolate = self.extrapolate
         x = np.asarray(x)
         x_shape, x_ndim = x.shape, x.ndim
-        x = np.ascontiguousarray(x.ravel(), dtype=np.float_)
+        x = np.ascontiguousarray(x.ravel(), dtype=np.float64)
 
         # With periodic extrapolation we map x to the segment
         # [self.t[k], self.t[n]].
@@ -468,7 +511,7 @@ class BSpline:
 
     def _evaluate(self, xp, nu, extrapolate, out):
         _bspl.evaluate_spline(self.t, self.c.reshape(self.c.shape[0], -1),
-                self.k, xp, nu, extrapolate, out)
+                              self.k, xp, nu, extrapolate, out)
 
     def _ensure_c_contiguous(self):
         """
@@ -507,7 +550,7 @@ class BSpline:
             c = np.r_[c, np.zeros((ct,) + c.shape[1:])]
         tck = _fitpack_impl.splder((self.t, c, self.k), nu)
         return self.construct_fast(*tck, extrapolate=self.extrapolate,
-                                    axis=self.axis)
+                                   axis=self.axis)
 
     def antiderivative(self, nu=1):
         """Return a B-spline representing the antiderivative.
@@ -618,8 +661,7 @@ class BSpline:
             if self.c.ndim == 1:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
-                t, c, k = self.tck
-                integral, wrk = _dierckx._splint(t, c, k, a, b)
+                integral = _fitpack_impl.splint(a, b, self.tck)
                 return integral * sign
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
@@ -642,7 +684,7 @@ class BSpline:
 
             if n_periods > 0:
                 # Evaluate the difference of antiderivatives.
-                x = np.asarray([ts, te], dtype=np.float_)
+                x = np.asarray([ts, te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral = out[1] - out[0]
@@ -658,23 +700,23 @@ class BSpline:
             # If b <= te then we need to integrate over [a, b], otherwise
             # over [a, te] and from xs to what is remained.
             if b <= te:
-                x = np.asarray([a, b], dtype=np.float_)
+                x = np.asarray([a, b], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
             else:
-                x = np.asarray([a, te], dtype=np.float_)
+                x = np.asarray([a, te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
 
-                x = np.asarray([ts, ts + b - te], dtype=np.float_)
+                x = np.asarray([ts, ts + b - te], dtype=np.float64)
                 _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                       ka, x, 0, False, out)
                 integral += out[1] - out[0]
         else:
             # Evaluate the difference of antiderivatives.
-            x = np.asarray([a, b], dtype=np.float_)
+            x = np.asarray([a, b], dtype=np.float64)
             _bspl.evaluate_spline(ta, ca.reshape(ca.shape[0], -1),
                                   ka, x, 0, extrapolate, out)
             integral = out[1] - out[0]
@@ -789,6 +831,94 @@ class BSpline:
                         * _diff_dual_poly(j, k, x[n - 2], m, t)
         return cls.construct_fast(t, c, k, pp.extrapolate, pp.axis)
 
+    def insert_knot(self, x, m=1):
+        """Insert a new knot at `x` of multiplicity `m`.
+
+        Given the knots and coefficients of a B-spline representation, create a
+        new B-spline with a knot inserted `m` times at point `x`.
+
+        Parameters
+        ----------
+        x : float
+            The position of the new knot
+        m : int, optional
+            The number of times to insert the given knot (its multiplicity).
+            Default is 1.
+
+        Returns
+        -------
+        spl : BSpline object
+            A new BSpline object with the new knot inserted.
+
+        Notes
+        -----
+        Based on algorithms from [1]_ and [2]_.
+
+        In case of a periodic spline (``self.extrapolate == "periodic"``)
+        there must be either at least k interior knots t(j) satisfying
+        ``t(k+1)<t(j)<=x`` or at least k interior knots t(j) satisfying
+        ``x<=t(j)<t(n-k)``.
+
+        This routine is functionally equivalent to `scipy.interpolate.insert`.
+
+        .. versionadded:: 1.13
+
+        References
+        ----------
+        .. [1] W. Boehm, "Inserting new knots into b-spline curves.",
+            Computer Aided Design, 12, p.199-201, 1980.
+            :doi:`10.1016/0010-4485(80)90154-2`.
+        .. [2] P. Dierckx, "Curve and surface fitting with splines, Monographs on
+            Numerical Analysis", Oxford University Press, 1993.
+
+        See Also
+        --------
+        scipy.interpolate.insert
+
+        Examples
+        --------
+        You can insert knots into a B-spline:
+
+        >>> import numpy as np
+        >>> from scipy.interpolate import BSpline, make_interp_spline
+        >>> x = np.linspace(0, 10, 5)
+        >>> y = np.sin(x)
+        >>> spl = make_interp_spline(x, y, k=3)
+        >>> spl.t
+        array([ 0.,  0.,  0.,  0.,  5., 10., 10., 10., 10.])
+
+        Insert a single knot
+
+        >>> spl_1 = spl.insert_knot(3)
+        >>> spl_1.t
+        array([ 0.,  0.,  0.,  0.,  3.,  5., 10., 10., 10., 10.])
+
+        Insert a multiple knot
+
+        >>> spl_2 = spl.insert_knot(8, m=3)
+        >>> spl_2.t
+        array([ 0.,  0.,  0.,  0.,  5.,  8.,  8.,  8., 10., 10., 10., 10.])
+
+        """
+        if x < self.t[self.k] or x > self.t[-self.k-1]:
+            raise ValueError(f"Cannot insert a knot at {x}.")
+        if m <= 0:
+            raise ValueError(f"`m` must be positive, got {m = }.")
+
+        extradim = self.c.shape[1:]
+        num_extra = prod(extradim)
+
+        tt = self.t.copy()
+        cc = self.c.copy()
+        cc = cc.reshape(-1, num_extra)
+
+        for _ in range(m):
+            tt, cc = _bspl.insert(x, tt, cc, self.k, self.extrapolate == "periodic")
+
+        return self.construct_fast(
+            tt, cc.reshape((-1,) + extradim), self.k, self.extrapolate, self.axis
+        )
+
 
 #################################
 #  Interpolating spline helpers #
@@ -835,16 +965,17 @@ def _process_deriv_spec(deriv):
         ords, vals = [], []
     return np.atleast_1d(ords, vals)
 
+
 def _woodbury_algorithm(A, ur, ll, b, k):
     '''
     Solve a cyclic banded linear system with upper right
     and lower blocks of size ``(k-1) / 2`` using
     the Woodbury formula
-    
+
     Parameters
     ----------
     A : 2-D array, shape(k, n)
-        Matrix of diagonals of original matrix(see 
+        Matrix of diagonals of original matrix (see
         ``solve_banded`` documentation).
     ur : 2-D array, shape(bs, bs)
         Upper right block matrix.
@@ -854,12 +985,12 @@ def _woodbury_algorithm(A, ur, ll, b, k):
         Vector of constant terms of the system of linear equations.
     k : int
         B-spline degree.
-        
+
     Returns
     -------
     c : 1-D array, shape(n,)
         Solution of the original system of linear equations.
-        
+
     Notes
     -----
     This algorithm works only for systems with banded matrix A plus
@@ -868,7 +999,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     The system is solved with the following steps:
         1.  New systems of linear equations are constructed:
             A @ z_i = u_i,
-            u_i - columnn vector of U,
+            u_i - column vector of U,
             i = 1, ..., k - 1
         2.  Matrix Z is formed from vectors z_i:
             Z = [ z_1 | z_2 | ... | z_{k - 1} ]
@@ -903,14 +1034,14 @@ def _woodbury_algorithm(A, ur, ll, b, k):
     U = np.zeros((n - 1, k_mod))
     VT = np.zeros((k_mod, n - 1))  # V transpose
 
-    # upper right block 
+    # upper right block
     U[:bs, :bs] = ur
     VT[np.arange(bs), np.arange(bs) - bs] = 1
 
-    # lower left block 
+    # lower left block
     U[-bs:, -bs:] = ll
     VT[np.arange(bs) - bs, np.arange(bs)] = 1
-    
+
     Z = solve_banded((bs, bs), A, U)
 
     H = solve(np.identity(k_mod) + VT @ Z, np.identity(k_mod))
@@ -920,6 +1051,7 @@ def _woodbury_algorithm(A, ur, ll, b, k):
 
     return c
 
+
 def _periodic_knots(x, k):
     '''
     returns vector of nodes on circle
@@ -928,7 +1060,7 @@ def _periodic_knots(x, k):
     n = len(xc)
     if k % 2 == 0:
         dx = np.diff(xc)
-        xc[1: -1] -= dx[:-1] / 2 
+        xc[1: -1] -= dx[:-1] / 2
     dx = np.diff(xc)
     t = np.zeros(n + 2 * k)
     t[k: -k] = xc
@@ -943,7 +1075,7 @@ def _periodic_knots(x, k):
 def _make_interp_per_full_matr(x, y, t, k):
     '''
     Returns a solution of a system for B-spline interpolation with periodic
-    boundary conditions. First ``k - 1`` rows of matrix are condtions of
+    boundary conditions. First ``k - 1`` rows of matrix are conditions of
     periodicity (continuity of ``k - 1`` derivatives at the boundary points).
     Last ``n`` rows are interpolation conditions.
     RHS is ``k - 1`` zeros and ``n`` ordinates in this case.
@@ -982,7 +1114,7 @@ def _make_interp_per_full_matr(x, y, t, k):
         matr[i, : k + 1] += bb
         bb = _bspl.evaluate_all_bspl(t, k, x[-1], n + k - 1, nu=i + 1)[:-1]
         matr[i, -k:] -= bb
-    
+
     # collocation matrix
     for i in range(n):
         xval = x[i]
@@ -995,12 +1127,13 @@ def _make_interp_per_full_matr(x, y, t, k):
         # fill a row
         bb = _bspl.evaluate_all_bspl(t, k, xval, left)
         matr[i + k - 1, left-k:left+1] = bb
-    
+
     # RHS
     b = np.r_[[0] * (k - 1), y]
 
     c = solve(matr, b)
     return c
+
 
 def _make_periodic_spline(x, y, t, k, axis):
     '''
@@ -1058,21 +1191,21 @@ def _make_periodic_spline(x, y, t, k, axis):
 
     # size of block elements
     kul = int(k / 2)
-    
+
     # kl = ku = k
-    ab = np.zeros((3 * k + 1, nt), dtype=np.float_, order='F')
+    ab = np.zeros((3 * k + 1, nt), dtype=np.float64, order='F')
 
     # upper right and lower left blocks
     ur = np.zeros((kul, kul))
     ll = np.zeros_like(ur)
-    
+
     # `offset` is made to shift all the non-zero elements to the end of the
     # matrix
     _bspl._colloc(x, t, k, ab, offset=k)
-    
+
     # remove zeros before the matrix
     ab = ab[-k - (k + 1) % 2:, :]
-    
+
     # The least elements in rows (except repetitions) are diagonals
     # of block matrices. Upper right matrix is an upper triangular
     # matrix while lower left is a lower triangular one.
@@ -1090,6 +1223,7 @@ def _make_periodic_spline(x, y, t, k, axis):
     c = np.ascontiguousarray(c.reshape((n + k - 1,) + y.shape[1:]))
     return BSpline.construct_fast(t, c, k, extrapolate='periodic', axis=axis)
 
+
 def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                        check_finite=True):
     """Compute the (coefficients of) interpolating B-spline.
@@ -1101,21 +1235,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     y : array_like, shape (n, ...)
         Ordinates.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
+        B-spline degree. Default is cubic, ``k = 3``.
     t : array_like, shape (nt + k + 1,), optional.
         Knots.
-        The number of knots needs to agree with the number of datapoints and
+        The number of knots needs to agree with the number of data points and
         the number of derivatives at the edges. Specifically, ``nt - n`` must
         equal ``len(deriv_l) + len(deriv_r)``.
     bc_type : 2-tuple or None
         Boundary conditions.
         Default is None, which means choosing the boundary conditions
         automatically. Otherwise, it must be a length-two tuple where the first
-        element sets the boundary conditions at ``x[0]`` and the second
-        element sets the boundary conditions at ``x[-1]``. Each of these must
-        be an iterable of pairs ``(order, value)`` which gives the values of
-        derivatives of specified orders at the given edge of the interpolation
-        interval.
+        element (``deriv_l``) sets the boundary conditions at ``x[0]`` and
+        the second element (``deriv_r``) sets the boundary conditions at
+        ``x[-1]``. Each of these must be an iterable of pairs
+        ``(order, value)`` which gives the values of derivatives of specified
+        orders at the given edge of the interpolation interval.
         Alternatively, the following string aliases are recognized:
 
         * ``"clamped"``: The first derivatives at the ends are zero. This is
@@ -1139,11 +1273,21 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     -------
     b : a BSpline object of the degree ``k`` and with knots ``t``.
 
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    CubicSpline : a cubic spline in the polynomial basis
+    make_lsq_spline : a similar factory function for spline fitting
+    UnivariateSpline : a wrapper over FITPACK spline fitting routines
+    splrep : a wrapper over FITPACK spline fitting routines
+
     Examples
     --------
 
     Use cubic interpolation on Chebyshev nodes:
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -1181,7 +1325,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Build an interpolating curve, parameterizing it by the angle
 
-    >>> from scipy.interpolate import make_interp_spline
     >>> spl = make_interp_spline(phi, np.c_[x, y])
 
     Evaluate the interpolant on a finer grid (note that we transpose the result
@@ -1192,13 +1335,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     Plot the result
 
-    >>> import matplotlib.pyplot as plt
     >>> plt.plot(x, y, 'o')
     >>> plt.plot(x_new, y_new, '-')
     >>> plt.show()
 
     Build a B-spline curve with 2 dimensional y
-    
+
     >>> x = np.linspace(0, 2*np.pi, 10)
     >>> y = np.array([np.sin(x), np.cos(x)])
 
@@ -1211,14 +1353,6 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     >>> ax.plot3D(xx, *bspl(xx))
     >>> ax.scatter3D(x, *y, color='red')
     >>> plt.show()
-
-    See Also
-    --------
-    BSpline : base class representing the B-spline objects
-    CubicSpline : a cubic spline in the polynomial basis
-    make_lsq_spline : a similar factory function for spline fitting
-    UnivariateSpline : a wrapper over FITPACK spline fitting routines
-    splrep : a wrapper over FITPACK spline fitting routines
 
     """
     # convert string aliases for the boundary conditions
@@ -1241,9 +1375,16 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
+    # sanity check the input
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
+    if x.size != y.shape[0]:
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
+    if np.any(x[1:] == x[:-1]):
+        raise ValueError("Expect x to not have duplicates")
+    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
 
     # special-case k=0 right away
     if k == 0:
@@ -1268,7 +1409,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if bc_type == 'periodic' and t is not None:
         raise NotImplementedError("For periodic case t is constructed "
-                         "automatically and can not be passed manually")
+                                  "automatically and can not be passed "
+                                  "manually")
 
     # come up with a sensible knot vector, if needed
     if t is None:
@@ -1280,8 +1422,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
                 # 2nd and 2nd-to-last points, a la not-a-knot
                 t = (x[1:] + x[:-1]) / 2.
                 t = np.r_[(x[0],)*(k+1),
-                           t[1:-1],
-                           (x[-1],)*(k+1)]
+                          t[1:-1],
+                          (x[-1],)*(k+1)]
             else:
                 t = _not_a_knot(x, k)
         else:
@@ -1289,17 +1431,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
-    if np.any(x[1:] == x[:-1]):
-        raise ValueError("Expect x to not have duplicates")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
-    if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
@@ -1324,17 +1459,24 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     if nt - n != nleft + nright:
         raise ValueError("The number of derivatives at boundaries does not "
-                         "match: expected %s, got %s+%s" % (nt-n, nleft, nright))
+                         f"match: expected {nt-n}, got {nleft}+{nright}")
+
+    # bail out if the `y` array is zero-sized
+    if y.size == 0:
+        c = np.zeros((nt,) + y.shape[1:], dtype=float)
+        return BSpline.construct_fast(t, c, k, axis=axis)
 
     # set up the LHS: the collocation matrix + derivatives at boundaries
     kl = ku = k
-    ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float_, order='F')
+    ab = np.zeros((2*kl + ku + 1, nt), dtype=np.float64, order='F')
     _bspl._colloc(x, t, k, ab, offset=nleft)
     if nleft > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku, deriv_l_ords)
+        _bspl._handle_lhs_derivatives(t, k, x[0], ab, kl, ku,
+                                      deriv_l_ords.astype(np.dtype("long")))
     if nright > 0:
-        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku, deriv_r_ords,
-                                offset=nt-nright)
+        _bspl._handle_lhs_derivatives(t, k, x[-1], ab, kl, ku,
+                                      deriv_r_ords.astype(np.dtype("long")),
+                                      offset=nt-nright)
 
     # set up the RHS: values to interpolate (+ derivative values, if any)
     extradim = prod(y.shape[1:])
@@ -1350,10 +1492,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
         ab, rhs = map(np.asarray_chkfinite, (ab, rhs))
     gbsv, = get_lapack_funcs(('gbsv',), (ab, rhs))
     lu, piv, c, info = gbsv(kl, ku, ab, rhs,
-            overwrite_ab=True, overwrite_b=True)
+                            overwrite_ab=True, overwrite_b=True)
 
     if info > 0:
-        raise LinAlgError("Collocation matix is singular.")
+        raise LinAlgError("Collocation matrix is singular.")
     elif info < 0:
         raise ValueError('illegal value in %d-th argument of internal gbsv' % -info)
 
@@ -1362,7 +1504,8 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
 
 def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
-    r"""Compute the (coefficients of) an LSQ B-spline.
+    r"""Compute the (coefficients of) an LSQ (Least SQuared) based
+    fitting B-spline.
 
     The result is a linear combination
 
@@ -1386,8 +1529,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         Knots.
         Knots and data points must satisfy Schoenberg-Whitney conditions.
     k : int, optional
-        B-spline degree. Default is cubic, k=3.
-    w : array_like, shape (n,), optional
+        B-spline degree. Default is cubic, ``k = 3``.
+    w : array_like, shape (m,), optional
         Weights for spline fitting. Must be positive. If ``None``,
         then weights are all equal.
         Default is ``None``.
@@ -1401,13 +1544,20 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Returns
     -------
-    b : a BSpline object of the degree `k` with knots `t`.
+    b : a BSpline object of the degree ``k`` with knots ``t``.
+
+    See Also
+    --------
+    BSpline : base class representing the B-spline objects
+    make_interp_spline : a similar factory function for interpolating splines
+    LSQUnivariateSpline : a FITPACK-based spline fitting routine
+    splrep : a FITPACK-based fitting routine
 
     Notes
     -----
-    The number of data points must be larger than the spline degree `k`.
+    The number of data points must be larger than the spline degree ``k``.
 
-    Knots `t` must satisfy the Schoenberg-Whitney conditions,
+    Knots ``t`` must satisfy the Schoenberg-Whitney conditions,
     i.e., there must be a subset of data points ``x[j]`` such that
     ``t[j] < x[j] < t[j+k+1]``, for ``j=0, 1,...,n-k-2``.
 
@@ -1415,6 +1565,8 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     --------
     Generate some noisy data:
 
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
@@ -1438,7 +1590,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Plot both:
 
-    >>> import matplotlib.pyplot as plt
     >>> xs = np.linspace(-3, 3, 100)
     >>> plt.plot(x, y, 'ro', ms=5)
     >>> plt.plot(xs, spl(xs), 'g-', lw=3, label='LSQ spline')
@@ -1457,13 +1608,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Notice the need to replace a ``nan`` by a numerical value (precise value
     does not matter as long as the corresponding weight is zero.)
-
-    See Also
-    --------
-    BSpline : base class representing the B-spline objects
-    make_interp_spline : a similar factory function for interpolating splines
-    LSQUnivariateSpline : a FITPACK-based spline fitting routine
-    splrep : a FITPACK-based fitting routine
 
     """
     x = _as_float_array(x, check_finite)
@@ -1488,13 +1632,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     if t.ndim != 1 or np.any(t[1:] - t[:-1] < 0):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
     if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
+        raise ValueError(f'Shapes of x {x.shape} and y {y.shape} are incompatible')
     if k > 0 and np.any((x < t[k]) | (x > t[-k])):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
-        raise ValueError('Shapes of x {} and w {} are incompatible'
-                         .format(x.shape, w.shape))
+        raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
 
     # number of coefficients
     n = t.size - k - 1
@@ -1503,12 +1645,12 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     # rhs = A.T @ y for solving the LSQ problem  ``A.T @ A @ c = A.T @ y``
     lower = True
     extradim = prod(y.shape[1:])
-    ab = np.zeros((k+1, n), dtype=np.float_, order='F')
+    ab = np.zeros((k+1, n), dtype=np.float64, order='F')
     rhs = np.zeros((n, extradim), dtype=y.dtype, order='F')
     _bspl._norm_eq_lsq(x, t, k,
-                      y.reshape(-1, extradim),
-                      w,
-                      ab, rhs)
+                       y.reshape(-1, extradim),
+                       w,
+                       ab, rhs)
     rhs = rhs.reshape((n,) + y.shape[1:])
 
     # have observation matrix & rhs, can solve the LSQ problem
@@ -1519,3 +1661,555 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     c = np.ascontiguousarray(c)
     return BSpline.construct_fast(t, c, k, axis=axis)
+
+
+#############################
+#  Smoothing spline helpers #
+#############################
+
+def _compute_optimal_gcv_parameter(X, wE, y, w):
+    """
+    Returns an optimal regularization parameter from the GCV criteria [1].
+
+    Parameters
+    ----------
+    X : array, shape (5, n)
+        5 bands of the design matrix ``X`` stored in LAPACK banded storage.
+    wE : array, shape (5, n)
+        5 bands of the penalty matrix :math:`W^{-1} E` stored in LAPACK banded
+        storage.
+    y : array, shape (n,)
+        Ordinates.
+    w : array, shape (n,)
+        Vector of weights.
+
+    Returns
+    -------
+    lam : float
+        An optimal from the GCV criteria point of view regularization
+        parameter.
+
+    Notes
+    -----
+    No checks are performed.
+
+    References
+    ----------
+    .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models
+        for observational data, Philadelphia, Pennsylvania: Society for
+        Industrial and Applied Mathematics, 1990, pp. 45-65.
+        :doi:`10.1137/1.9781611970128`
+
+    """
+
+    def compute_banded_symmetric_XT_W_Y(X, w, Y):
+        """
+        Assuming that the product :math:`X^T W Y` is symmetric and both ``X``
+        and ``Y`` are 5-banded, compute the unique bands of the product.
+
+        Parameters
+        ----------
+        X : array, shape (5, n)
+            5 bands of the matrix ``X`` stored in LAPACK banded storage.
+        w : array, shape (n,)
+            Array of weights
+        Y : array, shape (5, n)
+            5 bands of the matrix ``Y`` stored in LAPACK banded storage.
+
+        Returns
+        -------
+        res : array, shape (4, n)
+            The result of the product :math:`X^T Y` stored in the banded way.
+
+        Notes
+        -----
+        As far as the matrices ``X`` and ``Y`` are 5-banded, their product
+        :math:`X^T W Y` is 7-banded. It is also symmetric, so we can store only
+        unique diagonals.
+
+        """
+        # compute W Y
+        W_Y = np.copy(Y)
+
+        W_Y[2] *= w
+        for i in range(2):
+            W_Y[i, 2 - i:] *= w[:-2 + i]
+            W_Y[3 + i, :-1 - i] *= w[1 + i:]
+
+        n = X.shape[1]
+        res = np.zeros((4, n))
+        for i in range(n):
+            for j in range(min(n-i, 4)):
+                res[-j-1, i + j] = sum(X[j:, i] * W_Y[:5-j, i + j])
+        return res
+
+    def compute_b_inv(A):
+        """
+        Inverse 3 central bands of matrix :math:`A=U^T D^{-1} U` assuming that
+        ``U`` is a unit upper triangular banded matrix using an algorithm
+        proposed in [1].
+
+        Parameters
+        ----------
+        A : array, shape (4, n)
+            Matrix to inverse, stored in LAPACK banded storage.
+
+        Returns
+        -------
+        B : array, shape (4, n)
+            3 unique bands of the symmetric matrix that is an inverse to ``A``.
+            The first row is filled with zeros.
+
+        Notes
+        -----
+        The algorithm is based on the cholesky decomposition and, therefore,
+        in case matrix ``A`` is close to not positive defined, the function
+        raises LinalgError.
+
+        Both matrices ``A`` and ``B`` are stored in LAPACK banded storage.
+
+        References
+        ----------
+        .. [1] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+            spline functions," Numerische Mathematik, vol. 47, no. 1,
+            pp. 99-106, 1985.
+            :doi:`10.1007/BF01389878`
+
+        """
+
+        def find_b_inv_elem(i, j, U, D, B):
+            rng = min(3, n - i - 1)
+            rng_sum = 0.
+            if j == 0:
+                # use 2-nd formula from [1]
+                for k in range(1, rng + 1):
+                    rng_sum -= U[-k - 1, i + k] * B[-k - 1, i + k]
+                rng_sum += D[i]
+                B[-1, i] = rng_sum
+            else:
+                # use 1-st formula from [1]
+                for k in range(1, rng + 1):
+                    diag = abs(k - j)
+                    ind = i + min(k, j)
+                    rng_sum -= U[-k - 1, i + k] * B[-diag - 1, ind + diag]
+                B[-j - 1, i + j] = rng_sum
+
+        U = cholesky_banded(A)
+        for i in range(2, 5):
+            U[-i, i-1:] /= U[-1, :-i+1]
+        D = 1. / (U[-1])**2
+        U[-1] /= U[-1]
+
+        n = U.shape[1]
+
+        B = np.zeros(shape=(4, n))
+        for i in range(n - 1, -1, -1):
+            for j in range(min(3, n - i - 1), -1, -1):
+                find_b_inv_elem(i, j, U, D, B)
+        # the first row contains garbage and should be removed
+        B[0] = [0.] * n
+        return B
+
+    def _gcv(lam, X, XtWX, wE, XtE):
+        r"""
+        Computes the generalized cross-validation criteria [1].
+
+        Parameters
+        ----------
+        lam : float, (:math:`\lambda \geq 0`)
+            Regularization parameter.
+        X : array, shape (5, n)
+            Matrix is stored in LAPACK banded storage.
+        XtWX : array, shape (4, n)
+            Product :math:`X^T W X` stored in LAPACK banded storage.
+        wE : array, shape (5, n)
+            Matrix :math:`W^{-1} E` stored in LAPACK banded storage.
+        XtE : array, shape (4, n)
+            Product :math:`X^T E` stored in LAPACK banded storage.
+
+        Returns
+        -------
+        res : float
+            Value of the GCV criteria with the regularization parameter
+            :math:`\lambda`.
+
+        Notes
+        -----
+        Criteria is computed from the formula (1.3.2) [3]:
+
+        .. math:
+
+        GCV(\lambda) = \dfrac{1}{n} \sum\limits_{k = 1}^{n} \dfrac{ \left(
+        y_k - f_{\lambda}(x_k) \right)^2}{\left( 1 - \Tr{A}/n\right)^2}$.
+        The criteria is discussed in section 1.3 [3].
+
+        The numerator is computed using (2.2.4) [3] and the denominator is
+        computed using an algorithm from [2] (see in the ``compute_b_inv``
+        function).
+
+        References
+        ----------
+        .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models
+            for observational data, Philadelphia, Pennsylvania: Society for
+            Industrial and Applied Mathematics, 1990, pp. 45-65.
+            :doi:`10.1137/1.9781611970128`
+        .. [2] M. F. Hutchinson and F. R. de Hoog, "Smoothing noisy data with
+            spline functions," Numerische Mathematik, vol. 47, no. 1,
+            pp. 99-106, 1985.
+            :doi:`10.1007/BF01389878`
+        .. [3] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
+            BSc thesis, 2022. Might be available (in Russian)
+            `here <https://www.hse.ru/ba/am/students/diplomas/620910604>`_
+
+        """
+        # Compute the numerator from (2.2.4) [3]
+        n = X.shape[1]
+        c = solve_banded((2, 2), X + lam * wE, y)
+        res = np.zeros(n)
+        # compute ``W^{-1} E c`` with respect to banded-storage of ``E``
+        tmp = wE * c
+        for i in range(n):
+            for j in range(max(0, i - n + 3), min(5, i + 3)):
+                res[i] += tmp[j, i + 2 - j]
+        numer = np.linalg.norm(lam * res)**2 / n
+
+        # compute the denominator
+        lhs = XtWX + lam * XtE
+        try:
+            b_banded = compute_b_inv(lhs)
+            # compute the trace of the product b_banded @ XtX
+            tr = b_banded * XtWX
+            tr[:-1] *= 2
+            # find the denominator
+            denom = (1 - sum(sum(tr)) / n)**2
+        except LinAlgError:
+            # cholesky decomposition cannot be performed
+            raise ValueError('Seems like the problem is ill-posed')
+
+        res = numer / denom
+
+        return res
+
+    n = X.shape[1]
+
+    XtWX = compute_banded_symmetric_XT_W_Y(X, w, X)
+    XtE = compute_banded_symmetric_XT_W_Y(X, w, wE)
+
+    def fun(lam):
+        return _gcv(lam, X, XtWX, wE, XtE)
+
+    gcv_est = minimize_scalar(fun, bounds=(0, n), method='Bounded')
+    if gcv_est.success:
+        return gcv_est.x
+    raise ValueError(f"Unable to find minimum of the GCV "
+                     f"function: {gcv_est.message}")
+
+
+def _coeff_of_divided_diff(x):
+    """
+    Returns the coefficients of the divided difference.
+
+    Parameters
+    ----------
+    x : array, shape (n,)
+        Array which is used for the computation of divided difference.
+
+    Returns
+    -------
+    res : array_like, shape (n,)
+        Coefficients of the divided difference.
+
+    Notes
+    -----
+    Vector ``x`` should have unique elements, otherwise an error division by
+    zero might be raised.
+
+    No checks are performed.
+
+    """
+    n = x.shape[0]
+    res = np.zeros(n)
+    for i in range(n):
+        pp = 1.
+        for k in range(n):
+            if k != i:
+                pp *= (x[i] - x[k])
+        res[i] = 1. / pp
+    return res
+
+
+def make_smoothing_spline(x, y, w=None, lam=None):
+    r"""
+    Compute the (coefficients of) smoothing cubic spline function using
+    ``lam`` to control the tradeoff between the amount of smoothness of the
+    curve and its proximity to the data. In case ``lam`` is None, using the
+    GCV criteria [1] to find it.
+
+    A smoothing spline is found as a solution to the regularized weighted
+    linear regression problem:
+
+    .. math::
+
+        \sum\limits_{i=1}^n w_i\lvert y_i - f(x_i) \rvert^2 +
+        \lambda\int\limits_{x_1}^{x_n} (f^{(2)}(u))^2 d u
+
+    where :math:`f` is a spline function, :math:`w` is a vector of weights and
+    :math:`\lambda` is a regularization parameter.
+
+    If ``lam`` is None, we use the GCV criteria to find an optimal
+    regularization parameter, otherwise we solve the regularized weighted
+    linear regression problem with given parameter. The parameter controls
+    the tradeoff in the following way: the larger the parameter becomes, the
+    smoother the function gets.
+
+    Parameters
+    ----------
+    x : array_like, shape (n,)
+        Abscissas. `n` must be at least 5.
+    y : array_like, shape (n,)
+        Ordinates. `n` must be at least 5.
+    w : array_like, shape (n,), optional
+        Vector of weights. Default is ``np.ones_like(x)``.
+    lam : float, (:math:`\lambda \geq 0`), optional
+        Regularization parameter. If ``lam`` is None, then it is found from
+        the GCV criteria. Default is None.
+
+    Returns
+    -------
+    func : a BSpline object.
+        A callable representing a spline in the B-spline basis
+        as a solution of the problem of smoothing splines using
+        the GCV criteria [1] in case ``lam`` is None, otherwise using the
+        given parameter ``lam``.
+
+    Notes
+    -----
+    This algorithm is a clean room reimplementation of the algorithm
+    introduced by Woltring in FORTRAN [2]. The original version cannot be used
+    in SciPy source code because of the license issues. The details of the
+    reimplementation are discussed here (available only in Russian) [4].
+
+    If the vector of weights ``w`` is None, we assume that all the points are
+    equal in terms of weights, and vector of weights is vector of ones.
+
+    Note that in weighted residual sum of squares, weights are not squared:
+    :math:`\sum\limits_{i=1}^n w_i\lvert y_i - f(x_i) \rvert^2` while in
+    ``splrep`` the sum is built from the squared weights.
+
+    In cases when the initial problem is ill-posed (for example, the product
+    :math:`X^T W X` where :math:`X` is a design matrix is not a positive
+    defined matrix) a ValueError is raised.
+
+    References
+    ----------
+    .. [1] G. Wahba, "Estimating the smoothing parameter" in Spline models for
+        observational data, Philadelphia, Pennsylvania: Society for Industrial
+        and Applied Mathematics, 1990, pp. 45-65.
+        :doi:`10.1137/1.9781611970128`
+    .. [2] H. J. Woltring, A Fortran package for generalized, cross-validatory
+        spline smoothing and differentiation, Advances in Engineering
+        Software, vol. 8, no. 2, pp. 104-113, 1986.
+        :doi:`10.1016/0141-1195(86)90098-7`
+    .. [3] T. Hastie, J. Friedman, and R. Tisbshirani, "Smoothing Splines" in
+        The elements of Statistical Learning: Data Mining, Inference, and
+        prediction, New York: Springer, 2017, pp. 241-249.
+        :doi:`10.1007/978-0-387-84858-7`
+    .. [4] E. Zemlyanoy, "Generalized cross-validation smoothing splines",
+        BSc thesis, 2022.
+        `<https://www.hse.ru/ba/am/students/diplomas/620910604>`_ (in
+        Russian)
+
+    Examples
+    --------
+    Generate some noisy data
+
+    >>> import numpy as np
+    >>> np.random.seed(1234)
+    >>> n = 200
+    >>> def func(x):
+    ...    return x**3 + x**2 * np.sin(4 * x)
+    >>> x = np.sort(np.random.random_sample(n) * 4 - 2)
+    >>> y = func(x) + np.random.normal(scale=1.5, size=n)
+
+    Make a smoothing spline function
+
+    >>> from scipy.interpolate import make_smoothing_spline
+    >>> spl = make_smoothing_spline(x, y)
+
+    Plot both
+
+    >>> import matplotlib.pyplot as plt
+    >>> grid = np.linspace(x[0], x[-1], 400)
+    >>> plt.plot(grid, spl(grid), label='Spline')
+    >>> plt.plot(grid, func(grid), label='Original function')
+    >>> plt.scatter(x, y, marker='.')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+    """
+
+    x = np.ascontiguousarray(x, dtype=float)
+    y = np.ascontiguousarray(y, dtype=float)
+
+    if any(x[1:] - x[:-1] <= 0):
+        raise ValueError('``x`` should be an ascending array')
+
+    if x.ndim != 1 or y.ndim != 1 or x.shape[0] != y.shape[0]:
+        raise ValueError('``x`` and ``y`` should be one dimensional and the'
+                         ' same size')
+
+    if w is None:
+        w = np.ones(len(x))
+    else:
+        w = np.ascontiguousarray(w)
+        if any(w <= 0):
+            raise ValueError('Invalid vector of weights')
+
+    t = np.r_[[x[0]] * 3, x, [x[-1]] * 3]
+    n = x.shape[0]
+
+    if n <= 4:
+        raise ValueError('``x`` and ``y`` length must be at least 5')
+
+    # It is known that the solution to the stated minimization problem exists
+    # and is a natural cubic spline with vector of knots equal to the unique
+    # elements of ``x`` [3], so we will solve the problem in the basis of
+    # natural splines.
+
+    # create design matrix in the B-spline basis
+    X_bspl = BSpline.design_matrix(x, t, 3)
+    # move from B-spline basis to the basis of natural splines using equations
+    # (2.1.7) [4]
+    # central elements
+    X = np.zeros((5, n))
+    for i in range(1, 4):
+        X[i, 2: -2] = X_bspl[i: i - 4, 3: -3][np.diag_indices(n - 4)]
+
+    # first elements
+    X[1, 1] = X_bspl[0, 0]
+    X[2, :2] = ((x[2] + x[1] - 2 * x[0]) * X_bspl[0, 0],
+                X_bspl[1, 1] + X_bspl[1, 2])
+    X[3, :2] = ((x[2] - x[0]) * X_bspl[1, 1], X_bspl[2, 2])
+
+    # last elements
+    X[1, -2:] = (X_bspl[-3, -3], (x[-1] - x[-3]) * X_bspl[-2, -2])
+    X[2, -2:] = (X_bspl[-2, -3] + X_bspl[-2, -2],
+                 (2 * x[-1] - x[-2] - x[-3]) * X_bspl[-1, -1])
+    X[3, -2] = X_bspl[-1, -1]
+
+    # create penalty matrix and divide it by vector of weights: W^{-1} E
+    wE = np.zeros((5, n))
+    wE[2:, 0] = _coeff_of_divided_diff(x[:3]) / w[:3]
+    wE[1:, 1] = _coeff_of_divided_diff(x[:4]) / w[:4]
+    for j in range(2, n - 2):
+        wE[:, j] = (x[j+2] - x[j-2]) * _coeff_of_divided_diff(x[j-2:j+3])\
+                   / w[j-2: j+3]
+
+    wE[:-1, -2] = -_coeff_of_divided_diff(x[-4:]) / w[-4:]
+    wE[:-2, -1] = _coeff_of_divided_diff(x[-3:]) / w[-3:]
+    wE *= 6
+
+    if lam is None:
+        lam = _compute_optimal_gcv_parameter(X, wE, y, w)
+    elif lam < 0.:
+        raise ValueError('Regularization parameter should be non-negative')
+
+    # solve the initial problem in the basis of natural splines
+    c = solve_banded((2, 2), X + lam * wE, y)
+    # move back to B-spline basis using equations (2.2.10) [4]
+    c_ = np.r_[c[0] * (t[5] + t[4] - 2 * t[3]) + c[1],
+               c[0] * (t[5] - t[3]) + c[1],
+               c[1: -1],
+               c[-1] * (t[-4] - t[-6]) + c[-2],
+               c[-1] * (2 * t[-4] - t[-5] - t[-6]) + c[-2]]
+
+    return BSpline.construct_fast(t, c_, 3)
+
+
+########################
+#  FITPACK look-alikes #
+########################
+
+def fpcheck(x, t, k):
+    """ Check consistency of the data vector `x` and the knot vector `t`.
+
+    Return None if inputs are consistent, raises a ValueError otherwise.
+    """
+    # This routine is a clone of the `fpchec` Fortran routine, 
+    # https://github.com/scipy/scipy/blob/main/scipy/interpolate/fitpack/fpchec.f
+    # which carries the following comment:
+    #
+    # subroutine fpchec verifies the number and the position of the knots
+    #  t(j),j=1,2,...,n of a spline of degree k, in relation to the number
+    #  and the position of the data points x(i),i=1,2,...,m. if all of the
+    #  following conditions are fulfilled, the error parameter ier is set
+    #  to zero. if one of the conditions is violated ier is set to ten.
+    #      1) k+1 <= n-k-1 <= m
+    #      2) t(1) <= t(2) <= ... <= t(k+1)
+    #         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    #      3) t(k+1) < t(k+2) < ... < t(n-k)
+    #      4) t(k+1) <= x(i) <= t(n-k)
+    #      5) the conditions specified by schoenberg and whitney must hold
+    #         for at least one subset of data points, i.e. there must be a
+    #         subset of data points y(j) such that
+    #             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    x = np.asarray(x)
+    t = np.asarray(t)
+
+    if x.ndim != 1 or t.ndim != 1:
+        raise ValueError(f"Expect `x` and `t` be 1D sequences. Got {x = } and {t = }")
+
+    m = x.shape[0]
+    n = t.shape[0]
+    nk1 = n - k - 1
+
+    # check condition no 1
+    # c      1) k+1 <= n-k-1 <= m
+    if not (k + 1 <= nk1 <= m):
+        raise ValueError(f"Need k+1 <= n-k-1 <= m. Got {m = }, {n = } and {k = }.")
+
+    # check condition no 2
+    # c      2) t(1) <= t(2) <= ... <= t(k+1)
+    # c         t(n-k) <= t(n-k+1) <= ... <= t(n)
+    if (t[:k+1] > t[1:k+2]).any():
+        raise ValueError(f"First k knots must be ordered; got {t = }.")
+
+    if (t[nk1:] < t[nk1-1:-1]).any():
+        raise ValueError(f"Last k knots must be ordered; got {t = }.")
+
+    # c  check condition no 3
+    # c      3) t(k+1) < t(k+2) < ... < t(n-k)
+    if (t[k+1:n-k] <= t[k:n-k-1]).any():
+        raise ValueError(f"Internal knots must be distinct. Got {t = }.")
+
+    # c  check condition no 4
+    # c      4) t(k+1) <= x(i) <= t(n-k)
+    # NB: FITPACK's fpchec only checks x[0] & x[-1], so we follow.
+    if (x[0] < t[k]) or (x[-1] > t[n-k-1]):
+        raise ValueError(f"Out of bounds: {x = } and {t = }.")
+
+    # c  check condition no 5
+    # c      5) the conditions specified by schoenberg and whitney must hold
+    # c         for at least one subset of data points, i.e. there must be a
+    # c         subset of data points y(j) such that
+    # c             t(j) < y(j) < t(j+k+1), j=1,2,...,n-k-1
+    mesg = f"Schoenberg-Whitney condition is violated with {t = } and {x =}."
+
+    if (x[0] >= t[k+1]) or (x[-1] <= t[n-k-2]):
+        raise ValueError(mesg)
+
+    m = x.shape[0]
+    l = k+1
+    nk3 = n - k - 3
+    if nk3 < 2:
+        return
+    for j in range(1, nk3+1):
+        tj = t[j]
+        l += 1
+        tl = t[l]
+        i = np.argmax(x > tj)
+        if i >= m-1:
+            raise ValueError(mesg)
+        if x[i] >= tl:
+            raise ValueError(mesg)
+    return

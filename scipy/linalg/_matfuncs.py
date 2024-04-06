@@ -1,27 +1,31 @@
 #
 # Author: Travis Oliphant, March 2002
 #
+from itertools import product
 
-__all__ = ['expm','cosm','sinm','tanm','coshm','sinhm',
-           'tanhm','logm','funm','signm','sqrtm',
-           'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-           'khatri_rao']
-
-from numpy import (Inf, dot, diag, prod, logical_not, ravel,
-        transpose, conjugate, absolute, amax, sign, isfinite, single)
 import numpy as np
+from numpy import (dot, diag, prod, logical_not, ravel, transpose,
+                   conjugate, absolute, amax, sign, isfinite, triu)
 
 # Local imports
+from scipy.linalg import LinAlgError, bandwidth
 from ._misc import norm
 from ._basic import solve, inv
-from ._special_matrices import triu
 from ._decomp_svd import svd
 from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
+from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
-eps = np.finfo(float).eps
-feps = np.finfo(single).eps
+# deprecated imports to be removed in SciPy 1.13.0
+from numpy import single  # noqa: F401
+
+__all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
+           'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
+           'expm_cond', 'khatri_rao']
+
+eps = np.finfo('d').eps
+feps = np.finfo('f').eps
 
 _array_precision = {'i': 1, 'l': 1, 'f': 0, 'd': 1, 'F': 0, 'D': 1}
 
@@ -82,7 +86,7 @@ def _maybe_real(A, B, tol=None):
     # Note that booleans and integers compare as real.
     if np.isrealobj(A) and np.iscomplexobj(B):
         if tol is None:
-            tol = {0:feps*1e3, 1:eps*1e6}[_array_precision[B.dtype.char]]
+            tol = {0: feps*1e3, 1: eps*1e6}[_array_precision[B.dtype.char]]
         if np.allclose(B.imag, 0.0, atol=tol):
             B = B.real
     return B
@@ -119,6 +123,7 @@ def fractional_matrix_power(A, t):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import fractional_matrix_power
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = fractional_matrix_power(a, 0.5)
@@ -180,6 +185,7 @@ def logm(A, disp=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import logm, expm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> b = logm(a)
@@ -197,8 +203,8 @@ def logm(A, disp=True):
     F = scipy.linalg._matfuncs_inv_ssq._logm(A)
     F = _maybe_real(A, F)
     errtol = 1000*eps
-    #TODO use a better error approximation
-    errest = norm(expm(F)-A,1) / norm(A,1)
+    # TODO use a better error approximation
+    errest = norm(expm(F)-A, 1) / norm(A, 1)
     if disp:
         if not isfinite(errest) or errest >= errtol:
             print("logm result may be inaccurate, approximate err =", errest)
@@ -208,35 +214,59 @@ def logm(A, disp=True):
 
 
 def expm(A):
-    """
-    Compute the matrix exponential using Pade approximation.
+    """Compute the matrix exponential of an array.
 
     Parameters
     ----------
-    A : (N, N) array_like or sparse matrix
-        Matrix to be exponentiated.
+    A : ndarray
+        Input with last two dimensions are square ``(..., n, n)``.
 
     Returns
     -------
-    expm : (N, N) ndarray
-        Matrix exponential of `A`.
+    eA : ndarray
+        The resulting matrix exponential with the same shape of ``A``
+
+    Notes
+    -----
+    Implements the algorithm given in [1], which is essentially a Pade
+    approximation with a variable order that is decided based on the array
+    data.
+
+    For input with size ``n``, the memory usage is in the worst case in the
+    order of ``8*(n**2)``. If the input data is not of single and double
+    precision of real and complex dtypes, it is copied to a new array.
+
+    For cases ``n >= 400``, the exact 1-norm computation cost, breaks even with
+    1-norm estimation and from that point on the estimation scheme given in
+    [2] is used to decide on the approximation order.
 
     References
     ----------
-    .. [1] Awad H. Al-Mohy and Nicholas J. Higham (2009)
-           "A New Scaling and Squaring Algorithm for the Matrix Exponential."
-           SIAM Journal on Matrix Analysis and Applications.
-           31 (3). pp. 970-989. ISSN 1095-7162
+    .. [1] Awad H. Al-Mohy and Nicholas J. Higham, (2009), "A New Scaling
+           and Squaring Algorithm for the Matrix Exponential", SIAM J. Matrix
+           Anal. Appl. 31(3):970-989, :doi:`10.1137/09074721X`
+
+    .. [2] Nicholas J. Higham and Francoise Tisseur (2000), "A Block Algorithm
+           for Matrix 1-Norm Estimation, with an Application to 1-Norm
+           Pseudospectra." SIAM J. Matrix Anal. Appl. 21(4):1185-1201,
+           :doi:`10.1137/S0895479899356080`
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Matrix version of the formula exp(0) = 1:
 
-    >>> expm(np.zeros((2,2)))
-    array([[ 1.,  0.],
-           [ 0.,  1.]])
+    >>> expm(np.zeros((3, 2, 2)))
+    array([[[1., 0.],
+            [0., 1.]],
+    <BLANKLINE>
+           [[1., 0.],
+            [0., 1.]],
+    <BLANKLINE>
+           [[1., 0.],
+            [0., 1.]]])
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
     applied to a matrix:
@@ -250,9 +280,100 @@ def expm(A):
            [ 1.06860742+0.48905626j, -1.71075555+0.91406299j]])
 
     """
-    # Input checking and conversion is provided by sparse.linalg.expm().
-    import scipy.sparse.linalg
-    return scipy.sparse.linalg.expm(A)
+    a = np.asarray(A)
+    if a.size == 1 and a.ndim < 2:
+        return np.array([[np.exp(a.item())]])
+
+    if a.ndim < 2:
+        raise LinAlgError('The input array must be at least two-dimensional')
+    if a.shape[-1] != a.shape[-2]:
+        raise LinAlgError('Last 2 dimensions of the array must be square')
+    n = a.shape[-1]
+    # Empty array
+    if min(*a.shape) == 0:
+        return np.empty_like(a)
+
+    # Scalar case
+    if a.shape[-2:] == (1, 1):
+        return np.exp(a)
+
+    if not np.issubdtype(a.dtype, np.inexact):
+        a = a.astype(np.float64)
+    elif a.dtype == np.float16:
+        a = a.astype(np.float32)
+
+    # An explicit formula for 2x2 case exists (formula (2.2) in [1]). However, without
+    # Kahan's method, numerical instabilities can occur (See gh-19584). Hence removed
+    # here until we have a more stable implementation.
+
+    n = a.shape[-1]
+    eA = np.empty(a.shape, dtype=a.dtype)
+    # working memory to hold intermediate arrays
+    Am = np.empty((5, n, n), dtype=a.dtype)
+
+    # Main loop to go through the slices of an ndarray and passing to expm
+    for ind in product(*[range(x) for x in a.shape[:-2]]):
+        aw = a[ind]
+
+        lu = bandwidth(aw)
+        if not any(lu):  # a is diagonal?
+            eA[ind] = np.diag(np.exp(np.diag(aw)))
+            continue
+
+        # Generic/triangular case; copy the slice into scratch and send.
+        # Am will be mutated by pick_pade_structure
+        Am[0, :, :] = aw
+        m, s = pick_pade_structure(Am)
+
+        if s != 0:  # scaling needed
+            Am[:4] *= [[[2**(-s)]], [[4**(-s)]], [[16**(-s)]], [[64**(-s)]]]
+
+        pade_UV_calc(Am, n, m)
+        eAw = Am[0]
+
+        if s != 0:  # squaring needed
+
+            if (lu[1] == 0) or (lu[0] == 0):  # lower/upper triangular
+                # This branch implements Code Fragment 2.1 of [1]
+
+                diag_aw = np.diag(aw)
+                # einsum returns a writable view
+                np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2**(-s))
+                # super/sub diagonal
+                sd = np.diag(aw, k=-1 if lu[1] == 0 else 1)
+
+                for i in range(s-1, -1, -1):
+                    eAw = eAw @ eAw
+
+                    # diagonal
+                    np.einsum('ii->i', eAw)[:] = np.exp(diag_aw * 2.**(-i))
+                    exp_sd = _exp_sinch(diag_aw * (2.**(-i))) * (sd * 2**(-i))
+                    if lu[1] == 0:  # lower
+                        np.einsum('ii->i', eAw[1:, :-1])[:] = exp_sd
+                    else:  # upper
+                        np.einsum('ii->i', eAw[:-1, 1:])[:] = exp_sd
+
+            else:  # generic
+                for _ in range(s):
+                    eAw = eAw @ eAw
+
+        # Zero out the entries from np.empty in case of triangular input
+        if (lu[0] == 0) or (lu[1] == 0):
+            eA[ind] = np.triu(eAw) if lu[0] == 0 else np.tril(eAw)
+        else:
+            eA[ind] = eAw
+
+    return eA
+
+
+def _exp_sinch(x):
+    # Higham's formula (10.42), might overflow, see GH-11839
+    lexp_diff = np.diff(np.exp(x))
+    l_diff = np.diff(x)
+    mask_z = l_diff == 0.
+    lexp_diff[~mask_z] /= l_diff[~mask_z]
+    lexp_diff[mask_z] = np.exp(x[:-1][mask_z])
+    return lexp_diff
 
 
 def cosm(A):
@@ -273,6 +394,7 @@ def cosm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -312,6 +434,7 @@ def sinm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import expm, sinm, cosm
 
     Euler's identity (exp(i*theta) = cos(theta) + i*sin(theta))
@@ -351,6 +474,7 @@ def tanm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanm, sinm, cosm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanm(a)
@@ -389,6 +513,7 @@ def coshm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> c = coshm(a)
@@ -427,6 +552,7 @@ def sinhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> s = sinhm(a)
@@ -465,6 +591,7 @@ def tanhm(A):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.linalg import tanhm, sinhm, coshm
     >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
     >>> t = tanhm(a)
@@ -513,17 +640,6 @@ def funm(A, func, disp=True):
 
         1-norm of the estimated error, ||err||_1 / ||A||_1
 
-    Examples
-    --------
-    >>> from scipy.linalg import funm
-    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
-    >>> funm(a, lambda x: x*x)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-    >>> a.dot(a)
-    array([[  4.,  15.],
-           [  5.,  19.]])
-
     Notes
     -----
     This function implements the general algorithm based on Schur decomposition
@@ -546,41 +662,53 @@ def funm(A, func, disp=True):
     ----------
     .. [1] Gene H. Golub, Charles F. van Loan, Matrix Computations 4th ed.
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.linalg import funm
+    >>> a = np.array([[1.0, 3.0], [1.0, 4.0]])
+    >>> funm(a, lambda x: x*x)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+    >>> a.dot(a)
+    array([[  4.,  15.],
+           [  5.,  19.]])
+
     """
     A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
     T, Z = schur(A)
-    T, Z = rsf2csf(T,Z)
-    n,n = T.shape
+    T, Z = rsf2csf(T, Z)
+    n, n = T.shape
     F = diag(func(diag(T)))  # apply function to diagonal elements
     F = F.astype(T.dtype.char)  # e.g., when F is real but T is complex
 
-    minden = abs(T[0,0])
+    minden = abs(T[0, 0])
 
     # implement Algorithm 11.1.1 from Golub and Van Loan
     #                 "matrix Computations."
-    for p in range(1,n):
-        for i in range(1,n-p+1):
+    for p in range(1, n):
+        for i in range(1, n-p+1):
             j = i + p
-            s = T[i-1,j-1] * (F[j-1,j-1] - F[i-1,i-1])
-            ksl = slice(i,j-1)
-            val = dot(T[i-1,ksl],F[ksl,j-1]) - dot(F[i-1,ksl],T[ksl,j-1])
+            s = T[i-1, j-1] * (F[j-1, j-1] - F[i-1, i-1])
+            ksl = slice(i, j-1)
+            val = dot(T[i-1, ksl], F[ksl, j-1]) - dot(F[i-1, ksl], T[ksl, j-1])
             s = s + val
-            den = T[j-1,j-1] - T[i-1,i-1]
+            den = T[j-1, j-1] - T[i-1, i-1]
             if den != 0.0:
                 s = s / den
-            F[i-1,j-1] = s
-            minden = min(minden,abs(den))
+            F[i-1, j-1] = s
+            minden = min(minden, abs(den))
 
     F = dot(dot(Z, F), transpose(conjugate(Z)))
     F = _maybe_real(A, F)
 
-    tol = {0:feps, 1:eps}[_array_precision[F.dtype.char]]
+    tol = {0: feps, 1: eps}[_array_precision[F.dtype.char]]
     if minden == 0.0:
         minden = tol
-    err = min(1, max(tol,(tol/minden)*norm(triu(T,1),1)))
-    if prod(ravel(logical_not(isfinite(F))),axis=0):
-        err = Inf
+    err = min(1, max(tol, (tol/minden)*norm(triu(T, 1), 1)))
+    if prod(ravel(logical_not(isfinite(F))), axis=0):
+        err = np.inf
     if disp:
         if err > 1000*tol:
             print("funm result may be inaccurate, approximate err =", err)
@@ -632,7 +760,7 @@ def signm(A, disp=True):
             c = 1e3*eps*amax(x)
         return sign((absolute(rx) > c) * rx)
     result, errest = funm(A, rounded_sign, disp=0)
-    errtol = {0:1e3*feps, 1:1e3*eps}[_array_precision[result.dtype.char]]
+    errtol = {0: 1e3*feps, 1: 1e3*eps}[_array_precision[result.dtype.char]]
     if errest < errtol:
         return result
 
@@ -656,8 +784,8 @@ def signm(A, disp=True):
     for i in range(100):
         iS0 = inv(S0)
         S0 = 0.5*(S0 + iS0)
-        Pp = 0.5*(dot(S0,S0)+S0)
-        errest = norm(dot(Pp,Pp)-Pp,1)
+        Pp = 0.5*(dot(S0, S0)+S0)
+        errest = norm(dot(Pp, Pp)-Pp, 1)
         if errest < errtol or prev_errest == errest:
             break
         prev_errest = errest
@@ -687,6 +815,10 @@ def khatri_rao(a, b):
     c:  (n*m, k) ndarray
         Khatri-rao product of `a` and `b`.
 
+    See Also
+    --------
+    kron : Kronecker product
+
     Notes
     -----
     The mathematical definition of the Khatri-Rao product is:
@@ -699,12 +831,9 @@ def khatri_rao(a, b):
 
         c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
 
-    See Also
-    --------
-    kron : Kronecker product
-
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[1, 2, 3], [4, 5, 6]])
     >>> b = np.array([[3, 4, 5], [6, 7, 8], [2, 3, 9]])
@@ -720,12 +849,18 @@ def khatri_rao(a, b):
     a = np.asarray(a)
     b = np.asarray(b)
 
-    if not(a.ndim == 2 and b.ndim == 2):
+    if not (a.ndim == 2 and b.ndim == 2):
         raise ValueError("The both arrays should be 2-dimensional.")
 
     if not a.shape[1] == b.shape[1]:
         raise ValueError("The number of columns for both arrays "
                          "should be equal.")
+
+    # accommodate empty arrays
+    if a.size == 0 or b.size == 0:
+        m = a.shape[0] * b.shape[0]
+        n = a.shape[1]
+        return np.empty_like(a, shape=(m, n))
 
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]

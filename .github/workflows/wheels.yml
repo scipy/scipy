@@ -1,0 +1,236 @@
+# Workflow to build and test wheels.
+# To work on the wheel building infrastructure on a fork, comment out:
+#
+# if: github.repository == 'scipy/scipy'
+#
+# in the get_commit_message job include [wheel build] in your commit
+# message to trigger the build. All files related to wheel building are located
+# at tools/wheels/
+name: Wheel builder
+
+on:
+  schedule:
+  #        ┌───────────── minute (0 - 59)
+  #        │  ┌───────────── hour (0 - 23)
+  #        │  │ ┌───────────── day of the month (1 - 31)
+  #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+  #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+  #        │  │ │ │ │
+  - cron: "9  9 * * *"
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+  workflow_dispatch:
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  get_commit_message:
+    name: Get commit message
+    runs-on: ubuntu-latest
+    if: github.repository == 'scipy/scipy'
+    outputs:
+      message: ${{ steps.commit_message.outputs.message }}
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@v4.1.1
+        # Gets the correct commit message for pull request
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Get commit message
+        id: commit_message
+        run: |
+          set -xe
+          COMMIT_MSG=$(git log --no-merges -1)
+          RUN="0"
+          if [[ "$COMMIT_MSG" == *"[wheel build]"* ]]; then
+              RUN="1" 
+          fi
+          echo "message=$RUN" >> $GITHUB_OUTPUT
+          echo github.ref ${{ github.ref }}
+
+  build_wheels:
+    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
+    needs: get_commit_message
+    if: >-
+      contains(needs.get_commit_message.outputs.message, '1') ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ${{ matrix.buildplat[0] }}
+
+    strategy:
+      # Ensure that a wheel builder finishes even if another fails
+      fail-fast: false
+      matrix:
+        # Github Actions doesn't support pairing matrix values together, let's improvise
+        # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
+        buildplat:
+        # should also be able to do multi-archs on a single entry, e.g.
+        # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
+        # so easier to separate out here.
+        - [ubuntu-22.04, manylinux, x86_64]
+        - [ubuntu-22.04, musllinux, x86_64]
+        - [macos-11, macosx, x86_64]
+        - [macos-14, macosx, arm64]
+        - [windows-2019, win, AMD64]
+
+        python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
+        # python[0] is used to specify the python versions made by cibuildwheel
+
+    env:
+      IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
+      # upload to staging if it's a push to a maintenance branch and the last
+      # commit message contains '[wheel build]'
+      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/heads/maintenance') && contains(needs.get_commit_message.outputs.message, '1') }}
+      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout scipy
+        uses: actions/checkout@v4.1.1
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.11
+
+      - name: win_amd64 - install rtools
+        run: |
+          # mingw-w64
+          choco install rtools -y --no-progress --force --version=4.0.0.20220206
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+        if: ${{ runner.os == 'Windows' && env.IS_32_BIT == 'false' }}
+
+      - name: Setup macOS
+        if: matrix.buildplat[0] == 'macos-11' || matrix.buildplat[0] == 'macos-14'
+        run: |
+          if [[ ${{ matrix.buildplat[2] }} == 'arm64' ]]; then
+            # macosx_arm64
+          
+            # use homebrew gfortran
+            sudo xcode-select -s /Applications/Xcode_15.2.app            
+            # for some reason gfortran is not on the path
+            GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+            ln -s $GFORTRAN_LOC gfortran
+            export PATH=$PWD:$PATH
+            echo "PATH=$PATH" >> "$GITHUB_ENV"
+          
+            # location of the gfortran's libraries
+            GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+
+            CIBW="MACOSX_DEPLOYMENT_TARGET=12.0\
+              MACOS_DEPLOYMENT_TARGET=12.0\
+              LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
+              _PYTHON_HOST_PLATFORM=macosx-12.0-arm64\
+              PIP_PRE=1\
+              PIP_NO_BUILD_ISOLATION=false\
+              PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig\
+              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
+          
+            CIBW="sudo xcode-select -s /Applications/Xcode_15.2.app"
+            echo "CIBW_BEFORE_ALL=$CIBW" >> $GITHUB_ENV
+
+            echo "REPAIR_PATH=/opt/arm64-builds/lib" >> "$GITHUB_ENV"
+
+            CIBW="DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib delocate-listdeps {wheel} &&\
+              DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
+            echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+      
+          else
+            # macosx_x86_64 with OpenBLAS
+            # setting SDKROOT necessary when using the gfortran compiler
+            # installed in cibw_before_build_macos.sh
+            # MACOS_DEPLOYMENT_TARGET is set because of
+            # https://github.com/mesonbuild/meson-python/pull/309. Once
+            # an update is released, then that environment variable can
+            # be removed.
+            CIBW="MACOSX_DEPLOYMENT_TARGET=10.9\
+              MACOS_DEPLOYMENT_TARGET=10.9\
+              SDKROOT=/Applications/Xcode_11.7.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.15.sdk\
+              LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
+              _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64\
+              PIP_PRE=1\
+              PIP_NO_BUILD_ISOLATION=false\
+              PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
+          
+            CIBW="DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&\
+              DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
+            echo "CIBW_REPAIR_WHEEL_COMMAND_MACOS=$CIBW" >> "$GITHUB_ENV"
+          fi
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.17.0
+        env:
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}*
+          CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+          CIBW_PRERELEASE_PYTHONS: True
+
+          # TODO remove the CIBW_BEFORE_BUILD_* lines once there are
+          # numpy2.0 wheels available on PyPI. Also remove/comment out the
+          # PIP_NO_BUILD_ISOLATION and PIP_EXTRA_INDEX_URL from CIBW_ENVIRONMENT
+          # (also for _MACOS and _WINDOWS below)
+          CIBW_BEFORE_BUILD_LINUX: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
+          CIBW_BEFORE_BUILD_WINDOWS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+          CIBW_BEFORE_BUILD_MACOS: "pip install numpy>=2.0.0.dev0 meson-python cython pythran pybind11 ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+          # Allow pip to find install nightly wheels if necessary
+          # Setting PIP_NO_BUILD_ISOLATION=false makes pip use build-isolation.
+          CIBW_ENVIRONMENT: "PIP_NO_BUILD_ISOLATION=false PIP_PRE=1 PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
+
+          CIBW_ENVIRONMENT_WINDOWS: >
+            PKG_CONFIG_PATH=c:/opt/64/lib/pkgconfig
+            PIP_PRE=1
+            PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple
+            PIP_NO_BUILD_ISOLATION=false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          path: ./wheelhouse/*.whl
+          name: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}-${{ matrix.buildplat[2] }}
+
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          # for installation of anaconda-client, required for upload to
+          # anaconda.org
+          # default (and activated) environment name is test
+          # Note that this step is *after* specific pythons have been used to
+          # build and test the wheel
+          auto-update-conda: true
+          python-version: "3.10"
+
+      - name: Upload wheels
+        if: success()
+        shell: bash -el {0}
+        # see https://github.com/marketplace/actions/setup-miniconda for why
+        # `-el {0}` is required.
+        env:
+          SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+          SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_NIGHTLY_UPLOAD_TOKEN }}
+        run: |
+          conda install -y anaconda-client
+          source tools/wheels/upload_wheels.sh
+          set_upload_vars
+          # For cron jobs (restricted to main branch) or "Run workflow" trigger
+          # an upload to:
+          #
+          # https://anaconda.org/scientific-python-nightly-wheels/scipy
+          # 
+          # Pushes to a maintenance branch that contain '[wheel build]' will
+          # cause wheels to be built and uploaded to:
+          #
+          # https://anaconda.org/multibuild-wheels-staging/scipy
+          #
+          # The tokens were originally generated at anaconda.org
+          upload_wheels

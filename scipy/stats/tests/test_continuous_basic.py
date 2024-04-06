@@ -1,23 +1,25 @@
-
+import sys
 import numpy as np
 import numpy.testing as npt
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
+import itertools
 
 from scipy import stats
-from scipy.special import betainc
-from .common_tests import (check_normalization, check_moment, check_mean_expect,
+from .common_tests import (check_normalization, check_moment,
+                           check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_entropy_vect_scale,
                            check_edge_support, check_named_args,
                            check_random_state_property,
-                           check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast, check_freezing,
-                           check_deprecation_warning_gh5982_moment,
-                           check_deprecation_warning_gh5982_interval)
+                           check_meth_dtype, check_ppf_dtype,
+                           check_cmplx_deriv,
+                           check_pickling, check_rvs_broadcast,
+                           check_freezing, check_munp_expect,)
 from scipy.stats._distr_params import distcont
+from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
 """
 Test all continuous distributions.
@@ -34,12 +36,12 @@ not for numerically exact results.
 # to _distr_params
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
+_IS_32BIT = (sys.maxsize < 2**32)
 
 # For skipping test_cont_basic
-# distslow are sorted by speed (very slow to slow)
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
             'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm']
+            'truncnorm', 'truncweibull_min']
 
 # distxslow are sorted by speed (very slow to slow)
 distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
@@ -60,22 +62,23 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'kappa4', 'kstwobign', 'recipinvgauss',
                     'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
                     'studentized_range']
 # pearson3 fails due to something weird
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
-# pearson3 is overriden as not implemented due to gh-11746
+# pearson3 is overridden as not implemented due to gh-11746
 fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                     'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                     'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
-                     'tukeylambda', 'invweibull']
+                     'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
+                     'lomax', 'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
+                     'tukeylambda', 'invweibull', 'rel_breitwigner']
                      + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                         'nct', 'pareto', 'powernorm', 'powerlognorm']
                      + ['pearson3'])
+
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -85,20 +88,20 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'vonmises', 'vonmises_line',
+                         'trapezoid', 'truncpareto', 'vonmises', 'vonmises_line',
                          'studentized_range']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
-# pearson3 is overriden as not implemented due to gh-11746
+# pearson3 is overridden as not implemented due to gh-11746
 fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                         'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
-                         'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
-                         'invweibull']
-                         + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                            'pareto', 'powernorm', 'powerlognorm']
-                         + ['pearson3'])
+                         'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
+                         'lomax', 'mielke', 'nakagami', 'ncf', 'nct',
+                         'skewcauchy', 't', 'truncpareto', 'invweibull']
+                        + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
+                           'pareto', 'powernorm', 'powerlognorm']
+                        + ['pearson3'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
@@ -106,25 +109,36 @@ skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
 # on the implementation details of corresponding special functions.
 # cf https://github.com/scipy/scipy/pull/4979 for a discussion.
-fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
-                   'dgamma', 'dweibull', 'erlang', 'f', 'gamma',
-                   'gausshyper', 'gengamma', 'genhyperbolic',
-                   'geninvgauss', 'gennorm', 'genpareto',
-                   'halfgennorm', 'invgamma',
-                   'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
-                   'logistic', 'loguniform', 'maxwell', 'nakagami',
-                   'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
-                   'truncnorm', 'studentized_range'])
+fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
+               'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
+               'gausshyper', 'gengamma', 'genhyperbolic',
+               'geninvgauss', 'gennorm', 'genpareto',
+               'halfcauchy', 'halfgennorm', 'invgamma', 'jf_skew_t',
+               'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
+               'logistic', 'loguniform', 'maxwell', 'nakagami',
+               'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',
+               'powerlaw', 'rdist', 'reciprocal', 'rice',
+               'skewnorm', 't', 'truncweibull_min',
+               'tukeylambda', 'vonmises', 'vonmises_line',
+               'rv_histogram_instance', 'truncnorm', 'studentized_range',
+               'johnsonsb', 'halflogistic', 'rel_breitwigner'}
 
-_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
-                   6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
-histogram_test_instance = stats.rv_histogram(_h)
+
+# rv_histogram instances, with uniform and non-uniform bins;
+# stored as (dist, arg) tuples for cases_test_cont_basic
+# and cases_test_moments.
+histogram_test_instances = []
+case1 = {'a': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+               6, 6, 6, 7, 7, 7, 8, 8, 9], 'bins': 8}  # equal width bins
+case2 = {'a': [1, 1], 'bins': [0, 1, 10]}  # unequal width bins
+for case, density in itertools.product([case1, case2], [True, False]):
+    _hist = np.histogram(**case, density=density)
+    _rv_hist = stats.rv_histogram(_hist, density=density)
+    histogram_test_instances.append((_rv_hist, tuple()))
 
 
 def cases_test_cont_basic():
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
         elif distname in distslow:
@@ -148,21 +162,20 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     rng = np.random.RandomState(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
-    sm = rvs.mean()
-    sv = rvs.var()
     m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    if distname not in {'laplace_asymmetric'}:
+        check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
+    check_cdf_sf(distfn, arg, distname)
+    check_ppf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
     check_pdf_logpdf(distfn, arg, distname)
     check_pdf_logpdf_at_endpoints(distfn, arg, distname)
     check_cdf_logcdf(distfn, arg, distname)
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
-    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
-    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     if distname == 'rv_histogram_instance':
@@ -177,7 +190,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
              distfn.logsf]
     # make sure arguments are within support
     spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'tukeylambda': 0.3,
+              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
               'rv_histogram_instance': 5.0}
     x = spec_x.get(distname, 0.5)
     if distname == 'invweibull':
@@ -187,7 +200,12 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     check_named_args(distfn, x, arg, locscale_defaults, meths)
     check_random_state_property(distfn, arg)
-    check_pickling(distfn, arg)
+
+    if distname in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
+    else:
+        check_pickling(distfn, arg)
     check_freezing(distfn, arg)
 
     # Entropy
@@ -249,35 +267,48 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises'])
-    fail_higher = set(['vonmises', 'ncf'])
+    fail_normalization = set()
+    fail_higher = {'ncf'}
+    fail_moment = {'johnsonsu'}  # generic `munp` is inaccurate for johnsonsu
 
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
 
         if distname in distxslow_test_moments:
-            yield pytest.param(distname, arg, True, True, True,
+            yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason="too slow"))
             continue
 
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
+        cond3 = distname not in fail_moment
 
-        yield distname, arg, cond1, cond2, False
+        marks = list()
+        # Currently unused, `marks` can be used to add a timeout to a test of
+        # a specific distribution.  For example, this shows how a timeout could
+        # be added for the 'skewnorm' distribution:
+        #
+        #     marks = list()
+        #     if distname == 'skewnorm':
+        #         marks.append(pytest.mark.timeout(300))
 
-        if not cond1 or not cond2:
+        yield pytest.param(distname, arg, cond1, cond2, cond3,
+                           False, marks=marks)
+
+        if not cond1 or not cond2 or not cond3:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True,
-                               marks=pytest.mark.xfail)
+            yield pytest.param(distname, arg, True, True, True, True,
+                               marks=[pytest.mark.xfail] + marks)
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
+@pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,moment_ok,'
                          'is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, moment_ok,
+                 is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -287,27 +318,41 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
+        sup.filter(IntegrationWarning,
+                   "The maximum number of subdivisions.")
+        sup.filter(IntegrationWarning,
+                   "The algorithm does not converge.")
+
         if is_xfailing:
             sup.filter(IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        if normalization_ok:
-            check_normalization(distfn, arg, distname)
+        with np.errstate(all="ignore"):
+            if normalization_ok:
+                check_normalization(distfn, arg, distname)
 
-        if higher_ok:
-            check_mean_expect(distfn, arg, m, distname)
-            check_skew_expect(distfn, arg, m, v, s, distname)
-            check_var_expect(distfn, arg, m, v, distname)
-            check_kurt_expect(distfn, arg, m, v, k, distname)
+            if higher_ok:
+                check_mean_expect(distfn, arg, m, distname)
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
+                check_munp_expect(distfn, arg, distname)
 
-        check_moment(distfn, arg, m, v, distname)
+        check_loc_scale(distfn, arg, m, v, distname)
+
+        if moment_ok:
+            check_moment(distfn, arg, m, v, distname)
 
 
 @pytest.mark.parametrize('dist,shape_args', distcont)
 def test_rvs_broadcast(dist, shape_args):
-    if dist in ['gausshyper', 'genexpon', 'studentized_range']:
+    if dist in ['gausshyper', 'studentized_range']:
         pytest.skip("too slow")
+
+    if dist in ['rel_breitwigner'] and _IS_32BIT:
+        # gh18414
+        pytest.skip("fails on Linux 32-bit")
 
     # If shape_only is True, it means the _rvs method of the
     # distribution uses more than one random number to generate a random
@@ -322,7 +367,7 @@ def test_rvs_broadcast(dist, shape_args):
     shape_only = dist in ['argus', 'betaprime', 'dgamma', 'dweibull',
                           'exponnorm', 'genhyperbolic', 'geninvgauss',
                           'levy_stable', 'nct', 'norminvgauss', 'rice',
-                          'skewnorm', 'semicircular', 'gennorm']
+                          'skewnorm', 'semicircular', 'gennorm', 'loggamma']
 
     distfunc = getattr(stats, dist)
     loc = np.zeros(2)
@@ -340,6 +385,46 @@ def test_rvs_broadcast(dist, shape_args):
     # parameters are all broadcast together.
 
     check_rvs_broadcast(distfunc, dist, allargs, bshape, shape_only, 'd')
+
+
+# Expected values of the SF, CDF, PDF were computed using
+# mpmath with mpmath.mp.dps = 50 and output at 20:
+#
+# def ks(x, n):
+#     x = mpmath.mpf(x)
+#     logp = -mpmath.power(6.0*n*x+1.0, 2)/18.0/n
+#     sf, cdf = mpmath.exp(logp), -mpmath.expm1(logp)
+#     pdf = (6.0*n*x+1.0) * 2 * sf/3
+#     print(mpmath.nstr(sf, 20), mpmath.nstr(cdf, 20), mpmath.nstr(pdf, 20))
+#
+# Tests use 1/n < x < 1-1/n and n > 1e6 to use the asymptotic computation.
+# Larger x has a smaller sf.
+@pytest.mark.parametrize('x,n,sf,cdf,pdf,rtol',
+                         [(2.0e-5, 1000000000,
+                           0.44932297307934442379, 0.55067702692065557621,
+                           35946.137394996276407, 5e-15),
+                          (2.0e-9, 1000000000,
+                           0.99999999061111115519, 9.3888888448132728224e-9,
+                           8.6666665852962971765, 5e-14),
+                          (5.0e-4, 1000000000,
+                           7.1222019433090374624e-218, 1.0,
+                           1.4244408634752704094e-211, 5e-14)])
+def test_gh17775_regression(x, n, sf, cdf, pdf, rtol):
+    # Regression test for gh-17775. In scipy 1.9.3 and earlier,
+    # these test would fail.
+    #
+    # KS one asymptotic sf ~ e^(-(6nx+1)^2 / 18n)
+    # Given a large 32-bit integer n, 6n will overflow in the c implementation.
+    # Example of broken behaviour:
+    # ksone.sf(2.0e-5, 1000000000) == 0.9374359693473666
+    ks = stats.ksone
+    vals = np.array([ks.sf(x, n), ks.cdf(x, n), ks.pdf(x, n)])
+    expected = np.array([sf, cdf, pdf])
+    npt.assert_allclose(vals, expected, rtol=rtol)
+    # The sf+cdf must sum to 1.0.
+    npt.assert_equal(vals[0] + vals[1], 1.0)
+    # Check inverting the (potentially very small) sf (uses a lower tolerance)
+    npt.assert_allclose([ks.isf(sf, n)], [x], rtol=1e-8)
 
 
 def test_rvs_gh2069_regression():
@@ -368,34 +453,43 @@ def test_rvs_gh2069_regression():
                   [[1, 1], [1, 1]], 1)
     assert_raises(ValueError, stats.gamma.rvs, [2, 3, 4, 5], 0, 1, (2, 2))
     assert_raises(ValueError, stats.gamma.rvs, [1, 1, 1, 1], [0, 0, 0, 0],
-                     [[1], [2]], (4,))
+                  [[1], [2]], (4,))
 
 
 def test_nomodify_gh9900_regression():
     # Regression test for gh-9990
     # Prior to gh-9990, calls to stats.truncnorm._cdf() use what ever was
     # set inside the stats.truncnorm instance during stats.truncnorm.cdf().
-    # This could cause issues wth multi-threaded code.
+    # This could cause issues with multi-threaded code.
     # Since then, the calls to cdf() are not permitted to modify the global
     # stats.truncnorm instance.
     tn = stats.truncnorm
     # Use the right-half truncated normal
     # Check that the cdf and _cdf return the same result.
-    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf),
+                            0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]),
+                            0.6826894921370859)
 
     # Now use the left-half truncated normal
-    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0),
+                            0.31731050786291415)
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]),
+                            0.31731050786291415)
 
     # Check that the right-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(1, 0, np.inf), 0.6826894921370859)  # NOT 1.6826894921370859
-    npt.assert_almost_equal(tn.cdf(1, 0, np.inf), 0.6826894921370859)
+    npt.assert_almost_equal(tn._cdf([1], [0], [np.inf]),
+                            0.6826894921370859)  # Not 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, 0, np.inf),
+                            0.6826894921370859)
 
     # Check that the left-half truncated normal _cdf hasn't changed
-    npt.assert_almost_equal(tn._cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
-    npt.assert_almost_equal(tn.cdf(1, -np.inf, 0), 1)                     # Not 1.6826894921370859
-    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0), 0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn._cdf([-1], [-np.inf], [0]),
+                            0.31731050786291415)  # Not -0.6826894921370859
+    npt.assert_almost_equal(tn.cdf(1, -np.inf, 0),
+                            1)  # Not 1.6826894921370859
+    npt.assert_almost_equal(tn.cdf(-1, -np.inf, 0),
+                            0.31731050786291415)  # Not -0.6826894921370859
 
 
 def test_broadcast_gh9990_regression():
@@ -459,44 +553,37 @@ def test_method_of_moments():
     x = [0, 0, 0, 0, 1]
     a = 1/5 - 2*np.sqrt(3)/5
     b = 1/5 + 2*np.sqrt(3)/5
-    # force use of method of moments (uniform.fit is overriden)
+    # force use of method of moments (uniform.fit is overridden)
     loc, scale = super(type(stats.uniform), stats.uniform).fit(x, method="MM")
     npt.assert_almost_equal(loc, a, decimal=4)
     npt.assert_almost_equal(loc+scale, b, decimal=4)
 
 
-def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
-    # this did not work, skipped silently by nose
-    if np.isfinite(m):
-        check_sample_mean(sm, sv, sn, m)
-    if np.isfinite(v):
-        check_sample_var(sv, sn, v)
+def check_sample_meanvar_(popmean, popvar, sample):
+    if np.isfinite(popmean):
+        check_sample_mean(sample, popmean)
+    if np.isfinite(popvar):
+        check_sample_var(sample, popvar)
 
 
-def check_sample_mean(sm, v, n, popmean):
-    # from stats._stats_py.ttest_1samp(a, popmean):
-    # Calculates the t-obtained for the independent samples T-test on ONE group
-    # of scores a, given a population mean.
-    #
-    # Returns: t-value, two-tailed prob
-    df = n-1
-    svar = ((n-1)*v) / float(df)    # looks redundant
-    t = (sm-popmean) / np.sqrt(svar*(1.0/n))
-    prob = betainc(0.5*df, 0.5, df/(df + t*t))
-
-    # return t,prob
-    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m, sm=%f,%f' %
-                (t, prob, popmean, sm))
+def check_sample_mean(sample, popmean):
+    # Checks for unlikely difference between sample mean and population mean
+    prob = stats.ttest_1samp(sample, popmean).pvalue
+    assert prob > 0.01
 
 
-def check_sample_var(sv, n, popvar):
-    # two-sided chisquare test for sample variance equal to
-    # hypothesized variance
-    df = n-1
-    chi2 = (n - 1)*sv/popvar
-    pval = stats.distributions.chi2.sf(chi2, df) * 2
-    npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
-                (chi2, pval, popvar, sv))
+def check_sample_var(sample, popvar):
+    # check that population mean lies within the CI bootstrapped from the
+    # sample. This used to be a chi-squared test for variance, but there were
+    # too many false positives
+    res = stats.bootstrap(
+        (sample,),
+        lambda x, axis: x.var(ddof=1, axis=axis),
+        confidence_level=0.995,
+    )
+    conf = res.confidence_interval
+    low, high = conf.low, conf.high
+    assert low <= popvar <= high
 
 
 def check_cdf_ppf(distfn, arg, msg):
@@ -510,10 +597,20 @@ def check_sf_isf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.sf(distfn.isf([0.1, 0.5, 0.9], *arg), *arg),
                             [0.1, 0.5, 0.9], decimal=DECIMAL, err_msg=msg +
                             ' - sf-isf roundtrip')
+
+
+def check_cdf_sf(distfn, arg, msg):
     npt.assert_almost_equal(distfn.cdf([0.1, 0.9], *arg),
                             1.0 - distfn.sf([0.1, 0.9], *arg),
                             decimal=DECIMAL, err_msg=msg +
                             ' - cdf-sf relationship')
+
+
+def check_ppf_isf(distfn, arg, msg):
+    p = np.array([0.1, 0.9])
+    npt.assert_almost_equal(distfn.isf(p, *arg), distfn.ppf(1-p, *arg),
+                            decimal=DECIMAL, err_msg=msg +
+                            ' - ppf-isf relationship')
 
 
 def check_pdf(distfn, arg, msg):
@@ -610,7 +707,7 @@ def check_distribution_rvs(dist, args, alpha, rvs):
     if (pval < alpha):
         # The rvs passed in failed the K-S test, which _could_ happen
         # but is unlikely if alpha is small enough.
-        # Repeat the the test with a new sample of rvs.
+        # Repeat the test with a new sample of rvs.
         # Generate 1000 rvs, perform a K-S test that the new sample of rvs
         # are distributed according to the distribution.
         D, pval = stats.kstest(dist, dist, args=args, N=1000)
@@ -626,7 +723,7 @@ def check_loc_scale(distfn, arg, m, v, msg):
     # Make `loc` and `scale` arrays to catch bugs like gh-13580 where
     # `loc` and `scale` arrays improperly broadcast with shapes.
     loc, scale = np.array([10.0, 20.0]), np.array([10.0, 20.0])
-    mt, vt = distfn.stats(loc=loc, scale=scale, *arg)
+    mt, vt = distfn.stats(*arg, loc=loc, scale=scale)
     npt.assert_allclose(m*scale + loc, mt)
     npt.assert_allclose(v*scale*scale, vt)
 
@@ -833,6 +930,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
+@pytest.mark.xslow
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])
@@ -855,3 +953,64 @@ def test_kappa4_array_gh13582():
     k = np.array([-1, -0.5, 0, 1])[:, None]
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
     assert res2.shape == (4, 4, 3)
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_continuous_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().pmf
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().logpmf
+    stats.norm.pmf = "herring"
+    frozen_norm = stats.norm()
+    assert isinstance(frozen_norm, rv_continuous_frozen)
+    delattr(stats.norm, 'pmf')
+
+
+def test_skewnorm_pdf_gh16038():
+    rng = np.random.default_rng(0)
+    x, a = -np.inf, 0
+    npt.assert_equal(stats.skewnorm.pdf(x, a), stats.norm.pdf(x))
+    x, a = rng.random(size=(3, 3)), rng.random(size=(3, 3))
+    mask = rng.random(size=(3, 3)) < 0.5
+    a[mask] = 0
+    x_norm = x[mask]
+    res = stats.skewnorm.pdf(x, a)
+    npt.assert_equal(res[mask], stats.norm.pdf(x_norm))
+    npt.assert_equal(res[~mask], stats.skewnorm.pdf(x[~mask], a[~mask]))
+
+
+# for scalar input, these functions should return scalar output
+scalar_out = [['rvs', []], ['pdf', [0]], ['logpdf', [0]], ['cdf', [0]],
+              ['logcdf', [0]], ['sf', [0]], ['logsf', [0]], ['ppf', [0]],
+              ['isf', [0]], ['moment', [1]], ['entropy', []], ['expect', []],
+              ['median', []], ['mean', []], ['std', []], ['var', []]]
+scalars_out = [['interval', [0.95]], ['support', []], ['stats', ['mv']]]
+
+
+@pytest.mark.parametrize('case', scalar_out + scalars_out)
+def test_scalar_for_scalar(case):
+    # Some rv_continuous functions returned 0d array instead of NumPy scalar
+    # Guard against regression
+    method_name, args = case
+    method = getattr(stats.norm(), method_name)
+    res = method(*args)
+    if case in scalar_out:
+        assert isinstance(res, np.number)
+    else:
+        assert isinstance(res[0], np.number)
+        assert isinstance(res[1], np.number)
+
+
+def test_scalar_for_scalar2():
+    # test methods that are not attributes of frozen distributions
+    res = stats.norm.fit([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.fit_loc_scale([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.nnlf((0, 1), [1, 2, 3])
+    assert isinstance(res, np.number)

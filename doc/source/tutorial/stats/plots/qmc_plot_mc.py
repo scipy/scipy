@@ -1,6 +1,4 @@
 """Multiple MC to show how it can be bad."""
-from scipy.stats import qmc
-from scipy.stats._qmc import check_random_state
 import numpy as np
 
 import matplotlib.pyplot as plt

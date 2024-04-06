@@ -92,7 +92,7 @@ subroutine <prefix>gbmv(m,n,kl,ku,alpha,a,lda,x,incx,offx,beta,y,incy,offy,trans
 
   <ftype> dimension(*), intent(in) :: x
   check(offx>=0 && offx<len(x)) :: x
-  check(len(x)>offx+(trans==0?m-1:n-1)*abs(incx)) :: x
+  check(len(x)>offx+(trans==0?n-1:m-1)*abs(incx)) :: x
   depend(offx,n,incx) :: x
 
 end subroutine <prefix>gbmv

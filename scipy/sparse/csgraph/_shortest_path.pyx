@@ -5,6 +5,9 @@ The main interface is in the function :func:`shortest_path`.  This
 calls cython routines that compute the shortest path using
 the Floyd-Warshall algorithm, Dijkstra's algorithm with Fibonacci Heaps,
 the Bellman-Ford algorithm, or Johnson's Algorithm.
+
+Yen's k-Shortest Path Algorithm is available for
+finding the k-shortest paths between two nodes in a graph.
 """
 
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
@@ -14,17 +17,21 @@ import warnings
 import numpy as np
 cimport numpy as np
 
-from scipy.sparse import csr_matrix, isspmatrix, isspmatrix_csr, isspmatrix_csc
+from scipy.sparse import csr_matrix, issparse
 from scipy.sparse.csgraph._validation import validate_graph
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 cimport cython
 
 from libc.stdlib cimport malloc, free
-from numpy.math cimport INFINITY
+from libc.math cimport INFINITY
 
 np.import_array()
 
 include 'parameters.pxi'
+
+# EPS is the precision of DTYPE (float64, from parameters.pxi)
+DEF DTYPE_EPS = 1E-15
 
 
 class NegativeCycleError(Exception):
@@ -57,27 +64,27 @@ def shortest_path(csgraph, method='auto',
            'auto' -- (default) select the best among 'FW', 'D', 'BF', or 'J'
                      based on the input data.
 
-           'FW'   -- Floyd-Warshall algorithm.  Computational cost is
-                     approximately ``O[N^3]``.  The input csgraph will be
-                     converted to a dense representation.
+           'FW'   -- Floyd-Warshall algorithm.
+                     Computational cost is approximately ``O[N^3]``.
+                     The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.  Computational
-                     cost is approximately ``O[N(N*k + N*log(N))]``, where
-                     ``k`` is the average number of connected edges per node.
-                     The input csgraph will be converted to a csr
-                     representation.
+           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
+                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
+                     where ``k`` is the average number of connected edges per node.
+                     The input csgraph will be converted to a csr representation.
 
-           'BF'   -- Bellman-Ford algorithm.  This algorithm can be used when
-                     weights are negative.  If a negative cycle is encountered,
-                     an error will be raised.  Computational cost is
-                     approximately ``O[N(N^2 k)]``, where ``k`` is the average
-                     number of connected edges per node. The input csgraph will
-                     be converted to a csr representation.
+           'BF'   -- Bellman-Ford algorithm.
+                     This algorithm can be used when weights are negative.
+                     If a negative cycle is encountered, an error will be raised.
+                     Computational cost is approximately ``O[N(N^2 k)]``, where 
+                     ``k`` is the average number of connected edges per node. 
+                     The input csgraph will be converted to a csr representation.
 
-           'J'    -- Johnson's algorithm.  Like the Bellman-Ford algorithm,
-                     Johnson's algorithm is designed for use when the weights
-                     are negative.  It combines the Bellman-Ford algorithm
-                     with Dijkstra's algorithm for faster computation.
+           'J'    -- Johnson's algorithm.
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
+                     designed for use when the weights are negative. It combines 
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     faster computation.
 
     directed : bool, optional
         If True (default), then find the shortest path on a directed graph:
@@ -86,7 +93,7 @@ def shortest_path(csgraph, method='auto',
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -125,6 +132,9 @@ def shortest_path(csgraph, method='auto',
     directed == False.  i.e., if csgraph[i,j] and csgraph[j,i] are non-equal
     edges, method='D' may yield an incorrect result.
 
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
     Examples
     --------
     >>> from scipy.sparse import csr_matrix
@@ -157,14 +167,15 @@ def shortest_path(csgraph, method='auto',
                    copy_if_dense=(not overwrite),
                    copy_if_sparse=(not overwrite))
 
-    cdef bint issparse
+    cdef bint is_sparse
     cdef ssize_t N      # XXX cdef ssize_t Nk fails in Python 3 (?)
 
     if method == 'auto':
         # guess fastest method based on number of nodes and edges
         N = csgraph.shape[0]
-        issparse = isspmatrix(csgraph)
-        if issparse:
+        csgraph = convert_pydata_sparse_to_scipy(csgraph)
+        is_sparse = issparse(csgraph)
+        if is_sparse:
             Nk = csgraph.nnz
             if csgraph.format in ('csr', 'csc', 'coo'):
                 edges = csgraph.data
@@ -236,7 +247,7 @@ def floyd_warshall(csgraph, directed=True,
         algorithm can progress from point i to j along csgraph[i, j] or
         csgraph[j, i]
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -264,6 +275,11 @@ def floyd_warshall(csgraph, directed=True,
     ------
     NegativeCycleError:
         if there are negative cycles in the graph
+
+    Notes
+    -----
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -301,7 +317,7 @@ def floyd_warshall(csgraph, directed=True,
     dist_matrix = validate_graph(csgraph, directed, DTYPE,
                                  csr_output=False,
                                  copy_if_dense=not overwrite)
-    if not isspmatrix(csgraph):
+    if not issparse(csgraph):
         # for dense array input, zero entries represent non-edge
         dist_matrix[dist_matrix == 0] = INFINITY
 
@@ -332,7 +348,7 @@ def floyd_warshall(csgraph, directed=True,
 cdef void _floyd_warshall(
                np.ndarray[DTYPE_t, ndim=2, mode='c'] dist_matrix,
                np.ndarray[ITYPE_t, ndim=2, mode='c'] predecessor_matrix,
-               int directed=0):
+               int directed=0) noexcept:
     # dist_matrix : in/out
     #    on input, the graph
     #    on output, the matrix of shortest paths
@@ -426,7 +442,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -486,6 +502,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     distances.  Negative distances can lead to infinite cycles that must
     be handled by specialized algorithms such as Bellman-Ford's algorithm
     or Johnson's algorithm.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -659,7 +678,7 @@ cdef _dijkstra_scan_heap_multi(FibonacciHeap *heap,
                                int return_pred,
                                DTYPE_t limit):
     cdef:
-        unsigned int i, k, j_source, j_current
+        unsigned int j_current
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
@@ -698,7 +717,7 @@ cdef _dijkstra_scan_heap(FibonacciHeap *heap,
                          DTYPE_t limit,
                          int i):
     cdef:
-        unsigned int k, j_source, j_current
+        unsigned int j_current
         ITYPE_t j
         DTYPE_t next_val
         FibonacciNode *current_node
@@ -733,9 +752,7 @@ cdef int _dijkstra_directed(
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
@@ -779,12 +796,7 @@ cdef int _dijkstra_directed_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-
-        DTYPE_t next_val
 
         int return_pred = (pred.size > 0)
 
@@ -819,22 +831,20 @@ cdef int _dijkstra_directed_multi(
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
-            double[:] csrT_weights,
-            int[:] csrT_indices,
-            int[:] csrT_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            const double[:] csrT_weights,
+            const int[:] csrT_indices,
+            const int[:] csrT_indptr,
             double[:, :] dist_matrix,
             int[:, :] pred,
             DTYPE_t limit) except -1:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
@@ -885,15 +895,10 @@ cdef int _dijkstra_undirected_multi(
             int[:] sources,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
-        FibonacciNode *current_node
         FibonacciNode* nodes = <FibonacciNode*> malloc(N *
                                                        sizeof(FibonacciNode))
     if nodes == NULL:
@@ -951,7 +956,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -982,6 +987,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -1016,7 +1024,7 @@ def bellman_ford(csgraph, directed=True, indices=None,
     N = csgraph.shape[0]
 
     # ------------------------------
-    # intitialize/validate indices
+    # initialize/validate indices
     if indices is None:
         indices = np.arange(N, dtype=ITYPE)
     else:
@@ -1073,7 +1081,7 @@ cdef int _bellman_ford_directed(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
-            int[:, :] pred):
+            int[:, :] pred) noexcept:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1114,7 +1122,7 @@ cdef int _bellman_ford_undirected(
             const int[:] csr_indices,
             const int[:] csr_indptr,
             double[:, :] dist_matrix,
-            int[:, :] pred):
+            int[:, :] pred) noexcept:
     cdef:
         unsigned int Nind = dist_matrix.shape[0]
         unsigned int N = dist_matrix.shape[1]
@@ -1185,7 +1193,7 @@ def johnson(csgraph, directed=True, indices=None,
         if specified, only compute the paths from the points at the given
         indices.
     return_predecessors : bool, optional
-        If True, return the size (N, N) predecesor matrix
+        If True, return the size (N, N) predecessor matrix.
     unweighted : bool, optional
         If True, then find unweighted distances.  That is, rather than finding
         the path between each point such that the sum of weights is minimized,
@@ -1216,6 +1224,9 @@ def johnson(csgraph, directed=True, indices=None,
     This routine is specially designed for graphs with negative edge weights.
     If all edge weights are positive, then Dijkstra's algorithm is a better
     choice.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
 
     Examples
     --------
@@ -1336,7 +1347,7 @@ cdef void _johnson_add_weights(
             double[:] csr_weights,
             int[:] csr_indices,
             int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
 
@@ -1350,18 +1361,15 @@ cdef int _johnson_directed(
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, j_source, count
+        unsigned int j, k, count
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1386,18 +1394,15 @@ cdef int _johnson_undirected(
             const double[:] csr_weights,
             const int[:] csr_indices,
             const int[:] csr_indptr,
-            double[:] dist_array):
+            double[:] dist_array) noexcept:
+    # Note: The contents of dist_array must be initialized to zero on entry
     cdef:
         unsigned int N = dist_array.shape[0]
-        unsigned int j, k, ind_k, j_source, count
+        unsigned int j, k, ind_k, count
         DTYPE_t d1, d2, w12
 
     # relax all edges (N+1) - 1 times
     for count in range(N):
-        for k in range(N):
-            if dist_array[k] < 0:
-                dist_array[k] = 0
-
         for j in range(N):
             d1 = dist_array[j]
             for k in range(csr_indptr[j], csr_indptr[j + 1]):
@@ -1446,7 +1451,7 @@ cdef struct FibonacciNode:
 
 cdef void initialize_node(FibonacciNode* node,
                           unsigned int index,
-                          DTYPE_t val=0):
+                          DTYPE_t val=0) noexcept:
     # Assumptions: - node is a valid pointer
     #              - node is not currently part of a heap
     node.index = index
@@ -1461,15 +1466,7 @@ cdef void initialize_node(FibonacciNode* node,
     node.children = NULL
 
 
-cdef FibonacciNode* rightmost_sibling(FibonacciNode* node):
-    # Assumptions: - node is a valid pointer
-    cdef FibonacciNode* temp = node
-    while(temp.right_sibling):
-        temp = temp.right_sibling
-    return temp
-
-
-cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
+cdef FibonacciNode* leftmost_sibling(FibonacciNode* node) noexcept:
     # Assumptions: - node is a valid pointer
     cdef FibonacciNode* temp = node
     while(temp.left_sibling):
@@ -1477,7 +1474,7 @@ cdef FibonacciNode* leftmost_sibling(FibonacciNode* node):
     return temp
 
 
-cdef void add_child(FibonacciNode* node, FibonacciNode* new_child):
+cdef void add_child(FibonacciNode* node, FibonacciNode* new_child) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_child is a valid pointer
     #              - new_child is not the sibling or child of another node
@@ -1493,29 +1490,29 @@ cdef void add_child(FibonacciNode* node, FibonacciNode* new_child):
         node.rank = 1
 
 
-cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling):
+cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
-    cdef FibonacciNode* temp = rightmost_sibling(node)
-    temp.right_sibling = new_sibling
-    new_sibling.left_sibling = temp
-    new_sibling.right_sibling = NULL
+    
+    # Insert new_sibling between node and node.right_sibling
+    if node.right_sibling:
+        node.right_sibling.left_sibling = new_sibling
+    new_sibling.right_sibling = node.right_sibling
+    new_sibling.left_sibling = node
+    node.right_sibling = new_sibling
+
     new_sibling.parent = node.parent
     if new_sibling.parent:
         new_sibling.parent.rank += 1
 
 
-cdef void remove(FibonacciNode* node):
+cdef void remove(FibonacciNode* node) noexcept:
     # Assumptions: - node is a valid pointer
     if node.parent:
         node.parent.rank -= 1
-        if node.left_sibling:
-            node.parent.children = node.left_sibling
-        elif node.right_sibling:
+        if node.parent.children == node:  # node is the leftmost sibling.
             node.parent.children = node.right_sibling
-        else:
-            node.parent.children = NULL
 
     if node.left_sibling:
         node.left_sibling.right_sibling = node.right_sibling
@@ -1536,26 +1533,34 @@ ctypedef FibonacciNode* pFibonacciNode
 
 
 cdef struct FibonacciHeap:
+    # In this representation, min_node is always at the leftmost end
+    # of the linked-list, hence min_node.left_sibling is always NULL.
     FibonacciNode* min_node
     pFibonacciNode[100] roots_by_rank  # maximum number of nodes is ~2^100.
 
 
 cdef void insert_node(FibonacciHeap* heap,
-                      FibonacciNode* node):
+                      FibonacciNode* node) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - node is a valid pointer
     #              - node is not the child or sibling of another node
     if heap.min_node:
-        add_sibling(heap.min_node, node)
         if node.val < heap.min_node.val:
+            # Replace heap.min_node with node, which is always 
+            # at the leftmost end of the roots' linked-list.
+            node.left_sibling = NULL
+            node.right_sibling = heap.min_node
+            heap.min_node.left_sibling = node
             heap.min_node = node
+        else:
+            add_sibling(heap.min_node, node)
     else:
         heap.min_node = node
 
 
 cdef void decrease_val(FibonacciHeap* heap,
                        FibonacciNode* node,
-                       DTYPE_t newval):
+                       DTYPE_t newval) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - newval <= node.val
     #              - node is a valid pointer
@@ -1566,17 +1571,20 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
+        # Replace heap.min_node with node, which is always 
+        # at the leftmost end of the roots' linked-list.
+        remove(node)
+        node.right_sibling = heap.min_node
+        heap.min_node.left_sibling = node
         heap.min_node = node
 
 
-cdef void link(FibonacciHeap* heap, FibonacciNode* node):
+cdef void link(FibonacciHeap* heap, FibonacciNode* node) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - node is a valid pointer
     #              - node is already within heap
 
     cdef FibonacciNode *linknode
-    cdef FibonacciNode *parent
-    cdef FibonacciNode *child
 
     if heap.roots_by_rank[node.rank] == NULL:
         heap.roots_by_rank[node.rank] = node
@@ -1594,7 +1602,7 @@ cdef void link(FibonacciHeap* heap, FibonacciNode* node):
             link(heap, linknode)
 
 
-cdef FibonacciNode* remove_min(FibonacciHeap* heap):
+cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
     # Assumptions: - heap is a valid pointer
     #              - heap.min_node is a valid pointer
     cdef:
@@ -1604,32 +1612,24 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         unsigned int i
 
     # make all min_node children into root nodes
-    if heap.min_node.children:
-        temp = leftmost_sibling(heap.min_node.children)
-        temp_right = NULL
+    temp = heap.min_node.children
 
-        while temp:
-            temp_right = temp.right_sibling
-            remove(temp)
-            add_sibling(heap.min_node, temp)
-            temp = temp_right
+    while temp:
+        temp_right = temp.right_sibling
+        remove(temp)
+        add_sibling(heap.min_node, temp)
+        temp = temp_right
 
-        heap.min_node.children = NULL
-
-    # choose a root node other than min_node
-    temp = leftmost_sibling(heap.min_node)
-    if temp == heap.min_node:
-        if heap.min_node.right_sibling:
-            temp = heap.min_node.right_sibling
-        else:
-            out = heap.min_node
-            heap.min_node = NULL
-            return out
-
-    # remove min_node, and point heap to the new min
+    # remove min_root and choose another root as a preliminary min_root
     out = heap.min_node
+    temp = heap.min_node.right_sibling
     remove(heap.min_node)
     heap.min_node = temp
+    
+    if temp == NULL:
+        # There is a unique root in the tree, hence a unique node
+        # which is the minimum that we return here.
+        return out
 
     # re-link the heap
     for i in range(100):
@@ -1641,6 +1641,13 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
         temp_right = temp.right_sibling
         link(heap, temp)
         temp = temp_right
+    
+    # move heap.min_node to the leftmost end of the linked-list of roots
+    temp = leftmost_sibling(heap.min_node)
+    if heap.min_node != temp:
+        remove(heap.min_node)
+        heap.min_node.right_sibling = temp
+        temp.left_sibling = heap.min_node
 
     return out
 
@@ -1648,18 +1655,474 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap):
 ######################################################################
 # Debugging: Functions for printing the Fibonacci heap
 #
-#cdef void print_node(FibonacciNode* node, int level=0):
-#    print '%s(%i,%i) %i' % (level*'   ', node.index, node.val, node.rank)
+#cdef void print_node(FibonacciNode* node, int level=0) noexcept:
+#    print('%s(%i,%i) %i' % (level*' ', node.index, node.val, node.rank))
 #    if node.children:
-#        print_node(leftmost_sibling(node.children), level+1)
+#        print_node(node.children, level+1)
 #    if node.right_sibling:
 #        print_node(node.right_sibling, level)
 #
 #
-#cdef void print_heap(FibonacciHeap* heap):
-#    print "---------------------------------"
-#    print "min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val)
+#cdef void print_heap(FibonacciHeap* heap) noexcept:
+#    print("---------------------------------")
 #    if heap.min_node:
-#        print_node(leftmost_sibling(heap.min_node))
+#        print("min node: (%i, %i)" % (heap.min_node.index, heap.min_node.val))
+#        print_node(heap.min_node)
 #    else:
-#        print "[empty heap]"
+#        print("[empty heap]")
+
+######################################################################
+
+# Author: Tomer Sery  -- <tomersery28@gmail.com>
+# License: BSD 3-clause ("New BSD License"), (C) 2024
+
+def yen(
+    csgraph,
+    source,
+    sink,
+    K,
+    *,
+    directed=True,
+    return_predecessors=False,
+    unweighted=False,
+):
+    """
+    yen(csgraph, source, sink, K, *, directed=True, return_predecessors=False,
+        unweighted=False)
+
+    Yen's K-Shortest Paths algorithm on a directed or undirected graph.
+
+    .. versionadded:: 1.14.0
+
+    Parameters
+    ----------
+    csgraph : array or sparse array, 2 dimensions
+        The N x N array of distances representing the input graph.
+    source : int
+        The index of the starting node for the paths.
+    sink : int
+        The index of the ending node for the paths.
+    K : int
+        The number of shortest paths to find.
+    directed : bool, optional
+        If ``True`` (default), then find the shortest path on a directed graph:
+        only move from point ``i`` to point ``j`` along paths ``csgraph[i, j]``.
+        If False, then find the shortest path on an undirected graph: the
+        algorithm can progress from point i to j along ``csgraph[i, j]`` or
+        ``csgraph[j, i]``.
+    return_predecessors : bool, optional
+        If ``True``, return the size ``(M, N)`` predecessor matrix. Default: ``False``.
+    unweighted : bool, optional
+        If ``True``, then find unweighted distances. That is, rather than finding
+        the path between each point such that the sum of weights is minimized,
+        find the path such that the number of edges is minimized. Default: ``False``.
+
+    Returns
+    -------
+    dist_array : ndarray
+        Array of size ``M`` of shortest distances between the source and sink nodes.
+        ``dist_array[i]`` gives the i-th shortest distance from the source to the sink
+        along the graph. ``M`` is the number of shortest paths found, which is less than or
+        equal to `K`.
+    predecessors : ndarray
+        Returned only if ``return_predecessors == True``.
+        The M x N matrix of predecessors, which can be used to reconstruct
+        the shortest paths.
+        ``M`` is the number of shortest paths found, which is less than or equal to `K`.
+        Row ``i`` of the predecessor matrix contains
+        information on the ``i``-th shortest path from the source to the sink: each
+        entry ``predecessors[i, j]`` gives the index of the previous node in the
+        path from the source to node ``j``.  If the path does not pass via node ``j``,
+        then ``predecessors[i, j] = -9999``.
+
+    Raises
+    ------
+    NegativeCycleError:
+        If there are negative cycles in the graph
+
+    Notes
+    -----
+    Yen's algorithm is a graph search algorithm that finds single-source `K`-shortest
+    loopless paths for a graph with nonnegative edge cost. The algorithm was published
+    by Jin Y. Yen in 1971 and employs any shortest path algorithm to find the best path,
+    then proceeds to find ``K - 1`` deviations of the best path.
+
+    The algorithm is based on Dijsktra's algorithm for finding each shortest path.
+    In case there are negative edges in the graph, Johnson's algorithm is applied.
+
+    If multiple valid solutions are possible, output may vary with SciPy and
+    Python version.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Yen%27s_algorithm
+    .. [2] https://www.ams.org/journals/qam/1970-27-04/S0033-569X-1970-0253822-7/
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import yen
+
+    >>> graph = [
+    ... [0, 1, 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+    (0, 1)	1
+    (0, 2)	2
+    (1, 3)	1
+    (2, 0)	2
+    (2, 3)	3
+
+    >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
+    ...                                directed=False, return_predecessors=True)
+    >>> dist_array
+    array([2., 5.])
+    >>> predecessors
+    array([[-9999,     0, -9999,     1],
+        [-9999, -9999,     0,     2]], dtype=int32)
+
+    """
+
+    csgraph = validate_graph(csgraph, directed, DTYPE, dense_output=False)
+
+    cdef int N = csgraph.shape[0]
+    cdef int has_negative_weights = False
+    dist_array = np.full(K, INFINITY, dtype=DTYPE)
+
+    predecessor_matrix = np.full((K, N), NULL_IDX, dtype=ITYPE)
+
+    if unweighted:
+        csr_data = np.ones(csgraph.data.shape)
+    else:
+        csr_data = csgraph.data.copy()
+        if np.any(csr_data < 0):
+            # Use Johnson's algorithm to handle negative weights
+            has_negative_weights = True
+            johnson_dist_array = np.zeros(N, dtype=DTYPE)
+            if directed:
+                ret = _johnson_directed(csr_data, csgraph.indices,
+                                        csgraph.indptr, johnson_dist_array)
+            else:
+                ret = _johnson_undirected(csr_data, csgraph.indices,
+                                          csgraph.indptr, johnson_dist_array)
+            if ret >= 0:
+                raise NegativeCycleError("Negative cycle detected on node %i" % ret)
+    if has_negative_weights:
+        _johnson_add_weights(csr_data, csgraph.indices, csgraph.indptr,
+                             johnson_dist_array)
+
+    if directed:
+        csgraphT = csgraph
+        csrT_data = np.empty(0, dtype=DTYPE)
+    else:
+        csgraphT = csgraph.T.tocsr()
+        if unweighted:
+            csrT_data = csr_data
+        else:
+            if has_negative_weights:
+                _johnson_add_weights(csgraphT.data, csgraphT.indices,
+                                     csgraphT.indptr, johnson_dist_array)
+            csrT_data = csgraphT.data
+
+    _yen(
+        source, sink,
+        csr_data, csgraph.indices, csgraph.indptr,
+        csrT_data, csgraphT.indices, csgraphT.indptr,
+        dist_array, predecessor_matrix,
+    )
+    if has_negative_weights:
+        dist_array += johnson_dist_array[sink] - johnson_dist_array[source]
+
+
+    num_paths_found = sum(dist_array < INFINITY)
+    return_shape = (num_paths_found, N)
+    if return_predecessors:
+        return (dist_array[:num_paths_found].reshape((num_paths_found,)),
+                predecessor_matrix[:num_paths_found].reshape(return_shape))
+    return dist_array[:num_paths_found].reshape((num_paths_found,))
+
+
+@cython.boundscheck(False)
+cdef void _yen(
+    const int source,
+    const int sink,
+    const double[:] original_weights, const int[:] csr_indices, const int[:] csr_indptr,
+    const double[:] originalT_weights, const int[:] csrT_indices, const int[:] csrT_indptr,
+    double[:] shortest_distances,
+    int[:, :] shortest_paths_predecessors,
+):
+    cdef:
+        int K = shortest_paths_predecessors.shape[0] # Number of paths to find
+        int N = shortest_paths_predecessors.shape[1] # Number of nodes in graph
+        bint directed = originalT_weights.size == 0
+
+        # Dijkstra's operands and results arrays
+        int[:] indice_node_arr = np.array([source], dtype=ITYPE)
+        int[:, :] predecessor_matrix = np.full((1, N), NULL_IDX, dtype=ITYPE)
+        double[:, :] dist_matrix = np.full((1, N), np.inf, dtype=DTYPE)
+    dist_matrix[0, source] = 0
+
+    # ---------------------------------------------------
+    # Compute and store the shortest path
+    if directed:
+        _dijkstra_directed(
+            indice_node_arr,
+            original_weights, csr_indices, csr_indptr,
+            dist_matrix, predecessor_matrix, INFINITY,
+        )
+    else:
+        _dijkstra_undirected(
+            indice_node_arr,
+            original_weights, csr_indices, csr_indptr,
+            originalT_weights, csrT_indices, csrT_indptr,
+            dist_matrix, predecessor_matrix, INFINITY,
+        )
+
+    shortest_distances[0] = dist_matrix[0, sink]
+    if shortest_distances[0] == INFINITY:
+        # No paths between source and sink
+        return
+    if directed:
+        # Avoid copying a size 0 memory view
+        originalT_weights = original_weights
+
+    cdef:
+        # initialize candidate arrays
+        # for index 'i', candidate_distances[i] stores the distance
+        # of the path stored in candidate_predecessors[i. :]
+        double[:] candidate_distances = np.full(K, INFINITY, dtype=DTYPE)
+        int[:, :] candidate_predecessors = np.full((K, N), NULL_IDX, dtype=ITYPE)
+        # Store the original graph weights for restoring the graph
+        double[:] csr_weights = original_weights.copy()
+        double[:] csrT_weights = originalT_weights.copy()
+
+        int k, i, spur_node, node, short_path_idx, tmp_i
+        double root_path_distance, total_distance, tmp_d
+
+    # Copy shortest path to shortest_paths_predecessors
+    node = sink
+    while node != NULL_IDX:
+        shortest_paths_predecessors[0, node] = predecessor_matrix[0, node]
+        node = predecessor_matrix[0, node]
+
+
+    # ---------------------------------------------------
+    # Compute and store the K-1 shortest paths
+    for k in range(1, K):
+        # Set spur node as sink
+        spur_node = sink
+        # Set the original path distance as the previous shortest distance
+        root_path_distance = shortest_distances[k-1]
+
+        # ---------------------------------------------------
+        # For each spur_node in the previous k-shortest path
+        # Search for a new short path from it to the sink
+        while spur_node != source:
+            # Decrease the root path distance by the distance of it's final edge and
+            # set the source of the final edge as the new spur node
+            tmp_i = shortest_paths_predecessors[k-1][spur_node] # previous node
+            tmp_d = INFINITY # last edge distance
+            for i in range(csr_indptr[tmp_i], csr_indptr[tmp_i + 1]):
+                if csr_indices[i] == spur_node:
+                    tmp_d = csr_weights[i]
+                    break
+            if not directed:
+                for i in range(csrT_indptr[tmp_i], csrT_indptr[tmp_i + 1]):
+                    if csrT_indices[i] == spur_node and csrT_weights[i] < tmp_d:
+                        tmp_d = csrT_weights[i]
+                        break
+            if tmp_d == INFINITY:
+                raise ValueError(f"No edge between nodes {tmp_i} and {spur_node}")
+            root_path_distance -= tmp_d
+            spur_node = tmp_i
+
+            # ---------------------------------------------------
+            # Avoid following found shortest paths
+            for short_path_idx in range(k):
+                # For each shortest path
+                # Remove the edge {spur_node -> next node} in shortest path
+                # If the original path coincides with the current shortest path up to
+                # spur node.
+                node = spur_node
+                while (
+                    shortest_paths_predecessors[short_path_idx][node]
+                    == shortest_paths_predecessors[k-1][node]
+                ):
+                    if node == source:
+                        # Remove edge spur_node -> next node
+                        for i in range(
+                            csr_indptr[spur_node], csr_indptr[spur_node + 1]
+                        ):
+                            if (
+                                spur_node
+                                == shortest_paths_predecessors[short_path_idx][
+                                    csr_indices[i]
+                                ]
+                            ):
+                                csr_weights[i] = INFINITY
+                        if not directed:
+                            for i in range(
+                                csrT_indptr[spur_node], csrT_indptr[spur_node + 1]
+                            ):
+                                if (
+                                    spur_node
+                                    == shortest_paths_predecessors[short_path_idx][
+                                        csrT_indices[i]
+                                    ]
+                                ):
+                                    csrT_weights[i] = INFINITY
+
+                        break
+                    node = shortest_paths_predecessors[short_path_idx][node]
+
+            # ---------------------------------------------------
+            # Avoid loops in paths by removing all nodes of the root path from the graph
+            # except for the spur node.
+            # A node is removed from the graph by setting all its out-edges to infinity
+            node = shortest_paths_predecessors[k-1][spur_node]
+            while node != NULL_IDX:
+                csr_weights[csr_indptr[node]: csr_indptr[node + 1]] = INFINITY
+                if not directed:
+                    csrT_weights[csrT_indptr[node]: csrT_indptr[node + 1]] = INFINITY
+                node = shortest_paths_predecessors[k-1][node]
+
+            # ---------------------------------------------------
+            # Search for the shortest path from spur_node to sink
+
+            # Reset the distance and predecessor matrix
+            predecessor_matrix[0, :] = NULL_IDX
+            dist_matrix[0, :] = INFINITY
+            dist_matrix[0, source] = 0
+            # Search only for paths starting for spur_node
+            indice_node_arr[0] = spur_node
+            if directed:
+                _dijkstra_directed(
+                    indice_node_arr,
+                    csr_weights, csr_indices, csr_indptr,
+                    dist_matrix, predecessor_matrix, INFINITY,
+                )
+            else:
+                _dijkstra_undirected(
+                    indice_node_arr,
+                    csr_weights, csr_indices, csr_indptr,
+                    csrT_weights, csrT_indices, csrT_indptr,
+                    dist_matrix, predecessor_matrix, INFINITY,
+                )
+
+            # Compute the total distance of the found path
+            total_distance = dist_matrix[0, sink] + root_path_distance
+
+            # ---------------------------------------------------
+            # Add the found path to arrays of candidates
+            if (
+                total_distance != INFINITY
+                and _yen_is_path_in_candidates(candidate_predecessors,
+                                               shortest_paths_predecessors[k-1], 
+                                               predecessor_matrix[0],
+                                               spur_node, sink) == 0
+            ):
+                # Find the index to insert the new path
+                short_path_idx = tmp_i = NULL_IDX
+                tmp_d = -INFINITY # maximal distance in potential distances array
+                for i in range(candidate_distances.shape[0]):
+                    if candidate_distances[i] == INFINITY:
+                        short_path_idx = i
+                        break
+                    elif candidate_distances[i] > tmp_d:
+                        tmp_d = candidate_distances[i]
+                        tmp_i = i
+                if short_path_idx ==  NULL_IDX and total_distance < tmp_d:
+                    short_path_idx = tmp_i
+
+                if short_path_idx != NULL_IDX:
+                    candidate_distances[short_path_idx] = total_distance
+                    # Reset candidate_predecessors[short_path_idx]
+                    candidate_predecessors[short_path_idx, :] = NULL_IDX
+                    # Fill original path
+                    node = spur_node
+                    while node != NULL_IDX:
+                        candidate_predecessors[short_path_idx, node] = (
+                            shortest_paths_predecessors[k-1, node]
+                        )
+                        node = shortest_paths_predecessors[k-1, node]
+
+                    # Fill spur path
+                    node = sink
+                    while node != spur_node:
+                        candidate_predecessors[short_path_idx, node] = (
+                            predecessor_matrix[0, node]
+                        )
+                        node = predecessor_matrix[0, node]
+
+           # ---------------------------------------------------
+            # Restore graph weights
+            node = spur_node
+            while node != NULL_IDX:
+                csr_weights[csr_indptr[node]: csr_indptr[node + 1]] = (
+                    original_weights[csr_indptr[node]: csr_indptr[node + 1]]
+                )
+                if not directed:
+                    csrT_weights[csrT_indptr[node]: csrT_indptr[node + 1]] = (
+                        originalT_weights[csrT_indptr[node]: csrT_indptr[node + 1]]
+                    )
+                node = shortest_paths_predecessors[k-1, node]
+
+
+        # ---------------------------------------------------
+        # Find shortest path in candidates and add to result arrays
+        tmp_d = INFINITY # Minimal distance in potential distances array
+        short_path_idx = NULL_IDX
+        for i in range(candidate_distances.shape[0]):
+            if candidate_distances[i] < tmp_d:
+                tmp_d = candidate_distances[i]
+                short_path_idx = i
+        if short_path_idx == NULL_IDX:
+            # There are no more paths
+            break
+        else:
+            shortest_distances[k] = candidate_distances[short_path_idx]
+            # Remove path from candidates and add to shortest_paths_predecessors
+            candidate_distances[short_path_idx] = INFINITY
+            shortest_paths_predecessors[k] = candidate_predecessors[short_path_idx]
+
+
+@cython.boundscheck(False)
+cdef bint _yen_is_path_in_candidates(
+    const int[:, :] candidate_predecessors,
+    const int[:] orig_path, const int[:] spur_path,
+    const int spur_node, const int sink
+):
+    """
+    Return 1 if the path, formed by merging orig_path and spur_path,
+    exists in candidate_predecessors. If it doesn't, return 0.
+    """
+    cdef int i
+    cdef int node
+    cdef bint break_flag = 0
+    for i in range(candidate_predecessors.shape[0]):
+        node = sink
+        break_flag = 0
+        while node != spur_node:
+            # Check path moving backwards from sink to spur node
+            if candidate_predecessors[i, node] != spur_path[node]:
+                break_flag = 1
+                break
+            node = candidate_predecessors[i, node]
+        if break_flag:
+            # No match
+            continue
+        while node != NULL_IDX:
+            # Check path from spur node to source
+            if candidate_predecessors[i, node] != orig_path[node]:
+                # No match
+                break_flag = 1
+                break
+            node = candidate_predecessors[i, node]
+        if break_flag == 0:
+            # Paths are equal
+            return 1
+    return 0

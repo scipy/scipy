@@ -2,15 +2,13 @@
 
 '''
 
-'''
-Programmer's notes
-------------------
-Routines here have been reasonably optimized.
+# Programmer's notes
+# ------------------
+# Routines here have been reasonably optimized.
 
-The char matrix reading is not very fast, but it's not usually a
-bottleneck. See comments in ``read_char`` for possible ways to go if you
-want to optimize.
-'''
+# The char matrix reading is not very fast, but it's not usually a
+# bottleneck. See comments in ``read_char`` for possible ways to go if you
+# want to optimize.
 
 import sys
 
@@ -21,7 +19,7 @@ cimport cython
 from libc.stdlib cimport calloc, free
 from libc.string cimport strcmp
 
-from cpython cimport Py_INCREF, Py_DECREF
+from cpython cimport Py_INCREF
 from cpython cimport PyObject
 
 cdef extern from "Python.h":
@@ -60,7 +58,6 @@ DEF _N_MIS = 20
 DEF _N_MXS = 20
 
 from . cimport _streams
-import scipy.io.matlab._miobase as miob
 from scipy.io.matlab._mio_utils import squeeze_element, chars_to_strings
 import scipy.io.matlab._mio5_params as mio5p
 from scipy.sparse import csc_matrix
@@ -110,7 +107,7 @@ cdef cnp.dtype OPAQUE_DTYPE = mio5p.OPAQUE_DTYPE
 cdef cnp.dtype BOOL_DTYPE = np.dtype(np.bool_)
 
 
-cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4):
+cpdef cnp.uint32_t byteswap_u4(cnp.uint32_t u4) noexcept:
     return ((u4 << 24) |
            ((u4 << 8) & 0xff0000U) |
            ((u4 >> 8 & 0xff00u)) |
@@ -141,6 +138,19 @@ cdef class VarHeader5:
 
 
 cdef class VarReader5:
+    """Initialize from file reader object
+
+    preader needs the following fields defined:
+
+    * mat_stream (file-like)
+    * byte_order (str)
+    * uint16_codec (str)
+    * struct_as_record (bool)
+    * chars_as_strings (bool)
+    * mat_dtype (bool)
+    * squeeze_me (bool)
+    """
+
     cdef public int is_swapped, little_endian
     cdef int struct_as_record
     cdef object codecs, uint16_codec
@@ -156,18 +166,6 @@ cdef class VarReader5:
         int squeeze_me
         int chars_as_strings
 
-    """ Initialize from file reader object
-
-    preader needs the following fields defined:
-
-    * mat_stream (file-like)
-    * byte_order (str)
-    * uint16_codec (str)
-    * struct_as_record (bool)
-    * chars_as_strings (bool)
-    * mat_dtype (bool)
-    * squeeze_me (bool)
-    """
     def __cinit__(self, preader):
         byte_order = preader.byte_order
         self.is_swapped = byte_order == swapped_code
@@ -340,14 +338,13 @@ cdef class VarReader5:
         See ``read_element_into`` for routine to read element into a
         pre-allocated block of memory.
         '''
-        cdef cnp.uint32_t mdtype, byte_count
+        cdef cnp.uint32_t byte_count
         cdef char tag_data[4]
         cdef object data
         cdef int mod8
         cdef int tag_res = self.cread_tag(mdtype_ptr,
                                           byte_count_ptr,
                                           tag_data)
-        mdtype = mdtype_ptr[0]
         byte_count = byte_count_ptr[0]
         if tag_res == 1: # full format
             data = self.cstream.read_string(
@@ -455,7 +452,7 @@ cdef class VarReader5:
             el_count = byte_count // dt.itemsize
         cdef int flags = 0
         if copy:
-            flags = cnp.NPY_WRITEABLE
+            flags = cnp.NPY_ARRAY_WRITEABLE
         Py_INCREF(<object> dt)
         el = PyArray_NewFromDescr(&PyArray_Type,
                                    dt,
@@ -574,11 +571,9 @@ cdef class VarReader5:
         '''
         cdef:
             cdef cnp.uint32_t u4s[2]
-            cnp.uint32_t mdtype, byte_count
             cnp.uint32_t flags_class, nzmax
             cnp.uint16_t mc
-            int ret, i
-            void *ptr
+            int i
             VarHeader5 header
         # Read and discard mdtype and byte_count
         self.cstream.read_into(<void *>u4s, 8)
@@ -613,7 +608,7 @@ cdef class VarReader5:
         header.name = self.read_int8_string()
         return header
 
-    cdef inline size_t size_from_header(self, VarHeader5 header):
+    cdef inline size_t size_from_header(self, VarHeader5 header) noexcept:
         ''' Supporting routine for calculating array sizes from header
 
         Probably unnecessary optimization that uses integers stored in
@@ -655,7 +650,6 @@ cdef class VarReader5:
         cdef:
             VarHeader5 header
             cnp.uint32_t mdtype, byte_count
-            object arr
         # read full tag
         self.cread_full_tag(&mdtype, &byte_count)
         if mdtype != miMATRIX:
@@ -686,7 +680,6 @@ cdef class VarReader5:
         cdef:
             object arr
             cnp.dtype mat_dtype
-        cdef size_t remaining
         cdef int mc = header.mclass
         if (mc == mxDOUBLE_CLASS
             or mc == mxSINGLE_CLASS
@@ -793,18 +786,19 @@ cdef class VarReader5:
             data = self.read_numeric(True, nnz)
         else:
             data = self.read_numeric()
-        ''' From the matlab (TM) API documentation, last found here:
-        https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
-        rowind are simply the row indices for all the (nnz) non-zero
-        entries in the sparse array.  rowind has nzmax entries, so
-        may well have more entries than nnz, the actual number of
-        non-zero entries, but rowind[nnz:] can be discarded and
-        should be 0. indptr has length (number of columns + 1), and
-        is such that, if D = diff(colind), D[j] gives the number of
-        non-zero entries in column j. Because rowind values are
-        stored in column order, this gives the column corresponding
-        to each rowind
-        '''
+
+        # From the matlab (TM) API documentation, last found here:
+        # https://www.mathworks.com/help/pdf_doc/matlab/apiext.pdf
+        # rowind are simply the row indices for all the (nnz) non-zero
+        # entries in the sparse array.  rowind has nzmax entries, so
+        # may well have more entries than nnz, the actual number of
+        # non-zero entries, but rowind[nnz:] can be discarded and
+        # should be 0. indptr has length (number of columns + 1), and
+        # is such that, if D = diff(colind), D[j] gives the number of
+        # non-zero entries in column j. Because rowind values are
+        # stored in column order, this gives the column corresponding
+        # to each rowind
+
         return csc_matrix(
             (data[:nnz], rowind[:nnz], indptr),
             shape=(M, N))
@@ -815,25 +809,25 @@ cdef class VarReader5:
         Matrices of char are likely to be converted to matrices of
         string by later processing in ``array_from_header``
         '''
-        '''Notes to friendly fellow-optimizer
 
-        This routine is not much optimized.  If I was going to do it,
-        I'd store the codecs as an object pointer array, as for the
-        .dtypes, I might use python_string.PyBytes_Decode for decoding,
-        I'd do something with pointers to pull the LSB out of the uint16
-        dtype, without using an intermediate array, I guess I'd consider
-        using the numpy C-API for array creation. I'd try and work out
-        how to deal with UCS-2 and UCS-4 builds of python, and how numpy
-        deals with unicode strings passed as memory,
+        # Notes to friendly fellow-optimizer
+        #
+        # This routine is not much optimized.  If I was going to do it,
+        # I'd store the codecs as an object pointer array, as for the
+        # .dtypes, I might use python_string.PyBytes_Decode for decoding,
+        # I'd do something with pointers to pull the LSB out of the uint16
+        # dtype, without using an intermediate array, I guess I'd consider
+        # using the numpy C-API for array creation. I'd try and work out
+        # how to deal with UCS-2 and UCS-4 builds of python, and how numpy
+        # deals with unicode strings passed as memory,
+        #
+        # My own unicode introduction here:
+        # http://matthew-brett.github.com/pydagogue/python_unicode.html
 
-        My own unicode introduction here:
-        http://matthew-brett.github.com/pydagogue/python_unicode.html
-        '''
         cdef:
             cnp.uint32_t mdtype, byte_count
             char *data_ptr
-            size_t el_count
-            object data, res, codec
+            object data, codec
             cnp.ndarray arr
             cnp.dtype dt
         cdef size_t length = self.size_from_header(header)
@@ -941,7 +935,6 @@ cdef class VarReader5:
         defined before (this here) struct format structure
         '''
         cdef:
-            cnp.int32_t namelength
             int i, n_names
             cnp.ndarray[object, ndim=1] result
             object dt, tupdims

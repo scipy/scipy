@@ -1,4 +1,3 @@
-import numpy as np
 from scipy.optimize import root
 from scipy.sparse import spdiags, kron
 from scipy.sparse.linalg import spilu, LinearOperator

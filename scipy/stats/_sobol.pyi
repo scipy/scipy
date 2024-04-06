@@ -1,14 +1,16 @@
 import numpy as np
 from scipy._lib._util import IntNumber
-from typing_extensions import Literal
+from typing import Literal
 
-def initialize_v(
+def _initialize_v(
     v : np.ndarray, 
-    dim : IntNumber
+    dim : IntNumber,
+    bits: IntNumber
 ) -> None: ...
 
 def _cscramble (
     dim : IntNumber,
+    bits: IntNumber,
     ltm : np.ndarray,
     sv: np.ndarray
 ) -> None: ...
@@ -22,9 +24,10 @@ def _draw(
     n : IntNumber,
     num_gen: IntNumber,
     dim: IntNumber,
+    scale: float,
     sv: np.ndarray,
     quasi: np.ndarray,
-    result: np.ndarray
+    sample: np.ndarray
     ) -> None: ...
 
 def _fast_forward(
@@ -41,10 +44,7 @@ def _categorize(
     result: np.ndarray
     ) -> None: ...
 
-def initialize_direction_numbers() -> None: ...
-
 _MAXDIM: Literal[21201]
-_MAXBIT: Literal[30]
 _MAXDEG: Literal[18]
 
 def _test_find_index(

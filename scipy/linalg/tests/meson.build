@@ -9,6 +9,7 @@ python_sources = [
   'test_decomp_cholesky.py',
   'test_decomp_cossin.py',
   'test_decomp_ldl.py',
+  'test_decomp_lu.py',
   'test_decomp_polar.py',
   'test_decomp_update.py',
   'test_fblas.py',
@@ -16,7 +17,6 @@ python_sources = [
   'test_lapack.py',
   'test_matfuncs.py',
   'test_matmul_toeplitz.py',
-  'test_misc.py',
   'test_procrustes.py',
   'test_sketches.py',
   'test_solve_toeplitz.py',
@@ -27,7 +27,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  pure: false,
   subdir: 'scipy/linalg/tests'
 )
 

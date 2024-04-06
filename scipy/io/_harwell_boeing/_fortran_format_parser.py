@@ -172,7 +172,7 @@ class Token:
         self.pos = pos
 
     def __str__(self):
-        return """Token('%s', "%s")""" % (self.type, self.value)
+        return f"""Token('{self.type}', "{self.value}")"""
 
     def __repr__(self):
         return self.__str__()
@@ -299,7 +299,7 @@ class FortranFormatParser:
                 min = None
             return ExpFormat(width, significand, min, repeat)
         else:
-            raise SyntaxError("Invalid formater type %s" % next.value)
+            raise SyntaxError("Invalid formatter type %s" % next.value)
 
     def _next(self, tokens, tp):
         if not len(tokens) > 0:
