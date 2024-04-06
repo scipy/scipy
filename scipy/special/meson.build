@@ -5,7 +5,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_agm.pxd'),
   fs.copyfile('_boxcox.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
-  fs.copyfile('_cephes.pxd'),
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
   fs.copyfile('_cunity.pxd'),
