@@ -118,7 +118,7 @@ static struct TupleDI gaminv(double, double, double, double);
 static double gaminv_helper_30(double, double, double, double);
 static double gamln(double);
 static double gamln1(double);
-static double gamma(double);
+static double cdflib_gamma(double);
 static struct TupleDD grat1(double, double, double, double);
 static struct TupleDD gratio(double, double, int);
 static double gsumln(double, double);
@@ -5145,7 +5145,7 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
         am1 = (a - 0.5) - 0.5;
         if ((use_p ? p : q) <= 1.e10*xmin) {return (struct TupleDI){.d1=xn, .i1=-8};}
     } else if (a <= 1.0) {
-        g = gamma(a + 1.);
+        g = cdflib_gamma(a + 1.);
         qg = q*g;
         if (qg == 0.0) {return (struct TupleDI){.d1=xmax, .i1=-8};}
         b = qg / a;
@@ -5448,7 +5448,7 @@ double gamln1(double a)
 }
 
 
-double gamma(double a)
+double cdflib_gamma(double a)
 {
     //        Evaluation of the gamma function for real arguments
     //
@@ -6045,7 +6045,7 @@ struct TupleDD gratio(double a, double x, int ind)
 
         if (((a > x) || (x >= x0)) || (twoa != m)) {
             t1 = a*log(x) - x;
-            r = exp(t1)/gamma(a);
+            r = exp(t1)/cdflib_gamma(a);
 
             //
             // 40 Again - This time coming from 20
@@ -6395,7 +6395,7 @@ double rcomp(double a, double x)
     double t, t1, u, r2pi = sqrt(1. / (2.0*PI));
     if (a < 20) {
         t = a*log(x) - x;
-        return (a < 1 ? a*exp(t)*(1. + gam1(a)) : exp(t) / gamma(a));
+        return (a < 1 ? a*exp(t)*(1. + gam1(a)) : exp(t) / cdflib_gamma(a));
     } else {
         u = x / a;
         if (u == 0.) {
