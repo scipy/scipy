@@ -10,14 +10,15 @@ cdef extern from "_complexstuff.h":
     np.npy_cdouble npy_cexp(np.npy_cdouble x) nogil
 
 
-cdef extern from "cephes/dd_real.h":
+cdef extern from "dd_real_wrappers.h":
     ctypedef struct double2:
-        double x[2]
+        double hi
+        double lo
 
     double2 dd_create_d(double x) nogil
-    double2 dd_add(const double2 a, const double2 b) nogil
-    double2 dd_mul(const double2 a, const double2 b) nogil
-    double dd_to_double(const double2 a) nogil
+    double2 dd_add(const double2* a, const double2* b) nogil
+    double2 dd_mul(const double2* a, const double2* b) nogil
+    double dd_to_double(const double2* a) nogil
 
 cdef extern from "special_c_wrappers.h" nogil:
     double cephes_cosm1_wrap(double x)
@@ -75,13 +76,13 @@ cdef inline double complex clog1p_ddouble(double zr, double zi) noexcept nogil:
     i = dd_create_d(zi)
     two = dd_create_d(2.0)
 
-    rsqr = dd_mul(r, r)
-    isqr = dd_mul(i, i)
-    rtwo = dd_mul(two, r)
-    absm1 = dd_add(rsqr, isqr)
-    absm1 = dd_add(absm1, rtwo)
+    rsqr = dd_mul(&r,& r)
+    isqr = dd_mul(&i, &i)
+    rtwo = dd_mul(&two, &r)
+    absm1 = dd_add(&rsqr, &isqr)
+    absm1 = dd_add(&absm1, &rtwo)
 
-    x = 0.5 * cephes_log1p_wrap(dd_to_double(absm1))
+    x = 0.5 * cephes_log1p_wrap(dd_to_double(&absm1))
     y = atan2(zi, zr+1.0)
     return zpack(x, y)
 

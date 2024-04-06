@@ -20,6 +20,9 @@
 #include "../config.h"
 
 #include "const.h"
+#include "polevl.h"
+#include "gamma.h"
+#include "zeta.h"
 
 namespace special {
 namespace cephes {
@@ -134,7 +137,7 @@ namespace cephes {
 
     }
 
-    SPECFUN_HOST_DEVICE double cosm1(double x) {
+    SPECFUN_HOST_DEVICE inline double cosm1(double x) {
         double xx;
 
         if ((x < -M_PI_4) || (x > M_PI_4))

@@ -108,7 +108,8 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'special_wrappers.cpp',
-  'sf_error.c'
+  'sf_error.cc',
+  'dd_real_wrappers.cpp'
 ]
 
 ufuncs_cxx_sources = [
@@ -278,7 +279,7 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'special_wrappers.cpp',
-    'sf_error.c'
+    'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
   include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
