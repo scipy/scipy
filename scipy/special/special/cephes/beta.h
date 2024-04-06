@@ -72,7 +72,7 @@ namespace cephes {
 
             r += b * (1 - b) / (2 * a);
             r += b * (1 - b) * (1 - 2 * b) / (12 * a * a);
-            r += -b * b * (1 - b) * (1 - b) / (12 * a * a * a);
+            r += - b * b * (1 - b) * (1 - b) / (12 * a * a * a);
 
             return r;
         }
