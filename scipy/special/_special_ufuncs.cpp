@@ -102,6 +102,10 @@ extern const char *iti0k0_doc;
 extern const char *itj0y0_doc;
 extern const char *itmodstruve0_doc;
 extern const char *itstruve0_doc;
+extern const char *hankel1_doc;
+extern const char *hankel1e_doc;
+extern const char *hankel2_doc;
+extern const char *hankel2e_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
@@ -215,16 +219,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         {static_cast<func_f_f_t>(special::gammaln), static_cast<func_d_d_t>(special::gammaln)}, "gammaln", gammaln_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gammaln", gammaln);
 
-    PyObject *hankel1 = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap1)}, "hankel1", nullptr);
+    PyObject *hankel1 = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap1)}, "hankel1", hankel1_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel1", hankel1);
 
-    PyObject *hankel1e = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap1_e)}, "hankel1e", nullptr);
+    PyObject *hankel1e = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap1_e)}, "hankel1e", hankel1e_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel1e", hankel1e);
 
-    PyObject *hankel2 = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap2)}, "hankel2", nullptr);
+    PyObject *hankel2 = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap2)}, "hankel2", hankel2_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel2", hankel2);
 
-    PyObject *hankel2e = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap2_e)}, "hankel2e", nullptr);
+    PyObject *hankel2e = SpecFun_NewUFunc({static_cast<func_dD_D_t>(special::cbesh_wrap2_e)}, "hankel2e", hankel2e_doc);
     PyModule_AddObjectRef(_special_ufuncs, "hankel2e", hankel2e);
 
     PyObject *it2i0k0 =
