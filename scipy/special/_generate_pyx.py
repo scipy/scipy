@@ -81,7 +81,7 @@ special_ufuncs = [
     '_cospi', '_sinpi', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'exp1',
     'expi', 'gammaln', 'hankel1', 'hankel1e', 'hankel2', 'hankel2', 'it2i0k0',
     'it2j0y0', 'it2struve0', 'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0',
-    'itstruve0', 'ive', 'jv', 'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp',
+    'itstruve0', 'iv', 'ive', 'jv', 'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp',
     'kv', 'kve', 'mathieu_a', 'mathieu_b', 'mathieu_cem', 'mathieu_modcem1',
     'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2', 'mathieu_sem',
     'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',

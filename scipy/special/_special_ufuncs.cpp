@@ -106,6 +106,7 @@ extern const char *hankel1_doc;
 extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
+extern const char *iv_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
@@ -270,6 +271,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         SpecFun_NewUFunc({static_cast<func_f_f_t>(special::itstruve0), static_cast<func_d_d_t>(special::itstruve0)},
                          "itstruve0", itstruve0_doc);
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
+
+    PyObject *iv = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(cephes_iv), static_cast<func_dD_D_t>(special::cbesi_wrap)}, "iv", iv_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *ive = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesi_wrap_e_real), static_cast<func_dD_D_t>(special::cbesi_wrap_e)}, "ive",
