@@ -2,7 +2,7 @@
 
 static const double PI = 3.1415926535897932384626433832795028841971693993751;
 
-static struct DinvrState
+struct DinvrState
 {
     double absstp;
     double abstol;
@@ -39,7 +39,7 @@ static struct DinvrState
     int qup;
 };
 
-static struct DzrorState
+struct DzrorState
 {
     double a;
     double atol;
@@ -574,7 +574,7 @@ double bfrac(double a, double b, double x, double y, double lmbda, double eps)
         bnp1 = t;
         r0 = r;
         r = anp1 / bnp1;
-        if (!(abs(r - r0) > eps*r)) { break; }
+        if (!(fabs(r - r0) > eps*r)) { break; }
         // Rescale an, bn, anp1, and bnp1
         an /= bnp1;
         bn /= bnp1;
@@ -641,7 +641,7 @@ struct TupleDI bgrat(double a, double b, double x , double y, double w, double e
         dj = d[n-1]*j;
         ssum += dj;
         if (ssum <= 0.) { return (struct TupleDI){.d1 = w, .i1 = 1}; }
-        if (!(abs(dj) > eps*(ssum+l))) { break; }
+        if (!(fabs(dj) > eps*(ssum+l))) { break; }
     }
     return (struct TupleDI){.d1 = w + u*ssum, .i1 = 0};
 }
@@ -719,7 +719,7 @@ double bpser(double a, double b, double x, double eps)
         c *= (0.5 + (0.5 - b/n))*x;
         w = c / (a + n);
         ssum += w;
-        if (!(abs(w) > tol)) { break; }
+        if (!(fabs(w) > tol)) { break; }
     }
     return result * (1. + a*ssum);
 }
@@ -771,7 +771,7 @@ struct TupleDDI bratio(double a, double b, double x, double y)
             return (struct TupleDDI){.d1 = 0.0, .d2 = 1.0, .i1 = 0};
         }
     } else if (y == 0.) {
-        if (a == 0) {
+        if (b == 0) {
             return (struct TupleDDI){.d1 = w, .d2 = w1, .i1 = 7};
         } else {
             return (struct TupleDDI){.d1 = 1.0, .d2 = 0.0, .i1 = 0};
@@ -962,13 +962,13 @@ double brcmp1(int mu, double a, double b, double x, double y)
             lmbda = a - (a + b)*x;
         }
         e = -lmbda / a;
-        if (abs(e) > 0.6) {
+        if (fabs(e) > 0.6) {
             u = e - log(x / x0);
         } else {
             u = rlog1(e);
         }
         e = lmbda / b;
-        if (abs(e) > 0.6) {
+        if (fabs(e) > 0.6) {
             v = e - log(y / y0);
         } else {
             v = rlog1(e);
@@ -1569,7 +1569,7 @@ struct TupleDID cdfbin_which3(double p, double q, double s, double pr, double om
         ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
         return ret;
     }
-    if (!(0 < s)) {
+    if (!(0 <= s)) {
         return (struct TupleDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3};
     }
     if (!((0 <= pr) && (pr <= 1))) {
@@ -1794,7 +1794,7 @@ struct TupleDID cdfchi_which3(double p, double q, double x)
     while (DS.status == 1) {
         chiret = cumchi(x, DS.x);
         DS.fx = (qporq ? chiret.d1 - p : chiret.d2 - q);
-        if (DS.fx + porq <= 1.5) {
+        if (DS.fx + porq > 1.5) {
             return (struct TupleDID){.d1 = DS.x, .i1 = 10, .d2 = 0.0};
         }
         dinvr(&DS, &DZ);
@@ -1824,7 +1824,7 @@ struct TupleDDID cdfchn_which1(double x, double df, double pnonc)
     if (!(0 <= df)) {
         return (struct TupleDDID){.d1 = 0.0, .d2 = 0.0, .i1 = -2, .d3 = 0.0};
     }
-    if (!(0 < pnonc)) {
+    if (!(0 <= pnonc)) {
         return (struct TupleDDID){.d1 = 0.0, .d2 = 0.0, .i1 = -3, .d3 = 0.0};
     }
 
@@ -2825,10 +2825,10 @@ struct TupleDID cdfnor_which4(double p, double q, double x, double mean)
 
 struct TupleDDID cdfpoi_which1(double s, double xlam)
 {
-    if (!(s > 0.0)) {
+    if (!(s >= 0.0)) {
         return (struct TupleDDID){.d1 = 0.0, .d2 = 0.0, .i1 = -1, .d3 = 0.0};
     }
-    if (!(xlam > 0.0)) {
+    if (!(xlam >= 0.0)) {
         return (struct TupleDDID){.d1 = 0.0, .d2 = 0.0, .i1 = -2, .d3 = 0.0};
     }
     struct TupleDD res = cumpoi(s, xlam);
@@ -2845,7 +2845,7 @@ struct TupleDID cdfpoi_which2(double p, double q, double xlam)
     DzrorState DZ = {0};
 
     DS.small = 0.;
-    DS.big = 1e300;
+    DS.big = 1e100;
     DS.absstp = 0.5;
     DS.relstp = 0.5;
     DS.stpmul = 5.0;
@@ -2865,17 +2865,18 @@ struct TupleDID cdfpoi_which2(double p, double q, double xlam)
         ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
         return ret;
     }
-    if (!(xlam > 0.0)) {
+    if (!(xlam >= 0.0)) {
         ret.i1 = -3;
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
     }
 
     if ((xlam < 0.01) && (p < 0.975)) {
+        // For sufficiently small xlam and p, the result is 0.
         return ret;
     }
 
@@ -2931,7 +2932,7 @@ struct TupleDID cdfpoi_which3(double p, double q, double s)
         ret.i1 = -3;
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -2999,7 +3000,7 @@ struct TupleDID cdft_which2(double p, double q, double df)
         ret.i1 = -3;
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -3053,7 +3054,7 @@ struct TupleDID cdft_which3(double p, double q, double t)
         ret.d2 = (!(q > 0.0) ? 0.0 : 1.0);
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -3136,7 +3137,7 @@ struct TupleDID cdftnc_which2(double p, double q, double df, double pnonc)
         ret.d2 = (pnonc > -1e6 ? 1e6 : -1e6);
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -3195,7 +3196,7 @@ struct TupleDID cdftnc_which3(double p, double q, double t, double pnonc)
         ret.d2 = (pnonc > -1e6 ? 1e6 : -1e6);
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -3251,7 +3252,7 @@ struct TupleDID cdftnc_which4(double p, double q, double t, double df)
         ret.i1 = -4;
         return ret;
     }
-    if (((abs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
+    if (((fabs(p+q)-0.5)-0.5) > 3*spmpar[0]) {
         ret.i1 = 3;
         ret.d2 = (p+q < 0 ? 0.0 : 1.0);
         return ret;
@@ -3337,56 +3338,56 @@ struct TupleDD cumbet(double x, double y, double a, double b)
 
 struct TupleDD cumbin(double s, double xn, double pr, double ompr)
 {
-    //                        CUmulative BINomial distribution
+    //                     CUmulative BINomial distribution
     //
     //
-    //                                  Function
+    //                               Function
     //
     //
-    //         Returns the probability   of 0  to  S  successes in  XN   binomial
-    //         trials, each of which has a probability of success, PBIN.
+    //      Returns the probability   of 0  to  S  successes in  XN   binomial
+    //      trials, each of which has a probability of success, PBIN.
     //
     //
-    //                                  Arguments
+    //                               Arguments
     //
     //
-    //         S --> The upper limit of cumulation of the binomial distribution.
-    //                                                      S is DOUBLE PRECISION
+    //      S --> The upper limit of cumulation of the binomial distribution.
+    //                                                  S is DOUBLE PRECISION
     //
-    //         XN --> The number of binomial trials.
-    //                                                      XN is DOUBLE PRECISIO
+    //      XN --> The number of binomial trials.
+    //                                                 XN is DOUBLE PRECISION
     //
-    //         PBIN --> The probability of success in each binomial trial.
-    //                                                      PBIN is DOUBLE PRECIS
+    //      PBIN --> The probability of success in each binomial trial.
+    //                                               PBIN is DOUBLE PRECISION
     //
-    //         OMPR --> 1 - PBIN
-    //                                                      OMPR is DOUBLE PRECIS
+    //      OMPR --> 1 - PBIN
+    //                                               OMPR is DOUBLE PRECISION
     //
-    //         CUM <-- Cumulative binomial distribution.
-    //                                                      CUM is DOUBLE PRECISI
+    //      CUM <-- Cumulative binomial distribution.
+    //                                                CUM is DOUBLE PRECISION
     //
-    //         CCUM <-- Compliment of Cumulative binomial distribution.
-    //                                                      CCUM is DOUBLE PRECIS
-    //
-    //
-    //
-    //                                  Method
+    //      CCUM <-- Compliment of Cumulative binomial distribution.
+    //                                               CCUM is DOUBLE PRECISION
     //
     //
-    //         Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
-    //         Mathematical   Functions (1966) is   used  to reduce the  binomial
-    //         distribution  to  the  cumulative    beta distribution.
+    //
+    //                               Method
+    //
+    //
+    //       Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
+    //       Mathematical   Functions (1966) is   used  to reduce the  binomial
+    //       distribution  to  the  cumulative    beta distribution.
 
     double cum, ccum;
     if (!(s < xn)) {
+        return (struct TupleDD){.d1 = 1.0, .d2 = 0.0};
         cum = 1.0;
         ccum = 0.0;
     } else {
-        struct TupleDD res = cumbet(pr, ompr, s + 1., xn - s);
-        ccum = res.d1;
-        cum = res.d2;
+        struct TupleDD res = cumbet(pr, ompr, s + 1.0, xn - s);
+        // Swap result
+        return (struct TupleDD){.d1 = res.d2, .d2 = res.d1};
     }
-    return (struct TupleDD){.d1 = cum, .d2 = ccum};
 }
 
 
@@ -3909,7 +3910,7 @@ struct TupleDD cumnor(double x)
                    7.29751555083966205e-05};
     double eps = spmpar[0] * 0.5;
     double tiny = spmpar[1];
-    double y = abs(x);
+    double y = fabs(x);
     double threshold = 0.66291;
     double dl, result, xden, xnum, xsq, ccum;
     int i;
@@ -4119,7 +4120,7 @@ struct TupleDD cumtnc(double t, double df, double pnonc)
     double xi, xlnd, xlne;
     double conv = 1.e-7;
     double tiny = 1.e-10;
-    int ierr, qrevs;
+    int qrevs;
 
     if (fabs(pnonc) <= tiny) { return cumt(t, df); }
     qrevs = t < 0.0;
@@ -4150,12 +4151,10 @@ struct TupleDD cumtnc(double t, double df, double pnonc)
     struct TupleDDI res1 = bratio(0.5*df, cent + 0.5, x, omx);
     bcent = res1.d1;
     dum1 = res1.d2;
-    ierr = res1.i1;
     // Compute bbcent=B(2*cent+1)
     struct TupleDDI res2 = bratio(0.5*df, cent + 1., x, omx);
     bbcent = res2.d1;
     dum2 = res2.d2;
-    ierr = res2.i1;
 
     // Case bcent and bbcent are essentially zero
     // Thus t is effectively infinite
@@ -4264,7 +4263,7 @@ double devlpl(double *a, int n, double x)
     double temp = a[n-1];
     int i;
 
-    for (i = n - 2; i > 0; i--) {
+    for (i = n - 2; i >= 0; i--) {
         temp = a[i] + temp*x;
     }
     return temp;
@@ -4408,10 +4407,7 @@ void dinvr(DinvrState *S, DzrorState *DZ)
                 // 50
                 if (S->fsmall >= 0.0) {
                     // 60
-                    if (S->fbig <= 0.0) {
-                        // 70 - Do nothing
-                        ;
-                    } else {
+                    if (!(S->fbig <= 0.0)) {
                         S->qleft = 0;
                         S->qhi = 1;
                         return;
@@ -4424,10 +4420,7 @@ void dinvr(DinvrState *S, DzrorState *DZ)
             } else {
                 if (S->fsmall <= 0.0) {
                     // 30
-                    if (S->fbig >= 0.0) {
-                        // 40 - Do nothing
-                        ;
-                    } else {
+                    if (!(S->fbig >= 0.0)) {
                         S->qleft = 0;
                         S->qhi = 0;
                         return;
@@ -4500,8 +4493,8 @@ void dinvr(DinvrState *S, DzrorState *DZ)
     // Handle case in which we must step lower
         } else if (S->next_state == 200) {
             S->yy = S->fx;
-            S->qbdd = (S->qincr & (S->yy <= 0.)) || ((!(S->qincr)) && (S->yy >= 0.));
-            S->qlim = (S->xlb <= S->small);
+            S->qbdd = (((S->qincr) && (S->yy <= 0.0)) || ((!(S->qincr)) && (S->yy >= 0.0)));
+            S->qlim = ((S->xlb) <= (S->small));
             S->qcond = ((S->qbdd) || (S->qlim));
             if (S->qcond) {
                 S->next_state = 220;
@@ -4512,7 +4505,7 @@ void dinvr(DinvrState *S, DzrorState *DZ)
                 S->next_state = 190;
             }
         } else if (S->next_state == 220) {
-            if ((S->qlim) || (!(S->qbdd))) {
+            if ((S->qlim) && (!(S->qbdd))) {
                 S->status = -1;
                 S->qleft = 1;
                 S->qhi = S->qincr;
@@ -4691,19 +4684,19 @@ void dzror(DzrorState *S)
                 } else {
         // 40
                     S->status = -1;
-                    S->qleft = (S->fx > S->fb ? 1 : 0);
+                    S->qleft = (S->fx > S->fb);
                     S->qhi = 1;
                     return;
                 }
             } else {
                 S->status = -1;
-                S->qleft = (S->fx < S->fb ? 1 : 0);
+                S->qleft = (S->fx < S->fb);
                 S->qhi = 0;
                 return;
             }
         } else if (S->next_state == 80) {
-            if (abs(S->fc) < abs(S->fb)) {
-                if (S->c != S->a) {
+            if (fabs(S->fc) < fabs(S->fb)) {
+                if (!(S->c == S->a)) {
                     S->d = S->a;
                     S->fd = S->fa;
                 }
@@ -4717,7 +4710,7 @@ void dzror(DzrorState *S)
                 S->fc = S->fa;
             }
             // 100
-            S->tol = 0.5 * fmax(S->atol, S->rtol * abs(S->xlo));
+            S->tol = 0.5 * fmax(S->atol, S->rtol * fabs(S->xlo));
             S->m = (S->c + S->b) * 0.5;
             S->mb = S->m - S->b;
 
@@ -4838,7 +4831,7 @@ double cdflib_erf(double x)
     double s[4] = {9.41537750555460e+01, 1.87114811799590e+02,
                    9.90191814623914e+01, 1.80124575948747e+01};
 
-    ax = abs(x);
+    ax = fabs(x);
     if (ax <= 0.5) {
         t = x*x;
         top = ((((a[0]*t+a[1])*t+a[2])*t+a[3])*t+a[4]) + 1.0;
@@ -4903,10 +4896,10 @@ double erfc1(int ind, double x)
     double s[4] = {9.41537750555460e+01, 1.87114811799590e+02,
                    9.90191814623914e+01, 1.80124575948747e+01};
 
-    if (x <= -5.6) {return (ind != 0 ? (2*exp(x*x)) : 2.0);}
+    if (x <= -5.6) { return (ind == 0 ? 2.0 : (2*exp(x*x))); }
 
     // sqrt(log(np.finfo(np.float64).max)) ~= 26.64
-    if ((ind == 0) && (x > 26.64))  {return 0.0;}
+    if ((ind == 0) && (x > 26.64))  { return 0.0; }
 
     ax = fabs(x);
 
@@ -4941,9 +4934,9 @@ double erfc1(int ind, double x)
     }
     if (ind == 0) {
         result *= exp(-(x*x));
-        return (x < 0 ? (2. - result) : result);
+        return (x < 0 ? (2.0 - result) : result);
     } else {
-        return (x < 0 ? (2.*exp(x*x) - result) : result);
+        return (x < 0 ? (2.0*exp(x*x) - result) : result);
     }
 }
 
@@ -4993,7 +4986,7 @@ double fpser(double a, double b, double x, double eps)
         t *= x;
         c = t / an;
         s += c;
-        if (!(abs(c) > tol)) { break; }
+        if (!(fabs(c) > tol)) { break; }
     }
     return result*(1. + a*s);
 }
@@ -5140,7 +5133,7 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
 
     if (!(a > 0.)){return (struct TupleDI){.d1=x, .i1=-2};}
     t = p + q - 1.0;
-    if (!(abs(t) <= e)) {return (struct TupleDI){.d1=x, .i1=-4};}
+    if (!(fabs(t) <= e)) {return (struct TupleDI){.d1=x, .i1=-4};}
     ierr = 0;
     if (p == 0.0) {return (struct TupleDI){.d1=x, .i1=0};}
     if (q == 0.0) {return (struct TupleDI){.d1=xmax, .i1=0};}
@@ -5158,35 +5151,35 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
         b = qg / a;
 
         if ((qg > 0.6*a) || (((a >= 0.3) || (b < 0.35)) && (b >= 0.45))) {
-            if (b*q > 1.e-8){
-    # 50
+            if (b*q > 1.e-8) {
+    // 50
                 if (p <= 0.9) {
                     xn = exp(log(p*g)/a);
                 } else {
-    # 60
+    // 60
                     xn = exp((alnrel(-q) + gamln1(a))/a);
                 }
             } else {
-    # 40
+    // 40
                 xn = exp(-(q/a + c));
             }
-    # 70
+    // 70
             if (xn == 0.0) {return (struct TupleDI){.d1=x, .i1=-3};}
             t = 0.5 + (0.5 - xn/(a + 1.));
             xn /= t;
-            #160
+            // 160
             use_p = 1;
             am1 = (a - 0.5) - 0.5;
             if ((use_p ? p : q) <= 1.e10*xmin) {return (struct TupleDI){.d1=xn, .i1=-8};}
         } else if ((a >= 0.3) || (b < 0.35)) {
-    # 10
+    // 10
             if (b == 0.0) {return (struct TupleDI){.d1=xmax, .i1=-8};}
             y = -log(b);
             s = 0.5 + (0.5 - a);
             z = log(y);
             t = y - s*z;
             if (b < 0.15) {
-    # 20
+    // 20
                 if (b <= 0.01) {
                     xn = gaminv_helper_30(a, s, y, z);
                     if ((a <= 1.) || (b > bmin[iop])) {
@@ -5198,7 +5191,7 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
             } else {
                 xn = y - s*log(t)-log(1.+s/(t+1.));
             }
-            # 220
+            // 220
             use_p = 0;
             am1 = (a - 0.5) - 0.5;
             if (q <= 1.e10*xmin) {return (struct TupleDI){.d1=xn, .i1=-8};}
@@ -5207,7 +5200,7 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
             u = t*exp(t);
             xn = t*exp(u);
 
-            # 160
+            // 160
             use_p = 1;
             am1 = (a - 0.5) - 0.5;
             if (p <= 1.e10*xmin) {return (struct TupleDI){.d1=xn, .i1=-8};}
@@ -5310,7 +5303,7 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
     {
         if (a > amax) {
             d = 0.5 + (0.5 - xn / a);
-            if (abs(d) <= e2) {return (struct TupleDI){.d1=xn, .i1=-8};}
+            if (fabs(d) <= e2) {return (struct TupleDI){.d1=xn, .i1=-8};}
         }
         struct TupleDD pnqn = gratio(a, xn, 0);
         pn = pnqn.d1;
@@ -5321,18 +5314,18 @@ struct TupleDI gaminv(double a, double p, double q, double x0)
         t =  (use_p ? (pn-p)/r : (q-qn)/r);
         w = 0.5 * (am1 - xn);
 
-        if ((abs(t) <= 0.1) && (abs(w*t) <= 0.1)) {
+        if ((fabs(t) <= 0.1) && (fabs(w*t) <= 0.1)) {
             h = t * (1. + w*t);
             x = xn * (1. - h);
             if (x <= 0.) {return (struct TupleDI){.d1=x, .i1=-7};}
-            if ((fabs(w) >= 1.) && (abs(w)*t*t <= eps)) {
+            if ((fabs(w) >= 1.) && (fabs(w)*t*t <= eps)) {
                 return (struct TupleDI){.d1=x, .i1=ierr};
             }
-            d = abs(h);
+            d = fabs(h);
         } else {
             x = xn * (1. - t);
             if (x <= 0.) {return (struct TupleDI){.d1=x, .i1=-7};}
-            d = abs(t);
+            d = fabs(t);
         }
 
         xn = x;
@@ -5482,7 +5475,7 @@ double gamma(double a)
     result = 0.0;
     if (fabs(a) < 15) {
         t = 1.0;
-        m = (int)(a - 1);
+        m = (int)(a) - 1;
         if (m > 0) {
             for (j = 0; j < m; j++)
             {
@@ -5636,7 +5629,7 @@ struct TupleDD grat1(double a, double x, double r, double eps)
         a2n = a2nm1 + cma*a2n;
         b2n = b2nm1 + cma*b2n;
         an0 = a2n/b2n;
-        if (!(abs(an0-am0) >= eps*an0)) { break; }
+        if (!(fabs(an0-am0) >= eps*an0)) { break; }
     }
     q = r*an0;
     p = 0.5 + (0.5 - q);
@@ -5682,7 +5675,7 @@ struct TupleDD gratio(double a, double x, int ind)
     double acc, a2n, a2nm1, am0, amn, an, an0, ans, apn, b2n, b2nm1;
     double c, c0, c1, c2, c3, c4, c5, c6, cma, e0, g, h, j, l, qans, r;
     double rta, rtx, s, ssum, t, t1, tol, twoa, u, w, x0, y, z;
-    int i, m, n;
+    int i, m, n, last_entry;
 
     double wk[20] = {0.0};
     double acc0[3] = {5.e-15, 5.e-7, 5.e-4};
@@ -5717,16 +5710,15 @@ struct TupleDD gratio(double a, double x, int ind)
     double d5[4] = {-.697281375836586e-04, .277275324495939e-03,
                     -.199325705161888e-03, .679778047793721e-04};
     double d6[2] = {-.592166437353694e-03, .270878209671804e-03};
-    struct TupleDD retuple = { 0.0, 0.0 } ;
 
-    if (!(a >= 0.) || (!(x >= 0.))){
+    if ((!(a >= 0.0)) || (!(x >= 0.0))) {
         return (struct TupleDD){.d1=2.0, .d2=0.0};
     }
     if ((a == 0.0) && (x == 0.0)) {
         return (struct TupleDD){.d1=2.0, .d2=0.0};
     }
 
-    if (a*x == 0.) {
+    if (a*x == 0.0) {
         if (x > a) {
             return (struct TupleDD){.d1=1.0, .d2=0.0};
         } else {
@@ -5734,23 +5726,26 @@ struct TupleDD gratio(double a, double x, int ind)
         }
     }
 
-    if (!(ind == 0) & !(ind == 1)) {
+    if ((!(ind == 0)) && (!(ind == 1))) {
         ind = 2;
     }
 
     acc = fmax(acc0[ind], eps);
-    e0, x0 = e00[ind], x00[ind];
+    e0 = e00[ind];
+    x0 = x00[ind];
 
     if (a >= 1.0) {
         if (a >= big[ind]) {
+            // 30
             l = x / a;
             if (l == 0.0) {
-                retuple = (struct TupleDD){.d1=0.0, .d2=1.0};
-                return retuple;
+                // 370
+                return (struct TupleDD){.d1=0.0, .d2=1.0};
             }
             s = 0.5 + (0.5 - l);
             z = rlog(l);
             if (z >= (700. / a)) {
+                // 410
                 if (fabs(s) <= 2.*eps) {
                     return (struct TupleDD){.d1=2.0, .d2=0.0};
                 }
@@ -5944,6 +5939,7 @@ struct TupleDD gratio(double a, double x, int ind)
             // 40
             //
             if (r == 0.0) {
+                // 420
                 if (x > a) {
                     return (struct TupleDD){.d1=1.0, .d2=0.0};
                 } else {
@@ -5951,19 +5947,20 @@ struct TupleDD gratio(double a, double x, int ind)
                 }
             }
 
-            if (x <= (a > alog10 ? a : alog10)) {
+            if (x <= fmax(a, alog10)) {
                 // 50
                 // TAYLOR SERIES FOR P/R
                 //
                 apn = a + 1.;
                 t = x / apn;
                 wk[0] = t;
-
-                for (n =1; n < 20; n++) {
+                last_entry = 0;
+                for (n = 1; n < 20; n++) {
                     apn += 1.0;
                     t *= (x / apn);
                     if (t <= 1e-3) { break; }
                     wk[n] = t;
+                    last_entry = n;
                 }
                 ssum = t;
                 tol = 0.5 * acc;
@@ -5973,11 +5970,12 @@ struct TupleDD gratio(double a, double x, int ind)
                     ssum += t;
                     if (!(t > tol)) { break; }
                 }
-                for (m = n-1; m >= 0; m--)
+
+                for (m = last_entry; m >= 0; m--)
                 {
                     ssum += wk[m];
                 }
-                ans = (r/a) * (1. + ssum);
+                ans = (r/a) * (1.0 + ssum);
                 qans = 0.5 + (0.5 - ans);
                 return (struct TupleDD){.d1=ans, .d2=qans};
             }
@@ -5986,7 +5984,7 @@ struct TupleDD gratio(double a, double x, int ind)
                 // 250
                 // CONTINUED FRACTION EXPANSION
                 //
-                tol = (5.0*eps > acc ? 5.0*eps : acc);
+                tol = fmax(5.0*eps, acc);
                 a2nm1 = 1.0;
                 a2n = 1.0;
                 b2nm1 = x;
@@ -6015,23 +6013,26 @@ struct TupleDD gratio(double a, double x, int ind)
             amn = a - 1.;
             t = amn / x;
             wk[0] = t;
+            last_entry = 0;
             for (n = 1; n < 20; n++)
             {
                 amn -= 1.0;
                 t *= amn / x;
                 if (fabs(t) <= 1e-3) { break; }
                 wk[n] = t;
+                // F77 code was using "n" later in the code
+                last_entry = n;
             }
             ssum = t;
 
-            while (!(abs(t) <= acc)) {
+            while (!(fabs(t) <= acc)) {
                 amn -= 1.0;
                 t *= amn / x;
                 ssum += t;
             }
-            for (m = n-1; m > 0; m--)
+            for (m = last_entry; m >= 0; m--)
             {
-                ssum += wk[m-1];
+                ssum += wk[m];
             }
 
             qans = (r/x) * (1. + ssum);
@@ -6064,22 +6065,22 @@ struct TupleDD gratio(double a, double x, int ind)
                 apn = a + 1.;
                 t = x / apn;
                 wk[0] = t;
-
+                last_entry = 0;
                 for (n =1; n < 20; n++) {
                     apn += 1.0;
                     t *= (x / apn);
                     if (t <= 1e-3) { break; }
                     wk[n] = t;
+                    last_entry = n;
                 }
                 ssum = t;
                 tol = 0.5 * acc;
-                while (1) {
+                while (!(t <= tol)) {
                     apn += 1.0;
                     t *= x / apn;
                     ssum += t;
-                    if (!(t > tol)) { break; }
                 }
-                for (m = n-1; m >= 0; m--)
+                for (m = last_entry; m >= 0; m--)
                 {
                     ssum += wk[m];
                 }
@@ -6121,23 +6122,25 @@ struct TupleDD gratio(double a, double x, int ind)
             amn = a - 1.;
             t = amn / x;
             wk[0] = t;
+            last_entry = 0;
             for (n = 1; n < 20; n++)
             {
                 amn -= 1.0;
                 t *= amn / x;
                 if (fabs(t) <= 1e-3) { break; }
                 wk[n] = t;
+                last_entry = n;
             }
             ssum = t;
 
-            while (!(abs(t) <= acc)) {
+            while (!(fabs(t) <= acc)) {
                 amn -= 1.0;
                 t *= amn / x;
                 ssum += t;
             }
-            for (m = n-1; m > 0; m--)
+            for (m = last_entry; m >= 0; m--)
             {
-                ssum += wk[m-1];
+                ssum += wk[m];
             }
 
             qans = (r/x) * (1. + ssum);
@@ -6199,7 +6202,7 @@ struct TupleDD gratio(double a, double x, int ind)
             c *= -(x / an);
             t = c / (a + an);
             ssum += t;
-            if (!(abs(t) > tol)) { break; }
+            if (!(fabs(t) > tol)) { break; }
         }
         j = a*x*((ssum / 6. - 0.5 / (a + 2.))*x + 1./(a + 1.));
         z = a*log(x);
@@ -6353,7 +6356,9 @@ double psi(double xx)
             }
         }
         x = 1 - x;
-    } else if (x <= 3.0) {
+    }
+
+    if (x <= 3.0) {
         // 50
         den = x;
         upper = p1[0]*x;

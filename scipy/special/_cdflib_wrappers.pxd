@@ -216,7 +216,6 @@ cdef inline double chndtr(double x, double df, double nc) noexcept nogil:
     argnames[1] = "df"
     argnames[2] = "nc"
 
-    
     ret = cdfchn_which1(x, df, nc)
     result, status, bound = ret.d1, ret.i1, ret.d3
     return get_result("chndtr", argnames, result, status, bound, 1)
@@ -266,6 +265,7 @@ cdef inline double chndtrix(double p, double df, double nc) noexcept nogil:
         int status = 10
         char *argnames[3]
         TupleDID ret
+
     if isnan(p) or isnan(df) or isnan(nc):
       return NAN
 
