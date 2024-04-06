@@ -78,15 +78,16 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_sinpi', 'bei', 'beip', 'ber', 'berp', 'exp1', 'expi',
-    'gammaln', 'it2i0k0', 'it2j0y0', 'it2struve0', 'itairy',
-    'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'kei', 'keip',
-    'kelvin', 'ker', 'kerp', 'mathieu_a', 'mathieu_b',
-    'mathieu_cem', 'mathieu_modcem1', 'mathieu_modcem2', 'mathieu_modsem1',
-    'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp', 'obl_ang1',
-    'obl_ang1_cv', 'obl_cv', 'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv',
-    'pbdv', 'pbvv', 'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1',
-    'pro_rad1_cv', 'pro_rad2', 'pro_rad2_cv', '_zeta'
+    '_cospi', '_sinpi', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'exp1',
+    'expi', 'gammaln', 'hankel1', 'hankel1e', 'hankel2', 'hankel2', 'it2i0k0',
+    'it2j0y0', 'it2struve0', 'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0',
+    'itstruve0', 'iv', 'ive', 'jv', 'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp',
+    'kv', 'kve', 'mathieu_a', 'mathieu_b', 'mathieu_cem', 'mathieu_modcem1',
+    'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2', 'mathieu_sem',
+    'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
+    'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv',
+    'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv',
+    'pro_rad2', 'pro_rad2_cv', 'yv', 'yve', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------
@@ -107,12 +108,12 @@ include "_ufuncs_extra_code.pxi"
 """
 
 UFUNCS_EXTRA_CODE_BOTTOM = f"""\
+from ._special_ufuncs import ({', '.join(special_ufuncs)})
+
 #
 # Aliases
 #
 jn = jv
-
-from ._special_ufuncs import ({', '.join(special_ufuncs)})
 """
 
 CYTHON_SPECIAL_PXD = """\
