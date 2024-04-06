@@ -85,6 +85,8 @@ using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, doubl
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
+extern const char *airy_doc;
+extern const char *airye_doc;
 extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
@@ -100,11 +102,16 @@ extern const char *iti0k0_doc;
 extern const char *itj0y0_doc;
 extern const char *itmodstruve0_doc;
 extern const char *itstruve0_doc;
+extern const char *ive_doc;
+extern const char *jv_doc;
+extern const char *jve_doc;
 extern const char *kei_doc;
 extern const char *keip_doc;
 extern const char *kelvin_doc;
 extern const char *ker_doc;
 extern const char *kerp_doc;
+extern const char *kv_doc;
+extern const char *kve_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -133,6 +140,8 @@ extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
+extern const char *yv_doc;
+extern const char *yve_doc;
 
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT,
@@ -168,12 +177,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *airy = SpecFun_NewUFunc(
         {static_cast<func_d_dpdpdpdp_t>(special::airy_wrap), static_cast<func_D_DpDpDpDp_t>(special::cairy_wrap)}, 4,
-        "airy", nullptr);
+        "airy", airy_doc);
     PyModule_AddObjectRef(_special_ufuncs, "airy", airy);
 
     PyObject *airye = SpecFun_NewUFunc({static_cast<func_d_dpdpdpdp_t>(special::cairy_wrap_e_real),
                                         static_cast<func_D_DpDpDpDp_t>(special::cairy_wrap_e)},
-                                       4, "airye", nullptr);
+                                       4, "airye", airye_doc);
     PyModule_AddObjectRef(_special_ufuncs, "airye", airye);
 
     PyObject *bei = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::bei), static_cast<func_d_d_t>(special::bei)},
@@ -260,17 +269,17 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *ive = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesi_wrap_e_real), static_cast<func_dD_D_t>(special::cbesi_wrap_e)}, "ive",
-        nullptr);
+        ive_doc);
     PyModule_AddObjectRef(_special_ufuncs, "ive", ive);
 
     PyObject *jv = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesj_wrap_real), static_cast<func_dD_D_t>(special::cbesj_wrap)}, "jv",
-        nullptr);
+        jv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "jv", jv);
 
     PyObject *jve = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesj_wrap_e_real), static_cast<func_dD_D_t>(special::cbesj_wrap_e)}, "jve",
-        nullptr);
+        jve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "jve", jve);
 
     PyObject *kei = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::kei), static_cast<func_d_d_t>(special::kei)},
@@ -296,12 +305,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *kv = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesk_wrap_real), static_cast<func_dD_D_t>(special::cbesk_wrap)}, "kv",
-        nullptr);
+        kv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kv", kv);
 
     PyObject *kve = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesk_wrap_e_real), static_cast<func_dD_D_t>(special::cbesk_wrap_e)}, "kve",
-        nullptr);
+        kve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kve", kve);
 
     PyObject *mathieu_a =
@@ -438,12 +447,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *yv = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesy_wrap_real), static_cast<func_dD_D_t>(special::cbesy_wrap)}, "yv",
-        nullptr);
+        yv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "yv", yv);
 
     PyObject *yve = SpecFun_NewUFunc(
         {static_cast<func_dd_d_t>(special::cbesy_wrap_e_real), static_cast<func_dD_D_t>(special::cbesy_wrap_e)}, "yve",
-        nullptr);
+        yve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "yve", yve);
 
     return _special_ufuncs;
