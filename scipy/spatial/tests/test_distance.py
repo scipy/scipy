@@ -2246,6 +2246,9 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+    assert_almost_equal(jensenshannon(np.array([0.027501475, 0.055202297], dtype='float32'),
+                                      np.array([0.027537677, 0.055334348], dtype='float32')),
+                                      0.0001788188615755877)
 
 
 def test_gh_17703():

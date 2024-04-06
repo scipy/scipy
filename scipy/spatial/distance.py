@@ -118,7 +118,7 @@ from scipy._lib._util import _asarray_validated
 from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
-from ..special import rel_entr
+from ..special import kl_div
 
 from . import _distance_pybind
 
@@ -1261,8 +1261,8 @@ def jensenshannon(p, q, base=None, *, axis=0, keepdims=False):
     p = p / np.sum(p, axis=axis, keepdims=True)
     q = q / np.sum(q, axis=axis, keepdims=True)
     m = (p + q) / 2.0
-    left = rel_entr(p, m)
-    right = rel_entr(q, m)
+    left = kl_div(p, m)
+    right = kl_div(q, m)
     left_sum = np.sum(left, axis=axis, keepdims=keepdims)
     right_sum = np.sum(right, axis=axis, keepdims=keepdims)
     js = left_sum + right_sum
