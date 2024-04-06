@@ -830,8 +830,8 @@ class SmokeDocs(Task):
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
         with working_dir(dirs.site):
-            print("Running tests for {} version:{}, installed at:{}".format(
-                        PROJECT_MODULE, version, mod_path))
+            print(f"Running tests for {PROJECT_MODULE} version:{version}, "
+                  f"installed at:{mod_path}")
             # runner verbosity - convert bool to int
             verbose = int(args.verbose) + 1
             result = runner(  # scipy._lib._testutils:PytestTester

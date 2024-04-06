@@ -2975,7 +2975,8 @@ def describe(a, axis=0, ddof=0, bias=True):
                  mask=False,
            fill_value=999999), masked_array(data=2,
                  mask=False,
-           fill_value=999999)), mean=np.float64(1.0), variance=np.float64(0.6666666666666666),
+           fill_value=999999)), mean=np.float64(1.0),
+           variance=np.float64(0.6666666666666666),
            skewness=masked_array(data=0., mask=False, fill_value=1e+20),
             kurtosis=np.float64(-1.5))
 
