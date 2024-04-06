@@ -14,8 +14,8 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
-#include <math.h>
 #include "special_c_wrappers.h"
+#include <math.h>
 
 // M_PI64 is the 64 bit floating point representation of π, e.g.
 //   >>> math.pi.hex()
