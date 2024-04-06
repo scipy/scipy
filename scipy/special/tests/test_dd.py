@@ -1,4 +1,9 @@
-# Tests for a few of the "double-double" C functions defined in cephes/dd_*.
+# Tests for a few of the "double-double" C++ functions defined in
+# special/cephes/dd_real.h. Prior to gh-20390 which translated these
+# functions from C to C++, there were test cases for _dd_expm1. It
+# was determined that this function is not used anywhere internally
+# in SciPy, so this function was not translated.
+
 
 import pytest
 from numpy.testing import assert_allclose

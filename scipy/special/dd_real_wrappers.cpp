@@ -1,3 +1,10 @@
+/* These wrappers exist so that double-double extended precision arithmetic
+ * now translated to in C++ in special/cephes/dd_real.h can be used in Cython.
+ *  The original API of the C implementation which existed prior to gh-20390 has
+ *  been replicated to avoid the need to modify downstream Cython files.
+ */
+
+
 extern "C" {
 #include "dd_real_wrappers.h"
 }
