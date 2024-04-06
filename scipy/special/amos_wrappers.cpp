@@ -6,25 +6,27 @@ double sin_pi(double x) { return special::sin_pi(x); }
 double cos_pi(double x) { return special::cos_pi(x); }
 
 int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
-    return special::airy_wrap(x, ai, aip, bi, bip);
+    special::airy_wrap(x, ai, aip, bi, bip);
+    return 0;
 }
 
 int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    return special::cairy_wrap({npy_creal(z), npy_cimag(z)}, reinterpret_cast<std::complex<double> *>(ai),
-                               reinterpret_cast<std::complex<double> *>(aip),
-                               reinterpret_cast<std::complex<double> *>(bi),
-                               reinterpret_cast<std::complex<double> *>(bip));
+    special::cairy_wrap({npy_creal(z), npy_cimag(z)}, reinterpret_cast<std::complex<double> *>(ai),
+                        reinterpret_cast<std::complex<double> *>(aip), reinterpret_cast<std::complex<double> *>(bi),
+                        reinterpret_cast<std::complex<double> *>(bip));
+    return 0;
 }
 
 int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    return special::cairy_wrap_e({npy_creal(z), npy_cimag(z)}, reinterpret_cast<std::complex<double> *>(ai),
-                                 reinterpret_cast<std::complex<double> *>(aip),
-                                 reinterpret_cast<std::complex<double> *>(bi),
-                                 reinterpret_cast<std::complex<double> *>(bip));
+    special::cairy_wrap_e({npy_creal(z), npy_cimag(z)}, reinterpret_cast<std::complex<double> *>(ai),
+                          reinterpret_cast<std::complex<double> *>(aip), reinterpret_cast<std::complex<double> *>(bi),
+                          reinterpret_cast<std::complex<double> *>(bip));
+    return 0;
 }
 
 int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
-    return special::cairy_wrap_e_real(z, ai, aip, bi, bip);
+    special::cairy_wrap_e_real(z, ai, aip, bi, bip);
+    return 0;
 }
 
 npy_cdouble cbesi_wrap(double v, npy_cdouble z) {

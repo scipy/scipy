@@ -115,8 +115,8 @@ std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, do
     return w;
 }
 
-int cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
-               std::complex<double> *bip) {
+void cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
+                std::complex<double> *bip) {
     int id = 0;
     int ierr = 0;
     int kode = 1;
@@ -155,11 +155,10 @@ int cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<do
     bip->real(res.real());
     bip->imag(res.imag());
     DO_SFERR("airy:", bip);
-    return 0;
 }
 
-int cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
-                 std::complex<double> *bip) {
+void cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
+                  std::complex<double> *bip) {
     int id = 0;
     int kode = 2; /* Exponential scaling */
     int nz, ierr;
@@ -198,10 +197,9 @@ int cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex<
     bip->real(res.real());
     bip->imag(std::imag(res));
     DO_SFERR("airye:", bip);
-    return 0;
 }
 
-int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
+void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
     int id = 0;
     int kode = 2; /* Exponential scaling */
     int nz, ierr;
@@ -253,10 +251,9 @@ int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip
     cbip.imag(res.imag());
     DO_SFERR("airye:", &cbip);
     *bip = cbip.real();
-    return 0;
 }
 
-int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
+void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
     std::complex<double> z, zai, zaip, zbi, zbip;
 
     /* For small arguments, use Cephes as it's slightly faster.
@@ -273,7 +270,6 @@ int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
     } else {
         cephes_airy(x, ai, aip, bi, bip);
     }
-    return 0;
 }
 
 std::complex<double> cbesi_wrap_e(double v, std::complex<double> z) {
