@@ -291,9 +291,9 @@ def _root_leastsq(fun, x0, args=(), jac=None,
     maxiter : int
         The maximum number of calls to the function. If zero, then
         100*(N+1) is the maximum where N is the number of elements in x0.
-    epsfcn : float
+    eps : float
         A suitable step length for the forward-difference approximation of
-        the Jacobian (for Dfun=None). If epsfcn is less than the machine
+        the Jacobian (for Dfun=None). If `eps` is less than the machine
         precision, it is assumed that the relative errors in the functions
         are of the order of the machine precision.
     factor : float
