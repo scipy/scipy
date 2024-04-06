@@ -230,7 +230,7 @@ namespace cephes {
                 return 0.0;
             }
             if (psf == 0.0) {
-                return std::numeric_limits<double>::quiet_NaN();
+                return std::numeric_limits<double>::infinity();
             }
 
             if (pcdf <= 0.5) {
