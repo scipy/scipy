@@ -5,7 +5,6 @@
  * have been reworked in a more modern C++ style using operator overloading.
  */
 
-
 /*
  * include/double2.h
  *
@@ -13,7 +12,7 @@
  * of Mathematical, Information, and Computational Sciences of the
  * U.S. Department of Energy under contract numbers DE-AC03-76SF00098 and
  * DE-AC02-05CH11231.
- * 
+ *
  * Copyright (c) 2003-2009, The Regents of the University of California,
  * through Lawrence Berkeley National Laboratory (subject to receipt of
  * any required approvals from U.S. Dept. of Energy) All rights reserved.
@@ -43,7 +42,7 @@
 
 /*
  * This code taken from v2.3.18 of the qd package.
-*/
+ */
 
 #pragma once
 

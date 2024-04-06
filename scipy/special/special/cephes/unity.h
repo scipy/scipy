@@ -20,8 +20,8 @@
 #include "../config.h"
 
 #include "const.h"
-#include "polevl.h"
 #include "gamma.h"
+#include "polevl.h"
 #include "zeta.h"
 
 namespace special {

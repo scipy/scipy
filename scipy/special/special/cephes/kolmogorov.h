@@ -334,7 +334,7 @@ namespace cephes {
             return (x);
         }
 
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double kolmogorov(double x) {
         if (std::isnan(x)) {
@@ -443,7 +443,7 @@ namespace cephes {
             *Cman = man2;
         }
 
-        SPECFUN_HOST_DEVICE dd_real::DoubleDouble pow_D(const dd_real::DoubleDouble& a, int m) {
+        SPECFUN_HOST_DEVICE dd_real::DoubleDouble pow_D(const dd_real::DoubleDouble &a, int m) {
             /*
              * Using dd_npwr() here would be quite time-consuming.
              * Tradeoff accuracy-time by using pow().
@@ -635,7 +635,7 @@ namespace cephes {
             dd_real::DoubleDouble AjSum = dd_real::DoubleDouble(0.0);
             dd_real::DoubleDouble dAjSum = dd_real::DoubleDouble(0.0);
             double cdf, sf, pdf;
-            
+
             int bUseUpperSum;
             int nxfl, n1mxfl, n1mxceil;
 
@@ -722,13 +722,13 @@ namespace cephes {
                 dd_real::DoubleDouble Cman = dd_real::DoubleDouble(1.0);
                 int Cexpt = 0;
                 dd_real::DoubleDouble Aj, dAj, t1, t2, dAjCoeff;
-                dd_real::DoubleDouble oneOverX = dd_real::DoubleDouble(1.0) /  x;
+                dd_real::DoubleDouble oneOverX = dd_real::DoubleDouble(1.0) / x;
 
                 if (bUseUpperSum) {
                     start = n;
                     step = -1;
                     nTerms = n - n1mxceil + 1;
-                    
+
                     t1 = pow4_D(1, x, 1, 0, n - 1);
                     t2 = dd_real::DoubleDouble(1.0);
                     Aj = t1;
@@ -740,8 +740,8 @@ namespace cephes {
                     t2 = pow4_D(1, -x, 1, 0, n);
                     Aj = t2 / x;
 
-                    dAjCoeff = (-1 - dd_real::DoubleDouble(n - 1)*x) / (dd_real::DoubleDouble(1.0) - x);
-                    dAjCoeff = dAjCoeff /  x;
+                    dAjCoeff = (-1 - dd_real::DoubleDouble(n - 1) * x) / (dd_real::DoubleDouble(1.0) - x);
+                    dAjCoeff = dAjCoeff / x;
                     dAjCoeff = dAjCoeff + oneOverX;
                 }
 
@@ -759,24 +759,23 @@ namespace cephes {
 
                     if (dd_real::isfinite(Aj) && (Aj != 0.0)) {
                         /* coeff = 1/x + (j-1)/(x+j/n) - (n-j)/(1-x-j/n) */
-                        dAjCoeff = (n * (v - 1)) / (dd_real::DoubleDouble(nxfl + v) + alpha) - 
-                            ((n - v) * n) / (dd_real::DoubleDouble(n - nxfl - v) - alpha);
+                        dAjCoeff = (n * (v - 1)) / (dd_real::DoubleDouble(nxfl + v) + alpha) -
+                                   ((n - v) * n) / (dd_real::DoubleDouble(n - nxfl - v) - alpha);
                         dAjCoeff = dAjCoeff + oneOverX;
                         dAj = Aj * dAjCoeff;
-                        
+
                         SPECFUN_ASSERT(dd_real::isfinite(Aj));
                         AjSum = AjSum + Aj;
                         dAjSum = dAjSum + dAj;
                     }
                     /* Safe to terminate early? */
                     if (Aj != 0.0) {
-                        if (
-                            ((4 * (nTerms - j) * std::abs(static_cast<double>(Aj))) < (std::numeric_limits<double>::epsilon() * static_cast<double>(AjSum)))
-                             && (j != nTerms - 1)) {
-                                break;
-                            }
-                    }
-                    else if (j > vmid) {
+                        if (((4 * (nTerms - j) * std::abs(static_cast<double>(Aj))) <
+                             (std::numeric_limits<double>::epsilon() * static_cast<double>(AjSum))) &&
+                            (j != nTerms - 1)) {
+                            break;
+                        }
+                    } else if (j > vmid) {
                         SPECFUN_ASSERT(Aj == 0.0);
                         break;
                     }
@@ -789,7 +788,7 @@ namespace cephes {
                     dd_real::DoubleDouble probD = x * AjSum;
                     double deriv = static_cast<double>(derivD);
                     double prob = static_cast<double>(probD);
-                
+
                     SPECFUN_ASSERT(nx != 1 || alpha > 0);
                     if (step < 0) {
                         cdf = prob;
@@ -852,7 +851,7 @@ namespace cephes {
                 x = 1 - psfrootn;
                 return x;
             }
-            
+
             logpcdf = (pcdf < 0.5 ? log(pcdf) : log1p(-psf));
 
             /*
@@ -957,7 +956,9 @@ namespace cephes {
                  * If out-of-bounds, replace x with a midpoint of the bracket.
                  * Also check fast enough convergence.
                  */
-                if ((a <= x) && (x <= b) && (std::abs(2 * deltax) <= std::abs(dxold) || std::abs(dxold) < 256 * std::numeric_limits<double>::epsilon())) {
+                if ((a <= x) && (x <= b) &&
+                    (std::abs(2 * deltax) <= std::abs(dxold) ||
+                     std::abs(dxold) < 256 * std::numeric_limits<double>::epsilon())) {
                     dxold = dx;
                     dx = deltax;
                 } else {
@@ -983,7 +984,7 @@ namespace cephes {
             return x;
         }
 
-    }
+    } // namespace detail
 
     SPECFUN_HOST_DEVICE inline double smirnov(int n, double d) {
         if (std::isnan(d)) {
@@ -1038,5 +1039,5 @@ namespace cephes {
         return detail::_smirnovi(n, 1 - p, p);
     }
 
-}
-}
+} // namespace cephes
+} // namespace special
