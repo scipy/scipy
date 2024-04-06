@@ -118,12 +118,18 @@ double binom_wrap(double n, double k);
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
 
+double binom_wrap(double n, double k);
+npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double cephes_hyp2f1_wrap(double a, double b, double c, double x);
 double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
 double cephes_beta_wrap(double a, double b);
 double cephes_lbeta_wrap(double a, double b);
+double cephes_bdtr_wrap(double k, int n, double p);
+double cephes_bdtri_wrap(double k, int n, double y);
+double cephes_bdtrc_wrap(double k, int n, double p);
 double cephes_cosm1_wrap(double x);
 double cephes_expm1_wrap(double x);
+double cephes_expn_wrap(int n, double x);
 double cephes_log1p_wrap(double x);
 double cephes_gamma_wrap(double x);
 double cephes_gammasgn_wrap(double x);
@@ -133,14 +139,26 @@ double cephes_jv_wrap(double v, double x);
 double cephes_ellpk_wrap(double x);
 int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph);
 int cephes_fresnl_wrap(double xxa, double *ssa, double *cca);
+double cephes_nbdtr_wrap(int k, int n, double p);
+double cephes_nbdtrc_wrap(int k, int n, double p);
+double cephes_nbdtri_wrap(int k, int n, double p);
 double cephes_ndtr_wrap(double x);
 double cephes_ndtri_wrap(double x);
+double cephes_pdtri_wrap(int k, double y);
 double cephes_poch_wrap(double x, double m);
 int cephes_sici_wrap(double x, double *si, double *ci);
 int cephes_shichi_wrap(double x, double *si, double *ci);
 double cephes__struve_asymp_large_z(double v, double z, int is_h, double *err);
 double cephes__struve_bessel_series(double v, double z, int is_h, double *err);
 double cephes__struve_power_series(double v, double z, int is_h, double *err);
+double cephes_smirnov_wrap(int n, double x);
+double cephes_smirnovc_wrap(int n, double x);
+double cephes_smirnovi_wrap(int n, double x);
+double cephes_smirnovci_wrap(int n, double x);
+double cephes_smirnovp_wrap(int n, double x);
+double cephes_yn_wrap(int n, double x);
+double cephes_polevl_wrap(double x, const double coef[], int N);
+double cephes_p1evl_wrap(double x, const double coef[], int N);
 
 #ifdef __cplusplus
 } /* extern "C" */
