@@ -438,18 +438,18 @@ namespace dd_real {
 
         p = square(r);
         s = r + mul_pwr2(p, 0.5);
-        p = p - r;
+        p = p * r;
         t = p * detail::inv_fact[0];
         do {
             s = s + t;
             p = p * r;
             ++i;
             t = p * detail::inv_fact[i];
-        } while (std::abs(static_cast<double>(t)) > inv_k * detail::EPS && i < 5);
+        } while ((std::abs(static_cast<double>(t)) > inv_k * detail::EPS) && i < 5);
 
         s = s + t;
 
-        for (int i = 0; i < 9; i++) {
+        for (int j = 0; j < 9; j++) {
             s = mul_pwr2(s, 2.0) + square(s);
         }
         s = s + 1.0;
