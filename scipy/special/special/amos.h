@@ -17,7 +17,7 @@ extern "C" double cephes_yv(double v, double x);
 
 namespace special {
 
-int ierr_to_sferr(int nz, int ierr) {
+inline int ierr_to_sferr(int nz, int ierr) {
     /* Return sf_error equivalents for ierr values */
 
     if (nz != 0)
@@ -38,14 +38,14 @@ int ierr_to_sferr(int nz, int ierr) {
     return -1;
 }
 
-void set_nan_if_no_computation_done(std::complex<double> *v, int ierr) {
+inline void set_nan_if_no_computation_done(std::complex<double> *v, int ierr) {
     if (v != NULL && (ierr == 1 || ierr == 2 || ierr == 4 || ierr == 5)) {
         v->real(NAN);
         v->imag(NAN);
     }
 }
 
-double sin_pi(double x) {
+inline double sin_pi(double x) {
     if (floor(x) == x && fabs(x) < 1e14) {
         /* Return 0 when at exact zero, as long as the floating point number is
          * small enough to distinguish integer points from other points.
@@ -55,7 +55,7 @@ double sin_pi(double x) {
     return sin(M_PI * x);
 }
 
-double cos_pi(double x) {
+inline double cos_pi(double x) {
     double x05 = x + 0.5;
     if (floor(x05) == x05 && fabs(x) < 1e14) {
         /* Return 0 when at exact zero, as long as the floating point number is
@@ -66,7 +66,7 @@ double cos_pi(double x) {
     return cos(M_PI * x);
 }
 
-std::complex<double> rotate(std::complex<double> z, double v) {
+inline std::complex<double> rotate(std::complex<double> z, double v) {
     std::complex<double> w;
     double c = cos_pi(v);
     double s = sin_pi(v);
@@ -76,7 +76,7 @@ std::complex<double> rotate(std::complex<double> z, double v) {
     return w;
 }
 
-std::complex<double> rotate_jy(std::complex<double> j, std::complex<double> y, double v) {
+inline std::complex<double> rotate_jy(std::complex<double> j, std::complex<double> y, double v) {
     std::complex<double> w;
     double c = cos_pi(v);
     double s = sin_pi(v);
@@ -85,7 +85,7 @@ std::complex<double> rotate_jy(std::complex<double> j, std::complex<double> y, d
     return w;
 }
 
-int reflect_jy(std::complex<double> *jy, double v) {
+inline int reflect_jy(std::complex<double> *jy, double v) {
     /* NB: Y_v may be huge near negative integers -- so handle exact
      *     integers carefully
      */
@@ -101,13 +101,13 @@ int reflect_jy(std::complex<double> *jy, double v) {
     return 1;
 }
 
-int reflect_i(std::complex<double> *ik, double v) {
+inline int reflect_i(std::complex<double> *ik, double v) {
     if (v != floor(v))
         return 0;
     return 1; /* I is symmetric for integer v */
 }
 
-std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, double v) {
+inline std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, double v) {
     std::complex<double> w;
     double s = sin(v * M_PI) * (2.0 / M_PI);
     w.real(i.real() + s * k.real());
@@ -115,8 +115,8 @@ std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, do
     return w;
 }
 
-void cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
-                std::complex<double> *bip) {
+inline void cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip,
+                       std::complex<double> *bi, std::complex<double> *bip) {
     int id = 0;
     int ierr = 0;
     int kode = 1;
@@ -131,24 +131,24 @@ void cairy_wrap(std::complex<double> z, std::complex<double> *ai, std::complex<d
     bip->real(NAN);
     bip->imag(NAN);
 
-    *ai = amos_airy(z, id, kode, &nz, &ierr);
+    *ai = amos::airy(z, id, kode, &nz, &ierr);
     DO_SFERR("airy:", ai);
 
     nz = 0;
-    *bi = amos_biry(z, id, kode, &ierr);
+    *bi = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airy:", bi);
 
     id = 1;
-    *aip = amos_airy(z, id, kode, &nz, &ierr);
+    *aip = amos::airy(z, id, kode, &nz, &ierr);
     DO_SFERR("airy:", aip);
 
     nz = 0;
-    *bip = amos_biry(z, id, kode, &ierr);
+    *bip = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airy:", bip);
 }
 
-void cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip, std::complex<double> *bi,
-                  std::complex<double> *bip) {
+inline void cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex<double> *aip,
+                         std::complex<double> *bi, std::complex<double> *bip) {
     int id = 0;
     int kode = 2; /* Exponential scaling */
     int nz, ierr;
@@ -162,23 +162,23 @@ void cairy_wrap_e(std::complex<double> z, std::complex<double> *ai, std::complex
     bip->real(NAN);
     bip->imag(NAN);
 
-    *ai = amos_airy(z, id, kode, &nz, &ierr);
+    *ai = amos::airy(z, id, kode, &nz, &ierr);
     DO_SFERR("airye:", ai);
 
     nz = 0;
-    *bi = amos_biry(z, id, kode, &ierr);
+    *bi = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airye:", bi);
 
     id = 1;
-    *aip = amos_airy(z, id, kode, &nz, &ierr);
+    *aip = amos::airy(z, id, kode, &nz, &ierr);
     DO_SFERR("airye:", aip);
 
     nz = 0;
-    *bip = amos_biry(z, id, kode, &ierr);
+    *bip = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airye:", bip);
 }
 
-void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
+inline void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
     int id = 0;
     int kode = 2; /* Exponential scaling */
     int nz, ierr;
@@ -196,13 +196,13 @@ void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bi
     if (z < 0) {
         *ai = NAN;
     } else {
-        cai = amos_airy(z, id, kode, &nz, &ierr);
+        cai = amos::airy(z, id, kode, &nz, &ierr);
         DO_SFERR("airye:", &cai);
         *ai = cai.real();
     }
 
     nz = 0;
-    cbi = amos_biry(z, id, kode, &ierr);
+    cbi = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airye:", &cbi);
     *bi = std::real(cbi);
 
@@ -210,18 +210,18 @@ void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bi
     if (z < 0) {
         *aip = NAN;
     } else {
-        caip = amos_airy(z, id, kode, &nz, &ierr);
+        caip = amos::airy(z, id, kode, &nz, &ierr);
         DO_SFERR("airye:", &caip);
         *aip = std::real(caip);
     }
 
     nz = 0;
-    cbip = amos_biry(z, id, kode, &ierr);
+    cbip = amos::biry(z, id, kode, &ierr);
     DO_SFERR("airye:", &cbip);
     *bip = cbip.real();
 }
 
-void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
+inline void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
     std::complex<double> z, zai, zaip, zbi, zbip;
 
     /* For small arguments, use Cephes as it's slightly faster.
@@ -240,7 +240,7 @@ void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
     }
 }
 
-std::complex<double> cbesi_wrap_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesi_wrap_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int sign = 1;
@@ -259,12 +259,12 @@ std::complex<double> cbesi_wrap_e(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besi(z, v, kode, n, &cy, &ierr);
+    nz = amos::besi(z, v, kode, n, &cy, &ierr);
     DO_SFERR("ive:", &cy);
 
     if (sign == -1) {
         if (!reflect_i(&cy, v)) {
-            nz = amos_besk(z, v, kode, n, &cy_k, &ierr);
+            nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
             DO_SFERR("ive(kv):", &cy_k);
             /* adjust scaling to match zbesi */
             cy_k = rotate(cy_k, -z.imag() / M_PI);
@@ -280,7 +280,7 @@ std::complex<double> cbesi_wrap_e(double v, std::complex<double> z) {
     return cy;
 }
 
-double cbesi_wrap_e_real(double v, double z) {
+inline double cbesi_wrap_e_real(double v, double z) {
     std::complex<double> cy, w;
     if (v != floor(v) && z < 0) {
         return NAN;
@@ -292,7 +292,7 @@ double cbesi_wrap_e_real(double v, double z) {
     }
 }
 
-std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
+inline std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int sign = 1;
@@ -311,7 +311,7 @@ std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besi(z, v, kode, n, &cy, &ierr);
+    nz = amos::besi(z, v, kode, n, &cy, &ierr);
     DO_SFERR("iv:", &cy);
     if (ierr == 2) {
         /* overflow */
@@ -330,7 +330,7 @@ std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
 
     if (sign == -1) {
         if (!reflect_i(&cy, v)) {
-            nz = amos_besk(z, v, kode, n, &cy_k, &ierr);
+            nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
             DO_SFERR("iv(kv):", &cy_k);
             cy = rotate_i(cy, cy_k, v);
         }
@@ -339,7 +339,7 @@ std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
     return cy;
 }
 
-std::complex<double> cbesj_wrap_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesj_wrap_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int nz, ierr;
@@ -358,11 +358,11 @@ std::complex<double> cbesj_wrap_e(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besj(z, v, kode, n, &cy_j, &ierr);
+    nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
     DO_SFERR("jve:", &cy_j);
     if (sign == -1) {
         if (!reflect_jy(&cy_j, v)) {
-            nz = amos_besy(z, v, kode, n, &cy_y, &ierr);
+            nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
             DO_SFERR("jve(yve):", &cy_y);
             cy_j = rotate_jy(cy_j, cy_y, v);
         }
@@ -370,7 +370,7 @@ std::complex<double> cbesj_wrap_e(double v, std::complex<double> z) {
     return cy_j;
 }
 
-std::complex<double> cbesj_wrap(double v, std::complex<double> z) {
+inline std::complex<double> cbesj_wrap(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int nz, ierr;
@@ -389,7 +389,7 @@ std::complex<double> cbesj_wrap(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besj(z, v, kode, n, &cy_j, &ierr);
+    nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
     DO_SFERR("jv:", &cy_j);
     if (ierr == 2) {
         /* overflow */
@@ -400,7 +400,7 @@ std::complex<double> cbesj_wrap(double v, std::complex<double> z) {
 
     if (sign == -1) {
         if (!reflect_jy(&cy_j, v)) {
-            nz = amos_besy(z, v, kode, n, &cy_y, &ierr);
+            nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
             DO_SFERR("jv(yv):", &cy_y);
             cy_j = rotate_jy(cy_j, cy_y, v);
         }
@@ -408,7 +408,7 @@ std::complex<double> cbesj_wrap(double v, std::complex<double> z) {
     return cy_j;
 }
 
-double cbesj_wrap_e_real(double v, double z) {
+inline double cbesj_wrap_e_real(double v, double z) {
     std::complex<double> cy, w;
     if (v != floor(v) && z < 0) {
         return NAN;
@@ -420,7 +420,7 @@ double cbesj_wrap_e_real(double v, double z) {
     }
 }
 
-double cbesj_wrap_real(double v, double x) {
+inline double cbesj_wrap_real(double v, double x) {
     std::complex<double> z, r;
 
     if (x < 0 && v != (int) v) {
@@ -438,7 +438,7 @@ double cbesj_wrap_real(double v, double x) {
     return r.real();
 }
 
-std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
+inline std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int nz, ierr;
@@ -464,7 +464,7 @@ std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
         cy_y.imag(0);
         sf_error("yv", SF_ERROR_OVERFLOW, NULL);
     } else {
-        nz = amos_besy(z, v, kode, n, &cy_y, &ierr);
+        nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
         DO_SFERR("yv:", &cy_y);
         if (ierr == 2) {
             if (z.real() >= 0 && z.imag() == 0) {
@@ -477,7 +477,7 @@ std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
 
     if (sign == -1) {
         if (!reflect_jy(&cy_y, v)) {
-            nz = amos_besj(z, v, kode, n, &cy_j, &ierr);
+            nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
             // F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
             DO_SFERR("yv(jv):", &cy_j);
             cy_y = rotate_jy(cy_y, cy_j, -v);
@@ -486,7 +486,7 @@ std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
     return cy_y;
 }
 
-double cbesy_wrap_real(double v, double x) {
+inline double cbesy_wrap_real(double v, double x) {
     std::complex<double> z, r;
 
     if (x < 0.0) {
@@ -504,7 +504,7 @@ double cbesy_wrap_real(double v, double x) {
     return r.real();
 }
 
-std::complex<double> cbesy_wrap_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesy_wrap_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int nz, ierr;
@@ -523,7 +523,7 @@ std::complex<double> cbesy_wrap_e(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besy(z, v, kode, n, &cy_y, &ierr);
+    nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
     DO_SFERR("yve:", &cy_y);
     if (ierr == 2) {
         if (z.real() >= 0 && z.imag() == 0) {
@@ -535,7 +535,7 @@ std::complex<double> cbesy_wrap_e(double v, std::complex<double> z) {
 
     if (sign == -1) {
         if (!reflect_jy(&cy_y, v)) {
-            nz = amos_besj(z, v, kode, n, &cy_j, &ierr);
+            nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
             DO_SFERR("yv(jv):", &cy_j);
             cy_y = rotate_jy(cy_y, cy_j, -v);
         }
@@ -543,7 +543,7 @@ std::complex<double> cbesy_wrap_e(double v, std::complex<double> z) {
     return cy_y;
 }
 
-double cbesy_wrap_e_real(double v, double z) {
+inline double cbesy_wrap_e_real(double v, double z) {
     std::complex<double> cy, w;
     if (z < 0) {
         return NAN;
@@ -555,7 +555,7 @@ double cbesy_wrap_e_real(double v, double z) {
     }
 }
 
-std::complex<double> cbesk_wrap(double v, std::complex<double> z) {
+inline std::complex<double> cbesk_wrap(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int nz, ierr;
@@ -571,7 +571,7 @@ std::complex<double> cbesk_wrap(double v, std::complex<double> z) {
         /* K_v == K_{-v} even for non-integer v */
         v = -v;
     }
-    nz = amos_besk(z, v, kode, n, &cy, &ierr);
+    nz = amos::besk(z, v, kode, n, &cy, &ierr);
     DO_SFERR("kv:", &cy);
     if (ierr == 2) {
         if (z.real() >= 0 && z.imag() == 0) {
@@ -584,7 +584,7 @@ std::complex<double> cbesk_wrap(double v, std::complex<double> z) {
     return cy;
 }
 
-std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int nz, ierr;
@@ -600,7 +600,7 @@ std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
         /* K_v == K_{-v} even for non-integer v */
         v = -v;
     }
-    nz = amos_besk(z, v, kode, n, &cy, &ierr);
+    nz = amos::besk(z, v, kode, n, &cy, &ierr);
     DO_SFERR("kve:", &cy);
     if (ierr == 2) {
         if (z.real() >= 0 && z.imag() == 0) {
@@ -613,7 +613,7 @@ std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
     return cy;
 }
 
-double cbesk_wrap_real(double v, double z) {
+inline double cbesk_wrap_real(double v, double z) {
     std::complex<double> cy, w;
     if (z < 0) {
         return NAN;
@@ -633,9 +633,9 @@ double cbesk_wrap_real(double v, double z) {
     }
 }
 
-double cbesk_wrap_real_int(int n, double z) { return cbesk_wrap_real(n, z); }
+inline double cbesk_wrap_real_int(int n, double z) { return cbesk_wrap_real(n, z); }
 
-double cbesk_wrap_e_real(double v, double z) {
+inline double cbesk_wrap_e_real(double v, double z) {
     std::complex<double> cy, w;
     if (z < 0) {
         return NAN;
@@ -649,7 +649,7 @@ double cbesk_wrap_e_real(double v, double z) {
     }
 }
 
-std::complex<double> cbesh_wrap1(double v, std::complex<double> z) {
+inline std::complex<double> cbesh_wrap1(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int m = 1;
@@ -667,7 +667,7 @@ std::complex<double> cbesh_wrap1(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besh(z, v, kode, m, n, &cy, &ierr);
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
     DO_SFERR("hankel1:", &cy);
     if (sign == -1) {
         cy = rotate(cy, v);
@@ -675,7 +675,7 @@ std::complex<double> cbesh_wrap1(double v, std::complex<double> z) {
     return cy;
 }
 
-std::complex<double> cbesh_wrap1_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesh_wrap1_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int m = 1;
@@ -693,7 +693,7 @@ std::complex<double> cbesh_wrap1_e(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besh(z, v, kode, m, n, &cy, &ierr);
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
     DO_SFERR("hankel1e:", &cy);
     if (sign == -1) {
         cy = rotate(cy, v);
@@ -701,7 +701,7 @@ std::complex<double> cbesh_wrap1_e(double v, std::complex<double> z) {
     return cy;
 }
 
-std::complex<double> cbesh_wrap2(double v, std::complex<double> z) {
+inline std::complex<double> cbesh_wrap2(double v, std::complex<double> z) {
     int n = 1;
     int kode = 1;
     int m = 2;
@@ -719,7 +719,7 @@ std::complex<double> cbesh_wrap2(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besh(z, v, kode, m, n, &cy, &ierr);
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
     DO_SFERR("hankel2:", &cy);
     if (sign == -1) {
         cy = rotate(cy, -v);
@@ -727,7 +727,7 @@ std::complex<double> cbesh_wrap2(double v, std::complex<double> z) {
     return cy;
 }
 
-std::complex<double> cbesh_wrap2_e(double v, std::complex<double> z) {
+inline std::complex<double> cbesh_wrap2_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
     int m = 2;
@@ -743,7 +743,7 @@ std::complex<double> cbesh_wrap2_e(double v, std::complex<double> z) {
         v = -v;
         sign = -1;
     }
-    nz = amos_besh(z, v, kode, m, n, &cy, &ierr);
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
     DO_SFERR("hankel2e:", &cy);
     if (sign == -1) {
         cy = rotate(cy, -v);
