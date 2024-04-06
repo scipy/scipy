@@ -7496,7 +7496,8 @@ class ncx2_gen(rv_continuous):
 
     def _stats(self, df, nc):
         _ncx2_mean = np.add(df, nc)
-        k_plus_cl = lambda k, l, c: np.add(k, np.multiply(c, l))
+        def k_plus_cl(k, l, c):
+            return np.add(k, np.multiply(c, l))
         _ncx2_variance = np.multiply(2.0, k_plus_cl(df, nc, 2.0))
         _ncx2_skewness = np.divide(
             np.multiply(
