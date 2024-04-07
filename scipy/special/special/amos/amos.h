@@ -5743,6 +5743,16 @@ inline int unk2(
             kdflg = 2;
             continue;
         }
+        /* GO TO 70 */
+        if (rs1 > 0.0) { return -1; }
+        /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
+        if (x < 0.0) { return -1; }
+        kdflg = 1;
+        y[i-1] = 0.0;
+        cs *= -std::complex<double>(0, 1);
+        nz += 1;
+        if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
+        continue;
     }
     /* Check for exhausted loop */
     if (i == n+1) { i = n; }
