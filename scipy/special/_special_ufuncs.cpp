@@ -1,6 +1,5 @@
 #include <cmath>
 
-#include "sf_error.h"
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
