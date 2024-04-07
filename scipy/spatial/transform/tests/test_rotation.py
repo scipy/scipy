@@ -63,23 +63,27 @@ def test_as_quat_scalar_first():
     rng = np.random.RandomState(0)
 
     r = Rotation.from_euler('xyz', np.zeros(3))
-    assert_allclose(r.as_quat(scalar_first=True), [1, 0, 0, 0], rtol=1e-15, atol=1e-16)
+    assert_allclose(r.as_quat(scalar_first=True), [1, 0, 0, 0],
+                    rtol=1e-15, atol=1e-16)
 
     r = Rotation.from_euler('xyz', np.zeros((10, 3)))
-    assert_allclose(r.as_quat(scalar_first=True), np.tile([1, 0, 0, 0], (10, 1)),
-                    rtol=1e-15, atol=1e-16)
+    assert_allclose(r.as_quat(scalar_first=True),
+                    np.tile([1, 0, 0, 0], (10, 1)), rtol=1e-15, atol=1e-16)
 
     q = rng.randn(100, 4)
     q /= np.linalg.norm(q, axis=1)[:, None]
     for qi in q:
         r = Rotation.from_quat(qi)
-        assert_allclose(r.as_quat(scalar_first=True), np.roll(qi, 1), rtol=1e-15)
+        assert_allclose(r.as_quat(scalar_first=True), np.roll(qi, 1),
+                        rtol=1e-15)
 
         assert_allclose(r.as_quat(canonical=True, scalar_first=True),
-                        np.roll(r.as_quat(canonical=True), 1), rtol=1e-15)
+                        np.roll(r.as_quat(canonical=True), 1),
+                        rtol=1e-15)
 
     r = Rotation.from_quat(q)
-    assert_allclose(r.as_quat(scalar_first=True), np.roll(q, 1, axis=1), rtol=1e-15)
+    assert_allclose(r.as_quat(scalar_first=True), np.roll(q, 1, axis=1),
+                    rtol=1e-15)
 
     assert_allclose(r.as_quat(canonical=True, scalar_first=True),
                     np.roll(r.as_quat(canonical=True), 1, axis=1), rtol=1e-15)
