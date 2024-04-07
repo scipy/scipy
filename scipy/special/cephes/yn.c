@@ -98,7 +98,7 @@ double yn(int n, double x)
 	r += 2.0;
 	++k;
     }
-    while (k < n);
+    while (k < n && isfinite(an));
 
 
     return (sign * an);
