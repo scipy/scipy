@@ -620,7 +620,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         Initial guess for the parameters (length N). If None, then the
         initial values will all be 1 (if the number of parameters for the
         function can be determined using introspection, otherwise a
-        ValueError is raised).
+        ValueError is raised). Note that `x0` may be used interchangeably with `p0`.
     sigma : None or scalar or M-length sequence or MxM array, optional
         Determines the uncertainty in `ydata`. If we define residuals as
         ``r = ydata - f(xdata, *popt)``, then the interpretation of `sigma`
