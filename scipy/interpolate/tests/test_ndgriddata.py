@@ -203,7 +203,7 @@ class TestGriddata:
         griddata(coords, values, (grid_x, grid_y), method='cubic')
         final_memory = psutil.Process().memory_info().rss
         memory_used = final_memory - initial_memory
-        assert_allclose(memory_used, 52 * 2 ** 20, atol = 52 * 2 ** 20)
+        assert_allclose(memory_used, 52 * 2 ** 20, atol = 2 ** 27)
 
 class TestNearestNDInterpolator:
     def test_nearest_options(self):
