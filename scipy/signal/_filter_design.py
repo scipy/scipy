@@ -5340,11 +5340,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
         G0, G = 1, 0
     elif ftype == 'peak':
         G0, G = 0, 1
-    GB = 1 / np.sqrt(2)
 
     # Compute beta
     # Eq. 11.5.3 (p. 591) from reference [1]
-    beta = np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) * np.tan(N * w_delta / 4)
+    # Note that formulas can be further simplified when -3dB attenuation value
+    # GB = 1 / np.sqrt(2):
+    #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
+    beta = np.tan(N * w_delta / 4)
 
     # Compute filter coefficients
     # Eq 11.5.1 (p. 590) variables a, b, c from reference [1]
