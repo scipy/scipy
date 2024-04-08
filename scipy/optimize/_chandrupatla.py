@@ -181,8 +181,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._ESIGNERR
         stop[i] = True
 
-        i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
-               & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
+        x_nonfinite = ~(np.isfinite(work.x1) & np.isfinite(work.x2))
+        f_nan = np.isnan(work.f1) & np.isnan(work.f2)
+        i = (x_nonfinite | f_nan) & ~stop
         work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._EVALUEERR
         stop[i] = True
 
