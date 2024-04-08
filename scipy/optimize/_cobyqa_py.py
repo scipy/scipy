@@ -33,9 +33,13 @@ def _minimize_cobyqa(fun, x0, args=(), bounds=None, constraints=(),
         order of one tenth of the greatest expected change to the variables.
     final_tr_radius : float
         Final trust-region radius. It should indicate the accuracy required in
-        the final values of the variables.
+        the final values of the variables. If provided, this option overrides
+        the value of `tol` in the `minimize` function.
     scale : bool
-        Whether to scale the variables according to the bounds.
+        Set to True to scale the variables according to the bounds. If True and
+        if all the lower and upper bounds are finite, the variables are scaled
+        to be within the range :math:`[-1, 1]`. If any of the lower or upper
+        bounds is infinite, the variables are not scaled.
     """
     from .._lib.cobyqa import minimize  # import here to avoid circular imports
 
