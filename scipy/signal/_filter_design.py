@@ -5146,17 +5146,16 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     bw = bw*np.pi
     w0 = w0*np.pi
 
-    # Compute -3dB attenuation
-    gb = 1/np.sqrt(2)
-
-    if ftype == "notch":
-        # Compute beta: formula 11.3.4 (p.575) from reference [1]
-        beta = (np.sqrt(1.0-gb**2.0)/gb)*np.tan(bw/2.0)
-    elif ftype == "peak":
-        # Compute beta: formula 11.3.19 (p.579) from reference [1]
-        beta = (gb/np.sqrt(1.0-gb**2.0))*np.tan(bw/2.0)
-    else:
+    if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
+
+    # Compute beta
+    # Eqs. 11.3.4 (p.575) and 11.3.19 (p.579) from reference [1]
+    # Note that formulas can be further simplified when -3dB attenuation value
+    # gb = 1 / np.sqrt(2):
+    #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
+    #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
+    beta = np.tan(bw/2.0)
 
     # Compute gain: formula 11.3.6 (p.575) from reference [1]
     gain = 1.0/(1.0+beta)
