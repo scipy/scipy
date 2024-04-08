@@ -21,3 +21,9 @@
 #define qh_dgetrs F_FUNC(dgetrs,DGETRS)
 
 #define qhull_misc_lib_check() QHULL_LIB_CHECK
+
+#include "libqhull_r/libqhull_r.h"
+
+int qh_new_qhull_scipy(qhT *qh, int dim, int numpoints, coordT *points, boolT ismalloc,
+                       char *qhull_cmd, FILE *outfile, FILE *errfile, coordT* feaspoint);
+

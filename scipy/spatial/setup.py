@@ -28,7 +28,7 @@ def configuration(parent_package='', top_path=None):
     cfg.setdefault('include_dirs', []).extend(inc_dirs)
     cfg['libraries'].append('qhull_r')
     config.add_extension('qhull',
-                         sources=['qhull.c'],
+                         sources=['qhull.c', 'qhull_misc.c'],
                          **cfg)
     del cfg
 
