@@ -193,18 +193,6 @@ TYPE_NAMES = {
     'l': 'NPY_LONG',
 }
 
-CYTHON_SPECIAL_BENCHFUNCS = {
-    'airy': ['d*dddd', 'D*DDDD'],
-    'beta': ['dd'],
-    'erf': ['d', 'D'],
-    'exprel': ['d'],
-    'gamma': ['d', 'D'],
-    'jv': ['dd', 'dD'],
-    'loggamma': ['D'],
-    'logit': ['d'],
-    'psi': ['d', 'D'],
-}
-
 
 def underscore(arg):
     return arg.replace(" ", "_")

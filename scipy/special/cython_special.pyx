@@ -1129,14 +1129,14 @@ cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
 from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
 ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
 cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_bei_wrap "bei_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_beip_wrap "beip_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_ber_wrap "ber_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_berp_wrap "berp_wrap"(npy_double)nogil
+cdef extern from r"specfun_wrappers.h":
+    cdef double _func_bei_wrap "bei_wrap"(double)nogil
+cdef extern from r"specfun_wrappers.h":
+    cdef double _func_beip_wrap "beip_wrap"(double)nogil
+cdef extern from r"specfun_wrappers.h":
+    cdef double _func_ber_wrap "ber_wrap"(double)nogil
+cdef extern from r"specfun_wrappers.h":
+    cdef double _func_berp_wrap "berp_wrap"(double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_besselpoly "besselpoly"(npy_double, npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
