@@ -755,28 +755,6 @@ def generate_ufuncs(fn_prefix, cxx_fn_prefix, ufuncs):
         f.write("\n".join(cxx_pxd_defs))
 
 
-def generate_ufuncs_type_stubs(module_name: str, ufunc_names: list[str]):
-    stubs, module_all = [], []
-    for ufunc_name in ufunc_names:
-        stubs.append(f'{ufunc_name}: np.ufunc')
-        if not ufunc_name.startswith('_'):
-            module_all.append(f"'{ufunc_name}'")
-    # jn is an alias for jv.
-    module_all.append("'jn'")
-    stubs.append('jn: np.ufunc')
-    module_all.sort()
-    stubs.sort()
-
-    contents = STUBS.format(
-        ALL=',\n    '.join(module_all),
-        STUBS='\n'.join(stubs),
-    )
-
-    stubs_file = f'{module_name}.pyi'
-    with open(stubs_file, 'w') as f:
-        f.write(contents)
-
-
 def unique(lst):
     """
     Return a list without repeated entries (first occurrence is kept),
@@ -823,8 +801,7 @@ def main(outdir):
                  '_ufuncs_defs.h',
                  '_ufuncs_cxx.pyx',
                  '_ufuncs_cxx.pxd',
-                 '_ufuncs_cxx_defs.h',
-                 '_ufuncs.pyi')
+                 '_ufuncs_cxx_defs.h')
     dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
@@ -833,18 +810,15 @@ def main(outdir):
         print("scipy/special/_generate_pyx.py: all files up-to-date")
         return
 
-    ufuncs, ufuncs_type_stubs = [], []
+    ufuncs = []
     with open('functions.json') as data:
         functions = json.load(data)
     for f, sig in functions.items():
         if (f not in special_ufuncs):
             ufuncs.append(Ufunc(f, sig))
-        ufuncs_type_stubs.append(f)
     generate_ufuncs(os.path.join(outdir, "_ufuncs"),
                     os.path.join(outdir, "_ufuncs_cxx"),
                     ufuncs)
-    generate_ufuncs_type_stubs(os.path.join(outdir, "_ufuncs"),
-                               ufuncs_type_stubs)
 
 
 if __name__ == "__main__":

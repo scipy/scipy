@@ -173,8 +173,7 @@ cython_special = custom_target('cython_special',
     '_ufuncs_defs.h',
     '_ufuncs_cxx.pyx',
     '_ufuncs_cxx.pxd',
-    '_ufuncs_cxx_defs.h',
-    '_ufuncs.pyi'
+    '_ufuncs_cxx_defs.h'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
@@ -400,6 +399,7 @@ python_sources = [
   '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
+  '_ufuncs.pyi',
   'add_newdocs.py',
   'basic.py',
   'cython_special.pyi',

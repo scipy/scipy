@@ -1095,17 +1095,36 @@ from libc.math cimport NAN
 include "_cython_special.pxi"
 include "_cython_special_custom.pxi"
 
+cdef extern from r"amos_wrappers.h":
+    npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    npy_int _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    npy_int _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    npy_int _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    npy_cdouble _func_cbesi_wrap "cbesi_wrap"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesi_wrap_e "cbesi_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesi_wrap_e_real "cbesi_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesj_wrap "cbesj_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesj_wrap_real "cbesj_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesj_wrap_e "cbesj_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesj_wrap_e_real "cbesj_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesy_wrap "cbesy_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesy_wrap_real "cbesy_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesy_wrap_e "cbesy_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesy_wrap_e_real "cbesy_wrap_e_real"(npy_double, npy_double) nogil
+    npy_double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(npy_int, npy_double) nogil
+    npy_cdouble _func_cbesk_wrap "cbesk_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesk_wrap_e "cbesk_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesk_wrap_e_real "cbesk_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
+
+
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
 cdef _proto_agm_t *_proto_agm_t_var = &_func_agm
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
 from ._legacy cimport bdtr_unsafe as _func_bdtr_unsafe
 ctypedef double _proto_bdtr_unsafe_t(double, double, double) noexcept nogil
 cdef _proto_bdtr_unsafe_t *_proto_bdtr_unsafe_t_var = &_func_bdtr_unsafe
@@ -1339,7 +1358,7 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_exp10 "exp10"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_exp2 "exp2"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
+cdef extern from r"specfun_wrappers.h":
     cdef npy_cdouble _func_cexpi_wrap "cexpi_wrap"(npy_cdouble)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_expi_wrap "expi_wrap"(npy_double)nogil
@@ -1396,14 +1415,6 @@ cdef _proto_gdtrib_t *_proto_gdtrib_t_var = &_func_gdtrib
 from ._cdflib_wrappers cimport gdtrix as _func_gdtrix
 ctypedef double _proto_gdtrix_t(double, double, double) noexcept nogil
 cdef _proto_gdtrix_t *_proto_gdtrix_t_var = &_func_gdtrix
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble)nogil
 from ._convex_analysis cimport huber as _func_huber
 ctypedef double _proto_huber_t(double, double) noexcept nogil
 cdef _proto_huber_t *_proto_huber_t_var = &_func_huber
@@ -1454,25 +1465,11 @@ cdef extern from r"_ufuncs_defs.h":
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_itstruve0_wrap "itstruve0_wrap"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesi_wrap "cbesi_wrap"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_iv "iv"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesi_wrap_e "cbesi_wrap_e"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesi_wrap_e_real "cbesi_wrap_e_real"(npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j1 "j1"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesj_wrap "cbesj_wrap"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesj_wrap_real "cbesj_wrap_real"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesj_wrap_e "cbesj_wrap_e"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesj_wrap_e_real "cbesj_wrap_e_real"(npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k0 "k0"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
@@ -1498,19 +1495,9 @@ from ._legacy cimport kn_unsafe as _func_kn_unsafe
 ctypedef double _proto_kn_unsafe_t(double, double) noexcept nogil
 cdef _proto_kn_unsafe_t *_proto_kn_unsafe_t_var = &_func_kn_unsafe
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(npy_int, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_kolmogi "kolmogi"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_kolmogorov "kolmogorov"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesk_wrap "cbesk_wrap"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesk_wrap_e "cbesk_wrap_e"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesk_wrap_e_real "cbesk_wrap_e_real"(npy_double, npy_double)nogil
 from ._cunity cimport clog1p as _func_clog1p
 ctypedef double complex _proto_clog1p_t(double complex) noexcept nogil
 cdef _proto_clog1p_t *_proto_clog1p_t_var = &_func_clog1p
@@ -1727,14 +1714,6 @@ ctypedef double _proto_yn_unsafe_t(double, double) noexcept nogil
 cdef _proto_yn_unsafe_t *_proto_yn_unsafe_t_var = &_func_yn_unsafe
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_yn "yn"(npy_int, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesy_wrap "cbesy_wrap"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesy_wrap_real "cbesy_wrap_real"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cbesy_wrap_e "cbesy_wrap_e"(npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cbesy_wrap_e_real "cbesy_wrap_e_real"(npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_zetac "zetac"(npy_double)nogil
 from ._ndtri_exp cimport ndtri_exp as _func_ndtri_exp

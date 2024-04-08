@@ -293,7 +293,6 @@ scipy/special/_ufuncs_cxx.pxd
 scipy/special/_ufuncs_cxx.pyx
 scipy/special/_ufuncs_cxx_defs.h
 scipy/special/_ufuncs_defs.h
-scipy/special/_ufuncs.pyi
 scipy/special/cython_special.c
 scipy/special/cython_special.h
 scipy/special/_specfunmodule.c
