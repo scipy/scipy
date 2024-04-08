@@ -758,6 +758,16 @@ class TestChandrupatla(TestScalarRootFinders):
     def test_special_cases(self):
         # Test edge cases and other special cases
 
+        # Test infinite function values
+        def f(x):
+            return 1 / x + 1 - 1 / (-x + 1)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = _chandrupatla_root(f, [0.1, 0., 0., 0.1],
+                                     [0.9, 1.0, 0.9, 1.0])
+        assert np.all(res.success)
+        assert_allclose(res.x[1:], res.x[0])
+
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
         def f(x):
@@ -769,13 +779,14 @@ class TestChandrupatla(TestScalarRootFinders):
         assert_allclose(res.x, 1)
 
         # Test that if both ends of bracket equal root, algorithm reports
-        # convergence
-        def f(x):
-            return x**2 - 1
+        # convergence.
+        def f(x, root):
+            return x**2 - root
 
-        res = _chandrupatla_root(f, 1, 1)
-        assert res.success
-        assert_equal(res.x, 1)
+        root = [0, 1]
+        res = _chandrupatla_root(f, 1, 1, args=(root,))
+        assert_equal(res.success, [False, True])
+        assert_equal(res.x, [np.nan, 1])
 
         def f(x):
             return 1/x
