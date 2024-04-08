@@ -3,8 +3,8 @@ jupytext:
   text_representation:
     extension: .md
     format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.14.0
+    format_version: 1.0.0
+    jupytext_version: 1.16.1
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
@@ -12,7 +12,6 @@ kernelspec:
 ---
 
 (non-uniform-random-number-sampling)=
-
 # Universal Non-Uniform Random Number Sampling in SciPy
 
 SciPy provides an interface to many universal non-uniform random number
@@ -41,10 +40,10 @@ These methods are universal and work in a black-box fashion.
 
 Some methods to do that are:
 
-* The Inversion method: When the inverse {math}`F^{-1}` of the cumulative
+* The Inversion method: When the inverse $F^{-1}$ of the cumulative
   distribution function is known, then random variate generation is easy.
   We just generate a uniformly U(0,1) distributed random number U and
-  return {math}`X = F^{-1}(U)`. As closed form solutions for the inverse
+  return $X = F^{-1}(U)$. As closed form solutions for the inverse
   are rarely available, one usually needs to rely on approximations of
   the inverse (e.g. {class}`scipy.special.ndtri`,
   {class}`scipy.special.stdtrit`). In general, the implementation of special
@@ -61,7 +60,7 @@ Some methods to do that are:
   method which is uses minimal bounding rectangles to construct the hat
   function. See {class}`scipy.stats.sampling.RatioUniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
-  continuous case is that {math}`F` is now a step-function. To realize
+  continuous case is that $F$ is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
   is *sequential search*. A uniform random number is generated from
   U(0, 1) and probabilities are summed until the cumulative probability
@@ -142,21 +141,21 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-```python
-    >>> from scipy.stats.sampling import TransformedDensityRejection
-    >>> from math import exp
-    >>> 
-    >>> class StandardNormal:
-    ...     def pdf(self, x: float) -> float:
-    ...         # note that the normalization constant isn't required
-    ...         return exp(-0.5 * x*x)
-    ...     def dpdf(self, x: float) -> float:
-    ...         return -x * exp(-0.5 * x*x)
-    ... 
-    >>> dist = StandardNormal()
-    >>> 
-    >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, random_state=urng)
+```{code-cell}
+from scipy.stats.sampling import TransformedDensityRejection
+from math import exp
+import numpy as np
+
+class StandardNormal:
+    def pdf(self, x: float) -> float:
+        # note that the normalization constant isn't required
+        return exp(-0.5 * x*x)
+    def dpdf(self, x: float) -> float:
+        return -x * exp(-0.5 * x*x)
+
+dist = StandardNormal()
+urng = np.random.default_rng()
+rng = TransformedDensityRejection(dist, random_state=urng)
 ```
 
 As shown in the example, we first initialize a distribution object that
@@ -188,15 +187,12 @@ In the above example, we have set up an object of the
 standard normal distribution. Now, we can start sampling from our
 distribution by calling the `rvs` method:
 
-```python
-    >>> rng.rvs()
-    -1.526829048388144
-    >>> rng.rvs((5, 3))
-    array([[ 2.06206883,  0.15205036,  1.11587367],
-           [-0.30775562,  0.29879802, -0.61858268],
-           [-1.01049115,  0.78853694, -0.23060766],
-           [-0.60954752,  0.29071797, -0.57167182],
-           [ 0.9331694 , -0.95605208,  1.72195199]])
+```{code-cell}
+rng.rvs()
+```
+
+```{code-cell}
+rng.rvs((5, 3))
 ```
 
 We can also check that the samples are drawn from the correct distribution
@@ -208,33 +204,32 @@ mystnb:
   image:
     alt: This code generates an X-Y plot with the probability distribution function of X on the Y axis and values of X on the X axis. A red trace showing the true distribution is a typical normal distribution with tails near zero at the edges and a smooth peak around the center near 0.4. A blue bar graph of random variates is shown below the red trace with a distribution similar to the truth, but with clear imperfections.
 ---
-    >>> import numpy as np
-    >>> import matplotlib.pyplot as plt
-    >>> from scipy.stats import norm
-    >>> from scipy.stats.sampling import TransformedDensityRejection
-    >>> from math import exp
-    >>> 
-    >>> class StandardNormal:
-    ...     def pdf(self, x: float) -> float:
-    ...         # note that the normalization constant isn't required
-    ...         return exp(-0.5 * x*x)
-    ...     def dpdf(self, x: float) -> float:
-    ...         return -x * exp(-0.5 * x*x)
-    ... 
-    >>> 
-    >>> dist = StandardNormal()
-    >>> urng = np.random.default_rng()
-    >>> rng = TransformedDensityRejection(dist, random_state=urng)
-    >>> rvs = rng.rvs(size=1000)
-    >>> x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=1000)
-    >>> fx = norm.pdf(x)
-    >>> plt.plot(x, fx, 'r-', lw=2, label='true distribution')
-    >>> plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
-    >>> plt.xlabel('x')
-    >>> plt.ylabel('PDF(x)')
-    >>> plt.title('Transformed Density Rejection Samples')
-    >>> plt.legend()
-    >>> plt.show()
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.stats import norm
+from scipy.stats.sampling import TransformedDensityRejection
+from math import exp
+
+class StandardNormal:
+    def pdf(self, x: float) -> float:
+        # note that the normalization constant isn't required
+        return exp(-0.5 * x*x)
+    def dpdf(self, x: float) -> float:
+        return -x * exp(-0.5 * x*x)
+
+dist = StandardNormal()
+urng = np.random.default_rng()
+rng = TransformedDensityRejection(dist, random_state=urng)
+rvs = rng.rvs(size=1000)
+x = np.linspace(rvs.min()-0.1, rvs.max()+0.1, num=1000)
+fx = norm.pdf(x)
+plt.plot(x, fx, 'r-', lw=2, label='true distribution')
+plt.hist(rvs, bins=20, density=True, alpha=0.8, label='random variates')
+plt.xlabel('x')
+plt.ylabel('PDF(x)')
+plt.title('Transformed Density Rejection Samples')
+plt.legend()
+plt.show()
 ```
 
 ````{note}
@@ -259,29 +254,24 @@ mystnb:
   even for the same `random_state`:
 
   ```python
-    >>> from scipy.stats.sampling import norm, TransformedDensityRejection
-    >>> from copy import copy
-    >>> dist = StandardNormal()
-    >>> urng1 = np.random.default_rng()
-    >>> urng1_copy = copy(urng1)
-    >>> rng = TransformedDensityRejection(dist, random_state=urng1)
-    >>> rng.rvs()
-    -1.526829048388144
-    >>> norm.rvs(random_state=urng1_copy)
-    1.3194816698862635
+    from scipy.stats.sampling import norm, TransformedDensityRejection
+    from copy import copy
+    dist = StandardNormal()
+    urng1 = np.random.default_rng()
+    urng1_copy = copy(urng1)
+    rng = TransformedDensityRejection(dist, random_state=urng1)
+    rng.rvs()
+    # -1.526829048388144
+    norm.rvs(random_state=urng1_copy)
+    # 1.3194816698862635
   ```
 ````
 
 We can pass a `domain` parameter to truncate the distribution:
 
-```python
-    >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
-    >>> rng.rvs((5, 3))
-    array([[-0.99865691,  0.38104014,  0.31633526],
-           [ 0.88433909, -0.45181849,  0.78574461],
-           [ 0.3337244 ,  0.12924307,  0.40499404],
-           [-0.51865761,  0.43252222, -0.6514866 ],
-           [-0.82666174,  0.71525582,  0.49006743]])
+```{code-cell}
+rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
+rng.rvs((5, 3))
 ```
 
 Invalid and bad arguments are handled either by SciPy or by UNU.RAN. The

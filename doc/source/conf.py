@@ -388,6 +388,13 @@ nb_execution_excludepatterns = ["_contents/*.ipynb"]
 # Prevent creation of transition syntax when adding footnotes
 # See https://github.com/executablebooks/MyST-Parser/issues/352
 myst_footnote_transition = False
+myst_enable_extensions = [
+    "colon_fence",
+    "dollarmath",
+    "substitution",
+]
+nb_render_markdown_format = "myst"
+render_markdown_format = "myst"
 
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx
