@@ -909,7 +909,7 @@ struct TupleDDI bratio(double a, double b, double x, double y)
                     a0 += n;
                 }
                 bgratret = bgrat(a0, b0, x0, y0, w, 15.*eps);
-                w1 = bgratret.d1;
+                w = bgratret.d1;
                 w1 = 0.5 + (0.5 - w);
                 return (struct TupleDDI){.d1 = (ind == 0? w : w1), .d2 = (ind == 0? w1 : w), .i1 = 0};
             }
