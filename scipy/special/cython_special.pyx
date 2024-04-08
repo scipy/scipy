@@ -1121,6 +1121,55 @@ cdef extern from r"amos_wrappers.h":
     npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
 
+cdef extern from r"specfun_wrappers.h":
+    double _func_bei_wrap "bei_wrap"(double) nogil
+    double _func_beip_wrap "beip_wrap"(double) nogil
+    double _func_ber_wrap "ber_wrap"(double) nogil
+    double _func_berp_wrap "berp_wrap"(double) nogil
+    npy_double _func_kei_wrap "kei_wrap"(npy_double) nogil
+    npy_double _func_keip_wrap "keip_wrap"(npy_double) nogil
+    npy_int _func_kelvin_wrap "kelvin_wrap"(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    npy_double _func_ker_wrap "ker_wrap"(npy_double) nogil
+    double _func_kerp_wrap "kerp_wrap"(double) nogil
+    npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
+    npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double) nogil
+    npy_int _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_sem_wrap "sem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
+    npy_int _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *) nogil
+    npy_double _func_oblate_aswfa_nocv_wrap "oblate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_oblate_aswfa_wrap "oblate_aswfa_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_oblate_segv_wrap "oblate_segv_wrap"(npy_double, npy_double, npy_double) nogil
+    npy_double _func_oblate_radial1_nocv_wrap "oblate_radial1_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_oblate_radial1_wrap "oblate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_oblate_radial2_nocv_wrap "oblate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_oblate_radial2_wrap "oblate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_prolate_aswfa_nocv_wrap "prolate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_prolate_aswfa_wrap "prolate_aswfa_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_prolate_segv_wrap "prolate_segv_wrap"(npy_double, npy_double, npy_double) nogil
+    npy_double _func_prolate_radial1_nocv_wrap "prolate_radial1_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_prolate_radial1_wrap "prolate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
+    npy_int _func_prolate_radial2_wrap "prolate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_cdouble _func_cexp1_wrap "cexp1_wrap"(npy_cdouble) nogil
+    npy_double _func_exp1_wrap "exp1_wrap"(npy_double) nogil
+    npy_cdouble _func_cexpi_wrap "cexpi_wrap"(npy_cdouble) nogil
+    npy_double _func_expi_wrap "expi_wrap"(npy_double) nogil
+    npy_int _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_it2struve0_wrap "it2struve0_wrap"(npy_double) nogil
+    npy_int _func_itairy_wrap "itairy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    npy_int _func_it1i0k0_wrap "it1i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_it1j0y0_wrap "it1j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
+    npy_double _func_itmodstruve0_wrap "itmodstruve0_wrap"(npy_double) nogil
+    npy_double _func_itstruve0_wrap "itstruve0_wrap"(npy_double) nogil
+    npy_int _func_pbdv_wrap "pbdv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_pbvv_wrap "pbvv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
+    npy_int _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1146,14 +1195,6 @@ cdef _proto_bdtrik_t *_proto_bdtrik_t_var = &_func_bdtrik
 from ._cdflib_wrappers cimport bdtrin as _func_bdtrin
 ctypedef double _proto_bdtrin_t(double, double, double) noexcept nogil
 cdef _proto_bdtrin_t *_proto_bdtrin_t_var = &_func_bdtrin
-cdef extern from r"specfun_wrappers.h":
-    cdef double _func_bei_wrap "bei_wrap"(double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef double _func_beip_wrap "beip_wrap"(double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef double _func_ber_wrap "ber_wrap"(double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef double _func_berp_wrap "berp_wrap"(double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_besselpoly "besselpoly"(npy_double, npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
@@ -1351,17 +1392,9 @@ from .orthogonal_eval cimport eval_sh_legendre_l as _func_eval_sh_legendre_l
 ctypedef double _proto_eval_sh_legendre_l_t(long, double) noexcept nogil
 cdef _proto_eval_sh_legendre_l_t *_proto_eval_sh_legendre_l_t_var = &_func_eval_sh_legendre_l
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_cdouble _func_cexp1_wrap "cexp1_wrap"(npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_exp1_wrap "exp1_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_exp10 "exp10"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_exp2 "exp2"(npy_double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef npy_cdouble _func_cexpi_wrap "cexpi_wrap"(npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_expi_wrap "expi_wrap"(npy_double)nogil
 from ._cunity cimport cexpm1 as _func_cexpm1
 ctypedef double complex _proto_cexpm1_t(double complex) noexcept nogil
 cdef _proto_cexpm1_t *_proto_cexpm1_t_var = &_func_cexpm1
@@ -1449,22 +1482,6 @@ from ._boxcox cimport inv_boxcox1p as _func_inv_boxcox1p
 ctypedef double _proto_inv_boxcox1p_t(double, double) noexcept nogil
 cdef _proto_inv_boxcox1p_t *_proto_inv_boxcox1p_t_var = &_func_inv_boxcox1p
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_it2struve0_wrap "it2struve0_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_itairy_wrap "itairy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_it1i0k0_wrap "it1i0k0_wrap"(npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_it1j0y0_wrap "it1j0y0_wrap"(npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_itmodstruve0_wrap "itmodstruve0_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_itstruve0_wrap "itstruve0_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_iv "iv"(npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
@@ -1478,16 +1495,6 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1 "k1"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1e "k1e"(npy_double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef npy_double _func_kei_wrap "kei_wrap"(npy_double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef npy_double _func_keip_wrap "keip_wrap"(npy_double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef npy_int _func_kelvin_wrap "kelvin_wrap"(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef npy_double _func_ker_wrap "ker_wrap"(npy_double)nogil
-cdef extern from r"specfun_wrappers.h":
-    cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
 from ._convex_analysis cimport kl_div as _func_kl_div
 ctypedef double _proto_kl_div_t(double, double) noexcept nogil
 cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
@@ -1505,26 +1512,6 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_log1p "log1p"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_pmv_wrap "pmv_wrap"(npy_double, npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_mcm1_wrap "mcm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_mcm2_wrap "mcm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_msm1_wrap "msm1_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_msm2_wrap "msm2_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_sem_wrap "sem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_modified_fresnel_minus_wrap "modified_fresnel_minus_wrap"(npy_double, npy_cdouble *, npy_cdouble *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_modified_fresnel_plus_wrap "modified_fresnel_plus_wrap"(npy_double, npy_cdouble *, npy_cdouble *)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_struve_l "struve_l"(npy_double, npy_double)nogil
 from ._legacy cimport nbdtr_unsafe as _func_nbdtr_unsafe
@@ -1586,27 +1573,7 @@ from ._cdflib_wrappers cimport nrdtrisd as _func_nrdtrisd
 ctypedef double _proto_nrdtrisd_t(double, double, double) noexcept nogil
 cdef _proto_nrdtrisd_t *_proto_nrdtrisd_t_var = &_func_nrdtrisd
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_oblate_aswfa_nocv_wrap "oblate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_oblate_aswfa_wrap "oblate_aswfa_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_oblate_segv_wrap "oblate_segv_wrap"(npy_double, npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_oblate_radial1_nocv_wrap "oblate_radial1_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_oblate_radial1_wrap "oblate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_oblate_radial2_nocv_wrap "oblate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_oblate_radial2_wrap "oblate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_owens_t "owens_t"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_pbdv_wrap "pbdv_wrap"(npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_pbvv_wrap "pbvv_wrap"(npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_pdtr "pdtr"(npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
@@ -1621,20 +1588,6 @@ ctypedef double _proto_pdtrik_t(double, double) noexcept nogil
 cdef _proto_pdtrik_t *_proto_pdtrik_t_var = &_func_pdtrik
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_poch "poch"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_prolate_aswfa_nocv_wrap "prolate_aswfa_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_prolate_aswfa_wrap "prolate_aswfa_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_prolate_segv_wrap "prolate_segv_wrap"(npy_double, npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_prolate_radial1_nocv_wrap "prolate_radial1_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_prolate_radial1_wrap "prolate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_int _func_prolate_radial2_wrap "prolate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *)nogil
 from ._convex_analysis cimport pseudo_huber as _func_pseudo_huber
 ctypedef double _proto_pseudo_huber_t(double, double) noexcept nogil
 cdef _proto_pseudo_huber_t *_proto_pseudo_huber_t_var = &_func_pseudo_huber
