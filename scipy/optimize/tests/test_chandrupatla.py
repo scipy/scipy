@@ -779,13 +779,14 @@ class TestChandrupatla(TestScalarRootFinders):
         assert_allclose(res.x, 1)
 
         # Test that if both ends of bracket equal root, algorithm reports
-        # convergence
-        def f(x):
-            return x**2 - 1
+        # convergence.
+        def f(x, root):
+            return x**2 - root
 
-        res = _chandrupatla_root(f, 1, 1)
-        assert res.success
-        assert_equal(res.x, 1)
+        root = [0, 1]
+        res = _chandrupatla_root(f, 1, 1, args=(root,))
+        assert_equal(res.success, [False, True])
+        assert_equal(res.x, [np.nan, 1])
 
         def f(x):
             return 1/x
