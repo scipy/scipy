@@ -98,11 +98,9 @@ namespace cephes {
 
         /* Class to hold the CDF, SF and PDF, which are computed simultaneously */
         struct ThreeProbs {
-          public:
             double sf;
             double cdf;
             double pdf;
-            ThreeProbs(double sf, double cdf, double pdf) : sf(sf), cdf(cdf), pdf(pdf) {}
         };
 
         constexpr double _xtol = std::numeric_limits<double>::epsilon();
