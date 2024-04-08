@@ -2471,7 +2471,7 @@ struct TupleDID cdfgam_which2(double p, double q, double shape, double scale)
     if (invret.i1 < 0) {
         return (struct TupleDID){.d1 = 0.0, .i1 = 10, .d2 = 0.0};
     } else {
-        return (struct TupleDID){.d1 = invret.d1/scale, .i1 = 1, .d2 = 0.0};
+        return (struct TupleDID){.d1 = invret.d1/scale, .i1 = 0, .d2 = 0.0};
     }
 }
 
