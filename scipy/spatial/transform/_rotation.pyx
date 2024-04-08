@@ -905,7 +905,7 @@ cdef class Rotation:
         quaternions [1]_.
 
         The 4 components of a quaternion are divided into a scalar part ``w``
-        and a vector part ``(x, y, z)`` and can be expressed frorm the angle
+        and a vector part ``(x, y, z)`` and can be expressed from the angle
         ``theta`` and the axis ``n`` of a rotation as follows::
 
             w = cos(theta / 2)
@@ -913,13 +913,13 @@ cdef class Rotation:
             y = sin(theta / 2) * n_y
             z = sin(theta / 2) * n_z
 
-        There are 2 conventions to store the components in a quaternion:
+        There are 2 conventions to order the components in a quaternion:
 
-        - scalar-first -- ``(w, x, y, z)``
-        - scalar-last -- ``(x, y, z, w)``
+        - scalar-first order -- ``(w, x, y, z)``
+        - scalar-last order -- ``(x, y, z, w)``
 
         The choice is controlled by `scalar_first` argument.
-        By default, it is False and "scalar-last" format is assumed.
+        By default, it is False and the scalar-last order is assumed.
 
         Advanced users may be interested in the "double cover" of 3D space by
         the quaternion representation [2]_. As of version 1.11.0, the
@@ -936,7 +936,7 @@ cdef class Rotation:
             active rotation. Each quaternion will be normalized to unit norm.
         scalar_first : bool, optional
             Whether the scalar component goes first or last.
-            Default is False, i.e. the scalar-last format is assumed.
+            Default is False, i.e. the scalar-last order is assumed.
 
         Returns
         -------
@@ -953,8 +953,8 @@ cdef class Rotation:
         --------
         >>> from scipy.spatial.transform import Rotation as R
 
-        A rotation can be initialzied from a quaternion in a scalar-last (default)
-        or scalar-first order as shown below:
+        A rotation can be initialzied from a quaternion with the scalar-last
+        (default) or scalar-first component order as shown below:
 
         >>> r = R.from_quat([0, 0, 0, 1])
         >>> r.as_matrix()
@@ -1646,7 +1646,7 @@ cdef class Rotation:
         quaternions [1]_.
 
         The 4 components of a quaternion are divided into a scalar part ``w``
-        and a vector part ``(x, y, z)`` and can be expressed frorm the angle
+        and a vector part ``(x, y, z)`` and can be expressed from the angle
         ``theta`` and the axis ``n`` of a rotation as follows::
 
             w = cos(theta / 2)
@@ -1654,13 +1654,13 @@ cdef class Rotation:
             y = sin(theta / 2) * n_y
             z = sin(theta / 2) * n_z
 
-        There are 2 conventions to store the components in a quaternion:
+        There are 2 conventions to oder the components in a quaternion:
 
-        - scalar-first -- ``(w, x, y, z)``
-        - scalar-last -- ``(x, y, z, w)``
+        - scalar-first order -- ``(w, x, y, z)``
+        - scalar-last order -- ``(x, y, z, w)``
 
         The choice is controlled by `scalar_first` argument.
-        By default, it is False and "scalar-last" format is used.
+        By default, it is False and the scalar-last order is used.
 
         The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
@@ -1676,8 +1676,8 @@ cdef class Rotation:
             is 0, then the quaternion is chosen such that the first nonzero
             term of the x, y, and z terms is positive.
         scalar_first : bool, optional
-            Whether to put the scalar component first or last.
-            Default is False, i.e. the scalar-last format is used.
+            Whether the scalar component goes first or last.
+            Default is False, i.e. the scalar-last order is used.
 
         Returns
         -------
@@ -1693,8 +1693,9 @@ cdef class Rotation:
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
 
-        A rotation can be represented as a quaternion in either scalar-last
-        (default) or scalar-first order. This is shown for a single rotaiton:
+        A rotation can be represented as a quaternion with either scalar-last
+        (default) or scalar-first component order.
+        This is shown for a single rotaiton:
 
         >>> r = R.from_matrix(np.eye(3))
         >>> r.as_quat()
