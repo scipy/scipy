@@ -14,8 +14,8 @@ from scipy._lib.deprecation import (_NoValue, _deprecate_positional_args,
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
-           'trapezoid', 'trapz', 'simps', 'simpson',
-           'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
+           'trapezoid', 'simpson',
+           'cumulative_trapezoid', 'newton_cotes',
            'qmc_quad', 'AccuracyWarning', 'cumulative_simpson']
 
 
@@ -147,20 +147,6 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
         y = np.asarray(y)
         ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
     return ret
-
-
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-def trapz(y, x=None, dx=1.0, axis=-1):
-    """An alias of `trapezoid`.
-
-    `trapz` is kept for backwards compatibility. For new code, prefer
-    `trapezoid` instead.
-    """
-    msg = ("'scipy.integrate.trapz' is deprecated in favour of "
-           "'scipy.integrate.trapezoid' and will be removed in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return trapezoid(y, x=x, dx=dx, axis=axis)
 
 
 class AccuracyWarning(Warning):
@@ -414,21 +400,6 @@ def tupleset(t, i, value):
     return tuple(l)
 
 
-# Note: alias kept for backwards compatibility. Rename was done
-# because cumtrapz is a slur in colloquial English (see gh-12924).
-def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """An alias of `cumulative_trapezoid`.
-
-    `cumtrapz` is kept for backwards compatibility. For new code, prefer
-    `cumulative_trapezoid` instead.
-    """
-    msg = ("'scipy.integrate.cumtrapz' is deprecated in favour of "
-           "'scipy.integrate.cumulative_trapezoid' and will be removed "
-           "in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
-
-
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     """
     Cumulatively integrate y(x) using the composite trapezoidal rule.
@@ -571,21 +542,6 @@ def _basic_simpson(y, start, stop, x, dx, axis):
                           y[slice2] * (2.0 - h0divh1))
         result = np.sum(tmp, axis=axis)
     return result
-
-
-# Note: alias kept for backwards compatibility. simps was renamed to simpson
-# because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
-    """An alias of `simpson`.
-
-    `simps` is kept for backwards compatibility. For new code, prefer
-    `simpson` instead.
-    """
-    msg = ("'scipy.integrate.simps' is deprecated in favour of "
-           "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    # we don't deprecate positional use as the wrapper is going away completely
-    return simpson(y, x=x, dx=dx, axis=axis, even=even)
 
 
 @_deprecate_positional_args(version="1.14")

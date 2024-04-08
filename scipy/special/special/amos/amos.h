@@ -1,8 +1,7 @@
 /*
  *
- * This file accompanied with the header file _amos.h is a
- * C translation of the Fortran code written by D.E. Amos with the
- * following original description:
+ * This file is a C++ translation of the Fortran code written by
+ * D.E. Amos with the following original description:
  *
  *
  * A Portable Package for Bessel Functions of a Complex Argument
@@ -92,38 +91,41 @@
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#pragma once
+
 #include <stdlib.h>
-#include "_amos.h"
 
-#ifndef CMPLX
-#define CMPLX(x, y) ((double complex)((double)(x) + I * (double)(y)))
-#endif /* CMPLX */
+#include <math.h>
+#include <complex.h>
 
-static int amos_acai(double complex, double, int, int, int, double complex *, double, double, double, double);
-static int amos_acon(double complex, double, int, int, int, double complex *, double, double, double, double, double);
-static int amos_asyi(double complex, double, int, int, double complex *, double, double, double, double);
-static int amos_binu(double complex, double fnu, int, int, double complex *, double, double, double, double, double);
-static int amos_bknu(double complex, double, int, int, double complex *, double, double, double);
-static int amos_buni(double complex, double, int, int, double complex *, int, int *, double, double, double, double);
-static int amos_bunk(double complex, double, int, int, int, double complex *, double, double, double);
-static double amos_gamln(double);
-static int amos_kscl(double complex, double, int, double complex *, double complex, double *, double, double);
-static int amos_mlri(double complex, double, int, int, double complex *, double);
-static void amos_rati(double complex, double, int, double complex *, double);
-static int amos_seri(double complex, double, int, int, double complex *, double, double, double);
-static int amos_s1s2(double complex, double complex *, double complex *, double, double, int *);
-static int amos_uchk(double complex, double, double);
-static void amos_unhj(double complex, double, int, double, double complex *, double complex *, double complex *, double complex *, double complex *, double complex *);
-static void amos_uni1(double complex, double, int, int, double complex *, int *, int *, double, double, double, double);
-static void amos_uni2(double complex, double, int, int, double complex *, int *, int *, double, double, double, double);
-static void amos_unik(double complex, double, int, int, double, int *, double complex *, double complex *, double complex *, double complex *, double complex *);
-static int amos_unk1(double complex, double, int, int, int, double complex *, double, double, double);
-static int amos_unk2(double complex, double, int, int, int, double complex *, double, double, double);
-static int amos_uoik(double complex, double, int, int, int, double complex *, double, double, double);
-static int amos_wrsk(double complex, double, int, int, double complex *, double complex *, double, double, double);
+namespace special {
+namespace amos {
+
+inline int acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);
+inline int acon(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double, double);
+inline int asyi(std::complex<double>, double, int, int, std::complex<double> *, double, double, double, double);
+inline int binu(std::complex<double>, double fnu, int, int, std::complex<double> *, double, double, double, double, double);
+inline int bknu(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+inline int buni(std::complex<double>, double, int, int, std::complex<double> *, int, int *, double, double, double, double);
+inline int bunk(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+inline double gamln(double);
+inline int kscl(std::complex<double>, double, int, std::complex<double> *, std::complex<double>, double *, double, double);
+inline int mlri(std::complex<double>, double, int, int, std::complex<double> *, double);
+inline void rati(std::complex<double>, double, int, std::complex<double> *, double);
+inline int seri(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+inline int s1s2(std::complex<double>, std::complex<double> *, std::complex<double> *, double, double, int *);
+inline int uchk(std::complex<double>, double, double);
+inline void unhj(std::complex<double>, double, int, double, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+inline void uni1(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+inline void uni2(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+inline void unik(std::complex<double>, double, int, int, double, int *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+inline int unk1(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+inline int unk2(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+inline int uoik(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+inline int wrsk(std::complex<double>, double, int, int, std::complex<double> *, std::complex<double> *, double, double, double);
 
 
-static const double d1mach[5] = {
+constexpr double d1mach[5] = {
     2.2250738585072014e-308,  /* np.finfo(np.float64).tiny      */
     1.7976931348623157e+308,  /* np.finfo(np.float64).max       */
     1.1102230246251565e-16,   /* 0.5 * np.finfo(np.float64).eps */
@@ -131,7 +133,7 @@ static const double d1mach[5] = {
     0.3010299956639812        /* np.log10(2)                    */
 };
 
-static const double i1mach[16] = {
+constexpr double i1mach[16] = {
     5,           /* standard input         */
     6,           /* standard output        */
     7,           /* standard punch         */
@@ -150,21 +152,21 @@ static const double i1mach[16] = {
     1024         /* DBL_MAX_EXP;           */
 };
 
-static const double zunhj_ar[14] = {
+constexpr double zunhj_ar[14] = {
     1.00000000000000000e+00, 1.04166666666666667e-01, 8.35503472222222222e-02, 1.28226574556327160e-01,      //  0 
     2.91849026464140464e-01, 8.81627267443757652e-01, 3.32140828186276754e+00, 1.49957629868625547e+01,      //  4
     7.89230130115865181e+01, 4.74451538868264323e+02, 3.20749009089066193e+03, 2.40865496408740049e+04,      //  8
     1.98923119169509794e+05, 1.79190200777534383e+06                                                         // 12 
 };
 
-static const double zunhj_br[14] = {
+constexpr double zunhj_br[14] = {
      1.00000000000000000e+00, -1.45833333333333333e-01, -9.87413194444444444e-02, -1.43312053915895062e-01,  //  0
     -3.17227202678413548e-01, -9.42429147957120249e-01, -3.51120304082635426e+00, -1.57272636203680451e+01,  //  4
     -8.22814390971859444e+01, -4.92355370523670524e+02, -3.31621856854797251e+03, -2.48276742452085896e+04,  //  8
     -2.04526587315129788e+05, -1.83844491706820990e+06                                                       // 12
 };
 
-static const double  zunhj_c[105] = {
+constexpr double  zunhj_c[105] = {
      1.00000000000000000e+00, -2.08333333333333333e-01,  1.25000000000000000e-01,  3.34201388888888889e-01,  //   0  
     -4.01041666666666667e-01,  7.03125000000000000e-02, -1.02581259645061728e+00,  1.84646267361111111e+00,  //   4
     -8.91210937500000000e-01,  7.32421875000000000e-02,  4.66958442342624743e+00, -1.12070026162229938e+01,  //   8
@@ -194,7 +196,7 @@ static const double  zunhj_c[105] = {
      1.82577554742931747e+04                                                                                 // 104
 };
 
-static const double zunhj_alfa[180] = {
+constexpr double zunhj_alfa[180] = {
     -4.44444444444444444e-03, -9.22077922077922078e-04, -8.84892884892884893e-05,  1.65927687832449737e-04,  //   0
      2.46691372741792910e-04,  2.65995589346254780e-04,  2.61824297061500945e-04,  2.48730437344655609e-04,  //   4
      2.32721040083232098e-04,  2.16362485712365082e-04,  2.00738858762752355e-04,  1.86267636637545172e-04,  //   8
@@ -242,7 +244,7 @@ static const double zunhj_alfa[180] = {
      3.24724948503090564e-04,  2.20342042730246599e-04,  1.28412898401353882e-04,  4.82005924552095464e-05   // 176  
 };                                                                                                             
   
-static const double zunhj_beta[210] = {
+constexpr double zunhj_beta[210] = {
      1.79988721413553309e-02,  5.59964911064388073e-03,  2.88501402231132779e-03,  1.80096606761053941e-03,  //   0
      1.24753110589199202e-03,  9.22878876572938311e-04,  7.14430421727287357e-04,  5.71787281789704872e-04,  //   4
      4.69431007606481533e-04,  3.93232835462916638e-04,  3.34818889318297664e-04,  2.88952148495751517e-04,  //   8
@@ -298,7 +300,7 @@ static const double zunhj_beta[210] = {
      1.59690280765839059e-03,  1.42111975664438546e-03                                                       // 208
 };
 
-static const double zunhj_gama[30] = {
+constexpr double zunhj_gama[30] = {
     6.29960524947436582e-01, 2.51984209978974633e-01, 1.54790300415655846e-01, 1.10713062416159013e-01,      //  0
     8.57309395527394825e-02, 6.97161316958684292e-02, 5.86085671893713576e-02, 5.04698873536310685e-02,      //  4
     4.42600580689154809e-02, 3.93720661543509966e-02, 3.54283195924455368e-02, 3.21818857502098231e-02,      //  8
@@ -309,7 +311,7 @@ static const double zunhj_gama[30] = {
     1.22761545318762767e-02, 1.18338262398482403e-02                                                         // 28
 };
 
-static const double zunik_c[120] = {
+constexpr double zunik_c[120] = {
      1.00000000000000000e+00, -2.08333333333333333e-01,  1.25000000000000000e-01,  3.34201388888888889e-01,  //   0
     -4.01041666666666667e-01,  7.03125000000000000e-02, -1.02581259645061728e+00,  1.84646267361111111e+00,  //   4
     -8.91210937500000000e-01,  7.32421875000000000e-02,  4.66958442342624743e+00, -1.12070026162229938e+01,  //   8
@@ -342,7 +344,7 @@ static const double zunik_c[120] = {
     -2.18229277575292237e+10,  1.24700929351271032e+09, -2.91883881222208134e+07,  1.18838426256783253e+05   // 116
 };
 
-static const double dgamln_gln[100] = {
+constexpr double dgamln_gln[100] = {
     0.00000000000000000e+00, 0.00000000000000000e+00, 6.93147180559945309e-01, 1.79175946922805500e+00,      //   0
     3.17805383034794562e+00, 4.78749174278204599e+00, 6.57925121201010100e+00, 8.52516136106541430e+00,      //   4
     1.06046029027452502e+01, 1.28018274800814696e+01, 1.51044125730755153e+01, 1.75023078458738858e+01,      //   8
@@ -370,7 +372,7 @@ static const double dgamln_gln[100] = {
     3.45379407062266854e+02, 3.49954118040770237e+02, 3.54539085519440809e+02, 3.59134205369575399e+02       //  96
 };
 
-static const double dgamln_cf[22] = {
+constexpr double dgamln_cf[22] = {
     8.33333333333333333e-02, -2.77777777777777778e-03, 7.93650793650793651e-04, -5.95238095238095238e-04,    //  0 
     8.41750841750841751e-04, -1.91752691752691753e-03, 6.41025641025641026e-03, -2.95506535947712418e-02,    //  4
     1.79644372368830573e-01, -1.39243221690590112e+00, 1.34028640441683920e+01, -1.56848284626002017e+02,    //  8
@@ -380,13 +382,13 @@ static const double dgamln_cf[22] = {
 };
 
 
-int amos_acai(
-    double complex z,
+inline int acai(
+    std::complex<double> z,
     double fnu,
     int kode,
     int mr,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double rl,
     double tol,
     double elim,
@@ -399,7 +401,7 @@ int amos_acai(
     //     ZACAI APPLIES THE ANALYTIC CONTINUATION FORMULA
     //
     //         K(FNU,ZN*EXP(MP))=K(FNU,ZN)*EXP(-MP*FNU) - MP*I(FNU,ZN)
-    //                 MP=PI*MR*CMPLX(0.0,1.0)
+    //                 MP=PI*MR*std::complex<double>(0.0,1.0)
     //
     //     TO CONTINUE THE K FUNCTION FROM THE RIGHT HALF TO THE LEFT
     //     HALF Z PLANE FOR USE WITH ZAIRY WHERE FNU=1/3 OR 2/3 AND N=1.
@@ -410,13 +412,13 @@ int amos_acai(
     //***ROUTINES CALLED  ZASYI,ZBKNU,ZMLRI,ZSERI,ZS1S2,D1MACH,AZABS
     //***END PROLOGUE  ZACAI
 
-    double complex csgn, cspn, c1, c2, zn, cy[2];
+    std::complex<double> csgn, cspn, c1, c2, zn, cy[2];
     double arg, ascle, az, cpn, dfnu, fmr, sgn, spn, yy;
     int inu, iuf, nn, nw;
     double pi = 3.14159265358979324;
     int nz = 0;
     zn = -z;
-    az = cabs(z);
+    az = std::abs(z);
     nn = n;
     dfnu = fnu + (n-1);
     if ((az > 2.0) && (az*az*0.25 > dfnu+1.0)) {
@@ -425,12 +427,12 @@ int amos_acai(
             //
             // ASYMPTOTIC EXPANSION FOR LARGE Z FOR THE I FUNCTION
             //
-            nw = amos_asyi(zn, fnu, kode, nn, y, rl, tol, elim, alim);
+            nw = asyi(zn, fnu, kode, nn, y, rl, tol, elim, alim);
         } else {
             //
             // MILLER ALGORITHM NORMALIZED BY THE SERIES FOR THE I FUNCTION
             //
-            nw = amos_mlri(zn, fnu, kode, nn, y, tol);
+            nw = mlri(zn, fnu, kode, nn, y, tol);
         }
         if (nw < 0) {
             nz = -1;
@@ -441,13 +443,13 @@ int amos_acai(
         //
         // POWER SERIES FOR THE I FUNCTION
         //
-        amos_seri(zn, fnu, kode, nn, y, tol, elim, alim);
+        seri(zn, fnu, kode, nn, y, tol, elim, alim);
     }
     /* 40 */
     //
     // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE FOR THE K FUNCTION
     //
-    nw = amos_bknu(zn, fnu, kode, 1, &cy[0], tol, elim, alim);
+    nw = bknu(zn, fnu, kode, 1, &cy[0], tol, elim, alim);
     if (nw != 0) {
         nz = -1;
         if (nw == -2) { nz = -2; }
@@ -455,12 +457,12 @@ int amos_acai(
     }
     fmr = mr;
     sgn = (fmr < 0.0 ? pi : -pi);
-    csgn = CMPLX(0.0, sgn);
+    csgn = std::complex<double>(0.0, sgn);
     if (kode != 1) {
-        yy = -cimag(zn);
+        yy = -std::imag(zn);
         cpn = cos(yy);
         spn = sin(yy);
-        csgn *= CMPLX(cpn, spn);
+        csgn *= std::complex<double>(cpn, spn);
     }
     //
     // CALCULATE CSPN=EXP(FNU*PI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
@@ -470,14 +472,14 @@ int amos_acai(
     arg = (fnu - inu)*sgn;
     cpn = cos(arg);
     spn = sin(arg);
-    cspn = CMPLX(cpn, spn);
+    cspn = std::complex<double>(cpn, spn);
     if (inu % 2 == 1) { cspn = -cspn; }
     c1 = cy[0];
     c2 = y[0];
     if (kode != 1) {
         iuf = 0;
         ascle = 1e3 * d1mach[0] / tol;
-        nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+        nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
         nz += nw;
     }
     y[0] = cspn*c1 + csgn*c2;
@@ -485,13 +487,13 @@ int amos_acai(
 }
 
 
-int amos_acon(
-    double complex z,
+inline int acon(
+    std::complex<double> z,
     double fnu,
     int kode,
     int mr,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double rl,
     double fnul,
     double tol,
@@ -505,7 +507,7 @@ int amos_acon(
     //     ZACON APPLIES THE ANALYTIC CONTINUATION FORMULA
     //
     //         K(FNU,ZN*EXP(MP))=K(FNU,ZN)*EXP(-MP*FNU) - MP*I(FNU,ZN)
-    //                 MP=PI*MR*CMPLX(0.0,1.0)
+    //                 MP=PI*MR*std::complex<double>(0.0,1.0)
     //
     //     TO CONTINUE THE K FUNCTION FROM THE RIGHT HALF TO THE LEFT
     //     HALF Z PLANE
@@ -513,45 +515,45 @@ int amos_acon(
     //***ROUTINES CALLED  ZBINU,ZBKNU,ZS1S2,D1MACH,AZABS,ZMLT
     //***END PROLOGUE  ZACON
 
-    double complex ck, cs, cscl, cscr, csgn, cspn, c1, c2, rz, sc1, sc2 = 0.0,\
+    std::complex<double> ck, cs, cscl, cscr, csgn, cspn, c1, c2, rz, sc1, sc2 = 0.0,\
                    st, s1, s2, zn;
     double arg, ascle, as2, bscle, c1i, c1m, c1r, fmr, sgn, yy;
     int i, inu, iuf, kflag, nn, nw, nz;
     double pi = 3.14159265358979324;
-    double complex cy[2] = { 0.0 };
-    double complex css[3] = { 0.0 };
-    double complex csr[3] = { 0.0 };
+    std::complex<double> cy[2] = { 0.0 };
+    std::complex<double> css[3] = { 0.0 };
+    std::complex<double> csr[3] = { 0.0 };
     double bry[3] = { 0.0 };
 
     nz = 0;
     zn = -z;
     nn = n;
-    nw = amos_binu(zn, fnu, kode, nn, y, rl, fnul, tol, elim, alim);
+    nw = binu(zn, fnu, kode, nn, y, rl, fnul, tol, elim, alim);
     if (nw >= 0) {
         //
         // ANALYTIC CONTINUATION TO THE LEFT HALF PLANE FOR THE K FUNCTION
         //
         nn = (n > 2 ? 2 : n);
-        nw = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
+        nw = bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
         if (nw == 0) {
             s1 = cy[0];
             fmr = mr;
             sgn = ( fmr < 0 ? pi : -pi );
-            csgn = CMPLX(0.0, sgn);
+            csgn = std::complex<double>(0.0, sgn);
             if (kode != 1) {
-                yy = -cimag(zn);
-                csgn *= CMPLX(cos(yy), sin(yy));
+                yy = -std::imag(zn);
+                csgn *= std::complex<double>(cos(yy), sin(yy));
             }
             inu = (int)fnu;
             arg = (fnu - inu)*sgn;
-            cspn = CMPLX(cos(arg), sin(arg));
+            cspn = std::complex<double>(cos(arg), sin(arg));
             if (inu % 2 == 1) { cspn = -cspn; }
             iuf = 0;
             c1 = s1;
             c2 = y[0];
             ascle = 1e3*d1mach[0]/tol;
             if (kode != 1) {
-                nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                 nz += nw;
                 sc1 = c1;
             }
@@ -562,7 +564,7 @@ int amos_acon(
             c1 = s2;
             c2 = y[1];
             if (kode != 1) {
-                nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                 nz += nw;
                 sc2 = c1;
             }
@@ -585,7 +587,7 @@ int amos_acon(
             bry[0] = ascle;
             bry[1] = 1.0 / ascle;
             bry[2] = d1mach[1];
-            as2 = cabs(s2);
+            as2 = std::abs(s2);
             kflag = 2;
             if (as2 <= bry[0] ) {
                 kflag = 1;
@@ -608,7 +610,7 @@ int amos_acon(
                 c2 = y[i-1];
                 if (kode != 1) {
                     if (iuf >= 0) {
-                        nw = amos_s1s2(zn, &c1, &c2, ascle, alim, &iuf);
+                        nw = s1s2(zn, &c1, &c2, ascle, alim, &iuf);
                         nz += nw;
                         sc1 = sc2;
                         sc2 = c1;
@@ -624,8 +626,8 @@ int amos_acon(
                 ck += rz;
                 cspn = -cspn;
                 if (kflag < 3) {
-                    c1r = fabs(creal(c1));
-                    c1i = fabs(cimag(c1));
+                    c1r = fabs(std::real(c1));
+                    c1i = fabs(std::imag(c1));
                     c1m = fmax(c1r, c1i);
                     if (c1m > bscle) {
                         kflag += 1;
@@ -647,8 +649,8 @@ int amos_acon(
 }
 
 
-double complex amos_airy(
-    double complex z,
+inline std::complex<double> airy(
+    std::complex<double> z,
     int id,
     int kode,
     int *nz,
@@ -679,7 +681,7 @@ double complex amos_airy(
     //         MATHEMATICAL FUNCTIONS (REF. 1).
     //
     //         INPUT      ZR,ZI ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI)
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI)
     //           ID     - ORDER OF DERIVATIVE, ID=0 OR ID=1
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
     //                    KODE= 1  RETURNS
@@ -695,7 +697,7 @@ double complex amos_airy(
     //                    KODE
     //           NZ     - UNDERFLOW INDICATOR
     //                    NZ= 0   , NORMAL RETURN
-    //                    NZ= 1   , AI=CMPLX(0.0D0,0.0D0) DUE TO UNDERFLOW IN
+    //                    NZ= 1   , AI=std::complex<double>(0.0D0,0.0D0) DUE TO UNDERFLOW IN
     //                              -PI/3.LT.ARG(Z).LT.PI/3 ON KODE=1
     //           IERR   - ERROR FLAG
     //                    IERR=0, NORMAL RETURN - COMPUTATION COMPLETED
@@ -783,7 +785,7 @@ double complex amos_airy(
     //***ROUTINES CALLED  ZACAI,ZBKNU,AZEXP,AZSQRT,I1MACH,D1MACH
     //***END PROLOGUE  ZAIRY
 
-    double complex ai, csq, cy[1], s1, s2, trm1, trm2, zta, z3;
+    std::complex<double> ai, csq, cy[1], s1, s2, trm1, trm2, zta, z3;
     double aa, ad, ak, alim, atrm, az, az3, bk, ck, dig, dk, d1, d2,\
            elim, fid, fnu, rl, r1m5, sfac, tol, zi, zr, bb, alaz;
     int iflag, k, k1, k2, mr, nn;
@@ -798,7 +800,7 @@ double complex amos_airy(
     if ((id < 0) || (id > 1)) { *ierr = 1; }
     if ((kode < 1) || (kode > 2)) { *ierr = 1; }
     if (*ierr != 0) return 0.;
-    az = cabs(z);
+    az = std::abs(z);
     tol = d1mach[3];
     fid = id;
 
@@ -856,15 +858,15 @@ double complex amos_airy(
         if (id != 1) {
             ai = s1*c1 - z*s2*c2;
             if (kode == 1) { return ai; }
-            zta = z*csqrt(z)*tth;
-            ai *= cexp(zta);
+            zta = z*std::sqrt(z)*tth;
+            ai *= std::exp(zta);
             return ai;
         }
         ai = -s2*c2;
         if (az > tol) { ai += z*z*s1*c1/(1. + fid); }
         if (kode == 1) { return ai; }
-        zta = z*csqrt(z)*tth;
-        return ai*cexp(zta);
+        zta = z*std::sqrt(z)*tth;
+        return ai*std::exp(zta);
     }
     //
     // CASE FOR ABS(Z) > 1.0
@@ -906,25 +908,25 @@ double complex amos_airy(
     }
     aa = sqrt(aa);
     if (az > aa) { *ierr = 3; }
-    csq = csqrt(z);
+    csq = std::sqrt(z);
     zta = z * csq * tth;
     //
     // RE(ZTA) <= 0 WHEN RE(Z) < 0, ESPECIALLY WHEN IM(Z) IS SMALL
     //
     iflag = 0;
     sfac = 1.0;
-    zi = cimag(z);
-    zr = creal(z);
-    ak = cimag(zta);
+    zi = std::imag(z);
+    zr = std::real(z);
+    ak = std::imag(zta);
     if (zr < 0.0) {
-        bk = creal(zta);
+        bk = std::real(zta);
         ck = -fabs(bk);
-        zta = CMPLX(ck, ak);
+        zta = std::complex<double>(ck, ak);
     }
     if ((zi == 0.0) && (zr <= 0.0)) {
-        zta = CMPLX(0.0, ak);
+        zta = std::complex<double>(0.0, ak);
     }
-    aa = creal(zta);
+    aa = std::real(zta);
     if ((aa < 0.0) || (zr <= 0.0)) {
         if (kode != 2) {
             //
@@ -947,7 +949,7 @@ double complex amos_airy(
         //
         mr = 1;
         if (zi < 0.0) { mr = -1; }
-        nn = amos_acai(zta, fnu, kode, mr, 1, &cy[0], rl, tol, elim, alim);
+        nn = acai(zta, fnu, kode, mr, 1, &cy[0], rl, tol, elim, alim);
         if (nn < 0) {
             if (nn == -1) {
                 *nz = 1;
@@ -974,7 +976,7 @@ double complex amos_airy(
                 }
             }
         }
-        *nz = amos_bknu(zta, fnu, kode, 1, &cy[0], tol, elim, alim);
+        *nz = bknu(zta, fnu, kode, 1, &cy[0], tol, elim, alim);
     }
     s1 = cy[0]*coef;
 
@@ -994,12 +996,12 @@ double complex amos_airy(
 }
 
 
-int amos_asyi(
-    double complex z,
+inline int asyi(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double rl,
     double tol,
     double elim,
@@ -1017,30 +1019,30 @@ int amos_asyi(
     //***ROUTINES CALLED  D1MACH,AZABS,ZDIV,AZEXP,ZMLT,AZSQRT
     //***END PROLOGUE  ZASYI
 
-    double complex ak1, ck, cs1, cs2, cz, dk, ez, p1, rz, s2;
+    std::complex<double> ak1, ck, cs1, cs2, cz, dk, ez, p1, rz, s2;
     double aa, acz, aez, ak, arg, arm, atol, az, bb, bk, dfnu;
     double dnu2, fdn, rtr1, s, sgn, sqk, x, yy;
     int ib, il, inu, j, jl, k, koded, m, nn;
     double pi = 3.14159265358979324;
     double rpi = 0.159154943091895336; /* (1 / pi) */
     int nz = 0;
-    az = cabs(z);
-    x = creal(z);
+    az = std::abs(z);
+    x = std::real(z);
     arm = 1e3*d1mach[0];
     rtr1 = sqrt(arm);
     il = (n > 2 ? 2 : n);
     dfnu = fnu + (n - il);
     // OVERFLOW TEST
-    ak1 = csqrt(rpi / z);
+    ak1 = std::sqrt(rpi / z);
     cz = z;
-    if (kode == 2) { cz = CMPLX(0.0, cimag(z)); }
-    acz = creal(cz);
+    if (kode == 2) { cz = std::complex<double>(0.0, std::imag(z)); }
+    acz = std::real(cz);
     if (fabs(acz) <= elim) {
         dnu2 = dfnu + dfnu;
         koded = 1;
         if (!((fabs(acz) > alim) && (n > 2))) {
             koded = 0;
-            ak1 *= cexp(cz);
+            ak1 *= std::exp(cz);
         }
         fdn = 0.;
         if (dnu2 > rtr1) { fdn = dnu2 * dnu2; }
@@ -1052,7 +1054,7 @@ int amos_asyi(
         aez = 8. * az;
         s = tol / aez;
         jl = (int)(rl + rl) + 2;
-        yy = cimag(z);
+        yy = std::imag(z);
         p1 = 0.;
         if (yy != 0.) {
             inu = (int)fnu;
@@ -1061,7 +1063,7 @@ int amos_asyi(
             ak = -sin(arg);
             bk = cos(arg);
             if (yy < 0.) { bk = -bk; }
-            p1 = CMPLX(ak, bk);
+            p1 = std::complex<double>(ak, bk);
             if (inu % 2 == 1) { p1 = -p1; }
         }
         for (int k = 1; k < (il+1); k++)
@@ -1094,7 +1096,7 @@ int amos_asyi(
 
             /* 50 */
             s2 = cs1;
-            if (x + x < elim) { s2 += p1*cs2*cexp(-z-z); }
+            if (x + x < elim) { s2 += p1*cs2*std::exp(-z-z); }
             fdn += 8. * dfnu + 4.;
             p1 = -p1;
             m = n - il + k;
@@ -1113,7 +1115,7 @@ int amos_asyi(
             k -=1;
         }
         if (koded == 0) { return nz; }
-        ck = cexp(cz);
+        ck = std::exp(cz);
         for (int i = 0; i < (nn + 1); i++) { y[i] *= ck; }
         /* 90 */
         return nz;
@@ -1123,13 +1125,13 @@ int amos_asyi(
 }
 
 
-int amos_besh(
-    double complex z,
+inline int besh(
+    std::complex<double> z,
     double fnu,
     int kode,
     int m,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     int *ierr
 ) {
 
@@ -1147,7 +1149,7 @@ int amos_besh(
     //         ON KODE=1, ZBESH COMPUTES AN N MEMBER SEQUENCE OF COMPLEX
     //         HANKEL (BESSEL) FUNCTIONS CY(J)=H(M,FNU+J-1,Z) FOR KINDS M=1
     //         OR 2, REAL, NONNEGATIVE ORDERS FNU+J-1, J=1,...,N, AND COMPLEX
-    //         Z.NE.CMPLX(0.0,0.0) IN THE CUT PLANE -PI.LT.ARG(Z).LE.PI.
+    //         Z.NE.std::complex<double>(0.0,0.0) IN THE CUT PLANE -PI.LT.ARG(Z).LE.PI.
     //         ON KODE=2, ZBESH RETURNS THE SCALED HANKEL FUNCTIONS
     //
     //         CY(I)=EXP(-MM*Z*I)*H(M,FNU+J-1,Z)       MM=3-2*M,   I**2=-1.
@@ -1157,7 +1159,7 @@ int amos_besh(
     //         NBS HANDBOOK OF MATHEMATICAL FUNCTIONS (REF. 1).
     //
     //         INPUT      ZR,ZI,FNU ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI), Z.NE.CMPLX(0.0D0,0.0D0),
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI), Z.NE.std::complex<double>(0.0D0,0.0D0),
     //                    -PT.LT.ARG(Z).LE.PI
     //           FNU    - ORDER OF INITIAL H FUNCTION, FNU.GE.0.0D0
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
@@ -1178,7 +1180,7 @@ int amos_besh(
     //           NZ     - NUMBER OF COMPONENTS SET TO ZERO DUE TO UNDERFLOW,
     //                    NZ= 0   , NORMAL RETURN
     //                    NZ.GT.0 , FIRST NZ COMPONENTS OF CY SET TO ZERO DUE
-    //                              TO UNDERFLOW, CY(J)=CMPLX(0.0D0,0.0D0)
+    //                              TO UNDERFLOW, CY(J)=std::complex<double>(0.0D0,0.0D0)
     //                              J=1,...,NZ WHEN Y.GT.0.0 AND M=1 OR
     //                              Y.LT.0.0 AND M=2. FOR THE COMPLMENTARY
     //                              HALF PLANES, NZ STATES ONLY THE NUMBER
@@ -1289,7 +1291,7 @@ int amos_besh(
     //***ROUTINES CALLED  ZACON,ZBKNU,ZBUNK,ZUOIK,AZABS,I1MACH,D1MACH
     //***END PROLOGUE  ZBESH
 
-    double complex zn, zt, csgn;
+    std::complex<double> zn, zt, csgn;
     double aa, alim, aln, arg, az, cpn, dig, elim, fmm, fn, fnul,
         rhpi, rl, r1m5, sgn, spn, tol, ufl, xn, xx, yn, yy,
         bb, ascle, rtol, atol;
@@ -1298,8 +1300,8 @@ int amos_besh(
     double hpi = 1.57079632679489662; /* 0.5 PI */
 
     nz = 0;
-    xx = creal(z);
-    yy = cimag(z);
+    xx = std::real(z);
+    yy = std::imag(z);
     *ierr = 0;
 
     if ((xx == 0.0) && (yy == 0.0)) { *ierr = 1; }
@@ -1336,13 +1338,13 @@ int amos_besh(
     fn = fnu + (nn - 1);
     mm = 3 - m - m;
     fmm = mm;
-    zn = z * CMPLX(0.0, -fmm);
-    xn = creal(zn);
-    yn = cimag(zn);
+    zn = z * std::complex<double>(0.0, -fmm);
+    xn = std::real(zn);
+    yn = std::imag(zn);
     //
     // TEST FOR PROPER RANGE
     //
-    az = cabs(z);
+    az = std::abs(z);
     bb = d1mach[1] * 0.5;
     aa = fmin(0.5 / tol, bb);
     if ((az > aa) || (fn > aa)){ *ierr =4; return 0; }  /* GO TO 260 */
@@ -1368,7 +1370,7 @@ int amos_besh(
             /* Failed all but the az > tol hence do nothing and GO TO 70 */
         } else if ((fn > 1.0) && (fn > 2.0)) {
             /* GO TO 60 */
-            nuf = amos_uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
+            nuf = uoik(zn, fnu, kode, 2, nn, cy, tol, elim, alim);
             if (nuf < 0) { *ierr = 2; return 0; }  /* GO TO 230 */
             nz += nuf;
             nn -= nuf;
@@ -1393,7 +1395,7 @@ int amos_besh(
         if ((xn < 0.0) || ((xn == 0.0) && (yn < 0.0) && (m == 2))) {
             /* GO TO 80 */
             mr = -mm;
-            nw = amos_acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+            nw = acon(zn, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
             if (nw < 0) {
                 /* GO TO 240 */
                 if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
@@ -1407,7 +1409,7 @@ int amos_besh(
             // RIGHT HALF PLANE COMPUTATION, XN >= 0.  .AND.  (XN.NE.0.  .OR.
             // YN >= 0.  .OR.  M=1)
             //
-            nz = amos_bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
+            nz = bknu(zn, fnu, kode, nn, cy, tol, elim, alim);
             /* GO TO 110 */
         }
     } else {
@@ -1421,7 +1423,7 @@ int amos_besh(
             if ((xn == 0.0) && (yn < 0.0)) { zn = -zn; }
         }
         /* GO TO 100 */
-        nw = amos_bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
+        nw = bunk(zn, fnu, kode, mr, nn, cy, tol, elim, alim);
         if (nw < 0) {
             /* GO TO 240 */
             if (nw == -1) { *ierr = 2; return 0; }  /* GO TO 230 */
@@ -1433,7 +1435,7 @@ int amos_besh(
     /* 110 */
     //
     // H(M,FNU,Z) = -FMM*(I/HPI)*(ZT**FNU)*K(FNU,-Z*ZT)
-    // ZT=EXP(-FMM*HPI*I) = CMPLX(0.0,-FMM), FMM=3-2*M, M=1,2
+    // ZT=EXP(-FMM*HPI*I) = std::complex<double>(0.0,-FMM), FMM=3-2*M, M=1,2
     //
     sgn = (-fmm < 0 ? -hpi : hpi);
     //
@@ -1447,15 +1449,15 @@ int amos_besh(
     rhpi = 1.0 / sgn;
     cpn = rhpi * cos(arg);
     spn = -rhpi * sin(arg);
-    csgn = CMPLX(spn, cpn);
+    csgn = std::complex<double>(spn, cpn);
     if (inuh % 2 == 1) { csgn = -csgn; }
-    zt = CMPLX(0.0, -fmm);
+    zt = std::complex<double>(0.0, -fmm);
     rtol = 1.0 / tol;
     ascle = ufl * rtol;
     for (i = 1; i < (nn+1); i++) {
         zn = cy[i-1];
         atol = 1.0;
-        if (fmax(fabs(creal(zn)), fabs(cimag(zn))) <= ascle) {
+        if (fmax(fabs(std::real(zn)), fabs(std::imag(zn))) <= ascle) {
             zn *= rtol;
             atol = tol;
         }
@@ -1467,12 +1469,12 @@ int amos_besh(
 }
 
 
-int amos_besi(
-    double complex z,
+inline int besi(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     int *ierr
 ) {
 
@@ -1501,7 +1503,7 @@ int amos_besi(
     //         (REF. 1).
     //
     //         INPUT      ZR,ZI,FNU ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI),  -PI.LT.ARG(Z).LE.PI
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI),  -PI.LT.ARG(Z).LE.PI
     //           FNU    - ORDER OF INITIAL I FUNCTION, FNU.GE.0.0D0
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
     //                    KODE= 1  RETURNS
@@ -1519,7 +1521,7 @@ int amos_besi(
     //           NZ     - NUMBER OF COMPONENTS SET TO ZERO DUE TO UNDERFLOW,
     //                    NZ= 0   , NORMAL RETURN
     //                    NZ.GT.0 , LAST NZ COMPONENTS OF CY SET TO ZERO
-    //                              TO UNDERFLOW, CY(J)=CMPLX(0.0D0,0.0D0)
+    //                              TO UNDERFLOW, CY(J)=std::complex<double>(0.0D0,0.0D0)
     //                              J = N-NZ+1,...,N
     //           IERR   - ERROR FLAG
     //                    IERR=0, NORMAL RETURN - COMPUTATION COMPLETED
@@ -1627,7 +1629,7 @@ int amos_besi(
     //***ROUTINES CALLED  ZBINU,I1MACH,D1MACH
     //***END PROLOGUE  ZBESI
 
-    double complex csgn, zn;
+    std::complex<double> csgn, zn;
     double aa, alim, arg, atol, ascle, az, bb, dig, elim, fn, fnul, rl, rtol,\
            r1m5, tol, xx, yy;
     int i, inu, k, k1, k2, nn, nz;
@@ -1639,8 +1641,8 @@ int amos_besi(
     if ((kode < 1) || (kode > 2)) { *ierr = 1; }
     if (n < 1) { *ierr = 1; }
     if (*ierr != 0) { return nz; }
-    xx = creal(z);
-    yy = cimag(z);
+    xx = std::real(z);
+    yy = std::imag(z);
     //
     //  SET PARAMETERS RELATED TO MACHINE CONSTANTS.
     //  TOL IS THE APPROXIMATE UNIT ROUNDOFF LIMITED TO 1.0E-18.
@@ -1668,7 +1670,7 @@ int amos_besi(
     //
     // TEST FOR PROPER RANGE
     //
-    az = cabs(z);
+    az = std::abs(z);
     fn = fnu + (n - 1);
     aa = 0.5 / tol;
     bb = i1mach[8]*0.5;
@@ -1691,11 +1693,11 @@ int amos_besi(
         inu = (int)fnu;
         arg = (fnu - inu)*pi;
         if (yy < 0.0) { arg = -arg; }
-        csgn = CMPLX(cos(arg), sin(arg));
+        csgn = std::complex<double>(cos(arg), sin(arg));
         if (inu % 2 == 1) { csgn = -csgn; }
     }
     /* 40 */
-    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -2) {
             *ierr = 5;
@@ -1716,7 +1718,7 @@ int amos_besi(
     {
         zn = cy[i-1];
         atol = 1.0;
-        if (fmax(fabs(creal(zn)), fabs(cimag(zn))) <= ascle) {
+        if (fmax(fabs(std::real(zn)), fabs(std::imag(zn))) <= ascle) {
             zn *= rtol;
             atol = tol;
         }
@@ -1728,12 +1730,12 @@ int amos_besi(
 }
 
 
-int amos_besj(
-    double complex z,
+inline int besj(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     int *ierr
 ) {
 
@@ -1762,7 +1764,7 @@ int amos_besj(
     //         (REF. 1).
     //
     //         INPUT      ZR,ZI,FNU ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI),  -PI.LT.ARG(Z).LE.PI
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI),  -PI.LT.ARG(Z).LE.PI
     //           FNU    - ORDER OF INITIAL J FUNCTION, FNU.GE.0.0D0
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
     //                    KODE= 1  RETURNS
@@ -1780,7 +1782,7 @@ int amos_besj(
     //           NZ     - NUMBER OF COMPONENTS SET TO ZERO DUE TO UNDERFLOW,
     //                    NZ= 0   , NORMAL RETURN
     //                    NZ.GT.0 , LAST NZ COMPONENTS OF CY SET  ZERO DUE
-    //                              TO UNDERFLOW, CY(I)=CMPLX(0.0D0,0.0D0),
+    //                              TO UNDERFLOW, CY(I)=std::complex<double>(0.0D0,0.0D0),
     //                              I = N-NZ+1,...,N
     //           IERR   - ERROR FLAG
     //                    IERR=0, NORMAL RETURN - COMPUTATION COMPLETED
@@ -1882,7 +1884,7 @@ int amos_besj(
     //***ROUTINES CALLED  ZBINU,I1MACH,D1MACH
     //***END PROLOGUE  ZBESJ
 
-    double complex ci, csgn, zn;
+    std::complex<double> ci, csgn, zn;
     double aa, alim, arg, dig, elim, fnul, rl, r1, r1m5, r2,
         tol, yy, az, fn, bb, ascle, rtol, atol;
     int i, inu, inuh, ir, k1, k2, nl, nz, k;
@@ -1921,8 +1923,8 @@ int amos_besj(
     //
     // TEST FOR PROPER RANGE
     //
-    yy = cimag(z);
-    az = cabs(z);
+    yy = std::imag(z);
+    az = std::abs(z);
     fn = fnu + (n - 1);
 
     aa = 0.5 / tol;
@@ -1939,14 +1941,14 @@ int amos_besj(
     // CALCULATE CSGN = EXP(FNU*HPI*I) TO MINIMIZE LOSSES OF SIGNIFICANCE
     // WHEN FNU IS LARGE
     //
-    ci = I;
+    ci.imag(1);
     inu = (int)fnu;
     inuh = inu / 2;
     ir = inu - 2*inuh;
     arg = (fnu - (inu - ir)) * hpi;
     r1 = cos(arg);
     r2 = sin(arg);
-    csgn = CMPLX(r1, r2);
+    csgn = std::complex<double>(r1, r2);
     if (inuh % 2 == 1) { csgn = -csgn; }
     //
     // ZN IS IN THE RIGHT HALF PLANE
@@ -1957,7 +1959,7 @@ int amos_besj(
         csgn = conj(csgn);
         ci = conj(ci);
     }
-    nz = amos_binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zn, fnu, kode, n, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -2) { *ierr = 5; return 0; }
         *ierr = 2;
@@ -1970,8 +1972,8 @@ int amos_besj(
     for (i = 1; i < (nl+1); i++)
     {
         zn = cy[i-1];
-        aa = creal(zn);
-        bb = cimag(zn);
+        aa = std::real(zn);
+        bb = std::imag(zn);
         atol = 1.0;
         if (fmax(fabs(aa), fabs(bb)) <= ascle) {
             zn *= rtol;
@@ -1984,12 +1986,12 @@ int amos_besj(
 }
 
 
-int amos_besk(
-    double complex z,
+inline int besk(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     int *ierr
 ) {
 
@@ -2008,7 +2010,7 @@ int amos_besk(
     //
     //         ON KODE=1, CBESK COMPUTES AN N MEMBER SEQUENCE OF COMPLEX
     //         BESSEL FUNCTIONS CY(J)=K(FNU+J-1,Z) FOR REAL, NONNEGATIVE
-    //         ORDERS FNU+J-1, J=1,...,N AND COMPLEX Z.NE.CMPLX(0.0,0.0)
+    //         ORDERS FNU+J-1, J=1,...,N AND COMPLEX Z.NE.std::complex<double>(0.0,0.0)
     //         IN THE CUT PLANE -PI.LT.ARG(Z).LE.PI. ON KODE=2, CBESK
     //         RETURNS THE SCALED K FUNCTIONS,
     //
@@ -2020,7 +2022,7 @@ int amos_besk(
     //         FUNCTIONS (REF. 1).
     //
     //         INPUT      ZR,ZI,FNU ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI), Z.NE.CMPLX(0.0D0,0.0D0),
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI), Z.NE.std::complex<double>(0.0D0,0.0D0),
     //                    -PI.LT.ARG(Z).LE.PI
     //           FNU    - ORDER OF INITIAL K FUNCTION, FNU.GE.0.0D0
     //           N      - NUMBER OF MEMBERS OF THE SEQUENCE, N.GE.1
@@ -2039,7 +2041,7 @@ int amos_besk(
     //           NZ     - NUMBER OF COMPONENTS SET TO ZERO DUE TO UNDERFLOW.
     //                    NZ= 0   , NORMAL RETURN
     //                    NZ.GT.0 , FIRST NZ COMPONENTS OF CY SET TO ZERO DUE
-    //                              TO UNDERFLOW, CY(I)=CMPLX(0.0D0,0.0D0),
+    //                              TO UNDERFLOW, CY(I)=std::complex<double>(0.0D0,0.0D0),
     //                              I=1,...,N WHEN X.GE.0.0. WHEN X.LT.0.0
     //                              NZ STATES ONLY THE NUMBER OF UNDERFLOWS
     //                              IN THE SEQUENCE.
@@ -2144,8 +2146,8 @@ int amos_besk(
     //***ROUTINES CALLED  ZACON,ZBKNU,ZBUNK,ZUOIK,AZABS,I1MACH,D1MACH
     //***END PROLOGUE  ZBESK
 
-    double xx = creal(z);
-    double yy = cimag(z);
+    double xx = std::real(z);
+    double yy = std::imag(z);
     double aa, alim, aln, arg, az, dig, elim, fn, fnul, rl, r1m5, tol, ufl, bb;
     int k, k1, k2, mr, nn, nuf, nw, nz;
 
@@ -2186,7 +2188,7 @@ int amos_besk(
     //
     // TEST FOR PROPER RANGE
     //
-    az = cabs(z);
+    az = std::abs(z);
     fn = fnu + (nn - 1);
     aa = 0.5 / tol;
     bb = i1mach[8] * 0.5;
@@ -2216,7 +2218,7 @@ int amos_besk(
                 }
                 /* GO TO 60 */
             } else {
-                nuf = amos_uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
+                nuf = uoik(z, fnu, kode, 2, nn, cy, tol, elim, alim);
                 if (nuf < 0) { *ierr = 2; return 0; }
                 nz += nuf;
                 nn -= nuf;
@@ -2236,7 +2238,7 @@ int amos_besk(
             //
             // RIGHT HALF PLANE COMPUTATION, REAL(Z) >= 0.
             //
-            nw = amos_bknu(z, fnu, kode, nn, cy, tol, elim, alim);
+            nw = bknu(z, fnu, kode, nn, cy, tol, elim, alim);
             if (nw < 0) {
                 if (nw == -1) {
                     *ierr = 2;
@@ -2255,7 +2257,7 @@ int amos_besk(
         if (nz != 0) { *ierr = 2; return 0; }
         mr = 1;
         if (yy < 0.0) { mr = -1; }
-        nw = amos_acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
+        nw = acon(z, fnu, kode, mr, nn, cy, rl, fnul, tol, elim, alim);
         if (nw < 0) {
             if (nw == -1) {
                 *ierr = 2;
@@ -2276,7 +2278,7 @@ int amos_besk(
         mr = 1;
         if (yy < 0.0) { mr = -1; }
     }
-    nw = amos_bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
+    nw = bunk(z, fnu, kode, mr, nn, cy, tol, elim, alim);
     if (nw < 0) {
         if (nw == -1) {
             *ierr = 2;
@@ -2290,12 +2292,12 @@ int amos_besk(
 }
 
 
-int amos_besy(
-    double complex z,
+inline int besy(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     int *ierr
 ) {
 
@@ -2325,7 +2327,7 @@ int amos_besy(
     //         (REF. 1).
     //
     //         INPUT      ZR,ZI,FNU ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI), Z.NE.CMPLX(0.0D0,0.0D0),
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI), Z.NE.std::complex<double>(0.0D0,0.0D0),
     //                    -PI.LT.ARG(Z).LE.PI
     //           FNU    - ORDER OF INITIAL Y FUNCTION, FNU.GE.0.0D0
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
@@ -2446,13 +2448,13 @@ int amos_besy(
     //***ROUTINES CALLED  ZBESH,I1MACH,D1MACH
     //***END PROLOGUE  ZBESY
 
-    double complex c1, c2, hci, st;
+    std::complex<double> c1, c2, hci, st;
     double elim, exr, exi, ey, tay, xx, yy, ascle, rtol, atol, tol, aa, bb, r1m5;
     int i, k, k1, k2, nz, nz1, nz2;
-    double complex cwrk[n];
+    std::complex<double> cwrk[n];
 
-    xx = creal(z);
-    yy = cimag(z);
+    xx = std::real(z);
+    yy = std::imag(z);
     *ierr = 0;
     nz = 0;
 
@@ -2462,11 +2464,11 @@ int amos_besy(
     if (n < 1) { *ierr = 1; }
     if (*ierr != 0) { return nz; }
 
-    hci = CMPLX(0.0, 0.5);
-    nz1 = amos_besh(z, fnu, kode, 1, n, cy, ierr);
+    hci = std::complex<double>(0.0, 0.5);
+    nz1 = besh(z, fnu, kode, 1, n, cy, ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
-    nz2 = amos_besh(z, fnu, kode, 2, n, cwrk, ierr);
+    nz2 = besh(z, fnu, kode, 2, n, cwrk, ierr);
     if ((*ierr != 0) && (*ierr != 3)) { return 0; }
 
     nz = (nz1 > nz2 ? nz2 : nz1);
@@ -2494,11 +2496,11 @@ int amos_besy(
     if (tay < elim) { ey = exp(-tay); }
     if (yy < 0.0) {
         /* 90 */
-        c1 = CMPLX(exr, exi);
-        c2 = ey*CMPLX(exr, -exi);
+        c1 = std::complex<double>(exr, exi);
+        c2 = ey*std::complex<double>(exr, -exi);
     } else {
-        c1 = ey*CMPLX(exr, exi);
-        c2 = CMPLX(exr, -exi);
+        c1 = ey*std::complex<double>(exr, exi);
+        c2 = std::complex<double>(exr, -exi);
     }
 
     nz = 0;
@@ -2506,8 +2508,8 @@ int amos_besy(
     ascle = 1e3*d1mach[0]*rtol;
     for (i = 1; i< (n+1); i++)
     {
-        aa = creal(cwrk[i-1]);
-        bb = cimag(cwrk[i-1]);
+        aa = std::real(cwrk[i-1]);
+        bb = std::imag(cwrk[i-1]);
         atol = 1.0;
         if (fmax(fabs(aa), fabs(bb)) <= ascle) {
             aa *= rtol;
@@ -2515,9 +2517,9 @@ int amos_besy(
             atol = tol;
         }
 
-        st = CMPLX(aa, bb) * c2 * atol;
-        aa = creal(cy[i-1]);
-        bb = cimag(cy[i-1]);
+        st = std::complex<double>(aa, bb) * c2 * atol;
+        aa = std::real(cy[i-1]);
+        bb = std::imag(cy[i-1]);
         atol = 1.0;
         if (fmax(fabs(aa), fabs(bb)) <= ascle) {
             aa *= rtol;
@@ -2525,7 +2527,7 @@ int amos_besy(
             atol = tol;
         }
 
-        st -= CMPLX(aa, bb) * c1 * atol;
+        st -= std::complex<double>(aa, bb) * c1 * atol;
         cy[i-1] = st*hci;
         if ((st == 0.0) && (ey == 0.0)) { nz += 1; }
     }
@@ -2533,12 +2535,12 @@ int amos_besy(
 }
 
 
-int amos_binu(
-    double complex z,
+inline int binu(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     double rl,
     double fnul,
     double tol,
@@ -2554,17 +2556,17 @@ int amos_binu(
     //***ROUTINES CALLED  AZABS,ZASYI,ZBUNI,ZMLRI,ZSERI,ZUOIK,ZWRSK
     //***END PROLOGUE  ZBINU
 
-    double complex cw[2] = { 0. };
+    std::complex<double> cw[2] = { 0. };
     double az, dfnu;
     int inw, nlast, nn, nui, nw, nz;
 
     nz = 0;
-    az = cabs(z);
+    az = std::abs(z);
     nn = n;
     dfnu = fnu + n - 1;
     if ((az <= 2.) || (az*az*0.25 <= (dfnu + 1.0))) {
         /* GOTO 10 */
-        nw = amos_seri(z,fnu, kode, n, cy, tol, elim, alim);
+        nw = seri(z,fnu, kode, n, cy, tol, elim, alim);
         inw = abs(nw);
         nz += inw;
         nn -= inw;
@@ -2583,7 +2585,7 @@ int amos_binu(
             //
             // MILLER ALGORITHM NORMALIZED BY THE SERIES
             //
-            nw = amos_mlri(z, fnu, kode, n, cy, tol);
+            nw = mlri(z, fnu, kode, n, cy, tol);
             if (nw < 0) {
                 nz = -1;
                 if (nw == -2) {
@@ -2600,7 +2602,7 @@ int amos_binu(
             //
             // ASYMPTOTIC EXPANSION FOR LARGE Z
             //
-            nw = amos_asyi(z, fnu, kode, n, cy, rl, tol, elim, alim);
+            nw = asyi(z, fnu, kode, n, cy, rl, tol, elim, alim);
             if (nw < 0) {
                 nz = -1;
                 if (nw == -2) {
@@ -2616,7 +2618,7 @@ int amos_binu(
     //
     // OVERFLOW AND UNDERFLOW TEST ON I SEQUENCE FOR MILLER ALGORITHM
     //
-    nw = amos_uoik(z, fnu, kode, 1, nn, cy, tol, elim, alim);
+    nw = uoik(z, fnu, kode, 1, nn, cy, tol, elim, alim);
     if (nw < 0) {
         nz = -1;
         if (nw == -2) { nz = -2; }
@@ -2633,7 +2635,7 @@ int amos_binu(
         //
         nui = (int)(fnul-dfnu) + 1;
         nui = (nui > 0 ? nui : 0);
-        nw = amos_buni(z, fnu, kode, nn, cy, nui, &nlast, fnul, tol, elim, alim);
+        nw = buni(z, fnu, kode, nn, cy, nui, &nlast, fnul, tol, elim, alim);
         if (nw < 0) {
             nz = -1;
             if (nw == -2) { nz = -2; }
@@ -2646,7 +2648,7 @@ int amos_binu(
     /* 60 */
     if (az <= rl) {
         /* 70 */
-        nw = amos_mlri(z, fnu, kode, n, cy, tol);
+        nw = mlri(z, fnu, kode, n, cy, tol);
         if (nw < 0) {
             nz = -1;
             if (nw == -2) { nz = -2; }
@@ -2661,7 +2663,7 @@ int amos_binu(
     //
     // OVERFLOW TEST ON K FUNCTIONS USED IN WRONSKIAN
     //
-    nw = amos_uoik(z, fnu, kode, 2, 2, cw, tol, elim, alim);
+    nw = uoik(z, fnu, kode, 2, 2, cw, tol, elim, alim);
     if (nw < 0) {
         nz = nn;
         /* 90 */
@@ -2672,7 +2674,7 @@ int amos_binu(
     if (nw > 0) {
         return -1;
     }
-    nw = amos_wrsk(z, fnu, kode, nn, cy, cw, tol, elim, alim);
+    nw = wrsk(z, fnu, kode, nn, cy, cw, tol, elim, alim);
     if (nw < 0) {
         nz = -1;
         if (nw == -2) {
@@ -2684,8 +2686,8 @@ int amos_binu(
 }
 
 
-double complex amos_biry(
-    double complex z,
+inline std::complex<double> biry(
+    std::complex<double> z,
     int id,
     int kode,
     int *ierr
@@ -2706,12 +2708,12 @@ double complex amos_biry(
     //         KODE=2, A SCALING OPTION CEXP(-AXZTA)*BI(Z) OR CEXP(-AXZTA)*
     //         DBI(Z)/DZ IS PROVIDED TO REMOVE THE EXPONENTIAL BEHAVIOR IN
     //         BOTH THE LEFT AND RIGHT HALF PLANES WHERE
-    //         ZTA=(2/3)*Z*CSQRT(Z)=CMPLX(XZTA,YZTA) AND AXZTA=ABS(XZTA).
+    //         ZTA=(2/3)*Z*CSQRT(Z)=std::complex<double>(XZTA,YZTA) AND AXZTA=ABS(XZTA).
     //         DEFINITIONS AND NOTATION ARE FOUND IN THE NBS HANDBOOK OF
     //         MATHEMATICAL FUNCTIONS (REF. 1).
     //
     //         INPUT      ZR,ZI ARE DOUBLE PRECISION
-    //           ZR,ZI  - Z=CMPLX(ZR,ZI)
+    //           ZR,ZI  - Z=std::complex<double>(ZR,ZI)
     //           ID     - ORDER OF DERIVATIVE, ID=0 OR ID=1
     //           KODE   - A PARAMETER TO INDICATE THE SCALING OPTION
     //                    KODE= 1  RETURNS
@@ -2720,7 +2722,7 @@ double complex amos_biry(
     //                        = 2  RETURNS
     //                             BI=CEXP(-AXZTA)*BI(Z)     ON ID=0 OR
     //                             BI=CEXP(-AXZTA)*DBI(Z)/DZ ON ID=1 WHERE
-    //                             ZTA=(2/3)*Z*CSQRT(Z)=CMPLX(XZTA,YZTA)
+    //                             ZTA=(2/3)*Z*CSQRT(Z)=std::complex<double>(XZTA,YZTA)
     //                             AND AXZTA=ABS(XZTA)
     //
     //         OUTPUT     BIR,BII ARE DOUBLE PRECISION
@@ -2813,11 +2815,11 @@ double complex amos_biry(
     //***ROUTINES CALLED  ZBINU,AZABS,ZDIV,AZSQRT,D1MACH,I1MACH
     //***END PROLOGUE  ZBIRY
 
-    double complex bi, csq, s1, s2, trm1, trm2, zta, z3;
+    std::complex<double> bi, csq, s1, s2, trm1, trm2, zta, z3;
     double aa, ad, ak, alim, atrm, az, az3, bb, bk, ck, dig, dk, d1, d2,\
            elim, fid, fmr, fnu, fnul, rl, r1m5, sfac, tol, zi, zr;
     int k, k1, k2, nz;
-    double complex cy[2] = { 0.0 };
+    std::complex<double> cy[2] = { 0.0 };
     double tth = 2. / 3.;
     double c1 = 0.614926627446000735150922369;    /* 1/( 3**(1/6) Gamma(2/3)) */
     double c2 = 0.448288357353826357914823710;    /* 3**(1/6) / Gamma(1/3)    */
@@ -2829,7 +2831,7 @@ double complex amos_biry(
     if ((id < 0) || (id > 1)) { *ierr= 1; }
     if ((kode < 1) || (kode > 2)) { *ierr= 1; }
     if ( *ierr != 0) { return 0.0;}
-    az = cabs(z);
+    az = std::abs(z);
     tol = fmax(d1mach[3], 1e-18);
     fid = id;
     if (az <= 1.0) {
@@ -2878,8 +2880,8 @@ double complex amos_biry(
         if (id != 1) {
             bi = s1*c1 + z*s2*c2;
             if (kode == 1) { return bi; }
-            zta = z*csqrt(z)*tth;
-            aa = -fabs(creal(zta));
+            zta = z*std::sqrt(z)*tth;
+            aa = -fabs(std::real(zta));
             bi *= exp(aa);
             return bi;
         }
@@ -2887,8 +2889,8 @@ double complex amos_biry(
         bi = s2*c2;
         if (az > tol) { bi += z*z*s1*c1/(1.0 + fid ); }
         if (kode == 1) { return bi; }
-        zta = z*csqrt(z)*tth;
-        aa = -fabs(creal(zta));
+        zta = z*std::sqrt(z)*tth;
+        aa = -fabs(std::real(zta));
         bi *= exp(aa);
         return bi;
     }
@@ -2930,24 +2932,24 @@ double complex amos_biry(
     if (az > aa) { *ierr = 4; return 0.0; }
     aa = sqrt(aa);
     if (az > aa) { *ierr = 3; }
-    csq = csqrt(z);
+    csq = std::sqrt(z);
     zta = z*csq*tth;
     //
     // RE(ZTA) <= 0 WHEN RE(Z) < 0, ESPECIALLY WHEN IM(Z) IS SMALL
     //
     sfac = 1.0;
-    zi = cimag(z);
-    zr = creal(z);
-    ak = cimag(zta);
+    zi = std::imag(z);
+    zr = std::real(z);
+    ak = std::imag(zta);
     if (zr < 0.0) {
-        bk = creal(zta);
+        bk = std::real(zta);
         ck = -fabs(bk);
-        zta = CMPLX(ck, ak);
+        zta = std::complex<double>(ck, ak);
     }
     /* 80 */
-    if ((zi == 0.0) && (zr <= 0.0)) { zta = CMPLX(0.0, ak); }
+    if ((zi == 0.0) && (zr <= 0.0)) { zta = std::complex<double>(0.0, ak); }
     /* 90 */
-    aa = creal(zta);
+    aa = std::real(zta);
     if (kode != 2) {
         //
         // OVERFLOW TEST
@@ -2971,7 +2973,7 @@ double complex amos_biry(
     // AA=FACTOR FOR ANALYTIC CONTINUATION OF I(FNU,ZTA)
     // KODE=2 RETURNS EXP(-ABS(XZTA))*I(FNU,ZTA) FROM CBINU
     //
-    nz = amos_binu(zta, fnu, kode, 1, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zta, fnu, kode, 1, cy, rl, fnul, tol, elim, alim);
     if (nz < 0) {
         if (nz == -1) {
             *ierr = 2;
@@ -2982,9 +2984,9 @@ double complex amos_biry(
     }
     aa = fmr*fnu;
     z3 = sfac;
-    s1 = cy[0] * CMPLX(cos(aa), sin(aa)) * z3;
+    s1 = cy[0] * std::complex<double>(cos(aa), sin(aa)) * z3;
     fnu = (2.0 - fid) / 3.0;
-    nz = amos_binu(zta, fnu, kode, 2, cy, rl, fnul, tol, elim, alim);
+    nz = binu(zta, fnu, kode, 2, cy, rl, fnul, tol, elim, alim);
     cy[0] *= z3;
     cy[1] *= z3;
     //
@@ -2992,7 +2994,7 @@ double complex amos_biry(
     //
     s2 = cy[0] * (fnu+fnu) / zta + cy[1];
     aa = fmr * (fnu - 1.0);
-    s1 = (s1 + s2*CMPLX(cos(aa), sin(aa)))*coef;
+    s1 = (s1 + s2*std::complex<double>(cos(aa), sin(aa)))*coef;
     if (id != 1) {
         s1 *= csq;
         bi = s1 / sfac;
@@ -3005,12 +3007,12 @@ double complex amos_biry(
 }
 
 
-int amos_bknu(
-    double complex z,
+inline int bknu(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -3025,13 +3027,13 @@ int amos_bknu(
     //                    AZEXP,AZLOG,ZMLT,AZSQRT
     //***END PROLOGUE  ZBKNU
 
-    double complex cch, ck, coef, crsc, cs, cscl, csh, cz,\
+    std::complex<double> cch, ck, coef, crsc, cs, cscl, csh, cz,\
                    f, fmu, p, pt, p1, p2, q, rz, smu, st, s1, s2, zd;
     double aa, ak, ascle, a1, a2, bb, bk, caz, dnu, dnu2, etest, fc, fhs,\
            fk, fks, g1, g2, p2i, p2m, p2r, rk, s, tm, t1, t2, xx, yy,\
            elm, xd, yd, alas, as;
     int iflag, inu, k, kflag, kk, koded, j, ic, inub, i = 1;
-    double complex cy[2];
+    std::complex<double> cy[2];
 
     int kmax =30;
     double r1 = 2.;
@@ -3047,13 +3049,13 @@ int amos_bknu(
        -2.15241674114950973e-04, -2.01348547807882387e-05,
         1.13302723198169588e-06,  6.11609510448141582e-09
     };
-    xx = creal(z);
-    yy = cimag(z);
-    caz = cabs(z);
+    xx = std::real(z);
+    yy = std::imag(z);
+    caz = std::abs(z);
     cscl = 1. / tol;
     crsc = tol;
-    double complex css[3] = {cscl, 1., crsc};
-    double complex csr[3] = {crsc, 1., cscl};
+    std::complex<double> css[3] = {cscl, 1., crsc};
+    std::complex<double> csr[3] = {crsc, 1., cscl};
     double bry[3] = {1e3*d1mach[0]/tol, tol/(1e3*d1mach[0]), d1mach[1]};
     int nz = 0;
     iflag = 0;
@@ -3073,10 +3075,10 @@ int amos_bknu(
             //    SERIES FOR ABS(Z) <= R1
             //
             fc = 1.;
-            smu = clog(rz);
+            smu = std::log(rz);
             fmu = smu * dnu;
-            csh = csinh(fmu);
-            cch = ccosh(fmu);
+            csh = std::sinh(fmu);
+            cch = std::cosh(fmu);
             if (dnu != 0.0) {
                 fc = dnu * pi;
                 fc *= 1. / sin(fc);
@@ -3086,7 +3088,7 @@ int amos_bknu(
             //
             // GAM(1-Z)*GAM(1+Z)=PI*Z/SIN(PI*Z), T1=1/GAM(1-DNU), T2=1/GAM(1+DNU)
             //
-            t2 = exp(-amos_gamln(a2));
+            t2 = exp(-gamln(a2));
             t1 = 1. / (t2*fc);
             if (fabs(dnu) <= 0.1) {
                 //
@@ -3107,7 +3109,7 @@ int amos_bknu(
             }
             g2 = 0.5 * (t1+t2);
             f = fc*(g1*cch + smu*g2);
-            pt = cexp(fmu);
+            pt = std::exp(fmu);
             p = (0.5 / t2) * pt;
             q = (0.5 / t1) / pt;
             s1 = f;
@@ -3137,7 +3139,7 @@ int amos_bknu(
                 }
                 y[0] = s1;
                 if (koded == 1) { return nz; }
-                y[0] = s1 * cexp(z);
+                y[0] = s1 * std::exp(z);
                 return nz;
             }
             //
@@ -3160,7 +3162,7 @@ int amos_bknu(
                 } while (a1 > tol);
             }
             kflag = 2;
-            bk = creal(smu);
+            bk = std::real(smu);
             a1 = fnu + 1.;
             ak = a1 * fabs(bk);
             if (ak > alim) { kflag = 3; }
@@ -3168,7 +3170,7 @@ int amos_bknu(
             s2 = p2 * rz;
             s1 *= css[kflag-1];
             if (koded != 1) {
-                f = cexp(z);
+                f = std::exp(z);
                 s1 *= f;
                 s2 *= f;
             }
@@ -3181,7 +3183,7 @@ int amos_bknu(
     // KODED=2 AND A TEST FOR ON SCALE VALUES IS MADE DURING FORWARD
     // RECURSION
     //
-    coef = rthpi / csqrt(z);
+    coef = rthpi / std::sqrt(z);
     kflag = 2;
     if (koded != 2) {
         if (xx > alim) {
@@ -3189,8 +3191,8 @@ int amos_bknu(
             iflag = 1;
             kflag = 2;
         } else {
-            a1 = exp(-xx)*creal(css[kflag-1]);
-            pt = a1*CMPLX(cos(yy), -sin(yy));
+            a1 = exp(-xx)*std::real(css[kflag-1]);
+            pt = a1*std::complex<double>(cos(yy), -sin(yy));
             coef *= pt;
         }
     }
@@ -3294,7 +3296,7 @@ L80:
         t1 = (fk + xx) * rk;
         t2 = yy * rk;
         pt = p2;
-        p2 = (p2 * CMPLX(t1, t2) - p1) * a2;
+        p2 = (p2 * std::complex<double>(t1, t2) - p1) * a2;
         p1 = pt;
         cs += p2;
         fks = a1 - fk + 1.0;
@@ -3304,7 +3306,7 @@ L80:
     //
     // COMPUTE (P2/CS)=(P2/ABS(CS))*(CONJG(CS)/ABS(CS)) FOR BETTER SCALING
     //
-    tm = cabs(cs);
+    tm = std::abs(cs);
     pt = 1.0 / tm;
     s1 = pt * p2;
     cs = conj(cs) * pt;
@@ -3317,7 +3319,7 @@ L80:
     //
     // COMPUTE P1/P2=(P1/ABS(P2)*CONJG(P2)/ABS(P2) FOR SCALING
     //
-    tm = cabs(p2);
+    tm = std::abs(p2);
     pt = 1.0 / tm;
     p1 = pt * p1;
     p2 = conj(p2) * pt;
@@ -3349,7 +3351,7 @@ L110:
         ck += rz;
         if (kflag < 3) {
             p2 = s2*p1;
-            p2m = fmax(fabs(creal(p2)), fabs(cimag(p2)));
+            p2m = fmax(fabs(std::real(p2)), fabs(std::imag(p2)));
             if (p2m > ascle) {
                 kflag += 1;
                 ascle = bry[kflag-1];
@@ -3383,7 +3385,7 @@ L140:
         p2 = s2*p1;
         y[i-1] = p2;
         if (kflag < 3) {
-            p2m = fmax(fabs(creal(p2)), fabs(cimag(p2)));
+            p2m = fmax(fabs(std::real(p2)), fabs(std::imag(p2)));
             if (p2m > ascle) {
                 kflag += 1;
                 ascle = bry[kflag-1];
@@ -3413,16 +3415,16 @@ L160:
         s2 = ck*s2 + s1;
         s1 = st;
         ck += rz;
-        as = cabs(s2);
+        as = std::abs(s2);
         alas = log(as);
         p2r = alas - xd;
         if (p2r >= -elim) {
-            p2 = -zd + clog(s2);
-            p2r = creal(p2);
-            p2i = cimag(p2);
+            p2 = -zd + std::log(s2);
+            p2r = std::real(p2);
+            p2i = std::imag(p2);
             p2m = exp(p2r) / tol;
-            p1 = p2m * CMPLX(cos(p2i), sin(p2i));
-            if (!(amos_uchk(p1, ascle, tol))) {
+            p1 = p2m * std::complex<double>(cos(p2i), sin(p2i));
+            if (!(uchk(p1, ascle, tol))) {
                 j = 3 - j;
                 cy[j-1] = p1;
                 if (ic == i-1) { goto L180; }
@@ -3434,7 +3436,7 @@ L160:
             xd -= elim;
             s1 *= elm;
             s2 *= elm;
-            zd = CMPLX(xd, yd);
+            zd = std::complex<double>(xd, yd);
         }
     }
     if (n == 1) { s1 = s2; }
@@ -3452,7 +3454,7 @@ L190:
     y[0] = s1;
     if (n != 1) { y[1] = s2; }
     ascle = bry[0];
-    nz = amos_kscl(zd, fnu, n, &y[0], rz, &ascle, tol, elim);
+    nz = kscl(zd, fnu, n, &y[0], rz, &ascle, tol, elim);
     inu = n - nz;
     if (inu <= 0) { return nz; }
     kk = nz + 1;
@@ -3470,12 +3472,12 @@ L190:
 }
 
 
-int amos_buni(
-    double complex z,
+inline int buni(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     int nui,
     int *nlast,
     double fnul,
@@ -3496,24 +3498,24 @@ int amos_buni(
     //***ROUTINES CALLED  ZUNI1,ZUNI2,AZABS,D1MACH
     //***END PROLOGUE  ZBUNI
 
-    double complex cscl, cscr, rz, st, s1, s2;
+    std::complex<double> cscl, cscr, rz, st, s1, s2;
     double ax, ay, dfnu, fnui, gnu, xx, yy, ascle, str, sti, stm;
     int i, iflag, iform, k, nl, nw, nz;
-    double complex cy[2] = { 0.0 };
+    std::complex<double> cy[2] = { 0.0 };
     double bry[3] = { 0.0 };
 
     nz = 0;
-    xx = creal(z);
-    yy = cimag(z);
+    xx = std::real(z);
+    yy = std::imag(z);
     ax = fabs(xx) + sqrt(3.);
     ay = fabs(yy);
     iform = 1;
     if (ay > ax) { iform = 2; }
     if (nui == 0) {
         if (iform != 2) {
-            amos_uni1(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
+            uni1(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
         } else {
-            amos_uni2(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
+            uni2(z, fnu, kode, n, y, &nw, nlast, fnul, tol, elim, alim);
         }
         if (nw < 0) {
             nz = -1;
@@ -3531,13 +3533,13 @@ int amos_buni(
         // ASYMPTOTIC EXPANSION FOR I(FNU,Z) FOR LARGE FNU APPLIED IN
         // -PI/3 <= ARG(Z) <= PI/3
         //
-        amos_uni1(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
+        uni1(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
     } else {
-        amos_uni2(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
+        uni2(z, gnu, kode, 2, cy, &nw, nlast, fnul, tol, elim, alim);
     }
     if (nw >= 0) {
         if (nw != 0) { *nlast = n; return nz; }
-        ay = cabs(cy[0]);
+        ay = std::abs(cy[0]);
         //
         // SCALE BACKWARD RECURRENCE, BRY(3) IS DEFINED BUT NEVER USED
         //
@@ -3575,8 +3577,8 @@ int amos_buni(
             fnui -= 1.0;
             if (iflag < 3) {
                 st = s2 * cscr;
-                str = fabs(creal(st));
-                sti = fabs(cimag(st));
+                str = fabs(std::real(st));
+                sti = fabs(std::imag(st));
                 stm = fmax(str, sti);
                 if (stm > ascle) {
                     iflag += 1;
@@ -3608,8 +3610,8 @@ int amos_buni(
             k -= 1;
             if (iflag < 3) {
                 st = s2 * cscr;
-                str = fabs(creal(st));
-                sti = fabs(cimag(st));
+                str = fabs(std::real(st));
+                sti = fabs(std::imag(st));
                 stm = fmax(str, sti);
                 if (stm > ascle) {
                     iflag += 1;
@@ -3633,13 +3635,13 @@ int amos_buni(
 }
 
 
-int amos_bunk(
-    double complex z,
+inline int bunk(
+    std::complex<double> z,
     double fnu,
     int kode,
     int mr,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -3658,27 +3660,27 @@ int amos_bunk(
     double ax, ay;
 
     int nz = 0;
-    ax = fabs(creal(z)) * 1.7321;
-    ay = fabs(cimag(z));
+    ax = fabs(std::real(z)) * 1.7321;
+    ay = fabs(std::imag(z));
 
     if (ay <= ax) {
         //
         // Asymptotic expansion for K(FNU,Z) for large FNU applied in
         // -PI/3 <= ARG(Z) <= PI/3
         //
-        nz = amos_unk1(z, fnu, kode, mr, n, y, tol, elim, alim);
+        nz = unk1(z, fnu, kode, mr, n, y, tol, elim, alim);
     } else {
         //
         // Asymptotic expansion for H(2, FNU, Z*EXP(M*HPI)) for large FNU
         // applied in PI/3 < ABS(ARG(Z)) <= PI/2 where M = +I or -I and HPI = PI/2
         //
-        nz = amos_unk2(z, fnu, kode, mr, n, y, tol, elim, alim);
+        nz = unk2(z, fnu, kode, mr, n, y, tol, elim, alim);
     }
     return nz;
 }
 
 
-double amos_gamln(double z) {
+inline double gamln(double z) {
 
     //***BEGIN PROLOGUE  DGAMLN
     //***DATE WRITTEN   830501   (YYMMDD)
@@ -3778,12 +3780,12 @@ double amos_gamln(double z) {
 }
 
 
-int amos_mlri(
-    double complex z,
+inline int mlri(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol
 ) {
 
@@ -3796,14 +3798,14 @@ int amos_mlri(
     //***ROUTINES CALLED  DGAMLN,D1MACH,AZABS,AZEXP,AZLOG,ZMLT
     //***END PROLOGUE  ZMLRI
 
-    double complex ck, cnorm, pt, p1, p2, rz, sum;
+    std::complex<double> ck, cnorm, pt, p1, p2, rz, sum;
     double ack, ak, ap, at, az, bk, fkap, fkk, flam, fnf, rho,\
            rho2, scle, tfnf, tst, x;
     int i, iaz, ifnu, inu, itime, k, kk, km, m, nz;
     scle = d1mach[0] / tol;
     nz = 0;
-    az = cabs(z);
-    x = creal(z);
+    az = std::abs(z);
+    x = std::real(z);
     iaz = (int)az;
     ifnu = (int)fnu;
     inu = ifnu + n - 1;
@@ -3828,7 +3830,7 @@ int amos_mlri(
         p2 = p1 - ck * p2;
         p1 = pt;
         ck += rz;
-        ap = cabs(p2);
+        ap = std::abs(p2);
         if (ap > tst*ak*ak) { break; }
         ak += 1.0;
         if (i == 80) {
@@ -3856,12 +3858,12 @@ int amos_mlri(
             p2 = p1 - ck * p2;
             p1 = pt;
             ck += rz;
-            ap = cabs(p2);
+            ap = std::abs(p2);
             if (ap >= tst) {
                 if (itime == 2) { break; }
-                ack = cabs(ck);
+                ack = std::abs(ck);
                 flam = ack + sqrt(ack*ack - 1.0);
-                fkap = ap / cabs(p1);
+                fkap = ap / std::abs(p1);
                 rho = fmin(flam, fkap);
                 tst *= sqrt(rho / (rho*rho - 1.0));
                 itime = 2;
@@ -3885,7 +3887,7 @@ int amos_mlri(
     p2 = scle;
     fnf = fnu - ifnu;
     tfnf = fnf + fnf;
-    bk = amos_gamln(fkk + tfnf + 1.0) - amos_gamln(fkk + 1.0) - amos_gamln(tfnf + 1.0);
+    bk = gamln(fkk + tfnf + 1.0) - gamln(fkk + 1.0) - gamln(tfnf + 1.0);
     bk = exp(bk);
     sum = 0.;
     km = kk - inu;
@@ -3931,17 +3933,17 @@ int amos_mlri(
     }
     pt = z;
     if (kode == 2) { pt -= x; }
-    p1 = -fnf * clog(rz) + pt;
-    ap = amos_gamln(1. + fnf);
+    p1 = -fnf * std::log(rz) + pt;
+    ap = gamln(1. + fnf);
     pt = p1 - ap;
     //
     // THE DIVISION EXP(PT)/(SUM+P2) IS ALTERED TO AVOID OVERFLOW
     // IN THE DENOMINATOR BY SQUARING LARGE QUANTITIES
     //
     p2 += sum;
-    ap = cabs(p2);
+    ap = std::abs(p2);
     p1 = 1. / ap;
-    ck = cexp(pt) * p1;
+    ck = std::exp(pt) * p1;
     pt = conj(p2)*p1;
     cnorm = ck * pt;
     for (int i = 0; i < n; i++) { y[i] *= cnorm; }
@@ -3949,12 +3951,12 @@ int amos_mlri(
 }
 
 
-int amos_kscl(
-    double complex zr,
+inline int kscl(
+    std::complex<double> zr,
     double fnu,
     int n,
-    double complex *y,
-    double complex rz,
+    std::complex<double> *y,
+    std::complex<double> rz,
     double *ascle,
     double tol,
     double elim
@@ -3970,31 +3972,31 @@ int amos_kscl(
     //***ROUTINES CALLED  ZUCHK,AZABS,AZLOG
     //***END PROLOGUE  ZKSCL
 
-    double complex cy[2] = { 0. };
+    std::complex<double> cy[2] = { 0. };
     double as, acs, alas, fn, zri, xx;
-    double complex s1, s2, cs, ck, zd;
+    std::complex<double> s1, s2, cs, ck, zd;
     int nz = 0;
     int ic = 0;
     int nn = ( n > 2 ? 2 : n );
     int kk = 0;
     int i;
     double elm = exp(-elim);
-    xx = creal(zr);
+    xx = std::real(zr);
 
     for (i = 1; i < (nn + 1); i++)
     {
         s1 = y[i-1];
         cy[i-1] = s1;
-        as = cabs(s1);
-        acs = -creal(zr) + log(as);
+        as = std::abs(s1);
+        acs = -std::real(zr) + log(as);
         nz += 1;
         y[i-1] = 0.;
         if (acs < -elim) {
             continue;
         }
-        cs = -zr + clog(s1);
-        cs = (exp(creal(cs))/tol)*(cos(cimag(cs)) + sin(cimag(cs)*I));
-        if (!amos_uchk(cs, *ascle, tol)) {
+        cs = -zr + std::log(s1);
+        cs = (exp(std::real(cs))/tol)*(cos(std::imag(cs)) + sin(std::imag(cs)*std::complex<double>(0, 1)));
+        if (!uchk(cs, *ascle, tol)) {
             y[i-1] = cs;
             nz -= 1;
             ic = i;
@@ -4018,7 +4020,7 @@ int amos_kscl(
     ck = fn*rz;
     s1 = cy[0];
     s2 = cy[1];
-    zri = cimag(zr);
+    zri = std::imag(zr);
     zd = zr;
     for (i = 3; i < (n+1); i++)
     {
@@ -4028,16 +4030,16 @@ int amos_kscl(
         s2 += s1;
         s1 = cs;
         ck += rz;
-        as = cabs(s2);
+        as = std::abs(s2);
         alas = log(as);
         acs = alas - xx;
         nz += 1;
         y[i-1] = 0.;
         if (acs >= -elim) {
-            cs = clog(s2);
+            cs = std::log(s2);
             cs -= zd;
-            cs = (exp(creal(cs))/tol)*CMPLX(cos(cimag(cs)), sin(cimag(cs)));
-            if (!amos_uchk(cs, *ascle, tol)) {
+            cs = (exp(std::real(cs))/tol)*std::complex<double>(cos(std::imag(cs)), sin(std::imag(cs)));
+            if (!uchk(cs, *ascle, tol)) {
                 y[i-1] = cs;
                 nz -= 1;
                 if (ic == kk-1) {
@@ -4051,7 +4053,7 @@ int amos_kscl(
         }
         if (alas >= 0.5*elim){
             xx -= elim;
-            zd = CMPLX(xx, zri);
+            zd = std::complex<double>(xx, zri);
             s1 *= elm;
             s2 *= elm;
         }
@@ -4066,11 +4068,11 @@ int amos_kscl(
 }
 
 
-void amos_rati(
-    double complex z,
+inline void rati(
+    std::complex<double> z,
     double fnu,
     int n,
-    double complex *cy,
+    std::complex<double> *cy,
     double tol
 ) {
 
@@ -4087,11 +4089,11 @@ void amos_rati(
     //***ROUTINES CALLED  AZABS,ZDIV
     //***END PROLOGUE  ZRATI
 
-    double complex cdfnu, pt, p1, p2, rz, t1;
+    std::complex<double> cdfnu, pt, p1, p2, rz, t1;
     double ak, amagz, ap1, ap2, arg, az, dfnu, fdnu, flam, fnup, rap1, rho, test, test1;
     int i, id, idnu, inu, itime, k, kk, magz;
 
-    az = cabs(z);
+    az = std::abs(z);
     inu = (int)fnu;
     idnu = inu + n - 1;
     fdnu = idnu;
@@ -4109,8 +4111,8 @@ void amos_rati(
     if (id > 0) {
         id = 0;
     }
-    ap2 = cabs(p2);
-    ap1 = cabs(p1);
+    ap2 = std::abs(p2);
+    ap1 = std::abs(p1);
 
     //
     // THE OVERFLOW TEST ON K(FNU+I-1,Z) BEFORE THE CALL TO CBKNX
@@ -4132,10 +4134,10 @@ void amos_rati(
         p2 = p1 - t1*p2;
         p1 = pt;
         t1 += rz;
-        ap2 = cabs(p2);
+        ap2 = std::abs(p2);
         if (ap1 > test) { break; }
         if (itime != 2) {
-            ak = cabs(t1)*0.5;
+            ak = std::abs(t1)*0.5;
             flam = ak + sqrt(ak*ak - 1.0);
             rho = fmin(ap2/ap1, flam);
             test = test1*sqrt(rho / (rho*rho - 1.0));
@@ -4158,7 +4160,7 @@ void amos_rati(
     }
 
     if (p1 == 0.) {
-        p1 = CMPLX(p1, p1);
+        p1 = std::complex<double>(0, 0);
     }
 
     cy[n-1] = p2 / p1;
@@ -4171,7 +4173,7 @@ void amos_rati(
     for (i = 2; i < (n+1); i++) {
         pt = cdfnu + t1*rz*cy[k];
         if (pt == 0.0) {
-            pt = CMPLX(tol, tol);
+            pt = std::complex<double>(tol, tol);
         }
         cy[k-1] = 1.0 / pt;
         t1 -= 1.0;
@@ -4181,12 +4183,12 @@ void amos_rati(
 }
 
 
-int amos_seri(
-    double complex z,
+inline int seri(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -4206,13 +4208,13 @@ int amos_seri(
     //***ROUTINES CALLED  DGAMLN,D1MACH,ZUCHK,AZABS,ZDIV,AZLOG,ZMLT
     //***END PROLOGUE  ZSERI
 
-    double complex ak1, ck, coef, crsc, cz, half_z, rz, s1, s2, w[2];
+    std::complex<double> ak1, ck, coef, crsc, cz, half_z, rz, s1, s2, w[2];
     double aa, acz, ak, arm, ascle, atol, az, dfnu, fnup, rak1,\
            rs, rtr1, s, ss, x;
     int ib, iflag, il, k, l, m, nn;
 
     int nz = 0;
-    az = cabs(z);
+    az = std::abs(z);
     if (az == 0.0) {
         y[0] = 0.0;
         if (fnu == 0.) { y[0] = 1.0; }
@@ -4220,7 +4222,7 @@ int amos_seri(
         for (int i = 1; i < n; i++) { y[i] = 0.0; }
         return nz;
     }
-    x = creal(z);
+    x = std::real(z);
     arm = 1e3*d1mach[0];
     rtr1 = sqrt(arm);
     crsc = 1.0;
@@ -4229,9 +4231,9 @@ int amos_seri(
         half_z = 0.5*z;
         cz = 0.0;
         if (az > rtr1) { cz = half_z*half_z; }
-        acz = cabs(cz);
+        acz = std::abs(cz);
         nn = n;
-        ck = clog(half_z);
+        ck = std::log(half_z);
 L10:
         dfnu = fnu + (nn-1);
         fnup = dfnu + 1.0;
@@ -4239,10 +4241,10 @@ L10:
         // UNDERFLOW TEST
         //
         ak1 = ck * dfnu;
-        ak = amos_gamln(fnup);
+        ak = gamln(fnup);
         ak1 -= ak;
         if (kode == 2) { ak1 -= x; }
-        rak1 = creal(ak1);
+        rak1 = std::real(ak1);
         if (rak1 > -elim) { goto L30; }
 L20:
         nz += 1;
@@ -4262,10 +4264,10 @@ L30:
             crsc = tol;
             ascle = arm * ss;
         }
-        ak = cimag(ak1);
+        ak = std::imag(ak1);
         aa = exp(rak1);
         if (iflag == 1) { aa *= ss; }
-        coef = aa * CMPLX(cos(ak), sin(ak));
+        coef = aa * std::complex<double>(cos(ak), sin(ak));
         atol = tol * acz / fnup;
         il = (nn > 2 ? 2 : nn);
         for (int i = 1; i < (il +1); i++)
@@ -4293,7 +4295,7 @@ L30:
             s2 = s1 * coef;
             w[i-1] = s2;
             if (iflag != 0) {
-                if (amos_uchk(s2, ascle, tol)) { goto L20; }
+                if (uchk(s2, ascle, tol)) { goto L20; }
             }
             m = nn - i + 1;
             y[m-1] = s2 * crsc;
@@ -4333,7 +4335,7 @@ L80:
             y[k-1] = ck;
             ak -= 1.0;
             k -= 1;
-            if (cabs(ck) > ascle) { goto L100; }
+            if (std::abs(ck) > ascle) { goto L100; }
         }
         return nz;
 L100:
@@ -4351,10 +4353,10 @@ L100:
 }
 
 
-int amos_s1s2(
-    double complex zr,
-    double complex *s1,
-    double complex *s2,
+inline int s1s2(
+    std::complex<double> zr,
+    std::complex<double> *s1,
+    std::complex<double> *s2,
     double ascle,
     double alim,
     int *iuf
@@ -4374,25 +4376,25 @@ int amos_s1s2(
     //***ROUTINES CALLED  AZABS,AZEXP,AZLOG
     //***END PROLOGUE  ZS1S2
 
-    double complex c1, s1d;
+    std::complex<double> c1, s1d;
     double aa, aln, as1, as2, xx;
     int nz = 0;
-    as1 = cabs(*s1);
-    as2 = cabs(*s2);
-    aa = creal(*s1);
-    aln = cimag(*s1);
+    as1 = std::abs(*s1);
+    as2 = std::abs(*s2);
+    aa = std::real(*s1);
+    aln = std::imag(*s1);
 
     if ((aa != 0.) || (aln != 0.)) {
         if (as1 != 0.){
-            xx = creal(zr);
+            xx = std::real(zr);
             aln = -xx - xx + log(as1);
             s1d = *s1;
             *s1 = 0.;
             as1 = 0.;
             if (aln >= -alim) {
-                c1 = clog(s1d) - zr - zr;
-                *s1 = cexp(c1);
-                as1 = cabs(*s1);
+                c1 = std::log(s1d) - zr - zr;
+                *s1 = std::exp(c1);
+                as1 = std::abs(*s1);
                 *iuf += 1;
             }
         }
@@ -4408,8 +4410,8 @@ int amos_s1s2(
 }
 
 
-int amos_uchk(
-    double complex y,
+inline int uchk(
+    std::complex<double> y,
     double ascle,
     double tol
 ) {
@@ -4428,8 +4430,8 @@ int amos_uchk(
     //***ROUTINES CALLED  (NONE)
     //***END PROLOGUE  ZUCHK
 
-    double yr = fabs(creal(y));
-    double yi = fabs(cimag(y));
+    double yr = fabs(std::real(y));
+    double yi = fabs(std::imag(y));
     double ss = fmax(yr, yi);
     double st = fmin(yr, yi);
     if (st > ascle) {
@@ -4445,17 +4447,17 @@ int amos_uchk(
 }
 
 
-void amos_unhj(
-    double complex z,
+inline void unhj(
+    std::complex<double> z,
     double fnu,
     int ipmtr,
     double tol,
-    double complex *phi,
-    double complex *arg,
-    double complex *zeta1,
-    double complex *zeta2,
-    double complex *asum,
-    double complex *bsum
+    std::complex<double> *phi,
+    std::complex<double> *arg,
+    std::complex<double> *zeta1,
+    std::complex<double> *zeta2,
+    std::complex<double> *asum,
+    std::complex<double> *bsum
 ) {
 
     //***BEGIN PROLOGUE  ZUNHJ
@@ -4490,8 +4492,8 @@ void amos_unhj(
     //***ROUTINES CALLED  AZABS,ZDIV,AZLOG,AZSQRT,D1MACH
     //***END PROLOGUE  ZUNHJ
 
-    double complex cfnu, przth, ptfn, rtzta, rzth, suma, sumb;
-    double complex tfn, t2, w, w2, za, zb, zc, zeta, zth;
+    std::complex<double> cfnu, przth, ptfn, rtzta, rzth, suma, sumb;
+    std::complex<double> tfn, t2, w, w2, za, zb, zc, zeta, zth;
     double ang, atol, aw2, azth, btol, fn13, fn23, pp, rfn13;
     double rfnu, rfnu2, wi, wr, zci, zcr, zetai, zetar, zthi;
     double zthr, asumr, asumi, bsumr, bsumi, test, ac;
@@ -4502,10 +4504,10 @@ void amos_unhj(
     double thpi = 4.71238898038468986;
     int ias, ibs, j, ju, k, kmax, kp1, ks, l, lrp1, l1, l2, m;
     /* array vars */
-    double complex cr[14] = { 0. };
-    double complex dr[14] = { 0. };
-    double complex up[14] = { 0. };
-    double complex p[30] = { 0. };
+    std::complex<double> cr[14] = { 0. };
+    std::complex<double> dr[14] = { 0. };
+    std::complex<double> up[14] = { 0. };
+    std::complex<double> p[30] = { 0. };
     double ap[30] = { 0. };
 
     rfnu = 1. / fnu;
@@ -4514,7 +4516,7 @@ void amos_unhj(
     //
     test = d1mach[0] * 1e3;
     ac = fnu*test;
-    if ((fabs(creal(z)) <= ac) && (fabs(cimag(z)) <= ac)) {
+    if ((fabs(std::real(z)) <= ac) && (fabs(std::imag(z)) <= ac)) {
         *zeta1 = 2.0*fabs(log(test)) + fnu;
         *zeta2 = fnu;
         *phi = 1.;
@@ -4532,8 +4534,8 @@ void amos_unhj(
     w2 = 1.0 - zb*zb;
     /* AMOS AZSQRT and C CSQRT differs when imaginary 0.0 swaps sign */
     w2 = 1.0 - zb*zb;
-    if (cimag(w2) == -0.0) { w2 = creal(w2); }
-    aw2 = cabs(w2);
+    if (std::imag(w2) == -0.0) { w2 = std::real(w2); }
+    aw2 = std::abs(w2);
     if (aw2 <= 0.25) {
         //
         // POWER SERIES FOR ABS(W2) <= 0.25
@@ -4557,11 +4559,11 @@ void amos_unhj(
         kmax = k;
         zeta = w2*suma;
         *arg = zeta*fn23;
-        za = csqrt(suma);
-        *zeta2 = csqrt(w2)*fnu;
+        za = std::sqrt(suma);
+        *zeta2 = std::sqrt(w2)*fnu;
         *zeta1 = (*zeta2) * (1. + zeta*za*ex2);
         za = za + za;
-        *phi = csqrt(za)*rfn13;
+        *phi = std::sqrt(za)*rfn13;
         if (ipmtr == 1) { return; }
         //
         // SUM SERIES FOR ASUM AND BSUM
@@ -4574,7 +4576,7 @@ void amos_unhj(
         *bsum = sumb;
         l1 = 0;
         l2 = 30;
-        btol = tol * (fabs(creal(*bsum)) + fabs(cimag(*bsum)));
+        btol = tol * (fabs(std::real(*bsum)) + fabs(std::imag(*bsum)));
         atol = tol;
         pp = 1.0;
         ias = 0;
@@ -4622,26 +4624,26 @@ void amos_unhj(
     } else {
         //
         // ABS(W2) > 0.25
-        w = csqrt(w2);
-        wr = creal(w);
-        wi = cimag(w);
+        w = std::sqrt(w2);
+        wr = std::real(w);
+        wi = std::imag(w);
         if (wr < 0) { wr = 0.;}
         if (wi < 0) { wi = 0.;}
         za = (1. + w) / zb;
-        zc = clog(za);
-        zcr = creal(zc);
-        zci = cimag(zc);
+        zc = std::log(za);
+        zcr = std::real(zc);
+        zci = std::imag(zc);
         if (zci < 0) { zci = 0.;}
         if (zci > hpi) { zci = hpi;}
         if (zcr < 0) { zcr = 0.;}
-        zc = CMPLX(zcr, zci);
+        zc = std::complex<double>(zcr, zci);
         zth = (zc-w)*1.5;
         cfnu = fnu;
         *zeta1 = zc*cfnu;
         *zeta2 = w*cfnu;
-        azth = cabs(zth);
-        zthr = creal(zth);
-        zthi = cimag(zth);
+        azth = std::abs(zth);
+        zthr = std::real(zth);
+        zthi = std::imag(zth);
         ang = thpi;
         if ((zthr < 0.) || (zthi >= 0.)) {
             ang = hpi;
@@ -4655,11 +4657,11 @@ void amos_unhj(
         zetar = pp * cos(ang);
         zetai = pp * sin(ang);
         if (zetai < 0.) { zetai = 0.; }
-        zeta = CMPLX(zetar, zetai);
+        zeta = std::complex<double>(zetar, zetai);
         *arg = zeta*fn23;
         rtzta = zth / zeta;
         za = rtzta / w;
-        *phi = csqrt(za + za) * rfn13;
+        *phi = std::sqrt(za + za) * rfn13;
         if (ipmtr == 1) { return; }
         tfn = rfnu / w;
         rzth = rfnu / zth;
@@ -4679,8 +4681,8 @@ void amos_unhj(
         ptfn = tfn;
         up[0] = 1.0;
         pp = 1.0;
-        bsumr = creal(*bsum);
-        bsumi = cimag(*bsum);
+        bsumr = std::real(*bsum);
+        bsumi = std::imag(*bsum);
         btol = tol * (fabs(bsumr) + fabs(bsumi));
         ks = 0;
         kp1 = 2;
@@ -4722,8 +4724,8 @@ void amos_unhj(
                     suma += cr[jr-1] * up[ju-1];
                 }
                 *asum += suma;
-                asumr = creal(*asum);
-                asumi = cimag(*asum);
+                asumr = std::real(*asum);
+                asumi = std::imag(*asum);
                 test = fabs(asumr) + fabs(asumi);
                 if ((pp < tol) && (test < tol)) { ias = 1; }
             }
@@ -4736,8 +4738,8 @@ void amos_unhj(
                     sumb += dr[jr-1] * up[ju-1];
                 }
                 *bsum += sumb;
-                bsumr = creal(*bsum);
-                bsumi = cimag(*bsum);
+                bsumr = std::real(*bsum);
+                bsumi = std::imag(*bsum);
                 test = fabs(bsumr) + fabs(bsumi);
                 if ((pp < tol) && (test < tol)) { ibs = 1; }
             }
@@ -4750,12 +4752,12 @@ void amos_unhj(
 }
 
 
-void amos_uni1(
-    double complex z,
+inline void uni1(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     int *nz,
     int *nlast,
     double fnul,
@@ -4779,11 +4781,11 @@ void amos_uni1(
     //***ROUTINES CALLED  ZUCHK,ZUNIK,ZUOIK,D1MACH,AZABS
     //***END PROLOGUE  ZUNI1
 
-    double complex c2, phi, rz, sum, s1, s2, zeta1 = 0, zeta2 = 0;
+    std::complex<double> c2, phi, rz, sum, s1, s2, zeta1 = 0, zeta2 = 0;
     double aphi, ascle, c1r, crsc, cscl, fn, rs1;
     int i, iflag, init, k, m, nd, nn, nuf;
-    double complex cwrk[16] = { 0. };
-    double complex cy[2] = { 0. };
+    std::complex<double> cwrk[16] = { 0. };
+    std::complex<double> cy[2] = { 0. };
     *nz = 0;
     nd = n;
     *nlast = 0;
@@ -4804,14 +4806,14 @@ void amos_uni1(
     //
     fn = fmax(fnu, 1.0);
     init = 0;
-    amos_unik(z, fn, 1, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+    unik(z, fn, 1, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
     if (kode != 1) {
         s1 = -zeta1 + fn*(fn / (z + zeta2));
     } else {
         s1 = -zeta1 + zeta2 ;
     }
 
-    rs1 = creal(s1);
+    rs1 = std::real(s1);
     if (fabs(rs1) > elim) {
         if (rs1 > 0) {
             *nz = -1;
@@ -4826,23 +4828,23 @@ L30:
     {
         fn = fnu + nd - i;
         init = 0;
-        amos_unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+        unik(z, fn, 1, 0, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
         if (kode != 1) {
-            s1 = -zeta1 + fn*(fn / (z + zeta2)) + CMPLX(0.0, cimag(z));
+            s1 = -zeta1 + fn*(fn / (z + zeta2)) + std::complex<double>(0.0, std::imag(z));
         } else {
             s1 = -zeta1 + zeta2;
         }
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) > elim) { goto L110; }
         if (i == 1) { iflag = 2; }
         if (fabs(rs1) >= alim) {
             //
             // REFINE TEST AND SCALE
             //
-            aphi = cabs(phi);
+            aphi = std::abs(phi);
             rs1 += log(aphi);
             if (fabs(rs1) > elim) { goto L110; }
             if (i == 1) { iflag = 1; }
@@ -4853,9 +4855,9 @@ L30:
         // SCALE S1 IF CABS(S1) < ASCLE
         //
         s2 = phi*sum;
-        s1 = exp(creal(s1))*css[iflag-1]*CMPLX(cos(cimag(s1)), sin(cimag(s1)));
+        s1 = exp(std::real(s1))*css[iflag-1]*std::complex<double>(cos(std::imag(s1)), sin(std::imag(s1)));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L110; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { goto L110; } }
     /* 70 */
         cy[i-1] = s2;
         m = nd - i + 1;
@@ -4880,7 +4882,7 @@ L30:
             k -= 1;
             fn -= 1.0;
             if (iflag >= 3) { continue; }
-            if (fmax(fabs(creal(c2)), fabs(cimag(c2))) <= ascle) { continue; }
+            if (fmax(fabs(std::real(c2)), fabs(std::imag(c2))) <= ascle) { continue; }
             iflag += 1;
             ascle = bry[iflag-1];
             s1 *= c1r;
@@ -4899,7 +4901,7 @@ L110:
     *nz += 1;
     nd -= 1;
     if (nd == 0) { return; }
-    nuf = amos_uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
+    nuf = uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
     if (nuf < 0) { *nz = -1; return; }
     nd -= nuf;
     *nz += nuf;
@@ -4911,12 +4913,12 @@ L110:
 }
 
 
-void amos_uni2(
-    double complex z,
+inline void uni2(
+    std::complex<double> z,
     double fnu,
     int kode,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     int *nz,
     int *nlast,
     double fnul,
@@ -4941,14 +4943,14 @@ void amos_uni2(
     //***ROUTINES CALLED  ZAIRY,ZUCHK,ZUNHJ,ZUOIK,D1MACH,AZABS
     //***END PROLOGUE  ZUNI2
 
-    double complex ai, arg, asum, bsum, cfn, cid, crsc, cscl, c1, c2, dai, phi, rz,\
+    std::complex<double> ai, arg, asum, bsum, cfn, cid, crsc, cscl, c1, c2, dai, phi, rz,\
                    s1, s2, zb, zeta1, zeta2, zn, zar;
     double aarg, ang, aphi, ascle, ay, c2i, c2m, c2r, fn, rs1, yy;
     int i, iflag, in, inu, j, k, nai, nd, ndai, nn, nuf, idum;
     double hpi = 1.57079632679489662; /* 0.5 pi */
     double aic = 1.265512123484645396; /* log(2 sqrt(pi)) */
-    double complex cip[4] = { 1.0, I, -1.0, -I };
-    double complex ci = I;
+    std::complex<double> cip[4] = { 1.0, std::complex<double>(0, 1), -1.0, -std::complex<double>(0, 1) };
+    std::complex<double> ci = std::complex<double>(0, 1);
     //
     // COMPUTED VALUES WITH EXPONENTS BETWEEN ALIM AND ELIM IN MAGNITUDE
     // ARE SCALED TO KEEP INTERMEDIATE ARITHMETIC ON SCALE,
@@ -4956,11 +4958,11 @@ void amos_uni2(
     //
     cscl = 1.0 / tol;
     crsc = tol;
-    double complex csr[3] = { crsc, 1.0, cscl };
-    double complex css[3] = { cscl, 1.0, crsc };
+    std::complex<double> csr[3] = { crsc, 1.0, cscl };
+    std::complex<double> css[3] = { cscl, 1.0, crsc };
     double bry[3] = { 1e3*d1mach[0]/tol, 0.0, 0.0 };
-    double complex cy[2] = { 0.0 };
-    yy = cimag(z);
+    std::complex<double> cy[2] = { 0.0 };
+    yy = std::imag(z);
     *nz = 0;
     nd = n;
     *nlast = 0;
@@ -4972,7 +4974,7 @@ void amos_uni2(
     cid = -ci;
     inu = (int)fnu;
     ang = hpi * (fnu - inu);
-    c2 = CMPLX(cos(ang), sin(ang));
+    c2 = std::complex<double>(cos(ang), sin(ang));
     zar = c2;
     in = inu + n - 1;
     in = in % 4;
@@ -4987,14 +4989,14 @@ void amos_uni2(
     // CHECK FOR UNDERFLOW AND OVERFLOW ON FIRST MEMBER
     //
     fn = fmax(fnu, 1.0);
-    amos_unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+    unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
     if (kode != 1) {
         cfn = fnu;
         s1 = -zeta1 + cfn*(cfn/(zb + zeta2));
     } else {
         s1 = -zeta1 + zeta2;
     }
-    rs1 = creal(s1);
+    rs1 = std::real(s1);
     if (fabs(rs1) > elim) {
         if (rs1 > 0.) {
             *nz = -1;
@@ -5011,26 +5013,26 @@ L10:
     for (i = 1; i < (nn+1); i++)
     {
         fn = fnu + (nd-i);
-        amos_unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+        unhj(zn, fn, 0, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
         if (kode != 1) {
             cfn = fn;
             ay = fabs(yy);
-            s1 = -zeta1 + cfn*(cfn/(zb + zeta2)) + ay*I;
+            s1 = -zeta1 + cfn*(cfn/(zb + zeta2)) + ay*std::complex<double>(0, 1);
         } else {
             s1 = -zeta1 + zeta2;
         }
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) > elim) { goto L50; }
         if (i == 1) { iflag = 2; }
         if (fabs(rs1) >= alim) {
             //
             // REFINE TEST AND SCALE
             //
-            aphi = cabs(phi);
-            aarg = cabs(arg);
+            aphi = std::abs(phi);
+            aarg = std::abs(arg);
             rs1 += log(aphi) - 0.25*log(aarg) - aic;
             if (fabs(rs1) > elim) { goto L50; }
             if (i == 1) { iflag = 1; }
@@ -5040,14 +5042,14 @@ L10:
         // SCALE S1 TO KEEP INTERMEDIATE ARITHMETIC ON SCALE NEAR
         // EXPONENT EXTREMES
         //
-        ai = amos_airy(arg, 0, 2, &nai, &idum);
-        dai = amos_airy(arg, 1, 2, &ndai, &idum);
+        ai = airy(arg, 0, 2, &nai, &idum);
+        dai = airy(arg, 1, 2, &ndai, &idum);
         s2 = phi * (ai*asum + dai*bsum);
-        c2r = exp(creal(s1))*css[iflag-1];
-        c2i = cimag(s1);
-        s1 = c2r*CMPLX(cos(c2i), sin(c2i));
+        c2r = std::exp(std::real(s1))*std::real(css[iflag-1]);
+        c2i = std::imag(s1);
+        s1 = c2r*std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { goto L50; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { goto L50; } }
         if (yy <= 0.0) { s2 = conj(s2); }
         j = nd - i + 1;
         s2 *= c2;
@@ -5074,8 +5076,8 @@ L10:
             k -= 1;
             fn -= 1.0;
             if (iflag < 3) {
-                c2r = fabs(creal(c2));
-                c2i = fabs(cimag(c2));
+                c2r = fabs(std::real(c2));
+                c2i = fabs(std::imag(c2));
                 c2m = fmax(c2r, c2i);
                 if (c2m > ascle) {
                     iflag += 1;
@@ -5099,7 +5101,7 @@ L50:
         nz += 1;
         nd -= 1;
         if (nd == 0) { return; }
-        nuf = amos_uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
+        nuf = uoik(z, fnu, kode, 1, nd, y, tol, elim, alim);
         if (nuf >= 0) {
             nd -= nuf;
             nz += nuf;
@@ -5130,18 +5132,18 @@ L50:
 }
 
 
-void amos_unik(
-    double complex zr,
+inline void unik(
+    std::complex<double> zr,
     double fnu,
     int ikflg,
     int ipmtr,
     double tol,
     int *init,
-    double complex *phi,
-    double complex *zeta1,
-    double complex *zeta2,
-    double complex *total,
-    double complex *cwrk
+    std::complex<double> *phi,
+    std::complex<double> *zeta1,
+    std::complex<double> *zeta2,
+    std::complex<double> *total,
+    std::complex<double> *cwrk
 ) {
 
     //***BEGIN PROLOGUE  ZUNIK
@@ -5165,7 +5167,7 @@ void amos_unik(
     //***ROUTINES CALLED  ZDIV,AZLOG,AZSQRT,D1MACH
     //***END PROLOGUE  ZUNIK
 
-    double complex cfn, crfn, s, sr, t, t2, zn;
+    std::complex<double> cfn, crfn, s, sr, t, t2, zn;
     double ac, rfn, test, tstr, tsti;
     int i, j, k, l;
     /* ( 1/sqrt(2 PI), sqrt(PI/2) ) */
@@ -5175,8 +5177,8 @@ void amos_unik(
         rfn = 1. / fnu;
         crfn = rfn;
 
-        tstr = creal(zr);
-        tsti = cimag(zr);
+        tstr = std::real(zr);
+        tsti = std::imag(zr);
         test = d1mach[0] * 1e3;
         ac = fnu * test;
         if ((fabs(tstr) <= ac) && (fabs(tsti) <= ac)) {
@@ -5187,14 +5189,14 @@ void amos_unik(
         }
         t = zr * crfn;
         s = 1.0 + t*t;
-        sr = csqrt(s);
+        sr = std::sqrt(s);
         cfn = fnu;
         zn = (1. + sr) / t;
-        *zeta1 = cfn * clog(zn);
+        *zeta1 = cfn * std::log(zn);
         *zeta2 = cfn * sr;
         t = 1.0 / sr;
         sr = t*crfn;
-        cwrk[15] = csqrt(sr);
+        cwrk[15] = std::sqrt(sr);
         *phi = cwrk[15]*con[ikflg-1];
         if (ipmtr != 0) { return; }
         t2 = 1. / s;
@@ -5214,8 +5216,8 @@ void amos_unik(
             crfn *= sr;
             cwrk[k-1] = crfn*s;
             ac *= rfn;
-            tstr = creal(cwrk[k-1]);
-            tsti = cimag(cwrk[k-1]);
+            tstr = std::real(cwrk[k-1]);
+            tsti = std::imag(cwrk[k-1]);
             test = fabs(tstr) + fabs(tsti);
             if ((ac < tol) && (test < tol)) {
                 break;
@@ -5248,13 +5250,13 @@ void amos_unik(
 }
 
 
-int amos_unk1(
-    double complex z,
+inline int unk1(
+    std::complex<double> z,
     double fnu,
     int kode,
     int mr,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -5272,7 +5274,7 @@ int amos_unk1(
     //***ROUTINES CALLED  ZKSCL,ZS1S2,ZUCHK,ZUNIK,D1MACH,AZABS
     //***END PROLOGUE  ZUNK1
 
-    double complex cfn, ck, crsc, cs, cscl, csgn, cspn, c1, c2, rz, s1, s2, zr,\
+    std::complex<double> cfn, ck, crsc, cs, cscl, csgn, cspn, c1, c2, rz, s1, s2, zr,\
                    phid, zeta1d = 0.0, zeta2d = 0.0, sumd;
     double ang, aphi, asc, ascle, c2i, c2m, c2r, fmr, fn, fnf, rs1, sgn, x;
     int i, ib, iflag = 0, ifn, il, inu, iuf, k, kdflg, kflag, kk, m, nw, nz, j,\
@@ -5280,14 +5282,14 @@ int amos_unk1(
 
     cscl = 1.0 / tol;
     crsc = tol;
-    double complex css[3] = {cscl, 1.0, crsc };
-    double complex csr[3] = {crsc, 1.0, cscl };
-    double complex cwrk[3][16] = {{ 0.0 }};
-    double complex phi[2] = { 0.0 };
-    double complex sum[2] = { 0.0 };
-    double complex zeta1[2] = { 0.0 };
-    double complex zeta2[2] = { 0.0 };
-    double complex cy[2] = { 0.0 };
+    std::complex<double> css[3] = {cscl, 1.0, crsc };
+    std::complex<double> csr[3] = {crsc, 1.0, cscl };
+    std::complex<double> cwrk[3][16] = {{ 0.0 }};
+    std::complex<double> phi[2] = { 0.0 };
+    std::complex<double> sum[2] = { 0.0 };
+    std::complex<double> zeta1[2] = { 0.0 };
+    std::complex<double> zeta2[2] = { 0.0 };
+    std::complex<double> cy[2] = { 0.0 };
     double bry[3] = { 1e3*d1mach[0] / tol, tol / 1e3*d1mach[0], d1mach[1]};
     int init[2] = { 0 };
     double pi = 3.14159265358979324;
@@ -5296,7 +5298,7 @@ int amos_unk1(
     kflag = 1;
     fn = fnu;
     nz = 0;
-    x = creal(z);
+    x = std::real(z);
     zr = z;
     if (x < 0.0) { zr = -z; }
     j = 2;
@@ -5306,7 +5308,7 @@ int amos_unk1(
         jc = j - 1; /* dummy index for 0-indexing */
         fn = fnu + (i - 1);
         init[jc] = 0;
-        amos_unik(zr, fn, 2, 0, tol, &init[jc], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], &cwrk[jc][0]);
+        unik(zr, fn, 2, 0, tol, &init[jc], &phi[jc], &zeta1[jc], &zeta2[jc], &sum[jc], &cwrk[jc][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[jc] - cfn*(cfn / (zr + zeta2[jc]));
@@ -5316,14 +5318,14 @@ int amos_unk1(
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) <= elim) {
             if (kdflg == 1) { kflag = 2; }
             if (fabs(rs1) >= alim) {
                 //
                 // REFINE TEST AND SCALE
                 //
-                aphi = cabs(phi[jc]);
+                aphi = std::abs(phi[jc]);
                 rs1 += log(aphi);
                 if (fabs(rs1) > elim) { goto L10; }
                 if (kdflg == 1) { kflag = 1; }
@@ -5335,12 +5337,12 @@ int amos_unk1(
             // EXPONENT EXTREMES
             //
             s2 = phi[jc]*sum[jc];
-            c2r = creal(s1);
-            c2i = cimag(s1);
-            c2m = exp(c2r)*creal(css[kflag-1]);
-            s1 = c2m * CMPLX(cos(c2i), sin(c2i));
+            c2r = std::real(s1);
+            c2i = std::imag(s1);
+            c2m = exp(c2r)*std::real(css[kflag-1]);
+            s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
             s2 *= s1;
-            if (!((kflag == 1) && (amos_uchk(s2, bry[0], tol)))) {
+            if (!((kflag == 1) && (uchk(s2, bry[0], tol)))) {
                 cy[kdflg-1] = s2;
                 y[i-1] = s2*csr[kflag-1];
                 if (kdflg == 2) { break; }
@@ -5376,20 +5378,20 @@ L10:
         ipard = 1;
         if (mr != 0) { ipard = 0; }
         initd = 0;
-        amos_unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[2][0]);
+        unik(zr, fn, 2, ipard, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[2][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1d - cfn*(cfn / (zr + zeta2d));
         } else {
             s1 = zeta1d - zeta2d;
         }
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) <= elim) {
             if (fabs(rs1) < alim) { goto L50; }
             //
             // REFINE ESTIMATE AND TEST
             //
-            aphi = cabs(phid);
+            aphi = std::abs(phid);
             rs1 += log(aphi);
             if (fabs(rs1) < elim) { goto L50; }
         }
@@ -5418,7 +5420,7 @@ L50:
             c2 = s2*c1;
             y[i-1] = c2;
             if (kflag < 3) {
-                c2m = fmax(fabs(creal(c2)), fabs(cimag(c2)));
+                c2m = fmax(fabs(std::real(c2)), fabs(std::imag(c2)));
                 if (c2m > ascle) {
                     kflag += 1;
                     ascle = bry[kflag-1];
@@ -5441,12 +5443,12 @@ L50:
     //
     // CSPN AND CSGN ARE COEFF OF K AND I FUNCIONS RESP.
     //
-    csgn = CMPLX(0.0, sgn);
+    csgn = std::complex<double>(0.0, sgn);
     inu = (int)fnu;
     fnf = fnu - inu;
     ifn = inu + n - 1;
     ang = fnf * sgn;
-    cspn = CMPLX(cos(ang), sin(ang));
+    cspn = std::complex<double>(cos(ang), sin(ang));
     if (ifn % 2 == 1) { cspn = -cspn; }
     asc = bry[0];
     kk = n;
@@ -5479,7 +5481,7 @@ L80:
             initd = 0;
         }
 L90:
-        amos_unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[m-1][0]);
+        unik(zr, fn, 1, 0, tol, &initd, &phid, &zeta1d, &zeta2d, &sumd, &cwrk[m-1][0]);
         if (kode != 1) {
             cfn = fn;
             s1 = -zeta1d + cfn * (cfn/(zr + zeta2d));
@@ -5489,14 +5491,14 @@ L90:
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) > elim) { goto L110; }
         if (kdflg == 1) { iflag = 2; }
         if (fabs(rs1) >= alim) {
             //
             // REFINE TEST AND SCALE
             //
-            aphi = cabs(phid);
+            aphi = std::abs(phid);
             rs1 += log(aphi);
             if (fabs(rs1) > elim) { goto L110; }
             if (kdflg == 1) { iflag = 1; }
@@ -5504,12 +5506,12 @@ L90:
         }
 
         s2 = csgn * phid * sumd;
-        c2r = creal(s1);
-        c2i = cimag(s1);
-        c2m = exp(c2r) * creal(css[iflag-1]);
-        s1 = c2m * CMPLX(cos(c2i), sin(c2i));
+        c2r = std::real(s1);
+        c2i = std::imag(s1);
+        c2m = exp(c2r) * std::real(css[iflag-1]);
+        s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { s2 = 0.0; } }
 L100:
         cy[kdflg -1] = s2;
         c2 = s2;
@@ -5519,7 +5521,7 @@ L100:
         //
         s1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &s1, &s2, asc, alim, &iuf);
+            nw = s1s2(zr, &s1, &s2, asc, alim, &iuf);
             nz += nw;
         }
         y[kk-1] = s1*cspn + s2;
@@ -5557,14 +5559,14 @@ L130:
         ck = c2;
         c1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &c1, &c2, asc, alim, &iuf);
+            nw = s1s2(zr, &c1, &c2, asc, alim, &iuf);
             nz = nz + nw;
         }
         y[kk-1] = c1 * cspn + c2;
         kk -= 1;
         cspn = -cspn;
         if (iflag < 3) {
-            c2m = fmax(fabs(creal(c2)), fabs(cimag(c2)));
+            c2m = fmax(fabs(std::real(c2)), fabs(std::imag(c2)));
             if (c2m > ascle) {
                 iflag += 1;
                 ascle = bry[iflag-1];
@@ -5580,13 +5582,13 @@ L130:
 }
 
 
-int amos_unk2(
-    double complex z,
+inline int unk2(
+    std::complex<double> z,
     double fnu,
     int kode,
     int mr,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -5607,30 +5609,30 @@ int amos_unk2(
     //***ROUTINES CALLED  ZAIRY,ZKSCL,ZS1S2,ZUCHK,ZUNHJ,D1MACH,AZABS
     //***END PROLOGUE  ZUNK2
 
-    double complex ai, cfn, ck, cs, csgn, cspn, c1, c2, dai, rz, s1, s2,\
+    std::complex<double> ai, cfn, ck, cs, csgn, cspn, c1, c2, dai, rz, s1, s2,\
                  zb, zn, zr, phid, argd, zeta1d, zeta2d, asumd, bsumd;
     double aarg, ang, aphi, asc, ascle, car, cpn, c2i, c2m, c2r, crsc, cscl,\
            fmr, fn, fnf, rs1, sar, sgn, spn, x, yy;
     int i, ib, iflag = 0, ifn, il, in, inu, iuf, k, kdflg, kflag, kk, nai, ndai,\
         nw, nz, idum, j, ipard, ic;
 
-    double complex cr1 = CMPLX(1.0, 1.73205080756887729);      /*   1 + sqrt(3)i  */
-    double complex cr2 = CMPLX(-0.5, -8.66025403784438647e-1); /*      0.5 cr1    */
+    std::complex<double> cr1 = std::complex<double>(1.0, 1.73205080756887729);      /*   1 + sqrt(3)i  */
+    std::complex<double> cr2 = std::complex<double>(-0.5, -8.66025403784438647e-1); /*      0.5 cr1    */
     double hpi = 1.57079632679489662;                          /*      0.5 pi     */
     double pi = 3.14159265358979324;
     double aic = 1.26551212348464539;                          /* log(2 sqrt(pi)) */
-    double complex cip[4] = {1.0, -I, -1.0, I};
+    std::complex<double> cip[4] = {1.0, -std::complex<double>(0, 1), -1.0, std::complex<double>(0, 1)};
     cscl = 1.0 / tol;
     crsc = tol;
-    double complex css[3] = {cscl, 1.0, crsc };
-    double complex csr[3] = {crsc, 1.0, cscl };
-    double complex phi[2] = { 0.0 };
-    double complex arg[2] = { 0.0 };
-    double complex zeta1[2] = { 0.0 };
-    double complex zeta2[2] = { 0.0 };
-    double complex asum[2] = { 0.0 };
-    double complex bsum[2] = { 0.0 };
-    double complex cy[2] = { 0.0 };
+    std::complex<double> css[3] = {cscl, 1.0, crsc };
+    std::complex<double> csr[3] = {crsc, 1.0, cscl };
+    std::complex<double> phi[2] = { 0.0 };
+    std::complex<double> arg[2] = { 0.0 };
+    std::complex<double> zeta1[2] = { 0.0 };
+    std::complex<double> zeta2[2] = { 0.0 };
+    std::complex<double> asum[2] = { 0.0 };
+    std::complex<double> bsum[2] = { 0.0 };
+    std::complex<double> cy[2] = { 0.0 };
     double bry[3] = { (1.0 + 1e3*d1mach[0] / tol), 1.0/(1.0 + 1e3*d1mach[0] / tol), d1mach[1]};
 
     kdflg = 1;
@@ -5641,11 +5643,11 @@ int amos_unk2(
     // EXP(-ALIM)=EXP(-ELIM)/TOL=APPROX. ONE PRECISION GREATER THAN
     // THE UNDERFLOW LIMIT
     //
-    x = creal(z);
+    x = std::real(z);
     zr = z;
     if (x < 0.0) { zr = -z; }
-    yy = cimag(zr);
-    zn = -zr*I;
+    yy = std::imag(zr);
+    zn = -zr*std::complex<double>(0, 1);
     zb = zr;
     inu = (int)fnu;
     fnf = fnu - inu;
@@ -5654,7 +5656,7 @@ int amos_unk2(
     sar = sin(ang);
     cpn = hpi * car;
     spn = hpi * sar;
-    c2 = CMPLX(spn, -cpn);
+    c2 = std::complex<double>(spn, -cpn);
     kk = (inu % 4) + 1;
     cs = cr1 * c2 * cip[kk - 1];
     if (yy <= 0.0) {
@@ -5671,7 +5673,7 @@ int amos_unk2(
     {
         j = 3 - j;
         fn = fnu + (i-1);
-        amos_unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1], &bsum[j-1]);
+        unhj(zn, fn, 0, tol, &phi[j-1], &arg[j-1], &zeta1[j-1], &zeta2[j-1], &asum[j-1], &bsum[j-1]);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1[j-1] - cfn*(cfn/(zb + zeta2[j-1]));
@@ -5681,15 +5683,15 @@ int amos_unk2(
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) <= elim) {
             if (kdflg == 1) { kflag = 2; }
             if (fabs(rs1) >= alim) {
                 //
                 // REFINE TEST AND SCALE
                 //
-                aphi = cabs(phi[j-1]);
-                aarg = cabs(arg[j-1]);
+                aphi = std::abs(phi[j-1]);
+                aarg = std::abs(arg[j-1]);
                 rs1 += log(aphi) - 0.25 * log(aarg) - aic;
                 if (fabs(rs1) > elim) {
                     /* GO TO 70 */
@@ -5698,7 +5700,7 @@ int amos_unk2(
                     if (x < 0.0) { return -1; }
                     kdflg = 1;
                     y[i-1] = 0.0;
-                    cs *= -I;
+                    cs *= -std::complex<double>(0, 1);
                     nz += 1;
                     if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
                     continue;
@@ -5711,23 +5713,23 @@ int amos_unk2(
             // EXPONENT EXTREMES
             //
             c2 = arg[j-1] * cr2;
-            ai = amos_airy(c2, 0, 2, &nai, &idum);
-            dai = amos_airy(c2, 1, 2, &ndai, &idum);
+            ai = airy(c2, 0, 2, &nai, &idum);
+            dai = airy(c2, 1, 2, &ndai, &idum);
             s2 = cs * phi[j-1] * (ai*asum[j-1] + cr2*dai*bsum[j-1]);
-            c2r = creal(s1);
-            c2i = cimag(s1);
-            c2m = exp(c2r) * creal(css[kflag-1]);
-            s1 = c2m * CMPLX(cos(c2i), sin(c2i));
+            c2r = std::real(s1);
+            c2i = std::imag(s1);
+            c2m = exp(c2r) * std::real(css[kflag-1]);
+            s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
             s2 *= s1;
             if (kflag == 1) {
-                if (amos_uchk(s2, bry[0], tol)) {
+                if (uchk(s2, bry[0], tol)) {
                     /* GO TO 70 */
                     if (rs1 > 0.0) { return -1; }
                     /* FOR X < 0.0, THE I FUNCTION TO BE ADDED WILL OVERFLOW */
                     if (x < 0.0) { return -1; }
                     kdflg = 1;
                     y[i-1] = 0.0;
-                    cs *= -I;
+                    cs *= -std::complex<double>(0, 1);
                     nz += 1;
                     if (i != 1) { if (y[i-2] != 0.0) { y[i-2] = 0.0;nz += 1; } }
                     continue;
@@ -5736,7 +5738,7 @@ int amos_unk2(
             if (yy <= 0.0) { s2 = conj(s2); }
             cy[kdflg-1] = s2;
             y[i-1] = s2 * csr[kflag-1];
-            cs *= -I;
+            cs *= -std::complex<double>(0, 1);
             if (kdflg == 2) { break; }
             kdflg = 2;
             continue;
@@ -5752,21 +5754,21 @@ int amos_unk2(
         fn = fnu + (n - 1);
         ipard = 1;
         if (mr != 0) { ipard = 0; }
-        amos_unhj(zn, fn, ipard, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
+        unhj(zn, fn, ipard, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
         if (kode != 1) {
             cfn = fn;
             s1 = zeta1d - cfn * (cfn / (zb + zeta2d));
         } else {
             s1 = zeta1d - zeta2d;
         }
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) <= elim) {
             if (fabs(rs1) < alim) { goto L120; }
             //
             // REFINE ESTIMATE AND TEST
             //
-            aphi = cabs(phid);
-            aarg = cabs(argd);
+            aphi = std::abs(phid);
+            aarg = std::abs(argd);
             rs1 += log(aphi) - 0.25 * log(aarg) - aic;
             if (fabs(rs1) < elim) { goto L120; }
         }
@@ -5795,7 +5797,7 @@ L120:
             c2 = s2 * c1;
             y[i-1] = c2;
             if (kflag < 3) {
-                c2m = fmax(fabs(creal(c2)), fabs(cimag(c2)));
+                c2m = fmax(fabs(std::real(c2)), fabs(std::imag(c2)));
                 if (c2m > ascle) {
                     kflag += 1;
                     ascle = bry[kflag-1];
@@ -5818,11 +5820,11 @@ L120:
     //
     // CSPN AND CSGN ARE COEFF OF K AND I FUNCTIONS RESP.
     //
-    csgn = CMPLX(0.0, sgn);
+    csgn = std::complex<double>(0.0, sgn);
     if (yy <= 0.0) { csgn = -csgn; }
     ifn = inu + n - 1;
     ang = fnf*sgn;
-    cspn = CMPLX(cos(ang), sin(ang));
+    cspn = std::complex<double>(cos(ang), sin(ang));
     if (ifn % 2 == 1) { cspn = -cspn; }
     //
     // CS=COEFF OF THE J FUNCTION TO GET THE I FUNCTION.  I(FNU,Z) IS
@@ -5830,7 +5832,7 @@ L120:
     // QUADRANT.  FOURTH QUADRANT VALUES (YY <= 0.0_dp) ARE COMPUTED BY
     // CONJUGATION SINCE THE I FUNCTION IS REAL ON THE POSITIVE REAL AXIS
     //
-    cs = CMPLX(car, -sar) * csgn;
+    cs = std::complex<double>(car, -sar) * csgn;
     in = (ifn % 4) + 1;
     c2 = cip[in-1];
     cs *= conj(c2);
@@ -5855,7 +5857,7 @@ L172:
 L175:
         if (!((kk == n) && (ib < n))) {
             if ((kk == ib) || (kk == ic)) { goto L172; }
-            amos_unhj(zn, fn, 0, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
+            unhj(zn, fn, 0, tol, &phid, &argd, &zeta1d, &zeta2d, &asumd, &bsumd);
         }
 L210:
         if (kode != 1) {
@@ -5867,7 +5869,7 @@ L210:
         //
         // TEST FOR UNDERFLOW AND OVERFLOW
         //
-        rs1 = creal(s1);
+        rs1 = std::real(s1);
         if (fabs(rs1) > elim) {
             if (rs1 > 0.0) { return -1; }
             s2 = 0.0;
@@ -5878,8 +5880,8 @@ L210:
             //
             // REFINE  TEST AND SCALE
             //
-            aphi = cabs(phid);
-            aarg = cabs(argd);
+            aphi = std::abs(phid);
+            aarg = std::abs(argd);
             rs1 += log(aphi) - 0.25f * log(aarg) - aic;
             if (fabs(rs1) > elim) {
                 if (rs1 > 0.0) { return -1; }
@@ -5890,15 +5892,15 @@ L210:
             if (rs1 >= 0.0) { if (kdflg == 1) {iflag = 3;} }
         }
 
-        ai = amos_airy(argd, 0, 2, &nai, &idum);
-        dai = amos_airy(argd, 1, 2, &ndai, &idum);
+        ai = airy(argd, 0, 2, &nai, &idum);
+        dai = airy(argd, 1, 2, &ndai, &idum);
         s2 = cs * phid * (ai*asumd + dai*bsumd);
-        c2r = creal(s1);
-        c2i = cimag(s1);
-        c2m = exp(c2r) * creal(css[iflag-1]);
-        s1 = c2m * CMPLX(cos(c2i), sin(c2i));
+        c2r = std::real(s1);
+        c2i = std::imag(s1);
+        c2m = exp(c2r) * std::real(css[iflag-1]);
+        s1 = c2m * std::complex<double>(cos(c2i), sin(c2i));
         s2 *= s1;
-        if (iflag == 1) { if (amos_uchk(s2, bry[0], tol)) { s2 = 0.0; } }
+        if (iflag == 1) { if (uchk(s2, bry[0], tol)) { s2 = 0.0; } }
 L250:
         if (yy <= 0.0) { s2 = conj(s2); }
         cy[kdflg-1] = s2;
@@ -5909,13 +5911,13 @@ L250:
         //
         s1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &s1, &s2, asc, alim, &iuf);
+            nw = s1s2(zr, &s1, &s2, asc, alim, &iuf);
             nz += nw;
         }
         y[kk-1] = s1 * cspn + s2;
         kk -= 1;
         cspn = -cspn;
-        cs *= -I;
+        cs *= -std::complex<double>(0, 1);
         if (c2 == 0.0) {
             kdflg = 1;
             continue;
@@ -5948,14 +5950,14 @@ L250:
         ck = c2;
         c1 = y[kk-1];
         if (kode != 1) {
-            nw = amos_s1s2(zr, &c1, &c2, asc, alim, &iuf);
+            nw = s1s2(zr, &c1, &c2, asc, alim, &iuf);
             nz = nz + nw;
         }
         y[kk-1] = c1 * cspn + c2;
         kk -= 1;
         cspn = -cspn;
         if (iflag < 3) {
-            c2m = fmax(fabs(creal(ck)), fabs(cimag(ck)));
+            c2m = fmax(fabs(std::real(ck)), fabs(std::imag(ck)));
             if (c2m > ascle) {
                 iflag += 1;
                 ascle = bry[iflag-1];
@@ -5971,13 +5973,13 @@ L250:
 }
 
 
-int amos_uoik(
-    double complex z,
+inline int uoik(
+    std::complex<double> z,
     double fnu,
     int kode,
     int ikflg,
     int n,
-    double complex *y,
+    std::complex<double> *y,
     double tol,
     double elim,
     double alim
@@ -6009,20 +6011,20 @@ int amos_uoik(
     //***ROUTINES CALLED  ZUCHK,ZUNHJ,ZUNIK,D1MACH,AZABS,AZLOG
     //***END PROLOGUE  ZUOIK
 
-    double complex arg, asum, bsum, cz, phi, sum, zb, zeta1;
-    double complex zeta2, zn, zr;
+    std::complex<double> arg, asum, bsum, cz, phi, sum, zb, zeta1;
+    std::complex<double> zeta2, zn, zr;
     double aarg, aphi, ascle, ax, ay, fnn, gnn, gnu, rcz, x, yy;
     int iform, init, nn;
     double aic = 1.265512123484645396;
-    double complex cwrk[16] = { 0. };
+    std::complex<double> cwrk[16] = { 0. };
 
     int nuf = 0;
     nn = n;
-    x = creal(z);
+    x = std::real(z);
     zr = z;
     if (x < 0.) { zr = -z; }
     zb = zr;
-    yy = cimag(zr);
+    yy = std::imag(zr);
     ax = fabs(x) * sqrt(3.);
     ay = fabs(yy);
     iform = 1;
@@ -6036,21 +6038,21 @@ int amos_uoik(
 
     if (iform != 2) {
         init = 0;
-        amos_unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+        unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
         cz = -zeta1 + zeta2;
     } else {
-        zn = -zr * I;
+        zn = -zr * std::complex<double>(0, 1);
         if (yy <= 0.) {
             zn = conj(zn);
         }
-        amos_unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+        unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
         cz = zeta2 - zeta1;
-        aarg = cabs(arg);
+        aarg = std::abs(arg);
     }
     if (kode == 2) { cz -= zb; }
     if (ikflg == 2) { cz = -cz; }
-    aphi = cabs(phi);
-    rcz = creal(cz);
+    aphi = std::abs(phi);
+    rcz = std::real(cz);
 
     /*  OVERFLOW TEST  */
     if (rcz > elim) { return -1; }
@@ -6069,12 +6071,12 @@ int amos_uoik(
                 if (rcz > -elim) {
                     /* goto 30 */
                     ascle = 1e3*d1mach[0] / tol;
-                    cz += clog(phi);
+                    cz += std::log(phi);
                     if (iform != 1) { cz -= 0.25*log(arg) + aic;}
                     ax = exp(rcz) / tol;
-                    ay = cimag(cz);
-                    cz = ax*(cos(ay)+sin(ay)*I);
-                    if (amos_uchk(cz, ascle, tol)) {
+                    ay = std::imag(cz);
+                    cz = ax*std::exp(ay);
+                    if (uchk(cz, ascle, tol)) {
                         for (int i = 0; i < nn; i++){ y[i] = 0.; }
                         return nn;
                     }
@@ -6094,18 +6096,18 @@ int amos_uoik(
         gnu = fnu + (nn -1);
         if (iform != 2) {
             init = 0;
-            amos_unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
+            unik(zr, gnu, ikflg, 1, tol, &init, &phi, &zeta1, &zeta2, &sum, &cwrk[0]);
             cz = zeta2 - zeta1;
         } else {
-            amos_unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
+            unhj(zn, gnu, 1, tol, &phi, &arg, &zeta1, &zeta2, &asum, &bsum);
             cz = zeta2 - zeta1;
-            aarg = cabs(phi);
+            aarg = std::abs(phi);
         }
         if (kode == 2) { cz -= zb; }
 
         /* 170 */
-        aphi = cabs(phi);
-        rcz = creal(cz);
+        aphi = std::abs(phi);
+        rcz = std::real(cz);
 
         if (rcz >= -elim) {
             if (rcz > -alim) { return nuf; }
@@ -6113,12 +6115,12 @@ int amos_uoik(
             if (iform == 2) { rcz -= 0.25*log(aarg) + aic; }
             if (rcz > -elim) {
                 ascle = 1e3 * d1mach[0] / tol;
-                cz = clog(phi);
-                if (iform != 1) { cz -= 0.25*clog(arg) + aic; }
+                cz = std::log(phi);
+                if (iform != 1) { cz -= 0.25*std::log(arg) + aic; }
                 ax = exp(rcz)/tol;
-                ay = cimag(cz);
-                cz = ax*(cos(ay)+sin(ay*I));
-                if (!(amos_uchk(cz, ascle, tol))) { return nuf; }
+                ay = std::imag(cz);
+                cz = ax*(cos(ay)+sin(ay*std::complex<double>(0, 1)));
+                if (!(uchk(cz, ascle, tol))) { return nuf; }
             }
         }
 
@@ -6131,13 +6133,13 @@ int amos_uoik(
 }
 
 
-int amos_wrsk(
-    double complex zr,
+inline int wrsk(
+    std::complex<double> zr,
     double fnu,
     int kode,
     int n,
-    double complex *y,
-    double complex *cw,
+    std::complex<double> *y,
+    std::complex<double> *cw,
     double tol,
     double elim,
     double alim
@@ -6152,7 +6154,7 @@ int amos_wrsk(
     //***ROUTINES CALLED  D1MACH,ZBKNU,ZRATI,AZABS
     //***END PROLOGUE  ZWRSK
 
-   double complex cinu, cscl, ct, c1, c2, rct, st;
+   std::complex<double> cinu, cscl, ct, c1, c2, rct, st;
    double act, acw, ascle, yy;
    int i, nw, nz;
 
@@ -6162,7 +6164,7 @@ int amos_wrsk(
     // WRONSKIAN WITH K(FNU,Z) AND K(FNU+1,Z) FROM CBKNU.
     //
     nz = 0;
-    nw = amos_bknu(zr, fnu, kode, 2, cw, tol, elim, alim);
+    nw = bknu(zr, fnu, kode, 2, cw, tol, elim, alim);
     if (nw != 0) {
         /* 50 */
         nz = -1;
@@ -6171,15 +6173,15 @@ int amos_wrsk(
         }
         return nz;
     }
-    amos_rati(zr, fnu, n, y, tol);
+    rati(zr, fnu, n, y, tol);
     //
     // RECUR FORWARD ON I(FNU+1,Z) = R(FNU,Z)*I(FNU,Z),
     // R(FNU+J-1,Z)=Y(J),  J=1,...,N
     //
     cinu = 1.0;
     if (kode != 1) {
-        yy = cimag(zr);
-        cinu = CMPLX(cos(yy), sin(yy));
+        yy = std::imag(zr);
+        cinu = std::complex<double>(cos(yy), sin(yy));
     }
     //
     // ON LOW EXPONENT MACHINES THE K FUNCTIONS CAN BE CLOSE TO BOTH THE
@@ -6187,7 +6189,7 @@ int amos_wrsk(
     // PREVENT OVER OR UNDERFLOW.  CUOIK HAS DETERMINED THAT THE RESULT
     // IS ON SCALE.
     //
-    acw = cabs(cw[1]);
+    acw = std::abs(cw[1]);
     ascle = 1e3*d1mach[0]/tol;
     cscl = 1.0;
 
@@ -6208,7 +6210,7 @@ int amos_wrsk(
     // UNDER- OR OVERFLOW PREMATURELY BY SQUARING ABS(CT)
     //
     ct = zr * (c2 + st*c1);
-    act = cabs(ct);
+    act = std::abs(ct);
     rct = 1.0 / act;
     ct = conj(ct)*rct;
     cinu *= ct*rct;
@@ -6220,4 +6222,7 @@ int amos_wrsk(
         y[i-1] = cinu*cscl;
     }
     return nz;
+}
+
+}
 }

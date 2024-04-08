@@ -499,6 +499,29 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_neldermead_x0_ub(self):
+        # checks whether minimisation occurs correctly for entries where
+        # x0 == ub
+        # gh19991
+        def quad(x):
+            return np.sum(x**2)
+
+        res = optimize.minimize(
+            quad,
+            [1],
+            bounds=[(0, 1.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0])
+
+        res = optimize.minimize(
+            quad,
+            [1, 2],
+            bounds=[(0, 1.), (1, 3.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0, 1])
+
     def test_ncg_negative_maxiter(self):
         # Regression test for gh-8241
         opts = {'maxiter': -1}
@@ -506,6 +529,24 @@ class CheckOptimizeParameterized(CheckOptimize):
                                    method='Newton-CG', jac=self.grad,
                                    args=(), options=opts)
         assert result.status == 1
+
+    def test_ncg_zero_xtol(self):
+        # Regression test for gh-20214
+        def cosine(x):
+            return np.cos(x[0])
+
+        def jac(x):
+            return -np.sin(x[0])
+
+        x0 = [0.1]
+        xtol = 0
+        result = optimize.minimize(cosine,
+                                   x0=x0,
+                                   jac=jac,
+                                   method="newton-cg",
+                                   options=dict(xtol=xtol))
+        assert result.status == 0
+        assert_almost_equal(result.x[0], np.pi)
 
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine

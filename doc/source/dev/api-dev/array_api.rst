@@ -1,7 +1,7 @@
 Support for the array API standard
 ==================================
 
-.. note:: array API standard support is still experimental and hidden behind an
+.. note:: Array API standard support is still experimental and hidden behind an
           environment variable. Only a small part of the public API is covered
           right now.
 
@@ -114,7 +114,7 @@ functions for Numpy, CuPy and PyTorch is provided through
 This package is included in the SciPy code base via a git submodule (under
 ``scipy/_lib``), so no new dependencies are introduced.
 
-``array-api_compat`` provides generic utility functions and adds aliases such
+``array-api-compat`` provides generic utility functions and adds aliases such
 as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
 using a uniform API across NumPy, PyTorch and CuPy (as of right now; support
 for other libraries like JAX is expected to be added in the future).
@@ -144,12 +144,14 @@ Three helper functions are available:
 * ``array_namespace``: return the namespace based on input arrays and do some
   input validation (like refusing to work with masked arrays, please see the
   `RFC`_.)
-* ``_asarray``: a drop-in replacement for ``np.asarray`` with additional
-  features like ``copy, check_finite``. As stated above, try to limit the use
-  of non standard features. In the end we would want to upstream our needs to
-  the compatibility library. Passing ``xp=xp`` avoids duplicate calls of
-  ``array_namespace`` internally.
-* ``copy``: an alias for ``_asarray(x, copy=True)``. Passing ``xp=xp`` avoids
+* ``_asarray``: a drop-in replacement for ``asarray`` with the additional
+  parameters ``check_finite`` and ``order``. As stated above, try to limit
+  the use of non-standard features. In the end we would want to upstream our
+  needs to the compatibility library. Passing ``xp=xp`` avoids duplicate calls
+  of ``array_namespace`` internally.
+* ``copy``: an alias for ``_asarray(x, copy=True)``.
+  The ``copy`` parameter was only introduced to ``np.asarray`` in NumPy 2.0,
+  so use of the helper is needed to support ``<2.0``. Passing ``xp=xp`` avoids
   duplicate calls of ``array_namespace`` internally.
 
 To add support to a SciPy function which is defined in a ``.py`` file, what you
@@ -162,7 +164,12 @@ have to change is:
 
 Input array validation uses the following pattern::
 
-   xp = array_namespace(arr)  # where `arr` is the first input array
+   xp = array_namespace(arr) # where arr is the input array 
+   # alternatively, if there are multiple array inputs, include them all:
+   xp = array_namespace(arr1, arr2)
+
+   # uses of non-standard parameters of np.asarray can be replaced with _asarray
+   arr = _asarray(arr, order='C', dtype=xp.float64, xp=xp)
 
 Note that if one input is a non-numpy array type, all array-like inputs have to
 be of that type; trying to mix non-numpy arrays with lists, Python scalars or
@@ -223,29 +230,29 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_if_array_api(*backends, reasons=None, np_only=False, cpu_only=False)``:
+* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False)``:
   skip certain backends and/or devices. ``np_only`` skips tests for all backends
   other than the default NumPy backend.
-  ``@pytest.mark.usefixtures("skip_if_array_api")`` must be used alongside this
+  ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
   marker for the skipping to apply.
 
 The following is an example using the markers::
 
   from scipy.conftest import array_api_compatible
   ...
-  @pytest.mark.skip_if_array_api(np_only=True,
+  @pytest.mark.skip_xp_backends(np_only=True,
                                  reasons=['skip reason'])
-  @pytest.mark.usefixtures("skip_if_array_api")
+  @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
       toto(a, b)
   ...
-  @pytest.mark.skip_if_array_api('array_api_strict', 'cupy',
+  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
                                  reasons=['skip reason 1',
                                           'skip reason 2',])
-  @pytest.mark.usefixtures("skip_if_array_api")
+  @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto2(self, xp):
       a = xp.asarray([1, 2, 3])
@@ -263,10 +270,10 @@ markers to every test function using ``pytestmark``::
 
     from scipy.conftest import array_api_compatible
     
-    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-    skip_if_array_api = pytest.mark.skip_if_array_api
+    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+    skip_xp_backends = pytest.mark.skip_xp_backends
     ...
-    @skip_if_array_api(np_only=True, reasons=['skip reason'])
+    @skip_xp_backends(np_only=True, reasons=['skip reason'])
     def test_toto1(self, xp):
         a = xp.asarray([1, 2, 3])
         b = xp.asarray([0, 2, 5])

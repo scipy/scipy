@@ -85,7 +85,7 @@ npyrandom_path = _incdir_numpy_abs / '..' / '..' / 'random' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
 
-pybind11_dep = dependency('pybind11', version: '>=2.10.4')
+pybind11_dep = dependency('pybind11', version: '>=2.12.0')
 
 # Pythran include directory and build flags
 if use_pythran
@@ -199,16 +199,16 @@ uses_mkl = blas.name().to_lower().startswith('mkl') or lapack.name().to_lower().
 uses_accelerate = blas.name().to_lower().startswith('accelerate') or lapack.name().to_lower().startswith('accelerate')
 use_g77_abi = uses_mkl or uses_accelerate or get_option('use-g77-abi')
 if use_g77_abi
-  g77_abi_wrappers = declare_dependency(
-    sources: ['_build_utils/src/wrap_g77_abi.c'],
-    include_directories: inc_np,
-    dependencies: [py3_dep, cblas],
+  g77_abi_wrappers = static_library(
+    'g77_abi_wrappers',
+    ['_build_utils/src/wrap_g77_abi.c'],
+    dependencies: [py3_dep, cblas, blas, np_dep],
   )
 else
-  g77_abi_wrappers = declare_dependency(
-    sources: ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    include_directories: inc_np,
-    dependencies: [py3_dep],
+  g77_abi_wrappers = static_library(
+    'dummy_g77_abi_wrappers',
+    ['_build_utils/src/wrap_dummy_g77_abi.c'],
+    dependencies: [py3_dep, blas, np_dep],
   )
 endif
 

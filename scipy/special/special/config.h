@@ -1,8 +1,5 @@
 #pragma once
 
-#ifdef __CUDACC__
-#define SPECFUN_HOST_DEVICE __host__ __device__
-
 // Define math constants if they are not available
 #ifndef M_E
 #define M_E 2.71828182845904523536
@@ -56,6 +53,9 @@
 #define M_SQRT1_2 0.707106781186547524401
 #endif
 
+#ifdef __CUDACC__
+#define SPECFUN_HOST_DEVICE __host__ __device__
+
 #include <cuda/std/cmath>
 #include <cuda/std/limits>
 
@@ -74,6 +74,8 @@ SPECFUN_HOST_DEVICE inline double log(double num) { return cuda::std::log(num); 
 
 SPECFUN_HOST_DEVICE inline double sqrt(double num) { return cuda::std::sqrt(num); }
 
+SPECFUN_HOST_DEVICE inline bool isinf(double num) { return cuda::std::isinf(num); }
+
 SPECFUN_HOST_DEVICE inline bool isnan(double num) { return cuda::std::isnan(num); }
 
 SPECFUN_HOST_DEVICE inline bool isfinite(double num) { return cuda::std::isfinite(num); }
@@ -81,6 +83,8 @@ SPECFUN_HOST_DEVICE inline bool isfinite(double num) { return cuda::std::isfinit
 SPECFUN_HOST_DEVICE inline double pow(double x, double y) { return cuda::std::pow(x, y); }
 
 SPECFUN_HOST_DEVICE inline double sin(double x) { return cuda::std::sin(x); }
+
+SPECFUN_HOST_DEVICE inline double cos(double x) { return cuda::std::cos(x); }
 
 SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
 
@@ -98,7 +102,9 @@ SPECFUN_HOST_DEVICE inline double trunc(double x) { return cuda::std::trunc(x); 
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return cuda::std::fma(x, y, z); }
 SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return cuda::std::copysign(x, y); }
 SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return cuda::std::modf(value, iptr); }
-
+SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::fmax(x, y); }
+SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
+SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
@@ -106,6 +112,9 @@ SPECFUN_HOST_DEVICE inline double trunc(double x) { return ::trunc(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return ::fma(x, y, z); }
 SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return ::copysign(x, y); }
 SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return ::modf(value, iptr); }
+SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y); }
+SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
+SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
 #endif
 
 template <typename T>

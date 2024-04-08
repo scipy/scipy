@@ -28,8 +28,8 @@ def pytest_configure(config):
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
     config.addinivalue_line("markers",
-        "skip_if_array_api(*backends, reasons=None, np_only=False, cpu_only=False): "
-        "mark the desired skip configuration for the `skip_if_array_api` fixture.")
+        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
+        "mark the desired skip configuration for the `skip_xp_backends` fixture.")
 
 
 def _get_mark(item, name):
@@ -153,9 +153,9 @@ array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.value
 
 
 @pytest.fixture
-def skip_if_array_api(xp, request):
+def skip_xp_backends(xp, request):
     """
-    Skip based on the ``skip_if_array_api`` marker.
+    Skip based on the ``skip_xp_backends`` marker.
 
     Parameters
     ----------
@@ -180,10 +180,10 @@ def skip_if_array_api(xp, request):
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
     """
-    if "skip_if_array_api" not in request.keywords:
+    if "skip_xp_backends" not in request.keywords:
         return
-    backends = request.keywords["skip_if_array_api"].args
-    kwargs = request.keywords["skip_if_array_api"].kwargs
+    backends = request.keywords["skip_xp_backends"].args
+    kwargs = request.keywords["skip_xp_backends"].kwargs
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
     if np_only:

@@ -40,6 +40,8 @@ changed_installed_path = {
 # If this list gets too annoying, we should implement excluding directories
 # rather than (or in addition to) files.
 exception_list_test_files = [
+    "_lib/array_api_compat/tests/test_all.py",
+    "_lib/array_api_compat/tests/test_array_namespace.py",
     "_lib/array_api_compat/tests/test_common.py",
     "_lib/array_api_compat/tests/test_isdtype.py",
     "_lib/array_api_compat/tests/test_vendoring.py",

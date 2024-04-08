@@ -797,6 +797,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     if bounds is not None:
+        # The default simplex construction may make all entries (for a given
+        # parameter) greater than an upper bound if x0 is very close to the
+        # upper bound. If one simply clips the simplex to the bounds this could
+        # make the simplex entries degenerate. If that occurs reflect into the
+        # interior.
+        msk = sim > upper_bound
+        # reflect into the interior
+        sim = np.where(msk, 2*upper_bound - sim, sim)
+        # but make sure the reflection is no less than the lower_bound
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
@@ -2025,7 +2034,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
-    update_l1norm = 2 * xtol
+    # Make sure we enter the while loop.
+    update_l1norm = np.finfo(float).max
     xk = np.copy(x0)
     if retall:
         allvecs = [xk]
@@ -2116,7 +2126,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         update_l1norm = np.linalg.norm(update, ord=1)
 
     else:
-        if np.isnan(old_fval) or np.isnan(update).any():
+        if np.isnan(old_fval) or np.isnan(update_l1norm):
             return terminate(3, _status_message['nan'])
 
         msg = _status_message['success']
