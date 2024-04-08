@@ -113,7 +113,6 @@ sf_error_state_lib = shared_library('sf_error_state',
 
 ufuncs_sources = [
   '_cosine.c',
-  'cdflib.c',
   'scaled_exp1.c',
   'amos_wrappers.cpp',
   'specfun_wrappers.cpp',
@@ -134,6 +133,11 @@ cephes_lib = static_library('cephes',
   c_args: use_math_defines,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, np_dep],
+)
+
+cdflib_lib = static_library('cdflib',
+  'cdflib.c',
+  include_directories: ['../_lib', '../_build_utils/src'],
 )
 
 py3.extension_module('_special_ufuncs',
@@ -213,7 +217,8 @@ py3.extension_module('_ufuncs',
   link_args: version_link_args,
   link_with: [
     sf_error_state_lib,
-    cephes_lib
+    cephes_lib,
+    cdflib_lib
   ],
   install: true,
   subdir: 'scipy/special',
@@ -275,7 +280,6 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
-    'cdflib.c',
     'scaled_exp1.c',
     'amos_wrappers.cpp',
     'specfun_wrappers.cpp',
@@ -287,7 +291,8 @@ py3.extension_module('cython_special',
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     sf_error_state_lib,
-    cephes_lib
+    cephes_lib,
+    cdflib_lib
   ],
   install: true,
   subdir: 'scipy/special',
