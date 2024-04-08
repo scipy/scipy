@@ -177,8 +177,6 @@ namespace cephes {
          * Starts to converge roughly at |n| > |z|
          */
         SPECFUN_HOST_DEVICE inline double struve_power_series(double v, double z, int is_h, double *err) {
-            using special::dd_real::double_double;
-
             int n, sgn;
             double term, sum, maxterm, scaleexp, tmp;
             double_double cterm, csum, cdiv, z2, c2v, ctmp;
@@ -279,7 +277,7 @@ namespace cephes {
                 if (std::abs(term) > maxterm) {
                     maxterm = std::abs(term);
                 }
-                if (std::abs(term) < STRUVE_SUM_EPS * std::abs(sum) || term == 0 || !isfinite(sum)) {
+                if (std::abs(term) < STRUVE_SUM_EPS * std::abs(sum) || term == 0 || !std::isfinite(sum)) {
                     break;
                 }
             }

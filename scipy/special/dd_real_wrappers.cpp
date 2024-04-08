@@ -7,8 +7,7 @@
 #include "dd_real_wrappers.h"
 #include "special/cephes/dd_real.h"
 
-using special::dd_real::double_double;
-
+using special::cephes::detail::double_double;
 
 double2 dd_create_d(double x) {
     return {x, 0.0};
@@ -41,13 +40,13 @@ double2 dd_div(const double2* a, const double2* b) {
 
 double2 dd_exp(const double2* x) {
     double_double dd_x(x->hi, x->lo);
-    double_double result = special::dd_real::exp(dd_x);
+    double_double result = special::cephes::detail::exp(dd_x);
     return {result.hi, result.lo};
 }
 
 double2 dd_log(const double2* x) {
     double_double dd_x(x->hi, x->lo);
-    double_double result = special::dd_real::log(dd_x);
+    double_double result = special::cephes::detail::log(dd_x);
     return {result.hi, result.lo};
 }
 

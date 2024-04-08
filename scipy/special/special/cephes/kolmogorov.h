@@ -405,13 +405,12 @@ namespace cephes {
              * Compute floor(n*x) and remainder *exactly*.
              * If remainder is too close to 1 (E.g. (1, -std::numeric_limits<double>::epsilon()/2))
              *  round up and adjust   */
-            using special::dd_real::double_double;
             double_double alphaD, nxD, nxfloorD;
             int nxfloor;
             double alpha;
 
             nxD = static_cast<double>(n) * double_double(x);
-            nxfloorD = dd_real::floor(nxD);
+            nxfloorD = floor(nxD);
             alphaD = nxD - nxfloorD;
             alpha = alphaD.hi;
             nxfloor = static_cast<int>(nxfloorD);
@@ -434,23 +433,21 @@ namespace cephes {
          *  I.e a Mantissa/significand, and an exponent.
          *  Cman lies between 0.5 and 1, and the exponent has >=32-bit.
          */
-        SPECFUN_HOST_DEVICE inline void updateBinomial(dd_real::double_double *Cman, int *Cexpt, int n, int j) {
-            using special::dd_real::double_double;
+        SPECFUN_HOST_DEVICE inline void updateBinomial(double_double *Cman, int *Cexpt, int n, int j) {
             int expt;
             double_double rat = double_double(n - j) / (j + 1.0);
             double_double man2 = *Cman * rat;
-            man2 = dd_real::frexp(man2, &expt);
+            man2 = frexp(man2, &expt);
             SPECFUN_ASSERT(man2 != 0.0);
             *Cexpt += expt;
             *Cman = man2;
         }
 
-        SPECFUN_HOST_DEVICE dd_real::double_double pow_D(const dd_real::double_double &a, int m) {
+        SPECFUN_HOST_DEVICE double_double pow_D(const double_double &a, int m) {
             /*
              * Using dd_npwr() here would be quite time-consuming.
              * Tradeoff accuracy-time by using pow().
              */
-            using special::dd_real::double_double;
 
             double ans, r, adj;
             if (m <= 0) {
@@ -478,7 +475,7 @@ namespace cephes {
         }
 
         SPECFUN_HOST_DEVICE inline double pow2(double a, double b, int m) {
-            return static_cast<double>(pow_D(dd_real::double_double(a) + b, m));
+            return static_cast<double>(pow_D(double_double(a) + b, m));
         }
 
         /*
@@ -487,11 +484,9 @@ namespace cephes {
          */
         constexpr int SM_MAX_EXPONENT = 960;
 
-        SPECFUN_HOST_DEVICE dd_real::double_double pow2Scaled_D(const dd_real::double_double &a, int m,
+        SPECFUN_HOST_DEVICE double_double pow2Scaled_D(const double_double &a, int m,
                                                                 int *pExponent) {
             /* Compute a^m = significand*2^expt and return as (significand, expt) */
-            using special::dd_real::double_double;
-            using special::dd_real::frexp;
             double_double ans, y;
             int ansE, yE;
             int maxExpt = SM_MAX_EXPONENT;
@@ -552,9 +547,8 @@ namespace cephes {
             return ans;
         }
 
-        SPECFUN_HOST_DEVICE inline dd_real::double_double pow4_D(double a, double b, double c, double d, int m) {
+        SPECFUN_HOST_DEVICE inline double_double pow4_D(double a, double b, double c, double d, int m) {
             /* Compute ((a+b)/(c+d)) ^ m */
-            using special::dd_real::double_double;
             double_double A, C, X;
             if (m <= 0) {
                 if (m == 0) {
@@ -565,27 +559,26 @@ namespace cephes {
             A = double_double(a) + b;
             C = double_double(c) + d;
             if (A == 0.0) {
-                return (C == 0.0) ? dd_real::quiet_NaN() : double_double(0.0);
+                return (C == 0.0) ? quiet_NaN() : double_double(0.0);
             }
             if (C == 0.0) {
-                return ((A < 0) ? -dd_real::infinity() : dd_real::infinity());
+                return ((A < 0) ? -infinity() : infinity());
             }
             X = A / C;
             return pow_D(X, m);
         }
 
         SPECFUN_HOST_DEVICE inline double pow4(double a, double b, double c, double d, int m) {
-            dd_real::double_double ret = pow4_D(a, b, c, d, m);
+            double_double ret = pow4_D(a, b, c, d, m);
             return static_cast<double>(ret);
         }
 
-        SPECFUN_HOST_DEVICE inline dd_real::double_double logpow4_D(double a, double b, double c, double d, int m) {
+        SPECFUN_HOST_DEVICE inline double_double logpow4_D(double a, double b, double c, double d, int m) {
             /*
              * Compute log(((a+b)/(c+d)) ^ m)
              *    == m * log((a+b)/(c+d))
              *    == m * log( 1 + (a+b-c-d)/(c+d))
              */
-            using special::dd_real::double_double;
             double_double ans;
             double_double A, C, X;
             if (m == 0) {
@@ -594,26 +587,26 @@ namespace cephes {
             A = double_double(a) + b;
             C = double_double(c) + d;
             if (A == 0.0) {
-                return ((C == 0.0) ? double_double(0.0) : -dd_real::infinity());
+                return ((C == 0.0) ? double_double(0.0) : -infinity());
             }
             if (C == 0.0) {
-                return dd_real::infinity();
+                return infinity();
             }
             X = A / C;
             SPECFUN_ASSERT(X.hi >= 0);
             if (0.5 <= X.hi && X.hi <= 1.5) {
                 double_double A1 = A - C;
                 double_double X1 = A1 / C;
-                ans = dd_real::log1p(X1);
+                ans = log1p(X1);
             } else {
-                ans = dd_real::log(X);
+                ans = log(X);
             }
             ans = m * ans;
             return ans;
         }
 
         SPECFUN_HOST_DEVICE inline double logpow4(double a, double b, double c, double d, int m) {
-            dd_real::double_double ans = logpow4_D(a, b, c, d, m);
+            double_double ans = logpow4_D(a, b, c, d, m);
             return static_cast<double>(ans);
         }
 
@@ -621,10 +614,9 @@ namespace cephes {
          *  Compute a single term in the summation, A_v(n, x):
          *  A_v(n, x) =  Binomial(n,v) * (1-x-v/n)^(n-v) * (x+v/n)^(v-1)
          */
-        SPECFUN_HOST_DEVICE inline void computeAv(int n, double x, int v, const dd_real::double_double &Cman, int Cexpt,
-                                                  dd_real::double_double *pt1, dd_real::double_double *pt2,
-                                                  dd_real::double_double *pAv) {
-            using special::dd_real::double_double;
+        SPECFUN_HOST_DEVICE inline void computeAv(int n, double x, int v, const double_double &Cman, int Cexpt,
+                                                  double_double *pt1, double_double *pt2,
+                                                  double_double *pAv) {
             int t1E, t2E, ansE;
             double_double Av;
             double_double t2x = double_double(n - v) / n - x; /*  1 - x - v/n */
@@ -634,15 +626,13 @@ namespace cephes {
             double_double ans = t1 * t2;
             ans = ans * Cman;
             ansE = Cexpt + t1E + t2E;
-            Av = dd_real::ldexp(ans, ansE);
+            Av = ldexp(ans, ansE);
             *pAv = Av;
             *pt1 = t1;
             *pt2 = t2;
         }
 
         SPECFUN_HOST_DEVICE inline ThreeProbs _smirnov(int n, double x) {
-            using special::dd_real::double_double;
-            using special::dd_real::isfinite;
             double nx, alpha;
             double_double AjSum = double_double(0.0);
             double_double dAjSum = double_double(0.0);
@@ -864,7 +854,7 @@ namespace cephes {
                 return x;
             }
 
-            logpcdf = (pcdf < 0.5 ? log(pcdf) : log1p(-psf));
+            logpcdf = (pcdf < 0.5 ? std::log(pcdf) : std::log1p(-psf));
 
             /*
              * STEP 4 Find bracket and initial estimate for use in N-R
