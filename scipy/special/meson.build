@@ -10,7 +10,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_complexstuff.pxd'),
   fs.copyfile('_convex_analysis.pxd'),
   fs.copyfile('_cunity.pxd'),
-  fs.copyfile('_digamma.pxd'),
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
@@ -24,8 +23,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
   fs.copyfile('_spherical_bessel.pxd'),
-  fs.copyfile('_trig.pxd'),
-  fs.copyfile('_wright_bessel.pxd'),
   fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
@@ -139,11 +136,11 @@ cephes_lib = static_library('cephes',
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  link_with: [sf_error_state_lib, cephes_lib],
   link_args: version_link_args,
   install: true,
-  cpp_args: ['-DSP_SPECFUN_ERROR'],
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
 )
@@ -369,7 +366,8 @@ special_sources = [
   'special/trig.h',
   'special/zlog1.h',
   'special/loggamma.h',
-  'special/digamma.h'
+  'special/digamma.h',
+  'special/wright_bessel.h'
 ]
 
 special_cephes_sources = [
@@ -379,7 +377,10 @@ special_cephes_sources = [
   'special/cephes/gamma.h',
   'special/cephes/trig.h',
   'special/cephes/zeta.h',
-  'special/cephes/psi.h'
+  'special/cephes/psi.h',
+  'special/cephes/lanczos.h',
+  'special/cephes/rgamma.h',
+  'special/cephes/chbevl.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')

@@ -30,14 +30,6 @@ inline bool SpecFun_Initialize() {
     return true;
 }
 
-#if (PY_VERSION_HEX < 0x030a00f0)
-// This function is standard in Python >=3.10, we just add it here for convenience.
-inline int PyModule_AddObjectRef(PyObject *module, const char *name, PyObject *value) {
-    Py_INCREF(value);
-    return PyModule_AddObject(module, name, value);
-}
-#endif
-
 // Deduces the number of arguments of a callable F.
 template <typename Func>
 struct arity_of;

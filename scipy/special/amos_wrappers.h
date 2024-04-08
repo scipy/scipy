@@ -17,10 +17,10 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-int airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
-int cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-int cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-int cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
+void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
+void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
 npy_cdouble cbesi_wrap( double v, npy_cdouble z);
 npy_cdouble cbesi_wrap_e( double v, npy_cdouble z);
 double cbesi_wrap_e_real( double v, double z);
