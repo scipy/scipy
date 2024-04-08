@@ -499,12 +499,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
-    ...    ci = bootstrap(data, np.std, confidence_level=0.9, n_resamples=1000,
+    ...    ci = bootstrap(data, np.std, confidence_level=0.9, n_resamples=250,
     ...                   random_state=rng).confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    875
+    884
 
     Rather than writing a loop, we can also determine the confidence intervals
     for all 1000 samples at once.
@@ -518,14 +518,14 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     ``n_trials = 1000`` samples.
 
     >>> print(ci_l[995:])
-    [3.77729695 3.75090233 3.45829131 3.34078217 3.48072829]
+    [3.57643033 3.46510277 3.66485249 3.46928141 3.35141091]
     >>> print(ci_u[995:])
-    [4.88316666 4.86924034 4.32032996 4.2822427  4.59360598]
+    [4.70669938 4.5700425  4.4111398  4.46759032 4.14155623]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    900
+    874
 
     `bootstrap` can also be used to estimate confidence intervals of
     multi-sample statistics, including those calculated by hypothesis
@@ -545,16 +545,17 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
+    >>> res = bootstrap(data, my_statistic, n_resamples=1000, method='basic',
+    ...                 random_state=rng)
     >>> print(mood(sample1, sample2)[0])  # element 0 is the statistic
-    -5.521109549096542
+    -5.8349251004301745
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=-7.255994487314675, high=-4.016202624747605)
+    ConfidenceInterval(low=-7.524634459093211, high=-4.376323575000767)
 
     The bootstrap estimate of the standard error is also available.
 
     >>> print(res.standard_error)
-    0.8344963846318795
+    0.822908401788482
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
@@ -575,8 +576,8 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Also, since ``my_statistic`` isn't vectorized to calculate the statistic
     along a given axis, we pass in ``vectorized=False``.
 
-    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
-    ...                 random_state=rng)
+    >>> res = bootstrap((x, y), my_statistic, n_resamples=1000,
+    ...                 vectorized=False, paired=True, random_state=rng)
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
@@ -584,12 +585,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     resampling:
 
     >>> len(res.bootstrap_distribution)
-    9999
+    1000
     >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
     ...                 n_resamples=1001, random_state=rng,
     ...                 bootstrap_result=res)
     >>> len(res.bootstrap_distribution)
-    11000
+    2001
 
     or to change the confidence interval options:
 
