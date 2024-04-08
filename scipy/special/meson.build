@@ -4,7 +4,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_agm.pxd'),
   fs.copyfile('_boxcox.pxd'),
-  fs.copyfile('_cdflib.pxd'),
   fs.copyfile('_cdflib_wrappers.pxd'),
   fs.copyfile('_cephes.pxd'),
   fs.copyfile('_complexstuff.pxd'),
@@ -133,6 +132,11 @@ cephes_lib = static_library('cephes',
   dependencies: [py3_dep, np_dep],
 )
 
+cdflib_lib = static_library('cdflib',
+  'cdflib.c',
+  include_directories: ['../_lib', '../_build_utils/src'],
+)
+
 py3.extension_module('_special_ufuncs',
   ['_special_ufuncs.cpp', '_special_ufuncs_docs.cpp', 'sf_error.cc'],
   include_directories: ['../_lib', '../_build_utils/src'],
@@ -147,15 +151,6 @@ py3.extension_module('_special_ufuncs',
 
 py3.extension_module('_specfun',
   [cython_gen_cpp.process('_specfun.pyx')],
-  dependencies: [np_dep],
-  link_args: version_link_args,
-  install: true,
-  subdir: 'scipy/special'
-)
-
-py3.extension_module('_cdflib',
-  cython_gen.process('_cdflib.pyx'),
-  c_args: cython_c_args,
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,
@@ -219,7 +214,8 @@ py3.extension_module('_ufuncs',
   link_args: version_link_args,
   link_with: [
     sf_error_state_lib,
-    cephes_lib
+    cephes_lib,
+    cdflib_lib
   ],
   install: true,
   subdir: 'scipy/special',
@@ -292,7 +288,8 @@ py3.extension_module('cython_special',
   dependencies: [np_dep, npymath_lib, lapack],
   link_with: [
     sf_error_state_lib,
-    cephes_lib
+    cephes_lib,
+    cdflib_lib
   ],
   install: true,
   subdir: 'scipy/special',
