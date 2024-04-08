@@ -4587,14 +4587,14 @@ double dt1(double p, double q, double df)
 
     x = fabs(dinvnr(p, q));
     xx = x*x;
-    ssum = 1.0;
+    ssum = x;
     for (i = 0; i < 4; i++){
         term = (devlpl(coef[i], ideg[i], xx))*x ;
         denpow *= df;
         ssum += term / (denpow*denom[i]);
     }
 
-    return (p >= 0.5 ? -ssum : ssum);
+    return (p >= 0.5 ? ssum : -ssum);
 }
 
 
