@@ -32,7 +32,6 @@ typedef boost::math::policies::policy<
     boost::math::policies::evaluation_error<boost::math::policies::user_error >,
     boost::math::policies::promote_float<false >,
     boost::math::policies::promote_double<false >,
-    boost::math::policies::max_root_iterations<100 >,
     boost::math::policies::discrete_quantile<
         boost::math::policies::integer_round_up > > StatsPolicy;
 
