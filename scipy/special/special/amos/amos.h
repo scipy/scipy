@@ -97,8 +97,6 @@
 #include <math.h>
 #include <complex.h>
 
-#include <iostream>
-
 namespace special {
 namespace amos {
 
