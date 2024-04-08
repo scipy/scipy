@@ -68,9 +68,7 @@ the same shared library.
 
 """
 
-import itertools
 import json
-import math
 import os
 from stat import ST_MTIME
 import argparse
