@@ -177,9 +177,11 @@ namespace cephes {
          * Starts to converge roughly at |n| > |z|
          */
         SPECFUN_HOST_DEVICE inline double struve_power_series(double v, double z, int is_h, double *err) {
+            using special::dd_real::double_double;
+
             int n, sgn;
             double term, sum, maxterm, scaleexp, tmp;
-            special::dd_real::DoubleDouble cterm, csum, cdiv, z2, c2v, ctmp;
+            double_double cterm, csum, cdiv, z2, c2v, ctmp;
 
             if (is_h) {
                 sgn = -1;
@@ -200,15 +202,15 @@ namespace cephes {
             sum = term;
             maxterm = 0;
 
-            cterm = special::dd_real::DoubleDouble(term);
-            csum = special::dd_real::DoubleDouble(sum);
-            z2 = dd_real::DoubleDouble(sgn * z * z);
-            c2v = dd_real::DoubleDouble(2 * v);
+            cterm = double_double(term);
+            csum = double_double(sum);
+            z2 = double_double(sgn * z * z);
+            c2v = double_double(2 * v);
 
             for (n = 0; n < STRUVE_MAXITER; ++n) {
                 /* cdiv = (3 + 2*n) * (3 + 2*n + 2*v)) */
-                cdiv = dd_real::DoubleDouble(3 + 2 * n);
-                ctmp = dd_real::DoubleDouble(3 + 2 * n);
+                cdiv = double_double(3 + 2 * n);
+                ctmp = double_double(3 + 2 * n);
                 ctmp = ctmp + c2v;
                 cdiv = cdiv * ctmp;
 

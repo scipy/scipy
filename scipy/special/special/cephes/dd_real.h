@@ -110,205 +110,216 @@ namespace dd_real {
 
     } // namespace detail
 
-    class DoubleDouble {
+    struct double_double {
       public:
         double hi, lo;
 
-        DoubleDouble() : hi(0.0), lo(0.0) {}
-        DoubleDouble(double high, double low) : hi(high), lo(low) {}
-        explicit DoubleDouble(double high) : hi(high), lo(0.0) {}
+        double_double() = default;
+        double_double(double high, double low) : hi(high), lo(low) {}
+        explicit double_double(double high) : hi(high), lo(0.0) {}
 
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator-() const { return DoubleDouble(-hi, -lo); }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator+(const double rhs) const {
-            double s1, s2;
-            s1 = detail::two_sum(hi, rhs, &s2);
-            s2 += lo;
-            s1 = detail::quick_two_sum(s1, s2, &s2);
-            return DoubleDouble(s1, s2);
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator+(const DoubleDouble &rhs) const {
-            /* This one satisfies IEEE style error bound,
-               due to K. Briggs and W. Kahan.                   */
-            double s1, s2, t1, t2;
-
-            s1 = detail::two_sum(hi, rhs.hi, &s2);
-            t1 = detail::two_sum(lo, rhs.lo, &t2);
-            s2 += t1;
-            s1 = detail::quick_two_sum(s1, s2, &s2);
-            s2 += t2;
-            s1 = detail::quick_two_sum(s1, s2, &s2);
-            return DoubleDouble(s1, s2);
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator-(const double rhs) const {
-            double s1, s2;
-            s1 = detail::two_sum(hi, -rhs, &s2);
-            s2 += lo;
-            s1 = detail::quick_two_sum(s1, s2, &s2);
-            return DoubleDouble(s1, s2);
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator-(const DoubleDouble &rhs) const { return *this + (-rhs); }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator*(const double rhs) const {
-            double p1, p2, e1, e2;
-            p1 = detail::two_prod(hi, rhs, &e1);
-            p2 = detail::two_prod(lo, rhs, &e2);
-            p1 = detail::quick_two_sum(p1, e2 + p2 + e1, &e1);
-            return DoubleDouble(p1, e1);
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator*(const DoubleDouble &rhs) const {
-            double p1, p2;
-            p1 = detail::two_prod(hi, rhs.hi, &p2);
-            p2 += (hi * rhs.lo + lo * rhs.hi);
-            p1 = detail::quick_two_sum(p1, p2, &p2);
-            return DoubleDouble(p1, p2);
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator/(const DoubleDouble &rhs) const {
-            double q1, q2, q3;
-            DoubleDouble r;
-
-            q1 = hi / rhs.hi; /* approximate quotient */
-
-            r = *this - rhs * q1;
-
-            q2 = r.hi / rhs.hi;
-            r = r - rhs * q2;
-
-            q3 = r.hi / rhs.hi;
-
-            q1 = detail::quick_two_sum(q1, q2, &q2);
-            r = DoubleDouble(q1, q2) + q3;
-            return r;
-        }
-
-        SPECFUN_HOST_DEVICE inline DoubleDouble operator/(const double rhs) const { return *this / DoubleDouble(rhs); }
-
-        SPECFUN_HOST_DEVICE inline bool operator==(const DoubleDouble &rhs) const {
-            return (hi == rhs.hi && lo == rhs.lo);
-        }
-
-        SPECFUN_HOST_DEVICE inline bool operator==(const double rhs) const { return (hi == rhs && lo == 0.0); }
-
-        SPECFUN_HOST_DEVICE inline bool operator!=(const DoubleDouble &rhs) const {
-            return (hi != rhs.hi) || (lo != rhs.lo);
-        }
-
-        SPECFUN_HOST_DEVICE inline bool operator!=(const double rhs) const { return (hi != rhs) || (lo != 0.0); }
-
-        SPECFUN_HOST_DEVICE inline bool operator<(const DoubleDouble &rhs) const {
-            if (hi < rhs.hi) {
-                return true;
-            }
-            if (hi > rhs.hi) {
-                return false;
-            }
-            return lo < rhs.lo;
-        }
-
-        SPECFUN_HOST_DEVICE inline bool operator<(const double rhs) const {
-            if (hi < rhs) {
-                return true;
-            }
-            if (hi > rhs) {
-                return false;
-            }
-            return lo < 0.0;
-        }
-
-        SPECFUN_HOST_DEVICE inline bool operator<=(const DoubleDouble &rhs) const {
-            if (hi < rhs.hi) {
-                return true;
-            }
-            if (hi > rhs.hi) {
-                return false;
-            }
-            return lo <= rhs.lo;
-        }
-
-        SPECFUN_HOST_DEVICE inline bool operator<=(const double rhs) const {
-            if (hi < rhs) {
-                return true;
-            }
-            if (hi > rhs) {
-                return false;
-            }
-            return lo <= 0.0;
-        }
-
-        template <typename T>
-        SPECFUN_HOST_DEVICE inline bool operator>(const T &rhs) const {
-            return rhs < *this;
-        }
-
-        template <typename T>
-        SPECFUN_HOST_DEVICE inline bool operator>=(const T &rhs) const {
-            return rhs <= *this;
-        }
-
-        SPECFUN_HOST_DEVICE inline explicit operator double() const { return hi; }
-
-        SPECFUN_HOST_DEVICE inline explicit operator int() const { return static_cast<int>(hi); }
+        SPECFUN_HOST_DEVICE explicit operator double() const { return hi; }
+        SPECFUN_HOST_DEVICE explicit operator int() const { return static_cast<int>(hi); }
     };
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble operator+(const double lhs, const DoubleDouble &rhs) {
+    // Arithmetic operations
+
+    SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &x) { return double_double(-x.hi, -x.lo); }
+
+    SPECFUN_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double_double &rhs) {
+        /* This one satisfies IEEE style error bound,
+           due to K. Briggs and W. Kahan.                   */
+        double s1, s2, t1, t2;
+
+        s1 = detail::two_sum(lhs.hi, rhs.hi, &s2);
+        t1 = detail::two_sum(lhs.lo, rhs.lo, &t2);
+        s2 += t1;
+        s1 = detail::quick_two_sum(s1, s2, &s2);
+        s2 += t2;
+        s1 = detail::quick_two_sum(s1, s2, &s2);
+        return double_double(s1, s2);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator+(const double_double &lhs, const double rhs) {
+        double s1, s2;
+        s1 = detail::two_sum(lhs.hi, rhs, &s2);
+        s2 += lhs.lo;
+        s1 = detail::quick_two_sum(s1, s2, &s2);
+        return double_double(s1, s2);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator+(const double lhs, const double_double &rhs) {
         double s1, s2;
         s1 = detail::two_sum(lhs, rhs.hi, &s2);
         s2 += rhs.lo;
         s1 = detail::quick_two_sum(s1, s2, &s2);
-        return DoubleDouble(s1, s2);
+        return double_double(s1, s2);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble operator-(const double lhs, const DoubleDouble &rhs) {
+    SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double_double &rhs) {
+        return lhs + (-rhs);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator-(const double_double &lhs, const double rhs) {
+        double s1, s2;
+        s1 = detail::two_sum(lhs.hi, -rhs, &s2);
+        s2 += lhs.lo;
+        s1 = detail::quick_two_sum(s1, s2, &s2);
+        return double_double(s1, s2);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator-(const double lhs, const double_double &rhs) {
         double s1, s2;
         s1 = detail::two_sum(lhs, -rhs.hi, &s2);
         s2 -= rhs.lo;
         s1 = detail::quick_two_sum(s1, s2, &s2);
-        return DoubleDouble(s1, s2);
+        return double_double(s1, s2);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble operator*(const double lhs, const DoubleDouble &rhs) {
+    SPECFUN_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double_double &rhs) {
+        double p1, p2;
+        p1 = detail::two_prod(lhs.hi, rhs.hi, &p2);
+        p2 += (lhs.hi * rhs.lo + lhs.lo * rhs.hi);
+        p1 = detail::quick_two_sum(p1, p2, &p2);
+        return double_double(p1, p2);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator*(const double_double &lhs, const double rhs) {
+        double p1, p2, e1, e2;
+        p1 = detail::two_prod(lhs.hi, rhs, &e1);
+        p2 = detail::two_prod(lhs.lo, rhs, &e2);
+        p1 = detail::quick_two_sum(p1, e2 + p2 + e1, &e1);
+        return double_double(p1, e1);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator*(const double lhs, const double_double &rhs) {
         double p1, p2, e1, e2;
         p1 = detail::two_prod(lhs, rhs.hi, &e1);
         p2 = detail::two_prod(lhs, rhs.lo, &e2);
         p1 = detail::quick_two_sum(p1, e2 + p2 + e1, &e1);
-        return DoubleDouble(p1, e1);
+        return double_double(p1, e1);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble operator/(const double lhs, const DoubleDouble &rhs) {
-        return DoubleDouble(lhs) / rhs;
+    SPECFUN_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double_double &rhs) {
+        double q1, q2, q3;
+        double_double r;
+
+        q1 = lhs.hi / rhs.hi; /* approximate quotient */
+
+        r = lhs - rhs * q1;
+
+        q2 = r.hi / rhs.hi;
+        r = r - rhs * q2;
+
+        q3 = r.hi / rhs.hi;
+
+        q1 = detail::quick_two_sum(q1, q2, &q2);
+        r = double_double(q1, q2) + q3;
+        return r;
     }
 
-    SPECFUN_HOST_DEVICE inline bool operator==(const double lhs, const DoubleDouble &rhs) {
+    SPECFUN_HOST_DEVICE inline double_double operator/(const double_double &lhs, const double rhs) {
+        return lhs / double_double(rhs);
+    }
+
+    SPECFUN_HOST_DEVICE inline double_double operator/(const double lhs, const double_double &rhs) {
+        return double_double(lhs) / rhs;
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator==(const double_double &lhs, const double_double &rhs) {
+        return (lhs.hi == rhs.hi && lhs.lo == rhs.lo);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator==(const double_double &lhs, const double rhs) {
+        return (lhs.hi == rhs && lhs.lo == 0.0);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator==(const double lhs, const double_double &rhs) {
         return (lhs == rhs.hi) && (rhs.lo == 0.0);
     }
 
-    SPECFUN_HOST_DEVICE inline bool operator!=(const double lhs, const DoubleDouble &rhs) {
+    SPECFUN_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double_double &rhs) {
+        return (lhs.hi != rhs.hi) || (lhs.lo != rhs.lo);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator!=(const double_double &lhs, const double rhs) {
+        return (lhs.hi != rhs) || (lhs.lo != 0.0);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator!=(const double lhs, const double_double &rhs) {
         return (rhs.hi != lhs) || (rhs.lo != 0.0);
     }
 
-    SPECFUN_HOST_DEVICE inline bool operator<(const double lhs, const DoubleDouble &rhs) { return rhs > lhs; }
-
-    SPECFUN_HOST_DEVICE inline bool operator<=(const double lhs, const DoubleDouble &rhs) { return rhs >= lhs; }
-
-    SPECFUN_HOST_DEVICE inline bool operator>(const double lhs, const DoubleDouble &rhs) { return rhs < lhs; }
-
-    SPECFUN_HOST_DEVICE inline bool operator>=(const double lhs, const DoubleDouble &rhs) { return rhs <= lhs; }
-
-    SPECFUN_HOST_DEVICE inline DoubleDouble mul_pwr2(const DoubleDouble &lhs, double rhs) {
-        /* double-double * double,  where double is a power of 2. */
-        return DoubleDouble(lhs.hi * rhs, lhs.lo * rhs);
+    SPECFUN_HOST_DEVICE inline bool operator<(const double_double &lhs, const double_double &rhs) {
+        if (lhs.hi < rhs.hi) {
+            return true;
+        }
+        if (lhs.hi > rhs.hi) {
+            return false;
+        }
+        return lhs.lo < rhs.lo;
     }
 
-    SPECFUN_HOST_DEVICE inline bool isfinite(const DoubleDouble &a) { return std::isfinite(a.hi); }
+    SPECFUN_HOST_DEVICE inline bool operator<(const double_double &lhs, const double rhs) {
+        if (lhs.hi < rhs) {
+            return true;
+        }
+        if (lhs.hi > rhs) {
+            return false;
+        }
+        return lhs.lo < 0.0;
+    }
 
-    SPECFUN_HOST_DEVICE inline bool isinf(const DoubleDouble &a) { return std::isinf(a.hi); }
+    template <typename T>
+    SPECFUN_HOST_DEVICE bool operator>(const double_double &lhs, const T &rhs) {
+        return rhs < lhs;
+    }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble round(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline bool operator<(const double lhs, const double_double &rhs) { return rhs > lhs; }
+
+    SPECFUN_HOST_DEVICE inline bool operator>(const double lhs, const double_double &rhs) { return rhs < lhs; }
+
+    SPECFUN_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double_double &rhs) {
+        if (lhs.hi < rhs.hi) {
+            return true;
+        }
+        if (lhs.hi > rhs.hi) {
+            return false;
+        }
+        return lhs.lo <= rhs.lo;
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator<=(const double_double &lhs, const double rhs) {
+        if (lhs.hi < rhs) {
+            return true;
+        }
+        if (lhs.hi > rhs) {
+            return false;
+        }
+        return lhs.lo <= 0.0;
+    }
+
+    template <typename T>
+    SPECFUN_HOST_DEVICE bool operator>=(const double_double &lhs, const T &rhs) {
+        return rhs <= lhs;
+    }
+
+    SPECFUN_HOST_DEVICE inline bool operator>=(const double lhs, const double_double &rhs) { return rhs <= lhs; }
+
+    SPECFUN_HOST_DEVICE inline bool operator<=(const double lhs, const double_double &rhs) { return rhs >= lhs; }
+
+    // Math functions
+
+    SPECFUN_HOST_DEVICE inline double_double mul_pwr2(const double_double &lhs, double rhs) {
+        /* double-double * double,  where double is a power of 2. */
+        return double_double(lhs.hi * rhs, lhs.lo * rhs);
+    }
+
+    SPECFUN_HOST_DEVICE inline bool isfinite(const double_double &a) { return std::isfinite(a.hi); }
+
+    SPECFUN_HOST_DEVICE inline bool isinf(const double_double &a) { return std::isinf(a.hi); }
+
+    SPECFUN_HOST_DEVICE inline double_double round(const double_double &a) {
         double hi = detail::two_nint(a.hi);
         double lo;
 
@@ -327,10 +338,10 @@ namespace dd_real {
                 hi -= 1.0; /* NOTE: This does not cause INEXACT. */
             }
         }
-        return DoubleDouble(hi, lo);
+        return double_double(hi, lo);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble floor(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline double_double floor(const double_double &a) {
         double hi = std::floor(a.hi);
         double lo = 0.0;
 
@@ -340,10 +351,10 @@ namespace dd_real {
             hi = detail::quick_two_sum(hi, lo, &lo);
         }
 
-        return DoubleDouble(hi, lo);
+        return double_double(hi, lo);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble ceil(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline double_double ceil(const double_double &a) {
         double hi = std::ceil(a.hi);
         double lo = 0.0;
 
@@ -353,52 +364,54 @@ namespace dd_real {
             hi = detail::quick_two_sum(hi, lo, &lo);
         }
 
-        return DoubleDouble(hi, lo);
+        return double_double(hi, lo);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble trunc(const DoubleDouble &a) { return (a.hi >= 0.0) ? floor(a) : ceil(a); }
+    SPECFUN_HOST_DEVICE inline double_double trunc(const double_double &a) {
+        return (a.hi >= 0.0) ? floor(a) : ceil(a);
+    }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble abs(const DoubleDouble &a) { return (a.hi < 0.0 ? -a : a); }
+    SPECFUN_HOST_DEVICE inline double_double abs(const double_double &a) { return (a.hi < 0.0 ? -a : a); }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble fmod(const DoubleDouble &lhs, const DoubleDouble &rhs) {
-        DoubleDouble n = trunc(lhs / rhs);
+    SPECFUN_HOST_DEVICE inline double_double fmod(const double_double &lhs, const double_double &rhs) {
+        double_double n = trunc(lhs / rhs);
         return lhs - rhs * n;
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble remainder(const DoubleDouble &lhs, const DoubleDouble &rhs) {
-        DoubleDouble n = round(lhs / rhs);
+    SPECFUN_HOST_DEVICE inline double_double remainder(const double_double &lhs, const double_double &rhs) {
+        double_double n = round(lhs / rhs);
         return lhs - rhs * n;
     }
 
-    SPECFUN_HOST_DEVICE inline std::pair<DoubleDouble, DoubleDouble> divrem(const DoubleDouble &lhs,
-                                                                            const DoubleDouble &rhs) {
-        DoubleDouble n = round(lhs / rhs);
-        DoubleDouble remainder = lhs - n * rhs;
+    SPECFUN_HOST_DEVICE inline std::pair<double_double, double_double> divrem(const double_double &lhs,
+                                                                              const double_double &rhs) {
+        double_double n = round(lhs / rhs);
+        double_double remainder = lhs - n * rhs;
         return {n, remainder};
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble square(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline double_double square(const double_double &a) {
         double p1, p2;
         double s1, s2;
         p1 = detail::two_sqr(a.hi, &p2);
         p2 += 2.0 * a.hi * a.lo;
         p2 += a.lo * a.lo;
         s1 = detail::quick_two_sum(p1, p2, &s2);
-        return DoubleDouble(s1, s2);
+        return double_double(s1, s2);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble square(const double a) {
+    SPECFUN_HOST_DEVICE inline double_double square(const double a) {
         double p1, p2;
         p1 = detail::two_sqr(a, &p2);
-        return DoubleDouble(p1, p2);
+        return double_double(p1, p2);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble ldexp(const DoubleDouble &a, int expt) {
+    SPECFUN_HOST_DEVICE inline double_double ldexp(const double_double &a, int expt) {
         // float128 * (2.0 ^ expt)
-        return DoubleDouble(std::ldexp(a.hi, expt), std::ldexp(a.lo, expt));
+        return double_double(std::ldexp(a.hi, expt), std::ldexp(a.lo, expt));
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble frexp(const DoubleDouble &a, int *expt) {
+    SPECFUN_HOST_DEVICE inline double_double frexp(const double_double &a, int *expt) {
         //    r"""return b and l s.t. 0.5<=|b|<1 and 2^l == a
         //    0.5<=|b[0]|<1.0 or |b[0]| == 1.0 and b[0]*b[1]<0
         //    """
@@ -411,43 +424,45 @@ namespace dd_real {
             exponent -= 1;
         }
         *expt = exponent;
-        return DoubleDouble(man, b1);
+        return double_double(man, b1);
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble quiet_NaN() {
-        return DoubleDouble(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
+    // Numeric limits
+
+    SPECFUN_HOST_DEVICE inline double_double quiet_NaN() {
+        return double_double(std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN());
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble infinity() {
-        return DoubleDouble(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
+    SPECFUN_HOST_DEVICE inline double_double infinity() {
+        return double_double(std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
     }
 
     namespace detail {
 
-        const DoubleDouble inv_fact[] = {DoubleDouble(1.66666666666666657e-01, 9.25185853854297066e-18),
-                                         DoubleDouble(4.16666666666666644e-02, 2.31296463463574266e-18),
-                                         DoubleDouble(8.33333333333333322e-03, 1.15648231731787138e-19),
-                                         DoubleDouble(1.38888888888888894e-03, -5.30054395437357706e-20),
-                                         DoubleDouble(1.98412698412698413e-04, 1.72095582934207053e-22),
-                                         DoubleDouble(2.48015873015873016e-05, 2.15119478667758816e-23),
-                                         DoubleDouble(2.75573192239858925e-06, -1.85839327404647208e-22),
-                                         DoubleDouble(2.75573192239858883e-07, 2.37677146222502973e-23),
-                                         DoubleDouble(2.50521083854417202e-08, -1.44881407093591197e-24),
-                                         DoubleDouble(2.08767569878681002e-09, -1.20734505911325997e-25),
-                                         DoubleDouble(1.60590438368216133e-10, 1.25852945887520981e-26),
-                                         DoubleDouble(1.14707455977297245e-11, 2.06555127528307454e-28),
-                                         DoubleDouble(7.64716373181981641e-13, 7.03872877733453001e-30),
-                                         DoubleDouble(4.77947733238738525e-14, 4.39920548583408126e-31),
-                                         DoubleDouble(2.81145725434552060e-15, 1.65088427308614326e-31)};
+        const double_double inv_fact[] = {double_double(1.66666666666666657e-01, 9.25185853854297066e-18),
+                                          double_double(4.16666666666666644e-02, 2.31296463463574266e-18),
+                                          double_double(8.33333333333333322e-03, 1.15648231731787138e-19),
+                                          double_double(1.38888888888888894e-03, -5.30054395437357706e-20),
+                                          double_double(1.98412698412698413e-04, 1.72095582934207053e-22),
+                                          double_double(2.48015873015873016e-05, 2.15119478667758816e-23),
+                                          double_double(2.75573192239858925e-06, -1.85839327404647208e-22),
+                                          double_double(2.75573192239858883e-07, 2.37677146222502973e-23),
+                                          double_double(2.50521083854417202e-08, -1.44881407093591197e-24),
+                                          double_double(2.08767569878681002e-09, -1.20734505911325997e-25),
+                                          double_double(1.60590438368216133e-10, 1.25852945887520981e-26),
+                                          double_double(1.14707455977297245e-11, 2.06555127528307454e-28),
+                                          double_double(7.64716373181981641e-13, 7.03872877733453001e-30),
+                                          double_double(4.77947733238738525e-14, 4.39920548583408126e-31),
+                                          double_double(2.81145725434552060e-15, 1.65088427308614326e-31)};
 
         // Math constants
-        const DoubleDouble E = DoubleDouble(2.718281828459045091e+00, 1.445646891729250158e-16);
-        const DoubleDouble LOG2 = DoubleDouble(6.931471805599452862e-01, 2.319046813846299558e-17);
+        const double_double E = double_double(2.718281828459045091e+00, 1.445646891729250158e-16);
+        const double_double LOG2 = double_double(6.931471805599452862e-01, 2.319046813846299558e-17);
         const double EPS = 4.93038065763132e-32; // 2^-104
     }                                            // namespace detail
 
     /* Exponential.  Computes exp(x) in double-double precision. */
-    SPECFUN_HOST_DEVICE inline DoubleDouble exp(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline double_double exp(const double_double &a) {
         /* Strategy:  We first reduce the size of x by noting that
 
            exp(kr + m * log(2)) = 2^m * exp(r)^k
@@ -460,11 +475,11 @@ namespace dd_real {
         constexpr double k = 512.0;
         constexpr double inv_k = 1.0 / k;
         double m;
-        DoubleDouble r, s, t, p;
+        double_double r, s, t, p;
         int i = 0;
 
         if (a.hi <= -709.0) {
-            return DoubleDouble(0.0);
+            return double_double(0.0);
         }
 
         if (a.hi >= 709.0) {
@@ -472,7 +487,7 @@ namespace dd_real {
         }
 
         if (a == 0.0) {
-            return DoubleDouble(1.0);
+            return double_double(1.0);
         }
 
         if (a == 1.0) {
@@ -480,7 +495,7 @@ namespace dd_real {
         }
 
         m = std::floor(a.hi / detail::LOG2.hi + 0.5);
-        r = mul_pwr2(DoubleDouble(a) - detail::LOG2 * m, inv_k);
+        r = mul_pwr2(double_double(a) - detail::LOG2 * m, inv_k);
 
         p = square(r);
         s = r + mul_pwr2(p, 0.5);
@@ -505,7 +520,7 @@ namespace dd_real {
 
     /* Logarithm.  Computes log(x) in double-double precision.
        This is a natural logarithm (i.e., base e).            */
-    SPECFUN_HOST_DEVICE inline DoubleDouble log(const DoubleDouble &a) {
+    SPECFUN_HOST_DEVICE inline double_double log(const double_double &a) {
         /* Strategy.  The Taylor series for log converges much more
            slowly than that of exp, due to the lack of the factorial
            term in the denominator.  Hence this routine instead tries
@@ -521,25 +536,25 @@ namespace dd_real {
 
            Only one iteration is needed, since Newton's iteration
            approximately doubles the number of digits per iteration. */
-        DoubleDouble x;
+        double_double x;
 
         if (a == 1.0) {
-            return DoubleDouble(0.0);
+            return double_double(0.0);
         }
 
         if (a.hi <= 0.0) {
             return quiet_NaN();
         }
 
-        x = DoubleDouble(std::log(a.hi)); /* Initial approximation */
+        x = double_double(std::log(a.hi)); /* Initial approximation */
 
         /* x = x + a * exp(-x) - 1.0; */
         x = x + a * exp(-x) - 1.0;
         return x;
     }
 
-    SPECFUN_HOST_DEVICE inline DoubleDouble log1p(const DoubleDouble &a) {
-        DoubleDouble ans;
+    SPECFUN_HOST_DEVICE inline double_double log1p(const double_double &a) {
+        double_double ans;
         double la, elam1, ll;
         if (a.hi <= -1.0) {
             return -infinity();
@@ -550,7 +565,7 @@ namespace dd_real {
         if (a.hi > 0) {
             ll -= (elam1 - a.hi) / (elam1 + 1);
         }
-        ans = DoubleDouble(la) + ll;
+        ans = double_double(la) + ll;
         return ans;
     }
 

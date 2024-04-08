@@ -63,7 +63,6 @@ namespace cephes {
             return std::numeric_limits<double>::infinity();
         } else if (y == domain_ub) {
             return -std::numeric_limits<double>::infinity();
-            ;
         } else if (std::isnan(y)) {
             set_error("erfcinv", SF_ERROR_DOMAIN, NULL);
             return y;
