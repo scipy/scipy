@@ -1483,16 +1483,16 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1 "k1"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_k1e "k1e"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
+cdef extern from r"specfun_wrappers.h":
     cdef npy_double _func_kei_wrap "kei_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
+cdef extern from r"specfun_wrappers.h":
     cdef npy_double _func_keip_wrap "keip_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
+cdef extern from r"specfun_wrappers.h":
     cdef npy_int _func_kelvin_wrap "kelvin_wrap"(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *)nogil
-cdef extern from r"_ufuncs_defs.h":
+cdef extern from r"specfun_wrappers.h":
     cdef npy_double _func_ker_wrap "ker_wrap"(npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_kerp_wrap "kerp_wrap"(npy_double)nogil
+cdef extern from r"specfun_wrappers.h":
+    cdef double _func_kerp_wrap "kerp_wrap"(double) nogil
 from ._convex_analysis cimport kl_div as _func_kl_div
 ctypedef double _proto_kl_div_t(double, double) noexcept nogil
 cdef _proto_kl_div_t *_proto_kl_div_t_var = &_func_kl_div
