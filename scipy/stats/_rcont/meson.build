@@ -6,9 +6,9 @@ py3.install_sources([
 )
 
 py3.extension_module('rcont',
-  ['_rcont.c', 'logfactorial.c'],
+  '_rcont.c',
   cython_gen.process('rcont.pyx'),
-  dependencies: [np_dep, npyrandom_lib, npymath_lib],
+  dependencies: [np_dep, logfactorial_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/stats/_rcont',
