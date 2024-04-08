@@ -174,9 +174,7 @@ cython_special = custom_target('cython_special',
     '_ufuncs_cxx.pyx',
     '_ufuncs_cxx.pxd',
     '_ufuncs_cxx_defs.h',
-    '_ufuncs.pyi',
-    'cython_special.pyx',
-    'cython_special.pxd'
+    '_ufuncs.pyi'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
@@ -189,7 +187,7 @@ cython_special = custom_target('cython_special',
 # for cython_blas_pxd
 cython_special_pxd = custom_target('_dummy_cython_special.pxd',
   output: '_dummy_cython_special.pxd',
-  input: cython_special[7],
+  input: 'cython_special.pxd',
   command: [py3, '-c', '"@INPUT@"'],
 )
 
@@ -279,7 +277,7 @@ py3.extension_module('_ellip_harm_2',
 
 py3.extension_module('cython_special',
   [
-    uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
+    uf_cython_gen.process('cython_special.pyx'),  # cython_special.pyx
     '_cosine.c',
     'scaled_exp1.c',
     'amos_wrappers.cpp',
