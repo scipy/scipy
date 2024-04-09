@@ -11,7 +11,7 @@ cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
 
-cdef extern from "amos_wrappers.h":
+cdef extern from "special_wrappers.h":
     np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
     np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
     double sin_pi(double x) nogil

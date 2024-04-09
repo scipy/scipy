@@ -3,7 +3,7 @@
 from . cimport sf_error
 from ._cephes cimport poch
 
-cdef extern from "specfun_wrappers.h":
+cdef extern from "special_wrappers.h":
     double pmv_wrap(double, double, double) nogil
 
 from ._complexstuff cimport *

@@ -9,6 +9,7 @@
 #include "special/loggamma.h"
 #include "special/trig.h"
 #include "special/digamma.h"
+#include "special/wright_bessel.h"
 
 
 inline double binom(double n, double k) {
@@ -67,3 +68,13 @@ inline npy_cdouble cdigamma(npy_cdouble zp) {
     std::complex<double> w = special::digamma(z);
     return npy_cpack(real(w), imag(w));
 }
+
+inline double wright_bessel_scalar(double a, double b, double x) {
+    return special::wright_bessel(a, b, x);
+}
+
+inline double rgamma(double x) {
+    return special::cephes::rgamma(x);
+}
+
+

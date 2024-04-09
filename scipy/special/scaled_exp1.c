@@ -1,7 +1,7 @@
 #include <math.h>
 
 //
-// We use exp1_wrap() from specfun_wrappers.c
+// We use exp1_wrap() from special_wrappers.c
 //
 extern double exp1_wrap(double x);
 

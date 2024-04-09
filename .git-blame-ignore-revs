@@ -34,3 +34,5 @@ ecef3490da68a0c53ba543c618bab0c8e15dccee
 852776a3fe0f3d08c0bed9174f6ac33f653a8677
 # Style cleanup in `pyproject.toml`
 7b921fd28659b02544bfb46368ddadd1048b37aa
+# Style cleanup to always `import numpy as np`
+ceafa8e730887b81cf10d483ce375559ebd1de09
