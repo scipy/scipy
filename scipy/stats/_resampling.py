@@ -1591,14 +1591,14 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     permutation test.
 
     >>> x = norm.rvs(size=100, random_state=rng)
-    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
+    >>> y = norm.rvs(size=120, loc=0.2, random_state=rng)
+    >>> res = permutation_test((x, y), statistic, n_resamples=9999,
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
     -0.5230459671240913
     >>> print(res.pvalue)
-    0.00016999830001699983
+    0.0015
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
@@ -1611,7 +1611,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import ttest_ind
     >>> res_asymptotic = ttest_ind(x, y, alternative='less')
     >>> print(res_asymptotic.pvalue)
-    0.00012688101537979522
+    0.0014669545224902675
 
     The permutation distribution of the test statistic is provided for
     further investigation.
@@ -1630,9 +1630,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import pearsonr
     >>> x = [1, 2, 4, 3]
     >>> y = [2, 4, 6, 8]
-    >>> def statistic(x, y):
-    ...     return pearsonr(x, y).statistic
-    >>> res = permutation_test((x, y), statistic, vectorized=False,
+    >>> def statistic(x, y, axis=-1):
+    ...     return pearsonr(x, y, axis=axis).statistic
+    >>> res = permutation_test((x, y), statistic, vectorized=True,
     ...                        permutation_type='pairings',
     ...                        alternative='greater')
     >>> r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
@@ -1643,22 +1643,23 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     the same as the observed value of the test statistic.
 
     >>> r
-    0.8
+    0.7999999999999999
     >>> unique = np.unique(null)
     >>> unique
-    array([-1. , -0.8, -0.8, -0.6, -0.4, -0.2, -0.2,  0. ,  0.2,  0.2,  0.4,
-            0.6,  0.8,  0.8,  1. ]) # may vary
+    array([-1. , -1. , -0.8, -0.8, -0.8, -0.6, -0.4, -0.4, -0.2, -0.2, -0.2,
+        0. ,  0.2,  0.2,  0.2,  0.4,  0.4,  0.6,  0.8,  0.8,  0.8,  1. ,
+        1. ])  # may vary
     >>> unique[np.isclose(r, unique)].tolist()
-    [0.7999999999999999, 0.8]
+    [0.7999999999999998, 0.7999999999999999, 0.8]  # may vary
 
     If `permutation_test` were to perform the comparison naively, the
-    elements of the null distribution with value ``0.7999999999999999`` would
+    elements of the null distribution with value ``0.7999999999999998`` would
     not be considered as extreme or more extreme as the observed value of the
     statistic, so the calculated p-value would be too small.
 
     >>> incorrect_pvalue = np.count_nonzero(null >= r) / len(null)
     >>> incorrect_pvalue
-    0.1111111111111111  # may vary
+    0.14583333333333334  # may vary
 
     Instead, `permutation_test` treats elements of the null distribution that
     are within ``max(1e-14, abs(r)*1e-14)`` of the observed value of the
