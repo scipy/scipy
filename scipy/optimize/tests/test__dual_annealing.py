@@ -377,3 +377,34 @@ class TestDualAnnealing:
                               minimizer_kwargs=dict(method='L-BFGS-B',
                                                     jac=jac))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
+
+    def test_custom_minimizer_fun_gradient_gnev(self):
+        minimizer_opts = {
+            'fun': rosen,
+            'jac': self.rosen_der_wrapper,
+        }
+        ret = dual_annealing(rosen, self.ld_bounds,
+                             minimizer_kwargs=minimizer_opts,
+                             seed=self.seed)
+        assert ret.njev == self.ngev
+
+    def test_custom_minimizer_fun_call(self):
+        ret = dual_annealing(self.func, self.ld_bounds, 
+                             seed=self.seed, 
+                             minimizer_kwargs=dict(fun=self.func))
+        assert_equal(self.nb_fun_call, ret.nfev)
+
+    @pytest.mark.parametrize('method, atol', [
+        ('Nelder-Mead', 2e-5),
+        ('COBYLA', 1e-5),
+        ('Powell', 1e-8),
+        ('CG', 1e-8),
+        ('BFGS', 1e-8),
+        ('TNC', 1e-8),
+        ('SLSQP', 2e-7),
+    ])
+    def test_custom_minimizer_fun_multi_ls_minimizer(self, method, atol):
+        ret = dual_annealing(self.func, self.ld_bounds,
+                             minimizer_kwargs=dict(method=method,fun=self.func),
+                             seed=self.seed)
+        assert_allclose(ret.fun, 0., atol=atol)
