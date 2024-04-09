@@ -3,12 +3,6 @@
 #include <limits>
 #include <type_traits>
 
-#if __has_include(<mdspan>)
-
-#include <mdspan>
-
-#else
-
 namespace std {
 
 template <typename Index, size_t... Extents>
@@ -162,5 +156,3 @@ class mdspan {
 };
 
 } // namespace std
-
-#endif
