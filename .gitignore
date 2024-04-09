@@ -293,11 +293,8 @@ scipy/special/_ufuncs_cxx.pxd
 scipy/special/_ufuncs_cxx.pyx
 scipy/special/_ufuncs_cxx_defs.h
 scipy/special/_ufuncs_defs.h
-scipy/special/_ufuncs.pyi
 scipy/special/cython_special.c
 scipy/special/cython_special.h
-scipy/special/cython_special.pxd
-scipy/special/cython_special.pyx
 scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
 scipy/special/ellint_carlson_cpp_lite/Makefile

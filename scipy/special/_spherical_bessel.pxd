@@ -31,7 +31,7 @@ from ._complexstuff cimport *
 
 from . cimport sf_error
 
-cdef extern from "amos_wrappers.h":
+cdef extern from "special_wrappers.h":
     npy_cdouble cbesi_wrap( double v, npy_cdouble z) nogil
     npy_cdouble cbesj_wrap(double v, npy_cdouble z) nogil
     double cbesj_wrap_real(double v, double x) nogil

@@ -3169,6 +3169,11 @@ class TestBessel:
         yn2n = special.yn(1,.2)
         assert_almost_equal(yn2n,-3.3238249881118471,8)
 
+    def test_yn_gh_20405(self):
+        # Enforce correct asymptotic behavior for large n.
+        observed = cephes.yn(500, 1)
+        assert observed == -np.inf
+
     def test_negv_yv(self):
         assert_almost_equal(special.yv(-3,2), -special.yv(3,2), 14)
 

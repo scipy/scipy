@@ -47,6 +47,7 @@ python_sources = [
   'test_spherical_bessel.py',
   'test_support_alternative_backends.py',
   'test_trig.py',
+  'test_ufunc_signatures.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
   'test_zeta.py'

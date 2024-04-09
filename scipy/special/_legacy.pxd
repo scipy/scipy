@@ -16,7 +16,7 @@ from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        nbdtr, nbdtri, pdtri, kn, yn,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
-cdef extern from "amos_wrappers.h":
+cdef extern from "special_wrappers.h":
     double cbesk_wrap_real_int(int n, double z) nogil
 
 cdef extern from "Python.h":
