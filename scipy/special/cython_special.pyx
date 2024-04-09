@@ -1092,14 +1092,7 @@ optional Cython ``bint``, leading to the following signatures.
 
 from libc.math cimport NAN
 
-cimport numpy as np
-from numpy cimport (
-    npy_float, npy_double, npy_longdouble,
-    npy_cfloat, npy_cdouble, npy_clongdouble,
-    npy_int, npy_long,
-    NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
-    NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
-    NPY_INT, NPY_LONG)
+from numpy cimport npy_double, npy_cdouble, npy_int
 
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
@@ -1111,7 +1104,6 @@ cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
     """
     return PyUFunc_getfperr()
 
-from . cimport sf_error
 from . cimport _complexstuff
 cimport scipy.special._ufuncs_cxx
 from scipy.special import _ufuncs
