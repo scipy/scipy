@@ -9,16 +9,30 @@
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 
-extern "C" {
+using namespace std;
+
+complex<double> to_complex(npy_cdouble z) {
+    union {
+        npy_cdouble npy;
+        complex<double> cc;
+    } z_pun{.npy = z};
+    return z_pun.cc;
+}
+
+npy_cdouble to_ccomplex(complex<double> z) {
+    union {
+        npy_cdouble npy;
+        complex<double> cc;
+    } z_pun{.cc = z};
+    return z_pun.npy;
+}
 
 npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z) {
-    std::complex<double> res = special::chyp2f1(a, b, c, {npy_creal(z), npy_cimag(z)});
-    return npy_cpack(res.real(), res.imag());
+    return to_ccomplex(special::chyp2f1(a, b, c, to_complex(z)));
 }
 
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z) {
-    std::complex<double> res = special::chyp1f1(a, b, {npy_creal(z), npy_cimag(z)});
-    return npy_cpack(res.real(), res.imag());
+    return to_ccomplex(special::chyp1f1(a, b, to_complex(z)));
 }
 
 double hypU_wrap(double a, double b, double x) { return special::hypu(a, b, x); }
@@ -32,22 +46,13 @@ int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
 
 double exp1_wrap(double x) { return special::exp1(x); }
 
-npy_cdouble cexp1_wrap(npy_cdouble z) {
-    std::complex<double> res = special::exp1(std::complex<double>{npy_creal(z), npy_cimag(z)});
-    return npy_cpack(res.real(), res.imag());
-}
+npy_cdouble cexp1_wrap(npy_cdouble z) { return to_ccomplex(special::exp1(to_complex(z))); }
 
 double expi_wrap(double x) { return special::expi(x); }
 
-npy_cdouble cexpi_wrap(npy_cdouble z) {
-    std::complex<double> res = special::expi(std::complex<double>{npy_creal(z), npy_cimag(z)});
-    return npy_cpack(res.real(), res.imag());
-}
+npy_cdouble cexpi_wrap(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
 
-npy_cdouble cerf_wrap(npy_cdouble z) {
-    std::complex<double> res = special::cerf({npy_creal(z), npy_cimag(z)});
-    return npy_cpack(res.real(), res.imag());
-}
+npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(special::cerf(to_complex(z))); }
 
 double itstruve0_wrap(double x) { return special::itstruve0(x); }
 
@@ -72,8 +77,8 @@ double kerp_wrap(double x) { return special::kerp(x); }
 double keip_wrap(double x) { return special::keip(x); }
 
 int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
-    special::kelvin(x, reinterpret_cast<std::complex<double> *>(Be), reinterpret_cast<std::complex<double> *>(Ke),
-                    reinterpret_cast<std::complex<double> *>(Bep), reinterpret_cast<std::complex<double> *>(Kep));
+    special::kelvin(x, reinterpret_cast<complex<double> *>(Be), reinterpret_cast<complex<double> *>(Ke),
+                    reinterpret_cast<complex<double> *>(Bep), reinterpret_cast<complex<double> *>(Kep));
     return 0;
 }
 
@@ -98,8 +103,7 @@ int it2i0k0_wrap(double x, double *i0int, double *k0int) {
 }
 
 int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
-    special::cfresnl({npy_creal(z), npy_cimag(z)}, reinterpret_cast<std::complex<double> *>(zfs),
-                     reinterpret_cast<std::complex<double> *>(zfc));
+    special::cfresnl(to_complex(z), reinterpret_cast<complex<double> *>(zfs), reinterpret_cast<complex<double> *>(zfc));
     return 0;
 }
 
@@ -231,14 +235,13 @@ int oblate_radial2_wrap(double m, double n, double c, double cv, double x, doubl
 }
 
 int modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus) {
-    special::modified_fresnel_plus(x, reinterpret_cast<std::complex<double> *>(Fplus),
-                                   reinterpret_cast<std::complex<double> *>(Kplus));
+    special::modified_fresnel_plus(x, reinterpret_cast<complex<double> *>(Fplus),
+                                   reinterpret_cast<complex<double> *>(Kplus));
     return 0;
 }
 
 int modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kminus) {
-    special::modified_fresnel_minus(x, reinterpret_cast<std::complex<double> *>(Fminus),
-                                    reinterpret_cast<std::complex<double> *>(Kminus));
+    special::modified_fresnel_minus(x, reinterpret_cast<complex<double> *>(Fminus),
+                                    reinterpret_cast<complex<double> *>(Kminus));
     return 0;
-}
 }
