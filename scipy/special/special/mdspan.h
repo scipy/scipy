@@ -3,6 +3,12 @@
 #include <limits>
 #include <type_traits>
 
+#if __has_include(<mdspan>)
+
+#include <mdspan>
+
+#else
+
 namespace std {
 
 template <typename Index, size_t... Extents>
@@ -135,7 +141,7 @@ class mdspan {
 
     template <typename... OtherIndices>
     constexpr reference operator()(OtherIndices... indices) const {
-        return m_acc.access(m_ptr, m_map(static_cast<index_type>(move(indices))...));
+        return m_acc.access(m_ptr, m_map(static_cast<index_type>(std::move(indices))...));
     }
 
     template <typename OtherIndex>
@@ -156,3 +162,5 @@ class mdspan {
 };
 
 } // namespace std
+
+#endif
