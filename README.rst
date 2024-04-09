@@ -16,7 +16,7 @@
 .. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg
   :target: https://stackoverflow.com/questions/tagged/scipy
 
-.. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue
+.. image:: https://img.shields.io/badge/DOI-10.1038%2Fs41592--019--0686--2-blue.svg
   :target: https://www.nature.com/articles/s41592-019-0686-2
 
 SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
