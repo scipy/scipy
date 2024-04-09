@@ -5,6 +5,26 @@
 
 namespace std {
 
+template <typename Index, size_t... Extents>
+class extents;
+
+namespace detail {
+
+    template <typename Index, size_t Rank, size_t Value, size_t... Extents>
+    struct fill_extents {
+        using type = typename fill_extents<Index, Rank - 1, Value, Extents..., Value>::type;
+    };
+
+    template <typename Index, size_t Value, size_t... Extents>
+    struct fill_extents<Index, 0, Value, Extents...> {
+        using type = extents<Index, Extents...>;
+    };
+
+    template <typename Index, size_t Rank, size_t Value>
+    using fill_extents_t = typename fill_extents<Index, Rank, Value>::type;
+
+} // namespace detail
+
 inline constexpr size_t dynamic_extent = numeric_limits<size_t>::max();
 
 template <typename Index, size_t... Extents>
@@ -30,9 +50,8 @@ class extents {
     static constexpr rank_type rank() noexcept { return sizeof...(Extents); }
 };
 
-template <typename IndexType, std::size_t Rank>
-using dextents = std::conditional_t<Rank == 1, extents<IndexType, dynamic_extent>,
-                                    extents<IndexType, dynamic_extent, dynamic_extent>>;
+template <typename Index, size_t Rank>
+using dextents = detail::fill_extents_t<Index, Rank, dynamic_extent>;
 
 struct layout_left;
 
