@@ -14,8 +14,9 @@ import scipy.special as special
 import scipy.special._ufuncs
 import scipy.special._gufuncs
 
-_ufuncs = [getattr(scipy.special._ufuncs, funcname) for funcname in dir(scipy.special._ufuncs)]
-# Not all members of scipy.special._ufuncs are actually ufuncs.
+_ufuncs = [getattr(scipy.special._ufuncs, funcname) for funcname in dir(scipy.special._ufuncs)] + \
+    [getattr(scipy.special._gufuncs, funcname) for funcname in dir(scipy.special._gufuncs)]
+# Not all members of scipy.special._ufuncs or scipy.special._gufuncs are actually ufuncs.
 _ufuncs = [func for func in _ufuncs if isinstance(func, np.ufunc)]
 
 @pytest.mark.parametrize("ufunc", _ufuncs)
@@ -29,32 +30,6 @@ def test_ufunc_signatures(ufunc):
     # This may be a NumPy bug, but we need to work around it.
     # cf. gh-4895, https://github.com/numpy/numpy/issues/5895"
     types = set(sig for sig in ufunc.types if not ("l" in sig or "i" in sig))
-
-    # Generate the full expanded set of signatures which should exist. There
-    # should be matching float and double versions of any existing signature.
-    expanded_types = set()
-    for sig in types:
-        expanded_types.update(
-            [sig.replace("d", "f").replace("D", "F"),
-             sig.replace("f", "d").replace("F", "D")]
-        )
-    assert types == expanded_types
-
-_gufuncs = [getattr(scipy.special._gufuncs, funcname) for funcname in dir(scipy.special._gufuncs)]
-# Not all members of scipy.special._gufuncs are actually ufuncs.
-_gufuncs = [func for func in _gufuncs if isinstance(func, np.ufunc)]
-
-@pytest.mark.parametrize("gufunc", _gufuncs)
-def test_gufunc_signatures(gufunc):
-
-    # From _generate_pyx.py
-    # "Don't add float32 versions of ufuncs with integer arguments, as this
-    # can lead to incorrect dtype selection if the integer arguments are
-    # arrays, but float arguments are scalars.
-    # For instance sph_harm(0,[0],0,0).dtype == complex64
-    # This may be a NumPy bug, but we need to work around it.
-    # cf. gh-4895, https://github.com/numpy/numpy/issues/5895"
-    types = set(sig for sig in gufunc.types if not ("l" in sig or "i" in sig))
 
     # Generate the full expanded set of signatures which should exist. There
     # should be matching float and double versions of any existing signature.
