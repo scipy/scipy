@@ -3,6 +3,8 @@
 # included below.
 
 from scipy._lib.deprecation import _sub_module_deprecation
+from ._basic import clpmn, lpmn, lpn, lqmn
+from ._specfun import pbdv
 
 __all__ = [  # noqa: F822
     'clpmn',
