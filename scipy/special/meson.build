@@ -26,8 +26,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('sph_harm.pxd'),
-  fs.copyfile('_cython_special.pxi'),
-  fs.copyfile('_cython_special_custom.pxi'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
@@ -111,8 +109,7 @@ sf_error_state_lib = shared_library('sf_error_state',
 ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
-  'amos_wrappers.cpp',
-  'specfun_wrappers.cpp',
+  'special_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -168,10 +165,7 @@ cython_special = custom_target('cython_special',
     '_ufuncs_defs.h',
     '_ufuncs_cxx.pyx',
     '_ufuncs_cxx.pxd',
-    '_ufuncs_cxx_defs.h',
-    '_ufuncs.pyi',
-    'cython_special.pyx',
-    'cython_special.pxd'
+    '_ufuncs_cxx_defs.h'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
@@ -180,13 +174,7 @@ cython_special = custom_target('cython_special',
   install_tag: 'devel',
 )
 
-# Only needed to establish a dependency; see comments in linalg/meson.build
-# for cython_blas_pxd
-cython_special_pxd = custom_target('_dummy_cython_special.pxd',
-  output: '_dummy_cython_special.pxd',
-  input: cython_special[7],
-  command: [py3, '-c', '"@INPUT@"'],
-)
+cython_special_pxd = fs.copyfile('cython_special.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
@@ -275,11 +263,10 @@ py3.extension_module('_ellip_harm_2',
 
 py3.extension_module('cython_special',
   [
-    uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
+    uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
     'scaled_exp1.c',
-    'amos_wrappers.cpp',
-    'specfun_wrappers.cpp',
+    'special_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
@@ -399,6 +386,7 @@ python_sources = [
   '_support_alternative_backends.py',
   '_test_internal.pyi',
   '_testutils.py',
+  '_ufuncs.pyi',
   'add_newdocs.py',
   'basic.py',
   'cython_special.pyi',

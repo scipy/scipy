@@ -62,7 +62,7 @@ from ._complexstuff cimport (
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
 
-cdef extern from 'specfun_wrappers.h':
+cdef extern from 'special_wrappers.h':
     npy_cdouble chyp2f1_wrap(
         double,
         double,
