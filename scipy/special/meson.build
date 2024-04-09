@@ -143,7 +143,19 @@ py3.extension_module('_special_ufuncs',
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
+  install_rpath: '$ORIGIN'
+)
+
+py3.extension_module('_gufuncs',
+  ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  dependencies: [np_dep],
+  link_with: [sf_error_state_lib],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_specfun',
