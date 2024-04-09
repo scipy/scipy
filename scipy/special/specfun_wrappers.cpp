@@ -43,9 +43,8 @@ double hypU_wrap(double a, double b, double x) { return special::hypu(a, b, x); 
 
 double hyp1f1_wrap(double a, double b, double x) { return special::hyp1f1(a, b, x); }
 
-int itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
+void itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt) {
     special::itairy(x, apt, bpt, ant, bnt);
-    return 0;
 }
 
 double exp1_wrap(double x) { return special::exp1(x); }
@@ -80,31 +79,18 @@ double kerp_wrap(double x) { return special::kerp(x); }
 
 double keip_wrap(double x) { return special::keip(x); }
 
-int kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
+void kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
     special::kelvin(x, reinterpret_cast<complex<double> *>(Be), reinterpret_cast<complex<double> *>(Ke),
                     reinterpret_cast<complex<double> *>(Bep), reinterpret_cast<complex<double> *>(Kep));
-    return 0;
 }
 
-int it1j0y0_wrap(double x, double *j0int, double *y0int) {
-    special::it1j0y0(x, j0int, y0int);
-    return 0;
-}
+void it1j0y0_wrap(double x, double *j0int, double *y0int) { special::it1j0y0(x, j0int, y0int); }
 
-int it2j0y0_wrap(double x, double *j0int, double *y0int) {
-    special::it2j0y0(x, j0int, y0int);
-    return 0;
-}
+void it2j0y0_wrap(double x, double *j0int, double *y0int) { special::it2j0y0(x, j0int, y0int); }
 
-int it1i0k0_wrap(double x, double *i0int, double *k0int) {
-    special::it1i0k0(x, i0int, k0int);
-    return 0;
-}
+void it1i0k0_wrap(double x, double *i0int, double *k0int) { special::it1i0k0(x, i0int, k0int); }
 
-int it2i0k0_wrap(double x, double *i0int, double *k0int) {
-    special::it2i0k0(x, i0int, k0int);
-    return 0;
-}
+void it2i0k0_wrap(double x, double *i0int, double *k0int) { special::it2i0k0(x, i0int, k0int); }
 
 int cfresnl_wrap(npy_cdouble z, npy_cdouble *zfs, npy_cdouble *zfc) {
     special::cfresnl(to_complex(z), reinterpret_cast<complex<double> *>(zfs), reinterpret_cast<complex<double> *>(zfc));
@@ -115,52 +101,25 @@ double cem_cva_wrap(double m, double q) { return special::cem_cva(m, q); }
 
 double sem_cva_wrap(double m, double q) { return special::sem_cva(m, q); }
 
-int cem_wrap(double m, double q, double x, double *csf, double *csd) {
-    special::cem(m, q, x, csf, csd);
-    return 0;
-}
+void cem_wrap(double m, double q, double x, double *csf, double *csd) { special::cem(m, q, x, csf, csd); }
 
-int sem_wrap(double m, double q, double x, double *csf, double *csd) {
-    special::sem(m, q, x, csf, csd);
-    return 0;
-}
+void sem_wrap(double m, double q, double x, double *csf, double *csd) { special::sem(m, q, x, csf, csd); }
 
-int mcm1_wrap(double m, double q, double x, double *f1r, double *d1r) {
-    special::mcm1(m, q, x, f1r, d1r);
-    return 0;
-}
+void mcm1_wrap(double m, double q, double x, double *f1r, double *d1r) { special::mcm1(m, q, x, f1r, d1r); }
 
-int msm1_wrap(double m, double q, double x, double *f1r, double *d1r) {
-    special::msm1(m, q, x, f1r, d1r);
-    return 0;
-}
+void msm1_wrap(double m, double q, double x, double *f1r, double *d1r) { special::msm1(m, q, x, f1r, d1r); }
 
-int mcm2_wrap(double m, double q, double x, double *f2r, double *d2r) {
-    special::mcm2(m, q, x, f2r, d2r);
-    return 0;
-}
+void mcm2_wrap(double m, double q, double x, double *f2r, double *d2r) { special::mcm2(m, q, x, f2r, d2r); }
 
-int msm2_wrap(double m, double q, double x, double *f2r, double *d2r) {
-    special::msm2(m, q, x, f2r, d2r);
-    return 0;
-}
+void msm2_wrap(double m, double q, double x, double *f2r, double *d2r) { special::msm2(m, q, x, f2r, d2r); }
 
 double pmv_wrap(double m, double v, double x) { return special::pmv(m, v, x); }
 
-int pbwa_wrap(double a, double x, double *wf, double *wd) {
-    special::pbwa(a, x, wf, wd);
-    return 0;
-}
+void pbwa_wrap(double a, double x, double *wf, double *wd) { special::pbwa(a, x, wf, wd); }
 
-int pbdv_wrap(double v, double x, double *pdf, double *pdd) {
-    special::pbdv(v, x, pdf, pdd);
-    return 0;
-}
+void pbdv_wrap(double v, double x, double *pdf, double *pdd) { special::pbdv(v, x, pdf, pdd); }
 
-int pbvv_wrap(double v, double x, double *pvf, double *pvd) {
-    special::pbvv(v, x, pvf, pvd);
-    return 0;
-}
+void pbvv_wrap(double v, double x, double *pvf, double *pvd) { special::pbvv(v, x, pvf, pvd); }
 
 double prolate_segv_wrap(double m, double n, double c) { return special::prolate_segv(m, n, c); }
 
@@ -180,14 +139,12 @@ double oblate_aswfa_nocv_wrap(double m, double n, double c, double x, double *s1
     return s1f;
 }
 
-int prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d) {
+void prolate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d) {
     special::prolate_aswfa(m, n, c, cv, x, s1f, s1d);
-    return 0;
 }
 
-int oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d) {
+void oblate_aswfa_wrap(double m, double n, double c, double cv, double x, double *s1f, double *s1d) {
     special::oblate_aswfa(m, n, c, cv, x, s1f, s1d);
-    return 0;
 }
 
 double prolate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d) {
@@ -204,14 +161,12 @@ double prolate_radial2_nocv_wrap(double m, double n, double c, double x, double 
     return r2f;
 }
 
-int prolate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
+void prolate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
     special::prolate_radial1(m, n, c, cv, x, r1f, r1d);
-    return 0;
 }
 
-int prolate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d) {
+void prolate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d) {
     special::prolate_radial2(m, n, c, cv, x, r2f, r2d);
-    return 0;
 }
 
 double oblate_radial1_nocv_wrap(double m, double n, double c, double x, double *r1d) {
@@ -228,24 +183,20 @@ double oblate_radial2_nocv_wrap(double m, double n, double c, double x, double *
     return r2f;
 }
 
-int oblate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
+void oblate_radial1_wrap(double m, double n, double c, double cv, double x, double *r1f, double *r1d) {
     special::oblate_radial1(m, n, c, cv, x, r1f, r1d);
-    return 0;
 }
 
-int oblate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d) {
+void oblate_radial2_wrap(double m, double n, double c, double cv, double x, double *r2f, double *r2d) {
     special::oblate_radial2(m, n, c, cv, x, r2f, r2d);
-    return 0;
 }
 
-int modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus) {
+void modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus) {
     special::modified_fresnel_plus(x, reinterpret_cast<complex<double> *>(Fplus),
                                    reinterpret_cast<complex<double> *>(Kplus));
-    return 0;
 }
 
-int modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kminus) {
+void modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kminus) {
     special::modified_fresnel_minus(x, reinterpret_cast<complex<double> *>(Fminus),
                                     reinterpret_cast<complex<double> *>(Kminus));
-    return 0;
 }
