@@ -8,6 +8,8 @@ with safe_import():
 with safe_import():
     import scipy.interpolate as interpolate
 
+with safe_import():
+    from scipy.sparse import csr_matrix
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -83,7 +85,32 @@ class GridData(Benchmark):
     def time_evaluation(self, n_grids, method):
         interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y),
                              method=method)
+        
+class GridDataPeakMem(Benchmark):
 
+    def setup(self):
+        shape = (14790, 12816)
+        num_nonzero = 488686
+
+        rng = np.random.default_rng(1234)
+
+        random_rows = rng.integers(0, shape[0], num_nonzero)
+        random_cols = rng.integers(0, shape[1], num_nonzero)
+
+        random_values = np.random.rand(num_nonzero).astype(np.float32)
+
+        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)), 
+                                   shape=shape, dtype=np.float32)
+        sparse_matrix = sparse_matrix.toarray()
+
+        self.coords = np.column_stack(np.nonzero(sparse_matrix))
+        self.values = sparse_matrix[self.coords[:, 0], self.coords[:, 1]]
+        self.grid_x, self.grid_y = np.mgrid[0:sparse_matrix.shape[0], 
+                                            0:sparse_matrix.shape[1]]
+
+    def peakmem_griddata(self):
+        interpolate.griddata(self.coords, self.values, (self.grid_x, self.grid_y), 
+                             method='cubic')
 
 class Interpolate1d(Benchmark):
     param_names = ['n_samples', 'method']
