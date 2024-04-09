@@ -3,10 +3,9 @@
 # included below.
 
 from scipy._lib.deprecation import _sub_module_deprecation
-from ._basic import clpmn, lpmn, lpn, lqmn
-from ._specfun import pbdv
 
-__all__ = [  # noqa: F822
+# ruff: noqa: F822
+__all__ = [
     'clpmn',
     'lpmn',
     'lpn',
@@ -21,5 +20,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="special", module="specfun",
-                                   private_modules=["_basic"], all=__all__,
+                                   private_modules=["_basic", "_specfun"], all=__all__,
                                    attribute=name)
