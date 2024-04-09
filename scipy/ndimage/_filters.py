@@ -1786,14 +1786,14 @@ def generic_filter(input, function, size=None, footprint=None,
 
     >>> import numpy as np
     >>> from scipy import datasets
-    >>> from scipy.ndimage import generic_filter
+    >>> from scipy.ndimage import zoom, generic_filter
     >>> import matplotlib.pyplot as plt
-    >>> ascent = datasets.ascent()
+    >>> ascent = zoom(datasets.ascent(), 0.5)
 
-    Compute a maximum filter with kernel size 10 by passing a simple NumPy
+    Compute a maximum filter with kernel size 5 by passing a simple NumPy
     aggregation function as argument to `function`.
 
-    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [5, 5])
 
     While a maximmum filter could also directly be obtained using
     `maximum_filter`, `generic_filter` allows generic Python function or
@@ -1807,7 +1807,7 @@ def generic_filter(input, function, size=None, footprint=None,
 
     Plot the original and filtered images.
 
-    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> fig, axes = plt.subplots(3, 1, figsize=(3, 9))
     >>> plt.gray()  # show the filtered result in grayscale
     >>> top, middle, bottom = axes
     >>> for ax in axes:
@@ -1815,7 +1815,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> top.imshow(ascent)
     >>> top.set_title("Original image")
     >>> middle.imshow(maximum_filter_result)
-    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> middle.set_title("Maximum filter, Kernel: 5x5")
     >>> bottom.imshow(custom_filter_result)
     >>> bottom.set_title("Custom filter, Kernel: 5x5")
     >>> fig.tight_layout()

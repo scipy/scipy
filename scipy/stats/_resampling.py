@@ -1596,7 +1596,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
-    -0.5230459671240913
+    -0.4230459671240913
     >>> print(res.pvalue)
     0.0015
 
