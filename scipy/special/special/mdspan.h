@@ -1,9 +1,12 @@
 
 #pragma once
 
+#include <limits>
+#include <type_traits>
+
 namespace std {
 
-inline constexpr std::size_t dynamic_extent = std::numeric_limits<std::size_t>::max();
+inline constexpr size_t dynamic_extent = numeric_limits<size_t>::max();
 
 template <typename Index, size_t... Extents>
 class extents {
@@ -92,8 +95,8 @@ struct default_accessor {
     constexpr reference access(data_handle_type p, std::size_t i) const noexcept { return p[i]; }
 };
 
-template <class T, class Extents, class LayoutPolicy = std::layout_right,
-          class AccessorPolicy = std::default_accessor<T>>
+template <typename T, typename Extents, typename LayoutPolicy = std::layout_right,
+          typename AccessorPolicy = std::default_accessor<T>>
 class mdspan {
   public:
     using extents_type = Extents;
