@@ -550,6 +550,25 @@ class TestBinnedStatistic:
                                            np.min, np.max, 'count',
                                            lambda x: (x**2).sum(),
                                            lambda x: (x**2).sum() * 1j])
+    def test_structured(self):
+        # Test with a structured array
+        names = ["x", "v"]
+        types = [float, float]
+        struc_array = np.empty(self.x.size, dtype=list(zip(names, types)))
+        struc_array["x"] = self.x
+        struc_array["v"] = self.v
+
+        def test_func(data):
+            return np.sum(data["x"] + data["v"])
+        bins = np.linspace(0, 1, 11)
+        stat, edges, bc = binned_statistic(self.x, struc_array, bins=bins,
+                                           statistic=test_func)
+        stat2, edges2, bc = binned_statistic(self.x,
+                                             struc_array["x"]+struc_array["v"],
+                                             bins=bins,
+                                             statistic=np.sum)
+        assert_allclose(stat, stat2)
+
     def test_dd_all(self, dtype, statistic):
         def ref_statistic(x):
             return len(x) if statistic == 'count' else statistic(x)
