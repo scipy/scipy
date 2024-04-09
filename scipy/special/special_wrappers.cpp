@@ -16,9 +16,9 @@ namespace {
 
 complex<double> to_complex(npy_cdouble z) {
     union {
-        complex<double> value;
         npy_cdouble cvalue;
-    } z_union{.cvalue = z};
+        complex<double> value;
+    } z_union{z};
     return z_union.value;
 }
 
@@ -26,7 +26,7 @@ npy_cdouble to_ccomplex(complex<double> z) {
     union {
         complex<double> value;
         npy_cdouble cvalue;
-    } z_union{.value = z};
+    } z_union{z};
     return z_union.cvalue;
 }
 
