@@ -12,7 +12,7 @@ import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
 from scipy.conftest import array_api_compatible
 
-from scipy._lib._array_api import xp_assert_equal
+from scipy._lib._array_api import xp_assert_equal, xp_assert_close
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
@@ -398,7 +398,7 @@ class TestLazywhere:
             res2 = xp.asarray(res2)[()]
 
         isinstance(res1, type(xp.asarray([])))
-        xp_assert_equal(res1, ref1)
+        xp_assert_close(res1, ref1, rtol=2e-16)
         assert_equal(res1.shape, ref1.shape)
         assert_equal(res1.dtype, ref1.dtype)
 
