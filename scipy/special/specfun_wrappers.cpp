@@ -11,6 +11,8 @@
 
 using namespace std;
 
+namespace {
+
 complex<double> to_complex(npy_cdouble z) {
     union {
         npy_cdouble npy;
@@ -26,6 +28,8 @@ npy_cdouble to_ccomplex(complex<double> z) {
     } z_pun{.cc = z};
     return z_pun.npy;
 }
+
+} // namespace
 
 npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z) {
     return to_ccomplex(special::chyp2f1(a, b, c, to_complex(z)));
