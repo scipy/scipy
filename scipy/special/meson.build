@@ -110,8 +110,7 @@ sf_error_state_lib = shared_library('sf_error_state',
 ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
-  'amos_wrappers.cpp',
-  'specfun_wrappers.cpp',
+  'special_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -268,11 +267,10 @@ py3.extension_module('_ellip_harm_2',
 
 py3.extension_module('cython_special',
   [
-    uf_cython_gen.process('cython_special.pyx'),  # cython_special.pyx
+    uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
     'scaled_exp1.c',
-    'amos_wrappers.cpp',
-    'specfun_wrappers.cpp',
+    'special_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],

@@ -39,7 +39,7 @@ from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
 from ._hyp2f1 cimport hyp2f1_complex
 
-cdef extern from "specfun_wrappers.h":
+cdef extern from "special_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
 

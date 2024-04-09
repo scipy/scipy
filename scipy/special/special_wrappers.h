@@ -86,6 +86,32 @@ double oblate_segv_wrap(double, double, double);
 void modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 void modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 
+void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
+void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
+npy_cdouble cbesi_wrap(double v, npy_cdouble z);
+npy_cdouble cbesi_wrap_e(double v, npy_cdouble z);
+double cbesi_wrap_e_real(double v, double z);
+npy_cdouble cbesj_wrap(double v, npy_cdouble z);
+npy_cdouble cbesj_wrap_e(double v, npy_cdouble z);
+double cbesj_wrap_real(double v, double z);
+double cbesj_wrap_e_real(double v, double z);
+npy_cdouble cbesy_wrap(double v, npy_cdouble z);
+double cbesy_wrap_real(double v, double x);
+npy_cdouble cbesy_wrap_e(double v, npy_cdouble z);
+double cbesy_wrap_e_real(double v, double z);
+npy_cdouble cbesk_wrap(double v, npy_cdouble z);
+npy_cdouble cbesk_wrap_e(double v, npy_cdouble z);
+double cbesk_wrap_real(double v, double z);
+double cbesk_wrap_e_real(double v, double z);
+double cbesk_wrap_real_int(int n, double z);
+npy_cdouble cbesh_wrap1(double v, npy_cdouble z);
+npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z);
+npy_cdouble cbesh_wrap2(double v, npy_cdouble z);
+npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z);
+double sin_pi(double x);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */

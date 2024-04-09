@@ -5,7 +5,7 @@ import cython
 from . cimport sf_error
 from ._cephes cimport expm1, poch
 
-cdef extern from 'specfun_wrappers.h':
+cdef extern from 'special_wrappers.h':
     double hypU_wrap(double, double, double) nogil
 
 

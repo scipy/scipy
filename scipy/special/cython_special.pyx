@@ -1113,33 +1113,7 @@ ctypedef float complex float_complex
 ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
-cdef extern from r"amos_wrappers.h":
-    npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
-    npy_int _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
-    npy_int _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
-    npy_int _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
-    npy_cdouble _func_cbesi_wrap "cbesi_wrap"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesi_wrap_e "cbesi_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesi_wrap_e_real "cbesi_wrap_e_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesj_wrap "cbesj_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesj_wrap_real "cbesj_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesj_wrap_e "cbesj_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesj_wrap_e_real "cbesj_wrap_e_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesy_wrap "cbesy_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesy_wrap_real "cbesy_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesy_wrap_e "cbesy_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesy_wrap_e_real "cbesy_wrap_e_real"(npy_double, npy_double) nogil
-    npy_double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(npy_int, npy_double) nogil
-    npy_cdouble _func_cbesk_wrap "cbesk_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesk_wrap_e "cbesk_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesk_wrap_e_real "cbesk_wrap_e_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
-
-cdef extern from r"specfun_wrappers.h":
+cdef extern from r"special_wrappers.h":
     double _func_bei_wrap "bei_wrap"(double) nogil
     double _func_beip_wrap "beip_wrap"(double) nogil
     double _func_ber_wrap "ber_wrap"(double) nogil
@@ -1189,6 +1163,31 @@ cdef extern from r"specfun_wrappers.h":
     void _func_pbvv_wrap "pbvv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     npy_int _func_cfresnl_wrap "cfresnl_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
+
+    npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    npy_int _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    npy_int _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    npy_int _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    npy_cdouble _func_cbesi_wrap "cbesi_wrap"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesi_wrap_e "cbesi_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesi_wrap_e_real "cbesi_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesj_wrap "cbesj_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesj_wrap_real "cbesj_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesj_wrap_e "cbesj_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesj_wrap_e_real "cbesj_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesy_wrap "cbesy_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesy_wrap_real "cbesy_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesy_wrap_e "cbesy_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesy_wrap_e_real "cbesy_wrap_e_real"(npy_double, npy_double) nogil
+    npy_double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(npy_int, npy_double) nogil
+    npy_cdouble _func_cbesk_wrap "cbesk_wrap"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesk_wrap_e "cbesk_wrap_e"(npy_double, npy_cdouble) nogil
+    npy_double _func_cbesk_wrap_e_real "cbesk_wrap_e_real"(npy_double, npy_double) nogil
+    npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
+    npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
