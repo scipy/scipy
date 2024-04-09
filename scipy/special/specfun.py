@@ -5,31 +5,6 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
-    'airyzo',
-    'bernob',
-    'cerzo',
-    'clpmn',
-    'clpn',
-    'clqmn',
-    'clqn',
-    'cpbdn',
-    'cyzo',
-    'eulerb',
-    'fcoef',
-    'fcszo',
-    'jdzo',
-    'jyzo',
-    'klvnzo',
-    'lamn',
-    'lamv',
-    'lpmn',
-    'lpn',
-    'lqmn',
-    'lqnb',
-    'pbdv',
-    'rctj',
-    'rcty',
-    'segv'
 ]
 
 
