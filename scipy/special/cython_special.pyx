@@ -1092,8 +1092,34 @@ optional Cython ``bint``, leading to the following signatures.
 
 from libc.math cimport NAN
 
-include "_cython_special.pxi"
-include "_cython_special_custom.pxi"
+cimport numpy as np
+from numpy cimport (
+    npy_float, npy_double, npy_longdouble,
+    npy_cfloat, npy_cdouble, npy_clongdouble,
+    npy_int, npy_long,
+    NPY_FLOAT, NPY_DOUBLE, NPY_LONGDOUBLE,
+    NPY_CFLOAT, NPY_CDOUBLE, NPY_CLONGDOUBLE,
+    NPY_INT, NPY_LONG)
+
+cdef extern from "numpy/ufuncobject.h":
+    int PyUFunc_getfperr() nogil
+
+cdef public int wrap_PyUFunc_getfperr() noexcept nogil:
+    """
+    Call PyUFunc_getfperr in a context where PyUFunc_API array is initialized;
+    this avoids messing with the UNIQUE_SYMBOL #defines
+    """
+    return PyUFunc_getfperr()
+
+from . cimport sf_error
+from . cimport _complexstuff
+cimport scipy.special._ufuncs_cxx
+from scipy.special import _ufuncs
+
+ctypedef long double long_double
+ctypedef float complex float_complex
+ctypedef double complex double_complex
+ctypedef long double complex long_double_complex
 
 cdef extern from r"amos_wrappers.h":
     npy_int _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
@@ -1671,6 +1697,7 @@ cdef extern from r"_ufuncs_defs.h":
 from ._ndtri_exp cimport ndtri_exp as _func_ndtri_exp
 ctypedef double _proto_ndtri_exp_t(double) noexcept nogil
 cdef _proto_ndtri_exp_t *_proto_ndtri_exp_t_var = &_func_ndtri_exp
+from . cimport _spherical_bessel
 
 cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.voigt_profile"""
@@ -3472,6 +3499,58 @@ cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
 cpdef double ndtri_exp(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri_exp"""
     return _func_ndtri_exp(x0)
+
+cpdef number_t spherical_jn(long n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_jn"""
+    if derivative:
+        if number_t is double:
+            return _spherical_bessel.spherical_jn_d_real(n, z)
+        else:
+            return _spherical_bessel.spherical_jn_d_complex(n, z)
+
+    if number_t is double:
+        return _spherical_bessel.spherical_jn_real(n, z)
+    else:
+        return _spherical_bessel.spherical_jn_complex(n, z)
+
+cpdef number_t spherical_yn(long n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_yn"""
+    if derivative:
+        if number_t is double:
+            return _spherical_bessel.spherical_yn_d_real(n, z)
+        else:
+            return _spherical_bessel.spherical_yn_d_complex(n, z)
+
+    if number_t is double:
+        return _spherical_bessel.spherical_yn_real(n, z)
+    else:
+        return _spherical_bessel.spherical_yn_complex(n, z)
+
+cpdef number_t spherical_in(long n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_in"""
+    if derivative:
+        if number_t is double:
+            return _spherical_bessel.spherical_in_d_real(n, z)
+        else:
+            return _spherical_bessel.spherical_in_d_complex(n, z)
+
+    if number_t is double:
+        return _spherical_bessel.spherical_in_real(n, z)
+    else:
+        return _spherical_bessel.spherical_in_complex(n, z)
+
+cpdef number_t spherical_kn(long n, number_t z, bint derivative=0) noexcept nogil:
+    """See the documentation for scipy.special.spherical_kn"""
+    if derivative:
+        if number_t is double:
+            return _spherical_bessel.spherical_kn_d_real(n, z)
+        else:
+            return _spherical_bessel.spherical_kn_d_complex(n, z)
+
+    if number_t is double:
+        return _spherical_bessel.spherical_kn_real(n, z)
+    else:
+        return _spherical_bessel.spherical_kn_complex(n, z)
 
 def _bench_airy_d_py(int N, double x0):
     cdef int n

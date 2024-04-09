@@ -27,8 +27,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
   fs.copyfile('sph_harm.pxd'),
-  fs.copyfile('_cython_special.pxi'),
-  fs.copyfile('_cython_special_custom.pxi'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
@@ -182,13 +180,7 @@ cython_special = custom_target('cython_special',
   install_tag: 'devel',
 )
 
-# Only needed to establish a dependency; see comments in linalg/meson.build
-# for cython_blas_pxd
-cython_special_pxd = custom_target('_dummy_cython_special.pxd',
-  output: '_dummy_cython_special.pxd',
-  input: 'cython_special.pxd',
-  command: [py3, '-c', '"@INPUT@"'],
-)
+cython_special_pxd = fs.copyfile('cython_special.pxd')
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
 uf_cython_gen = generator(cython,
