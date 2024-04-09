@@ -124,8 +124,6 @@ invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 
 npyrandom_includes = include_directories('libnpyrandom')
 npyrandom_dep = declare_dependency(include_directories: npyrandom_includes)
-logfactorial_dep = declare_dependency(sources: ['libnpyrandom/logfactorial.c'], dependencies: npyrandom_dep)
-distributions_dep = declare_dependency(sources: ['libnpyrandom/distributions.c'], dependencies: npyrandom_dep)
 
 py3.extension_module('_biasedurn',
   [
@@ -136,10 +134,11 @@ py3.extension_module('_biasedurn',
     'biasedurn/stoc3.cpp',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
+    'libnpyrandom/distributions.c',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   link_args: version_link_args,
-  dependencies: [np_dep, distributions_dep],
+  dependencies: [np_dep, npyrandom_dep],
   install: true,
   subdir: 'scipy/stats'
 )
