@@ -52,6 +52,13 @@
 namespace special {
 namespace detail {
     constexpr double hyp2f1_EPS = 1e-15;
+    /* The original implementation in SciPy from Zhang and Jin used 1500 for the
+     * maximum number of series iterations in some cases and 500 in others.
+     * Through the empirical results on the test cases in
+     * scipy/special/_precompute/hyp2f1_data.py, it was determined that these values
+     * can lead to early termination of series which would have eventually converged
+     * at a reasonable level of accuracy. We've bumped the iteration limit to 3000,
+     * and may adjust it again based on further analysis. */
     constexpr std::uint64_t hyp2f1_MAXITER = 3000;
 
     SPECFUN_HOST_DEVICE inline double four_gammas_lanczos(double u, double v, double w, double x) {
@@ -607,7 +614,6 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
     if (z_abs < 0.9 && z.real() >= 0) {
         if (c - a < a && c - b < b) {
             result = std::pow(1.0 - z, c - a - b);
-            // Maximum number of terms 1500 comes from Zhang and Jin.
             auto series_generator = detail::HypergeometricSeriesGenerator(c - a, c - b, c, z);
             result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
                                           detail::hyp2f1_MAXITER, "hyp2f1");
