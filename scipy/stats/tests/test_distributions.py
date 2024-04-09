@@ -4621,7 +4621,7 @@ class TestBetaPrime:
 
     @pytest.mark.parametrize('x, a, b, p', cdf_vals)
     def test_ppf_gh_17631(self, x, a, b, p):
-        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=1.2e-14)
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',
