@@ -123,12 +123,12 @@ void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp 
 template <typename T, typename Extents, typename AccessorPolicy>
 void from_pointer(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
                   const npy_intp *dimensions, const npy_intp *steps) {
-    std::array<npy_intp, Extents::rank()> strides;
+    std::array<ptrdiff_t, Extents::rank()> strides;
     for (npy_uintp i = 0; i < strides.size(); ++i) {
         strides[i] = steps[i] / sizeof(T);
     }
 
-    std::array<npy_intp, Extents::rank()> exts;
+    std::array<ptrdiff_t, Extents::rank()> exts;
     for (npy_uintp i = 0; i < exts.size(); ++i) {
         exts[i] = dimensions[i];
     }
