@@ -12662,7 +12662,7 @@ add_newdoc("_stirling2_inexact",
 
 add_newdoc(
     "_beta_pdf",
-    """
+    r"""
     _beta_pdf(x, a, b)
 
     Probability density function of beta distribution.
@@ -12683,7 +12683,7 @@ add_newdoc(
 
 add_newdoc(
     "_beta_ppf",
-    """
+    r"""
     _beta_ppf(x, a, b)
 
     Percent point function of beta distribution.
