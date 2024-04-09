@@ -1477,9 +1477,6 @@ cdef extern from r"_ufuncs_defs.h":
     cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_hyp2f1 "hyp2f1"(npy_double, npy_double, npy_double, npy_double)nogil
-from ._hyp2f1 cimport hyp2f1_complex as _func_hyp2f1_complex
-ctypedef double complex _proto_hyp2f1_complex_t(double, double, double, double complex) noexcept nogil
-cdef _proto_hyp2f1_complex_t *_proto_hyp2f1_complex_t_var = &_func_hyp2f1_complex
 from ._hypergeometric cimport hyperu as _func_hyperu
 ctypedef double _proto_hyperu_t(double, double, double) noexcept nogil
 cdef _proto_hyperu_t *_proto_hyperu_t_var = &_func_hyperu
@@ -2533,7 +2530,7 @@ cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexce
     if Dd_number_t is double:
         return _func_hyp2f1(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
-        return _func_hyp2f1_complex(x0, x1, x2, x3)
+        return (<double complex(*)(double, double, double, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp2f1_complex)(x0, x1, x2, x3)
     else:
         if Dd_number_t is double_complex:
             return NAN
