@@ -37,7 +37,7 @@ class extents {
     using rank_type = size_t;
 
   private:
-    std::array<index_type, sizeof...(Extents)> m_dexts;
+    array<index_type, sizeof...(Extents)> m_dexts;
 
   public:
     constexpr extents() = default;
@@ -107,8 +107,8 @@ class default_accessor {
     constexpr data_handle_type offset(data_handle_type p, size_t i) const noexcept { return p + i; }
 };
 
-template <typename T, typename Extents, typename LayoutPolicy = std::layout_right,
-          typename AccessorPolicy = std::default_accessor<T>>
+template <typename T, typename Extents, typename LayoutPolicy = layout_right,
+          typename AccessorPolicy = default_accessor<T>>
 class mdspan {
   public:
     using extents_type = Extents;
@@ -116,7 +116,7 @@ class mdspan {
     using accessor_type = AccessorPolicy;
     using mapping_type = typename LayoutPolicy::template mapping<Extents>;
     using element_type = T;
-    using value_type = std::remove_cv_t<T>;
+    using value_type = remove_cv_t<T>;
     using index_type = typename Extents::index_type;
     using size_type = typename Extents::size_type;
     using rank_type = typename Extents::rank_type;
@@ -135,7 +135,7 @@ class mdspan {
 
     template <typename... OtherIndices>
     constexpr reference operator()(OtherIndices... indices) const {
-        return m_acc.access(m_ptr, m_map(static_cast<index_type>(std::move(indices))...));
+        return m_acc.access(m_ptr, m_map(static_cast<index_type>(move(indices))...));
     }
 
     template <typename OtherIndex>
