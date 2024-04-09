@@ -1,3 +1,62 @@
+/*
+ *
+ * This file accompanied with the header file cdflib.h is a C rewrite of
+ * the Fortran code with the following as its original description:
+ *
+ * Cumulative distribution functions, inverses and parameters for
+ * Beta, Binomial, Chi-square, noncentral Chi-square, F, noncentral F, Gamma,
+ * negative Binomial, Normal, Poisson, Student's t distributions.
+ * It uses various TOMS algorithms and Abramowitz & Stegun, also Bus Dekker
+ * zero-finding algorithm.
+ *
+ * The original Fortran code can be found at Netlib
+ * https://www.netlib.org/random/
+ *
+ *
+ * References
+ * ----------
+ *
+ *  J. C. P. Bus, T. J. Dekker, Two Efficient Algorithms with Guaranteed
+ *  Convergence for Finding a Zero of a Function, ACM Trans. Math. Software 1:4
+ *  (1975) 330-345, DOI:10.1145/355656.355659
+ *
+ *  M. Abramowitz and I. A. Stegun (Eds.) (1964) Handbook of Mathematical
+ *  Functions with Formulas, Graphs, and Mathematical Tables. National Bureau
+ *  of Standards Applied Mathematics Series, U.S. Government Printing Office,
+ *  Washington, D.C..
+ *
+ */
+
+/*
+ *
+ * Copyright (C) 2024 SciPy developers
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * a. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * b. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * c. Names of the SciPy Developers may not be used to endorse or promote
+ *    products derived from this software without specific prior written
+ *    permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+ * OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ */
+
 #include "cdflib.h"
 
 static const double PI = 3.1415926535897932384626433832795028841971693993751;
@@ -1141,6 +1200,8 @@ double brcomp(double a, double b, double x, double y)
 
 double bup(double a, double b, double x, double y, int n, double eps)
 {
+    //     Evaluation of Ix(a,b) - Ix(a+n,b) where n is a positive integer and
+    //     eps is the tolerance used.
     double apb = a + b;
     double ap1 = a + 1.;
     double d = 1.;
@@ -1148,6 +1209,9 @@ double bup(double a, double b, double x, double y, int n, double eps)
     int i, nm1;
     int k = 0;
     int mu = 0;
+
+    //          Obtain the scaling factor exp(-mu) and
+    //             exp(mu)*(x**a*y**b/beta(a,b))/a
 
     if (!((n == 1) || (a < 1) || (apb < 1.1*ap1))) {
         mu = 708;
@@ -1162,6 +1226,7 @@ double bup(double a, double b, double x, double y, int n, double eps)
     nm1 = n - 1;
     w = d;
 
+    // Let k be the index of the maximum term
     k = 0;
     if (b <= 1.) {
         // 50
@@ -1193,6 +1258,7 @@ double bup(double a, double b, double x, double y, int n, double eps)
         k = nm1;
     }
     // 30
+    // Add the increasing terms of the series
     for (i = 0; i < k; i++) {
         d *= ((apb + i) / (ap1 + i))*x;
         w += d;
@@ -1203,6 +1269,7 @@ double bup(double a, double b, double x, double y, int n, double eps)
     }
 
     // 50
+    // Add the remaining terms of the series
     for (i = k; i < n-1; i++) {
         d *= ((apb + i) / (ap1 + i))*x;
         w += d;
@@ -1211,6 +1278,103 @@ double bup(double a, double b, double x, double y, int n, double eps)
     return result*w;
 }
 
+    //               Cumulative Distribution Function
+    //                         BETa Distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the beta distribution given
+    //     values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next four argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from X,Y,A and B
+    //               iwhich = 2 : Calculate X and Y from P,Q,A and B
+    //               iwhich = 3 : Calculate A from P,Q,X,Y and B
+    //               iwhich = 4 : Calculate B from P,Q,X,Y and A
+    //
+    //                    INTEGER WHICH
+    //
+    //     P <--> The integral from 0 to X of the chi-square
+    //            distribution.
+    //            Input range: [0, 1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: [0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //     X <--> Upper limit of integration of beta density.
+    //            Input range: [0,1].
+    //            Search range: [0,1]
+    //                    DOUBLE PRECISION X
+    //
+    //     Y <--> 1-X.
+    //            Input range: [0,1].
+    //            Search range: [0,1]
+    //            X + Y = 1.0.
+    //                    DOUBLE PRECISION Y
+    //
+    //     A <--> The first parameter of the beta density.
+    //            Input range: (0, +infinity).
+    //            Search range: [1D-100,1D100]
+    //                    DOUBLE PRECISION A
+    //
+    //     B <--> The second parameter of the beta density.
+    //            Input range: (0, +infinity).
+    //            Search range: [1D-100,1D100]
+    //                    DOUBLE PRECISION B
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                4 if X + Y .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Cumulative distribution function  (P)  is calculated directly by
+    //     code associated with the following reference.
+    //
+    //     DiDinato, A. R. and Morris,  A.   H.  Algorithm 708: Significant
+    //     Digit Computation of the Incomplete  Beta  Function Ratios.  ACM
+    //     Trans. Math.  Softw. 18 (1993), 360-373.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //                              Note
+    //
+    //
+    //     The beta density is proportional to
+    //               t^(A-1) * (1-t)^(B-1)
+    //
+    //**********************************************************************
 
 struct TupleDDID cdfbet_which1(double x, double y, double a, double b)
 {
@@ -1452,6 +1616,95 @@ struct TupleDID cdfbet_which4(double p, double q, double x, double y, double a)
 }
 
 
+    //               Cumulative Distribution Function
+    //                         BINomial distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the binomial
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next four argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from S,XN,PR and OMPR
+    //               iwhich = 2 : Calculate S from P,Q,XN,PR and OMPR
+    //               iwhich = 3 : Calculate XN from P,Q,S,PR and OMPR
+    //               iwhich = 4 : Calculate PR and OMPR from P,Q,S and XN
+    //                    INTEGER WHICH
+    //
+    //     P <--> The cumulation from 0 to S of the binomial distribution.
+    //            (Probablility of S or fewer successes in XN trials each
+    //            with probability of success PR.)
+    //            Input range: [0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: [0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //     S <--> The number of successes observed.
+    //            Input range: [0, XN]
+    //            Search range: [0, XN]
+    //                    DOUBLE PRECISION S
+    //
+    //     XN  <--> The number of binomial trials.
+    //              Input range: (0, +infinity).
+    //              Search range: [1E-100, 1E100]
+    //                    DOUBLE PRECISION XN
+    //
+    //     PR  <--> The probability of success in each binomial trial.
+    //              Input range: [0,1].
+    //              Search range: [0,1]
+    //                    DOUBLE PRECISION PR
+    //
+    //     OMPR  <--> 1-PR
+    //              Input range: [0,1].
+    //              Search range: [0,1]
+    //              PR + OMPR = 1.0
+    //                    DOUBLE PRECISION OMPR
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                4 if PR + OMPR .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
+    //     Mathematical   Functions (1966) is   used  to reduce the  binomial
+    //     distribution  to  the  cumulative incomplete    beta distribution.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //**********************************************************************
+
 struct TupleDDID cdfbin_which1(double s, double xn, double pr, double ompr)
 {
     if (!((0 <= s) && (s <= xn))) {
@@ -1678,6 +1931,84 @@ struct TupleDDID cdfbin_which4(double p, double q, double s, double xn)
 }
 
 
+    //               Cumulative Distribution Function
+    //               CHI-Square distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the chi-square
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next three argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..3
+    //               iwhich = 1 : Calculate P and Q from X and DF
+    //               iwhich = 2 : Calculate X from P,Q and DF
+    //               iwhich = 3 : Calculate DF from P,Q and X
+    //                    INTEGER WHICH
+    //
+    //     P <--> The integral from 0 to X of the chi-square
+    //            distribution.
+    //            Input range: [0, 1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //     X <--> Upper limit of integration of the non-central
+    //            chi-square distribution.
+    //            Input range: [0, +infinity).
+    //            Search range: [0,1E100]
+    //                    DOUBLE PRECISION X
+    //
+    //     DF <--> Degrees of freedom of the
+    //             chi-square distribution.
+    //             Input range: (0, +infinity).
+    //             Search range: [ 1E-100, 1E100]
+    //                    DOUBLE PRECISION DF
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //               10 indicates error returned from cumgam.  See
+    //                  references in cdfgam
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula    26.4.19   of Abramowitz  and     Stegun, Handbook  of
+    //     Mathematical Functions   (1966) is used   to reduce the chisqure
+    //     distribution to the incomplete distribution.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //**********************************************************************
+
 struct TupleDDID cdfchi_which1(double x, double df)
 {
     struct TupleDD chiret;
@@ -1811,6 +2142,96 @@ struct TupleDID cdfchi_which3(double p, double q, double x)
     }
 }
 
+
+    //               Cumulative Distribution Function
+    //               Non-central Chi-Square
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the non-central chi-square
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next three argument
+    //               values is to be calculated from the others.
+    //               Input range: 1..4
+    //               iwhich = 1 : Calculate P and Q from X and DF
+    //               iwhich = 2 : Calculate X from P,DF and PNONC
+    //               iwhich = 3 : Calculate DF from P,X and PNONC
+    //               iwhich = 3 : Calculate PNONC from P,X and DF
+    //                    INTEGER WHICH
+    //
+    //     P <--> The integral from 0 to X of the non-central chi-square
+    //            distribution.
+    //            Input range: [0, 1-1E-16).
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Q is not used by this subroutine and is only included
+    //            for similarity with other cdf* routines.
+    //                    DOUBLE PRECISION Q
+    //
+    //     X <--> Upper limit of integration of the non-central
+    //            chi-square distribution.
+    //            Input range: [0, +infinity).
+    //            Search range: [0,1E300]
+    //                    DOUBLE PRECISION X
+    //
+    //     DF <--> Degrees of freedom of the non-central
+    //             chi-square distribution.
+    //             Input range: (0, +infinity).
+    //             Search range: [ 1E-300, 1E300]
+    //                    DOUBLE PRECISION DF
+    //
+    //     PNONC <--> Non-centrality parameter of the non-central
+    //                chi-square distribution.
+    //                Input range: [0, +infinity).
+    //                Search range: [0,1E4]
+    //                    DOUBLE PRECISION PNONC
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula  26.4.25   of   Abramowitz   and   Stegun,  Handbook  of
+    //     Mathematical  Functions (1966) is used to compute the cumulative
+    //     distribution function.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //                            WARNING
+    //
+    //     The computation time  required for this  routine is proportional
+    //     to the noncentrality  parameter  (PNONC).  Very large  values of
+    //     this parameter can consume immense  computer resources.  This is
+    //     why the search range is bounded by 1e9.
+    //
+    //**********************************************************************
 
 struct TupleDDID cdfchn_which1(double x, double df, double pnonc)
 {
@@ -1988,6 +2409,93 @@ struct TupleDID cdfchn_which4(double p, double x, double df)
     }
 }
 
+
+    //               Cumulative Distribution Function
+    //               F distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the F distribution
+    //     given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next four argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from F,DFN and DFD
+    //               iwhich = 2 : Calculate F from P,Q,DFN and DFD
+    //               iwhich = 3 : Calculate DFN from P,Q,F and DFD
+    //               iwhich = 4 : Calculate DFD from P,Q,F and DFN
+    //                    INTEGER WHICH
+    //
+    //       P <--> The integral from 0 to F of the f-density.
+    //              Input range: [0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //       Q <--> 1-P.
+    //              Input range: (0, 1].
+    //              P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //       F <--> Upper limit of integration of the f-density.
+    //              Input range: [0, +infinity).
+    //              Search range: [0,1E100]
+    //                    DOUBLE PRECISION F
+    //
+    //     DFN < --> Degrees of freedom of the numerator sum of squares.
+    //               Input range: (0, +infinity).
+    //               Search range: [ 1E-100, 1E100]
+    //                    DOUBLE PRECISION DFN
+    //
+    //     DFD < --> Degrees of freedom of the denominator sum of squares.
+    //               Input range: (0, +infinity).
+    //               Search range: [ 1E-100, 1E100]
+    //                    DOUBLE PRECISION DFD
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula   26.6.2   of   Abramowitz   and   Stegun,  Handbook  of
+    //     Mathematical  Functions (1966) is used to reduce the computation
+    //     of the  cumulative  distribution function for the  F  variate to
+    //     that of an incomplete beta.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //                              WARNING
+    //
+    //     The value of the  cumulative  F distribution is  not necessarily
+    //     monotone in  either degrees of freedom.  There  thus may  be two
+    //     values  that  provide a given CDF  value.   This routine assumes
+    //     monotonicity and will find an arbitrary one of the two values.
+    //
+    //**********************************************************************
 
 struct TupleDDID cdff_which1(double f, double dfn, double dfd)
 {
@@ -2183,6 +2691,107 @@ struct TupleDID cdff_which4(double p, double q, double f, double dfn)
     }
 }
 
+
+    //               Cumulative Distribution Function
+    //               Non-central F distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the Non-central F
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next five argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..5
+    //               iwhich = 1 : Calculate P and Q from F,DFN,DFD and PNONC
+    //               iwhich = 2 : Calculate F from P,Q,DFN,DFD and PNONC
+    //               iwhich = 3 : Calculate DFN from P,Q,F,DFD and PNONC
+    //               iwhich = 4 : Calculate DFD from P,Q,F,DFN and PNONC
+    //               iwhich = 5 : Calculate PNONC from P,Q,F,DFN and DFD
+    //                    INTEGER WHICH
+    //
+    //       P <--> The integral from 0 to F of the non-central f-density.
+    //              Input range: [0,1-1E-16).
+    //                    DOUBLE PRECISION P
+    //
+    //       Q <--> 1-P.
+    //            Q is not used by this subroutine and is only included
+    //            for similarity with other cdf* routines.
+    //                    DOUBLE PRECISION Q
+    //
+    //       F <--> Upper limit of integration of the non-central f-density.
+    //              Input range: [0, +infinity).
+    //              Search range: [0,1E100]
+    //                    DOUBLE PRECISION F
+    //
+    //     DFN < --> Degrees of freedom of the numerator sum of squares.
+    //               Input range: (0, +infinity).
+    //               Search range: [ 1E-100, 1E100]
+    //                    DOUBLE PRECISION DFN
+    //
+    //     DFD < --> Degrees of freedom of the denominator sum of squares.
+    //               Must be in range: (0, +infinity).
+    //               Input range: (0, +infinity).
+    //               Search range: [ 1E-100, 1E100]
+    //                    DOUBLE PRECISION DFD
+    //
+    //     PNONC <-> The non-centrality parameter
+    //               Input range: [0,infinity)
+    //               Search range: [0,1E4]
+    //                    DOUBLE PRECISION PHONC
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula  26.6.20   of   Abramowitz   and   Stegun,  Handbook  of
+    //     Mathematical  Functions (1966) is used to compute the cumulative
+    //     distribution function.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //                            WARNING
+    //
+    //     The computation time  required for this  routine is proportional
+    //     to the noncentrality  parameter  (PNONC).  Very large  values of
+    //     this parameter can consume immense  computer resources.  This is
+    //     why the search range is bounded by 10,000.
+    //
+    //                              WARNING
+    //
+    //     The  value  of the  cumulative  noncentral F distribution is not
+    //     necessarily monotone in either degrees  of freedom.  There  thus
+    //     may be two values that provide a given  CDF value.  This routine
+    //     assumes monotonicity  and will find  an arbitrary one of the two
+    //     values.
+    //
+    //**********************************************************************
 
 struct TupleDDID cdffnc_which1(double f, double dfn, double dfd, double phonc)
 {
@@ -2427,6 +3036,102 @@ struct TupleDID cdffnc_which5(double p, double q, double f, double dfn, double d
 }
 
 
+    //               Cumulative Distribution Function
+    //                         GAMma Distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the gamma
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next four argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from X,SHAPE and SCALE
+    //               iwhich = 2 : Calculate X from P,Q,SHAPE and SCALE
+    //               iwhich = 3 : Calculate SHAPE from P,Q,X and SCALE
+    //               iwhich = 4 : Calculate SCALE from P,Q,X and SHAPE
+    //                    INTEGER WHICH
+    //
+    //     P <--> The integral from 0 to X of the gamma density.
+    //            Input range: [0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //
+    //     X <--> The upper limit of integration of the gamma density.
+    //            Input range: [0, +infinity).
+    //            Search range: [0,1E100]
+    //                    DOUBLE PRECISION X
+    //
+    //     SHAPE <--> The shape parameter of the gamma density.
+    //                Input range: (0, +infinity).
+    //                Search range: [1E-100,1E100]
+    //                  DOUBLE PRECISION SHAPE
+    //
+    //
+    //     SCALE <--> The scale parameter of the gamma density.
+    //                Input range: (0, +infinity).
+    //                Search range: (1E-100,1E100]
+    //                   DOUBLE PRECISION SCALE
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                10 if the gamma or inverse gamma routine cannot
+    //                   compute the answer.  Usually happens only for
+    //                   X and SHAPE very large (gt 1E10 or more)
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Cumulative distribution function (P) is calculated directly by
+    //     the code associated with:
+    //
+    //     DiDinato, A. R. and Morris, A. H. Computation of the  incomplete
+    //     gamma function  ratios  and their  inverse.   ACM  Trans.  Math.
+    //     Softw. 12 (1986), 377-393.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //                              Note
+    //
+    //
+    //
+    //     The gamma density is proportional to
+    //       T**(SHAPE - 1) * EXP(- SCALE * T)
+    //
+    //
+    //**********************************************************************
+
 struct TupleDDID cdfgam_which1(double x, double shape, double scale)
 {
     struct TupleDD gamret;
@@ -2565,6 +3270,105 @@ struct TupleDID cdfgam_which4(double p, double q, double x, double shape)
     }
 }
 
+
+    //               Cumulative Distribution Function
+    //               Negative BiNomial distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the negative binomial
+    //     distribution given values for the others.
+    //
+    //     The  cumulative  negative   binomial  distribution  returns  the
+    //     probability that there  will be  F or fewer failures before  the
+    //     XNth success in binomial trials each of which has probability of
+    //     success PR.
+    //
+    //     The individual term of the negative binomial is the probability of
+    //     S failures before XN successes and is
+    //          Choose( S, XN+S-1 ) * PR^(XN) * (1-PR)^S
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which of the next four argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from S,XN,PR and OMPR
+    //               iwhich = 2 : Calculate S from P,Q,XN,PR and OMPR
+    //               iwhich = 3 : Calculate XN from P,Q,S,PR and OMPR
+    //               iwhich = 4 : Calculate PR and OMPR from P,Q,S and XN
+    //                    INTEGER WHICH
+    //
+    //     P <--> The cumulation from 0 to S of the  negative
+    //            binomial distribution.
+    //            Input range: [0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //     S <--> The upper limit of cumulation of the binomial distribution.
+    //            There are F or fewer failures before the XNth success.
+    //            Input range: [0, +infinity).
+    //            Search range: [0, 1E100]
+    //                    DOUBLE PRECISION S
+    //
+    //     XN  <--> The number of successes.
+    //              Input range: [0, +infinity).
+    //              Search range: [0, 1E100]
+    //                    DOUBLE PRECISION XN
+    //
+    //     PR  <--> The probability of success in each binomial trial.
+    //              Input range: [0,1].
+    //              Search range: [0,1].
+    //                    DOUBLE PRECISION PR
+    //
+    //     OMPR  <--> 1-PR
+    //              Input range: [0,1].
+    //              Search range: [0,1]
+    //              PR + OMPR = 1.0
+    //                    DOUBLE PRECISION OMPR
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                4 if PR + OMPR .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula   26.5.26   of   Abramowitz  and  Stegun,  Handbook   of
+    //     Mathematical Functions (1966) is used  to  reduce calculation of
+    //     the cumulative distribution  function to that of  an  incomplete
+    //     beta.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //**********************************************************************
 
 struct TupleDDID cdfnbn_which1(double s, double xn, double pr, double ompr)
 {
@@ -2785,6 +3589,102 @@ struct TupleDDID cdfnbn_which4(double p, double q, double s, double xn)
 }
 
 
+    //               Cumulative Distribution Function
+    //               NORmal distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the normal
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH  --> Integer indicating  which of the  next  parameter
+    //     values is to be calculated using values  of the others.
+    //     Legal range: 1..4
+    //               iwhich = 1 : Calculate P and Q from X,MEAN and SD
+    //               iwhich = 2 : Calculate X from P,Q,MEAN and SD
+    //               iwhich = 3 : Calculate MEAN from P,Q,X and SD
+    //               iwhich = 4 : Calculate SD from P,Q,X and MEAN
+    //                    INTEGER WHICH
+    //
+    //     P <--> The integral from -infinity to X of the normal density.
+    //            Input range: (0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //     X < --> Upper limit of integration of the normal-density.
+    //             Input range: ( -infinity, +infinity)
+    //                    DOUBLE PRECISION X
+    //
+    //     MEAN <--> The mean of the normal density.
+    //               Input range: (-infinity, +infinity)
+    //                    DOUBLE PRECISION MEAN
+    //
+    //     SD <--> Standard Deviation of the normal density.
+    //             Input range: (0, +infinity).
+    //                    DOUBLE PRECISION SD
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //
+    //
+    //     A slightly modified version of ANORM from
+    //
+    //     Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
+    //     Package of Special Function Routines and Test Drivers"
+    //     acm Transactions on Mathematical Software. 19, 22-32.
+    //
+    //     is used to calculate the cumulative standard normal distribution.
+    //
+    //     The rational functions from pages  90-95  of Kennedy and Gentle,
+    //     Statistical  Computing,  Marcel  Dekker, NY,  1980 are  used  as
+    //     starting values to Newton's Iterations which compute the inverse
+    //     standard normal.  Therefore no  searches  are necessary for  any
+    //     parameter.
+    //
+    //     For X < -15, the asymptotic expansion for the normal is used  as
+    //     the starting value in finding the inverse standard normal.
+    //     This is formula 26.2.12 of Abramowitz and Stegun.
+    //
+    //
+    //                              Note
+    //
+    //
+    //      The normal density is proportional to
+    //      exp( - 0.5 * (( X - MEAN)/SD)**2)
+    //
+    //
+    //**********************************************************************
+
 struct TupleDDID cdfnor_which1(double x, double mean, double sd)
 {
     if (!(sd > 0.0)) {
@@ -2822,6 +3722,82 @@ struct TupleDID cdfnor_which4(double p, double q, double x, double mean)
     return (struct TupleDID){.d1 = (x - mean)/z, .i1 = 0, .d2 = 0.0};
 }
 
+
+    //               Cumulative Distribution Function
+    //               POIsson distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the Poisson
+    //     distribution given values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which  argument
+    //               value is to be calculated from the others.
+    //               Legal range: 1..3
+    //               iwhich = 1 : Calculate P and Q from S and XLAM
+    //               iwhich = 2 : Calculate S from P,Q and XLAM
+    //               iwhich = 3 : Calculate XLAM from P,Q and S
+    //                    INTEGER WHICH
+    //
+    //        P <--> The cumulation from 0 to S of the poisson density.
+    //               Input range: [0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //        Q <--> 1-P.
+    //               Input range: (0, 1].
+    //               P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //        S <--> Upper limit of cumulation of the Poisson.
+    //               Input range: [0, +infinity).
+    //               Search range: [0,1E100]
+    //                    DOUBLE PRECISION S
+    //
+    //     XLAM <--> Mean of the Poisson distribution.
+    //               Input range: [0, +infinity).
+    //               Search range: [0,1E100]
+    //                    DOUBLE PRECISION XLAM
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula   26.4.21  of   Abramowitz  and   Stegun,   Handbook  of
+    //     Mathematical Functions (1966) is used  to reduce the computation
+    //     of  the cumulative distribution function to that  of computing a
+    //     chi-square, hence an incomplete gamma function.
+    //
+    //     Cumulative  distribution function  (P) is  calculated  directly.
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired value of  P.   The  search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //
+    //**********************************************************************
 
 struct TupleDDID cdfpoi_which1(double s, double xlam)
 {
@@ -2957,6 +3933,80 @@ struct TupleDID cdfpoi_which3(double p, double q, double s)
 }
 
 
+    //               Cumulative Distribution Function
+    //                         T distribution
+    //
+    //
+    //                              Function
+    //
+    //
+    //     Calculates any one parameter of the t distribution given
+    //     values for the others.
+    //
+    //
+    //                              Arguments
+    //
+    //
+    //     WHICH --> Integer indicating which  argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..3
+    //               iwhich = 1 : Calculate P and Q from T and DF
+    //               iwhich = 2 : Calculate T from P,Q and DF
+    //               iwhich = 3 : Calculate DF from P,Q and T
+    //                    INTEGER WHICH
+    //
+    //        P <--> The integral from -infinity to t of the t-density.
+    //              Input range: (0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //        T <--> Upper limit of integration of the t-density.
+    //               Input range: ( -infinity, +infinity).
+    //               Search range: [ -1E100, 1E100 ]
+    //                    DOUBLE PRECISION T
+    //
+    //        DF <--> Degrees of freedom of the t-distribution.
+    //                Input range: (0 , +infinity).
+    //                Search range: [1e-100, 1E10]
+    //                    DOUBLE PRECISION DF
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //
+    //                              Method
+    //
+    //
+    //     Formula  26.5.27  of   Abramowitz   and  Stegun,   Handbook   of
+    //     Mathematical Functions  (1966) is used to reduce the computation
+    //     of the cumulative distribution function to that of an incomplete
+    //     beta.
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //**********************************************************************
+
 struct TupleDDID cdft_which1(double t, double df)
 {
     if (!(df > 0.0)) {
@@ -3077,6 +4127,77 @@ struct TupleDID cdft_which3(double p, double q, double t)
     }
 }
 
+
+    //               Cumulative Distribution Function
+    //                  Non-Central T distribution
+    //
+    //                               Function
+    //
+    //     Calculates any one parameter of the noncentral t distribution give
+    //     values for the others.
+    //
+    //                               Arguments
+    //
+    //     WHICH --> Integer indicating which  argument
+    //               values is to be calculated from the others.
+    //               Legal range: 1..3
+    //               iwhich = 1 : Calculate P and Q from T,DF,PNONC
+    //               iwhich = 2 : Calculate T from P,Q,DF,PNONC
+    //               iwhich = 3 : Calculate DF from P,Q,T
+    //               iwhich = 4 : Calculate PNONC from P,Q,DF,T
+    //                    INTEGER WHICH
+    //
+    //        P <--> The integral from -infinity to t of the noncentral t-den
+    //              Input range: (0,1].
+    //                    DOUBLE PRECISION P
+    //
+    //     Q <--> 1-P.
+    //            Input range: (0, 1].
+    //            P + Q = 1.0.
+    //                    DOUBLE PRECISION Q
+    //
+    //        T <--> Upper limit of integration of the noncentral t-density.
+    //               Input range: ( -infinity, +infinity).
+    //               Search range: [ -1E100, 1E100 ]
+    //                    DOUBLE PRECISION T
+    //
+    //        DF <--> Degrees of freedom of the noncentral t-distribution.
+    //                Input range: (0 , +infinity).
+    //                Search range: [1e-100, 1E10]
+    //                    DOUBLE PRECISION DF
+    //
+    //     PNONC <--> Noncentrality parameter of the noncentral t-distributio
+    //                Input range: [-1e6, 1E6].
+    //
+    //     STATUS <-- 0 if calculation completed correctly
+    //               -I if input parameter number I is out of range
+    //                1 if answer appears to be lower than lowest
+    //                  search bound
+    //                2 if answer appears to be higher than greatest
+    //                  search bound
+    //                3 if P + Q .ne. 1
+    //                    INTEGER STATUS
+    //
+    //     BOUND <-- Undefined if STATUS is 0
+    //
+    //               Bound exceeded by parameter number I if STATUS
+    //               is negative.
+    //
+    //               Lower search bound if STATUS is 1.
+    //
+    //               Upper search bound if STATUS is 2.
+    //
+    //                                Method
+    //
+    //     Upper tail    of  the  cumulative  noncentral t is calculated usin
+    //     formulae  from page 532  of Johnson, Kotz,  Balakrishnan, Coninuou
+    //     Univariate Distributions, Vol 2, 2nd Edition.  Wiley (1995)
+    //
+    //     Computation of other parameters involve a search for a value that
+    //     produces  the desired  value  of P.   The search relies  on  the
+    //     monotinicity of P with the other parameter.
+    //
+    //***********************************************************************
 
 struct TupleDDID cdftnc_which1(double t, double df, double pnonc)
 {
