@@ -7,6 +7,7 @@
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/kelvin.h"
+#include "special/legendre.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
@@ -25,11 +26,6 @@
 // This allows the build process to generate a corresponding entry for scipy.special.cython_special.
 
 using namespace std;
-
-// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
-// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
-// already in such a context.
-extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
 // And also the following modifiers
@@ -147,6 +143,11 @@ extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
+
+// This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
+// It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
+// already in such a context.
+extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
 
 static PyModuleDef _special_ufuncs_def = {
     PyModuleDef_HEAD_INIT,

@@ -400,4 +400,134 @@ void it2i0k0(T x, T *i0int, T *k0int) {
     }
 }
 
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rctj(T x, int *nm, OutputVec1 rj, OutputVec2 dj) {
+
+    // ========================================================
+    // Purpose: Compute Riccati-Bessel functions of the first
+    //          kind and their derivatives
+    // Input:   x --- Argument of Riccati-Bessel function
+    //          n --- Order of jn(x)  ( n = 0,1,2,... )
+    // Output:  RJ(n) --- x·jn(x)
+    //          DJ(n) --- [x·jn(x)]'
+    //          NM --- Highest order computed
+    // Routines called:
+    //          MSTA1 and MSTA2 for computing the starting
+    //          point for backward recurrence
+    // ========================================================
+
+    int n = rj.extent(0) - 1;
+
+    int k, m;
+    T cs, f, f0, f1, rj0, rj1;
+
+    *nm = n;
+    if (fabs(x) < 1.0e-100) {
+        for (int k = 0; k <= n; k++) {
+            rj[k] = 0.0;
+            dj[k] = 0.0;
+        }
+        dj[0] = 1.0;
+        return;
+    }
+    rj[0] = sin(x);
+    rj[1] = rj[0] / x - cos(x);
+    rj0 = rj[0];
+    rj1 = rj[1];
+    cs = 0.0;
+    f = 0.0;
+
+    if (n >= 2) {
+        m = specfun::msta1(x, 200);
+        if (m < n) {
+            *nm = m;
+        } else {
+            m = specfun::msta2(x, n, 15);
+        }
+
+        f0 = 0.0;
+        f1 = 1.0e-100;
+
+        for (k = m; k >= 0; k--) {
+            f = (2.0 * k + 3.0) * f1 / x - f0;
+            if (k <= *nm) {
+                rj[k] = f;
+            }
+            f0 = f1;
+            f1 = f;
+        }
+        cs = (fabs(rj0) > fabs(rj1) ? rj0 / f : rj1 / f0);
+        for (k = 0; k <= *nm; k++) {
+            rj[k] = cs * rj[k];
+        }
+    }
+    dj[0] = cos(x);
+    for (int k = 1; k <= *nm; k++) {
+        dj[k] = -k * rj[k] / x + rj[k - 1];
+    }
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rctj(T x, OutputVec1 rj, OutputVec2 dj) {
+    int nm;
+    rctj(x, &nm, rj, dj);
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rcty(T x, int *nm, OutputVec1 ry, OutputVec2 dy) {
+
+    // ========================================================
+    // Purpose: Compute Riccati-Bessel functions of the second
+    //          kind and their derivatives
+    // Input:   x --- Argument of Riccati-Bessel function
+    //          n --- Order of yn(x)
+    // Output:  RY(n) --- x·yn(x)
+    //          DY(n) --- [x·yn(x)]'
+    //          NM --- Highest order computed
+    // ========================================================
+
+    int n = ry.extent(0) - 1;
+
+    int k;
+    T rf0, rf1, rf2;
+    *nm = n;
+    if (x < 1.0e-60) {
+        for (k = 0; k <= n; k++) {
+            ry[k] = -1.0e+300;
+            dy[k] = 1.0e+300;
+        }
+        ry[0] = -1.0;
+        dy[0] = 0.0;
+        return;
+    }
+
+    ry[0] = -cos(x);
+    ry[1] = ry[0] / x - sin(x);
+    rf0 = ry[0];
+    rf1 = ry[1];
+
+    for (k = 2; k <= n; k++) {
+        rf2 = (2.0 * k - 1.0) * rf1 / x - rf0;
+        if (fabs(rf2) > 1.0e+300) {
+            break;
+        }
+        ry[k] = rf2;
+        rf0 = rf1;
+        rf1 = rf2;
+    }
+
+    *nm = k - 1;
+    dy[0] = sin(x);
+    for (k = 1; k <= *nm; k++) {
+        dy[k] = -k * ry[k] / x + ry[k - 1];
+    }
+    return;
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2>
+void rcty(T x, OutputVec1 ry, OutputVec2 dy) {
+    int nm;
+    rcty(x, &nm, ry, dy);
+}
+
 } // namespace special
