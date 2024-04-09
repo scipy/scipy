@@ -404,7 +404,6 @@ python_sources = [
   'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
-  'specfun.py',
   'spfun_stats.py'
 ]
 
