@@ -181,8 +181,7 @@ PRIVATE_BUT_PRESENT_MODULES = [
     'scipy.special.basic',
     'scipy.special.cython_special',
     'scipy.special.orthogonal',
-    'scipy.special.sf_error',
-    'scipy.special.specfun',
+    'scipy.special.sf_error'
     'scipy.special.spfun_stats',
     'scipy.stats.biasedurn',
     'scipy.stats.kde',
@@ -426,7 +425,6 @@ def test_api_importable():
                           ('scipy.special.basic', None),
                           ('scipy.special.orthogonal', None),
                           ('scipy.special.sf_error', None),
-                          ('scipy.special.specfun', None),
                           ('scipy.special.spfun_stats', None),
                           ('scipy.stats.biasedurn', None),
                           ('scipy.stats.kde', None),
