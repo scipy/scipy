@@ -15,18 +15,18 @@ namespace {
 
 complex<double> to_complex(npy_cdouble z) {
     union {
-        npy_cdouble npy;
-        complex<double> cc;
-    } z_pun{.npy = z};
-    return z_pun.cc;
+        complex<double> value;
+        npy_cdouble cvalue;
+    } z_union{.cvalue = z};
+    return z_union.value;
 }
 
 npy_cdouble to_ccomplex(complex<double> z) {
     union {
-        npy_cdouble npy;
-        complex<double> cc;
-    } z_pun{.cc = z};
-    return z_pun.npy;
+        complex<double> value;
+        npy_cdouble cvalue;
+    } z_union{.value = z};
+    return z_union.cvalue;
 }
 
 } // namespace
