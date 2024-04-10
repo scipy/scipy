@@ -697,37 +697,14 @@ class beta_gen(rv_continuous):
         return scu._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
-        a_plus_b = np.add(a, b)
-        _beta_mean = np.divide(a, a_plus_b)
-        _beta_variance = np.divide(
-            np.multiply(a, b),
-            np.multiply(
-                np.square(a_plus_b),
-                np.add(a_plus_b, 1)
-            )
-        )
-        _beta_skewness = np.divide(
-            np.multiply(
-                np.multiply(2, np.subtract(b, a)),
-                np.sqrt(np.add(a_plus_b, 1))
-            ),
-            np.multiply(
-                np.add(a_plus_b, 2),
-                np.sqrt(np.multiply(a, b))
-            )
-        )
-        _beta_kurtosis_excess = np.divide(
-            np.multiply(6, np.subtract(
-                np.multiply(np.square(np.subtract(a, b)),
-                            np.add(a_plus_b, 1)),
-                np.multiply(np.multiply(a, b),
-                            np.add(a_plus_b, 2))
-            )),
-            np.multiply(
-                np.multiply(np.multiply(a, b),
-                            np.add(a_plus_b, 2)),
-                np.add(a_plus_b, 3))
-        )
+        a_plus_b = a + b
+        _beta_mean = a/a_plus_b
+        _beta_variance = a*b / (a_plus_b**2 * (a_plus_b + 1))
+        _beta_skewness = ((2 * (b - a) * np.sqrt(a_plus_b + 1)) /
+                          ((a_plus_b + 2) * np.sqrt(a * b)))
+        _beta_kurtosis_excess_n = 6 * ((a - b)**2 * (a_plus_b + 1) - a * b * (a_plus_b + 2))
+        _beta_kurtosis_excess_d = a * b * (a_plus_b + 2) * (a_plus_b + 3)
+        _beta_kurtosis_excess = _beta_kurtosis_excess_n / _beta_kurtosis_excess_d
         return (
             _beta_mean,
             _beta_variance,
