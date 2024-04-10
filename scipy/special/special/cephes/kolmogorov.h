@@ -482,8 +482,7 @@ namespace cephes {
          */
         constexpr int SM_MAX_EXPONENT = 960;
 
-        SPECFUN_HOST_DEVICE double_double pow2Scaled_D(const double_double &a, int m,
-                                                                int *pExponent) {
+        SPECFUN_HOST_DEVICE double_double pow2Scaled_D(const double_double &a, int m, int *pExponent) {
             /* Compute a^m = significand*2^expt and return as (significand, expt) */
             double_double ans, y;
             int ansE, yE;
@@ -613,8 +612,7 @@ namespace cephes {
          *  A_v(n, x) =  Binomial(n,v) * (1-x-v/n)^(n-v) * (x+v/n)^(v-1)
          */
         SPECFUN_HOST_DEVICE inline void computeAv(int n, double x, int v, const double_double &Cman, int Cexpt,
-                                                  double_double *pt1, double_double *pt2,
-                                                  double_double *pAv) {
+                                                  double_double *pt1, double_double *pt2, double_double *pAv) {
             int t1E, t2E, ansE;
             double_double Av;
             double_double t2x = double_double(n - v) / n - x; /*  1 - x - v/n */
