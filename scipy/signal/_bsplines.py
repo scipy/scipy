@@ -1,7 +1,7 @@
 from numpy import (asarray, pi, zeros_like,
                    array, arctan2, tan, ones, arange, floor,
                    r_, atleast_1d, sqrt, exp, greater, cos, add, sin,
-                   moveaxis, abs, arctan)
+                   moveaxis, abs, arctan, complex64, float32)
 
 from scipy._lib._util import normalize_axis_index
 
@@ -432,8 +432,8 @@ def qspline2d(signal, lamb=0.0, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
-    if precision == -1.0:
-        if signal.dtype.char in {'f', 'F'}:
+    if precision < 0.0 or precision >= 1.0:
+        if signal.dtype in [float32, complex64]:
             precision = 1e-3
         else:
             precision = 1e-6
@@ -473,8 +473,8 @@ def cspline2d(signal, lamb=0.0, precision=-1.0):
     output : ndarray
         The filtered signal.
     """
-    if precision == -1.0:
-        if signal.dtype.char in {'f', 'F'}:
+    if precision < 0.0 or precision >= 1.0:
+        if signal.dtype in [float32, complex64]:
             precision = 1e-3
         else:
             precision = 1e-6
