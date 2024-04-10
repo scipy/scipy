@@ -11,6 +11,7 @@
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 #include "special/trig.h"
@@ -79,6 +80,12 @@ using func_dddd_dpdp_t = void (*)(double, double, double, double, double *, doub
 using func_fffff_fpfp_t = void (*)(float, float, float, float, float, float *, float *);
 using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, double *, double *);
 
+using func_llff_F_t = complex<float> (*)(long, long, float, float);
+using func_lldd_D_t = complex<double> (*)(long, long, double, double);
+
+using func_ffff_F_t = complex<float> (*)(float, float, float, float);
+using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
 extern const char *airy_doc;
@@ -141,6 +148,7 @@ extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
+extern const char *sph_harm_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
 
@@ -472,6 +480,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                               static_cast<func_ddddd_dpdp_t>(special::prolate_radial2)},
                                              2, "pro_rad2_cv", pro_rad2_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2_cv", pro_rad2_cv);
+
+    PyObject *sph_harm =
+        SpecFun_NewUFunc({static_cast<func_lldd_D_t>(special::sph_harm), static_cast<func_dddd_D_t>(special::sph_harm),
+                          static_cast<func_llff_F_t>(special::sph_harm), static_cast<func_ffff_F_t>(special::sph_harm)},
+                         "sph_harm", sph_harm_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
     PyObject *yv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cbesy_wrap_real), static_cast<func_dd_d_t>(special::cbesy_wrap_real),

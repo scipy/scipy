@@ -85,7 +85,7 @@ special_ufuncs = [
     'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
     'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv',
     'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv',
-    'pro_rad2', 'pro_rad2_cv', 'yv', 'yve', '_zeta'
+    'pro_rad2', 'pro_rad2_cv', 'sph_harm', 'yv', 'yve', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------

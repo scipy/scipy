@@ -7,6 +7,7 @@
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 
@@ -263,3 +264,11 @@ npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z) { return to_ccomplex(special:
 npy_cdouble cbesh_wrap2(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap2(v, to_complex(z))); }
 
 npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap2_e(v, to_complex(z))); }
+
+npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
+    return to_ccomplex(special::sph_harm(m, n, theta, phi));
+}
+
+npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
+    return to_ccomplex(special::sph_harm(m, n, theta, phi));
+}
