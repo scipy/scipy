@@ -149,6 +149,7 @@ Expired Deprecations
 *********************
 There is an ongoing effort to follow through on long-standing deprecations.
 The following previously deprecated features are affected:
+
 - ``scipy.signal.{lsim2,impulse2,step2}`` have been removed in favour of
   ``scipy.signal.{lsim,impulse,step}``.
 - Window functions can no longer be imported from the `scipy.signal` namespace and
