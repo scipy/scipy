@@ -38,7 +38,7 @@ from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
-from scipy.conftest import array_api_compatible, skip_array_api_invalid_arg
+from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API)
 
@@ -2873,7 +2873,7 @@ class TestZmapZscore:
         desired = np.log(x / stats.gmean(x)) / np.log(stats.gstd(x, ddof=0))
         assert_allclose(desired, z)
 
-    @skip_array_api_invalid_arg
+    @skip_xp_invalid_arg
     def test_gzscore_masked_array(self):
         x = np.array([1, 2, -1, 3, 4])
         mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
@@ -2882,7 +2882,7 @@ class TestZmapZscore:
                     1.136670895503])
         assert_allclose(desired, z)
 
-    @skip_array_api_invalid_arg
+    @skip_xp_invalid_arg
     def test_zscore_masked_element_0_gh19039(self):
         # zscore returned all NaNs when 0th element was masked. See gh-19039.
         rng = np.random.default_rng(8675309)
@@ -3253,8 +3253,9 @@ class TestMoments:
         x = xp.asarray(rng.random(size=size))
         m = [0, 1, 2, 3]
         res = stats.moment(x, m, center=c)
-        xp = array_namespace(x)
-        ref = xp.concat([stats.moment(x, i, center=c)[xp.newaxis, ...] for i in m])
+        xp_test = array_namespace(x)  # no `concat` in np < 2.0; no `newaxis` in torch
+        ref = xp_test.concat([stats.moment(x, i, center=c)[xp_test.newaxis, ...]
+                              for i in m])
         xp_assert_equal(res, ref)
 
     @array_api_compatible
@@ -3363,8 +3364,8 @@ class TestMoments:
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
         #  but very accurate numpy.power() implementation.
-        tc_no_mean = self.testcase_moment_accuracy - \
-                     np.mean(self.testcase_moment_accuracy)
+        tc_no_mean = (self.testcase_moment_accuracy
+                      - np.mean(self.testcase_moment_accuracy))
         assert_allclose(np.power(tc_no_mean, 42).mean(),
                         stats.moment(self.testcase_moment_accuracy, 42))
 

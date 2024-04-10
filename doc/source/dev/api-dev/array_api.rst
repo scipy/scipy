@@ -238,13 +238,13 @@ The following pytest markers are available:
   other than the default NumPy backend.
   ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
   marker for the skipping to apply.
-* ``skip_array_api_invalid_arg`` is used to skip tests that use arguments which
-  are invalid when ``SCIPY_ARRAY_API=1``. For instance, some tests of
+* ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
+  are invalid when ``SCIPY_ARRAY_API`` is used. For instance, some tests of
   `scipy.stats` functions pass masked arrays to the function being tested, but
   masked arrays are incompatible with the array API. Use of the
-  ``skip_array_api_invalid_arg`` decorator allows these tests to protect against
-  regressions when ``SCIPY_ARRAY_API`` is not set without resulting in failures
-  when ``SCIPY_ARRAY_API=1``. In time, we will want these functions to emit
+  ``skip_xp_invalid_arg`` decorator allows these tests to protect against
+  regressions when ``SCIPY_ARRAY_API`` is not used without resulting in failures
+  when ``SCIPY_ARRAY_API`` is used. In time, we will want these functions to emit
   deprecation warnings when they receive array API invalid input, and this
   decorator will check that the deprecation warning is emitted without it
   causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
@@ -253,7 +253,7 @@ The following pytest markers are available:
 
 The following is an example using the markers::
 
-  from scipy.conftest import array_api_compatible, skip_array_api_invalid_arg
+  from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
   ...
   @pytest.mark.skip_xp_backends(np_only=True,
                                  reasons=['skip reason'])
@@ -274,8 +274,8 @@ The following is an example using the markers::
       b = xp.asarray([0, 2, 5])
       toto(a, b)
   ...
-  # Do not run when SCIPY_ARRAY_API=1
-  @skip_array_api_invalid_arg
+  # Do not run when SCIPY_ARRAY_API is used
+  @skip_xp_invalid_arg
   def test_toto_masked_array(self):
       a = np.ma.asarray([1, 2, 3])
       b = np.ma.asarray([0, 2, 5])

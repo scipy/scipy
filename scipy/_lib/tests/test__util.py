@@ -10,7 +10,7 @@ import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
 from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-from scipy.conftest import array_api_compatible, skip_array_api_invalid_arg
+from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 
 from scipy._lib._array_api import xp_assert_equal, is_numpy, copy as xp_copy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
@@ -318,7 +318,7 @@ class TestContainsNaNTest:
         data5 = np.array([[1, 2], [3, np.nan]])
         assert _contains_nan(data5)[0]
 
-    @skip_array_api_invalid_arg
+    @skip_xp_invalid_arg
     def test_contains_nan_with_strings(self):
         data1 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
         assert not _contains_nan(data1)[0]

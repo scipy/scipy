@@ -1015,7 +1015,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     if xp_size(order) == 0:
         # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
         # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
-        # is a non-NumPy array, so we need to check again. When the decoratpor is
+        # is a non-NumPy array, so we need to check again. When the decorator is
         # updated for array API compatibility, we can remove this second check.
         raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
     if xp.any(order != xp.round(order)):
@@ -1038,8 +1038,13 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         return _moment(a, order, axis, mean=center)
 
 
-# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
 def _moment(a, order, axis, *, mean=None):
+    """Vectorized calculation of raw moment about specified center
+
+    When `mean` is None, the mean is computed and used as the center;
+    otherwise, the provided value is used as the center.
+
+    """
     xp = array_namespace(a)
 
     if xp.isdtype(a.dtype, 'integral'):
@@ -1061,48 +1066,47 @@ def _moment(a, order, axis, *, mean=None):
                 else xp.zeros(shape, dtype=dtype))
         return temp[()] if temp.ndim == 0 else temp
 
-    else:
-        # Exponentiation by squares: form exponent sequence
-        n_list = [order]
-        current_n = order
-        while current_n > 2:
-            if current_n % 2:
-                current_n = (current_n - 1) / 2
-            else:
-                current_n /= 2
-            n_list.append(current_n)
-
-        # Starting point for exponentiation by squares
-        mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
-                else xp.asarray(mean, dtype=dtype))
-        mean = mean[()] if mean.ndim == 0 else mean
-        a_zero_mean = a - mean
-
-        eps = xp.finfo(dtype).eps * 10
-
-        with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
-                              keepdims=True) / xp.abs(mean)
-        with np.errstate(invalid='ignore'):
-            precision_loss = xp.any(rel_diff < eps)
-        n = a.shape[axis] if axis is not None else a.size
-        if precision_loss and n > 1:
-            message = ("Precision loss occurred in moment calculation due to "
-                       "catastrophic cancellation. This occurs when the data "
-                       "are nearly identical. Results may be unreliable.")
-            warnings.warn(message, RuntimeWarning, stacklevel=4)
-
-        if n_list[-1] == 1:
-            s = xp.asarray(a_zero_mean, copy=True)
+    # Exponentiation by squares: form exponent sequence
+    n_list = [order]
+    current_n = order
+    while current_n > 2:
+        if current_n % 2:
+            current_n = (current_n - 1) / 2
         else:
-            s = a_zero_mean**2
+            current_n /= 2
+        n_list.append(current_n)
 
-        # Perform multiplications
-        for n in n_list[-2::-1]:
-            s = s**2
-            if n % 2:
-                s *= a_zero_mean
-        return xp.mean(s, axis=axis)
+    # Starting point for exponentiation by squares
+    mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
+            else xp.asarray(mean, dtype=dtype))
+    mean = mean[()] if mean.ndim == 0 else mean
+    a_zero_mean = a - mean
+
+    eps = xp.finfo(dtype).eps * 10
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                          keepdims=True) / xp.abs(mean)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(rel_diff < eps)
+    n = a.shape[axis] if axis is not None else a.size
+    if precision_loss and n > 1:
+        message = ("Precision loss occurred in moment calculation due to "
+                   "catastrophic cancellation. This occurs when the data "
+                   "are nearly identical. Results may be unreliable.")
+        warnings.warn(message, RuntimeWarning, stacklevel=4)
+
+    if n_list[-1] == 1:
+        s = xp.asarray(a_zero_mean, copy=True)
+    else:
+        s = a_zero_mean**2
+
+    # Perform multiplications
+    for n in n_list[-2::-1]:
+        s = s**2
+        if n % 2:
+            s *= a_zero_mean
+    return xp.mean(s, axis=axis)
 
 
 def _var(x, axis=0, ddof=0, mean=None):
