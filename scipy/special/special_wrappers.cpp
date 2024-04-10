@@ -5,6 +5,7 @@
 #include "special/bessel.h"
 #include "special/fresnel.h"
 #include "special/hyp2f1.h"
+#include "special/gamma.h"
 #include "special/kelvin.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
@@ -462,3 +463,5 @@ double cephes_polevl_wrap(double x, const double coef[], int N) {
 double cephes_p1evl_wrap(double x, const double coef[], int N) {
     return special::cephes::p1evl(x, coef, N);
 }
+
+double gammaln_wrap(double x) { return special::gammaln(x); }

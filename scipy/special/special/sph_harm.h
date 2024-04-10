@@ -5,7 +5,7 @@
 #include "mdspan.h"
 #include "specfun.h"
 
-extern "C" double cephes_poch(double x, double m);
+#include "cephes/poch.h"
 
 namespace special {
 
@@ -25,7 +25,7 @@ inline std::complex<double> sph_harm(long m, long n, double theta, double phi) {
 
     if (m < 0) {
         mp = -m;
-        prefactor = std::pow(-1, mp) * cephes_poch(n + mp + 1, -2 * mp);
+        prefactor = std::pow(-1, mp) * cephes::poch(n + mp + 1, -2 * mp);
     } else {
         mp = m;
     }
@@ -36,7 +36,7 @@ inline std::complex<double> sph_harm(long m, long n, double theta, double phi) {
     }
 
     val *= std::sqrt((2 * n + 1) / 4.0 / M_PI);
-    val *= std::sqrt(cephes_poch(n + m + 1, -2 * m));
+    val *= std::sqrt(cephes::poch(n + m + 1, -2 * m));
     val *= std::exp(std::complex<double>(0, m * theta));
 
     return val;
@@ -57,7 +57,7 @@ void sph_harm_all(T theta, T phi, OutMat y) {
     for (long j = 0; j <= n; ++j) {
         y(0, j) *= std::sqrt((2 * j + 1) / (4 * M_PI));
         for (long i = 1; i <= j; ++i) {
-            y(i, j) *= static_cast<T>(std::sqrt((2 * j + 1) * cephes_poch(j + i + 1, -2 * i) / (4 * M_PI))) *
+            y(i, j) *= static_cast<T>(std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI))) *
                        std::exp(std::complex<T>(0, i * theta));
             y(y.extent(0) - i, j) = static_cast<T>(std::pow(-1, i)) * std::conj(y(i, j));
         }

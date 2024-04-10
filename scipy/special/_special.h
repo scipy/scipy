@@ -6,6 +6,7 @@
 
 #include "special/binom.h"
 #include "special/ellipk.h"
+#include "special/gamma.h"
 #include "special/hyp2f1.h"
 #include "special/lambertw.h"
 #include "special/loggamma.h"
@@ -137,6 +138,10 @@ inline double ellipk(double m) {
     return special::ellipk(m);
 }
 
+inline double gammaln(double x) {
+    return special::gammaln(x);
+}
+
 
 // Special functions from cephes
 
@@ -182,10 +187,6 @@ inline double cephes_Gamma(double x) {
 
 inline double cephes_gammasgn(double x) {
     return special::cephes::gammasgn(x);
-}
-
-inline double cephes_lgam(double x) {
-    return special::cephes::lgam(x);
 }
 
 inline double cephes_hyp2f1(double a, double b, double c, double x) {

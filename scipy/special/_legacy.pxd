@@ -12,7 +12,7 @@ from libc.math cimport isnan, isinf, NAN
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
 
-cdef extern from "special_c_wrappers.h" nogil:
+cdef extern from "special_wrappers.h" nogil:
     double cephes_bdtrc_wrap(double k, int n, double p)
     double cephes_bdtr_wrap(double k, int n, double p)
     double cephes_bdtri_wrap(double k, int n, double y)

@@ -6,7 +6,7 @@ from ._complexstuff cimport (
     zsqrt, zpow, zabs, npy_cdouble_from_double_complex,
     double_complex_from_npy_cdouble)
 
-cdef extern from "special_c_wrappers.h" nogil:
+cdef extern from "special_wrappers.h" nogil:
     double cephes_iv_wrap(double v, double x)
     double cephes_jv_wrap(double v, double x)
     double cephes_gamma_wrap(double x)

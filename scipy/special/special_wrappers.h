@@ -112,6 +112,7 @@ npy_cdouble cbesh_wrap2(double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z);
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
+double gammaln_wrap(double x);
 
 double binom_wrap(double n, double k);
 

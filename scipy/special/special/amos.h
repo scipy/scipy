@@ -7,19 +7,6 @@
 #include "cephes/yv.h"
 #include "config.h"
 
-inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bipf) {
-    double ai;
-    double aip;
-    double bi;
-    double bip;
-    int res = cephes_airy(xf, &ai, &aip, &bi, &bip);
-
-    *aif = ai;
-    *aipf = aip;
-    *bif = bi;
-    *bipf = bip;
-    return res;
-}
 
 namespace special {
 
@@ -367,7 +354,7 @@ inline std::complex<double> cbesi_wrap(double v, std::complex<double> z) {
     return cy;
 }
 
-inline float cbesi_wrap_real(float v, float z) { return cephes_iv(static_cast<double>(v), static_cast<double>(z)); }
+    inline float cbesi_wrap_real(float v, float z) { return cephes::iv(static_cast<double>(v), static_cast<double>(z)); }
 
 inline std::complex<float> cbesi_wrap(float v, std::complex<float> z) {
     std::complex<double> res = cbesi_wrap(

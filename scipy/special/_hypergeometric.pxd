@@ -4,11 +4,9 @@ import cython
 
 from . cimport sf_error
 
-cdef extern from "special_c_wrappers.h" nogil:
-    double cephes_poch_wrap(double x, double m)
-
 cdef extern from 'special_wrappers.h':
     double hypU_wrap(double, double, double) nogil
+    double cephes_poch_wrap(double x, double m) nogil
 
 
 @cython.cdivision(True)

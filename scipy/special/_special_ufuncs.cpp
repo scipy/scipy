@@ -312,7 +312,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
 
     PyObject *iv =
-        SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cbesi_wrap_real), static_cast<func_dd_d_t>(cephes_iv),
+        SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cbesi_wrap_real), static_cast<func_dd_d_t>(special::cephes::iv),
                           static_cast<func_fF_F_t>(special::cbesi_wrap), static_cast<func_dD_D_t>(special::cbesi_wrap)},
                          "iv", iv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);

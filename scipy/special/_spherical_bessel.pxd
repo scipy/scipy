@@ -39,9 +39,7 @@ cdef extern from "special_wrappers.h":
     double cbesk_wrap_real(double v, double x) nogil
     npy_cdouble cbesy_wrap(double v, npy_cdouble z) nogil
     double cbesy_wrap_real(double v, double x) nogil
-
-cdef extern from "special_c_wrappers.h" nogil:
-    double cephes_iv_wrap(double v, double x)
+    double cephes_iv_wrap(double v, double x) nogil
 
 # Fused type wrappers
 

@@ -289,5 +289,19 @@ namespace cephes {
         return (0);
     }
 
+    inline int airy(float xf, float *aif, float *aipf, float *bif, float *bipf) {
+        double ai;
+        double aip;
+        double bi;
+        double bip;
+        int res = cephes::airy(xf, &ai, &aip, &bi, &bip);
+
+        *aif = ai;
+        *aipf = aip;
+        *bif = bi;
+        *bipf = bip;
+        return res;
+    }
+
 } // namespace cephes
 } // namespace special

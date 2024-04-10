@@ -108,17 +108,17 @@
         }
     },
     "_struve_asymp_large_z": {
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes__struve_asymp_large_z": "ddi*d->d"
         }
     },
     "_struve_bessel_series": {
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes__struve_bessel_series": "ddi*d->d"
         }
     },
     "_struve_power_series": {
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes__struve_power_series": "ddi*d->d"
         }
     },
@@ -316,7 +316,7 @@
         }
     },
     "ellipj": {
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes_ellpj_wrap": "dd*dddd->*i"
         }
     },
@@ -578,10 +578,8 @@
             "fdtridfd": "ddd->d"        }
     },
     "fresnel": {
-        "special_c_wrappers.h": {
-            "cephes_fresnl_wrap": "d*dd->*i"
-        },
         "special_wrappers.h": {
+            "cephes_fresnl_wrap": "d*dd->*i",
             "cfresnl_wrap": "D*DD->*i"
         }
     },
@@ -613,7 +611,7 @@
     },
     "gammaln": {
         "_special.h++": {
-            "cephes_lgam": "d->d"
+            "gammaln": "d->d"
         }
     },
     "gammasgn": {
@@ -743,7 +741,7 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "amos_wrappers.h": {
+        "special_wrappers.h": {
             "cbesk_wrap_real_int": "id->d"
         }
     },
@@ -987,7 +985,7 @@
         "_sici.pxd": {
             "cshichi": "D*DD->*i"
         },
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes_shichi_wrap": "d*dd->*i"
         }
     },
@@ -995,7 +993,7 @@
         "_sici.pxd": {
             "csici": "D*DD->*i"
         },
-        "special_c_wrappers.h": {
+        "special_wrappers.h": {
             "cephes_sici_wrap": "d*dd->*i"
         }
     },
