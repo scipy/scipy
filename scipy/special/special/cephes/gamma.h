@@ -240,14 +240,26 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
-
-        /* Disable optimizations for lgam_sgn on 32 bit systems when compiling with GCC.
+        /* Disable optimizations for this function on 32 bit systems when compiling with GCC.
          * We've found that enabling optimizations can result in degraded precision
-         for x > 1000 */
+         * for this asymptotic approximation in that case. */
 #if defined(__GNUC__) && defined(__i386__)
 #pragma GCC push_options
-#pragma GCC optimize ("00")
+#pragma GCC optimize("00")
 #endif
+        SPECFUN_HOST_DEVICE inline double lgam_large_x(double x) {
+            double q = (x - 0.5) * std::log(x) - x + LS2PI;
+            if (x > 1.0e8) {
+                return (q);
+            }
+            double p = 1.0 / (x * x);
+            p = ((7.9365079365079365079365e-4 * p - 2.7777777777777777777778e-3) * p + 0.0833333333333333333333) / x;
+            return q + p;
+        }
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC pop_options
+#endif
+
         SPECFUN_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
             double p, q, u, w, z;
             int i;
@@ -323,23 +335,14 @@ namespace cephes {
                 return (*sign * std::numeric_limits<double>::infinity());
             }
 
-            q = (x - 0.5) * std::log(x) - x + LS2PI;
-            if (x > 1.0e8) {
-                return (q);
+            if (x >= 1000.0) {
+                return lgam_large_x(x);
             }
 
+            q = (x - 0.5) * std::log(x) - x + LS2PI;
             p = 1.0 / (x * x);
-            if (x >= 1000.0) {
-                q += ((7.9365079365079365079365e-4 * p - 2.7777777777777777777778e-3) * p + 0.0833333333333333333333) /
-                     x;
-            } else {
-                q += polevl(p, gamma_A, 4) / x;
-            }
-            return (q);
+            return q + polevl(p, gamma_A, 4) / x;
         }
-#if defined(__GNUC__) && defined(__i386__)
-#pragma GCC pop_options
-#endif
     } // namespace detail
 
     /* Logarithm of Gamma function */
