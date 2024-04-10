@@ -49,6 +49,9 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
         signal = signal[None, :]
         squeeze_dim = True
 
+    if np.issubdtype(signal.dtype, np.integer):
+        signal = signal.astype(np.promote_types(signal.dtype, np.float32))
+
     y0 = symiirorder1_ic(signal, z1, precision)
 
     # Apply first the system 1 / (1 - z1 * z^-1)
@@ -122,6 +125,9 @@ def symiirorder2(input, r, omega, precision=-1.0):
     if input.ndim == 1:
         input = input[None, :]
         squeeze_dim = True
+
+    if np.issubdtype(input.dtype, np.integer):
+        input = input.astype(np.promote_types(input.dtype, np.float32))
 
     rsq = r * r
     a2 = 2 * r * np.cos(omega)

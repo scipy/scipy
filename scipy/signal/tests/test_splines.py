@@ -26,7 +26,7 @@ class TestSymIIR:
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
     def test_symiir1_ic(self, dtype, precision):
         c_precision = precision
-        if precision == -1.0:
+        if precision <= 0.0 or precision > 1.0:
             if dtype in {np.float32, np.complex64}:
                 c_precision = 1e-6
             else:
@@ -40,7 +40,7 @@ class TestSymIIR:
         # a geometric series: 1 + b * \sum_{k = 0}^{n - 1} u[k] b^k.
 
         # Finding the initial condition corresponds to
-        # 1. Computing the index n such that b**n < log(precision), which
+        # 1. Computing the index n such that b**n < precision, which
         # corresponds to ceil(log(precision) / log(b))
         # 2. Computing the geometric series until n, this can be computed
         # using the partial sum formula: (1 - b**n) / (1 - b)
@@ -87,7 +87,7 @@ class TestSymIIR:
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
     def test_symiir1(self, dtype, precision):
         c_precision = precision
-        if precision == -1.0:
+        if precision <= 0.0 or precision > 1.0:
             if dtype in {np.float32, np.complex64}:
                 c_precision = 1e-6
             else:
@@ -156,7 +156,7 @@ class TestSymIIR:
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
     def test_symiir2_initial_fwd(self, dtype, precision):
         c_precision = precision
-        if precision == -1.0:
+        if precision <= 0.0 or precision > 1.0:
             if dtype in {np.float32, np.complex64}:
                 c_precision = 1e-6
             else:
@@ -221,7 +221,7 @@ class TestSymIIR:
     @pytest.mark.parametrize('precision', [-1.0, 0.7, 0.5, 0.25, 0.0075])
     def test_symiir2_initial_bwd(self, dtype, precision):
         c_precision = precision
-        if precision == -1.0:
+        if precision <= 0.0 or precision > 1.0:
             if dtype in {np.float32, np.complex64}:
                 c_precision = 1e-6
             else:
@@ -298,3 +298,15 @@ class TestSymIIR:
 
         out = symiirorder2(signal, r, omega, precision)
         assert_allclose(out, exp, atol=4e-6, rtol=6e-7)
+
+    def test_symiir1_integer_input(self):
+        s = np.where(np.arange(100) % 2, -1, 1)
+        expected = symiirorder1(s.astype(float), 0.5, 0.5)
+        out = symiirorder1(s, 0.5, 0.5)
+        assert_allclose(out, expected)
+
+    def test_symiir2_integer_input(self):
+        s = np.where(np.arange(100) % 2, -1, 1)
+        expected = symiirorder2(s.astype(float), 0.5, np.pi / 3.0)
+        out = symiirorder2(s, 0.5, np.pi / 3.0)
+        assert_allclose(out, expected)
