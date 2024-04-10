@@ -90,21 +90,21 @@ class binom_gen(rv_discrete):
         return scu._binom_ppf(q, n, p)
 
     def _stats(self, n, p, moments='mv'):
-        mu = np.multiply(n, p)
-        var = np.subtract(mu, np.multiply(n, np.square(p)))
+        mu = n * p
+        var = mu - n * np.square(p)
         g1, g2 = None, None
         if 's' in moments:
-            pq = np.subtract(p, np.square(p))
-            npq_sqrt = np.sqrt(np.multiply(n, pq))
+            pq = p - np.square(p)
+            npq_sqrt = np.sqrt(n * pq)
             t1 = np.reciprocal(npq_sqrt)
-            t2 = np.divide(np.multiply(2.0, p), npq_sqrt)
-            g1 = np.subtract(t1, t2)
+            t2 = (2.0 * p) / npq_sqrt
+            g1 = t1 - t2
         if 'k' in moments:
-            pq = np.subtract(p, np.square(p))
-            npq = np.multiply(n, pq)
+            pq = p - np.square(p)
+            npq = n * pq
             t1 = np.reciprocal(npq)
-            t2 = np.divide(6.0, n)
-            g2 = np.subtract(t1, t2)
+            t2 = 6.0/n
+            g2 = t1 - t2
         return mu, var, g1, g2
 
     def _entropy(self, n, p):
