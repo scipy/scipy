@@ -2,7 +2,6 @@ _stats_pxd = [
   fs.copyfile('__init__.py'),
   fs.copyfile('_stats.pxd'),
   fs.copyfile('_biasedurn.pxd'),
-  fs.copyfile('_boost/include/templated_pyufunc.pxd'),
 ]
 
 stats_special_cython_gen = generator(cython,
@@ -74,55 +73,6 @@ py3.extension_module('_qmc_cy',
   subdir: 'scipy/stats'
 )
 
-_stats_gen_pyx = custom_target('_stats_gen_pyx',
-  output: [
-    'beta_ufunc.pyx',  # 0 (used in stats/_boost - S_B)
-    'binom_ufunc.pyx',  # 1 (S_B)
-    'func_defs.pxd',  # 2 (S_B)
-    'hypergeom_ufunc.pyx',  # 3 (S_B)
-    'nbinom_ufunc.pyx',  # 4 (S_B)
-    'ncf_ufunc.pyx',  # 5 (S_B)
-    'ncx2_ufunc.pyx',  # 6 (S_B)
-    'nct_ufunc.pyx',  # 7 (S_B)
-    'skewnorm_ufunc.pyx',  # 8 (S_B)
-    'invgauss_ufunc.pyx',  # 9 (S_B)
-  ],
-  input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  depends: _stats_pxd,
-  depend_files: [
-    '_boost/include/code_gen.py',
-    '_boost/include/gen_func_defs_pxd.py',
-    '_boost/include/_info.py',
-  ]
-)
-
-# Only needed to establish a dependency; see comments in linalg/meson.build
-# for cython_blas_pxd
-_stats_gen_pyx_dummy = custom_target('_dummy_stats_gen_pyx',
-  output: '_dummy_stats_gen.pxd',
-  input: _stats_gen_pyx[2],
-  command: [py3, '-c', '"@INPUT@"'],
-)
-
-cython_stats_gen_cpp = generator(cython,
-  arguments : cython_cplus_args,
-  output : '@BASENAME@.cpp',
-  depends : [_cython_tree, _stats_gen_pyx_dummy])
-
-# Build recipes defined here to get correct output path when used from
-# other subdirs.
-beta_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[0])
-binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[1])
-hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[3])
-nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
-ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
-ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[6])
-nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[7])
-skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
-invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
-
-
 py3.extension_module('_biasedurn',
   [
     cython_gen_cpp.process('_biasedurn.pyx'),
@@ -175,7 +125,6 @@ py3.install_sources([
     '_distr_params.py',
     '_entropy.py',
     '_fit.py',
-    '_generate_pyx.py',
     '_hypotests.py',
     '_kde.py',
     '_ksstats.py',
@@ -232,7 +181,6 @@ py3.install_sources([
   subdir: 'scipy/stats'
 )
 
-subdir('_boost')
 subdir('_levy_stable')
 subdir('_unuran')
 subdir('_rcont')
