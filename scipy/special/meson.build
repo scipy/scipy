@@ -405,6 +405,7 @@ python_sources = [
   '_ufuncs.pyi',
   'add_newdocs.py',
   'basic.py',
+  'cython_special.pxd',
   'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
