@@ -12,6 +12,7 @@
 #include <numpy/ufuncobject.h>
 
 #include "sf_error.h"
+#include "special/mdspan.h"
 
 // Initializes Python and NumPy.
 inline bool SpecFun_Initialize() {
@@ -41,6 +42,28 @@ struct arity_of<Res(Args...)> {
 
 template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
+
+template <typename F, size_t I>
+struct argument_rank;
+
+template <typename Res, typename... Args, size_t I>
+struct argument_rank<Res(Args...), I> {
+    static constexpr size_t value = 0;
+};
+
+template <typename Res, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename... Args>
+struct argument_rank<Res(std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>, Args...), 0> {
+    static constexpr size_t value = Extents::rank();
+};
+
+template <typename Res, typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy, typename... Args,
+          size_t I>
+struct argument_rank<Res(std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>, Args...), I> {
+    static constexpr size_t value = Extents::rank() + argument_rank<Res(Args...), I - 1>::value;
+};
+
+template <typename T, size_t N>
+constexpr size_t argument_rank_v = argument_rank<T, N>::value;
 
 // Maps a C++ type to a NumPy type identifier.
 template <typename T>
@@ -86,22 +109,43 @@ struct npy_type<npy_cdouble> {
     static constexpr int value = NPY_COMPLEX128;
 };
 
+template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
+struct npy_type<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
+    static constexpr int value = npy_type<T>::value;
+};
+
 // Sets the value dst to be the value of type T at src
 template <typename T>
-void from_pointer(char *src, T &dst) {
+void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst = *reinterpret_cast<T *>(src);
+}
+
+template <typename T, typename Extents, typename AccessorPolicy>
+void from_pointer(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
+                  const npy_intp *dimensions, const npy_intp *steps) {
+    std::array<ptrdiff_t, Extents::rank()> strides;
+    for (npy_uintp i = 0; i < strides.size(); ++i) {
+        strides[i] = steps[i] / sizeof(T);
+    }
+
+    std::array<ptrdiff_t, Extents::rank()> exts;
+    for (npy_uintp i = 0; i < exts.size(); ++i) {
+        exts[i] = dimensions[i];
+    }
+
+    dst = {reinterpret_cast<T *>(src), {exts, strides}};
 }
 
 // Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
 template <typename T>
-void from_pointer(char *src, T *&dst) {
+void from_pointer(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst = reinterpret_cast<T *>(src);
 }
 
 template <typename T>
-T from_pointer(char *src) {
+T from_pointer(char *src, const npy_intp *dimensions, const npy_intp *steps) {
     T dst;
-    from_pointer(src, dst);
+    from_pointer(src, dst, dimensions, steps);
 
     return dst;
 }
@@ -123,7 +167,8 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
         const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
 
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            *reinterpret_cast<Res *>(args[sizeof...(Args)]) = func(from_pointer<Args>(args[I])...);
+            *reinterpret_cast<Res *>(args[sizeof...(Args)]) =
+                func(from_pointer<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -144,7 +189,8 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
         const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
 
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(from_pointer<Args>(args[I])...);
+            func(from_pointer<Args>(args[I], dimensions + 1,
+                                    steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -238,4 +284,30 @@ PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, int nout, c
 
 PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc) {
     return SpecFun_NewUFunc(func, func.begin()->has_return(), name, doc);
+}
+
+PyObject *SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, int nout, const char *name, const char *doc,
+                            const char *signature) {
+    static std::vector<SpecFun_UFunc> ufuncs;
+
+    for (auto it = func.begin(); it != func.end(); ++it) {
+        if (it->nin_and_nout() != func.begin()->nin_and_nout()) {
+            PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
+            return nullptr;
+        }
+        if (it->has_return() != func.begin()->has_return()) {
+            PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
+            return nullptr;
+        }
+    }
+
+    const SpecFun_UFunc &ufunc = ufuncs.emplace_back(func, name);
+    return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
+                                               ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
+                                               signature);
+}
+
+PyObject *SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc,
+                            const char *signature) {
+    return SpecFun_NewGUFunc(func, func.begin()->has_return(), name, doc, signature);
 }

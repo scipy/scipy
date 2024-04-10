@@ -19,10 +19,6 @@ cdef extern from "special/par_cyl.h" nogil:
 cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_bernob 'special::specfun::bernob'(int n, double *bn)
     void specfun_cerzo 'special::specfun::cerzo'(int nt, ccomplex[double] *zo)
-    void specfun_clpmn 'special::specfun::clpmn'(ccomplex[double] z, int m, int n, int ntype, ccomplex[double] *cpm, ccomplex[double] *cpd)
-    void specfun_clpn 'special::specfun::clpn'(int n, ccomplex[double] z, ccomplex[double] *cpn, ccomplex[double] *cpd)
-    void specfun_clqmn 'special::specfun::clqmn'(ccomplex[double] z, int m, int n, ccomplex[double] *cqm, ccomplex[double] *cqd)
-    void specfun_clqn 'special::specfun::clqn'(int n, ccomplex[double] z, ccomplex[double] *cqn, ccomplex[double] *cqd)
     void specfun_cpbdn 'special::specfun::cpbdn'(int n, ccomplex[double] z, ccomplex[double] *cpb, ccomplex[double] *cpd)
     void specfun_cyzo 'special::specfun::cyzo'(int nt, int kf, int kc, ccomplex[double] *zo, ccomplex[double] *zv)
     void specfun_eulerb 'special::specfun::eulerb'(int n, double *en)
@@ -31,12 +27,9 @@ cdef extern from "special/specfun/specfun.h" nogil:
     void specfun_jyzo 'special::specfun::jyzo'(int n, int nt, double *rj0, double *rj1, double *ry0, double *ry1)
     void specfun_lamn 'special::specfun::lamn'(int n, double x, int *nm, double *bl, double *dl)
     void specfun_lamv 'special::specfun::lamv'(double v, double x, double *vm, double *vl, double *dl)
-    void specfun_lpmn 'special::specfun::lpmn'(int m, int n, double x, double *pm, double *pd)
-    void specfun_lpn 'special::specfun::lpn'(int n, double x, double *pn, double *pd)
-    void specfun_lqmn 'special::specfun::lqmn'(double x, int m, int n, double *qm, double *qd)
     void specfun_lqnb 'special::specfun::lqnb'(int n, double x, double* qn, double* qd)
-    void specfun_rctj 'special::specfun::rctj'(int n, double x, int *nm, double *rj, double *dj)
-    void specfun_rcty 'special::specfun::rcty'(int n, double x, int *nm, double *ry, double *dy)
+    void specfun_pbdv 'special::specfun::pbdv'(double x, double v, double *dv, double *dp, double *pdf, double *pdd)
+    void specfun_pbvv 'special::specfun::pbvv'(double x, double v, double *vv, double *vp, double *pvf, double *pvd)
     void specfun_sdmn 'special::specfun::sdmn'(int m, int n, double c, double cv, double kd, double *df)
     void specfun_segv 'special::specfun::segv'(int m, int n, double c, int kd, double *cv, double *eg)
 
@@ -101,87 +94,6 @@ def cerzo(int nt):
     zzo = <ccomplex[double] *>cnp.PyArray_DATA(zo)
     specfun_cerzo(nt, zzo)
     return zo
-
-
-def clpmn(int m, int n, ccomplex[double] z, int ntype):
-    """
-    Compute the associated Legendre functions Pmn(z) and their derivatives
-    Pmn'(z) for a complex argument. This is a wrapper for the function
-    'specfun_clpmn'.
-    """
-    cdef ccomplex[double] *ccpm
-    cdef ccomplex[double] *ccpd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
-
-    # specfun_clpmn initializes the array internally
-    cpm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    cpd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    ccpm = <ccomplex[double] *>cnp.PyArray_DATA(cpm)
-    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
-    specfun_clpmn(z, m, n, ntype, ccpm, ccpd)
-    return cpm, cpd
-
-
-def clpn(int n1, ccomplex[double] z):
-    """
-    Compute Legendre polynomials Pn(z) and their derivatives Pn'(z) for
-    a complex argument. This is a wrapper for the function 'specfun_clpn'.
-    """
-    cdef ccomplex[double] *ccpn
-    cdef ccomplex[double] *ccpd
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n1 + 1
-
-    # specfun_clpn initializes the array internally
-    cpn = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    cpd = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    ccpn = <ccomplex[double] *>cnp.PyArray_DATA(cpn)
-    ccpd = <ccomplex[double] *>cnp.PyArray_DATA(cpd)
-    specfun_clpn(n1, z, ccpn, ccpd)
-    return cpn, cpd
-
-
-def clqmn(int m, int n, ccomplex[double] z):
-    """
-    Compute the associated Legendre functions of the second kind,
-    Qmn(z) and Qmn'(z), for a complex argument. This is a wrapper
-    for the function 'specfun_clqmn'.
-    """
-    cdef ccomplex[double] *ccqm
-    cdef ccomplex[double] *ccqd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
-
-    # specfun_clqmn initializes the array internally
-    cqm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    cqd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_COMPLEX128)
-    ccqm = <ccomplex[double] *>cnp.PyArray_DATA(cqm)
-    ccqd = <ccomplex[double] *>cnp.PyArray_DATA(cqd)
-    specfun_clqmn(z, m, n, ccqm, ccqd)
-    return cqm, cqd
-
-
-def clqn(int n, ccomplex[double] z):
-    """
-    Compute the Legendre functions Qn(z) and their derivatives
-    Qn'(z) for a complex argument. This is a wrapper for the
-    function 'specfun_clqn'.
-    """
-    cdef ccomplex[double] *ccqn
-    cdef ccomplex[double] *ccqd
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    # specfun_clpn initializes the array internally
-    cqn = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    cqd = cnp.PyArray_SimpleNew(1, dims, cnp.NPY_COMPLEX128)
-    ccqn = <ccomplex[double] *>cnp.PyArray_DATA(cqn)
-    ccqd = <ccomplex[double] *>cnp.PyArray_DATA(cqd)
-    specfun_clqn(n, <ccomplex[double]> z, ccqn, ccqd)
-    return cqn, cqd
 
 
 def cpbdn(int n, ccomplex[double] z):
@@ -396,84 +308,6 @@ def lamv(double v, double x):
     return vm, vl, dl
 
 
-def lpmn(int m, int n, double x):
-    """
-    Compute the associated Legendre functions Pmn(x) and their
-    derivatives Pmn'(x) for real argument. This is a wrapper for
-    the function 'specfun_lpmn'.
-    """
-    cdef double *cpm
-    cdef double *cpd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
-
-    # specfun_clpmn initializes the array internally
-    pm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    pd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    cpm = <cnp.float64_t *>cnp.PyArray_DATA(pm)
-    cpd = <cnp.float64_t *>cnp.PyArray_DATA(pd)
-    specfun_lpmn(m, n, x, cpm, cpd)
-    return pm, pd
-
-
-def lpn(int n, double z):
-    """
-    Compute Legendre polynomials Pn(x) and their derivatives
-    Pn'(x). This is a wrapper for the function 'specfun_lpn'.
-    """
-    cdef double *ppn
-    cdef double *ppd
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    pn = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    pd = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    ppn = <cnp.float64_t *>cnp.PyArray_DATA(pn)
-    ppd = <cnp.float64_t *>cnp.PyArray_DATA(pd)
-    specfun_lpn(n, z, ppn, ppd)
-    return pn, pd
-
-
-def lqmn(int m, int n, double x):
-    """
-    Purpose: Compute the associated Legendre functions of the
-    second kind, Qmn(x) and Qmn'(x). This is a wrapper for
-    the function 'specfun_lqmn'.
-    """
-    cdef double *cqm
-    cdef double *cqd
-    cdef cnp.npy_intp dims[2]
-    dims[0] = m+1
-    dims[1] = n+1
-
-    # specfun_clpmn initializes the array internally
-    qm = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    qd = cnp.PyArray_SimpleNew(2, dims, cnp.NPY_FLOAT64)
-    cqm = <cnp.float64_t *>cnp.PyArray_DATA(qm)
-    cqd = <cnp.float64_t *>cnp.PyArray_DATA(qd)
-    specfun_lqmn(x, m, n, cqm, cqd)
-    return qm, qd
-
-
-def lqnb(int n, double x):
-    """
-    Compute Legendre functions Qn(x) & Qn'(x). This is a wrapper for
-    the function 'specfun_lqnb'.
-    """
-    cdef double *qqn
-    cdef double *qqd
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    qn = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    qd = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    qqn = <cnp.float64_t *>cnp.PyArray_DATA(qn)
-    qqd = <cnp.float64_t *>cnp.PyArray_DATA(qd)
-    specfun_lqnb(n, x, qqn, qqd)
-    return qn, qd
-
-
 def pbdv(double v, double x):
     cdef double pdf
     cdef double pdd
@@ -504,44 +338,6 @@ def pbvv(double v, double x):
     dvp = <cnp.float64_t *>cnp.PyArray_DATA(vp)
     specfun_pbvv(x, v, dvv, dvp, &pvf, &pvd)
     return vv, vp, pvf, pvd
-
-    
-def rctj(int n, double x):
-    """
-    Compute Riccati-Bessel functions of the first kind and their
-    derivatives. This is a wrapper for the function 'specfun_rctj'.
-    """
-    cdef int nm
-    cdef double *rrj
-    cdef double *ddj
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    rj = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    dj = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    rrj = <cnp.float64_t *>cnp.PyArray_DATA(rj)
-    ddj = <cnp.float64_t *>cnp.PyArray_DATA(dj)
-    specfun_rctj(n, x, &nm, rrj, ddj)
-    return nm, rj, dj
-
-
-def rcty(int n, double x):
-    """
-    Compute Riccati-Bessel functions of the second kind and their
-    derivatives This is a wrapper for the function 'specfun_rcty'.
-    """
-    cdef int nm
-    cdef double *rry
-    cdef double *ddy
-    cdef cnp.npy_intp dims[1]
-    dims[0] = n + 1
-
-    ry = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    dy = cnp.PyArray_ZEROS(1, dims, cnp.NPY_FLOAT64, 0)
-    rry = <cnp.float64_t *>cnp.PyArray_DATA(ry)
-    ddy = <cnp.float64_t *>cnp.PyArray_DATA(dy)
-    specfun_rcty(n, x, &nm, rry, ddy)
-    return nm, ry, dy
 
 
 def sdmn(int m, int n, double c, double cv, int kd):

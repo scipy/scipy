@@ -15,7 +15,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_exprel.pxd'),
   fs.copyfile('_factorial.pxd'),
   fs.copyfile('_hyp0f1.pxd'),
-  fs.copyfile('_hyp2f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
   fs.copyfile('_legacy.pxd'),
   fs.copyfile('_ndtri_exp.pxd'),
@@ -110,6 +109,7 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'special_wrappers.cpp',
+  'special_c_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -143,7 +143,19 @@ py3.extension_module('_special_ufuncs',
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
-  install_rpath: '$ORIGIN',
+  install_rpath: '$ORIGIN'
+)
+
+py3.extension_module('_gufuncs',
+  ['_gufuncs.cpp', '_gufuncs_docs.cpp', 'sf_error.cc'],
+  include_directories: ['../_lib', '../_build_utils/src'],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
+  dependencies: [np_dep],
+  link_with: [sf_error_state_lib],
+  link_args: version_link_args,
+  install: true,
+  subdir: 'scipy/special',
+  install_rpath: '$ORIGIN'
 )
 
 py3.extension_module('_specfun',
@@ -267,6 +279,7 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'special_wrappers.cpp',
+    'special_c_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
@@ -351,7 +364,9 @@ special_sources = [
   'special/zlog1.h',
   'special/loggamma.h',
   'special/digamma.h',
-  'special/wright_bessel.h'
+  'special/wright_bessel.h',
+  'special/hyp2f1.h',
+  'special/tools.h'
 ]
 
 special_cephes_sources = [
@@ -364,7 +379,8 @@ special_cephes_sources = [
   'special/cephes/psi.h',
   'special/cephes/lanczos.h',
   'special/cephes/rgamma.h',
-  'special/cephes/chbevl.h'
+  'special/cephes/chbevl.h',
+  'special/cephes/poch.h'
 ]
 
 py3.install_sources(special_sources, subdir: 'scipy/special/special')
