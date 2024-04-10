@@ -34,6 +34,9 @@ Usable from Cython via::
 These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.
 
+If using ``cdotu``, ``cdotc``, ``zdotu``, ``zdotc``, ``sladiv``, or ``dladiv``,
+the environment variable ``CYTHON_CCOMPLEX`` must be 0 during compilation.
+
 Raw function pointers (Fortran-style pointer arguments):
 
 - {}
