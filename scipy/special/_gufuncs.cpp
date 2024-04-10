@@ -1,5 +1,6 @@
 #include "special/bessel.h"
 #include "special/legendre.h"
+#include "special/sph_harm.h"
 #include "ufunc.h"
 
 using namespace std;
@@ -33,6 +34,9 @@ using func_Fll_F2F2_t = void (*)(complex<float>, long, long,
 using func_Dll_D2D2_t = void (*)(complex<double>, long, long,
                                  mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
                                  mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+
+using func_ff_F2_t = void (*)(float, float, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_dd_D2_t = void (*)(double, double, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
 extern const char *lpn_doc;
 extern const char *lpmn_doc;
@@ -100,6 +104,11 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         SpecFun_NewGUFunc({static_cast<func_f_f1f1_t>(special::rcty), static_cast<func_d_d1d1_t>(special::rcty)}, 2,
                           "_rcty", rcty_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_gufuncs, "_rcty", _rcty);
+
+    PyObject *_sph_harm_all = SpecFun_NewGUFunc(
+        {static_cast<func_dd_D2_t>(special::sph_harm_all), static_cast<func_ff_F2_t>(special::sph_harm_all)}, 1,
+        "_sph_harm_all", nullptr, "(),()->(mp1,np1)");
+    PyModule_AddObjectRef(_gufuncs, "_sph_harm_all", _sph_harm_all);
 
     return _gufuncs;
 }

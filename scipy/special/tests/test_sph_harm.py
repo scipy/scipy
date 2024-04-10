@@ -35,3 +35,18 @@ def test_first_harmonics():
                         harm(theta, phi),
                         rtol=1e-15, atol=1e-15,
                         err_msg=f"Y^{m}_{n} incorrect")
+
+
+def test_all_harmonics():
+    n_max = 50
+
+    theta = np.linspace(0, np.pi)
+    phi = np.linspace(0, 2 * np.pi)
+
+    y_actual = sc.sph_harm_all(n_max, n_max, theta, phi)
+
+    for n in [0, 1, 2, 5, 10, 20, 50]:
+        for m in [0, 1, 2, 5, 10, 20, 50]:
+            if (m <= n):
+                y_desired = sc.sph_harm(m, n, theta, phi)
+                np.testing.assert_allclose(y_actual[m, n], y_desired, rtol = 1e-05)

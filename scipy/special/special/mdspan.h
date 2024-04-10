@@ -78,7 +78,11 @@ struct layout_stride {
         constexpr mapping(const Extents &exts, const array<index_type, extents_type::rank()> &strides)
             : m_exts(exts), m_strides(strides) {}
 
+        constexpr const extents_type &extents() const noexcept { return m_exts; }
+
         constexpr index_type extent(rank_type i) const noexcept { return m_exts.extent(i); }
+
+        constexpr index_type stride(rank_type i) const noexcept { return m_strides[i]; }
 
         template <typename... Args>
         constexpr index_type operator()(Args... args) const noexcept {
@@ -144,7 +148,13 @@ class mdspan {
         return m_acc.access(m_ptr, m_map(static_cast<index_type>(index)));
     }
 
-    constexpr index_type extent(rank_type i) const noexcept { return m_map.extent(i); }
+    constexpr const data_handle_type &data_handle() const noexcept { return m_ptr; }
+
+    constexpr index_type stride(rank_type r) const { return m_map.stride(r); }
+
+    constexpr const extents_type &extents() const noexcept { return m_map.extents(); }
+
+    constexpr index_type extent(rank_type r) const noexcept { return m_map.extent(r); }
 
     constexpr size_type size() const noexcept {
         size_type res = 1;

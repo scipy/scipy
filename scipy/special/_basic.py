@@ -14,7 +14,7 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._gufuncs import _lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty
+from ._gufuncs import _lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty, _sph_harm_all
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -72,6 +72,7 @@ __all__ = [
     'riccati_jn',
     'riccati_yn',
     'sinc',
+    'sph_harm_all',
     'stirling2',
     'y0_zeros',
     'y1_zeros',
@@ -3433,3 +3434,18 @@ def zeta(x, q=None, out=None):
         return _ufuncs._riemann_zeta(x, out)
     else:
         return _ufuncs._zeta(x, q, out)
+
+
+def sph_harm_all(m, n, theta, phi):
+    theta = np.asarray(theta)
+    if (not np.issubdtype(theta.dtype, np.inexact)):
+        theta = theta.astype(np.float64)
+
+    phi = np.asarray(phi)
+    if (not np.issubdtype(phi.dtype, np.inexact)):
+        phi = phi.astype(np.float64)
+
+    out = np.empty((m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape), dtype = np.complex128)
+    _sph_harm_all(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
+
+    return out
