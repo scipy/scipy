@@ -12,7 +12,6 @@ from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
                     reason="Can't start subprocess")
 @pytest.mark.skipif(cython is None, reason="requires cython")
-@pytest.mark.slow
 def test_cython(tmp_path):
     srcdir = os.path.dirname(os.path.dirname(__file__))
     extensions, extensions_cpp = _test_cython_extension(tmp_path, srcdir)
