@@ -491,71 +491,71 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
 
-    If we sample from the original distribution 1000 times and form a bootstrap
+    If we sample from the original distribution 100 times and form a bootstrap
     confidence interval for each sample, the confidence interval
     contains the true value of the statistic approximately 90% of the time.
 
-    >>> n_trials = 1000
+    >>> n_trials = 100
     >>> ci_contains_true_std = 0
     >>> for i in range(n_trials):
     ...    data = (dist.rvs(size=100, random_state=rng),)
-    ...    ci = bootstrap(data, np.std, confidence_level=0.9, n_resamples=250,
-    ...                   random_state=rng).confidence_interval
+    ...    res = bootstrap(data, np.std, confidence_level=0.9,
+    ...                    n_resamples=999, random_state=rng)
+    ...    ci = res.confidence_interval
     ...    if ci[0] < std_true < ci[1]:
     ...        ci_contains_true_std += 1
     >>> print(ci_contains_true_std)
-    884
+    88
 
     Rather than writing a loop, we can also determine the confidence intervals
-    for all 1000 samples at once.
+    for all 100 samples at once.
 
     >>> data = (dist.rvs(size=(n_trials, 100), random_state=rng),)
     >>> res = bootstrap(data, np.std, axis=-1, confidence_level=0.9,
-    ...                 n_resamples=1000, random_state=rng)
+    ...                 n_resamples=999, random_state=rng)
     >>> ci_l, ci_u = res.confidence_interval
 
     Here, `ci_l` and `ci_u` contain the confidence interval for each of the
-    ``n_trials = 1000`` samples.
+    ``n_trials = 100`` samples.
 
-    >>> print(ci_l[995:])
-    [3.57643033 3.46510277 3.66485249 3.46928141 3.35141091]
-    >>> print(ci_u[995:])
-    [4.70669938 4.5700425  4.4111398  4.46759032 4.14155623]
+    >>> print(ci_l[:5])
+    [3.86401283 3.33304394 3.52474647 3.54160981 3.80569252]
+    >>> print(ci_u[:5])
+    [4.80217409 4.18143252 4.39734707 4.37549713 4.72843584]
 
     And again, approximately 90% contain the true value, ``std_true = 4``.
 
     >>> print(np.sum((ci_l < std_true) & (std_true < ci_u)))
-    874
+    93
 
     `bootstrap` can also be used to estimate confidence intervals of
-    multi-sample statistics, including those calculated by hypothesis
-    tests. `scipy.stats.mood` perform's Mood's test for equal scale parameters,
-    and it returns two outputs: a statistic, and a p-value. To get a
-    confidence interval for the test statistic, we first wrap
-    `scipy.stats.mood` in a function that accepts two sample arguments,
-    accepts an `axis` keyword argument, and returns only the statistic.
+    multi-sample statistics. For example, to get a confidence interval
+    for the difference between means, we write a function that accepts
+    two sample arguments and returns only the statistic. The use of the
+    ``axis`` argument ensures that all mean calculations are perform in
+    a single vectorized call, which is faster than looping over pairs
+    of resamples in Python.
 
-    >>> from scipy.stats import mood
-    >>> def my_statistic(sample1, sample2, axis):
-    ...     statistic, _ = mood(sample1, sample2, axis=-1)
-    ...     return statistic
+    >>> def my_statistic(sample1, sample2, axis=-1):
+    ...     mean1 = np.mean(sample1, axis=axis)
+    ...     mean2 = np.mean(sample2, axis=axis)
+    ...     return mean1 - mean2
 
     Here, we use the 'percentile' method with the default 95% confidence level.
 
     >>> sample1 = norm.rvs(scale=1, size=100, random_state=rng)
     >>> sample2 = norm.rvs(scale=2, size=100, random_state=rng)
     >>> data = (sample1, sample2)
-    >>> res = bootstrap(data, my_statistic, n_resamples=1000, method='basic',
-    ...                 random_state=rng)
-    >>> print(mood(sample1, sample2)[0])  # element 0 is the statistic
-    -5.8349251004301745
+    >>> res = bootstrap(data, my_statistic, method='basic', random_state=rng)
+    >>> print(my_statistic(sample1, sample2))
+    0.16661030792089523
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=-7.524634459093211, high=-4.376323575000767)
+    ConfidenceInterval(low=-0.29087973240818693, high=0.6371338699912273)
 
     The bootstrap estimate of the standard error is also available.
 
     >>> print(res.standard_error)
-    0.822908401788482
+    0.238323948262459
 
     Paired-sample statistics work, too. For example, consider the Pearson
     correlation coefficient.
@@ -565,42 +565,40 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> x = np.linspace(0, 10, n)
     >>> y = x + rng.uniform(size=n)
     >>> print(pearsonr(x, y)[0])  # element 0 is the statistic
-    0.9962357936065914
+    0.9954306665125647
 
-    We wrap `pearsonr` so that it returns only the statistic.
+    We wrap `pearsonr` so that it returns only the statistic, ensuring
+    that we use the `axis` argument because it is available.
 
-    >>> def my_statistic(x, y):
-    ...     return pearsonr(x, y)[0]
+    >>> def my_statistic(x, y, axis=-1):
+    ...     return pearsonr(x, y, axis=axis)[0]
 
     We call `bootstrap` using ``paired=True``.
-    Also, since ``my_statistic`` isn't vectorized to calculate the statistic
-    along a given axis, we pass in ``vectorized=False``.
 
-    >>> res = bootstrap((x, y), my_statistic, n_resamples=1000,
-    ...                 vectorized=False, paired=True, random_state=rng)
+    >>> res = bootstrap((x, y), my_statistic, paired=True, random_state=rng)
     >>> print(res.confidence_interval)
-    ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
+    ConfidenceInterval(low=0.9941504301315878, high=0.996377412215445)
 
     The result object can be passed back into `bootstrap` to perform additional
     resampling:
 
     >>> len(res.bootstrap_distribution)
-    1000
-    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
-    ...                 n_resamples=1001, random_state=rng,
+    9999
+    >>> res = bootstrap((x, y), my_statistic, paired=True,
+    ...                 n_resamples=1000, random_state=rng,
     ...                 bootstrap_result=res)
     >>> len(res.bootstrap_distribution)
-    2001
+    10999
 
     or to change the confidence interval options:
 
-    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    >>> res2 = bootstrap((x, y), my_statistic, paired=True,
     ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
     ...                  method='percentile', confidence_level=0.9)
     >>> np.testing.assert_equal(res2.bootstrap_distribution,
     ...                         res.bootstrap_distribution)
     >>> res.confidence_interval
-    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+    ConfidenceInterval(low=0.9941574828235082, high=0.9963781698210212)
 
     without repeating computation of the original bootstrap distribution.
 
@@ -1593,14 +1591,14 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     permutation test.
 
     >>> x = norm.rvs(size=100, random_state=rng)
-    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
+    >>> y = norm.rvs(size=120, loc=0.2, random_state=rng)
+    >>> res = permutation_test((x, y), statistic, n_resamples=9999,
     ...                        vectorized=True, alternative='less',
     ...                        random_state=rng)
     >>> print(res.statistic)
-    -0.5230459671240913
+    -0.4230459671240913
     >>> print(res.pvalue)
-    0.00016999830001699983
+    0.0015
 
     The approximate probability of obtaining a test statistic less than or
     equal to the observed value under the null hypothesis is 0.0225%. This is
@@ -1613,7 +1611,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import ttest_ind
     >>> res_asymptotic = ttest_ind(x, y, alternative='less')
     >>> print(res_asymptotic.pvalue)
-    0.00012688101537979522
+    0.0014669545224902675
 
     The permutation distribution of the test statistic is provided for
     further investigation.
@@ -1632,9 +1630,9 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> from scipy.stats import pearsonr
     >>> x = [1, 2, 4, 3]
     >>> y = [2, 4, 6, 8]
-    >>> def statistic(x, y):
-    ...     return pearsonr(x, y).statistic
-    >>> res = permutation_test((x, y), statistic, vectorized=False,
+    >>> def statistic(x, y, axis=-1):
+    ...     return pearsonr(x, y, axis=axis).statistic
+    >>> res = permutation_test((x, y), statistic, vectorized=True,
     ...                        permutation_type='pairings',
     ...                        alternative='greater')
     >>> r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
@@ -1645,22 +1643,23 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     the same as the observed value of the test statistic.
 
     >>> r
-    0.8
+    0.7999999999999999
     >>> unique = np.unique(null)
     >>> unique
-    array([-1. , -0.8, -0.8, -0.6, -0.4, -0.2, -0.2,  0. ,  0.2,  0.2,  0.4,
-            0.6,  0.8,  0.8,  1. ]) # may vary
+    array([-1. , -1. , -0.8, -0.8, -0.8, -0.6, -0.4, -0.4, -0.2, -0.2, -0.2,
+        0. ,  0.2,  0.2,  0.2,  0.4,  0.4,  0.6,  0.8,  0.8,  0.8,  1. ,
+        1. ])  # may vary
     >>> unique[np.isclose(r, unique)].tolist()
-    [0.7999999999999999, 0.8]
+    [0.7999999999999998, 0.7999999999999999, 0.8]  # may vary
 
     If `permutation_test` were to perform the comparison naively, the
-    elements of the null distribution with value ``0.7999999999999999`` would
+    elements of the null distribution with value ``0.7999999999999998`` would
     not be considered as extreme or more extreme as the observed value of the
     statistic, so the calculated p-value would be too small.
 
     >>> incorrect_pvalue = np.count_nonzero(null >= r) / len(null)
     >>> incorrect_pvalue
-    0.1111111111111111  # may vary
+    0.14583333333333334  # may vary
 
     Instead, `permutation_test` treats elements of the null distribution that
     are within ``max(1e-14, abs(r)*1e-14)`` of the observed value of the
