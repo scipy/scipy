@@ -492,8 +492,8 @@ First, prepare a small python reproducer, with a breakpoint. For example::
     import numpy as np
     from scipy import linalg
     n = 40
-    np.random.refault_rng(1234)
-    x = np.random.uniform(size=n)
+    rng = np.random.default_rng(1234)
+    x = rng.uniform(size=n)
     a = x[:, None] @ x[None, :] + np.identity(n)
 
     breakpoint()      # note a breakpoint
@@ -534,6 +534,16 @@ Here is an example ``gdb`` session::
         capi_keywds=<optimized out>, f2py_func=0x7ffff4c48820 <dpotrf_>)
         at scipy/linalg/_flapackmodule.c:63281
     ....
-    (gdb) p lda    # inspect values of C variables etc
+    (gdb) p lda    # inspect values of C variables (some symbols may be
+                   # missing or reported as <optimized out>)
     $1 = 40
 
+    # print out the C backtrace
+    (gdb) bt
+    #0  0x00007ffff3056b1e in f2py_rout.flapack_dpotrf ()
+       from /path/to/site-packages/scipy/linalg/_flapack.cpython-311-x86_64-linux-gnu.so
+    #1  0x0000555555734323 in _PyObject_MakeTpCall (tstate=0x555555ad0558 <_PyRuntime+166328>,
+        callable=<fortran at remote 0x7ffff40ffc00>, args=<optimized out>, nargs=1,
+        keywords=('lower', 'overwrite_a', 'clean'))
+        at /usr/local/src/conda/python-3.11.8/Objects/call.c:214
+    ...
