@@ -50,7 +50,8 @@ python_sources = [
   'test_ufunc_signatures.py',
   'test_wright_bessel.py',
   'test_wrightomega.py',
-  'test_zeta.py'
+  'test_zeta.py',
+  'test_boost_ufuncs.py'
 ]
 
 

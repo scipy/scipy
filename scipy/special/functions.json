@@ -1159,8 +1159,302 @@
         }
     },
     "ndtri_exp": {
-	"_ndtri_exp.pxd": {
-	    "ndtri_exp": "d->d"
-	}
+        "_ndtri_exp.pxd": {
+            "ndtri_exp": "d->d"
+        }
+    },
+    "_beta_pdf": {
+        "boost_special_functions.h++": {
+            "beta_pdf_float": "fff->f",
+            "beta_pdf_double": "ddd->d"
+        }
+    },
+    "_beta_ppf": {
+        "boost_special_functions.h++": {
+            "beta_ppf_float": "fff->f",
+            "beta_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_ppf": {
+        "boost_special_functions.h++": {
+            "invgauss_ppf_float": "fff->f",
+            "invgauss_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_isf": {
+        "boost_special_functions.h++": {
+            "invgauss_isf_float": "fff->f",
+            "invgauss_isf_double": "ddd->d"
+        }
+    },
+    "_ncx2_pdf": {
+        "boost_special_functions.h++": {
+            "ncx2_pdf_float": "fff->f",
+            "ncx2_pdf_double": "ddd->d"
+        }
+    },
+    "_ncx2_cdf": {
+        "boost_special_functions.h++": {
+            "ncx2_cdf_float": "fff->f",
+            "ncx2_cdf_double": "ddd->d"
+        }
+    },
+    "_ncx2_ppf": {
+        "boost_special_functions.h++": {
+            "ncx2_ppf_float": "fff->f",
+            "ncx2_ppf_double": "ddd->d"
+        }
+    },
+    "_ncx2_sf": {
+        "boost_special_functions.h++": {
+            "ncx2_sf_float": "fff->f",
+            "ncx2_sf_double": "ddd->d"
+        }
+    },
+    "_ncx2_isf": {
+        "boost_special_functions.h++": {
+            "ncx2_isf_float": "fff->f",
+            "ncx2_isf_double": "ddd->d"
+        }
+    },
+    "_ncf_pdf": {
+        "boost_special_functions.h++": {
+            "ncf_pdf_float": "ffff->f",
+            "ncf_pdf_double": "dddd->d"
+        }
+    },
+    "_ncf_cdf": {
+        "boost_special_functions.h++": {
+            "ncf_cdf_float": "ffff->f",
+            "ncf_cdf_double": "dddd->d"
+        }
+    },
+    "_ncf_ppf": {
+        "boost_special_functions.h++": {
+            "ncf_ppf_float": "ffff->f",
+            "ncf_ppf_double": "dddd->d"
+        }
+    },
+    "_ncf_sf": {
+        "boost_special_functions.h++": {
+            "ncf_sf_float": "ffff->f",
+            "ncf_sf_double": "dddd->d"
+        }
+    },
+    "_ncf_isf": {
+        "boost_special_functions.h++": {
+            "ncf_isf_float": "ffff->f",
+            "ncf_isf_double": "dddd->d"
+        }
+    },
+    "_ncf_mean": {
+        "boost_special_functions.h++": {
+            "ncf_mean_float": "fff->f",
+            "ncf_mean_double": "ddd->d"
+        }
+    },
+    "_ncf_variance": {
+        "boost_special_functions.h++": {
+            "ncf_variance_float": "fff->f",
+            "ncf_variance_double": "ddd->d"
+        }
+    },
+    "_ncf_skewness": {
+        "boost_special_functions.h++": {
+            "ncf_skewness_float": "fff->f",
+            "ncf_skewness_double": "ddd->d"
+        }
+    },
+    "_ncf_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "ncf_kurtosis_excess_float": "fff->f",
+            "ncf_kurtosis_excess_double": "ddd->d"
+        }
+    },
+    "_nct_cdf": {
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"
+        }
+    },
+    "_nct_ppf": {
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
+        }
+    },
+    "_nct_sf": {
+        "boost_special_functions.h++": {
+            "nct_sf_float": "fff->f",
+            "nct_sf_double": "ddd->d"
+        }
+    },
+    "_nct_isf": {
+        "boost_special_functions.h++": {
+            "nct_isf_float": "fff->f",
+            "nct_isf_double": "ddd->d"
+        }
+    },
+    "_nct_mean": {
+        "boost_special_functions.h++": {
+            "nct_mean_float": "ff->f",
+            "nct_mean_double": "dd->d"
+        }
+    },
+    "_nct_variance": {
+        "boost_special_functions.h++": {
+            "nct_variance_float": "ff->f",
+            "nct_variance_double": "dd->d"
+        }
+    },
+    "_nct_skewness": {
+        "boost_special_functions.h++": {
+            "nct_skewness_float": "ff->f",
+            "nct_skewness_double": "dd->d"
+        }
+    },
+    "_nct_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nct_kurtosis_excess_float": "ff->f",
+            "nct_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_skewnorm_cdf": {
+        "boost_special_functions.h++": {
+            "skewnorm_cdf_float": "ffff->f",
+            "skewnorm_cdf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_ppf": {
+        "boost_special_functions.h++": {
+            "skewnorm_ppf_float": "ffff->f",
+            "skewnorm_ppf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_isf": {
+        "boost_special_functions.h++": {
+            "skewnorm_isf_float": "ffff->f",
+            "skewnorm_isf_double": "dddd->d"
+        }
+    },
+    "_binom_pmf": {
+        "boost_special_functions.h++": {
+            "binom_pmf_float": "fff->f",
+            "binom_pmf_double": "ddd->d"
+        }
+    },
+    "_binom_cdf": {
+        "boost_special_functions.h++": {
+            "binom_cdf_float": "fff->f",
+            "binom_cdf_double": "ddd->d"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_float": "fff->f",
+            "binom_ppf_double": "ddd->d"
+        }
+    },
+    "_binom_sf": {
+        "boost_special_functions.h++": {
+            "binom_sf_float": "fff->f",
+            "binom_sf_double": "ddd->d"
+        }
+    },
+    "_binom_isf": {
+        "boost_special_functions.h++": {
+            "binom_isf_float": "fff->f",
+            "binom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_pmf": {
+        "boost_special_functions.h++": {
+            "nbinom_pmf_float": "fff->f",
+            "nbinom_pmf_double": "ddd->d"
+        }
+    },
+    "_nbinom_cdf": {
+        "boost_special_functions.h++": {
+            "nbinom_cdf_float": "fff->f",
+            "nbinom_cdf_double": "ddd->d"
+        }
+    },
+    "_nbinom_ppf": {
+        "boost_special_functions.h++": {
+            "nbinom_ppf_float": "fff->f",
+            "nbinom_ppf_double": "ddd->d"
+        }
+    },
+    "_nbinom_sf": {
+        "boost_special_functions.h++": {
+            "nbinom_sf_float": "fff->f",
+            "nbinom_sf_double": "ddd->d"
+        }
+    },
+    "_nbinom_isf": {
+        "boost_special_functions.h++": {
+            "nbinom_isf_float": "fff->f",
+            "nbinom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_mean": {
+        "boost_special_functions.h++": {
+            "nbinom_mean_float": "ff->f",
+            "nbinom_mean_double": "dd->d"
+        }
+    },
+    "_nbinom_variance": {
+        "boost_special_functions.h++": {
+            "nbinom_variance_float": "ff->f",
+            "nbinom_variance_double": "dd->d"
+        }
+    },
+    "_nbinom_skewness": {
+        "boost_special_functions.h++": {
+            "nbinom_skewness_float": "ff->f",
+            "nbinom_skewness_double": "dd->d"
+        }
+    },
+    "_nbinom_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nbinom_kurtosis_excess_float": "ff->f",
+            "nbinom_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_hypergeom_pmf": {
+        "boost_special_functions.h++": {
+            "hypergeom_pmf_float": "ffff->f",
+            "hypergeom_pmf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_cdf": {
+        "boost_special_functions.h++": {
+            "hypergeom_cdf_float": "ffff->f",
+            "hypergeom_cdf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_sf": {
+        "boost_special_functions.h++": {
+            "hypergeom_sf_float": "ffff->f",
+            "hypergeom_sf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_mean": {
+        "boost_special_functions.h++": {
+            "hypergeom_mean_float": "fff->f",
+            "hypergeom_mean_double": "ddd->d"
+        }
+    },
+    "_hypergeom_variance": {
+        "boost_special_functions.h++": {
+            "hypergeom_variance_float": "fff->f",
+            "hypergeom_variance_double": "ddd->d"
+        }
+    },
+    "_hypergeom_skewness": {
+        "boost_special_functions.h++": {
+            "hypergeom_skewness_float": "fff->f",
+            "hypergeom_skewness_double": "ddd->d"
+        }
     }
 }

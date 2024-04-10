@@ -12659,3 +12659,1011 @@ add_newdoc("_stirling2_inexact",
     r"""
     Internal function, do not use.
     """)
+
+add_newdoc(
+    "_beta_pdf",
+    r"""
+    _beta_pdf(x, a, b)
+
+    Probability density function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_beta_ppf",
+    r"""
+    _beta_ppf(x, a, b)
+
+    Percent point function of beta distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued such that :math:`0 \leq x \leq 1`,
+        the upper limit of integration
+    a, b : array_like
+           Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_invgauss_ppf",
+    """
+    _invgauss_ppf(x, mu)
+
+    Percent point function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_invgauss_isf",
+    """
+    _invgauss_isf(x, mu, s)
+
+    Inverse survival function of inverse gaussian distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    mu : array_like
+        Positive, real-valued parameters
+    s : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_pdf",
+    """
+    _ncx2_pdf(x, k, l)
+
+    Probability density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_cdf",
+    """
+    _ncx2_cdf(x, k, l)
+
+    Cumulative density function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_ppf",
+    """
+    _ncx2_ppf(x, k, l)
+
+    Percent point function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_sf",
+    """
+    _ncx2_sf(x, k, l)
+
+    Survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncx2_isf",
+    """
+    _ncx2_isf(x, k, l)
+
+    Inverse survival function of Non-central chi-squared distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    k, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_pdf",
+    """
+    _ncf_pdf(x, v1, v2, l)
+
+    Probability density function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_cdf",
+    """
+    _ncf_cdf(x, v1, v2, l)
+
+    Cumulative density function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_ppf",
+    """
+    _ncf_ppf(x, v1, v2, l)
+
+    Percent point function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_sf",
+    """
+    _ncf_sf(x, v1, v2, l)
+
+    Survival function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_isf",
+    """
+    _ncf_isf(x, v1, v2, l)
+
+    Inverse surivial function of noncentral F-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Positive real-valued
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_mean",
+    """
+    _ncf_mean(v1, v2, l)
+
+    Mean of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_variance",
+    """
+    _ncf_variance(v1, v2, l)
+
+    Variance of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_skewness",
+    """
+    _ncf_skewness(v1, v2, l)
+
+    Skewness of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_ncf_kurtosis_excess",
+    """
+    _ncf_kurtosis_excess(v1, v2, l)
+
+    Kurtosis excess of noncentral F-distribution.
+
+    Parameters
+    ----------
+    v1, v2, l : array_like
+        Positive, real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_cdf",
+    """
+    _nct_cdf(x, v, l)
+
+    Cumulative density function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_ppf",
+    """
+    _nct_ppf(x, v, l)
+
+    Percent point function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_sf",
+    """
+    _nct_sf(x, v, l)
+
+    Survival function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_isf",
+    """
+    _nct_isf(x, v, l)
+
+    Inverse surivial function of noncentral t-distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_mean",
+    """
+    _nct_mean(v, l)
+
+    Mean of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_variance",
+    """
+    _nct_variance(v, l)
+
+    Variance of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_skewness",
+    """
+    _nct_skewness(v, l)
+
+    Skewness of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nct_kurtosis_excess",
+    """
+    _nct_kurtosis_excess(v, l)
+
+    Kurtosis excess of noncentral t-distribution.
+
+    Parameters
+    ----------
+    v : array_like
+        Positive, real-valued parameters
+    l : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_skewnorm_cdf",
+    """
+    _skewnorm_cdf(x, l, sc, sh)
+
+    Cumulative density function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_skewnorm_ppf",
+    """
+    _skewnorm_ppf(x, l, sc, sh)
+
+    Percent point function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_skewnorm_isf",
+    """
+    _skewnorm_isf(x, l, sc, sh)
+
+    Inverse surivial function of skewnorm distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    l : array_like
+        Real-valued parameters
+    sc : array_like
+        Positive, Real-valued parameters
+    sh : array_like
+        Real-valued parameters
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_binom_pmf",
+    """
+    _binom_pmf(x, n, p)
+
+    Probability mass function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_binom_cdf",
+    """
+    _binom_cdf(x, n, p)
+
+    Cumulative density function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_binom_ppf",
+    """
+    _binom_ppf(x, n, p)
+
+    Percent point function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_binom_sf",
+    """
+    _binom_sf(x, n, p)
+
+    Survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_binom_isf",
+    """
+    _binom_isf(x, n, p)
+
+    Inverse survival function of binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    n : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_pmf",
+    """
+    _nbinom_pmf(x, r, p)
+
+    Probability mass function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_cdf",
+    """
+    _nbinom_cdf(x, r, p)
+
+    Cumulative density function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_ppf",
+    """
+    _nbinom_ppf(x, r, p)
+
+    Percent point function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_sf",
+    """
+    _nbinom_sf(x, r, p)
+
+    Survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_isf",
+    """
+    _nbinom_isf(x, r, p)
+
+    Inverse survival function of negative binomial distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_mean",
+    """
+    _nbinom_mean(r, p)
+
+    Mean of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_variance",
+    """
+    _nbinom_variance(r, p)
+
+    Variance of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_skewness",
+    """
+    _nbinom_skewness(r, p)
+
+    Skewness of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_nbinom_kurtosis_excess",
+    """
+    _nbinom_kurtosis_excess(r, p)
+
+    Kurtosis excess of negative binomial distribution.
+
+    Parameters
+    ----------
+    r : array_like
+        Positive, integer-valued parameter
+    p : array_like
+        Positive, real-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_pmf",
+    """
+    _hypergeom_pmf(x, r, N, M)
+
+    Probability mass function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_cdf",
+    """
+    _hypergeom_cdf(x, r, N, M)
+
+    Cumulative density function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_hypergeom_sf",
+    """
+    _hypergeom_sf(x, r, N, M)
+
+    Survival function of hypergeometric distribution.
+
+    Parameters
+    ----------
+    x : array_like
+        Real-valued
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+    """)
+
+add_newdoc(
+    "_hypergeom_mean",
+    """
+    _hypergeom_mean(r, N, M)
+
+    Mean of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_variance",
+    """
+    _hypergeom_variance(r, N, M)
+
+    Mean of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)
+
+add_newdoc(
+    "_hypergeom_skewness",
+    """
+    _hypergeom_skewness(r, N, M)
+
+    Skewness of hypergeometric distribution.
+
+    Parameters
+    ----------
+    r, N, M : array_like
+        Positive, integer-valued parameter
+
+    Returns
+    -------
+    scalar or ndarray
+
+    """)

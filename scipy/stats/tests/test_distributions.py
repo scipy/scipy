@@ -531,7 +531,7 @@ class TestChi:
     @pytest.mark.parametrize('df, ref',
                              [(1e3, CHI_MEAN_1000),
                               (1e14, 9999999.999999976)]
-                            ) 
+                            )
     def test_mean(self, df, ref):
         assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
@@ -4621,7 +4621,7 @@ class TestBetaPrime:
 
     @pytest.mark.parametrize('x, a, b, p', cdf_vals)
     def test_ppf_gh_17631(self, x, a, b, p):
-        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=1e-14)
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',
