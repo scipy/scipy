@@ -47,11 +47,11 @@ from scipy.cluster.hierarchy import (
     _order_cluster_tree, _hierarchy, _LINKAGE_METHODS)
 from scipy.spatial.distance import pdist
 from scipy.cluster._hierarchy import Heap
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close, xp_assert_equal
-
 from . import hierarchy_test_data
 
+from scipy._lib._array_api import (
+    array_api_compatible, skip_xp_backends, xp_assert_close, xp_assert_equal,
+)
 
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
@@ -65,9 +65,7 @@ try:
 except Exception:
     have_matplotlib = False
 
-
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 class TestLinkage:

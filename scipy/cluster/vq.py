@@ -67,13 +67,14 @@ code book.
 import warnings
 import numpy as np
 from collections import deque
-from scipy._lib._array_api import (
-    _asarray, array_namespace, size, atleast_nd, copy, cov
-)
+
 from scipy._lib._util import check_random_state, rng_integers
 from scipy.spatial.distance import cdist
-
 from . import _vq
+
+from scipy._lib._array_api import (
+    _asarray, array_namespace, atleast_nd, copy, cov, size,
+)
 
 __docformat__ = 'restructuredtext'
 

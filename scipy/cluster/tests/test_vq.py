@@ -12,15 +12,19 @@ from pytest import raises as assert_raises
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.conftest import array_api_compatible
 from scipy.sparse._sputils import matrix
 
 from scipy._lib._array_api import (
-    SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
+    array_api_compatible,
+    copy,
+    cov,
+    SCIPY_ARRAY_API,
+    skip_xp_backends,
+    xp_assert_close,
+    xp_assert_equal,
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,

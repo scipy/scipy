@@ -238,10 +238,9 @@ The following pytest markers are available:
 
 The following is an example using the markers::
 
-  from scipy.conftest import array_api_compatible
+  from scipy._lib._array_api import array_api_compatible, skip_xp_backends
   ...
-  @pytest.mark.skip_xp_backends(np_only=True,
-                                 reasons=['skip reason'])
+  @skip_xp_backends(np_only=True, reasons=['skip reason'])
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto1(self, xp):
@@ -249,9 +248,8 @@ The following is an example using the markers::
       b = xp.asarray([0, 2, 5])
       toto(a, b)
   ...
-  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
-                                 reasons=['skip reason 1',
-                                          'skip reason 2',])
+  @skip_xp_backends('array_api_strict', 'cupy',
+                    reasons=['skip reason 1', 'skip reason 2',])
   @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto2(self, xp):
@@ -268,10 +266,9 @@ When every test function in a file has been updated for array API
 compatibility, one can reduce verbosity by telling ``pytest`` to apply the
 markers to every test function using ``pytestmark``::
 
-    from scipy.conftest import array_api_compatible
+    from scipy._lib._array_api import array_api_compatible, skip_xp_backends
     
     pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-    skip_xp_backends = pytest.mark.skip_xp_backends
     ...
     @skip_xp_backends(np_only=True, reasons=['skip reason'])
     def test_toto1(self, xp):

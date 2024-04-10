@@ -4,18 +4,21 @@ Copied from fftpack.helper by Pearu Peterson, October 2005
 Modified for Array API, 2023
 
 """
-from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
+
 from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close, SCIPY_DEVICE
+
 from scipy import fft
+from scipy.fft._helper import next_fast_len, _init_nd_shape_and_axes
+
+from scipy._lib._array_api import (
+    array_api_compatible, SCIPY_DEVICE, skip_xp_backends, xp_assert_close,
+)
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -23,6 +26,7 @@ _5_smooth_numbers = [
     2**3 * 3**5,
     2**3 * 3**3 * 5**2,
 ]
+
 
 def test_next_fast_len():
     for n in _5_smooth_numbers:

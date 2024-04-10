@@ -1,8 +1,9 @@
-from scipy._lib._array_api import (
-    array_namespace, is_numpy, xp_unsupported_param_msg, is_complex
-)
-from . import _pocketfft
 import numpy as np
+from . import _pocketfft
+
+from scipy._lib._array_api import (
+    array_namespace, is_complex, is_numpy, xp_unsupported_param_msg,
+)
 
 
 def _validate_fft_args(workers, plan, norm):

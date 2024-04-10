@@ -9,14 +9,14 @@ from numpy.testing import assert_equal, assert_
 import pytest
 from pytest import raises as assert_raises
 import hypothesis.extra.numpy as npst
-from hypothesis import given, strategies, reproduce_failure  # noqa: F401
-from scipy.conftest import array_api_compatible
+from hypothesis import given, strategies  # noqa: F401
 
-from scipy._lib._array_api import xp_assert_equal
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
                               rng_integers, _validate_int, _rename_parameter,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
+
+from scipy._lib._array_api import array_api_compatible, xp_assert_equal
 
 
 def test__aligned_zeros():

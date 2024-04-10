@@ -68,6 +68,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
+
 from scipy._lib._array_api import array_namespace, is_numpy
 
 # In __all__ but deprecated for removal in SciPy 1.13.0

@@ -5,8 +5,7 @@ import pytest
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
-from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import array_api_compatible, xp_assert_close
 
 pytestmark = array_api_compatible
 

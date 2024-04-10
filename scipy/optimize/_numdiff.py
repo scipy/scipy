@@ -6,7 +6,8 @@ from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from ..sparse import issparse, csc_matrix, csr_matrix, coo_matrix, find
 from ._group_columns import group_dense, group_sparse
-from scipy._lib._array_api import atleast_nd, array_namespace
+
+from scipy._lib._array_api import array_namespace, atleast_nd
 
 
 def _adjust_scheme_to_bounds(x0, h, num_steps, scheme, lb, ub):

@@ -20,13 +20,44 @@ from scipy._lib.array_api_compat import (
     numpy as np_compat,
 )
 
-__all__ = ['array_namespace', '_asarray', 'size']
+try:
+    # try to get the experimental variables and pytest marks from conftest,
+    # will error if pytest is not installed.
+    import pytest
+    from scipy.conftest import (
+        array_api_compatible, SCIPY_ARRAY_API, SCIPY_DEVICE
+    )
 
+    skip_xp_backends = pytest.mark.skip_xp_backends
+except ImportError:
+    # define the experimental variables here instead
 
-# To enable array API and strict array-like input validation
-SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)
-# To control the default device - for use in the test suite only
-SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
+    # To enable array API and strict array-like input validation
+    SCIPY_ARRAY_API: str | bool = os.environ.get("SCIPY_ARRAY_API", False)  # type: ignore[no-redef]  # noqa: E501
+    # To control the default device - for use in the test suite only
+    SCIPY_DEVICE = os.environ.get("SCIPY_DEVICE", "cpu")
+
+__all__ = [
+    '_GLOBAL_CONFIG',
+    'array_api_compatible',
+    'array_namespace',
+    '_asarray',
+    'atleast_nd',
+    'copy',
+    'cov',
+    'is_complex',
+    'is_cupy',
+    'is_numpy',
+    'is_torch',
+    'SCIPY_ARRAY_API',
+    'SCIPY_DEVICE',
+    'size',
+    'skip_xp_backends',
+    'xp_assert_close',
+    'xp_assert_equal',
+    'xp_assert_less',
+    'xp_unsupported_param_msg'
+]
 
 _GLOBAL_CONFIG = {
     "SCIPY_ARRAY_API": SCIPY_ARRAY_API,

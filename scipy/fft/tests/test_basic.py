@@ -6,14 +6,19 @@ import pytest
 from numpy.random import random
 from numpy.testing import assert_array_almost_equal, assert_allclose
 from pytest import raises as assert_raises
+
 import scipy.fft as fft
-from scipy.conftest import array_api_compatible
+
 from scipy._lib._array_api import (
-    array_namespace, size, xp_assert_close, xp_assert_equal
+    array_api_compatible,
+    array_namespace,
+    size,
+    skip_xp_backends,
+    xp_assert_close,
+    xp_assert_equal,
 )
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
-skip_xp_backends = pytest.mark.skip_xp_backends
 
 
 # Expected input dtypes. Note that `scipy.fft` is more flexible for numpy,
