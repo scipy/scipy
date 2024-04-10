@@ -5149,10 +5149,9 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     if ftype not in ("notch", "peak"):
         raise ValueError("Unknown ftype.")
 
-    # Compute beta
-    # Eqs. 11.3.4 (p.575) and 11.3.19 (p.579) from reference [1]
-    # Note that formulas can be further simplified when -3dB attenuation value
-    # gb = 1 / np.sqrt(2):
+    # Compute beta according to Eqs. 11.3.4 (p.575) and 11.3.19 (p.579) from reference [1]
+    # Due to assuming a -3 dB attenuation value, i.e, assuming gb = 1 / np.sqrt(2),
+    # the following terms simplify to:
     #   (np.sqrt(1.0 - gb**2.0) / gb) = 1
     #   (gb / np.sqrt(1.0 - gb**2.0)) = 1
     beta = np.tan(bw/2.0)
@@ -5341,10 +5340,8 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     elif ftype == 'peak':
         G0, G = 0, 1
 
-    # Compute beta
-    # Eq. 11.5.3 (p. 591) from reference [1]
-    # Note that formulas can be further simplified when -3dB attenuation value
-    # GB = 1 / np.sqrt(2):
+    # Due to assuming a -3 dB attenuation value, i.e, assuming GB = 1 / np.sqrt(2),
+    # the following term of Eq. 11.5.3 simplifies to:
     #   np.sqrt((GB**2 - G0**2) / (G**2 - GB**2)) = 1
     beta = np.tan(N * w_delta / 4)
 
