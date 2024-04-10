@@ -56,7 +56,7 @@ inline std::complex<float> sph_harm(float m, float n, float theta, float phi) {
 
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    lpmn_no_deriv(std::cos(phi), y);
+    lpmn(std::cos(phi), y);
 
     for (long i = 0; i < y.extent(0); ++i) {
         for (long j = i; j < y.extent(1); ++j) {

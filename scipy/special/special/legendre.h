@@ -56,7 +56,7 @@ void lpn(T z, OutputVec1 pn, OutputVec2 pd) {
 // =====================================================
 
 template <typename T, typename OutputMat1>
-void lpmn_no_deriv(T x, OutputMat1 pm) {
+void lpmn(T x, OutputMat1 pm) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
@@ -102,25 +102,22 @@ void lpmn_no_deriv(T x, OutputMat1 pm) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
+void lpmn_jac(T x, OutputMat1 pm, OutputMat2 pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
     for (int i = 0; i < m + 1; ++i) {
         for (int j = 0; j < n + 1; ++j) {
-            pm(i, j) = 0;
             pd(i, j) = 0;
         }
     }
 
-    pm(0, 0) = 1;
     if (n == 0) {
         return;
     }
 
     if (std::abs(x) == 1) {
         for (int i = 1; i <= n; i++) {
-            pm(0, i) = std::pow(x, i);
             pd(0, i) = i * (i + 1) * std::pow(x, i + 1) / 2;
         }
 
@@ -144,19 +141,6 @@ void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
     }
     T xs = ls * (1 - x * x);
 
-    for (int i = 1; i <= m; ++i) {
-        pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
-    }
-    for (int i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
-        pm(i, i + 1) = (2 * i + 1) * x * pm(i, i);
-    }
-
-    for (int i = 0; i <= m; i++) {
-        for (int j = i + 2; j <= n; j++) {
-            pm(i, j) = ((2 * j - 1) * x * pm(i, j - 1) - (i + j - 1) * pm(i, j - 2)) / (j - i);
-        }
-    }
-
     pd(0, 0) = 0;
     for (int j = 1; j <= n; j++) {
         pd(0, j) = ls * j * (pm(0, j - 1) - x * pm(0, j)) / xs;
@@ -170,8 +154,14 @@ void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
-    lpmn(x, pm, pd);
+void scipy_lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
+    lpmn(x, pm);
+    lpmn_jac(x, pm, pd);
+}
+
+template <typename T, typename OutputMat1, typename OutputMat2>
+void scipy_lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
+    scipy_lpmn(x, pm, pd);
 
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;

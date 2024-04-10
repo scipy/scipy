@@ -73,9 +73,9 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                           2, "_lpn", lpn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_gufuncs, "_lpn", _lpn);
 
-    PyObject *_lpmn =
-        SpecFun_NewGUFunc({static_cast<func_fl_f2f2_t>(special::lpmn), static_cast<func_dl_d2d2_t>(special::lpmn)}, 2,
-                          "_lpmn", lpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
+    PyObject *_lpmn = SpecFun_NewGUFunc(
+        {static_cast<func_fl_f2f2_t>(special::scipy_lpmn), static_cast<func_dl_d2d2_t>(special::scipy_lpmn)}, 2,
+        "_lpmn", lpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_lpmn", _lpmn);
 
     PyObject *_clpmn =
