@@ -702,7 +702,8 @@ class beta_gen(rv_continuous):
         _beta_variance = a*b / (a_plus_b**2 * (a_plus_b + 1))
         _beta_skewness = ((2 * (b - a) * np.sqrt(a_plus_b + 1)) /
                           ((a_plus_b + 2) * np.sqrt(a * b)))
-        _beta_kurtosis_excess_n = 6 * ((a - b)**2 * (a_plus_b + 1) - a * b * (a_plus_b + 2))
+        _beta_kurtosis_excess_n = 6 * ((a - b)**2 * (a_plus_b + 1) -
+                                       a * b * (a_plus_b + 2))
         _beta_kurtosis_excess_d = a * b * (a_plus_b + 2) * (a_plus_b + 3)
         _beta_kurtosis_excess = _beta_kurtosis_excess_n / _beta_kurtosis_excess_d
         return (
