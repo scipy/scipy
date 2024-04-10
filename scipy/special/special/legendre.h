@@ -101,8 +101,8 @@ void lpmn(T x, OutputMat1 pm) {
     }
 }
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn_jac(T x, OutputMat1 pm, OutputMat2 pd) {
+template <typename T, typename InputMat1, typename OutputMat2>
+void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
