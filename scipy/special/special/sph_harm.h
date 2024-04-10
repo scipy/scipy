@@ -2,7 +2,6 @@
 
 #include "error.h"
 #include "legendre.h"
-#include "mdspan.h"
 #include "specfun.h"
 
 extern "C" double cephes_poch(double x, double m);
@@ -57,25 +56,10 @@ inline std::complex<float> sph_harm(float m, float n, float theta, float phi) {
 
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    using out_submat = std::mdspan<T, typename OutMat::extents_type, typename OutMat::layout_type>;
+    lpmn_no_deriv(std::cos(phi), y);
 
-    long m = y.extent(0) - 1;
-    long n = y.extent(1) - 1;
-
-    std::array<ptrdiff_t, 2> suby_strides{2 * y.stride(0), 2 * y.stride(1)};
-
-    out_submat y_real(reinterpret_cast<T *>(y.data_handle()), {y.extents(), suby_strides});
-    lpmn_no_deriv(std::cos(phi), y_real);
-
-    out_submat y_imag(reinterpret_cast<T *>(y.data_handle()) + 1, {y.extents(), suby_strides});
-    for (long i = 0; i <= m; ++i) {
-        for (long j = 0; j <= n; ++j) {
-            y_imag(i, j) = 0;
-        }
-    }
-
-    for (long i = 0; i <= m; ++i) {
-        for (long j = i; j <= n; ++j) {
+    for (long i = 0; i < y.extent(0); ++i) {
+        for (long j = i; j < y.extent(1); ++j) {
             y(i, j) *= std::sqrt((2 * j + 1) * cephes_poch(j + i + 1, -2 * i) / (4 * M_PI)) *
                        std::exp(std::complex<double>(0, i * theta));
         }

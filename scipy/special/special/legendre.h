@@ -95,7 +95,8 @@ void lpmn_no_deriv(T x, OutputMat1 pm) {
 
     for (int i = 0; i <= m; i++) {
         for (int j = i + 2; j <= n; j++) {
-            pm(i, j) = ((2 * j - 1) * x * pm(i, j - 1) - (i + j - 1) * pm(i, j - 2)) / (j - i);
+            pm(i, j) =
+                ((2 * j - 1) * x * pm(i, j - 1) - static_cast<T>(i + j - 1) * pm(i, j - 2)) / static_cast<T>(j - i);
         }
     }
 }
