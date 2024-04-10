@@ -57,7 +57,9 @@
 #define SPECFUN_HOST_DEVICE __host__ __device__
 
 #include <cuda/std/cmath>
+#include <cuda/std/cstdint>
 #include <cuda/std/limits>
+#include <cuda/std/type_traits>
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -98,6 +100,7 @@ SPECFUN_HOST_DEVICE inline bool signbit(double x) { return cuda::std::signbit(x)
 #ifndef _LIBCUDACXX_COMPILER_NVRTC
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return cuda::std::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return cuda::std::floor(x); }
+SPECFUN_HOST_DEVICE inline double round(double x) { return cuda::std::round(x); }
 SPECFUN_HOST_DEVICE inline double trunc(double x) { return cuda::std::trunc(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return cuda::std::fma(x, y, z); }
 SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return cuda::std::copysign(x, y); }
@@ -105,9 +108,11 @@ SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return cuda
 SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::fmax(x, y); }
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
+SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
 SPECFUN_HOST_DEVICE inline double floor(double x) { return ::floor(x); }
+SPECFUN_HOST_DEVICE inline double round(double x) { return ::round(x); }
 SPECFUN_HOST_DEVICE inline double trunc(double x) { return ::trunc(x); }
 SPECFUN_HOST_DEVICE inline double fma(double x, double y, double z) { return ::fma(x, y, z); }
 SPECFUN_HOST_DEVICE inline double copysign(double x, double y) { return ::copysign(x, y); }
@@ -115,7 +120,13 @@ SPECFUN_HOST_DEVICE inline double modf(double value, double *iptr) { return ::mo
 SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y); }
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
+SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
 #endif
+
+template <typename T>
+SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
+    cuda::std::swap(a, b);
+}
 
 template <typename T>
 using numeric_limits = cuda::std::numeric_limits<T>;
@@ -154,14 +165,32 @@ SPECFUN_HOST_DEVICE complex<T> conj(const complex<T> &z) {
     return thrust::conj(z);
 }
 
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const complex<T> &y) {
+    return thrust::pow(x, y);
+}
+
+template <typename T>
+SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
+    return thrust::pow(x, y);
+}
+
+// Other types and utilities
+template <typename T>
+using is_floating_point = cuda::std::is_floating_point<T>;
+using uint64_t = cuda::std::uint64_t;
+
 } // namespace std
 
 #else
 #define SPECFUN_HOST_DEVICE
 
+#include <algorithm>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <limits>
 #include <math.h>
+#include <type_traits>
 
 #endif
