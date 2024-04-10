@@ -240,6 +240,14 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
+
+        /* Disable optimizations for lgam_sgn on 32 bit systems when compiling with GCC.
+         * We've found that enabling optimizations can result in degraded precision
+         for x > 1000 */
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC push_options
+#pragma GCC optimize ("00")
+#endif
         SPECFUN_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
             double p, q, u, w, z;
             int i;
@@ -329,6 +337,9 @@ namespace cephes {
             }
             return (q);
         }
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC pop_options
+#endif
     } // namespace detail
 
     /* Logarithm of Gamma function */
