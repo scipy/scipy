@@ -134,7 +134,37 @@ class ksone_gen(rv_continuous):
        for probability distribution functions", The Annals of Mathematical
        Statistics, 22(4), pp 592-596 (1951).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import ksone
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 1e+03
+    >>> x = np.linspace(ksone.ppf(0.01, n),
+    ...                 ksone.ppf(0.99, n), 100)
+    >>> ax.plot(x, ksone.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='ksone pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = ksone(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = ksone.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], ksone.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -196,7 +226,37 @@ class kstwo_gen(rv_continuous):
        Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
        Vol 39, 11, 1-18 (2011).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstwo
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 10
+    >>> x = np.linspace(kstwo.ppf(0.01, n),
+    ...                 kstwo.ppf(0.99, n), 100)
+    >>> ax.plot(x, kstwo.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='kstwo pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = kstwo(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = kstwo.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], kstwo.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -11629,13 +11689,9 @@ class studentized_range_gen(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
 
-    Calculate the first four moments:
-
-    >>> k, df = 3, 10
-    >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
-
     Display the probability density function (``pdf``):
 
+    >>> k, df = 3, 10
     >>> x = np.linspace(studentized_range.ppf(0.01, k, df),
     ...                 studentized_range.ppf(0.99, k, df), 100)
     >>> ax.plot(x, studentized_range.pdf(x, k, df),
