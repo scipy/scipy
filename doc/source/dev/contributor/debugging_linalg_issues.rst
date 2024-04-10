@@ -492,7 +492,7 @@ First, prepare a small python reproducer, with a breakpoint. For example::
     import numpy as np
     from scipy import linalg
     n = 40
-    np.random.seed(1234)
+    np.random.refault_rng(1234)
     x = np.random.uniform(size=n)
     a = x[:, None] @ x[None, :] + np.identity(n)
 
@@ -500,7 +500,7 @@ First, prepare a small python reproducer, with a breakpoint. For example::
     linalg.cholesky(a)
 
 Then, you will need to run it under the ``gdb`` and add a C-level breakpoint at
-the LAPACK function. This way, you execution will first stop twice: first on the
+the LAPACK function. This way, your execution will stop twice: first on the
 Python breakpoint and then on the C breakpoint, and you will be able to step
 through and inspect values of both Python and C variables.
 
