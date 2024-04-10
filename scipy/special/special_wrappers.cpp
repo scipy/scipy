@@ -3,6 +3,7 @@
 #include "special/amos.h"
 #include "special/bessel.h"
 #include "special/fresnel.h"
+#include "special/hyp2f1.h"
 #include "special/kelvin.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
@@ -84,6 +85,10 @@ double keip_wrap(double x) { return special::keip(x); }
 void kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
     special::kelvin(x, reinterpret_cast<complex<double> *>(Be), reinterpret_cast<complex<double> *>(Ke),
                     reinterpret_cast<complex<double> *>(Bep), reinterpret_cast<complex<double> *>(Kep));
+}
+
+npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble z) {
+    return to_ccomplex(special::hyp2f1(a, b, c, to_complex(z)));
 }
 
 void it1j0y0_wrap(double x, double *j0int, double *y0int) { special::it1j0y0(x, j0int, y0int); }
