@@ -85,7 +85,6 @@ void lpmn_no_deriv(T x, OutputMat1 pm) {
     if (x < -1) {
         xq = -xq;
     }
-    T xs = ls * (1 - x * x);
 
     for (int i = 1; i <= m; ++i) {
         pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
