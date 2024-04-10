@@ -84,6 +84,18 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError(f"unrecognized {self.__class__.__name__} "
                                  f"constructor input: {arg1}") from e
+            if arg1.ndim < 2:
+                if not isinstance(self, sparray):
+                    warn(
+                        f"{arg1.ndim}D input will not be valid for matrices. Use 2D",
+                        FutureWarning, stacklevel=2
+                    )
+                if self.format != "csr":
+                    raise ValueError(
+                        "Compressed arrays other than CSR do not support "
+                        f"{arg1.ndim}D input. Use 2D"
+                    )
+
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays

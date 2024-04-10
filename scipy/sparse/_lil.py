@@ -6,6 +6,7 @@ __docformat__ = "restructuredtext en"
 __all__ = ['lil_array', 'lil_matrix', 'isspmatrix_lil']
 
 from bisect import bisect_left
+from warnings import warn
 
 import numpy as np
 
@@ -57,13 +58,22 @@ class _lil_base(_spbase, IndexMixin):
                 A = self._ascontainer(arg1)
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
-            else:
-                A = self._csr_container(A, dtype=dtype).tolil()
+            if A.ndim != 2:
+                if isinstance(self, sparray):
+                    raise ValueError(
+                        f"LIL arrays do not support {A.ndim}D input. Use 2D"
+                    )
+                else:
+                    warn(
+                        f"{A.ndim}D input will not be valid for matrices. Use 2D",
+                        FutureWarning, stacklevel=2
+                    )
+            A = self._csr_container(A, dtype=dtype).tolil()
 
-                self._shape = check_shape(A.shape)
-                self.dtype = A.dtype
-                self.rows = A.rows
-                self.data = A.data
+            self._shape = check_shape(A.shape)
+            self.dtype = A.dtype
+            self.rows = A.rows
+            self.data = A.data
 
     def __iadd__(self,other):
         self[:,:] = self + other

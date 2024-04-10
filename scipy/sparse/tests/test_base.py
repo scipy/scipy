@@ -292,8 +292,8 @@ class _TestCommon:
             datsp = self.datsp_dtypes[dtype]
 
             assert_raises(ValueError, bool, datsp)
-            assert_(self.spcreator([1]))
-            assert_(not self.spcreator([0]))
+            assert_(self.spcreator([[1]]))
+            assert_(not self.spcreator([[0]]))
 
         if isinstance(self, TestDOK):
             pytest.skip("Cannot create a rank <= 2 DOK matrix.")
@@ -3456,7 +3456,7 @@ class _TestMinMax:
         assert_equal(X.max(), -1)
 
         # and a fully sparse matrix
-        Z = self.spcreator(np.zeros(1))
+        Z = self.spcreator(np.zeros((1, 1)))
         assert_equal(Z.min(), 0)
         assert_equal(Z.max(), 0)
         assert_equal(Z.max().dtype, Z.dtype)
@@ -3736,10 +3736,10 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                 continue
             old_cls = names.get(name)
             if old_cls is not None:
-                raise ValueError(
-                    f"Test class {cls.__name__} overloads"
-                    f" test {name} defined in {old_cls.__name__}"
-                )
+                cls_nm = cls.__name__
+                old_nm = old_cls.__name__
+                raise ValueError(f"Test class {cls_nm} overloads test {name} "
+                                 f"defined in {old_nm}")
             names[name] = cls
 
     return type("TestBase", bases, {})
@@ -3992,8 +3992,8 @@ class TestCSR(sparse_test_class()):
     def test_binop_explicit_zeros(self):
         # Check that binary ops don't introduce spurious explicit zeros.
         # See gh-9619 for context.
-        a = csr_matrix([0, 1, 0])
-        b = csr_matrix([1, 1, 0])
+        a = csr_matrix([[0, 1, 0]])
+        b = csr_matrix([[1, 1, 0]])
         assert (a + b).nnz == 2
         assert a.multiply(b).nnz == 1
 
@@ -4413,18 +4413,24 @@ class TestCOO(sparse_test_class(getset=False,
         coo = coo_matrix(mat)
         assert_array_equal(coo.toarray(), mat)
 
-        # upgrade rank 1 arrays to row matrix
+        # upgrade rank 1 arrays to row matrix, but raise FutureWarning
         mat = array([0,1,0,0])
-        coo = coo_matrix(mat)
+        with suppress_warnings() as sup:
+            sup.filter(FutureWarning, "1D input will not be valid for matrices.")
+            coo = coo_matrix(mat)
         assert_array_equal(coo.toarray(), mat.reshape(1, -1))
 
         # error if second arg interpreted as shape (gh-9919)
         with pytest.raises(TypeError, match=r'object cannot be interpreted'):
-            coo_matrix([0, 11, 22, 33], ([0, 1, 2, 3], [0, 0, 0, 0]))
+            with suppress_warnings() as sup:
+                sup.filter(FutureWarning, "1D input will not be valid for matrices.")
+                coo_matrix([0, 11, 22, 33], ([0, 1, 2, 3], [0, 0, 0, 0]))
 
         # error if explicit shape arg doesn't match the dense matrix
         with pytest.raises(ValueError, match=r'inconsistent shapes'):
-            coo_matrix([0, 11, 22, 33], shape=(4, 4))
+            with suppress_warnings() as sup:
+                sup.filter(FutureWarning, "1D input will not be valid for matrices.")
+                coo_matrix([0, 11, 22, 33], shape=(4, 4))
 
     def test_constructor_data_ij_dtypeNone(self):
         data = [1]

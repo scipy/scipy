@@ -7,6 +7,11 @@ from numpy.testing import assert_equal, assert_allclose
 
 from scipy.sparse import coo_array, csr_array, dok_array, SparseEfficiencyWarning
 from scipy.sparse._sputils import supported_dtypes, matrix
+from scipy.sparse import (
+        bsr_array, csc_array, dia_array, lil_array,
+        coo_array, csr_array, dok_array,
+        coo_matrix, csr_matrix, dia_matrix
+    )
 from scipy._lib._util import ComplexWarning
 
 
@@ -32,6 +37,37 @@ def datsp_math_dtypes(dat1d):
     }
 
 
+# Test init with 1D dense input
+# spmatrix -- only test a few formats
+@pytest.mark.parametrize("sp_matrix", [csr_matrix, coo_matrix, dia_matrix])
+def test_matrix_init_of_1d(sp_matrix):
+    with pytest.warns(FutureWarning, match='D input will not be valid'):
+        A = sp_matrix([0, 1, 2, 3])
+    assert A.ndim == 2
+
+
+# csr_array -- will soon support 1D
+@pytest.mark.parametrize("spcreator", [csr_array])
+def test_csr_init_of_1d(spcreator):
+    with pytest.raises(ValueError, match='arrays do not support 1D input yet'):
+        spcreator([0, 1, 2, 3])
+
+
+# sparrays which do not plan to support 1D
+@pytest.mark.parametrize("spcreator", [bsr_array, csc_array, dia_array, lil_array])
+def test_no_1d_support_in_init(spcreator):
+    with pytest.raises(ValueError, match='arrays do not support 1D input'):
+        spcreator([0, 1, 2, 3])
+
+
+# sparrays which do support 1D
+@pytest.mark.parametrize("spcreator", spcreators)
+def test_1d_supported_init(spcreator):
+    A = spcreator([0, 1, 2, 3])
+    assert A.ndim == 1
+
+
+# Main tests class
 @pytest.mark.parametrize("spcreator", spcreators)
 class TestCommon1D:
     """test common functionality shared by 1D sparse formats"""
