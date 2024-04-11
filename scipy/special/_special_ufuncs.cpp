@@ -161,7 +161,13 @@ complex<T> sph_harm(long m, long n, T theta, T phi) {
 
 template <typename T>
 complex<T> sph_harm(T m, T n, T theta, T phi) {
-    return special::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
+    if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
+        PyGILState_Release(gstate);
+    }
+
+    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
 }
 
 } // namespace
