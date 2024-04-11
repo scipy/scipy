@@ -38,7 +38,9 @@ RTYPES = RTYPE + RTYPE
 }}
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
+// Approximate steady state conditions for the system cs / (1 - a2 * z^-1 - a3 * z^-2)
 static {{TYP}} {{SUB}}_hc(int, {{TYP}}, double, double);
+// Approximate steady state conditions for the system cs / (1 - a2 * z - a3 * z^2)
 static {{TYP}} {{SUB}}_hs(int, {{TYP}}, double, double);
 {{endfor}}
 
@@ -86,6 +88,30 @@ int {{SUB}}_SYM_IIR1_initial({{TYP}} z1, {{TYP}} *x, {{TYP}} *yp0,
 {{endif}}
 {{endfor}}
 
+/**
+Compute the starting initial conditions for the system
+cs / (1 - a2 * z^-1 - a3 * z^-2) against signals x, where:
+
+a2 = 2 * r * cos(omega)
+a3 = - r ** 2
+cs = 1 - 2 * r * cos(omega) + r ** 2
+
+Arguments
+---------
+x: double* or float*
+    2D strided pointer signal of size (M, N). When M > 1, multiple signals
+    will be processed independently.
+yp: double* or float*
+    Strided output state condition pointer of size (M, 2).
+    yp[:, 0] will contain the initial conditions y[n - 1],
+    whereas yp[:, 1] will contain the initial conditions y[n - 2].
+M: int
+    Number of signals to compute initial conditions for.
+N: int
+    Length of the signals.
+precision: double* or float*
+    Precision up to which the initial conditions will be computed.
+**/
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
         {{TYP}} *x, {{TYP}} *yp, int M, int N, {{TYP}} precision) {
@@ -93,6 +119,7 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     {{TYP}} cs = 1 - 2 * r * cos(omega) + r * r;
 
     for(int i = 0; i < M; i++) {
+        // Compute starting condition y[n - 1]
         yp[2 * i] = {{SUB}}_hc(0, cs, r, omega) * x[N * i];
     }
 
@@ -105,6 +132,7 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     do {
         diff = {{SUB}}_hc(k+1, cs, r, omega);
         for(int i = 0; i < M; i++) {
+            // Keep computing starting condition y[n - 1]
             yp[2 * i] += diff * x[N * i + k];
         }
         err = diff * diff;
@@ -114,6 +142,7 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     if (k >= N) {return -3;}     /* sum did not converge */
 
     for(int i = 0; i < M; i++) {
+        // Compute starting condition y[n - 2]
         yp[2 * i + 1] = {{SUB}}_hc(0, cs, r, omega) * x[N * i + 1];
         yp[2 * i + 1] += {{SUB}}_hc(1, cs, r, omega) * x[N * i];
     }
@@ -122,6 +151,7 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
     do {
         diff = {{SUB}}_hc(k+2, cs, r, omega);
         for(int i = 0; i < M; i++) {
+            // Keep computing starting condition y[n - 2]
             yp[2 * i + 1] += diff * x[N * i + k];
         }
         err = diff * diff;
@@ -133,6 +163,30 @@ int {{SUB}}_SYM_IIR2_initial_fwd(double r, double omega,
 }
 {{endfor}}
 
+/**
+Compute the starting initial conditions for the system (ran in backwards)
+cs / (1 - a2 * z - a3 * z^2) against signal x, where:
+
+a2 = 2 * r * cos(omega)
+a3 = - r ** 2
+cs = 1 - 2 * r * cos(omega) + r ** 2
+
+Arguments
+---------
+x: double* or float*
+    2D strided pointer signal of size (M, N). When M > 1, multiple signals
+    will be processed independently.
+yp: double* or float*
+    Output state condition pointer of size (M, 2), yp[:, 0] will contain the
+    initial conditions y[n + 1], whereas yp[:, 1] will contain the initial
+    condition y[n + 2].
+M: int
+    Number of signals to compute initial conditions for.
+N: int
+    Length of the signals.
+precision: double* or float*
+    Precision up to which the initial conditions will be computed.
+**/
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
         {{TYP}} *x, {{TYP}} *yp, int M, int N, {{TYP}} precision) {
@@ -148,6 +202,7 @@ int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
     do {
 	    diff = ({{SUB}}_hs(k, cs, rsq, omega) + {{SUB}}_hs(k+1, cs, rsq, omega));
 	    for(int i = 0; i < M; i++) {
+            // Compute initial condition y[n + 1]
             yp[2 * i] += diff * x[N * i + N - 1 - k];
         }
 	    err = diff * diff;
@@ -160,6 +215,7 @@ int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
     do {
         diff = ({{SUB}}_hs(k-1, cs, rsq, omega) + {{SUB}}_hs(k+2, cs, rsq, omega));
         for(int i = 0; i < M; i++) {
+            // Compute initial condition y[n + 2]
             yp[2 * i + 1] += diff * x[N * i + N - 1 - k];
         }
         err = diff * diff;
@@ -293,6 +349,10 @@ int {{SUB}}_separable_2Dconvolve_mirror({{TYP}} *in, {{TYP}} *out,
 {{endif}}
 {{endfor}}
 
+/**
+Approximate the steady state of a two-pole filter in polar form for a
+step input.
+**/
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 {{TYP}} {{SUB}}_hc(int k, {{TYP}} cs, double r, double omega)
 {
@@ -305,6 +365,11 @@ int {{SUB}}_separable_2Dconvolve_mirror({{TYP}} *in, {{TYP}} *out,
 }
 {{endfor}}
 
+
+/**
+Approximate the steady state of a two-pole filer in polar form ran in backwards
+for a step input.
+**/
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 {{TYP}} {{SUB}}_hs(int k, {{TYP}} cs, double rsq, double omega)
 {
