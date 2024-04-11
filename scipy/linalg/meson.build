@@ -18,8 +18,6 @@ cython_linalg = custom_target('cython_linalg',
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
   ],
-  # Set PYTHONPATH to import from _build_utils/_wrappers_common.py
-  env: {'PYTHONPATH': meson.global_source_root() / 'scipy/_build_utils'},
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
