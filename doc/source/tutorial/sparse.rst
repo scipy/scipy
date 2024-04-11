@@ -18,8 +18,8 @@ Getting started with sparse arrays
 Sparse arrays are a special kind of array where only a few locations in the array have data. This allows for *compressed* representations of the data to be used, where only the locations where data exists are recorded. There are many different sparse array formats, each of which makes a different tradeoff between compression and functionality. To start, let's build a very simple sparse array, the Coordinate (COO) array (:func:`coo_array`) and compare it to a dense array:
 
    >>> import scipy as sp
-   >>> import numpy
-   >>> dense = numpy.array([[1, 0, 0, 2], [0, 4, 1, 0], [0, 0, 5, 0]])
+   >>> import numpy as np
+   >>> dense = np.array([[1, 0, 0, 2], [0, 4, 1, 0], [0, 0, 5, 0]])
    >>> sparse = sp.sparse.coo_array(dense)
    >>> dense
    array([[1, 0, 0, 2],

@@ -98,6 +98,7 @@
 #include "../config.h"
 #include "../error.h"
 #include "polevl.h"
+#include "trig.h"
 
 namespace special {
 namespace cephes {
@@ -157,7 +158,7 @@ namespace cephes {
 
         if (q > 33.0) {
             if (x < 0.0) {
-                p = floor(q);
+                p = std::floor(q);
                 if (p == q) {
                 gamnan:
                     set_error("Gamma", SF_ERROR_OVERFLOW, NULL);
@@ -172,7 +173,7 @@ namespace cephes {
                     p += 1.0;
                     z = q - p;
                 }
-                z = q * std::sin(M_PI * z);
+                z = q * sinpi(z);
                 if (z == 0.0) {
                     return (sgngam * std::numeric_limits<double>::infinity());
                 }
@@ -242,9 +243,8 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
-        template <typename T>
-        SPECFUN_HOST_DEVICE T lgam_sgn(T x, int *sign) {
-            T p, q, u, w, z;
+        SPECFUN_HOST_DEVICE double lgam_sgn(double x, int *sign) {
+            double p, q, u, w, z;
             int i;
 
             *sign = 1;
@@ -256,11 +256,11 @@ namespace cephes {
             if (x < -34.0) {
                 q = -x;
                 w = lgam_sgn(q, sign);
-                p = floor(q);
+                p = std::floor(q);
                 if (p == q) {
                 lgsing:
                     set_error("lgam", SF_ERROR_SINGULAR, NULL);
-                    return (std::numeric_limits<T>::infinity());
+                    return (std::numeric_limits<double>::infinity());
                 }
                 i = p;
                 if ((i & 1) == 0) {
@@ -273,7 +273,7 @@ namespace cephes {
                     p += 1.0;
                     z = p - q;
                 }
-                z = q * std::sin(M_PI * z);
+                z = q * sinpi(z);
                 if (z == 0.0) {
                     goto lgsing;
                 }
@@ -335,10 +335,30 @@ namespace cephes {
     } // namespace detail
 
     /* Logarithm of Gamma function */
-    template <typename T>
-    SPECFUN_HOST_DEVICE T lgam(T x) {
+    SPECFUN_HOST_DEVICE double lgam(double x) {
         int sign;
         return detail::lgam_sgn(x, &sign);
+    }
+
+    /* Sign of the Gamma function */
+    SPECFUN_HOST_DEVICE double gammasgn(double x) {
+        double fx;
+
+        if (std::isnan(x)) {
+            return x;
+        }
+        if (x > 0) {
+            return 1.0;
+        } else {
+            fx = std::floor(x);
+            if (x - fx == 0.0) {
+                return 0.0;
+            } else if (static_cast<int>(fx) % 2) {
+                return -1.0;
+            } else {
+                return 1.0;
+            }
+        }
     }
 
 } // namespace cephes

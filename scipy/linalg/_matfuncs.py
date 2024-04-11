@@ -856,6 +856,12 @@ def khatri_rao(a, b):
         raise ValueError("The number of columns for both arrays "
                          "should be equal.")
 
+    # accommodate empty arrays
+    if a.size == 0 or b.size == 0:
+        m = a.shape[0] * b.shape[0]
+        n = a.shape[1]
+        return np.empty_like(a, shape=(m, n))
+
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]
     return c.reshape((-1,) + c.shape[2:])

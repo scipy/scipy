@@ -18,7 +18,7 @@ __all__ = ['eig', 'eigvals', 'eigh', 'eigvalsh',
 
 import warnings
 
-import numpy
+import numpy as np
 from numpy import (array, isfinite, inexact, nonzero, iscomplexobj,
                    flatnonzero, conj, asarray, argsort, empty,
                    iscomplex, zeros, einsum, eye, inf)
@@ -29,7 +29,7 @@ from .lapack import get_lapack_funcs, _compute_lwork
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
-_I = numpy.array(1j, dtype='F')
+_I = np.array(1j, dtype='F')
 
 
 def _make_complex_eigvecs(w, vin, dtype):
@@ -37,7 +37,7 @@ def _make_complex_eigvecs(w, vin, dtype):
     Produce complex-valued eigenvectors from LAPACK DGGEV real-valued output
     """
     # - see LAPACK man page DGGEV at ALPHAI
-    v = numpy.array(vin, dtype=dtype)
+    v = np.array(vin, dtype=dtype)
     m = (w.imag > 0)
     m[:-1] |= (w.imag[1:] < 0)  # workaround for LAPACK bug, cf. ticket #709
     for i in flatnonzero(m):
@@ -49,26 +49,26 @@ def _make_complex_eigvecs(w, vin, dtype):
 def _make_eigvals(alpha, beta, homogeneous_eigvals):
     if homogeneous_eigvals:
         if beta is None:
-            return numpy.vstack((alpha, numpy.ones_like(alpha)))
+            return np.vstack((alpha, np.ones_like(alpha)))
         else:
-            return numpy.vstack((alpha, beta))
+            return np.vstack((alpha, beta))
     else:
         if beta is None:
             return alpha
         else:
-            w = numpy.empty_like(alpha)
+            w = np.empty_like(alpha)
             alpha_zero = (alpha == 0)
             beta_zero = (beta == 0)
             beta_nonzero = ~beta_zero
             w[beta_nonzero] = alpha[beta_nonzero]/beta[beta_nonzero]
-            # Use numpy.inf for complex values too since
-            # 1/numpy.inf = 0, i.e., it correctly behaves as projective
+            # Use np.inf for complex values too since
+            # 1/np.inf = 0, i.e., it correctly behaves as projective
             # infinity.
-            w[~alpha_zero & beta_zero] = numpy.inf
-            if numpy.all(alpha.imag == 0):
-                w[alpha_zero & beta_zero] = numpy.nan
+            w[~alpha_zero & beta_zero] = np.inf
+            if np.all(alpha.imag == 0):
+                w[alpha_zero & beta_zero] = np.nan
             else:
-                w[alpha_zero & beta_zero] = complex(numpy.nan, numpy.nan)
+                w[alpha_zero & beta_zero] = complex(np.nan, np.nan)
             return w
 
 
@@ -77,7 +77,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
     ggev, = get_lapack_funcs(('ggev',), (a1, b1))
     cvl, cvr = left, right
     res = ggev(a1, b1, lwork=-1)
-    lwork = res[-2][0].real.astype(numpy.int_)
+    lwork = res[-2][0].real.astype(np.int_)
     if ggev.typecode in 'cz':
         alpha, beta, vl, vr, work, info = ggev(a1, b1, cvl, cvr, lwork,
                                                overwrite_a, overwrite_b)
@@ -90,7 +90,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
         w = _make_eigvals(alpha, beta, homogeneous_eigvals)
     _check_info(info, 'generalized eig algorithm (ggev)')
 
-    only_real = numpy.all(w.imag == 0.0)
+    only_real = np.all(w.imag == 0.0)
     if not (ggev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -215,6 +215,22 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, vr_n = eig(np.eye(2, dtype=a1.dtype))
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        w = _make_eigvals(w, None, homogeneous_eigvals)
+        vl = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        vr = np.empty_like(a1, shape=(0, 0), dtype=vr_n.dtype)
+        if not (left or right):
+            return w
+        if left:
+            if right:
+                return w, vl, vr
+            return w, vl
+        return w, vr
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     if b is not None:
         b1 = _asarray_validated(b, check_finite=check_finite)
@@ -244,7 +260,6 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                                     compute_vl=compute_vl,
                                     compute_vr=compute_vr,
                                     overwrite_a=overwrite_a)
-        t = {'f': 'F', 'd': 'D'}[wr.dtype.char]
         w = wr + _I * wi
         w = _make_eigvals(w, None, homogeneous_eigvals)
 
@@ -252,7 +267,7 @@ def eig(a, b=None, left=False, right=True, overwrite_a=False,
                 positive='did not converge (only eigenvalues '
                          'with order >= %d have converged)')
 
-    only_real = numpy.all(w.imag == 0.0)
+    only_real = np.all(w.imag == 0.0)
     if not (geev.typecode in 'cz' or only_real):
         t = w.dtype.char
         if left:
@@ -469,6 +484,18 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
     a1 = _asarray_validated(a, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
         raise ValueError('expected square "a" matrix')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eigh(np.eye(2, dtype=a1.dtype))
+
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = np.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     overwrite_a = overwrite_a or (_datacopied(a1, a))
     cplx = True if iscomplexobj(a1) else False
     n = a1.shape[0]
@@ -592,8 +619,8 @@ def eigh(a, b=None, *, lower=True, eigvals_only=False, overwrite_a=False,
             return w, v
     else:
         if info < -1:
-            raise LinAlgError('Illegal value in argument {} of internal {}'
-                              ''.format(-info, drv.typecode + pfx + driver))
+            raise LinAlgError(f'Illegal value in argument {-info} of internal '
+                              f'{drv.typecode + pfx + driver}')
         elif info > n:
             raise LinAlgError(f'The leading minor of order {info-n} of B is not '
                               'positive definite. The factorization of B '
@@ -781,8 +808,21 @@ def eig_banded(a_band, lower=False, eigvals_only=False, overwrite_a_band=False,
 
     if len(a1.shape) != 2:
         raise ValueError('expected a 2-D array')
+
+    # accommodate square empty matrices
+    if a1.size == 0:
+        w_n, v_n = eig_banded(np.array([[0, 0], [1, 1]], dtype=a1.dtype))
+
+        w = np.empty_like(a1, shape=(0,), dtype=w_n.dtype)
+        v = np.empty_like(a1, shape=(0, 0), dtype=v_n.dtype)
+        if eigvals_only:
+            return w
+        else:
+            return w, v
+
     select, vl, vu, il, iu, max_ev = _check_select(
         select, select_range, max_ev, a1.shape[1])
+
     del select_range
     if select == 0:
         if a1.dtype.char in 'GFD':
@@ -1447,6 +1487,17 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
         raise ValueError('expected square matrix')
     overwrite_a = overwrite_a or (_datacopied(a1, a))
 
+    if a1.size == 0:
+        h3 = hessenberg(np.eye(3, dtype=a1.dtype))
+        h = np.empty(a1.shape, dtype=h3.dtype)
+        if not calc_q:
+            return h
+        else:
+            h3, q3 = hessenberg(np.eye(3, dtype=a1.dtype), calc_q=True)
+            q = np.empty(a1.shape, dtype=q3.dtype)
+            h = np.empty(a1.shape, dtype=h3.dtype)
+            return h, q
+
     # if 2x2 or smaller: already in Hessenberg
     if a1.shape[0] <= 2:
         if calc_q:
@@ -1463,7 +1514,7 @@ def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
 
     hq, tau, info = gehrd(ba, lo=lo, hi=hi, lwork=lwork, overwrite_a=1)
     _check_info(info, 'gehrd (hessenberg)', positive=False)
-    h = numpy.triu(hq, -1)
+    h = np.triu(hq, -1)
     if not calc_q:
         return h
 
@@ -1613,7 +1664,7 @@ def cdf2rdf(w, v):
     wr[stack_ind + (k, j)] = w[stack_ind + (k,)].imag
 
     # compute real eigenvectors associated with real block diagonal eigenvalues
-    u = zeros(M + (n, n), dtype=numpy.cdouble)
+    u = zeros(M + (n, n), dtype=np.cdouble)
     u[..., di, di] = 1.0
     u[stack_ind + (j, j)] = 0.5j
     u[stack_ind + (j, k)] = 0.5

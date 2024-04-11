@@ -59,8 +59,14 @@ def test_lapack_documented():
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
     ignore_list = {
-        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function', 'HAS_ILP64',
+        "absolute_import",
+        "clapack",
+        "division",
+        "find_best_lapack_type",
+        "flapack",
+        "print_function",
+        "HAS_ILP64",
+        "np",
     }
     missing = list()
     for name in dir(lapack):
