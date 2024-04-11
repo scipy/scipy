@@ -45,6 +45,7 @@ extern const char *lqn_doc;
 extern const char *lqmn_doc;
 extern const char *rctj_doc;
 extern const char *rcty_doc;
+extern const char *sph_harm_all_doc;
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
@@ -116,7 +117,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
 
     PyObject *_sph_harm_all = SpecFun_NewGUFunc(
         {static_cast<func_dd_D2_t>(special::sph_harm_all), static_cast<func_ff_F2_t>(special::sph_harm_all)}, 1,
-        "_sph_harm_all", nullptr, "(),()->(mp1,np1)");
+        "_sph_harm_all", sph_harm_all_doc, "(),()->(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_sph_harm_all", _sph_harm_all);
 
     return _gufuncs;
