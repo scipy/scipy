@@ -55,15 +55,14 @@ void lpn(T z, OutputVec1 pn, OutputVec2 pd) {
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
+template <typename T, typename OutputMat1>
+void lpmn(T x, OutputMat1 pm) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
     for (int i = 0; i < m + 1; ++i) {
         for (int j = 0; j < n + 1; ++j) {
             pm(i, j) = 0;
-            pd(i, j) = 0;
         }
     }
 
@@ -75,6 +74,74 @@ void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
     if (std::abs(x) == 1) {
         for (int i = 1; i <= n; i++) {
             pm(0, i) = std::pow(x, i);
+        }
+
+        return;
+    }
+
+    int ls = (std::abs(x) > 1 ? -1 : 1);
+    T xq = std::sqrt(ls * (1 - x * x));
+    // Ensure connection to the complex-valued function for |x| > 1
+    if (x < -1) {
+        xq = -xq;
+    }
+
+    for (int i = 1; i <= m; ++i) {
+        pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
+    }
+    for (int i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
+        pm(i, i + 1) = (2 * i + 1) * x * pm(i, i);
+    }
+
+    for (int i = 0; i <= m; i++) {
+        for (int j = i + 2; j <= n; j++) {
+            pm(i, j) =
+                ((2 * j - 1) * x * pm(i, j - 1) - static_cast<T>(i + j - 1) * pm(i, j - 2)) / static_cast<T>(j - i);
+        }
+    }
+}
+
+template <typename T, typename OutputMat1>
+void lpmn(T x, bool m_signbit, OutputMat1 pm) {
+    lpmn(x, pm);
+
+    int m = pm.extent(0) - 1;
+    int n = pm.extent(1) - 1;
+
+    if (m_signbit) {
+        for (int j = 0; j < n + 1; ++j) {
+            for (int i = 0; i < m + 1; ++i) {
+                T fac = 0;
+                if (i <= j) {
+                    fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
+                    if (std::abs(x) < 1) {
+                        fac *= std::pow(-1, i);
+                    }
+                }
+
+                pm(i, j) *= fac;
+            }
+        }
+    }
+}
+
+template <typename T, typename InputMat1, typename OutputMat2>
+void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
+    int m = pm.extent(0) - 1;
+    int n = pm.extent(1) - 1;
+
+    for (int i = 0; i < m + 1; ++i) {
+        for (int j = 0; j < n + 1; ++j) {
+            pd(i, j) = 0;
+        }
+    }
+
+    if (n == 0) {
+        return;
+    }
+
+    if (std::abs(x) == 1) {
+        for (int i = 1; i <= n; i++) {
             pd(0, i) = i * (i + 1) * std::pow(x, i + 1) / 2;
         }
 
@@ -98,19 +165,6 @@ void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
     }
     T xs = ls * (1 - x * x);
 
-    for (int i = 1; i <= m; ++i) {
-        pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
-    }
-    for (int i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
-        pm(i, i + 1) = (2 * i + 1) * x * pm(i, i);
-    }
-
-    for (int i = 0; i <= m; i++) {
-        for (int j = i + 2; j <= n; j++) {
-            pm(i, j) = ((2 * j - 1) * x * pm(i, j - 1) - (i + j - 1) * pm(i, j - 2)) / (j - i);
-        }
-    }
-
     pd(0, 0) = 0;
     for (int j = 1; j <= n; j++) {
         pd(0, j) = ls * j * (pm(0, j - 1) - x * pm(0, j)) / xs;
@@ -123,14 +177,14 @@ void lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
     }
 }
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
-    lpmn(x, pm, pd);
+template <typename T, typename InputMat1, typename OutputMat2>
+void lpmn_jac(T x, bool m_signbit, InputMat1 pm, OutputMat2 pd) {
+    lpmn_jac(x, pm, pd);
 
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
-    if (m_sign < 0) {
+    if (m_signbit) {
         for (int j = 0; j < n + 1; ++j) {
             for (int i = 0; i < m + 1; ++i) {
                 T fac = 0;
@@ -141,7 +195,6 @@ void lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
                     }
                 }
 
-                pm(i, j) *= fac;
                 pd(i, j) *= fac;
             }
         }
@@ -250,13 +303,13 @@ void clpmn(std::complex<T> z, long ntype, OutputMat1 cpm, OutputMat2 cpd) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void clpmn(std::complex<T> z, long ntype, long m_sign, OutputMat1 cpm, OutputMat2 cpd) {
+void clpmn(std::complex<T> z, long ntype, bool m_signbit, OutputMat1 cpm, OutputMat2 cpd) {
     clpmn(z, ntype, cpm, cpd);
 
     int m = cpm.extent(0) - 1;
     int n = cpm.extent(1) - 1;
 
-    if (m_sign < 0) {
+    if (m_signbit) {
         for (int j = 0; j < n + 1; ++j) {
             for (int i = 0; i < m + 1; ++i) {
                 T fac = 0;

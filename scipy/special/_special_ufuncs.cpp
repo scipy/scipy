@@ -11,6 +11,7 @@
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 #include "special/trig.h"
@@ -79,6 +80,12 @@ using func_dddd_dpdp_t = void (*)(double, double, double, double, double *, doub
 using func_fffff_fpfp_t = void (*)(float, float, float, float, float, float *, float *);
 using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, double *, double *);
 
+using func_llff_F_t = complex<float> (*)(long, long, float, float);
+using func_lldd_D_t = complex<double> (*)(long, long, double, double);
+
+using func_ffff_F_t = complex<float> (*)(float, float, float, float);
+using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
 extern const char *airy_doc;
@@ -141,8 +148,29 @@ extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
+extern const char *sph_harm_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
+
+namespace {
+
+template <typename T>
+complex<T> sph_harm(long m, long n, T theta, T phi) {
+    return special::sph_harm(m, n, theta, phi);
+}
+
+template <typename T>
+complex<T> sph_harm(T m, T n, T theta, T phi) {
+    if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
+        PyGILState_STATE gstate = PyGILState_Ensure();
+        PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
+        PyGILState_Release(gstate);
+    }
+
+    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
+}
+
+} // namespace
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
@@ -472,6 +500,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                               static_cast<func_ddddd_dpdp_t>(special::prolate_radial2)},
                                              2, "pro_rad2_cv", pro_rad2_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2_cv", pro_rad2_cv);
+
+    PyObject *sph_harm =
+        SpecFun_NewUFunc({static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
+                          static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
+                         "sph_harm", sph_harm_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 
     PyObject *yv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cbesy_wrap_real), static_cast<func_dd_d_t>(special::cbesy_wrap_real),

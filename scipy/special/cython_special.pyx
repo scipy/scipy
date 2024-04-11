@@ -1092,7 +1092,7 @@ optional Cython ``bint``, leading to the following signatures.
 
 from libc.math cimport NAN
 
-from numpy cimport npy_double, npy_cdouble, npy_int
+from numpy cimport npy_double, npy_cdouble, npy_int, npy_long
 
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
@@ -1188,6 +1188,9 @@ cdef extern from r"special_wrappers.h":
     npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
+
+    npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
+    npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1638,12 +1641,6 @@ ctypedef double complex _proto_cspence_t(double complex) noexcept nogil
 cdef _proto_cspence_t *_proto_cspence_t_var = &_func_cspence
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_spence "spence"(npy_double)nogil
-from ._legacy cimport sph_harmonic_unsafe as _func_sph_harmonic_unsafe
-ctypedef double complex _proto_sph_harmonic_unsafe_t(double, double, double, double) noexcept nogil
-cdef _proto_sph_harmonic_unsafe_t *_proto_sph_harmonic_unsafe_t_var = &_func_sph_harmonic_unsafe
-from .sph_harm cimport sph_harmonic as _func_sph_harmonic
-ctypedef double complex _proto_sph_harmonic_t(int, int, double, double) noexcept nogil
-cdef _proto_sph_harmonic_t *_proto_sph_harmonic_t_var = &_func_sph_harmonic
 from ._cdflib_wrappers cimport stdtr as _func_stdtr
 ctypedef double _proto_stdtr_t(double, double) noexcept nogil
 cdef _proto_stdtr_t *_proto_stdtr_t_var = &_func_stdtr
@@ -3365,9 +3362,9 @@ cpdef Dd_number_t spence(Dd_number_t x0) noexcept nogil:
 cpdef double complex sph_harm(dl_number_t x0, dl_number_t x1, double x2, double x3) noexcept nogil:
     """See the documentation for scipy.special.sph_harm"""
     if dl_number_t is double:
-        return _func_sph_harmonic_unsafe(x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm_unsafe(x0, x1, x2, x3))
     elif dl_number_t is long:
-        return _func_sph_harmonic(x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(special_sph_harm(x0, x1, x2, x3))
     else:
         return NAN
 

@@ -110,7 +110,11 @@ npy_cdouble cbesh_wrap1(double v, npy_cdouble z);
 npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2(double v, npy_cdouble z);
 npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z);
+npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 double sin_pi(double x);
+
+npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
+npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
 
 #ifdef __cplusplus
 } /* extern "C" */

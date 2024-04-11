@@ -1060,14 +1060,6 @@
             "spence": "d->d"
         }
     },
-    "sph_harm": {
-        "_legacy.pxd": {
-            "sph_harmonic_unsafe": "dddd->D"
-        },
-        "sph_harm.pxd": {
-            "sph_harmonic": "iidd->D"
-        }
-    },
     "stdtr": {
         "_cdflib_wrappers.pxd": {
             "stdtr": "dd->d"        }
