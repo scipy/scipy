@@ -5761,7 +5761,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     >>> y = np.array([2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0])
 
     These data were analyzed in [7]_ using Spearman's correlation coefficient,
-    a statistic similar to to Kendall's tau in that it is also sensitive to
+    a statistic similar to Kendall's tau in that it is also sensitive to
     ordinal correlation between the samples. Let's perform an analogous study
     using Kendall's tau.
 
