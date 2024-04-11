@@ -15,7 +15,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._gufuncs import (_lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
-                       _sph_harm_all as __sph_harm_all)
+                       _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
@@ -3449,6 +3449,6 @@ def _sph_harm_all(m, n, theta, phi):
 
     out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
         dtype = np.result_type(1j, theta.dtype, phi.dtype))
-    __sph_harm_all(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
+    _sph_harm_all_gufunc(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
 
     return out
