@@ -522,7 +522,8 @@ Here is an example ``gdb`` session::
     ...
     > /home/br/temp/chol/chol.py(12)<module>()
     -> linalg.cholesky(a)   # execution stopped at the python breakpoint
-    (Pdb)   # ... inspect the python state here
+    (Pdb) p a.shape  # ... inspect the python state here
+    (40, 40)
     (Pdb) c     # continue execution until the C breakpoint
 
     Thread 1 "python" hit Breakpoint 1, 0x00007ffff4c48820 in dpotrf_ ()
@@ -534,8 +535,7 @@ Here is an example ``gdb`` session::
         capi_keywds=<optimized out>, f2py_func=0x7ffff4c48820 <dpotrf_>)
         at scipy/linalg/_flapackmodule.c:63281
     ....
-    (gdb) p lda    # inspect values of C variables (some symbols may be
-                   # missing or reported as <optimized out>)
+    (gdb) p lda    # inspect values of C variables
     $1 = 40
 
     # print out the C backtrace
@@ -547,3 +547,8 @@ Here is an example ``gdb`` session::
         keywords=('lower', 'overwrite_a', 'clean'))
         at /usr/local/src/conda/python-3.11.8/Objects/call.c:214
     ...
+
+Depending on your system, you may need to build SciPy with debug build type,
+and unset CFLAGS/CXXFLAGS environment variables. See the `NumPy debugging guide
+<https://numpy.org/devdocs/dev/development_environment.html#debugging>`__ for
+more details.
