@@ -1773,10 +1773,10 @@ def lpmn(m, n, z):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
-        m_sign = -1
+        m_signbit = True
         m_abs = -m
     else:
-        m_sign = 1
+        m_signbit = False
         m_abs = m
 
     z = np.asarray(z)
@@ -1786,9 +1786,9 @@ def lpmn(m, n, z):
     p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _lpmn(z, m_sign, out = (p, pd))
+        _lpmn(z, m_signbit, out = (p, pd))
     else:
-        _lpmn(z, m_sign, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _lpmn(z, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
@@ -1859,10 +1859,10 @@ def clpmn(m, n, z, type=3):
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
     if (m < 0):
         mp = -m
-        m_sign = -1
+        m_signbit = True
     else:
         mp = m
-        m_sign = 1
+        m_signbit = False
 
     z = np.asarray(z)
     if (not np.issubdtype(z.dtype, np.inexact)):
@@ -1871,9 +1871,9 @@ def clpmn(m, n, z, type=3):
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _clpmn(z, type, m_sign, out = (p, pd))
+        _clpmn(z, type, m_signbit, out = (p, pd))
     else:
-        _clpmn(z, type, m_sign, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _clpmn(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
@@ -3446,7 +3446,7 @@ def sph_harm_all(m, n, theta, phi):
         phi = phi.astype(np.float64)
 
     out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
-        dtype = np.complex128)
+        dtype = np.result_type(1j, theta.dtype, phi.dtype))
     _sph_harm_all(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
 
     return out

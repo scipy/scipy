@@ -152,6 +152,20 @@ extern const char *sph_harm_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
 
+namespace {
+
+template <typename T>
+complex<T> sph_harm(long m, long n, T theta, T phi) {
+    return special::sph_harm(m, n, theta, phi);
+}
+
+template <typename T>
+complex<T> sph_harm(T m, T n, T theta, T phi) {
+    return special::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
+}
+
+} // namespace
+
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
 // already in such a context.
@@ -482,8 +496,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2_cv", pro_rad2_cv);
 
     PyObject *sph_harm =
-        SpecFun_NewUFunc({static_cast<func_lldd_D_t>(special::sph_harm), static_cast<func_dddd_D_t>(special::sph_harm),
-                          static_cast<func_llff_F_t>(special::sph_harm), static_cast<func_ffff_F_t>(special::sph_harm)},
+        SpecFun_NewUFunc({static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
+                          static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
                          "sph_harm", sph_harm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
 

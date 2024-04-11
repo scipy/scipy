@@ -23,15 +23,15 @@ using func_F_F2F2_t = void (*)(complex<float>, mdspan<complex<float>, dextents<p
 using func_D_D2D2_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
                                mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
-using func_fl_f2f2_t = void (*)(float, long, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>,
+using func_fb_f2f2_t = void (*)(float, bool, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>,
                                 mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_dl_d2d2_t = void (*)(double, long, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>,
+using func_db_d2d2_t = void (*)(double, bool, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>,
                                 mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
 
-using func_Fll_F2F2_t = void (*)(complex<float>, long, long,
+using func_Flb_F2F2_t = void (*)(complex<float>, long, bool,
                                  mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>,
                                  mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_Dll_D2D2_t = void (*)(complex<double>, long, long,
+using func_Dlb_D2D2_t = void (*)(complex<double>, long, bool,
                                  mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>,
                                  mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
@@ -50,6 +50,16 @@ extern const char *rcty_doc;
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are
 // already in such a context.
 extern "C" int wrap_PyUFunc_getfperr() { return PyUFunc_getfperr(); }
+
+namespace {
+
+template <typename T, typename OutputMat1, typename OutputMat2>
+void lpmn(T x, bool m_signbit, OutputMat1 pm, OutputMat2 pd) {
+    special::lpmn(x, m_signbit, pm);
+    special::lpmn_jac(x, m_signbit, pm, pd);
+}
+
+} // namespace
 
 static PyModuleDef _gufuncs_def = {
     PyModuleDef_HEAD_INIT,
@@ -73,13 +83,12 @@ PyMODINIT_FUNC PyInit__gufuncs() {
                           2, "_lpn", lpn_doc, "()->(np1),(np1)");
     PyModule_AddObjectRef(_gufuncs, "_lpn", _lpn);
 
-    PyObject *_lpmn = SpecFun_NewGUFunc(
-        {static_cast<func_fl_f2f2_t>(special::scipy_lpmn), static_cast<func_dl_d2d2_t>(special::scipy_lpmn)}, 2,
-        "_lpmn", lpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
+    PyObject *_lpmn = SpecFun_NewGUFunc({static_cast<func_fb_f2f2_t>(::lpmn), static_cast<func_db_d2d2_t>(::lpmn)}, 2,
+                                        "_lpmn", lpmn_doc, "(),()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_lpmn", _lpmn);
 
     PyObject *_clpmn =
-        SpecFun_NewGUFunc({static_cast<func_Fll_F2F2_t>(special::clpmn), static_cast<func_Dll_D2D2_t>(special::clpmn)},
+        SpecFun_NewGUFunc({static_cast<func_Flb_F2F2_t>(special::clpmn), static_cast<func_Dlb_D2D2_t>(special::clpmn)},
                           2, "_clpmn", clpmn_doc, "(),(),()->(mp1,np1),(mp1,np1)");
     PyModule_AddObjectRef(_gufuncs, "_clpmn", _clpmn);
 

@@ -101,6 +101,30 @@ void lpmn(T x, OutputMat1 pm) {
     }
 }
 
+template <typename T, typename OutputMat1>
+void lpmn(T x, bool m_signbit, OutputMat1 pm) {
+    lpmn(x, pm);
+
+    int m = pm.extent(0) - 1;
+    int n = pm.extent(1) - 1;
+
+    if (m_signbit) {
+        for (int j = 0; j < n + 1; ++j) {
+            for (int i = 0; i < m + 1; ++i) {
+                T fac = 0;
+                if (i <= j) {
+                    fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
+                    if (std::abs(x) < 1) {
+                        fac *= std::pow(-1, i);
+                    }
+                }
+
+                pm(i, j) *= fac;
+            }
+        }
+    }
+}
+
 template <typename T, typename InputMat1, typename OutputMat2>
 void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
     int m = pm.extent(0) - 1;
@@ -153,20 +177,14 @@ void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
     }
 }
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void scipy_lpmn(T x, OutputMat1 pm, OutputMat2 pd) {
-    lpmn(x, pm);
+template <typename T, typename InputMat1, typename OutputMat2>
+void lpmn_jac(T x, bool m_signbit, InputMat1 pm, OutputMat2 pd) {
     lpmn_jac(x, pm, pd);
-}
-
-template <typename T, typename OutputMat1, typename OutputMat2>
-void scipy_lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
-    scipy_lpmn(x, pm, pd);
 
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
-    if (m_sign < 0) {
+    if (m_signbit) {
         for (int j = 0; j < n + 1; ++j) {
             for (int i = 0; i < m + 1; ++i) {
                 T fac = 0;
@@ -177,7 +195,6 @@ void scipy_lpmn(T x, long m_sign, OutputMat1 pm, OutputMat2 pd) {
                     }
                 }
 
-                pm(i, j) *= fac;
                 pd(i, j) *= fac;
             }
         }
@@ -286,13 +303,13 @@ void clpmn(std::complex<T> z, long ntype, OutputMat1 cpm, OutputMat2 cpd) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void clpmn(std::complex<T> z, long ntype, long m_sign, OutputMat1 cpm, OutputMat2 cpd) {
+void clpmn(std::complex<T> z, long ntype, bool m_signbit, OutputMat1 cpm, OutputMat2 cpd) {
     clpmn(z, ntype, cpm, cpd);
 
     int m = cpm.extent(0) - 1;
     int n = cpm.extent(1) - 1;
 
-    if (m_sign < 0) {
+    if (m_signbit) {
         for (int j = 0; j < n + 1; ++j) {
             for (int i = 0; i < m + 1; ++i) {
                 T fac = 0;
