@@ -57,7 +57,7 @@ inline std::complex<float> sph_harm(float m, float n, float theta, float phi) {
 
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    const long m = y.extent(0) - 1;
+    const long m = (y.extent(0) - 1) / 2;
     const long n = y.extent(1) - 1;
 
     OutMat y_pos = std::submdspan(y, std::make_tuple(0, m + 1), std::full_extent);
