@@ -4,6 +4,9 @@
 
 #include "config.h"
 #include "error.h"
+#include <utility>
+#include <cstddef>
+#include <iterator>
 
 namespace special {
 namespace detail {
@@ -149,6 +152,168 @@ namespace detail {
         set_error(func_name, SF_ERROR_NO_RESULT, NULL);
         return maybe_complex_numeric_limits::quiet_NaN<T>();
     }
+
+    template <typename T, typename Iterator>
+    std::pair<T, std::size_t> continued_fraction_eval_lentz(
+        T init_val, Iterator cf, T tol, std::size_t max_terms) {
+
+        std::pair<T, T> v;
+
+        T tiny_value = 16.0 * maybe_complex_numeric_limits::min<T>();
+        T f = (init_val == 0.0) ? tiny_value : init_val;
+
+        double C = f;
+        double D = 0.0;
+        double delta;
+
+        for (std::size_t i = 0; i < max_terms; i++) {
+            v = *(cf++);
+            D = v.second + v.first * D;
+            if (D == 0.0) {
+                D = tiny_value;
+            }
+            C = v.second + v.first / C;
+            if (C == 0.0) {
+                C = tiny_value;
+            }
+            D = 1.0 / D;
+            delta = C * D;
+            f *= delta;
+            if (std::abs(delta - 1.0) <= tol) {
+                return {f, i+1};
+            }
+        }
+
+        // Exceeded max terms without converging.
+        return {f, 0};
+    }
+
+    /* Evaluates a continued fraction using the "series" method.
+     *
+     * Denote the continued fraction by
+     *
+     *                a[1]     a[2]     a[3]
+     *   f = b[0] + -------- -------- -------- ...
+     *               b[1] +   b[2] +   b[3] +
+     *
+     * Denote the n-th convergent by f[n], starting from f[0] := b[0].  The
+     * series method (see [1])
+     *
+     * Reference
+     * ---------
+     *
+     * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
+     *     Recurrence Relations.” SIAM Review, 9(1):24-82.
+     *
+     * Parameters
+     * ----------
+     *
+     *   initial_value
+     *       b0.  The type of this parameter is used as the "accumulator"
+     *       as well as the result.  It may be different from the type of
+     *       the terms of the continued fraction.  For example, a higher
+     *       precision data type may be supplied to improve the accuracy.
+     *
+     *   cf
+     *       Input iterator that yields the terms of the c.f.  The value_type
+     *       of the iterator must be std::pair<T,T>, where T is the data type
+     *       of the numerator and denominator.  The current term is given by
+     *       ((*cf).first, (*cf).second).  The iterator initially points to
+     *       (a1, b1), and advances to the next term each time `++cf` is
+     *       called.
+     *
+     *   tol
+     *       Tolerance used to terminate the iteration.  Specifically, stop
+     *       iteration as soon as `abs(f[n] - f[n-1]) <= tol * abs(f[n])`,
+     *       where f[n], n >= 1 is the n-th convergent, and f[0] = b0.
+     *
+     *   max_terms
+     *       Maximum number of terms to evaluate.  Should be positive.
+     *
+     * Return Value
+     * ------------
+     *
+     * If the continued fraction converges (i.e. the tolerance condition is
+     * satisfied) by f[n] with `n <= max_terms`, returns (f[n], n).
+     * Otherwise, returns (f[max_terms], 0).
+     *
+     * Remarks
+     * -------
+     *
+     * This is a low-level routine for internal use.  No error check of any
+     * kind is performed.  The caller must ensure that all parameters and
+     * terms are finite, and that all intermediary calculations are valid
+     * (i.e. do not lead to overflow or nan).  `tol` should be suitably
+     * chosen to bound the truncation error.  `max_terms` should be set
+     * large enough and is meant to protect against unexpected errors.
+     *
+     * The numerical stability of this method depends on the characteristics
+     * of the continued fraction being evaluated.  For example, it works well
+     * if `f[n] - f[n-1]` are all positive and geometrically decreasing.
+     */
+    template <typename Result, typename Iterator, typename Tolerance>
+    SPECFUN_HOST_DEVICE std::pair<Result, std::size_t> continued_fraction_eval_series(
+        Result initial_value, Iterator cf, Tolerance tol, std::size_t max_terms) {
+
+        // T is type of numerator and denominator.
+        using T = typename std::iterator_traits<Iterator>::value_type::first_type;
+
+        Result w = initial_value;  // current convergent
+        if (max_terms == 0) {
+            return {w, 0};
+        }
+
+        // n = 1
+        std::pair<T, T> ab = *cf;  // ab == current fraction
+        T a = ab.first;            // a == current numerator
+        T b = ab.second;           // b == current denominator
+        T v = a / b;               // v == f[n] - f[n-1]
+        w += v;                    // w == f[n]
+        if (std::abs(v) <= tol * std::abs(w)) {
+            return {w, 1};
+        }
+
+        // n = 2, 3, 4, ...
+        T u = 1;
+        T bb = b;  // last denominator
+        for (std::size_t n = 1; n < max_terms; ++n) {
+            ab = *(++cf);
+            a = ab.first;
+            b = ab.second;
+            u = 1 / (1 + a / (b * bb) * u);
+            v *= (u - 1);
+            w += v;
+            if (std::abs(v) <= tol * std::abs(w)) {
+                return {w, n + 1u};
+            }
+            bb = b;
+        }
+
+        // Failed to converge within max_terms terms.
+        return {w, 0};
+    }
+
+    /* Performs Kahan summation. */
+    template <typename T>
+    class KahanSummer {
+
+    public:
+        KahanSummer() : _s(), _c() {} // value initialization
+
+        KahanSummer & operator+=(T x) {
+            T y = x - _c;
+            T t = _s + y;
+            _c = (t - _s) - y;
+            _s = t;
+            return *this;
+        }
+
+        operator T() const { return _s; }
+
+    private:
+        T _s; // current sum
+        T _c; // current compensation
+    };
 
 } // namespace detail
 } // namespace special

@@ -13653,6 +13653,10 @@ add_newdoc(
     """)
 
 add_newdoc("_iv_ratio",
-    """
-    Internal function, use `ellip_harm` instead.
+    r"""
+    _iv_ratio(v, x)
+
+    Internal function, do not use.
+
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
     """)
