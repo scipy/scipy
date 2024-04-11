@@ -6,7 +6,6 @@
 #include "error.h"
 #include <utility>
 #include <cstddef>
-#include <iterator>
 
 namespace special {
 namespace detail {
@@ -153,48 +152,104 @@ namespace detail {
         return maybe_complex_numeric_limits::quiet_NaN<T>();
     }
 
-    template <typename T, typename Iterator>
-    std::pair<T, std::size_t> continued_fraction_eval_lentz(
-        T init_val, Iterator cf, T tol, std::size_t max_terms) {
+    /* Evaluates a continued fraction using the modified Lentz algorithm.
+     *
+     * Parameters
+     * ----------
+     *
+     *   init_val
+     *       b0.  The type of this parameter (T) is used for intermediary
+     *       computations as well as the return value.  It is expected to
+     *       be a (possibly complex) floating point type.
+     *
+     *   cf
+     *       Input iterator that yields the terms of the continued fraction.
+     *       It must support two operations: `*cf` returns the current term
+     *       (a[n], b[n]) as a pair; `++cf` advances to the next term. The
+     *       iterator initially points to (a[1], b[1]).
+     *
+     *   tol
+     *       Tolerance used to terminate the iteration.  Specifically, stop
+     *       iteration as soon as ...
+     *
+     *   max_terms
+     *       Maximum number of terms to evaluate.  This parameter is used to
+     *       handle unexpected non-convergence.  It should normally be set
+     *       large enough such that the continued fraction is mathematically
+     *       guaranteed to have converged within that many terms.
+     *
+     *   tiny_val
+     *       If any intermediary C or D is exactly zero, it is replaced by
+     *       `tiny_val`.  It should be set to a "small" number; the default
+     *       choice of boost is 16 times the smallest positive normalized
+     *       value representable by T.  Setting `tiny_val` to zero disables
+     *       this workaround.
+     *
+     * Return Value
+     * ------------
+     *
+     * If the continued fraction converges (i.e. the tolerance condition is
+     * satisfied) by f[n] with `n <= max_terms`, returns (f[n], n).
+     * Otherwise, returns (f[max_terms], 0).
+     *
+     * Remarks
+     * -------
+     *
+     * This is a low-level routine intended for expert use.  No error checking
+     * is performed.  The caller must ensure that the parameters and terms are
+     * finite and that intermediary calculations do not trigger floating point
+     * exceptions such as overflow.
+     *
+     * The numerical accuracy of this method depends on the characteristics of
+     * the continued fraction being evaluated.
+     */
+    template <typename T, typename InputIt>
+    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_lentz(
+        T init_val, InputIt cf, T tol, std::size_t max_terms, T tiny_val) {
 
-        std::pair<T, T> v;
+        T f = (init_val == 0)? tiny_val : init_val;
+        T C = f;
+        T D = 0;
+        for (std::size_t n = 0; n < max_terms; ++n, ++cf) {
+            T a = std::get<0>(*cf);  // current numerator
+            T b = std::get<1>(*cf);  // current denominator
 
-        T tiny_value = 16.0 * maybe_complex_numeric_limits::min<T>();
-        T f = (init_val == 0.0) ? tiny_value : init_val;
-
-        double C = f;
-        double D = 0.0;
-        double delta;
-
-        for (std::size_t i = 0; i < max_terms; i++) {
-            v = *(cf++);
-            D = v.second + v.first * D;
-            if (D == 0.0) {
-                D = tiny_value;
+            D = b + a * D;
+            if (D == 0) {
+                D = tiny_val;
             }
-            C = v.second + v.first / C;
-            if (C == 0.0) {
-                C = tiny_value;
+            C = b + a / C;
+            if (C == 0) {
+                C = tiny_val;
             }
-            D = 1.0 / D;
-            delta = C * D;
+            D = 1 / D;
+            T delta = C * D;
             f *= delta;
-            if (std::abs(delta - 1.0) <= tol) {
-                return {f, i+1};
+            if (abs(delta - 1) <= abs(tol)) {
+                return {f, n+1};
             }
         }
 
-        // Exceeded max terms without converging.
+        // Failed to converge within max_terms terms.
         return {f, 0};
+    }
+
+    /* Performs one step of Kahan summation. */
+    template <typename T>
+    void kahan_step(T *sum, T *comp, T x) {
+        T y = x - *comp;
+        T t = *sum + y;
+        *comp = (t - *sum) - y;
+        *sum = t;
     }
 
     /* Evaluates a continued fraction using the "series" method.
      *
      * Denote the continued fraction by
      *
-     *                a[1]     a[2]     a[3]
-     *   f = b[0] + -------- -------- -------- ...
-     *               b[1] +   b[2] +   b[3] +
+     *              a[1]   a[2]   a[3]
+     *   f = b[0] + ------ ------ ------ ...
+     *              b[1] + b[2] + b[3] +
      *
      * Denote the n-th convergent by f[n], starting from f[0] := b[0].  The
      * series method (see [1])
@@ -208,27 +263,28 @@ namespace detail {
      * Parameters
      * ----------
      *
-     *   initial_value
-     *       b0.  The type of this parameter is used as the "accumulator"
-     *       as well as the result.  It may be different from the type of
-     *       the terms of the continued fraction.  For example, a higher
-     *       precision data type may be supplied to improve the accuracy.
+     *   init_val
+     *       b0.  The type of this parameter (T) is used for intermediary
+     *       computations as well as the return value.  It is expected to
+     *       be a (possibly complex) floating point type.
      *
      *   cf
-     *       Input iterator that yields the terms of the c.f.  The value_type
-     *       of the iterator must be std::pair<T,T>, where T is the data type
-     *       of the numerator and denominator.  The current term is given by
-     *       ((*cf).first, (*cf).second).  The iterator initially points to
-     *       (a1, b1), and advances to the next term each time `++cf` is
-     *       called.
+     *       Input iterator that yields the terms of the continued fraction.
+     *       It must support two operations: `*cf` returns the current term
+     *       (a[n], b[n]) as a pair; `++cf` advances to the next term. The
+     *       iterator initially points to (a[1], b[1]).
      *
      *   tol
      *       Tolerance used to terminate the iteration.  Specifically, stop
-     *       iteration as soon as `abs(f[n] - f[n-1]) <= tol * abs(f[n])`,
-     *       where f[n], n >= 1 is the n-th convergent, and f[0] = b0.
+     *       iteration as soon as `abs(f[n] - f[n-1]) <= abs(tol * f[n])`,
+     *       where f[n], n >= 1 is the n-th convergent, and f[0] = b0.  The
+     *       value of `tol` should be chosen to bound the truncation error.
      *
      *   max_terms
-     *       Maximum number of terms to evaluate.  Should be positive.
+     *       Maximum number of terms to evaluate.  This parameter is used to
+     *       handle unexpected non-convergence.  It should normally be set
+     *       large enough such that the continued fraction is mathematically
+     *       guaranteed to have converged within that many terms.
      *
      * Return Value
      * ------------
@@ -240,36 +296,30 @@ namespace detail {
      * Remarks
      * -------
      *
-     * This is a low-level routine for internal use.  No error check of any
-     * kind is performed.  The caller must ensure that all parameters and
-     * terms are finite, and that all intermediary calculations are valid
-     * (i.e. do not lead to overflow or nan).  `tol` should be suitably
-     * chosen to bound the truncation error.  `max_terms` should be set
-     * large enough and is meant to protect against unexpected errors.
+     * This is a low-level routine intended for expert use.  No error checking
+     * is performed.  The caller must ensure that the parameters and terms are
+     * finite and that intermediary calculations do not trigger floating point
+     * exceptions such as overflow.
      *
-     * The numerical stability of this method depends on the characteristics
-     * of the continued fraction being evaluated.  For example, it works well
-     * if `f[n] - f[n-1]` are all positive and geometrically decreasing.
+     * The numerical accuracy of this method depends on the characteristics of
+     * the continued fraction being evaluated.
      */
-    template <typename Result, typename Iterator, typename Tolerance>
-    SPECFUN_HOST_DEVICE std::pair<Result, std::size_t> continued_fraction_eval_series(
-        Result initial_value, Iterator cf, Tolerance tol, std::size_t max_terms) {
+    template <typename T, typename InputIt>
+    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_series(
+        T init_val, InputIt cf, T tol, std::size_t max_terms) {
 
-        // T is type of numerator and denominator.
-        using T = typename std::iterator_traits<Iterator>::value_type::first_type;
-
-        Result w = initial_value;  // current convergent
+        T w = init_val;  // current convergent
+        T c = 0;         // compensation for Kahan summation
         if (max_terms == 0) {
             return {w, 0};
         }
 
         // n = 1
-        std::pair<T, T> ab = *cf;  // ab == current fraction
-        T a = ab.first;            // a == current numerator
-        T b = ab.second;           // b == current denominator
-        T v = a / b;               // v == f[n] - f[n-1]
-        w += v;                    // w == f[n]
-        if (std::abs(v) <= tol * std::abs(w)) {
+        T a = std::get<0>(*cf);  // a == current numerator
+        T b = std::get<1>(*cf);  // b == current denominator
+        T v = a / b;             // v == f[n] - f[n-1]
+        kahan_step(&w, &c, v);   // w == f[n]
+        if (abs(v) <= abs(tol * w)) {
             return {w, 1};
         }
 
@@ -277,13 +327,13 @@ namespace detail {
         T u = 1;
         T bb = b;  // last denominator
         for (std::size_t n = 1; n < max_terms; ++n) {
-            ab = *(++cf);
-            a = ab.first;
-            b = ab.second;
+            ++cf;
+            a = std::get<0>(*cf);
+            b = std::get<1>(*cf);
             u = 1 / (1 + a / (b * bb) * u);
             v *= (u - 1);
-            w += v;
-            if (std::abs(v) <= tol * std::abs(w)) {
+            kahan_step(&w, &c, v);
+            if (abs(v) <= abs(tol * w)) {
                 return {w, n + 1u};
             }
             bb = b;
@@ -292,28 +342,6 @@ namespace detail {
         // Failed to converge within max_terms terms.
         return {w, 0};
     }
-
-    /* Performs Kahan summation. */
-    template <typename T>
-    class KahanSummer {
-
-    public:
-        KahanSummer() : _s(), _c() {} // value initialization
-
-        KahanSummer & operator+=(T x) {
-            T y = x - _c;
-            T t = _s + y;
-            _c = (t - _s) - y;
-            _s = t;
-            return *this;
-        }
-
-        operator T() const { return _s; }
-
-    private:
-        T _s; // current sum
-        T _c; // current compensation
-    };
 
 } // namespace detail
 } // namespace special

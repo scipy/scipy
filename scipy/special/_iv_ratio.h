@@ -25,11 +25,11 @@ class IvRatioCFIterator {
    */
 
 public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type = std::pair<double, double>;
-    using difference_type = std::ptrdiff_t;
-    using pointer = const value_type *;
-    using reference = const value_type &;
+//    using iterator_category = std::input_iterator_tag;
+//    using value_type = std::pair<double, double>;
+//    using difference_type = std::ptrdiff_t;
+//    using pointer = const value_type *;
+//    using reference = const value_type &;
 
     // It is assumed that v >= 1, x >= 0, and both are finite.
     IvRatioCFIterator(double v, double x) noexcept {
@@ -47,19 +47,12 @@ public:
         _k = 0;
     }
 
-    reference operator*() const { return _frac; }
+    const std::pair<double, double> & operator*() const { return _frac; }
 
-    IvRatioCFIterator & operator++() /* prefix ++ */ {
+    IvRatioCFIterator & operator++() {
         ++_k;
         _frac = {std::fma(_k, _as, _a0), std::fma(_k, _bs, _b0)};
         return *this;
-    }
-
-    IvRatioCFIterator operator++(int) /* postfix ++ */ {
-        IvRatioCFIterator self = *this;
-        ++_k;
-        _frac = {std::fma(_k, _as, _a0), std::fma(_k, _bs, _b0)};
-        return self;
     }
 
 private:
@@ -70,16 +63,19 @@ private:
 };
 
 inline double iv_ratio(double v, double x) {
-//
-//    std::pair<double, double> cf[] = {
-//        {4., 1.}, {1., 3.}, {4., 5.}, {9., 7.}, {16., 9.},
-//        {25., 11.}, {36, 13}, {49, 15}, {64, 17}, {81, 19},
-//        {100, 21}, {0, 23},
-//    };
-//    return special::detail::continued_fraction_eval_series(
-////    return special::detail::continued_fraction_eval_lentz(
-//        0., &cf[0], 0., 5000).first;
 
+#if 0
+    std::pair<double, double> cf[] = {
+        {4., 1.}, {1., 3.}, {4., 5.}, {9., 7.}, {16., 9.},
+        {25., 11.}, {36, 13}, {49, 15}, {64, 17}, {81, 19},
+        {100, 21}, {0, 23},
+    };
+//    return special::detail::continued_fraction_eval_series(
+    return special::detail::continued_fraction_eval_lentz(
+        0., &cf[0], 0., 5000, 1e-30).first;
+#endif
+
+#if 1
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
@@ -106,11 +102,17 @@ inline double iv_ratio(double v, double x) {
     IvRatioCFIterator cf(v+1, x);
     double tol = std::numeric_limits<double>::epsilon() * (v+0.75);
     tol = tol / std::max(tol, x); // prevent overflow
-    auto result = special::detail::continued_fraction_eval_series(
-        special::detail::KahanSummer<double>(), cf, tol, 5000);
-//        0.0, cf, tol*0, 5000);
-    if (result.second == 0) { // failed to converge; not expected
+#if 1
+    auto [result, terms] = special::detail::continued_fraction_eval_series(
+        0.0, cf, tol, 1000);
+#else
+    auto [result, terms] = special::detail::continued_fraction_eval_lentz(
+        0.0, cf, tol, 1000, 1e-30);
+#endif
+    if (terms == 0) { // failed to converge; should not happen
+        // TODO: raise FPE
         return std::numeric_limits<double>::quiet_NaN();
     }
-    return static_cast<double>(result.first);
+    return result;
+#endif
 }
