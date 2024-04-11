@@ -3,6 +3,7 @@
 #include <array>
 #include <limits>
 #include <type_traits>
+#include <utility>
 
 namespace std {
 
@@ -43,6 +44,9 @@ class extents {
   public:
     constexpr extents() = default;
 
+    template <class... OtherIndex>
+    constexpr explicit extents(OtherIndex... exts) : m_dexts{exts...} {}
+
     template <class OtherIndex>
     constexpr extents(const array<OtherIndex, sizeof...(Extents)> &dexts) noexcept : m_dexts(dexts) {}
 
@@ -53,6 +57,65 @@ class extents {
 
 template <typename Index, size_t Rank>
 using dextents = detail::fill_extents_t<Index, Rank, dynamic_extent>;
+
+struct full_extent_t {
+    explicit full_extent_t() = default;
+};
+
+inline constexpr full_extent_t full_extent;
+
+template <typename Offset, typename Extent, typename Stride>
+struct strided_slice {
+    using offset_type = Offset;
+    using extent_type = Extent;
+    using stride_type = Stride;
+
+    strided_slice() = default;
+
+    strided_slice(offset_type offset, extent_type extent, stride_type stride)
+        : offset(offset), extent(extent), stride(stride) {}
+
+    offset_type offset;
+    extent_type extent;
+    stride_type stride;
+};
+
+namespace detail {
+
+    template <typename Index, typename Offset, typename Extent, typename Stride>
+    Index submdspan_extent(Index ext, strided_slice<Offset, Extent, Stride> slice) {
+        return (slice.extent - slice.offset) / slice.stride;
+    }
+
+    template <typename Index, typename Index0, typename Index1>
+    Index submdspan_extent(Index ext, std::tuple<Index0, Index1> slice) {
+        return std::get<1>(slice) - std::get<0>(slice);
+    }
+
+    template <typename Index>
+    Index submdspan_extent(Index ext, full_extent_t slice) {
+        return ext;
+    }
+
+    template <size_t... I, typename Index, size_t... Extents, typename... Slices>
+    auto submdspan_extents(std::index_sequence<I...>, const extents<Index, Extents...> exts, Slices... slices) {
+        return extents<Index, Extents...>{submdspan_extent(exts.extent(I), slices)...};
+    }
+
+    template <typename Index, size_t... Extents, typename... Slices>
+    auto submdspan_extents(const extents<Index, Extents...> exts, Slices... slices) {
+        return submdspan_extents(std::index_sequence_for<Slices...>(), exts, slices...);
+    }
+
+} // namespace detail
+
+template <typename Index, size_t... Extents, typename... Slices>
+auto submdspan_extents(const extents<Index, Extents...> &exts, Slices... slices) {
+    return detail::submdspan_extents(exts, slices...);
+}
+
+template <typename Mapping, typename... Slices>
+auto submdspan_mapping(const Mapping &, Slices...);
 
 struct layout_left;
 
@@ -80,6 +143,8 @@ struct layout_stride {
 
         constexpr const extents_type &extents() const noexcept { return m_exts; }
 
+        constexpr const array<index_type, extents_type::rank()> &strides() const noexcept { return m_strides; }
+
         constexpr index_type extent(rank_type i) const noexcept { return m_exts.extent(i); }
 
         constexpr index_type stride(rank_type i) const noexcept { return m_strides[i]; }
@@ -98,6 +163,47 @@ struct layout_stride {
         }
     };
 };
+
+namespace detail {
+
+    template <typename Index, typename Offset, typename Extent, typename Stride>
+    Index submdspan_stride(Index stride, strided_slice<Offset, Extent, Stride> slice) {
+        return stride * slice.stride;
+    }
+
+    template <typename Index, typename Index0, typename Index1>
+    Index submdspan_stride(Index stride, std::tuple<Index0, Index1> slice) {
+        return stride;
+    }
+
+    template <typename Index>
+    Index submdspan_stride(Index stride, full_extent_t slice) {
+        return stride;
+    }
+
+    template <size_t... I, typename Index, size_t Rank, typename... Slices>
+    auto submdspan_strides(std::index_sequence<I...>, const array<Index, Rank> strides, Slices... slices) {
+        array<Index, Rank> res{submdspan_stride(strides[I], slices)...};
+        return res;
+    }
+
+    template <typename Index, size_t Rank, typename... Slices>
+    auto submdspan_strides(const array<Index, Rank> strides, Slices... slices) {
+        return submdspan_strides(std::index_sequence_for<Slices...>(), strides, slices...);
+    }
+
+} // namespace detail
+
+template <typename Index, size_t Rank, typename... Slices>
+auto submdspan_strides(const array<Index, Rank> &strides, Slices... slices) {
+    return detail::submdspan_strides(strides, slices...);
+}
+
+template <typename Extents, typename... Slices>
+auto submdspan_mapping(const layout_stride::mapping<Extents> &map, Slices... slices) {
+    return layout_stride::mapping(submdspan_extents(map.extents(), slices...),
+                                  submdspan_strides(map.strides(), slices...));
+}
 
 template <typename Element>
 class default_accessor {
@@ -138,6 +244,9 @@ class mdspan {
 
     constexpr mdspan(data_handle_type p, const mapping_type &m) : m_ptr(p), m_map(m) {}
 
+    constexpr mdspan(data_handle_type p, const mapping_type &m, const accessor_type &a)
+        : m_ptr(p), m_map(m), m_acc(a) {}
+
     template <typename... OtherIndices>
     constexpr reference operator()(OtherIndices... indices) const {
         return m_acc.access(m_ptr, m_map(static_cast<index_type>(std::move(indices))...));
@@ -149,6 +258,10 @@ class mdspan {
     }
 
     constexpr const data_handle_type &data_handle() const noexcept { return m_ptr; }
+
+    constexpr const mapping_type &mapping() const noexcept { return m_map; }
+
+    constexpr const accessor_type &accessor() const noexcept { return m_acc; }
 
     constexpr index_type stride(rank_type r) const { return m_map.stride(r); }
 
@@ -165,5 +278,33 @@ class mdspan {
         return res;
     }
 };
+
+namespace detail {
+
+    template <typename Offset, typename Extent, typename Stride>
+    auto submdspan_offset(strided_slice<Offset, Extent, Stride> slice) {
+        return slice.offset;
+    }
+
+    template <typename Index0, typename Index1>
+    auto submdspan_offset(std::tuple<Index0, Index1> slice) {
+        return std::get<0>(slice);
+    }
+
+    inline auto submdspan_offset(full_extent_t slice) { return 0; }
+
+} // namespace detail
+
+template <class T, class Extents, class LayoutPolicy, class AccessorPolicy, class... SliceArgs>
+auto submdspan(const mdspan<T, Extents, LayoutPolicy, AccessorPolicy> &src, SliceArgs... args) {
+    static_assert(Extents::rank() == sizeof...(SliceArgs), "number of slices must equal extents rank");
+
+    using submdspan_type = mdspan<T, Extents, LayoutPolicy, AccessorPolicy>;
+
+    auto src_map = src.mapping();
+    auto src_acc = src.accessor();
+    return submdspan_type(src_acc.offset(src.data_handle(), src_map(detail::submdspan_offset(args)...)),
+                          submdspan_mapping(src.mapping(), args...), src_acc);
+}
 
 } // namespace std

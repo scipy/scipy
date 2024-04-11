@@ -3445,7 +3445,7 @@ def sph_harm_all(m, n, theta, phi):
     if (not np.issubdtype(phi.dtype, np.inexact)):
         phi = phi.astype(np.float64)
 
-    out = np.empty((m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
+    out = np.empty((2 * m + 1, n + 1) + np.broadcast_shapes(theta.shape, phi.shape),
         dtype = np.complex128)
     _sph_harm_all(theta, phi, out = np.moveaxis(out, (0, 1), (-2, -1)))
 

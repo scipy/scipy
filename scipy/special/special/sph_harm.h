@@ -2,6 +2,7 @@
 
 #include "error.h"
 #include "legendre.h"
+#include "mdspan.h"
 #include "specfun.h"
 
 extern "C" double cephes_poch(double x, double m);
@@ -56,12 +57,18 @@ inline std::complex<float> sph_harm(float m, float n, float theta, float phi) {
 
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    lpmn(std::cos(phi), y);
+    const long m = y.extent(0) - 1;
+    const long n = y.extent(1) - 1;
 
-    for (long i = 0; i < y.extent(0); ++i) {
-        for (long j = i; j < y.extent(1); ++j) {
+    OutMat y_pos = std::submdspan(y, std::make_tuple(0, m + 1), std::full_extent);
+    lpmn(std::cos(phi), y_pos);
+
+    for (long j = 0; j <= n; ++j) {
+        y(0, j) *= std::sqrt((2 * j + 1) / (4 * M_PI));
+        for (long i = 1; i <= j; ++i) {
             y(i, j) *= std::sqrt((2 * j + 1) * cephes_poch(j + i + 1, -2 * i) / (4 * M_PI)) *
                        std::exp(std::complex<double>(0, i * theta));
+            y(y.extent(0) - i, j) = static_cast<T>(std::pow(-1, i)) * std::conj(y(i, j));
         }
     }
 }

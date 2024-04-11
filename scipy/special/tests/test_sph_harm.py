@@ -50,3 +50,6 @@ def test_all_harmonics():
             if (m <= n):
                 y_desired = sc.sph_harm(m, n, theta, phi)
                 np.testing.assert_allclose(y_actual[m, n], y_desired, rtol = 1e-05)
+
+                y_desired = sc.sph_harm(-m, n, theta, phi)
+                np.testing.assert_allclose(y_actual[-m, n], y_desired, rtol = 1e-05)
