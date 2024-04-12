@@ -4095,6 +4095,11 @@ class TestIIRFilter:
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
         assert_allclose(k, k2)
+        # if fs is specified then the normalization of Wn to have 
+        # 0 <= Wn <= 1 should not cause an integer overflow
+        # the following line should not raise an exception
+        iirfilter(20, [1000000000, 1100000000], btype='bp', 
+                      analog=False, fs=6250000000)
 
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
