@@ -130,7 +130,7 @@ As explained in more detail below, the current minimal compiler versions are:
 
 Note that the lower bound for LLVM is not enforced. Older versions should
 work - as long as they support core (non-stdlib) C++17 -, but no version
-below LLVM 12 is tested regularly during development. Please file an issue
+below LLVM 14 is tested regularly during development. Please file an issue
 if you encounter a problem during compilation.
 
 Official Builds
@@ -143,17 +143,18 @@ Currently, SciPy wheels are being built as follows:
 ================    ==============================   ==============================   =============================
 Linux x86            ``ubuntu-22.04``                 GCC 10.2.1                       ``cibuildwheel``
 Linux arm            ``docker-builder-arm64``         GCC 11.3.0                       ``cibuildwheel``
-OSX x86_64           ``macOS-11``                     clang-13/gfortran 11.3.0         ``cibuildwheel``
-OSX arm64            ``macos-14``                     clang-15.0.0/gfortran 13.2.0     ``cibuildwheel``
-Windows              ``windows-2019``                 GCC 10.3 (rtools)                ``cibuildwheel``
+OSX x86_64           ``macos-latest``                 clang-14/gfortran 13.0           ``cibuildwheel``
+OSX arm64            ``macos-14``                     clang-14/gfortran 13.0           ``cibuildwheel``
+Windows              ``windows-2019``                 GCC 10.3 (`rtools`_)             ``cibuildwheel``
 ================    ==============================   ==============================   =============================
 
 .. _CI: https://github.com/actions/runner-images
 .. _Base: https://cirrus-ci.org/guide/docker-builder-vm/#under-the-hood
 .. _Images: https://github.com/orgs/cirruslabs/packages?tab=packages&q=macos
+.. _rtools: https://community.chocolatey.org/packages/rtools#versionhistory
 
 Note that the OSX wheels additionally vendor gfortran 11.3.0 for x86_64,
-and gfortran 13.2.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
+and gfortran 12.1.0 for arm64. See ``tools/wheels/cibw_before_build_macos.sh``.
 
 
 C Compilers
