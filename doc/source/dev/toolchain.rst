@@ -159,66 +159,68 @@ be. The following paragraphs primarily discuss the evolution of these
 constraints; readers who do not care about historical context can skip ahead
 to the table at the end.
 
-In the past, the most restrictive compiler on relevant platform in terms
-of C support was the Microsoft Visual C++ compiler & toolset (together known
-as MSVC) [8]_ [9]_. Up until Visual Studio 2013, each MSVC version came with
-an updated C Runtime (CRT) library that was incompatible with the previous
-ones.
+.. dropdown:: Historical context around ABI vs. compiler support vs. C standards
 
-This lack of compatibility of the Application Binary Interface (ABI) meant
-that all projects wanting to communicate across this interface (e.g. calling a
-function from a shared library) needed to be (re)compiled with the same MSVC
-version. The long support of CPython 2.7 meant that python itself was stuck
-for a long time with VS 2008 (in order not to break the ABI in patch
-releases), and thus SciPy was stuck on that version as well.
+    In the past, the most restrictive compiler on relevant platforms in terms
+    of C support was the Microsoft Visual C++ compiler & toolset (together known
+    as MSVC) [8]_ [9]_. Up until Visual Studio 2013, each MSVC version came with
+    an updated C Runtime (CRT) library that was incompatible with the previous
+    ones.
 
-The use of VS 2008 (which doesn't have support for C99) to compile builds for
-CPython 2.7 meant for a long time that C code in SciPy has had to conform
-to the earlier C90 standard for the language and standard library. After
-dropping support for CPython 2.7 in SciPy 1.3.x, that restriction was finally
-lifted (though only gradually at first).
+    This lack of compatibility of the Application Binary Interface (ABI) meant
+    that all projects wanting to communicate across this interface (e.g. calling a
+    function from a shared library) needed to be (re)compiled with the same MSVC
+    version. The long support of CPython 2.7 meant that python itself was stuck
+    for a long time with VS 2008 (in order not to break the ABI in patch
+    releases), and thus SciPy was stuck on that version as well.
 
-With the introduction of the "Universal C Runtime" (UCRT) [10]_ since the
-release of Visual Studio 2015, the ABI of C Runtime has been stable, which
-means that the restriction of having to use the same compiler version for
-SciPy as for the underlying CPython version is no longer applicable. This
-stability is not indefinite though: Microsoft has been planning [11]_ an
-ABI-breaking release - across the compiler resp. C/C++ standard libraries -
-(tentatively called "vNext") for quite a while, but so far it is unclear
-when this will arrive. Once that happens, SciPy will again be restricted to
-at most the last ABI-compatible Visual Studio release (currently VS 2022)
-until all CPython versions supported according to NEP29 have been built
-upstream with vNext-compatible compilers.
+    The use of VS 2008 (which doesn't have support for C99) to compile builds for
+    CPython 2.7 meant for a long time that C code in SciPy has had to conform
+    to the earlier C90 standard for the language and standard library. After
+    dropping support for CPython 2.7 in SciPy 1.3.x, that restriction was finally
+    lifted (though only gradually at first).
 
-More specifically, there is a distinction between the Microsoft Visual
-Studio version and the version of the targeted "toolset", which is defined
-[12]_ as "The Microsoft C++ compiler, linker, standard libraries, and related
-utilities". Each version of Visual Studio comes with a default version of the
-MSVC toolset (for example VS2017 with vc141, VS2019 with vc142), but it is
-possible to target older toolsets even in newer versions of Visual Studio.
-Due to the nature of compilers (i.e. split into frontend and backend), it
-depends whether the limiting factor for supporting a given feature (e.g. in C)
-is due to the version of Visual Studio or the toolset, but in general the
-latter is a harder barrier and thus the effective lower bound.
+    With the introduction of the "Universal C Runtime" (UCRT) [10]_ since the
+    release of Visual Studio 2015, the ABI of C Runtime has been stable, which
+    means that the restriction of having to use the same compiler version for
+    SciPy as for the underlying CPython version is no longer applicable. This
+    stability is not indefinite though: Microsoft has been planning [11]_ an
+    ABI-breaking release - across the compiler resp. C/C++ standard libraries -
+    (tentatively called "vNext") for quite a while, but so far it is unclear
+    when this will arrive. Once that happens, SciPy will again be restricted to
+    at most the last ABI-compatible Visual Studio release (currently VS 2022)
+    until all CPython versions supported according to NEP29 have been built
+    upstream with vNext-compatible compilers.
 
-This is due to the fact that while the ABI stays compatible between toolset
-versions (until vNext), all linking operations must use a toolset at least
-as new as the one used to build any of the involved artefacts, meaning that
-toolset version bumps tend to be "infectious", as in: requiring all consuming
-libraries to also bump their toolset (and probably compiler) version. This is
-more of an issue for NumPy than SciPy, as the latter has only a small C API
-and is compiled against by far fewer projects than NumPy. Additionally, using
-a newer toolset means that users of libraries that compile C++ code (as SciPy
-does) might also need a newer Microsoft Visual C++ Redistributable, which
-might have to be distributed to them [13]_.
+    More specifically, there is a distinction between the Microsoft Visual
+    Studio version and the version of the targeted "toolset", which is defined
+    [12]_ as "The Microsoft C++ compiler, linker, standard libraries, and related
+    utilities". Each version of Visual Studio comes with a default version of the
+    MSVC toolset (for example VS2017 with vc141, VS2019 with vc142), but it is
+    possible to target older toolsets even in newer versions of Visual Studio.
+    Due to the nature of compilers (i.e. split into frontend and backend), it
+    depends whether the limiting factor for supporting a given feature (e.g. in C)
+    is due to the version of Visual Studio or the toolset, but in general the
+    latter is a harder barrier and thus the effective lower bound.
 
-Summing up, the minimal requirement for the MSVC compiler resp. toolset per
-SciPy version was determined predominantly by the oldest supported CPython
-version at the time. The first SciPy version to raise the minimal requirement
-beyond that was SciPy 1.9, due to the inclusion of the HiGHS submodule, which
-does not compile with vc141 (and the aggressive removal of VS2017 in public CI
-making it infeasible to keep ensuring that everything everywhere works with
-non-default toolset versions).
+    This is due to the fact that while the ABI stays compatible between toolset
+    versions (until vNext), all linking operations must use a toolset at least
+    as new as the one used to build any of the involved artefacts, meaning that
+    toolset version bumps tend to be "infectious", as in: requiring all consuming
+    libraries to also bump their toolset (and probably compiler) version. This is
+    more of an issue for NumPy than SciPy, as the latter has only a small C API
+    and is compiled against by far fewer projects than NumPy. Additionally, using
+    a newer toolset means that users of libraries that compile C++ code (as SciPy
+    does) might also need a newer Microsoft Visual C++ Redistributable, which
+    might have to be distributed to them [13]_.
+
+    Summing up, the minimal requirement for the MSVC compiler resp. toolset per
+    SciPy version was determined predominantly by the oldest supported CPython
+    version at the time. The first SciPy version to raise the minimal requirement
+    beyond that was SciPy 1.9, due to the inclusion of the HiGHS submodule, which
+    does not compile with vc141 (and the aggressive removal of VS2017 in public CI
+    making it infeasible to keep ensuring that everything everywhere works with
+    non-default toolset versions).
 
 ==============  =================  =================  =================
 SciPy version    CPython support    MS Visual C++      Toolset version
@@ -278,32 +280,34 @@ attempting to predict adoption timelines for newer standards.
  ?                 C++17 (with full stdlib), C++20, C++23
 ================  =======================================================================
 
-Since dropping support for Python 2.7, C++11 can be used
-universally, and since dropping Python 3.6, the Visual Studio version
-(that had previously been stuck with 14.0 due to ABI compatibility with
-CPython) has been recent enough to support even C++17.
+.. dropdown:: Historical context for compiler constraints due to manylinux
 
-Since the official builds (see above) use a pretty recent version of LLVM,
-the bottleneck for C++ support is therefore the oldest supported GCC version,
-where SciPy has been constrained mainly by the version in the oldest supported
-manylinux versions & images [19]_.
+    Since dropping support for Python 2.7, C++11 can be used
+    universally, and since dropping Python 3.6, the Visual Studio version
+    (that had previously been stuck with 14.0 due to ABI compatibility with
+    CPython) has been recent enough to support even C++17.
 
-At the end of 2021 (with the final removal of ``manylinux1`` wheels), the
-minimal requirement of GCC moved to 6.3, which has full C++14 support [20]_.
-This corresponded to the lowest-present GCC version in relevant manylinux
-versions, though this was still considering the Debian-based "outlier"
-``manylinux_2_24``, which - in contrast to previous manylinux images based on
-RHEL-derivative CentOS that could benefit from the ABI-compatible GCC backports
-in the "RHEL Dev Toolset" - was stuck with GCC 6.3. That image failed to take
-off not least due to those outdated compilers [21]_ and reached its EOL in
-mid-2022 [22]_. For different reasons, ``manylinux2010`` also reached its EOL
-around the same time [23]_.
+    Since the official builds (see above) use a pretty recent version of LLVM,
+    the bottleneck for C++ support is therefore the oldest supported GCC version,
+    where SciPy has been constrained mainly by the version in the oldest supported
+    manylinux versions & images [19]_.
 
-The remaining images ``manylinux2014`` and ``manylinux_2_28`` currently support
-GCC 10 and 11, respectively. The latter will continue to receive updates as new
-GCC versions become available as backports, but the former will likely not
-change since the CentOS project is not responsive anymore about publishing
-aarch64 backports of GCC 11 [24]_.
+    At the end of 2021 (with the final removal of ``manylinux1`` wheels), the
+    minimal requirement of GCC moved to 6.3, which has full C++14 support [20]_.
+    This corresponded to the lowest-present GCC version in relevant manylinux
+    versions, though this was still considering the Debian-based "outlier"
+    ``manylinux_2_24``, which - in contrast to previous manylinux images based on
+    RHEL-derivative CentOS that could benefit from the ABI-compatible GCC backports
+    in the "RHEL Dev Toolset" - was stuck with GCC 6.3. That image failed to take
+    off not least due to those outdated compilers [21]_ and reached its EOL in
+    mid-2022 [22]_. For different reasons, ``manylinux2010`` also reached its EOL
+    around the same time [23]_.
+
+    The remaining images ``manylinux2014`` and ``manylinux_2_28`` currently support
+    GCC 10 and 11, respectively. The latter will continue to receive updates as new
+    GCC versions become available as backports, but the former will likely not
+    change since the CentOS project is not responsive anymore about publishing
+    aarch64 backports of GCC 11 [24]_.
 
 This leaves all the main platforms and their compilers with comparatively
 recent versions. However, SciPy has historically also endeavored to support
@@ -311,23 +315,25 @@ less common platforms as well - if not with binary artefacts (i.e. wheels),
 then at least by remaining compilable from source - which includes for example
 AIX, Alpine Linux and FreeBSD.
 
-For AIX 7.1 & 7.2 the default compiler is GCC 8 (AIX 6.1 had its EOL in 2017),
-but GCC 10 is installable (side-by-side) [25]_.
-The oldest currently-supported Alpine Linux release is 3.12 [26]_, and already
-comes with GCC 10.
-For FreeBSD, the oldest currently-supported 12.x release [27]_ comes with
-LLVM 10 (and GCC 10 is available as a freebsd-port [28]_).
+.. dropdown:: Platform support and other constraints on compiler
 
-Finally there is the question of which machines are widely used by people
-needing to compile SciPy from source for other reasons (e.g. SciPy developers,
-or people wanting to compile for themselves for performance reasons).
-The oldest relevant distributions (without RHEL-style backports) are Ubuntu
-18.04 LTS (which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS
-has GCC 9) and Debian Buster (with GCC 8; Bullseye has GCC 10).
-This is the weakest restriction for determining the lower bounds of compiler
-support (power users and developers can be expected to keep their systems at
-least somewhat up-to-date, or use backports where available), and gradually
-becomes less important as usage numbers of old distributions dwindle.
+    For AIX 7.1 & 7.2 the default compiler is GCC 8 (AIX 6.1 had its EOL in 2017),
+    but GCC 10 is installable (side-by-side) [25]_.
+    The oldest currently-supported Alpine Linux release is 3.12 [26]_, and already
+    comes with GCC 10.
+    For FreeBSD, the oldest currently-supported 12.x release [27]_ comes with
+    LLVM 10 (and GCC 10 is available as a freebsd-port [28]_).
+
+    Finally there is the question of which machines are widely used by people
+    needing to compile SciPy from source for other reasons (e.g. SciPy developers,
+    or people wanting to compile for themselves for performance reasons).
+    The oldest relevant distributions (without RHEL-style backports) are Ubuntu
+    18.04 LTS (which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS
+    has GCC 9) and Debian Buster (with GCC 8; Bullseye has GCC 10).
+    This is the weakest restriction for determining the lower bounds of compiler
+    support (power users and developers can be expected to keep their systems at
+    least somewhat up-to-date, or use backports where available), and gradually
+    becomes less important as usage numbers of old distributions dwindle.
 
 All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
 VS2019 with vc142) have full support for the C++17 *core language*,
