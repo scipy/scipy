@@ -47,18 +47,26 @@ Python Versions
 ^^^^^^^^^^^^^^^
 
 SciPy is compatible with several versions of Python.  When dropping support for
-older Python versions, SciPy takes guidance from NEP 29 [1]_.  Python 2.7
-support was dropped starting from SciPy 1.3.
+older Python versions, SciPy takes guidance from NEP 29 [1]_. Generally, support for
+the oldest Python version is dropped 42 months after the original release. Following
+the acceptance of PEP 602, this mostly happens in April, and gets picked up by the
+mid-year release of SciPy.
 
-================  =======================================================================
- Date             Pythons supported
-================  =======================================================================
- 2018              Py2.7, Py3.4+ (SciPy 1.2.x is the last release to support Python 2.7)
- 2019              Py3.5+ (but Py2.7-specific code not removed)
- 2020              Py3.6+ (removal of Py2.7-specific code permitted)
- 2021              Py3.7+
- 2022              Py3.8+
-================  =======================================================================
+.. dropdown:: Python version support over time
+
+    Python 2.7 support was dropped starting from SciPy 1.3.
+
+    ================  =======================================================================
+     Date             Pythons supported
+    ================  =======================================================================
+     2024              Py3.10+
+     2023              Py3.9+
+     2022              Py3.8+
+     2021              Py3.7+
+     2020              Py3.6+
+     2019              Py3.5+
+     2018              Py2.7, Py3.4+
+    ================  =======================================================================
 
 NumPy
 ^^^^^
@@ -68,25 +76,27 @@ SciPy attempts to be compatible with at least the 4 previous releases of NumPy.
 In particular, SciPy cannot rely on features of just the latest NumPy, but
 needs to be written using what is common in all of those 4 releases [2]_.
 
-The table shows the NumPy versions suitable for each major Python version.
+.. dropdown:: Python and NumPy version support per SciPy version
 
-=================  ========================    =======================
- SciPy version      Python versions             NumPy versions
-=================  ========================    =======================
- 1.2                2.7, >=3.4, <=3.7           >=1.8.2, <= 1.16.x
- 1.4                >=3.5, <=3.8                >=1.13.3, <= 1.17.3
- 1.5                >=3.6, <=3.9                >=1.14.5, <= 1.19.3
- 1.6                >=3.7, <=3.9                >=1.16.5, <= 1.20.x
- 1.7.0/1            >=3.7, <3.10                >=1.16.5, <1.23.0
- 1.7.2/3            >=3.7, <3.11                >=1.16.5, <1.23.0
- 1.8                >=3.8, <3.11                >=1.17.3, <1.24.0
- 1.9.0/1            >=3.8, <3.12                >=1.18.5, <1.25.0
- 1.9.2              >=3.8, <3.12                >=1.18.5, <1.26.0
- 1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
- 1.11               >=3.9, <3.12                >=1.21.6, <1.27.0
- 1.12               >=3.9, <3.13                >=1.22.4, <2.0.0
- 1.13               >=3.9, <3.13                >=1.22.4, <2.3.0
-=================  ========================    =======================
+    The table shows the NumPy versions suitable for each major Python version.
+    This table does not distinguish SciPy patch versions (e.g. when a new Python
+    version is released, SciPy will generally issue a compatible patch version).
+
+    =================  ========================    =======================
+     SciPy version      Python versions             NumPy versions
+    =================  ========================    =======================
+     1.13               >=3.9, <3.13                >=1.22.4, <2.3.0
+     1.12               >=3.9, <3.13                >=1.22.4, <2.0.0
+     1.11               >=3.9, <3.13                >=1.21.6, <1.27.0
+     1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
+     1.9                >=3.8, <3.12                >=1.18.5, <1.26.0
+     1.8                >=3.8, <3.11                >=1.17.3, <1.24.0
+     1.7                >=3.7, <3.11                >=1.16.5, <1.23.0
+     1.6                >=3.7, <3.10                >=1.16.5, <1.21.0
+     1.5                >=3.6, <3.10                >=1.14.5, <1.20.0
+     1.4                >=3.5, <3.9                 >=1.13.3, <1.18.0
+     1.2                2.7, >=3.4, <3.8            >=1.8.2, <1.17.0
+    =================  ========================    =======================
 
 In specific cases, such as a particular architecture, these requirements
 could vary. Please check the release notes [3]_ and the meta-package
