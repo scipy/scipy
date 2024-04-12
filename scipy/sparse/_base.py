@@ -445,6 +445,8 @@ class _spbase:
 
     def multiply(self, other):
         """Point-wise multiplication by another array/matrix."""
+        if isscalarlike(other):
+            return self._mul_scalar(other)
         return self.tocsr().multiply(other)
 
     def maximum(self, other):
@@ -652,13 +654,9 @@ class _spbase:
             raise ValueError('could not interpret dimensions')
 
     def __mul__(self, other):
-        if isscalarlike(other):
-            return self._mul_scalar(other)
         return self.multiply(other)
 
     def __rmul__(self, other):  # other * self
-        if isscalarlike(other):
-            return self._mul_scalar(other)
         return self.multiply(other)
 
     # by default, use CSR for __mul__ handlers
