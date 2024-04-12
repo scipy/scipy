@@ -322,7 +322,7 @@ attempting to predict adoption timelines for newer standards.
     around the `same time <https://github.com/pypa/manylinux/issues/1281>`_.
 
     The remaining images ``manylinux2014`` and ``manylinux_2_28`` currently support
-    GCC 10 and 11, respectively. The latter will continue to receive updates as new
+    GCC 10 and 12, respectively. The latter will continue to receive updates as new
     GCC versions become available as backports, but the former will likely not
     change since the CentOS project is not responsive anymore about publishing
     aarch64 `backports <https://github.com/pypa/manylinux/issues/1266>`_ of GCC 11.
@@ -335,19 +335,21 @@ AIX, Alpine Linux and FreeBSD.
 
 .. dropdown:: Platform support and other constraints on compiler
 
-    For AIX 7.1 & 7.2 the default compiler is GCC 8 (AIX 6.1 had its EOL in 2017),
-    but GCC 10 is installable `side-by-side`_.
-    The oldest currently-supported `Alpine Linux`_ release is 3.12, and already
-    comes with GCC 10.
-    For `FreeBSD`_, the oldest currently-supported 12.x release comes with
-    LLVM 10 (and GCC 10 is available as a `freebsd-port`_).
+    For AIX 7.2 & 7.3 the default compiler is GCC 10 (AIX 7.1 had its EOL in 2023),
+    but GCC 11/12 is installable `side-by-side`_, and similarly, there is the
+    LLVM 17-based `Open XL`_ for AIX.
+
+    The oldest currently-supported `Alpine Linux`_ release is 3.16, and already
+    `comes with <https://distrowatch.com/table.php?distribution=alpine>`_ GCC 11.
+    For `FreeBSD`_, the oldest currently-supported `13.x release`_ comes with
+    LLVM 14 (and GCC 13 is available as a `freebsd-port`_).
 
     Finally there is the question of which machines are widely used by people
     needing to compile SciPy from source for other reasons (e.g. SciPy developers,
     or people wanting to compile for themselves for performance reasons).
     The oldest relevant distributions (without RHEL-style backports) are Ubuntu
-    18.04 LTS (which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS
-    has GCC 9) and Debian Buster (with GCC 8; Bullseye has GCC 10).
+    20.04 LTS (which has GCC 9 but also has a backport of GCC 10; Ubuntu 22.04 LTS
+    has GCC 11) and Debian Bullseye (with GCC 10; Bookworm has GCC 12).
     This is the weakest restriction for determining the lower bounds of compiler
     support (power users and developers can be expected to keep their systems at
     least somewhat up-to-date, or use backports where available), and gradually
@@ -355,9 +357,11 @@ AIX, Alpine Linux and FreeBSD.
 
 .. _outdated compilers: https://github.com/pypa/manylinux/issues/1012
 .. _side-by-side: https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#G
+.. _Open XL: https://www.ibm.com/docs/en/openxl-c-and-cpp-aix/17.1.2?topic=new-enhanced-llvm-clang-support
 .. _Alpine Linux: https://alpinelinux.org/releases/
 .. _FreeBSD: https://www.freebsd.org/releases/
-.. _freebsd-port: https://www.freebsd.org/status/report-2021-04-2021-06/gcc/
+.. _13.x release: https://www.freebsd.org/releases/13.2R/relnotes/
+.. _freebsd-port: https://ports.freebsd.org/cgi/ports.cgi?query=gcc
 
 All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
 VS2019 with vc142) have full support for the C++17 *core language*,
