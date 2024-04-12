@@ -10019,6 +10019,24 @@ add_newdoc("pdtrc",
     pdtrik : inverse of `pdtr` with respect to `k`
     pdtri : inverse of `pdtr` with respect to `m`
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It is a survival function, so it decreases to 0
+    monotonically as `k` goes to infinity.
+
+    >>> k = np.array([1, 10, 100, np.inf])
+    >>> sc.pdtrc(k, 1)
+    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
+
+    It can be expressed in terms of the lower incomplete gamma
+    function `gammainc`.
+
+    >>> sc.gammainc(k + 1, 1)
+    array([2.64241118e-001, 1.00477664e-008, 3.94147589e-161, 0.00000000e+000])
+
     """)
 
 add_newdoc("pdtri",
@@ -10052,20 +10070,36 @@ add_newdoc("pdtri",
     pdtrc : Poisson survival function
     pdtrik : inverse of `pdtr` with respect to `k`
 
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    Compute the CDF for several values of `m`:
+
+    >>> m = [0.5, 1, 1.5]
+    >>> p = sc.pdtr(1, m)
+    >>> p
+    array([0.90979599, 0.73575888, 0.5578254 ])
+
+    Compute the inverse. We recover the values of `m`, as expected:
+
+    >>> sc.pdtri(1, p)
+    array([0.5, 1. , 1.5])
+
     """)
 
 add_newdoc("pdtrik",
     """
     pdtrik(p, m, out=None)
 
-    Inverse to `pdtr` vs `m`.
+    Inverse to `pdtr` vs `k`.
 
     Parameters
     ----------
-    m : array_like
-        Shape parameter (nonnegative, real)
     p : array_like
         Probability
+    m : array_like
+        Shape parameter (nonnegative, real)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -10079,6 +10113,22 @@ add_newdoc("pdtrik",
     pdtr : Poisson cumulative distribution function
     pdtrc : Poisson survival function
     pdtri : inverse of `pdtr` with respect to `m`
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    Compute the CDF for several values of `k`:
+
+    >>> k = [1, 2, 3]
+    >>> p = sc.pdtr(k, 2)
+    >>> p
+    array([0.40600585, 0.67667642, 0.85712346])
+
+    Compute the inverse. We recover the values of `k`, as expected:
+
+    >>> sc.pdtrik(p, 2)
+    array([1., 2., 3.])
 
     """)
 
