@@ -4614,6 +4614,10 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert isinstance(res, dia_matrix)
         assert_array_equal(res.toarray(), [[3, 6], [0, 12]])
 
+        res2 = m.multiply(3)
+        assert isinstance(res2, dia_matrix)
+        assert_array_equal(res2.toarray(), [[3, 6], [0, 12]])
+
 
 TestDIA.init_class()
 
