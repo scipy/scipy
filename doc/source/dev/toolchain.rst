@@ -384,15 +384,16 @@ Fortran Compilers
 ~~~~~~~~~~~~~~~~~
 
 Generally, any well-maintained compiler is likely suitable and can be
-used to build SciPy.
+used to build SciPy. That said, we do not test with old ``gfortran`` versions,
+which is why we are matching the lower bound with the one for GCC above.
 
-======== ==================
- Tool     Version
-======== ==================
-gfortran   >= 4.8.0
-ifort     A recent version
-flang     A recent version
-======== ==================
+============= =====================================
+ Tool          Version
+============= =====================================
+gfortran       >= 9.x
+ifort/ifx      A recent version (not tested in CI)
+flang (LLVM)   >= 17.x
+============= =====================================
 
 
 Cython & Pythran
