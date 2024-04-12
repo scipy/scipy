@@ -277,7 +277,7 @@ attempting to predict adoption timelines for newer standards.
  2020              C++11
  2021              C++14
  2022              C++17 (core language + universally available stdlib features)
- ?                 C++17 (with full stdlib), C++20, C++23
+ ?                 C++17 (with full stdlib), C++20, C++23, C++26
 ================  =======================================================================
 
 .. dropdown:: Historical context for compiler constraints due to manylinux
@@ -338,11 +338,16 @@ AIX, Alpine Linux and FreeBSD.
 All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
 VS2019 with vc142) have full support for the C++17 *core language*,
 which can therefore be used unconditionally.
-However, as of mid-2022, support for the entirety of the C++17 standard library
+However, as of mid-2024, support for the entirety of the C++17 standard library
 has not yet been completed across all compilers [20]_, particularly LLVM.
 It is therefore necessary to check if a given stdlib-feature is supported by
 all compilers before it can be used in SciPy.
-Compiler support for C++20 and C++23 is still under heavy development [20]_.
+
+C++20 support is stabilizing very slowly, even aside from modules, coroutines
+and several not-yet-universally-supported stdlib features. Given how big of a
+release the C++20 standard was, it is expected that it will take a while yet
+before we can start considering moving our baseline [30]_.
+Compiler support for C++23 and C++26 is still under heavy development [20]_.
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -496,3 +501,4 @@ References
 .. [27] https://www.freebsd.org/releases/
 .. [28] https://www.freebsd.org/status/report-2021-04-2021-06/gcc/
 .. [29] https://github.com/scipy/scipy/issues/10239
+.. [30] https://discourse.llvm.org/t/rfc-clang-17-0-6-would-be-minimum-version-to-build-llvm-in-c-20/75345/8
