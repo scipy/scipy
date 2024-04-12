@@ -10058,14 +10058,14 @@ add_newdoc("pdtrik",
     """
     pdtrik(p, m, out=None)
 
-    Inverse to `pdtr` vs `m`.
+    Inverse to `pdtr` vs `k`.
 
     Parameters
     ----------
-    m : array_like
-        Shape parameter (nonnegative, real)
     p : array_like
         Probability
+    m : array_like
+        Shape parameter (nonnegative, real)
     out : ndarray, optional
         Optional output array for the function results
 
