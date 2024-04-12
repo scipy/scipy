@@ -123,8 +123,8 @@ As explained in more detail below, the current minimal compiler versions are:
 ==========  ===========================  ===============================  ============================
  Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
 ==========  ===========================  ===============================  ============================
- GCC         Linux                        AIX, Alpine Linux, OSX           GCC 8.x
- LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 10.x
+ GCC         Linux                        AIX, Alpine Linux, OSX           GCC 9.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 14.x
  MSVC        Windows                      -                                Visual Studio 2019 (vc142)
 ==========  ===========================  ===============================  ============================
 
@@ -364,7 +364,7 @@ AIX, Alpine Linux and FreeBSD.
 .. _13.x release: https://www.freebsd.org/releases/13.2R/relnotes/
 .. _freebsd-port: https://ports.freebsd.org/cgi/ports.cgi?query=gcc
 
-All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
+All the currently lowest-supported compiler versions (GCC 9, LLVM 14,
 VS2019 with vc142) have full support for the C++17 *core language*,
 which can therefore be used unconditionally.
 However, as of mid-2024, support for the entirety of the C++17 standard library
