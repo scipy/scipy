@@ -4,8 +4,6 @@
 
 #include "config.h"
 #include "error.h"
-#include <utility>
-#include <cstddef>
 
 namespace special {
 namespace detail {
@@ -90,7 +88,7 @@ namespace detail {
 
     /* Performs one step of Kahan summation. */
     template <typename T>
-    void kahan_step(T *sum, T *comp, T x) {
+    SPECFUN_HOST_DEVICE void kahan_step(T *sum, T *comp, T x) {
         T y = x - *comp;
         T t = *sum + y;
         *comp = (t - *sum) - y;
@@ -103,7 +101,7 @@ namespace detail {
      *
      *   S = a[0] + a[1] + a[2] + ...
      *
-     * For n >= 0, denote its n-th partial sum by
+     * For n = 0, 1, 2, ..., denote its n-th partial sum by
      *
      *   S[n] = a[0] + a[1] + ... + a[n]
      *
@@ -112,9 +110,8 @@ namespace detail {
      *
      * Parameters
      * ----------
-     *
      *   init_val
-     *       a[0].  The type of this argument is used for intermediary
+     *       a[0].  The type of this parameter (T) is used for intermediary
      *       computations as well as the return value.
      *
      *   g
@@ -125,11 +122,14 @@ namespace detail {
      *       as soon as `abs(a[n]) <= tol * abs(S[n])` for some n >= 1.
      *
      *   max_terms
-     *       Maximum number of terms after a[0] to evaluate.
+     *       Maximum number of terms after a[0] to evaluate.  This parameter
+     *       is used to handle unexpected non-convergence.  It should be set
+     *       large enough such that the convergence criterion is guaranteed
+     *       to have been satisfied within that many terms if there were no
+     *       rounding error.
      *
      * Return Value
      * ------------
-     *
      * If the convergence criterion is satisfied by some n <= max_terms,
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
@@ -232,21 +232,18 @@ namespace detail {
      *
      * Parameters
      * ----------
-     *
      *   init_val
      *       b0.  The type of this parameter (T) is used for intermediary
      *       computations as well as the return value.  It is expected to
      *       be a (possibly complex) floating point type.
      *
      *   cf
-     *       Input iterator that yields the terms of the continued fraction.
-     *       It must support two operations: `*cf` returns the current term
-     *       (a[n], b[n]) as a pair; `++cf` advances to the next term. The
-     *       iterator initially points to (a[1], b[1]).
+     *       Input iterator that yields the terms of the continued fraction
+     *       as (numerator, denominator) pairs, starting from (a[1], b[1]).
      *
      *   tol
-     *       Tolerance used to terminate the iteration.  Specifically, stop
-     *       iteration as soon as ...
+     *       Relative tolerance for convergence.  Specifically, stop iteration
+     *       and return `f[n]` as soon as `abs(f[n]/f[n-1] - 1) <= abs(tol)`.
      *
      *   max_terms
      *       Maximum number of terms to evaluate.  This parameter is used to
@@ -263,18 +260,14 @@ namespace detail {
      *
      * Return Value
      * ------------
-     *
-     * If the continued fraction converges (i.e. the tolerance condition is
-     * satisfied) by f[n] with `n <= max_terms`, returns (f[n], n).
-     * Otherwise, returns (f[max_terms], 0).
+     * If the convergence criterion is satisfied by some `n <= max_terms`,
+     * returns `(f[n], n)`.  Otherwise, returns `(f[max_terms], 0)`.
      *
      * Remarks
      * -------
-     *
-     * This is a low-level routine intended for expert use.  No error checking
-     * is performed.  The caller must ensure that the parameters and terms are
-     * finite and that intermediary calculations do not trigger floating point
-     * exceptions such as overflow.
+     * No error checking is performed.  The caller must ensure that all terms
+     * are finite and that intermediary computations do not trigger floating
+     * point exceptions such as overflow.
      *
      * The numerical accuracy of this method depends on the characteristics of
      * the continued fraction being evaluated.
@@ -310,11 +303,11 @@ namespace detail {
         return {f, 0};
     }
 
-    /* Forward iterator to generate the difference of successive convergents
+    /* Input iterator that generates the difference of successive convergents
      * of a continued fraction.
      *
-     * Let f denote the continued fraction, and let f[n], n >= 0 denote its
-     * n-th convergent.  Write
+     * Let f denote a continued fraction, and let f[n], n = 0, 1, 2, 3, ...
+     * denote its n-th convergent.  Write
      *
      *              a[1]   a[2]   a[3]
      *   f = b[0] + ------ ------ ------ ...
@@ -324,20 +317,17 @@ namespace detail {
      *   f[n] = b[0] + ------ ------ ... ----
      *                 b[1] + b[2] +     b[n]
      *
-     * with f[0] = b[0].  This iterator generates the sequence of values
+     * with f[0] = b[0].  This generator produces a series with terms
      * f[1]-f[0], f[2]-f[1], f[3]-f[2], ...
      *
      * Type Arguments
      * --------------
-     *
      *   T
      *       Type in which computations are performed and results are turned.
      *
-     *   FwdIt
-     *       Forward iterator that yields the terms of the continued fraction
+     *   InputIt
+     *       Input iterator that yields the terms of the continued fraction
      *       as (numerator, denominator) pairs, starting from (a[1], b[1]).
-     *       It must support two operations: `*cf` to return the current term
-     *       (a[n], b[n]) as a pair, and `++cf` to advance to the next term.
      *
      *       IMPORTANT: For performance reason, the generator always eagerly
      *       dereference the current term of the continued fraction.  That is,
@@ -347,8 +337,7 @@ namespace detail {
      *
      * Remarks
      * -------
-     *
-     * The values are computed using the recurrence relation described in [1].
+     * The series is computed using the recurrence relation described in [1].
      *
      * No error checking is performed.  The caller must ensure that all terms
      * are finite and that intermediary computations do not trigger floating
@@ -359,13 +348,12 @@ namespace detail {
      *
      * Reference
      * ---------
-     *
      * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
      *     Recurrence Relations.” SIAM Review, 9(1):24-82.
      */
-    template <typename T, typename FwdIt>
-    class ContinuedFractionDifferenceGenerator {
-        using Self = ContinuedFractionDifferenceGenerator<T, FwdIt>;
+    template <typename T, typename InputIt>
+    class ContinuedFractionSeriesGenerator {
+        using Self = ContinuedFractionSeriesGenerator<T, InputIt>;
 
     public:
         using iterator_category = std::forward_iterator_tag;
@@ -374,7 +362,11 @@ namespace detail {
         using pointer = const T *;
         using reference = const T &;
 
-        ContinuedFractionDifferenceGenerator(FwdIt cf) : _cf(cf) { _init(); }
+        explicit ContinuedFractionSeriesGenerator(InputIt &&cf)
+          : _cf(std::move(cf)) { _init(); }
+
+        explicit ContinuedFractionSeriesGenerator(const InputIt &cf)
+          : _cf(cf) { _init(); }
 
         reference operator*() const { return _v; }
 
@@ -383,11 +375,7 @@ namespace detail {
             return *this;
         }
 
-        Self operator++(int) {
-            Self self = *this;
-            _advance();
-            return self;
-        }
+        void operator++(int) { _advance(); }
 
     private:
         void _init() {
@@ -408,78 +396,21 @@ namespace detail {
             _b = b;
         }
 
-        FwdIt _cf;  // points to current fraction
-        T _v;       // v[n] == f[n] - f[n-1], n >= 1
-        T _u;       // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
-        T _b;       // last denominator, i.e. b[n-1]
+        InputIt _cf;  // points to current fraction
+        T _v;         // v[n] == f[n] - f[n-1], n >= 1
+        T _u;         // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
+        T _b;         // last denominator, i.e. b[n-1]
     };
 
-    /* Evaluates a continued fraction using the "series" method.
+    /* Converts a continued fraction into a series whose terms are the
+     * difference of its successive convergents.
      *
-     * Denote the continued fraction by
-     *
-     *              a[1]   a[2]   a[3]
-     *   f = b[0] + ------ ------ ------ ...
-     *              b[1] + b[2] + b[3] +
-     *
-     * Denote the n-th convergent by f[n], starting from f[0] := b[0].  The
-     * series method (see [1])
-     *
-     * Reference
-     * ---------
-     *
-     * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
-     *     Recurrence Relations.” SIAM Review, 9(1):24-82.
-     *
-     * Parameters
-     * ----------
-     *
-     *   init_val
-     *       b0.  The type of this parameter (T) is used for intermediary
-     *       computations as well as the return value.  It is expected to
-     *       be a (possibly complex) floating point type.
-     *
-     *   cf
-     *       Input iterator that yields the terms of the continued fraction.
-     *       It must support two operations: `*cf` returns the current term
-     *       (a[n], b[n]) as a pair; `++cf` advances to the next term. The
-     *       iterator initially points to (a[1], b[1]).
-     *
-     *   tol
-     *       Tolerance used to terminate the iteration.  Specifically, stop
-     *       iteration as soon as `abs(f[n] - f[n-1]) <= abs(tol * f[n])`,
-     *       where f[n], n >= 1 is the n-th convergent, and f[0] = b0.  The
-     *       value of `tol` should be chosen to bound the truncation error.
-     *
-     *   max_terms
-     *       Maximum number of terms to evaluate.  This parameter is used to
-     *       handle unexpected non-convergence.  It should normally be set
-     *       large enough such that the continued fraction is mathematically
-     *       guaranteed to have converged within that many terms.
-     *
-     * Return Value
-     * ------------
-     *
-     * If the continued fraction converges (i.e. the tolerance condition is
-     * satisfied) by f[n] with `n <= max_terms`, returns (f[n], n).
-     * Otherwise, returns (f[max_terms], 0).
-     *
-     * Remarks
-     * -------
-     *
-     * This is a low-level routine intended for expert use.  No error checking
-     * is performed.  The caller must ensure that the parameters and terms are
-     * finite and that intermediary calculations do not trigger floating point
-     * exceptions such as overflow.
-     *
-     * The numerical accuracy of this method depends on the characteristics of
-     * the continued fraction being evaluated.
+     * See ContinuedFractionSeriesGenerator for details.
      */
-    template <typename T, typename FwdIt>
-    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_series(
-        T init_val, FwdIt cf, real_type_t<T> tol, std::size_t max_terms) {
-        ContinuedFractionDifferenceGenerator<T, FwdIt> vs(cf);
-        return series_eval_kahan(init_val, vs, tol, max_terms);
+    template <typename T, typename InputIt>
+    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<T, InputIt>
+    continued_fraction_series(InputIt cf) {
+        return ContinuedFractionSeriesGenerator<T, InputIt>(cf);
     }
 
 } // namespace detail

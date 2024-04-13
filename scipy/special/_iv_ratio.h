@@ -3,36 +3,37 @@
 #pragma once
 
 #include "special/tools.h"
+#include "special/error.h"
 #include <algorithm>
 #include <iterator>
 #include <cstddef>
 #include <cmath>
 #include <utility>
 
-class IvRatioCFIterator {
-  /* Generates the Perron continued fraction for iv(v, x) / iv(v-1, x), for
-   * v >= 1 and x >= 0.
-   *
-   * The formulas are given in [1].  We additionally perform an equivalent
-   * transform of the c.f. to avoid overflow.
-   *
-   *    iv(v, x)      xc    -(2vc+c)(xc) -(2vc+3c)(xc) -(2vc+5c)(xc)
-   *   --------- = -------- ------------ ------------- ------------- ...
-   *   iv(v-1,x)   2vc+xc + 2(vc+xc)+c + 2(vc+xc)+2c + 2(vc+xc)+3c +
-   *
-   * [1] Gautschi, W. and Slavik, J. (1978). "On the computation of modified
-   * Bessel function ratios." Mathematics of Computation, 32(143):865-875.
-   */
+/* Generates the Perron continued fraction for `iv(v, x) / iv(v-1, x)` for
+ * v >= 1 and x >= 0.
+ *
+ * The formulas are given in [1].  We additionally perform an equivalent
+ * transform of the c.f. to avoid overflow.
+ *
+ *    iv(v, x)      xc    -(2vc+c)(xc) -(2vc+3c)(xc) -(2vc+5c)(xc)
+ *   --------- = -------- ------------ ------------- ------------- ...
+ *   iv(v-1,x)   2vc+xc + 2(vc+xc)+c + 2(vc+xc)+2c + 2(vc+xc)+3c +
+ *
+ * [1] Gautschi, W. and Slavik, J. (1978). "On the computation of modified
+ * Bessel function ratios." Mathematics of Computation, 32(143):865-875.
+ */
+class IvRatioCFGenerator {
 
 public:
-//    using iterator_category = std::input_iterator_tag;
-//    using value_type = std::pair<double, double>;
-//    using difference_type = std::ptrdiff_t;
-//    using pointer = const value_type *;
-//    using reference = const value_type &;
+    using iterator_category = std::input_iterator_tag;
+    using value_type = std::pair<double, double>;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const value_type *;
+    using reference = const value_type &;
 
     // It is assumed that v >= 1, x >= 0, and both are finite.
-    IvRatioCFIterator(double v, double x) noexcept {
+    IvRatioCFGenerator(double v, double x) noexcept {
         int e;
         std::frexp(std::max(v, x), &e);
         double c = std::ldexp(1, 1-e); // rescaling multiplier
@@ -49,11 +50,13 @@ public:
 
     const std::pair<double, double> & operator*() const { return _frac; }
 
-    IvRatioCFIterator & operator++() {
+    IvRatioCFGenerator & operator++() {
         ++_k;
         _frac = {std::fma(_k, _as, _a0), std::fma(_k, _bs, _b0)};
         return *this;
     }
+
+    void operator++(int) { ++(*this); }
 
 private:
     std::pair<double, double> _frac;  // current fraction
@@ -63,17 +66,6 @@ private:
 };
 
 inline double iv_ratio(double v, double x) {
-
-#if 0
-    std::pair<double, double> cf[] = {
-        {4., 1.}, {1., 3.}, {4., 5.}, {9., 7.}, {16., 9.},
-        {25., 11.}, {36, 13}, {49, 15}, {64, 17}, {81, 19},
-        {100, 21}, {0, 23},
-    };
-//    return special::detail::continued_fraction_eval_series(
-    return special::detail::continued_fraction_eval_lentz(
-        0., &cf[0], 0., 5000, 1e-30).first;
-#endif
 
 #if 1
     if (std::isnan(v) || std::isnan(x)) {
@@ -98,20 +90,20 @@ inline double iv_ratio(double v, double x) {
     }
 
     // Now v >= 0 and x >= 0 and both are finite.  Evaluate the c.f. using
-    // series method.  The termination condition is
-    IvRatioCFIterator cf(v+1, x);
-    double tol = std::numeric_limits<double>::epsilon() * (v+0.75);
-    tol = tol / std::max(tol, x); // prevent overflow
+    // series method.
+    IvRatioCFGenerator cf(v+1, x);
+    double tol = std::numeric_limits<double>::epsilon() * 0.5;
 #if 1
-    auto [result, terms] = special::detail::continued_fraction_eval_series(
-        0.0, cf, tol, 1000);
+    auto cf_series = special::detail::continued_fraction_series<double>(cf);
+    auto [result, terms] = special::detail::series_eval_kahan(
+        0.0, cf_series, tol, 300);
 #else
     auto [result, terms] = special::detail::continued_fraction_eval_lentz(
-        0.0, cf, tol, 1000, 1e-30);
+        0.0, cf, tol, 300, 1e-30);
 #endif
     if (terms == 0) { // failed to converge; should not happen
-        // TODO: raise FPE
-        return std::numeric_limits<double>::quiet_NaN();
+        special::set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
+        return std::numeric_limits<double>::signaling_NaN();
     }
     return result;
 #endif
