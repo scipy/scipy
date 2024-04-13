@@ -2,6 +2,7 @@
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
+#include "special/exprel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
@@ -62,6 +63,8 @@ npy_cdouble cexp1_wrap(npy_cdouble z) { return to_ccomplex(special::exp1(to_comp
 double expi_wrap(double x) { return special::expi(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
+
+double special_exprel(double x) { return special::exprel(x); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(special::cerf(to_complex(z))); }
 

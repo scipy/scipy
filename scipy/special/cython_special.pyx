@@ -1194,6 +1194,8 @@ cdef extern from r"special_wrappers.h":
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
 
+    npy_double special_exprel(npy_double) nogil
+
     npy_double special_gamma(npy_double) nogil
     npy_cdouble special_cgamma(npy_cdouble) nogil
 
@@ -1445,9 +1447,6 @@ ctypedef double _proto_expn_unsafe_t(double, double) noexcept nogil
 cdef _proto_expn_unsafe_t *_proto_expn_unsafe_t_var = &_func_expn_unsafe
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_expn "expn"(npy_int, npy_double)nogil
-from ._exprel cimport exprel as _func_exprel
-ctypedef double _proto_exprel_t(double) noexcept nogil
-cdef _proto_exprel_t *_proto_exprel_t_var = &_func_exprel
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_fdtr "fdtr"(npy_double, npy_double, npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
@@ -2397,7 +2396,7 @@ cpdef double expn(dl_number_t x0, double x1) noexcept nogil:
 
 cpdef double exprel(double x0) noexcept nogil:
     """See the documentation for scipy.special.exprel"""
-    return _func_exprel(x0)
+    return special_exprel(x0)
 
 cpdef double fdtr(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.fdtr"""

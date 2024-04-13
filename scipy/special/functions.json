@@ -531,11 +531,6 @@
             "expn": "id->d"
         }
     },
-    "exprel": {
-        "_exprel.pxd": {
-            "exprel": "d->d"
-        }
-    },
     "fdtr": {
         "cephes.h": {
             "fdtr": "ddd->d"

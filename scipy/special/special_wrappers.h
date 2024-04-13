@@ -122,6 +122,8 @@ npy_cdouble special_csinpi(npy_cdouble z);
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
 
+double special_exprel(double x);
+
 double special_loggamma(double x);
 npy_cdouble special_cloggamma(npy_cdouble z);
 

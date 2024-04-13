@@ -77,7 +77,7 @@ import textwrap
 
 special_ufuncs = [
     '_cospi', '_lambertw', '_sinpi', 'airy', 'airye', 'bei', 'beip',
-    'ber', 'berp', 'binom', 'exp1', 'expi', 'gamma', 'gammaln',
+    'ber', 'berp', 'binom', 'exp1', 'expi', 'exprel', 'gamma', 'gammaln',
     'hankel1', 'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1', 'it2i0k0',
     'it2j0y0', 'it2struve0', 'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0',
     'itstruve0', 'iv', 'ive', 'jv', 'jve', 'kei', 'keip', 'kelvin', 'ker',

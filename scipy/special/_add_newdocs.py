@@ -4501,57 +4501,6 @@ add_newdoc("expn",
 
     """)
 
-add_newdoc("exprel",
-    r"""
-    exprel(x, out=None)
-
-    Relative error exponential, ``(exp(x) - 1)/x``.
-
-    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
-    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
-    ``exprel(x)`` is implemented to avoid the loss of precision that occurs when
-    `x` is near zero.
-
-    Parameters
-    ----------
-    x : ndarray
-        Input array.  `x` must contain real numbers.
-    out : ndarray, optional
-        Optional output array for the function values
-
-    Returns
-    -------
-    scalar or ndarray
-        ``(exp(x) - 1)/x``, computed element-wise.
-
-    See Also
-    --------
-    expm1
-
-    Notes
-    -----
-    .. versionadded:: 0.17.0
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> from scipy.special import exprel
-
-    >>> exprel(0.01)
-    1.0050167084168056
-    >>> exprel([-0.25, -0.1, 0, 0.1, 0.25])
-    array([ 0.88479687,  0.95162582,  1.        ,  1.05170918,  1.13610167])
-
-    Compare ``exprel(5e-9)`` to the naive calculation.  The exact value
-    is ``1.00000000250000000416...``.
-
-    >>> exprel(5e-9)
-    1.0000000025
-
-    >>> (np.exp(5e-9) - 1)/5e-9
-    0.99999999392252903
-    """)
-
 add_newdoc("fdtr",
     r"""
     fdtr(dfn, dfd, x, out=None)

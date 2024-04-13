@@ -6,6 +6,7 @@
 #include "special/bessel.h"
 #include "special/binom.h"
 #include "special/digamma.h"
+#include "special/exprel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
@@ -111,6 +112,7 @@ extern const char *berp_doc;
 extern const char *binom_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
+extern const char *exprel_doc;
 extern const char *gamma_doc;
 extern const char *gammaln_doc;
 extern const char *it2i0k0_doc;
@@ -278,6 +280,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                        static_cast<func_F_F_t>(special::expi), static_cast<func_D_D_t>(special::expi)},
                                       "expi", expi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "expi", expi);
+
+    PyObject *exprel = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(special::exprel), static_cast<func_f_f_t>(special::exprel)}, "exprel", exprel_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
 
     PyObject *gamma =
         SpecFun_NewUFunc({static_cast<func_d_d_t>(special::gamma), static_cast<func_D_D_t>(special::gamma),
