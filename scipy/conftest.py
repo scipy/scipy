@@ -15,7 +15,7 @@ from scipy._lib._testutils import FPUModeChangeWarning
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 try:
-    from scpdt.conftest import dt_config
+    from scipy_doctest.conftest import dt_config
     HAVE_SCPDT = True
 except ModuleNotFoundError:
     HAVE_SCPDT = False
