@@ -41,16 +41,21 @@ def test_first_harmonics():
 def test_all_harmonics():
     n_max = 50
 
-    theta = np.linspace(0, np.pi)
-    phi = np.linspace(0, 2 * np.pi)
+    theta = np.linspace(0, 2 * np.pi)
+    phi = np.linspace(0, np.pi)
 
-    y_actual = _sph_harm_all(n_max, n_max, theta, phi)
+    y_actual = _sph_harm_all(2 * n_max, n_max, theta, phi)
 
     for n in [0, 1, 2, 5, 10, 20, 50]:
         for m in [0, 1, 2, 5, 10, 20, 50]:
             if (m <= n):
                 y_desired = sc.sph_harm(m, n, theta, phi)
-                np.testing.assert_allclose(y_actual[m, n], y_desired, rtol = 1e-05)
+            else:
+                y_desired = 0
+            np.testing.assert_allclose(y_actual[m, n], y_desired, rtol = 1e-05)
 
+            if (m <= n):
                 y_desired = sc.sph_harm(-m, n, theta, phi)
-                np.testing.assert_allclose(y_actual[-m, n], y_desired, rtol = 1e-05)
+            else:
+                y_desired = 0
+            np.testing.assert_allclose(y_actual[-m, n], y_desired, rtol = 1e-05)
