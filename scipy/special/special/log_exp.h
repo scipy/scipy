@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cmath>
+
 #include "config.h"
 
 namespace special {
