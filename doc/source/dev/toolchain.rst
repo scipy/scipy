@@ -13,7 +13,7 @@ This document aims to provide a guide as to how SciPy's use of
 these dynamic dependencies will proceed over time.
 
 SciPy aims to be compatible with a number of releases of its dependent
-libraries and tools. Forcing the user base to other components for upgrade
+libraries and tools. Forcing the user base to upgrade other components
 for every release would greatly diminish the value of SciPy. However,
 maintaining backwards compatibility with very old tooling/libraries
 imposes limitations on which newer functionalities and capabilities
@@ -27,7 +27,7 @@ section for an example.)
 - First and foremost, SciPy is a Python project, hence it requires a Python environment.
 - BLAS and LAPACK numerical libraries need to be installed.
 - Compilers for C, C++, Fortran code are needed, as well as for Cython & Pythran (the latter is opt-out currently)
-- The Python environment needs the ``NumPy`` package to be installed.
+- The Python environment needs the ``numpy`` package to be installed.
 - Testing requires the ``pytest`` and ``hypothesis`` Python packages.
 - Building the documentation requires the ``matplotlib``, Sphinx and MyST-NB_ packages along with PyData theme.
 
@@ -266,7 +266,7 @@ However, it's still possible to use complex types on windows, provided that
 .. _Visual Studio 16.8: https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance#c-standard-library-features-1
 .. _windows-specific types: https://docs.microsoft.com/en-us/cpp/c-runtime-library/complex-math-support
 
-Therefore, using C features beyond C90 was only possible insofar there was support on
+Therefore, using C features beyond C90 was only possible insofar as there was support on
 Windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
 This is because GCC & LLVM support all relevant C11 features with the oldest currently
 used versions, and C17 is just a bugfix for C11, as mentioned above. In short:
