@@ -189,6 +189,8 @@ using uint64_t = cuda::std::uint64_t;
 #include <cmath>
 #include <complex>
 #include <cstdint>
+#include <cstddef>
+#include <iterator>
 #include <limits>
 #include <math.h>
 #include <type_traits>

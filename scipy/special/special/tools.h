@@ -10,6 +10,19 @@
 namespace special {
 namespace detail {
 
+    template <typename T>
+    struct real_type {
+        using type = T;
+    };
+
+    template <typename T>
+    struct real_type<std::complex<T>> {
+        using type = T;
+    };
+
+    template <typename T>
+    using real_type_t = typename real_type<T>::type;
+
     // Return NaN, handling both real and complex types.
     template <typename T>
     SPECFUN_HOST_DEVICE inline std::enable_if_t<std::is_floating_point_v<T>, T> maybe_complex_NaN() {
@@ -75,6 +88,7 @@ namespace detail {
         return result;
     }
 
+#if 0
     namespace maybe_complex_numeric_limits {
         // Handle numeric limits when type may be complex.
         template <typename T>
@@ -151,6 +165,7 @@ namespace detail {
         set_error(func_name, SF_ERROR_NO_RESULT, NULL);
         return maybe_complex_numeric_limits::quiet_NaN<T>();
     }
+#endif
 
     /* Evaluates a continued fraction using the modified Lentz algorithm.
      *
@@ -243,6 +258,110 @@ namespace detail {
         *sum = t;
     }
 
+    /* Forward iterator to generate the difference of successive convergents
+     * of a continued fraction.
+     *
+     * Let f denote the continued fraction, and let f[n], n >= 0 denote its
+     * n-th convergent.  Write
+     *
+     *              a[1]   a[2]   a[3]
+     *   f = b[0] + ------ ------ ------ ...
+     *              b[1] + b[2] + b[3] +
+     *
+     *                 a[1]   a[2]       a[n]
+     *   f[n] = b[0] + ------ ------ ... ----
+     *                 b[1] + b[2] +     b[n]
+     *
+     * with f[0] = b[0].  This iterator generates the sequence of values
+     * f[1]-f[0], f[2]-f[1], f[3]-f[2], ...
+     *
+     * Type Arguments
+     * --------------
+     *
+     *   T
+     *       Type in which computations are performed and results are turned.
+     *
+     *   FwdIt
+     *       Forward iterator that yields the terms of the continued fraction
+     *       as (numerator, denominator) pairs, starting from (a[1], b[1]).
+     *       It must support two operations: `*cf` to return the current term
+     *       (a[n], b[n]) as a pair, and `++cf` to advance to the next term.
+     *
+     *       IMPORTANT: For performance reason, the generator always eagerly
+     *       dereference the current term of the continued fraction.  That is,
+     *       (a[1], b[1]) is dereferenced upon generator construction, and
+     *       (a[n], b[n]) is dereferenced after (n-1) calls of `++`.  FwdIt
+     *       must ensure it is always dereference-able.
+     *
+     * Remarks
+     * -------
+     *
+     * The values are computed using the recurrence relation described in [1].
+     *
+     * No error checking is performed.  The caller must ensure that all terms
+     * are finite and that intermediary computations do not trigger floating
+     * point exceptions such as overflow.
+     *
+     * The numerical stability of this method depends on the characteristics
+     * of the continued fraction being evaluated.
+     *
+     * Reference
+     * ---------
+     *
+     * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
+     *     Recurrence Relations.” SIAM Review, 9(1):24-82.
+     */
+    template <typename T, typename FwdIt>
+    class ContinuedFractionDifferenceGenerator {
+        using Self = ContinuedFractionDifferenceGenerator<T, FwdIt>;
+
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type = T;
+        using difference_type = std::ptrdiff_t;
+        using pointer = const T *;
+        using reference = const T &;
+
+        ContinuedFractionDifferenceGenerator(FwdIt cf) : _cf(cf) { _init(); }
+
+        reference operator*() const { return _v; }
+
+        Self& operator++() {
+            _advance();
+            return *this;
+        }
+
+        Self operator++(int) {
+            Self self = *this;
+            _advance();
+            return self;
+        }
+
+    private:
+        void _init() {
+            auto [num, denom] = *_cf;
+            T a = num;
+            T b = denom;
+            _u = 1;
+            _v = a / b;
+            _b = b;
+        }
+
+        void _advance() {
+            auto [num, denom] = *(++_cf);
+            T a = num;
+            T b = denom;
+            _u = 1 / (1 + (a * _u) / (b * _b));
+            _v *= (_u - 1);
+            _b = b;
+        }
+
+        FwdIt _cf;  // points to current fraction
+        T _v;       // v[n] == f[n] - f[n-1], n >= 1
+        T _u;       // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
+        T _b;       // last denominator, i.e. b[n-1]
+    };
+
     /* Evaluates a continued fraction using the "series" method.
      *
      * Denote the continued fraction by
@@ -304,39 +423,20 @@ namespace detail {
      * The numerical accuracy of this method depends on the characteristics of
      * the continued fraction being evaluated.
      */
-    template <typename T, typename InputIt>
+    template <typename T, typename FwdIt>
     SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_series(
-        T init_val, InputIt cf, T tol, std::size_t max_terms) {
+        T init_val, FwdIt cf, real_type_t<T> tol, std::size_t max_terms) {
 
-        T w = init_val;  // current convergent
-        T c = 0;         // compensation for Kahan summation
-        if (max_terms == 0) {
-            return {w, 0};
-        }
+        T w = init_val;
+        T c = 0; // compensation
+        ContinuedFractionDifferenceGenerator<T, FwdIt> vs(cf);
 
-        // n = 1
-        T a = std::get<0>(*cf);  // a == current numerator
-        T b = std::get<1>(*cf);  // b == current denominator
-        T v = a / b;             // v == f[n] - f[n-1]
-        kahan_step(&w, &c, v);   // w == f[n]
-        if (abs(v) <= abs(tol * w)) {
-            return {w, 1};
-        }
-
-        // n = 2, 3, 4, ...
-        T u = 1;
-        T bb = b;  // last denominator
-        for (std::size_t n = 1; n < max_terms; ++n) {
-            ++cf;
-            a = std::get<0>(*cf);
-            b = std::get<1>(*cf);
-            u = 1 / (1 + a / (b * bb) * u);
-            v *= (u - 1);
+        for (std::size_t n = 0; n < max_terms; ++n, ++vs) {
+            T v = *vs;
             kahan_step(&w, &c, v);
-            if (abs(v) <= abs(tol * w)) {
+            if (abs(v) <= tol * abs(w)) {
                 return {w, n + 1u};
             }
-            bb = b;
         }
 
         // Failed to converge within max_terms terms.
