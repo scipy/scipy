@@ -289,8 +289,10 @@ void npy_get(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *ste
 }
 
 template <typename T, typename Extents, typename AccessorPolicy>
-void npy_get(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
-             const npy_intp *steps) {
+void npy_get(
+    char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
+    const npy_intp *steps
+) {
     static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
     std::array<ptrdiff_t, Extents::rank()> strides;
@@ -339,7 +341,8 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
     static constexpr size_t steps_offsets[sizeof...(Args)] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...};
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...
+    };
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
@@ -363,7 +366,8 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
     static constexpr size_t steps_offsets[sizeof...(Args)] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...};
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...
+    };
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
@@ -472,16 +476,19 @@ PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, int nout, c
     }
 
     const SpecFun_UFunc &ufunc = ufuncs.emplace_back(func, name);
-    return PyUFunc_FromFuncAndData(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
-                                   ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0);
+    return PyUFunc_FromFuncAndData(
+        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
+        name, doc, 0
+    );
 }
 
 PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc) {
     return SpecFun_NewUFunc(func, func.begin()->has_return(), name, doc);
 }
 
-PyObject *SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, int nout, const char *name, const char *doc,
-                            const char *signature) {
+PyObject *SpecFun_NewGUFunc(
+    std::initializer_list<SpecFun_Func> func, int nout, const char *name, const char *doc, const char *signature
+) {
     static std::vector<SpecFun_UFunc> ufuncs;
 
     for (auto it = func.begin(); it != func.end(); ++it) {
@@ -496,12 +503,13 @@ PyObject *SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, int nout, 
     }
 
     const SpecFun_UFunc &ufunc = ufuncs.emplace_back(func, name);
-    return PyUFunc_FromFuncAndDataAndSignature(ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(),
-                                               ufunc.nin_and_nout() - nout, nout, PyUFunc_None, name, doc, 0,
-                                               signature);
+    return PyUFunc_FromFuncAndDataAndSignature(
+        ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
+        name, doc, 0, signature
+    );
 }
 
-PyObject *SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc,
-                            const char *signature) {
+PyObject *
+SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc, const char *signature) {
     return SpecFun_NewGUFunc(func, func.begin()->has_return(), name, doc, signature);
 }
