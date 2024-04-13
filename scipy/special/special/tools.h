@@ -88,6 +88,67 @@ namespace detail {
         return result;
     }
 
+    /* Performs one step of Kahan summation. */
+    template <typename T>
+    void kahan_step(T *sum, T *comp, T x) {
+        T y = x - *comp;
+        T t = *sum + y;
+        *comp = (t - *sum) - y;
+        *sum = t;
+    }
+
+    /* Evaluates an infinite series using Kahan summation.
+     *
+     * Denote the series by
+     *
+     *   S = a[0] + a[1] + a[2] + ...
+     *
+     * For n >= 0, denote its n-th partial sum by
+     *
+     *   S[n] = a[0] + a[1] + ... + a[n]
+     *
+     * This function computes S[0], S[1], ... until a[n] is sufficiently
+     * small or if the maximum number of terms have been evaluated.
+     *
+     * Parameters
+     * ----------
+     *
+     *   init_val
+     *       a[0].  The type of this argument is used for intermediary
+     *       computations as well as the return value.
+     *
+     *   g
+     *       Input iterator that yields the terms a[1], a[2], a[3], ...
+     *
+     *   tol
+     *       Relative tolerance for convergence.  Specifically, stop iteration
+     *       as soon as `abs(a[n]) <= tol * abs(S[n])` for some n >= 1.
+     *
+     *   max_terms
+     *       Maximum number of terms after a[0] to evaluate.
+     *
+     * Return Value
+     * ------------
+     *
+     * If the convergence criterion is satisfied by some n <= max_terms,
+     * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
+     */
+    template <typename T, typename InputIt>
+    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> series_eval_kahan(
+        T init_val, InputIt g, real_type_t<T> tol, std::size_t max_terms) {
+
+        T sum = init_val;
+        T comp = 0;
+        for (std::size_t i = 0; i < max_terms; ++i, ++g) {
+            T term = *g;
+            kahan_step(&sum, &comp, term);
+            if (std::abs(term) <= tol * std::abs(sum)) {
+                return {sum, i + 1};
+            }
+        }
+        return {sum, 0};
+    }
+
 #if 0
     namespace maybe_complex_numeric_limits {
         // Handle numeric limits when type may be complex.
@@ -247,15 +308,6 @@ namespace detail {
 
         // Failed to converge within max_terms terms.
         return {f, 0};
-    }
-
-    /* Performs one step of Kahan summation. */
-    template <typename T>
-    void kahan_step(T *sum, T *comp, T x) {
-        T y = x - *comp;
-        T t = *sum + y;
-        *comp = (t - *sum) - y;
-        *sum = t;
     }
 
     /* Forward iterator to generate the difference of successive convergents
@@ -426,21 +478,8 @@ namespace detail {
     template <typename T, typename FwdIt>
     SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_series(
         T init_val, FwdIt cf, real_type_t<T> tol, std::size_t max_terms) {
-
-        T w = init_val;
-        T c = 0; // compensation
         ContinuedFractionDifferenceGenerator<T, FwdIt> vs(cf);
-
-        for (std::size_t n = 0; n < max_terms; ++n, ++vs) {
-            T v = *vs;
-            kahan_step(&w, &c, v);
-            if (abs(v) <= tol * abs(w)) {
-                return {w, n + 1u};
-            }
-        }
-
-        // Failed to converge within max_terms terms.
-        return {w, 0};
+        return series_eval_kahan(init_val, vs, tol, max_terms);
     }
 
 } // namespace detail
