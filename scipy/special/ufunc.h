@@ -75,6 +75,16 @@ struct npy_type<bool> {
 };
 
 template <>
+struct npy_type<char> {
+    using type = npy_byte;
+};
+
+template <>
+struct npy_type<short> {
+    using type = npy_short;
+};
+
+template <>
 struct npy_type<int> {
     using type = npy_int;
 };
@@ -82,6 +92,36 @@ struct npy_type<int> {
 template <>
 struct npy_type<long> {
     using type = npy_long;
+};
+
+template <>
+struct npy_type<long long> {
+    using type = npy_longlong;
+};
+
+template <>
+struct npy_type<unsigned char> {
+    using type = npy_ubyte;
+};
+
+template <>
+struct npy_type<unsigned short> {
+    using type = npy_ushort;
+};
+
+template <>
+struct npy_type<unsigned int> {
+    using type = npy_uint;
+};
+
+template <>
+struct npy_type<unsigned long> {
+    using type = npy_ulong;
+};
+
+template <>
+struct npy_type<unsigned long long> {
+    using type = npy_ulonglong;
 };
 
 template <>
@@ -109,6 +149,11 @@ struct npy_type<std::complex<double>> {
     using type = npy_cdouble;
 };
 
+template <>
+struct npy_type<std::complex<long double>> {
+    using type = npy_clongdouble;
+};
+
 template <typename T>
 using npy_type_t = typename npy_type<T>::type;
 
@@ -118,9 +163,20 @@ struct npy_typenum {
     static constexpr int value = npy_typenum<npy_type_t<T>>::value;
 };
 
+// We need to specialise for bool as npy_bool is defined as npy_ubyte
 template <>
-struct npy_typenum<npy_bool> {
+struct npy_typenum<bool> {
     static constexpr int value = NPY_BOOL;
+};
+
+template <>
+struct npy_typenum<npy_byte> {
+    static constexpr int value = NPY_BYTE;
+};
+
+template <>
+struct npy_typenum<npy_short> {
+    static constexpr int value = NPY_SHORT;
 };
 
 template <>
@@ -134,6 +190,36 @@ struct npy_typenum<npy_long> {
 };
 
 template <>
+struct npy_typenum<npy_longlong> {
+    static constexpr int value = NPY_LONGLONG;
+};
+
+template <>
+struct npy_typenum<npy_ubyte> {
+    static constexpr int value = NPY_UBYTE;
+};
+
+template <>
+struct npy_typenum<npy_ushort> {
+    static constexpr int value = NPY_USHORT;
+};
+
+template <>
+struct npy_typenum<npy_uint> {
+    static constexpr int value = NPY_UINT;
+};
+
+template <>
+struct npy_typenum<npy_ulong> {
+    static constexpr int value = NPY_ULONG;
+};
+
+template <>
+struct npy_typenum<npy_ulonglong> {
+    static constexpr int value = NPY_ULONGLONG;
+};
+
+template <>
 struct npy_typenum<npy_float> {
     static constexpr int value = NPY_FLOAT;
 };
@@ -143,8 +229,8 @@ struct npy_typenum<npy_double> {
     static constexpr int value = NPY_DOUBLE;
 };
 
-// When NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE, npy_longdouble is defined to be the same as npy_double
-// See https://github.com/numpy/numpy/blob/main/numpy/_core/include/numpy/npy_common.h#L306
+// When NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE, npy_longdouble is defined as npy_double
+// See https://github.com/numpy/numpy/blob/main/numpy/_core/include/numpy/npy_common.h
 #if (NPY_SIZEOF_LONGDOUBLE != NPY_SIZEOF_DOUBLE)
 template <>
 struct npy_typenum<npy_longdouble> {
@@ -154,12 +240,17 @@ struct npy_typenum<npy_longdouble> {
 
 template <>
 struct npy_typenum<npy_cfloat> {
-    static constexpr int value = NPY_COMPLEX64;
+    static constexpr int value = NPY_CFLOAT;
 };
 
 template <>
 struct npy_typenum<npy_cdouble> {
-    static constexpr int value = NPY_COMPLEX128;
+    static constexpr int value = NPY_CDOUBLE;
+};
+
+template <>
+struct npy_typenum<npy_clongdouble> {
+    static constexpr int value = NPY_CLONGDOUBLE;
 };
 
 template <typename T>
