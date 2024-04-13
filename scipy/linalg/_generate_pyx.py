@@ -35,7 +35,14 @@ These wrappers do not check for alignment of arrays.
 Alignment should be checked before these wrappers are used.
 
 If using ``cdotu``, ``cdotc``, ``zdotu``, ``zdotc``, ``sladiv``, or ``dladiv``,
-the environment variable ``CYTHON_CCOMPLEX`` must be 0 during compilation.
+the ``CYTHON_CCOMPLEX`` define must be set to 0 during compilation. For
+example, in a `meson.build` file when using Meson::
+
+    py.extension_module('ext_module'
+        'ext_module.pyx',
+        c_args: ['-DCYTHON_CCOMPLEX=0'],
+        ...
+    )
 
 Raw function pointers (Fortran-style pointer arguments):
 
