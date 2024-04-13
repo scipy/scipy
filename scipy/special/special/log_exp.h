@@ -17,8 +17,9 @@ T exprel(T x) {
         return 1;
     }
 
-    if (x >= std::numeric_limits<T>::max_exponent) {
-        return std::numeric_limits<T>::infinity();
+    if (x >= M_LN10 * std::numeric_limits<T>::max_exponent10) {
+        return std::numeric_limits<T>::infinity(); // std::log(10) * std::numeric_limits<T>::max_exponent10 is the
+                                                   // largest x such that std::exp(x) is representable
     }
 
     return std::expm1(x) / x;
