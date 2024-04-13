@@ -11,19 +11,19 @@ T expit(T x) {
     return 1 / (1 + std::exp(-x));
 };
 
-template <typename T>
-T exprel(T x) {
-    if (std::abs(x) < std::numeric_limits<T>::epsilon()) {
+inline double exprel(double x) {
+    if (std::abs(x) < std::numeric_limits<double>::epsilon()) {
         return 1;
     }
 
-    if (x >= M_LN10 * std::numeric_limits<T>::max_exponent10) {
-        return std::numeric_limits<T>::infinity(); // std::log(10) * std::numeric_limits<T>::max_exponent10 is the
-                                                   // largest x such that std::exp(x) is representable
+    if (x > 717) { // near log(DBL_MAX)
+        return std::numeric_limits<double>::infinity();
     }
 
     return std::expm1(x) / x;
 }
+
+inline float exprel(float x) { return exprel(static_cast<double>(x)); }
 
 template <typename T>
 T logit(T x) {

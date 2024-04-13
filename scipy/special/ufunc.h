@@ -157,7 +157,7 @@ struct npy_type<std::complex<long double>> {
 template <typename T>
 using npy_type_t = typename npy_type<T>::type;
 
-// Maps a C++ type to a NumPy type number.
+// Maps a C++ type to a NumPy type number
 template <typename T>
 struct npy_typenum {
     static constexpr int value = npy_typenum<npy_type_t<T>>::value;
@@ -268,19 +268,29 @@ inline constexpr int npy_typenum_v = npy_typenum<T>::value;
 
 // Sets the value dst to be the value of type T at src
 template <typename T>
-void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
+void from_npy_bytes(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst = *reinterpret_cast<npy_type_t<T> *>(src);
 }
 
 template <typename T>
-void from_pointer(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
+void from_npy_bytes(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst.real(*reinterpret_cast<npy_type_t<T> *>(src));
     dst.imag(*reinterpret_cast<npy_type_t<T> *>(src + sizeof(T)));
 }
 
+// Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
+template <typename T>
+void from_npy_bytes(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
+    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+    dst = reinterpret_cast<T *>(src);
+}
+
 template <typename T, typename Extents, typename AccessorPolicy>
-void from_pointer(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
-                  const npy_intp *dimensions, const npy_intp *steps) {
+void from_npy_bytes(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
+                    const npy_intp *dimensions, const npy_intp *steps) {
+    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
     std::array<ptrdiff_t, Extents::rank()> strides;
     for (npy_uintp i = 0; i < strides.size(); ++i) {
         strides[i] = steps[i] / sizeof(T);
@@ -294,23 +304,18 @@ void from_pointer(char *src, std::mdspan<T, Extents, std::layout_stride, Accesso
     dst = {reinterpret_cast<T *>(src), {exts, strides}};
 }
 
-// Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
 template <typename T>
-void from_pointer(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst = reinterpret_cast<T *>(src);
-}
-
-template <typename T>
-T from_pointer(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+T from_npy_bytes(char *src, const npy_intp *dimensions, const npy_intp *steps) {
     T dst;
-    from_pointer(src, dst, dimensions, steps);
+    from_npy_bytes(src, dst, dimensions, steps);
 
     return dst;
 }
 
-struct SpecFun_UFuncData {
-    void *func;
+template <typename Func>
+struct ufunc_data {
     const char *name;
+    Func func;
 };
 
 template <typename Func, typename Indices = std::make_index_sequence<arity_of_v<Func>>>
@@ -321,12 +326,10 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        Res (*func)(Args...) = reinterpret_cast<Res (*)(Args...)>(static_cast<SpecFun_UFuncData *>(data)->func);
-        const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
-
+        Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             *reinterpret_cast<Res *>(args[sizeof...(Args)]) =
-                func(from_pointer<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
+                func(from_npy_bytes<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -334,7 +337,8 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
             args[sizeof...(Args)] += steps[sizeof...(Args)]; // output
         }
 
-        sf_error_check_fpe(func_name);
+        const char *name = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->name;
+        sf_error_check_fpe(name);
     }
 };
 
@@ -343,45 +347,48 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        void (*func)(Args...) = reinterpret_cast<void (*)(Args...)>(static_cast<SpecFun_UFuncData *>(data)->func);
-        const char *func_name = static_cast<SpecFun_UFuncData *>(data)->name;
-
+        void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(from_pointer<Args>(args[I], dimensions + 1,
-                                    steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
+            func(from_npy_bytes<Args>(args[I], dimensions + 1,
+                                      steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
             }
         }
 
-        sf_error_check_fpe(func_name);
+        const char *name = static_cast<ufunc_data<void (*)(Args...)> *>(data)->name;
+        sf_error_check_fpe(name);
     }
 };
 
 class SpecFun_Func {
     bool m_has_return;
     int m_nin_and_nout;
-    void *m_func;
     PyUFuncGenericFunction m_loop_func;
     std::unique_ptr<char[]> m_types;
+    size_t m_data_size;
+    std::unique_ptr<std::byte[]> m_data;
 
   public:
     template <typename Res, typename... Args>
     SpecFun_Func(Res (*func)(Args... args))
         : m_has_return(!std::is_void_v<Res>), m_nin_and_nout(sizeof...(Args) + m_has_return),
-          m_func(reinterpret_cast<void *>(func)), m_loop_func(ufunc_traits<Res(Args...)>::loop_func),
-          m_types(new char[m_nin_and_nout]) {
+          m_loop_func(ufunc_traits<Res(Args...)>::loop_func), m_types(new char[m_nin_and_nout]),
+          m_data_size(sizeof(ufunc_data<Res (*)(Args...)>)), m_data(new std::byte[m_data_size]) {
         std::copy(ufunc_traits<Res(Args...)>::types, ufunc_traits<Res(Args...)>::types + m_nin_and_nout, m_types.get());
+        reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(m_data.get())->func = func;
     }
 
     int nin_and_nout() const { return m_nin_and_nout; }
 
     bool has_return() const { return m_has_return; }
 
-    void *func() const { return m_func; }
-
     PyUFuncGenericFunction loop_func() const { return m_loop_func; }
+
+    void *data() const { return reinterpret_cast<void *>(m_data.get()); }
+
+    size_t data_size() const { return m_data_size; }
 
     char *types() const { return m_types.get(); }
 };
@@ -390,23 +397,34 @@ class SpecFun_UFunc {
     int m_ntypes;
     int m_nin_and_nout;
     std::unique_ptr<PyUFuncGenericFunction[]> m_func;
-    std::unique_ptr<void *[]> m_data;
+    std::unique_ptr<std::byte *[]> m_data;
     std::unique_ptr<char[]> m_types;
-    std::unique_ptr<SpecFun_UFuncData[]> m_data_alloc;
 
   public:
     SpecFun_UFunc(std::initializer_list<SpecFun_Func> func, const char *name)
         : m_ntypes(func.size()), m_nin_and_nout(func.begin()->nin_and_nout()),
-          m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new void *[m_ntypes]),
-          m_types(new char[m_ntypes * m_nin_and_nout]), m_data_alloc(new SpecFun_UFuncData[m_ntypes]) {
+          m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new std::byte *[m_ntypes]),
+          m_types(new char[m_ntypes * m_nin_and_nout]) {
         for (auto it = func.begin(); it != func.end(); ++it) {
             size_t i = it - func.begin();
 
             m_func[i] = it->loop_func();
-            m_data[i] = m_data_alloc.get() + i;
-            std::copy(it->types(), it->types() + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
 
-            m_data_alloc[i] = {it->func(), name};
+            m_data[i] = new std::byte[it->data_size()];
+            std::memcpy(m_data[i], it->data(), it->data_size());
+            std::memcpy(m_data[i], &name, sizeof(const char *)); // overwrite the first member with the name pointer
+
+            std::copy(it->types(), it->types() + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
+        }
+    }
+
+    SpecFun_UFunc(SpecFun_UFunc &&) = default;
+
+    ~SpecFun_UFunc() {
+        if (m_data) {
+            for (int i = 0; i < m_ntypes; ++i) {
+                delete[] m_data[i];
+            }
         }
     }
 
@@ -416,7 +434,7 @@ class SpecFun_UFunc {
 
     PyUFuncGenericFunction *func() const { return m_func.get(); }
 
-    void **data() const { return m_data.get(); }
+    void **data() const { return reinterpret_cast<void **>(m_data.get()); }
 
     char *types() const { return m_types.get(); }
 };
