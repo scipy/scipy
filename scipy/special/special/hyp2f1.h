@@ -413,9 +413,9 @@ namespace detail {
          * for the 1 - z transform also has an initial finite sum, but it is a standard hypergeometric
          * series. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double a, double b, double c, double m,
+        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double b, double c, double m,
                                                                      std::complex<double> z)
-            : a_(a), b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
+            : b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
 
         SPECFUN_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> output = term_;
@@ -425,7 +425,7 @@ namespace detail {
         }
 
       private:
-        double a_, b_, c_, m_;
+        double b_, c_, m_;
         std::complex<double> z_, term_;
         std::uint64_t k_;
     };
@@ -498,7 +498,7 @@ namespace detail {
                                                                              std::complex<double> z) {
         /* 1 / z transform in limiting case where a - b approaches a non-negative integer m. Negative integer case
          * can be handled by swapping a and b. */
-        auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(a, b, c, m, z);
+        auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(b, c, m, z);
         std::complex<double> result = cephes::Gamma(c) / cephes::Gamma(a) * std::pow(-z, -b);
         result *=
             series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
