@@ -43,7 +43,6 @@ using namespace std;
 
 using func_f_f_t = float (*)(float);
 using func_d_d_t = double (*)(double);
-
 using func_F_F_t = complex<float> (*)(complex<float>);
 using func_D_D_t = complex<double> (*)(complex<double>);
 

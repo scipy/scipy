@@ -65,32 +65,81 @@ struct argument_rank<Res(std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>, 
 template <typename T, size_t N>
 constexpr size_t argument_rank_v = argument_rank<T, N>::value;
 
-// Maps a C++ type to a NumPy type identifier.
+// Maps a C++ type to a NumPy type
 template <typename T>
 struct npy_type;
 
 template <>
 struct npy_type<bool> {
-    static constexpr int value = NPY_BOOL;
+    using type = npy_bool;
 };
 
 template <>
 struct npy_type<int> {
-    static constexpr int value = NPY_INT;
+    using type = npy_int;
 };
 
 template <>
 struct npy_type<long> {
-    static constexpr int value = NPY_LONG;
+    using type = npy_long;
 };
 
 template <>
 struct npy_type<float> {
-    static constexpr int value = NPY_FLOAT;
+    using type = npy_float;
 };
 
 template <>
 struct npy_type<double> {
+    using type = npy_double;
+};
+
+template <>
+struct npy_type<long double> {
+    using type = npy_longdouble;
+};
+
+template <>
+struct npy_type<std::complex<float>> {
+    using type = npy_cfloat;
+};
+
+template <>
+struct npy_type<std::complex<double>> {
+    using type = npy_cdouble;
+};
+
+template <typename T>
+using npy_type_t = typename npy_type<T>::type;
+
+// Maps a C++ type to a NumPy type number.
+template <typename T>
+struct npy_typenum {
+    static constexpr int value = npy_typenum<npy_type_t<T>>::value;
+};
+
+template <>
+struct npy_typenum<npy_bool> {
+    static constexpr int value = NPY_BOOL;
+};
+
+template <>
+struct npy_typenum<npy_int> {
+    static constexpr int value = NPY_INT;
+};
+
+template <>
+struct npy_typenum<npy_long> {
+    static constexpr int value = NPY_LONG;
+};
+
+template <>
+struct npy_typenum<npy_float> {
+    static constexpr int value = NPY_FLOAT;
+};
+
+template <>
+struct npy_typenum<npy_double> {
     static constexpr int value = NPY_DOUBLE;
 };
 
@@ -98,40 +147,44 @@ struct npy_type<double> {
 // See https://github.com/numpy/numpy/blob/main/numpy/_core/include/numpy/npy_common.h#L306
 #if (NPY_SIZEOF_LONGDOUBLE != NPY_SIZEOF_DOUBLE)
 template <>
-struct npy_type<long double> {
+struct npy_typenum<npy_longdouble> {
     static constexpr int value = NPY_LONGDOUBLE;
 };
 #endif
 
-template <typename T>
-struct npy_type<T *> {
-    static constexpr int value = npy_type<T>::value;
-};
-
 template <>
-struct npy_type<std::complex<float>> {
+struct npy_typenum<npy_cfloat> {
     static constexpr int value = NPY_COMPLEX64;
 };
 
 template <>
-struct npy_type<std::complex<double>> {
+struct npy_typenum<npy_cdouble> {
     static constexpr int value = NPY_COMPLEX128;
 };
 
-template <>
-struct npy_type<npy_cdouble> {
-    static constexpr int value = NPY_COMPLEX128;
+template <typename T>
+struct npy_typenum<T *> {
+    static constexpr int value = npy_typenum<T>::value;
 };
 
 template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
-struct npy_type<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
-    static constexpr int value = npy_type<T>::value;
+struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
+    static constexpr int value = npy_typenum<T>::value;
 };
+
+template <typename T>
+inline constexpr int npy_typenum_v = npy_typenum<T>::value;
 
 // Sets the value dst to be the value of type T at src
 template <typename T>
 void from_pointer(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst = *reinterpret_cast<T *>(src);
+    dst = *reinterpret_cast<npy_type_t<T> *>(src);
+}
+
+template <typename T>
+void from_pointer(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
+    dst.real(*reinterpret_cast<npy_type_t<T> *>(src));
+    dst.imag(*reinterpret_cast<npy_type_t<T> *>(src + sizeof(T)));
 }
 
 template <typename T, typename Extents, typename AccessorPolicy>
@@ -174,7 +227,7 @@ struct ufunc_traits;
 
 template <typename Res, typename... Args, size_t... I>
 struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
-    static constexpr char types[sizeof...(Args) + 1] = {npy_type<Args>::value..., npy_type<Res>::value};
+    static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = reinterpret_cast<Res (*)(Args...)>(static_cast<SpecFun_UFuncData *>(data)->func);
@@ -196,7 +249,7 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
 
 template <typename... Args, size_t... I>
 struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
-    static constexpr char types[sizeof...(Args)] = {npy_type<Args>::value...};
+    static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         void (*func)(Args...) = reinterpret_cast<void (*)(Args...)>(static_cast<SpecFun_UFuncData *>(data)->func);
