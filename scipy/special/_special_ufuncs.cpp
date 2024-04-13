@@ -4,9 +4,13 @@
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
+#include "special/binom.h"
+#include "special/digamma.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
+#include "special/hyp2f1.h"
 #include "special/kelvin.h"
+#include "special/lambertw.h"
 #include "special/legendre.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
@@ -15,6 +19,7 @@
 #include "special/sphd_wave.h"
 #include "special/struve.h"
 #include "special/trig.h"
+#include "special/wright_bessel.h"
 #include "special/zeta.h"
 #include "ufunc.h"
 
@@ -83,8 +88,17 @@ using func_ddddd_dpdp_t = void (*)(double, double, double, double, double, doubl
 using func_llff_F_t = complex<float> (*)(long, long, float, float);
 using func_lldd_D_t = complex<double> (*)(long, long, double, double);
 
+using func_ffff_f_t = float (*)(float, float, float, float);
+using func_dddd_d_t = double (*)(double, double, double, double);
+
+using func_fffF_F_t = complex<float> (*)(float, float, float, complex<float>);
+using func_dddD_D_t = complex<double> (*)(double, double, double, complex<double>);
+
 using func_ffff_F_t = complex<float> (*)(float, float, float, float);
 using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+
+using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
+using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
@@ -94,8 +108,10 @@ extern const char *bei_doc;
 extern const char *beip_doc;
 extern const char *ber_doc;
 extern const char *berp_doc;
+extern const char *binom_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
+extern const char *gamma_doc;
 extern const char *gammaln_doc;
 extern const char *it2i0k0_doc;
 extern const char *it2j0y0_doc;
@@ -109,6 +125,7 @@ extern const char *hankel1_doc;
 extern const char *hankel1e_doc;
 extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
+extern const char *hyp2f1_doc;
 extern const char *iv_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
@@ -120,6 +137,8 @@ extern const char *ker_doc;
 extern const char *kerp_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
+extern const char *lambertw_doc;
+extern const char *loggamma_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -148,7 +167,10 @@ extern const char *pro_rad1_doc;
 extern const char *pro_rad1_cv_doc;
 extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
+extern const char *psi_doc;
+extern const char *rgamma_doc;
 extern const char *sph_harm_doc;
+extern const char *wright_bessel_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
 
@@ -199,6 +221,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                          "_cospi", _cospi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "_cospi", _cospi);
 
+    PyObject *_lambertw =
+        SpecFun_NewUFunc({static_cast<func_Dld_D_t>(special::lambertw), static_cast<func_Flf_F_t>(special::lambertw)},
+                         "_lambertw", lambertw_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "_lambertw", _lambertw);
+
     PyObject *_sinpi =
         SpecFun_NewUFunc({static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
                           static_cast<func_F_F_t>(special::sinpi), static_cast<func_D_D_t>(special::sinpi)},
@@ -238,6 +265,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       "berp", berp_doc);
     PyModule_AddObjectRef(_special_ufuncs, "berp", berp);
 
+    PyObject *binom = SpecFun_NewUFunc(
+        {static_cast<func_ff_f_t>(special::binom), static_cast<func_dd_d_t>(special::binom)}, "binom", binom_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "binom", binom);
+
     PyObject *exp1 = SpecFun_NewUFunc({static_cast<func_f_f_t>(special::exp1), static_cast<func_d_d_t>(special::exp1),
                                        static_cast<func_F_F_t>(special::exp1), static_cast<func_D_D_t>(special::exp1)},
                                       "exp1", exp1_doc);
@@ -248,9 +279,21 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       "expi", expi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "expi", expi);
 
+    PyObject *gamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::gamma), static_cast<func_D_D_t>(special::gamma),
+                          static_cast<func_f_f_t>(special::gamma), static_cast<func_F_F_t>(special::gamma)},
+                         "gamma", gamma_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "gamma", gamma);
+
     PyObject *gammaln = SpecFun_NewUFunc(
         {static_cast<func_f_f_t>(special::gammaln), static_cast<func_d_d_t>(special::gammaln)}, "gammaln", gammaln_doc);
     PyModule_AddObjectRef(_special_ufuncs, "gammaln", gammaln);
+
+    PyObject *hyp2f1 =
+        SpecFun_NewUFunc({static_cast<func_dddd_d_t>(special::hyp2f1), static_cast<func_dddD_D_t>(special::hyp2f1),
+                          static_cast<func_ffff_f_t>(special::hyp2f1), static_cast<func_fffF_F_t>(special::hyp2f1)},
+                         "hyp2f1", hyp2f1_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "hyp2f1", hyp2f1);
 
     PyObject *hankel1 = SpecFun_NewUFunc(
         {static_cast<func_fF_F_t>(special::cbesh_wrap1), static_cast<func_dD_D_t>(special::cbesh_wrap1)}, "hankel1",
@@ -368,6 +411,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
          static_cast<func_fF_F_t>(special::cbesk_wrap_e), static_cast<func_dD_D_t>(special::cbesk_wrap_e)},
         "kve", kve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kve", kve);
+
+    PyObject *loggamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::loggamma), static_cast<func_D_D_t>(special::loggamma),
+                          static_cast<func_f_f_t>(special::loggamma), static_cast<func_F_F_t>(special::loggamma)},
+                         "loggamma", loggamma_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
     PyObject *mathieu_a =
         SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)},
@@ -501,11 +550,28 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                              2, "pro_rad2_cv", pro_rad2_cv_doc);
     PyModule_AddObjectRef(_special_ufuncs, "pro_rad2_cv", pro_rad2_cv);
 
+    PyObject *psi =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::digamma), static_cast<func_D_D_t>(special::digamma),
+                          static_cast<func_f_f_t>(special::digamma), static_cast<func_F_F_t>(special::digamma)},
+                         "psi", psi_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "psi", psi);
+
+    PyObject *rgamma =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::rgamma), static_cast<func_D_D_t>(special::rgamma),
+                          static_cast<func_f_f_t>(special::rgamma), static_cast<func_F_F_t>(special::rgamma)},
+                         "rgamma", rgamma_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
+
     PyObject *sph_harm =
         SpecFun_NewUFunc({static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
                           static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
                          "sph_harm", sph_harm_doc);
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);
+
+    PyObject *wright_bessel = SpecFun_NewUFunc(
+        {static_cast<func_ddd_d_t>(special::wright_bessel), static_cast<func_fff_f_t>(special::wright_bessel)},
+        "wright_bessel", wright_bessel_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "wright_bessel", wright_bessel);
 
     PyObject *yv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cbesy_wrap_real), static_cast<func_dd_d_t>(special::cbesy_wrap_real),

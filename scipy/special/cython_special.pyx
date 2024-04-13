@@ -1189,8 +1189,27 @@ cdef extern from r"special_wrappers.h":
     npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
 
+    npy_double special_binom(npy_double, npy_double) nogil
+
+    npy_double special_digamma(npy_double) nogil
+    npy_cdouble special_cdigamma(npy_cdouble) nogil
+
+    npy_double special_gamma(npy_double) nogil
+    npy_cdouble special_cgamma(npy_cdouble) nogil
+
+    npy_double special_loggamma(npy_double) nogil
+    npy_cdouble special_cloggamma(npy_cdouble) nogil
+
+    npy_double special_hyp2f1(npy_double, npy_double, npy_double, npy_double) nogil
+    npy_cdouble special_chyp2f1(npy_double, npy_double, npy_double, npy_cdouble) nogil
+
+    npy_double special_rgamma(npy_double) nogil
+    npy_cdouble special_crgamma(npy_cdouble) nogil
+
     npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
     npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
+
+    npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
 
 from ._agm cimport agm as _func_agm
 ctypedef double _proto_agm_t(double, double) noexcept nogil
@@ -1478,8 +1497,6 @@ ctypedef double _proto__hyp0f1_real_t(double, double) noexcept nogil
 cdef _proto__hyp0f1_real_t *_proto__hyp0f1_real_t_var = &_func__hyp0f1_real
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_cdouble _func_chyp1f1_wrap "chyp1f1_wrap"(npy_double, npy_double, npy_cdouble)nogil
-cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_hyp2f1 "hyp2f1"(npy_double, npy_double, npy_double, npy_double)nogil
 from ._hypergeometric cimport hyperu as _func_hyperu
 ctypedef double _proto_hyperu_t(double, double, double) noexcept nogil
 cdef _proto_hyperu_t *_proto_hyperu_t_var = &_func_hyperu
@@ -1873,7 +1890,7 @@ cpdef double betaln(double x0, double x1) noexcept nogil:
 
 cpdef double binom(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.binom"""
-    return (<double(*)(double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_binom)(x0, x1)
+    return special_binom(x0, x1)
 
 cpdef double boxcox(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.boxcox"""
@@ -2425,9 +2442,9 @@ def _fresnel_pywrap(Dd_number_t x0):
 cpdef Dd_number_t gamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.gamma"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cgamma)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(special_cgamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return _func_Gamma(x0)
+        return special_gamma(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2525,9 +2542,9 @@ cpdef Dd_number_t hyp1f1(double x0, double x1, Dd_number_t x2) noexcept nogil:
 cpdef Dd_number_t hyp2f1(double x0, double x1, double x2, Dd_number_t x3) noexcept nogil:
     """See the documentation for scipy.special.hyp2f1"""
     if Dd_number_t is double:
-        return _func_hyp2f1(x0, x1, x2, x3)
+        return special_hyp2f1(x0, x1, x2, x3)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double, double, double, double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_hyp2f1_complex)(x0, x1, x2, x3)
+        return _complexstuff.double_complex_from_npy_cdouble(special_chyp2f1(x0, x1, x2, _complexstuff.npy_cdouble_from_double_complex(x3)))
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2822,9 +2839,9 @@ cpdef Dd_number_t log_ndtr(Dd_number_t x0) noexcept nogil:
 cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.loggamma"""
     if Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_loggamma_real)(x0)
+        return special_loggamma(x0)
     elif Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_loggamma)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(special_cloggamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3252,9 +3269,9 @@ cpdef double pseudo_huber(double x0, double x1) noexcept nogil:
 cpdef Dd_number_t psi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.psi"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_cdigamma)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(special_cdigamma(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_digamma)(x0)
+        return special_digamma(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3272,9 +3289,9 @@ cpdef double rel_entr(double x0, double x1) noexcept nogil:
 cpdef Dd_number_t rgamma(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.rgamma"""
     if Dd_number_t is double_complex:
-        return (<double complex(*)(double complex) noexcept nogil>scipy.special._ufuncs_cxx._export_crgamma)(x0)
+        return _complexstuff.double_complex_from_npy_cdouble(special_crgamma(_complexstuff.npy_cdouble_from_double_complex(x0))) 
     elif Dd_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_rgamma)(x0)
+        return special_rgamma(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3479,7 +3496,7 @@ cpdef double zetac(double x0) noexcept nogil:
 
 cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.wright_bessel"""
-    return (<double(*)(double, double, double) noexcept nogil>scipy.special._ufuncs_cxx._export_wright_bessel_scalar)(x0, x1, x2)
+    return special_wright_bessel(x0, x1, x2)
 
 cpdef double ndtri_exp(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri_exp"""
