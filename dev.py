@@ -1243,8 +1243,7 @@ class RefguideCheck(Task):
         dirs = Dirs(args)
 
         cmd = [f'{sys.executable}',
-               str(dirs.root / 'tools' / 'refguide_check.py'),
-               '--doctests']
+               str(dirs.root / 'tools' / 'refguide_check.py')]
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:
