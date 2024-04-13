@@ -1,7 +1,6 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
-#include <numeric>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -31,6 +30,16 @@ inline bool SpecFun_Initialize() {
     }
 
     return true;
+}
+
+// This is std::accumulate, but that is not constexpr until C++20
+template <typename InputIt, typename T>
+constexpr T initializer_accumulate(InputIt first, InputIt last, T init) {
+    for (InputIt it = first; it != last; ++it) {
+        init = std::move(init) + *it;
+    }
+
+    return init;
 }
 
 // Deduces the number of arguments of a callable F.
@@ -329,11 +338,10 @@ template <typename Res, typename... Args, size_t... I>
 struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
+    static constexpr size_t steps_offsets[sizeof...(Args)] = {
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        static const size_t steps_offsets[sizeof...(Args)] = {
-            std::accumulate(ranks, ranks + I, sizeof...(Args) + 1)...};
-
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             const Res &res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
@@ -354,10 +362,10 @@ template <typename... Args, size_t... I>
 struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
+    static constexpr size_t steps_offsets[sizeof...(Args)] = {
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args))...};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        static const size_t steps_offsets[sizeof...(Args)] = {std::accumulate(ranks, ranks + I, sizeof...(Args))...};
-
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
