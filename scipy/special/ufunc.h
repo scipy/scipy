@@ -1,6 +1,7 @@
 #include <cassert>
 #include <cstring>
 #include <memory>
+#include <numeric>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -44,22 +45,6 @@ struct arity_of<Res(Args...)> {
 template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
-template <typename F, size_t I>
-struct argument_of;
-
-template <typename Res, typename Arg0, typename... Args>
-struct argument_of<Res(Arg0, Args...), 0> {
-    using type = Arg0;
-};
-
-template <typename Res, typename Arg0, typename... Args, size_t I>
-struct argument_of<Res(Arg0, Args...), I> {
-    using type = typename argument_of<Res(Args...), I - 1>::type;
-};
-
-template <typename F, size_t I>
-using argument_of_t = typename argument_of<F, I>::type;
-
 template <typename T>
 struct rank_of {
     static constexpr size_t value = 0;
@@ -72,17 +57,6 @@ struct rank_of<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
 
 template <typename T>
 inline constexpr size_t rank_of_v = rank_of<T>::value;
-
-template <typename Func, size_t I, typename J = std::make_index_sequence<I>>
-struct npy_steps_offset;
-
-template <typename Res, typename... Args, size_t I, size_t... J>
-struct npy_steps_offset<Res(Args...), I, std::index_sequence<J...>> {
-    static constexpr size_t value = (rank_of_v<argument_of_t<Res(Args...), J>> + ... + 0);
-};
-
-template <typename Func, size_t I>
-constexpr size_t npy_steps_offset_v = npy_steps_offset<Func, I>::value;
 
 // Maps a C++ type to a NumPy type
 template <typename T>
@@ -354,12 +328,15 @@ struct ufunc_traits;
 template <typename Res, typename... Args, size_t... I>
 struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
+    static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+        static const size_t steps_offsets[sizeof...(Args)] = {
+            std::accumulate(ranks, ranks + I, sizeof...(Args) + 1)...};
+
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            const Res &res = func(npy_get<Args>(args[I], dimensions + 1,
-                                                steps + sizeof...(Args) + 1 + npy_steps_offset_v<Res(Args...), I>)...);
+            const Res &res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
             npy_set(args[sizeof...(Args)], res); // assign to the output pointer
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
@@ -376,12 +353,14 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
 template <typename... Args, size_t... I>
 struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
+    static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+        static const size_t steps_offsets[sizeof...(Args)] = {std::accumulate(ranks, ranks + I, sizeof...(Args))...};
+
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(npy_get<Args>(args[I], dimensions + 1,
-                               steps + sizeof...(Args) + npy_steps_offset_v<void(Args...), I>)...);
+            func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
