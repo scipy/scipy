@@ -288,8 +288,8 @@ void npy_get(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *ste
 }
 
 template <typename T, typename Extents, typename AccessorPolicy>
-T npy_get(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
-          const npy_intp *steps) {
+void npy_get(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
+             const npy_intp *steps) {
     static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
     std::array<ptrdiff_t, Extents::rank()> strides;
