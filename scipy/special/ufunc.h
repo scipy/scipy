@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cstring>
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -268,27 +269,27 @@ inline constexpr int npy_typenum_v = npy_typenum<T>::value;
 
 // Sets the value dst to be the value of type T at src
 template <typename T>
-void from_npy_bytes(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
+void npy_get(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst = *reinterpret_cast<npy_type_t<T> *>(src);
 }
 
 template <typename T>
-void from_npy_bytes(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
+void npy_get(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
     dst.real(*reinterpret_cast<npy_type_t<T> *>(src));
     dst.imag(*reinterpret_cast<npy_type_t<T> *>(src + sizeof(T)));
 }
 
 // Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
 template <typename T>
-void from_npy_bytes(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
+void npy_get(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
     static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
     dst = reinterpret_cast<T *>(src);
 }
 
 template <typename T, typename Extents, typename AccessorPolicy>
-void from_npy_bytes(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst,
-                    const npy_intp *dimensions, const npy_intp *steps) {
+T npy_get(char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
+          const npy_intp *steps) {
     static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
     std::array<ptrdiff_t, Extents::rank()> strides;
@@ -305,11 +306,22 @@ void from_npy_bytes(char *src, std::mdspan<T, Extents, std::layout_stride, Acces
 }
 
 template <typename T>
-T from_npy_bytes(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+T npy_get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
     T dst;
-    from_npy_bytes(src, dst, dimensions, steps);
+    npy_get(src, dst, dimensions, steps);
 
     return dst;
+}
+
+template <typename T>
+void npy_set(char *dst, const T &src) {
+    *reinterpret_cast<npy_type_t<T> *>(dst) = src;
+}
+
+template <typename T>
+void npy_set(char *dst, const std::complex<T> &src) {
+    *reinterpret_cast<npy_type_t<T> *>(dst) = src.real();
+    *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = src.imag();
 }
 
 template <typename Func>
@@ -328,8 +340,8 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            *reinterpret_cast<Res *>(args[sizeof...(Args)]) =
-                func(from_npy_bytes<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
+            const Res &res = func(npy_get<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + 1)...);
+            npy_set(args[sizeof...(Args)], res); // assign to the output pointer
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -349,8 +361,8 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(from_npy_bytes<Args>(args[I], dimensions + 1,
-                                      steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
+            func(
+                npy_get<Args>(args[I], dimensions + 1, steps + sizeof...(Args) + argument_rank_v<void(Args...), I>)...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
