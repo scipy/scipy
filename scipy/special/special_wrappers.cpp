@@ -64,7 +64,7 @@ double expi_wrap(double x) { return special::expi(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
 
-double special_exprel(double x) { return special::exprel(x); }
+npy_double special_exprel(npy_double x) { return special::exprel(x); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(special::cerf(to_complex(z))); }
 
@@ -298,19 +298,19 @@ float special_expitf(float x) { return special::expit(x); };
 
 double special_expit(double x) { return special::expit(x); };
 
-long double special_expitl(long double x) { return special::expit(x); };
+npy_longdouble special_expitl(npy_longdouble x) { return special::expit(x); };
 
 float special_log_expitf(float x) { return special::log_expit(x); };
 
 double special_log_expit(double x) { return special::log_expit(x); };
 
-long double special_log_expitl(long double x) { return special::log_expit(x); };
+npy_longdouble special_log_expitl(npy_longdouble x) { return special::log_expit(x); };
 
 float special_logitf(float x) { return special::logit(x); };
 
 double special_logit(double x) { return special::logit(x); };
 
-long double special_logitl(long double x) { return special::logit(x); };
+npy_longdouble special_logitl(npy_longdouble x) { return special::logit(x); };
 
 double special_loggamma(double x) { return special::loggamma(x); }
 

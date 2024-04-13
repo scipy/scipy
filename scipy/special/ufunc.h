@@ -75,29 +75,33 @@ struct npy_type<bool> {
 };
 
 template <>
-struct npy_type<long int> {
+struct npy_type<int> {
+    static constexpr int value = NPY_INT;
+};
+
+template <>
+struct npy_type<long> {
     static constexpr int value = NPY_LONG;
 };
 
 template <>
 struct npy_type<float> {
-    static constexpr int value = NPY_FLOAT32;
+    static constexpr int value = NPY_FLOAT;
 };
 
 template <>
 struct npy_type<double> {
-    static constexpr int value = NPY_FLOAT64;
+    static constexpr int value = NPY_DOUBLE;
 };
 
+// When NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE, npy_longdouble is defined to be the same as npy_double
+// See https://github.com/numpy/numpy/blob/main/numpy/_core/include/numpy/npy_common.h#L306
+#if (NPY_SIZEOF_LONGDOUBLE != NPY_SIZEOF_DOUBLE)
 template <>
 struct npy_type<long double> {
     static constexpr int value = NPY_LONGDOUBLE;
 };
-
-template <>
-struct npy_type<int> {
-    static constexpr int value = NPY_INT;
-};
+#endif
 
 template <typename T>
 struct npy_type<T *> {

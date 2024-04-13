@@ -43,7 +43,7 @@ using namespace std;
 
 using func_f_f_t = float (*)(float);
 using func_d_d_t = double (*)(double);
-using func_g_g_t = long double (*)(long double);
+
 using func_F_F_t = complex<float> (*)(complex<float>);
 using func_D_D_t = complex<double> (*)(complex<double>);
 
@@ -101,6 +101,14 @@ using func_dddd_D_t = complex<double> (*)(double, double, double, double);
 
 using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
 using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
+
+#if (NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE)
+using func_g_g_t = double (*)(double);
+using func_gg_g_t = double (*)(double);
+#else
+using func_g_g_t = long double (*)(long double);
+using func_gg_g_t = long double (*)(long double);
+#endif
 
 extern const char *_cospi_doc;
 extern const char *_sinpi_doc;
