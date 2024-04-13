@@ -508,13 +508,6 @@
             "exp2": "d->d"
         }
     },
-    "expit": {
-        "_logit.h++": {
-            "expit": "d->d",
-            "expitf": "f->f",
-            "expitl": "g->g"
-        }
-    },
     "expm1": {
         "_cunity.pxd": {
             "cexpm1": "D->D"
@@ -741,24 +734,10 @@
             "log1p": "d->d"
         }
     },
-    "log_expit": {
-        "_logit.h++": {
-            "log_expit": "d->d",
-            "log_expitf": "f->f",
-            "log_expitl": "g->g"
-        }
-    },
     "log_ndtr": {
         "_faddeeva.h++": {
             "faddeeva_log_ndtr": "d->d",
             "faddeeva_log_ndtr_complex": "D->D"
-        }
-    },
-    "logit": {
-        "_logit.h++": {
-            "logit": "d->d",
-            "logitf": "f->f",
-            "logitl": "g->g"
         }
     },
     "lpmv": {

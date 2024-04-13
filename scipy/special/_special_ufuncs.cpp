@@ -6,13 +6,13 @@
 #include "special/bessel.h"
 #include "special/binom.h"
 #include "special/digamma.h"
-#include "special/exprel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
 #include "special/kelvin.h"
 #include "special/lambertw.h"
 #include "special/legendre.h"
+#include "special/log_exp.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
@@ -43,6 +43,7 @@ using namespace std;
 
 using func_f_f_t = float (*)(float);
 using func_d_d_t = double (*)(double);
+using func_g_g_t = long double (*)(long double);
 using func_F_F_t = complex<float> (*)(complex<float>);
 using func_D_D_t = complex<double> (*)(complex<double>);
 
@@ -112,6 +113,7 @@ extern const char *berp_doc;
 extern const char *binom_doc;
 extern const char *exp1_doc;
 extern const char *expi_doc;
+extern const char *expit_doc;
 extern const char *exprel_doc;
 extern const char *gamma_doc;
 extern const char *gammaln_doc;
@@ -140,7 +142,9 @@ extern const char *kerp_doc;
 extern const char *kv_doc;
 extern const char *kve_doc;
 extern const char *lambertw_doc;
+extern const char *logit_doc;
 extern const char *loggamma_doc;
+extern const char *log_expit_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -281,6 +285,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
                                       "expi", expi_doc);
     PyModule_AddObjectRef(_special_ufuncs, "expi", expi);
 
+    PyObject *expit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::expit), static_cast<func_f_f_t>(special::expit),
+                          static_cast<func_g_g_t>(special::expit)},
+                         "expit", expit_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "expit", expit);
+
     PyObject *exprel = SpecFun_NewUFunc(
         {static_cast<func_d_d_t>(special::exprel), static_cast<func_f_f_t>(special::exprel)}, "exprel", exprel_doc);
     PyModule_AddObjectRef(_special_ufuncs, "exprel", exprel);
@@ -417,6 +427,18 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
          static_cast<func_fF_F_t>(special::cbesk_wrap_e), static_cast<func_dD_D_t>(special::cbesk_wrap_e)},
         "kve", kve_doc);
     PyModule_AddObjectRef(_special_ufuncs, "kve", kve);
+
+    PyObject *log_expit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::log_expit), static_cast<func_f_f_t>(special::log_expit),
+                          static_cast<func_g_g_t>(special::log_expit)},
+                         "log_expit", log_expit_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "log_expit", log_expit);
+
+    PyObject *logit =
+        SpecFun_NewUFunc({static_cast<func_d_d_t>(special::logit), static_cast<func_f_f_t>(special::logit),
+                          static_cast<func_g_g_t>(special::logit)},
+                         "logit", logit_doc);
+    PyModule_AddObjectRef(_special_ufuncs, "logit", logit);
 
     PyObject *loggamma =
         SpecFun_NewUFunc({static_cast<func_d_d_t>(special::loggamma), static_cast<func_D_D_t>(special::loggamma),

@@ -2,12 +2,12 @@
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
-#include "special/exprel.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
 #include "special/kelvin.h"
 #include "special/lambertw.h"
+#include "special/log_exp.h"
 #include "special/loggamma.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
@@ -293,6 +293,24 @@ npy_cdouble special_cgamma(npy_cdouble z) { return to_ccomplex(special::gamma(to
 double special_rgamma(double x) { return special::rgamma(x); }
 
 npy_cdouble special_crgamma(npy_cdouble z) { return to_ccomplex(special::rgamma(to_complex(z))); }
+
+float special_expitf(float x) { return special::expit(x); };
+
+double special_expit(double x) { return special::expit(x); };
+
+long double special_expitl(long double x) { return special::expit(x); };
+
+float special_log_expitf(float x) { return special::log_expit(x); };
+
+double special_log_expit(double x) { return special::log_expit(x); };
+
+long double special_log_expitl(long double x) { return special::log_expit(x); };
+
+float special_logitf(float x) { return special::logit(x); };
+
+double special_logit(double x) { return special::logit(x); };
+
+long double special_logitl(long double x) { return special::logit(x); };
 
 double special_loggamma(double x) { return special::loggamma(x); }
 

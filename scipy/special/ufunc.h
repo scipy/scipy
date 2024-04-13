@@ -90,6 +90,11 @@ struct npy_type<double> {
 };
 
 template <>
+struct npy_type<long double> {
+    static constexpr int value = NPY_LONGDOUBLE;
+};
+
+template <>
 struct npy_type<int> {
     static constexpr int value = NPY_INT;
 };

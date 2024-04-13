@@ -1092,7 +1092,7 @@ optional Cython ``bint``, leading to the following signatures.
 
 from libc.math cimport NAN
 
-from numpy cimport npy_double, npy_cdouble, npy_int, npy_long
+from numpy cimport npy_float, npy_double, npy_longdouble, npy_cdouble, npy_int, npy_long
 
 cdef extern from "numpy/ufuncobject.h":
     int PyUFunc_getfperr() nogil
@@ -1198,6 +1198,18 @@ cdef extern from r"special_wrappers.h":
 
     npy_double special_gamma(npy_double) nogil
     npy_cdouble special_cgamma(npy_cdouble) nogil
+
+    npy_float special_expitf(npy_float) nogil
+    npy_double special_expit(npy_double) nogil
+    npy_longdouble special_expitl(npy_longdouble) nogil
+
+    npy_float special_log_expitf(npy_float) nogil
+    npy_double special_log_expit(npy_double) nogil
+    npy_longdouble special_log_expitl(npy_longdouble) nogil
+
+    npy_float special_logitf(npy_float) nogil
+    npy_double special_logit(npy_double) nogil
+    npy_longdouble special_logitl(npy_longdouble) nogil
 
     npy_double special_loggamma(npy_double) nogil
     npy_cdouble special_cloggamma(npy_cdouble) nogil
@@ -2360,11 +2372,11 @@ cpdef Dd_number_t expi(Dd_number_t x0) noexcept nogil:
 cpdef dfg_number_t expit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.expit"""
     if dfg_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_expit)(x0)
+        return special_expit(x0)
     elif dfg_number_t is float:
-        return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_expitf)(x0)
+        return special_expitf(x0)
     elif dfg_number_t is long_double:
-        return (<long double(*)(long double) noexcept nogil>scipy.special._ufuncs_cxx._export_expitl)(x0)
+        return special_expitl(x0)
     else:
         if dfg_number_t is double:
             return NAN
@@ -2810,11 +2822,11 @@ cpdef Dd_number_t log1p(Dd_number_t x0) noexcept nogil:
 cpdef dfg_number_t log_expit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.log_expit"""
     if dfg_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_log_expit)(x0)
+        return special_log_expit(x0)
     elif dfg_number_t is float:
-        return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_log_expitf)(x0)
+        return special_log_expitf(x0)
     elif dfg_number_t is long_double:
-        return (<long double(*)(long double) noexcept nogil>scipy.special._ufuncs_cxx._export_log_expitl)(x0)
+        return special_log_expitl(x0)
     else:
         if dfg_number_t is double:
             return NAN
@@ -2850,11 +2862,11 @@ cpdef Dd_number_t loggamma(Dd_number_t x0) noexcept nogil:
 cpdef dfg_number_t logit(dfg_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.logit"""
     if dfg_number_t is double:
-        return (<double(*)(double) noexcept nogil>scipy.special._ufuncs_cxx._export_logit)(x0)
+        return special_logit(x0)
     elif dfg_number_t is float:
-        return (<float(*)(float) noexcept nogil>scipy.special._ufuncs_cxx._export_logitf)(x0)
+        return special_logitf(x0)
     elif dfg_number_t is long_double:
-        return (<long double(*)(long double) noexcept nogil>scipy.special._ufuncs_cxx._export_logitl)(x0)
+        return special_logitl(x0)
     else:
         if dfg_number_t is double:
             return NAN

@@ -122,7 +122,19 @@ npy_cdouble special_csinpi(npy_cdouble z);
 double special_digamma(double z);
 npy_cdouble special_cdigamma(npy_cdouble z);
 
+float special_expitf(float x);
+double special_expit(double x);
+long double special_expitl(long double x);
+
 double special_exprel(double x);
+
+float special_log_expitf(float x);
+double special_log_expit(double x);
+long double special_log_expitl(long double x);
+
+float special_logitf(float x);
+double special_logit(double x);
+long double special_logitl(long double x);
 
 double special_loggamma(double x);
 npy_cdouble special_cloggamma(npy_cdouble z);
