@@ -340,8 +340,9 @@ template <typename Res, typename... Args, size_t... I>
 struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
-    static constexpr size_t steps_offsets[sizeof...(Args)] = {
-        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...
+    static constexpr size_t steps_offsets[sizeof...(Args) + 1] = {
+        initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...,
+        initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)
     };
 
     static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
