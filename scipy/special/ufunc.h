@@ -47,12 +47,28 @@ template <typename Func>
 struct arity_of;
 
 template <typename Res, typename... Args>
-struct arity_of<Res(Args...)> {
+struct arity_of<Res (*)(Args...)> {
     static constexpr size_t value = sizeof...(Args);
 };
 
 template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
+
+template <typename Func>
+struct has_return;
+
+template <typename Res, typename... Args>
+struct has_return<Res (*)(Args...)> {
+    static constexpr bool value = true;
+};
+
+template <typename... Args>
+struct has_return<void (*)(Args...)> {
+    static constexpr bool value = false;
+};
+
+template <typename Func>
+constexpr size_t has_return_v = has_return<Func>::value;
 
 template <typename T>
 struct rank_of {
@@ -340,7 +356,7 @@ template <typename Func, typename Indices = std::make_index_sequence<arity_of_v<
 struct ufunc_traits;
 
 template <typename Res, typename... Args, size_t... I>
-struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
+struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
 
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
@@ -367,7 +383,7 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
 };
 
 template <typename... Args, size_t... I>
-struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
+struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
 
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
@@ -406,12 +422,12 @@ class SpecFun_UFunc {
         data_deleter_type data_deleter;
         const char *types;
 
-        template <typename Res, typename... Args>
-        SpecFun_Func(Res (*func)(Args... args))
-            : has_return(!std::is_void_v<Res>), nin_and_nout(sizeof...(Args) + has_return),
-              func(ufunc_traits<Res(Args...)>::loop), data(new ufunc_data<Res (*)(Args...)>{{nullptr}, func}),
-              data_deleter([](void *ptr) { delete static_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }),
-              types(ufunc_traits<Res(Args...)>::types) {}
+        template <typename Func>
+        SpecFun_Func(Func func)
+            : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
+              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
+              data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
+              types(ufunc_traits<Func>::types) {}
     };
 
     int m_ntypes;
