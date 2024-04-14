@@ -59,33 +59,24 @@ def generate_decl_wrapper(name, return_type, argnames, argtypes, accelerate):
     param_list = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
     argnames = ', '.join(argnames)
     blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
+    # HIDDEN_SYMBOL macro defined in npy_cblas.h
     return f"""
 {c_return_type} {blas_macro}({blas_name})({param_list});
-{c_return_type} F_FUNC({name},{name.upper()})({param_list}){{
+HIDDEN_SYMBOL {c_return_type} F_FUNC({name},{name.upper()})({param_list}){{
     return {blas_macro}({blas_name})({argnames});
 }}
 """
 
 
-def generate_file_wrapper(sigs, lib_name, accelerate, outdir):
+def generate_file_wrapper(sigs, accelerate):
     """
-    Returns a dictionary of wrapper file paths to their string contents.
-    Each BLAS/LAPACK function gets a separate wrapper file. All wrapper files
-    are compiled into an archive that allows the linker to selectively include
-    only the necessary symbols for each binary.
+    Returns text of file containing wrappers for all BLAS/LAPACK functions.
     """
-    if lib_name == 'BLAS':
-        preamble = [C_COMMENT, C_PREAMBLE, CPP_GUARD_BEGIN]
-    elif lib_name == 'LAPACK':
-        preamble = [C_COMMENT, C_PREAMBLE, LAPACK_DECLS, CPP_GUARD_BEGIN]
-    wrappers = {}
+    file_text = [C_COMMENT, C_PREAMBLE, LAPACK_DECLS, CPP_GUARD_BEGIN]
     for sig in sigs:
-        file_path = os.path.join(outdir, sig["name"] + '.c')
-        wrappers[file_path] = ''.join(preamble + [
-            generate_decl_wrapper(**sig, accelerate=accelerate), CPP_GUARD_END]
-        )
-    return wrappers
-
+        file_text.append(generate_decl_wrapper(**sig, accelerate=accelerate))
+    file_text.append(CPP_GUARD_END)
+    return ''.join(file_text)
 
 def make_all(outdir,
              blas_signature_file=os.path.join(
@@ -103,17 +94,12 @@ def make_all(outdir,
     src_files = (os.path.abspath(__file__),
                  blas_signature_file,
                  lapack_signature_file)
-    dst_files = [os.path.join(outdir, f'{sig["name"]}.c')
-                 for sig in blas_sigs + lapack_sigs]
+    dst_files = [os.path.join(outdir, 'blas_lapack_wrappers.c')]
     if all_newer(dst_files, src_files):
         print("scipy/_build_utils/_generate_blas_wrapper.py: all files up-to-date")
         return
-    blas_wrappers = generate_file_wrapper(
-        blas_sigs, 'BLAS', accelerate, outdir)
-    lapack_wrappers = generate_file_wrapper(
-        lapack_sigs, 'LAPACK', accelerate, outdir)
-    to_write = dict(**blas_wrappers, **lapack_wrappers)
-    write_files(to_write)
+    wrapper_file = generate_file_wrapper(blas_sigs + lapack_sigs, accelerate)
+    write_files({dst_files[0]: wrapper_file})
 
 
 if __name__ == '__main__':

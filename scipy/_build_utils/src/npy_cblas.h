@@ -16,6 +16,18 @@ extern "C"
 #endif
 
 /*
+ * GCC and Clang require functions from static libraries to have this attribute
+ * in order for the linker to strip them if they are unused during linkage of
+ * dynamic libraries. We require GCC > 4 and Clang defines __GNUC__ as 4. MSVC
+ * does not require this macro because it makes all symbols hidden by default.
+ */
+#if __GNUC__ >= 4
+#define HIDDEN_SYMBOL  __attribute__ ((visibility ("hidden")))
+#else
+#define HIDDEN_SYMBOL
+#endif
+
+/*
  * Enumerated and derived types
  */
 enum CBLAS_ORDER {CblasRowMajor=101, CblasColMajor=102};

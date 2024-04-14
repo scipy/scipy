@@ -39,41 +39,47 @@ typedef double _Complex double_complex;
 typedef float _Complex float_complex;
 #endif
 
-float_complex F_FUNC(wcdotc,WCDOTC)(CBLAS_INT *n, float_complex *cx, \
-        CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+HIDDEN_SYMBOL float_complex F_FUNC(wcdotc,WCDOTC)(CBLAS_INT *n,
+    float_complex *cx, CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy)
+{
     float_complex ret;
     /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_cdotc_sub)(*n, cx, *incx, cy, *incy,&ret);
     return ret;
 }
 
-double_complex F_FUNC(wzdotc,WZDOTC)(CBLAS_INT *n, double_complex *zx, \
-        CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+HIDDEN_SYMBOL double_complex F_FUNC(wzdotc,WZDOTC)(CBLAS_INT *n,
+    double_complex *zx, CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy)
+{
     double_complex ret;
     /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_zdotc_sub)(*n, zx, *incx, zy, *incy,&ret);
     return ret;
 }
 
-float_complex F_FUNC(wcdotu,WCDOTU)(CBLAS_INT *n, float_complex *cx, \
-        CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+HIDDEN_SYMBOL float_complex F_FUNC(wcdotu,WCDOTU)(CBLAS_INT *n,
+    float_complex *cx, CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy)
+{
     float_complex ret;
     /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_cdotu_sub)(*n, cx, *incx, cy, *incy,&ret);
     return ret;
 }
 
-double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n, double_complex *zx, \
-        CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+HIDDEN_SYMBOL double_complex F_FUNC(wzdotu,WZDOTU)(CBLAS_INT *n,
+    double_complex *zx, CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy)
+{
     double_complex ret;
     /* Prototype in npy_cblas_base.h which is included in npy_cblas.h */
     CBLAS_FUNC(cblas_zdotu_sub)(*n, zx, *incx, zy, *incy,&ret);
     return ret;
 }
 
-void BLAS_FUNC(sladiv)(float *xr, float *xi, float *yr, float *yi, \
-    float *retr, float *reti);
-float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
+void BLAS_FUNC(sladiv)(float *xr, float *xi, float *yr,
+    float *yi, float *retr, float *reti);
+HIDDEN_SYMBOL float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x,
+    float_complex *y)
+{
     float_complex ret;
     /* float_complex has the same memory layout as float[2], so we can
        cast and use pointer arithmetic to get the real and imaginary parts */
@@ -83,9 +89,11 @@ float_complex F_FUNC(wcladiv,WCLADIV)(float_complex *x, float_complex *y){
     return ret;
 }
 
-void BLAS_FUNC(dladiv)(double *xr, double *xi, double *yr, double *yi, \
-    double *retr, double *reti);
-double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
+void BLAS_FUNC(dladiv)(double *xr, double *xi, double *yr,
+    double *yi, double *retr, double *reti);
+HIDDEN_SYMBOL double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x,
+    double_complex *y)
+{
     double_complex ret;
     /* double_complex has the same memory layout as double[2], so we can
        cast and use pointer arithmetic to get the real and imaginary parts */
@@ -95,31 +103,39 @@ double_complex F_FUNC(wzladiv,WZLADIV)(double_complex *x, double_complex *y){
     return ret;
 }
 
-void F_FUNC(cdotcwrp,WCDOTCWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
-        CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+HIDDEN_SYMBOL void F_FUNC(cdotcwrp,WCDOTCWRP)(float_complex *ret, CBLAS_INT *n,
+    float_complex *cx, CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy)
+{
     *ret = F_FUNC(wcdotc,WCDOTC)(n, cx, incx, cy, incy);
 }
 
-void F_FUNC(zdotcwrp,WZDOTCWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
-        CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+HIDDEN_SYMBOL void F_FUNC(zdotcwrp,WZDOTCWRP)(double_complex *ret, CBLAS_INT *n,
+    double_complex *zx, CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy)
+{
     *ret = F_FUNC(wzdotc,WZDOTC)(n, zx, incx, zy, incy);
 }
 
-void F_FUNC(cdotuwrp,CDOTUWRP)(float_complex *ret, CBLAS_INT *n, float_complex *cx, \
-        CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy){
+HIDDEN_SYMBOL void F_FUNC(cdotuwrp,CDOTUWRP)(float_complex *ret, CBLAS_INT *n,
+    float_complex *cx, CBLAS_INT *incx, float_complex *cy, CBLAS_INT *incy)
+{
     *ret = F_FUNC(wcdotu,WCDOTU)(n, cx, incx, cy, incy);
 }
 
-void F_FUNC(zdotuwrp,ZDOTUWRP)(double_complex *ret, CBLAS_INT *n, double_complex *zx, \
-        CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy){
+HIDDEN_SYMBOL void F_FUNC(zdotuwrp,ZDOTUWRP)(double_complex *ret, CBLAS_INT *n,
+    double_complex *zx, CBLAS_INT *incx, double_complex *zy, CBLAS_INT *incy)
+{
     *ret = F_FUNC(wzdotu,WZDOTU)(n, zx, incx, zy, incy);
 }
 
-void F_FUNC(cladivwrp,CLADIVWRP)(float_complex *ret, float_complex *x, float_complex *y){
+HIDDEN_SYMBOL void F_FUNC(cladivwrp,CLADIVWRP)(float_complex *ret,
+    float_complex *x, float_complex *y)
+{
     *ret = F_FUNC(wcladiv,WCLADIV)(x, y);
 }
 
-void F_FUNC(zladivwrp,ZLADIVWRP)(double_complex *ret, double_complex *x, double_complex *y){
+HIDDEN_SYMBOL void F_FUNC(zladivwrp,ZLADIVWRP)(double_complex *ret,
+    double_complex *x, double_complex *y)
+{
     *ret = F_FUNC(wzladiv,WZLADIV)(x, y);
 }
 
