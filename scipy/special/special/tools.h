@@ -8,6 +8,17 @@
 namespace special {
 namespace detail {
 
+    /* Returns the next value of a sequence.
+     *
+     * This overload assumes `g` is a stateful, callable "generator" object
+     * that returns the next value each time it is called.  `g` behaves like
+     * a bound `__next__` method in Python, except that no `StopIteration` is
+     * supported.
+     */
+    template <typename Generator>
+    std::enable_if_t<std::is_invocable_v<Generator>, std::invoke_result_t<Generator>>
+    next(Generator &g) { return g(); }
+
     template <typename T>
     struct real_type {
         using type = T;
@@ -115,7 +126,7 @@ namespace detail {
      *       computations as well as the return value.
      *
      *   g
-     *       Input iterator that yields the terms a[1], a[2], a[3], ...
+     *       Reference to generator that yields a[1], a[2], a[3], ...
      *
      *   tol
      *       Relative tolerance for convergence.  Specifically, stop iteration
@@ -133,14 +144,14 @@ namespace detail {
      * If the convergence criterion is satisfied by some n <= max_terms,
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
-    template <typename T, typename InputIt>
+    template <typename T, typename Generator>
     SPECFUN_HOST_DEVICE std::pair<T, std::size_t> series_eval_kahan(
-        T init_val, InputIt g, real_type_t<T> tol, std::size_t max_terms) {
+        T init_val, Generator &g, real_type_t<T> tol, std::size_t max_terms) {
 
         T sum = init_val;
         T comp = 0;
-        for (std::size_t i = 0; i < max_terms; ++i, ++g) {
-            T term = *g;
+        for (std::size_t i = 0; i < max_terms; ++i) {
+            T term = next(g);
             kahan_step(&sum, &comp, term);
             if (std::abs(term) <= tol * std::abs(sum)) {
                 return {sum, i + 1};
@@ -238,12 +249,13 @@ namespace detail {
      *       be a (possibly complex) floating point type.
      *
      *   cf
-     *       Input iterator that yields the terms of the continued fraction
-     *       as (numerator, denominator) pairs, starting from (a[1], b[1]).
+     *       Reference to generator that yields the terms of the continued
+     *       fraction as (numerator, denominator) pairs, starting from
+     *       (a[1], b[1]).
      *
      *   tol
      *       Relative tolerance for convergence.  Specifically, stop iteration
-     *       and return `f[n]` as soon as `abs(f[n]/f[n-1] - 1) <= abs(tol)`.
+     *       as soon as `abs(f[n]/f[n-1] - 1) <= abs(tol)` for some `n >= 1`.
      *
      *   max_terms
      *       Maximum number of terms to evaluate.  This parameter is used to
@@ -272,16 +284,17 @@ namespace detail {
      * The numerical accuracy of this method depends on the characteristics of
      * the continued fraction being evaluated.
      */
-    template <typename T, typename InputIt>
+    template <typename T, typename Generator>
     SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_lentz(
-        T init_val, InputIt cf, T tol, std::size_t max_terms, T tiny_val) {
+        T init_val, Generator &cf, T tol, std::size_t max_terms, T tiny_val) {
 
         T f = (init_val == 0)? tiny_val : init_val;
         T C = f;
         T D = 0;
-        for (std::size_t n = 0; n < max_terms; ++n, ++cf) {
-            T a = std::get<0>(*cf);  // current numerator
-            T b = std::get<1>(*cf);  // current denominator
+        for (std::size_t n = 0; n < max_terms; ++n) {
+            auto [num, denom] = next(cf);
+            T a = num;
+            T b = denom;
 
             D = b + a * D;
             if (D == 0) {
@@ -303,8 +316,8 @@ namespace detail {
         return {f, 0};
     }
 
-    /* Input iterator that generates the difference of successive convergents
-     * of a continued fraction.
+    /* Generator that yields the difference of successive convergents of a
+     * continued fraction.
      *
      * Let f denote a continued fraction, and let f[n], n = 0, 1, 2, 3, ...
      * denote its n-th convergent.  Write
@@ -317,7 +330,7 @@ namespace detail {
      *   f[n] = b[0] + ------ ------ ... ----
      *                 b[1] + b[2] +     b[n]
      *
-     * with f[0] = b[0].  This generator produces a series with terms
+     * with f[0] = b[0].  This generator yields the sequence of values
      * f[1]-f[0], f[2]-f[1], f[3]-f[2], ...
      *
      * Type Arguments
@@ -325,15 +338,15 @@ namespace detail {
      *   T
      *       Type in which computations are performed and results are turned.
      *
-     *   InputIt
-     *       Input iterator that yields the terms of the continued fraction
-     *       as (numerator, denominator) pairs, starting from (a[1], b[1]).
+     *   Generator
+     *       Reference to generator that yields the terms of the continued
+     *       fraction as (numerator, denominator) pairs, starting from
+     *       (a[1], b[1]).
      *
      *       IMPORTANT: For performance reason, the generator always eagerly
-     *       dereference the current term of the continued fraction.  That is,
-     *       (a[1], b[1]) is dereferenced upon generator construction, and
-     *       (a[n], b[n]) is dereferenced after (n-1) calls of `++`.  FwdIt
-     *       must ensure it is always dereference-able.
+     *       retrieve the next term of the continued fraction.  That is,
+     *       (a[1], b[1]) is retrieved upon generator construction, and
+     *       (a[n], b[n]) is retrieved after (n-1) calls of `()`.
      *
      * Remarks
      * -------
@@ -351,35 +364,23 @@ namespace detail {
      * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
      *     Recurrence Relations.” SIAM Review, 9(1):24-82.
      */
-    template <typename T, typename InputIt>
+    template <typename T, typename Generator>
     class ContinuedFractionSeriesGenerator {
-        using Self = ContinuedFractionSeriesGenerator<T, InputIt>;
 
     public:
-        using iterator_category = std::forward_iterator_tag;
-        using value_type = T;
-        using difference_type = std::ptrdiff_t;
-        using pointer = const T *;
-        using reference = const T &;
-
-        explicit ContinuedFractionSeriesGenerator(InputIt &&cf)
-          : _cf(std::move(cf)) { _init(); }
-
-        explicit ContinuedFractionSeriesGenerator(const InputIt &cf)
-          : _cf(cf) { _init(); }
-
-        reference operator*() const { return _v; }
-
-        Self& operator++() {
-            _advance();
-            return *this;
+        explicit ContinuedFractionSeriesGenerator(Generator &cf) : _cf(cf) {
+            _init();
         }
 
-        void operator++(int) { _advance(); }
+        double operator()() {
+            double v = _v;
+            _advance();
+            return v;
+        }
 
     private:
         void _init() {
-            auto [num, denom] = *_cf;
+            auto [num, denom] = next(_cf);
             T a = num;
             T b = denom;
             _u = 1;
@@ -388,7 +389,7 @@ namespace detail {
         }
 
         void _advance() {
-            auto [num, denom] = *(++_cf);
+            auto [num, denom] = next(_cf);
             T a = num;
             T b = denom;
             _u = 1 / (1 + (a * _u) / (b * _b));
@@ -396,10 +397,10 @@ namespace detail {
             _b = b;
         }
 
-        InputIt _cf;  // points to current fraction
-        T _v;         // v[n] == f[n] - f[n-1], n >= 1
-        T _u;         // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
-        T _b;         // last denominator, i.e. b[n-1]
+        Generator& _cf; // reference to continued fraction generator
+        T _v;           // v[n] == f[n] - f[n-1], n >= 1
+        T _u;           // u[1] = 1, u[n] = v[n]/v[n-1], n >= 2
+        T _b;           // last denominator, i.e. b[n-1]
     };
 
     /* Converts a continued fraction into a series whose terms are the
@@ -407,10 +408,10 @@ namespace detail {
      *
      * See ContinuedFractionSeriesGenerator for details.
      */
-    template <typename T, typename InputIt>
-    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<T, InputIt>
-    continued_fraction_series(InputIt cf) {
-        return ContinuedFractionSeriesGenerator<T, InputIt>(cf);
+    template <typename T, typename Generator>
+    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<T, Generator>
+    continued_fraction_series(Generator &cf) {
+        return ContinuedFractionSeriesGenerator<T, Generator>(cf);
     }
 
 } // namespace detail

@@ -24,13 +24,9 @@
  * Bessel function ratios." Mathematics of Computation, 32(143):865-875.
  */
 class IvRatioCFGenerator {
+    using frac_type = std::pair<double, double>;
 
 public:
-    using iterator_category = std::input_iterator_tag;
-    using value_type = std::pair<double, double>;
-    using difference_type = std::ptrdiff_t;
-    using pointer = const value_type *;
-    using reference = const value_type &;
 
     // It is assumed that v >= 1, x >= 0, and both are finite.
     IvRatioCFGenerator(double v, double x) noexcept {
@@ -48,21 +44,18 @@ public:
         _k = 0;
     }
 
-    const std::pair<double, double> & operator*() const { return _frac; }
-
-    IvRatioCFGenerator & operator++() {
+    frac_type operator()() {
+        frac_type frac = _frac;
         ++_k;
         _frac = {std::fma(_k, _as, _a0), std::fma(_k, _bs, _b0)};
-        return *this;
+        return frac;
     }
 
-    void operator++(int) { ++(*this); }
-
 private:
-    std::pair<double, double> _frac;  // current fraction
+    frac_type _frac;  // current fraction
     double _a0, _as;  // a[k] == _a0 + _as*k, k >= 1
     double _b0, _bs;  // b[k] == _b0 + _bs*k, k >= 1
-    double _k;        // current index (0-based)
+    std::size_t _k;   // current index (0-based)
 };
 
 inline double iv_ratio(double v, double x) {
