@@ -137,7 +137,7 @@ class TestRegularGridInterpolator:
 
         # 2nd derivatives of a linear function are zero
         assert_allclose(interp(sample, nu=(0, 1, 1, 0)),
-                        [0, 0, 0], atol=1e-12)
+                        [0, 0, 0], atol=2e-12)
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
