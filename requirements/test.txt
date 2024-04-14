@@ -8,7 +8,7 @@ asv
 mpmath
 # gymp2  # does not yet support Python 3.12
 threadpoolctl
-# scikit-umfpack  # circular dependency issues
+scikit-umfpack
 pooch
 hypothesis>=6.30
 array-api-strict
