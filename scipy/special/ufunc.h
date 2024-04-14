@@ -443,10 +443,10 @@ class SpecFun_UFunc {
           m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
           m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
         for (auto it = func.begin(); it != func.end(); ++it) {
-            if (it->nin_and_nout() != func.begin()->nin_and_nout()) {
+            if (it->nin_and_nout() != m_nin_and_nout) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
             }
-            if (it->has_return() != func.begin()->has_return()) {
+            if (it->has_return() != m_has_return) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
             }
 
