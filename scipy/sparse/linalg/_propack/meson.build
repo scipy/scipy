@@ -93,7 +93,8 @@ foreach ele: elements
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
       _fflag_fpp,
-    ]
+    ],
+    gnu_symbol_visibility: 'hidden',
   )
 
   propack_module = custom_target('propack_module' + ele[0],

@@ -124,11 +124,13 @@ cephes_lib = static_library('cephes',
   c_args: use_math_defines,
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, np_dep],
+  gnu_symbol_visibility: 'hidden',
 )
 
 cdflib_lib = static_library('cdflib',
   'cdflib.c',
   include_directories: ['../_lib', '../_build_utils/src'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_special_ufuncs',

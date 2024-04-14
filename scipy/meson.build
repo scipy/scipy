@@ -130,6 +130,7 @@ fortranobject_lib = static_library('_fortranobject',
   c_args: numpy_nodepr_api,
   dependencies: py3_dep,
   include_directories: [inc_np, inc_f2py],
+  gnu_symbol_visibility: 'hidden',
 )
 fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
