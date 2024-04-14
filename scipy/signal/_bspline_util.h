@@ -1,10 +1,49 @@
 #pragma once
 
-/*
-RNAME = ['S', 'D']
-RTYPE = ['float', 'double']
-*/
+#ifdef __GNUC__
+#define CONJ(a) (~((__complex__ double)a))
+#define ABSQ(a) (__real__ (a*CONJ(a)))
+#else
+#define CONJ(a) ((a))
+#define ABSQ(a) ( (a*CONJ(a)))
+#endif
 
+
+template<typename T, typename C>
+int _sym_iir1_initial(C z1, C *x, C *yp0, int M, int N, T precision)
+{
+    // XXX: remove templating on C,T : C === T or std::complex<T>
+    C powz1, diff;
+    T err;
+    int k;
+
+    if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
+
+   /* Fix starting value assuming mirror-symmetric boundary conditions. */
+    for(int i = 0; i < M; i++) {
+        yp0[i] = x[N * i];
+    }
+
+    powz1 = 1.0;
+    k = 0;
+    precision *= precision;
+    do {
+    	powz1 *= z1;
+        for(int i = 0; i < M; i++) {
+            yp0[i] += powz1 * x[N * i + k];
+        }
+    	diff = powz1;
+    	err = ABSQ(diff);
+    	k++;
+    } while((err > precision) && (k < N));
+
+    if (k >= N){
+        /* sum did not converge */
+        return -3;
+    }
+
+    return 0;
+}
 
 
 /**
@@ -80,7 +119,7 @@ precision: double* or float*
     Precision up to which the initial conditions will be computed.
 **/
 template<typename T>
-int _SYM_IIR2_initial_bwd(double r, double omega, T *x, T *yp, int M, int N, T precision)
+int _sym_iir2_initial_bwd(double r, double omega, T *x, T *yp, int M, int N, T precision)
 {
     double rsq = r * r;
     T cs = 1 - 2 * r * cos(omega) + rsq;
@@ -120,51 +159,6 @@ int _SYM_IIR2_initial_bwd(double r, double omega, T *x, T *yp, int M, int N, T p
 }
 
 
-/*
-{{for SUB, TYP in zip(RNAME, RTYPE)}}
-int {{SUB}}_SYM_IIR2_initial_bwd(double r, double omega,
-        {{TYP}} *x, {{TYP}} *yp, int M, int N, {{TYP}} precision) {
-    double rsq = r * r;
-    {{TYP}} cs = 1 - 2 * r * cos(omega) + rsq;
-
-    // Fix starting values assuming mirror-symmetric boundary conditions.
-    int k = 0;
-
-    {{TYP}} err;
-    {{TYP}} diff;
-
-    do {
-	    diff = ({{SUB}}_hs(k, cs, rsq, omega) + {{SUB}}_hs(k+1, cs, rsq, omega));
-	    for(int i = 0; i < M; i++) {
-            // Compute initial condition y[n + 1]
-            yp[2 * i] += diff * x[N * i + N - 1 - k];
-        }
-	    err = diff * diff;
-	    k++;
-    } while((err > precision) && (k < N));
-
-    if (k >= N) {return -3;}     // sum did not converge
-
-    k = 0;
-    do {
-        diff = ({{SUB}}_hs(k-1, cs, rsq, omega) + {{SUB}}_hs(k+2, cs, rsq, omega));
-        for(int i = 0; i < M; i++) {
-            // Compute initial condition y[n + 2]
-            yp[2 * i + 1] += diff * x[N * i + N - 1 - k];
-        }
-        err = diff * diff;
-        k++;
-    } while((err > precision) && (k < N));
-
-    if (k >= N) {return -3;}     // sum did not converge
-
-    return 0;
-}
-{{endfor}}
-*/
-
-
-
 
 /**
 Compute the starting initial conditions for the system
@@ -191,7 +185,7 @@ precision: double* or float*
     Precision up to which the initial conditions will be computed.
 **/
 template<typename T>
-int _SYM_IIR2_initial_fwd(double r, double omega, T *x, T *yp, int M, int N, T precision)
+int _sym_iir2_initial_fwd(double r, double omega, T *x, T *yp, int M, int N, T precision)
 {
     /* Fix starting values assuming mirror-symmetric boundary conditions. */
     T cs = 1 - 2 * r * cos(omega) + r * r;
@@ -237,6 +231,110 @@ int _SYM_IIR2_initial_fwd(double r, double omega, T *x, T *yp, int M, int N, T p
     } while((err > precision) && (k < N));
 
     if (k >= N) {return -3;}     /* sum did not converge */
+    return 0;
+}
+
+
+
+template <typename T>
+void _fir_mirror_symmetric(T *in, T *out, int N, T *h, int Nh, int instride, int outstride)
+{
+    int n, k;
+    int Nhdiv2 = Nh >> 1;
+    T *outptr;
+    T *inptr;
+    T *hptr;
+
+    /* first part boundary conditions */
+    outptr = out;
+    for (n=0; n < Nhdiv2; n++) {
+	*outptr = 0.0;
+	hptr = h;
+	inptr = in + (n + Nhdiv2)*instride;
+	for (k=-Nhdiv2; k <= n; k++) {
+	    *outptr += *hptr++ * *inptr;
+	    inptr -= instride;
+	}
+	inptr += instride;
+	for (k=n+1; k <= Nhdiv2; k++) {
+	    *outptr += *hptr++ * *inptr;
+	    inptr += instride;
+	}
+	outptr += outstride;
+    }
+
+    /* middle section */
+    outptr = out + Nhdiv2*outstride;
+    for (n=Nhdiv2; n < N-Nhdiv2; n++) {
+	*outptr = 0.0;
+	hptr = h;
+	inptr = in + (n + Nhdiv2)*instride;
+	for (k=-Nhdiv2; k <= Nhdiv2; k++) {
+	    *outptr += *hptr++ * *inptr;
+	    inptr -= instride;
+	}
+	outptr += outstride;
+    }
+
+    /* end boundary conditions */
+    outptr = out + (N - Nhdiv2)*outstride;
+    for (n=N-Nhdiv2; n < N; n++) {
+	*outptr = 0.0;
+	hptr = h;
+	inptr = in + (2*N - 1 - n - Nhdiv2)*instride;
+	for (k=-Nhdiv2; k <= n-N; k++) {
+	    *outptr += *hptr++ * *inptr;
+	    inptr += instride;
+	}
+	inptr -= instride;
+	for (k=n+1-N; k <= Nhdiv2; k++) {
+	    *outptr += *hptr++ * *inptr;
+	    inptr -= instride;
+	}
+	outptr += outstride;
+    }
+}
+
+
+
+template<typename T>
+int _separable_2Dconvolve_mirror(T *in, T *out, int M, int N, T *hr, T *hc, int Nhr, int Nhc, npy_intp *instrides, npy_intp *outstrides)
+{
+    int m, n;
+    T *tmpmem;
+    T *inptr = NULL;
+    T *outptr = NULL;
+
+    tmpmem = (T *)malloc(M*N*sizeof(T));
+    if (tmpmem == NULL) {return -1;}
+
+    if (Nhr > 0) {
+	/* filter across rows */
+	inptr = in;
+	outptr = tmpmem;
+	for (m = 0; m < M; m++) {
+	    _fir_mirror_symmetric (inptr, outptr, N, hr, Nhr, instrides[1], 1);
+	    inptr += instrides[0];
+	    outptr += N;
+	}
+    }
+    else
+	memmove(tmpmem, in, M*N*sizeof(T));
+
+    if (Nhc > 0) {
+	/* filter down columns */
+	inptr = tmpmem;
+	outptr = out;
+	for (n = 0; n < N; n++) {
+	    _fir_mirror_symmetric (inptr, outptr, M, hc, Nhc, N, outstrides[0]);
+	    outptr += outstrides[1];
+	    inptr += 1;
+	}
+    }
+    else
+	memmove(out, tmpmem, M*N*sizeof(T));
+
+    free(tmpmem);
     return 0;
 }
 

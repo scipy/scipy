@@ -7,14 +7,14 @@
 
 static void convert_strides(npy_intp*,npy_intp*,int,int);
 
-extern int S_SYM_IIR1_initial(float, float*, float*, int, int, float);
-extern int S_SYM_IIR2_initial_fwd(double, double, float*, float*, int, int, float);
-extern int S_SYM_IIR2_initial_bwd(double, double, float*, float*, int, int, float);
+//extern int S_SYM_IIR1_initial(float, float*, float*, int, int, float);
+//extern int S_SYM_IIR2_initial_fwd(double, double, float*, float*, int, int, float);
+//extern int S_SYM_IIR2_initial_bwd(double, double, float*, float*, int, int, float);
 extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int,int,npy_intp*,npy_intp*);
 
-extern int D_SYM_IIR1_initial(double, double*, double*, int, int, double);
-extern int D_SYM_IIR2_initial_fwd(double, double, double*, double*, int, int, double);
-extern int D_SYM_IIR2_initial_bwd(double, double, double*, double*, int, int, double);
+//extern int D_SYM_IIR1_initial(double, double*, double*, int, int, double);
+//extern int D_SYM_IIR2_initial_fwd(double, double, double*, double*, int, int, double);
+//extern int D_SYM_IIR2_initial_bwd(double, double, double*, double*, int, int, double);
 extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,npy_intp*,npy_intp*);
 
 #ifdef __GNUC__

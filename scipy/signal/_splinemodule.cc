@@ -1,4 +1,5 @@
 #include "_splinemodule.h"
+#include "_bspline_util.h"
 
 #define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
 
@@ -91,6 +92,13 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					(float *)PyArray_DATA(a_hcol),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
+//    ret = _separable_2Dconvolve_mirror(static_cast<float *>(PyArray_DATA(a_image)),
+//				       static_cast<float *>(PyArray_DATA(out)), M, N,
+//				       static_cast<float *>(PyArray_DATA(a_hrow)),
+//				       static_cast<float *>(PyArray_DATA(a_hcol)),
+//					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
+//					instrides, outstrides);
+
     break;
   case NPY_DOUBLE:
     ret = D_separable_2Dconvolve_mirror((double *)PyArray_DATA(a_image),
@@ -99,6 +107,12 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 					(double *)PyArray_DATA(a_hcol),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
+//    ret = _separable_2Dconvolve_mirror(static_cast<float *>(PyArray_DATA(a_image)),
+//				       static_cast<float *>(PyArray_DATA(out)), M, N,
+//					static_cast<float *>(PyArray_DATA(a_hrow)),
+//					static_cast<float *>(PyArray_DATA(a_hcol)),
+//					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
+//					instrides, outstrides);
     break;
 #ifdef __GNUC__
   case NPY_CFLOAT:
@@ -213,9 +227,9 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
       float rz1 = z1.real;
 
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = S_SYM_IIR1_initial(rz1, (float *)PyArray_DATA(a_sig),
-                               (float *)PyArray_DATA(out), M, N,
-                               (float )precision);
+        ret = _sym_iir1_initial(rz1, static_cast<float *>(PyArray_DATA(a_sig)),
+                               static_cast<float *>(PyArray_DATA(out)), M, N,
+                               static_cast<float>(precision));
     }
     break;
   case NPY_DOUBLE:
@@ -223,9 +237,10 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
       double rz1 = z1.real;
 
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = D_SYM_IIR1_initial(rz1, (double *)PyArray_DATA(a_sig),
-                               (double *)PyArray_DATA(out), M, N,
-                               precision);
+      ret = _sym_iir1_initial(rz1, static_cast<double *>(PyArray_DATA(a_sig)),
+                              static_cast<double *>(PyArray_DATA(out)), M, N,
+                              precision);
+
     }
     break;
 #ifdef __GNUC__
@@ -346,16 +361,17 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   case NPY_FLOAT:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = S_SYM_IIR2_initial_fwd(r, omega, (float *)PyArray_DATA(a_sig),
-                                  (float *)PyArray_DATA(out), M, N,
-                                  (float )precision);
+      ret = _sym_iir2_initial_fwd(r, omega, static_cast<float *>(PyArray_DATA(a_sig)),
+                                  static_cast<float *>(PyArray_DATA(out)), M, N,
+                                  static_cast<float>(precision));
+
     }
     break;
   case NPY_DOUBLE:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = D_SYM_IIR2_initial_fwd(r, omega, (double *)PyArray_DATA(a_sig),
-                                  (double *)PyArray_DATA(out), M, N,
+      ret = _sym_iir2_initial_fwd(r, omega, static_cast<double *>(PyArray_DATA(a_sig)),
+                                  static_cast<double *>(PyArray_DATA(out)), M, N,
                                   precision);
     }
     break;
@@ -457,16 +473,16 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   case NPY_FLOAT:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = S_SYM_IIR2_initial_bwd(r, omega, (float *)PyArray_DATA(a_sig),
-                                  (float *)PyArray_DATA(out), M, N,
-                                  (float )precision);
+      ret = _sym_iir2_initial_bwd(r, omega, static_cast<float *>(PyArray_DATA(a_sig)),
+                                  static_cast<float *>(PyArray_DATA(out)), M, N,
+                                  static_cast<float>(precision));
     }
     break;
   case NPY_DOUBLE:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = D_SYM_IIR2_initial_bwd(r, omega, (double *)PyArray_DATA(a_sig),
-                                   (double *)PyArray_DATA(out), M, N,
+      ret = _sym_iir2_initial_bwd(r, omega, static_cast<double *>(PyArray_DATA(a_sig)),
+                                   static_cast<double *>(PyArray_DATA(out)), M, N,
                                    precision);
     }
     break;
