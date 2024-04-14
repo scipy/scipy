@@ -70,8 +70,7 @@ endforeach
 
 py3.extension_module('_spline',
   [
-    '_splinemodule.c',
-    tempita_gen.process('_bspline_util.c.in'),
+    '_splinemodule.cc',
   ],
   dependencies: np_dep,
   link_args: version_link_args,
