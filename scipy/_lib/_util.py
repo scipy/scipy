@@ -723,13 +723,11 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # The summation method avoids creating another (potentially huge) array
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = xp.isnan(xp.sum(a))
-        else:
-            contains_nan = xp.any(xp.isnan(a))
+    if a.size == 0:
+        contains_nan = False
+    elif inexact:
+        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+        contains_nan = xp.isnan(xp.max(a))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
