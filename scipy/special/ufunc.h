@@ -507,7 +507,9 @@ PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const
 }
 
 PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc) {
-    return SpecFun_NewUFunc(std::move(func), func.has_return(), name, doc);
+    int nout = func.has_return();
+
+    return SpecFun_NewUFunc(std::move(func), nout, name, doc);
 }
 
 PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature) {
@@ -527,5 +529,7 @@ PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, cons
 }
 
 PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature) {
-    return SpecFun_NewGUFunc(std::move(func), func.has_return(), name, doc, signature);
+    int nout = func.has_return();
+
+    return SpecFun_NewGUFunc(std::move(func), nout, name, doc, signature);
 }
