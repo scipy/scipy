@@ -2066,6 +2066,7 @@ class TestBoxcoxNormmax:
         assert np.all(bounds[0] < maxlog)
         assert np.all(maxlog < bounds[1])
 
+    @pytest.mark.slow
     def test_user_defined_optimizer(self):
         # tests an optimizer that is not based on scipy.optimize.minimize
         lmbda = stats.boxcox_normmax(self.x)

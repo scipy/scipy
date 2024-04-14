@@ -5676,6 +5676,7 @@ def test_ttest_single_observation():
     assert_allclose(res, (1.0394023007754, 0.407779907736), rtol=1e-10)
 
 
+@pytest.mark.slow
 def test_ttest_1samp_new():
     n1, n2, n3 = (10,15,20)
     rvn1 = stats.norm.rvs(loc=5,scale=10,size=(n1,n2,n3))
