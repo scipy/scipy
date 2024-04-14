@@ -1,9 +1,23 @@
-#include "_splinemodule.h"
-#include "_bspline_util.h"
+#include "Python.h"
+#include "numpy/arrayobject.h"
+#include <math.h>
+#include <complex>
 
+#include "_splinemodule.h"
+
+#include <stddef.h>
+#include <stdlib.h>
+#include <string.h>
+#include <iostream>
+
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#endif
+
+#define PYERR(message) do {PyErr_SetString(PyExc_ValueError, message); goto fail;} while(0)
 #define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
 
-static void
+void
 convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
 {
   int n; npy_intp bitshift;
@@ -18,6 +32,8 @@ convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
     convstrides[n] = instrides[n] >> bitshift;
   }
 }
+
+extern "C" {
 
 static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "\n"
@@ -86,52 +102,38 @@ static PyObject *FIRsepsym2d(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
   switch (thetype) {
   case NPY_FLOAT:
-    ret = S_separable_2Dconvolve_mirror((float *)PyArray_DATA(a_image),
+
+    ret = _separable_2Dconvolve_mirror((float *)PyArray_DATA(a_image),
 					(float *)PyArray_DATA(out), M, N,
 					(float *)PyArray_DATA(a_hrow),
 					(float *)PyArray_DATA(a_hcol),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
-//    ret = _separable_2Dconvolve_mirror(static_cast<float *>(PyArray_DATA(a_image)),
-//				       static_cast<float *>(PyArray_DATA(out)), M, N,
-//				       static_cast<float *>(PyArray_DATA(a_hrow)),
-//				       static_cast<float *>(PyArray_DATA(a_hcol)),
-//					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
-//					instrides, outstrides);
-
     break;
   case NPY_DOUBLE:
-    ret = D_separable_2Dconvolve_mirror((double *)PyArray_DATA(a_image),
+    ret = _separable_2Dconvolve_mirror((double *)PyArray_DATA(a_image),
 					(double *)PyArray_DATA(out), M, N,
 					(double *)PyArray_DATA(a_hrow),
 					(double *)PyArray_DATA(a_hcol),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
-//    ret = _separable_2Dconvolve_mirror(static_cast<float *>(PyArray_DATA(a_image)),
-//				       static_cast<float *>(PyArray_DATA(out)), M, N,
-//					static_cast<float *>(PyArray_DATA(a_hrow)),
-//					static_cast<float *>(PyArray_DATA(a_hcol)),
-//					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
-//					instrides, outstrides);
     break;
-#ifdef __GNUC__
   case NPY_CFLOAT:
-    ret = C_separable_2Dconvolve_mirror((__complex__ float *)PyArray_DATA(a_image),
-					(__complex__ float *)PyArray_DATA(out), M, N,
-					(__complex__ float *)PyArray_DATA(a_hrow),
-					(__complex__ float *)PyArray_DATA(a_hcol),
+    ret = _separable_2Dconvolve_mirror(reinterpret_cast<std::complex<float> *>(PyArray_DATA(a_image)),
+					reinterpret_cast<std::complex<float> *>(PyArray_DATA(out)), M, N,
+					reinterpret_cast<std::complex<float> *>(PyArray_DATA(a_hrow)),
+					reinterpret_cast<std::complex<float> *>(PyArray_DATA(a_hcol)),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
   case NPY_CDOUBLE:
-    ret = Z_separable_2Dconvolve_mirror((__complex__ double *)PyArray_DATA(a_image),
-					(__complex__ double *)PyArray_DATA(out), M, N,
-					(__complex__ double *)PyArray_DATA(a_hrow),
-					(__complex__ double *)PyArray_DATA(a_hcol),
+    ret = _separable_2Dconvolve_mirror(reinterpret_cast<std::complex<double> *>(PyArray_DATA(a_image)),
+					reinterpret_cast<std::complex<double> *>(PyArray_DATA(out)), M, N,
+					reinterpret_cast<std::complex<double> *>(PyArray_DATA(a_hrow)),
+					reinterpret_cast<std::complex<double> *>(PyArray_DATA(a_hcol)),
 					PyArray_DIMS(a_hrow)[0], PyArray_DIMS(a_hcol)[0],
 					instrides, outstrides);
     break;
-#endif
   default:
     PYERR("Incorrect type.");
   }
@@ -201,9 +203,12 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  bool gotofail = false;
-
-  if (a_sig == NULL) {gotofail = true; }
+  if (a_sig == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -217,9 +222,12 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   const npy_intp sz[2] = {M, 1};
   dtype = PyArray_DescrFromType(thetype);
   out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
-  if (out == NULL) {gotofail = true; }
-
-  if(gotofail) goto fail;
+  if (out == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   switch (thetype) {
   case NPY_FLOAT:
@@ -243,26 +251,27 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
 
     }
     break;
-#ifdef __GNUC__
   case NPY_CFLOAT:
     {
-      __complex__ float zz1 = z1.real + 1.0j*z1.imag;
+      std::complex<float> zz1(z1.real, z1.imag);
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = C_SYM_IIR1_initial (zz1, (__complex__ float *)PyArray_DATA(a_sig),
-			    (__complex__ float *)PyArray_DATA(out), M, N,
-			    (float )precision);
+      ret = _sym_iir1_initial(zz1, reinterpret_cast<std::complex<float> *>(PyArray_DATA(a_sig)),
+			           reinterpret_cast<std::complex<float> *>(PyArray_DATA(out)),
+			           M, N,
+			           static_cast<float>(precision));
+
     }
     break;
   case NPY_CDOUBLE:
     {
-      __complex__ double zz1 = z1.real + 1.0j*z1.imag;
+      std::complex<double> zz1(z1.real, z1.imag);
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = Z_SYM_IIR1_initial (zz1, (__complex__ double *)PyArray_DATA(a_sig),
-			    (__complex__ double *)PyArray_DATA(out), M, N,
-			    precision);
+      ret = _sym_iir1_initial(zz1, reinterpret_cast<std::complex<double> *>(PyArray_DATA(a_sig)),
+			           reinterpret_cast<std::complex<double> *>(PyArray_DATA(out)), M, N,
+			           precision);
+
     }
     break;
-#endif
   default:
     PYERR("Incorrect type.");
   }
@@ -277,7 +286,6 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   if (ret == -3) PYERR("Sum to find symmetric boundary conditions did not converge.");
 
   PYERR("Unknown error.");
-
 
  fail:
   Py_XDECREF(a_sig);
@@ -337,9 +345,12 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  bool gotofail = false;
-
-  if (a_sig == NULL) {gotofail = true;}
+  if (a_sig == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -353,24 +364,27 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   dtype = PyArray_DescrFromType(thetype);
   const npy_intp sz[2] = {M, 2};
   out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
-  if (out == NULL) {gotofail = true;}
-
-  if (gotofail) {goto fail;}
+  if (out == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   switch (thetype) {
   case NPY_FLOAT:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
-      ret = _sym_iir2_initial_fwd(r, omega, static_cast<float *>(PyArray_DATA(a_sig)),
-                                  static_cast<float *>(PyArray_DATA(out)), M, N,
-                                  static_cast<float>(precision));
+      ret = _sym_iir2_initial_fwd<float>(r, omega, (float *)(PyArray_DATA(a_sig)),
+                                  (float *)(PyArray_DATA(out)), M, N,
+                                  (float)(precision));
 
     }
     break;
   case NPY_DOUBLE:
     {
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
-      ret = _sym_iir2_initial_fwd(r, omega, static_cast<double *>(PyArray_DATA(a_sig)),
+      ret = _sym_iir2_initial_fwd<double>(r, omega, static_cast<double *>(PyArray_DATA(a_sig)),
                                   static_cast<double *>(PyArray_DATA(out)), M, N,
                                   precision);
     }
@@ -431,6 +445,7 @@ static char doc_IIRsymorder2_ic_bwd[] = "out = symiirorder2_ic_bwd(input, r, ome
 "    zi : ndarray\n"
 "        The mirror-symmetric initial condition for the forward IIR filter.";
 
+
 static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args)
 {
   PyObject *sig=NULL;
@@ -449,9 +464,12 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  bool gotofail = false;
-
-  if (a_sig == NULL) {gotofail = true;}
+  if (a_sig == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -465,9 +483,12 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   dtype = PyArray_DescrFromType(thetype);
   const npy_intp sz[2] = {M, 2};
   out = (PyArrayObject *)PyArray_Zeros(2, sz, dtype, 0);
-  if (out == NULL) {gotofail = true;}
-
-  if (gotofail) {goto fail;}
+  if (out == NULL) {
+    // goto fail: block
+    Py_XDECREF(a_sig);
+    Py_XDECREF(out);
+    return NULL;
+  }
 
   switch (thetype) {
   case NPY_FLOAT:
@@ -508,6 +529,7 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   return NULL;
 
 }
+}
 
 
 static struct PyMethodDef toolbox_module_methods[] = {
@@ -531,9 +553,11 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
+extern "C"{
 PyMODINIT_FUNC
 PyInit__spline(void)
 {
     import_array();
     return PyModule_Create(&moduledef);
+}
 }

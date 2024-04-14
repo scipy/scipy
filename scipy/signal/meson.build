@@ -71,7 +71,6 @@ endforeach
 py3.extension_module('_spline',
   [
     '_splinemodule.cc',
-    '_bspline_util.cc',
   ],
   dependencies: np_dep,
   cpp_args: ['--std=c++14', '-fext-numeric-literals'],
