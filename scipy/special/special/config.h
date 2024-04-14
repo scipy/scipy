@@ -186,11 +186,18 @@ using uint64_t = cuda::std::uint64_t;
 #define SPECFUN_HOST_DEVICE
 
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <complex>
 #include <cstdint>
 #include <limits>
 #include <math.h>
 #include <type_traits>
+
+#ifdef DEBUG
+#define SPECFUN_ASSERT(a) assert(a)
+#else
+#define SPECFUN_ASSERT(a)
+#endif
 
 #endif
