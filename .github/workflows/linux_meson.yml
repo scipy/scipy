@@ -217,14 +217,14 @@ jobs:
           python3-dbg -m pytest --pyargs scipy -n2 --durations=10 -m "not slow"
 
   #################################################################################
-  gcc8:
+  gcc9:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
-    name: Build with gcc-8
+    name: Build with gcc-9
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
       && (github.repository == 'scipy/scipy' || github.repository == '')
-    runs-on: ubuntu-20.04  # 22.04 doesn't support gcc-8
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4.1.1
         with:
@@ -238,7 +238,7 @@ jobs:
       - name: Setup system dependencies
         run: |
           sudo apt-get -y update
-          sudo apt install -y g++-8 gcc-8 gfortran-8
+          sudo apt install -y g++-9 gcc-9 gfortran-9
           sudo apt install -y libatlas-base-dev liblapack-dev libgmp-dev \
             libmpfr-dev libmpc-dev pkg-config libsuitesparse-dev liblapack-dev
 
@@ -252,7 +252,7 @@ jobs:
           export PYTHONOPTIMIZE=2
 
           # specify which compilers to use using environment variables
-          CC=gcc-8 CXX=g++-8 FC=gfortran-8 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          CC=gcc-9 CXX=g++-9 FC=gfortran-9 python -m build --wheel --no-isolation -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
           python -m pip install dist/scipy*.whl
 
       - name: Install test dependencies
