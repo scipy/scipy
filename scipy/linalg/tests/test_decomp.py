@@ -240,8 +240,8 @@ class TestEig:
         w_fin = -1j * np.real_if_close(1j*w_fin, tol=1e-10)
         wt_fin = -1j * np.real_if_close(1j*wt_fin, tol=1e-10)
 
-        perm = argsort(w_fin)
-        permt = argsort(wt_fin)
+        perm = argsort(abs(w_fin) + w_fin.imag)
+        permt = argsort(abs(wt_fin) + wt_fin.imag)
 
         assert_allclose(w_fin[perm], wt_fin[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
