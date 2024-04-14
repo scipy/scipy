@@ -398,15 +398,15 @@ class SpecFun_UFunc {
         bool has_return;
         int nin_and_nout;
         PyUFuncGenericFunction func;
-        void *data;
-        void (*data_deleter)(void *);
+        data_handle_type data;
+        data_deleter_type data_deleter;
         const char *types;
 
         template <typename Res, typename... Args>
         SpecFun_Func(Res (*func)(Args... args))
             : has_return(!std::is_void_v<Res>), nin_and_nout(sizeof...(Args) + has_return),
               func(ufunc_traits<Res(Args...)>::loop), data(new ufunc_data<Res (*)(Args...)>{{nullptr}, func}),
-              data_deleter([](void *ptr) { delete reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }),
+              data_deleter([](void *ptr) { delete static_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }),
               types(ufunc_traits<Res(Args...)>::types) {}
     };
 
@@ -432,16 +432,14 @@ class SpecFun_UFunc {
             }
 
             size_t i = it - func.begin();
-
             m_func[i] = it->func;
             m_data[i] = it->data;
             m_data_deleters[i] = it->data_deleter;
-
-            std::copy(it->types, it->types + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
+            std::memcpy(m_types.get() + i * m_nin_and_nout, it->types, m_nin_and_nout);
         }
     }
 
-    SpecFun_UFunc(SpecFun_UFunc &&) = default;
+    SpecFun_UFunc(SpecFun_UFunc &&other) = default;
 
     ~SpecFun_UFunc() {
         if (m_data) {
@@ -452,11 +450,11 @@ class SpecFun_UFunc {
         }
     }
 
-    int nin_and_nout() const { return m_nin_and_nout; }
-
     int ntypes() const { return m_ntypes; }
 
     bool has_return() const { return m_has_return; }
+
+    int nin_and_nout() const { return m_nin_and_nout; }
 
     PyUFuncGenericFunction *func() const { return m_func.get(); }
 
@@ -466,7 +464,7 @@ class SpecFun_UFunc {
 
     void set_name(const char *name) {
         for (int i = 0; i < m_ntypes; ++i) {
-            reinterpret_cast<base_ufunc_data *>(m_data[i])->name = name;
+            static_cast<base_ufunc_data *>(m_data[i])->name = name;
         }
     }
 };
