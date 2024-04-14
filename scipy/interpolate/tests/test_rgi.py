@@ -983,7 +983,11 @@ class TestInterpN:
 
         v1 = interpn((x, y), values, sample, method=method)
         v2 = interpn((x, y), np.asarray(values), sample, method=method)
-        assert_allclose(v1, v2)
+        if method == "quintic":
+            # https://github.com/scipy/scipy/issues/20472
+            assert_allclose(v1, v2, atol=5e-5, rtol=2e-6)
+        else:
+            assert_allclose(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
