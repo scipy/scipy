@@ -162,73 +162,73 @@ using npy_type_t = typename npy_type<T>::type;
 // Maps a C++ type to a NumPy type number
 template <typename T>
 struct npy_typenum {
-    static constexpr int value = npy_typenum<npy_type_t<T>>::value;
+    static constexpr NPY_TYPES value = npy_typenum<npy_type_t<T>>::value;
 };
 
 // We need to specialise for bool as npy_bool is defined as npy_ubyte
 template <>
 struct npy_typenum<bool> {
-    static constexpr int value = NPY_BOOL;
+    static constexpr NPY_TYPES value = NPY_BOOL;
 };
 
 template <>
 struct npy_typenum<npy_byte> {
-    static constexpr int value = NPY_BYTE;
+    static constexpr NPY_TYPES value = NPY_BYTE;
 };
 
 template <>
 struct npy_typenum<npy_short> {
-    static constexpr int value = NPY_SHORT;
+    static constexpr NPY_TYPES value = NPY_SHORT;
 };
 
 template <>
 struct npy_typenum<npy_int> {
-    static constexpr int value = NPY_INT;
+    static constexpr NPY_TYPES value = NPY_INT;
 };
 
 template <>
 struct npy_typenum<npy_long> {
-    static constexpr int value = NPY_LONG;
+    static constexpr NPY_TYPES value = NPY_LONG;
 };
 
 template <>
 struct npy_typenum<npy_longlong> {
-    static constexpr int value = NPY_LONGLONG;
+    static constexpr NPY_TYPES value = NPY_LONGLONG;
 };
 
 template <>
 struct npy_typenum<npy_ubyte> {
-    static constexpr int value = NPY_UBYTE;
+    static constexpr NPY_TYPES value = NPY_UBYTE;
 };
 
 template <>
 struct npy_typenum<npy_ushort> {
-    static constexpr int value = NPY_USHORT;
+    static constexpr NPY_TYPES value = NPY_USHORT;
 };
 
 template <>
 struct npy_typenum<npy_uint> {
-    static constexpr int value = NPY_UINT;
+    static constexpr NPY_TYPES value = NPY_UINT;
 };
 
 template <>
 struct npy_typenum<npy_ulong> {
-    static constexpr int value = NPY_ULONG;
+    static constexpr NPY_TYPES value = NPY_ULONG;
 };
 
 template <>
 struct npy_typenum<npy_ulonglong> {
-    static constexpr int value = NPY_ULONGLONG;
+    static constexpr NPY_TYPES value = NPY_ULONGLONG;
 };
 
 template <>
 struct npy_typenum<npy_float> {
-    static constexpr int value = NPY_FLOAT;
+    static constexpr NPY_TYPES value = NPY_FLOAT;
 };
 
 template <>
 struct npy_typenum<npy_double> {
-    static constexpr int value = NPY_DOUBLE;
+    static constexpr NPY_TYPES value = NPY_DOUBLE;
 };
 
 // When NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE, npy_longdouble is defined as npy_double
@@ -236,37 +236,37 @@ struct npy_typenum<npy_double> {
 #if (NPY_SIZEOF_LONGDOUBLE != NPY_SIZEOF_DOUBLE)
 template <>
 struct npy_typenum<npy_longdouble> {
-    static constexpr int value = NPY_LONGDOUBLE;
+    static constexpr NPY_TYPES value = NPY_LONGDOUBLE;
 };
 #endif
 
 template <>
 struct npy_typenum<npy_cfloat> {
-    static constexpr int value = NPY_CFLOAT;
+    static constexpr NPY_TYPES value = NPY_CFLOAT;
 };
 
 template <>
 struct npy_typenum<npy_cdouble> {
-    static constexpr int value = NPY_CDOUBLE;
+    static constexpr NPY_TYPES value = NPY_CDOUBLE;
 };
 
 template <>
 struct npy_typenum<npy_clongdouble> {
-    static constexpr int value = NPY_CLONGDOUBLE;
+    static constexpr NPY_TYPES value = NPY_CLONGDOUBLE;
 };
 
 template <typename T>
 struct npy_typenum<T *> {
-    static constexpr int value = npy_typenum<T>::value;
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
 };
 
 template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
 struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
-    static constexpr int value = npy_typenum<T>::value;
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
 };
 
 template <typename T>
-inline constexpr int npy_typenum_v = npy_typenum<T>::value;
+inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
 // Sets the value dst to be the value of type T at src
 template <typename T>
@@ -348,16 +348,15 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
         initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)
     };
 
-    static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+    static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             const Res &res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
             npy_set(args[sizeof...(Args)], res); // assign to the output pointer
 
-            for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
+            for (npy_uintp j = 0; j < sizeof...(Args) + 1; ++j) {
                 args[j] += steps[j];
             }
-            args[sizeof...(Args)] += steps[sizeof...(Args)]; // output
         }
 
         const char *name = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->name;
@@ -373,7 +372,7 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
         initializer_accumulate(ranks, ranks + I, sizeof...(Args))...
     };
 
-    static void loop_func(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
+    static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
@@ -389,49 +388,31 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
 };
 
 class SpecFun_UFunc {
-    // This is an internal class designed only to help construction from an initializer list of functions
-    class SpecFun_Func {
-      public:
-        using data_handle_type = void *;
-        using data_deleter_type = void (*)(void *);
-
-      private:
-        bool m_has_return;
-        int m_nin_and_nout;
-        PyUFuncGenericFunction m_loop_func;
-        const char *m_types;
-        data_handle_type m_data;
-        data_deleter_type m_data_deleter;
-
-      public:
-        template <typename Res, typename... Args>
-        SpecFun_Func(Res (*func)(Args... args))
-            : m_has_return(!std::is_void_v<Res>), m_nin_and_nout(sizeof...(Args) + m_has_return),
-              m_loop_func(ufunc_traits<Res(Args...)>::loop_func), m_types(ufunc_traits<Res(Args...)>::types),
-              m_data(new ufunc_data<Res (*)(Args...)>{{nullptr}, func}),
-              m_data_deleter([](void *ptr) { delete reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }) {}
-
-        int nin_and_nout() const { return m_nin_and_nout; }
-
-        bool has_return() const { return m_has_return; }
-
-        PyUFuncGenericFunction loop_func() const { return m_loop_func; }
-
-        data_handle_type data() const { return m_data; }
-
-        data_deleter_type data_deleter() const { return m_data_deleter; }
-
-        const char *types() const { return m_types; }
-    };
-
   public:
     using data_handle_type = void *;
     using data_deleter_type = void (*)(void *);
 
   private:
+    // This is an internal class designed only to help construction from an initializer list of functions
+    struct SpecFun_Func {
+        bool has_return;
+        int nin_and_nout;
+        PyUFuncGenericFunction func;
+        void *data;
+        void (*data_deleter)(void *);
+        const char *types;
+
+        template <typename Res, typename... Args>
+        SpecFun_Func(Res (*func)(Args... args))
+            : has_return(!std::is_void_v<Res>), nin_and_nout(sizeof...(Args) + has_return),
+              func(ufunc_traits<Res(Args...)>::loop), data(new ufunc_data<Res (*)(Args...)>{{nullptr}, func}),
+              data_deleter([](void *ptr) { delete reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }),
+              types(ufunc_traits<Res(Args...)>::types) {}
+    };
+
     int m_ntypes;
-    int m_nin_and_nout;
     bool m_has_return;
+    int m_nin_and_nout;
     std::unique_ptr<PyUFuncGenericFunction[]> m_func;
     std::unique_ptr<data_handle_type[]> m_data;
     std::unique_ptr<data_deleter_type[]> m_data_deleters;
@@ -439,24 +420,24 @@ class SpecFun_UFunc {
 
   public:
     SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
-        : m_ntypes(func.size()), m_nin_and_nout(func.begin()->nin_and_nout()), m_has_return(func.begin()->has_return()),
+        : m_ntypes(func.size()), m_has_return(func.begin()->has_return), m_nin_and_nout(func.begin()->nin_and_nout),
           m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
           m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
         for (auto it = func.begin(); it != func.end(); ++it) {
-            if (it->nin_and_nout() != m_nin_and_nout) {
+            if (it->nin_and_nout != m_nin_and_nout) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
             }
-            if (it->has_return() != m_has_return) {
+            if (it->has_return != m_has_return) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
             }
 
             size_t i = it - func.begin();
 
-            m_func[i] = it->loop_func();
-            m_data[i] = it->data();
-            m_data_deleters[i] = it->data_deleter();
+            m_func[i] = it->func;
+            m_data[i] = it->data;
+            m_data_deleters[i] = it->data_deleter;
 
-            std::copy(it->types(), it->types() + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
+            std::copy(it->types, it->types + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
         }
     }
 
@@ -484,7 +465,7 @@ class SpecFun_UFunc {
     char *types() const { return m_types.get(); }
 
     void set_name(const char *name) {
-        for (size_t i = 0; i < m_ntypes; ++i) {
+        for (int i = 0; i < m_ntypes; ++i) {
             reinterpret_cast<base_ufunc_data *>(m_data[i])->name = name;
         }
     }
