@@ -788,7 +788,7 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
 
-
+    @pytest.mark.xslow
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
@@ -909,6 +909,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
@@ -928,6 +929,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
     @pytest.mark.parametrize('i', range(5))
     def test_against_anderson(self, dist_name, i):

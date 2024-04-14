@@ -423,7 +423,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens

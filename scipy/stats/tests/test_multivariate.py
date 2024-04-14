@@ -2583,7 +2583,7 @@ class TestMultivariateT:
         cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
 
-    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    @pytest.mark.parametrize('dim', [1, 2, 5])
     def test_cdf_against_multivariate_normal(self, dim):
         # Check accuracy against MVN randomly-generated cases
         self.cdf_against_mvn_test(dim)

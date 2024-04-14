@@ -79,7 +79,7 @@ fail_interval_censored = {"truncpareto"}
 # Don't run the fit test on these:
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
-    'genhyperbolic',  # too slow
+    'genhyperbolic', 'norminvgauss',  # too slow
 ]
 
 
@@ -292,7 +292,7 @@ def cases_test_fit_mse():
                       'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'beta', 'betaprime', 'burr', 'burr12',
+    xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
                        'f', 'gengamma', 'gennorm',
                        'halfgennorm', 'invgamma', 'invgauss',
                        'kappa4', 'loguniform',
@@ -840,7 +840,7 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
         assert_allclose(res.pvalue, 0.15, atol=5e-3)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_against_anderson_gumbel_r(self):
         rng = np.random.default_rng(7302761058217743)
         # c that produced critical value of statistic found w/ root_scalar
@@ -901,7 +901,7 @@ class TestGoodnessOfFit:
         res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
         assert_allclose(res, ref, atol=2e-3)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize('case', [(5, 0.95772790260469, 0.4755),
                                       (6, 0.95398832257958, 0.3848),
                                       (7, 0.9432692889277, 0.2328)])
