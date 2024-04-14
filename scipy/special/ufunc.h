@@ -342,7 +342,9 @@ struct ufunc_traits;
 template <typename Res, typename... Args, size_t... I>
 struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
+
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
+
     static constexpr size_t steps_offsets[sizeof...(Args) + 1] = {
         initializer_accumulate(ranks, ranks + I, sizeof...(Args) + 1)...,
         initializer_accumulate(ranks, ranks + sizeof...(Args) + 1, sizeof...(Args) + 1)
@@ -351,10 +353,10 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            const Res &res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
+            Res res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
             npy_set(args[sizeof...(Args)], res); // assign to the output pointer
 
-            for (npy_uintp j = 0; j < sizeof...(Args) + 1; ++j) {
+            for (npy_uintp j = 0; j <= sizeof...(Args); ++j) {
                 args[j] += steps[j];
             }
         }
@@ -367,7 +369,9 @@ struct ufunc_traits<Res(Args...), std::index_sequence<I...>> {
 template <typename... Args, size_t... I>
 struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
+
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
+
     static constexpr size_t steps_offsets[sizeof...(Args)] = {
         initializer_accumulate(ranks, ranks + I, sizeof...(Args))...
     };
