@@ -180,6 +180,8 @@ template <typename T>
 using is_floating_point = cuda::std::is_floating_point<T>;
 using uint64_t = cuda::std::uint64_t;
 
+#define SPECFUN_ASSERT(a)
+
 } // namespace std
 
 #else
