@@ -853,8 +853,8 @@ class SmokeDocs(Task):
         return cls.scipy_tests(args, pytest_args)
 
 
-@cli.cls_cmd('smoke-tutorial')
-class SmokeTutorial(Task):
+@cli.cls_cmd('smoke-tutorials')
+class SmokeTutorials(Task):
     """:wrench: Run smoke-tests on tutorial files."""
     ctx = CONTEXT
 

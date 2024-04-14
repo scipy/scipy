@@ -191,7 +191,7 @@ jobs:
           name: smoke-tutorials
           no_output_timeout: 10m
           command: |
-            python dev.py smoke-tutorial
+            python dev.py smoke-tutorials
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
