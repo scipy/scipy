@@ -224,21 +224,20 @@ def cases_test_fit_mle():
                       'arcsine'}
 
     # Please keep this list in alphabetical order...
-    slow_basic_fit = {'alpha',
-                      'betaprime', 'binom', 'bradford', 'burr12',
-                      'chi', 'crystalball', 'dweibull', 'exponpow',
-                      'f', 'fatiguelife', 'fisk', 'foldcauchy',
+    slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',
+                      'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
+                      'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
-                      'gompertz', 'halfgennorm', 'invgauss', 'invweibull',
+                      'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nakagami', 'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
-                      'randint', 'rdist', 'recipinvgauss', 'rice',
-                      't', 'uniform', 'weibull_max', 'wrapcauchy'}
+                      'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
+                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'beta', 'betabinom', 'burr', 'exponweib',
+    xslow_basic_fit = {'beta', 'betabinom', 'betanbinom', 'burr', 'exponweib',
                        'gausshyper', 'gengamma', 'genhalflogistic',
                        'genhyperbolic', 'geninvgauss',
                        'hypergeom', 'kappa4', 'loguniform',
@@ -246,7 +245,7 @@ def cases_test_fit_mle():
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
                        'skellam', 'trapezoid', 'triang', 'truncnorm',
-                       'tukeylambda', 'zipfian'}
+                       'tukeylambda', 'vonmises', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -274,34 +273,33 @@ def cases_test_fit_mse():
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
-                      'chi', 'chi2', 'crystalball', 'dgamma', 'dweibull',
+                      'chi', 'chi2', 'crystalball', 'dweibull',
                       'erlang', 'exponnorm', 'exponpow', 'exponweib',
                       'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
                       'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
                       'genlogistic', 'genpareto', 'gompertz',
-                      'hypergeom', 'invweibull', 'jf_skew_t', 'johnsonsb',
+                      'hypergeom', 'invweibull',
                       'johnsonsu', 'kappa3', 'kstwobign',
                       'laplace_asymmetric', 'loggamma', 'loglaplace',
                       'lognorm', 'lomax',
-                      'maxwell', 'mielke', 'nakagami', 'nhypergeom',
+                      'maxwell', 'nhypergeom',
                       'pareto', 'powernorm', 'randint', 'recipinvgauss',
                       'semicircular',
                       't', 'triang', 'truncexpon', 'truncpareto',
-                      'truncweibull_min',
-                      'uniform', 'vonmises_line',
+                      'uniform',
                       'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
-                       'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss',
-                       'kappa4', 'loguniform',
-                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
-                       'nct', 'ncx2',
+                       'dgamma', 'f', 'gengamma', 'gennorm',
+                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t'
+                       'johnsonsb', 'kappa4', 'loguniform', 'mielke',
+                       'nakagami', 'ncf', 'nchypergeom_fisher',
+                       'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlaw', 'powerlognorm',
                        'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
-                       'trapezoid', 'truncnorm',
-                       'zipfian'}
+                       'trapezoid', 'truncnorm', 'truncweibull_min',
+                       'vonmises_line', 'zipfian'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 

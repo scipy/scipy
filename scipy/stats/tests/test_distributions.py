@@ -220,6 +220,7 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
+    @pytest.mark.slow
     def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
