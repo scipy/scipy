@@ -707,14 +707,11 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
-    if not_numpy:
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
         policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
