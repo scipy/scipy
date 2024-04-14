@@ -312,7 +312,7 @@ int {{SUB}}_separable_2Dconvolve_mirror({{TYP}} *in, {{TYP}} *out,
     {{TYP}} *tmpmem;
     {{TYP}} *inptr=NULL, *outptr=NULL;
 
-    tmpmem = malloc(M*N*sizeof({{TYP}}));
+    tmpmem = ({{TYP}} *)malloc(M*N*sizeof({{TYP}}));
     if (tmpmem == NULL) return -1;
 
     if (Nhr > 0) {

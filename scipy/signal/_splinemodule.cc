@@ -187,7 +187,9 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   thetype = PyArray_MIN(thetype, NPY_CDOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  if (a_sig == NULL) goto fail;
+  bool gotofail = false;
+
+  if (a_sig == NULL) {gotofail = true; }
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -201,7 +203,9 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
   const npy_intp sz[2] = {M, 1};
   dtype = PyArray_DescrFromType(thetype);
   out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
-  if (out == NULL) goto fail;
+  if (out == NULL) {gotofail = true; }
+
+  if(gotofail) goto fail;
 
   switch (thetype) {
   case NPY_FLOAT:
@@ -227,7 +231,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
 #ifdef __GNUC__
   case NPY_CFLOAT:
     {
-      __complex__ float zz1 = z1.real + 1.0i*z1.imag;
+      __complex__ float zz1 = z1.real + 1.0j*z1.imag;
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-6;
       ret = C_SYM_IIR1_initial (zz1, (__complex__ float *)PyArray_DATA(a_sig),
 			    (__complex__ float *)PyArray_DATA(out), M, N,
@@ -236,7 +240,7 @@ static PyObject *IIRsymorder1_ic(PyObject *NPY_UNUSED(dummy), PyObject *args)
     break;
   case NPY_CDOUBLE:
     {
-      __complex__ double zz1 = z1.real + 1.0i*z1.imag;
+      __complex__ double zz1 = z1.real + 1.0j*z1.imag;
       if ((precision <= 0.0) || (precision > 1.0)) precision = 1e-11;
       ret = Z_SYM_IIR1_initial (zz1, (__complex__ double *)PyArray_DATA(a_sig),
 			    (__complex__ double *)PyArray_DATA(out), M, N,
@@ -318,7 +322,9 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  if (a_sig == NULL) goto fail;
+  bool gotofail = false;
+
+  if (a_sig == NULL) {gotofail = true;}
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -332,7 +338,9 @@ static PyObject *IIRsymorder2_ic_fwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   dtype = PyArray_DescrFromType(thetype);
   const npy_intp sz[2] = {M, 2};
   out = (PyArrayObject *)PyArray_Empty(2, sz, dtype, 0);
-  if (out == NULL) goto fail;
+  if (out == NULL) {gotofail = true;}
+
+  if (gotofail) {goto fail;}
 
   switch (thetype) {
   case NPY_FLOAT:
@@ -425,7 +433,9 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   thetype = PyArray_MIN(thetype, NPY_DOUBLE);
   a_sig = (PyArrayObject *)PyArray_FromObject(sig, thetype, 1, 2);
 
-  if (a_sig == NULL) goto fail;
+  bool gotofail = false;
+
+  if (a_sig == NULL) {gotofail = true;}
 
   in_size = PyArray_DIMS(a_sig);
   M = 1;
@@ -439,7 +449,9 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   dtype = PyArray_DescrFromType(thetype);
   const npy_intp sz[2] = {M, 2};
   out = (PyArrayObject *)PyArray_Zeros(2, sz, dtype, 0);
-  if (out == NULL) goto fail;
+  if (out == NULL) {gotofail = true;}
+
+  if (gotofail) {goto fail;}
 
   switch (thetype) {
   case NPY_FLOAT:

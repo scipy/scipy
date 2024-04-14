@@ -70,10 +70,11 @@ endforeach
 
 py3.extension_module('_spline',
   [
-    '_splinemodule.c',
-    tempita_gen.process('_bspline_util.c.in'),
+    '_splinemodule.cc',
+    tempita_gen.process('_bspline_util.cc.in'),
   ],
   dependencies: np_dep,
+  cpp_args: ['--std=c++14', '-fext-numeric-literals'],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/signal'
