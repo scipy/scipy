@@ -231,12 +231,14 @@ if use_g77_abi
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
     dependencies: [py3_dep, cblas, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
     dependencies: [py3_dep, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 endif
 

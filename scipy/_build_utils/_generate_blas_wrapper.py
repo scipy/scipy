@@ -59,10 +59,9 @@ def generate_decl_wrapper(name, return_type, argnames, argtypes, accelerate):
     param_list = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
     argnames = ', '.join(argnames)
     blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
-    # HIDDEN_SYMBOL macro defined in npy_cblas.h
     return f"""
 {c_return_type} {blas_macro}({blas_name})({param_list});
-HIDDEN_SYMBOL {c_return_type} F_FUNC({name},{name.upper()})({param_list}){{
+{c_return_type} F_FUNC({name},{name.upper()})({param_list}){{
     return {blas_macro}({blas_name})({argnames});
 }}
 """

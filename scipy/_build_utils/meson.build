@@ -14,6 +14,7 @@ if generate_blas_wrappers
     c_args: numpy_nodepr_api,
     dependencies: [blas_dep, lapack_dep, np_dep, py3_dep],
     include_directories: ['../linalg/', './src'],
+    gnu_symbol_visibility: 'hidden',
   )
 else
   blas_lapack_wrapper_lib = []
