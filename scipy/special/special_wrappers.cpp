@@ -220,7 +220,7 @@ double special_sinpi(double x) { return special::sinpi(x); }
 
 npy_cdouble special_csinpi(npy_cdouble z) { return to_ccomplex(special::sinpi(to_complex(z))); }
 
-double special_cospi(double x) { return special::cos_pi(x); }
+double special_cospi(double x) { return special::cospi(x); }
 
 void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) { special::airy_wrap(x, ai, aip, bi, bip); }
 

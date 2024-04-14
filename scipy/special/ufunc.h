@@ -450,7 +450,7 @@ class SpecFun_UFunc {
             if (it->has_return != m_has_return) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
             }
-
+ 
             size_t i = it - func.begin();
             m_func[i] = it->func;
             m_data[i] = it->data;

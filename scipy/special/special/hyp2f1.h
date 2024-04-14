@@ -47,9 +47,8 @@
 #include "cephes/gamma.h"
 #include "cephes/lanczos.h"
 #include "cephes/poch.h"
+#include "cephes/hyp2f1.h"
 #include "digamma.h"
-
-extern "C" double cephes_hyp2f1(double, double, double, double);
 
 namespace special {
 namespace detail {
@@ -686,7 +685,7 @@ inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float>
                                                    static_cast<double>(c), static_cast<std::complex<double>>(x)));
 }
 
-inline double hyp2f1(double a, double b, double c, double x) { return cephes_hyp2f1(a, b, c, x); }
+inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
 
 inline float hyp2f1(float a, float b, float c, float x) {
     return hyp2f1(static_cast<double>(a), static_cast<double>(b), static_cast<double>(c), static_cast<double>(x));

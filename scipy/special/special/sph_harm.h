@@ -21,10 +21,10 @@ std::complex<T> sph_harm(long m, long n, T theta, T phi) {
 
     std::complex<T> val = pmv(m_abs, n, std::cos(phi));
     if (m < 0) {
-        val *= std::pow(-1, m_abs) * cephes_poch(n + m_abs + 1, -2 * m_abs);
+        val *= std::pow(-1, m_abs) * cephes::poch(n + m_abs + 1, -2 * m_abs);
     }
 
-    val *= std::sqrt((2 * n + 1) * cephes_poch(n + m + 1, -2 * m) / (4 * M_PI));
+    val *= std::sqrt((2 * n + 1) * cephes::poch(n + m + 1, -2 * m) / (4 * M_PI));
     val *= std::exp(std::complex(static_cast<T>(0), m * theta));
 
     return val;

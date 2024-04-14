@@ -1,8 +1,7 @@
 #pragma once
 
 #include "config.h"
-
-extern "C" double cephes_poch(double x, double m);
+#include "cephes/poch.h"
 
 namespace special {
 
@@ -135,7 +134,7 @@ void sph_legendre_all(T phi, OutMat p) {
 
     for (long j = 0; j <= n; ++j) {
         for (long i = 0; i <= j; ++i) {
-            p(i, j) *= std::sqrt((2 * j + 1) * cephes_poch(j + i + 1, -2 * i) / (4 * M_PI));
+            p(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
         }
     }
 }
