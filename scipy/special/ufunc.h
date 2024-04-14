@@ -327,9 +327,12 @@ void npy_set(char *dst, const std::complex<T> &src) {
     *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = src.imag();
 }
 
-template <typename Func>
-struct ufunc_data {
+struct base_ufunc_data {
     const char *name;
+};
+
+template <typename Func>
+struct ufunc_data : base_ufunc_data {
     Func func;
 };
 
@@ -385,57 +388,73 @@ struct ufunc_traits<void(Args...), std::index_sequence<I...>> {
     }
 };
 
-class SpecFun_Func {
-    bool m_has_return;
-    int m_nin_and_nout;
-    PyUFuncGenericFunction m_loop_func;
-    std::unique_ptr<char[]> m_types;
-    size_t m_data_size;
-    std::unique_ptr<std::byte[]> m_data;
+class SpecFun_UFunc {
+    // This is an internal class designed only to help construction from an initializer list of functions
+    class SpecFun_Func {
+      public:
+        using data_handle_type = void *;
+        using data_deleter_type = void (*)(void *);
+
+      private:
+        bool m_has_return;
+        int m_nin_and_nout;
+        PyUFuncGenericFunction m_loop_func;
+        const char *m_types;
+        data_handle_type m_data;
+        data_deleter_type m_data_deleter;
+
+      public:
+        template <typename Res, typename... Args>
+        SpecFun_Func(Res (*func)(Args... args))
+            : m_has_return(!std::is_void_v<Res>), m_nin_and_nout(sizeof...(Args) + m_has_return),
+              m_loop_func(ufunc_traits<Res(Args...)>::loop_func), m_types(ufunc_traits<Res(Args...)>::types),
+              m_data(new ufunc_data<Res (*)(Args...)>{{nullptr}, func}),
+              m_data_deleter([](void *ptr) { delete reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(ptr); }) {}
+
+        int nin_and_nout() const { return m_nin_and_nout; }
+
+        bool has_return() const { return m_has_return; }
+
+        PyUFuncGenericFunction loop_func() const { return m_loop_func; }
+
+        data_handle_type data() const { return m_data; }
+
+        data_deleter_type data_deleter() const { return m_data_deleter; }
+
+        const char *types() const { return m_types; }
+    };
 
   public:
-    template <typename Res, typename... Args>
-    SpecFun_Func(Res (*func)(Args... args))
-        : m_has_return(!std::is_void_v<Res>), m_nin_and_nout(sizeof...(Args) + m_has_return),
-          m_loop_func(ufunc_traits<Res(Args...)>::loop_func), m_types(new char[m_nin_and_nout]),
-          m_data_size(sizeof(ufunc_data<Res (*)(Args...)>)), m_data(new std::byte[m_data_size]) {
-        std::copy(ufunc_traits<Res(Args...)>::types, ufunc_traits<Res(Args...)>::types + m_nin_and_nout, m_types.get());
-        reinterpret_cast<ufunc_data<Res (*)(Args...)> *>(m_data.get())->func = func;
-    }
+    using data_handle_type = void *;
+    using data_deleter_type = void (*)(void *);
 
-    int nin_and_nout() const { return m_nin_and_nout; }
-
-    bool has_return() const { return m_has_return; }
-
-    PyUFuncGenericFunction loop_func() const { return m_loop_func; }
-
-    void *data() const { return reinterpret_cast<void *>(m_data.get()); }
-
-    size_t data_size() const { return m_data_size; }
-
-    char *types() const { return m_types.get(); }
-};
-
-class SpecFun_UFunc {
+  private:
     int m_ntypes;
     int m_nin_and_nout;
+    bool m_has_return;
     std::unique_ptr<PyUFuncGenericFunction[]> m_func;
-    std::unique_ptr<std::byte *[]> m_data;
+    std::unique_ptr<data_handle_type[]> m_data;
+    std::unique_ptr<data_deleter_type[]> m_data_deleters;
     std::unique_ptr<char[]> m_types;
 
   public:
-    SpecFun_UFunc(std::initializer_list<SpecFun_Func> func, const char *name)
-        : m_ntypes(func.size()), m_nin_and_nout(func.begin()->nin_and_nout()),
-          m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new std::byte *[m_ntypes]),
-          m_types(new char[m_ntypes * m_nin_and_nout]) {
+    SpecFun_UFunc(std::initializer_list<SpecFun_Func> func)
+        : m_ntypes(func.size()), m_nin_and_nout(func.begin()->nin_and_nout()), m_has_return(func.begin()->has_return()),
+          m_func(new PyUFuncGenericFunction[m_ntypes]), m_data(new data_handle_type[m_ntypes]),
+          m_data_deleters(new data_deleter_type[m_ntypes]), m_types(new char[m_ntypes * m_nin_and_nout]) {
         for (auto it = func.begin(); it != func.end(); ++it) {
+            if (it->nin_and_nout() != func.begin()->nin_and_nout()) {
+                PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
+            }
+            if (it->has_return() != func.begin()->has_return()) {
+                PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
+            }
+
             size_t i = it - func.begin();
 
             m_func[i] = it->loop_func();
-
-            m_data[i] = new std::byte[it->data_size()];
-            std::memcpy(m_data[i], it->data(), it->data_size());
-            std::memcpy(m_data[i], &name, sizeof(const char *)); // overwrite the first member with the name pointer
+            m_data[i] = it->data();
+            m_data_deleters[i] = it->data_deleter();
 
             std::copy(it->types(), it->types() + m_nin_and_nout, m_types.get() + i * m_nin_and_nout);
         }
@@ -446,7 +465,8 @@ class SpecFun_UFunc {
     ~SpecFun_UFunc() {
         if (m_data) {
             for (int i = 0; i < m_ntypes; ++i) {
-                delete[] m_data[i];
+                data_deleter_type data_deleter = m_data_deleters[i];
+                data_deleter(m_data[i]);
             }
         }
     }
@@ -455,62 +475,57 @@ class SpecFun_UFunc {
 
     int ntypes() const { return m_ntypes; }
 
+    bool has_return() const { return m_has_return; }
+
     PyUFuncGenericFunction *func() const { return m_func.get(); }
 
-    void **data() const { return reinterpret_cast<void **>(m_data.get()); }
+    data_handle_type *data() const { return m_data.get(); }
 
     char *types() const { return m_types.get(); }
-};
 
-PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, int nout, const char *name, const char *doc) {
-    static std::vector<SpecFun_UFunc> ufuncs;
-
-    for (auto it = func.begin(); it != func.end(); ++it) {
-        if (it->nin_and_nout() != func.begin()->nin_and_nout()) {
-            PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
-            return nullptr;
-        }
-        if (it->has_return() != func.begin()->has_return()) {
-            PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
-            return nullptr;
+    void set_name(const char *name) {
+        for (size_t i = 0; i < m_ntypes; ++i) {
+            reinterpret_cast<base_ufunc_data *>(m_data[i])->name = name;
         }
     }
+};
 
-    const SpecFun_UFunc &ufunc = ufuncs.emplace_back(func, name);
+PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc) {
+    static std::vector<SpecFun_UFunc> ufuncs;
+
+    if (PyErr_Occurred()) {
+        return nullptr;
+    }
+
+    SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+    ufunc.set_name(name);
+
     return PyUFunc_FromFuncAndData(
         ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
         name, doc, 0
     );
 }
 
-PyObject *SpecFun_NewUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc) {
-    return SpecFun_NewUFunc(func, func.begin()->has_return(), name, doc);
+PyObject *SpecFun_NewUFunc(SpecFun_UFunc func, const char *name, const char *doc) {
+    return SpecFun_NewUFunc(std::move(func), func.has_return(), name, doc);
 }
 
-PyObject *SpecFun_NewGUFunc(
-    std::initializer_list<SpecFun_Func> func, int nout, const char *name, const char *doc, const char *signature
-) {
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, int nout, const char *name, const char *doc, const char *signature) {
     static std::vector<SpecFun_UFunc> ufuncs;
 
-    for (auto it = func.begin(); it != func.end(); ++it) {
-        if (it->nin_and_nout() != func.begin()->nin_and_nout()) {
-            PyErr_SetString(PyExc_RuntimeError, "all functions must have the same number of arguments");
-            return nullptr;
-        }
-        if (it->has_return() != func.begin()->has_return()) {
-            PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
-            return nullptr;
-        }
+    if (PyErr_Occurred()) {
+        return nullptr;
     }
 
-    const SpecFun_UFunc &ufunc = ufuncs.emplace_back(func, name);
+    SpecFun_UFunc &ufunc = ufuncs.emplace_back(std::move(func));
+    ufunc.set_name(name);
+
     return PyUFunc_FromFuncAndDataAndSignature(
         ufunc.func(), ufunc.data(), ufunc.types(), ufunc.ntypes(), ufunc.nin_and_nout() - nout, nout, PyUFunc_None,
         name, doc, 0, signature
     );
 }
 
-PyObject *
-SpecFun_NewGUFunc(std::initializer_list<SpecFun_Func> func, const char *name, const char *doc, const char *signature) {
-    return SpecFun_NewGUFunc(func, func.begin()->has_return(), name, doc, signature);
+PyObject *SpecFun_NewGUFunc(SpecFun_UFunc func, const char *name, const char *doc, const char *signature) {
+    return SpecFun_NewGUFunc(std::move(func), func.has_return(), name, doc, signature);
 }
