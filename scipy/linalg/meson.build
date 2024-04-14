@@ -76,7 +76,6 @@ py3.extension_module('_fblas',
   fblas_module,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -106,7 +105,6 @@ py3.extension_module('_flapack',
   c_args: [Wno_empty_body],
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -202,7 +200,6 @@ cython_blas = py3.extension_module('cython_blas',
   c_args: cython_c_args,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, np_dep],
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -216,7 +213,6 @@ cython_lapack = py3.extension_module('cython_lapack',
   c_args: cython_c_args,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, np_dep],
-  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'

@@ -202,7 +202,7 @@ superlu_lib = static_library('superlu_lib',
 
 py3.extension_module('_superlu',
   ['_superlumodule.c', '_superlu_utils.c', '_superluobject.c'],
-  link_with: [superlu_lib, blas_lapack_wrapper_lib],
+  link_with: [superlu_lib],
   include_directories: ['SuperLU/SRC'],
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, np_dep],

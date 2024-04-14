@@ -101,7 +101,7 @@ arpack_module = custom_target('arpack_module',
 
 _arpack = py3.extension_module('_arpack',
   arpack_module,
-  link_with: [arpack_lib, g77_abi_wrappers, blas_lapack_wrapper_lib],
+  link_with: arpack_lib,
   link_args: version_link_args,
   dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,

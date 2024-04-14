@@ -519,6 +519,15 @@ configure_file(
 # subdirs with the most heavy builds should come first (that parallelizes
 # better)
 subdir('_build_utils')
+# Update BLAS/LAPACK dependencies to include wrapper libs
+blas_dep = declare_dependency(
+  dependencies: blas_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
+lapack_dep = declare_dependency(
+  dependencies: lapack_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
 subdir('_lib')
 subdir('special')
 subdir('linalg')

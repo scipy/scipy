@@ -104,7 +104,7 @@ foreach ele: elements
 
   propacklib = py3.extension_module(ele[0],
     propack_module,
-    link_with: [propack_lib, g77_abi_wrappers, blas_lapack_wrapper_lib],
+    link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
     dependencies: [lapack_dep, blas_dep, fortranobject_dep],
