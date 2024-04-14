@@ -42,6 +42,10 @@ if cc.get_id() == 'gcc'
   if not cc.version().version_compare('>=9.1')
     error('SciPy requires GCC >= 9.1')
   endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=14.0')
+    error('SciPy requires clang >= 14.0')
+  endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
     error('SciPy requires at least vc142 (default with Visual Studio 2019) ' + \
