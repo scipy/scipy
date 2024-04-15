@@ -2,9 +2,63 @@
 
 #include "amos.h"
 #include "specfun.h"
+#include "trig.h"
+
+extern "C" double cephes_jv(double v, double x);
+extern "C" double cephes_iv(double v, double x);
+extern "C" double cephes_yv(double v, double x);
 
 namespace special {
 namespace detail {
+
+    inline std::complex<double> rotate(std::complex<double> z, double v) {
+        std::complex<double> w;
+        double c = cospi(v);
+        double s = sinpi(v);
+        w.real(z.real() * c - z.imag() * s);
+        w.imag(z.real() * s + z.imag() * c);
+
+        return w;
+    }
+
+    inline std::complex<double> rotate_jy(std::complex<double> j, std::complex<double> y, double v) {
+        std::complex<double> w;
+        double c = cospi(v);
+        double s = sinpi(v);
+        w.real(j.real() * c - y.real() * s);
+        w.imag(j.imag() * c - y.imag() * s);
+        return w;
+    }
+
+    inline int reflect_jy(std::complex<double> *jy, double v) {
+        /* NB: Y_v may be huge near negative integers -- so handle exact
+         *     integers carefully
+         */
+        int i;
+        if (v != floor(v))
+            return 0;
+
+        i = v - 16384.0 * floor(v / 16384.0);
+        if (i & 1) {
+            jy->real(-jy->real());
+            jy->imag(-jy->imag());
+        }
+        return 1;
+    }
+
+    inline int reflect_i(std::complex<double> *ik, double v) {
+        if (v != floor(v))
+            return 0;
+        return 1; /* I is symmetric for integer v */
+    }
+
+    inline std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, double v) {
+        std::complex<double> w;
+        double s = sin(v * M_PI) * (2.0 / M_PI);
+        w.real(i.real() + s * k.real());
+        w.imag(i.imag() + s * k.imag());
+        return w;
+    }
 
     template <typename T>
     void itika(T x, T *ti, T *tk) {
@@ -533,31 +587,437 @@ void rcty(T x, OutputVec1 ry, OutputVec2 dy) {
     rcty(x, &nm, ry, dy);
 }
 
-inline double cyl_bessel_j(double v, double x) { return cbesj_wrap_real(v, x); }
+inline std::complex<double> cyl_bessel_je(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 2;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy_j, cy_y;
 
-inline float cyl_bessel_j(float v, float x) { return cyl_bessel_j(static_cast<double>(v), static_cast<double>(x)); }
+    cy_j.real(NAN);
+    cy_j.imag(NAN);
+    cy_y.real(NAN);
+    cy_y.imag(NAN);
 
-inline std::complex<double> cyl_bessel_j(double v, std::complex<double> x) { return cbesj_wrap(v, x); }
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy_j;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
+    do_sferr("jve:", &cy_j, nz, ierr);
+    if (sign == -1) {
+        if (!detail::reflect_jy(&cy_j, v)) {
+            nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
+            do_sferr("jve(yve):", &cy_y, nz, ierr);
+            cy_j = detail::rotate_jy(cy_j, cy_y, v);
+        }
+    }
+    return cy_j;
+}
+
+inline std::complex<float> cyl_bessel_je(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_je(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+template <typename T>
+T cyl_bessel_je(T v, T x) {
+    if (v != floor(v) && x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    return std::real(cyl_bessel_je(v, std::complex(x)));
+}
+
+inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 2;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy_y, cy_j;
+
+    cy_j.real(NAN);
+    cy_j.imag(NAN);
+    cy_y.real(NAN);
+    cy_y.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy_y;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
+    do_sferr("yve:", &cy_y, nz, ierr);
+    if (ierr == 2) {
+        if (z.real() >= 0 && z.imag() == 0) {
+            /* overflow */
+            cy_y.real(INFINITY);
+            cy_y.imag(0);
+        }
+    }
+
+    if (sign == -1) {
+        if (!detail::reflect_jy(&cy_y, v)) {
+            nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
+            do_sferr("yv(jv):", &cy_j, nz, ierr);
+            cy_y = detail::rotate_jy(cy_y, cy_j, -v);
+        }
+    }
+    return cy_y;
+}
+
+inline std::complex<float> cyl_bessel_ye(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ye(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+template <typename T>
+T cyl_bessel_ye(T v, T x) {
+    if (x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    return std::real(cyl_bessel_ye(v, std::complex(x)));
+}
+
+inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 2;
+    int sign = 1;
+    int nz, ierr;
+    std::complex<double> cy, cy_k;
+
+    cy.real(NAN);
+    cy.imag(NAN);
+    cy_k.real(NAN);
+    cy_k.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besi(z, v, kode, n, &cy, &ierr);
+    do_sferr("ive:", &cy, nz, ierr);
+
+    if (sign == -1) {
+        if (!detail::reflect_i(&cy, v)) {
+            nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
+            do_sferr("ive(kv):", &cy_k, nz, ierr);
+            /* adjust scaling to match zbesi */
+            cy_k = detail::rotate(cy_k, -z.imag() / M_PI);
+            if (z.real() > 0) {
+                cy_k.real(cy_k.real() * exp(-2 * z.real()));
+                cy_k.imag(cy_k.imag() * exp(-2 * z.real()));
+            }
+            /* v -> -v */
+            cy = detail::rotate_i(cy, cy_k, v);
+        }
+    }
+
+    return cy;
+}
+
+inline std::complex<float> cyl_bessel_ie(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ie(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+template <typename T>
+T cyl_bessel_ie(T v, T x) {
+    if (v != floor(v) && x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    return std::real(cyl_bessel_ie(v, std::complex(x)));
+}
+
+inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> z) {
+    std::complex<double> cy{NAN, NAN};
+    if (isnan(v) || isnan(std::real(z)) || isnan(std::imag(z))) {
+        return cy;
+    }
+
+    if (v < 0) {
+        /* K_v == K_{-v} even for non-integer v */
+        v = -v;
+    }
+
+    int n = 1;
+    int kode = 2;
+    int ierr;
+    int nz = amos::besk(z, v, kode, n, &cy, &ierr);
+    do_sferr("kve:", &cy, nz, ierr);
+    if (ierr == 2) {
+        if (std::real(z) >= 0 && std::imag(z) == 0) {
+            /* overflow */
+            cy = INFINITY;
+        }
+    }
+
+    return cy;
+}
+
+inline std::complex<float> cyl_bessel_ke(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ke(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+template <typename T>
+T cyl_bessel_ke(T v, T x) {
+    if (x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    if (x == 0) {
+        return std::numeric_limits<T>::infinity();
+    }
+
+    return std::real(cyl_bessel_ke(v, std::complex(x)));
+}
+
+inline std::complex<double> cyl_hankel_1e(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 2;
+    int m = 1;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy;
+
+    cy.real(NAN);
+    cy.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
+    do_sferr("hankel1e:", &cy, nz, ierr);
+    if (sign == -1) {
+        cy = detail::rotate(cy, v);
+    }
+    return cy;
+}
+
+inline std::complex<float> cyl_hankel_1e(float v, std::complex<float> z) {
+    return static_cast<std::complex<float>>(cyl_hankel_1e(static_cast<double>(v), static_cast<std::complex<double>>(z))
+    );
+}
+
+inline std::complex<double> cyl_hankel_2e(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 2;
+    int m = 2;
+    int nz, ierr;
+    int sign = 1;
+
+    std::complex<double> cy{NAN, NAN};
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
+    }
+
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
+    do_sferr("hankel2e:", &cy, nz, ierr);
+    if (sign == -1) {
+        cy = detail::rotate(cy, -v);
+    }
+    return cy;
+}
+
+inline std::complex<float> cyl_hankel_2e(float v, std::complex<float> z) {
+    return static_cast<std::complex<float>>(cyl_hankel_2e(static_cast<double>(v), static_cast<std::complex<double>>(z))
+    );
+}
+
+inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 1;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy_j, cy_y;
+
+    cy_j.real(NAN);
+    cy_j.imag(NAN);
+    cy_y.real(NAN);
+    cy_y.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy_j;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
+    do_sferr("jv:", &cy_j, nz, ierr);
+    if (ierr == 2) {
+        /* overflow */
+        cy_j = cyl_bessel_je(v, z);
+        cy_j.real(cy_j.real() * INFINITY);
+        cy_j.imag(cy_j.imag() * INFINITY);
+    }
+
+    if (sign == -1) {
+        if (!detail::reflect_jy(&cy_j, v)) {
+            nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
+            do_sferr("jv(yv):", &cy_y, nz, ierr);
+            cy_j = detail::rotate_jy(cy_j, cy_y, v);
+        }
+    }
+    return cy_j;
+}
 
 inline std::complex<float> cyl_bessel_j(float v, std::complex<float> x) {
     return static_cast<std::complex<float>>(cyl_bessel_j(static_cast<double>(v), static_cast<std::complex<double>>(x)));
 }
 
-inline double cyl_bessel_y(double v, double x) { return cbesy_wrap_real(v, x); }
+template <typename T>
+T cyl_bessel_j(T v, T x) {
+    if (v != static_cast<int>(v) && x < 0) {
+        set_error("jv", SF_ERROR_DOMAIN, NULL);
+        return std::numeric_limits<T>::quiet_NaN();
+    }
 
-inline float cyl_bessel_y(float v, float x) { return cyl_bessel_y(static_cast<double>(v), static_cast<double>(x)); }
+    std::complex<T> res = cyl_bessel_j(v, std::complex(x));
+    if (std::real(res) != std::real(res)) {
+        /* AMOS returned NaN, possibly due to overflow */
+        return cephes_jv(v, x);
+    }
 
-inline std::complex<double> cyl_bessel_y(double v, std::complex<double> x) { return cbesy_wrap(v, x); }
+    return std::real(res);
+}
+
+inline std::complex<double> cyl_bessel_y(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 1;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy_y, cy_j;
+
+    cy_j.real(NAN);
+    cy_j.imag(NAN);
+    cy_y.real(NAN);
+    cy_y.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy_y;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+
+    if (z.real() == 0 && z.imag() == 0) {
+        /* overflow */
+        cy_y.real(-INFINITY);
+        cy_y.imag(0);
+        set_error("yv", SF_ERROR_OVERFLOW, NULL);
+    } else {
+        nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
+        do_sferr("yv:", &cy_y, nz, ierr);
+        if (ierr == 2) {
+            if (z.real() >= 0 && z.imag() == 0) {
+                /* overflow */
+                cy_y.real(-INFINITY);
+                cy_y.imag(0);
+            }
+        }
+    }
+
+    if (sign == -1) {
+        if (!detail::reflect_jy(&cy_y, v)) {
+            nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
+            // F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
+            do_sferr("yv(jv):", &cy_j, nz, ierr);
+            cy_y = detail::rotate_jy(cy_y, cy_j, -v);
+        }
+    }
+    return cy_y;
+}
 
 inline std::complex<float> cyl_bessel_y(float v, std::complex<float> x) {
     return static_cast<std::complex<float>>(cyl_bessel_y(static_cast<double>(v), static_cast<std::complex<double>>(x)));
+}
+
+template <typename T>
+T cyl_bessel_y(T v, T x) {
+    if (x < 0) {
+        set_error("yv", SF_ERROR_DOMAIN, nullptr);
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    std::complex<T> res = cyl_bessel_y(v, std::complex(x));
+    if (std::real(res) != std::real(res)) {
+        return cephes_yv(v, x);
+    }
+
+    return std::real(res);
 }
 
 inline double cyl_bessel_i(double v, double x) { return cephes_iv(v, x); }
 
 inline float cyl_bessel_i(float v, float x) { return cyl_bessel_i(static_cast<double>(v), static_cast<double>(x)); }
 
-inline std::complex<double> cyl_bessel_i(double v, std::complex<double> x) { return cbesi_wrap(v, x); }
+inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 1;
+    int sign = 1;
+    int nz, ierr;
+    std::complex<double> cy, cy_k;
+
+    cy.real(NAN);
+    cy.imag(NAN);
+    cy_k.real(NAN);
+    cy_k.imag(NAN);
+
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besi(z, v, kode, n, &cy, &ierr);
+    do_sferr("iv:", &cy, nz, ierr);
+    if (ierr == 2) {
+        /* overflow */
+        if (z.imag() == 0 && (z.real() >= 0 || v == floor(v))) {
+            if (z.real() < 0 && v / 2 != floor(v / 2))
+                cy.real(-INFINITY);
+            else
+                cy.real(INFINITY);
+            cy.imag(0);
+        } else {
+            cy = cyl_bessel_ie(v * sign, z);
+            cy.real(cy.real() * INFINITY);
+            cy.imag(cy.imag() * INFINITY);
+        }
+    }
+
+    if (sign == -1) {
+        if (!detail::reflect_i(&cy, v)) {
+            nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
+            do_sferr("iv(kv):", &cy_k, nz, ierr);
+            cy = detail::rotate_i(cy, cy_k, v);
+        }
+    }
+
+    return cy;
+}
 
 inline std::complex<float> cyl_bessel_i(float v, std::complex<float> x) {
     return static_cast<std::complex<float>>(cyl_bessel_i(static_cast<double>(v), static_cast<std::complex<double>>(x)));
@@ -614,53 +1074,64 @@ T cyl_bessel_k(T v, T z) {
     return std::real(cyl_bessel_k(v, std::complex(z)));
 }
 
-inline double cyl_bessel_je(double v, double x) { return cbesj_wrap_e_real(v, x); }
+inline std::complex<double> cyl_hankel_1(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 1;
+    int m = 1;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy;
 
-inline float cyl_bessel_je(float v, float x) { return cyl_bessel_je(static_cast<double>(v), static_cast<double>(x)); }
+    cy.real(NAN);
+    cy.imag(NAN);
 
-inline std::complex<double> cyl_bessel_je(double v, std::complex<double> x) { return cbesj_wrap_e(v, x); }
-
-inline std::complex<float> cyl_bessel_je(float v, std::complex<float> x) {
-    return static_cast<std::complex<float>>(cyl_bessel_je(static_cast<double>(v), static_cast<std::complex<double>>(x))
-    );
-}
-
-inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> x) { return cbesy_wrap_e(v, x); }
-
-inline std::complex<float> cyl_bessel_ye(float v, std::complex<float> x) {
-    return static_cast<std::complex<float>>(cyl_bessel_ye(static_cast<double>(v), static_cast<std::complex<double>>(x))
-    );
-}
-
-template <typename T>
-T cyl_bessel_ye(T v, T x) {
-    if (x < 0) {
-        return std::numeric_limits<T>::quiet_NaN();
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
     }
-
-    return std::real(cyl_bessel_ye(v, std::complex(x)));
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
+    do_sferr("hankel1:", &cy, nz, ierr);
+    if (sign == -1) {
+        cy = detail::rotate(cy, v);
+    }
+    return cy;
 }
 
-inline double cyl_bessel_ie(double v, double x) { return cbesi_wrap_e_real(v, x); }
-
-inline float cyl_bessel_ie(float v, float x) { return cyl_bessel_ie(static_cast<double>(v), static_cast<double>(x)); }
-
-inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> x) { return cbesi_wrap_e(v, x); }
-
-inline std::complex<float> cyl_bessel_ie(float v, std::complex<float> x) {
-    return static_cast<std::complex<float>>(cyl_bessel_ie(static_cast<double>(v), static_cast<std::complex<double>>(x))
-    );
+inline std::complex<float> cyl_hankel_1(float v, std::complex<float> z) {
+    return static_cast<std::complex<float>>(cyl_hankel_1(static_cast<double>(v), static_cast<std::complex<double>>(z)));
 }
 
-inline double cyl_bessel_ke(double v, double x) { return cbesk_wrap_e_real(v, x); }
+inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
+    int n = 1;
+    int kode = 1;
+    int m = 2;
+    int nz, ierr;
+    int sign = 1;
+    std::complex<double> cy;
 
-inline float cyl_bessel_ke(float v, float x) { return cyl_bessel_ke(static_cast<double>(v), static_cast<double>(x)); }
+    cy.real(NAN);
+    cy.imag(NAN);
 
-inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> x) { return cbesk_wrap_e(v, x); }
+    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
+        return cy;
+    }
+    if (v < 0) {
+        v = -v;
+        sign = -1;
+    }
+    nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
+    do_sferr("hankel2:", &cy, nz, ierr);
+    if (sign == -1) {
+        cy = detail::rotate(cy, -v);
+    }
+    return cy;
+}
 
-inline std::complex<float> cyl_bessel_ke(float v, std::complex<float> x) {
-    return static_cast<std::complex<float>>(cyl_bessel_ke(static_cast<double>(v), static_cast<std::complex<double>>(x))
-    );
+inline std::complex<float> cyl_hankel_2(float v, std::complex<float> z) {
+    return static_cast<std::complex<float>>(cyl_hankel_2(static_cast<double>(v), static_cast<std::complex<double>>(z)));
 }
 
 } // namespace special

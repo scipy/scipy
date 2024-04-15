@@ -71,11 +71,19 @@ using func_dd_dpdp_t = void (*)(double, double, double *, double *);
 using func_fff_fpfp_t = void (*)(float, float, float, float *, float *);
 using func_ddd_dpdp_t = void (*)(double, double, double, double *, double *);
 
+using func_f_frfrfrfr_t = void (*)(float, float &, float &, float &, float &);
+using func_d_drdrdrdr_t = void (*)(double, double &, double &, double &, double &);
+
 using func_f_fpfpfpfp_t = void (*)(float, float *, float *, float *, float *);
 using func_d_dpdpdpdp_t = void (*)(double, double *, double *, double *, double *);
 
 using func_f_FpFpFpFp_t = void (*)(float, complex<float> *, complex<float> *, complex<float> *, complex<float> *);
 using func_d_DpDpDpDp_t = void (*)(double, complex<double> *, complex<double> *, complex<double> *, complex<double> *);
+
+using func_F_FrFrFrFr_t =
+    void (*)(complex<float>, complex<float> &, complex<float> &, complex<float> &, complex<float> &);
+using func_D_DrDrDrDr_t =
+    void (*)(complex<double>, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
 
 using func_F_FpFpFpFp_t =
     void (*)(complex<float>, complex<float> *, complex<float> *, complex<float> *, complex<float> *);
@@ -276,16 +284,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_zeta", _zeta);
 
     PyObject *airy = SpecFun_NewUFunc(
-        {static_cast<func_f_fpfpfpfp_t>(special::airy_wrap), static_cast<func_d_dpdpdpdp_t>(special::airy_wrap),
-         static_cast<func_F_FpFpFpFp_t>(special::cairy_wrap), static_cast<func_D_DpDpDpDp_t>(special::cairy_wrap)},
+        {static_cast<func_f_frfrfrfr_t>(special::airy), static_cast<func_d_drdrdrdr_t>(special::airy),
+         static_cast<func_F_FrFrFrFr_t>(special::airy), static_cast<func_D_DrDrDrDr_t>(special::airy)},
         4, "airy", airy_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "airy", airy);
 
     PyObject *airye = SpecFun_NewUFunc(
-        {static_cast<func_f_fpfpfpfp_t>(special::cairy_wrap_e_real),
-         static_cast<func_d_dpdpdpdp_t>(special::cairy_wrap_e_real),
-         static_cast<func_F_FpFpFpFp_t>(special::cairy_wrap_e), static_cast<func_D_DpDpDpDp_t>(special::cairy_wrap_e)},
+        {static_cast<func_f_frfrfrfr_t>(special::airye), static_cast<func_d_drdrdrdr_t>(special::airye),
+         static_cast<func_F_FrFrFrFr_t>(special::airye), static_cast<func_D_DrDrDrDr_t>(special::airye)},
         4, "airye", airye_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "airye", airye);
@@ -361,25 +368,25 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "hyp2f1", hyp2f1);
 
     PyObject *hankel1 = SpecFun_NewUFunc(
-        {static_cast<func_fF_F_t>(special::cbesh_wrap1), static_cast<func_dD_D_t>(special::cbesh_wrap1)}, "hankel1",
+        {static_cast<func_fF_F_t>(special::cyl_hankel_1), static_cast<func_dD_D_t>(special::cyl_hankel_1)}, "hankel1",
         hankel1_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "hankel1", hankel1);
 
     PyObject *hankel1e = SpecFun_NewUFunc(
-        {static_cast<func_fF_F_t>(special::cbesh_wrap1_e), static_cast<func_dD_D_t>(special::cbesh_wrap1_e)},
+        {static_cast<func_fF_F_t>(special::cyl_hankel_1e), static_cast<func_dD_D_t>(special::cyl_hankel_1e)},
         "hankel1e", hankel1e_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "hankel1e", hankel1e);
 
     PyObject *hankel2 = SpecFun_NewUFunc(
-        {static_cast<func_fF_F_t>(special::cbesh_wrap2), static_cast<func_dD_D_t>(special::cbesh_wrap2)}, "hankel2",
+        {static_cast<func_fF_F_t>(special::cyl_hankel_2), static_cast<func_dD_D_t>(special::cyl_hankel_2)}, "hankel2",
         hankel2_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "hankel2", hankel2);
 
     PyObject *hankel2e = SpecFun_NewUFunc(
-        {static_cast<func_fF_F_t>(special::cbesh_wrap2_e), static_cast<func_dD_D_t>(special::cbesh_wrap2_e)},
+        {static_cast<func_fF_F_t>(special::cyl_hankel_2e), static_cast<func_dD_D_t>(special::cyl_hankel_2e)},
         "hankel2e", hankel2e_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "hankel2e", hankel2e);

@@ -1168,10 +1168,11 @@ cdef extern from r"special_wrappers.h":
     void _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     void _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     void _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
-    npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesh_wrap2_e "cbesh_wrap2_e"(npy_double, npy_cdouble) nogil
+
+    npy_cdouble special_ccyl_hankel_1(npy_double, npy_cdouble) nogil
+    npy_cdouble special_ccyl_hankel_1e(npy_double, npy_cdouble) nogil
+    npy_cdouble special_ccyl_hankel_2(npy_double, npy_cdouble) nogil
+    npy_cdouble special_ccyl_hankel_2e(npy_double, npy_cdouble) nogil
 
     npy_double special_binom(npy_double, npy_double) nogil
 
@@ -2538,19 +2539,19 @@ cpdef double gdtrix(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double complex hankel1(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel1"""
-    return _complexstuff.double_complex_from_npy_cdouble(_func_cbesh_wrap1(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+    return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_hankel_1(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
 
 cpdef double complex hankel1e(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel1e"""
-    return _complexstuff.double_complex_from_npy_cdouble(_func_cbesh_wrap1_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+    return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_hankel_1e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
 
 cpdef double complex hankel2(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel2"""
-    return _complexstuff.double_complex_from_npy_cdouble(_func_cbesh_wrap2(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+    return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_hankel_2(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
 
 cpdef double complex hankel2e(double x0, double complex x1) noexcept nogil:
     """See the documentation for scipy.special.hankel2e"""
-    return _complexstuff.double_complex_from_npy_cdouble(_func_cbesh_wrap2_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+    return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_hankel_2e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
 
 cpdef double huber(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.huber"""

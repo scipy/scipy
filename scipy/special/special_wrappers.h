@@ -116,10 +116,11 @@ npy_cdouble special_ccyl_bessel_k(double v, npy_cdouble z);
 double special_cyl_bessel_ke(double v, double z);
 npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z);
 
-npy_cdouble cbesh_wrap1(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap2(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_1(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z);
+
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 
 double special_binom(double n, double k);

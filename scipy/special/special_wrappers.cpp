@@ -228,24 +228,24 @@ npy_cdouble special_csinpi(npy_cdouble z) { return to_ccomplex(special::sinpi(to
 
 double special_cospi(double x) { return special::cospi(x); }
 
-void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) { special::airy_wrap(x, ai, aip, bi, bip); }
+void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) { special::airy(x, *ai, *aip, *bi, *bip); }
 
 void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    special::cairy_wrap(
-        to_complex(z), reinterpret_cast<complex<double> *>(ai), reinterpret_cast<complex<double> *>(aip),
-        reinterpret_cast<complex<double> *>(bi), reinterpret_cast<complex<double> *>(bip)
+    special::airy(
+        to_complex(z), *reinterpret_cast<complex<double> *>(ai), *reinterpret_cast<complex<double> *>(aip),
+        *reinterpret_cast<complex<double> *>(bi), *reinterpret_cast<complex<double> *>(bip)
     );
 }
 
 void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    special::cairy_wrap_e(
-        to_complex(z), reinterpret_cast<complex<double> *>(ai), reinterpret_cast<complex<double> *>(aip),
-        reinterpret_cast<complex<double> *>(bi), reinterpret_cast<complex<double> *>(bip)
+    special::airye(
+        to_complex(z), *reinterpret_cast<complex<double> *>(ai), *reinterpret_cast<complex<double> *>(aip),
+        *reinterpret_cast<complex<double> *>(bi), *reinterpret_cast<complex<double> *>(bip)
     );
 }
 
 void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
-    special::cairy_wrap_e_real(z, ai, aip, bi, bip);
+    special::airye(z, *ai, *aip, *bi, *bip);
 }
 
 double special_cyl_bessel_j(double v, double x) { return special::cyl_bessel_j(v, x); }
@@ -298,13 +298,21 @@ npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z) {
     return to_ccomplex(special::cyl_bessel_ke(v, to_complex(z)));
 }
 
-npy_cdouble cbesh_wrap1(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap1(v, to_complex(z))); }
+npy_cdouble special_ccyl_hankel_1(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_hankel_1(v, to_complex(z)));
+}
 
-npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap1_e(v, to_complex(z))); }
+npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_hankel_1e(v, to_complex(z)));
+}
 
-npy_cdouble cbesh_wrap2(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap2(v, to_complex(z))); }
+npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_hankel_2(v, to_complex(z)));
+}
 
-npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap2_e(v, to_complex(z))); }
+npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_hankel_2e(v, to_complex(z)));
+}
 
 double special_binom(double n, double k) { return special::binom(n, k); }
 
