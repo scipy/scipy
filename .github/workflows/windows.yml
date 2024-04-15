@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test:
-    name: cp312 (meson) fast
+    name: cp312 fast
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -57,12 +57,12 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2
+          python dev.py test -j2 -- --durations=10
 
 
   #############################################################################
   full_dev_py_min_numpy:
-    name: cp310 (meson) full, dev.py, minimum numpy
+    name: cp310 full, dev.py, minimum numpy
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -97,7 +97,7 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2 --mode full
+          python dev.py test -j2 --mode full -- --durations=10
 
 
   #############################################################################
@@ -156,5 +156,4 @@ jobs:
         run: |
           cd $RUNNER_TEMP
           # run full test suite
-          pytest --pyargs scipy
-
+          pytest --pyargs scipy --durations=10

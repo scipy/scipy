@@ -1,4 +1,4 @@
-name: Linux Meson tests
+name: Linux tests
 
 on:
   push:
@@ -126,7 +126,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        python dev.py --no-build test -j2 -- --durations 10 --timeout=60
+        python dev.py --no-build test -j2 -- --durations=10 --timeout=60
 
   #################################################################################
   test_venv_install:
@@ -386,4 +386,4 @@ jobs:
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py test -- --durations=10"

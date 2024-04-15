@@ -1,4 +1,4 @@
-name: macOS tests (meson)
+name: macOS tests
 
 on:
   push:
@@ -128,7 +128,7 @@ jobs:
       run: |
         conda activate scipy-dev
         export OMP_NUM_THREADS=2
-        python dev.py -n test -j2
+        python dev.py -n test -j2 -- --durations=10
 
     - name: Ccache statistics
       shell: bash -l {0}
@@ -179,4 +179,4 @@ jobs:
         python dev.py build
 
         pip install pooch pytest hypothesis
-        python dev.py -n test 
+        python dev.py -n test -- --durations=10

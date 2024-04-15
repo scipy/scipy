@@ -81,4 +81,4 @@ jobs:
         cd $RUNNER_TEMP
         source test_env/bin/activate
         cd $GITHUB_WORKSPACE
-        python dev.py test
+        python dev.py test -- --durations=10
