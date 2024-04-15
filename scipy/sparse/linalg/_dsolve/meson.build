@@ -196,7 +196,6 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zutil.c'
   ],
   c_args: _superlu_lib_c_args,
-  dependencies: blas_dep,
   include_directories: ['SuperLU/SRC']
 )
 

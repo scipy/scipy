@@ -252,7 +252,7 @@ _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
 py3.extension_module('_matfuncs_expm',
   linalg_cython_gen.process(_matfuncs_expm_pyx),
   c_args: cython_c_args,
-  dependencies: [np_dep, blas_dep],
+  dependencies: np_dep,
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/linalg'
