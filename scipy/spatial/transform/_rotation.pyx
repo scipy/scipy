@@ -898,7 +898,7 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_quat(cls, quat, scalar_first=False):
+    def from_quat(cls, quat, *, scalar_first=False):
         """Initialize from quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
@@ -1639,7 +1639,7 @@ cdef class Rotation:
             return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
-    def as_quat(self, canonical=False, scalar_first=False):
+    def as_quat(self, canonical=False, *, scalar_first=False):
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
