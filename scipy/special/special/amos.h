@@ -22,11 +22,12 @@ inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bip
 
 namespace special {
 
-inline int ierr_to_sferr(int nz, int ierr) {
+inline sf_error_t ierr_to_sferr(int nz, int ierr) {
     /* Return sf_error equivalents for ierr values */
 
-    if (nz != 0)
+    if (nz != 0) {
         return SF_ERROR_UNDERFLOW;
+    }
 
     switch (ierr) {
     case 1:
@@ -40,22 +41,30 @@ inline int ierr_to_sferr(int nz, int ierr) {
     case 5: /* Algorithm termination condition not met */
         return SF_ERROR_NO_RESULT;
     }
-    return -1;
+
+    return SF_ERROR_OK;
 }
 
 template <typename T>
-void set_nan_if_no_computation_done(std::complex<T> *v, int ierr) {
-    if (v != NULL && (ierr == 1 || ierr == 2 || ierr == 4 || ierr == 5)) {
-        v->real(NAN);
-        v->imag(NAN);
+void set_error_and_nan(const char *name, sf_error_t code, T &value) {
+    if (code != SF_ERROR_OK) {
+        set_error(name, code, nullptr);
+
+        if (code == SF_ERROR_DOMAIN || code == SF_ERROR_OVERFLOW || code == SF_ERROR_NO_RESULT) {
+            value = std::numeric_limits<T>::quiet_NaN();
+        }
     }
 }
 
 template <typename T>
-void do_sferr(const char *name, std::complex<T> *ai, int nz, int ierr) {
-    if (nz != 0 || ierr != 0) {
-        set_error(name, (sf_error_t) ierr_to_sferr(nz, ierr), NULL);
-        set_nan_if_no_computation_done(ai, ierr);
+void set_error_and_nan(const char *name, sf_error_t code, std::complex<T> &value) {
+    if (code != SF_ERROR_OK) {
+        set_error(name, code, nullptr);
+
+        if (code == SF_ERROR_DOMAIN || code == SF_ERROR_OVERFLOW || code == SF_ERROR_NO_RESULT) {
+            value.real(std::numeric_limits<T>::quiet_NaN());
+            value.imag(std::numeric_limits<T>::quiet_NaN());
+        }
     }
 }
 
@@ -66,29 +75,20 @@ void airy(std::complex<T> z, std::complex<T> &ai, std::complex<T> &aip, std::com
     int kode = 1;
     int nz;
 
-    ai.real(NAN);
-    ai.imag(NAN);
-    bi.real(NAN);
-    bi.imag(NAN);
-    aip.real(NAN);
-    aip.imag(NAN);
-    bip.real(NAN);
-    bip.imag(NAN);
-
     ai = amos::airy(z, id, kode, &nz, &ierr);
-    do_sferr("airy:", &ai, nz, ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), ai);
 
     nz = 0;
     bi = amos::biry(z, id, kode, &ierr);
-    do_sferr("airy:", &bi, nz, ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), bi);
 
     id = 1;
     aip = amos::airy(z, id, kode, &nz, &ierr);
-    do_sferr("airy:", &aip, nz, ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), aip);
 
     nz = 0;
     bip = amos::biry(z, id, kode, &ierr);
-    do_sferr("airy:", &bip, nz, ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), bip);
 }
 
 template <typename T>
@@ -97,29 +97,20 @@ void airye(std::complex<T> z, std::complex<T> &ai, std::complex<T> &aip, std::co
     int kode = 2; /* Exponential scaling */
     int nz, ierr;
 
-    ai.real(NAN);
-    ai.imag(NAN);
-    bi.real(NAN);
-    bi.imag(NAN);
-    aip.real(NAN);
-    aip.imag(NAN);
-    bip.real(NAN);
-    bip.imag(NAN);
-
     ai = amos::airy(z, id, kode, &nz, &ierr);
-    do_sferr("airye:", &ai, nz, ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), ai);
 
     nz = 0;
     bi = amos::biry(z, id, kode, &ierr);
-    do_sferr("airye:", &bi, nz, ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), bi);
 
     id = 1;
     aip = amos::airy(z, id, kode, &nz, &ierr);
-    do_sferr("airye:", &aip, nz, ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), aip);
 
     nz = 0;
     bip = amos::biry(z, id, kode, &ierr);
-    do_sferr("airye:", &bip, nz, ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), bip);
 }
 
 template <typename T>
@@ -142,13 +133,13 @@ void airye(T z, T &ai, T &aip, T &bi, T &bip) {
         ai = NAN;
     } else {
         cai = amos::airy(z, id, kode, &nz, &ierr);
-        do_sferr("airye:", &cai, nz, ierr);
-        ai = cai.real();
+        set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cai);
+        ai = std::real(cai);
     }
 
     nz = 0;
     cbi = amos::biry(z, id, kode, &ierr);
-    do_sferr("airye:", &cbi, nz, ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cbi);
     bi = std::real(cbi);
 
     id = 1;
@@ -156,14 +147,14 @@ void airye(T z, T &ai, T &aip, T &bi, T &bip) {
         aip = NAN;
     } else {
         caip = amos::airy(z, id, kode, &nz, &ierr);
-        do_sferr("airye:", &caip, nz, ierr);
+        set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), caip);
         aip = std::real(caip);
     }
 
     nz = 0;
     cbip = amos::biry(z, id, kode, &ierr);
-    do_sferr("airye:", &cbip, nz, ierr);
-    bip = cbip.real();
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cbip);
+    bip = std::real(cbip);
 }
 
 template <typename T>

@@ -9,6 +9,7 @@
 #endif
 
 #ifdef __cplusplus
+
 extern "C" {
 #endif
 
@@ -36,6 +37,7 @@ namespace special {
 #else
     void set_error(const char *func_name, sf_error_t code, const char *fmt, ...);
 #endif
+
 } // namespace special
 
 } // closes extern "C"

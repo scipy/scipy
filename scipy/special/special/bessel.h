@@ -607,11 +607,11 @@ inline std::complex<double> cyl_bessel_je(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
-    do_sferr("jve:", &cy_j, nz, ierr);
+    set_error_and_nan("jve:", ierr_to_sferr(nz, ierr), cy_j);
     if (sign == -1) {
         if (!detail::reflect_jy(&cy_j, v)) {
             nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
-            do_sferr("jve(yve):", &cy_y, nz, ierr);
+            set_error_and_nan("jve(yve):", ierr_to_sferr(nz, ierr), cy_y);
             cy_j = detail::rotate_jy(cy_j, cy_y, v);
         }
     }
@@ -652,7 +652,7 @@ inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
-    do_sferr("yve:", &cy_y, nz, ierr);
+    set_error_and_nan("yve:", ierr_to_sferr(nz, ierr), cy_y);
     if (ierr == 2) {
         if (z.real() >= 0 && z.imag() == 0) {
             /* overflow */
@@ -664,7 +664,7 @@ inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> z) {
     if (sign == -1) {
         if (!detail::reflect_jy(&cy_y, v)) {
             nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
-            do_sferr("yv(jv):", &cy_j, nz, ierr);
+            set_error_and_nan("yv(jv):", ierr_to_sferr(nz, ierr), cy_j);
             cy_y = detail::rotate_jy(cy_y, cy_j, -v);
         }
     }
@@ -705,12 +705,12 @@ inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besi(z, v, kode, n, &cy, &ierr);
-    do_sferr("ive:", &cy, nz, ierr);
+    set_error_and_nan("ive:", ierr_to_sferr(nz, ierr), cy);
 
     if (sign == -1) {
         if (!detail::reflect_i(&cy, v)) {
             nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
-            do_sferr("ive(kv):", &cy_k, nz, ierr);
+            set_error_and_nan("ive(kv):", ierr_to_sferr(nz, ierr), cy_k);
             /* adjust scaling to match zbesi */
             cy_k = detail::rotate(cy_k, -z.imag() / M_PI);
             if (z.real() > 0) {
@@ -754,7 +754,7 @@ inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> z) {
     int kode = 2;
     int ierr;
     int nz = amos::besk(z, v, kode, n, &cy, &ierr);
-    do_sferr("kve:", &cy, nz, ierr);
+    set_error_and_nan("kve:", ierr_to_sferr(nz, ierr), cy);
     if (ierr == 2) {
         if (std::real(z) >= 0 && std::imag(z) == 0) {
             /* overflow */
@@ -802,7 +802,7 @@ inline std::complex<double> cyl_hankel_1e(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
-    do_sferr("hankel1e:", &cy, nz, ierr);
+    set_error_and_nan("hankel1e:", ierr_to_sferr(nz, ierr), cy);
     if (sign == -1) {
         cy = detail::rotate(cy, v);
     }
@@ -831,7 +831,7 @@ inline std::complex<double> cyl_hankel_2e(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
-    do_sferr("hankel2e:", &cy, nz, ierr);
+    set_error_and_nan("hankel2e:", ierr_to_sferr(nz, ierr), cy);
     if (sign == -1) {
         cy = detail::rotate(cy, -v);
     }
@@ -863,7 +863,7 @@ inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
-    do_sferr("jv:", &cy_j, nz, ierr);
+    set_error_and_nan("jv:", ierr_to_sferr(nz, ierr), cy_j);
     if (ierr == 2) {
         /* overflow */
         cy_j = cyl_bessel_je(v, z);
@@ -874,7 +874,7 @@ inline std::complex<double> cyl_bessel_j(double v, std::complex<double> z) {
     if (sign == -1) {
         if (!detail::reflect_jy(&cy_j, v)) {
             nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
-            do_sferr("jv(yv):", &cy_y, nz, ierr);
+            set_error_and_nan("jv(yv):", ierr_to_sferr(nz, ierr), cy_y);
             cy_j = detail::rotate_jy(cy_j, cy_y, v);
         }
     }
@@ -928,7 +928,7 @@ inline std::complex<double> cyl_bessel_y(double v, std::complex<double> z) {
         set_error("yv", SF_ERROR_OVERFLOW, NULL);
     } else {
         nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
-        do_sferr("yv:", &cy_y, nz, ierr);
+        set_error_and_nan("yv:", ierr_to_sferr(nz, ierr), cy_y);
         if (ierr == 2) {
             if (z.real() >= 0 && z.imag() == 0) {
                 /* overflow */
@@ -942,7 +942,7 @@ inline std::complex<double> cyl_bessel_y(double v, std::complex<double> z) {
         if (!detail::reflect_jy(&cy_y, v)) {
             nz = amos::besj(z, v, kode, n, &cy_j, &ierr);
             // F_FUNC(zbesj,ZBESJ)(CADDR(z), &v,  &kode, &n, CADDR(cy_j), &nz, &ierr);
-            do_sferr("yv(jv):", &cy_j, nz, ierr);
+            set_error_and_nan("yv(jv):", ierr_to_sferr(nz, ierr), cy_j);
             cy_y = detail::rotate_jy(cy_y, cy_j, -v);
         }
     }
@@ -992,7 +992,7 @@ inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besi(z, v, kode, n, &cy, &ierr);
-    do_sferr("iv:", &cy, nz, ierr);
+    set_error_and_nan("iv:", ierr_to_sferr(nz, ierr), cy);
     if (ierr == 2) {
         /* overflow */
         if (z.imag() == 0 && (z.real() >= 0 || v == floor(v))) {
@@ -1011,7 +1011,7 @@ inline std::complex<double> cyl_bessel_i(double v, std::complex<double> z) {
     if (sign == -1) {
         if (!detail::reflect_i(&cy, v)) {
             nz = amos::besk(z, v, kode, n, &cy_k, &ierr);
-            do_sferr("iv(kv):", &cy_k, nz, ierr);
+            set_error_and_nan("iv(kv):", ierr_to_sferr(nz, ierr), cy_k);
             cy = detail::rotate_i(cy, cy_k, v);
         }
     }
@@ -1038,7 +1038,7 @@ inline std::complex<double> cyl_bessel_k(double v, std::complex<double> z) {
     int kode = 1;
     int ierr;
     int nz = amos::besk(z, v, kode, n, &cy, &ierr);
-    do_sferr("kv:", &cy, nz, ierr);
+    set_error_and_nan("kv:", ierr_to_sferr(nz, ierr), cy);
     if (ierr == 2) {
         if (std::real(z) >= 0 && std::imag(z) == 0) {
             /* overflow */
@@ -1093,7 +1093,7 @@ inline std::complex<double> cyl_hankel_1(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
-    do_sferr("hankel1:", &cy, nz, ierr);
+    set_error_and_nan("hankel1:", ierr_to_sferr(nz, ierr), cy);
     if (sign == -1) {
         cy = detail::rotate(cy, v);
     }
@@ -1123,7 +1123,7 @@ inline std::complex<double> cyl_hankel_2(double v, std::complex<double> z) {
         sign = -1;
     }
     nz = amos::besh(z, v, kode, m, n, &cy, &ierr);
-    do_sferr("hankel2:", &cy, nz, ierr);
+    set_error_and_nan("hankel2:", ierr_to_sferr(nz, ierr), cy);
     if (sign == -1) {
         cy = detail::rotate(cy, -v);
     }
