@@ -1654,7 +1654,7 @@ cdef class Rotation:
             y = sin(theta / 2) * n_y
             z = sin(theta / 2) * n_z
 
-        There are 2 conventions to oder the components in a quaternion:
+        There are 2 conventions to order the components in a quaternion:
 
         - scalar-first order -- ``(w, x, y, z)``
         - scalar-last order -- ``(x, y, z, w)``
@@ -1695,7 +1695,7 @@ cdef class Rotation:
 
         A rotation can be represented as a quaternion with either scalar-last
         (default) or scalar-first component order.
-        This is shown for a single rotaiton:
+        This is shown for a single rotation:
 
         >>> r = R.from_matrix(np.eye(3))
         >>> r.as_quat()
