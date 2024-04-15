@@ -1114,15 +1114,15 @@ ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
 cdef extern from r"special_wrappers.h":
-    double _func_bei_wrap "bei_wrap"(double) nogil
-    double _func_beip_wrap "beip_wrap"(double) nogil
-    double _func_ber_wrap "ber_wrap"(double) nogil
-    double _func_berp_wrap "berp_wrap"(double) nogil
-    npy_double _func_kei_wrap "kei_wrap"(npy_double) nogil
-    npy_double _func_keip_wrap "keip_wrap"(npy_double) nogil
+    double special_bei(double) nogil
+    double special_beip(double) nogil
+    double special_ber(double) nogil
+    double special_berp(double) nogil
+    npy_double special_kei(npy_double) nogil
+    npy_double special_keip(npy_double) nogil
     void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
-    npy_double _func_ker_wrap "ker_wrap"(npy_double) nogil
-    double _func_kerp_wrap "kerp_wrap"(double) nogil
+    npy_double special_ker(npy_double) nogil
+    double special_kerp(double) nogil
     npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
     npy_double _func_sem_cva_wrap "sem_cva_wrap"(npy_double, npy_double) nogil
     void _func_cem_wrap "cem_wrap"(npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
@@ -1856,19 +1856,19 @@ cpdef double bdtrin(double x0, double x1, double x2) noexcept nogil:
 
 cpdef double bei(double x0) noexcept nogil:
     """See the documentation for scipy.special.bei"""
-    return _func_bei_wrap(x0)
+    return special_bei(x0)
 
 cpdef double beip(double x0) noexcept nogil:
     """See the documentation for scipy.special.beip"""
-    return _func_beip_wrap(x0)
+    return special_beip(x0)
 
 cpdef double ber(double x0) noexcept nogil:
     """See the documentation for scipy.special.ber"""
-    return _func_ber_wrap(x0)
+    return special_ber(x0)
 
 cpdef double berp(double x0) noexcept nogil:
     """See the documentation for scipy.special.berp"""
-    return _func_berp_wrap(x0)
+    return special_berp(x0)
 
 cpdef double besselpoly(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.besselpoly"""
@@ -2759,11 +2759,11 @@ cpdef double k1e(double x0) noexcept nogil:
 
 cpdef double kei(double x0) noexcept nogil:
     """See the documentation for scipy.special.kei"""
-    return _func_kei_wrap(x0)
+    return special_kei(x0)
 
 cpdef double keip(double x0) noexcept nogil:
     """See the documentation for scipy.special.keip"""
-    return _func_keip_wrap(x0)
+    return special_keip(x0)
 
 cdef void kelvin(double x0, double complex *y0, double complex *y1, double complex *y2, double complex *y3) noexcept nogil:
     """See the documentation for scipy.special.kelvin"""
@@ -2787,11 +2787,11 @@ def _kelvin_pywrap(double x0):
 
 cpdef double ker(double x0) noexcept nogil:
     """See the documentation for scipy.special.ker"""
-    return _func_ker_wrap(x0)
+    return special_ker(x0)
 
 cpdef double kerp(double x0) noexcept nogil:
     """See the documentation for scipy.special.kerp"""
-    return _func_kerp_wrap(x0)
+    return special_kerp(x0)
 
 cpdef double kl_div(double x0, double x1) noexcept nogil:
     """See the documentation for scipy.special.kl_div"""

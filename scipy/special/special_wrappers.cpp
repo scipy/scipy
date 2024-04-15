@@ -76,21 +76,21 @@ double it2struve0_wrap(double x) { return special::it2struve0(x); }
 
 double itmodstruve0_wrap(double x) { return special::itmodstruve0(x); }
 
-double ber_wrap(double x) { return special::ber(x); }
+double special_ber(double x) { return special::ber(x); }
 
-double bei_wrap(double x) { return special::bei(x); }
+double special_bei(double x) { return special::bei(x); }
 
-double ker_wrap(double x) { return special::ker(x); }
+double special_ker(double x) { return special::ker(x); }
 
-double kei_wrap(double x) { return special::kei(x); }
+double special_kei(double x) { return special::kei(x); }
 
-double berp_wrap(double x) { return special::berp(x); }
+double special_berp(double x) { return special::berp(x); }
 
-double beip_wrap(double x) { return special::beip(x); }
+double special_beip(double x) { return special::beip(x); }
 
-double kerp_wrap(double x) { return special::kerp(x); }
+double special_kerp(double x) { return special::kerp(x); }
 
-double keip_wrap(double x) { return special::keip(x); }
+double special_keip(double x) { return special::keip(x); }
 
 void special_ckelvin(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
     special::kelvin(
