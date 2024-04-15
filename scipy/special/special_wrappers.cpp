@@ -13,6 +13,7 @@
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sph_bessel.h"
 #include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
@@ -92,8 +93,10 @@ double kerp_wrap(double x) { return special::kerp(x); }
 double keip_wrap(double x) { return special::keip(x); }
 
 void kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep) {
-    special::kelvin(x, reinterpret_cast<complex<double> *>(Be), reinterpret_cast<complex<double> *>(Ke),
-                    reinterpret_cast<complex<double> *>(Bep), reinterpret_cast<complex<double> *>(Kep));
+    special::kelvin(
+        x, reinterpret_cast<complex<double> *>(Be), reinterpret_cast<complex<double> *>(Ke),
+        reinterpret_cast<complex<double> *>(Bep), reinterpret_cast<complex<double> *>(Kep)
+    );
 }
 
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble z) {
@@ -208,13 +211,15 @@ void oblate_radial2_wrap(double m, double n, double c, double cv, double x, doub
 }
 
 void modified_fresnel_plus_wrap(double x, npy_cdouble *Fplus, npy_cdouble *Kplus) {
-    special::modified_fresnel_plus(x, reinterpret_cast<complex<double> *>(Fplus),
-                                   reinterpret_cast<complex<double> *>(Kplus));
+    special::modified_fresnel_plus(
+        x, reinterpret_cast<complex<double> *>(Fplus), reinterpret_cast<complex<double> *>(Kplus)
+    );
 }
 
 void modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kminus) {
-    special::modified_fresnel_minus(x, reinterpret_cast<complex<double> *>(Fminus),
-                                    reinterpret_cast<complex<double> *>(Kminus));
+    special::modified_fresnel_minus(
+        x, reinterpret_cast<complex<double> *>(Fminus), reinterpret_cast<complex<double> *>(Kminus)
+    );
 }
 
 double special_sinpi(double x) { return special::sinpi(x); }
@@ -226,52 +231,72 @@ double special_cospi(double x) { return special::cospi(x); }
 void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) { special::airy_wrap(x, ai, aip, bi, bip); }
 
 void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    special::cairy_wrap(to_complex(z), reinterpret_cast<complex<double> *>(ai),
-                        reinterpret_cast<complex<double> *>(aip), reinterpret_cast<complex<double> *>(bi),
-                        reinterpret_cast<complex<double> *>(bip));
+    special::cairy_wrap(
+        to_complex(z), reinterpret_cast<complex<double> *>(ai), reinterpret_cast<complex<double> *>(aip),
+        reinterpret_cast<complex<double> *>(bi), reinterpret_cast<complex<double> *>(bip)
+    );
 }
 
 void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip) {
-    special::cairy_wrap_e(to_complex(z), reinterpret_cast<complex<double> *>(ai),
-                          reinterpret_cast<complex<double> *>(aip), reinterpret_cast<complex<double> *>(bi),
-                          reinterpret_cast<complex<double> *>(bip));
+    special::cairy_wrap_e(
+        to_complex(z), reinterpret_cast<complex<double> *>(ai), reinterpret_cast<complex<double> *>(aip),
+        reinterpret_cast<complex<double> *>(bi), reinterpret_cast<complex<double> *>(bip)
+    );
 }
 
 void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip) {
     special::cairy_wrap_e_real(z, ai, aip, bi, bip);
 }
 
-npy_cdouble cbesi_wrap(double v, npy_cdouble z) { return to_ccomplex(special::cbesi_wrap(v, to_complex(z))); }
+double special_cyl_bessel_j(double v, double x) { return special::cyl_bessel_j(v, x); }
 
-npy_cdouble cbesi_wrap_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesi_wrap_e(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_j(v, to_complex(z)));
+}
 
-double cbesi_wrap_e_real(double v, double z) { return special::cbesi_wrap_e_real(v, z); }
+double special_cyl_bessel_je(double v, double z) { return special::cyl_bessel_je(v, z); }
 
-npy_cdouble cbesj_wrap(double v, npy_cdouble z) { return to_ccomplex(special::cbesj_wrap(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_je(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_je(v, to_complex(z)));
+}
 
-double cbesj_wrap_real(double v, double x) { return special::cbesj_wrap_real(v, x); }
+double special_cyl_bessel_y(double v, double x) { return special::cyl_bessel_y(v, x); }
 
-npy_cdouble cbesj_wrap_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesj_wrap_e(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_y(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_y(v, to_complex(z)));
+}
 
-double cbesj_wrap_e_real(double v, double z) { return special::cbesj_wrap_e_real(v, z); }
+double special_cyl_bessel_ye(double v, double z) { return special::cyl_bessel_ye(v, z); }
 
-npy_cdouble cbesy_wrap(double v, npy_cdouble z) { return to_ccomplex(special::cbesy_wrap(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_ye(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_ye(v, to_complex(z)));
+}
 
-double cbesy_wrap_real(double v, double x) { return special::cbesy_wrap_real(v, x); }
+double special_cyl_bessel_i(double v, double z) { return special::cyl_bessel_i(v, z); }
 
-npy_cdouble cbesy_wrap_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesy_wrap_e(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_i(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_i(v, to_complex(z)));
+}
 
-double cbesy_wrap_e_real(double v, double z) { return special::cbesy_wrap_e_real(v, z); }
+double special_cyl_bessel_ie(double v, double z) { return special::cyl_bessel_ie(v, z); }
 
-npy_cdouble cbesk_wrap(double v, npy_cdouble z) { return to_ccomplex(special::cbesk_wrap(v, to_complex(z))); }
+npy_cdouble special_ccyl_bessel_ie(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_ie(v, to_complex(z)));
+}
 
-npy_cdouble cbesk_wrap_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesk_wrap_e(v, to_complex(z))); }
+double special_cyl_bessel_k_int(int n, double z) { return special::cyl_bessel_k(static_cast<double>(n), z); }
 
-double cbesk_wrap_real(double v, double z) { return special::cbesk_wrap_real(v, z); }
+double special_cyl_bessel_k(double v, double z) { return special::cyl_bessel_k(v, z); }
 
-double cbesk_wrap_real_int(int n, double z) { return special::cbesk_wrap_real_int(n, z); }
+npy_cdouble special_ccyl_bessel_k(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_k(v, to_complex(z)));
+}
 
-double cbesk_wrap_e_real(double v, double z) { return special::cbesk_wrap_e_real(v, z); }
+double special_cyl_bessel_ke(double v, double z) { return special::cyl_bessel_ke(v, z); }
+
+npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z) {
+    return to_ccomplex(special::cyl_bessel_ke(v, to_complex(z)));
+}
 
 npy_cdouble cbesh_wrap1(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap1(v, to_complex(z))); }
 
@@ -338,3 +363,51 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
 
 double special_scaled_exp1(double x) { return special::scaled_exp1(x); }
+
+double special_sph_bessel_j(long n, double x) { return special::sph_bessel_j(n, x); }
+
+npy_cdouble special_csph_bessel_j(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_j(n, to_complex(z)));
+}
+
+double special_sph_bessel_j_jac(long n, double x) { return special::sph_bessel_j_jac(n, x); }
+
+npy_cdouble special_csph_bessel_j_jac(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_j_jac(n, to_complex(z)));
+}
+
+double special_sph_bessel_y(long n, double x) { return special::sph_bessel_y(n, x); }
+
+npy_cdouble special_csph_bessel_y(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_y(n, to_complex(z)));
+}
+
+double special_sph_bessel_y_jac(long n, double x) { return special::sph_bessel_y_jac(n, x); }
+
+npy_cdouble special_csph_bessel_y_jac(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_y_jac(n, to_complex(z)));
+}
+
+double special_sph_bessel_i(long n, double x) { return special::sph_bessel_i(n, x); }
+
+npy_cdouble special_csph_bessel_i(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_i(n, to_complex(z)));
+}
+
+double special_sph_bessel_i_jac(long n, double x) { return special::sph_bessel_i_jac(n, x); }
+
+npy_cdouble special_csph_bessel_i_jac(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_i_jac(n, to_complex(z)));
+}
+
+double special_sph_bessel_k(long n, double x) { return special::sph_bessel_k(n, x); }
+
+npy_cdouble special_csph_bessel_k(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_k(n, to_complex(z)));
+}
+
+double special_sph_bessel_k_jac(long n, double x) { return special::sph_bessel_k_jac(n, x); }
+
+npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z) {
+    return to_ccomplex(special::sph_bessel_k_jac(n, to_complex(z)));
+}

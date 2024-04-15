@@ -12,8 +12,8 @@ cdef extern from "float.h":
 
 
 cdef extern from "special_wrappers.h":
-    np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
-    np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
+    np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
+    np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
     double special_sinpi(double x) nogil
 
 cdef extern from "numpy/npy_math.h":
@@ -121,10 +121,10 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept no
     if npy_creal(zz) > 0:
         arg = zsqrt(z)
         s = 2.0 * arg
-        r = cbesi_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_i(v-1.0, npy_cdouble_from_double_complex(s))
     else:
         arg = zsqrt(-z)
         s = 2.0 * arg
-        r = cbesj_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_j(v-1.0, npy_cdouble_from_double_complex(s))
 
     return double_complex_from_npy_cdouble(r) * Gamma(v) * zpow(arg, 1.0 - v)

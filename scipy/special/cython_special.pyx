@@ -1168,22 +1168,6 @@ cdef extern from r"special_wrappers.h":
     void _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     void _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     void _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
-    npy_cdouble _func_cbesi_wrap "cbesi_wrap"(npy_double, npy_cdouble) nogil
-    npy_cdouble _func_cbesi_wrap_e "cbesi_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesi_wrap_e_real "cbesi_wrap_e_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesj_wrap "cbesj_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesj_wrap_real "cbesj_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesj_wrap_e "cbesj_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesj_wrap_e_real "cbesj_wrap_e_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesy_wrap "cbesy_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesy_wrap_real "cbesy_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesy_wrap_e "cbesy_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesy_wrap_e_real "cbesy_wrap_e_real"(npy_double, npy_double) nogil
-    npy_double _func_cbesk_wrap_real_int "cbesk_wrap_real_int"(npy_int, npy_double) nogil
-    npy_cdouble _func_cbesk_wrap "cbesk_wrap"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesk_wrap_real "cbesk_wrap_real"(npy_double, npy_double) nogil
-    npy_cdouble _func_cbesk_wrap_e "cbesk_wrap_e"(npy_double, npy_cdouble) nogil
-    npy_double _func_cbesk_wrap_e_real "cbesk_wrap_e_real"(npy_double, npy_double) nogil
     npy_cdouble _func_cbesh_wrap1 "cbesh_wrap1"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap1_e "cbesh_wrap1_e"(npy_double, npy_cdouble) nogil
     npy_cdouble _func_cbesh_wrap2 "cbesh_wrap2"(npy_double, npy_cdouble) nogil
@@ -1193,6 +1177,31 @@ cdef extern from r"special_wrappers.h":
 
     npy_double special_digamma(npy_double) nogil
     npy_cdouble special_cdigamma(npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_j(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_j(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_je(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_je(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_y(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_y(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_ye(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_ye(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_k_int(npy_int, npy_double) nogil
+    npy_double special_cyl_bessel_k(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_k(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_ke(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_ke(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_i(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_i(npy_double, npy_cdouble) nogil
+
+    npy_double special_cyl_bessel_ie(npy_double, npy_double) nogil
+    npy_cdouble special_ccyl_bessel_ie(npy_double, npy_cdouble) nogil
 
     npy_double special_exprel(npy_double) nogil
 
@@ -1219,6 +1228,30 @@ cdef extern from r"special_wrappers.h":
 
     npy_double special_rgamma(npy_double) nogil
     npy_cdouble special_crgamma(npy_cdouble) nogil
+
+    npy_long special_sph_bessel_j(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_j(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_j_jac(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_j_jac(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_y(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_y(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_y_jac(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_y_jac(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_i(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_i(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_i_jac(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_i_jac(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_k(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_k(npy_long, npy_cdouble) nogil
+
+    npy_long special_sph_bessel_k_jac(npy_long, npy_double) nogil
+    npy_cdouble special_csph_bessel_k_jac(npy_long, npy_cdouble) nogil
 
     npy_cdouble special_sph_harm(npy_long, npy_long, npy_double, npy_double) nogil
     npy_cdouble special_sph_harm_unsafe(npy_double, npy_double, npy_double, npy_double) nogil
@@ -1526,8 +1559,6 @@ from ._boxcox cimport inv_boxcox1p as _func_inv_boxcox1p
 ctypedef double _proto_inv_boxcox1p_t(double, double) noexcept nogil
 cdef _proto_inv_boxcox1p_t *_proto_inv_boxcox1p_t_var = &_func_inv_boxcox1p
 cdef extern from r"_ufuncs_defs.h":
-    cdef npy_double _func_iv "iv"(npy_double, npy_double)nogil
-cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j0 "j0"(npy_double)nogil
 cdef extern from r"_ufuncs_defs.h":
     cdef npy_double _func_j1 "j1"(npy_double)nogil
@@ -1710,7 +1741,6 @@ cdef extern from r"_ufuncs_defs.h":
 from ._ndtri_exp cimport ndtri_exp as _func_ndtri_exp
 ctypedef double _proto_ndtri_exp_t(double) noexcept nogil
 cdef _proto_ndtri_exp_t *_proto_ndtri_exp_t_var = &_func_ndtri_exp
-from . cimport _spherical_bessel
 
 cpdef double voigt_profile(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.voigt_profile"""
@@ -2657,9 +2687,9 @@ cpdef double itstruve0(double x0) noexcept nogil:
 cpdef Dd_number_t iv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.iv"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesi_wrap(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_i(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_iv(x0, x1)
+        return special_cyl_bessel_i(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2669,9 +2699,9 @@ cpdef Dd_number_t iv(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t ive(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.ive"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesi_wrap_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ie(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesi_wrap_e_real(x0, x1)
+        return special_cyl_bessel_ie(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2689,9 +2719,9 @@ cpdef double j1(double x0) noexcept nogil:
 cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.jv"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesj_wrap(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_j(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesj_wrap_real(x0, x1)
+        return special_cyl_bessel_j(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2701,9 +2731,9 @@ cpdef Dd_number_t jv(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t jve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.jve"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesj_wrap_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_je(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesj_wrap_e_real(x0, x1)
+        return special_cyl_bessel_je(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2771,7 +2801,7 @@ cpdef double kn(dl_number_t x0, double x1) noexcept nogil:
     if dl_number_t is double:
         return _func_kn_unsafe(x0, x1)
     elif dl_number_t is long:
-        return _func_cbesk_wrap_real_int(x0, x1)
+        return special_cyl_bessel_k_int(x0, x1)
     else:
         return NAN
 
@@ -2786,9 +2816,9 @@ cpdef double kolmogorov(double x0) noexcept nogil:
 cpdef Dd_number_t kv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.kv"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesk_wrap(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_k(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesk_wrap_real(x0, x1)
+        return special_cyl_bessel_k(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2798,9 +2828,9 @@ cpdef Dd_number_t kv(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t kve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.kve"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesk_wrap_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ke(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesk_wrap_e_real(x0, x1)
+        return special_cyl_bessel_ke(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3480,9 +3510,9 @@ cpdef double yn(dl_number_t x0, double x1) noexcept nogil:
 cpdef Dd_number_t yv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.yv"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesy_wrap(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_y(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesy_wrap_real(x0, x1)
+        return special_cyl_bessel_y(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3492,9 +3522,9 @@ cpdef Dd_number_t yv(double x0, Dd_number_t x1) noexcept nogil:
 cpdef Dd_number_t yve(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.yve"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cbesy_wrap_e(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_ccyl_bessel_ye(x0, _complexstuff.npy_cdouble_from_double_complex(x1)))
     elif Dd_number_t is double:
-        return _func_cbesy_wrap_e_real(x0, x1)
+        return special_cyl_bessel_ye(x0, x1)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -3517,53 +3547,53 @@ cpdef number_t spherical_jn(long n, number_t z, bint derivative=0) noexcept nogi
     """See the documentation for scipy.special.spherical_jn"""
     if derivative:
         if number_t is double:
-            return _spherical_bessel.spherical_jn_d_real(n, z)
+            return special_sph_bessel_j_jac(n, z)
         else:
-            return _spherical_bessel.spherical_jn_d_complex(n, z)
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
     if number_t is double:
-        return _spherical_bessel.spherical_jn_real(n, z)
+        return special_sph_bessel_j(n, z)
     else:
-        return _spherical_bessel.spherical_jn_complex(n, z)
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_j(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
 cpdef number_t spherical_yn(long n, number_t z, bint derivative=0) noexcept nogil:
     """See the documentation for scipy.special.spherical_yn"""
     if derivative:
         if number_t is double:
-            return _spherical_bessel.spherical_yn_d_real(n, z)
+            return special_sph_bessel_y_jac(n, z)
         else:
-            return _spherical_bessel.spherical_yn_d_complex(n, z)
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
     if number_t is double:
-        return _spherical_bessel.spherical_yn_real(n, z)
+        return special_sph_bessel_y(n, z)
     else:
-        return _spherical_bessel.spherical_yn_complex(n, z)
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_y(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
 cpdef number_t spherical_in(long n, number_t z, bint derivative=0) noexcept nogil:
     """See the documentation for scipy.special.spherical_in"""
     if derivative:
         if number_t is double:
-            return _spherical_bessel.spherical_in_d_real(n, z)
+            return special_sph_bessel_i_jac(n, z)
         else:
-            return _spherical_bessel.spherical_in_d_complex(n, z)
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
     if number_t is double:
-        return _spherical_bessel.spherical_in_real(n, z)
+        return special_sph_bessel_i(n, z)
     else:
-        return _spherical_bessel.spherical_in_complex(n, z)
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_i(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
 cpdef number_t spherical_kn(long n, number_t z, bint derivative=0) noexcept nogil:
     """See the documentation for scipy.special.spherical_kn"""
     if derivative:
         if number_t is double:
-            return _spherical_bessel.spherical_kn_d_real(n, z)
+            return special_sph_bessel_k_jac(n, z)
         else:
-            return _spherical_bessel.spherical_kn_d_complex(n, z)
+            return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k_jac(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
     if number_t is double:
-        return _spherical_bessel.spherical_kn_real(n, z)
+        return special_sph_bessel_k(n, z)
     else:
-        return _spherical_bessel.spherical_kn_complex(n, z)
+        return _complexstuff.double_complex_from_npy_cdouble(special_csph_bessel_k(n, _complexstuff.npy_cdouble_from_double_complex(z)))
 
 def _bench_airy_d_py(int N, double x0):
     cdef int n

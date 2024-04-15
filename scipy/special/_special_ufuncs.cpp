@@ -17,6 +17,7 @@
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
+#include "special/sph_bessel.h"
 #include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
@@ -102,6 +103,11 @@ using func_dddd_D_t = complex<double> (*)(double, double, double, double);
 using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
 using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
 
+using func_lf_f_t = float (*)(long, float);
+using func_ld_d_t = double (*)(long, double);
+using func_lF_F_t = complex<float> (*)(long, complex<float>);
+using func_lD_D_t = complex<double> (*)(long, complex<double>);
+
 #if (NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE)
 using func_g_g_t = double (*)(double);
 using func_gg_g_t = double (*)(double);
@@ -184,6 +190,14 @@ extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
 extern const char *rgamma_doc;
 extern const char *scaled_exp1_doc;
+extern const char *spherical_jn_doc;
+extern const char *spherical_jn_d_doc;
+extern const char *spherical_yn_doc;
+extern const char *spherical_yn_d_doc;
+extern const char *spherical_in_doc;
+extern const char *spherical_in_d_doc;
+extern const char *spherical_kn_doc;
+extern const char *spherical_kn_d_doc;
 extern const char *sph_harm_doc;
 extern const char *wright_bessel_doc;
 extern const char *yv_doc;
@@ -419,29 +433,29 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
 
     PyObject *iv = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesi_wrap_real), static_cast<func_dd_d_t>(cephes_iv),
-         static_cast<func_fF_F_t>(special::cbesi_wrap), static_cast<func_dD_D_t>(special::cbesi_wrap)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_i), static_cast<func_dd_d_t>(special::cyl_bessel_i),
+         static_cast<func_fF_F_t>(special::cyl_bessel_i), static_cast<func_dD_D_t>(special::cyl_bessel_i)},
         "iv", iv_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *ive = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesi_wrap_e_real), static_cast<func_dd_d_t>(special::cbesi_wrap_e_real),
-         static_cast<func_fF_F_t>(special::cbesi_wrap_e), static_cast<func_dD_D_t>(special::cbesi_wrap_e)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_ie), static_cast<func_dd_d_t>(special::cyl_bessel_ie),
+         static_cast<func_fF_F_t>(special::cyl_bessel_ie), static_cast<func_dD_D_t>(special::cyl_bessel_ie)},
         "ive", ive_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "ive", ive);
 
     PyObject *jv = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesj_wrap_real), static_cast<func_dd_d_t>(special::cbesj_wrap_real),
-         static_cast<func_fF_F_t>(special::cbesj_wrap), static_cast<func_dD_D_t>(special::cbesj_wrap)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_j), static_cast<func_dd_d_t>(special::cyl_bessel_j),
+         static_cast<func_fF_F_t>(special::cyl_bessel_j), static_cast<func_dD_D_t>(special::cyl_bessel_j)},
         "jv", jv_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "jv", jv);
 
     PyObject *jve = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesj_wrap_e_real), static_cast<func_dd_d_t>(special::cbesj_wrap_e_real),
-         static_cast<func_fF_F_t>(special::cbesj_wrap_e), static_cast<func_dD_D_t>(special::cbesj_wrap_e)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_je), static_cast<func_dd_d_t>(special::cyl_bessel_je),
+         static_cast<func_fF_F_t>(special::cyl_bessel_je), static_cast<func_dD_D_t>(special::cyl_bessel_je)},
         "jve", jve_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "jve", jve);
@@ -473,15 +487,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "kerp", kerp);
 
     PyObject *kv = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesk_wrap_real), static_cast<func_dd_d_t>(special::cbesk_wrap_real),
-         static_cast<func_fF_F_t>(special::cbesk_wrap), static_cast<func_dD_D_t>(special::cbesk_wrap)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_k), static_cast<func_dd_d_t>(special::cyl_bessel_k),
+         static_cast<func_fF_F_t>(special::cyl_bessel_k), static_cast<func_dD_D_t>(special::cyl_bessel_k)},
         "kv", kv_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "kv", kv);
 
     PyObject *kve = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesk_wrap_e_real), static_cast<func_dd_d_t>(special::cbesk_wrap_e_real),
-         static_cast<func_fF_F_t>(special::cbesk_wrap_e), static_cast<func_dD_D_t>(special::cbesk_wrap_e)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_ke), static_cast<func_dd_d_t>(special::cyl_bessel_ke),
+         static_cast<func_fF_F_t>(special::cyl_bessel_ke), static_cast<func_dD_D_t>(special::cyl_bessel_ke)},
         "kve", kve_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "kve", kve);
@@ -693,6 +707,62 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "rgamma", rgamma);
 
+    PyObject *_spherical_jn = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_j), static_cast<func_lD_D_t>(special::sph_bessel_j),
+         static_cast<func_lf_f_t>(special::sph_bessel_j), static_cast<func_lF_F_t>(special::sph_bessel_j)},
+        "_spherical_jn", spherical_jn_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_jn", _spherical_jn);
+
+    PyObject *_spherical_jn_d = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_j_jac), static_cast<func_lD_D_t>(special::sph_bessel_j_jac),
+         static_cast<func_lf_f_t>(special::sph_bessel_j_jac), static_cast<func_lF_F_t>(special::sph_bessel_j_jac)},
+        "_spherical_jn_d", spherical_jn_d_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_jn_d", _spherical_jn_d);
+
+    PyObject *_spherical_yn = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_y), static_cast<func_lD_D_t>(special::sph_bessel_y),
+         static_cast<func_lf_f_t>(special::sph_bessel_y), static_cast<func_lF_F_t>(special::sph_bessel_y)},
+        "_spherical_yn", spherical_yn_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_yn", _spherical_yn);
+
+    PyObject *_spherical_yn_d = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_y_jac), static_cast<func_lD_D_t>(special::sph_bessel_y_jac),
+         static_cast<func_lf_f_t>(special::sph_bessel_y_jac), static_cast<func_lF_F_t>(special::sph_bessel_y_jac)},
+        "_spherical_yn_d", spherical_yn_d_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_yn_d", _spherical_yn_d);
+
+    PyObject *_spherical_in = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_i), static_cast<func_lD_D_t>(special::sph_bessel_i),
+         static_cast<func_lf_f_t>(special::sph_bessel_i), static_cast<func_lF_F_t>(special::sph_bessel_i)},
+        "_spherical_in", spherical_in_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_in", _spherical_in);
+
+    PyObject *_spherical_in_d = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_i_jac), static_cast<func_lD_D_t>(special::sph_bessel_i_jac),
+         static_cast<func_lf_f_t>(special::sph_bessel_i_jac), static_cast<func_lF_F_t>(special::sph_bessel_i_jac)},
+        "_spherical_in_d", spherical_in_d_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_in_d", _spherical_in_d);
+
+    PyObject *_spherical_kn = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_k), static_cast<func_lD_D_t>(special::sph_bessel_k),
+         static_cast<func_lf_f_t>(special::sph_bessel_k), static_cast<func_lF_F_t>(special::sph_bessel_k)},
+        "_spherical_kn", spherical_kn_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn", _spherical_kn);
+
+    PyObject *_spherical_kn_d = SpecFun_NewUFunc(
+        {static_cast<func_ld_d_t>(special::sph_bessel_k_jac), static_cast<func_lD_D_t>(special::sph_bessel_k_jac),
+         static_cast<func_lf_f_t>(special::sph_bessel_k_jac), static_cast<func_lF_F_t>(special::sph_bessel_k_jac)},
+        "_spherical_kn_d", spherical_kn_d_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn_d", _spherical_kn_d);
+
     PyObject *sph_harm = SpecFun_NewUFunc(
         {static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
          static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
@@ -707,15 +777,15 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "wright_bessel", wright_bessel);
 
     PyObject *yv = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesy_wrap_real), static_cast<func_dd_d_t>(special::cbesy_wrap_real),
-         static_cast<func_fF_F_t>(special::cbesy_wrap), static_cast<func_dD_D_t>(special::cbesy_wrap)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_y), static_cast<func_dd_d_t>(special::cyl_bessel_y),
+         static_cast<func_fF_F_t>(special::cyl_bessel_y), static_cast<func_dD_D_t>(special::cyl_bessel_y)},
         "yv", yv_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "yv", yv);
 
     PyObject *yve = SpecFun_NewUFunc(
-        {static_cast<func_ff_f_t>(special::cbesy_wrap_e_real), static_cast<func_dd_d_t>(special::cbesy_wrap_e_real),
-         static_cast<func_fF_F_t>(special::cbesy_wrap_e), static_cast<func_dD_D_t>(special::cbesy_wrap_e)},
+        {static_cast<func_ff_f_t>(special::cyl_bessel_ye), static_cast<func_dd_d_t>(special::cyl_bessel_ye),
+         static_cast<func_fF_F_t>(special::cyl_bessel_ye), static_cast<func_dD_D_t>(special::cyl_bessel_ye)},
         "yve", yve_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "yve", yve);

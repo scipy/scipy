@@ -1,5 +1,6 @@
 #pragma once
 
+#include "amos.h"
 #include "specfun.h"
 
 namespace special {
@@ -18,16 +19,18 @@ namespace detail {
 
         int k;
         T rc1, rc2, e0, b1, b2, rs, r, tw, x2;
-        static const T a[10] = {0.625,
-                                1.0078125,
-                                2.5927734375,
-                                9.1868591308594,
-                                4.1567974090576e+1,
-                                2.2919635891914e+2,
-                                1.491504060477e+3,
-                                1.1192354495579e+4,
-                                9.515939374212e+4,
-                                9.0412425769041e+5};
+        static const T a[10] = {
+            0.625,
+            1.0078125,
+            2.5927734375,
+            9.1868591308594,
+            4.1567974090576e+1,
+            2.2919635891914e+2,
+            1.491504060477e+3,
+            1.1192354495579e+4,
+            9.515939374212e+4,
+            9.0412425769041e+5
+        };
         const T pi = 3.141592653589793;
         const T el = 0.5772156649015329;
 
@@ -528,6 +531,136 @@ template <typename T, typename OutputVec1, typename OutputVec2>
 void rcty(T x, OutputVec1 ry, OutputVec2 dy) {
     int nm;
     rcty(x, &nm, ry, dy);
+}
+
+inline double cyl_bessel_j(double v, double x) { return cbesj_wrap_real(v, x); }
+
+inline float cyl_bessel_j(float v, float x) { return cyl_bessel_j(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_j(double v, std::complex<double> x) { return cbesj_wrap(v, x); }
+
+inline std::complex<float> cyl_bessel_j(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_j(static_cast<double>(v), static_cast<std::complex<double>>(x)));
+}
+
+inline double cyl_bessel_y(double v, double x) { return cbesy_wrap_real(v, x); }
+
+inline float cyl_bessel_y(float v, float x) { return cyl_bessel_y(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_y(double v, std::complex<double> x) { return cbesy_wrap(v, x); }
+
+inline std::complex<float> cyl_bessel_y(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_y(static_cast<double>(v), static_cast<std::complex<double>>(x)));
+}
+
+inline double cyl_bessel_i(double v, double x) { return cephes_iv(v, x); }
+
+inline float cyl_bessel_i(float v, float x) { return cyl_bessel_i(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_i(double v, std::complex<double> x) { return cbesi_wrap(v, x); }
+
+inline std::complex<float> cyl_bessel_i(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_i(static_cast<double>(v), static_cast<std::complex<double>>(x)));
+}
+
+inline std::complex<double> cyl_bessel_k(double v, std::complex<double> z) {
+    std::complex<double> cy(NAN, NAN);
+    if (std::isnan(v) || std::isnan(std::real(z)) || isnan(std::imag(z))) {
+        return cy;
+    }
+
+    if (v < 0) {
+        /* K_v == K_{-v} even for non-integer v */
+        v = -v;
+    }
+
+    int n = 1;
+    int kode = 1;
+    int ierr;
+    int nz = amos::besk(z, v, kode, n, &cy, &ierr);
+    do_sferr("kv:", &cy, nz, ierr);
+    if (ierr == 2) {
+        if (std::real(z) >= 0 && std::imag(z) == 0) {
+            /* overflow */
+            cy = INFINITY;
+        }
+    }
+
+    return cy;
+}
+
+inline std::complex<float> cyl_bessel_k(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_k(static_cast<double>(v), static_cast<std::complex<double>>(x)));
+}
+
+template <typename T>
+T cyl_bessel_k(T v, T z) {
+    if (z < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    if (z == 0) {
+        return std::numeric_limits<T>::infinity();
+    }
+
+    if (z > 710 * (1 + std::abs(v))) {
+        /* Underflow. See uniform expansion https://dlmf.nist.gov/10.41
+         * This condition is not a strict bound (it can underflow earlier),
+         * rather, we are here working around a restriction in AMOS.
+         */
+        return 0;
+    }
+
+    return std::real(cyl_bessel_k(v, std::complex(z)));
+}
+
+inline double cyl_bessel_je(double v, double x) { return cbesj_wrap_e_real(v, x); }
+
+inline float cyl_bessel_je(float v, float x) { return cyl_bessel_je(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_je(double v, std::complex<double> x) { return cbesj_wrap_e(v, x); }
+
+inline std::complex<float> cyl_bessel_je(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_je(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+inline std::complex<double> cyl_bessel_ye(double v, std::complex<double> x) { return cbesy_wrap_e(v, x); }
+
+inline std::complex<float> cyl_bessel_ye(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ye(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+template <typename T>
+T cyl_bessel_ye(T v, T x) {
+    if (x < 0) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    return std::real(cyl_bessel_ye(v, std::complex(x)));
+}
+
+inline double cyl_bessel_ie(double v, double x) { return cbesi_wrap_e_real(v, x); }
+
+inline float cyl_bessel_ie(float v, float x) { return cyl_bessel_ie(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_ie(double v, std::complex<double> x) { return cbesi_wrap_e(v, x); }
+
+inline std::complex<float> cyl_bessel_ie(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ie(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
+}
+
+inline double cyl_bessel_ke(double v, double x) { return cbesk_wrap_e_real(v, x); }
+
+inline float cyl_bessel_ke(float v, float x) { return cyl_bessel_ke(static_cast<double>(v), static_cast<double>(x)); }
+
+inline std::complex<double> cyl_bessel_ke(double v, std::complex<double> x) { return cbesk_wrap_e(v, x); }
+
+inline std::complex<float> cyl_bessel_ke(float v, std::complex<float> x) {
+    return static_cast<std::complex<float>>(cyl_bessel_ke(static_cast<double>(v), static_cast<std::complex<double>>(x))
+    );
 }
 
 } // namespace special

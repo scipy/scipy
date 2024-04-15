@@ -399,10 +399,10 @@ double struve_asymp_large_z(double v, double z, int is_h, double *err)
 
 static double bessel_y(double v, double x)
 {
-    return cbesy_wrap_real(v, x);
+    return special_cyl_bessel_y(v, x);
 }
 
 static double bessel_j(double v, double x)
 {
-    return cbesj_wrap_real(v, x);
+    return special_cyl_bessel_j(v, x);
 }

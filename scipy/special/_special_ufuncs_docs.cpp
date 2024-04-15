@@ -3771,6 +3771,38 @@ const char *scaled_exp1_doc = R"(
     >>> _scaled_exp1([0, 0.1, 1, 10, 100])
     )";
 
+const char *spherical_jn_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_jn_d_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_yn_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_yn_d_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_in_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_in_d_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_kn_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
+const char *spherical_kn_d_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
 const char *sph_harm_doc = R"(
     sph_harm(m, n, theta, phi, out=None)
 

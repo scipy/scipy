@@ -19,7 +19,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_spherical_bessel.pxd'),
   fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),

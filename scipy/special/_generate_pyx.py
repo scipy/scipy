@@ -76,9 +76,10 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_lambertw', '_scaled_exp1', '_sinpi', 'airy', 'airye',
-    'bei', 'beip', 'ber', 'berp', 'binom', 'exp1', 'expi', 'expit',
-    'exprel', 'gamma', 'gammaln', 'hankel1', 'hankel1e', 'hankel2',
+    '_cospi', '_lambertw', '_scaled_exp1', '_sinpi', '_spherical_jn', '_spherical_jn_d',
+    '_spherical_yn', '_spherical_yn_d', '_spherical_in', '_spherical_in_d', '_spherical_kn',
+    '_spherical_kn_d', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'binom', 'exp1',
+    'expi', 'expit', 'exprel', 'gamma', 'gammaln', 'hankel1', 'hankel1e', 'hankel2',
     'hankel2e', 'hyp2f1', 'it2i0k0', 'it2j0y0', 'it2struve0', 'itairy',
     'iti0k0', 'itj0y0', 'itmodstruve0', 'itstruve0', 'iv', 'ive', 'jv',
     'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit',

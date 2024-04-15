@@ -2,6 +2,7 @@
 
 #include "amos/amos.h"
 #include "config.h"
+#include "error.h"
 
 extern "C" int cephes_airy(double x, double *ai, double *aip, double *bi, double *bip);
 extern "C" double cephes_jv(double v, double x);
@@ -472,7 +473,7 @@ inline double cbesj_wrap_real(double v, double x) {
     std::complex<double> z, r;
 
     if (x < 0 && v != (int) v) {
-        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        set_error("yv", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
 
@@ -520,7 +521,7 @@ inline std::complex<double> cbesy_wrap(double v, std::complex<double> z) {
         /* overflow */
         cy_y.real(-INFINITY);
         cy_y.imag(0);
-        sf_error("yv", SF_ERROR_OVERFLOW, NULL);
+        set_error("yv", SF_ERROR_OVERFLOW, NULL);
     } else {
         nz = amos::besy(z, v, kode, n, &cy_y, &ierr);
         do_sferr("yv:", &cy_y, nz, ierr);
@@ -548,7 +549,7 @@ inline double cbesy_wrap_real(double v, double x) {
     std::complex<double> z, r;
 
     if (x < 0.0) {
-        sf_error("yv", SF_ERROR_DOMAIN, NULL);
+        set_error("yv", SF_ERROR_DOMAIN, NULL);
         return NAN;
     }
 
@@ -617,51 +618,6 @@ inline std::complex<float> cbesy_wrap_e(float v, std::complex<float> z) {
     return {static_cast<float>(std::real(res)), static_cast<float>(std::imag(res))};
 }
 
-inline double cbesy_wrap_e_real(double v, double z) {
-    std::complex<double> cy, w;
-    if (z < 0) {
-        return NAN;
-    } else {
-        w.real(z);
-        w.imag(0);
-        cy = cbesy_wrap_e(v, w);
-        return cy.real();
-    }
-}
-
-inline float cbesy_wrap_e_real(float v, float z) {
-    return cbesy_wrap_e_real(static_cast<double>(v), static_cast<double>(z));
-}
-
-inline std::complex<double> cbesk_wrap(double v, std::complex<double> z) {
-    int n = 1;
-    int kode = 1;
-    int nz, ierr;
-    std::complex<double> cy;
-
-    cy.real(NAN);
-    cy.imag(NAN);
-
-    if (isnan(v) || isnan(z.real()) || isnan(z.imag())) {
-        return cy;
-    }
-    if (v < 0) {
-        /* K_v == K_{-v} even for non-integer v */
-        v = -v;
-    }
-    nz = amos::besk(z, v, kode, n, &cy, &ierr);
-    do_sferr("kv:", &cy, nz, ierr);
-    if (ierr == 2) {
-        if (z.real() >= 0 && z.imag() == 0) {
-            /* overflow */
-            cy.real(INFINITY);
-            cy.imag(0);
-        }
-    }
-
-    return cy;
-}
-
 inline std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
     int n = 1;
     int kode = 2;
@@ -691,37 +647,6 @@ inline std::complex<double> cbesk_wrap_e(double v, std::complex<double> z) {
     return cy;
 }
 
-inline double cbesk_wrap_real(double v, double z) {
-    std::complex<double> cy, w;
-    if (z < 0) {
-        return NAN;
-    } else if (z == 0) {
-        return INFINITY;
-    } else if (z > 710 * (1 + fabs(v))) {
-        /* Underflow. See uniform expansion https://dlmf.nist.gov/10.41
-         * This condition is not a strict bound (it can underflow earlier),
-         * rather, we are here working around a restriction in AMOS.
-         */
-        return 0;
-    } else {
-        w.real(z);
-        w.imag(0);
-        cy = cbesk_wrap(v, w);
-        return cy.real();
-    }
-}
-
-inline double cbesk_wrap_real_int(int n, double z) { return cbesk_wrap_real(n, z); }
-
-inline float cbesk_wrap_real(float v, float z) {
-    return cbesk_wrap_real(static_cast<double>(v), static_cast<double>(z));
-}
-
-inline std::complex<float> cbesk_wrap(float v, std::complex<float> z) {
-    std::complex<double> res = cbesk_wrap(
-        static_cast<double>(v), std::complex(static_cast<double>(std::real(z)), static_cast<double>(std::imag(z))));
-    return {static_cast<float>(std::real(res)), static_cast<float>(std::imag(res))};
-}
 
 inline double cbesk_wrap_e_real(double v, double z) {
     std::complex<double> cy, w;
@@ -739,12 +664,6 @@ inline double cbesk_wrap_e_real(double v, double z) {
 
 inline float cbesk_wrap_e_real(float v, float z) {
     return cbesk_wrap_e_real(static_cast<double>(v), static_cast<double>(z));
-}
-
-inline std::complex<float> cbesk_wrap_e(float v, std::complex<float> z) {
-    std::complex<double> res = cbesk_wrap_e(
-        static_cast<double>(v), std::complex(static_cast<double>(std::real(z)), static_cast<double>(std::imag(z))));
-    return {static_cast<float>(std::real(res)), static_cast<float>(std::imag(res))};
 }
 
 inline std::complex<double> cbesh_wrap1(double v, std::complex<double> z) {
