@@ -13658,5 +13658,5 @@ add_newdoc("_iv_ratio",
 
     Internal function, do not use.
 
-    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    Return `iv(v+1, x) / iv(v, x)` for `v >= 0` and `x >= 0`.
     """)

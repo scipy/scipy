@@ -36,26 +36,26 @@ public:
 
         double vc = v * c;
         double xc = x * c;
-        _frac = {xc, 2*vc+xc};
-        _a0 = -(2*vc-c)*xc;
-        _as = -2*c*xc;
-        _b0 = 2*(vc+xc);
-        _bs = c;
-        _k = 0;
+        frac_ = {xc, 2*vc+xc};
+        a0_ = -(2*vc-c)*xc;
+        as_ = -2*c*xc;
+        b0_ = 2*(vc+xc);
+        bs_ = c;
+        k_ = 0;
     }
 
     frac_type operator()() {
-        frac_type frac = _frac;
-        ++_k;
-        _frac = {std::fma(_k, _as, _a0), std::fma(_k, _bs, _b0)};
+        frac_type frac = frac_;
+        double k = ++k_;
+        frac_ = {std::fma(k, as_, a0_), std::fma(k, bs_, b0_)};
         return frac;
     }
 
 private:
-    frac_type _frac;  // current fraction
-    double _a0, _as;  // a[k] == _a0 + _as*k, k >= 1
-    double _b0, _bs;  // b[k] == _b0 + _bs*k, k >= 1
-    std::size_t _k;   // current index (0-based)
+    frac_type frac_;  // current fraction
+    double a0_, as_;  // a[k] == a0 + as*k, k >= 1
+    double b0_, bs_;  // b[k] == b0 + bs*k, k >= 1
+    std::size_t k_;   // current index (0-based)
 };
 
 inline double iv_ratio(double v, double x) {
@@ -92,7 +92,7 @@ inline double iv_ratio(double v, double x) {
         0.0, cf_series, tol, 300);
 #else
     auto [result, terms] = special::detail::continued_fraction_eval_lentz(
-        0.0, cf, tol, 300, 1e-30);
+        0.0, cf, tol, 300);
 #endif
     if (terms == 0) { // failed to converge; should not happen
         special::set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
