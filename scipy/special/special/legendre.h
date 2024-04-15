@@ -1,6 +1,7 @@
 #pragma once
 
 #include "config.h"
+#include "cephes/poch.h"
 
 namespace special {
 
@@ -121,6 +122,19 @@ void lpmn(T x, bool m_signbit, OutputMat1 pm) {
 
                 pm(i, j) *= fac;
             }
+        }
+    }
+}
+
+template <typename T, typename OutMat>
+void sph_legendre_all(T phi, OutMat p) {
+    long n = p.extent(1) - 1;
+
+    lpmn(std::cos(phi), p);
+
+    for (long j = 0; j <= n; ++j) {
+        for (long i = 0; i <= j; ++i) {
+            p(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
         }
     }
 }

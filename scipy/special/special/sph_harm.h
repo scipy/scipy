@@ -3,63 +3,48 @@
 #include "error.h"
 #include "legendre.h"
 #include "mdspan.h"
-#include "specfun.h"
-
-extern "C" double cephes_poch(double x, double m);
 
 namespace special {
 
-inline std::complex<double> sph_harm(long m, long n, double theta, double phi) {
-    double prefactor;
-    std::complex<double> val;
-    int mp;
-
-    if (std::abs(m) > n) {
-        set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
-        return NAN;
-    }
+template <typename T>
+std::complex<T> sph_harm(long m, long n, T theta, T phi) {
     if (n < 0) {
         set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
         return NAN;
     }
 
-    if (m < 0) {
-        mp = -m;
-        prefactor = std::pow(-1, mp) * cephes_poch(n + mp + 1, -2 * mp);
-    } else {
-        mp = m;
+    long m_abs = std::abs(m);
+    if (m_abs > n) {
+        set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
+        return NAN;
     }
 
-    val = pmv(mp, n, std::cos(phi));
+    std::complex<T> val = pmv(m_abs, n, std::cos(phi));
     if (m < 0) {
-        val *= prefactor;
+        val *= std::pow(-1, m_abs) * cephes::poch(n + m_abs + 1, -2 * m_abs);
     }
 
-    val *= std::sqrt((2 * n + 1) / 4.0 / M_PI);
-    val *= std::sqrt(cephes_poch(n + m + 1, -2 * m));
-    val *= std::exp(std::complex<double>(0, m * theta));
+    val *= std::sqrt((2 * n + 1) * cephes::poch(n + m + 1, -2 * m) / (4 * M_PI));
+    val *= std::exp(std::complex(static_cast<T>(0), m * theta));
 
     return val;
 }
 
-inline std::complex<float> sph_harm(long m, long n, float theta, float phi) {
-    return static_cast<std::complex<float>>(sph_harm(m, n, static_cast<double>(theta), static_cast<double>(phi)));
-}
-
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    const long m = (y.extent(0) - 1) / 2;
-    const long n = y.extent(1) - 1;
+    long m = (y.extent(0) - 1) / 2;
+    long n = y.extent(1) - 1;
 
     OutMat y_pos = std::submdspan(y, std::make_tuple(0, m + 1), std::full_extent);
-    lpmn(std::cos(phi), y_pos);
+    sph_legendre_all(phi, y_pos);
 
     for (long j = 0; j <= n; ++j) {
-        y(0, j) *= std::sqrt((2 * j + 1) / (4 * M_PI));
         for (long i = 1; i <= j; ++i) {
-            y(i, j) *= static_cast<T>(std::sqrt((2 * j + 1) * cephes_poch(j + i + 1, -2 * i) / (4 * M_PI))) *
-                       std::exp(std::complex<T>(0, i * theta));
-            y(y.extent(0) - i, j) = static_cast<T>(std::pow(-1, i)) * std::conj(y(i, j));
+            y(i, j) *= std::exp(std::complex(static_cast<T>(0), i * theta));
+            y(2 * m + 1 - i, j) = static_cast<T>(std::pow(-1, i)) * std::conj(y(i, j));
+        }
+        for (long i = j + 1; i <= m; ++i) {
+            y(2 * m + 1 - i, j) = 0;
         }
     }
 }

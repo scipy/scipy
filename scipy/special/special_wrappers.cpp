@@ -3,14 +3,20 @@
 #include "special/amos.h"
 #include "special/bessel.h"
 #include "special/fresnel.h"
+#include "special/gamma.h"
 #include "special/hyp2f1.h"
 #include "special/kelvin.h"
+#include "special/lambertw.h"
+#include "special/log_exp.h"
+#include "special/loggamma.h"
 #include "special/mathieu.h"
 #include "special/par_cyl.h"
 #include "special/specfun.h"
 #include "special/sph_harm.h"
 #include "special/sphd_wave.h"
 #include "special/struve.h"
+#include "special/trig.h"
+#include "special/wright_bessel.h"
 
 using namespace std;
 
@@ -57,6 +63,8 @@ npy_cdouble cexp1_wrap(npy_cdouble z) { return to_ccomplex(special::exp1(to_comp
 double expi_wrap(double x) { return special::expi(x); }
 
 npy_cdouble cexpi_wrap(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
+
+npy_double special_exprel(npy_double x) { return special::exprel(x); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(special::cerf(to_complex(z))); }
 
@@ -208,9 +216,11 @@ void modified_fresnel_minus_wrap(double x, npy_cdouble *Fminus, npy_cdouble *Kmi
                                     reinterpret_cast<complex<double> *>(Kminus));
 }
 
-double sin_pi(double x) { return special::sin_pi(x); }
+double special_sinpi(double x) { return special::sinpi(x); }
 
-double cos_pi(double x) { return special::cos_pi(x); }
+npy_cdouble special_csinpi(npy_cdouble z) { return to_ccomplex(special::sinpi(to_complex(z))); }
+
+double special_cospi(double x) { return special::cospi(x); }
 
 void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) { special::airy_wrap(x, ai, aip, bi, bip); }
 
@@ -270,6 +280,52 @@ npy_cdouble cbesh_wrap2(double v, npy_cdouble z) { return to_ccomplex(special::c
 
 npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z) { return to_ccomplex(special::cbesh_wrap2_e(v, to_complex(z))); }
 
+double special_binom(double n, double k) { return special::binom(n, k); }
+
+double special_digamma(double z) { return special::digamma(z); }
+
+npy_cdouble special_cdigamma(npy_cdouble z) { return to_ccomplex(special::digamma(to_complex(z))); }
+
+double special_gamma(double x) { return special::gamma(x); }
+
+npy_cdouble special_cgamma(npy_cdouble z) { return to_ccomplex(special::gamma(to_complex(z))); }
+
+double special_rgamma(double x) { return special::rgamma(x); }
+
+npy_cdouble special_crgamma(npy_cdouble z) { return to_ccomplex(special::rgamma(to_complex(z))); }
+
+float special_expitf(float x) { return special::expit(x); };
+
+double special_expit(double x) { return special::expit(x); };
+
+npy_longdouble special_expitl(npy_longdouble x) { return special::expit(x); };
+
+float special_log_expitf(float x) { return special::log_expit(x); };
+
+double special_log_expit(double x) { return special::log_expit(x); };
+
+npy_longdouble special_log_expitl(npy_longdouble x) { return special::log_expit(x); };
+
+float special_logitf(float x) { return special::logit(x); };
+
+double special_logit(double x) { return special::logit(x); };
+
+npy_longdouble special_logitl(npy_longdouble x) { return special::logit(x); };
+
+double special_loggamma(double x) { return special::loggamma(x); }
+
+npy_cdouble special_cloggamma(npy_cdouble z) { return to_ccomplex(special::loggamma(to_complex(z))); }
+
+double special_hyp2f1(double a, double b, double c, double z) { return special::hyp2f1(a, b, c, z); }
+
+npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z) {
+    return to_ccomplex(special::hyp2f1(a, b, c, to_complex(z)));
+}
+
+npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
+    return to_ccomplex(special::lambertw(to_complex(z), k, tol));
+}
+
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
     return to_ccomplex(special::sph_harm(m, n, theta, phi));
 }
@@ -277,3 +333,5 @@ npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
     return to_ccomplex(special::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
+
+double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
