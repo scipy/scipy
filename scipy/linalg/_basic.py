@@ -1123,7 +1123,7 @@ def det(a, overwrite_a=False, check_finite=True):
 
     if a1.ndim == 2:
         det = find_det_from_lu(a1)
-        # Convert float, complex to to NumPy scalars
+        # Convert float, complex to NumPy scalars
         return (np.float64(det) if np.isrealobj(det) else np.complex128(det))
 
     # loop over the stacked array, and avoid overflows for single precision

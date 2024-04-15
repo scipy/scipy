@@ -16,7 +16,7 @@ from ._complexstuff cimport (
     npy_cdouble_from_double_complex, double_complex_from_npy_cdouble,
     zabs, zlog, zpack)
 
-cdef extern from "specfun_wrappers.h":
+cdef extern from "special_wrappers.h":
     np.npy_cdouble cexpi_wrap(np.npy_cdouble) nogil
 
 DEF EULER = 0.577215664901532860606512090082402431  # Euler constant

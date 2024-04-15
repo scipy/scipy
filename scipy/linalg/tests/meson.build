@@ -12,6 +12,7 @@ python_sources = [
   'test_decomp_lu.py',
   'test_decomp_polar.py',
   'test_decomp_update.py',
+  'test_extending.py',
   'test_fblas.py',
   'test_interpolative.py',
   'test_lapack.py',
@@ -28,6 +29,11 @@ python_sources = [
 py3.install_sources(
   python_sources,
   subdir: 'scipy/linalg/tests'
+)
+
+py3.install_sources(
+  ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
+  subdir: 'scipy/linalg/tests/_cython_examples'
 )
 
 subdir('data')

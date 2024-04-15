@@ -81,6 +81,9 @@ test = [
     "pooch",
     "hypothesis>=6.30",
     "array-api-strict",
+    "Cython",
+    "meson",
+    'ninja; sys_platform != "emscripten"',
 ]
 doc = [
     "sphinx>=5.0.0",

@@ -1809,11 +1809,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     image:
 
     >>> import numpy as np
-    >>> from scipy import signal
-    >>> from scipy import datasets
+    >>> from scipy import signal, datasets, ndimage
     >>> rng = np.random.default_rng()
     >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
-    >>> template = np.copy(face[300:365, 670:750])  # right eye
+    >>> face = ndimage.zoom(face[30:500, 400:950], 0.5)  # extract the face
+    >>> template = np.copy(face[135:165, 140:175])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')

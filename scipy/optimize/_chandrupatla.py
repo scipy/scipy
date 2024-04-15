@@ -164,26 +164,34 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         work.fmin = np.choose(i, (work.f2, work.f1))
         stop = np.zeros_like(work.x1, dtype=bool)  # termination condition met
 
+        # If function value tolerance is met, report successful convergence,
+        # regardless of other conditions. Note that `frtol` has been redefined
+        # as `frtol = frtol * np.minimum(f1, f2)`, where `f1` and `f2` are the
+        # function evaluated at the original ends of the bracket.
+        i = np.abs(work.fmin) <= work.fatol + work.frtol
+        work.status[i] = eim._ECONVERGED
+        stop[i] = True
+
+        # If the bracket is no longer valid, report failure (unless a function
+        # tolerance is met, as detected above).
+        i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._ESIGNERR
+        stop[i] = True
+
+        # If the abscissae are non-finite or either function value is NaN,
+        # report failure.
+        x_nonfinite = ~(np.isfinite(work.x1) & np.isfinite(work.x2))
+        f_nan = np.isnan(work.f1) & np.isnan(work.f2)
+        i = (x_nonfinite | f_nan) & ~stop
+        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._EVALUEERR
+        stop[i] = True
+
         # This is the convergence criterion used in bisect. Chandrupatla's
         # criterion is equivalent to this except with a factor of 4 on `xrtol`.
         work.dx = abs(work.x2 - work.x1)
         work.tol = abs(work.xmin) * work.xrtol + work.xatol
         i = work.dx < work.tol
-        # Modify in place to incorporate tolerance on function value. Note that
-        # `frtol` has been redefined as `frtol = frtol * np.minimum(f1, f2)`,
-        # where `f1` and `f2` are the function evaluated at the original ends of
-        # the bracket.
-        i |= np.abs(work.fmin) <= work.fatol + work.frtol
         work.status[i] = eim._ECONVERGED
-        stop[i] = True
-
-        i = (np.sign(work.f1) == np.sign(work.f2)) & ~stop
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._ESIGNERR
-        stop[i] = True
-
-        i = ~((np.isfinite(work.x1) & np.isfinite(work.x2)
-               & np.isfinite(work.f1) & np.isfinite(work.f2)) | stop)
-        work.xmin[i], work.fmin[i], work.status[i] = np.nan, np.nan, eim._EVALUEERR
         stop[i] = True
 
         return stop
