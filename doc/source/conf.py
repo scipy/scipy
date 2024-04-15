@@ -395,6 +395,8 @@ myst_enable_extensions = [
 ]
 nb_render_markdown_format = "myst"
 render_markdown_format = "myst"
+# Fix rendering of MathJax objects in Jupyter notebooks
+myst_update_mathjax = False
 
 #------------------------------------------------------------------------------
 # Interactive examples with jupyterlite-sphinx

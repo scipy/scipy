@@ -3,13 +3,19 @@ jupytext:
   text_representation:
     extension: .md
     format_name: myst
-    format_version: 1.0.0
+    format_version: 0.13
     jupytext_version: 1.16.1
 kernelspec:
   display_name: Python 3 (ipykernel)
   language: python
   name: python3
 ---
+
+
+```{eval-rst}
+.. jupyterlite:: sampling.md
+   :new_tab: True
+```
 
 (non-uniform-random-number-sampling)=
 # Universal Non-Uniform Random Number Sampling in SciPy
@@ -141,7 +147,7 @@ samples from the given distribution.
 
 An example of this interface is shown below:
 
-```{code-cell}
+```{code-cell} ipython3
 from scipy.stats.sampling import TransformedDensityRejection
 from math import exp
 import numpy as np
@@ -187,22 +193,27 @@ In the above example, we have set up an object of the
 standard normal distribution. Now, we can start sampling from our
 distribution by calling the `rvs` method:
 
-```{code-cell}
+```{code-cell} ipython3
 rng.rvs()
 ```
 
-```{code-cell}
+```{code-cell} ipython3
 rng.rvs((5, 3))
 ```
 
 We can also check that the samples are drawn from the correct distribution
 by visualizing the histogram of the samples:
 
-```{code-cell}
+```{code-cell} ipython3
 ---
 mystnb:
   image:
-    alt: This code generates an X-Y plot with the probability distribution function of X on the Y axis and values of X on the X axis. A red trace showing the true distribution is a typical normal distribution with tails near zero at the edges and a smooth peak around the center near 0.4. A blue bar graph of random variates is shown below the red trace with a distribution similar to the truth, but with clear imperfections.
+    alt: This code generates an X-Y plot with the probability distribution function
+      of X on the Y axis and values of X on the X axis. A red trace showing the true
+      distribution is a typical normal distribution with tails near zero at the edges
+      and a smooth peak around the center near 0.4. A blue bar graph of random variates
+      is shown below the red trace with a distribution similar to the truth, but with
+      clear imperfections.
 ---
 import numpy as np
 import matplotlib.pyplot as plt
@@ -269,7 +280,7 @@ plt.show()
 
 We can pass a `domain` parameter to truncate the distribution:
 
-```{code-cell}
+```{code-cell} ipython3
 rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
 rng.rvs((5, 3))
 ```
@@ -330,12 +341,3 @@ sampling_srou
 [^3]: Leydold, Josef, Wolfgang Hörmann, and Halis Sak. "An R Interface to
        the UNU.RAN Library for Universal Random Variate Generators.",
        <https://cran.r-project.org/web/packages/Runuran/vignettes/Runuran.pdf>
-
-
-```{eval-rst}
-.. notebooklite:: sampling.md
-   :width: 100%
-   :height: 600px
-   :prompt: Open as a notebook
-   :prompt_color: #00aa42
-```
