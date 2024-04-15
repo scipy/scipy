@@ -90,6 +90,7 @@ arpack_lib = static_library('arpack_lib',
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   include_directories: ['ARPACK/SRC'],
   override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 arpack_module = custom_target('arpack_module',

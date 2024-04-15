@@ -196,7 +196,8 @@ superlu_lib = static_library('superlu_lib',
     'SuperLU/SRC/zutil.c'
   ],
   c_args: _superlu_lib_c_args,
-  include_directories: ['SuperLU/SRC']
+  include_directories: ['SuperLU/SRC'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_superlu',

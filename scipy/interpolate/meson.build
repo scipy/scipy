@@ -92,6 +92,7 @@ fitpack_lib = static_library('fitpack_lib',
   fitpack_src,
   fortran_args: _fflag_Wno_maybe_uninitialized,
   override_options: ['b_lto=false'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('interpnd',
