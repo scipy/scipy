@@ -155,6 +155,8 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 
 double special_wright_bessel(double a, double b, double x);
 
+double special_scaled_exp1(double x);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif /* __cplusplus */

@@ -2,6 +2,7 @@
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
+#include "special/expint.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
@@ -335,3 +336,5 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
 }
 
 double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
+
+double special_scaled_exp1(double x) { return special::scaled_exp1(x); }

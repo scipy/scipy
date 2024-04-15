@@ -105,7 +105,6 @@ sf_error_state_lib = shared_library('sf_error_state',
 
 ufuncs_sources = [
   '_cosine.c',
-  'scaled_exp1.c',
   'special_wrappers.cpp',
   'sf_error.c'
 ]
@@ -274,7 +273,6 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'scaled_exp1.c',
     'special_wrappers.cpp',
     'sf_error.c'
   ],

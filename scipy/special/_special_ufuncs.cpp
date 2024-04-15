@@ -6,6 +6,7 @@
 #include "special/bessel.h"
 #include "special/binom.h"
 #include "special/digamma.h"
+#include "special/expint.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
@@ -182,6 +183,7 @@ extern const char *pro_rad2_doc;
 extern const char *pro_rad2_cv_doc;
 extern const char *psi_doc;
 extern const char *rgamma_doc;
+extern const char *scaled_exp1_doc;
 extern const char *sph_harm_doc;
 extern const char *wright_bessel_doc;
 extern const char *yv_doc;
@@ -240,6 +242,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         lambertw_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "_lambertw", _lambertw);
+
+    PyObject *_scaled_exp1 = SpecFun_NewUFunc(
+        {static_cast<func_d_d_t>(special::scaled_exp1), static_cast<func_f_f_t>(special::scaled_exp1)}, "_scaled_exp1",
+        scaled_exp1_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_scaled_exp1", _scaled_exp1);
 
     PyObject *_sinpi = SpecFun_NewUFunc(
         {static_cast<func_f_f_t>(special::sinpi), static_cast<func_d_d_t>(special::sinpi),
