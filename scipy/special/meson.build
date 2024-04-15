@@ -12,7 +12,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ellip_harm.pxd'),
   fs.copyfile('_ellip_harm_2.pxd'),
   fs.copyfile('_ellipk.pxd'),
-  fs.copyfile('_exprel.pxd'),
   fs.copyfile('_factorial.pxd'),
   fs.copyfile('_hyp0f1.pxd'),
   fs.copyfile('_hypergeometric.pxd'),
@@ -24,7 +23,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
-  fs.copyfile('sph_harm.pxd'),
   fs.copyfile('_ufuncs_extra_code.pxi'),
   fs.copyfile('_ufuncs_extra_code_common.pxi'),
 ]
@@ -109,7 +107,6 @@ ufuncs_sources = [
   '_cosine.c',
   'scaled_exp1.c',
   'special_wrappers.cpp',
-  'special_c_wrappers.cpp',
   'sf_error.c'
 ]
 
@@ -151,7 +148,7 @@ py3.extension_module('_gufuncs',
   include_directories: ['../_lib', '../_build_utils/src'],
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   dependencies: [np_dep],
-  link_with: [sf_error_state_lib],
+  link_with: [sf_error_state_lib, cephes_lib],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/special',
@@ -279,7 +276,6 @@ py3.extension_module('cython_special',
     '_cosine.c',
     'scaled_exp1.c',
     'special_wrappers.cpp',
-    'special_c_wrappers.cpp',
     'sf_error.c'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],

@@ -140,7 +140,7 @@ Deprecated features
 - Complex dtypes in ``PchipInterpolator`` and ``Akima1DInterpolator`` have
   been deprecated and will raise an error in SciPy 1.15.0. If you are trying
   to use the real components of the passed array, use ``np.real`` on ``y``.
-- Non-integer values of ``n`` together with ```exact=True`` are deprecated for
+- Non-integer values of ``n`` together with ``exact=True`` are deprecated for
   `scipy.special.factorial`.
 
 

@@ -14,7 +14,7 @@ cdef extern from "float.h":
 cdef extern from "special_wrappers.h":
     np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
     np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
-    double sin_pi(double x) nogil
+    double special_sinpi(double x) nogil
 
 cdef extern from "numpy/npy_math.h":
     double npy_creal(np.npy_cdouble z) nogil
@@ -89,7 +89,7 @@ cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * sin_pi(v1) * u_corr_k
+        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * special_sinpi(v1) * u_corr_k
 
     return result
 

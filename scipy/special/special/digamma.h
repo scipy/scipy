@@ -126,6 +126,8 @@ SPECFUN_HOST_DEVICE inline double digamma(double z) {
     return cephes::psi(z);
 }
 
+SPECFUN_HOST_DEVICE inline float digamma(float z) { return static_cast<float>(digamma(static_cast<double>(z))); }
+
 SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) {
     /*
      * Compute the digamma function for complex arguments. The strategy
@@ -193,6 +195,10 @@ SPECFUN_HOST_DEVICE inline std::complex<double> digamma(std::complex<double> z) 
         res += detail::digamma_forward_recurrence(z - n, init, n);
     }
     return res;
+}
+
+SPECFUN_HOST_DEVICE inline std::complex<float> digamma(std::complex<float> z) {
+    return static_cast<std::complex<float>>(digamma(static_cast<std::complex<double>>(z)));
 }
 
 } // namespace special

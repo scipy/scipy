@@ -47,6 +47,7 @@
 #include "cephes/gamma.h"
 #include "cephes/lanczos.h"
 #include "cephes/poch.h"
+#include "cephes/hyp2f1.h"
 #include "digamma.h"
 
 namespace special {
@@ -267,7 +268,7 @@ namespace detail {
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform1LimitSeriesGenerator(double a, double b, double m, std::complex<double> z)
             : d1_(special::digamma(a)), d2_(special::digamma(b)), d3_(special::digamma(1 + m)),
-              d4_(special::digamma(1)), a_(a), b_(b), m_(m), z_(z), log_1_z_(std::log(1.0 - z)),
+              d4_(special::digamma(1.0)), a_(a), b_(b), m_(m), z_(z), log_1_z_(std::log(1.0 - z)),
               factor_(1.0 / cephes::Gamma(m + 1)), k_(0) {}
 
         SPECFUN_HOST_DEVICE std::complex<double> operator()() {
@@ -312,7 +313,7 @@ namespace detail {
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesGenerator(double a, double b, double c, double m,
                                                                  std::complex<double> z)
-            : d1_(special::digamma(1)), d2_(special::digamma(1 + m)), d3_(special::digamma(a)),
+            : d1_(special::digamma(1.0)), d2_(special::digamma(1 + m)), d3_(special::digamma(a)),
               d4_(special::digamma(c - a)), a_(a), b_(b), c_(c), m_(m), z_(z), log_neg_z_(std::log(-z)),
               factor_(special::cephes::poch(b, m) * special::cephes::poch(1 - c + b, m) /
                       special::cephes::Gamma(m + 1)),
@@ -342,7 +343,7 @@ namespace detail {
       public:
         SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitSeriesCminusAIntGenerator(double a, double b, double c, double m,
                                                                            double n, std::complex<double> z)
-            : d1_(special::digamma(1)), d2_(special::digamma(1 + m)), d3_(special::digamma(a)),
+            : d1_(special::digamma(1.0)), d2_(special::digamma(1 + m)), d3_(special::digamma(a)),
               d4_(special::digamma(n)), a_(a), b_(b), c_(c), m_(m), n_(n), z_(z), log_neg_z_(std::log(-z)),
               factor_(special::cephes::poch(b, m) * special::cephes::poch(1 - c + b, m) /
                       special::cephes::Gamma(m + 1)),
@@ -413,9 +414,9 @@ namespace detail {
          * for the 1 - z transform also has an initial finite sum, but it is a standard hypergeometric
          * series. */
       public:
-        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double a, double b, double c, double m,
+        SPECFUN_HOST_DEVICE Hyp2f1Transform2LimitFinitePartGenerator(double b, double c, double m,
                                                                      std::complex<double> z)
-            : a_(a), b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
+            : b_(b), c_(c), m_(m), z_(z), term_(cephes::Gamma(m) / cephes::Gamma(c - b)), k_(0) {}
 
         SPECFUN_HOST_DEVICE std::complex<double> operator()() {
             std::complex<double> output = term_;
@@ -425,7 +426,7 @@ namespace detail {
         }
 
       private:
-        double a_, b_, c_, m_;
+        double b_, c_, m_;
         std::complex<double> z_, term_;
         std::uint64_t k_;
     };
@@ -498,7 +499,7 @@ namespace detail {
                                                                              std::complex<double> z) {
         /* 1 / z transform in limiting case where a - b approaches a non-negative integer m. Negative integer case
          * can be handled by swapping a and b. */
-        auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(a, b, c, m, z);
+        auto series_generator1 = Hyp2f1Transform2LimitFinitePartGenerator(b, c, m, z);
         std::complex<double> result = cephes::Gamma(c) / cephes::Gamma(a) * std::pow(-z, -b);
         result *=
             series_eval_fixed_length(series_generator1, std::complex<double>{0.0, 0.0}, static_cast<std::uint64_t>(m));
@@ -678,4 +679,16 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
     return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
                                detail::hyp2f1_MAXITER, "hyp2f1");
 }
+
+inline std::complex<float> hyp2f1(float a, float b, float c, std::complex<float> x) {
+    return static_cast<std::complex<float>>(hyp2f1(static_cast<double>(a), static_cast<double>(b),
+                                                   static_cast<double>(c), static_cast<std::complex<double>>(x)));
+}
+
+inline double hyp2f1(double a, double b, double c, double x) { return cephes::hyp2f1(a, b, c, x); }
+
+inline float hyp2f1(float a, float b, float c, float x) {
+    return hyp2f1(static_cast<double>(a), static_cast<double>(b), static_cast<double>(c), static_cast<double>(x));
+}
+
 } // namespace special

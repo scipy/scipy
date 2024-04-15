@@ -827,7 +827,7 @@ cdef class Rotation:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __init__(self, quat, normalize=True, copy=True):
+    def __init__(self, quat, normalize=True, copy=True, scalar_first=False):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -843,13 +843,18 @@ cdef class Rotation:
             self._single = True
 
         cdef Py_ssize_t num_rotations = quat.shape[0]
+
+        if scalar_first:
+            quat = np.roll(quat, -1, axis=1)
+        elif normalize or copy:
+            quat = quat.copy()
+
         if normalize:
-            self._quat = quat.copy()
             for ind in range(num_rotations):
-                if isnan(_normalize4(self._quat[ind, :])):
+                if isnan(_normalize4(quat[ind, :])):
                     raise ValueError("Found zero norm quaternions in `quat`.")
-        else:
-            self._quat = quat.copy() if copy else quat
+
+        self._quat = quat
 
     def __getstate__(self):
         return np.asarray(self._quat, dtype=float), self._single
@@ -893,10 +898,28 @@ cdef class Rotation:
 
     @cython.embedsignature(True)
     @classmethod
-    def from_quat(cls, quat):
+    def from_quat(cls, quat, *, scalar_first=False):
         """Initialize from quaternions.
 
-        3D rotations can be represented using unit-norm quaternions [1]_.
+        Rotations in 3 dimensions can be represented using unit norm
+        quaternions [1]_.
+
+        The 4 components of a quaternion are divided into a scalar part ``w``
+        and a vector part ``(x, y, z)`` and can be expressed from the angle
+        ``theta`` and the axis ``n`` of a rotation as follows::
+
+            w = cos(theta / 2)
+            x = sin(theta / 2) * n_x
+            y = sin(theta / 2) * n_y
+            z = sin(theta / 2) * n_z
+
+        There are 2 conventions to order the components in a quaternion:
+
+        - scalar-first order -- ``(w, x, y, z)``
+        - scalar-last order -- ``(x, y, z, w)``
+
+        The choice is controlled by `scalar_first` argument.
+        By default, it is False and the scalar-last order is assumed.
 
         Advanced users may be interested in the "double cover" of 3D space by
         the quaternion representation [2]_. As of version 1.11.0, the
@@ -910,8 +933,10 @@ cdef class Rotation:
         ----------
         quat : array_like, shape (N, 4) or (4,)
             Each row is a (possibly non-unit norm) quaternion representing an
-            active rotation, in scalar-last (x, y, z, w) format. Each
-            quaternion will be normalized to unit norm.
+            active rotation. Each quaternion will be normalized to unit norm.
+        scalar_first : bool, optional
+            Whether the scalar component goes first or last.
+            Default is False, i.e. the scalar-last order is assumed.
 
         Returns
         -------
@@ -928,15 +953,22 @@ cdef class Rotation:
         --------
         >>> from scipy.spatial.transform import Rotation as R
 
-        Initialize a single rotation:
+        A rotation can be initialzied from a quaternion with the scalar-last
+        (default) or scalar-first component order as shown below:
 
-        >>> r = R.from_quat([1, 0, 0, 0])
-        >>> r.as_quat()
-        array([1., 0., 0., 0.])
-        >>> r.as_quat().shape
-        (4,)
+        >>> r = R.from_quat([0, 0, 0, 1])
+        >>> r.as_matrix()
+        array([[1., 0., 0.],
+               [0., 1., 0.],
+               [0., 0., 1.]])
+        >>> r = R.from_quat([1, 0, 0, 0], scalar_first=True)
+        >>> r.as_matrix()
+        array([[1., 0., 0.],
+               [0., 1., 0.],
+               [0., 0., 1.]])
 
-        Initialize multiple rotations in a single object:
+        It is possible to initialize multiple rotations in a single object by
+        passing a 2-dimensional array:
 
         >>> r = R.from_quat([
         ... [1, 0, 0, 0],
@@ -962,7 +994,7 @@ cdef class Rotation:
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         """
-        return cls(quat, normalize=True)
+        return cls(quat, normalize=True, scalar_first=scalar_first)
 
     @cython.embedsignature(True)
     @classmethod
@@ -1607,14 +1639,33 @@ cdef class Rotation:
             return cls(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
-    def as_quat(self, canonical=False):
+    def as_quat(self, canonical=False, *, scalar_first=False):
         """Represent as quaternions.
 
-        Active rotations in 3 dimensions can be represented using unit norm
-        quaternions [1]_. The mapping from quaternions to rotations is
+        Rotations in 3 dimensions can be represented using unit norm
+        quaternions [1]_.
+
+        The 4 components of a quaternion are divided into a scalar part ``w``
+        and a vector part ``(x, y, z)`` and can be expressed from the angle
+        ``theta`` and the axis ``n`` of a rotation as follows::
+
+            w = cos(theta / 2)
+            x = sin(theta / 2) * n_x
+            y = sin(theta / 2) * n_y
+            z = sin(theta / 2) * n_z
+
+        There are 2 conventions to order the components in a quaternion:
+
+        - scalar-first order -- ``(w, x, y, z)``
+        - scalar-last order -- ``(x, y, z, w)``
+
+        The choice is controlled by `scalar_first` argument.
+        By default, it is False and the scalar-last order is used.
+
+        The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation. The returned value is in scalar-last (x, y, z, w) format.
+        rotation. 
 
         Parameters
         ----------
@@ -1624,6 +1675,9 @@ cdef class Rotation:
             chosen from {q, -q} such that the w term is positive. If the w term
             is 0, then the quaternion is chosen such that the first nonzero
             term of the x, y, and z terms is positive.
+        scalar_first : bool, optional
+            Whether the scalar component goes first or last.
+            Default is False, i.e. the scalar-last order is used.
 
         Returns
         -------
@@ -1639,23 +1693,18 @@ cdef class Rotation:
         >>> from scipy.spatial.transform import Rotation as R
         >>> import numpy as np
 
-        Represent a single rotation:
+        A rotation can be represented as a quaternion with either scalar-last
+        (default) or scalar-first component order.
+        This is shown for a single rotation:
 
-        >>> r = R.from_matrix([[0, -1, 0],
-        ...                    [1, 0, 0],
-        ...                    [0, 0, 1]])
+        >>> r = R.from_matrix(np.eye(3))
         >>> r.as_quat()
-        array([0.        , 0.        , 0.70710678, 0.70710678])
-        >>> r.as_quat().shape
-        (4,)
+        array([0., 0., 0., 1.])
+        >>> r.as_quat(scalar_first=True)
+        array([1., 0., 0., 0.])
 
-        Represent a stack with a single rotation:
-
-        >>> r = R.from_quat([[0, 0, 0, 1]])
-        >>> r.as_quat().shape
-        (1, 4)
-
-        Represent multiple rotations in a single object:
+        When multiple rotations are stored in a single Rotation object, the
+        result will be a 2-dimensional array:
 
         >>> r = R.from_rotvec([[np.pi, 0, 0], [0, 0, np.pi/2]])
         >>> r.as_quat().shape
@@ -1678,6 +1727,9 @@ cdef class Rotation:
             q = np.array(self._quat, copy=True)
             if canonical:
                 _quat_canonical(q)
+
+        if scalar_first:
+            q = np.roll(q, 1, axis=None if self._single else 1)
 
         return q
 
