@@ -4,11 +4,10 @@
 
 #include "special/tools.h"
 #include "special/error.h"
-#include <algorithm>
-#include <iterator>
-#include <cstddef>
-#include <cmath>
-#include <utility>
+#include <algorithm>  // for std::max
+#include <cstddef>    // for std::size_t
+#include <cmath>      // for std::frexp and std::ldexp
+#include <utility>    // for std::pair
 
 /* Generates the Perron continued fraction for `iv(v, x) / iv(v-1, x)` for
  * v >= 1 and x >= 0.
@@ -60,20 +59,17 @@ private:
 
 inline double iv_ratio(double v, double x) {
 
-#if 1
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-
     if (v < 0 || x < 0) {
-        // TODO: raise domain error
-        return std::numeric_limits<double>::quiet_NaN();
+        special::set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        return std::numeric_limits<double>::signaling_NaN();
     }
-
     if (std::isinf(v) && std::isinf(x)) {
-        // TBC
         // There is not a unique limit as both v and x tends to infinity.
-        return std::numeric_limits<double>::quiet_NaN();
+        special::set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        return std::numeric_limits<double>::signaling_NaN();
     }
     if (std::isinf(v)) {
         return 0.0;
@@ -82,8 +78,7 @@ inline double iv_ratio(double v, double x) {
         return 1.0;
     }
 
-    // Now v >= 0 and x >= 0 and both are finite.  Evaluate the c.f. using
-    // series method.
+    // Now v >= 0 and x >= 0 and both are finite.
     IvRatioCFGenerator cf(v+1, x);
     double tol = std::numeric_limits<double>::epsilon() * 0.5;
 #if 1
@@ -99,5 +94,4 @@ inline double iv_ratio(double v, double x) {
         return std::numeric_limits<double>::signaling_NaN();
     }
     return result;
-#endif
 }
