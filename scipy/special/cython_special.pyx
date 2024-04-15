@@ -1120,7 +1120,7 @@ cdef extern from r"special_wrappers.h":
     double _func_berp_wrap "berp_wrap"(double) nogil
     npy_double _func_kei_wrap "kei_wrap"(npy_double) nogil
     npy_double _func_keip_wrap "keip_wrap"(npy_double) nogil
-    void _func_kelvin_wrap "kelvin_wrap"(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    void special_ckelvin(npy_double, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
     npy_double _func_ker_wrap "ker_wrap"(npy_double) nogil
     double _func_kerp_wrap "kerp_wrap"(double) nogil
     npy_double _func_cem_cva_wrap "cem_cva_wrap"(npy_double, npy_double) nogil
@@ -1154,7 +1154,7 @@ cdef extern from r"special_wrappers.h":
     void _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
     npy_double _func_it2struve0_wrap "it2struve0_wrap"(npy_double) nogil
-    void _func_itairy_wrap "itairy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    void special_itairy(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void _func_it1i0k0_wrap "it1i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it1j0y0_wrap "it1j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
     npy_double _func_itmodstruve0_wrap "itmodstruve0_wrap"(npy_double) nogil
@@ -1164,10 +1164,10 @@ cdef extern from r"special_wrappers.h":
     void _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     npy_int _func_cfresnl_wrap "cfresnl_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *) nogil
 
-    void _func_airy_wrap "airy_wrap"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
-    void _func_cairy_wrap "cairy_wrap"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
-    void _func_cairy_wrap_e "cairy_wrap_e"(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
-    void _func_cairy_wrap_e_real "cairy_wrap_e_real"(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    void special_airy(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    void special_cairy(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
+    void special_airye(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
+    void special_cairye(npy_cdouble, npy_cdouble *, npy_cdouble *, npy_cdouble *, npy_cdouble *) nogil
 
     npy_cdouble special_ccyl_hankel_1(npy_double, npy_cdouble) nogil
     npy_cdouble special_ccyl_hankel_1e(npy_double, npy_cdouble) nogil
@@ -1758,9 +1758,9 @@ cdef void airy(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y2
     cdef npy_cdouble tmp2
     cdef npy_cdouble tmp3
     if Dd_number_t is double:
-        _func_airy_wrap(x0, y0, y1, y2, y3)
+        special_airy(x0, y0, y1, y2, y3)
     elif Dd_number_t is double_complex:
-        _func_cairy_wrap(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1, &tmp2, &tmp3)
+        special_cairy(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1, &tmp2, &tmp3)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
         y2[0] = _complexstuff.double_complex_from_npy_cdouble(tmp2)
@@ -1792,13 +1792,13 @@ cdef void airye(Dd_number_t x0, Dd_number_t *y0, Dd_number_t *y1, Dd_number_t *y
     cdef npy_cdouble tmp2
     cdef npy_cdouble tmp3
     if Dd_number_t is double_complex:
-        _func_cairy_wrap_e(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1, &tmp2, &tmp3)
+        special_cairye(_complexstuff.npy_cdouble_from_double_complex(x0), &tmp0, &tmp1, &tmp2, &tmp3)
         y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
         y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
         y2[0] = _complexstuff.double_complex_from_npy_cdouble(tmp2)
         y3[0] = _complexstuff.double_complex_from_npy_cdouble(tmp3)
     elif Dd_number_t is double:
-        _func_cairy_wrap_e_real(x0, y0, y1, y2, y3)
+        special_airye(x0, y0, y1, y2, y3)
     else:
         if Dd_number_t is double_complex:
             y0[0] = NAN
@@ -2647,7 +2647,7 @@ cpdef double it2struve0(double x0) noexcept nogil:
 
 cdef void itairy(double x0, double *y0, double *y1, double *y2, double *y3) noexcept nogil:
     """See the documentation for scipy.special.itairy"""
-    _func_itairy_wrap(x0, y0, y1, y2, y3)
+    special_itairy(x0, y0, y1, y2, y3)
 
 def _itairy_pywrap(double x0):
     cdef double y0
@@ -2771,7 +2771,7 @@ cdef void kelvin(double x0, double complex *y0, double complex *y1, double compl
     cdef npy_cdouble tmp1
     cdef npy_cdouble tmp2
     cdef npy_cdouble tmp3
-    _func_kelvin_wrap(x0, &tmp0, &tmp1, &tmp2, &tmp3)
+    special_ckelvin(x0, &tmp0, &tmp1, &tmp2, &tmp3)
     y0[0] = _complexstuff.double_complex_from_npy_cdouble(tmp0)
     y1[0] = _complexstuff.double_complex_from_npy_cdouble(tmp1)
     y2[0] = _complexstuff.double_complex_from_npy_cdouble(tmp2)

@@ -105,7 +105,7 @@ sf_error_state_lib = shared_library('sf_error_state',
 ufuncs_sources = [
   '_cosine.c',
   'special_wrappers.cpp',
-  'sf_error.c'
+  'sf_error.cc'
 ]
 
 ufuncs_cxx_sources = [
@@ -257,8 +257,9 @@ py3.extension_module('_ufuncs_cxx',
 )
 
 py3.extension_module('_ellip_harm_2',
-  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
+  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
   c_args: cython_c_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
@@ -273,9 +274,10 @@ py3.extension_module('cython_special',
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
     'special_wrappers.cpp',
-    'sf_error.c'
+    'sf_error.cc'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src', 'cephes'],
   link_args: version_link_args,
   dependencies: [np_dep, npymath_lib, lapack],

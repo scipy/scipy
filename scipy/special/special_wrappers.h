@@ -29,7 +29,6 @@ double expi_wrap(double x);
 npy_cdouble cexp1_wrap(npy_cdouble z);
 npy_cdouble cexpi_wrap(npy_cdouble z);
 npy_cdouble cerf_wrap(npy_cdouble z);
-void itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt);
 
 double struve_wrap(double v, double x);
 double itstruve0_wrap(double x);
@@ -47,7 +46,7 @@ double beip_wrap(double x);
 double kerp_wrap(double x);
 double keip_wrap(double x);
 
-void kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep);
+void special_ckelvin(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep);
 
 void it1j0y0_wrap(double x, double *, double *);
 void it2j0y0_wrap(double x, double *, double *);
@@ -86,10 +85,13 @@ double oblate_segv_wrap(double, double, double);
 void modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 void modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 
-void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
-void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
+void special_airy(double x, double *ai, double *aip, double *bi, double *bip);
+void special_cairy(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+
+void special_airye(double z, double *ai, double *aip, double *bi, double *bip);
+void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+
+void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt);
 
 double special_cyl_bessel_j(double v, double z);
 npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z);

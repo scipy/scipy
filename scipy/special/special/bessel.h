@@ -1,6 +1,7 @@
 #pragma once
 
 #include "amos.h"
+#include "error.h"
 #include "specfun.h"
 #include "trig.h"
 
@@ -394,17 +395,17 @@ namespace detail {
 /* int(y0(t),t=0..x) */
 
 template <typename T>
-void it1j0y0(T x, T *j0int, T *y0int) {
+void it1j0y0(T x, T &j0int, T &y0int) {
     int flag = 0;
 
     if (x < 0) {
         x = -x;
         flag = 1;
     }
-    detail::itjya(x, j0int, y0int);
+    detail::itjya(x, &j0int, &y0int);
     if (flag) {
-        *j0int = -(*j0int);
-        *y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
+        j0int = -j0int;
+        y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
 }
 
@@ -412,47 +413,47 @@ void it1j0y0(T x, T *j0int, T *y0int) {
 /* int(y0(t)/t,t=x..inf) */
 
 template <typename T>
-void it2j0y0(T x, T *j0int, T *y0int) {
+void it2j0y0(T x, T &j0int, T &y0int) {
     int flag = 0;
 
     if (x < 0) {
         x = -x;
         flag = 1;
     }
-    detail::ittjya(x, j0int, y0int);
+    detail::ittjya(x, &j0int, &y0int);
     if (flag) {
-        *y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
+        y0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
 }
 
 /* Integrals of modified bessel functions */
 
 template <typename T>
-void it1i0k0(T x, T *i0int, T *k0int) {
+void it1i0k0(T x, T &i0int, T &k0int) {
     int flag = 0;
 
     if (x < 0) {
         x = -x;
         flag = 1;
     }
-    detail::itika(x, i0int, k0int);
+    detail::itika(x, &i0int, &k0int);
     if (flag) {
-        *i0int = -(*i0int);
-        *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
+        i0int = -i0int;
+        k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
 }
 
 template <typename T>
-void it2i0k0(T x, T *i0int, T *k0int) {
+void it2i0k0(T x, T &i0int, T &k0int) {
     int flag = 0;
 
     if (x < 0) {
         x = -x;
         flag = 1;
     }
-    detail::ittika(x, i0int, k0int);
+    detail::ittika(x, &i0int, &k0int);
     if (flag) {
-        *k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
+        k0int = std::numeric_limits<T>::quiet_NaN(); /* domain error */
     }
 }
 
