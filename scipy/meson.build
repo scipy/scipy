@@ -148,6 +148,26 @@ fortranobject_dep = declare_dependency(
 blas_name = get_option('blas')
 lapack_name = get_option('lapack')
 
+macOS13_3_or_later = false
+if host_machine.system() == 'darwin'
+  r = run_command('xcrun', '-sdk', 'macosx', '--show-sdk-version', check: true)
+  sdkVersion = r.stdout().strip()
+
+  macOS13_3_or_later = sdkVersion.version_compare('>=13.3')
+endif
+
+_args_blas_lapack = []
+accelerate_flag = []
+generate_blas_wrappers = false
+if blas_name == 'accelerate'
+  if not macOS13_3_or_later
+    error('macOS Accelerate is only supported on macOS >=13.3')
+  endif
+  _args_blas_lapack += ['-DACCELERATE_NEW_LAPACK']
+  generate_blas_wrappers = true
+  accelerate_flag = '-a'
+endif
+
 # First try scipy-openblas, and if found don't look for cblas or lapack, we
 # know what's inside the scipy-openblas wheels already.
 if blas_name == 'openblas' or blas_name == 'auto'
@@ -164,6 +184,10 @@ if blas_name == 'openblas'
 elif blas_name != 'scipy-openblas'  # if so, we found it already
   blas = dependency(blas_name)
 endif
+blas_dep = declare_dependency(
+  dependencies: blas,
+  compile_args: _args_blas_lapack
+)
 if blas_name == 'blas'
   # Netlib BLAS has a separate `libcblas.so` which we use directly in the g77
   # ABI wrappers, so detect it and error out if we cannot find it.
@@ -184,6 +208,10 @@ elif lapack_name == 'openblas'
 else
   lapack = dependency(lapack_name)
 endif
+lapack_dep = declare_dependency(
+  dependencies: lapack,
+  compile_args: _args_blas_lapack
+)
 
 dependency_map = {
   'BLAS': blas,
@@ -202,13 +230,15 @@ if use_g77_abi
   g77_abi_wrappers = static_library(
     'g77_abi_wrappers',
     ['_build_utils/src/wrap_g77_abi.c'],
-    dependencies: [py3_dep, cblas, blas, np_dep],
+    dependencies: [py3_dep, cblas, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 else
   g77_abi_wrappers = static_library(
     'dummy_g77_abi_wrappers',
     ['_build_utils/src/wrap_dummy_g77_abi.c'],
-    dependencies: [py3_dep, blas, np_dep],
+    dependencies: [py3_dep, blas_dep, np_dep],
+    gnu_symbol_visibility: 'hidden',
   )
 endif
 
@@ -490,6 +520,16 @@ configure_file(
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes
 # better)
+subdir('_build_utils')
+# Update BLAS/LAPACK dependencies to include wrapper libs
+blas_dep = declare_dependency(
+  dependencies: blas_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
+lapack_dep = declare_dependency(
+  dependencies: lapack_dep,
+  link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
+)
 subdir('_lib')
 subdir('special')
 subdir('linalg')
