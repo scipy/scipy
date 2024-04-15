@@ -73,9 +73,6 @@ py3.extension_module('_qmc_cy',
   subdir: 'scipy/stats'
 )
 
-npyrandom_includes = include_directories('libnpyrandom')
-npyrandom_dep = declare_dependency(include_directories: npyrandom_includes)
-
 py3.extension_module('_biasedurn',
   [
     cython_gen_cpp.process('_biasedurn.pyx'),
@@ -88,8 +85,9 @@ py3.extension_module('_biasedurn',
     'libnpyrandom/distributions.c',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
+  include_directories: ['libnpyrandom'],
   link_args: version_link_args,
-  dependencies: [np_dep, npyrandom_dep],
+  dependencies: [np_dep],
   install: true,
   subdir: 'scipy/stats'
 )
