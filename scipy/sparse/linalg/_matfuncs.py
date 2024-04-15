@@ -15,7 +15,9 @@ from scipy.linalg._basic import solve, solve_triangular
 
 from scipy.sparse._base import issparse
 from scipy.sparse.linalg import spsolve
-from scipy.sparse._sputils import is_pydata_spmatrix, isintlike
+from scipy.sparse._sputils import (
+    convert_pydata_sparse_to_scipy, is_pydata_spmatrix, isintlike
+)
 
 import scipy.sparse
 import scipy.sparse.linalg
@@ -554,7 +556,7 @@ def expm(A):
 
     Returns
     -------
-    expA : (M,M) ndarray
+    expA : (M,M) ndarray or sparse matrix
         Matrix exponential of `A`
 
     Notes
@@ -588,7 +590,16 @@ def expm(A):
            [  0.        ,   7.3890561 ,   0.        ],
            [  0.        ,   0.        ,  20.08553692]])
     """
-    return _expm(A, use_exact_onenorm='auto')
+    is_pydata_sparse = is_pydata_spmatrix(A)
+    if is_pydata_sparse:
+        pydata_sparse_cls = A.__class__
+    A = convert_pydata_sparse_to_scipy(A)
+
+    result = _expm(A, use_exact_onenorm='auto')
+
+    if is_pydata_sparse:
+        result = pydata_sparse_cls.from_scipy_sparse(result)
+    return result
 
 
 def _expm(A, use_exact_onenorm):
