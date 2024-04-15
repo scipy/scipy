@@ -1147,10 +1147,10 @@ cdef extern from r"special_wrappers.h":
     void _func_prolate_radial1_wrap "prolate_radial1_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
     npy_double _func_prolate_radial2_nocv_wrap "prolate_radial2_nocv_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double *) nogil
     void _func_prolate_radial2_wrap "prolate_radial2_wrap"(npy_double, npy_double, npy_double, npy_double, npy_double, npy_double *, npy_double *) nogil
-    npy_cdouble _func_cexp1_wrap "cexp1_wrap"(npy_cdouble) nogil
-    npy_double _func_exp1_wrap "exp1_wrap"(npy_double) nogil
-    npy_cdouble _func_cexpi_wrap "cexpi_wrap"(npy_cdouble) nogil
-    npy_double _func_expi_wrap "expi_wrap"(npy_double) nogil
+    npy_cdouble special_cexp1(npy_cdouble) nogil
+    npy_double special_exp1(npy_double) nogil
+    npy_cdouble special_cexpi(npy_cdouble) nogil
+    npy_double special_expi(npy_double) nogil
     void _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
     npy_double _func_it2struve0_wrap "it2struve0_wrap"(npy_double) nogil
@@ -2371,9 +2371,9 @@ cpdef Dd_number_t eval_sh_legendre(dl_number_t x0, Dd_number_t x1) noexcept nogi
 cpdef Dd_number_t exp1(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.exp1"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cexp1_wrap(_complexstuff.npy_cdouble_from_double_complex(x0)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_cexp1(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return _func_exp1_wrap(x0)
+        return special_exp1(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN
@@ -2391,9 +2391,9 @@ cpdef double exp2(double x0) noexcept nogil:
 cpdef Dd_number_t expi(Dd_number_t x0) noexcept nogil:
     """See the documentation for scipy.special.expi"""
     if Dd_number_t is double_complex:
-        return _complexstuff.double_complex_from_npy_cdouble(_func_cexpi_wrap(_complexstuff.npy_cdouble_from_double_complex(x0)))
+        return _complexstuff.double_complex_from_npy_cdouble(special_cexpi(_complexstuff.npy_cdouble_from_double_complex(x0)))
     elif Dd_number_t is double:
-        return _func_expi_wrap(x0)
+        return special_expi(x0)
     else:
         if Dd_number_t is double_complex:
             return NAN

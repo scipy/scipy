@@ -58,13 +58,13 @@ void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt
     special::itairy(x, *apt, *bpt, *ant, *bnt);
 }
 
-double exp1_wrap(double x) { return special::exp1(x); }
+double special_exp1(double x) { return special::exp1(x); }
 
-npy_cdouble cexp1_wrap(npy_cdouble z) { return to_ccomplex(special::exp1(to_complex(z))); }
+npy_cdouble special_cexp1(npy_cdouble z) { return to_ccomplex(special::exp1(to_complex(z))); }
 
-double expi_wrap(double x) { return special::expi(x); }
+double special_expi(double x) { return special::expi(x); }
 
-npy_cdouble cexpi_wrap(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
+npy_cdouble special_cexpi(npy_cdouble z) { return to_ccomplex(special::expi(to_complex(z))); }
 
 npy_double special_exprel(npy_double x) { return special::exprel(x); }
 

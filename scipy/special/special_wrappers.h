@@ -24,11 +24,13 @@ npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
-double exp1_wrap(double x);
-double expi_wrap(double x);
-npy_cdouble cexp1_wrap(npy_cdouble z);
-npy_cdouble cexpi_wrap(npy_cdouble z);
 npy_cdouble cerf_wrap(npy_cdouble z);
+
+double special_exp1(double x);
+npy_cdouble special_cexp1(npy_cdouble z);
+
+double special_expi(double x);
+npy_cdouble special_cexpi(npy_cdouble z);
 
 double struve_wrap(double v, double x);
 double itstruve0_wrap(double x);

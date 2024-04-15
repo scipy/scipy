@@ -48,27 +48,10 @@ using func_d_d_t = double (*)(double);
 using func_F_F_t = complex<float> (*)(complex<float>);
 using func_D_D_t = complex<double> (*)(complex<double>);
 
-using func_ff_f_t = float (*)(float, float);
-using func_dd_d_t = double (*)(double, double);
-using func_FF_F_t = complex<float> (*)(complex<float>, complex<float>);
-using func_DD_D_t = complex<double> (*)(complex<double>, complex<double>);
-
-using func_fF_F_t = complex<float> (*)(float, complex<float>);
-using func_dD_D_t = complex<double> (*)(double, complex<double>);
-
-using func_fff_f_t = float (*)(float, float, float);
-using func_ddd_d_t = double (*)(double, double, double);
-
 using func_f_ff_t = void (*)(float, float &, float &);
 using func_d_dd_t = void (*)(double, double &, double &);
 using func_f_FF_t = void (*)(float, complex<float> &, complex<float> &);
 using func_d_DD_t = void (*)(double, complex<double> &, complex<double> &);
-
-using func_ff_ff_t = void (*)(float, float, float &, float &);
-using func_dd_dd_t = void (*)(double, double, double &, double &);
-
-using func_fff_ff_t = void (*)(float, float, float, float &, float &);
-using func_ddd_dd_t = void (*)(double, double, double, double &, double &);
 
 using func_f_ffff_t = void (*)(float, float &, float &, float &, float &);
 using func_d_dddd_t = void (*)(double, double &, double &, double &, double &);
@@ -79,31 +62,42 @@ using func_F_FFFF_t = void (*)(complex<float>, complex<float> &, complex<float> 
 using func_D_DDDD_t =
     void (*)(complex<double>, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
 
+using func_ff_f_t = float (*)(float, float);
+using func_dd_d_t = double (*)(double, double);
+using func_FF_F_t = complex<float> (*)(complex<float>, complex<float>);
+using func_DD_D_t = complex<double> (*)(complex<double>, complex<double>);
+using func_fF_F_t = complex<float> (*)(float, complex<float>);
+using func_dD_D_t = complex<double> (*)(double, complex<double>);
+using func_lf_f_t = float (*)(long, float);
+using func_ld_d_t = double (*)(long, double);
+using func_lF_F_t = complex<float> (*)(long, complex<float>);
+using func_lD_D_t = complex<double> (*)(long, complex<double>);
+
+using func_ff_ff_t = void (*)(float, float, float &, float &);
+using func_dd_dd_t = void (*)(double, double, double &, double &);
+
+using func_fff_f_t = float (*)(float, float, float);
+using func_ddd_d_t = double (*)(double, double, double);
+using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
+using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
+
+using func_fff_ff_t = void (*)(float, float, float, float &, float &);
+using func_ddd_dd_t = void (*)(double, double, double, double &, double &);
+
+using func_llff_F_t = complex<float> (*)(long, long, float, float);
+using func_lldd_D_t = complex<double> (*)(long, long, double, double);
+using func_ffff_f_t = float (*)(float, float, float, float);
+using func_dddd_d_t = double (*)(double, double, double, double);
+using func_fffF_F_t = complex<float> (*)(float, float, float, complex<float>);
+using func_dddD_D_t = complex<double> (*)(double, double, double, complex<double>);
+using func_ffff_F_t = complex<float> (*)(float, float, float, float);
+using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+
 using func_ffff_ff_t = void (*)(float, float, float, float, float &, float &);
 using func_dddd_dd_t = void (*)(double, double, double, double, double &, double &);
 
 using func_fffff_ff_t = void (*)(float, float, float, float, float, float &, float &);
 using func_ddddd_dd_t = void (*)(double, double, double, double, double, double &, double &);
-
-using func_llff_F_t = complex<float> (*)(long, long, float, float);
-using func_lldd_D_t = complex<double> (*)(long, long, double, double);
-
-using func_ffff_f_t = float (*)(float, float, float, float);
-using func_dddd_d_t = double (*)(double, double, double, double);
-
-using func_fffF_F_t = complex<float> (*)(float, float, float, complex<float>);
-using func_dddD_D_t = complex<double> (*)(double, double, double, complex<double>);
-
-using func_ffff_F_t = complex<float> (*)(float, float, float, float);
-using func_dddd_D_t = complex<double> (*)(double, double, double, double);
-
-using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
-using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
-
-using func_lf_f_t = float (*)(long, float);
-using func_ld_d_t = double (*)(long, double);
-using func_lF_F_t = complex<float> (*)(long, complex<float>);
-using func_lD_D_t = complex<double> (*)(long, complex<double>);
 
 #if (NPY_SIZEOF_LONGDOUBLE == NPY_SIZEOF_DOUBLE)
 using func_g_g_t = double (*)(double);
