@@ -33,11 +33,11 @@ double special_expi(double x);
 npy_cdouble special_cexpi(npy_cdouble z);
 
 double struve_wrap(double v, double x);
-double itstruve0_wrap(double x);
-double it2struve0_wrap(double x);
+double special_itstruve0(double x);
+double special_it2struve0(double x);
 
 double modstruve_wrap(double v, double x);
-double itmodstruve0_wrap(double x);
+double special_itmodstruve0(double x);
 
 double special_ber(double x);
 double special_bei(double x);

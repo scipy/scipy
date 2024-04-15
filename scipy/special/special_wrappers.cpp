@@ -70,11 +70,11 @@ npy_double special_exprel(npy_double x) { return special::exprel(x); }
 
 npy_cdouble cerf_wrap(npy_cdouble z) { return to_ccomplex(special::cerf(to_complex(z))); }
 
-double itstruve0_wrap(double x) { return special::itstruve0(x); }
+double special_itstruve0(double x) { return special::itstruve0(x); }
 
-double it2struve0_wrap(double x) { return special::it2struve0(x); }
+double special_it2struve0(double x) { return special::it2struve0(x); }
 
-double itmodstruve0_wrap(double x) { return special::itmodstruve0(x); }
+double special_itmodstruve0(double x) { return special::itmodstruve0(x); }
 
 double special_ber(double x) { return special::ber(x); }
 

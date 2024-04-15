@@ -1153,12 +1153,12 @@ cdef extern from r"special_wrappers.h":
     npy_double special_expi(npy_double) nogil
     void _func_it2i0k0_wrap "it2i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it2j0y0_wrap "it2j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
-    npy_double _func_it2struve0_wrap "it2struve0_wrap"(npy_double) nogil
+    npy_double special_it2struve0(npy_double) nogil
     void special_itairy(npy_double, npy_double *, npy_double *, npy_double *, npy_double *) nogil
     void _func_it1i0k0_wrap "it1i0k0_wrap"(npy_double, npy_double *, npy_double *) nogil
     void _func_it1j0y0_wrap "it1j0y0_wrap"(npy_double, npy_double *, npy_double *) nogil
-    npy_double _func_itmodstruve0_wrap "itmodstruve0_wrap"(npy_double) nogil
-    npy_double _func_itstruve0_wrap "itstruve0_wrap"(npy_double) nogil
+    npy_double special_itmodstruve0(npy_double) nogil
+    npy_double special_itstruve0(npy_double) nogil
     void _func_pbdv_wrap "pbdv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_pbvv_wrap "pbvv_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
     void _func_pbwa_wrap "pbwa_wrap"(npy_double, npy_double, npy_double *, npy_double *) nogil
@@ -2643,7 +2643,7 @@ def _it2j0y0_pywrap(double x0):
 
 cpdef double it2struve0(double x0) noexcept nogil:
     """See the documentation for scipy.special.it2struve0"""
-    return _func_it2struve0_wrap(x0)
+    return special_it2struve0(x0)
 
 cdef void itairy(double x0, double *y0, double *y1, double *y2, double *y3) noexcept nogil:
     """See the documentation for scipy.special.itairy"""
@@ -2679,11 +2679,11 @@ def _itj0y0_pywrap(double x0):
 
 cpdef double itmodstruve0(double x0) noexcept nogil:
     """See the documentation for scipy.special.itmodstruve0"""
-    return _func_itmodstruve0_wrap(x0)
+    return special_itmodstruve0(x0)
 
 cpdef double itstruve0(double x0) noexcept nogil:
     """See the documentation for scipy.special.itstruve0"""
-    return _func_itstruve0_wrap(x0)
+    return special_itstruve0(x0)
 
 cpdef Dd_number_t iv(double x0, Dd_number_t x1) noexcept nogil:
     """See the documentation for scipy.special.iv"""
