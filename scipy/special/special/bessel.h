@@ -11,26 +11,24 @@ extern "C" double cephes_yv(double v, double x);
 namespace special {
 namespace detail {
 
-    inline std::complex<double> rotate(std::complex<double> z, double v) {
-        std::complex<double> w;
-        double c = cospi(v);
-        double s = sinpi(v);
-        w.real(z.real() * c - z.imag() * s);
-        w.imag(z.real() * s + z.imag() * c);
+    template <typename T>
+    std::complex<T> rotate(std::complex<T> z, T v) {
+        T c = cospi(v);
+        T s = sinpi(v);
 
-        return w;
+        return {c * std::real(z) - s * std::imag(z), s * std::real(z) + c * std::imag(z)};
     }
 
-    inline std::complex<double> rotate_jy(std::complex<double> j, std::complex<double> y, double v) {
-        std::complex<double> w;
-        double c = cospi(v);
-        double s = sinpi(v);
-        w.real(j.real() * c - y.real() * s);
-        w.imag(j.imag() * c - y.imag() * s);
-        return w;
+    template <typename T>
+    std::complex<T> rotate_jy(std::complex<T> j, std::complex<T> y, T v) {
+        T c = cospi(v);
+        T s = sinpi(v);
+
+        return c * j - s * y;
     }
 
-    inline int reflect_jy(std::complex<double> *jy, double v) {
+    template <typename T>
+    int reflect_jy(std::complex<T> *jy, T v) {
         /* NB: Y_v may be huge near negative integers -- so handle exact
          *     integers carefully
          */
@@ -40,24 +38,25 @@ namespace detail {
 
         i = v - 16384.0 * floor(v / 16384.0);
         if (i & 1) {
-            jy->real(-jy->real());
-            jy->imag(-jy->imag());
+            *jy = -(*jy);
         }
         return 1;
     }
 
-    inline int reflect_i(std::complex<double> *ik, double v) {
-        if (v != floor(v))
+    template <typename T>
+    int reflect_i(std::complex<T> *ik, T v) {
+        if (v != floor(v)) {
             return 0;
+        }
+
         return 1; /* I is symmetric for integer v */
     }
 
-    inline std::complex<double> rotate_i(std::complex<double> i, std::complex<double> k, double v) {
-        std::complex<double> w;
-        double s = sin(v * M_PI) * (2.0 / M_PI);
-        w.real(i.real() + s * k.real());
-        w.imag(i.imag() + s * k.imag());
-        return w;
+    template <typename T>
+    std::complex<T> rotate_i(std::complex<T> i, std::complex<T> k, T v) {
+        T s = std::sin(v * M_PI) * (2 / M_PI);
+
+        return i + s * k;
     }
 
     template <typename T>
