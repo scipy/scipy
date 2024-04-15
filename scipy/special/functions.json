@@ -9,12 +9,6 @@
             "cosine_invcdf": "d->d"
         }
     },
-    "_cospi": {
-        "_special.h++": {
-            "cephes_cospi": "d->d",
-            "ccospi": "D->D"
-        }
-    },
     "_ellip_harm": {
         "_ellip_harm.pxd": {
             "ellip_harmonic": "ddiiddd->d"
@@ -27,11 +21,6 @@
         "_special.h++": {
             "cephes_igam_fac": "dd->d"
         }
-    },
-    "_lambertw": {
-	"_special.h++": {
-            "lambertw_scalar": "Dld->D"
-	}
     },
     "_lanczos_sum_expg_scaled": {
         "_special.h++": {
@@ -51,12 +40,6 @@
     "_sf_error_test_function": {
         "sf_error.pxd": {
             "_sf_error_test_function": "i->i"
-        }
-    },
-    "_sinpi": {
-        "_special.h++": {
-            "cephes_sinpi": "d->d",
-            "csinpi": "D->D"
         }
     },
     "_spherical_in": {
@@ -207,11 +190,6 @@
     "betaln": {
         "_special.h++": {
             "cephes_lbeta": "dd->d"
-        }
-    },
-    "binom": {
-        "_special.h++": {
-            "binom": "dd->d"
         }
     },
     "boxcox": {
@@ -530,13 +508,6 @@
             "cephes_exp2": "d->d"
         }
     },
-    "expit": {
-        "_logit.h++": {
-            "expit": "d->d",
-            "expitf": "f->f",
-            "expitl": "g->g"
-        }
-    },
     "expm1": {
         "_cunity.pxd": {
             "cexpm1": "D->D"
@@ -551,11 +522,6 @@
         },
         "_special.h++": {
             "cephes_expn": "id->d"
-        }
-    },
-    "exprel": {
-        "_exprel.pxd": {
-            "exprel": "d->d"
         }
     },
     "fdtr": {
@@ -581,12 +547,6 @@
         "special_wrappers.h": {
             "cephes_fresnl_wrap": "d*dd->*i",
             "cfresnl_wrap": "D*DD->*i"
-        }
-    },
-    "gamma": {
-        "_special.h++": {
-            "cgamma": "D->D",
-            "cephes_Gamma": "d->d"
         }
     },
     "gammainc": {
@@ -659,12 +619,6 @@
 	    },
         "special_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
-        }
-    },
-    "hyp2f1": {
-        "_special.h++": {
-            "cephes_hyp2f1": "dddd->d",
-            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
@@ -778,30 +732,10 @@
             "cephes_log1p": "d->d"
         }
     },
-    "log_expit": {
-        "_logit.h++": {
-            "log_expit": "d->d",
-            "log_expitf": "f->f",
-            "log_expitl": "g->g"
-        }
-    },
     "log_ndtr": {
         "_faddeeva.h++": {
             "faddeeva_log_ndtr": "d->d",
             "faddeeva_log_ndtr_complex": "D->D"
-        }
-    },
-    "loggamma": {
-        "_special.h++": {
-	    "loggamma_real": "d->d",
-            "loggamma": "D->D"
-        }
-    },
-    "logit": {
-        "_logit.h++": {
-            "logit": "d->d",
-            "logitf": "f->f",
-            "logitl": "g->g"
         }
     },
     "lpmv": {
@@ -954,12 +888,6 @@
             "pseudo_huber": "dd->d"
         }
     },
-    "psi": {
-        "_special.h++": {
-            "cdigamma": "D->D",
-            "digamma": "d->d"
-        }
-    },
     "radian": {
         "_special.h++": {
             "cephes_radian": "ddd->d"
@@ -968,12 +896,6 @@
     "rel_entr": {
         "_convex_analysis.pxd": {
             "rel_entr": "dd->d"
-        }
-    },
-    "rgamma": {
-        "_special.h++": {
-            "crgamma": "D->D",
-            "cephes_rgamma": "d->d"
         }
     },
     "round": {
@@ -1133,11 +1055,6 @@
     "_riemann_zeta": {
         "_special.h++": {
             "cephes_riemann_zeta": "d->d"
-        }
-    },
-    "wright_bessel": {
-        "_special.h++": {
-            "wright_bessel_scalar": "ddd->d"
         }
     },
     "ndtri_exp": {

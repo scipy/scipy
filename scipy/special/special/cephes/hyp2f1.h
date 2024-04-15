@@ -367,7 +367,7 @@ namespace cephes {
 
             *loss = 0;
 
-            assert(da != 0);
+            SPECFUN_ASSERT(da != 0);
 
             if (std::abs(da) > hyp2f1_MAXITER) {
                 /* Too expensive to compute this value, so give up */

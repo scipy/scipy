@@ -445,6 +445,8 @@ class _spbase:
 
     def multiply(self, other):
         """Point-wise multiplication by another array/matrix."""
+        if isscalarlike(other):
+            return self._mul_scalar(other)
         return self.tocsr().multiply(other)
 
     def maximum(self, other):

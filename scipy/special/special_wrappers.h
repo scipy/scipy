@@ -116,6 +116,44 @@ double gammaln_wrap(double x);
 
 double binom_wrap(double n, double k);
 
+double special_binom(double n, double k);
+
+double special_cospi(double x);
+
+double special_sinpi(double x);
+npy_cdouble special_csinpi(npy_cdouble z);
+
+double special_digamma(double z);
+npy_cdouble special_cdigamma(npy_cdouble z);
+
+float special_expitf(float x);
+double special_expit(double x);
+npy_longdouble special_expitl(npy_longdouble x);
+
+npy_double special_exprel(npy_double x);
+
+float special_log_expitf(float x);
+double special_log_expit(double x);
+npy_longdouble special_log_expitl(npy_longdouble x);
+
+float special_logitf(float x);
+double special_logit(double x);
+npy_longdouble special_logitl(npy_longdouble x);
+
+double special_loggamma(double x);
+npy_cdouble special_cloggamma(npy_cdouble z);
+
+double special_gamma(double x);
+npy_cdouble special_cgamma(npy_cdouble z);
+
+double special_hyp2f1(double a, double b, double c, double z);
+npy_cdouble special_chyp2f1(double a, double b, double c, npy_cdouble z);
+
+npy_cdouble special_lambertw(npy_cdouble z, long k, double tol);
+
+double special_rgamma(double x);
+npy_cdouble special_crgamma(npy_cdouble z);
+
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
 
@@ -160,6 +198,7 @@ double cephes_smirnovp_wrap(int n, double x);
 double cephes_yn_wrap(int n, double x);
 double cephes_polevl_wrap(double x, const double coef[], int N);
 double cephes_p1evl_wrap(double x, const double coef[], int N);
+double special_wright_bessel(double a, double b, double x);
 
 #ifdef __cplusplus
 } /* extern "C" */

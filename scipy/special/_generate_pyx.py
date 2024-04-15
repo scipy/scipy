@@ -76,16 +76,18 @@ import re
 import textwrap
 
 special_ufuncs = [
-    '_cospi', '_sinpi', 'airy', 'airye', 'bei', 'beip', 'ber', 'berp', 'exp1',
-    'expi', 'gammaln', 'hankel1', 'hankel1e', 'hankel2', 'hankel2e', 'it2i0k0',
-    'it2j0y0', 'it2struve0', 'itairy', 'iti0k0', 'itj0y0', 'itmodstruve0',
-    'itstruve0', 'iv', 'ive', 'jv', 'jve', 'kei', 'keip', 'kelvin', 'ker', 'kerp',
-    'kv', 'kve', 'mathieu_a', 'mathieu_b', 'mathieu_cem', 'mathieu_modcem1',
-    'mathieu_modcem2', 'mathieu_modsem1', 'mathieu_modsem2', 'mathieu_sem',
-    'modfresnelm', 'modfresnelp', 'obl_ang1', 'obl_ang1_cv', 'obl_cv',
-    'obl_rad1', 'obl_rad1_cv', 'obl_rad2', 'obl_rad2_cv', 'pbdv', 'pbvv',
-    'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv', 'pro_rad1', 'pro_rad1_cv',
-    'pro_rad2', 'pro_rad2_cv', 'sph_harm', 'yv', 'yve', '_zeta'
+    '_cospi', '_lambertw', '_sinpi', 'airy', 'airye', 'bei', 'beip',
+    'ber', 'berp', 'binom', 'exp1', 'expi', 'expit', 'exprel', 'gamma',
+    'gammaln', 'hankel1', 'hankel1e', 'hankel2', 'hankel2e', 'hyp2f1',
+    'it2i0k0', 'it2j0y0', 'it2struve0', 'itairy', 'iti0k0', 'itj0y0',
+    'itmodstruve0', 'itstruve0', 'iv', 'ive', 'jv', 'jve', 'kei', 'keip',
+    'kelvin', 'ker', 'kerp', 'kv', 'kve', 'log_expit', 'loggamma', 'logit',
+    'mathieu_a', 'mathieu_b', 'mathieu_cem', 'mathieu_modcem1', 'mathieu_modcem2',
+    'mathieu_modsem1', 'mathieu_modsem2', 'mathieu_sem', 'modfresnelm', 'modfresnelp',
+    'obl_ang1', 'obl_ang1_cv', 'obl_cv', 'obl_rad1', 'obl_rad1_cv', 'obl_rad2',
+    'obl_rad2_cv', 'pbdv', 'pbvv', 'pbwa', 'pro_ang1', 'pro_ang1_cv', 'pro_cv',
+    'pro_rad1', 'pro_rad1_cv', 'pro_rad2', 'pro_rad2_cv', 'psi', 'rgamma', 'sph_harm',
+    'wright_bessel', 'yv', 'yve', '_zeta'
 ]
 
 # -----------------------------------------------------------------------------

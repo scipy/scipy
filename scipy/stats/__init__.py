@@ -426,6 +426,7 @@ at the cost of greater computational requirements and stochastic results.
    monte_carlo_test
    permutation_test
    bootstrap
+   power
 
 Instances of the following object can be passed into some hypothesis test
 functions to perform a resampling or Monte Carlo version of the hypothesis
@@ -619,7 +620,7 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._censored_data import CensoredData
-from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *

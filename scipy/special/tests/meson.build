@@ -13,6 +13,7 @@ python_sources = [
   'test_ellip_harm.py',
   'test_erfinv.py',
   'test_exponential_integrals.py',
+  'test_extending.py',
   'test_faddeeva.py',
   'test_gamma.py',
   'test_gammainc.py',
@@ -63,4 +64,9 @@ py3.install_sources(
 py3.install_sources(
   'data/__init__.py',
   subdir: 'scipy/special/tests/data'
+)
+
+py3.install_sources(
+  ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
+  subdir: 'scipy/special/tests/_cython_examples'
 )

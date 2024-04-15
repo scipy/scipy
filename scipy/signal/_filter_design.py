@@ -2565,7 +2565,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
     if fs is not None:
         if analog:
             raise ValueError("fs cannot be specified for an analog filter")
-        Wn = 2*Wn/fs
+        Wn = Wn / (fs/2)
 
     if np.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")

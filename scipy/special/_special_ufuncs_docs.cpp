@@ -326,6 +326,90 @@ const char *berp_doc = R"(
 
     )";
 
+const char *binom_doc = R"(
+    binom(x, y, out=None)
+
+    Binomial coefficient considered as a function of two real variables.
+
+    For real arguments, the binomial coefficient is defined as
+
+    .. math::
+
+        \binom{x}{y} = \frac{\Gamma(x + 1)}{\Gamma(y + 1)\Gamma(x - y + 1)} =
+            \frac{1}{(x + 1)\mathrm{B}(x - y + 1, y + 1)}
+
+    Where :math:`\Gamma` is the Gamma function (`gamma`) and :math:`\mathrm{B}`
+    is the Beta function (`beta`) [1]_.
+
+    Parameters
+    ----------
+    x, y: array_like
+       Real arguments to :math:`\binom{x}{y}`.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of binomial coefficient.
+
+    See Also
+    --------
+    comb : The number of combinations of N things taken k at a time.
+
+    Notes
+    -----
+    The Gamma function has poles at non-positive integers and tends to either
+    positive or negative infinity depending on the direction on the real line
+    from which a pole is approached. When considered as a function of two real
+    variables, :math:`\binom{x}{y}` is thus undefined when `x` is a negative
+    integer.  `binom` returns ``nan`` when ``x`` is a negative integer. This
+    is the case even when ``x`` is a negative integer and ``y`` an integer,
+    contrary to the usual convention for defining :math:`\binom{n}{k}` when it
+    is considered as a function of two integer variables.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Binomial_coefficient
+
+    Examples
+    --------
+    The following examples illustrate the ways in which `binom` differs from
+    the function `comb`.
+
+    >>> from scipy.special import binom, comb
+
+    When ``exact=False`` and ``x`` and ``y`` are both positive, `comb` calls
+    `binom` internally.
+
+    >>> x, y = 3, 2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (3.0, 3.0, 3)
+
+    For larger values, `comb` with ``exact=True`` no longer agrees
+    with `binom`.
+
+    >>> x, y = 43, 23
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (960566918219.9999, 960566918219.9999, 960566918220)
+
+    `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
+    defined for negative arguments. `comb` returns 0 whenever one of ``x`` or
+    ``y`` is negative or ``x`` is less than ``y``.
+
+    >>> x, y = -3, 2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (nan, 0.0, 0)
+
+    >>> x, y = -3.1, 2.2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (18.714147876804432, 0.0, 0)
+
+    >>> x, y = 2.2, 3.1
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (0.037399983365134115, 0.0, 0)
+    )";
+
 const char *exp1_doc = R"(
     exp1(z, out=None)
 
@@ -490,6 +574,193 @@ const char *expi_doc = R"(
     (-0.21938393439552062-0j)
     >>> sc.expi(complex(-1, -0.0))
     (-0.21938393439552062-0j)
+
+    )";
+
+const char *expit_doc = R"(
+    expit(x, out=None)
+
+    Expit (a.k.a. logistic sigmoid) ufunc for ndarrays.
+
+    The expit function, also known as the logistic sigmoid function, is
+    defined as ``expit(x) = 1/(1+exp(-x))``.  It is the inverse of the
+    logit function.
+
+    Parameters
+    ----------
+    x : ndarray
+        The ndarray to apply expit to element-wise.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        An ndarray of the same shape as x. Its entries
+        are `expit` of the corresponding entry of x.
+
+    See Also
+    --------
+    logit
+
+    Notes
+    -----
+    As a ufunc expit takes a number of optional
+    keyword arguments. For more information
+    see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import expit, logit
+
+    >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
+    array([ 0.        ,  0.18242552,  0.5       ,  0.81757448,  1.        ])
+
+    `logit` is the inverse of `expit`:
+
+    >>> logit(expit([-2.5, 0, 3.1, 5.0]))
+    array([-2.5,  0. ,  3.1,  5. ])
+
+    Plot expit(x) for x in [-6, 6]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-6, 6, 121)
+    >>> y = expit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.xlim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('expit(x)')
+    >>> plt.show()
+    )";
+
+const char *exprel_doc = R"(
+    exprel(x, out=None)
+
+    Relative error exponential, ``(exp(x) - 1)/x``.
+
+    When `x` is near zero, ``exp(x)`` is near 1, so the numerical calculation
+    of ``exp(x) - 1`` can suffer from catastrophic loss of precision.
+    ``exprel(x)`` is implemented to avoid the loss of precision that occurs when
+    `x` is near zero.
+
+    Parameters
+    ----------
+    x : ndarray
+        Input array.  `x` must contain real numbers.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        ``(exp(x) - 1)/x``, computed element-wise.
+
+    See Also
+    --------
+    expm1
+
+    Notes
+    -----
+    .. versionadded:: 0.17.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import exprel
+
+    >>> exprel(0.01)
+    1.0050167084168056
+    >>> exprel([-0.25, -0.1, 0, 0.1, 0.25])
+    array([ 0.88479687,  0.95162582,  1.        ,  1.05170918,  1.13610167])
+
+    Compare ``exprel(5e-9)`` to the naive calculation.  The exact value
+    is ``1.00000000250000000416...``.
+
+    >>> exprel(5e-9)
+    1.0000000025
+
+    >>> (np.exp(5e-9) - 1)/5e-9
+    0.99999999392252903
+    )";
+
+const char *gamma_doc = R"(
+    gamma(z, out=None)
+
+    gamma function.
+
+    The gamma function is defined as
+
+    .. math::
+
+       \Gamma(z) = \int_0^\infty t^{z-1} e^{-t} dt
+
+    for :math:`\Re(z) > 0` and is extended to the rest of the complex
+    plane by analytic continuation. See [dlmf]_ for more details.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued argument
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the gamma function
+
+    Notes
+    -----
+    The gamma function is often referred to as the generalized
+    factorial since :math:`\Gamma(n + 1) = n!` for natural numbers
+    :math:`n`. More generally it satisfies the recurrence relation
+    :math:`\Gamma(z + 1) = z \cdot \Gamma(z)` for complex :math:`z`,
+    which, combined with the fact that :math:`\Gamma(1) = 1`, implies
+    the above identity for :math:`z = n`.
+
+    References
+    ----------
+    .. [dlmf] NIST Digital Library of Mathematical Functions
+              https://dlmf.nist.gov/5.2#E1
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import gamma, factorial
+
+    >>> gamma([0, 0.5, 1, 5])
+    array([         inf,   1.77245385,   1.        ,  24.        ])
+
+    >>> z = 2.5 + 1j
+    >>> gamma(z)
+    (0.77476210455108352+0.70763120437959293j)
+    >>> gamma(z+1), z*gamma(z)  # Recurrence property
+    ((1.2292740569981171+2.5438401155000685j),
+     (1.2292740569981158+2.5438401155000658j))
+
+    >>> gamma(0.5)**2  # gamma(0.5) = sqrt(pi)
+    3.1415926535897927
+
+    Plot gamma(x) for real x
+
+    >>> x = np.linspace(-3.5, 5.5, 2251)
+    >>> y = gamma(x)
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(x, y, 'b', alpha=0.6, label='gamma(x)')
+    >>> k = np.arange(1, 7)
+    >>> plt.plot(k, factorial(k-1), 'k*', alpha=0.6,
+    ...          label='(x-1)!, x = 1, 2, ...')
+    >>> plt.xlim(-3.5, 5.5)
+    >>> plt.ylim(-10, 25)
+    >>> plt.grid()
+    >>> plt.xlabel('x')
+    >>> plt.legend(loc='lower right')
+    >>> plt.show()
 
     )";
 
@@ -746,6 +1017,113 @@ const char *hankel2e_doc = R"(
            of a Complex Argument and Nonnegative Order",
            http://netlib.org/amos/
 
+    )";
+
+const char *hyp2f1_doc = R"(
+    hyp2f1(a, b, c, z, out=None)
+
+    Gauss hypergeometric function 2F1(a, b; c; z)
+
+    Parameters
+    ----------
+    a, b, c : array_like
+        Arguments, should be real-valued.
+    z : array_like
+        Argument, real or complex.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    hyp2f1 : scalar or ndarray
+        The values of the gaussian hypergeometric function.
+
+    See Also
+    --------
+    hyp0f1 : confluent hypergeometric limit function.
+    hyp1f1 : Kummer's (confluent hypergeometric) function.
+
+    Notes
+    -----
+    This function is defined for :math:`|z| < 1` as
+
+    .. math::
+
+       \mathrm{hyp2f1}(a, b, c, z) = \sum_{n=0}^\infty
+       \frac{(a)_n (b)_n}{(c)_n}\frac{z^n}{n!},
+
+    and defined on the rest of the complex z-plane by analytic
+    continuation [1]_.
+    Here :math:`(\cdot)_n` is the Pochhammer symbol; see `poch`. When
+    :math:`n` is an integer the result is a polynomial of degree :math:`n`.
+
+    The implementation for complex values of ``z`` is described in [2]_,
+    except for ``z`` in the region defined by
+
+    .. math::
+
+         0.9 <= \left|z\right| < 1.1,
+         \left|1 - z\right| >= 0.9,
+         \mathrm{real}(z) >= 0
+
+    in which the implementation follows [4]_.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/15.2
+    .. [2] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+    .. [3] Cephes Mathematical Functions Library,
+           http://www.netlib.org/cephes/
+    .. [4] J.L. Lopez and N.M. Temme, "New series expansions of the Gauss
+           hypergeometric function", Adv Comput Math 39, 349-365 (2013).
+           https://doi.org/10.1007/s10444-012-9283-y
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import scipy.special as sc
+
+    It has poles when `c` is a negative integer.
+
+    >>> sc.hyp2f1(1, 1, -2, 1)
+    inf
+
+    It is a polynomial when `a` or `b` is a negative integer.
+
+    >>> a, b, c = -1, 1, 1.5
+    >>> z = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, c, z)
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+    >>> 1 + a * b * z / c
+    array([1.        , 0.83333333, 0.66666667, 0.5       , 0.33333333])
+
+    It is symmetric in `a` and `b`.
+
+    >>> a = np.linspace(0, 1, 5)
+    >>> b = np.linspace(0, 1, 5)
+    >>> sc.hyp2f1(a, b, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+    >>> sc.hyp2f1(b, a, 1, 0.5)
+    array([1.        , 1.03997334, 1.1803406 , 1.47074441, 2.        ])
+
+    It contains many other functions as special cases.
+
+    >>> z = 0.5
+    >>> sc.hyp2f1(1, 1, 2, z)
+    1.3862943611198901
+    >>> -np.log(1 - z) / z
+    1.3862943611198906
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, z**2)
+    1.098612288668109
+    >>> np.log((1 + z) / (1 - z)) / (2 * z)
+    1.0986122886681098
+
+    >>> sc.hyp2f1(0.5, 1, 1.5, -z**2)
+    0.9272952180016117
+    >>> np.arctan(z) / z
+    0.9272952180016122
     )";
 
 const char *it2i0k0_doc = R"(
@@ -2051,6 +2429,331 @@ const char *kve_doc = R"(
     >>> plt.show()
     )";
 
+const char *lambertw_doc = R"(
+    lambertw(z, k=0, tol=1e-8)
+
+    Lambert W function.
+
+    The Lambert W function `W(z)` is defined as the inverse function
+    of ``w * exp(w)``. In other words, the value of ``W(z)`` is
+    such that ``z = W(z) * exp(W(z))`` for any complex number
+    ``z``.
+
+    The Lambert W function is a multivalued function with infinitely
+    many branches. Each branch gives a separate solution of the
+    equation ``z = w exp(w)``. Here, the branches are indexed by the
+    integer `k`.
+
+    Parameters
+    ----------
+    z : array_like
+        Input argument.
+    k : int, optional
+        Branch index.
+    tol : float, optional
+        Evaluation tolerance.
+
+    Returns
+    -------
+    w : array
+        `w` will have the same shape as `z`.
+
+    See Also
+    --------
+    wrightomega : the Wright Omega function
+
+    Notes
+    -----
+    All branches are supported by `lambertw`:
+
+    * ``lambertw(z)`` gives the principal solution (branch 0)
+    * ``lambertw(z, k)`` gives the solution on branch `k`
+
+    The Lambert W function has two partially real branches: the
+    principal branch (`k = 0`) is real for real ``z > -1/e``, and the
+    ``k = -1`` branch is real for ``-1/e < z < 0``. All branches except
+    ``k = 0`` have a logarithmic singularity at ``z = 0``.
+
+    **Possible issues**
+
+    The evaluation can become inaccurate very close to the branch point
+    at ``-1/e``. In some corner cases, `lambertw` might currently
+    fail to converge, or can end up on the wrong branch.
+
+    **Algorithm**
+
+    Halley's iteration is used to invert ``w * exp(w)``, using a first-order
+    asymptotic approximation (O(log(w)) or `O(w)`) as the initial estimate.
+
+    The definition, implementation and choice of branches is based on [2]_.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Lambert_W_function
+    .. [2] Corless et al, "On the Lambert W function", Adv. Comp. Math. 5
+       (1996) 329-359.
+       https://cs.uwaterloo.ca/research/tr/1993/03/W.pdf
+
+    Examples
+    --------
+    The Lambert W function is the inverse of ``w exp(w)``:
+
+    >>> import numpy as np
+    >>> from scipy.special import lambertw
+    >>> w = lambertw(1)
+    >>> w
+    (0.56714329040978384+0j)
+    >>> w * np.exp(w)
+    (1.0+0j)
+
+    Any branch gives a valid inverse:
+
+    >>> w = lambertw(1, k=3)
+    >>> w
+    (-2.8535817554090377+17.113535539412148j)
+    >>> w*np.exp(w)
+    (1.0000000000000002+1.609823385706477e-15j)
+
+    **Applications to equation-solving**
+
+    The Lambert W function may be used to solve various kinds of
+    equations.  We give two examples here.
+
+    First, the function can be used to solve implicit equations of the
+    form
+
+        :math:`x = a + b e^{c x}`
+
+    for :math:`x`.  We assume :math:`c` is not zero.  After a little
+    algebra, the equation may be written
+
+        :math:`z e^z = -b c e^{a c}`
+
+    where :math:`z = c (a - x)`.  :math:`z` may then be expressed using
+    the Lambert W function
+
+        :math:`z = W(-b c e^{a c})`
+
+    giving
+
+        :math:`x = a - W(-b c e^{a c})/c`
+
+    For example,
+
+    >>> a = 3
+    >>> b = 2
+    >>> c = -0.5
+
+    The solution to :math:`x = a + b e^{c x}` is:
+
+    >>> x = a - lambertw(-b*c*np.exp(a*c))/c
+    >>> x
+    (3.3707498368978794+0j)
+
+    Verify that it solves the equation:
+
+    >>> a + b*np.exp(c*x)
+    (3.37074983689788+0j)
+
+    The Lambert W function may also be used find the value of the infinite
+    power tower :math:`z^{z^{z^{\ldots}}}`:
+
+    >>> def tower(z, n):
+    ...     if n == 0:
+    ...         return z
+    ...     return z ** tower(z, n-1)
+    ...
+    >>> tower(0.5, 100)
+    0.641185744504986
+    >>> -lambertw(-np.log(0.5)) / np.log(0.5)
+    (0.64118574450498589+0j)
+    )";
+
+const char *loggamma_doc = R"(
+    loggamma(z, out=None)
+
+    Principal branch of the logarithm of the gamma function.
+
+    Defined to be :math:`\log(\Gamma(x))` for :math:`x > 0` and
+    extended to the complex plane by analytic continuation. The
+    function has a single branch cut on the negative real axis.
+
+    .. versionadded:: 0.18.0
+
+    Parameters
+    ----------
+    z : array_like
+        Values in the complex plane at which to compute ``loggamma``
+    out : ndarray, optional
+        Output array for computed values of ``loggamma``
+
+    Returns
+    -------
+    loggamma : scalar or ndarray
+        Values of ``loggamma`` at z.
+
+    See Also
+    --------
+    gammaln : logarithm of the absolute value of the gamma function
+    gammasgn : sign of the gamma function
+
+    Notes
+    -----
+    It is not generally true that :math:`\log\Gamma(z) =
+    \log(\Gamma(z))`, though the real parts of the functions do
+    agree. The benefit of not defining `loggamma` as
+    :math:`\log(\Gamma(z))` is that the latter function has a
+    complicated branch cut structure whereas `loggamma` is analytic
+    except for on the negative real axis.
+
+    The identities
+
+    .. math::
+      \exp(\log\Gamma(z)) &= \Gamma(z) \\
+      \log\Gamma(z + 1) &= \log(z) + \log\Gamma(z)
+
+    make `loggamma` useful for working in complex logspace.
+
+    On the real line `loggamma` is related to `gammaln` via
+    ``exp(loggamma(x + 0j)) = gammasgn(x)*exp(gammaln(x))``, up to
+    rounding error.
+
+    The implementation here is based on [hare1997]_.
+
+    References
+    ----------
+    .. [hare1997] D.E.G. Hare,
+      *Computing the Principal Branch of log-Gamma*,
+      Journal of Algorithms, Volume 25, Issue 2, November 1997, pages 221-236.
+    )";
+
+const char *logit_doc = R"(
+    """
+    logit(x, out=None)
+
+    Logit ufunc for ndarrays.
+
+    The logit function is defined as logit(p) = log(p/(1-p)).
+    Note that logit(0) = -inf, logit(1) = inf, and logit(p)
+    for p<0 or p>1 yields nan.
+
+    Parameters
+    ----------
+    x : ndarray
+        The ndarray to apply logit to element-wise.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        An ndarray of the same shape as x. Its entries
+        are logit of the corresponding entry of x.
+
+    See Also
+    --------
+    expit
+
+    Notes
+    -----
+    As a ufunc logit takes a number of optional
+    keyword arguments. For more information
+    see `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 0.10.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import logit, expit
+
+    >>> logit([0, 0.25, 0.5, 0.75, 1])
+    array([       -inf, -1.09861229,  0.        ,  1.09861229,         inf])
+
+    `expit` is the inverse of `logit`:
+
+    >>> expit(logit([0.1, 0.75, 0.999]))
+    array([ 0.1  ,  0.75 ,  0.999])
+
+    Plot logit(x) for x in [0, 1]:
+
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(0, 1, 501)
+    >>> y = logit(x)
+    >>> plt.plot(x, y)
+    >>> plt.grid()
+    >>> plt.ylim(-6, 6)
+    >>> plt.xlabel('x')
+    >>> plt.title('logit(x)')
+    >>> plt.show()
+    )";
+
+const char *log_expit_doc = R"(
+    log_expit(x, out=None)
+
+    Logarithm of the logistic sigmoid function.
+
+    The SciPy implementation of the logistic sigmoid function is
+    `scipy.special.expit`, so this function is called ``log_expit``.
+
+    The function is mathematically equivalent to ``log(expit(x))``, but
+    is formulated to avoid loss of precision for inputs with large
+    (positive or negative) magnitude.
+
+    Parameters
+    ----------
+    x : array_like
+        The values to apply ``log_expit`` to element-wise.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    out : scalar or ndarray
+        The computed values, an ndarray of the same shape as ``x``.
+
+    See Also
+    --------
+    expit
+
+    Notes
+    -----
+    As a ufunc, ``log_expit`` takes a number of optional keyword arguments.
+    For more information see
+    `ufuncs <https://docs.scipy.org/doc/numpy/reference/ufuncs.html>`_
+
+    .. versionadded:: 1.8.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.special import log_expit, expit
+
+    >>> log_expit([-3.0, 0.25, 2.5, 5.0])
+    array([-3.04858735, -0.57593942, -0.07888973, -0.00671535])
+
+    Large negative values:
+
+    >>> log_expit([-100, -500, -1000])
+    array([ -100.,  -500., -1000.])
+
+    Note that ``expit(-1000)`` returns 0, so the naive implementation
+    ``log(expit(-1000))`` return ``-inf``.
+
+    Large positive values:
+
+    >>> log_expit([29, 120, 400])
+    array([-2.54366565e-013, -7.66764807e-053, -1.91516960e-174])
+
+    Compare that to the naive implementation:
+
+    >>> np.log(expit([29, 120, 400]))
+    array([-2.54463117e-13,  0.00000000e+00,  0.00000000e+00])
+
+    The first value is accurate to only 3 digits, and the larger inputs
+    lose all precision and return 0.
+    )";
+
 const char *mathieu_a_doc = R"(
     mathieu_a(m, q, out=None)
 
@@ -2905,6 +3608,120 @@ const char *pro_rad2_cv_doc = R"(
         Value of the derivative vs x
     )";
 
+const char *psi_doc = R"(
+    psi(z, out=None)
+
+    The digamma function.
+
+    The logarithmic derivative of the gamma function evaluated at ``z``.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex argument.
+    out : ndarray, optional
+        Array for the computed values of ``psi``.
+
+    Returns
+    -------
+    digamma : scalar or ndarray
+        Computed values of ``psi``.
+
+    Notes
+    -----
+    For large values not close to the negative real axis, ``psi`` is
+    computed using the asymptotic series (5.11.2) from [1]_. For small
+    arguments not close to the negative real axis, the recurrence
+    relation (5.5.2) from [1]_ is used until the argument is large
+    enough to use the asymptotic series. For values close to the
+    negative real axis, the reflection formula (5.5.4) from [1]_ is
+    used first. Note that ``psi`` has a family of zeros on the
+    negative real axis which occur between the poles at nonpositive
+    integers. Around the zeros the reflection formula suffers from
+    cancellation and the implementation loses precision. The sole
+    positive zero and the first negative zero, however, are handled
+    separately by precomputing series expansions using [2]_, so the
+    function should maintain full accuracy around the origin.
+
+    References
+    ----------
+    .. [1] NIST Digital Library of Mathematical Functions
+           https://dlmf.nist.gov/5
+    .. [2] Fredrik Johansson and others.
+           "mpmath: a Python library for arbitrary-precision floating-point arithmetic"
+           (Version 0.19) http://mpmath.org/
+
+    Examples
+    --------
+    >>> from scipy.special import psi
+    >>> z = 3 + 4j
+    >>> psi(z)
+    (1.55035981733341+1.0105022091860445j)
+
+    Verify psi(z) = psi(z + 1) - 1/z:
+
+    >>> psi(z + 1) - 1/z
+    (1.55035981733341+1.0105022091860445j)
+    )";
+
+const char *rgamma_doc = R"(
+    rgamma(z, out=None)
+
+    Reciprocal of the gamma function.
+
+    Defined as :math:`1 / \Gamma(z)`, where :math:`\Gamma` is the
+    gamma function. For more on the gamma function see `gamma`.
+
+    Parameters
+    ----------
+    z : array_like
+        Real or complex valued input
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Function results
+
+    See Also
+    --------
+    gamma, gammaln, loggamma
+
+    Notes
+    -----
+    The gamma function has no zeros and has simple poles at
+    nonpositive integers, so `rgamma` is an entire function with zeros
+    at the nonpositive integers. See the discussion in [dlmf]_ for
+    more details.
+
+    References
+    ----------
+    .. [dlmf] Nist, Digital Library of Mathematical functions,
+        https://dlmf.nist.gov/5.2#i
+
+    Examples
+    --------
+    >>> import scipy.special as sc
+
+    It is the reciprocal of the gamma function.
+
+    >>> sc.rgamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+    >>> 1 / sc.gamma([1, 2, 3, 4])
+    array([1.        , 1.        , 0.5       , 0.16666667])
+
+    It is zero at nonpositive integers.
+
+    >>> sc.rgamma([0, -1, -2, -3])
+    array([0., 0., 0., 0.])
+
+    It rapidly underflows to zero along the positive real axis.
+
+    >>> sc.rgamma([10, 100, 179])
+    array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
+    )";
+
 const char *sph_harm_doc = R"(
     sph_harm(m, n, theta, phi, out=None)
 
@@ -2968,6 +3785,58 @@ const char *sph_harm_doc = R"(
     .. [1] Digital Library of Mathematical Functions, 14.30.
            https://dlmf.nist.gov/14.30
     .. [2] https://en.wikipedia.org/wiki/Spherical_harmonics#Condon.E2.80.93Shortley_phase
+    )";
+
+const char *wright_bessel_doc = R"(
+    wright_bessel(a, b, x, out=None)
+
+    Wright's generalized Bessel function.
+
+    Wright's generalized Bessel function is an entire function and defined as
+
+    .. math:: \Phi(a, b; x) = \sum_{k=0}^\infty \frac{x^k}{k! \Gamma(a k + b)}
+
+    See Also [1].
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the Wright's generalized Bessel function
+
+    Notes
+    -----
+    Due to the complexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    References
+    ----------
+    .. [1] Digital Library of Mathematical Functions, 10.46.
+           https://dlmf.nist.gov/10.46.E1
+
+    Examples
+    --------
+    >>> from scipy.special import wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> wright_bessel(a, b-1, x)
+    4.5314465939443025
+
+    Now, let us verify the relation
+
+    .. math:: \Phi(a, b-1; x) = a x \Phi(a, b+a; x) + (b-1) \Phi(a, b; x)
+
+    >>> a * x * wright_bessel(a, b+a, x) + (b-1) * wright_bessel(a, b, x)
+    4.5314465939443025
     )";
 
 const char *yv_doc = R"(

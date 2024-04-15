@@ -735,4 +735,8 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
     return detail::wright_bessel_integral(a, b, x);
 }
 
+SPECFUN_HOST_DEVICE inline float wright_bessel(float a, float b, float x) {
+    return wright_bessel(static_cast<float>(a), static_cast<float>(b), static_cast<float>(x));
+}
+
 } // namespace special

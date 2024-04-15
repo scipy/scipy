@@ -194,11 +194,6 @@ SPECFUN_HOST_DEVICE complex<T> pow(const complex<T> &x, const T &y) {
 }
 
 // Other types and utilities
-template <typename T>
-using is_floating_point = cuda::std::is_floating_point<T>;
-using uint64_t = cuda::std::uint64_t;
-
-// Other types and utilities
 using cuda::std::is_floating_point;
 using cuda::std::pair;
 using cuda::std::uint64_t;
