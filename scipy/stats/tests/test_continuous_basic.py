@@ -43,8 +43,8 @@ _IS_32BIT = (sys.maxsize < 2**32)
 # xslow took > 1s; slow took > 0.5s
 
 xslow_test_cont_basic = {'studentized_range', 'kstwo', 'ksone', 'vonmises', 'kappa4',
-                         'recipinvgauss', 'vonmises_line', 'gausshyper', 'rel_breitwigner',
-                         'norminvgauss'}
+                         'recipinvgauss', 'vonmises_line', 'gausshyper',
+                         'rel_breitwigner', 'norminvgauss'}
 slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
 
 # test_moments is already marked slow
