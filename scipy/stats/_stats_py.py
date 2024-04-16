@@ -257,6 +257,11 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     hmean : ndarray
         See `dtype` parameter above.
 
+    Raises
+    ------
+    ValueError
+        If `a` has elements less than 0.
+
     See Also
     --------
     numpy.mean : Arithmetic average
@@ -358,6 +363,12 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     -------
     pmean : ndarray, see `dtype` parameter above.
         Output array containing the power mean values.
+
+    Raises
+    ------
+    ValueError
+        If `a` has elements less than 0.
+        If `p` is not of type int or float.
 
     See Also
     --------
@@ -485,6 +496,11 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         Array of modal values.
     count : ndarray
         Array of counts for each mode.
+
+    Raises
+    ------
+    TypeError
+        If `a` is not numeric.
 
     Notes
     -----
@@ -1355,6 +1371,11 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
         normalized so that it is zero for the normal distribution.  No
         degrees of freedom are used.
 
+    Raises
+    ------
+    ValueError
+        If size of `a` is 0.
+
     See Also
     --------
     skew, kurtosis
@@ -1463,9 +1484,10 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Notes
-    -----
-    The sample size must be at least 8.
+    Raises
+    ------
+    ValueError
+        If shape of `a` along the given `axis` is less than 8.
 
     References
     ----------
@@ -1644,9 +1666,15 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     pvalue : float
         The p-value for the hypothesis test.
 
-    Notes
+    Raises
+    ------
+    ValueError
+        If shape of `a` along the given `axis` is less than 5.
+
+    Warns
     -----
     Valid only for n>20. This function uses the method described in [1]_.
+    If any element in the denominator array is 0. Returns `nan` for such cases.
 
     References
     ----------
@@ -1990,6 +2018,11 @@ def jarque_bera(x, *, axis=None):
             The test statistic.
         pvalue : float
             The p-value for the hypothesis test.
+
+    Raises
+    ------
+    ValueError
+        If the shape of `x` along the given `axis` is 0.
 
     References
     ----------
@@ -2677,6 +2710,12 @@ def obrientransform(*samples):
         the return value is a 2-D array; otherwise it is a 1-D array
         of type object, with each element being an ndarray.
 
+    Raises
+    ------
+    ValueError
+        If the mean of the transformed data is not equal to the original
+        variance, indicating a lack of convergence in the O'Brien transform.
+
     References
     ----------
     .. [1] S. E. Maxwell and H. D. Delaney, "Designing Experiments and
@@ -3145,11 +3184,17 @@ def gstd(a, axis=0, ddof=1):
     numpy.std : Standard deviation
     gzscore : Geometric standard score
 
+    Raises
+    ------
+    ValueError
+        As the calculation requires the use of logarithms the geometric standard
+        deviation only supports strictly positive values. Any non-positive or
+        infinite values will raise a `ValueError`.
+
+        If `a` could not be safely coerced to any supported types.
+
     Notes
     -----
-    As the calculation requires the use of logarithms the geometric standard
-    deviation only supports strictly positive values. Any non-positive or
-    infinite values will raise a `ValueError`.
     The geometric standard deviation is sometimes confused with the exponent of
     the standard deviation, ``exp(std(a))``. Instead the geometric standard
     deviation is ``exp(std(log(a)))``.
@@ -3477,6 +3522,13 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
         output data-type is ``np.float64``. Otherwise, the output data-type is
         the same as that of the input.
 
+    Raises
+    ------
+    TypeError
+        If `center` is not callable.
+    ValueError
+        If `scale` is not a valid value.
+
     See Also
     --------
     numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
@@ -3685,6 +3737,11 @@ def trimboth(a, proportiontocut, axis=0):
         Trimmed version of array `a`. The order of the trimmed content
         is undefined.
 
+    Raises
+    ------
+    ValueError
+        If `proportiontocut` is not in the range [0, 1].
+
     See Also
     --------
     trim_mean
@@ -3854,6 +3911,11 @@ def trim_mean(a, proportiontocut, axis=0):
     -------
     trim_mean : ndarray
         Mean of trimmed array.
+
+    Raises
+    ------
+    ValueError
+        If `proportiontocut` is not in the range [0, 1].
 
     See Also
     --------
@@ -4587,6 +4649,14 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
             In some cases, confidence limits may be NaN due to a degenerate
             resample, and this is typical for very small samples (~6
             observations).
+
+    Raises
+    ------
+    ValueError
+        If `axis` is not an integer, `x` and `y` do not have the same length
+        along `axis`, `x` and `y` do not have length at least 2, `x` and `y`
+        are not broadcastable, if `x` or `y` are of complex datatypes, or if
+        `method` is invalid.
 
     Warns
     -----
