@@ -640,7 +640,7 @@ def isspmatrix_bsr(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class bsr_array(_bsr_base, sparray):
+class bsr_array(sparray, _bsr_base):
     """
     Block Sparse Row format sparse array.
 

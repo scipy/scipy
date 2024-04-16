@@ -413,7 +413,7 @@ def isspmatrix_dia(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class dia_array(_dia_base, sparray):
+class dia_array(sparray, _dia_base):
     """
     Sparse array with DIAgonal storage.
 

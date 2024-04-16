@@ -626,7 +626,7 @@ def isspmatrix_coo(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class coo_array(_coo_base, sparray):
+class coo_array(sparray, _coo_base):
     """
     A sparse array in COOrdinate format.
 

@@ -488,7 +488,7 @@ def isspmatrix_lil(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class lil_array(_lil_base, sparray):
+class lil_array(sparray, _lil_base):
     """
     Row-based LIst of Lists sparse array.
 

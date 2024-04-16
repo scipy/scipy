@@ -519,7 +519,7 @@ def isspmatrix_dok(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class dok_array(_dok_base, sparray):
+class dok_array(sparray, _dok_base):
     """
     Dictionary Of Keys based sparse array.
 
