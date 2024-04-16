@@ -4,9 +4,8 @@
 
 #include "special/tools.h"
 #include "special/error.h"
-#include <algorithm>  // for std::max
-#include <cstddef>    // for std::size_t
-#include <cmath>      // for std::frexp and std::ldexp
+#include <cstdint>    // for std::uint64_t
+#include <cmath>      // for std::frexp, std::ldexp, std::fmax
 #include <utility>    // for std::pair
 
 /* Generates the Perron continued fraction for `iv(v, x) / iv(v-1, x)` for
@@ -30,7 +29,7 @@ public:
     // It is assumed that v >= 1, x >= 0, and both are finite.
     IvRatioCFGenerator(double v, double x) noexcept {
         int e;
-        std::frexp(std::max(v, x), &e);
+        std::frexp(std::fmax(v, x), &e);
         double c = std::ldexp(1, 1-e); // rescaling multiplier
 
         double vc = v * c;
@@ -54,7 +53,7 @@ private:
     frac_type frac_;  // current fraction
     double a0_, as_;  // a[k] == a0 + as*k, k >= 1
     double b0_, bs_;  // b[k] == b0 + bs*k, k >= 1
-    std::size_t k_;   // current index (0-based)
+    std::uint64_t k_; // current index (0-based)
 };
 
 inline double iv_ratio(double v, double x) {
@@ -80,18 +79,16 @@ inline double iv_ratio(double v, double x) {
 
     // Now v >= 0 and x >= 0 and both are finite.
     IvRatioCFGenerator cf(v+1, x);
-    double tol = std::numeric_limits<double>::epsilon() * 0.5;
-#if 1
-    auto cf_series = special::detail::continued_fraction_series<double>(cf);
+
     auto [result, terms] = special::detail::series_eval_kahan(
-        0.0, cf_series, tol, 300);
-#else
-    auto [result, terms] = special::detail::continued_fraction_eval_lentz(
-        0.0, cf, tol, 300);
-#endif
+        special::detail::continued_fraction_series(cf),
+        std::numeric_limits<double>::epsilon() * 0.5,
+        1000);
+
     if (terms == 0) { // failed to converge; should not happen
         special::set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
+
     return result;
 }

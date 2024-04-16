@@ -8,17 +8,25 @@
 namespace special {
 namespace detail {
 
-    /* Returns the next value of a sequence.
-     *
-     * This overload assumes `g` to be a (stateful) callable object that
-     * returns the next value of the sequence each time it is called.
-     * `g` behaves like a bound `__next__` method in Python, except that
-     * no `StopIteration` is supported.
+    /* Result type of a "generator", a callable object that produces a value
+     * each time it is called.
      */
     template <typename Generator>
-    std::enable_if_t<std::is_invocable_v<Generator>, std::invoke_result_t<Generator>>
-    next(Generator &g) { return g(); }
+    using generator_result_t = std::decay_t<std::invoke_result_t<Generator>>;
 
+    /* Used to deduce the type of the numerator/denominator of a fraction. */
+    template <typename Pair>
+    struct pair_traits;
+
+    template <typename T>
+    struct pair_traits<std::pair<T, T>> {
+        using value_type = T;
+    };
+
+    template <typename Pair>
+    using pair_value_t = typename pair_traits<Pair>::value_type;
+
+    /* Used to extract the "value type" of a complex type. */
     template <typename T>
     struct real_type {
         using type = T;
@@ -45,7 +53,7 @@ namespace detail {
     }
 
     // Series evaluators.
-    template <typename Generator, typename T>
+    template <typename Generator, typename T = generator_result_t<Generator>>
     SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
                                            const char *func_name) {
         /* Sum an infinite series to a given precision.
@@ -65,9 +73,9 @@ namespace detail {
          *     of non-convergence.
          */
         T result = init_val;
-        T term, previous;
+        T term;
         for (std::uint64_t i = 0; i < max_terms; ++i) {
-            term = next(g);
+            term = g();
             result += term;
             if (std::abs(term) < std::abs(result) * tol) {
                 return result;
@@ -78,7 +86,7 @@ namespace detail {
         return maybe_complex_NaN<T>();
     }
 
-    template <typename Generator, typename T>
+    template <typename Generator, typename T = generator_result_t<Generator>>
     SPECFUN_HOST_DEVICE T series_eval_fixed_length(Generator &g, T init_val, std::uint64_t num_terms) {
         /* Sum a fixed number of terms from a series.
          *
@@ -92,7 +100,7 @@ namespace detail {
          */
         T result = init_val;
         for (std::uint64_t i = 0; i < num_terms; ++i) {
-            result += next(g);
+            result += g();
         }
         return result;
     }
@@ -121,10 +129,6 @@ namespace detail {
      *
      * Parameters
      * ----------
-     *   init_val
-     *       a[0].  The type of this parameter (T) is used for intermediary
-     *       computations as well as the return value.
-     *
      *   g
      *       Reference to generator that yields the sequence of values a[1],
      *       a[2], a[3], ...
@@ -134,25 +138,28 @@ namespace detail {
      *       as soon as `abs(a[n]) <= tol * abs(S[n])` for some n >= 1.
      *
      *   max_terms
-     *       Maximum number of terms after a[0] to evaluate.  This parameter
-     *       is used to handle unexpected non-convergence.  It should be set
+     *       Maximum number of terms after a[0] to evaluate.  It should be set
      *       large enough such that the convergence criterion is guaranteed
      *       to have been satisfied within that many terms if there is no
      *       rounding error.
+     *
+     *   init_val
+     *       a[0].  Default is zero.  The type of this parameter (T) is used
+     *       for intermediary computations as well as the result.
      *
      * Return Value
      * ------------
      * If the convergence criterion is satisfied by some `n <= max_terms`,
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
-    template <typename T, typename Generator>
-    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> series_eval_kahan(
-        T init_val, Generator &g, real_type_t<T> tol, std::size_t max_terms) {
+    template <typename Generator, typename T = generator_result_t<Generator>>
+    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_kahan(
+        Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
 
         T sum = init_val;
         T comp = 0;
-        for (std::size_t i = 0; i < max_terms; ++i) {
-            T term = next(g);
+        for (std::uint64_t i = 0; i < max_terms; ++i) {
+            T term = g();
             kahan_step(&sum, &comp, term);
             if (std::abs(term) <= tol * std::abs(sum)) {
                 return {sum, i + 1};
@@ -161,98 +168,10 @@ namespace detail {
         return {sum, 0};
     }
 
-    /* Evaluates a continued fraction using the modified Lentz algorithm.
-     *
-     * Let f denote a continued fraction:
-     *
-     *              a[1]   a[2]   a[3]
-     *   f = b[0] + ------ ------ ------ ...
-     *              b[1] + b[2] + b[3] +
-     *
-     * Parameters
-     * ----------
-     *   init_val
-     *       b0.  The type of this parameter (T) is used for intermediary
-     *       computations as well as the return value.
-     *
-     *   cf
-     *       Reference to generator that yields the terms of the continued
-     *       fraction as (numerator, denominator) pairs, starting from
-     *       (a[1], b[1]).
-     *
-     *   tol
-     *       Relative tolerance for convergence.  Specifically, stop iteration
-     *       as soon as `abs(f[n]/f[n-1] - 1) <= abs(tol)` for some `n >= 1`.
-     *
-     *   max_terms
-     *       Maximum number of terms to evaluate.  This parameter is used to
-     *       handle unexpected non-convergence.  It should be set large enough
-     *       such that the convergence criterion is guaranteed to have been
-     *       satisfied within that many terms if there is no rounding error.
-     *
-     *   tiny_val
-     *       If any intermediary C or D is exactly zero, it is replaced by
-     *       `tiny_val`.  It should be set to a "small" number; the default
-     *       choice of boost is 16 times the smallest positive normalized
-     *       value representable by T.  Setting `tiny_val` to zero disables
-     *       this workaround.
-     *
-     * Return Value
-     * ------------
-     * If the convergence criterion is satisfied by some `n <= max_terms`,
-     * returns `(f[n], n)`.  Otherwise, returns `(f[max_terms], 0)`.
-     *
-     * Remarks
-     * -------
-     * No error checking is performed.  The caller must ensure that all terms
-     * are finite and that intermediary computations do not trigger floating
-     * point exceptions such as overflow.
-     *
-     * The numerical accuracy of this method depends on the characteristics of
-     * the continued fraction being evaluated.
-     */
-    template <typename T, typename Generator>
-    SPECFUN_HOST_DEVICE std::pair<T, std::size_t> continued_fraction_eval_lentz(
-        T init_val, Generator &cf, T tol, std::size_t max_terms,
-        T tiny_val = 16 * std::numeric_limits<real_type_t<T>>::min()) {
-
-        T f = (init_val == 0)? tiny_val : init_val;
-        T C = f;
-        T D = 0;
-        for (std::size_t n = 0; n < max_terms; ++n) {
-            auto [num, denom] = next(cf);
-            T a = num;
-            T b = denom;
-
-            D = b + a * D;
-            if (D == 0) {
-                D = tiny_val;
-            }
-            C = b + a / C;
-            if (C == 0) {
-                C = tiny_val;
-            }
-            D = 1 / D;
-            T delta = C * D;
-            f *= delta;
-            if (std::abs(delta - 1) <= tol) {
-                return {f, n+1};
-            }
-        }
-
-        // Failed to converge within max_terms terms.
-        return {f, 0};
-    }
-
     /* Generator that yields the difference of successive convergents of a
      * continued fraction.
      *
-     * Let f denote a continued fraction, and let f[n], n = 0, 1, 2, 3, ...
-     * denote its n-th convergent.  Write
-     *
-     *              a[1]   a[2]   a[3]
-     *   f = b[0] + ------ ------ ------ ...
-     *              b[1] + b[2] + b[3] +
+     * Let f[n] denote the n-th convergent of a continued fraction:
      *
      *                 a[1]   a[2]       a[n]
      *   f[n] = b[0] + ------ ------ ... ----
@@ -261,20 +180,24 @@ namespace detail {
      * with f[0] = b[0].  This generator yields the sequence of values
      * f[1]-f[0], f[2]-f[1], f[3]-f[2], ...
      *
-     * Type Arguments
-     * --------------
-     *   T
-     *       Type in which computations are performed and results are turned.
-     *
-     *   Generator
+     * Constructor Arguments
+     * ---------------------
+     *   cf
      *       Reference to generator that yields the terms of the continued
      *       fraction as (numerator, denominator) pairs, starting from
      *       (a[1], b[1]).
      *
-     *       IMPORTANT: For performance reason, the generator always eagerly
-     *       retrieves the next term of the continued fraction.  Specifically,
-     *       (a[1], b[1]) is retrieved upon generator construction, and
-     *       (a[n], b[n]) is retrieved after (n-1) calls of `()`.
+     *       `cf` must outlive the ContinuedFractionSeriesGenerator object.
+     *
+     *       The constructed object always eagerly retrieves the next term
+     *       of the continued fraction.  Specifically, (a[1], b[1]) is
+     *       retrieved upon construction, and (a[n], b[n]) is retrieved after
+     *       (n-1) calls of `()`.
+     *
+     * Type Arguments
+     * --------------
+     *   T
+     *       Type in which computations are performed and results are turned.
      *
      * Remarks
      * -------
@@ -292,7 +215,7 @@ namespace detail {
      * [1] Gautschi, W. (1967). “Computational Aspects of Three-Term
      *     Recurrence Relations.” SIAM Review, 9(1):24-82.
      */
-    template <typename T, typename Generator>
+    template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
     class ContinuedFractionSeriesGenerator {
 
     public:
@@ -308,20 +231,20 @@ namespace detail {
 
     private:
         void init() {
-            auto [num, denom] = next(cf_);
+            auto [num, denom] = cf_();
             T a = num;
             T b = denom;
-            u_ = 1;
+            u_ = T(1);
             v_ = a / b;
             b_ = b;
         }
 
         void advance() {
-            auto [num, denom] = next(cf_);
+            auto [num, denom] = cf_();
             T a = num;
             T b = denom;
-            u_ = 1 / (1 + (a * u_) / (b * b_));
-            v_ *= (u_ - 1);
+            u_ = T(1) / (T(1) + (a * u_) / (b * b_));
+            v_ *= (u_ - T(1));
             b_ = b;
         }
 
@@ -336,10 +259,10 @@ namespace detail {
      *
      * See ContinuedFractionSeriesGenerator for details.
      */
-    template <typename T, typename Generator>
-    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<T, Generator>
+    template <typename Generator, typename T = pair_value_t<generator_result_t<Generator>>>
+    SPECFUN_HOST_DEVICE ContinuedFractionSeriesGenerator<Generator, T>
     continued_fraction_series(Generator &cf) {
-        return ContinuedFractionSeriesGenerator<T, Generator>(cf);
+        return ContinuedFractionSeriesGenerator<Generator, T>(cf);
     }
 
 } // namespace detail
