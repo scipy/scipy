@@ -39,8 +39,12 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=8.0')
-    error('SciPy requires GCC >= 8.0')
+  if not cc.version().version_compare('>=9.1')
+    error('SciPy requires GCC >= 9.1')
+  endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=14.0')
+    error('SciPy requires clang >= 14.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
