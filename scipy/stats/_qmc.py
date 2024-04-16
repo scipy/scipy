@@ -1494,7 +1494,8 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-
+        
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
@@ -1504,8 +1505,6 @@ class LatinHypercube(QMCEngine):
                 idx = oa_sample[:, j] == k
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
-
-                lhs_engine = lhs_engine.reset()
 
         oa_lhs_sample /= p
 
