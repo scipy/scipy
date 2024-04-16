@@ -896,9 +896,7 @@ cdef int _dijkstra_directed_sparse(
             int[:, :] pred,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
@@ -1049,9 +1047,7 @@ cdef int _dijkstra_undirected_sparse(
             int[:, :] pred,
             DTYPE_t limit) except -1:
     cdef:
-        unsigned int i, k, j_source, j_current
-        ITYPE_t j
-        DTYPE_t next_val
+        unsigned int i, k, j_source
         int return_pred = (pred.size > 0)
         FibonacciHeap heap
         FibonacciNode *v
