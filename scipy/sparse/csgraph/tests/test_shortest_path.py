@@ -107,6 +107,27 @@ def test_dijkstra_limit():
         check(limit, result)
 
 
+def test_dijkstra_sparse_dist():
+    limits = [0, 2, np.inf]
+    results = [undirected_SP_limit_0,
+               undirected_SP_limit_2,
+               undirected_SP]
+
+    def todense(sp_csr):
+        sp = np.full(sp_csr.shape, np.inf)
+        sp_coo = sp_csr.tocoo()
+        sp[sp_coo.row, sp_coo.col] = sp_coo.data
+        return sp
+
+    def check(limit, result):
+        SP_csr = dijkstra(undirected_G, directed=False, limit=limit,
+                             return_sparse_dist=True)
+        assert_array_almost_equal(todense(SP_csr), result)
+
+    for limit, result in zip(limits, results):
+        check(limit, result)
+
+
 def test_directed():
     def check(method):
         SP = shortest_path(directed_G, method=method, directed=True,

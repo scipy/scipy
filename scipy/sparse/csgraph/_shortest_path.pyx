@@ -10,6 +10,8 @@ Yen's k-Shortest Path Algorithm is available for
 finding the k-shortest paths between two nodes in a graph.
 """
 
+# distutils: language = c++
+
 # Author: Jake Vanderplas  -- <vanderplas@astro.washington.edu>
 # License: BSD, (C) 2011
 import warnings
@@ -25,6 +27,7 @@ cimport cython
 
 from libc.stdlib cimport malloc, free
 from libc.math cimport INFINITY
+from libcpp.vector cimport vector
 
 np.import_array()
 
@@ -418,7 +421,7 @@ cdef void _floyd_warshall(
 def dijkstra(csgraph, directed=True, indices=None,
              return_predecessors=False,
              unweighted=False, limit=np.inf,
-             bint min_only=False):
+             bint min_only=False, bint return_sparse_dist=False):
     """
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
@@ -461,6 +464,13 @@ def dijkstra(csgraph, directed=True, indices=None,
         of the nodes in indices (which can be substantially faster).
 
         .. versionadded:: 1.3.0
+    return_sparse_dist : bool, optional
+        If True, then return a sparse distance matrix. Only pairs with distances
+        <= limit are included. For small limits and large graphs, this is a more
+        efficient representation. Note that this option is incompatible with
+        min_only.
+
+        .. versionadded:: 1.10.0.dev
 
     Returns
     -------
@@ -468,6 +478,8 @@ def dijkstra(csgraph, directed=True, indices=None,
         The matrix of distances between graph nodes. If min_only=False,
         dist_matrix has shape (n_indices, n_nodes) and dist_matrix[i, j]
         gives the shortest distance from point i to point j along the graph.
+        If return_sparse_dist=True, dist_matrix is a sparse matrix where
+        only pairs with distance <= limit are included in the suppport.
         If min_only=True, dist_matrix has shape (n_nodes,) and contains for
         a given node the shortest path to that node from any of the nodes
         in indices.
@@ -564,10 +576,26 @@ def dijkstra(csgraph, directed=True, indices=None,
         raise ValueError('limit must be >= 0')
 
     #------------------------------
+    # initialize sparse dist_matrix coo representation
+    if return_sparse_dist and min_only:
+        raise ValueError("return_sparse_dist is incompatible with min_only")
+    cdef ITYPE_t Nindi = len(indices)
+    cdef ITYPE_t Ni = N
+    cdef vector[ITYPE_t] *dist_row
+    cdef vector[ITYPE_t] *dist_col
+    cdef vector[DTYPE_t] *dist_data
+    if return_sparse_dist:
+        dist_row = new vector[ITYPE_t]()
+        dist_col = new vector[ITYPE_t]()
+        dist_data = new vector[DTYPE_t]()
+
+    #------------------------------
     # initialize dist_matrix for output
     if min_only:
         dist_matrix = np.full(N, np.inf, dtype=DTYPE)
         dist_matrix[indices] = 0
+    elif return_sparse_dist:
+        dist_matrix = np.empty((0, 0), dtype=DTYPE)
     else:
         dist_matrix = np.full((len(indices), N), np.inf, dtype=DTYPE)
         dist_matrix[np.arange(len(indices)), indices] = 0
@@ -602,6 +630,11 @@ def dijkstra(csgraph, directed=True, indices=None,
                                      csgraph.indptr,
                                      dist_matrix, predecessor_matrix,
                                      source_matrix, limitf)
+        elif return_sparse_dist:
+            _dijkstra_directed_sparse(Nindi, Ni, indices,
+                               csr_data, csgraph.indices, csgraph.indptr,
+                               dist_row, dist_col, dist_data, predecessor_matrix,
+                               limitf)
         else:
             _dijkstra_directed(indices,
                                csr_data, csgraph.indices, csgraph.indptr,
@@ -620,20 +653,40 @@ def dijkstra(csgraph, directed=True, indices=None,
                                        csgraphT.indptr,
                                        dist_matrix, predecessor_matrix,
                                        source_matrix, limitf)
+        elif return_sparse_dist:
+            _dijkstra_undirected_sparse(Nindi, Ni, indices,
+                                 csr_data, csgraph.indices, csgraph.indptr,
+                                 csrT_data, csgraphT.indices, csgraphT.indptr,
+                                 dist_row, dist_col, dist_data, predecessor_matrix,
+                                 limitf)
         else:
             _dijkstra_undirected(indices,
                                  csr_data, csgraph.indices, csgraph.indptr,
                                  csrT_data, csgraphT.indices, csgraphT.indptr,
                                  dist_matrix, predecessor_matrix, limitf)
+    
+    if return_sparse_dist:
+        dist_row_arr = np.array(<ITYPE_t [:dist_row.size()]>dist_row.data())
+        dist_col_arr = np.array(<ITYPE_t [:dist_col.size()]>dist_col.data())
+        dist_data_arr = np.array(<DTYPE_t [:dist_data.size()]>dist_data.data())
+        dist_matrix = csr_matrix(
+            (dist_data_arr, (dist_row_arr, dist_col_arr)), shape=(len(indices), N)
+        )
+        del dist_row, dist_col, dist_data
 
     if return_predecessors:
         if min_only:
             return (dist_matrix.reshape(return_shape),
                     predecessor_matrix.reshape(return_shape),
                     source_matrix.reshape(return_shape))
+        elif return_sparse_dist:
+            return (dist_matrix,
+                    predecessor_matrix.reshape(return_shape))
         else:
             return (dist_matrix.reshape(return_shape),
                     predecessor_matrix.reshape(return_shape))
+    elif return_sparse_dist:
+        return dist_matrix
     else:
         return dist_matrix.reshape(return_shape)
 
@@ -830,6 +883,59 @@ cdef int _dijkstra_directed_multi(
     return 0
 
 @cython.boundscheck(False)
+cdef int _dijkstra_directed_sparse(
+            const int Nind,
+            const int N,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            vector[ITYPE_t] *dist_row,
+            vector[ITYPE_t] *dist_col,
+            vector[DTYPE_t] *dist_data,
+            int[:, :] pred,
+            DTYPE_t limit) except -1:
+    cdef:
+        unsigned int i, k, j_source, j_current
+        ITYPE_t j
+        DTYPE_t next_val
+        int return_pred = (pred.size > 0)
+        FibonacciHeap heap
+        FibonacciNode *v
+        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
+                                                       sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_directed")
+
+    for i in range(Nind):
+        j_source = source_indices[i]
+
+        for k in range(N):
+            initialize_node(&nodes[k], k)
+
+        dist_row.push_back(i)
+        dist_col.push_back(j_source)
+        dist_data.push_back(0.0)
+        heap.min_node = NULL
+        insert_node(&heap, &nodes[j_source])
+
+        while heap.min_node:
+            v = remove_min(&heap)
+            v.state = SCANNED
+
+            _dijkstra_scan_heap(&heap, v, nodes,
+                                csr_weights, csr_indices, csr_indptr,
+                                pred, return_pred, limit, i)
+
+            # v has now been scanned: add the distance to the results
+            dist_row.push_back(i)
+            dist_col.push_back(v.index)
+            dist_data.push_back(v.val)
+
+    free(nodes)
+    return 0
+
+@cython.boundscheck(False)
 cdef int _dijkstra_undirected(
             const int[:] source_indices,
             const double[:] csr_weights,
@@ -926,6 +1032,65 @@ cdef int _dijkstra_undirected_multi(
     free(nodes)
     return 0
 
+@cython.boundscheck(False)
+cdef int _dijkstra_undirected_sparse(
+            const int Nind,
+            const int N,
+            int[:] source_indices,
+            double[:] csr_weights,
+            int[:] csr_indices,
+            int[:] csr_indptr,
+            double[:] csrT_weights,
+            int[:] csrT_indices,
+            int[:] csrT_indptr,
+            vector[ITYPE_t] *dist_row,
+            vector[ITYPE_t] *dist_col,
+            vector[DTYPE_t] *dist_data,
+            int[:, :] pred,
+            DTYPE_t limit) except -1:
+    cdef:
+        unsigned int i, k, j_source, j_current
+        ITYPE_t j
+        DTYPE_t next_val
+        int return_pred = (pred.size > 0)
+        FibonacciHeap heap
+        FibonacciNode *v
+        FibonacciNode* nodes = <FibonacciNode*> malloc(N *
+                                                       sizeof(FibonacciNode))
+    if nodes == NULL:
+        raise MemoryError("Failed to allocate memory in _dijkstra_undirected")
+
+    for i in range(Nind):
+        j_source = source_indices[i]
+
+        for k in range(N):
+            initialize_node(&nodes[k], k)
+
+        dist_row.push_back(i)
+        dist_col.push_back(j_source)
+        dist_data.push_back(0.0)
+        heap.min_node = NULL
+        insert_node(&heap, &nodes[j_source])
+
+        while heap.min_node:
+            v = remove_min(&heap)
+            v.state = SCANNED
+
+            _dijkstra_scan_heap(&heap, v, nodes,
+                                csr_weights, csr_indices, csr_indptr,
+                                pred, return_pred, limit, i)
+
+            _dijkstra_scan_heap(&heap, v, nodes,
+                                csrT_weights, csrT_indices, csrT_indptr,
+                                pred, return_pred, limit, i)
+
+            # v has now been scanned: add the distance to the results
+            dist_row.push_back(i)
+            dist_col.push_back(v.index)
+            dist_data.push_back(v.val)
+
+    free(nodes)
+    return 0
 
 def bellman_ford(csgraph, directed=True, indices=None,
                  return_predecessors=False,

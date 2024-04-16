@@ -3,7 +3,6 @@ pyx_files = [
   ['_matching', '_matching.pyx'],
   ['_min_spanning_tree', '_min_spanning_tree.pyx'],
   ['_reordering', '_reordering.pyx'],
-  ['_shortest_path', '_shortest_path.pyx'],
   ['_tools', '_tools.pyx'],
   ['_traversal', '_traversal.pyx']
 ]
@@ -24,6 +23,15 @@ foreach pyx_file: pyx_files
     subdir: 'scipy/sparse/csgraph'
   )
 endforeach
+
+py3.extension_module('_shortest_path',
+  cython_gen_cpp.process('_shortest_path.pyx'),
+  cpp_args: cython_cpp_args,
+  include_directories: inc_np,
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/sparse/csgraph'
+)
 
 python_sources = [
   '__init__.py',
