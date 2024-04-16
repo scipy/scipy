@@ -9,6 +9,7 @@ from scipy.linalg.blas import cdotu  # type: ignore[attr-defined]
 from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
 
 
+@pytest.mark.xslow
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
                     reason="Can't start subprocess")
 @pytest.mark.skipif(cython is None, reason="requires cython")

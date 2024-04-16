@@ -344,7 +344,7 @@ class TestUtilities:
         # Check the transforms
         self._check_barycentric_transforms(tri)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 

@@ -476,7 +476,7 @@ class TestRegularGridInterpolator:
     ])
     def test_descending_points_nd(self, method, ndims, func):
 
-        if ndims == 5 and method in {"cubic", "quintic"}:
+        if ndims >= 4 and method in {"cubic", "quintic"}:
             pytest.skip("too slow; OOM (quintic); or nearly so (cubic)")
 
         rng = np.random.default_rng(42)

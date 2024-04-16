@@ -533,7 +533,7 @@ def test_maxit():
     assert_allclose(np.shape(r_h), np.shape(np.asarray(r_h)))
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 @pytest.mark.parametrize("n", [15])
 @pytest.mark.parametrize("m", [1, 2])
 @pytest.mark.filterwarnings("ignore:Exited at iteration")
