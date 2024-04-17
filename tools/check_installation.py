@@ -36,10 +36,11 @@ changed_installed_path = {
 
 # We do not want the following tests to be checked
 exception_list_test_files = [
+    "_lib/array_api_compat/tests/test_all.py",
+    "_lib/array_api_compat/tests/test_array_namespace.py",
     "_lib/array_api_compat/tests/test_common.py",
     "_lib/array_api_compat/tests/test_isdtype.py",
     "_lib/array_api_compat/tests/test_vendoring.py",
-    "_lib/array_api_compat/tests/test_array_namespace.py",
 ]
 
 

@@ -39,7 +39,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install ruff cython-lint
+        python -m pip install ruff cython-lint packaging
 
     - name: Lint
       run: |

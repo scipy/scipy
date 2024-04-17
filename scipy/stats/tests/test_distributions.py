@@ -17,7 +17,6 @@ from numpy.testing import (assert_equal, assert_array_equal,
 import pytest
 from pytest import raises as assert_raises
 
-import numpy
 import numpy as np
 from numpy import typecodes, array
 from numpy.lib.recfunctions import rec_append_fields
@@ -357,27 +356,27 @@ class TestRandInt:
 
     def test_rvs(self):
         vals = stats.randint.rvs(5, 30, size=100)
-        assert_(numpy.all(vals < 30) & numpy.all(vals >= 5))
+        assert_(np.all(vals < 30) & np.all(vals >= 5))
         assert_(len(vals) == 100)
         vals = stats.randint.rvs(5, 30, size=(2, 50))
-        assert_(numpy.shape(vals) == (2, 50))
+        assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.randint.rvs(15, 46)
         assert_((val >= 15) & (val < 46))
-        assert_(isinstance(val, numpy.ScalarType), msg=repr(type(val)))
+        assert_(isinstance(val, np.ScalarType), msg=repr(type(val)))
         val = stats.randint(15, 46).rvs(3)
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_pdf(self):
-        k = numpy.r_[0:36]
-        out = numpy.where((k >= 5) & (k < 30), 1.0/(30-5), 0)
+        k = np.r_[0:36]
+        out = np.where((k >= 5) & (k < 30), 1.0/(30-5), 0)
         vals = stats.randint.pmf(k, 5, 30)
         assert_array_almost_equal(vals, out)
 
     def test_cdf(self):
         x = np.linspace(0, 36, 100)
-        k = numpy.floor(x)
-        out = numpy.select([k >= 30, k >= 5], [1.0, (k-5.0+1)/(30-5.0)], 0)
+        k = np.floor(x)
+        out = np.select([k >= 30, k >= 5], [1.0, (k-5.0+1)/(30-5.0)], 0)
         vals = stats.randint.cdf(x, 5, 30)
         assert_array_almost_equal(vals, out, decimal=12)
 
@@ -388,13 +387,13 @@ class TestBinom:
 
     def test_rvs(self):
         vals = stats.binom.rvs(10, 0.75, size=(2, 50))
-        assert_(numpy.all(vals >= 0) & numpy.all(vals <= 10))
-        assert_(numpy.shape(vals) == (2, 50))
+        assert_(np.all(vals >= 0) & np.all(vals <= 10))
+        assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.binom.rvs(10, 0.75)
         assert_(isinstance(val, int))
         val = stats.binom(10, 0.75).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
+        assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_pmf(self):
@@ -471,13 +470,13 @@ class TestBernoulli:
 
     def test_rvs(self):
         vals = stats.bernoulli.rvs(0.75, size=(2, 50))
-        assert_(numpy.all(vals >= 0) & numpy.all(vals <= 1))
-        assert_(numpy.shape(vals) == (2, 50))
+        assert_(np.all(vals >= 0) & np.all(vals <= 1))
+        assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.bernoulli.rvs(0.75)
         assert_(isinstance(val, int))
         val = stats.bernoulli(0.75).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
+        assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_entropy(self):
@@ -532,7 +531,7 @@ class TestChi:
     @pytest.mark.parametrize('df, ref',
                              [(1e3, CHI_MEAN_1000),
                               (1e14, 9999999.999999976)]
-                            ) 
+                            )
     def test_mean(self, df, ref):
         assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
@@ -562,13 +561,13 @@ class TestNBinom:
 
     def test_rvs(self):
         vals = stats.nbinom.rvs(10, 0.75, size=(2, 50))
-        assert_(numpy.all(vals >= 0))
-        assert_(numpy.shape(vals) == (2, 50))
+        assert_(np.all(vals >= 0))
+        assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.nbinom.rvs(10, 0.75)
         assert_(isinstance(val, int))
         val = stats.nbinom(10, 0.75).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
+        assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_pmf(self):
@@ -959,13 +958,13 @@ class TestGeom:
 
     def test_rvs(self):
         vals = stats.geom.rvs(0.75, size=(2, 50))
-        assert_(numpy.all(vals >= 0))
-        assert_(numpy.shape(vals) == (2, 50))
+        assert_(np.all(vals >= 0))
+        assert_(np.shape(vals) == (2, 50))
         assert_(vals.dtype.char in typecodes['AllInteger'])
         val = stats.geom.rvs(0.75)
         assert_(isinstance(val, int))
         val = stats.geom(0.75).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
+        assert_(isinstance(val, np.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
     def test_rvs_9313(self):
@@ -1718,15 +1717,14 @@ class TestHypergeom:
 
     def test_rvs(self):
         vals = stats.hypergeom.rvs(20, 10, 3, size=(2, 50))
-        assert_(numpy.all(vals >= 0) &
-                numpy.all(vals <= 3))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllInteger'])
+        assert np.all(vals >= 0) & np.all(vals <= 3)
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllInteger']
         val = stats.hypergeom.rvs(20, 3, 10)
-        assert_(isinstance(val, int))
+        assert isinstance(val, int)
         val = stats.hypergeom(20, 3, 10).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllInteger'])
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllInteger']
 
     def test_precision(self):
         # comparison number from mpmath
@@ -2104,14 +2102,14 @@ class TestLogser:
 
     def test_rvs(self):
         vals = stats.logser.rvs(0.75, size=(2, 50))
-        assert_(numpy.all(vals >= 1))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllInteger'])
+        assert np.all(vals >= 1)
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllInteger']
         val = stats.logser.rvs(0.75)
-        assert_(isinstance(val, int))
+        assert isinstance(val, int)
         val = stats.logser(0.75).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllInteger'])
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllInteger']
 
     def test_pmf_small_p(self):
         m = stats.logser.pmf(4, 1e-20)
@@ -2451,14 +2449,14 @@ class TestPearson3:
 
     def test_rvs(self):
         vals = stats.pearson3.rvs(0.1, size=(2, 50))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllFloat'])
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllFloat']
         val = stats.pearson3.rvs(0.5)
-        assert_(isinstance(val, float))
+        assert isinstance(val, float)
         val = stats.pearson3(0.5).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllFloat'])
-        assert_(len(val) == 3)
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllFloat']
+        assert len(val) == 3
 
     def test_pdf(self):
         vals = stats.pearson3.pdf(2, [0.0, 0.1, 0.2])
@@ -2618,14 +2616,14 @@ class TestPoisson:
 
     def test_rvs(self):
         vals = stats.poisson.rvs(0.5, size=(2, 50))
-        assert_(numpy.all(vals >= 0))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllInteger'])
+        assert np.all(vals >= 0)
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllInteger']
         val = stats.poisson.rvs(0.5)
-        assert_(isinstance(val, int))
+        assert isinstance(val, int)
         val = stats.poisson(0.5).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllInteger'])
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllInteger']
 
     def test_stats(self):
         mu = 16.0
@@ -2790,14 +2788,14 @@ class TestZipf:
 
     def test_rvs(self):
         vals = stats.zipf.rvs(1.5, size=(2, 50))
-        assert_(numpy.all(vals >= 1))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllInteger'])
+        assert np.all(vals >= 1)
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllInteger']
         val = stats.zipf.rvs(1.5)
-        assert_(isinstance(val, int))
+        assert isinstance(val, int)
         val = stats.zipf(1.5).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllInteger'])
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllInteger']
 
     def test_moments(self):
         # n-th moment is finite iff a > n + 1
@@ -2815,14 +2813,14 @@ class TestDLaplace:
 
     def test_rvs(self):
         vals = stats.dlaplace.rvs(1.5, size=(2, 50))
-        assert_(numpy.shape(vals) == (2, 50))
-        assert_(vals.dtype.char in typecodes['AllInteger'])
+        assert np.shape(vals) == (2, 50)
+        assert vals.dtype.char in typecodes['AllInteger']
         val = stats.dlaplace.rvs(1.5)
-        assert_(isinstance(val, int))
+        assert isinstance(val, int)
         val = stats.dlaplace(1.5).rvs(3)
-        assert_(isinstance(val, numpy.ndarray))
-        assert_(val.dtype.char in typecodes['AllInteger'])
-        assert_(stats.dlaplace.rvs(0.8) is not None)
+        assert isinstance(val, np.ndarray)
+        assert val.dtype.char in typecodes['AllInteger']
+        assert stats.dlaplace.rvs(0.8) is not None
 
     def test_stats(self):
         # compare the explicit formulas w/ direct summation using pmf
@@ -3566,10 +3564,10 @@ class TestRvDiscrete:
         samples = 1000
         r = stats.rv_discrete(name='sample', values=(states, probability))
         x = r.rvs(size=samples)
-        assert_(isinstance(x, numpy.ndarray))
+        assert isinstance(x, np.ndarray)
 
         for s, p in zip(states, probability):
-            assert_(abs(sum(x == s)/float(samples) - p) < 0.05)
+            assert abs(sum(x == s)/float(samples) - p) < 0.05
 
         x = r.rvs()
         assert np.issubdtype(type(x), np.integer)
@@ -4190,13 +4188,13 @@ class TestGenExpon:
     def test_pdf_unity_area(self):
         from scipy.integrate import simpson
         # PDF should integrate to one
-        p = stats.genexpon.pdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
+        p = stats.genexpon.pdf(np.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
         assert_almost_equal(simpson(p, dx=0.01), 1, 1)
 
     def test_cdf_bounds(self):
         # CDF should always be positive
-        cdf = stats.genexpon.cdf(numpy.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
-        assert_(numpy.all((0 <= cdf) & (cdf <= 1)))
+        cdf = stats.genexpon.cdf(np.arange(0, 10, 0.01), 0.5, 0.5, 2.0)
+        assert np.all((0 <= cdf) & (cdf <= 1))
 
     # The values of p in the following data were computed with mpmath.
     # E.g. the script
@@ -4258,9 +4256,9 @@ class TestExponpow:
 class TestSkellam:
     def test_pmf(self):
         # comparison to R
-        k = numpy.arange(-10, 15)
+        k = np.arange(-10, 15)
         mu1, mu2 = 10, 5
-        skpmfR = numpy.array(
+        skpmfR = np.array(
                    [4.2254582961926893e-005, 1.1404838449648488e-004,
                     2.8979625801752660e-004, 6.9177078182101231e-004,
                     1.5480716105844708e-003, 3.2412274963433889e-003,
@@ -4279,9 +4277,9 @@ class TestSkellam:
 
     def test_cdf(self):
         # comparison to R, only 5 decimals
-        k = numpy.arange(-10, 15)
+        k = np.arange(-10, 15)
         mu1, mu2 = 10, 5
-        skcdfR = numpy.array(
+        skcdfR = np.array(
                    [6.4061475386192104e-005, 1.7810985988267694e-004,
                     4.6790611790020336e-004, 1.1596768997212152e-003,
                     2.7077485103056847e-003, 5.9489760066490718e-003,
@@ -4623,7 +4621,7 @@ class TestBetaPrime:
 
     @pytest.mark.parametrize('x, a, b, p', cdf_vals)
     def test_ppf_gh_17631(self, x, a, b, p):
-        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=1e-14)
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',

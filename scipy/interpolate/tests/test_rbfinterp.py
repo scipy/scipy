@@ -369,9 +369,18 @@ class _TestRBFInterpolator:
         y = np.linspace(0, 1, 5)[:, None]
         d = np.zeros(5)
         for kernel, deg in _NAME_TO_MIN_DEGREE.items():
-            match = f'`degree` should not be below {deg}'
-            with pytest.warns(Warning, match=match):
-                self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
+            # Only test for kernels that its minimum degree is not 0.
+            if deg >= 1:
+                match = f'`degree` should not be below {deg}'
+                with pytest.warns(Warning, match=match):
+                    self.build(y, d, epsilon=1.0, kernel=kernel, degree=deg-1)
+
+    def test_minus_one_degree(self):
+        # Make sure a degree of -1 is accepted without any warning.
+        y = np.linspace(0, 1, 5)[:, None]
+        d = np.zeros(5)
+        for kernel, _ in _NAME_TO_MIN_DEGREE.items():
+            self.build(y, d, epsilon=1.0, kernel=kernel, degree=-1)
 
     def test_rank_error(self):
         # An error should be raised when `kernel` is "thin_plate_spline" and

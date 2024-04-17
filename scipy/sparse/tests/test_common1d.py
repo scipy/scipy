@@ -5,8 +5,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-import scipy as sp
-from scipy.sparse import coo_array, csr_array, dok_array
+from scipy.sparse import coo_array, csr_array, dok_array, SparseEfficiencyWarning
 from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
 
@@ -28,8 +27,8 @@ def dat1d():
 def datsp_math_dtypes(dat1d):
     dat_dtypes = {dtype: dat1d.astype(dtype) for dtype in math_dtypes}
     return {
-        sp: [(dtype, dat, sp(dat)) for dtype, dat in dat_dtypes.items()]
-        for sp in spcreators
+        spcreator: [(dtype, dat, spcreator(dat)) for dtype, dat in dat_dtypes.items()]
+        for spcreator in spcreators
     }
 
 
@@ -228,13 +227,13 @@ class TestCommon1D:
     @sup_complex
     def test_from_sparse(self, spcreator):
         D = np.array([1, 0, 0])
-        S = sp.sparse.coo_array(D)
+        S = coo_array(D)
         assert_equal(spcreator(S).toarray(), D)
         S = spcreator(D)
         assert_equal(spcreator(S).toarray(), D)
 
         D = np.array([1.0 + 3j, 0, -1])
-        S = sp.sparse.coo_array(D)
+        S = coo_array(D)
         assert_equal(spcreator(S).toarray(), D)
         assert_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
         S = spcreator(D)
@@ -420,10 +419,7 @@ class TestGetSet1D:
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
         with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive",
-            )
+            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             A[0] = dtype(0)
             A[1] = dtype(3)
             A[8] = dtype(9.0)

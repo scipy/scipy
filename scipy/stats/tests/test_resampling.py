@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scipy.stats import bootstrap, monte_carlo_test, permutation_test
+from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy import special
@@ -1029,6 +1029,172 @@ class TestMonteCarloHypothesisTest:
         c1 = np.sum(res.null_distribution <= res.statistic*(1+1e-15))
         assert c0 != c1
         assert res.pvalue == (c1 + 1)/(n_resamples + 1)
+
+
+class TestPower:
+    def test_input_validation(self):
+        # test that the appropriate error messages are raised for invalid input
+        rng = np.random.default_rng(8519895914314711673)
+
+        test = stats.ttest_ind
+        rvs = (rng.normal, rng.normal)
+        n_observations = (10, 12)
+
+        message = "`vectorized` must be `True`, `False`, or `None`."
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, vectorized=1.5)
+
+        message = "`rvs` must be callable or sequence of callables."
+        with pytest.raises(TypeError, match=message):
+            power(test, None, n_observations)
+        with pytest.raises(TypeError, match=message):
+            power(test, (rng.normal, 'ekki'), n_observations)
+
+        message = "If `rvs` is a sequence..."
+        with pytest.raises(ValueError, match=message):
+            power(test, (rng.normal,), n_observations)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, (10,))
+
+        message = "`significance` must contain floats between 0 and 1."
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, significance=2)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, significance=np.linspace(-1, 1))
+
+        message = "`kwargs` must be a dictionary"
+        with pytest.raises(TypeError, match=message):
+            power(test, rvs, n_observations, kwargs=(1, 2, 3))
+
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, ([10, 11], [12, 13, 14]))
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, ([10, 11], [12, 13]), kwargs={'x': [1, 2, 3]})
+
+        message = "`test` must be callable"
+        with pytest.raises(TypeError, match=message):
+            power(None, rvs, n_observations)
+
+        message = "`n_resamples` must be a positive integer"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, n_resamples=-10)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, n_resamples=10.5)
+
+        message = "`batch` must be a positive integer"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, batch=-10)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, batch=10.5)
+
+    def test_batch(self):
+        # make sure that the `batch` parameter is respected by checking the
+        # maximum batch size provided in calls to `test`
+        rng = np.random.default_rng(23492340193)
+
+        def test(x, axis):
+            batch_size = 1 if x.ndim == 1 else len(x)
+            test.batch_size = max(batch_size, test.batch_size)
+            test.counter += 1
+            return stats.ttest_1samp(x, 0, axis=axis).pvalue
+        test.counter = 0
+        test.batch_size = 0
+
+        kwds = dict(test=test, n_observations=10, n_resamples=1000)
+
+        rng = np.random.default_rng(23492340193)
+        res1 = power(**kwds, rvs=rng.normal, batch=1)
+        assert_equal(test.counter, 1000)
+        assert_equal(test.batch_size, 1)
+
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res2 = power(**kwds, rvs=rng.normal, batch=50)
+        assert_equal(test.counter, 20)
+        assert_equal(test.batch_size, 50)
+
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res3 = power(**kwds, rvs=rng.normal, batch=1000)
+        assert_equal(test.counter, 1)
+        assert_equal(test.batch_size, 1000)
+
+        assert_equal(res1.power, res3.power)
+        assert_equal(res2.power, res3.power)
+
+    def test_vectorization(self):
+        # Test that `power` is vectorized as expected
+        rng = np.random.default_rng(25495254834552)
+
+        # Single vectorized call
+        popmeans = np.array([0, 0.2])
+        def test(x, alternative, axis=-1):
+            # ensure that popmeans axis is zeroth and orthogonal to the rest
+            popmeans_expanded = np.expand_dims(popmeans, tuple(range(1, x.ndim + 1)))
+            return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
+                                     axis=axis)
+
+        # nx and kwargs broadcast against one another
+        nx = np.asarray([10, 15, 20, 50, 100])[:, np.newaxis]
+        kwargs = {'alternative': ['less', 'greater', 'two-sided']}
+
+        # This dimension is added to the beginning
+        significance = np.asarray([0.01, 0.025, 0.05, 0.1])
+        res = stats.power(test, rng.normal, nx, significance=significance,
+                          kwargs=kwargs)
+
+        # Looping over all combinations
+        ref = []
+        for significance_i in significance:
+            for nx_i in nx:
+                for alternative_i in kwargs['alternative']:
+                    for popmean_i in popmeans:
+                        def test2(x, axis=-1):
+                            return stats.ttest_1samp(x, popmean_i, axis=axis,
+                                                     alternative=alternative_i)
+
+                        tmp = stats.power(test2, rng.normal, nx_i,
+                                          significance=significance_i)
+                        ref.append(tmp.power)
+        ref = np.reshape(ref, res.power.shape)
+
+        # Show that results are similar
+        assert_allclose(res.power, ref, rtol=2e-2, atol=1e-2)
+
+    def test_ttest_ind_null(self):
+        # Check that the p-values of `ttest_ind` are uniformly distributed under
+        # the null hypothesis
+        rng = np.random.default_rng(254952548345528)
+
+        test = stats.ttest_ind
+        n_observations = rng.integers(10, 100, size=(2, 10))
+        rvs = rng.normal, rng.normal
+        significance = np.asarray([0.01, 0.05, 0.1])
+        res = stats.power(test, rvs, n_observations, significance=significance)
+        significance = np.broadcast_to(significance[:, np.newaxis], res.power.shape)
+        assert_allclose(res.power, significance, atol=1e-2)
+
+    def test_ttest_1samp_power(self):
+        # Check simulated ttest_1samp power against reference
+        rng = np.random.default_rng(254952548345528)
+
+        # Reference values computed with statmodels
+        # import numpy as np
+        # from statsmodels.stats.power import tt_solve_power
+        # tt_solve_power = np.vectorize(tt_solve_power)
+        # tt_solve_power([0.1, 0.5, 0.9], [[10], [20]], [[[0.01]], [[0.05]]])
+        ref = [[[0.0126515 , 0.10269751, 0.40415802],
+                [0.01657775, 0.29734608, 0.86228288]],
+               [[0.0592903 , 0.29317561, 0.71718121],
+                [0.07094116, 0.56450441, 0.96815163]]]
+
+        kwargs = {'popmean': [0.1, 0.5, 0.9]}
+        n_observations = [[10], [20]]
+        significance = [0.01, 0.05]
+        res = stats.power(stats.ttest_1samp, rng.normal, n_observations,
+                          significance=significance, kwargs=kwargs)
+        assert_allclose(res.power, ref, atol=1e-2)
 
 
 class TestPermutationTest:

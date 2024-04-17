@@ -180,3 +180,43 @@ jobs:
 
         pip install pooch pytest hypothesis
         python dev.py -n test 
+
+  test_meson_accelerate:
+    name: Meson build (Accelerate)
+    needs: get_commit_message
+    # If using act to run CI locally the github object does not exist and
+    # the usual skipping should not be enforced
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: macos-14
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+    - uses: actions/checkout@v4.1.1
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+
+    - name: Build and Install SciPy
+      run: |
+        sudo xcode-select -s /Applications/Xcode_15.2.app
+
+        git submodule update --init
+        # for some reason gfortran is not on the path
+        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran
+        ln -s $GFORTRAN_LOC gfortran
+        export PATH=$PWD:$PATH
+
+        pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
+        python dev.py build -C-Dblas=accelerate
+
+        pip install pooch pytest hypothesis
+        python dev.py -n test
