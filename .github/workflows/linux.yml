@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Meson build
+    name: mypy (py3.10) & dev deps (py3.12), fast, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -126,11 +126,11 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
-        python dev.py --no-build test -j2 -- --durations=10 --timeout=60
+        python dev.py --no-build test -j2 -- --durations 10 --timeout=60
 
   #################################################################################
   test_venv_install:
-    name: Pip install into venv
+    name: Install into venv, cluster only, pyAny/npAny, pip+cluster.test()
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -189,7 +189,7 @@ jobs:
   #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
-    name: Python-debug & ATLAS
+    name: Python-debug & ATLAS & sdist+wheel, fast, py3.10/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -219,7 +219,7 @@ jobs:
   #################################################################################
   gcc9:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
-    name: Build with gcc-9
+    name: Oldest GCC & pydata/sparse, fast, py3.10/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -271,7 +271,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps, coverage and 64-bit BLAS
+    name: Prerelease deps & coverage report, full, py3.10/npMin & py3.11/npPre, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -357,7 +357,7 @@ jobs:
 
   #################################################################################
   linux_32bit:
-    name: Linux - 32 bit
+    name: 32-bit, fast, py3.10/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -386,4 +386,4 @@ jobs:
         python -m pip install doit click rich_click pydevtool meson ninja && \
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py test -- --durations=10"
+        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"

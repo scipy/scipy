@@ -22,7 +22,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test:
-    name: cp312 fast
+    name: fast, py3.12/npAny, dev.py
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -57,12 +57,12 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2 -- --durations=10
+          python dev.py test -j2
 
 
   #############################################################################
   full_dev_py_min_numpy:
-    name: cp310 full, dev.py, minimum numpy
+    name: full, py3.10/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -97,13 +97,13 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2 --mode full -- --durations=10
+          python dev.py test -j2 --mode full
 
 
   #############################################################################
   full_build_sdist_wheel:
     # TODO: enable ILP64 once possible
-    name: cp311 (build sdist + wheel), full, no pythran
+    name: no pythran & sdist+wheel, full, py3.11/npPre, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -156,4 +156,4 @@ jobs:
         run: |
           cd $RUNNER_TEMP
           # run full test suite
-          pytest --pyargs scipy --durations=10
+          pytest --pyargs scipy

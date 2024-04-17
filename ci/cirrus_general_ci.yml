@@ -82,5 +82,5 @@ linux_aarch64_test_task:
     python dev.py build -j1
 
   test_script: |
-    python dev.py test -j1 -- --durations=10
+    python dev.py test -j1
     ccache -s
