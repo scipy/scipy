@@ -66,7 +66,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                         )
                 elif not included_python:
                     included_other.append(i)
-            elif not included_python and ("py::" in line or "PYBIND11_" in line):
+            elif not included_python and ("py::" in line or "PYBIND11_" in line or "npy_" in line):
                 print(
                     "Python-including header not used before python constructs in file "
                     f"{name_to_check:s}\nConstruct on line {i:d}",
