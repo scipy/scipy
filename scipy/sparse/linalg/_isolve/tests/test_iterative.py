@@ -26,11 +26,6 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
-pytestmark = [
-    # remove this once atol defaults to 0.0 for all methods
-    pytest.mark.filterwarnings("ignore:.*called without specifying.*"),
-]
-
 
 # create parametrized fixture for easy reuse in tests
 @pytest.fixture(params=_SOLVERS, scope="session")
@@ -554,7 +549,7 @@ def test_show(case, capsys):
     assert err == ""
 
 
-def test_positional_deprecation(solver):
+def test_positional_error(solver):
     # from test_x0_working
     rng = np.random.default_rng(1685363802304750)
     n = 10
@@ -562,12 +557,23 @@ def test_positional_deprecation(solver):
     A = A @ A.T
     b = rng.random(n)
     x0 = rng.random(n)
-    with pytest.deprecated_call(
-        # due to the use of the _deprecate_positional_args decorator, it's not possible
-        # to separate the two warnings (1 for positional use, 1 for `tol` deprecation).
-        match="use keyword arguments.*|argument `tol` is deprecated.*"
-    ):
+    with pytest.raises(TypeError):
         solver(A, b, x0, 1e-5)
+
+
+@pytest.mark.parametrize("atol", ["legacy", None, -1])
+def test_invalid_atol(solver, atol):
+    if solver == minres:
+        pytest.skip("minres has no `atol` argument")
+    # from test_x0_working
+    rng = np.random.default_rng(1685363802304750)
+    n = 10
+    A = rng.random(size=[n, n])
+    A = A @ A.T
+    b = rng.random(n)
+    x0 = rng.random(n)
+    with pytest.raises(ValueError):
+        solver(A, b, x0, atol=atol)
 
 
 class TestQMR:
@@ -787,10 +793,3 @@ class TestGMRES:
                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 20
-
-    def test_restrt_dep(self):
-        with pytest.warns(
-            DeprecationWarning,
-            match="'gmres' keyword argument 'restrt'"
-        ):
-            gmres(np.array([1]), np.array([1]), restrt=10)
