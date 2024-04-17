@@ -15,8 +15,7 @@ from scipy.sparse import (csr_matrix, coo_matrix,
                           dia_array, dok_array,
                           lil_array, csc_matrix,
                           bsr_matrix, dia_matrix,
-                          dok_matrix, lil_matrix,
-                          sparray, spmatrix,
+                          lil_matrix, sparray, spmatrix,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
 
@@ -43,17 +42,29 @@ def _sprandn_array(m, n, density=0.01, format="coo", dtype=None, random_state=No
 
 class TestConstructUtils:
 
-    @pytest.mark.parametrize("cls", [csc_array, csr_array, coo_array, bsr_array, dia_array, dok_array, lil_array])
+    @pytest.mark.parametrize("cls", [
+        csc_array, csr_array, coo_array, bsr_array,
+        dia_array, dok_array, lil_array
+    ])
     def test_singleton_array_constructor(self, cls):
-        with pytest.raises(ValueError, match='scipy sparse array classes do not support instantiation from a scalar'):
+        with pytest.raises(
+            ValueError,
+            match='scipy sparse array classes do not \
+                support instantiation from a scalar'
+        ):
             cls(0)
     
-    @pytest.mark.parametrize("cls", [csc_matrix, csr_matrix, coo_matrix, bsr_matrix, dia_matrix, lil_matrix])
+    @pytest.mark.parametrize("cls", [
+        csc_matrix, csr_matrix, coo_matrix,
+        bsr_matrix, dia_matrix, lil_matrix
+    ])
     def test_singleton_matrix_constructor(self, cls):
         """
         This test is for backwards compatibility post scipy 1.13.
-        The behavior observed here is what is to be expected with the older matrix classes.
-        This test comes with the exception of dok_matrix, which was not working pre scipy1.12 anyway (unlike the rest of these).
+        The behavior observed here is what is to be expected
+        with the older matrix classes. This test comes with the
+        exception of dok_matrix, which was not working pre scipy1.12
+        (unlike the rest of these).
         """
         assert cls(0).shape == (1, 1)
 

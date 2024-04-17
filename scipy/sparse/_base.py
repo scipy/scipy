@@ -1509,7 +1509,10 @@ class sparray:
     
     def __init__(self, *args, **kwargs):
         if np.isscalar(args[0]):
-            raise ValueError("scipy sparse array classes do not support instantiation from a scalar")
+            raise ValueError(
+                "scipy sparse array classes do not \
+                    support instantiation from a scalar"
+            )
         super().__init__(*args, **kwargs)
 
 sparray.__doc__ = _spbase.__doc__

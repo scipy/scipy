@@ -94,8 +94,10 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
                     if not isshape(blocksize):
                         raise ValueError(f'invalid blocksize={blocksize}')
                     if tuple(blocksize) != self.data.shape[1:]:
-                        raise ValueError('mismatching blocksize={} vs {}'.format(
-                            blocksize, self.data.shape[1:]))
+                        raise ValueError(
+                            f'mismatching blocksize={blocksize} \
+                                vs {self.data.shape[1:]}'
+                        )
             else:
                 raise ValueError('unrecognized bsr_array constructor usage')
         else:
