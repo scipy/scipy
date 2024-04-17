@@ -1,9 +1,9 @@
 import numpy as np
-from ._zeros_py import _xtol, _rtol, _iter
+from ._zeros_py import _rtol, _iter
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
-def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
+def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
                   fatol=None, frtol=0, maxiter=_iter, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
@@ -84,9 +84,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     ``fun(xmin) <= fatol + abs(fmin0) * frtol``. This is equivalent to the
     termination condition described in [1]_ with ``xrtol = 4e-10``,
     ``xatol = 1e-5``, and ``fatol = frtol = 0``. The default values are
-    ``xatol = 2e-12``, ``xrtol = 4 * np.finfo(float).eps``, ``frtol = 0``,
-    and ``fatol`` is the smallest normal number of the ``dtype`` returned
-    by ``func``.
+    ``xatol = 4*tiny``, ``xrtol = 4*eps``, ``frtol = 0``, and ``fatol = tiny``,
+    where ``eps`` and ``tiny`` are the precision and smallest normal number
+    of the result ``dtype`` of function inputs and outputs.
 
     References
     ----------
@@ -128,7 +128,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     f1, f2 = fs
     status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
-    xatol = _xtol if xatol is None else xatol
+    xatol = 4*np.finfo(dtype).tiny if xatol is None else xatol
     xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
@@ -344,7 +344,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     or ``(f1 - 2*f2 + f3)/2 <= abs(f2)*frtol + fatol``. Note that first of
     these differs from the termination conditions described in [1]_. The
     default values of `xrtol` is the square root of the precision of the
-    appropriate dtype, and ``xatol=fatol = frtol`` is the smallest normal
+    appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
     number of the appropriate dtype.
 
     References
