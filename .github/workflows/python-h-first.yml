@@ -1,0 +1,42 @@
+name: Check Python.h include order
+
+on:
+  push:
+    branches:
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+permissions:
+   contents: read  # to fetch code (actions/checkout)
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  INSTALLDIR: "build-install"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  check-python-h-first:
+    name: Check Python.h before other headers
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4.1.1
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
+
+    - name: Check that Python.h is first in any file including it.
+      shell: bash
+      run:
+        python tools/check_python_h_first.py $(find scipy -type f -iname \*.[ch] -o -name \*.[ch]pp -o -name \*.cc -o -name \*.hh)
