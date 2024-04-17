@@ -65,7 +65,7 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
         Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        inverse of A (see Notes).  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
@@ -86,6 +86,20 @@ def bicg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+    Notes
+    -----
+    The definition given here for the preconditioner is the inverse matrix of the definition in the litterature. See [1,2,3]
+    for comparison.
+    Here, the preconditioner M of a matrix A is a matrix such that MA has a smaller condition number than A. See [1] for more info.
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] SAAD, Yousef. Iterative methods for sparse linear systems. 
+           Society for Industrial and Applied Mathematics, 2003.
+    .. [3] "Biconjugate gradient method", Wikipedia, 
+           https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 
     Examples
     --------
@@ -194,7 +208,7 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
         Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        inverse of A (see Notes).  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
@@ -215,6 +229,23 @@ def bicgstab(A, b, *, x0=None, tol=_NoValue, maxiter=None, M=None,
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+    
+    Notes
+    -----
+    The definition given here for the preconditioner is the inverse matrix of the definition in the litterature.
+    See [1,2,3] for comparison.
+    Here the preconditioner M of a matrix A is a matrix such that MA has a smaller condition number than A.
+    See [1] for more info.
+    
+    
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] SAAD, Yousef. Iterative methods for sparse linear systems.
+           Society for Industrial and Applied Mathematics, 2003.
+    .. [3] "Biconjugate gradient stabilized method", 
+           Wikipedia, https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 
     Examples
     --------
@@ -337,8 +368,10 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
-        Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        Preconditioner for A.  
+        M must represent a hermitian, positive definite matrix.
+        The preconditioner should approximate the
+        inverse of A (see Notes).  Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
@@ -358,6 +391,29 @@ def cg(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         Provides convergence information:
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
+
+    Notes
+    -----
+    The definition given here for the preconditioner is the inverse matrix of the definition in the litterature. See [1,2,3,4] for comparison.
+    Here, the preconditioner M of a matrix A is a matrix such that MA has a smaller condition number than A. See [4, 6].
+    Thus, M should look like the inverse of A as the CG algorithm will solve the left preconditionned system MAx=Mb.
+    Choosing an efficient preconditioner for a given problem is not a straightforward issue see [5, 6].
+
+    
+    References
+    ----------
+    .. [1] TREFETHEN, Lloyd N. et BAU, David. Numerical linear algebra. 
+           Society for Industrial and Applied Mathematics, 2022.
+    .. [2] SAAD, Yousef. Iterative methods for sparse linear systems. 
+           Society for Industrial and Applied Mathematics, 2003.
+    .. [3] "Conjugate Gradient Method, Wikipedia, 
+           https://en.wikipedia.org/wiki/Conjugate_gradient_method
+    .. [4] "Preconditioner", 
+           Wikipedia, https://en.wikipedia.org/wiki/Preconditioner
+    .. [5] KATRUTSA, Alexandr, BOTCHEV, Mike, OVCHINNIKOV, George, et al. 
+           How to optimize preconditioners for the conjugate gradient method: 
+           a stochastic approach. arXiv preprint arXiv:1806.06045, 2018.
+    .. [6] CARABA, Elena. Preconditioned conjugate gradient algorithm. 2008.
 
     Examples
     --------
@@ -452,7 +508,8 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
         steps even if the specified tolerance has not been achieved.
     M : {sparse matrix, ndarray, LinearOperator}
         Preconditioner for A.  The preconditioner should approximate the
-        inverse of A.  Effective preconditioning dramatically improves the
+        inverse of A (see Notes).  
+        Effective preconditioning dramatically improves the
         rate of convergence, which implies that fewer iterations are needed
         to reach a given error tolerance.
     callback : function
@@ -473,6 +530,22 @@ def cgs(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None, callback=None,
             0  : successful exit
             >0 : convergence to tolerance not achieved, number of iterations
             <0 : parameter breakdown
+
+    Notes
+    -----
+    The definition given here for the preconditioner is the inverse matrix of the definition in the litterature. See [1,2,3]
+    for comparison.
+    Here, the preconditioner M of a matrix A is a matrix such that MA has a smaller condition number than A.
+    Thus, M should look like the inverse of A. See [1].
+
+    References
+    ----------
+    .. [1] "Preconditioner", Wikipedia, 
+           https://en.wikipedia.org/wiki/Preconditioner
+    .. [2] SAAD, Yousef. Iterative methods for sparse linear systems. 
+           Society for Industrial and Applied Mathematics, 2003.
+    .. [3] "Conjugate gradient squared", Wikipedia,
+           https://en.wikipedia.org/wiki/Conjugate_gradient_squared_method
 
     Examples
     --------
