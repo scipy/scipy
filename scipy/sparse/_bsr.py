@@ -107,19 +107,9 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
             except Exception as e:
                 raise ValueError("unrecognized form for"
                         " %s_matrix constructor" % self.format) from e
-            if arg1.ndim != 2:
-                if isinstance(self, sparray):
-                    raise ValueError(
-                        f"BSR arrays do not support {arg1.ndim}D input. Use 2D"
-                    )
-                else:
-                    warn(
-                        f"{arg1.ndim}D input will not be valid for matrices. Use 2D",
-                        FutureWarning, stacklevel=2
-                    )
-            arg1 = self._coo_container(
-                arg1, dtype=dtype
-            ).tobsr(blocksize=blocksize)
+            if isinstance(self, sparray) and arg1.ndim != 2:
+                raise ValueError(f"BSR arrays don't support {arg1.ndim}D input. Use 2D")
+            arg1 = self._coo_container(arg1, dtype=dtype).tobsr(blocksize=blocksize)
             self.indptr, self.indices, self.data, self._shape = (
                 arg1.indptr, arg1.indices, arg1.data, arg1._shape
             )

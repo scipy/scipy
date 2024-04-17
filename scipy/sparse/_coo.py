@@ -77,11 +77,6 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 # dense argument
                 M = np.asarray(arg1)
                 if not is_array:
-                    if M.ndim < 2:
-                        warn(
-                            f"{M.ndim}D input will not be valid for matrices. Use 2D",
-                            FutureWarning, stacklevel=2
-                        )
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
                         raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
