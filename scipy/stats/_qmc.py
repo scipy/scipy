@@ -1798,12 +1798,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 
