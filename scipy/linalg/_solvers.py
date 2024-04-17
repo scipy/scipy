@@ -280,7 +280,7 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. "Lyapunov equation",
+    .. [1] "Lyapunov equation", Wikipedia,
        https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
