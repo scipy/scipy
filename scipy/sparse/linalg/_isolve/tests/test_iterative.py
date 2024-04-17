@@ -26,6 +26,8 @@ from scipy.sparse.linalg._isolve import (bicg, bicgstab, cg, cgs,
 _SOLVERS = [bicg, bicgstab, cg, cgs, gcrotmk, gmres, lgmres,
             minres, qmr, tfqmr]
 
+CB_TYPE_FILTER = ".*called without specifying `callback_type`.*"
+
 
 # create parametrized fixture for easy reuse in tests
 @pytest.fixture(params=_SOLVERS, scope="session")
@@ -233,7 +235,11 @@ def test_maxiter(case):
     def callback(x):
         residuals.append(norm(b - case.A * x))
 
-    x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    if case.solver == gmres:
+        with pytest.warns(DeprecationWarning, match=CB_TYPE_FILTER):
+            x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
+    else:
+        x, info = case.solver(A, b, x0=x0, rtol=rtol, maxiter=1, callback=callback)
 
     assert len(residuals) == 1
     assert info == 1
@@ -627,6 +633,7 @@ class TestGMRES:
 
         assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback(self):
 
         def store_residual(r, rvec):
@@ -730,6 +737,7 @@ class TestGMRES:
         # The solution should be OK outside null space of A
         assert_allclose(A @ (A @ x), A @ b)
 
+    @pytest.mark.filterwarnings(f"ignore:{CB_TYPE_FILTER}:DeprecationWarning")
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
         np.random.seed(1)
