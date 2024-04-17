@@ -6,12 +6,13 @@ May be a bit overzealous, but it should get the job done.
 """
 import argparse
 import io
+import os.path
 import re
 import sys
 
 HEADER_PATTERN = re.compile(r'^\s*#\s*include\s*[<"]((?:\w+/)*\w+(?:\.h[hp+]{0,2})?)[>"]\s*$')
 
-PYTHON_INCLUDING_HEADERS = (
+PYTHON_INCLUDING_HEADERS = [
   "Python.h",
   "numpy/arrayobject.h",
   "numpy/ndarrayobject.h",
@@ -19,7 +20,7 @@ PYTHON_INCLUDING_HEADERS = (
   "numpy/npy_math.h",
   "numpy/random/distributions.h",
   "pybind11/pybind11.h"
-)
+]
 
 PARSER = argparse.ArgumentParser(description=__doc__)
 PARSER.add_argument("file_list", nargs="+", type=str)
@@ -55,6 +56,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                             file=sys.stderr
                         )
                     included_python = True
+                    PYTHON_INCLUDING_HEADERS.append(os.path.basename(name_to_check))
                 elif not included_python and ("numpy" in match.group(1) and match.group(1) != "numpy/utils.h"):
                         print(
                             f"Python.h not included before python-including header "
@@ -76,7 +78,8 @@ def check_python_h_included_first(name_to_check: str) -> int:
 if __name__ == "__main__":
     args = PARSER.parse_args()
     n_out_of_order = 0
-    for name_to_check in args.file_list:
+    # See which of the headers include Python.h and add them to the list
+    for name_to_check in sorted(args.file_list, key=lambda name: "h" not in name.lower()):
         try:
             n_out_of_order += check_python_h_included_first(name_to_check)
         except UnicodeDecodeError as err:
