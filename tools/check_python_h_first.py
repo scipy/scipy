@@ -19,7 +19,9 @@ PYTHON_INCLUDING_HEADERS = [
   "numpy/npy_common.h",
   "numpy/npy_math.h",
   "numpy/random/distributions.h",
-  "pybind11/pybind11.h"
+  "pybind11/pybind11.h",
+  # Python-including headers the sort doesn't pick up
+  "ni_support.h",
 ]
 
 PARSER = argparse.ArgumentParser(description=__doc__)
