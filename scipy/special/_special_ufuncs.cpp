@@ -1,4 +1,7 @@
+#include "ufunc.h"
+
 #include <cmath>
+#include <complex>
 
 #include "ufunc.h"
 
