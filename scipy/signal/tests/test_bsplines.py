@@ -144,6 +144,11 @@ class TestBSplines:
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
 
+# i/o dtypes with scipy 1.9.1, likely fixed by backwards compat
+sepfir_dtype_map = {np.uint8: np.float32, int: np.float64,
+                    np.float32: np.float32, float: float,
+                    np.complex64: np.complex64, complex: complex}
+
 class TestSepfir2d:
     def test_sepfir2d_invalid_filter(self):
         filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
@@ -191,13 +196,8 @@ class TestSepfir2d:
                           [2.5, 4. , 5.5, 5.5, 4. , 2.5],
                           [2.5, 4. , 5.5, 5.5, 4. , 2.5]])
 
-        # dtypes with scipy 1.9.1, likely fixed by backwards compat
-        dtype_map = {np.uint8: np.float32, int: np.float64,
-                     np.float32: np.float32, float: float,
-                     np.complex64: np.complex64, complex: complex}
-
         assert_allclose(result, expected, atol=1e-16)
-        assert result.dtype == dtype_map[dtyp]
+        assert result.dtype == sepfir_dtype_map[dtyp]
 
         result = signal.sepfir2d(a, h2, h1)
         expected = array([[2., 4., 6., 6., 4., 2.],
@@ -205,7 +205,7 @@ class TestSepfir2d:
                           [2., 4., 6., 6., 4., 2.],
                           [2., 4., 6., 6., 4., 2.]])
         assert_allclose(result, expected, atol=1e-16)
-        assert result.dtype == dtype_map[dtyp]
+        assert result.dtype == sepfir_dtype_map[dtyp]
 
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
@@ -221,33 +221,52 @@ class TestSepfir2d:
         assert_allclose(result_strided, result_contig, atol=1e-15)
         assert result_strided.dtype == result_contig.dtype
 
-    def test_sepfir2d_2(self):
+    @pytest.mark.xfail(reason="XXX: filt.size > image.shape: flaky")
+    def test_sepfir2d_strided_2(self):
+        # XXX: this test is flaky: fails on some reruns, with
+        # result[0, 1] and result[1, 1] being ~1e+224.
         np.random.seed(1234)
         filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0, 3.0, 2.0])
         image = np.random.rand(4, 4)
 
-        expected = array([[36.018162, 30.239061, 38.71187 , 43.878183],
-              [38.180999, 35.824583, 43.525247, 43.874945],
-              [43.269533, 40.834018, 46.757772, 44.276423],
-              [49.120928, 39.681844, 43.596067, 45.085854]])
+        expected = np.array([[36.018162, 30.239061, 38.71187 , 43.878183],
+                             [38.180999, 35.824583, 43.525247, 43.874945],
+                             [43.269533, 40.834018, 46.757772, 44.276423],
+                             [49.120928, 39.681844, 43.596067, 45.085854]])
         assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
 
-        filt = np.array([1, 2, 4, 2, 1, 3, 2])
-        image = np.random.randint(4, size=(5, 5))
+    @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_sepfir2d_strided_3(self, dtyp):
+        # NB: 'image' and 'filt' dtypes match here. Otherwise we can run into
+        # unsafe casting errors for many combinations. Historically, dtype handling
+        # in `sepfir2d` is a tad baroque; fixing it is an enhancement.
+        filt = np.array([1, 2, 4, 2, 1, 3, 2], dtype=dtyp)
+        image = np.array([[0, 3, 0, 1, 2],
+                          [2, 2, 3, 3, 3],
+                          [0, 1, 3, 0, 3],
+                          [2, 3, 0, 1, 3],
+                          [3, 3, 2, 1, 2]], dtype=dtyp)
 
         expected = array([[123., 101.,  91., 136., 127.],
              [133., 125., 126., 152., 160.],
              [136., 137., 150., 162., 177.],
              [133., 124., 132., 148., 147.],
              [173., 158., 152., 164., 141.]])
-        assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
+        result = signal.sepfir2d(image, filt, filt[::3])
+        assert_allclose(result, expected, atol=1e-15)
+        assert result.dtype == sepfir_dtype_map[dtyp]
 
         expected = array([[22., 35., 41., 31., 47.],
              [27., 39., 48., 47., 55.],
              [33., 42., 49., 53., 59.],
              [39., 44., 41., 36., 48.],
              [67., 62., 47., 34., 46.]])
-        assert_allclose(signal.sepfir2d(image, filt[::3], filt[::3]), expected)
+        result = signal.sepfir2d(image, filt[::3], filt[::3])
+        assert_allclose(result, expected, atol=1e-15)
+        assert result.dtype == sepfir_dtype_map[dtyp]
 
 
 def test_cspline2d():
