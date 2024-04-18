@@ -1,18 +1,13 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include <math.h>
 #include <complex>
-
+#include<cmath>
 #include "_splinemodule.h"
 
-#include <stddef.h>
-#include <stdlib.h>
-#include <string.h>
-#include <iostream>
 
-#ifndef M_PI
-#define M_PI           3.14159265358979323846  /* pi */
-#endif
+//#ifndef M_PI
+//#define M_PI           3.14159265358979323846  /* pi */
+//#endif
 
 #define PYERR(message) do {PyErr_SetString(PyExc_ValueError, message); goto fail;} while(0)
 #define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
@@ -33,7 +28,6 @@ convert_strides(npy_intp* instrides,npy_intp* convstrides,int size,int N)
   }
 }
 
-extern "C" {
 
 static char doc_FIRsepsym2d[] = "out = sepfir2d(input, hrow, hcol)\n"
 "\n"
@@ -529,7 +523,6 @@ static PyObject *IIRsymorder2_ic_bwd(PyObject *NPY_UNUSED(dummy), PyObject *args
   return NULL;
 
 }
-}
 
 
 static struct PyMethodDef toolbox_module_methods[] = {
@@ -553,11 +546,11 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-extern "C"{
+
 PyMODINIT_FUNC
 PyInit__spline(void)
 {
     import_array();
     return PyModule_Create(&moduledef);
 }
-}
+
