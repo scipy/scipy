@@ -15,7 +15,8 @@ import pytest
 
 import scipy.linalg
 from scipy.linalg import (funm, signm, logm, sqrtm, fractional_matrix_power,
-                          expm, expm_frechet, expm_cond, norm, khatri_rao)
+                          expm, expm_frechet, expm_cond, norm, khatri_rao,
+                          cosm, sinm, tanm, coshm, sinhm, tanhm)
 from scipy.linalg import _matfuncs_inv_ssq
 from scipy.linalg._matfuncs import pick_pade_structure
 import scipy.linalg._expm_frechet
@@ -1047,3 +1048,13 @@ class TestKhatriRao:
         b = np.empty((5, 0))
         res = khatri_rao(a, b)
         assert_allclose(res, np.empty((15, 0)))
+
+@pytest.mark.parametrize('func', [cosm, sinm, tanm, coshm, sinhm, tanhm])
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_empty_matrix_input(func, dt):
+    A = np.zeros((0, 0), dtype=dt)
+    result = func(A)
+    A0 = np.zeros((1, 1), dtype=dt)
+    result0 = func(A0)
+    assert result.size == 0
+    assert result.dtype == result0.dtype
