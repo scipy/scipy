@@ -144,34 +144,82 @@ class TestBSplines:
         assert_allclose(bsp.qspline1d_eval(cj, newx, dx=dx, x0=x[0]), newy)
 
 
-def test_sepfir2d_invalid_filter():
-    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
-    image = np.random.rand(7, 9)
-    # No error for odd lengths
-    signal.sepfir2d(image, filt, filt[2:])
+class TestSepfir2d:
+    def test_sepfir2d_invalid_filter(self):
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+        image = np.random.rand(7, 9)
+        # No error for odd lengths
+        signal.sepfir2d(image, filt, filt[2:])
 
-    # Row or column filter must be odd
-    with pytest.raises(ValueError, match="odd length"):
-        signal.sepfir2d(image, filt, filt[1:])
-    with pytest.raises(ValueError, match="odd length"):
-        signal.sepfir2d(image, filt[1:], filt)
+        # Row or column filter must be odd
+        with pytest.raises(ValueError, match="odd length"):
+            signal.sepfir2d(image, filt, filt[1:])
+        with pytest.raises(ValueError, match="odd length"):
+            signal.sepfir2d(image, filt[1:], filt)
 
-    # Filters must be 1-dimensional
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image, filt.reshape(1, -1), filt)
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image, filt, filt.reshape(1, -1))
+        # Filters must be 1-dimensional
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image, filt.reshape(1, -1), filt)
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image, filt, filt.reshape(1, -1))
 
-def test_sepfir2d_invalid_image():
-    filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
-    image = np.random.rand(8, 8)
+    def test_sepfir2d_invalid_image(self):
+        filt = np.array([1.0, 2.0, 4.0, 2.0, 1.0])
+        image = np.random.rand(8, 8)
 
-    # Image must be 2 dimensional
-    with pytest.raises(ValueError, match="object too deep"):
-        signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
+        # Image must be 2 dimensional
+        with pytest.raises(ValueError, match="object too deep"):
+            signal.sepfir2d(image.reshape(4, 4, 4), filt, filt)
 
-    with pytest.raises(ValueError, match="object of too small depth"):
-        signal.sepfir2d(image[0], filt, filt)
+        with pytest.raises(ValueError, match="object of too small depth"):
+            signal.sepfir2d(image[0], filt, filt)
+
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_simple(self, dtyp):
+        # test values on a paper-and-pencil example
+        a = np.array([[1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1],
+                      [1, 2, 3, 3, 2, 1]], dtype=dtyp)
+        h1 = [0.5, 1, 0.5]
+        h2 = [1]
+        result = signal.sepfir2d(a, h1, h2)
+        expected = array([[2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5],
+                          [2.5, 4. , 5.5, 5.5, 4. , 2.5]])
+
+        # dtypes with scipy 1.9.1, likely fixed by backwards compat
+        dtype_map = {np.uint8: np.float32, int: np.float64,
+                     np.float32: np.float32, float: float,
+                     np.complex64: np.complex64, complex: complex}
+
+        assert_allclose(result, expected, atol=1e-16)
+        assert result.dtype == dtype_map[dtyp]
+
+        result = signal.sepfir2d(a, h2, h1)
+        expected = array([[2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.],
+                          [2., 4., 6., 6., 4., 2.]])
+        assert_allclose(result, expected, atol=1e-16)
+        assert result.dtype == dtype_map[dtyp]
+
+    @pytest.mark.parametrize('dtyp',
+        [np.uint8, int, np.float32, float, np.complex64, complex]
+    )
+    def test_strided(self, dtyp):
+        a = np.array([[1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3],
+                     [1, 2, 3, 3, 2, 1, 1, 2, 3]])
+        h1, h2 = [0.5, 1, 0.5], [1]
+        result_strided = signal.sepfir2d(a[:, ::2], h1, h2)
+        result_contig = signal.sepfir2d(a[:, ::2].copy(), h1, h2)
+        assert_allclose(result_strided, result_contig, atol=1e-15)
+        assert result_strided.dtype == result_contig.dtype
 
 
 def test_cspline2d():
