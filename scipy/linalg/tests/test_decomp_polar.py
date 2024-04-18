@@ -90,7 +90,6 @@ def test_precomputed_cases():
 
 def test_verify_cases():
     for a in verify_cases:
-        print(a)
         verify_polar(a)
 
 @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
