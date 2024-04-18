@@ -652,9 +652,10 @@ def qspline1d_eval(cj, newx, dx=1.0, x0=0):
 def symiirorder1(signal, c0, z1, precision=-1.0):
     """
     Implement a smoothing IIR filter with mirror-symmetric boundary conditions
-    using a cascade of first-order sections.  The second section uses a
-    reversed sequence.  This implements a system with the following
-    transfer function and mirror-symmetric boundary conditions::
+    using a cascade of first-order sections.
+
+    The second section uses a reversed sequence.  This implements a system with
+    the following transfer function and mirror-symmetric boundary conditions::
 
                            c0
            H(z) = ---------------------
@@ -726,14 +727,17 @@ def symiirorder1(signal, c0, z1, precision=-1.0):
 def symiirorder2(input, r, omega, precision=-1.0):
     """
     Implement a smoothing IIR filter with mirror-symmetric boundary conditions
-    using a cascade of second-order sections.  The second section uses a
-    reversed sequence.  This implements the following transfer function::
+    using a cascade of second-order sections.
+
+    The second section uses a reversed sequence.  This implements the following
+    transfer function::
 
                                   cs^2
          H(z) = ---------------------------------------
                 (1 - a2/z - a3/z^2) (1 - a2 z - a3 z^2 )
 
     where::
+
           a2 = 2 * r * cos(omega)
           a3 = - r ** 2
           cs = 1 - 2 * r * cos(omega) + r ** 2
