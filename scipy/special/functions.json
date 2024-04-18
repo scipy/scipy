@@ -42,54 +42,6 @@
             "_sf_error_test_function": "i->i"
         }
     },
-    "_spherical_in": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_complex": "lD->D",
-            "spherical_in_real": "ld->d"
-        }
-    },
-    "_spherical_in_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_d_complex": "lD->D",
-            "spherical_in_d_real": "ld->d"
-        }
-    },
-    "_spherical_jn": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_complex": "lD->D",
-            "spherical_jn_real": "ld->d"
-        }
-    },
-    "_spherical_jn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_d_complex": "lD->D",
-            "spherical_jn_d_real": "ld->d"
-        }
-    },
-    "_spherical_kn": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_complex": "lD->D",
-            "spherical_kn_real": "ld->d"
-        }
-    },
-    "_spherical_kn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_d_complex": "lD->D",
-            "spherical_kn_d_real": "ld->d"
-        }
-    },
-    "_spherical_yn": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_complex": "lD->D",
-            "spherical_yn_real": "ld->d"
-        }
-    },
-    "_spherical_yn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_d_complex": "lD->D",
-            "spherical_yn_d_real": "ld->d"
-        }
-    },
     "_struve_asymp_large_z": {
         "cephes.h": {
             "struve_asymp_large_z": "ddi*d->d"
@@ -493,11 +445,6 @@
             "eval_sh_legendre_l": "ld->d"
         }
     },
-    "_scaled_exp1": {
-        "scaled_exp1.h": {
-            "scaled_exp1": "d->d"
-        }
-    },
     "exp10": {
         "cephes.h": {
             "exp10": "d->d"
@@ -698,7 +645,7 @@
             "kn_unsafe": "dd->d"
         },
         "cephes.h": {
-            "cbesk_wrap_real_int": "id->d"
+            "special_cyl_bessel_k_int": "id->d"
         }
     },
     "_kolmogc": {

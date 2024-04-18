@@ -16,7 +16,7 @@ from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
 cdef extern from "special_wrappers.h":
-    double cbesk_wrap_real_int(int n, double z) nogil
+    double special_cyl_bessel_k_int(int n, double z) nogil
 
 cdef extern from "Python.h":
     # Purposefully ignore the raised PyError --- assume the ufunc will collect it
@@ -98,7 +98,7 @@ cdef inline double kn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("kn", n, 0)
-    return cbesk_wrap_real_int(<int>n, x)
+    return special_cyl_bessel_k_int(<int>n, x)
 
 cdef inline double yn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):

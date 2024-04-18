@@ -24,30 +24,31 @@ npy_cdouble chyp2f1_wrap(double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap(double a, double b, npy_cdouble z);
 double hyp1f1_wrap(double a, double b, double x);
 double hypU_wrap(double a, double b, double x);
-double exp1_wrap(double x);
-double expi_wrap(double x);
-npy_cdouble cexp1_wrap(npy_cdouble z);
-npy_cdouble cexpi_wrap(npy_cdouble z);
 npy_cdouble cerf_wrap(npy_cdouble z);
-void itairy_wrap(double x, double *apt, double *bpt, double *ant, double *bnt);
+
+double special_exp1(double x);
+npy_cdouble special_cexp1(npy_cdouble z);
+
+double special_expi(double x);
+npy_cdouble special_cexpi(npy_cdouble z);
 
 double struve_wrap(double v, double x);
-double itstruve0_wrap(double x);
-double it2struve0_wrap(double x);
+double special_itstruve0(double x);
+double special_it2struve0(double x);
 
 double modstruve_wrap(double v, double x);
-double itmodstruve0_wrap(double x);
+double special_itmodstruve0(double x);
 
-double ber_wrap(double x);
-double bei_wrap(double x);
-double ker_wrap(double x);
-double kei_wrap(double x);
-double berp_wrap(double x);
-double beip_wrap(double x);
-double kerp_wrap(double x);
-double keip_wrap(double x);
+double special_ber(double x);
+double special_bei(double x);
+double special_ker(double x);
+double special_kei(double x);
+double special_berp(double x);
+double special_beip(double x);
+double special_kerp(double x);
+double special_keip(double x);
 
-void kelvin_wrap(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep);
+void special_ckelvin(double x, npy_cdouble *Be, npy_cdouble *Ke, npy_cdouble *Bep, npy_cdouble *Kep);
 
 void it1j0y0_wrap(double x, double *, double *);
 void it2j0y0_wrap(double x, double *, double *);
@@ -86,30 +87,44 @@ double oblate_segv_wrap(double, double, double);
 void modified_fresnel_plus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 void modified_fresnel_minus_wrap(double x, npy_cdouble *F, npy_cdouble *K);
 
-void airy_wrap(double x, double *ai, double *aip, double *bi, double *bip);
-void cairy_wrap(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-void cairy_wrap_e(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
-void cairy_wrap_e_real(double z, double *ai, double *aip, double *bi, double *bip);
-npy_cdouble cbesi_wrap(double v, npy_cdouble z);
-npy_cdouble cbesi_wrap_e(double v, npy_cdouble z);
-double cbesi_wrap_e_real(double v, double z);
-npy_cdouble cbesj_wrap(double v, npy_cdouble z);
-npy_cdouble cbesj_wrap_e(double v, npy_cdouble z);
-double cbesj_wrap_real(double v, double z);
-double cbesj_wrap_e_real(double v, double z);
-npy_cdouble cbesy_wrap(double v, npy_cdouble z);
-double cbesy_wrap_real(double v, double x);
-npy_cdouble cbesy_wrap_e(double v, npy_cdouble z);
-double cbesy_wrap_e_real(double v, double z);
-npy_cdouble cbesk_wrap(double v, npy_cdouble z);
-npy_cdouble cbesk_wrap_e(double v, npy_cdouble z);
-double cbesk_wrap_real(double v, double z);
-double cbesk_wrap_e_real(double v, double z);
-double cbesk_wrap_real_int(int n, double z);
-npy_cdouble cbesh_wrap1(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap1_e(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap2(double v, npy_cdouble z);
-npy_cdouble cbesh_wrap2_e(double v, npy_cdouble z);
+void special_airy(double x, double *ai, double *aip, double *bi, double *bip);
+void special_cairy(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+
+void special_airye(double z, double *ai, double *aip, double *bi, double *bip);
+void special_cairye(npy_cdouble z, npy_cdouble *ai, npy_cdouble *aip, npy_cdouble *bi, npy_cdouble *bip);
+
+void special_itairy(double x, double *apt, double *bpt, double *ant, double *bnt);
+
+double special_cyl_bessel_j(double v, double z);
+npy_cdouble special_ccyl_bessel_j(double v, npy_cdouble z);
+
+double special_cyl_bessel_je(double v, double z);
+npy_cdouble special_ccyl_bessel_je(double v, npy_cdouble z);
+
+double special_cyl_bessel_y(double v, double x);
+npy_cdouble special_ccyl_bessel_y(double v, npy_cdouble z);
+
+double special_cyl_bessel_ye(double v, double z);
+npy_cdouble special_ccyl_bessel_ye(double v, npy_cdouble z);
+
+double special_cyl_bessel_i(double v, double z);
+npy_cdouble special_ccyl_bessel_i(double v, npy_cdouble z);
+
+double special_cyl_bessel_ie(double v, double z);
+npy_cdouble special_ccyl_bessel_ie(double v, npy_cdouble z);
+
+double special_cyl_bessel_k_int(int n, double z);
+double special_cyl_bessel_k(double v, double z);
+npy_cdouble special_ccyl_bessel_k(double v, npy_cdouble z);
+
+double special_cyl_bessel_ke(double v, double z);
+npy_cdouble special_ccyl_bessel_ke(double v, npy_cdouble z);
+
+npy_cdouble special_ccyl_hankel_1(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_2(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_1e(double v, npy_cdouble z);
+npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z);
+
 npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble zp);
 
 double special_binom(double n, double k);
@@ -154,6 +169,32 @@ npy_cdouble special_sph_harm(long m, long n, double theta, double phi);
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi);
 
 double special_wright_bessel(double a, double b, double x);
+
+double special_scaled_exp1(double x);
+
+double special_sph_bessel_j(long n, double x);
+npy_cdouble special_csph_bessel_j(long n, npy_cdouble z);
+
+double special_sph_bessel_j_jac(long n, double x);
+npy_cdouble special_csph_bessel_j_jac(long n, npy_cdouble z);
+
+double special_sph_bessel_y(long n, double x);
+npy_cdouble special_csph_bessel_y(long n, npy_cdouble z);
+
+double special_sph_bessel_y_jac(long n, double x);
+npy_cdouble special_csph_bessel_y_jac(long n, npy_cdouble z);
+
+double special_sph_bessel_i(long n, double x);
+npy_cdouble special_csph_bessel_i(long n, npy_cdouble z);
+
+double special_sph_bessel_i_jac(long n, double x);
+npy_cdouble special_csph_bessel_i_jac(long n, npy_cdouble z);
+
+double special_sph_bessel_k(long n, double x);
+npy_cdouble special_csph_bessel_k(long n, npy_cdouble z);
+
+double special_sph_bessel_k_jac(long n, double x);
+npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z);
 
 #ifdef __cplusplus
 } /* extern "C" */

@@ -3722,6 +3722,87 @@ const char *rgamma_doc = R"(
     array([2.75573192e-006, 1.07151029e-156, 0.00000000e+000])
     )";
 
+const char *scaled_exp1_doc = R"(
+    _scaled_exp1(x, out=None):
+
+    Compute the scaled exponential integral.
+
+    This is a private function, subject to change or removal with no
+    deprecation.
+
+    This function computes F(x), where F is the factor remaining in E_1(x)
+    when exp(-x)/x is factored out.  That is,::
+
+        E_1(x) = exp(-x)/x * F(x)
+
+    or
+
+        F(x) = x * exp(x) * E_1(x)
+
+    The function is defined for real x >= 0.  For x < 0, nan is returned.
+
+    F has the properties:
+
+    * F(0) = 0
+    * F(x) is increasing on [0, inf).
+    * The limit as x goes to infinity of F(x) is 1.
+
+    Parameters
+    ----------
+    x: array_like
+        The input values. Must be real.  The implementation is limited to
+        double precision floating point, so other types will be cast to
+        to double precision.
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the scaled exponential integral.
+
+    See Also
+    --------
+    exp1 : exponential integral E_1
+
+    Examples
+    --------
+    >>> from scipy.special import _scaled_exp1
+    >>> _scaled_exp1([0, 0.1, 1, 10, 100])
+    )";
+
+const char *spherical_jn_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_jn_d_doc = R"(
+    Internal function, use `spherical_jn` instead.
+    )";
+
+const char *spherical_yn_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_yn_d_doc = R"(
+    Internal function, use `spherical_yn` instead.
+    )";
+
+const char *spherical_in_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_in_d_doc = R"(
+    Internal function, use `spherical_in` instead.
+    )";
+
+const char *spherical_kn_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
+const char *spherical_kn_d_doc = R"(
+    Internal function, use `spherical_kn` instead.
+    )";
+
 const char *sph_harm_doc = R"(
     sph_harm(m, n, theta, phi, out=None)
 
