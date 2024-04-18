@@ -189,25 +189,22 @@ void assoc_legendre_all_jac(T x, InputMat pm, OutputMat pd) {
     }
 }
 
-template <typename T, typename InputMat1, typename OutputMat2>
-void assoc_legendre_all_jac(T x, bool m_signbit, InputMat1 pm, OutputMat2 pd) {
-    assoc_legendre_all_jac(x, pm, pd);
+template <typename T, typename InputMat, typename OutputMat>
+void assoc_legendre_all_jac(T x, bool m_signbit, InputMat p, OutputMat p_jac) {
+    long m = p.extent(0) - 1;
+    long n = p.extent(1) - 1;
 
-    int m = pm.extent(0) - 1;
-    int n = pm.extent(1) - 1;
+    assoc_legendre_all_jac(x, p, p_jac);
 
     if (m_signbit) {
-        for (int j = 0; j < n + 1; ++j) {
-            for (int i = 0; i < m + 1; ++i) {
-                T fac = 0;
-                if (i <= j) {
-                    fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
-                    if (std::abs(x) < 1) {
-                        fac *= std::pow(-1, i);
-                    }
+        for (long j = 0; j <= n; ++j) {
+            for (long i = 0; i <= std::min(j, m); ++i) {
+                T fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
+                if (std::abs(x) < 1) {
+                    fac *= std::pow(-1, i);
                 }
 
-                pd(i, j) *= fac;
+                p_jac(i, j) *= fac;
             }
         }
     }
