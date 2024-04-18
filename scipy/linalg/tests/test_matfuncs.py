@@ -711,8 +711,10 @@ class TestExpM:
         # handle gh-11082
         A = np.zeros((0, 0), dtype=dt)
         result = expm(A)
+        A0 = np.zeros((1, 1), dtype=dt)
+        result0 = expm(A0)
         assert result.size == 0
-        assert result.dtype == A.dtype
+        assert result.dtype == result0.dtype
 
     def test_2x2_input(self):
         E = np.e
