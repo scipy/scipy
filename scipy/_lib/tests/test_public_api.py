@@ -445,9 +445,13 @@ def test_private_but_present_deprecation(module_name, correct_module):
     else:
         import_name = f'scipy.{module_name.split(".")[1]}.{correct_module}'
 
+    correct_import = import_module(import_name)
+
     # Attributes that were formerly in `module_name` can still be imported from
     # `module_name`, albeit with a deprecation warning.
     for attr_name in module.__all__:
+        # ensure attribute is present where the warning is pointing
+        assert getattr(correct_import, attr_name, None) is not None
         message = f"Please import `{attr_name}` from the `{import_name}`..."
         with pytest.deprecated_call(match=message):
             getattr(module, attr_name)
