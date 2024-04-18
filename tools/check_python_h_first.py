@@ -47,6 +47,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
     included_python = False
     included_other = []
     warned_python_construct = False
+    basename_to_check = os.path.basename(name_to_check)
     with open(name_to_check, "r") as in_file:
         for i, line in enumerate(in_file, 1):
             match = re.match(HEADER_PATTERN, line)
@@ -59,7 +60,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                             file=sys.stderr
                         )
                     included_python = True
-                    PYTHON_INCLUDING_HEADERS.append(os.path.basename(name_to_check))
+                    PYTHON_INCLUDING_HEADERS.append(basename_to_check)
                 elif not included_python and ("numpy" in match.group(1) and match.group(1) != "numpy/utils.h"):
                         print(
                             f"Python.h not included before python-including header "
@@ -69,7 +70,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                         )
                 elif not included_python:
                     included_other.append(i)
-            elif (not included_python and not warned_python_construct) and (
+            elif (not included_python and not warned_python_construct and ".h" not in basename_to_check) and (
                 "py::" in line or "PYBIND11_" in line or "npy_" in line
             ):
                 print(
