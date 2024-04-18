@@ -48,8 +48,20 @@ def check_python_h_included_first(name_to_check: str) -> int:
     included_other = []
     warned_python_construct = False
     basename_to_check = os.path.basename(name_to_check)
+    in_comment = False
     with open(name_to_check, "r") as in_file:
         for i, line in enumerate(in_file, 1):
+            # Very basic comment parsing
+            # Assumes /*...*/ comments are on their own lines
+            if "/*" in line:
+                if "*/" not in line:
+                    in_comment = True
+                # else-branch could use regex to remove comment and continue
+                continue
+            if in_comment:
+                if "*/" in line:
+                    in_comment = False
+                continue
             match = re.match(HEADER_PATTERN, line)
             if match:
                 if match.group(1) in PYTHON_INCLUDING_HEADERS:
