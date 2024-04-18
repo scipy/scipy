@@ -2,6 +2,7 @@ from numpy import (asarray, pi, zeros_like,
                    array, arctan2, tan, ones, arange, floor,
                    r_, atleast_1d, sqrt, exp, greater, cos, add, sin,
                    moveaxis, abs, arctan, complex64, float32)
+import numpy as np
 
 from scipy._lib._util import normalize_axis_index
 
@@ -55,21 +56,22 @@ def spline_filter(Iin, lmbda=5.0):
     >>> plt.show()
 
     """
-    intype = Iin.dtype.char
-    hcol = array([1.0, 4.0, 1.0], 'f') / 6.0
-    if intype in ['F', 'D']:
-        Iin = Iin.astype('F')
-        ckr = cspline2d(Iin.real, lmbda)
-        cki = cspline2d(Iin.imag, lmbda)
-        outr = sepfir2d(ckr, hcol, hcol)
-        outi = sepfir2d(cki, hcol, hcol)
-        out = (outr + 1j * outi).astype(intype)
-    elif intype in ['f', 'd']:
-        ckr = cspline2d(Iin, lmbda)
-        out = sepfir2d(ckr, hcol, hcol)
-        out = out.astype(intype)
-    else:
-        raise TypeError("Invalid data type for Iin")
+    if Iin.dtype not in [np.float32, np.float64, np.complex64, np.complex128]:
+        raise TypeError(f"Invalid data type for Iin: {Iin.dtype = }")
+
+    # XXX: note that complex-valued computations are done in single precision
+    # this is historic, and the root reason is unclear,
+    # see https://github.com/scipy/scipy/issues/9091
+    # Attempting to work in complex double precision leads to symiirorder1
+    # failing to converge for the boundary conditions.
+    intype = Iin.dtype
+    hcol = array([1.0, 4.0, 1.0], np.float32) / 6.0
+    if intype == np.complex128:
+        Iin = Iin.astype(np.complex64)
+
+    ck = cspline2d(Iin, lmbda)
+    out = sepfir2d(ck, hcol, hcol)
+    out = out.astype(intype)
     return out
 
 
