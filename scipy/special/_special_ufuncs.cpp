@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include "sf_error.h"
+#include "special.h"
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
@@ -193,26 +194,6 @@ extern const char *sph_harm_doc;
 extern const char *wright_bessel_doc;
 extern const char *yv_doc;
 extern const char *yve_doc;
-
-namespace {
-
-template <typename T>
-complex<T> sph_harm(long m, long n, T theta, T phi) {
-    return special::sph_harm(m, n, theta, phi);
-}
-
-template <typename T>
-complex<T> sph_harm(T m, T n, T theta, T phi) {
-    if (static_cast<long>(m) != m || static_cast<long>(n) != n) {
-        PyGILState_STATE gstate = PyGILState_Ensure();
-        PyErr_WarnEx(PyExc_RuntimeWarning, "floating point number truncated to an integer", 1);
-        PyGILState_Release(gstate);
-    }
-
-    return sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi);
-}
-
-} // namespace
 
 // This is needed by sf_error, it is defined in the Cython "_ufuncs_extra_code_common.pxi" for "_generate_pyx.py".
 // It exists to "call PyUFunc_getfperr in a context where PyUFunc_API array is initialized", but here we are

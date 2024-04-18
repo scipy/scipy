@@ -1,4 +1,5 @@
 #include "special_wrappers.h"
+#include "special.h"
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
@@ -363,11 +364,11 @@ npy_cdouble special_lambertw(npy_cdouble z, long k, double tol) {
 }
 
 npy_cdouble special_sph_harm(long m, long n, double theta, double phi) {
-    return to_ccomplex(special::sph_harm(m, n, theta, phi));
+    return to_ccomplex(::sph_harm(m, n, theta, phi));
 }
 
 npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi) {
-    return to_ccomplex(special::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
+    return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
 double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
