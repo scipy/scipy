@@ -46,6 +46,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
     """
     included_python = False
     included_other = []
+    warned_python_construct = False
     with open(name_to_check, "r") as in_file:
         for i, line in enumerate(in_file, 1):
             match = re.match(HEADER_PATTERN, line)
@@ -68,12 +69,15 @@ def check_python_h_included_first(name_to_check: str) -> int:
                         )
                 elif not included_python:
                     included_other.append(i)
-            elif not included_python and ("py::" in line or "PYBIND11_" in line or "npy_" in line):
+            elif (not included_python and not warned_python_construct) and (
+                "py::" in line or "PYBIND11_" in line or "npy_" in line
+            ):
                 print(
                     "Python-including header not used before python constructs in file "
                     f"{name_to_check:s}\nConstruct on line {i:d}",
                     file=sys.stderr
                 )
+                warned_python_construct = True
     return included_python and len(included_other)
 
 
