@@ -10,7 +10,6 @@
         PyErr_SetString(PyExc_ValueError, message);                                                                    \
         goto fail;                                                                                                     \
     } while (0)
-#define PyArray_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
 void convert_strides(npy_intp *instrides, npy_intp *convstrides, int size, int N) {
     int n;
