@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose, assert_equal)
@@ -89,5 +90,32 @@ def test_precomputed_cases():
 
 def test_verify_cases():
     for a in verify_cases:
+        print(a)
         verify_polar(a)
 
+@pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
+def test_empty(dt):
+    empty_cases = [
+    np.empty((0, 0), dt),
+    np.empty((0, 2), dt),
+    np.empty((2, 0), dt),
+    ]
+
+    for a in empty_cases:
+        # a = up 
+        u, p = polar(a, side='right')
+        u_n, p_n = polar(np.eye(2, dtype = dt))
+
+        assert_equal(u.dtype, u_n.dtype)
+        assert_equal(p.dtype, p_n.dtype)
+        assert_(u.size == 0)
+        assert_((p == 0).all())
+
+        # a = pu
+        u, p = polar(a, side='left')
+        u_n, p_n = polar(np.eye(2, dtype = dt))
+
+        assert_equal(u.dtype, u_n.dtype)
+        assert_equal(p.dtype, p_n.dtype)
+        assert_(u.size == 0)
+        assert_((p == 0).all())
