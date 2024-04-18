@@ -77,11 +77,11 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-22.04, manylinux, x86_64]
-        - [ubuntu-22.04, musllinux, x86_64]
+        #- [ubuntu-22.04, manylinux, x86_64]
+        #- [ubuntu-22.04, musllinux, x86_64]
         - [macos-13, macosx, x86_64]
-        - [macos-14, macosx, arm64]
-        - [windows-2019, win, AMD64]
+        #- [macos-14, macosx, arm64]
+        #- [windows-2019, win, AMD64]
 
         python: [["cp310", "3.10"], ["cp311", "3.11"], ["cp312", "3.12"]]
         # python[0] is used to specify the python versions made by cibuildwheel
@@ -157,13 +157,15 @@ jobs:
             # be removed.
             CIBW="MACOSX_DEPLOYMENT_TARGET=10.9\
               MACOS_DEPLOYMENT_TARGET=10.9\
-              SDKROOT=/Applications/Xcode_15.0.1.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.0.sdk\
+              SDKROOT=/Applications/Xcode_15.2.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.0.sdk\
               LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH\
               _PYTHON_HOST_PLATFORM=macosx-10.9-x86_64\
               PIP_PRE=1\
               PIP_NO_BUILD_ISOLATION=false\
               PIP_EXTRA_INDEX_URL=https://pypi.anaconda.org/scientific-python-nightly-wheels/simple"
-            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"  
+            echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
+          
+            clang -v
           
             CIBW="DYLD_LIBRARY_PATH=/usr/local/lib delocate-listdeps {wheel} &&\
               DYLD_LIBRARY_PATH=/usr/local/lib delocate-wheel --require-archs {delocate_archs} -w {dest_dir} {wheel}"
