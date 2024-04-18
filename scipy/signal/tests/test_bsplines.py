@@ -6,7 +6,7 @@ from numpy.testing import (assert_allclose, assert_array_equal,
 import pytest
 from pytest import raises
 
-import scipy.signal._bsplines as bsp
+import scipy.signal._spline_filters as bsp
 from scipy import signal
 
 

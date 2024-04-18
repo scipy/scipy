@@ -6,7 +6,7 @@ import pytest
 
 from scipy.signal._spline import (
     symiirorder1_ic, symiirorder2_ic_fwd, symiirorder2_ic_bwd)
-from scipy.signal._splines import symiirorder1, symiirorder2
+from scipy.signal import symiirorder1, symiirorder2
 
 
 def _compute_symiirorder2_bwd_hs(k, cs, rsq, omega):
@@ -166,7 +166,6 @@ class TestSymIIR:
         atol = {np.float64: 1e-15, np.float32: 1e-7}[dtyp]
         assert_allclose(res, exp_res, atol=atol)
 
-        # complex now
         s = s + 1j*s
         res = symiirorder1(s, 0.5, 0.1)
         assert res.dtype == np.complex64 if dtyp == np.float32 else np.complex128
@@ -341,10 +340,8 @@ class TestSymIIR:
         # test_symiir2_initial_{fwd,bwd} above, so the difference is likely
         # due to a different way roundoff errors accumulate in the filter.
         # In that respect, sosfilt is likely doing a better job.
-        atol = {np.float64: 2e-6, np.float32: 2e-6}[dtyp]
-        assert_allclose(res, exp_res, atol=atol)
+        assert_allclose(res, exp_res, atol=2e-6)
 
-        # complex now
         s = s + 1j*s
         with assert_raises(TypeError):
             res = symiirorder2(s, 0.5, 0.1)

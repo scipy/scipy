@@ -298,8 +298,7 @@ from ._spline import (
     sepfir2d
 )
 
-from ._splines import *
-from ._bsplines import *
+from ._spline_filters import *
 from ._filter_design import *
 from ._fir_filter_design import *
 from ._ltisys import *
