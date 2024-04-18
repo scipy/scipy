@@ -291,7 +291,8 @@ def expm(A):
     n = a.shape[-1]
     # Empty array
     if min(*a.shape) == 0:
-        return np.empty_like(a)
+        dtype = expm(np.eye(1, dtype=a.dtype)).dtype
+        return np.empty_like(a, dtype=dtype)
 
     # Scalar case
     if a.shape[-2:] == (1, 1):
