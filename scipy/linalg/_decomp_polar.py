@@ -99,17 +99,6 @@ def polar(a, side="right"):
     a = np.asarray(a)
     if a.ndim != 2:
         raise ValueError("`a` must be a 2-D array.")
-    # accommodate square empty matrices
-    if a.size == 0:
-        dt = polar(np.eye(2, dtype=a.dtype))[0].dtype
-        u = np.empty(a.shape, dtype=dt)
-        if side == 'right':
-            # a = up
-            p = np.array(a.T @ a, dtype=dt)
-        else:
-            # a = pu
-            p = np.array(a @ a.T, dtype=dt)
-        return u, p
 
     w, s, vh = svd(a, full_matrices=False)
     u = w.dot(vh)
