@@ -151,6 +151,10 @@ if 'cupy' in xp_available_backends:
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
+skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
+    reason = ('Test involves masked arrays, object arrays, or other types '
+              'that are not valid input when `SCIPY_ARRAY_API` is used.'))
+
 
 @pytest.fixture
 def skip_xp_backends(xp, request):
