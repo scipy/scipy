@@ -60,6 +60,8 @@
  * - 09-10-2016: improved asymptotic expansion for large n
  */
 
+#pragma once
+
 #include "../config.h"
 #include "../error.h"
 #include "const.h"

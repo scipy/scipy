@@ -11,6 +11,8 @@
  * Author:  Travis Oliphant
  */
 
+#pragma once
+
 #include "../config.h"
 
 namespace special {
