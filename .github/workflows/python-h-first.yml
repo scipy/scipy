@@ -38,5 +38,6 @@ jobs:
 
     - name: Check that Python.h is first in any file including it.
       shell: bash
-      run:
-        python tools/check_python_h_first.py $(find scipy -type f -iname \*.[ch] -o -name \*.[ch]pp -o -name \*.cc -o -name \*.hh)
+      run: |
+        python tools/check_python_h_first.py $(find scipy \( -name boost_math -o -name highs -o -name fast_float \) -prune \
+            -o \( -type f -iname \*.[ch] -o -name \*.[ch]pp -o -name \*.cc -o -name \*.hh \) -print)

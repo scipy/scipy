@@ -45,7 +45,9 @@ def check_python_h_included_first(name_to_check: str) -> int:
         The number of headers before Python.h
     """
     included_python = False
-    included_other = []
+    included_non_python_headers = []
+    included_headers = []
+    duplicate_header_count = 0
     warned_python_construct = False
     basename_to_check = os.path.basename(name_to_check)
     in_comment = False
@@ -64,24 +66,33 @@ def check_python_h_included_first(name_to_check: str) -> int:
                 continue
             match = re.match(HEADER_PATTERN, line)
             if match:
-                if match.group(1) in PYTHON_INCLUDING_HEADERS:
-                    if included_other and not included_python:
+                this_header = match.group(1)
+                if this_header in PYTHON_INCLUDING_HEADERS:
+                    if included_non_python_headers and not included_python:
                         print(
                             f"Header before Python.h in file {name_to_check:s}\n"
-                            f"Python.h on line {i:d}, other header(s) on line(s) {included_other}",
+                            f"Python.h on line {i:d}, other header(s) on line(s) {included_non_python_headers}",
                             file=sys.stderr
                         )
                     included_python = True
                     PYTHON_INCLUDING_HEADERS.append(basename_to_check)
-                elif not included_python and ("numpy" in match.group(1) and match.group(1) != "numpy/utils.h"):
+                elif not included_python and ("numpy" in this_header and this_header != "numpy/utils.h"):
                         print(
                             f"Python.h not included before python-including header "
                             f"in file {name_to_check:s}\n"
-                            f"pybind11/pybind11.h on line {i:d}",
+                            f"{this_header:s} on line {i:d}",
                             file=sys.stderr
                         )
                 elif not included_python:
-                    included_other.append(i)
+                    included_non_python_headers.append(i)
+
+                if this_header in included_headers:
+                    print(
+                        f"Header {this_header:s} included twice in file {name_to_check:s}, second on line {i:d}",
+                        file=sys.stderr
+                    )
+                    duplicate_header_count += 1
+                included_headers.append(this_header)
             elif (not included_python and not warned_python_construct and ".h" not in basename_to_check) and (
                 "py::" in line or "PYBIND11_" in line or "npy_" in line
             ):
@@ -91,7 +102,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                     file=sys.stderr
                 )
                 warned_python_construct = True
-    return included_python and len(included_other)
+    return (included_python and len(included_non_python_headers)) + duplicate_header_count
 
 
 if __name__ == "__main__":
