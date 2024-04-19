@@ -102,7 +102,8 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
 
     # Scale by real part for complex inputs, because this affects
     # the magnitude of the exponential.
-    a_max = np.amax(a.real, axis=axis, keepdims=True)
+    initial_value = -np.inf if np.size(a) == 0 else None
+    a_max = np.amax(a.real, axis=axis, keepdims=True, initial=initial_value)
 
     if a_max.ndim > 0:
         a_max[~np.isfinite(a_max)] = 0

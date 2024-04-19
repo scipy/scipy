@@ -384,7 +384,7 @@ def arg_casts(argtype):
     return ''
 
 
-def generate_decl_pyx(name, return_type, argnames, argtypes, header_name):
+def generate_decl_pyx(name, return_type, argnames, argtypes, accelerate, header_name):
     """Create Cython declaration for BLAS/LAPACK function."""
     pyx_input_args = ', '.join([' *'.join(arg) for arg in zip(argtypes, argnames)])
     # By default, nothing is returned
@@ -409,7 +409,7 @@ def generate_decl_pyx(name, return_type, argnames, argtypes, header_name):
     if name in WRAPPED_FUNCS:
         pyx_call_args[0] = ''.join([arg_casts(c_argtypes[0]), '&', argnames[0]])
     pyx_call_args = ', '.join(pyx_call_args)
-    blas_macro, blas_name = get_blas_macro_and_name(name)
+    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
     return f"""
 cdef extern from "{header_name}":
     {blas_return_type} _fortran_{name} "{blas_macro}({blas_name})"({c_proto}) nogil
@@ -420,7 +420,7 @@ cdef {return_type} {name}({pyx_input_args}) noexcept nogil:
 """
 
 
-def generate_file_pyx(sigs, lib_name, header_name):
+def generate_file_pyx(sigs, lib_name, header_name, accelerate):
     """Generate content for pyx file with BLAS/LAPACK declarations and tests."""
     if lib_name == 'BLAS':
         preamble_template = blas_pyx_preamble
@@ -434,7 +434,7 @@ def generate_file_pyx(sigs, lib_name, header_name):
     comment = ['# ' + c for c in COMMENT_TEXT]
     preamble = comment + [preamble_template.format(names)]
     decls = [
-        generate_decl_pyx(**sig, header_name=header_name)
+        generate_decl_pyx(**sig, accelerate=accelerate, header_name=header_name)
         for sig in sigs]
     content = preamble + decls + [epilog]
     return ''.join(content)
@@ -510,7 +510,7 @@ def generate_file_pxd(sigs, lib_name):
     return ''.join(content)
 
 
-def generate_decl_c(name, return_type, argnames, argtypes):
+def generate_decl_c(name, return_type, argnames, argtypes, accelerate):
     """Create C header declarations for Cython to import."""
     c_return_type = C_TYPES[return_type]
     c_argtypes = [C_TYPES[t] for t in argtypes]
@@ -520,12 +520,12 @@ def generate_decl_c(name, return_type, argnames, argtypes):
         argnames = ['out'] + argnames
         c_argtypes = [c_return_type] + c_argtypes
         c_return_type = 'void'
-    blas_macro, blas_name = get_blas_macro_and_name(name)
+    blas_macro, blas_name = get_blas_macro_and_name(name, accelerate)
     c_args = ', '.join(f'{t} *{n}' for t, n in zip(c_argtypes, argnames))
     return f"{c_return_type} {blas_macro}({blas_name})({c_args});\n"
 
 
-def generate_file_c(sigs, lib_name):
+def generate_file_c(sigs, lib_name, accelerate):
     """Generate content for C header file for Cython to import."""
     if lib_name == 'BLAS':
         preamble = [C_PREAMBLE]
@@ -534,7 +534,7 @@ def generate_file_c(sigs, lib_name):
     else:
         raise RuntimeError(f'Unrecognized lib_name: {lib_name}.')
     preamble = ['/*\n', *COMMENT_TEXT, '*/\n'] + preamble + [CPP_GUARD_BEGIN]
-    decls = [generate_decl_c(**sig) for sig in sigs]
+    decls = [generate_decl_c(**sig, accelerate=accelerate) for sig in sigs]
     content = preamble + decls + [CPP_GUARD_END]
     return ''.join(content)
 
@@ -545,7 +545,8 @@ def make_all(outdir,
              blas_name="cython_blas",
              lapack_name="cython_lapack",
              blas_header_name="_blas_subroutines.h",
-             lapack_header_name="_lapack_subroutines.h"):
+             lapack_header_name="_lapack_subroutines.h",
+             accelerate=False):
     src_files = (os.path.abspath(__file__),
                  blas_signature_file,
                  lapack_signature_file)
@@ -568,13 +569,13 @@ def make_all(outdir,
     lapack_sigs = read_signatures(lapack_sigs)
     to_write = {
         dst_files[0]: generate_file_pyx(
-            blas_sigs, 'BLAS', blas_header_name),
+            blas_sigs, 'BLAS', blas_header_name, accelerate),
         dst_files[1]: generate_file_pxd(blas_sigs, 'BLAS'),
-        dst_files[2]: generate_file_c(blas_sigs, 'BLAS'),
+        dst_files[2]: generate_file_c(blas_sigs, 'BLAS', accelerate),
         dst_files[3]: generate_file_pyx(
-            lapack_sigs, 'LAPACK', lapack_header_name),
+            lapack_sigs, 'LAPACK', lapack_header_name, accelerate),
         dst_files[4]: generate_file_pxd(lapack_sigs, 'LAPACK'),
-        dst_files[5]: generate_file_c(lapack_sigs, 'LAPACK')
+        dst_files[5]: generate_file_c(lapack_sigs, 'LAPACK', accelerate)
     }
     write_files(to_write)
 
@@ -583,6 +584,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("-o", "--outdir", type=str,
                         help="Path to the output directory")
+    parser.add_argument("-a", "--accelerate", action="store_true",
+                        help="Whether to use new Accelerate (macOS 13.3+)")
     args = parser.parse_args()
 
     if not args.outdir:
@@ -590,4 +593,4 @@ if __name__ == '__main__':
     else:
         outdir_abs = os.path.join(os.getcwd(), args.outdir)
 
-    make_all(outdir_abs)
+    make_all(outdir_abs, accelerate=args.accelerate)

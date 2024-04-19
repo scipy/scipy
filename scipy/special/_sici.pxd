@@ -17,14 +17,14 @@ from ._complexstuff cimport (
     zabs, zlog, zpack)
 
 cdef extern from "special_wrappers.h":
-    np.npy_cdouble cexpi_wrap(np.npy_cdouble) nogil
+    np.npy_cdouble special_cexpi(np.npy_cdouble) nogil
 
 DEF EULER = 0.577215664901532860606512090082402431  # Euler constant
     
 
 cdef inline double complex zexpi(double complex z) noexcept nogil:
     cdef np.npy_cdouble r
-    r = cexpi_wrap(npy_cdouble_from_double_complex(z))
+    r = special_cexpi(npy_cdouble_from_double_complex(z))
     return double_complex_from_npy_cdouble(r)
 
 

@@ -4156,7 +4156,7 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         A[0,3] = 10
         A[5,6] = 20
         D = A*A.T
-        E = A*A.H
+        E = A*A.T.conjugate()
         assert_array_equal(D.toarray(), E.toarray())
 
     def test_add_nonzero(self):

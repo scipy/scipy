@@ -18,7 +18,6 @@ _ufuncs_pxi_pxd_sources = [
   fs.copyfile('_ndtri_exp.pxd'),
   fs.copyfile('_sici.pxd'),
   fs.copyfile('_spence.pxd'),
-  fs.copyfile('_spherical_bessel.pxd'),
   fs.copyfile('_xlogy.pxd'),
   fs.copyfile('orthogonal_eval.pxd'),
   fs.copyfile('sf_error.pxd'),
@@ -36,10 +35,10 @@ sf_error_state_lib = shared_library('sf_error_state',
 
 ufuncs_sources = [
   '_cosine.c',
-  'scaled_exp1.c',
   'special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
+  'sf_error.cc'
 ]
 
 ufuncs_cxx_sources = [
@@ -54,6 +53,7 @@ ufuncs_cxx_sources = [
 cdflib_lib = static_library('cdflib',
   'cdflib.c',
   include_directories: ['../_lib', '../_build_utils/src'],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_special_ufuncs',
@@ -130,7 +130,7 @@ py3.extension_module('_ufuncs',
   cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   dependencies: [
-    lapack,
+    lapack_dep,
     npymath_lib,
     np_dep,
   ],
@@ -184,12 +184,13 @@ py3.extension_module('_ufuncs_cxx',
 )
 
 py3.extension_module('_ellip_harm_2',
-  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
+  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.cc'],
   c_args: cython_c_args,
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   link_with: [sf_error_state_lib],
   link_args: version_link_args,
-  dependencies: [lapack, np_dep],
+  dependencies: [lapack_dep, np_dep],
   install: true,
   subdir: 'scipy/special',
   install_rpath: '$ORIGIN',
@@ -199,15 +200,15 @@ py3.extension_module('cython_special',
   [
     uf_cython_gen.process('cython_special.pyx'),
     '_cosine.c',
-    'scaled_exp1.c',
     'special_wrappers.cpp',
-    'sf_error.c',
+    'sf_error.cc',
     'dd_real_wrappers.cpp'
   ],
   c_args: [cython_c_args, Wno_maybe_uninitialized],
+  cpp_args: ['-DSP_SPECFUN_ERROR'],
   include_directories: ['../_lib', '../_build_utils/src'],
   link_args: version_link_args,
-  dependencies: [np_dep, npymath_lib, lapack],
+  dependencies: [np_dep, npymath_lib],
   link_with: [
     sf_error_state_lib,
     cdflib_lib
