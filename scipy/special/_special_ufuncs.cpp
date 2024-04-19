@@ -1,6 +1,7 @@
-#include <cmath>
-
 #include "ufunc.h"
+
+#include <cmath>
+#include <complex>
 
 #include "sf_error.h"
 #include "special.h"

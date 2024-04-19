@@ -2,6 +2,7 @@
 // Use of this source code is governed by the BSD 2-clause license found in the LICENSE.txt file.
 // SPDX-License-Identifier: BSD-2-Clause
 
+#include <Python.h>
 #include <fast_matrix_market/types.hpp>
 #include <cstdint>
 namespace fast_matrix_market {
