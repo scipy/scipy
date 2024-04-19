@@ -10,8 +10,12 @@ namespace {
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void lpn(T z, OutputVec1 p, OutputVec2 p_jac) {
-    special::legendre_all(z, p);
-    special::legendre_all_jac(z, p, p_jac);
+    long n = p.extent(0) - 1;
+
+    special::legendre_jac(n, z, [p, p_jac](long j, T z, T p_curr, T p_prev, T p_jac_curr) {
+        p(j) = p_curr;
+        p_jac(j) = p_jac_curr;
+    });
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
