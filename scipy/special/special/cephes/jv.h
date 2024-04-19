@@ -438,8 +438,8 @@ namespace cephes {
             double pp, qq, z32i, zzi;
             double ak, bk, akl, bkl;
             int sign, doa, dob, nflg, k, s, tk, tkp1, m;
-            static double u[8];
-            static double ai, aip, bi, bip;
+            double u[8];
+            double ai, aip, bi, bip;
 
             /* Test for x very close to n. Use expansion for transition region if so. */
             cbn = cbrt(n);
