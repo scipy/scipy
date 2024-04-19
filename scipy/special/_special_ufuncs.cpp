@@ -3,8 +3,6 @@
 #include <cmath>
 #include <complex>
 
-#include "ufunc.h"
-
 #include "sf_error.h"
 #include "special.h"
 #include "special/airy.h"
