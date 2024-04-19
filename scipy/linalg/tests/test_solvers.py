@@ -24,8 +24,10 @@ def _load_data(name):
 
 
 class TestSolveLyapunov:
-
     cases = [
+        # empty case
+        (np.empty((0, 0)),
+         np.empty((0, 0))),
         (np.array([[1, 2], [3, 4]]),
          np.array([[9, 10], [11, 12]])),
         # a, q all complex.
@@ -278,7 +280,8 @@ class TestSolveContinuousAre:
          'Bad Residual Accuracy'),
         # Test Case 19: carex #20
         (mat20['A'], mat20['B'], mat20['Q'], mat20['R'],
-         'Bad Residual Accuracy')
+         'Bad Residual Accuracy'),
+        np.empty
         ]
     # Makes the minimum precision requirements customized to the test.
     # Here numbers represent the number of decimals that agrees with zero
@@ -495,7 +498,7 @@ class TestSolveDiscreteAre:
          np.flipud(np.eye(100, 1)),
          np.eye(100),
          np.array([[1]]),
-         None)
+         None),
         ]
 
     # Makes the minimum precision requirements customized to the test.
@@ -725,6 +728,16 @@ def test_are_validate_args():
 class TestSolveSylvester:
 
     cases = [
+        # empty cases
+        (np.empty((0, 0)),
+         np.empty((0, 0)),
+         np.empty((0, 0))),
+         (np.empty((0, 0)),
+         np.empty((2, 2)),
+         np.empty((0, 2))),
+         (np.empty((2, 2)),
+         np.empty((0, 0)),
+         np.empty((2, 0))),
         # a, b, c all real.
         (np.array([[1, 2], [0, 4]]),
          np.array([[5, 6], [0, 8]]),
