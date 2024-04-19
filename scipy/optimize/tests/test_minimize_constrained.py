@@ -457,7 +457,7 @@ class TestTrustRegionConstr:
                         Rosenbrock(),
                         IneqRosenbrock(),
                         EqIneqRosenbrock(),
-                        # BoundedRosenbrock(),  # fails on one CI platform?
+                        BoundedRosenbrock(),
                         Elec(n_electrons=2),
                         Elec(n_electrons=2, constr_hess='2-point'),
                         Elec(n_electrons=2, constr_hess=SR1()),
