@@ -101,7 +101,7 @@ def polar(a, side="right"):
         raise ValueError("`a` must be a 2-D array.")
     # accommodate square empty matrices
     if a.size == 0:
-        dt = polar(np.eye(2, dtype = a.dtype))[0].dtype
+        dt = polar(np.eye(2, dtype=a.dtype))[0].dtype
         u = np.empty(a.shape, dtype=dt)
         if side == 'right':
             # a = up
