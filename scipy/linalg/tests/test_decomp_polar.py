@@ -103,7 +103,7 @@ def test_empty(dt):
     for a in empty_cases:
         # a = up 
         u, p = polar(a, side='right')
-        u_n, p_n = polar(np.eye(2, dtype = dt))
+        u_n, p_n = polar(np.eye(2, dtype=dt))
 
         assert_equal(u.dtype, u_n.dtype)
         assert_equal(p.dtype, p_n.dtype)
@@ -112,7 +112,7 @@ def test_empty(dt):
 
         # a = pu
         u, p = polar(a, side='left')
-        u_n, p_n = polar(np.eye(2, dtype = dt))
+        u_n, p_n = polar(np.eye(2, dtype=dt))
 
         assert_equal(u.dtype, u_n.dtype)
         assert_equal(p.dtype, p_n.dtype)
