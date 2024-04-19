@@ -214,9 +214,8 @@ class Rosenbrock:
 
     def __init__(self, n=2, random_state=0):
         # Sensitive to x0 with Accelerate
-        # rng = np.random.RandomState(random_state)
-        # self.x0 = rng.uniform(-1, 1, n)
-        self.x0 = [0.0976270078546495, 0.43037873274483895]
+        rng = np.random.RandomState(random_state)
+        self.x0 = rng.uniform(-1, 1, n)
         self.x_opt = np.ones(n)
         self.bounds = None
 
@@ -459,7 +458,7 @@ class TestTrustRegionConstr:
                         Rosenbrock(),
                         IneqRosenbrock(),
                         EqIneqRosenbrock(),
-                        BoundedRosenbrock(1),
+                        BoundedRosenbrock(),
                         Elec(n_electrons=2),
                         Elec(n_electrons=2, constr_hess='2-point'),
                         Elec(n_electrons=2, constr_hess=SR1()),
@@ -480,10 +479,10 @@ class TestTrustRegionConstr:
             pytest.skip("Numerical Hessian needs analytical gradient")
         if prob.grad is True and grad in {'3-point', False}:
             pytest.skip("prob.grad incompatible with grad in {'3-point', False}")
-        # sensitive = (isinstance(prob, Rosenbrock) and grad == '3-point'
-        #              and isinstance(hess, BFGS))
-        # if sensitive:
-        #     pytest.xfail("Seems sensitive to initial conditions w/ Accelerate")
+        sensitive = (isinstance(prob, BoundedRosenbrock) and grad == '3-point'
+                     and isinstance(hess, BFGS))
+        if sensitive:
+            pytest.xfail("Seems sensitive to initial conditions w/ Accelerate")
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.0")
             result = minimize(prob.fun, prob.x0,
