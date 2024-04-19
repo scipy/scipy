@@ -221,10 +221,11 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
         else:
             p = 2 * np.minimum(dist.sf(r_plus), dist.cdf(r_plus))
             p = np.clip(p, 0, 1)
-    else:
+    else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
             (d,), lambda d: _wilcoxon_statistic(d, zero_method)[0],
-            permutation_type='samples', alternative=alternative, axis=-1).pvalue
+            permutation_type='samples', **method._asdict(),
+            alternative=alternative, axis=-1).pvalue
 
     # for backward compatibility...
     statistic = np.minimum(r_plus, r_minus) if alternative=='two-sided' else r_plus

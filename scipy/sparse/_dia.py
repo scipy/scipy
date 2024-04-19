@@ -200,6 +200,9 @@ class _dia_base(_data_matrix):
                 m.setdiag(other.diagonal(d), d)
         return m
 
+    def _mul_scalar(self, other):
+        return self._with_data(self.data * other)
+
     def _matmul_vector(self, other):
         x = other
 

@@ -44,7 +44,7 @@ dependencies:
   - sphinx-design
   - jupytext
   - myst-nb
-  - jupyterlite-sphinx>=0.12.0
+  - jupyterlite-sphinx>=0.13.1
   # Some optional test dependencies
   - mpmath
   - gmpy2
@@ -55,5 +55,5 @@ dependencies:
   - doit>=0.36.0
   - pydevtool
   # For linting
-  - ruff
+  - ruff>=0.0.292
   - cython-lint

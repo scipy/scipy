@@ -31,7 +31,7 @@
 from collections.abc import Iterable
 import numbers
 import warnings
-import numpy
+import numpy as np
 import operator
 
 from scipy._lib._util import normalize_axis_index
@@ -60,21 +60,21 @@ def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
     if complex_input and complex_weights:
         # real component of the output
         func(input.real, weights.real, output=output.real,
-             cval=numpy.real(cval), **kwargs)
+             cval=np.real(cval), **kwargs)
         output.real -= func(input.imag, weights.imag, output=None,
-                            cval=numpy.imag(cval), **kwargs)
+                            cval=np.imag(cval), **kwargs)
         # imaginary component of the output
         func(input.real, weights.imag, output=output.imag,
-             cval=numpy.real(cval), **kwargs)
+             cval=np.real(cval), **kwargs)
         output.imag += func(input.imag, weights.real, output=None,
-                            cval=numpy.imag(cval), **kwargs)
+                            cval=np.imag(cval), **kwargs)
     elif complex_input:
-        func(input.real, weights, output=output.real, cval=numpy.real(cval),
+        func(input.real, weights, output=output.real, cval=np.real(cval),
              **kwargs)
-        func(input.imag, weights, output=output.imag, cval=numpy.imag(cval),
+        func(input.imag, weights, output=output.imag, cval=np.imag(cval),
              **kwargs)
     else:
-        if numpy.iscomplexobj(cval):
+        if np.iscomplexobj(cval):
             raise ValueError("Cannot provide a complex-valued cval when the "
                              "input is real.")
         func(input, weights.real, output=output.real, cval=cval, **kwargs)
@@ -112,21 +112,21 @@ def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
     >>> correlate1d([2, 8, 0, 4, 1, 9, 9, 0], weights=[1, 3])
     array([ 8, 26,  8, 12,  7, 28, 36,  9])
     """
-    input = numpy.asarray(input)
-    weights = numpy.asarray(weights)
+    input = np.asarray(input)
+    weights = np.asarray(weights)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
         if complex_weights:
             weights = weights.conj()
-            weights = weights.astype(numpy.complex128, copy=False)
+            weights = weights.astype(np.complex128, copy=False)
         kwargs = dict(axis=axis, mode=mode, origin=origin)
         output = _ni_support._get_output(output, input, complex_output=True)
         return _complex_via_real_components(correlate1d, input, weights,
                                             output, cval, **kwargs)
 
     output = _ni_support._get_output(output, input)
-    weights = numpy.asarray(weights, dtype=numpy.float64)
+    weights = np.asarray(weights, dtype=np.float64)
     if weights.ndim != 1 or weights.shape[0] < 1:
         raise RuntimeError('no filter weights given')
     if not weights.flags.contiguous:
@@ -176,7 +176,7 @@ def convolve1d(input, weights, axis=-1, output=None, mode="reflect",
     origin = -origin
     if not len(weights) & 1:
         origin -= 1
-    weights = numpy.asarray(weights)
+    weights = np.asarray(weights)
     if weights.dtype.kind == 'c':
         # pre-conjugate here to counteract the conjugation in correlate1d
         weights = weights.conj()
@@ -189,10 +189,10 @@ def _gaussian_kernel1d(sigma, order, radius):
     """
     if order < 0:
         raise ValueError('order must be non-negative')
-    exponent_range = numpy.arange(order + 1)
+    exponent_range = np.arange(order + 1)
     sigma2 = sigma * sigma
-    x = numpy.arange(-radius, radius+1)
-    phi_x = numpy.exp(-0.5 / sigma2 * x ** 2)
+    x = np.arange(-radius, radius+1)
+    phi_x = np.exp(-0.5 / sigma2 * x ** 2)
     phi_x = phi_x / phi_x.sum()
 
     if order == 0:
@@ -203,10 +203,10 @@ def _gaussian_kernel1d(sigma, order, radius):
         # p'(x) = -1 / sigma ** 2
         # Implement q'(x) + q(x) * p'(x) as a matrix operator and apply to the
         # coefficients of q(x)
-        q = numpy.zeros(order + 1)
+        q = np.zeros(order + 1)
         q[0] = 1
-        D = numpy.diag(exponent_range[1:], 1)  # D @ q(x) = q'(x)
-        P = numpy.diag(numpy.ones(order)/-sigma2, -1)  # P @ q(x) = q(x) * p'(x)
+        D = np.diag(exponent_range[1:], 1)  # D @ q(x) = q'(x)
+        P = np.diag(np.ones(order)/-sigma2, -1)  # P @ q(x) = q(x) * p'(x)
         Q_deriv = D + P
         for _ in range(order):
             q = Q_deriv.dot(q)
@@ -369,7 +369,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _ni_support._get_output(output, input)
 
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -441,7 +441,7 @@ def prewitt(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
 
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -499,7 +499,7 @@ def sobel(input, axis=-1, output=None, mode="reflect", cval=0.0):
     >>> plt.show()
 
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
     output = _ni_support._get_output(output, input)
     modes = _ni_support._normalize_sequence(mode, input.ndim)
@@ -542,7 +542,7 @@ def generic_laplace(input, derivative2, output=None, mode="reflect",
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
@@ -633,7 +633,7 @@ def gaussian_laplace(input, sigma, output=None, mode="reflect",
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
 
     def derivative2(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
@@ -679,21 +679,21 @@ def generic_gradient_magnitude(input, derivative, output=None,
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _ni_support._get_output(output, input)
     axes = list(range(input.ndim))
     if len(axes) > 0:
         modes = _ni_support._normalize_sequence(mode, len(axes))
         derivative(input, axes[0], output, modes[0], cval,
                    *extra_arguments, **extra_keywords)
-        numpy.multiply(output, output, output)
+        np.multiply(output, output, output)
         for ii in range(1, len(axes)):
             tmp = derivative(input, axes[ii], output.dtype, modes[ii], cval,
                              *extra_arguments, **extra_keywords)
-            numpy.multiply(tmp, tmp, tmp)
+            np.multiply(tmp, tmp, tmp)
             output += tmp
         # This allows the sqrt to work with a different default casting
-        numpy.sqrt(output, output, casting='unsafe')
+        np.sqrt(output, output, casting='unsafe')
     else:
         output[...] = input[...]
     return output
@@ -735,7 +735,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
 
     def derivative(input, axis, output, mode, cval, sigma, **kwargs):
         order = [0] * input.ndim
@@ -750,13 +750,13 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                            convolution):
-    input = numpy.asarray(input)
-    weights = numpy.asarray(weights)
+    input = np.asarray(input)
+    weights = np.asarray(weights)
     complex_input = input.dtype.kind == 'c'
     complex_weights = weights.dtype.kind == 'c'
     if complex_input or complex_weights:
         if complex_weights and not convolution:
-            # As for numpy.correlate, conjugate weights rather than input.
+            # As for np.correlate, conjugate weights rather than input.
             weights = weights.conj()
         kwargs = dict(
             mode=mode, origin=origin, convolution=convolution
@@ -767,7 +767,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                                             weights, output, cval, **kwargs)
 
     origins = _ni_support._normalize_sequence(origin, input.ndim)
-    weights = numpy.asarray(weights, dtype=numpy.float64)
+    weights = np.asarray(weights, dtype=np.float64)
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
         raise RuntimeError('filter weights array has incorrect shape.')
@@ -786,7 +786,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
     if not weights.flags.contiguous:
         weights = weights.copy()
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.may_share_memory(input, output)
+    temp_needed = np.may_share_memory(input, output)
     if temp_needed:
         # input and output arrays cannot share memory
         temp = output
@@ -1006,7 +1006,7 @@ def uniform_filter1d(input, size, axis=-1, output=None,
     >>> uniform_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([4, 3, 4, 1, 4, 6, 6, 3])
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
         raise RuntimeError('incorrect filter size')
@@ -1021,9 +1021,9 @@ def uniform_filter1d(input, size, axis=-1, output=None,
                                    origin)
     else:
         _nd_image.uniform_filter1d(input.real, size, axis, output.real, mode,
-                                   numpy.real(cval), origin)
+                                   np.real(cval), origin)
         _nd_image.uniform_filter1d(input.imag, size, axis, output.imag, mode,
-                                   numpy.imag(cval), origin)
+                                   np.imag(cval), origin)
     return output
 
 
@@ -1077,7 +1077,7 @@ def uniform_filter(input, size=3, output=None, mode="reflect",
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    input = np.asarray(input)
     output = _ni_support._get_output(output, input,
                                      complex_output=input.dtype.kind == 'c')
     axes = _ni_support._check_axes(axes, input.ndim)
@@ -1139,8 +1139,8 @@ def minimum_filter1d(input, size, axis=-1, output=None,
     >>> minimum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([2, 0, 0, 0, 1, 1, 0, 0])
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
@@ -1196,8 +1196,8 @@ def maximum_filter1d(input, size, axis=-1, output=None,
     >>> maximum_filter1d([2, 8, 0, 4, 1, 9, 9, 0], size=3)
     array([8, 8, 8, 4, 9, 9, 9, 9])
     """
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axis = normalize_axis_index(axis, input.ndim)
     if size < 1:
@@ -1222,7 +1222,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 raise RuntimeError("no footprint provided")
             separable = True
         else:
-            footprint = numpy.asarray(footprint, dtype=bool)
+            footprint = np.asarray(footprint, dtype=bool)
             if not footprint.any():
                 raise ValueError("All-zero footprint is not supported.")
             if footprint.all():
@@ -1232,17 +1232,17 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             else:
                 separable = False
     else:
-        structure = numpy.asarray(structure, dtype=numpy.float64)
+        structure = np.asarray(structure, dtype=np.float64)
         separable = False
         if footprint is None:
-            footprint = numpy.ones(structure.shape, bool)
+            footprint = np.ones(structure.shape, bool)
         else:
-            footprint = numpy.asarray(footprint, dtype=bool)
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+            footprint = np.asarray(footprint, dtype=bool)
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
-    temp_needed = numpy.may_share_memory(input, output)
+    temp_needed = np.may_share_memory(input, output)
     if temp_needed:
         # input and output arrays cannot share memory
         temp = output
@@ -1270,7 +1270,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         if num_axes < input.ndim:
             if footprint.ndim != num_axes:
                 raise RuntimeError("footprint array has incorrect shape")
-            footprint = numpy.expand_dims(
+            footprint = np.expand_dims(
                 footprint,
                 tuple(ax for ax in range(input.ndim) if ax not in axes)
             )
@@ -1286,7 +1286,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             if len(structure.shape) != input.ndim:
                 raise RuntimeError('structure array has incorrect shape')
             if num_axes != structure.ndim:
-                structure = numpy.expand_dims(
+                structure = np.expand_dims(
                     structure,
                     tuple(ax for ax in range(structure.ndim) if ax not in axes)
                 )
@@ -1408,8 +1408,8 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
     if (size is not None) and (footprint is not None):
         warnings.warn("ignoring size because footprint is set",
                       UserWarning, stacklevel=3)
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
@@ -1418,9 +1418,9 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         if size is None:
             raise RuntimeError("no footprint or filter size provided")
         sizes = _ni_support._normalize_sequence(size, num_axes)
-        footprint = numpy.ones(sizes, dtype=bool)
+        footprint = np.ones(sizes, dtype=bool)
     else:
-        footprint = numpy.asarray(footprint, dtype=bool)
+        footprint = np.asarray(footprint, dtype=bool)
     if num_axes < input.ndim:
         # set origin = 0 for any axes not being filtered
         origins_temp = [0,] * input.ndim
@@ -1439,7 +1439,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         # insert singleton dimension along any non-filtered axes
         if footprint.ndim != num_axes:
             raise RuntimeError("footprint array has incorrect shape")
-        footprint = numpy.expand_dims(
+        footprint = np.expand_dims(
             footprint,
             tuple(ax for ax in range(input.ndim) if ax not in axes)
         )
@@ -1451,7 +1451,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             raise ValueError('invalid origin')
     if not footprint.flags.contiguous:
         footprint = footprint.copy()
-    filter_size = numpy.where(footprint, 1, 0).sum()
+    filter_size = np.where(footprint, 1, 0).sum()
     if operation == 'median':
         rank = filter_size // 2
     elif operation == 'percentile':
@@ -1476,7 +1476,7 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                               origins, axes=None)
     else:
         output = _ni_support._get_output(output, input)
-        temp_needed = numpy.may_share_memory(input, output)
+        temp_needed = np.may_share_memory(input, output)
         if temp_needed:
             # input and output arrays cannot share memory
             temp = output
@@ -1704,8 +1704,8 @@ def generic_filter1d(input, function, filter_size, axis=-1,
     """
     if extra_keywords is None:
         extra_keywords = {}
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     output = _ni_support._get_output(output, input)
     if filter_size < 1:
@@ -1786,14 +1786,14 @@ def generic_filter(input, function, size=None, footprint=None,
 
     >>> import numpy as np
     >>> from scipy import datasets
-    >>> from scipy.ndimage import generic_filter
+    >>> from scipy.ndimage import zoom, generic_filter
     >>> import matplotlib.pyplot as plt
-    >>> ascent = datasets.ascent()
+    >>> ascent = zoom(datasets.ascent(), 0.5)
 
-    Compute a maximum filter with kernel size 10 by passing a simple NumPy
+    Compute a maximum filter with kernel size 5 by passing a simple NumPy
     aggregation function as argument to `function`.
 
-    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [5, 5])
 
     While a maximmum filter could also directly be obtained using
     `maximum_filter`, `generic_filter` allows generic Python function or
@@ -1807,7 +1807,7 @@ def generic_filter(input, function, size=None, footprint=None,
 
     Plot the original and filtered images.
 
-    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> fig, axes = plt.subplots(3, 1, figsize=(3, 9))
     >>> plt.gray()  # show the filtered result in grayscale
     >>> top, middle, bottom = axes
     >>> for ax in axes:
@@ -1815,7 +1815,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> top.imshow(ascent)
     >>> top.set_title("Original image")
     >>> middle.imshow(maximum_filter_result)
-    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> middle.set_title("Maximum filter, Kernel: 5x5")
     >>> bottom.imshow(custom_filter_result)
     >>> bottom.set_title("Custom filter, Kernel: 5x5")
     >>> fig.tight_layout()
@@ -1826,17 +1826,17 @@ def generic_filter(input, function, size=None, footprint=None,
                       UserWarning, stacklevel=2)
     if extra_keywords is None:
         extra_keywords = {}
-    input = numpy.asarray(input)
-    if numpy.iscomplexobj(input):
+    input = np.asarray(input)
+    if np.iscomplexobj(input):
         raise TypeError('Complex type not supported')
     origins = _ni_support._normalize_sequence(origin, input.ndim)
     if footprint is None:
         if size is None:
             raise RuntimeError("no footprint or filter size provided")
         sizes = _ni_support._normalize_sequence(size, input.ndim)
-        footprint = numpy.ones(sizes, dtype=bool)
+        footprint = np.ones(sizes, dtype=bool)
     else:
-        footprint = numpy.asarray(footprint, dtype=bool)
+        footprint = np.asarray(footprint, dtype=bool)
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
         raise RuntimeError('filter footprint array has incorrect shape.')

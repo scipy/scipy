@@ -2,7 +2,7 @@
 import functools
 import itertools
 import math
-import numpy
+import numpy as np
 
 from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_almost_equal,
@@ -27,8 +27,8 @@ def _complex_correlate(array, kernel, real_dtype, convolve=False,
 
     When convolve==False, correlation is performed instead
     """
-    array = numpy.asarray(array)
-    kernel = numpy.asarray(kernel)
+    array = np.asarray(array)
+    kernel = np.asarray(kernel)
     complex_array = array.dtype.kind == 'c'
     complex_kernel = kernel.dtype.kind == 'c'
     if array.ndim == 1:
@@ -42,20 +42,20 @@ def _complex_correlate(array, kernel, real_dtype, convolve=False,
         #      imag(cval) for array.imag component
         output = (
             func(array.real, kernel.real, output=real_dtype,
-                 mode=mode, cval=numpy.real(cval)) -
+                 mode=mode, cval=np.real(cval)) -
             func(array.imag, kernel.imag, output=real_dtype,
-                 mode=mode, cval=numpy.imag(cval)) +
+                 mode=mode, cval=np.imag(cval)) +
             1j * func(array.imag, kernel.real, output=real_dtype,
-                      mode=mode, cval=numpy.imag(cval)) +
+                      mode=mode, cval=np.imag(cval)) +
             1j * func(array.real, kernel.imag, output=real_dtype,
-                      mode=mode, cval=numpy.real(cval))
+                      mode=mode, cval=np.real(cval))
         )
     elif complex_array:
         output = (
             func(array.real, kernel, output=real_dtype, mode=mode,
-                 cval=numpy.real(cval)) +
+                 cval=np.real(cval)) +
             1j * func(array.imag, kernel, output=real_dtype, mode=mode,
-                      cval=numpy.imag(cval))
+                      cval=np.imag(cval))
         )
     elif complex_kernel:
         # real array so cval is real too
@@ -88,7 +88,7 @@ class TestNdimageFilters:
 
     def _validate_complex(self, array, kernel, type2, mode='reflect', cval=0):
         # utility for validating complex-valued correlations
-        real_dtype = numpy.asarray([], dtype=type2).real.dtype
+        real_dtype = np.asarray([], dtype=type2).real.dtype
         expected = _complex_correlate(
             array, kernel, real_dtype, convolve=False, mode=mode, cval=cval
         )
@@ -110,7 +110,7 @@ class TestNdimageFilters:
         assert_equal(output.dtype.type, type2)
 
         # test correlate with pre-allocated output
-        output = numpy.zeros_like(array, dtype=type2)
+        output = np.zeros_like(array, dtype=type2)
         correlate(array, kernel, output=output)
         assert_array_almost_equal(expected, output)
 
@@ -137,7 +137,7 @@ class TestNdimageFilters:
             convolve(array, kernel, output=real_dtype)
 
         # raises if output array is provided, but is not complex-valued
-        output_real = numpy.zeros_like(array, dtype=real_dtype)
+        output_real = np.zeros_like(array, dtype=real_dtype)
         with assert_raises(RuntimeError):
             correlate(array, kernel, output=output_real)
 
@@ -145,8 +145,8 @@ class TestNdimageFilters:
             convolve(array, kernel, output=output_real)
 
     def test_correlate01(self):
-        array = numpy.array([1, 2])
-        weights = numpy.array([2])
+        array = np.array([1, 2])
+        weights = np.array([2])
         expected = [2, 4]
 
         output = ndimage.correlate(array, weights)
@@ -162,16 +162,16 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     def test_correlate01_overlap(self):
-        array = numpy.arange(256).reshape(16, 16)
-        weights = numpy.array([2])
+        array = np.arange(256).reshape(16, 16)
+        weights = np.array([2])
         expected = 2 * array
 
         ndimage.correlate1d(array, weights, output=array)
         assert_array_almost_equal(array, expected)
 
     def test_correlate02(self):
-        array = numpy.array([1, 2, 3])
-        kernel = numpy.array([1])
+        array = np.array([1, 2, 3])
+        kernel = np.array([1])
 
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
@@ -186,8 +186,8 @@ class TestNdimageFilters:
         assert_array_almost_equal(array, output)
 
     def test_correlate03(self):
-        array = numpy.array([1])
-        weights = numpy.array([1, 1])
+        array = np.array([1])
+        weights = np.array([1, 1])
         expected = [2]
 
         output = ndimage.correlate(array, weights)
@@ -203,10 +203,10 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     def test_correlate04(self):
-        array = numpy.array([1, 2])
+        array = np.array([1, 2])
         tcor = [2, 3]
         tcov = [3, 4]
-        weights = numpy.array([1, 1])
+        weights = np.array([1, 1])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, tcor)
         output = ndimage.convolve(array, weights)
@@ -217,10 +217,10 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, tcov)
 
     def test_correlate05(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         tcor = [2, 3, 5]
         tcov = [3, 5, 6]
-        kernel = numpy.array([1, 1])
+        kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(tcor, output)
         output = ndimage.convolve(array, kernel)
@@ -231,10 +231,10 @@ class TestNdimageFilters:
         assert_array_almost_equal(tcov, output)
 
     def test_correlate06(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         tcor = [9, 14, 17]
         tcov = [7, 10, 15]
-        weights = numpy.array([1, 2, 3])
+        weights = np.array([1, 2, 3])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, tcor)
         output = ndimage.convolve(array, weights)
@@ -245,9 +245,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, tcov)
 
     def test_correlate07(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         expected = [5, 8, 11]
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, expected)
         output = ndimage.convolve(array, weights)
@@ -258,10 +258,10 @@ class TestNdimageFilters:
         assert_array_almost_equal(output, expected)
 
     def test_correlate08(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         tcor = [1, 2, 5]
         tcov = [3, 6, 7]
-        weights = numpy.array([1, 2, -1])
+        weights = np.array([1, 2, -1])
         output = ndimage.correlate(array, weights)
         assert_array_almost_equal(output, tcor)
         output = ndimage.convolve(array, weights)
@@ -273,7 +273,7 @@ class TestNdimageFilters:
 
     def test_correlate09(self):
         array = []
-        kernel = numpy.array([1, 1])
+        kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
         output = ndimage.convolve(array, kernel)
@@ -285,27 +285,27 @@ class TestNdimageFilters:
 
     def test_correlate10(self):
         array = [[]]
-        kernel = numpy.array([[1, 1]])
+        kernel = np.array([[1, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal(array, output)
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal(array, output)
 
     def test_correlate11(self):
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]])
-        kernel = numpy.array([[1, 1],
-                              [1, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]])
+        kernel = np.array([[1, 1],
+                           [1, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
         output = ndimage.convolve(array, kernel)
         assert_array_almost_equal([[12, 16, 18], [18, 22, 24]], output)
 
     def test_correlate12(self):
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]])
-        kernel = numpy.array([[1, 0],
-                              [0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]])
+        kernel = np.array([[1, 0],
+                           [0, 1]])
         output = ndimage.correlate(array, kernel)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
         output = ndimage.convolve(array, kernel)
@@ -314,10 +314,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_kernel', types)
     def test_correlate13(self, dtype_array, dtype_kernel):
-        kernel = numpy.array([[1, 0],
+        kernel = np.array([[1, 0],
                               [0, 1]])
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_array)
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel, output=dtype_kernel)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
         assert_equal(output.dtype.type, dtype_kernel)
@@ -330,11 +330,11 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate14(self, dtype_array, dtype_output):
-        kernel = numpy.array([[1, 0],
-                              [0, 1]])
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_array)
-        output = numpy.zeros(array.shape, dtype_output)
+        kernel = np.array([[1, 0],
+                           [0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_array)
+        output = np.zeros(array.shape, dtype_output)
         ndimage.correlate(array, kernel, output=output)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
         assert_equal(output.dtype.type, dtype_output)
@@ -345,36 +345,36 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate15(self, dtype_array):
-        kernel = numpy.array([[1, 0],
-                              [0, 1]])
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_array)
-        output = ndimage.correlate(array, kernel, output=numpy.float32)
+        kernel = np.array([[1, 0],
+                           [0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel, output=np.float32)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
-        output = ndimage.convolve(array, kernel, output=numpy.float32)
+        output = ndimage.convolve(array, kernel, output=np.float32)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate16(self, dtype_array):
-        kernel = numpy.array([[0.5, 0],
-                              [0, 0.5]])
-        array = numpy.array([[1, 2, 3], [4, 5, 6]], dtype_array)
-        output = ndimage.correlate(array, kernel, output=numpy.float32)
+        kernel = np.array([[0.5, 0],
+                           [0, 0.5]])
+        array = np.array([[1, 2, 3], [4, 5, 6]], dtype_array)
+        output = ndimage.correlate(array, kernel, output=np.float32)
         assert_array_almost_equal([[1, 1.5, 2.5], [2.5, 3, 4]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
-        output = ndimage.convolve(array, kernel, output=numpy.float32)
+        output = ndimage.convolve(array, kernel, output=np.float32)
         assert_array_almost_equal([[3, 4, 4.5], [4.5, 5.5, 6]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
     def test_correlate17(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         tcor = [3, 5, 6]
         tcov = [2, 3, 5]
-        kernel = numpy.array([1, 1])
+        kernel = np.array([1, 1])
         output = ndimage.correlate(array, kernel, origin=-1)
         assert_array_almost_equal(tcor, output)
         output = ndimage.convolve(array, kernel, origin=-1)
@@ -386,25 +386,25 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate18(self, dtype_array):
-        kernel = numpy.array([[1, 0],
-                              [0, 1]])
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_array)
+        kernel = np.array([[1, 0],
+                           [0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel,
-                                   output=numpy.float32,
+                                   output=np.float32,
                                    mode='nearest', origin=-1)
         assert_array_almost_equal([[6, 8, 9], [9, 11, 12]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
         output = ndimage.convolve(array, kernel,
-                                  output=numpy.float32,
+                                  output=np.float32,
                                   mode='nearest', origin=-1)
         assert_array_almost_equal([[2, 3, 5], [5, 6, 8]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
     def test_correlate_mode_sequence(self):
-        kernel = numpy.ones((2, 2))
-        array = numpy.ones((3, 3), float)
+        kernel = np.ones((2, 2))
+        array = np.ones((3, 3), float)
         with assert_raises(RuntimeError):
             ndimage.correlate(array, kernel, mode=['nearest', 'reflect'])
         with assert_raises(RuntimeError):
@@ -412,40 +412,40 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype_array', types)
     def test_correlate19(self, dtype_array):
-        kernel = numpy.array([[1, 0],
-                              [0, 1]])
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_array)
+        kernel = np.array([[1, 0],
+                           [0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_array)
         output = ndimage.correlate(array, kernel,
-                                   output=numpy.float32,
+                                   output=np.float32,
                                    mode='nearest', origin=[-1, 0])
         assert_array_almost_equal([[5, 6, 8], [8, 9, 11]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
         output = ndimage.convolve(array, kernel,
-                                  output=numpy.float32,
+                                  output=np.float32,
                                   mode='nearest', origin=[-1, 0])
         assert_array_almost_equal([[3, 5, 6], [6, 8, 9]], output)
-        assert_equal(output.dtype.type, numpy.float32)
+        assert_equal(output.dtype.type, np.float32)
 
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate20(self, dtype_array, dtype_output):
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         expected = [[5, 10, 15], [7, 14, 21]]
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], dtype_array)
-        output = numpy.zeros((2, 3), dtype_output)
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]], dtype_array)
+        output = np.zeros((2, 3), dtype_output)
         ndimage.correlate1d(array, weights, axis=0, output=output)
         assert_array_almost_equal(output, expected)
         ndimage.convolve1d(array, weights, axis=0, output=output)
         assert_array_almost_equal(output, expected)
 
     def test_correlate21(self):
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]])
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]])
         expected = [[5, 10, 15], [7, 14, 21]]
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         output = ndimage.correlate1d(array, weights, axis=0)
         assert_array_almost_equal(output, expected)
         output = ndimage.convolve1d(array, weights, axis=0)
@@ -454,11 +454,11 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate22(self, dtype_array, dtype_output):
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         expected = [[6, 12, 18], [6, 12, 18]]
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], dtype_array)
-        output = numpy.zeros((2, 3), dtype_output)
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]], dtype_array)
+        output = np.zeros((2, 3), dtype_output)
         ndimage.correlate1d(array, weights, axis=0,
                             mode='wrap', output=output)
         assert_array_almost_equal(output, expected)
@@ -469,11 +469,11 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate23(self, dtype_array, dtype_output):
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         expected = [[5, 10, 15], [7, 14, 21]]
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], dtype_array)
-        output = numpy.zeros((2, 3), dtype_output)
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]], dtype_array)
+        output = np.zeros((2, 3), dtype_output)
         ndimage.correlate1d(array, weights, axis=0,
                             mode='nearest', output=output)
         assert_array_almost_equal(output, expected)
@@ -484,12 +484,12 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate24(self, dtype_array, dtype_output):
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         tcor = [[7, 14, 21], [8, 16, 24]]
         tcov = [[4, 8, 12], [5, 10, 15]]
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], dtype_array)
-        output = numpy.zeros((2, 3), dtype_output)
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]], dtype_array)
+        output = np.zeros((2, 3), dtype_output)
         ndimage.correlate1d(array, weights, axis=0,
                             mode='nearest', output=output, origin=-1)
         assert_array_almost_equal(output, tcor)
@@ -500,12 +500,12 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_array', types)
     @pytest.mark.parametrize('dtype_output', types)
     def test_correlate25(self, dtype_array, dtype_output):
-        weights = numpy.array([1, 2, 1])
+        weights = np.array([1, 2, 1])
         tcor = [[4, 8, 12], [5, 10, 15]]
         tcov = [[7, 14, 21], [8, 16, 24]]
-        array = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], dtype_array)
-        output = numpy.zeros((2, 3), dtype_output)
+        array = np.array([[1, 2, 3],
+                          [2, 4, 6]], dtype_array)
+        output = np.zeros((2, 3), dtype_output)
         ndimage.correlate1d(array, weights, axis=0,
                             mode='nearest', output=output, origin=1)
         assert_array_almost_equal(output, tcor)
@@ -515,21 +515,21 @@ class TestNdimageFilters:
 
     def test_correlate26(self):
         # test fix for gh-11661 (mirror extension of a length 1 signal)
-        y = ndimage.convolve1d(numpy.ones(1), numpy.ones(5), mode='mirror')
-        assert_array_equal(y, numpy.array(5.))
+        y = ndimage.convolve1d(np.ones(1), np.ones(5), mode='mirror')
+        assert_array_equal(y, np.array(5.))
 
-        y = ndimage.correlate1d(numpy.ones(1), numpy.ones(5), mode='mirror')
-        assert_array_equal(y, numpy.array(5.))
+        y = ndimage.correlate1d(np.ones(1), np.ones(5), mode='mirror')
+        assert_array_equal(y, np.array(5.))
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_kernel(self, dtype_input, dtype_kernel,
                                       dtype_output):
-        kernel = numpy.array([[1, 0],
-                              [0, 1 + 1j]], dtype_kernel)
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_input)
+        kernel = np.array([[1, 0],
+                           [0, 1 + 1j]], dtype_kernel)
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
@@ -540,10 +540,10 @@ class TestNdimageFilters:
                                            dtype_output, mode):
         # test use of non-zero cval with complex inputs
         # also verifies that mode 'grid-constant' does not segfault
-        kernel = numpy.array([[1, 0],
-                              [0, 1 + 1j]], dtype_kernel)
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_input)
+        kernel = np.array([[1, 0],
+                           [0, 1 + 1j]], dtype_kernel)
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_input)
         self._validate_complex(array, kernel, dtype_output, mode=mode,
                                cval=5.0)
 
@@ -552,23 +552,23 @@ class TestNdimageFilters:
     def test_correlate_complex_kernel_invalid_cval(self, dtype_input,
                                                    dtype_kernel):
         # cannot give complex cval with a real image
-        kernel = numpy.array([[1, 0],
-                              [0, 1 + 1j]], dtype_kernel)
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype_input)
+        kernel = np.array([[1, 0],
+                           [0, 1 + 1j]], dtype_kernel)
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype_input)
         for func in [ndimage.convolve, ndimage.correlate, ndimage.convolve1d,
                      ndimage.correlate1d]:
             with pytest.raises(ValueError):
                 func(array, kernel, mode='constant', cval=5.0 + 1.0j,
-                     output=numpy.complex64)
+                     output=np.complex64)
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
     @pytest.mark.parametrize('dtype_input', types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel(self, dtype_input, dtype_kernel,
                                         dtype_output):
-        kernel = numpy.array([1, 1 + 1j], dtype_kernel)
-        array = numpy.array([1, 2, 3, 4, 5, 6], dtype_input)
+        kernel = np.array([1, 1 + 1j], dtype_kernel)
+        array = np.array([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype_kernel', complex_types)
@@ -576,8 +576,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_kernel_cval(self, dtype_input, dtype_kernel,
                                              dtype_output):
-        kernel = numpy.array([1, 1 + 1j], dtype_kernel)
-        array = numpy.array([1, 2, 3, 4, 5, 6], dtype_input)
+        kernel = np.array([1, 1 + 1j], dtype_kernel)
+        array = np.array([1, 2, 3, 4, 5, 6], dtype_input)
         self._validate_complex(array, kernel, dtype_output, mode='constant',
                                cval=5.0)
 
@@ -586,10 +586,10 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input(self, dtype_input, dtype_kernel,
                                      dtype_output):
-        kernel = numpy.array([[1, 0],
-                              [0, 1]], dtype_kernel)
-        array = numpy.array([[1, 2j, 3],
-                             [1 + 4j, 5, 6j]], dtype_input)
+        kernel = np.array([[1, 0],
+                           [0, 1]], dtype_kernel)
+        array = np.array([[1, 2j, 3],
+                          [1 + 4j, 5, 6j]], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype_kernel', types)
@@ -597,8 +597,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input(self, dtype_input, dtype_kernel,
                                        dtype_output):
-        kernel = numpy.array([1, 0, 1], dtype_kernel)
-        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
+        kernel = np.array([1, 0, 1], dtype_kernel)
+        array = np.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype_kernel', types)
@@ -606,63 +606,63 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_cval(self, dtype_input, dtype_kernel,
                                             dtype_output):
-        kernel = numpy.array([1, 0, 1], dtype_kernel)
-        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
+        kernel = np.array([1, 0, 1], dtype_kernel)
+        array = np.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype_input)
         self._validate_complex(array, kernel, dtype_output, mode='constant',
                                cval=5 - 3j)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel(self, dtype, dtype_output):
-        kernel = numpy.array([[1, 0],
-                              [0, 1 + 1j]], dtype)
-        array = numpy.array([[1, 2j, 3],
-                             [1 + 4j, 5, 6j]], dtype)
+        kernel = np.array([[1, 0],
+                           [0, 1 + 1j]], dtype)
+        array = np.array([[1, 2j, 3],
+                          [1 + 4j, 5, 6j]], dtype)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate_complex_input_and_kernel_cval(self, dtype,
                                                      dtype_output):
-        kernel = numpy.array([[1, 0],
-                              [0, 1 + 1j]], dtype)
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6]], dtype)
+        kernel = np.array([[1, 0],
+                           [0, 1 + 1j]], dtype)
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6]], dtype)
         self._validate_complex(array, kernel, dtype_output, mode='constant',
                                cval=5.0 + 2.0j)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel(self, dtype, dtype_output):
-        kernel = numpy.array([1, 1 + 1j], dtype)
-        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
+        kernel = np.array([1, 1 + 1j], dtype)
+        array = np.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
         self._validate_complex(array, kernel, dtype_output)
 
     @pytest.mark.parametrize('dtype', complex_types)
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_correlate1d_complex_input_and_kernel_cval(self, dtype,
                                                        dtype_output):
-        kernel = numpy.array([1, 1 + 1j], dtype)
-        array = numpy.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
+        kernel = np.array([1, 1 + 1j], dtype)
+        array = np.array([1, 2j, 3, 1 + 4j, 5, 6j], dtype)
         self._validate_complex(array, kernel, dtype_output, mode='constant',
                                cval=5.0 + 2.0j)
 
     def test_gauss01(self):
-        input = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], numpy.float32)
+        input = np.array([[1, 2, 3],
+                          [2, 4, 6]], np.float32)
         output = ndimage.gaussian_filter(input, 0)
         assert_array_almost_equal(output, input)
 
     def test_gauss02(self):
-        input = numpy.array([[1, 2, 3],
-                             [2, 4, 6]], numpy.float32)
+        input = np.array([[1, 2, 3],
+                          [2, 4, 6]], np.float32)
         output = ndimage.gaussian_filter(input, 1.0)
         assert_equal(input.dtype, output.dtype)
         assert_equal(input.shape, output.shape)
 
     def test_gauss03(self):
         # single precision data
-        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input = np.arange(100 * 100).astype(np.float32)
         input.shape = (100, 100)
         output = ndimage.gaussian_filter(input, [1.0, 1.0])
 
@@ -676,34 +676,34 @@ class TestNdimageFilters:
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss04(self):
-        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input = np.arange(100 * 100).astype(np.float32)
         input.shape = (100, 100)
-        otype = numpy.float64
+        otype = np.float64
         output = ndimage.gaussian_filter(input, [1.0, 1.0], output=otype)
-        assert_equal(output.dtype.type, numpy.float64)
+        assert_equal(output.dtype.type, np.float64)
         assert_equal(input.shape, output.shape)
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss05(self):
-        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input = np.arange(100 * 100).astype(np.float32)
         input.shape = (100, 100)
-        otype = numpy.float64
+        otype = np.float64
         output = ndimage.gaussian_filter(input, [1.0, 1.0],
                                          order=1, output=otype)
-        assert_equal(output.dtype.type, numpy.float64)
+        assert_equal(output.dtype.type, np.float64)
         assert_equal(input.shape, output.shape)
         assert_(sumsq(input, output) > 1.0)
 
     def test_gauss06(self):
-        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input = np.arange(100 * 100).astype(np.float32)
         input.shape = (100, 100)
-        otype = numpy.float64
+        otype = np.float64
         output1 = ndimage.gaussian_filter(input, [1.0, 1.0], output=otype)
         output2 = ndimage.gaussian_filter(input, 1.0, output=otype)
         assert_array_almost_equal(output1, output2)
 
     def test_gauss_memory_overlap(self):
-        input = numpy.arange(100 * 100).astype(numpy.float32)
+        input = np.arange(100 * 100).astype(np.float32)
         input.shape = (100, 100)
         output1 = ndimage.gaussian_filter(input, 1.0)
         ndimage.gaussian_filter(input, 1.0, output=input)
@@ -724,8 +724,8 @@ class TestNdimageFilters:
         + ((0, 1, 2),))
     def test_filter_axes(self, filter_func, extra_args, size0, size, axes):
         # Note: `size` is called `sigma` in `gaussian_filter`
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
-        axes = numpy.array(axes)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
+        axes = np.array(axes)
 
         if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
@@ -756,10 +756,10 @@ class TestNdimageFilters:
                               (ndimage.percentile_filter, 1, 3, kwargs_rank)])
     @pytest.mark.parametrize('axes', itertools.combinations(range(-3, 3), 2))
     def test_filter_axes_kwargs(self, filter_func, size0, size, kwargs, axes):
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
 
-        kwargs = {key: numpy.array(val) for key, val in kwargs.items()}
-        axes = numpy.array(axes)
+        kwargs = {key: np.array(val) for key, val in kwargs.items()}
+        axes = np.array(axes)
         n_axes = axes.size
 
         if filter_func == ndimage.rank_filter:
@@ -782,11 +782,11 @@ class TestNdimageFilters:
                              **reduced_kwargs)
 
         # result should be equivalent to sigma=0.0/size=1 on unfiltered axes
-        size_3d = numpy.full(array.ndim, fill_value=size0)
+        size_3d = np.full(array.ndim, fill_value=size0)
         size_3d[axes] = size
         if 'origin' in kwargs:
             # origin should be zero on the axis that has size 0
-            origin = numpy.array([0, 0, 0])
+            origin = np.array([0, 0, 0])
             origin[axes] = reduced_kwargs['origin']
             kwargs['origin'] = origin
         expected = filter_func(array, *args, size_3d, **kwargs)
@@ -805,7 +805,7 @@ class TestNdimageFilters:
         'axes', [(1.5,), (0, 1, 2, 3), (3,), (-4,)]
     )
     def test_filter_invalid_axes(self, filter_func, args, axes):
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
         if any(isinstance(ax, float) for ax in axes):
             error_class = TypeError
             match = "cannot be interpreted as an integer"
@@ -828,9 +828,9 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('separable_footprint', [False, True])
     def test_filter_invalid_footprint_ndim(self, filter_func, kwargs, axes,
                                            separable_footprint):
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
         # create a footprint with one too many dimensions
-        footprint = numpy.ones((3,) * (len(axes) + 1))
+        footprint = np.ones((3,) * (len(axes) + 1))
         if not separable_footprint:
             footprint[(0,) * footprint.ndim] = 0
         if (filter_func in [ndimage.minimum_filter, ndimage.maximum_filter]
@@ -847,7 +847,7 @@ class TestNdimageFilters:
     def test_filter_tuple_length_mismatch(self, n_mismatch, filter_func,
                                           kwargs, key, val):
         # Test for the intended RuntimeError when a kwargs has an invalid size
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float64).reshape(6, 8, 12)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
         kwargs = dict(**kwargs, axes=(0, 1))
         kwargs[key] = (val,) * n_mismatch
         err_msg = "sequence argument must have length equal to input rank"
@@ -856,9 +856,9 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt01(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
         t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
         output = ndimage.prewitt(array, 0)
@@ -866,20 +866,20 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt02(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
         t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 1)
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         ndimage.prewitt(array, 0, output)
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt03(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
         t = ndimage.correlate1d(t, [1.0, 1.0, 1.0], 0)
         output = ndimage.prewitt(array, 1)
@@ -887,18 +887,18 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_prewitt04(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.prewitt(array, -1)
         output = ndimage.prewitt(array, 1)
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel01(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
         t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
         output = ndimage.sobel(array, 0)
@@ -906,82 +906,82 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel02(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 0)
         t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 1)
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         ndimage.sobel(array, 0, output)
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel03(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.correlate1d(array, [-1.0, 0.0, 1.0], 1)
         t = ndimage.correlate1d(t, [1.0, 2.0, 1.0], 0)
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         output = ndimage.sobel(array, 1)
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype', types + complex_types)
     def test_sobel04(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         t = ndimage.sobel(array, -1)
         output = ndimage.sobel(array, 1)
         assert_array_almost_equal(t, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_laplace01(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
         tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
         output = ndimage.laplace(array)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_laplace02(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.correlate1d(array, [1, -2, 1], 0)
         tmp2 = ndimage.correlate1d(array, [1, -2, 1], 1)
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         ndimage.laplace(array, output=output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_gaussian_laplace01(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
         output = ndimage.gaussian_laplace(array, 1.0)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_gaussian_laplace02(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [2, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 2])
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         ndimage.gaussian_laplace(array, 1.0, output)
         assert_array_almost_equal(tmp1 + tmp2, output)
 
@@ -989,15 +989,15 @@ class TestNdimageFilters:
     def test_generic_laplace01(self, dtype):
         def derivative2(input, axis, output, mode, cval, a, b):
             sigma = [a, b / 2.0]
-            input = numpy.asarray(input)
+            input = np.asarray(input)
             order = [0] * input.ndim
             order[axis] = 2
             return ndimage.gaussian_filter(input, sigma, order,
                                            output, mode, cval)
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
-        output = numpy.zeros(array.shape, dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
+        output = np.zeros(array.shape, dtype)
         tmp = ndimage.generic_laplace(array, derivative2,
                                       extra_arguments=(1.0,),
                                       extra_keywords={'b': 2.0})
@@ -1005,42 +1005,42 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_gaussian_gradient_magnitude01(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
         output = ndimage.gaussian_gradient_magnitude(array, 1.0)
         expected = tmp1 * tmp1 + tmp2 * tmp2
-        expected = numpy.sqrt(expected).astype(dtype)
+        expected = np.sqrt(expected).astype(dtype)
         assert_array_almost_equal(expected, output)
 
     @pytest.mark.parametrize('dtype',
-                             [numpy.int32, numpy.float32, numpy.float64,
-                              numpy.complex64, numpy.complex128])
+                             [np.int32, np.float32, np.float64,
+                              np.complex64, np.complex128])
     def test_gaussian_gradient_magnitude02(self, dtype):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype) * 100
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype) * 100
         tmp1 = ndimage.gaussian_filter(array, 1.0, [1, 0])
         tmp2 = ndimage.gaussian_filter(array, 1.0, [0, 1])
-        output = numpy.zeros(array.shape, dtype)
+        output = np.zeros(array.shape, dtype)
         ndimage.gaussian_gradient_magnitude(array, 1.0, output)
         expected = tmp1 * tmp1 + tmp2 * tmp2
-        expected = numpy.sqrt(expected).astype(dtype)
+        expected = np.sqrt(expected).astype(dtype)
         assert_array_almost_equal(expected, output)
 
     def test_generic_gradient_magnitude01(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], numpy.float64)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], np.float64)
 
         def derivative(input, axis, output, mode, cval, a, b):
             sigma = [a, b / 2.0]
-            input = numpy.asarray(input)
+            input = np.asarray(input)
             order = [0] * input.ndim
             order[axis] = 1
             return ndimage.gaussian_filter(input, sigma, order,
@@ -1052,32 +1052,32 @@ class TestNdimageFilters:
         assert_array_almost_equal(tmp1, tmp2)
 
     def test_uniform01(self):
-        array = numpy.array([2, 4, 6])
+        array = np.array([2, 4, 6])
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
         assert_array_almost_equal([3, 5, 6], output)
 
     def test_uniform01_complex(self):
-        array = numpy.array([2 + 1j, 4 + 2j, 6 + 3j], dtype=numpy.complex128)
+        array = np.array([2 + 1j, 4 + 2j, 6 + 3j], dtype=np.complex128)
         size = 2
         output = ndimage.uniform_filter1d(array, size, origin=-1)
         assert_array_almost_equal([3, 5, 6], output.real)
         assert_array_almost_equal([1.5, 2.5, 3], output.imag)
 
     def test_uniform02(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         filter_shape = [0]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(array, output)
 
     def test_uniform03(self):
-        array = numpy.array([1, 2, 3])
+        array = np.array([1, 2, 3])
         filter_shape = [1]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal(array, output)
 
     def test_uniform04(self):
-        array = numpy.array([2, 4, 6])
+        array = np.array([2, 4, 6])
         filter_shape = [2]
         output = ndimage.uniform_filter(array, filter_shape)
         assert_array_almost_equal([2, 3, 5], output)
@@ -1092,8 +1092,8 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', types)
     def test_uniform06(self, dtype_array, dtype_output):
         filter_shape = [2, 2]
-        array = numpy.array([[4, 8, 12],
-                             [16, 20, 24]], dtype_array)
+        array = np.array([[4, 8, 12],
+                          [16, 20, 24]], dtype_array)
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output)
@@ -1103,61 +1103,61 @@ class TestNdimageFilters:
     @pytest.mark.parametrize('dtype_output', complex_types)
     def test_uniform06_complex(self, dtype_array, dtype_output):
         filter_shape = [2, 2]
-        array = numpy.array([[4, 8 + 5j, 12],
-                             [16, 20, 24]], dtype_array)
+        array = np.array([[4, 8 + 5j, 12],
+                          [16, 20, 24]], dtype_array)
         output = ndimage.uniform_filter(
             array, filter_shape, output=dtype_output)
         assert_array_almost_equal([[4, 6, 10], [10, 12, 16]], output.real)
         assert_equal(output.dtype.type, dtype_output)
 
     def test_minimum_filter01(self):
-        array = numpy.array([1, 2, 3, 4, 5])
-        filter_shape = numpy.array([2])
+        array = np.array([1, 2, 3, 4, 5])
+        filter_shape = np.array([2])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal([1, 1, 2, 3, 4], output)
 
     def test_minimum_filter02(self):
-        array = numpy.array([1, 2, 3, 4, 5])
-        filter_shape = numpy.array([3])
+        array = np.array([1, 2, 3, 4, 5])
+        filter_shape = np.array([3])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal([1, 1, 2, 3, 4], output)
 
     def test_minimum_filter03(self):
-        array = numpy.array([3, 2, 5, 1, 4])
-        filter_shape = numpy.array([2])
+        array = np.array([3, 2, 5, 1, 4])
+        filter_shape = np.array([2])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal([3, 2, 2, 1, 1], output)
 
     def test_minimum_filter04(self):
-        array = numpy.array([3, 2, 5, 1, 4])
-        filter_shape = numpy.array([3])
+        array = np.array([3, 2, 5, 1, 4])
+        filter_shape = np.array([3])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal([2, 2, 1, 1, 1], output)
 
     def test_minimum_filter05(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
-        filter_shape = numpy.array([2, 3])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
+        filter_shape = np.array([2, 3])
         output = ndimage.minimum_filter(array, filter_shape)
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], output)
 
     def test_minimum_filter05_overlap(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
-        filter_shape = numpy.array([2, 3])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
+        filter_shape = np.array([2, 3])
         ndimage.minimum_filter(array, filter_shape, output=array)
         assert_array_almost_equal([[2, 2, 1, 1, 1],
                                    [2, 2, 1, 1, 1],
                                    [5, 3, 3, 1, 1]], array)
 
     def test_minimum_filter06(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.minimum_filter(array, footprint=footprint)
         assert_array_almost_equal([[2, 2, 1, 1, 1],
@@ -1169,9 +1169,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     def test_minimum_filter07(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint)
         assert_array_almost_equal([[2, 2, 1, 1, 1],
@@ -1182,9 +1182,9 @@ class TestNdimageFilters:
                                    mode=['reflect', 'constant'])
 
     def test_minimum_filter08(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint, origin=-1)
         assert_array_almost_equal([[3, 1, 3, 1, 1],
@@ -1192,9 +1192,9 @@ class TestNdimageFilters:
                                    [3, 3, 1, 1, 1]], output)
 
     def test_minimum_filter09(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.minimum_filter(array, footprint=footprint,
                                         origin=[-1, 0])
@@ -1203,43 +1203,43 @@ class TestNdimageFilters:
                                    [5, 3, 3, 1, 1]], output)
 
     def test_maximum_filter01(self):
-        array = numpy.array([1, 2, 3, 4, 5])
-        filter_shape = numpy.array([2])
+        array = np.array([1, 2, 3, 4, 5])
+        filter_shape = np.array([2])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal([1, 2, 3, 4, 5], output)
 
     def test_maximum_filter02(self):
-        array = numpy.array([1, 2, 3, 4, 5])
-        filter_shape = numpy.array([3])
+        array = np.array([1, 2, 3, 4, 5])
+        filter_shape = np.array([3])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal([2, 3, 4, 5, 5], output)
 
     def test_maximum_filter03(self):
-        array = numpy.array([3, 2, 5, 1, 4])
-        filter_shape = numpy.array([2])
+        array = np.array([3, 2, 5, 1, 4])
+        filter_shape = np.array([2])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal([3, 3, 5, 5, 4], output)
 
     def test_maximum_filter04(self):
-        array = numpy.array([3, 2, 5, 1, 4])
-        filter_shape = numpy.array([3])
+        array = np.array([3, 2, 5, 1, 4])
+        filter_shape = np.array([3])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal([3, 5, 5, 5, 4], output)
 
     def test_maximum_filter05(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
-        filter_shape = numpy.array([2, 3])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
+        filter_shape = np.array([2, 3])
         output = ndimage.maximum_filter(array, filter_shape)
         assert_array_almost_equal([[3, 5, 5, 5, 4],
                                    [7, 9, 9, 9, 5],
                                    [8, 9, 9, 9, 7]], output)
 
     def test_maximum_filter06(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 1, 1], [1, 1, 1]]
         output = ndimage.maximum_filter(array, footprint=footprint)
         assert_array_almost_equal([[3, 5, 5, 5, 4],
@@ -1251,9 +1251,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(output2, output)
 
     def test_maximum_filter07(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint)
         assert_array_almost_equal([[3, 5, 5, 5, 4],
@@ -1265,9 +1265,9 @@ class TestNdimageFilters:
                                    mode=['reflect', 'reflect'])
 
     def test_maximum_filter08(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint, origin=-1)
         assert_array_almost_equal([[7, 9, 9, 5, 5],
@@ -1275,9 +1275,9 @@ class TestNdimageFilters:
                                    [8, 8, 7, 7, 7]], output)
 
     def test_maximum_filter09(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         footprint = [[1, 0, 1], [1, 1, 0]]
         output = ndimage.maximum_filter(array, footprint=footprint,
                                         origin=[-1, 0])
@@ -1297,10 +1297,10 @@ class TestNdimageFilters:
          (ndimage.percentile_filter, dict(percentile=60))]
     )
     def test_minmax_nonseparable_axes(self, filter_func, axes, kwargs):
-        array = numpy.arange(6 * 8 * 12, dtype=numpy.float32).reshape(6, 8, 12)
+        array = np.arange(6 * 8 * 12, dtype=np.float32).reshape(6, 8, 12)
         # use 2D triangular footprint because it is non-separable
-        footprint = numpy.tri(5)
-        axes = numpy.array(axes)
+        footprint = np.tri(5)
+        axes = np.array(axes)
 
         if len(set(axes % array.ndim)) != len(axes):
             # parametrized cases with duplicate axes raise an error
@@ -1310,12 +1310,12 @@ class TestNdimageFilters:
         output = filter_func(array, footprint=footprint, axes=axes, **kwargs)
 
         missing_axis = tuple(set(range(3)) - set(axes % array.ndim))[0]
-        footprint_3d = numpy.expand_dims(footprint, missing_axis)
+        footprint_3d = np.expand_dims(footprint, missing_axis)
         expected = filter_func(array, footprint=footprint_3d, **kwargs)
         assert_allclose(output, expected)
 
     def test_rank01(self):
-        array = numpy.array([1, 2, 3, 4, 5])
+        array = np.array([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=2)
         assert_array_almost_equal(array, output)
         output = ndimage.percentile_filter(array, 100, size=2)
@@ -1324,7 +1324,7 @@ class TestNdimageFilters:
         assert_array_almost_equal(array, output)
 
     def test_rank02(self):
-        array = numpy.array([1, 2, 3, 4, 5])
+        array = np.array([1, 2, 3, 4, 5])
         output = ndimage.rank_filter(array, 1, size=[3])
         assert_array_almost_equal(array, output)
         output = ndimage.percentile_filter(array, 50, size=3)
@@ -1333,14 +1333,14 @@ class TestNdimageFilters:
         assert_array_almost_equal(array, output)
 
     def test_rank03(self):
-        array = numpy.array([3, 2, 5, 1, 4])
+        array = np.array([3, 2, 5, 1, 4])
         output = ndimage.rank_filter(array, 1, size=[2])
         assert_array_almost_equal([3, 3, 5, 5, 4], output)
         output = ndimage.percentile_filter(array, 100, size=2)
         assert_array_almost_equal([3, 3, 5, 5, 4], output)
 
     def test_rank04(self):
-        array = numpy.array([3, 2, 5, 1, 4])
+        array = np.array([3, 2, 5, 1, 4])
         expected = [3, 3, 2, 4, 4]
         output = ndimage.rank_filter(array, 1, size=3)
         assert_array_almost_equal(expected, output)
@@ -1350,15 +1350,15 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
 
     def test_rank05(self):
-        array = numpy.array([3, 2, 5, 1, 4])
+        array = np.array([3, 2, 5, 1, 4])
         expected = [3, 3, 2, 4, 4]
         output = ndimage.rank_filter(array, -2, size=3)
         assert_array_almost_equal(expected, output)
 
     def test_rank06(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]])
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
                     [5, 5, 3, 3, 1]]
@@ -1368,9 +1368,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
 
     def test_rank06_overlap(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]])
         array_copy = array.copy()
         expected = [[2, 2, 1, 1, 1],
                     [3, 3, 2, 1, 1],
@@ -1383,9 +1383,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, array_copy)
 
     def test_rank07(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]])
         expected = [[3, 5, 5, 5, 4],
                     [5, 5, 7, 5, 4],
                     [6, 8, 8, 7, 5]]
@@ -1393,9 +1393,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
 
     def test_rank08(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]])
         expected = [[3, 3, 2, 4, 4],
                     [5, 5, 5, 4, 4],
                     [5, 6, 7, 5, 5]]
@@ -1421,18 +1421,18 @@ class TestNdimageFilters:
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint)
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 35, footprint=footprint)
         assert_array_almost_equal(expected, output)
 
     def test_rank10(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         expected = [[2, 2, 1, 1, 1],
                     [2, 3, 1, 3, 1],
                     [5, 5, 3, 3, 1]]
@@ -1443,9 +1443,9 @@ class TestNdimageFilters:
         assert_array_almost_equal(expected, output)
 
     def test_rank11(self):
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [7, 6, 9, 3, 5],
-                             [5, 8, 3, 7, 1]])
+        array = np.array([[3, 2, 5, 1, 4],
+                          [7, 6, 9, 3, 5],
+                          [5, 8, 3, 7, 1]])
         expected = [[3, 5, 5, 5, 4],
                     [7, 7, 9, 9, 5],
                     [7, 9, 8, 9, 7]]
@@ -1461,9 +1461,9 @@ class TestNdimageFilters:
                     [3, 5, 2, 5, 1],
                     [5, 5, 8, 3, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint)
         assert_array_almost_equal(expected, output)
         output = ndimage.percentile_filter(array, 50.0,
@@ -1478,9 +1478,9 @@ class TestNdimageFilters:
                     [5, 8, 3, 5, 5],
                     [6, 6, 5, 5, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=-1)
         assert_array_almost_equal(expected, output)
@@ -1491,9 +1491,9 @@ class TestNdimageFilters:
                     [5, 5, 8, 3, 5],
                     [5, 6, 6, 5, 5]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         output = ndimage.rank_filter(array, 1, footprint=footprint,
                                      origin=[-1, 0])
         assert_array_almost_equal(expected, output)
@@ -1504,16 +1504,16 @@ class TestNdimageFilters:
                     [5, 3, 7, 1, 1],
                     [5, 5, 3, 3, 3]]
         footprint = [[1, 0, 1], [0, 1, 0]]
-        array = numpy.array([[3, 2, 5, 1, 4],
-                             [5, 8, 3, 7, 1],
-                             [5, 6, 9, 3, 5]], dtype)
+        array = np.array([[3, 2, 5, 1, 4],
+                          [5, 8, 3, 7, 1],
+                          [5, 6, 9, 3, 5]], dtype)
         output = ndimage.rank_filter(array, 0, footprint=footprint,
                                      origin=[-1, 0])
         assert_array_almost_equal(expected, output)
 
     @pytest.mark.parametrize('dtype', types)
     def test_generic_filter1d01(self, dtype):
-        weights = numpy.array([1.1, 2.2, 3.3])
+        weights = np.array([1.1, 2.2, 3.3])
 
         def _filter_func(input, output, fltr, total):
             fltr = fltr / total
@@ -1521,7 +1521,7 @@ class TestNdimageFilters:
                 output[ii] = input[ii] * fltr[0]
                 output[ii] += input[ii + 1] * fltr[1]
                 output[ii] += input[ii + 2] * fltr[2]
-        a = numpy.arange(12, dtype=dtype)
+        a = np.arange(12, dtype=dtype)
         a.shape = (3, 4)
         r1 = ndimage.correlate1d(a, weights / weights.sum(), 0, origin=-1)
         r2 = ndimage.generic_filter1d(
@@ -1532,15 +1532,15 @@ class TestNdimageFilters:
 
     @pytest.mark.parametrize('dtype', types)
     def test_generic_filter01(self, dtype):
-        filter_ = numpy.array([[1.0, 2.0], [3.0, 4.0]])
-        footprint = numpy.array([[1, 0], [0, 1]])
-        cf = numpy.array([1., 4.])
+        filter_ = np.array([[1.0, 2.0], [3.0, 4.0]])
+        footprint = np.array([[1, 0], [0, 1]])
+        cf = np.array([1., 4.])
 
         def _filter_func(buffer, weights, total=1.0):
             weights = cf / total
             return (buffer * weights).sum()
 
-        a = numpy.arange(12, dtype=dtype)
+        a = np.arange(12, dtype=dtype)
         a.shape = (3, 4)
         r1 = ndimage.correlate(a, filter_ * footprint)
         if dtype in float_types:
@@ -1568,8 +1568,8 @@ class TestNdimageFilters:
          ('constant', [0, 1, 2])]
     )
     def test_extend01(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([1, 0])
+        array = np.array([1, 2, 3])
+        weights = np.array([1, 0])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1582,8 +1582,8 @@ class TestNdimageFilters:
          ('constant', [0, 0, 0])]
     )
     def test_extend02(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([1, 0, 0, 0, 0, 0, 0, 0])
+        array = np.array([1, 2, 3])
+        weights = np.array([1, 0, 0, 0, 0, 0, 0, 0])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1596,8 +1596,8 @@ class TestNdimageFilters:
          ('constant', [2, 3, 0])]
     )
     def test_extend03(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([0, 0, 1])
+        array = np.array([1, 2, 3])
+        weights = np.array([0, 0, 1])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1610,8 +1610,8 @@ class TestNdimageFilters:
          ('constant', [0, 0, 0])]
     )
     def test_extend04(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
+        array = np.array([1, 2, 3])
+        weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate1d(array, weights, 0, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1624,10 +1624,10 @@ class TestNdimageFilters:
          ('constant', [[0, 0, 0], [0, 1, 2], [0, 4, 5]])]
     )
     def test_extend05(self, mode, expected_value):
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6],
-                             [7, 8, 9]])
-        weights = numpy.array([[1, 0], [0, 0]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6],
+                          [7, 8, 9]])
+        weights = np.array([[1, 0], [0, 0]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1640,10 +1640,10 @@ class TestNdimageFilters:
          ('constant', [[5, 6, 0], [8, 9, 0], [0, 0, 0]])]
     )
     def test_extend06(self, mode, expected_value):
-        array = numpy.array([[1, 2, 3],
-                             [4, 5, 6],
-                             [7, 8, 9]])
-        weights = numpy.array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
+        array = np.array([[1, 2, 3],
+                          [4, 5, 6],
+                          [7, 8, 9]])
+        weights = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1656,8 +1656,8 @@ class TestNdimageFilters:
          ('constant', [0, 0, 0])]
     )
     def test_extend07(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
+        array = np.array([1, 2, 3])
+        weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1670,8 +1670,8 @@ class TestNdimageFilters:
          ('constant', [[0], [0], [0]])]
     )
     def test_extend08(self, mode, expected_value):
-        array = numpy.array([[1], [2], [3]])
-        weights = numpy.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
+        array = np.array([[1], [2], [3]])
+        weights = np.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1684,8 +1684,8 @@ class TestNdimageFilters:
          ('constant', [0, 0, 0])]
     )
     def test_extend09(self, mode, expected_value):
-        array = numpy.array([1, 2, 3])
-        weights = numpy.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
+        array = np.array([1, 2, 3])
+        weights = np.array([0, 0, 0, 0, 0, 0, 0, 0, 1])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
@@ -1698,17 +1698,17 @@ class TestNdimageFilters:
          ('constant', [[0], [0], [0]])]
     )
     def test_extend10(self, mode, expected_value):
-        array = numpy.array([[1], [2], [3]])
-        weights = numpy.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
+        array = np.array([[1], [2], [3]])
+        weights = np.array([[0], [0], [0], [0], [0], [0], [0], [0], [1]])
         output = ndimage.correlate(array, weights, mode=mode, cval=0)
         assert_array_equal(output, expected_value)
 
 
 def test_ticket_701():
     # Test generic filter sizes
-    arr = numpy.arange(4).reshape((2, 2))
+    arr = np.arange(4).reshape((2, 2))
     def func(x):
-        return numpy.min(x)
+        return np.min(x)
     res = ndimage.generic_filter(arr, func, size=(1, 1))
     # The following raises an error unless ticket 701 is fixed
     res2 = ndimage.generic_filter(arr, func, size=1)
@@ -1720,10 +1720,10 @@ def test_gh_5430():
     # fixed. In py2k an int is implemented using a C long, so
     # which one fails depends on your system. In py3k there is only
     # one arbitrary precision integer type, so both should fail.
-    sigma = numpy.int32(1)
+    sigma = np.int32(1)
     out = ndimage._ni_support._normalize_sequence(sigma, 1)
     assert_equal(out, [sigma])
-    sigma = numpy.int64(1)
+    sigma = np.int64(1)
     out = ndimage._ni_support._normalize_sequence(sigma, 1)
     assert_equal(out, [sigma])
     # This worked before; make sure it still works
@@ -1735,12 +1735,12 @@ def test_gh_5430():
     out = ndimage._ni_support._normalize_sequence(sigma, 2)
     assert_equal(out, sigma)
     # Also include the OPs original example to make sure we fixed the issue
-    x = numpy.random.normal(size=(256, 256))
-    perlin = numpy.zeros_like(x)
-    for i in 2**numpy.arange(6):
+    x = np.random.normal(size=(256, 256))
+    perlin = np.zeros_like(x)
+    for i in 2**np.arange(6):
         perlin += ndimage.gaussian_filter(x, i, mode="wrap") * i**2
     # This also fixes gh-4106, show that the OPs example now runs.
-    x = numpy.int64(21)
+    x = np.int64(21)
     ndimage._ni_support._normalize_sequence(x, 0)
 
 
@@ -1748,8 +1748,8 @@ def test_gaussian_kernel1d():
     radius = 10
     sigma = 2
     sigma2 = sigma * sigma
-    x = numpy.arange(-radius, radius + 1, dtype=numpy.double)
-    phi_x = numpy.exp(-0.5 * x * x / sigma2)
+    x = np.arange(-radius, radius + 1, dtype=np.double)
+    phi_x = np.exp(-0.5 * x * x / sigma2)
     phi_x /= phi_x.sum()
     assert_allclose(phi_x, _gaussian_kernel1d(sigma, 0, radius))
     assert_allclose(-phi_x * x / sigma2, _gaussian_kernel1d(sigma, 1, radius))
@@ -1761,7 +1761,7 @@ def test_gaussian_kernel1d():
 
 def test_orders_gauss():
     # Check order inputs to Gaussians
-    arr = numpy.zeros((1,))
+    arr = np.zeros((1,))
     assert_equal(0, ndimage.gaussian_filter(arr, 1, order=0))
     assert_equal(0, ndimage.gaussian_filter(arr, 1, order=3))
     assert_raises(ValueError, ndimage.gaussian_filter, arr, 1, -1)
@@ -1773,8 +1773,8 @@ def test_orders_gauss():
 def test_valid_origins():
     """Regression test for #1311."""
     def func(x):
-        return numpy.mean(x)
-    data = numpy.array([1, 2, 3, 4, 5], dtype=numpy.float64)
+        return np.mean(x)
+    data = np.array([1, 2, 3, 4, 5], dtype=np.float64)
     assert_raises(ValueError, ndimage.generic_filter, data, func, size=3,
                   origin=2)
     assert_raises(ValueError, ndimage.generic_filter1d, data, func,
@@ -1803,20 +1803,20 @@ def test_bad_convolve_and_correlate_origins():
     assert_raises(ValueError, ndimage.correlate,
                   [0, 1, 2, 3, 4, 5], [0, 1, 2], origin=[2])
     assert_raises(ValueError, ndimage.correlate,
-                  numpy.ones((3, 5)), numpy.ones((2, 2)), origin=[0, 1])
+                  np.ones((3, 5)), np.ones((2, 2)), origin=[0, 1])
 
     assert_raises(ValueError, ndimage.convolve1d,
-                  numpy.arange(10), numpy.ones(3), origin=-2)
+                  np.arange(10), np.ones(3), origin=-2)
     assert_raises(ValueError, ndimage.convolve,
-                  numpy.arange(10), numpy.ones(3), origin=[-2])
+                  np.arange(10), np.ones(3), origin=[-2])
     assert_raises(ValueError, ndimage.convolve,
-                  numpy.ones((3, 5)), numpy.ones((2, 2)), origin=[0, -2])
+                  np.ones((3, 5)), np.ones((2, 2)), origin=[0, -2])
 
 
 def test_multiple_modes():
     # Test that the filters with multiple mode cababilities for different
     # dimensions give the same result as applying a single mode.
-    arr = numpy.array([[1., 0., 0.],
+    arr = np.array([[1., 0., 0.],
                        [1., 1., 0.],
                        [0., 0., 0.]])
 
@@ -1847,9 +1847,9 @@ def test_multiple_modes_sequentially():
     # Test that the filters with multiple mode cababilities for different
     # dimensions give the same result as applying the filters with
     # different modes sequentially
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1878,13 +1878,13 @@ def test_multiple_modes_sequentially():
 
 def test_multiple_modes_prewitt():
     # Test prewitt filter for multiple extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[1., -3., 2.],
-                            [1., -2., 1.],
-                            [1., -1., 0.]])
+    expected = np.array([[1., -3., 2.],
+                         [1., -2., 1.],
+                         [1., -1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1894,13 +1894,13 @@ def test_multiple_modes_prewitt():
 
 def test_multiple_modes_sobel():
     # Test sobel filter for multiple extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[1., -4., 3.],
-                            [2., -3., 1.],
-                            [1., -1., 0.]])
+    expected = np.array([[1., -4., 3.],
+                         [2., -3., 1.],
+                         [1., -1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1910,13 +1910,13 @@ def test_multiple_modes_sobel():
 
 def test_multiple_modes_laplace():
     # Test laplace filter for multiple extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[-2., 2., 1.],
-                            [-2., -3., 2.],
-                            [1., 1., 0.]])
+    expected = np.array([[-2., 2., 1.],
+                         [-2., -3., 2.],
+                         [1., 1., 0.]])
 
     modes = ['reflect', 'wrap']
 
@@ -1926,13 +1926,13 @@ def test_multiple_modes_laplace():
 
 def test_multiple_modes_gaussian_laplace():
     # Test gaussian_laplace filter for multiple extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[-0.28438687, 0.01559809, 0.19773499],
-                            [-0.36630503, -0.20069774, 0.07483620],
-                            [0.15849176, 0.18495566, 0.21934094]])
+    expected = np.array([[-0.28438687, 0.01559809, 0.19773499],
+                         [-0.36630503, -0.20069774, 0.07483620],
+                         [0.15849176, 0.18495566, 0.21934094]])
 
     modes = ['reflect', 'wrap']
 
@@ -1943,13 +1943,13 @@ def test_multiple_modes_gaussian_laplace():
 def test_multiple_modes_gaussian_gradient_magnitude():
     # Test gaussian_gradient_magnitude filter for multiple
     # extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[0.04928965, 0.09745625, 0.06405368],
-                            [0.23056905, 0.14025305, 0.04550846],
-                            [0.19894369, 0.14950060, 0.06796850]])
+    expected = np.array([[0.04928965, 0.09745625, 0.06405368],
+                         [0.23056905, 0.14025305, 0.04550846],
+                         [0.19894369, 0.14950060, 0.06796850]])
 
     modes = ['reflect', 'wrap']
 
@@ -1960,13 +1960,13 @@ def test_multiple_modes_gaussian_gradient_magnitude():
 
 def test_multiple_modes_uniform():
     # Test uniform filter for multiple extrapolation modes
-    arr = numpy.array([[1., 0., 0.],
-                       [1., 1., 0.],
-                       [0., 0., 0.]])
+    arr = np.array([[1., 0., 0.],
+                    [1., 1., 0.],
+                    [0., 0., 0.]])
 
-    expected = numpy.array([[0.32, 0.40, 0.48],
-                            [0.20, 0.28, 0.32],
-                            [0.28, 0.32, 0.40]])
+    expected = np.array([[0.32, 0.40, 0.48],
+                         [0.20, 0.28, 0.32],
+                         [0.28, 0.32, 0.40]])
 
     modes = ['reflect', 'wrap']
 
@@ -1978,7 +1978,7 @@ def test_gaussian_truncate():
     # Test that Gaussian filters can be truncated at different widths.
     # These tests only check that the result has the expected number
     # of nonzero elements.
-    arr = numpy.zeros((100, 100), float)
+    arr = np.zeros((100, 100), float)
     arr[50, 50] = 1
     num_nonzeros_2 = (ndimage.gaussian_filter(arr, 5, truncate=2) > 0).sum()
     assert_equal(num_nonzeros_2, 21**2)
@@ -1996,7 +1996,7 @@ def test_gaussian_truncate():
     assert_equal(n1, 5)
 
     # Test gaussian_filter1d.
-    x = numpy.zeros(51)
+    x = np.zeros(51)
     x[25] = 1
     f = ndimage.gaussian_filter1d(x, sigma=2, truncate=3.5)
     n = (f > 0).sum()
@@ -2004,14 +2004,14 @@ def test_gaussian_truncate():
 
     # Test gaussian_laplace
     y = ndimage.gaussian_laplace(x, sigma=2, truncate=3.5)
-    nonzero_indices = numpy.nonzero(y != 0)[0]
-    n = numpy.ptp(nonzero_indices) + 1
+    nonzero_indices = np.nonzero(y != 0)[0]
+    n = np.ptp(nonzero_indices) + 1
     assert_equal(n, 15)
 
     # Test gaussian_gradient_magnitude
     y = ndimage.gaussian_gradient_magnitude(x, sigma=2, truncate=3.5)
-    nonzero_indices = numpy.nonzero(y != 0)[0]
-    n = numpy.ptp(nonzero_indices) + 1
+    nonzero_indices = np.nonzero(y != 0)[0]
+    n = np.ptp(nonzero_indices) + 1
     assert_equal(n, 15)
 
 
@@ -2020,21 +2020,21 @@ def test_gaussian_radius():
     # results as the filters with corresponding truncate argument.
     # radius = int(truncate * sigma + 0.5)
     # Test gaussian_filter1d
-    x = numpy.zeros(7)
+    x = np.zeros(7)
     x[3] = 1
     f1 = ndimage.gaussian_filter1d(x, sigma=2, truncate=1.5)
     f2 = ndimage.gaussian_filter1d(x, sigma=2, radius=3)
     assert_equal(f1, f2)
 
     # Test gaussian_filter when sigma is a number.
-    a = numpy.zeros((9, 9))
+    a = np.zeros((9, 9))
     a[4, 4] = 1
     f1 = ndimage.gaussian_filter(a, sigma=0.5, truncate=3.5)
     f2 = ndimage.gaussian_filter(a, sigma=0.5, radius=2)
     assert_equal(f1, f2)
 
     # Test gaussian_filter when sigma is a sequence.
-    a = numpy.zeros((50, 50))
+    a = np.zeros((50, 50))
     a[25, 25] = 1
     f1 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], truncate=3.5)
     f2 = ndimage.gaussian_filter(a, sigma=[0.5, 2.5], radius=[2, 9])
@@ -2044,9 +2044,9 @@ def test_gaussian_radius():
 def test_gaussian_radius_invalid():
     # radius must be a nonnegative integer
     with assert_raises(ValueError):
-        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=-1)
+        ndimage.gaussian_filter1d(np.zeros(8), sigma=1, radius=-1)
     with assert_raises(ValueError):
-        ndimage.gaussian_filter1d(numpy.zeros(8), sigma=1, radius=1.1)
+        ndimage.gaussian_filter1d(np.zeros(8), sigma=1, radius=1.1)
 
 
 class TestThreading:
@@ -2062,43 +2062,43 @@ class TestThreading:
             fun(*args, output=out[i])
 
     def test_correlate1d(self):
-        d = numpy.random.randn(5000)
-        os = numpy.empty((4, d.size))
-        ot = numpy.empty_like(os)
-        k = numpy.arange(5)
+        d = np.random.randn(5000)
+        os = np.empty((4, d.size))
+        ot = np.empty_like(os)
+        k = np.arange(5)
         self.check_func_serial(4, ndimage.correlate1d, (d, k), os)
         self.check_func_thread(4, ndimage.correlate1d, (d, k), ot)
         assert_array_equal(os, ot)
 
     def test_correlate(self):
-        d = numpy.random.randn(500, 500)
-        k = numpy.random.randn(10, 10)
-        os = numpy.empty([4] + list(d.shape))
-        ot = numpy.empty_like(os)
+        d = np.random.randn(500, 500)
+        k = np.random.randn(10, 10)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.correlate, (d, k), os)
         self.check_func_thread(4, ndimage.correlate, (d, k), ot)
         assert_array_equal(os, ot)
 
     def test_median_filter(self):
-        d = numpy.random.randn(500, 500)
-        os = numpy.empty([4] + list(d.shape))
-        ot = numpy.empty_like(os)
+        d = np.random.randn(500, 500)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.median_filter, (d, 3), os)
         self.check_func_thread(4, ndimage.median_filter, (d, 3), ot)
         assert_array_equal(os, ot)
 
     def test_uniform_filter1d(self):
-        d = numpy.random.randn(5000)
-        os = numpy.empty((4, d.size))
-        ot = numpy.empty_like(os)
+        d = np.random.randn(5000)
+        os = np.empty((4, d.size))
+        ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.uniform_filter1d, (d, 5), os)
         self.check_func_thread(4, ndimage.uniform_filter1d, (d, 5), ot)
         assert_array_equal(os, ot)
 
     def test_minmax_filter(self):
-        d = numpy.random.randn(500, 500)
-        os = numpy.empty([4] + list(d.shape))
-        ot = numpy.empty_like(os)
+        d = np.random.randn(500, 500)
+        os = np.empty([4] + list(d.shape))
+        ot = np.empty_like(os)
         self.check_func_serial(4, ndimage.maximum_filter, (d, 3), os)
         self.check_func_thread(4, ndimage.maximum_filter, (d, 3), ot)
         assert_array_equal(os, ot)
@@ -2109,7 +2109,7 @@ class TestThreading:
 
 def test_minmaximum_filter1d():
     # Regression gh-3898
-    in_ = numpy.arange(10)
+    in_ = np.arange(10)
     out = ndimage.minimum_filter1d(in_, 1)
     assert_equal(in_, out)
     out = ndimage.maximum_filter1d(in_, 1)
@@ -2138,7 +2138,7 @@ def test_minmaximum_filter1d():
 
 def test_uniform_filter1d_roundoff_errors():
     # gh-6930
-    in_ = numpy.repeat([0, 1, 0], [9, 9, 9])
+    in_ = np.repeat([0, 1, 0], [9, 9, 9])
     for filter_size in range(3, 10):
         out = ndimage.uniform_filter1d(in_, filter_size)
         assert_equal(out.sum(), 10 - filter_size)
@@ -2146,16 +2146,16 @@ def test_uniform_filter1d_roundoff_errors():
 
 def test_footprint_all_zeros():
     # regression test for gh-6876: footprint of all zeros segfaults
-    arr = numpy.random.randint(0, 100, (100, 100))
-    kernel = numpy.zeros((3, 3), bool)
+    arr = np.random.randint(0, 100, (100, 100))
+    kernel = np.zeros((3, 3), bool)
     with assert_raises(ValueError):
         ndimage.maximum_filter(arr, footprint=kernel)
 
 
 def test_gaussian_filter():
-    # Test gaussian filter with numpy.float16
+    # Test gaussian filter with np.float16
     # gh-8207
-    data = numpy.array([1], dtype=numpy.float16)
+    data = np.array([1], dtype=np.float16)
     sigma = 1.0
     with assert_raises(RuntimeError):
         ndimage.gaussian_filter(data, sigma)
@@ -2164,9 +2164,9 @@ def test_gaussian_filter():
 def test_rank_filter_noninteger_rank():
     # regression test for issue 9388: ValueError for
     # non integer rank when performing rank_filter
-    arr = numpy.random.random((10, 20, 30))
+    arr = np.random.random((10, 20, 30))
     assert_raises(TypeError, ndimage.rank_filter, arr, 0.5,
-                  footprint=numpy.ones((1, 1, 10), dtype=bool))
+                  footprint=np.ones((1, 1, 10), dtype=bool))
 
 
 def test_size_footprint_both_set():
@@ -2175,15 +2175,14 @@ def test_size_footprint_both_set():
     with suppress_warnings() as sup:
         sup.filter(UserWarning,
                    "ignoring size because footprint is set")
-        arr = numpy.random.random((10, 20, 30))
-        ndimage.rank_filter(arr, 5, size=2, footprint=numpy.ones((1, 1, 10),
-                    dtype=bool))
+        arr = np.random.random((10, 20, 30))
+        ndimage.rank_filter(arr, 5, size=2, footprint=np.ones((1, 1, 10), dtype=bool))
 
 
 def test_byte_order_median():
     """Regression test for #413: median_filter does not handle bytes orders."""
-    a = numpy.arange(9, dtype='<f4').reshape(3, 3)
+    a = np.arange(9, dtype='<f4').reshape(3, 3)
     ref = ndimage.median_filter(a, (3, 3))
-    b = numpy.arange(9, dtype='>f4').reshape(3, 3)
+    b = np.arange(9, dtype='>f4').reshape(3, 3)
     t = ndimage.median_filter(b, (3, 3))
     assert_array_almost_equal(ref, t)

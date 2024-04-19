@@ -9,14 +9,6 @@
             "cosine_invcdf": "d->d"
         }
     },
-    "_cospi": {
-	"cephes.h": {
-	    "cospi": "d->d"
-	},
-        "_special.h++": {
-            "ccospi": "D->D"
-        }
-    },
     "_ellip_harm": {
         "_ellip_harm.pxd": {
             "ellip_harmonic": "ddiiddd->d"
@@ -29,11 +21,6 @@
         "cephes.h": {
             "igam_fac": "dd->d"
         }
-    },
-    "_lambertw": {
-	"_special.h++": {
-            "lambertw_scalar": "Dld->D"
-	}
     },
     "_lanczos_sum_expg_scaled": {
         "cephes.h": {
@@ -53,62 +40,6 @@
     "_sf_error_test_function": {
         "sf_error.pxd": {
             "_sf_error_test_function": "i->i"
-        }
-    },
-    "_sinpi": {
-	"cephes.h": {
-	    "sinpi": "d->d"
-	},
-        "_special.h++": {
-            "csinpi": "D->D"
-        }
-    },
-    "_spherical_in": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_complex": "lD->D",
-            "spherical_in_real": "ld->d"
-        }
-    },
-    "_spherical_in_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_d_complex": "lD->D",
-            "spherical_in_d_real": "ld->d"
-        }
-    },
-    "_spherical_jn": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_complex": "lD->D",
-            "spherical_jn_real": "ld->d"
-        }
-    },
-    "_spherical_jn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_d_complex": "lD->D",
-            "spherical_jn_d_real": "ld->d"
-        }
-    },
-    "_spherical_kn": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_complex": "lD->D",
-            "spherical_kn_real": "ld->d"
-        }
-    },
-    "_spherical_kn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_d_complex": "lD->D",
-            "spherical_kn_d_real": "ld->d"
-        }
-    },
-    "_spherical_yn": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_complex": "lD->D",
-            "spherical_yn_real": "ld->d"
-        }
-    },
-    "_spherical_yn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_d_complex": "lD->D",
-            "spherical_yn_d_real": "ld->d"
         }
     },
     "_struve_asymp_large_z": {
@@ -139,18 +70,6 @@
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
-        }
-    },
-    "airy": {
-        "amos_wrappers.h": {
-            "airy_wrap": "d*dddd->*i",
-            "cairy_wrap": "D*DDDD->*i"
-        }
-    },
-    "airye": {
-        "amos_wrappers.h": {
-            "cairy_wrap_e": "D*DDDD->*i",
-            "cairy_wrap_e_real": "d*dddd->*i"
         }
     },
     "bdtr": {
@@ -185,26 +104,6 @@
     "bdtrin": {
         "_cdflib_wrappers.pxd": {
             "bdtrin": "ddd->d"        }
-    },
-    "bei": {
-        "specfun_wrappers.h": {
-            "bei_wrap": "d->d"
-        }
-    },
-    "beip": {
-        "specfun_wrappers.h": {
-            "beip_wrap": "d->d"
-        }
-    },
-    "ber": {
-        "specfun_wrappers.h": {
-            "ber_wrap": "d->d"
-        }
-    },
-    "berp": {
-        "specfun_wrappers.h": {
-            "berp_wrap": "d->d"
-        }
     },
     "besselpoly": {
         "cephes.h": {
@@ -243,11 +142,6 @@
     "betaln": {
         "cephes.h": {
             "lbeta": "dd->d"
-        }
-    },
-    "binom": {
-        "_special.h++": {
-            "binom": "dd->d"
         }
     },
     "boxcox": {
@@ -551,17 +445,6 @@
             "eval_sh_legendre_l": "ld->d"
         }
     },
-    "exp1": {
-        "specfun_wrappers.h": {
-            "cexp1_wrap": "D->D",
-            "exp1_wrap": "d->d"
-        }
-    },
-    "_scaled_exp1": {
-        "scaled_exp1.h": {
-            "scaled_exp1": "d->d"
-        }
-    },
     "exp10": {
         "cephes.h": {
             "exp10": "d->d"
@@ -570,19 +453,6 @@
     "exp2": {
         "cephes.h": {
             "exp2": "d->d"
-        }
-    },
-    "expi": {
-        "specfun_wrappers.h": {
-            "cexpi_wrap": "D->D",
-            "expi_wrap": "d->d"
-        }
-    },
-    "expit": {
-        "_logit.h++": {
-            "expit": "d->d",
-            "expitf": "f->f",
-            "expitl": "g->g"
         }
     },
     "expm1": {
@@ -599,11 +469,6 @@
         },
         "cephes.h": {
             "expn": "id->d"
-        }
-    },
-    "exprel": {
-        "_exprel.pxd": {
-            "exprel": "d->d"
         }
     },
     "fdtr": {
@@ -629,16 +494,8 @@
         "cephes.h": {
             "fresnl": "d*dd->*i"
         },
-        "specfun_wrappers.h": {
+        "special_wrappers.h": {
             "cfresnl_wrap": "D*DD->*i"
-        }
-    },
-    "gamma": {
-        "_special.h++": {
-            "cgamma": "D->D"
-        },
-        "cephes.h": {
-            "Gamma": "d->d"
         }
     },
     "gammainc": {
@@ -694,26 +551,6 @@
         "_cdflib_wrappers.pxd": {
             "gdtrix": "ddd->d"        }
     },
-    "hankel1": {
-        "amos_wrappers.h": {
-            "cbesh_wrap1": "dD->D"
-        }
-    },
-    "hankel1e": {
-        "amos_wrappers.h": {
-            "cbesh_wrap1_e": "dD->D"
-        }
-    },
-    "hankel2": {
-        "amos_wrappers.h": {
-            "cbesh_wrap2": "dD->D"
-        }
-    },
-    "hankel2e": {
-        "amos_wrappers.h": {
-            "cbesh_wrap2_e": "dD->D"
-        }
-    },
     "huber": {
         "_convex_analysis.pxd": {
             "huber": "dd->d"
@@ -729,16 +566,8 @@
         "boost_special_functions.h++": {
             "hyp1f1_double": "ddd->d"
 	    },
-        "specfun_wrappers.h": {
+        "special_wrappers.h": {
             "chyp1f1_wrap": "ddD->D"
-        }
-    },
-    "hyp2f1": {
-        "cephes.h": {
-            "hyp2f1": "dddd->d"
-        },
-        "_hyp2f1.pxd": {
-            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
@@ -776,60 +605,6 @@
             "inv_boxcox1p": "dd->d"
         }
     },
-    "it2i0k0": {
-        "specfun_wrappers.h": {
-            "it2i0k0_wrap": "d*dd->*i"
-        }
-    },
-    "it2j0y0": {
-        "specfun_wrappers.h": {
-            "it2j0y0_wrap": "d*dd->*i"
-        }
-    },
-    "it2struve0": {
-        "specfun_wrappers.h": {
-            "it2struve0_wrap": "d->d"
-        }
-    },
-    "itairy": {
-        "specfun_wrappers.h": {
-            "itairy_wrap": "d*dddd->*i"
-        }
-    },
-    "iti0k0": {
-        "specfun_wrappers.h": {
-            "it1i0k0_wrap": "d*dd->*i"
-        }
-    },
-    "itj0y0": {
-        "specfun_wrappers.h": {
-            "it1j0y0_wrap": "d*dd->*i"
-        }
-    },
-    "itmodstruve0": {
-        "specfun_wrappers.h": {
-            "itmodstruve0_wrap": "d->d"
-        }
-    },
-    "itstruve0": {
-        "specfun_wrappers.h": {
-            "itstruve0_wrap": "d->d"
-        }
-    },
-    "iv": {
-        "amos_wrappers.h": {
-            "cbesi_wrap": "dD->D"
-        },
-        "cephes.h": {
-            "iv": "dd->d"
-        }
-    },
-    "ive": {
-        "amos_wrappers.h": {
-            "cbesi_wrap_e": "dD->D",
-            "cbesi_wrap_e_real": "dd->d"
-        }
-    },
     "j0": {
         "cephes.h": {
             "j0": "d->d"
@@ -838,18 +613,6 @@
     "j1": {
         "cephes.h": {
             "j1": "d->d"
-        }
-    },
-    "jv": {
-        "amos_wrappers.h": {
-            "cbesj_wrap": "dD->D",
-            "cbesj_wrap_real": "dd->d"
-        }
-    },
-    "jve": {
-        "amos_wrappers.h": {
-            "cbesj_wrap_e": "dD->D",
-            "cbesj_wrap_e_real": "dd->d"
         }
     },
     "k0": {
@@ -872,31 +635,6 @@
             "k1e": "d->d"
         }
     },
-    "kei": {
-        "specfun_wrappers.h": {
-            "kei_wrap": "d->d"
-        }
-    },
-    "keip": {
-        "specfun_wrappers.h": {
-            "keip_wrap": "d->d"
-        }
-    },
-    "kelvin": {
-        "specfun_wrappers.h": {
-            "kelvin_wrap": "d*DDDD->*i"
-        }
-    },
-    "ker": {
-        "specfun_wrappers.h": {
-            "ker_wrap": "d->d"
-        }
-    },
-    "kerp": {
-        "specfun_wrappers.h": {
-            "kerp_wrap": "d->d"
-        }
-    },
     "kl_div": {
         "_convex_analysis.pxd": {
             "kl_div": "dd->d"
@@ -907,7 +645,7 @@
             "kn_unsafe": "dd->d"
         },
         "cephes.h": {
-            "cbesk_wrap_real_int": "id->d"
+            "special_cyl_bessel_k_int": "id->d"
         }
     },
     "_kolmogc": {
@@ -935,18 +673,6 @@
             "kolmogorov": "d->d"
         }
     },
-    "kv": {
-        "amos_wrappers.h": {
-            "cbesk_wrap": "dD->D",
-            "cbesk_wrap_real": "dd->d"
-        }
-    },
-    "kve": {
-        "amos_wrappers.h": {
-            "cbesk_wrap_e": "dD->D",
-            "cbesk_wrap_e_real": "dd->d"
-        }
-    },
     "log1p": {
         "_cunity.pxd": {
             "clog1p": "D->D"
@@ -955,85 +681,15 @@
             "log1p": "d->d"
         }
     },
-    "log_expit": {
-        "_logit.h++": {
-            "log_expit": "d->d",
-            "log_expitf": "f->f",
-            "log_expitl": "g->g"
-        }
-    },
     "log_ndtr": {
         "_faddeeva.h++": {
             "faddeeva_log_ndtr": "d->d",
             "faddeeva_log_ndtr_complex": "D->D"
         }
     },
-    "loggamma": {
-        "_special.h++": {
-	    "loggamma_real": "d->d",
-            "loggamma": "D->D"
-        }
-    },
-    "logit": {
-        "_logit.h++": {
-            "logit": "d->d",
-            "logitf": "f->f",
-            "logitl": "g->g"
-        }
-    },
     "lpmv": {
-        "specfun_wrappers.h": {
+        "special_wrappers.h": {
             "pmv_wrap": "ddd->d"
-        }
-    },
-    "mathieu_a": {
-        "specfun_wrappers.h": {
-            "cem_cva_wrap": "dd->d"
-        }
-    },
-    "mathieu_b": {
-        "specfun_wrappers.h": {
-            "sem_cva_wrap": "dd->d"
-        }
-    },
-    "mathieu_cem": {
-        "specfun_wrappers.h": {
-            "cem_wrap": "ddd*dd->*i"
-        }
-    },
-    "mathieu_modcem1": {
-        "specfun_wrappers.h": {
-            "mcm1_wrap": "ddd*dd->*i"
-        }
-    },
-    "mathieu_modcem2": {
-        "specfun_wrappers.h": {
-            "mcm2_wrap": "ddd*dd->*i"
-        }
-    },
-    "mathieu_modsem1": {
-        "specfun_wrappers.h": {
-            "msm1_wrap": "ddd*dd->*i"
-        }
-    },
-    "mathieu_modsem2": {
-        "specfun_wrappers.h": {
-            "msm2_wrap": "ddd*dd->*i"
-        }
-    },
-    "mathieu_sem": {
-        "specfun_wrappers.h": {
-            "sem_wrap": "ddd*dd->*i"
-        }
-    },
-    "modfresnelm": {
-        "specfun_wrappers.h": {
-            "modified_fresnel_minus_wrap": "d*DD->*i"
-        }
-    },
-    "modfresnelp": {
-        "specfun_wrappers.h": {
-            "modified_fresnel_plus_wrap": "d*DD->*i"
         }
     },
     "modstruve": {
@@ -1138,59 +794,9 @@
             "nrdtrisd": "ddd->d"
         }
     },
-    "obl_ang1": {
-        "specfun_wrappers.h": {
-            "oblate_aswfa_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "obl_ang1_cv": {
-        "specfun_wrappers.h": {
-            "oblate_aswfa_wrap": "ddddd*dd->*i"
-        }
-    },
-    "obl_cv": {
-        "specfun_wrappers.h": {
-            "oblate_segv_wrap": "ddd->d"
-        }
-    },
-    "obl_rad1": {
-        "specfun_wrappers.h": {
-            "oblate_radial1_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "obl_rad1_cv": {
-        "specfun_wrappers.h": {
-            "oblate_radial1_wrap": "ddddd*dd->*i"
-        }
-    },
-    "obl_rad2": {
-        "specfun_wrappers.h": {
-            "oblate_radial2_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "obl_rad2_cv": {
-        "specfun_wrappers.h": {
-            "oblate_radial2_wrap": "ddddd*dd->*i"
-        }
-    },
     "owens_t": {
         "cephes.h": {
             "owens_t": "dd->d"
-        }
-    },
-    "pbdv": {
-        "specfun_wrappers.h": {
-            "pbdv_wrap": "dd*dd->*i"
-        }
-    },
-    "pbvv": {
-        "specfun_wrappers.h": {
-            "pbvv_wrap": "dd*dd->*i"
-        }
-    },
-    "pbwa": {
-        "specfun_wrappers.h": {
-            "pbwa_wrap": "dd*dd->*i"
         }
     },
     "pdtr": {
@@ -1226,50 +832,9 @@
             "powm1_double": "dd->d"
         }
     },
-    "pro_ang1": {
-        "specfun_wrappers.h": {
-            "prolate_aswfa_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "pro_ang1_cv": {
-        "specfun_wrappers.h": {
-            "prolate_aswfa_wrap": "ddddd*dd->*i"
-        }
-    },
-    "pro_cv": {
-        "specfun_wrappers.h": {
-            "prolate_segv_wrap": "ddd->d"
-        }
-    },
-    "pro_rad1": {
-        "specfun_wrappers.h": {
-            "prolate_radial1_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "pro_rad1_cv": {
-        "specfun_wrappers.h": {
-            "prolate_radial1_wrap": "ddddd*dd->*i"
-        }
-    },
-    "pro_rad2": {
-        "specfun_wrappers.h": {
-            "prolate_radial2_nocv_wrap": "dddd*d->d"
-        }
-    },
-    "pro_rad2_cv": {
-        "specfun_wrappers.h": {
-            "prolate_radial2_wrap": "ddddd*dd->*i"
-        }
-    },
     "pseudo_huber": {
         "_convex_analysis.pxd": {
             "pseudo_huber": "dd->d"
-        }
-    },
-    "psi": {
-        "_special.h++": {
-            "cdigamma": "D->D",
-            "digamma": "d->d"
         }
     },
     "radian": {
@@ -1280,14 +845,6 @@
     "rel_entr": {
         "_convex_analysis.pxd": {
             "rel_entr": "dd->d"
-        }
-    },
-    "rgamma": {
-        "_special.h++": {
-            "crgamma": "D->D"
-        },
-        "cephes.h": {
-            "rgamma": "d->d"
         }
     },
     "round": {
@@ -1362,14 +919,6 @@
         },
         "cephes.h": {
             "spence": "d->d"
-        }
-    },
-    "sph_harm": {
-        "_legacy.pxd": {
-            "sph_harmonic_unsafe": "dddd->D"
-        },
-        "sph_harm.pxd": {
-            "sph_harmonic": "iidd->D"
         }
     },
     "stdtr": {
@@ -1447,18 +996,6 @@
             "yn": "id->d"
         }
     },
-    "yv": {
-        "amos_wrappers.h": {
-            "cbesy_wrap": "dD->D",
-            "cbesy_wrap_real": "dd->d"
-        }
-    },
-    "yve": {
-        "amos_wrappers.h": {
-            "cbesy_wrap_e": "dD->D",
-            "cbesy_wrap_e_real": "dd->d"
-        }
-    },
     "zetac": {
         "cephes.h": {
             "zetac": "d->d"
@@ -1469,14 +1006,303 @@
             "riemann_zeta": "d->d"
         }
     },
-    "wright_bessel": {
-        "_wright_bessel.pxd": {
-            "wright_bessel_scalar": "ddd->d"
+    "ndtri_exp": {
+        "_ndtri_exp.pxd": {
+            "ndtri_exp": "d->d"
         }
     },
-    "ndtri_exp": {
-	"_ndtri_exp.pxd": {
-	    "ndtri_exp": "d->d"
-	}
+    "_beta_pdf": {
+        "boost_special_functions.h++": {
+            "beta_pdf_float": "fff->f",
+            "beta_pdf_double": "ddd->d"
+        }
+    },
+    "_beta_ppf": {
+        "boost_special_functions.h++": {
+            "beta_ppf_float": "fff->f",
+            "beta_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_ppf": {
+        "boost_special_functions.h++": {
+            "invgauss_ppf_float": "fff->f",
+            "invgauss_ppf_double": "ddd->d"
+        }
+    },
+    "_invgauss_isf": {
+        "boost_special_functions.h++": {
+            "invgauss_isf_float": "fff->f",
+            "invgauss_isf_double": "ddd->d"
+        }
+    },
+    "_ncx2_pdf": {
+        "boost_special_functions.h++": {
+            "ncx2_pdf_float": "fff->f",
+            "ncx2_pdf_double": "ddd->d"
+        }
+    },
+    "_ncx2_cdf": {
+        "boost_special_functions.h++": {
+            "ncx2_cdf_float": "fff->f",
+            "ncx2_cdf_double": "ddd->d"
+        }
+    },
+    "_ncx2_ppf": {
+        "boost_special_functions.h++": {
+            "ncx2_ppf_float": "fff->f",
+            "ncx2_ppf_double": "ddd->d"
+        }
+    },
+    "_ncx2_sf": {
+        "boost_special_functions.h++": {
+            "ncx2_sf_float": "fff->f",
+            "ncx2_sf_double": "ddd->d"
+        }
+    },
+    "_ncx2_isf": {
+        "boost_special_functions.h++": {
+            "ncx2_isf_float": "fff->f",
+            "ncx2_isf_double": "ddd->d"
+        }
+    },
+    "_ncf_pdf": {
+        "boost_special_functions.h++": {
+            "ncf_pdf_float": "ffff->f",
+            "ncf_pdf_double": "dddd->d"
+        }
+    },
+    "_ncf_cdf": {
+        "boost_special_functions.h++": {
+            "ncf_cdf_float": "ffff->f",
+            "ncf_cdf_double": "dddd->d"
+        }
+    },
+    "_ncf_ppf": {
+        "boost_special_functions.h++": {
+            "ncf_ppf_float": "ffff->f",
+            "ncf_ppf_double": "dddd->d"
+        }
+    },
+    "_ncf_sf": {
+        "boost_special_functions.h++": {
+            "ncf_sf_float": "ffff->f",
+            "ncf_sf_double": "dddd->d"
+        }
+    },
+    "_ncf_isf": {
+        "boost_special_functions.h++": {
+            "ncf_isf_float": "ffff->f",
+            "ncf_isf_double": "dddd->d"
+        }
+    },
+    "_ncf_mean": {
+        "boost_special_functions.h++": {
+            "ncf_mean_float": "fff->f",
+            "ncf_mean_double": "ddd->d"
+        }
+    },
+    "_ncf_variance": {
+        "boost_special_functions.h++": {
+            "ncf_variance_float": "fff->f",
+            "ncf_variance_double": "ddd->d"
+        }
+    },
+    "_ncf_skewness": {
+        "boost_special_functions.h++": {
+            "ncf_skewness_float": "fff->f",
+            "ncf_skewness_double": "ddd->d"
+        }
+    },
+    "_ncf_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "ncf_kurtosis_excess_float": "fff->f",
+            "ncf_kurtosis_excess_double": "ddd->d"
+        }
+    },
+    "_nct_cdf": {
+        "boost_special_functions.h++": {
+            "nct_cdf_float": "fff->f",
+            "nct_cdf_double": "ddd->d"
+        }
+    },
+    "_nct_ppf": {
+        "boost_special_functions.h++": {
+            "nct_ppf_float": "fff->f",
+            "nct_ppf_double": "ddd->d"
+        }
+    },
+    "_nct_sf": {
+        "boost_special_functions.h++": {
+            "nct_sf_float": "fff->f",
+            "nct_sf_double": "ddd->d"
+        }
+    },
+    "_nct_isf": {
+        "boost_special_functions.h++": {
+            "nct_isf_float": "fff->f",
+            "nct_isf_double": "ddd->d"
+        }
+    },
+    "_nct_mean": {
+        "boost_special_functions.h++": {
+            "nct_mean_float": "ff->f",
+            "nct_mean_double": "dd->d"
+        }
+    },
+    "_nct_variance": {
+        "boost_special_functions.h++": {
+            "nct_variance_float": "ff->f",
+            "nct_variance_double": "dd->d"
+        }
+    },
+    "_nct_skewness": {
+        "boost_special_functions.h++": {
+            "nct_skewness_float": "ff->f",
+            "nct_skewness_double": "dd->d"
+        }
+    },
+    "_nct_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nct_kurtosis_excess_float": "ff->f",
+            "nct_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_skewnorm_cdf": {
+        "boost_special_functions.h++": {
+            "skewnorm_cdf_float": "ffff->f",
+            "skewnorm_cdf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_ppf": {
+        "boost_special_functions.h++": {
+            "skewnorm_ppf_float": "ffff->f",
+            "skewnorm_ppf_double": "dddd->d"
+        }
+    },
+    "_skewnorm_isf": {
+        "boost_special_functions.h++": {
+            "skewnorm_isf_float": "ffff->f",
+            "skewnorm_isf_double": "dddd->d"
+        }
+    },
+    "_binom_pmf": {
+        "boost_special_functions.h++": {
+            "binom_pmf_float": "fff->f",
+            "binom_pmf_double": "ddd->d"
+        }
+    },
+    "_binom_cdf": {
+        "boost_special_functions.h++": {
+            "binom_cdf_float": "fff->f",
+            "binom_cdf_double": "ddd->d"
+        }
+    },
+    "_binom_ppf": {
+        "boost_special_functions.h++": {
+            "binom_ppf_float": "fff->f",
+            "binom_ppf_double": "ddd->d"
+        }
+    },
+    "_binom_sf": {
+        "boost_special_functions.h++": {
+            "binom_sf_float": "fff->f",
+            "binom_sf_double": "ddd->d"
+        }
+    },
+    "_binom_isf": {
+        "boost_special_functions.h++": {
+            "binom_isf_float": "fff->f",
+            "binom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_pmf": {
+        "boost_special_functions.h++": {
+            "nbinom_pmf_float": "fff->f",
+            "nbinom_pmf_double": "ddd->d"
+        }
+    },
+    "_nbinom_cdf": {
+        "boost_special_functions.h++": {
+            "nbinom_cdf_float": "fff->f",
+            "nbinom_cdf_double": "ddd->d"
+        }
+    },
+    "_nbinom_ppf": {
+        "boost_special_functions.h++": {
+            "nbinom_ppf_float": "fff->f",
+            "nbinom_ppf_double": "ddd->d"
+        }
+    },
+    "_nbinom_sf": {
+        "boost_special_functions.h++": {
+            "nbinom_sf_float": "fff->f",
+            "nbinom_sf_double": "ddd->d"
+        }
+    },
+    "_nbinom_isf": {
+        "boost_special_functions.h++": {
+            "nbinom_isf_float": "fff->f",
+            "nbinom_isf_double": "ddd->d"
+        }
+    },
+    "_nbinom_mean": {
+        "boost_special_functions.h++": {
+            "nbinom_mean_float": "ff->f",
+            "nbinom_mean_double": "dd->d"
+        }
+    },
+    "_nbinom_variance": {
+        "boost_special_functions.h++": {
+            "nbinom_variance_float": "ff->f",
+            "nbinom_variance_double": "dd->d"
+        }
+    },
+    "_nbinom_skewness": {
+        "boost_special_functions.h++": {
+            "nbinom_skewness_float": "ff->f",
+            "nbinom_skewness_double": "dd->d"
+        }
+    },
+    "_nbinom_kurtosis_excess": {
+        "boost_special_functions.h++": {
+            "nbinom_kurtosis_excess_float": "ff->f",
+            "nbinom_kurtosis_excess_double": "dd->d"
+        }
+    },
+    "_hypergeom_pmf": {
+        "boost_special_functions.h++": {
+            "hypergeom_pmf_float": "ffff->f",
+            "hypergeom_pmf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_cdf": {
+        "boost_special_functions.h++": {
+            "hypergeom_cdf_float": "ffff->f",
+            "hypergeom_cdf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_sf": {
+        "boost_special_functions.h++": {
+            "hypergeom_sf_float": "ffff->f",
+            "hypergeom_sf_double": "dddd->d"
+        }
+    },
+    "_hypergeom_mean": {
+        "boost_special_functions.h++": {
+            "hypergeom_mean_float": "fff->f",
+            "hypergeom_mean_double": "ddd->d"
+        }
+    },
+    "_hypergeom_variance": {
+        "boost_special_functions.h++": {
+            "hypergeom_variance_float": "fff->f",
+            "hypergeom_variance_double": "ddd->d"
+        }
+    },
+    "_hypergeom_skewness": {
+        "boost_special_functions.h++": {
+            "hypergeom_skewness_float": "fff->f",
+            "hypergeom_skewness_double": "ddd->d"
+        }
     }
 }

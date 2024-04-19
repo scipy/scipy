@@ -104,7 +104,7 @@ c           WORKD, WORKL, LWORKL, RWORK, INFO
 c
 c         must be passed directly to ZNEUPD following the last call 
 c         to ZNAUPD.  These arguments MUST NOT BE MODIFIED between
-c         the last call to ZNAUPD and the call to ZNEUPD.
+c         the the last call to ZNAUPD and the call to ZNEUPD.
 c
 c  Three of these parameters (V, WORKL and INFO) are also output parameters:
 c

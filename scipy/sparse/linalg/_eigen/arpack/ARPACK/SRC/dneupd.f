@@ -133,7 +133,7 @@ c           WORKD, WORKL, LWORKL, INFO
 c
 c         must be passed directly to DNEUPD  following the last call
 c         to DNAUPD .  These arguments MUST NOT BE MODIFIED between
-c         the last call to DNAUPD  and the call to DNEUPD .
+c         the the last call to DNAUPD  and the call to DNEUPD .
 c
 c  Three of these parameters (V, WORKL, INFO) are also output parameters:
 c

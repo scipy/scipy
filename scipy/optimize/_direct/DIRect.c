@@ -19,7 +19,7 @@
 /* | DIRECT is a method to solve problems of the form:                     | */
 /* |              min f: Q --> R,                                          | */
 /* | where f is the function to be minimized and Q is an n-dimensional     | */
-/* | hyperrectangle given by the the following equation:                   | */
+/* | hyperrectangle given by the following equation:                       | */
 /* |                                                                       | */
 /* |       Q={ x : l(i) <= x(i) <= u(i), i = 1,...,n }.                    | */
 /* | Note: This version of DIRECT can also handle hidden constraints. By   | */
@@ -298,7 +298,7 @@
 /* |  maxpos -- The number of intervalls, which are truncated.             | */
 /* |    help -- A help variable.                                           | */
 /* | numfunc -- The actual number of function evaluations.                 | */
-/* |   file2 -- The filehandle for an other datafile.                      | */
+/* |   file2 -- The filehandle for another datafile.                       | */
 /* |  ArrayI -- Array with the indexes of the sides with maximum length.   | */
 /* |    maxi -- Number of directions with maximal side length.             | */
 /* |    oops -- Flag which shows if anything went wrong in the             | */
@@ -311,7 +311,7 @@
 /* |  oldpos -- The old index of the minimum. Used to print only, if there | */
 /* |            is a new minimum found.                                    | */
 /* |  tstart -- The start of the outer loop.                               | */
-/* |   start -- The postion of the starting point in the inner loop.       | */
+/* |   start -- The position of the starting point in the inner loop.      | */
 /* | Newtosample -- The total number of points to sample in the inner loop.| */
 /* |       w -- Array used to divide the intervalls                        | */
 /* |    kmax -- Obsolete. If cheat = 1, Ktilde was not allowed to be larger| */

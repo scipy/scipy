@@ -11,10 +11,10 @@ cdef extern from "float.h":
     double DBL_MAX, DBL_MIN
 
 
-cdef extern from "amos_wrappers.h":
-    np.npy_cdouble cbesi_wrap(double v, np.npy_cdouble z) nogil
-    np.npy_cdouble cbesj_wrap(double v, np.npy_cdouble z) nogil
-    double sin_pi(double x) nogil
+cdef extern from "special_wrappers.h":
+    np.npy_cdouble special_ccyl_bessel_i(double v, np.npy_cdouble z) nogil
+    np.npy_cdouble special_ccyl_bessel_j(double v, np.npy_cdouble z) nogil
+    double special_sinpi(double x) nogil
 
 cdef extern from "numpy/npy_math.h":
     double npy_creal(np.npy_cdouble z) nogil
@@ -89,7 +89,7 @@ cdef inline double _hyp0f1_asy(double v, double z) noexcept nogil:
     if v - 1 < 0:
         # DLMF 10.27.2: I_{-v} = I_{v} + (2/pi) sin(pi*v) K_v
         u_corr_k = 1.0 - u1/v1 + u2/(v1*v1) - u3/(v1*v1*v1)
-        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * sin_pi(v1) * u_corr_k
+        result += exp(arg_exp_k + xlogy(v1, arg)) * gs * 2.0 * special_sinpi(v1) * u_corr_k
 
     return result
 
@@ -121,10 +121,10 @@ cdef inline double complex _hyp0f1_cmplx(double v, double complex z) noexcept no
     if npy_creal(zz) > 0:
         arg = zsqrt(z)
         s = 2.0 * arg
-        r = cbesi_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_i(v-1.0, npy_cdouble_from_double_complex(s))
     else:
         arg = zsqrt(-z)
         s = 2.0 * arg
-        r = cbesj_wrap(v-1.0, npy_cdouble_from_double_complex(s))
+        r = special_ccyl_bessel_j(v-1.0, npy_cdouble_from_double_complex(s))
 
     return double_complex_from_npy_cdouble(r) * Gamma(v) * zpow(arg, 1.0 - v)

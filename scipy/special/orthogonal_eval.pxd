@@ -37,11 +37,12 @@ from . cimport sf_error
 from ._cephes cimport Gamma, lgam, beta, lbeta, gammasgn
 from ._cephes cimport hyp2f1 as hyp2f1_wrap
 
-from ._hyp2f1 cimport hyp2f1_complex
+cdef extern from "special_wrappers.h":
+    npy_cdouble hyp2f1_complex_wrap(double a, double b, double c, npy_cdouble z) nogil
 
-cdef extern from "specfun_wrappers.h":
     double hyp1f1_wrap(double a, double b, double x) nogil
     npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z) nogil
+
 
 # Fused type wrappers
 
@@ -50,7 +51,8 @@ cdef inline number_t hyp2f1(double a, double b, double c, number_t z) noexcept n
     if number_t is double:
         return hyp2f1_wrap(a, b, c, z)
     else:
-        return hyp2f1_complex(a, b, c, z)
+        r = hyp2f1_complex_wrap(a, b, c, npy_cdouble_from_double_complex(z))
+        return double_complex_from_npy_cdouble(r)
 
 cdef inline number_t hyp1f1(double a, double b, number_t z) noexcept nogil:
     cdef npy_cdouble r

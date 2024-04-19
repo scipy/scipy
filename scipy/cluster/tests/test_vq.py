@@ -19,8 +19,8 @@ from scipy._lib._array_api import (
     SCIPY_ARRAY_API, copy, cov, xp_assert_close, xp_assert_equal
 )
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-skip_if_array_api = pytest.mark.skip_if_array_api
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 TESTDATA_2D = np.array([
     -2.2, 1.17, -1.63, 1.69, -2.04, 4.38, -3.09, 0.95, -1.7, 4.79, -1.68, 0.68,
@@ -133,7 +133,7 @@ class TestWhiten:
 
 class TestVq:
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_py_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         # label1.dtype varies between int32 and int64 over platforms
@@ -149,7 +149,7 @@ class TestVq:
         label1 = py_vq(matrix(X), matrix(initc))[0]
         assert_array_equal(label1, LABEL1)
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test_vq(self, xp):
         initc = np.concatenate([[X[0]], [X[1]], [X[2]]])
         label1, _ = _vq.vq(xp.asarray(X), xp.asarray(initc))
@@ -164,7 +164,7 @@ class TestVq:
         assert_array_equal(label1, LABEL1)
         _, _ = vq(matrix(X), matrix(initc))
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_1d(self, xp):
         # Test special rank 1 vq algo, python implementation.
         data = X[:, 0]
@@ -177,18 +177,18 @@ class TestVq:
         xp_assert_equal(ta, xp.asarray(a, dtype=xp.int64), check_dtype=False)
         xp_assert_equal(tb, xp.asarray(b))
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test__vq_sametype(self, xp):
         a = xp.asarray([1.0, 2.0], dtype=xp.float64)
         b = a.astype(xp.float32)
         assert_raises(TypeError, _vq.vq, a, b)
 
-    @skip_if_array_api(np_only=True, reasons=['`_vq` only supports NumPy backend'])
+    @skip_xp_backends(np_only=True, reasons=['`_vq` only supports NumPy backend'])
     def test__vq_invalid_type(self, xp):
         a = xp.asarray([1, 2], dtype=int)
         assert_raises(TypeError, _vq.vq, a, a)
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_large_nfeat(self, xp):
         X = np.random.rand(20, 20)
         code_book = np.random.rand(3, 20)
@@ -212,7 +212,7 @@ class TestVq:
         # codes1.dtype varies between int32 and int64 over platforms
         xp_assert_equal(codes1, xp.asarray(codes0, dtype=xp.int64), check_dtype=False)
 
-    @skip_if_array_api(cpu_only=True)
+    @skip_xp_backends(cpu_only=True)
     def test_vq_large_features(self, xp):
         X = np.random.rand(10, 5) * 1000000
         code_book = np.random.rand(2, 5) * 1000000
@@ -228,7 +228,7 @@ class TestVq:
 
 # Whole class skipped on GPU for now;
 # once pdist/cdist are hooked up for CuPy, more tests will work
-@skip_if_array_api(cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 class TestKMean:
 
     def test_large_features(self, xp):

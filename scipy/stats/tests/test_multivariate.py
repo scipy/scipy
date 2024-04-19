@@ -12,7 +12,6 @@ from pytest import raises as assert_raises
 
 from .test_continuous_basic import check_distribution_rvs
 
-import numpy
 import numpy as np
 
 import scipy.linalg
@@ -734,7 +733,7 @@ class TestMultivariateNormal:
 
         sample = multivariate_normal.rvs(mean, cov, size)
 
-        assert_allclose(numpy.cov(sample.T), cov, rtol=1e-1)
+        assert_allclose(np.cov(sample.T), cov, rtol=1e-1)
         assert_allclose(sample.mean(0), mean, rtol=1e-1)
 
     def test_entropy(self):

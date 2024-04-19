@@ -11,13 +11,12 @@ from libc.math cimport isnan, isinf, NAN
 
 from . cimport sf_error
 from ._ellip_harm cimport ellip_harmonic
-from .sph_harm cimport sph_harmonic
 from ._cephes cimport (bdtrc, bdtr, bdtri, expn, nbdtrc,
                        nbdtr, nbdtri, pdtri, kn, yn,
                        smirnov, smirnovi, smirnovc, smirnovci, smirnovp)
 
-cdef extern from "amos_wrappers.h":
-    double cbesk_wrap_real_int(int n, double z) nogil
+cdef extern from "special_wrappers.h":
+    double special_cyl_bessel_k_int(int n, double z) nogil
 
 cdef extern from "Python.h":
     # Purposefully ignore the raised PyError --- assume the ufunc will collect it
@@ -35,13 +34,6 @@ cdef inline void _legacy_deprecation(char *func_name, double x, double y) noexce
             PyErr_WarnEx_noerr(DeprecationWarning,
                                "non-integer arg n is deprecated, removed in SciPy 1.7.x",
                                1)
-
-cdef inline double complex sph_harmonic_unsafe(double m, double n,
-                                               double theta, double phi) noexcept nogil:
-    if isnan(m) or isnan(n):
-        return NAN
-    _legacy_cast_check("sph_harm", m, n)
-    return sph_harmonic(<int>m, <int> n, theta, phi)
 
 cdef inline double ellip_harmonic_unsafe(double h2, double k2, double n,
                                          double p, double l, double signm,
@@ -106,7 +98,7 @@ cdef inline double kn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
         return n
     _legacy_cast_check("kn", n, 0)
-    return cbesk_wrap_real_int(<int>n, x)
+    return special_cyl_bessel_k_int(<int>n, x)
 
 cdef inline double yn_unsafe(double n, double x) noexcept nogil:
     if isnan(n):
