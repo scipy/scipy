@@ -213,7 +213,6 @@ class Rosenbrock:
     """
 
     def __init__(self, n=2, random_state=0):
-        # Sensitive to x0 with Accelerate
         rng = np.random.RandomState(random_state)
         self.x0 = rng.uniform(-1, 1, n)
         self.x_opt = np.ones(n)
