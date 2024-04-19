@@ -457,7 +457,7 @@ class TestTrustRegionConstr:
                         Rosenbrock(),
                         IneqRosenbrock(),
                         EqIneqRosenbrock(),
-                        BoundedRosenbrock(),
+                        BoundedRosenbrock(1),
                         Elec(n_electrons=2),
                         Elec(n_electrons=2, constr_hess='2-point'),
                         Elec(n_electrons=2, constr_hess=SR1()),
@@ -465,43 +465,44 @@ class TestTrustRegionConstr:
                              constr_hess=SR1())]
 
     @pytest.mark.parametrize('prob', list_of_problems)
-    def test_list_of_problems(self, prob):
-        for grad in (prob.grad, '3-point', False):
-            for hess in (prob.hess,
-                         '3-point',
-                         SR1(),
-                         BFGS(exception_strategy='damp_update'),
-                         BFGS(exception_strategy='skip_update')):
+    @pytest.mark.parametrize('grad', ('prob.grad', '3-point', False))
+    @pytest.mark.parametrize('hess', ("prob.hess", '3-point', SR1(),
+                                      BFGS(exception_strategy='damp_update'),
+                                      BFGS(exception_strategy='skip_update')))
+    def test_list_of_problems(self, prob, grad, hess):
+        grad = prob.grad if grad == "prob.grad" else grad
+        hess = prob.hess if hess == "prob.hess" else hess
+        # Remove exceptions
+        if (grad in {'2-point', '3-point', 'cs', False} and
+                hess in {'2-point', '3-point', 'cs'}):
+            pytest.skip("Numerical Hessian needs analytical gradient")
+        if prob.grad is True and grad in {'3-point', False}:
+            pytest.skip("prob.grad incompatible with grad in {'3-point', False}")
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "delta_grad == 0.0")
+            result = minimize(prob.fun, prob.x0,
+                              method='trust-constr',
+                              jac=grad, hess=hess,
+                              bounds=prob.bounds,
+                              constraints=prob.constr)
 
-                # Remove exceptions
-                if grad in ('2-point', '3-point', 'cs', False) and \
-                   hess in ('2-point', '3-point', 'cs'):
-                    continue
-                if prob.grad is True and grad in ('3-point', False):
-                    continue
-                with suppress_warnings() as sup:
-                    sup.filter(UserWarning, "delta_grad == 0.0")
-                    result = minimize(prob.fun, prob.x0,
-                                      method='trust-constr',
-                                      jac=grad, hess=hess,
-                                      bounds=prob.bounds,
-                                      constraints=prob.constr)
+        if prob.x_opt is not None:
+            assert_array_almost_equal(result.x, prob.x_opt,
+                                      decimal=5)
+            # gtol
+            if result.status == 1:
+                assert_array_less(result.optimality, 1e-8)
+        # xtol
+        if result.status == 2:
+            assert_array_less(result.tr_radius, 1e-8)
 
-                if prob.x_opt is not None:
-                    assert_array_almost_equal(result.x, prob.x_opt,
-                                              decimal=5)
-                    # gtol
-                    if result.status == 1:
-                        assert_array_less(result.optimality, 1e-8)
-                # xtol
-                if result.status == 2:
-                    assert_array_less(result.tr_radius, 1e-8)
+            if result.method == "tr_interior_point":
+                assert_array_less(result.barrier_parameter, 1e-8)
 
-                    if result.method == "tr_interior_point":
-                        assert_array_less(result.barrier_parameter, 1e-8)
-                # max iter
-                if result.status in (0, 3):
-                    raise RuntimeError("Invalid termination condition.")
+        # check for max iter
+        message = f"Invalid termination condition: {result.status}."
+        assert result.status not in {0, 3}, message
+
 
     def test_default_jac_and_hess(self):
         def fun(x):
