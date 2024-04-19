@@ -1,6 +1,21 @@
 #pragma once
 #include "Python.h"
 
+#ifndef M_PI
+#define M_PI           3.14159265358979323846  /* pi */
+#endif
+
+#ifndef PyArray_MIN
+#define PyArray_MIN(a,b) (((a)<(b))?(a):(b))
+#endif
+
+#define PYERR(message)                                                                                                 \
+    do {                                                                                                               \
+        PyErr_SetString(PyExc_ValueError, message);                                                                    \
+        goto fail;                                                                                                     \
+    } while (0)
+
+
 template <typename T, typename C>
 int _sym_iir1_initial(C z1, C *x, C *yp0, int M, int N, T precision) {
     // XXX: remove templating on C,T : C === T or std::complex<T>

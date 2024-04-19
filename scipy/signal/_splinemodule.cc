@@ -5,12 +5,6 @@
 #include "_splinemodule.h"
 
 
-#define PYERR(message)                                                                                                 \
-    do {                                                                                                               \
-        PyErr_SetString(PyExc_ValueError, message);                                                                    \
-        goto fail;                                                                                                     \
-    } while (0)
-
 void convert_strides(npy_intp *instrides, npy_intp *convstrides, int size, int N) {
     int n;
     npy_intp bitshift;
