@@ -189,8 +189,8 @@ def solve_continuous_lyapunov(a, q):
     # Accomodate empty array
     if a.size == 0:
         a_n = np.eye(2, dtype=a.dtype)
-        b_n = np.eye(2, dtype=q.dtype)
-        dt = solve_continuous_lyapunov(a_n, b_n).dtype
+        q_n = np.eye(2, dtype=q.dtype)
+        dt = solve_continuous_lyapunov(a_n, q_n).dtype
         return np.empty(a.shape, dtype=dt)
 
     # Compute the Schur decomposition form of a
