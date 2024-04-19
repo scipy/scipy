@@ -290,9 +290,9 @@ def main():
                             cwd=os.getcwd())
         out, err = p.communicate()
         if not (p.returncode == 0):
-            raise RuntimeError(f"Writing {fname_pyf} with f2py failed!\n"
-                            f"{out.decode()}\n"
-                            f"{err.decode()}")
+            raise RuntimeError(f"Processing {fname_pyf} with f2py failed!\n"
+                               f"{out.decode()}\n"
+                               f"{err.decode()}")
 
 
 if __name__ == "__main__":
