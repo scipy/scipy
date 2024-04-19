@@ -77,7 +77,7 @@
             "bdtr_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtr": "did->d"
+            "bdtr": "dld->d"
         }
     },
     "bdtrc": {
@@ -85,7 +85,7 @@
             "bdtrc_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtrc": "did->d"
+            "bdtrc": "dld->d"
         }
     },
     "bdtri": {
@@ -93,7 +93,7 @@
             "bdtri_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtri": "did->d"
+            "bdtri": "dld->d"
         }
     },
     "bdtrik": {
