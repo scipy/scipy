@@ -24,7 +24,7 @@ def _load_data(name):
 
 
 class TestSolveLyapunov:
-    
+
     cases = [
         # empty case
         (np.empty((0, 0)),
