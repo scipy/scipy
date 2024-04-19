@@ -89,10 +89,9 @@ def solve_sylvester(a, b, q):
 
     # Accomodate empty a
     if a.size == 0 or b.size == 0:
-        a_n = np.eye(2, dtype=a.dtype)
-        b_n = np.eye(2, dtype=b.dtype)
-        q_n = np.eye(2, dtype=q.dtype)
-        dt = solve_sylvester(a_n, b_n, q_n).dtype
+        dt = np.result_type(a, b, q)
+        if dt == int:
+            dt = np.float64
         return np.empty(q.shape, dtype=dt)
 
     # Compute the Schur decomposition form of a
@@ -188,9 +187,9 @@ def solve_continuous_lyapunov(a, q):
     
     # Accomodate empty array
     if a.size == 0:
-        a_n = np.eye(2, dtype=a.dtype)
-        b_n = np.eye(2, dtype=q.dtype)
-        dt = solve_continuous_lyapunov(a_n, b_n).dtype
+        dt = np.result_type(a, q)
+        if dt == int:
+            dt = np.float64
         return np.empty(a.shape, dtype=dt)
 
     # Compute the Schur decomposition form of a
