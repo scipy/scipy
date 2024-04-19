@@ -301,7 +301,12 @@ T sph_bessel_i_jac(long n, T z) {
     }
 
     if (z == static_cast<T>(0)) {
-        return 0;
+        if (n == 1) {
+            return 1./3.;
+        }
+        else {
+            return 0;
+        }
     }
 
     return sph_bessel_i(n - 1, z) - static_cast<T>(n + 1) * sph_bessel_i(n, z) / z;
