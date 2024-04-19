@@ -89,10 +89,9 @@ def solve_sylvester(a, b, q):
 
     # Accomodate empty a
     if a.size == 0 or b.size == 0:
-        dt = np.result_type(a, b, q)
-        if dt == int:
-            dt = np.float64
-        return np.empty(q.shape, dtype=dt)
+        tdict = {'s': np.float32, 'd': np.float64, 'c': np.complex64, 'z': np.complex128}
+        func, = get_lapack_funcs(('trsyl',), arrays=(a, b, q))
+        return np.empty(q.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
@@ -187,10 +186,9 @@ def solve_continuous_lyapunov(a, q):
     
     # Accomodate empty array
     if a.size == 0:
-        dt = np.result_type(a, q)
-        if dt == int:
-            dt = np.float64
-        return np.empty(a.shape, dtype=dt)
+        tdict = {'s': np.float32, 'd': np.float64, 'c': np.complex64, 'z': np.complex128}
+        func, = get_lapack_funcs(('trsyl',), arrays=(a, q))
+        return np.empty(a.shape, dtype=tdict[func.typecode])
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
