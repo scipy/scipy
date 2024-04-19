@@ -5,6 +5,38 @@
 
 namespace special {
 
+template <typename T>
+struct legendre_callback_jac {
+    T z;
+    T res;
+    T res_prev;
+
+    legendre_callback_jac(T z) : z(z) {}
+
+    void operator()(long j, T p, T p_prev) {
+        if (j == 0) {
+            res_prev = std::numeric_limits<T>::quiet_NaN();
+            res = 0;
+        } else {
+            res_prev = res;
+            if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
+                res = T(j) * T(j + 1) * std::pow(std::real(z), T(j + 1)) / T(2);
+            } else {
+                res = T(j) * (p_prev - z * p) / (T(1) - z * z);
+            }
+        }
+    }
+};
+
+template <typename OutputVec, typename T = typename OutputVec::value_type>
+struct legendre_callback_all {
+    OutputVec res_all;
+
+    legendre_callback_all(OutputVec res_all) : res_all(res_all) {}
+
+    void operator()(long j, T res, T res_prev) { res_all(j) = res; }
+};
+
 // Translated into C++ by SciPy developers in 2024.
 //
 // ===============================================
@@ -16,45 +48,57 @@ namespace special {
 //          PD(n) --- Pn'(z)
 // ===============================================
 
-template <typename T, typename OutputVec>
-void legendre_all(T z, OutputVec p) {
-    long n = p.extent(0) - 1;
-
-    T p0 = 1;
-    p(0) = p0;
+template <typename T, typename Callback>
+T legendre(long n, T z, Callback callback) {
+    T p = 1;
+    callback(0, p, std::numeric_limits<T>::quiet_NaN());
 
     if (n >= 1) {
-        T p1 = z;
-        p(1) = p1;
+        T p_prev = p;
+        p = z;
+        callback(1, p, p_prev);
 
-        for (long k = 2; k <= n; k++) {
-            T pf = (static_cast<T>(2 * k - 1) * z * p1 - static_cast<T>(k - 1) * p0) / static_cast<T>(k);
-            p(k) = pf;
-
-            p0 = p1;
-            p1 = pf;
+        for (long j = 2; j <= n; j++) {
+            T p_prev_prev = p_prev;
+            p_prev = p;
+            p = (T(2 * j - 1) * z * p_prev - T(j - 1) * p_prev_prev) / T(j);
+            callback(j, p, p_prev);
         }
     }
+
+    return p;
+}
+
+template <typename T>
+T legendre(long n, T z) {
+    return legendre(n, z, [](long j, T p, T p_prev) {});
+}
+
+template <typename T, typename OutputVec>
+void legendre_all(T z, OutputVec p_all) {
+    long n = p_all.extent(0) - 1;
+
+    legendre_callback_all callback(p_all);
+    legendre(n, z, callback);
+}
+
+template <typename T, typename Callback>
+T legendre_jac(long n, T z, Callback callback) {
+    legendre_callback_jac p_callback(z);
+    legendre(n, z, [&p_callback, &callback](long j, T p, T p_prev) {
+        p_callback(j, p, p_prev);
+        callback(j, p_callback.res, p_callback.res_prev);
+    });
+
+    return p_callback.res;
 }
 
 template <typename T, typename InputVec, typename OutputVec>
-void legendre_all_jac(T z, InputVec p, OutputVec pd) {
+void legendre_all_jac(T z, InputVec p, OutputVec pd_all) {
     long n = p.extent(0) - 1;
 
-    pd(0) = 0;
-    if (n >= 1) {
-        pd(1) = 1;
-
-        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-            for (long k = 2; k <= n; k++) {
-                pd(k) = k * (k + 1) * std::pow(std::real(z), k + 1) / 2;
-            }
-        } else {
-            for (long k = 2; k <= n; k++) {
-                pd(k) = static_cast<T>(k) * (p(k - 1) - z * p(k)) / (static_cast<T>(1) - z * z);
-            }
-        }
-    }
+    legendre_callback_all callback(pd_all);
+    legendre_jac(n, z, callback);
 }
 
 // Translated into C++ by SciPy developers in 2024.
@@ -72,6 +116,57 @@ void legendre_all_jac(T z, InputVec p, OutputVec pd) {
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
+template <typename T, typename OutputMat, typename Callback>
+void assoc_legendre_all(long m, long n, T x, OutputMat p, Callback callback) {
+    using value_type = typename OutputMat::value_type;
+
+    for (long i = 0; i <= m; ++i) {
+        for (long j = 0; j <= n; ++j) {
+            p(i, j) = 0;
+        }
+    }
+
+    p(0, 0) = 1;
+    callback(0, 0, p(0, 0));
+
+    if (n > 0) {
+        if (std::abs(x) == 1) {
+            for (long i = 1; i <= n; i++) {
+                p(0, i) = std::pow(x, i);
+                callback(0, i, p(0, i));
+            }
+        } else {
+            long ls = (std::abs(x) > 1 ? -1 : 1);
+            T xq = std::sqrt(ls * (1 - x * x));
+            if (x < -1) {
+                xq = -xq; // Ensure connection to the complex-valued function for |x| > 1
+            }
+
+            for (long i = 1; i <= m; ++i) {
+                p(i, i) = -ls * (2 * i - 1) * xq * p(i - 1, i - 1);
+                callback(i, i, p(i, i));
+            }
+            for (long i = 0; i <= std::min(n - 1, m); i++) {
+                p(i, i + 1) = (2 * i + 1) * x * p(i, i);
+                callback(i, i + 1, p(i, i + 1));
+            }
+
+            for (long i = 0; i <= m; i++) {
+                value_type p_prev = p(i, i);
+                value_type p_curr = p(i, i + 1);
+                for (long j = i + 2; j <= n; j++) {
+                    value_type p_prev_prev = p_prev;
+                    p_prev = p_curr;
+
+                    p_curr =
+                        ((2 * j - 1) * x * p_prev - static_cast<T>(i + j - 1) * p_prev_prev) / static_cast<T>(j - i);
+                    callback(i, j, p_curr);
+                }
+            }
+        }
+    }
+}
+
 template <typename T, typename OutputMat>
 void assoc_legendre_all(T x, OutputMat p) {
     long m = p.extent(0) - 1;
@@ -82,6 +177,11 @@ void assoc_legendre_all(T x, OutputMat p) {
             p(i, j) = 0;
         }
     }
+
+    assoc_legendre_all(m, n, x, p, [p](auto i, auto j, auto v) {
+        // ...
+        p(i, j) = v;
+    });
 
     p(0, 0) = 1;
     if (n > 0) {
@@ -101,13 +201,6 @@ void assoc_legendre_all(T x, OutputMat p) {
             }
             for (long i = 0; i <= std::min(n - 1, m); i++) {
                 p(i, i + 1) = (2 * i + 1) * x * p(i, i);
-            }
-
-            for (long i = 0; i <= m; i++) {
-                for (long j = i + 2; j <= n; j++) {
-                    p(i, j) = ((2 * j - 1) * x * p(i, j - 1) - static_cast<T>(i + j - 1) * p(i, j - 2)) /
-                              static_cast<T>(j - i);
-                }
             }
         }
     }
@@ -210,15 +303,74 @@ void assoc_legendre_all_jac(T x, bool m_signbit, InputMat p, OutputMat p_jac) {
     }
 }
 
+template <typename T, typename Callback>
+T sph_legendre(long m, long n, T phi, Callback callback) {
+    if (std::isnan(phi)) {
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
+    // n = 0, m
+    T x = std::cos(phi);
+    if (m == 0) {
+        T p = std::sqrt((2 * n + 1) / (4 * M_PI)) * legendre(n, x);
+        //        callback(0, n, p);
+
+        return p;
+    }
+
+    T poch_log = std::lgamma(m + 1 / T(2)) - std::lgamma(m); // log(gamma(m + 1 / 2) / gamma(m)))
+
+    T p = std::pow(-1, m) * std::sqrt((T(2) + T(1) / m) / (T(4) * M_PI)) *
+          std::exp((poch_log + m * std::log1p(-x * x)) / T(2) - std::log(M_PI) / T(4));
+    callback(n, n, p);
+
+    if (m == n) {
+        return p;
+    }
+
+    // n = 1, m
+    T p_prev = p;
+    p = std::sqrt(2 * m + 3) * x * p_prev;
+    callback(m, n + 1, p);
+
+    T p_prev_prev;
+    for (long j = m + 2; j <= n; ++j) {
+        T fac0 = T(j - m) / T(j + m);
+        T fac1 = T(j - m - 1) / T(j + m - 1);
+
+        p_prev_prev = p_prev;
+        p_prev = p;
+
+        p = (std::sqrt(T(2 * j + 1) * T(2 * j - 1) * fac0) * x * p_prev -
+             T(j + m - 1) * std::sqrt(T(2 * j + 1) / T(2 * j - 3) * fac0 * fac1) * p_prev_prev) /
+            T(j - m);
+        callback(m, j, p);
+    }
+
+    return p;
+}
+
+template <typename T>
+void default_sph_legendre_callback(long m, long n, T p) {}
+
+template <typename T>
+T sph_legendre(long m, long n, T phi) {
+    return sph_legendre(m, n, phi, default_sph_legendre_callback<T>);
+}
+
 template <typename T, typename OutMat>
-void sph_legendre_all(T phi, OutMat p) {
-    long n = p.extent(1) - 1;
+void sph_legendre_all(T phi, OutMat p_all) {
+    long m = p_all.extent(0) - 1;
+    long n = p_all.extent(1) - 1;
 
-    assoc_legendre_all(std::cos(phi), p);
+    for (long i = 0; i <= m; ++m) {
+        sph_legendre(i, n, phi, [p_all, i](auto j, auto m, auto p) { p_all(i, j) = p; });
+    }
 
+    assoc_legendre_all(std::cos(phi), p_all);
     for (long j = 0; j <= n; ++j) {
         for (long i = 0; i <= j; ++i) {
-            p(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
+            p_all(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
         }
     }
 }

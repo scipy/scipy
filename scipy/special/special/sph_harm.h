@@ -10,7 +10,7 @@ template <typename T>
 std::complex<T> sph_harm(long m, long n, T theta, T phi) {
     if (n < 0) {
         set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
-        return NAN;
+        return std::numeric_limits<T>::quiet_NaN();
     }
 
     long m_abs = std::abs(m);
@@ -18,15 +18,12 @@ std::complex<T> sph_harm(long m, long n, T theta, T phi) {
         return 0;
     }
 
-    std::complex<T> val = pmv(m_abs, n, std::cos(phi));
+    std::complex<T> y = sph_legendre(m_abs, n, phi) * std::exp(std::complex(T(0), m * theta));
     if (m < 0) {
-        val *= std::pow(-1, m_abs) * cephes::poch(n + m_abs + 1, -2 * m_abs);
+        y *= std::pow(-1, m_abs);
     }
 
-    val *= std::sqrt((2 * n + 1) * cephes::poch(n + m + 1, -2 * m) / (4 * M_PI));
-    val *= std::exp(std::complex(static_cast<T>(0), m * theta));
-
-    return val;
+    return y;
 }
 
 template <typename T, typename OutMat>
