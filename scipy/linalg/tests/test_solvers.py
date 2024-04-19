@@ -281,7 +281,6 @@ class TestSolveContinuousAre:
         # Test Case 19: carex #20
         (mat20['A'], mat20['B'], mat20['Q'], mat20['R'],
          'Bad Residual Accuracy'),
-        np.empty
         ]
     # Makes the minimum precision requirements customized to the test.
     # Here numbers represent the number of decimals that agrees with zero
@@ -498,7 +497,7 @@ class TestSolveDiscreteAre:
          np.flipud(np.eye(100, 1)),
          np.eye(100),
          np.array([[1]]),
-         None),
+         None)
         ]
 
     # Makes the minimum precision requirements customized to the test.
