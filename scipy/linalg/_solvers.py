@@ -80,6 +80,20 @@ def solve_sylvester(a, b, q):
     True
 
     """
+    for ind, _ in enumerate((a, b)):
+        if not np.equal(*_.shape):
+            raise ValueError("Matrix {} should be square.".format("ab"[ind]))
+    # Shape consistency check
+    if a.shape[0] != q.shape[0] or b.shape[0] != q.shape[1]:
+        raise ValueError("Matrix q should have shape (a.shape[0], b.shape[0])")
+
+    # Accomodate empty a
+    if a.size == 0 or b.size == 0:
+        a_n = np.eye(2, dtype=a.dtype)
+        b_n = np.eye(2, dtype=b.dtype)
+        q_n = np.eye(2, dtype=q.dtype)
+        dt = solve_sylvester(a_n, b_n, q_n).dtype
+        return np.empty(q.shape, dtype=dt)
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
@@ -171,6 +185,13 @@ def solve_continuous_lyapunov(a, q):
     # Shape consistency check
     if a.shape != q.shape:
         raise ValueError("Matrix a and q should have the same shape.")
+    
+    # Accomodate empty array
+    if a.size == 0:
+        a_n = np.eye(2, dtype=a.dtype)
+        b_n = np.eye(2, dtype=q.dtype)
+        dt = solve_continuous_lyapunov(a_n, b_n).dtype
+        return np.empty(a.shape, dtype=dt)
 
     # Compute the Schur decomposition form of a
     r, u = schur(a, output='real')
