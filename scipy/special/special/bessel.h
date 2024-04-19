@@ -1,13 +1,14 @@
 #pragma once
 
 #include "amos.h"
+#include "cephes/jv.h"
+#include "cephes/scipy_iv.h"
+#include "cephes/yv.h"
 #include "error.h"
 #include "specfun.h"
 #include "trig.h"
 
-extern "C" double cephes_jv(double v, double x);
 extern "C" double cephes_iv(double v, double x);
-extern "C" double cephes_yv(double v, double x);
 
 namespace special {
 namespace detail {
@@ -895,7 +896,7 @@ T cyl_bessel_j(T v, T x) {
     std::complex<T> res = cyl_bessel_j(v, std::complex(x));
     if (std::real(res) != std::real(res)) {
         /* AMOS returned NaN, possibly due to overflow */
-        return cephes_jv(v, x);
+        return cephes::jv(v, x);
     }
 
     return std::real(res);
@@ -962,13 +963,13 @@ T cyl_bessel_y(T v, T x) {
 
     std::complex<T> res = cyl_bessel_y(v, std::complex(x));
     if (std::real(res) != std::real(res)) {
-        return cephes_yv(v, x);
+        return cephes::yv(v, x);
     }
 
     return std::real(res);
 }
 
-inline double cyl_bessel_i(double v, double x) { return cephes_iv(v, x); }
+inline double cyl_bessel_i(double v, double x) { return cephes::iv(v, x); }
 
 inline float cyl_bessel_i(float v, float x) { return cyl_bessel_i(static_cast<double>(v), static_cast<double>(x)); }
 

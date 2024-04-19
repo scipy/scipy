@@ -82,7 +82,7 @@
  */
 #pragma once
 
-#include "../amos.h"
+#include "../bessel.h"
 #include "../config.h"
 #include "../error.h"
 
@@ -155,7 +155,7 @@ namespace cephes {
             }
 
             if (is_h) {
-                sum += special::cbesy_wrap_real(v, z);
+                sum += special::cyl_bessel_y(v, z);
             } else {
                 sum += special::cephes::iv(v, z);
             }
@@ -267,7 +267,7 @@ namespace cephes {
 
             for (n = 0; n < STRUVE_MAXITER; ++n) {
                 if (is_h) {
-                    term = cterm * special::cbesj_wrap_real(n + v + 0.5, z) / (n + 0.5);
+                    term = cterm * special::cyl_bessel_j(n + v + 0.5, z) / (n + 0.5);
                     cterm *= z / 2 / (n + 1);
                 } else {
                     term = cterm * special::cephes::iv(n + v + 0.5, z) / (n + 0.5);
@@ -315,7 +315,7 @@ namespace cephes {
             n = -v - 0.5;
             if (n == -v - 0.5 && n > 0) {
                 if (is_h) {
-                    return (n % 2 == 0 ? 1 : -1) * special::cbesj_wrap_real(n + 0.5, z);
+                    return (n % 2 == 0 ? 1 : -1) * special::cyl_bessel_j(n + 0.5, z);
                 } else {
                     return special::cephes::iv(n + 0.5, z);
                 }

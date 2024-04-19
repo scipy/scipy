@@ -1114,6 +1114,8 @@ ctypedef double complex double_complex
 ctypedef long double complex long_double_complex
 
 cdef extern from r"special_wrappers.h":
+    double _func_gammaln_wrap "gammaln_wrap"(double) nogil
+
     double special_bei(double) nogil
     double special_beip(double) nogil
     double special_ber(double) nogil

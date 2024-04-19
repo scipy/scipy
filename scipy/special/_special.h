@@ -71,6 +71,9 @@ inline double binom(double n, double k) {
     return special::binom(n, k);
 }
 
+
+inline double special_cyl_bessel_k_int(int n, double z) { return special::cyl_bessel_k(static_cast<double>(n), z); }
+
 inline npy_cdouble lambertw_scalar(npy_cdouble zp, long k, double tol) {
     std::complex<double> z(npy_creal(zp), npy_cimag(zp));
     std::complex<double> w = special::lambertw(z, k, tol);

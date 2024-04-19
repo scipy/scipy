@@ -642,7 +642,7 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "cephes.h": {
+        "_special.h++": {
             "special_cyl_bessel_k_int": "id->d"
         }
     },

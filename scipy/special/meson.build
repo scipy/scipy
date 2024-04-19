@@ -38,7 +38,6 @@ ufuncs_sources = [
   'special_wrappers.cpp',
   'sf_error.cc',
   'dd_real_wrappers.cpp'
-  'sf_error.cc'
 ]
 
 ufuncs_cxx_sources = [

@@ -1,12 +1,9 @@
 #include <cmath>
 
-<<<<<<< HEAD
-=======
 #include "ufunc.h"
 
 #include "sf_error.h"
 #include "special.h"
->>>>>>> origin/main
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
@@ -407,18 +404,11 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "itstruve0", itstruve0);
 
-<<<<<<< HEAD
-    PyObject *iv =
-        SpecFun_NewUFunc({static_cast<func_ff_f_t>(special::cbesi_wrap_real), static_cast<func_dd_d_t>(special::cephes::iv),
-                          static_cast<func_fF_F_t>(special::cbesi_wrap), static_cast<func_dD_D_t>(special::cbesi_wrap)},
-                         "iv", iv_doc);
-=======
     PyObject *iv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_i), static_cast<func_dd_d_t>(special::cyl_bessel_i),
          static_cast<func_fF_F_t>(special::cyl_bessel_i), static_cast<func_dD_D_t>(special::cyl_bessel_i)},
         "iv", iv_doc
     );
->>>>>>> origin/main
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *ive = SpecFun_NewUFunc(
