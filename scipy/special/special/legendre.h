@@ -5,38 +5,6 @@
 
 namespace special {
 
-template <typename T>
-struct legendre_callback_jac {
-    T z;
-    T res;
-    T res_prev;
-
-    legendre_callback_jac(T z) : z(z) {}
-
-    void operator()(long j, T p, T p_prev) {
-        if (j == 0) {
-            res_prev = std::numeric_limits<T>::quiet_NaN();
-            res = 0;
-        } else {
-            res_prev = res;
-            if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-                res = T(j) * T(j + 1) * std::pow(std::real(z), T(j + 1)) / T(2);
-            } else {
-                res = T(j) * (p_prev - z * p) / (T(1) - z * z);
-            }
-        }
-    }
-};
-
-template <typename OutputVec, typename T = typename OutputVec::value_type>
-struct legendre_callback_all {
-    OutputVec res_all;
-
-    legendre_callback_all(OutputVec res_all) : res_all(res_all) {}
-
-    void operator()(long j, T res, T res_prev) { res_all(j) = res; }
-};
-
 // Translated into C++ by SciPy developers in 2024.
 //
 // ===============================================
@@ -78,27 +46,38 @@ template <typename T, typename OutputVec>
 void legendre_all(T z, OutputVec p_all) {
     long n = p_all.extent(0) - 1;
 
-    legendre_callback_all callback(p_all);
-    legendre(n, z, callback);
+    legendre(n, z, [p_all](long j, T p, T p_prev) { p_all(j) = p; });
+}
+
+template <typename T>
+T legendre_jac_step(long j, T z, T p, T p_prev) {
+    if (j == 0) {
+        return 0;
+    }
+
+    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
+        return T(j) * T(j + 1) * std::pow(std::real(z), T(j + 1)) / T(2);
+    }
+
+    return T(j) * (p_prev - z * p) / (T(1) - z * z);
 }
 
 template <typename T, typename Callback>
 T legendre_jac(long n, T z, Callback callback) {
-    legendre_callback_jac p_callback(z);
-    legendre(n, z, [&p_callback, &callback](long j, T p, T p_prev) {
-        p_callback(j, p, p_prev);
-        callback(j, p_callback.res, p_callback.res_prev);
+    T res;
+    legendre(n, z, [z, &res, &callback](long j, T p, T p_prev) {
+        res = legendre_jac_step(j, z, p, p_prev);
+        callback(j, p, p_prev, res);
     });
 
-    return p_callback.res;
+    return res;
 }
 
 template <typename T, typename InputVec, typename OutputVec>
 void legendre_all_jac(T z, InputVec p, OutputVec pd_all) {
     long n = p.extent(0) - 1;
 
-    legendre_callback_all callback(pd_all);
-    legendre_jac(n, z, callback);
+    legendre_jac(n, z, [pd_all](long j, T p, T p_prev, T pd) { pd_all(j) = pd; });
 }
 
 // Translated into C++ by SciPy developers in 2024.
