@@ -24,6 +24,7 @@ def _load_data(name):
 
 
 class TestSolveLyapunov:
+    
     cases = [
         # empty case
         (np.empty((0, 0)),
@@ -280,7 +281,7 @@ class TestSolveContinuousAre:
          'Bad Residual Accuracy'),
         # Test Case 19: carex #20
         (mat20['A'], mat20['B'], mat20['Q'], mat20['R'],
-         'Bad Residual Accuracy'),
+         'Bad Residual Accuracy')
         ]
     # Makes the minimum precision requirements customized to the test.
     # Here numbers represent the number of decimals that agrees with zero
