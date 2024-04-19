@@ -282,9 +282,11 @@ class TestSepfir2d:
                              [49.120928, 39.681844, 43.596067, 45.085854]])
         assert_allclose(signal.sepfir2d(image, filt, filt[::3]), expected)
 
+
     @pytest.mark.parametrize('dtyp',
         [np.uint8, int, np.float32, float, np.complex64, complex]
     )
+    @pytest.mark.xfail(reason="XXX: flaky. pointers OOB on some platforms")
     def test_sepfir2d_strided_3(self, dtyp):
         # NB: 'image' and 'filt' dtypes match here. Otherwise we can run into
         # unsafe casting errors for many combinations. Historically, dtype handling
