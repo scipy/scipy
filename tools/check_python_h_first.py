@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """Check that Python.h is included before any stdlib headers.
 
 May be a bit overzealous, but it should get the job done.
@@ -50,7 +49,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
     warned_python_construct = False
     basename_to_check = os.path.basename(name_to_check)
     in_comment = False
-    with open(name_to_check, "r") as in_file:
+    with open(name_to_check) as in_file:
         for i, line in enumerate(in_file, 1):
             # Very basic comment parsing
             # Assumes /*...*/ comments are on their own lines
