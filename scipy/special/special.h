@@ -20,7 +20,20 @@ void lpn_all(T z, OutputVec p) {
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void lpn_all_until_jac(T z, OutputVec1 p, OutputVec2 p_jac) {
-    special::legendre_p_jac_all(z, p, p_jac);
+    special::legendre_p_all_until_jac(z, p, p_jac);
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
+void lpn_all_until_hess(T z, OutputVec1 p, OutputVec2 p_jac, OutputVec3 p_hess) {
+    unsigned int n = p.extent(0) - 1;
+
+    special::legendre_p_all_until_jac(z, p, p_jac);
+
+    p_hess(0) = 0;
+    p_hess(1) = 0;
+    for (unsigned int j = 2; j <= n; ++j) {
+        p_hess(j) = (T(2 * j - 1) * (T(2) * p_jac(j - 1) + z * p_hess(j - 1)) - T(j - 1) * p_hess(j - 2)) / T(j);
+    }
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>

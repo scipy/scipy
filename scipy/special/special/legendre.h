@@ -85,7 +85,7 @@ void legendre_p_jac(unsigned int n, T z, T &p, T &p_jac) {
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
-void legendre_p_jac_all(T z, OutputVec1 p, OutputVec2 p_jac) {
+void legendre_p_all_until_jac(T z, OutputVec1 p, OutputVec2 p_jac) {
     unsigned int n = p.extent(0) - 1;
 
     legendre_p_jac(n, z, [p, p_jac](unsigned int j, T z, T value, T value_jac) {

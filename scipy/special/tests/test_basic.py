@@ -3623,6 +3623,16 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])), 4)
 
+    def test_lpn_all(self):
+        n = 10
+        j = np.arange(n + 1)
+
+        x = 0.5
+        p, p_jac, p_hess = special.lpn_all.until_hess(n, x)
+
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + j * (j + 1) * p
+        np.testing.assert_allclose(err, 0)
+
     def test_lpn(self):
         p, pd = special.lpn(2, 0.5)
         assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)

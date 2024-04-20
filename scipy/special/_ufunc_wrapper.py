@@ -14,6 +14,10 @@ class ufunc_wrapper(object):
     def until_jac(self):
         return self.until_diffs[0]
 
+    @property
+    def until_hess(self):
+        return self.until_diffs[1]
+
     def resolve_out_shapes(self, func):
         for k, until_diff in enumerate(self.until_diffs, 1):
             until_diff.resolve_out_shapes(lambda *args: (k + 1) * (func(*args),))
