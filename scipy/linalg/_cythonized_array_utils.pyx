@@ -193,15 +193,14 @@ cdef inline (int, int) band_check_internal_c(const np_numeric_t[:, ::1]A) noexce
             break
 
     # upper triangular part
-    for c in range(m - 1, 0, -1):
-        # Only bother if outside the existing band:
-        for r in range(min(c - upper_band, n - 1)):
+    for r in range(n - 1):
+        if m - 1 <= r + upper_band:
+            # If existing band falls outside matrix; we are done
+            break
+        for c in range(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        # If the first element is full don't go lower; we are done
-        if upper_band == c:
-            break
 
     return lower_band, upper_band
 
@@ -226,15 +225,14 @@ cdef inline (int, int) band_check_internal_noncontig(const np_numeric_t[:, :]A) 
             break
 
     # upper triangular part
-    for c in range(m - 1, 0, -1):
-        # Only bother if outside the existing band:
-        for r in range(min(c - upper_band, n - 1)):
+    for r in range(n - 1):
+        if m - 1 <= r + upper_band:
+            # If existing band falls outside matrix; we are done
+            break
+        for c in range(m - 1, r + upper_band, -1):
             if A[r, c] != zero:
                 upper_band = c - r
                 break
-        # If the first element is full don't go lower; we are done
-        if upper_band == c:
-            break
 
     return lower_band, upper_band
 
