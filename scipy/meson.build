@@ -134,6 +134,15 @@ fortranobject_dep = declare_dependency(
   link_with: fortranobject_lib,
   include_directories: [inc_np, inc_f2py],
 )
+# Workaround for numpy#24761 on numpy<1.26.1 (see also gh-20515)
+_f2py_c_args = []
+if is_mingw
+  _f2py_c_args = '-DNPY_OS_MINGW'
+endif
+fortranobject_dep = declare_dependency(
+  dependencies: fortranobject_dep,
+  compile_args: _f2py_c_args,
+)
 
 # TODO: 64-bit BLAS and LAPACK
 #
