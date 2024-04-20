@@ -193,7 +193,7 @@ cdef inline (int, int) band_check_internal_c(const np_numeric_t[:, ::1]A) noexce
             break
 
     # upper triangular part
-    for r in range(n - 1):
+    for r in range(n-1):
         # If existing band falls outside matrix; we are done
         if r + upper_band>m - 1:
             break
@@ -225,7 +225,7 @@ cdef inline (int, int) band_check_internal_noncontig(const np_numeric_t[:, :]A) 
             break
 
     # upper triangular part
-    for r in range(n - 1):
+    for r in range(n-1):
         # If existing band falls outside matrix; we are done
         if r + upper_band > m - 1:
             break
