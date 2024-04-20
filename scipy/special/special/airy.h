@@ -3,15 +3,14 @@
 #include "amos.h"
 #include "config.h"
 #include "error.h"
-
-extern "C" int cephes_airy(double x, double *ai, double *aip, double *bi, double *bip);
+#include "cephes/airy.h"
 
 inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bipf) {
     double ai;
     double aip;
     double bi;
     double bip;
-    int res = cephes_airy(xf, &ai, &aip, &bi, &bip);
+    int res = special::cephes::airy(xf, &ai, &aip, &bi, &bip);
 
     *aif = ai;
     *aipf = aip;
@@ -542,7 +541,7 @@ void airy(T x, T &ai, T &aip, T &bi, T &bip) {
         bi = std::real(zbi);
         bip = std::real(zbip);
     } else {
-        cephes_airy(x, &ai, &aip, &bi, &bip);
+        cephes::airy(x, &ai, &aip, &bi, &bip);
     }
 }
 

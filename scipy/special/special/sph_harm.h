@@ -3,6 +3,9 @@
 #include "error.h"
 #include "legendre.h"
 #include "mdspan.h"
+#include "specfun.h"
+
+#include "cephes/poch.h"
 
 namespace special {
 
