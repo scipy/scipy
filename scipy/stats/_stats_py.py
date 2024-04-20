@@ -1198,12 +1198,6 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     a, axis = _chk_asarray(a, axis)
     n = a.shape[axis]
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.skew(a, axis, bias)
-
     mean = a.mean(axis, keepdims=True)
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
