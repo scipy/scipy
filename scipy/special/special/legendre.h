@@ -67,7 +67,7 @@ T legendre_p_jac_next(unsigned int n, T z, T p, T p_prev) {
 template <typename T, typename Callable>
 T legendre_p_jac(unsigned int n, T z, Callable callback) {
     T value_jac;
-    T value_prev;
+    T value_prev = std::numeric_limits<T>::quiet_NaN();
     legendre_p(n, z, [&value_jac, &value_prev, &callback](unsigned int j, T z, T value) {
         value_jac = legendre_p_jac_next(j, z, value, value_prev);
         value_prev = value;
@@ -223,7 +223,7 @@ T assoc_legendre_jac_next(unsigned int n, unsigned int m, bool m_signbit, T x, T
 template <typename T, typename Callback>
 T assoc_legendre_jac(unsigned int n, unsigned int m, T x, Callback callback) {
     T value_jac;
-    T value_prev;
+    T value_prev = std::numeric_limits<T>::quiet_NaN();
     assoc_legendre(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, T x, T value) {
         value_jac = assoc_legendre_jac_next(j, i, x, value, value_prev);
         value_prev = value;
@@ -236,7 +236,7 @@ T assoc_legendre_jac(unsigned int n, unsigned int m, T x, Callback callback) {
 template <typename T, typename Callback>
 T assoc_legendre_jac(unsigned int n, unsigned int m, bool m_signbit, T x, Callback callback) {
     T value_jac;
-    T value_prev;
+    T value_prev = std::numeric_limits<T>::quiet_NaN();
     assoc_legendre(
         n, m, m_signbit, x,
         [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
