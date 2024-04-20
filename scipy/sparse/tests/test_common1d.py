@@ -5,12 +5,11 @@ import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
 
-from scipy.sparse import coo_array, csr_array, dok_array, SparseEfficiencyWarning
-from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy.sparse import (
         bsr_array, csc_array, dia_array, lil_array,
-        coo_array, csr_array, dok_array,
+        coo_array, csr_array, dok_array, SparseEfficiencyWarning,
     )
+from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
 
 
