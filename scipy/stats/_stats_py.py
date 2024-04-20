@@ -1038,14 +1038,14 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         return _moment(a, order, axis, mean=center)
 
 
-def _moment(a, order, axis, *, mean=None):
+def _moment(a, order, axis, *, mean=None, xp=None):
     """Vectorized calculation of raw moment about specified center
 
     When `mean` is None, the mean is computed and used as the center;
     otherwise, the provided value is used as the center.
 
     """
-    xp = array_namespace(a)
+    xp = array_namespace(a) if xp is None else xp
 
     if xp.isdtype(a.dtype, 'integral'):
         a = xp.asarray(a, dtype=xp.float64)
@@ -1121,6 +1121,8 @@ def _var(x, axis=0, ddof=0, mean=None):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
+# nan_policy handled by `_axis_nan_policy, but needs to be left
+# in signature to preserve use as a positional argument
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -1195,23 +1197,24 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     0.2650554122698573
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
     n = a.shape[axis]
 
-    mean = a.mean(axis, keepdims=True)
-    mean_reduced = mean.squeeze(axis)  # needed later
+    mean = xp.mean(a, axis, keepdims=True)
+    mean_reduced = xp.squeeze(mean, axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
-        eps = np.finfo(m2.dtype).resolution
+        eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
-        vals = np.where(zero, np.nan, m3 / m2**1.5)
+        vals = xp.where(zero, np.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
-        if np.any(can_correct):
+        if xp.any(can_correct):
             m2 = m2[can_correct]
             m3 = m3[can_correct]
-            nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
+            nval = xp.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
             vals[can_correct] = nval
 
     return vals[()] if vals.ndim == 0 else vals
