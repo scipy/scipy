@@ -15,12 +15,12 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import lpn as _lpn
-from ._gufuncs import (lpn_all as _lpn_all, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._gufuncs import (lpn_all as _lpn_all, lpn_all_until_jac as _lpn_all_until_jac, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
-
+from ._ufunc_wrapper import ufunc_wrapper
 
 __all__ = [
     'ai_zeros',
@@ -2044,8 +2044,10 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
+lpn_all = ufunc_wrapper(_lpn_all, until_diffs = (_lpn_all_until_jac,))
 
-def lpn_all(n, z):
+@lpn_all.resolve_out_shapes
+def _(n, shape):
     """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
@@ -2060,25 +2062,18 @@ def lpn_all(n, z):
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
     """
+
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    z = np.asarray(z)
-    if (not np.issubdtype(z.dtype, np.inexact)):
-        z = z.astype(np.float64)
+    return (n + 1,) + shape[0]
 
-    pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
-    pd = np.empty_like(pn)
-    if (z.ndim == 0):
-        _lpn_all(z, out = (pn, pd))
-    else:
-        _lpn_all(z, out = (np.moveaxis(pn, 0, -1),
-            np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
-
-    return pn, pd
+@lpn_all.as_ufunc_out
+def _(out):
+    return np.moveaxis(out, 0, -1)
 
 def lpn(n, z, legacy = True):
     if legacy:
-        return lpn_all(n, z)
+        return lpn_all.until_jac(n, z)
 
     return _lpn(n, z)
 

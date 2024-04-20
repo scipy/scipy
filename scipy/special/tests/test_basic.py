@@ -3621,10 +3621,10 @@ class TestLegendreFunctions:
                                                       -0.12500]]),
                                       array([[0.00000,
                                                       1.00000,
-                                                      1.50000]])),4)
+                                                      1.50000]])), 4)
 
-    def test_lpn_all(self):
-        p, pd = special.lpn_all(2, 0.5)
+    def test_lpn(self):
+        p, pd = special.lpn(2, 0.5)
         assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
         assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
 

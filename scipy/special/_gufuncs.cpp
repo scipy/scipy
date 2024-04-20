@@ -7,6 +7,11 @@
 
 using namespace std;
 
+using func_f_f1_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
+using func_d_d1_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
+using func_F_F1_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
+using func_D_D1_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
+
 using func_f_f1f1_t =
     void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
 using func_d_d1d1_t =
@@ -74,11 +79,18 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     }
 
     PyObject *lpn_all = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(::lpn_all), static_cast<func_d_d1d1_t>(::lpn_all),
-         static_cast<func_F_F1F1_t>(::lpn_all), static_cast<func_D_D1D1_t>(::lpn_all)},
-        2, "lpn_all", lpn_all_doc, "()->(np1),(np1)"
+        {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all), static_cast<func_F_F1_t>(::lpn_all),
+         static_cast<func_D_D1_t>(::lpn_all)},
+        1, "lpn_all", lpn_all_doc, "()->(np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
+
+    PyObject *lpn_all_until_jac = SpecFun_NewGUFunc(
+        {static_cast<func_f_f1f1_t>(::lpn_all_until_jac), static_cast<func_d_d1d1_t>(::lpn_all_until_jac),
+         static_cast<func_F_F1F1_t>(::lpn_all_until_jac), static_cast<func_D_D1D1_t>(::lpn_all_until_jac)},
+        2, "lpn_all_until_jac", lpn_all_doc, "()->(np1),(np1)"
+    );
+    PyModule_AddObjectRef(_gufuncs, "lpn_all_until_jac", lpn_all_until_jac);
 
     PyObject *_lpmn = SpecFun_NewGUFunc(
         {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,

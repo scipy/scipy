@@ -342,6 +342,7 @@ python_sources = [
   '_test_internal.pyi',
   '_testutils.py',
   '_ufuncs.pyi',
+  '_ufunc_wrapper.py',
   'add_newdocs.py',
   'basic.py',
   'cython_special.pxd',

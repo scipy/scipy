@@ -13,8 +13,13 @@ void lpn(long n, T z, T &p, T &p_jac) {
     special::legendre_p_jac(n, z, p, p_jac);
 }
 
+template <typename T, typename OutputVec>
+void lpn_all(T z, OutputVec p) {
+    special::legendre_p_all(z, p);
+}
+
 template <typename T, typename OutputVec1, typename OutputVec2>
-void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac) {
+void lpn_all_until_jac(T z, OutputVec1 p, OutputVec2 p_jac) {
     special::legendre_p_jac_all(z, p, p_jac);
 }
 
