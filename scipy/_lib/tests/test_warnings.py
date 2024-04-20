@@ -54,7 +54,7 @@ class FindFuncs(ast.NodeVisitor):
                 case _:
                     raise ValueError("unknown ast node type")
             # check if filter is set to ignore
-            if argtext.split(":")[0] == "ignore":
+            if argtext == "ignore":
                 self.bad_filters.append(
                     f"{self.__filename}:{node.lineno}")
 
