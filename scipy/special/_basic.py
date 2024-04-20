@@ -14,7 +14,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._gufuncs import (_lpn, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import lpn as _lpn
+from ._gufuncs import (lpn_all as _lpn_all, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -59,6 +60,7 @@ __all__ = [
     'lmbda',
     'lpmn',
     'lpn',
+    'lpn_all',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -2043,7 +2045,7 @@ def euler(n):
     return _specfun.eulerb(n1)[:(n+1)]
 
 
-def lpn(n, z):
+def lpn_all(n, z):
     """Legendre function of the first kind.
 
     Compute sequence of Legendre functions of the first kind (polynomials),
@@ -2067,13 +2069,18 @@ def lpn(n, z):
     pn = np.empty((n + 1,) + z.shape, dtype=z.dtype)
     pd = np.empty_like(pn)
     if (z.ndim == 0):
-        _lpn(z, out = (pn, pd))
+        _lpn_all(z, out = (pn, pd))
     else:
-        _lpn(z, out = (np.moveaxis(pn, 0, -1),
+        _lpn_all(z, out = (np.moveaxis(pn, 0, -1),
             np.moveaxis(pd, 0, -1))) # new axes must be last for the ufunc
 
     return pn, pd
 
+def lpn(n, z, legacy = True):
+    if legacy:
+        return lpn_all(n, z)
+
+    return _lpn(n, z)
 
 def lqn(n, z):
     """Legendre function of the second kind.

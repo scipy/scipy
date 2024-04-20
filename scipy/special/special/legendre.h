@@ -66,7 +66,7 @@ T legendre_p_jac_next(unsigned int n, T z, T p, T p_prev) {
 }
 
 template <typename T, typename Callable>
-T legendre_p_jac(unsigned int n, T z, Callable callback) {
+void legendre_p_jac(unsigned int n, T z, Callable callback) {
     T value_jac;
     T value_prev = std::numeric_limits<T>::quiet_NaN();
     legendre_p(n, z, [&value_jac, &value_prev, &callback](unsigned int j, T z, T value) {
@@ -74,8 +74,24 @@ T legendre_p_jac(unsigned int n, T z, Callable callback) {
         value_prev = value;
         callback(j, z, value, value_jac);
     });
+}
 
-    return value_jac;
+template <typename T>
+void legendre_p_jac(unsigned int n, T z, T &p, T &p_jac) {
+    legendre_p_jac(n, z, [&p, &p_jac](unsigned int j, T z, T value, T value_jac) {
+        p = value;
+        p_jac = value_jac;
+    });
+}
+
+template <typename T, typename OutputVec1, typename OutputVec2>
+void legendre_p_jac_all(T z, OutputVec1 p, OutputVec2 p_jac) {
+    unsigned int n = p.extent(0) - 1;
+
+    legendre_p_jac(n, z, [p, p_jac](unsigned int j, T z, T value, T value_jac) {
+        p(j) = value;
+        p_jac(j) = value_jac;
+    });
 }
 
 // Translated into C++ by SciPy developers in 2024.
@@ -95,7 +111,9 @@ T legendre_p_jac(unsigned int n, T z, Callable callback) {
 
 template <typename T, typename Callable>
 T assoc_legendre_p(unsigned int n, unsigned int m, T x, Callable callback) {
-    if (m > n) {
+    unsigned int m_abs = m;
+
+    if (m_abs > n) {
         for (unsigned int j = 0; j < n; ++j) {
             callback(j, m, x, 0);
         }

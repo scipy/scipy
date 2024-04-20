@@ -3615,7 +3615,7 @@ class TestLegendreFunctions:
                                     rtol=1e-4)
 
     def test_lpmn(self):
-        lp = special.lpmn(0,2,.5)
+        lp = special.lpmn(0, 2, .5)
         assert_array_almost_equal(lp,(array([[1.00000,
                                                       0.50000,
                                                       -0.12500]]),
@@ -3623,14 +3623,10 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])),4)
 
-    def test_lpn(self):
-        lpnf = special.lpn(2,.5)
-        assert_array_almost_equal(lpnf,(array([1.00000,
-                                                        0.50000,
-                                                        -0.12500]),
-                                      array([0.00000,
-                                                      1.00000,
-                                                      1.50000])),4)
+    def test_lpn_all(self):
+        p, pd = special.lpn_all(2, 0.5)
+        assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
+        assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
 
     def test_lpmv(self):
         lp = special.lpmv(0,2,.5)

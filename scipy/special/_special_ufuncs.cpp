@@ -77,6 +77,8 @@ using func_lD_D_t = complex<double> (*)(long, complex<double>);
 
 using func_ff_ff_t = void (*)(float, float, float &, float &);
 using func_dd_dd_t = void (*)(double, double, double &, double &);
+using func_lf_ff_t = void (*)(long, float, float &, float &);
+using func_ld_dd_t = void (*)(long, double, double &, double &);
 
 using func_fff_f_t = float (*)(float, float, float);
 using func_ddd_d_t = double (*)(double, double, double);
@@ -492,6 +494,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "loggamma", loggamma_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
+
+    PyObject *lpn =
+        SpecFun_NewUFunc({static_cast<func_lf_ff_t>(::lpn), static_cast<func_ld_dd_t>(::lpn)}, 2, "lpn", nullptr);
+    PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
     PyObject *mathieu_a = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)}, "mathieu_a",

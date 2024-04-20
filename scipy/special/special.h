@@ -8,14 +8,14 @@
 
 namespace {
 
-template <typename T, typename OutputVec1, typename OutputVec2>
-void lpn(T z, OutputVec1 p, OutputVec2 p_jac) {
-    unsigned int n = p.extent(0) - 1;
+template <typename T>
+void lpn(long n, T z, T &p, T &p_jac) {
+    special::legendre_p_jac(n, z, p, p_jac);
+}
 
-    special::legendre_p_jac(n, z, [p, p_jac](unsigned int j, T z, T value, T value_jac) {
-        p(j) = value;
-        p_jac(j) = value_jac;
-    });
+template <typename T, typename OutputVec1, typename OutputVec2>
+void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac) {
+    special::legendre_p_jac_all(z, p, p_jac);
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>

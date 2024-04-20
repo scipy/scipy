@@ -43,7 +43,7 @@ using func_Dlb_D2D2_t =
 using func_ff_F2_t = void (*)(float, float, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_dd_D2_t = void (*)(double, double, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
-extern const char *lpn_doc;
+extern const char *lpn_all_doc;
 extern const char *lpmn_doc;
 extern const char *clpmn_doc;
 extern const char *lqn_doc;
@@ -73,12 +73,12 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         return nullptr;
     }
 
-    PyObject *_lpn = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(::lpn), static_cast<func_d_d1d1_t>(::lpn), static_cast<func_F_F1F1_t>(::lpn),
-         static_cast<func_D_D1D1_t>(::lpn)},
-        2, "_lpn", lpn_doc, "()->(np1),(np1)"
+    PyObject *lpn_all = SpecFun_NewGUFunc(
+        {static_cast<func_f_f1f1_t>(::lpn_all), static_cast<func_d_d1d1_t>(::lpn_all),
+         static_cast<func_F_F1F1_t>(::lpn_all), static_cast<func_D_D1D1_t>(::lpn_all)},
+        2, "lpn_all", lpn_all_doc, "()->(np1),(np1)"
     );
-    PyModule_AddObjectRef(_gufuncs, "_lpn", _lpn);
+    PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
 
     PyObject *_lpmn = SpecFun_NewGUFunc(
         {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,
