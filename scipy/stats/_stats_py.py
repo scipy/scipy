@@ -1199,20 +1199,22 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
 
     mean = a.mean(axis, keepdims=True)
+    mean_reduced = mean.squeeze(axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
+        eps = np.finfo(m2.dtype).resolution
+        zero = m2 <= (eps * mean_reduced)**2
         vals = np.where(zero, np.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
-        if can_correct.any():
-            m2 = np.extract(can_correct, m2)
-            m3 = np.extract(can_correct, m3)
+        if np.any(can_correct):
+            m2 = m2[can_correct]
+            m3 = m3[can_correct]
             nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
-            np.place(vals, can_correct, nval)
+            vals[can_correct] = nval
 
-    return vals[()]
+    return vals[()] if vals.ndim == 0 else vals
 
 
 @_axis_nan_policy_factory(
