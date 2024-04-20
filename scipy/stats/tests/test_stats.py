@@ -3342,7 +3342,7 @@ class TestMoments:
         a = np.arange(8).reshape(2, -1).astype(float)
         a = xp.asarray(a)
         a[1, 0] = np.nan
-        mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
+        mm = stats.moment(a, 2, axis=1)
         xp_assert_close(mm, xp.asarray([1.25, np.nan], dtype=xp.float64), atol=1e-15)
 
     @array_api_compatible
@@ -3432,7 +3432,7 @@ class TestSkew(SkewKurtosisTest):
         a = xp.reshape(a, (2, -1))
         a[1, 0] = xp.nan
         with np.errstate(invalid='ignore'):
-            s = stats.skew(a, axis=1, nan_policy="propagate")
+            s = stats.skew(a, axis=1)
         xp_assert_equal(s, xp.asarray([0, xp.nan]))
 
     @array_api_compatible
@@ -8920,3 +8920,20 @@ def test_chk_asarray(xp):
     x_out, axis_out = _chk_asarray(x[0, 0, 0], axis=axis, xp=xp)
     xp_assert_equal(x_out, xp.asarray(np.atleast_1d(x0[0, 0, 0])))
     assert_equal(axis_out, axis)
+
+
+@pytest.mark.skip_xp_backends('numpy',
+                              reasons=['These parameters *are* compatible with NumPy'])
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
+def test_axis_nan_policy_keepdims_nanpolicy(xp):
+    # this test does not need to be repeated for every function
+    # using the _axis_nan_policy decorator. The test is here
+    # rather than in `test_axis_nanpolicy.py` because there is
+    # no reason to run those tests on an array API CI job.
+    x = xp.asarray([1, 2, 3, 4])
+    message = "Use of `nan_policy` and `keepdims`..."
+    with pytest.raises(NotImplementedError, match=message):
+        stats.skew(x, nan_policy='omit')
+    with pytest.raises(NotImplementedError, match=message):
+        stats.skew(x, keepdims=True)
