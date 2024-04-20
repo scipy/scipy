@@ -2,7 +2,6 @@
 
 #include "error.h"
 #include "legendre.h"
-#include "mdspan.h"
 
 namespace special {
 
@@ -31,17 +30,13 @@ void sph_harm_all(T theta, T phi, OutMat y) {
     long m = (y.extent(0) - 1) / 2;
     long n = y.extent(1) - 1;
 
-    OutMat y_pos = std::submdspan(y, std::make_tuple(0, m + 1), std::full_extent);
-    sph_legendre_all(phi, y_pos);
+    sph_legendre(0, n, phi, [y](long i, long j, T phi, T value) { y(i, j) = value; });
 
-    for (long j = 0; j <= n; ++j) {
-        for (long i = 1; i <= j; ++i) {
-            y(i, j) *= std::exp(std::complex(static_cast<T>(0), i * theta));
-            y(2 * m + 1 - i, j) = static_cast<T>(std::pow(-1, i)) * std::conj(y(i, j));
-        }
-        for (long i = j + 1; i <= m; ++i) {
-            y(2 * m + 1 - i, j) = 0;
-        }
+    for (long i = 1; i <= m; ++i) {
+        sph_legendre(i, n, phi, [theta, y](long i, long j, T phi, T value) {
+            y(i, j) = value * std::exp(std::complex(T(0), i * theta));
+            y(y.extent(0) - i, j) = T(std::pow(-1, i)) * std::conj(y(i, j));
+        });
     }
 }
 

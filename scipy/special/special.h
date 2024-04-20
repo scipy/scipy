@@ -12,9 +12,9 @@ template <typename T, typename OutputVec1, typename OutputVec2>
 void lpn(T z, OutputVec1 p, OutputVec2 p_jac) {
     long n = p.extent(0) - 1;
 
-    special::legendre_jac(n, z, [p, p_jac](long j, T z, T p_curr, T p_prev, T p_jac_curr) {
-        p(j) = p_curr;
-        p_jac(j) = p_jac_curr;
+    special::legendre_jac(n, z, [p, p_jac](long j, T z, T value, T value_jac) {
+        p(j) = value;
+        p_jac(j) = value_jac;
     });
 }
 
