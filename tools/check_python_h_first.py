@@ -62,7 +62,7 @@ def check_python_h_included_first(name_to_check: str) -> int:
                 if "*/" in line:
                     in_comment = False
                 continue
-            match = re.match(HEADER_PATTERN, line)
+            match = HEADER_PATTERN.match(line)
             if match:
                 this_header = match.group(1)
                 if this_header in PYTHON_INCLUDING_HEADERS:
