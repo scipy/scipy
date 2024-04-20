@@ -97,6 +97,7 @@
 
 #include "../config.h"
 #include "../error.h"
+#include "const.h"
 #include "polevl.h"
 #include "trig.h"
 
@@ -111,9 +112,6 @@ namespace cephes {
                                       1.18139785222060435552E-2,  3.58236398605498653373E-2, -2.34591795718243348568E-1,
                                       7.14304917030273074085E-2,  1.00000000000000000320E0};
 
-        constexpr double MAXGAM = 171.624376956302725;
-        constexpr double LOGPI = 1.14472988584940017414;
-
         /* Stirling's formula for the Gamma function */
         constexpr double gamma_STIR[5] = {
             7.87311395793093628397E-4, -2.29549961613378126380E-4, -2.68132617805781232825E-3,
@@ -121,7 +119,6 @@ namespace cephes {
         };
 
         constexpr double MAXSTIR = 143.01608;
-        constexpr double SQTPI = 2.50662827463100050242E0;
 
         /* Gamma function computed by Stirling's formula.
          * The polynomial STIR is valid for 33 <= x <= 172.
@@ -141,7 +138,7 @@ namespace cephes {
             } else {
                 y = std::pow(x, x - 0.5) / y;
             }
-            y = SQTPI * y * w;
+            y = SQRTPI * y * w;
             return (y);
         }
     } // namespace detail
@@ -243,7 +240,27 @@ namespace cephes {
 
         constexpr double MAXLGM = 2.556348e305;
 
-        SPECFUN_HOST_DEVICE double lgam_sgn(double x, int *sign) {
+        /* Disable optimizations for this function on 32 bit systems when compiling with GCC.
+         * We've found that enabling optimizations can result in degraded precision
+         * for this asymptotic approximation in that case. */
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC push_options
+#pragma GCC optimize("00")
+#endif
+        SPECFUN_HOST_DEVICE inline double lgam_large_x(double x) {
+            double q = (x - 0.5) * std::log(x) - x + LS2PI;
+            if (x > 1.0e8) {
+                return (q);
+            }
+            double p = 1.0 / (x * x);
+            p = ((7.9365079365079365079365e-4 * p - 2.7777777777777777777778e-3) * p + 0.0833333333333333333333) / x;
+            return q + p;
+        }
+#if defined(__GNUC__) && defined(__i386__)
+#pragma GCC pop_options
+#endif
+
+        SPECFUN_HOST_DEVICE inline double lgam_sgn(double x, int *sign) {
             double p, q, u, w, z;
             int i;
 
@@ -318,30 +335,24 @@ namespace cephes {
                 return (*sign * std::numeric_limits<double>::infinity());
             }
 
-            q = (x - 0.5) * std::log(x) - x + LS2PI;
-            if (x > 1.0e8) {
-                return (q);
+            if (x >= 1000.0) {
+                return lgam_large_x(x);
             }
 
+            q = (x - 0.5) * std::log(x) - x + LS2PI;
             p = 1.0 / (x * x);
-            if (x >= 1000.0) {
-                q += ((7.9365079365079365079365e-4 * p - 2.7777777777777777777778e-3) * p + 0.0833333333333333333333) /
-                     x;
-            } else {
-                q += polevl(p, gamma_A, 4) / x;
-            }
-            return (q);
+            return q + polevl(p, gamma_A, 4) / x;
         }
     } // namespace detail
 
     /* Logarithm of Gamma function */
-    SPECFUN_HOST_DEVICE double lgam(double x) {
+    SPECFUN_HOST_DEVICE inline double lgam(double x) {
         int sign;
         return detail::lgam_sgn(x, &sign);
     }
 
     /* Sign of the Gamma function */
-    SPECFUN_HOST_DEVICE double gammasgn(double x) {
+    SPECFUN_HOST_DEVICE inline double gammasgn(double x) {
         double fx;
 
         if (std::isnan(x)) {

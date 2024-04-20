@@ -4,7 +4,9 @@ import cython
 
 from libc.math cimport log, exp, fabs, sqrt, isnan, isinf, NAN, M_PI
 
-from ._cephes cimport ellpk
+
+cdef extern from "special_wrappers.h" nogil:
+    double cephes_ellpk_wrap(double x)
 
 
 cdef inline double _agm_iter(double a, double b) noexcept nogil:
@@ -64,7 +66,7 @@ cdef inline double agm(double a, double b) noexcept nogil:
 
     if (invsqrthalfmax < a < sqrthalfmax) and (invsqrthalfmax < b < sqrthalfmax):
         e = 4*a*b/(a + b)**2
-        return sgn*(M_PI/4)*(a + b)/ellpk(e)
+        return sgn*(M_PI/4)*(a + b)/cephes_ellpk_wrap(e)
     else:
         # At least one value is "extreme" (very big or very small).
         # Use the iteration to avoid overflow or underflow.

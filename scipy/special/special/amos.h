@@ -27,5 +27,4 @@ inline sf_error_t ierr_to_sferr(int nz, int ierr) {
 
     return SF_ERROR_OK;
 }
-
 } // namespace special

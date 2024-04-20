@@ -3,6 +3,7 @@
 #include "special/airy.h"
 #include "special/amos.h"
 #include "special/bessel.h"
+#include "special/binom.h"
 #include "special/expint.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
@@ -20,6 +21,86 @@
 #include "special/struve.h"
 #include "special/trig.h"
 #include "special/wright_bessel.h"
+
+#include "special/binom.h"
+#include "special/digamma.h"
+#include "special/ellipk.h"
+#include "special/gamma.h"
+#include "special/hyp2f1.h"
+#include "special/lambertw.h"
+#include "special/loggamma.h"
+#include "special/trig.h"
+#include "special/wright_bessel.h"
+
+#include "special/cephes/bdtr.h"
+#include "special/cephes/besselpoly.h"
+#include "special/cephes/beta.h"
+#include "special/cephes/cbrt.h"
+#include "special/cephes/chdtr.h"
+#include "special/cephes/ellie.h"
+#include "special/cephes/ellik.h"
+#include "special/cephes/ellpe.h"
+#include "special/cephes/ellpj.h"
+#include "special/cephes/ellpk.h"
+#include "special/cephes/erfinv.h"
+#include "special/cephes/exp10.h"
+#include "special/cephes/exp2.h"
+#include "special/cephes/expn.h"
+#include "special/cephes/fdtr.h"
+#include "special/cephes/gamma.h"
+#include "special/cephes/gdtr.h"
+#include "special/cephes/hyp2f1.h"
+#include "special/cephes/hyperg.h"
+#include "special/cephes/i0.h"
+#include "special/cephes/i1.h"
+#include "special/cephes/igam.h"
+#include "special/cephes/igami.h"
+#include "special/cephes/incbet.h"
+#include "special/cephes/incbi.h"
+#include "special/cephes/j0.h"
+#include "special/cephes/j1.h"
+#include "special/cephes/jv.h"
+#include "special/cephes/k0.h"
+#include "special/cephes/k1.h"
+#include "special/cephes/kolmogorov.h"
+#include "special/cephes/lanczos.h"
+#include "special/cephes/nbdtr.h"
+#include "special/cephes/ndtr.h"
+#include "special/cephes/ndtri.h"
+#include "special/cephes/owens_t.h"
+#include "special/cephes/pdtr.h"
+#include "special/cephes/poch.h"
+#include "special/cephes/rgamma.h"
+#include "special/cephes/round.h"
+#include "special/cephes/scipy_iv.h"
+#include "special/cephes/sindg.h"
+#include "special/cephes/spence.h"
+#include "special/cephes/struve.h"
+#include "special/cephes/tandg.h"
+#include "special/cephes/trig.h"
+#include "special/cephes/tukey.h"
+#include "special/cephes/unity.h"
+#include "special/cephes/yn.h"
+#include "special/cephes/zeta.h"
+#include "special/cephes/zetac.h"
+
+#include "special/cephes/airy.h"
+#include "special/cephes/bdtr.h"
+#include "special/cephes/beta.h"
+#include "special/cephes/ellpj.h"
+#include "special/cephes/ellpk.h"
+#include "special/cephes/expn.h"
+#include "special/cephes/fresnl.h"
+#include "special/cephes/gamma.h"
+#include "special/cephes/hyp2f1.h"
+#include "special/cephes/jv.h"
+#include "special/cephes/kolmogorov.h"
+#include "special/cephes/nbdtr.h"
+#include "special/cephes/ndtr.h"
+#include "special/cephes/ndtri.h"
+#include "special/cephes/pdtr.h"
+#include "special/cephes/shichi.h"
+#include "special/cephes/sici.h"
 
 using namespace std;
 
@@ -317,6 +398,8 @@ npy_cdouble special_ccyl_hankel_2e(double v, npy_cdouble z) {
     return to_ccomplex(special::cyl_hankel_2e(v, to_complex(z)));
 }
 
+double binom_wrap(double n, double k) { return special::binom(n, k); }
+
 double special_binom(double n, double k) { return special::binom(n, k); }
 
 double special_digamma(double z) { return special::digamma(z); }
@@ -371,6 +454,95 @@ npy_cdouble special_sph_harm_unsafe(double m, double n, double theta, double phi
     return to_ccomplex(::sph_harm(static_cast<long>(m), static_cast<long>(n), theta, phi));
 }
 
+double cephes_hyp2f1_wrap(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }
+
+double cephes_airy_wrap(double x, double *ai, double *aip, double *bi, double *bip) {
+    return special::cephes::airy(x, ai, aip, bi, bip);
+}
+
+double cephes_beta_wrap(double a, double b) { return special::cephes::beta(a, b); }
+
+double cephes_lbeta_wrap(double a, double b) { return special::cephes::lbeta(a, b); }
+
+double cephes_bdtr_wrap(double k, int n, double p) { return special::cephes::bdtr(k, n, p); }
+
+double cephes_bdtri_wrap(double k, int n, double y) { return special::cephes::bdtri(k, n, y); }
+
+double cephes_bdtrc_wrap(double k, int n, double p) { return special::cephes::bdtrc(k, n, p); }
+
+double cephes_cosm1_wrap(double x) { return special::cephes::cosm1(x); }
+
+double cephes_expm1_wrap(double x) { return special::cephes::expm1(x); }
+
+double cephes_expn_wrap(int n, double x) { return special::cephes::expn(n, x); }
+
+double cephes_log1p_wrap(double x) { return special::cephes::log1p(x); }
+
+double cephes_gamma_wrap(double x) { return special::cephes::Gamma(x); }
+
+double cephes_gammasgn_wrap(double x) { return special::cephes::gammasgn(x); }
+
+double cephes_lgam_wrap(double x) { return special::cephes::lgam(x); }
+
+double cephes_iv_wrap(double v, double x) { return special::cephes::iv(v, x); }
+
+double cephes_jv_wrap(double v, double x) { return special::cephes::jv(v, x); }
+
+int cephes_ellpj_wrap(double u, double m, double *sn, double *cn, double *dn, double *ph) {
+    return special::cephes::ellpj(u, m, sn, cn, dn, ph);
+}
+
+double cephes_ellpk_wrap(double x) { return special::cephes::ellpk(x); }
+
+int cephes_fresnl_wrap(double xxa, double *ssa, double *cca) { return special::cephes::fresnl(xxa, ssa, cca); }
+
+double cephes_nbdtr_wrap(int k, int n, double p) { return special::cephes::nbdtr(k, n, p); }
+
+double cephes_nbdtrc_wrap(int k, int n, double p) { return special::cephes::nbdtrc(k, n, p); }
+
+double cephes_nbdtri_wrap(int k, int n, double p) { return special::cephes::nbdtri(k, n, p); }
+
+double cephes_ndtr_wrap(double x) { return special::cephes::ndtr(x); }
+
+double cephes_ndtri_wrap(double x) { return special::cephes::ndtri(x); }
+
+double cephes_pdtri_wrap(int k, double y) { return special::cephes::pdtri(k, y); }
+
+double cephes_poch_wrap(double x, double m) { return special::cephes::poch(x, m); }
+
+int cephes_sici_wrap(double x, double *si, double *ci) { return special::cephes::sici(x, si, ci); }
+
+int cephes_shichi_wrap(double x, double *si, double *ci) { return special::cephes::shichi(x, si, ci); }
+
+double cephes_smirnov_wrap(int n, double x) { return special::cephes::smirnov(n, x); }
+
+double cephes_smirnovc_wrap(int n, double x) { return special::cephes::smirnovc(n, x); }
+
+double cephes_smirnovi_wrap(int n, double x) { return special::cephes::smirnovi(n, x); }
+
+double cephes_smirnovci_wrap(int n, double x) { return special::cephes::smirnovci(n, x); }
+
+double cephes_smirnovp_wrap(int n, double x) { return special::cephes::smirnovp(n, x); }
+
+double cephes__struve_asymp_large_z(double v, double z, int is_h, double *err) {
+    return special::cephes::detail::struve_asymp_large_z(v, z, is_h, err);
+}
+
+double cephes__struve_bessel_series(double v, double z, int is_h, double *err) {
+    return special::cephes::detail::struve_bessel_series(v, z, is_h, err);
+}
+
+double cephes__struve_power_series(double v, double z, int is_h, double *err) {
+    return special::cephes::detail::struve_power_series(v, z, is_h, err);
+}
+
+double cephes_yn_wrap(int n, double x) { return special::cephes::yn(n, x); }
+
+double cephes_polevl_wrap(double x, const double coef[], int N) { return special::cephes::polevl(x, coef, N); }
+
+double cephes_p1evl_wrap(double x, const double coef[], int N) { return special::cephes::p1evl(x, coef, N); }
+
+double gammaln_wrap(double x) { return special::gammaln(x); }
 double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
 
 double special_scaled_exp1(double x) { return special::scaled_exp1(x); }
@@ -422,3 +594,187 @@ double special_sph_bessel_k_jac(long n, double x) { return special::sph_bessel_k
 npy_cdouble special_csph_bessel_k_jac(long n, npy_cdouble z) {
     return to_ccomplex(special::sph_bessel_k_jac(n, to_complex(z)));
 }
+
+double special_ellipk(double m) { return special::ellipk(m); }
+
+double cephes_besselpoly(double a, double lambda, double nu) { return special::cephes::besselpoly(a, lambda, nu); }
+
+double cephes_beta(double a, double b) { return special::cephes::beta(a, b); }
+
+double cephes_chdtr(double df, double x) { return special::cephes::chdtr(df, x); }
+
+double cephes_chdtrc(double df, double x) { return special::cephes::chdtrc(df, x); }
+
+double cephes_chdtri(double df, double y) { return special::cephes::chdtri(df, y); }
+
+double cephes_lbeta(double a, double b) { return special::cephes::lbeta(a, b); }
+
+double cephes_sinpi(double x) { return special::cephes::sinpi(x); }
+
+double cephes_cospi(double x) { return special::cephes::cospi(x); }
+
+double cephes_cbrt(double x) { return special::cephes::detail::cbrt(x); }
+
+double cephes_Gamma(double x) { return special::cephes::Gamma(x); }
+
+double cephes_gammasgn(double x) { return special::cephes::gammasgn(x); }
+
+double cephes_hyp2f1(double a, double b, double c, double x) { return special::cephes::hyp2f1(a, b, c, x); }
+
+double cephes_i0(double x) { return special::cephes::i0(x); }
+
+double cephes_i0e(double x) { return special::cephes::i0e(x); }
+
+double cephes_i1(double x) { return special::cephes::i1(x); }
+
+double cephes_i1e(double x) { return special::cephes::i1e(x); }
+
+double cephes_iv(double v, double x) { return special::cephes::iv(v, x); }
+
+double cephes_j0(double x) { return special::cephes::j0(x); }
+
+double cephes_j1(double x) { return special::cephes::j1(x); }
+
+double cephes_k0(double x) { return special::cephes::k0(x); }
+
+double cephes_k0e(double x) { return special::cephes::k0e(x); }
+
+double cephes_k1(double x) { return special::cephes::k1(x); }
+
+double cephes_k1e(double x) { return special::cephes::k1e(x); }
+
+double cephes_y0(double x) { return special::cephes::y0(x); }
+
+double cephes_y1(double x) { return special::cephes::y1(x); }
+
+double cephes_yn(int n, double x) { return special::cephes::yn(n, x); }
+
+double cephes_igam(double a, double x) { return special::cephes::igam(a, x); }
+
+double cephes_igamc(double a, double x) { return special::cephes::igamc(a, x); }
+
+double cephes_igami(double a, double p) { return special::cephes::igami(a, p); }
+
+double cephes_igamci(double a, double p) { return special::cephes::igamci(a, p); }
+
+double cephes_igam_fac(double a, double x) { return special::cephes::detail::igam_fac(a, x); }
+
+double cephes_lanczos_sum_expg_scaled(double x) { return special::cephes::lanczos_sum_expg_scaled(x); }
+
+double cephes_kolmogorov(double x) { return special::cephes::kolmogorov(x); }
+
+double cephes_kolmogc(double x) { return special::cephes::kolmogc(x); }
+
+double cephes_kolmogi(double x) { return special::cephes::kolmogi(x); }
+
+double cephes_kolmogci(double x) { return special::cephes::kolmogci(x); }
+
+double cephes_kolmogp(double x) { return special::cephes::kolmogp(x); }
+
+double cephes_smirnov(int n, double x) { return special::cephes::smirnov(n, x); }
+
+double cephes_smirnovc(int n, double x) { return special::cephes::smirnovc(n, x); }
+
+double cephes_smirnovi(int n, double x) { return special::cephes::smirnovi(n, x); }
+
+double cephes_smirnovci(int n, double x) { return special::cephes::smirnovci(n, x); }
+
+double cephes_smirnovp(int n, double x) { return special::cephes::smirnovp(n, x); }
+
+double cephes_ndtr(double x) { return special::cephes::ndtr(x); }
+
+double cephes_erf(double x) { return special::cephes::erf(x); }
+
+double cephes_erfc(double x) { return special::cephes::erfc(x); }
+
+double cephes_poch(double x, double m) { return special::cephes::poch(x, m); }
+
+double cephes_rgamma(double x) { return special::cephes::rgamma(x); }
+
+double cephes_zeta(double x, double q) { return special::cephes::zeta(x, q); }
+
+double cephes_zetac(double x) { return special::cephes::zetac(x); }
+
+double cephes_riemann_zeta(double x) { return special::cephes::riemann_zeta(x); }
+
+double cephes_log1p(double x) { return special::cephes::log1p(x); }
+
+double cephes_log1pmx(double x) { return special::cephes::log1pmx(x); }
+
+double cephes_lgam1p(double x) { return special::cephes::lgam1p(x); }
+
+double cephes_expm1(double x) { return special::cephes::expm1(x); }
+
+double cephes_cosm1(double x) { return special::cephes::cosm1(x); }
+
+double cephes_expn(int n, double x) { return special::cephes::expn(n, x); }
+
+double cephes_ellpe(double x) { return special::cephes::ellpe(x); }
+
+double cephes_ellpk(double x) { return special::cephes::ellpk(x); }
+
+double cephes_ellie(double phi, double m) { return special::cephes::ellie(phi, m); }
+
+double cephes_ellik(double phi, double m) { return special::cephes::ellik(phi, m); }
+
+double cephes_sindg(double x) { return special::cephes::sindg(x); }
+
+double cephes_cosdg(double x) { return special::cephes::cosdg(x); }
+
+double cephes_tandg(double x) { return special::cephes::tandg(x); }
+
+double cephes_cotdg(double x) { return special::cephes::cotdg(x); }
+
+double cephes_radian(double d, double m, double s) { return special::cephes::radian(d, m, s); }
+
+double cephes_ndtri(double x) { return special::cephes::ndtri(x); }
+
+double cephes_bdtr(double k, int n, double p) { return special::cephes::bdtr(k, n, p); }
+
+double cephes_bdtri(double k, int n, double y) { return special::cephes::bdtri(k, n, y); }
+
+double cephes_bdtrc(double k, int n, double p) { return special::cephes::bdtrc(k, n, p); }
+
+double cephes_btdtri(double aa, double bb, double yy0) { return special::cephes::incbi(aa, bb, yy0); }
+
+double cephes_btdtr(double a, double b, double x) { return special::cephes::incbet(a, b, x); }
+
+double cephes_erfcinv(double y) { return special::cephes::erfcinv(y); }
+
+double cephes_exp10(double x) { return special::cephes::exp10(x); }
+
+double cephes_exp2(double x) { return special::cephes::exp2(x); }
+
+double cephes_fdtr(double a, double b, double x) { return special::cephes::fdtr(a, b, x); }
+
+double cephes_fdtrc(double a, double b, double x) { return special::cephes::fdtrc(a, b, x); }
+
+double cephes_fdtri(double a, double b, double y) { return special::cephes::fdtri(a, b, y); }
+
+double cephes_gdtr(double a, double b, double x) { return special::cephes::gdtr(a, b, x); }
+
+double cephes_gdtrc(double a, double b, double x) { return special::cephes::gdtrc(a, b, x); }
+
+double cephes_owens_t(double h, double a) { return special::cephes::owens_t(h, a); }
+
+double cephes_nbdtr(int k, int n, double p) { return special::cephes::nbdtr(k, n, p); }
+
+double cephes_nbdtrc(int k, int n, double p) { return special::cephes::nbdtrc(k, n, p); }
+
+double cephes_nbdtri(int k, int n, double p) { return special::cephes::nbdtri(k, n, p); }
+
+double cephes_pdtr(double k, double m) { return special::cephes::pdtr(k, m); }
+
+double cephes_pdtrc(double k, double m) { return special::cephes::pdtrc(k, m); }
+
+double cephes_pdtri(int k, double y) { return special::cephes::pdtri(k, y); }
+
+double cephes_round(double x) { return special::cephes::round(x); }
+
+double cephes_spence(double x) { return special::cephes::spence(x); }
+
+double cephes_tukeylambdacdf(double x, double lmbda) { return special::cephes::tukeylambdacdf(x, lmbda); }
+
+double cephes_struve_h(double v, double z) { return special::cephes::struve_h(v, z); }
+
+double cephes_struve_l(double v, double z) { return special::cephes::struve_l(v, z); }

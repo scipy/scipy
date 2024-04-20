@@ -94,4 +94,5 @@ jobs:
         python dev.py --no-build test -b all -s fft -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api
+        python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.stats.tests.test_stats -- --durations 3 --timeout=60
