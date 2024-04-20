@@ -1786,9 +1786,9 @@ def lpmn(m, n, z):
     p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _lpmn(z, m_signbit, out = (p, pd))
+        _lpmn(m_signbit, z, out = (p, pd))
     else:
-        _lpmn(z, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _lpmn(m_signbit, z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd

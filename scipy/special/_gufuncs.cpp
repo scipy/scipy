@@ -25,6 +25,11 @@ using func_F_F2F2_t =
 using func_D_D2D2_t =
     void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
+using func_bf_f2f2_t =
+    void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_bd_d2d2_t =
+    void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
+
 using func_fb_f2f2_t =
     void (*)(float, bool, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_db_d2d2_t =
@@ -76,7 +81,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "_lpn", _lpn);
 
     PyObject *_lpmn = SpecFun_NewGUFunc(
-        {static_cast<func_fb_f2f2_t>(::lpmn), static_cast<func_db_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,
+        {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,
         "(),()->(mp1,np1),(mp1,np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_lpmn", _lpmn);

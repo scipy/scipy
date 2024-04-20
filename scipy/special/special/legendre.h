@@ -4,6 +4,7 @@
 
 #include "config.h"
 #include "error.h"
+#include "gamma.h"
 
 namespace special {
 
@@ -157,32 +158,45 @@ void assoc_legendre_p_all(T x, OutputMat p) {
 }
 
 template <typename T, typename Callable>
-T assoc_legendre_p(unsigned int n, unsigned int m, bool m_signbit, T x, Callable callback) {
-    return assoc_legendre_p(n, m, x, [m_signbit, &callback](unsigned int j, unsigned int i, T x, T value) {
-        T fac = 1;
-        if (m_signbit && i <= j) {
-            fac *= std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
-            if (std::abs(x) < 1) {
-                fac *= std::pow(-1, i);
+T assoc_legendre_p(unsigned int n, int m, T x, Callable callback) {
+    unsigned int m_abs = std::abs(m);
+    bool m_signbit = std::signbit(m);
+
+    return assoc_legendre_p(n, m_abs, x, [m_signbit, &callback](unsigned int j, unsigned int i_abs, T x, T value_unm) {
+        int i = i_abs;
+        T value = value_unm;
+        if (m_signbit) {
+            i = -i;
+            if (i_abs <= j) {
+                value *= gamma_ratio(j - i_abs + 1, j + i_abs + 1);
+                if (std::abs(x) < 1) {
+                    value *= std::pow(-1, i_abs);
+                }
             }
         }
 
-        callback(j, i, m_signbit, x, fac * value);
+        callback(j, i, x, value);
     });
 }
 
 template <typename T, typename OutputMat>
 void assoc_legendre_p_all(bool m_signbit, T x, OutputMat p) {
-    unsigned int m = p.extent(0) - 1;
+    unsigned int m_abs = p.extent(0) - 1;
     unsigned int n = p.extent(1) - 1;
 
-    assoc_legendre_p(n, m, m_signbit, x, [p](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
-        p(i, j) = value;
+    int m = m_abs;
+    if (m_signbit) {
+        m = -m;
+    }
+
+    assoc_legendre_p(n, m, x, [p](unsigned int j, int i, T x, T value) {
+        unsigned int i_abs = std::abs(i);
+        p(i_abs, j) = value;
     });
 }
 
 template <typename T>
-T assoc_legendre_p_jac_next(unsigned int n, unsigned int m, T x, T p_curr, T p_prev) {
+T assoc_legendre_p_jac_next(unsigned int n, int m, T x, T p_curr, T p_prev) {
     if (std::abs(x) == 1) {
         if (m == 0) {
             return std::pow(x, n + 1) * n * (n + 1) / 2;
@@ -241,17 +255,14 @@ T assoc_legendre_p_jac(unsigned int n, unsigned int m, T x, Callable callback) {
 }
 
 template <typename T, typename Callable>
-T assoc_legendre_p_jac(unsigned int n, unsigned int m, bool m_signbit, T x, Callable callback) {
+T assoc_legendre_p_jac(unsigned int n, int m, T x, Callable callback) {
     T value_jac;
     T value_prev = std::numeric_limits<T>::quiet_NaN();
-    assoc_legendre_p(
-        n, m, m_signbit, x,
-        [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
-            value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
-            value_prev = value;
-            callback(j, i, i_signbit, x, value, value_jac);
-        }
-    );
+    assoc_legendre_p(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, int i, T x, T value) {
+        value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
+        value_prev = value;
+        callback(j, i, x, value, value_jac);
+    });
 
     return value_jac;
 }

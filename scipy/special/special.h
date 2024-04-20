@@ -19,18 +19,21 @@ void lpn(T z, OutputVec1 p, OutputVec2 p_jac) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn(T x, bool m_signbit, OutputMat1 p, OutputMat2 p_jac) {
-    unsigned int m = p.extent(0) - 1;
+void lpmn(bool m_signbit, T x, OutputMat1 p, OutputMat2 p_jac) {
+    unsigned int m_abs = p.extent(0) - 1;
     unsigned int n = p.extent(1) - 1;
 
-    for (unsigned int i = 0; i <= m; ++i) {
-        special::assoc_legendre_p_jac(
-            n, i, m_signbit, x,
-            [p, p_jac](unsigned int j, unsigned int i, bool i_signbit, T x, T value, T value_jac) {
-                p(i, j) = value;
-                p_jac(i, j) = value_jac;
-            }
-        );
+    int m_sign = 1;
+    if (m_signbit) {
+        m_sign = -m_sign;
+    }
+
+    for (int i = 0; std::abs(i) <= m_abs; i += m_sign) {
+        special::assoc_legendre_p_jac(n, i, x, [p, p_jac](unsigned int j, int i, T x, T value, T value_jac) {
+            unsigned int i_abs = std::abs(i);
+            p(i_abs, j) = value;
+            p_jac(i_abs, j) = value_jac;
+        });
     }
 }
 
