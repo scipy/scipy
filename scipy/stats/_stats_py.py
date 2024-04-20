@@ -1201,20 +1201,20 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     a, axis = _chk_asarray(a, axis, xp=xp)
     n = a.shape[axis]
 
-    mean = xp.mean(a, axis, keepdims=True)
-    mean_reduced = xp.squeeze(mean, axis)  # needed later
+    mean = xp.mean(a, axis=axis, keepdims=True)
+    mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
-        vals = xp.where(zero, np.nan, m3 / m2**1.5)
+        vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if xp.any(can_correct):
             m2 = m2[can_correct]
             m3 = m3[can_correct]
-            nval = xp.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
+            nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
             vals[can_correct] = nval
 
     return vals[()] if vals.ndim == 0 else vals
