@@ -93,7 +93,15 @@ T legendre_p_jac(unsigned int n, T z, Callable callback) {
 // =====================================================
 
 template <typename T, typename Callable>
-T assoc_legendre(unsigned int n, unsigned int m, T x, Callable callback) {
+T assoc_legendre_p(unsigned int n, unsigned int m, T x, Callable callback) {
+    if (m > n) {
+        for (unsigned int j = 0; j < n; ++j) {
+            callback(j, m, x, 0);
+        }
+
+        return 0;
+    }
+
     unsigned int ls = (std::abs(x) > 1 ? -1 : 1);
     T xq = std::sqrt(ls * (1 - x * x));
     if (x < -1) {
@@ -101,13 +109,12 @@ T assoc_legendre(unsigned int n, unsigned int m, T x, Callable callback) {
     }
 
     T p = 1;
-    for (unsigned int i = 1; i <= m; ++i) {
-        callback(i - 1, m, x, 0);
+    for (unsigned int j = 0; j < m; ++j) {
+        callback(j, m, x, 0);
 
-        p *= -ls * T(2 * i - 1) * xq;
+        p *= -ls * T(2 * j + 1) * xq;
     }
 
-    // ...
     callback(m, m, x, p);
 
     if (m != n) {
@@ -135,23 +142,23 @@ T assoc_legendre(unsigned int n, unsigned int m, T x, Callable callback) {
 */
 
 template <typename T>
-T assoc_legendre(unsigned int n, unsigned int m, T x) {
-    return assoc_legendre(n, m, x, [](unsigned int j, unsigned int i, T x, T value) {});
+T assoc_legendre_p(unsigned int n, unsigned int m, T x) {
+    return assoc_legendre_p(n, m, x, [](unsigned int j, unsigned int i, T x, T value) {});
 }
 
 template <typename T, typename OutputMat>
-void assoc_legendre_all(T x, OutputMat p) {
+void assoc_legendre_p_all(T x, OutputMat p) {
     unsigned int m = p.extent(0) - 1;
     unsigned int n = p.extent(1) - 1;
 
     for (unsigned int i = 0; i <= m; ++i) {
-        assoc_legendre(n, i, x, [p](unsigned int j, unsigned int i, T x, T value) { p(i, j) = value; });
+        assoc_legendre_p(n, i, x, [p](unsigned int j, unsigned int i, T x, T value) { p(i, j) = value; });
     }
 }
 
 template <typename T, typename Callable>
-T assoc_legendre(unsigned int n, unsigned int m, bool m_signbit, T x, Callable callback) {
-    return assoc_legendre(n, m, x, [m_signbit, &callback](unsigned int j, unsigned int i, T x, T value) {
+T assoc_legendre_p(unsigned int n, unsigned int m, bool m_signbit, T x, Callable callback) {
+    return assoc_legendre_p(n, m, x, [m_signbit, &callback](unsigned int j, unsigned int i, T x, T value) {
         T fac = 1;
         if (m_signbit && i <= j) {
             fac *= std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
@@ -165,17 +172,17 @@ T assoc_legendre(unsigned int n, unsigned int m, bool m_signbit, T x, Callable c
 }
 
 template <typename T, typename OutputMat>
-void assoc_legendre_all(bool m_signbit, T x, OutputMat p) {
+void assoc_legendre_p_all(bool m_signbit, T x, OutputMat p) {
     unsigned int m = p.extent(0) - 1;
     unsigned int n = p.extent(1) - 1;
 
-    assoc_legendre(n, m, m_signbit, x, [p](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
+    assoc_legendre_p(n, m, m_signbit, x, [p](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
         p(i, j) = value;
     });
 }
 
 template <typename T>
-T assoc_legendre_jac_next(unsigned int n, unsigned int m, T x, T p_curr, T p_prev) {
+T assoc_legendre_p_jac_next(unsigned int n, unsigned int m, T x, T p_curr, T p_prev) {
     if (std::abs(x) == 1) {
         if (m == 0) {
             return std::pow(x, n + 1) * n * (n + 1) / 2;
@@ -212,20 +219,20 @@ T assoc_legendre_jac_next(unsigned int n, unsigned int m, T x, T p_curr, T p_pre
 }
 
 template <typename T>
-T assoc_legendre_jac_next(unsigned int n, unsigned int m, bool m_signbit, T x, T p, T p_prev) {
+T assoc_legendre_p_jac_next(unsigned int n, unsigned int m, bool m_signbit, T x, T p, T p_prev) {
     if (m_signbit) {
-        return assoc_legendre_jac_next(m, n, x, p, p_prev);
+        return assoc_legendre_p_jac_next(m, n, x, p, p_prev);
     }
 
-    return assoc_legendre_jac_next(m, n, x, p, p_prev);
+    return assoc_legendre_p_jac_next(m, n, x, p, p_prev);
 }
 
-template <typename T, typename Callback>
-T assoc_legendre_jac(unsigned int n, unsigned int m, T x, Callback callback) {
+template <typename T, typename Callable>
+T assoc_legendre_p_jac(unsigned int n, unsigned int m, T x, Callable callback) {
     T value_jac;
     T value_prev = std::numeric_limits<T>::quiet_NaN();
-    assoc_legendre(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, T x, T value) {
-        value_jac = assoc_legendre_jac_next(j, i, x, value, value_prev);
+    assoc_legendre_p(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, T x, T value) {
+        value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
         value_prev = value;
         callback(j, i, x, value_jac);
     });
@@ -233,14 +240,14 @@ T assoc_legendre_jac(unsigned int n, unsigned int m, T x, Callback callback) {
     return value_jac;
 }
 
-template <typename T, typename Callback>
-T assoc_legendre_jac(unsigned int n, unsigned int m, bool m_signbit, T x, Callback callback) {
+template <typename T, typename Callable>
+T assoc_legendre_p_jac(unsigned int n, unsigned int m, bool m_signbit, T x, Callable callback) {
     T value_jac;
     T value_prev = std::numeric_limits<T>::quiet_NaN();
-    assoc_legendre(
+    assoc_legendre_p(
         n, m, m_signbit, x,
         [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, bool i_signbit, T x, T value) {
-            value_jac = assoc_legendre_jac_next(j, i, x, value, value_prev);
+            value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
             value_prev = value;
             callback(j, i, i_signbit, x, value, value_jac);
         }
@@ -250,7 +257,15 @@ T assoc_legendre_jac(unsigned int n, unsigned int m, bool m_signbit, T x, Callba
 }
 
 template <typename T, typename Callable>
-T sph_legendre(unsigned int n, unsigned int m, T phi, Callable callback) {
+T sph_legendre_p(unsigned int n, unsigned int m, T phi, Callable callback) {
+    if (m > n) {
+        for (unsigned int j = 0; j < n; ++j) {
+            callback(j, m, phi, 0);
+        }
+
+        return 0;
+    }
+
     T x = std::cos(phi);
 
     long ls = (std::abs(x) > 1 ? -1 : 1);
@@ -259,16 +274,14 @@ T sph_legendre(unsigned int n, unsigned int m, T phi, Callable callback) {
         xq = -xq; // Ensure connection to the complex-valued function for |x| > 1
     }
 
-    T p_diag = 1 / (T(2) * std::sqrt(M_PI));
-    for (unsigned int i = 1; i <= m; ++i) {
-        callback(i - 1, m, phi, 0);
+    T p = 1 / (T(2) * std::sqrt(M_PI));
+    for (unsigned int j = 0; j < m; ++j) {
+        callback(j, m, phi, 0);
 
-        T fac = std::sqrt(T(2 * i + 1) / T(2 * i));
-        p_diag *= -ls * fac * xq;
+        T fac = std::sqrt(T(2 * j + 3) / T(2 * (j + 1)));
+        p *= -ls * fac * xq;
     }
 
-    // ...
-    T p = p_diag;
     callback(m, m, phi, p);
 
     if (m != n) {
@@ -292,12 +305,12 @@ T sph_legendre(unsigned int n, unsigned int m, T phi, Callable callback) {
 }
 
 template <typename T>
-T sph_legendre(unsigned int n, unsigned int m, T phi) {
-    return sph_legendre(n, m, phi, [](unsigned int j, unsigned int i, T phi, T value) {});
+T sph_legendre_p(unsigned int n, unsigned int m, T phi) {
+    return sph_legendre_p(n, m, phi, [](unsigned int j, unsigned int i, T phi, T value) {});
 }
 
 template <typename T, typename OutMat>
-void sph_legendre_all(T phi, OutMat p) {
+void sph_legendre_p_all(T phi, OutMat p) {
     unsigned int m = p.extent(0) - 1;
     unsigned int n = p.extent(1) - 1;
 

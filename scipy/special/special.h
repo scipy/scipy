@@ -24,7 +24,7 @@ void lpmn(T x, bool m_signbit, OutputMat1 p, OutputMat2 p_jac) {
     unsigned int n = p.extent(1) - 1;
 
     for (unsigned int i = 0; i <= m; ++i) {
-        special::assoc_legendre_jac(
+        special::assoc_legendre_p_jac(
             n, i, m_signbit, x,
             [p, p_jac](unsigned int j, unsigned int i, bool i_signbit, T x, T value, T value_jac) {
                 p(i, j) = value;
