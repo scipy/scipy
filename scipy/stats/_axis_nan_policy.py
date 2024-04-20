@@ -403,6 +403,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 temp = args[0]
 
             if not is_numpy(array_namespace(temp)):
+                msg = ("Use of `nan_policy` and `keepdims` "
+                       "is incompatible with non-NumPy arrays.")
+                if 'nan_policy' in kwds or 'keepdims' in kwds:
+                    raise NotImplementedError(msg)
                 return hypotest_fun_in(*args, **kwds)
 
             # We need to be flexible about whether position or keyword

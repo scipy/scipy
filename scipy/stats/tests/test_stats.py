@@ -3342,7 +3342,7 @@ class TestMoments:
         a = np.arange(8).reshape(2, -1).astype(float)
         a = xp.asarray(a)
         a[1, 0] = np.nan
-        mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
+        mm = stats.moment(a, 2, axis=1)
         xp_assert_close(mm, xp.asarray([1.25, np.nan], dtype=xp.float64), atol=1e-15)
 
     @array_api_compatible
@@ -3381,31 +3381,37 @@ class TestMoments:
         xp_assert_close(res, ref)
 
 
-class TestSkewKurtosis:
+class SkewKurtosisTest:
     scalar_testcase = 4.
     testcase = [1., 2., 3., 4.]
     testmathworks = [1.165, 0.6268, 0.0751, 0.3516, -0.6965]
 
+
+class TestSkew(SkewKurtosisTest):
     def test_empty_1d(self):
+        # This is not essential behavior to maintain w/ array API
         message = r"Mean of empty slice\.|invalid value encountered.*"
         with pytest.warns(RuntimeWarning, match=message):
             stats.skew([])
         with pytest.warns(RuntimeWarning, match=message):
             stats.kurtosis([])
 
-    def test_skewness(self):
+    @array_api_compatible
+    def test_skewness(self, xp):
         # Scalar test case
-        y = stats.skew(self.scalar_testcase)
-        assert np.isnan(y)
+        y = stats.skew(xp.asarray(self.scalar_testcase))
+        xp_assert_close(y, xp.asarray(xp.nan))
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
-        y = stats.skew(self.testmathworks)
-        assert_approx_equal(y, -0.29322304336607, 10)
-        y = stats.skew(self.testmathworks, bias=0)
-        assert_approx_equal(y, -0.437111105023940, 10)
-        y = stats.skew(self.testcase)
-        assert_approx_equal(y, 0.0, 10)
+        y = stats.skew(xp.asarray(self.testmathworks, dtype=xp.float64))
+        xp_assert_close(y, xp.asarray(-0.29322304336607, dtype=xp.float64), atol=1e-10)
+        y = stats.skew(xp.asarray(self.testmathworks, dtype=xp.float64), bias=0)
+        xp_assert_close(y, xp.asarray(-0.437111105023940, dtype=xp.float64), atol=1e-10)
+        y = stats.skew(xp.asarray(self.testcase, dtype=xp.float64))
+        xp_assert_close(y, xp.asarray(0.0, dtype=xp.float64), atol=1e-10)
 
+    def test_nan_policy(self):
+        # initially, nan_policy is ignored with alternative backends
         x = np.arange(10.)
         x[9] = np.nan
         with np.errstate(invalid='ignore'):
@@ -3415,42 +3421,78 @@ class TestSkewKurtosis:
         assert_raises(ValueError, stats.skew, x, nan_policy='foobar')
 
     def test_skewness_scalar(self):
-        # `skew` must return a scalar for 1-dim input
+        # `skew` must return a scalar for 1-dim input (only for NumPy arrays)
         assert_equal(stats.skew(arange(10)), 0.0)
 
-    def test_skew_propagate_nan(self):
+    @array_api_compatible
+    def test_skew_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a[1, 0] = np.nan
+        a = xp.arange(8.)
+        a = xp.reshape(a, (2, -1))
+        a[1, 0] = xp.nan
         with np.errstate(invalid='ignore'):
-            s = stats.skew(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(s, [0, np.nan], atol=1e-15)
+            s = stats.skew(a, axis=1)
+        xp_assert_equal(s, xp.asarray([0, xp.nan]))
 
-    def test_skew_constant_value(self):
+    @array_api_compatible
+    def test_skew_constant_value(self, xp):
         # Skewness of a constant input should be zero even when the mean is not
         # exact (gh-13245)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            a = np.repeat(-0.27829495, 10)
-            assert np.isnan(stats.skew(a))
-            assert np.isnan(stats.skew(a * float(2**50)))
-            assert np.isnan(stats.skew(a / float(2**50)))
-            assert np.isnan(stats.skew(a, bias=False))
+            a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
+            assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
+            assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
+            assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
 
-            # similarly, from gh-11086:
-            assert np.isnan(stats.skew([14.3]*7))
-            assert np.isnan(stats.skew(1 + np.arange(-3, 4)*1e-16))
+            # # similarly, from gh-11086:
+            a = xp.asarray([14.3]*7)
+            assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            a = 1. + xp.arange(-3., 4)*1e-16
+            assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
-    def test_precision_loss_gh15554(self):
+    @array_api_compatible
+    def test_precision_loss_gh15554(self, xp):
         # gh-15554 was one of several issues that have reported problems with
         # constant or near-constant input. We can't always fix these, but
         # make sure there's a warning.
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             rng = np.random.default_rng(34095309370)
-            a = rng.random(size=(100, 10))
+            a = xp.asarray(rng.random(size=(100, 10)))
             a[:, 0] = 1.01
-            stats.skew(a)[0]
+            stats.skew(a)
 
+    @array_api_compatible
+    @pytest.mark.parametrize('axis', [-1, 0, 2, None])
+    @pytest.mark.parametrize('bias', [False, True])
+    def test_vectorization(self, xp, axis, bias):
+        # Behavior with array input is barely tested above. Compare
+        # against naive implementation.
+        rng = np.random.default_rng(1283413549926)
+        x = xp.asarray(rng.random((3, 4, 5)))
+
+        def skewness(a, axis, bias):
+            # Simple implementation of skewness
+            if axis is None:
+                a = xp.reshape(a, (-1,))
+                axis = 0
+            xp_test = array_namespace(a)  # plain torch ddof=1 by default
+            mean = xp_test.mean(a, axis=axis, keepdims=True)
+            mu3 = xp_test.mean((a - mean)**3, axis=axis)
+            std = xp_test.std(a, axis=axis)
+            res = mu3 / std ** 3
+            if not bias:
+                n = a.shape[axis]
+                res *= ((n - 1.0) * n) ** 0.5 / (n - 2.0)
+            return res
+
+        res = stats.skew(x, axis=axis, bias=bias)
+        ref = skewness(x, axis=axis, bias=bias)
+        xp_assert_close(res, ref)
+
+
+class TestKurtosis(SkewKurtosisTest):
     def test_kurtosis(self):
         # Scalar test case
         y = stats.kurtosis(self.scalar_testcase)
@@ -8878,3 +8920,20 @@ def test_chk_asarray(xp):
     x_out, axis_out = _chk_asarray(x[0, 0, 0], axis=axis, xp=xp)
     xp_assert_equal(x_out, xp.asarray(np.atleast_1d(x0[0, 0, 0])))
     assert_equal(axis_out, axis)
+
+
+@pytest.mark.skip_xp_backends('numpy',
+                              reasons=['These parameters *are* compatible with NumPy'])
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
+def test_axis_nan_policy_keepdims_nanpolicy(xp):
+    # this test does not need to be repeated for every function
+    # using the _axis_nan_policy decorator. The test is here
+    # rather than in `test_axis_nanpolicy.py` because there is
+    # no reason to run those tests on an array API CI job.
+    x = xp.asarray([1, 2, 3, 4])
+    message = "Use of `nan_policy` and `keepdims`..."
+    with pytest.raises(NotImplementedError, match=message):
+        stats.skew(x, nan_policy='omit')
+    with pytest.raises(NotImplementedError, match=message):
+        stats.skew(x, keepdims=True)
