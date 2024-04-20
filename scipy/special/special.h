@@ -36,12 +36,17 @@ void lpmn(T x, bool m_signbit, OutputMat1 p, OutputMat2 p_jac) {
 
 template <typename T>
 std::complex<T> sph_harm(long m, long n, T theta, T phi) {
+    if (n < 0) {
+        special::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
+        return std::numeric_limits<T>::quiet_NaN();
+    }
+
     if (std::abs(m) > n) {
         special::set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
         return std::numeric_limits<T>::quiet_NaN();
     }
 
-    return special::sph_harm(m, n, theta, phi);
+    return special::sph_harm(n, m, theta, phi);
 }
 
 template <typename T>

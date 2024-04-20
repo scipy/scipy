@@ -5,20 +5,13 @@
 namespace special {
 
 template <typename T>
-std::complex<T> sph_harm(long m, long n, T theta, T phi) {
-    if (n < 0) {
-        set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
-        return std::numeric_limits<T>::quiet_NaN();
+std::complex<T> sph_harm(unsigned int n, int m, T theta, T phi) {
+    std::complex<T> y = sph_legendre_p(n, std::abs(m), phi) * std::exp(std::complex(T(0), m * theta));
+    if (m < 0) {
+        y *= std::pow(-1, m);
     }
 
-    long m_abs = std::abs(m);
-
-    std::complex<T> y = sph_legendre_p(n, m_abs, phi) * std::exp(std::complex(T(0), m_abs * theta));
-    if (m >= 0) {
-        return y;
-    }
-
-    return T(std::pow(-1, m)) * std::conj(y);
+    return y;
 }
 
 template <typename T, typename OutMat>
