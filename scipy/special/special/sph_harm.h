@@ -1,6 +1,5 @@
 #pragma once
 
-#include "error.h"
 #include "legendre.h"
 
 namespace special {
@@ -17,7 +16,7 @@ std::complex<T> sph_harm(long m, long n, T theta, T phi) {
         return 0;
     }
 
-    std::complex<T> y = sph_legendre(m_abs, n, phi) * std::exp(std::complex(T(0), m * theta));
+    std::complex<T> y = sph_legendre(n, m_abs, phi) * std::exp(std::complex(T(0), m * theta));
     if (m < 0) {
         y *= std::pow(-1, m_abs);
     }
@@ -27,13 +26,13 @@ std::complex<T> sph_harm(long m, long n, T theta, T phi) {
 
 template <typename T, typename OutMat>
 void sph_harm_all(T theta, T phi, OutMat y) {
-    long m = (y.extent(0) - 1) / 2;
-    long n = y.extent(1) - 1;
+    unsigned int m = (y.extent(0) - 1) / 2;
+    unsigned int n = y.extent(1) - 1;
 
-    sph_legendre(0, n, phi, [y](long i, long j, T phi, T value) { y(i, j) = value; });
+    sph_legendre(n, 0, phi, [y](unsigned int j, unsigned int i, T phi, T value) { y(i, j) = value; });
 
-    for (long i = 1; i <= m; ++i) {
-        sph_legendre(i, n, phi, [theta, y](long i, long j, T phi, T value) {
+    for (unsigned int i = 1; i <= n; ++i) {
+        sph_legendre(n, i, phi, [theta, y](unsigned int j, unsigned int i, T phi, T value) {
             y(i, j) = value * std::exp(std::complex(T(0), i * theta));
             y(y.extent(0) - i, j) = T(std::pow(-1, i)) * std::conj(y(i, j));
         });
