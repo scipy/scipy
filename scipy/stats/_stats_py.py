@@ -1112,10 +1112,10 @@ def _moment(a, order, axis, *, mean=None, xp=None):
 def _var(x, axis=0, ddof=0, mean=None, xp=None):
     # Calculate variance of sample, warning if precision is lost
     xp = array_namespace(x) if xp is None else xp
-    var = _moment(x, 2, axis, mean=mean)
+    var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
         n = x.shape[axis] if axis is not None else x.size
-        var *= xp.divide(n, n-ddof)  # to avoid error on division by zero
+        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
     return var
 
 
@@ -6787,7 +6787,8 @@ class TtestResult(TtestResultBase):
     """
 
     def __init__(self, statistic, pvalue, df,  # public
-                 alternative, standard_error, estimate, statistic_np=None, xp=None):  # private
+                 alternative, standard_error, estimate,
+                 statistic_np=None, xp=None):  # private
         super().__init__(statistic, pvalue, df=df)
         self._alternative = alternative
         self._standard_error = standard_error  # denominator of t-statistic
@@ -6812,8 +6813,9 @@ class TtestResult(TtestResultBase):
             fields `low` and `high`.
 
         """
-        low, high = _t_confidence_interval(self.df, self._statistic_np, confidence_level,
-                                           self._alternative, self._dtype, self._xp)
+        low, high = _t_confidence_interval(self.df, self._statistic_np,
+                                           confidence_level, self._alternative,
+                                           self._dtype, self._xp)
         low = low * self._standard_error + self._estimate
         high = high * self._standard_error + self._estimate
         return ConfidenceInterval(low=low, high=high)
