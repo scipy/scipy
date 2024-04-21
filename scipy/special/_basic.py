@@ -2046,6 +2046,10 @@ def euler(n):
 
 _lpn = ufunc_wrapper(_lpn)
 
+@_lpn.resolve_ufunc
+def _(ufuncs, diff_n):
+    return ufuncs[diff_n]
+
 lpn_all = ufunc_wrapper(lpn_all)
 
 @lpn_all.resolve_out_shapes
@@ -2054,15 +2058,19 @@ def _(n, shapes):
 
     return (n + 1,) + shapes[0]
 
+@lpn_all.resolve_ufunc
+def _(ufuncs, diff_n):
+    return ufuncs[diff_n]
+
 @lpn_all.as_ufunc_out
 def _(out):
     return np.moveaxis(out, 0, -1)
 
-def lpn(n, z, nout = 1, legacy = True):
+def lpn(n, z, diff_n = 1, legacy = True):
     if legacy:
-        return lpn_all(n, z, nout = 2)
+        return lpn_all(n, z, diff_n = 1)
 
-    return _lpn(n, z, nout = nout)
+    return _lpn(n, z, diff_n = diff_n)
 
 def lqn(n, z):
     """Legendre function of the second kind.

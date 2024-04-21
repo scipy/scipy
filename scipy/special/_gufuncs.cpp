@@ -92,7 +92,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     }
 
     PyObject *lpn_all = PyTuple_Pack(
-        4, Py_None,
+        3,
         SpecFun_NewGUFunc(
             {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all),
              static_cast<func_F_F1_t>(::lpn_all), static_cast<func_D_D1_t>(::lpn_all)},
