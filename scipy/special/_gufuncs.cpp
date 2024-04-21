@@ -91,27 +91,25 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         return nullptr;
     }
 
-    PyObject *lpn_all = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all), static_cast<func_F_F1_t>(::lpn_all),
-         static_cast<func_D_D1_t>(::lpn_all)},
-        1, "lpn_all", lpn_all_doc, "()->(np1)"
-    );
-    PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
-
-    PyObject *lpn_all_diffs_all = PyTuple_Pack(
-        2,
+    PyObject *lpn_alls = PyTuple_Pack(
+        3,
+        SpecFun_NewGUFunc(
+            {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all),
+             static_cast<func_F_F1_t>(::lpn_all), static_cast<func_D_D1_t>(::lpn_all)},
+            1, "lpn_all", lpn_all_doc, "()->(np1)"
+        ),
         SpecFun_NewGUFunc(
             {static_cast<func_f_f1f1_t>(::lpn_all), static_cast<func_d_d1d1_t>(::lpn_all),
              static_cast<func_F_F1F1_t>(::lpn_all), static_cast<func_D_D1D1_t>(::lpn_all)},
-            2, "lpn_all_diff_all_1", lpn_all_doc, "()->(np1),(np1)"
+            2, "lpn_all", lpn_all_doc, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_f_f1f1f1_t>(::lpn_all), static_cast<func_d_d1d1d1_t>(::lpn_all),
              static_cast<func_F_F1F1F1_t>(::lpn_all), static_cast<func_D_D1D1D1_t>(::lpn_all)},
-            3, "lpn_all_diff_all_2", lpn_all_doc, "()->(np1),(np1),(np1)"
+            3, "lpn_all", lpn_all_doc, "()->(np1),(np1),(np1)"
         )
     );
-    PyModule_AddObjectRef(_gufuncs, "lpn_all_diffs_all", lpn_all_diffs_all);
+    PyModule_AddObjectRef(_gufuncs, "lpn_alls", lpn_alls);
 
     PyObject *_lpmn = SpecFun_NewGUFunc(
         {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,

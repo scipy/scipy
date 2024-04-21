@@ -14,8 +14,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn, lpn_diff_all as _lpn_diff_all
-from ._gufuncs import (lpn_all as _lpn_all, lpn_all_diffs_all as _lpn_all_diffs_all, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import lpns as _lpns
+from ._gufuncs import (lpn_alls, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -2044,9 +2044,9 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = ufunc_wrapper(_lpn, None, _lpn_diff_all)
+_lpn = ufunc_wrapper(_lpns)
 
-lpn_all = ufunc_wrapper(_lpn_all, None, _lpn_all_diffs_all)
+lpn_all = ufunc_wrapper(lpn_alls)
 
 @lpn_all.resolve_out_shapes
 def _(n, shapes):
@@ -2058,11 +2058,11 @@ def _(n, shapes):
 def _(out):
     return np.moveaxis(out, 0, -1)
 
-def lpn(n, z, diff_n = 0, diff_all = False, legacy = True):
+def lpn(n, z, nout = 1, legacy = True):
     if legacy:
-        return lpn_all(n, z, diff_n = 1, diff_all = True)
+        return lpn_all(n, z, nout = 2)
 
-    return _lpn(n, z, diff_n = diff_n, diff_all = diff_all)
+    return _lpn(n, z, nout = nout)
 
 def lqn(n, z):
     """Legendre function of the second kind.

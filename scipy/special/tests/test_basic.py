@@ -3630,7 +3630,12 @@ class TestLegendreFunctions:
         n = rng.integers(0, 100, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.lpn(n, x, diff_n = 2, diff_all = True, legacy = False)
+        p, p_jac, p_hess = special.lpn(n, x, nout = 3, legacy = False)
+
+        assert p.shape == shape
+        assert p_jac.shape == p.shape
+        assert p_hess.shape == p_jac.shape
+
         err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
         np.testing.assert_allclose(err, 0, atol = 1e-10)
 
@@ -3640,7 +3645,7 @@ class TestLegendreFunctions:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, x_shape)
-        p, p_jac, p_hess = special.lpn_all(n_max, x, diff_n = 2, diff_all = True)
+        p, p_jac, p_hess = special.lpn_all(n_max, x, nout = 3)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))
