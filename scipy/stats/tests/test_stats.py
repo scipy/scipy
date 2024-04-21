@@ -3688,7 +3688,7 @@ class TestStudentTest:
         ci = res.confidence_interval(confidence_level=0.85)
         xp_assert_close(ci.low, xp.asarray(ref[alternative][0]))
         xp_assert_close(ci.high, xp.asarray(ref[alternative][1]))
-        xp_assert_close(res.df, xp.asarray(n-1))
+        xp_assert_equal(res.df, xp.asarray(n-1))
 
     def test_1samp_ci_iv(self, xp):
         # test `confidence_interval` method input validation
@@ -3704,7 +3704,8 @@ class TestStudentTest:
     def test_pvalue_ci(self, alpha, data_axis, alternative, xp):
         # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        data = np.asarray(data, dtype=np.float64)  # ensure byte order
+        data = data.astype(np.float64, copy=True)  # ensure byte order
+        data = xp.asarray(data, dtype=xp.float64)
         res = stats.ttest_1samp(data, 0.,
                                 alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
@@ -3712,7 +3713,10 @@ class TestStudentTest:
         xp_test = array_namespace(l)  # torch needs `expand_dims`
         popmean = xp_test.expand_dims(popmean, axis=axis)
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
-        np.testing.assert_allclose(res.pvalue, xp.asarray(1-alpha, dtype=xp.float64))
+        shape = list(data.shape)
+        shape.pop(axis)
+        ref = xp.broadcast_to(xp.asarray(1-alpha, dtype=xp.float64), shape)
+        xp_assert_close(res.pvalue, ref)
 
 
 class TestPercentileOfScore:
