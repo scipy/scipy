@@ -38,8 +38,8 @@ WRAPPED_FUNCS = ['cdotc', 'cdotu', 'zdotc', 'zdotu', 'cladiv', 'zladiv']
 USE_OLD_ACCELERATE = ['lsame', 'dcabs1']
 
 C_PREAMBLE = """
-#include "fortran_defs.h"
 #include "npy_cblas.h"
+#include "fortran_defs.h"
 """
 
 LAPACK_DECLS = """
@@ -128,7 +128,8 @@ def get_blas_macro_and_name(name, accelerate):
         elif name == 'xerbla_array':
             return '', name + '__'
     if name in WRAPPED_FUNCS:
-        return '', name + 'wrp_'
+        name = name + 'wrp'
+        return 'F_FUNC', f'{name},{name.upper()}'
     return 'BLAS_FUNC', name
 
 
