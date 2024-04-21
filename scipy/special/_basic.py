@@ -2058,7 +2058,7 @@ def _(out):
 
 def lpn(n, z, legacy = True):
     if legacy:
-        return lpn_all(n, z, diff = 1, diff_all = True)
+        return lpn_all(n, z, diff = 1, diff_until = True)
 
     return _lpn(n, z)
 

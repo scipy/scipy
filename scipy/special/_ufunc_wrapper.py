@@ -13,10 +13,10 @@ class ufunc_wrapper(object):
     def as_ufunc_out(self, func):
         self._as_ufunc_out = func
 
-    def __call__(self, *args, diff = 0, diff_all = False):
+    def __call__(self, *args, diff = 0, diff_until = False):
         if (diff == 0):
             uf = self.ufunc
-        elif diff_all:
+        elif diff_until:
             uf = self.until_diffs[diff - 1]
         else:
             uf = self.diffs[diff - 1]

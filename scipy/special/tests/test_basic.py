@@ -3629,7 +3629,7 @@ class TestLegendreFunctions:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, shape)
-        p, p_jac, p_hess = special.lpn_all(n, x, diff = 2, diff_all = True)
+        p, p_jac, p_hess = special.lpn_all(n, x, diff = 2, diff_until = True)
 
         j = np.arange(n + 1)
         j = np.expand_dims(j, axis = tuple(range(1, x.ndim + 1)))
