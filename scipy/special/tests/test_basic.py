@@ -3624,15 +3624,19 @@ class TestLegendreFunctions:
                                                       1.50000]])), 4)
 
     @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
-    @pytest.mark.parametrize("shape", [10, (4, 9), (3, 5, 7)])
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpn_all(self, n, shape):
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, shape)
-        p, p_jac, p_hess = special.lpn_all.until_hess(n, x)
+        p, p_jac, p_hess = special.lpn_all(n, x, diff = 2, diff_all = True)
 
         j = np.arange(n + 1)
         j = np.expand_dims(j, axis = tuple(range(1, x.ndim + 1)))
+
+        assert p.shape == (n + 1,) + shape
+        assert p_jac.shape == p.shape
+        assert p_hess.shape == p_jac.shape
 
         err = (1 - x * x) * p_hess - 2 * x * p_jac + j * (j + 1) * p
         np.testing.assert_allclose(err, 0, atol = 1e-10)

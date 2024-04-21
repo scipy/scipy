@@ -2,47 +2,43 @@
 import numpy as np
 
 class ufunc_wrapper(object):
-    def __init__(self, ufunc, diffs = (), until_diffs = ()):
-        if until_diffs:
-            until_diffs = tuple(ufunc_wrapper(until_diff) for until_diff in until_diffs)
-
+    def __init__(self, ufunc, diffs = (), diff_alls = ()):
         self.ufunc = ufunc
-        self.until_diffs = until_diffs
+        self.until_diffs = diff_alls
         self._as_ufunc_out = lambda out: out
 
-    @property
-    def until_jac(self):
-        return self.until_diffs[0]
-
-    @property
-    def until_hess(self):
-        return self.until_diffs[1]
-
     def resolve_out_shapes(self, func):
-        for k, until_diff in enumerate(self.until_diffs, 1):
-            until_diff.resolve_out_shapes(lambda *args: (k + 1) * (func(*args),))
-
         self._resolve_out_shapes = func
 
     def as_ufunc_out(self, func):
-        for k, until_diff in enumerate(self.until_diffs, 1):
-            until_diff.as_ufunc_out(lambda out: tuple(func(out[i]) for i in range(len(out))))
-
         self._as_ufunc_out = func
 
-    def __call__(self, *args):
-        resolve_out_shapes_args = args[:-self.ufunc.nin]
-        args = args[-self.ufunc.nin:]
+    def __call__(self, *args, diff = 0, diff_all = False):
+        if (diff == 0):
+            uf = self.ufunc
+        elif diff_all:
+            uf = self.until_diffs[diff - 1]
+        else:
+            uf = self.diffs[diff - 1]
+
+        resolve_out_shapes_args = args[:-uf.nin]
+        args = args[-uf.nin:]
 
         arg_shapes = tuple(np.shape(arg) for arg in args)
         out_shapes = self._resolve_out_shapes(*resolve_out_shapes_args, arg_shapes)
+        if (diff > 0):
+            out_shapes = (diff + 1) * (out_shapes,)
 
-        arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else type(arg) for arg in args) + self.ufunc.nout * (None,)
-        dtypes = self.ufunc.resolve_dtypes(arg_dtypes)
-        out_dtypes = dtypes[-self.ufunc.nout:]
+        arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else type(arg) for arg in args) + uf.nout * (None,)
+        dtypes = uf.resolve_dtypes(arg_dtypes)
+        out_dtypes = dtypes[-uf.nout:]
+
+        f = self._as_ufunc_out
+        if (diff > 0):
+            f = lambda out: tuple(self._as_ufunc_out(out[i]) for i in range(len(out)))
 
         out = tuple(np.empty(out_shape, dtype = out_dtype) for out_shape, out_dtype in zip(out_shapes, out_dtypes))
-        self.ufunc(*args, out = self._as_ufunc_out(out)) 
+        uf(*args, out = f(out)) 
 
         if (len(out) == 1):
             out, = out

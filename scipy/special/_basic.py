@@ -2044,13 +2044,13 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-lpn_all = ufunc_wrapper(_lpn_all, until_diffs = (_lpn_all_until_jac, _lpn_all_until_hess))
+lpn_all = ufunc_wrapper(_lpn_all, diff_alls = (_lpn_all_until_jac, _lpn_all_until_hess))
 
 @lpn_all.resolve_out_shapes
-def _(n, shape):
+def _(n, shapes):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return (n + 1,) + shape[0]
+    return (n + 1,) + shapes[0]
 
 @lpn_all.as_ufunc_out
 def _(out):
@@ -2058,7 +2058,7 @@ def _(out):
 
 def lpn(n, z, legacy = True):
     if legacy:
-        return lpn_all.until_jac(n, z)
+        return lpn_all(n, z, diff = 1, diff_all = True)
 
     return _lpn(n, z)
 
