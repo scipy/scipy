@@ -101,13 +101,13 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *lpn_all_diffs_all = PyTuple_Pack(
         2,
         SpecFun_NewGUFunc(
-            {static_cast<func_f_f1f1_t>(::lpn_all_diff_all), static_cast<func_d_d1d1_t>(::lpn_all_diff_all),
-             static_cast<func_F_F1F1_t>(::lpn_all_diff_all), static_cast<func_D_D1D1_t>(::lpn_all_diff_all)},
+            {static_cast<func_f_f1f1_t>(::lpn_all), static_cast<func_d_d1d1_t>(::lpn_all),
+             static_cast<func_F_F1F1_t>(::lpn_all), static_cast<func_D_D1D1_t>(::lpn_all)},
             2, "lpn_all_diff_all_1", lpn_all_doc, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_f_f1f1f1_t>(::lpn_all_diff_all), static_cast<func_d_d1d1d1_t>(::lpn_all_diff_all),
-             static_cast<func_F_F1F1F1_t>(::lpn_all_diff_all), static_cast<func_D_D1D1D1_t>(::lpn_all_diff_all)},
+            {static_cast<func_f_f1f1f1_t>(::lpn_all), static_cast<func_d_d1d1d1_t>(::lpn_all),
+             static_cast<func_F_F1F1F1_t>(::lpn_all), static_cast<func_D_D1D1D1_t>(::lpn_all)},
             3, "lpn_all_diff_all_2", lpn_all_doc, "()->(np1),(np1),(np1)"
         )
     );

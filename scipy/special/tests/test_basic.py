@@ -3623,19 +3623,16 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])), 4)
 
-    def test_lpn(self):
-        n = 20
-        x = 0.5
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_lpn(self, shape):
+        rng = np.random.default_rng(1234)
 
-
+        n = rng.integers(0, 100, shape)
+        x = rng.uniform(-1, 1, shape)
 
         p, p_jac, p_hess = special.lpn(n, x, diff_n = 2, diff_all = True, legacy = False)
         err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
         np.testing.assert_allclose(err, 0, atol = 1e-10)
-
-#        p = special.lpn(2, 0.5)
-#        assert_array_almost_equal(p[2], [-0.12500], 4)
-  #      assert_array_almost_equal(p_jac, [1.50000], 4)
 
     @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
     @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])

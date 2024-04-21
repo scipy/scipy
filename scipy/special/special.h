@@ -14,13 +14,13 @@ T lpn(long n, T z) {
 }
 
 template <typename T>
-void lpn_diff_all(long n, T z, T &p, T &p_jac) {
-    return special::legendre_p(n, z, p, p_jac);
+void lpn(long n, T z, T &p, T &p_jac) {
+    special::legendre_p(n, z, p, p_jac);
 }
 
 template <typename T>
-void lpn_diff_all(long n, T z, T &p, T &p_jac, T &p_hess) {
-    return special::legendre_p(n, z, p, p_jac, p_hess);
+void lpn(long n, T z, T &p, T &p_jac, T &p_hess) {
+    special::legendre_p(n, z, p, p_jac, p_hess);
 }
 
 template <typename T, typename OutputVec>
@@ -29,12 +29,12 @@ void lpn_all(T z, OutputVec p) {
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
-void lpn_all_diff_all(T z, OutputVec1 p, OutputVec2 p_jac) {
+void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac) {
     special::legendre_p_all(z, p, p_jac);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
-void lpn_all_diff_all(T z, OutputVec1 p, OutputVec2 p_jac, OutputVec3 p_hess) {
+void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac, OutputVec3 p_hess) {
     special::legendre_p_all(z, p, p_jac, p_hess);
 }
 
