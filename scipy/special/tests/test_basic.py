@@ -3623,15 +3623,16 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])), 4)
 
-    def test_lpn_all(self):
-        n = 10
+    @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
+    def test_lpn_all(self, n):
         j = np.arange(n + 1)
-
-        x = 0.5
+        x = np.linspace(-1, 1, 10)
         p, p_jac, p_hess = special.lpn_all.until_hess(n, x)
 
+        j, x = np.meshgrid(j, x, indexing = 'ij')
+
         err = (1 - x * x) * p_hess - 2 * x * p_jac + j * (j + 1) * p
-        np.testing.assert_allclose(err, 0)
+        np.testing.assert_allclose(err, 0, atol = 1e-12)
 
     def test_lpn(self):
         p, pd = special.lpn(2, 0.5)
