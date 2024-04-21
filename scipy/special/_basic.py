@@ -2048,21 +2048,6 @@ lpn_all = ufunc_wrapper(_lpn_all, until_diffs = (_lpn_all_until_jac, _lpn_all_un
 
 @lpn_all.resolve_out_shapes
 def _(n, shape):
-    """Legendre function of the first kind.
-
-    Compute sequence of Legendre functions of the first kind (polynomials),
-    Pn(z) and derivatives for all degrees from 0 to n (inclusive).
-
-    See also special.legendre for polynomial class.
-
-    References
-    ----------
-    .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
-           Functions", John Wiley and Sons, 1996.
-           https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
-
-    """
-
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
     return (n + 1,) + shape[0]
