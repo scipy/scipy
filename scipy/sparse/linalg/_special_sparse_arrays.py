@@ -843,7 +843,7 @@ class MikotaPair:
     the system length such that vibration frequencies are subsequent
     integers 1, 2, ..., `n` where `n` is the number of the masses. Thus,
     eigenvalues of the generalized eigenvalue problem for
-    the matrix pair `K` and `M` where `K` is he system stiffness matrix
+    the matrix pair `K` and `M` where `K` is the system stiffness matrix
     and `M` is the system mass matrix are the squares of the integers,
     i.e., 1, 4, 9, ..., ``n * n``.
 
