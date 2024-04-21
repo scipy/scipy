@@ -5016,6 +5016,12 @@ def fisher_exact(table, alternative='two-sided'):
             The probability under the null hypothesis of obtaining a
             table at least as extreme as the one that was actually observed.
 
+    Raises
+    ------
+    ValueError
+        If `table` is not a 2x2 contingency table with non-negative entries.
+        If `alternative` is an invalid value.
+
     See Also
     --------
     chi2_contingency : Chi-square test of independence of variables in a
@@ -5338,6 +5344,13 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
             is that two samples have no ordinal correlation. See
             `alternative` above for alternative hypotheses. `pvalue` has the
             same shape as `statistic`.
+
+    Raises
+    ------
+    ValueError
+        If `axis` is not 0, 1 or None, or if dimensions of `a` along the `axis`
+        is greater than 2, or if `b` is None and dimensions of `a` along the
+        `axis` is less than 2.
 
     Warns
     -----
@@ -5761,6 +5774,15 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
            The p-value for a hypothesis test whose null hypothesis is
            an absence of association, tau = 0.
 
+    Raises
+    ------
+    ValueError
+        If `x` and `y` have different lengths.
+        If `nan_policy` is `omit` and `variant` is not `b`.
+        If `variant` is not either `b` or `c`.
+        If `method` is `exact` and there are ties in `x` and `y`.
+        If invalid `method` is provided.
+
     See Also
     --------
     spearmanr : Calculates a Spearman rank-order correlation coefficient.
@@ -6119,6 +6141,11 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         pvalue : float
            Presently ``np.nan``, as the null distribution of the statistic is
            unknown (even in the additive hyperbolic case).
+
+    Raises
+    ------
+    ValueError
+        If `x` and `y` are of different sizes.
 
     See Also
     --------
