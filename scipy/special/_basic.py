@@ -14,8 +14,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn
-from ._gufuncs import (lpn_all as _lpn_all, lpn_all_until_jac as _lpn_all_until_jac, lpn_all_until_hess as _lpn_all_until_hess, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import lpn as _lpn, lpn_diff_all_1 as _lpn_diff_all_1, lpn_diff_all_2 as _lpn_diff_all_2
+from ._gufuncs import (lpn_all as _lpn_all, lpn_all_diff_all_1 as _lpn_all_diff_all_1, lpn_all_diff_all_2 as _lpn_all_diff_all_2, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -2044,7 +2044,9 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-lpn_all = ufunc_wrapper(_lpn_all, diff_alls = (_lpn_all_until_jac, _lpn_all_until_hess))
+_lpn = ufunc_wrapper(_lpn, None, (_lpn_diff_all_1, _lpn_diff_all_2))
+
+lpn_all = ufunc_wrapper(_lpn_all, None, (_lpn_all_diff_all_1, _lpn_all_diff_all_2))
 
 @lpn_all.resolve_out_shapes
 def _(n, shapes):
@@ -2056,11 +2058,11 @@ def _(n, shapes):
 def _(out):
     return np.moveaxis(out, 0, -1)
 
-def lpn(n, z, legacy = True):
+def lpn(n, z, diff_n = 0, diff_all = False, legacy = True):
     if legacy:
-        return lpn_all(n, z, diff = 'all', diff_n = 1)
+        return lpn_all(n, z, diff_n = 1, diff_all = True)
 
-    return _lpn(n, z)
+    return _lpn(n, z, diff_n = diff_n, diff_all = diff_all)
 
 def lqn(n, z):
     """Legendre function of the second kind.

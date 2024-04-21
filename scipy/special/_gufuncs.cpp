@@ -98,19 +98,19 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
 
-    PyObject *lpn_all_until_jac = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(::lpn_all_until_jac), static_cast<func_d_d1d1_t>(::lpn_all_until_jac),
-         static_cast<func_F_F1F1_t>(::lpn_all_until_jac), static_cast<func_D_D1D1_t>(::lpn_all_until_jac)},
-        2, "lpn_all_until_jac", lpn_all_doc, "()->(np1),(np1)"
+    PyObject *lpn_all_diff_all_1 = SpecFun_NewGUFunc(
+        {static_cast<func_f_f1f1_t>(::lpn_all_diff_all), static_cast<func_d_d1d1_t>(::lpn_all_diff_all),
+         static_cast<func_F_F1F1_t>(::lpn_all_diff_all), static_cast<func_D_D1D1_t>(::lpn_all_diff_all)},
+        2, "lpn_all_diff_all_1", lpn_all_doc, "()->(np1),(np1)"
     );
-    PyModule_AddObjectRef(_gufuncs, "lpn_all_until_jac", lpn_all_until_jac);
+    PyModule_AddObjectRef(_gufuncs, "lpn_all_diff_all_1", lpn_all_diff_all_1);
 
-    PyObject *lpn_all_until_hess = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1f1_t>(::lpn_all_until_hess), static_cast<func_d_d1d1d1_t>(::lpn_all_until_hess),
-         static_cast<func_F_F1F1F1_t>(::lpn_all_until_hess), static_cast<func_D_D1D1D1_t>(::lpn_all_until_hess)},
-        3, "lpn_all_until_hess", lpn_all_doc, "()->(np1),(np1),(np1)"
+    PyObject *lpn_all_diff_all_2 = SpecFun_NewGUFunc(
+        {static_cast<func_f_f1f1f1_t>(::lpn_all_diff_all), static_cast<func_d_d1d1d1_t>(::lpn_all_diff_all),
+         static_cast<func_F_F1F1F1_t>(::lpn_all_diff_all), static_cast<func_D_D1D1D1_t>(::lpn_all_diff_all)},
+        3, "lpn_all_diff_all_2", lpn_all_doc, "()->(np1),(np1),(np1)"
     );
-    PyModule_AddObjectRef(_gufuncs, "lpn_all_until_hess", lpn_all_until_hess);
+    PyModule_AddObjectRef(_gufuncs, "lpn_all_diff_all_2", lpn_all_diff_all_2);
 
     PyObject *_lpmn = SpecFun_NewGUFunc(
         {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "_lpmn", lpmn_doc,

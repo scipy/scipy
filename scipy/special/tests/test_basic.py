@@ -3623,25 +3623,39 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])), 4)
 
-    @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
-    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpn_all(self, n, shape):
+    def test_lpn(self):
+        n = 20
+        x = 0.5
+
+
+
+        p, p_jac, p_hess = special.lpn(n, x, diff_n = 2, diff_all = True, legacy = False)
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
+        np.testing.assert_allclose(err, 0, atol = 1e-10)
+
+#        p = special.lpn(2, 0.5)
+#        assert_array_almost_equal(p[2], [-0.12500], 4)
+  #      assert_array_almost_equal(p_jac, [1.50000], 4)
+
+    @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
+    @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_lpn_all(self, n_max, x_shape):
         rng = np.random.default_rng(1234)
 
-        x = rng.uniform(-1, 1, shape)
-        p, p_jac, p_hess = special.lpn_all(n, x, diff = 'all', diff_n = 2)
+        x = rng.uniform(-1, 1, x_shape)
+        p, p_jac, p_hess = special.lpn_all(n_max, x, diff_n = 2, diff_all = True)
 
-        j = np.arange(n + 1)
-        j = np.expand_dims(j, axis = tuple(range(1, x.ndim + 1)))
+        n = np.arange(n_max + 1)
+        n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))
 
-        assert p.shape == (n + 1,) + shape
+        assert p.shape == (len(n),) + x.shape
         assert p_jac.shape == p.shape
         assert p_hess.shape == p_jac.shape
 
-        err = (1 - x * x) * p_hess - 2 * x * p_jac + j * (j + 1) * p
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + n * (n + 1) * p
         np.testing.assert_allclose(err, 0, atol = 1e-10)
 
-    def test_lpn(self):
+    def test_lpn_legacy(self):
         p, pd = special.lpn(2, 0.5)
         assert_array_almost_equal(p, [1.00000, 0.50000, -0.12500], 4)
         assert_array_almost_equal(pd, [0.00000, 1.00000, 1.50000], 4)
