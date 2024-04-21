@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os
+import os.path
 import sys
 import subprocess
 import packaging.version
@@ -90,6 +90,23 @@ def run_cython_lint(files):
     return res.returncode, res.stdout
 
 
+def run_check_python_h_first(files):
+    # type: (list[str]) -> tuple[int, str]
+    """Run check_python_h_first on files."""
+    if not files:
+        return 0, ""
+    res = subprocess.run(
+        [
+            sys.executable,
+            os.path.join(os.path.dirname(__file__), "check_python_h_first.py")
+        ]
+        + list(files),
+        stdout=subprocess.PIPE,
+        encoding="utf-8"
+    )
+    return (res.returncode, res.stdout)
+
+
 def check_ruff_version():
     min_version = packaging.version.parse('0.0.292')
     res = subprocess.run(
@@ -144,6 +161,19 @@ def main():
 
     if rc == 0 and rc_cy != 0:
         rc = rc_cy
+
+    c_cpp_exts = (
+        ".c", ".h", ".cc", ".hh", ".cpp", ".hpp", ".cxx", ".hxx"
+    )
+    c_cpp_files = {
+        f for f in files if os.path.splitext(f)[1].lower() in c_cpp_exts
+    }
+    rc_py_h, errors = run_check_python_h_first(c_cpp_files)
+    if errors:
+        print(errors)
+
+    if rc == 0 and rc_py_h != 0:
+        rc = rc_py_h
 
     sys.exit(rc)
 
