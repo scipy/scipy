@@ -45,8 +45,8 @@ struct legendre_p_diff_callback {
     T p_prev[N + 1];
     T p_prev_prev[N + 1];
 
-    template <typename Callable>
-    void operator()(unsigned int j, T z, T p, Callable callback) {
+    template <typename Callable, typename... Args>
+    void operator()(unsigned int j, T z, T p, Callable callback, Args &&...args) {
         T res[N + 1];
 
         res[0] = p;
@@ -72,13 +72,13 @@ struct legendre_p_diff_callback {
             p_prev[i] = res[i];
         }
 
-        callback(j, z, res);
+        callback(j, z, res, std::forward<Args>(args)...);
     }
 };
 
 template <typename T>
 T legendre_p(unsigned int n, T z) {
-    return legendre_p(n, z, [](unsigned int j, T z, T value) {});
+    return legendre_p(n, z, [](unsigned int j, T z, T p) {});
 }
 
 template <typename T>
@@ -105,7 +105,7 @@ template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
     unsigned int n = res.extent(0) - 1;
 
-    legendre_p(n, z, [res](unsigned int j, T z, T value) { res(j) = value; });
+    legendre_p(n, z, [res](unsigned int j, T z, T p) { res(j) = p; });
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
