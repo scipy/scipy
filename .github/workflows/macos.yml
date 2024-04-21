@@ -1,4 +1,4 @@
-name: macOS tests (meson)
+name: macOS tests
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Meson build
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -137,7 +137,7 @@ jobs:
 
 
   test_scipy_openblas:
-    name: M1 test - openblas
+    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -181,8 +181,9 @@ jobs:
         pip install pooch pytest hypothesis
         python dev.py -n test 
 
+
   test_meson_accelerate:
-    name: Meson build (Accelerate)
+    name: Accelerate, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
