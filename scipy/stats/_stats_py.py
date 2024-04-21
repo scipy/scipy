@@ -368,7 +368,6 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     ------
     ValueError
         If `a` has elements less than 0.
-        If `p` is not of type int or float.
 
     See Also
     --------
@@ -496,11 +495,6 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=False):
         Array of modal values.
     count : ndarray
         Array of counts for each mode.
-
-    Raises
-    ------
-    TypeError
-        If `a` is not numeric.
 
     Notes
     -----
@@ -3524,8 +3518,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 
     Raises
     ------
-    TypeError
-        If `center` is not callable.
     ValueError
         If `scale` is not a valid value.
 
@@ -4653,10 +4645,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     Raises
     ------
     ValueError
-        If `axis` is not an integer, `x` and `y` do not have the same length
-        along `axis`, `x` and `y` do not have length at least 2, `x` and `y`
-        are not broadcastable, if `x` or `y` are of complex datatypes, or if
-        `method` is invalid.
+        If `x` and `y` do not have the same length along `axis`, `x` and `y` do
+        not have length at least 2, `x` and `y` are not broadcastable, if `x`
+        or `y` are of complex datatypes, or if `method` is invalid.
 
     Warns
     -----
