@@ -14,8 +14,11 @@ class ufunc_wrapper(object):
     def as_ufunc_out(self, func):
         self._as_ufunc_out = func
 
-    def __call__(self, *args, nout = 1):
-        ufunc = self.ufuncs[nout - 1]
+    def __call__(self, *args, nout = None):
+        if (nout is None):
+            ufunc = next(filter(lambda ufunc: (ufunc is not None), self.ufuncs))
+        else:
+            ufunc = self.ufuncs[nout]
 
         if (self._resolve_out_shapes is None and self._as_ufunc_out is None):
             return ufunc(*args)

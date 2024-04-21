@@ -499,12 +499,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
-    PyObject *lpns = PyTuple_Pack(
-        3, SpecFun_NewUFunc({static_cast<func_lf_f_t>(::lpn), static_cast<func_ld_d_t>(::lpn)}, "lpn", nullptr),
+    PyObject *lpn = PyTuple_Pack(
+        4, Py_None,
+        SpecFun_NewUFunc({static_cast<func_lf_f_t>(::lpn), static_cast<func_ld_d_t>(::lpn)}, "lpn", nullptr),
         SpecFun_NewUFunc({static_cast<func_lf_ff_t>(::lpn), static_cast<func_ld_dd_t>(::lpn)}, 2, "lpn", nullptr),
         SpecFun_NewUFunc({static_cast<func_lf_fff_t>(::lpn), static_cast<func_ld_ddd_t>(::lpn)}, 3, "lpn", nullptr)
     );
-    PyModule_AddObjectRef(_special_ufuncs, "lpns", lpns);
+    PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
     PyObject *mathieu_a = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)}, "mathieu_a",
