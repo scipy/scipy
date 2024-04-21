@@ -14,8 +14,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn, lpn_diff_all_1 as _lpn_diff_all_1, lpn_diff_all_2 as _lpn_diff_all_2
-from ._gufuncs import (lpn_all as _lpn_all, lpn_all_diff_all_1 as _lpn_all_diff_all_1, lpn_all_diff_all_2 as _lpn_all_diff_all_2, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import lpn as _lpn, lpn_diff_all as _lpn_diff_all
+from ._gufuncs import (lpn_all as _lpn_all, lpn_all_diffs_all as _lpn_all_diffs_all, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -2044,9 +2044,9 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = ufunc_wrapper(_lpn, None, (_lpn_diff_all_1, _lpn_diff_all_2))
+_lpn = ufunc_wrapper(_lpn, None, _lpn_diff_all)
 
-lpn_all = ufunc_wrapper(_lpn_all, None, (_lpn_all_diff_all_1, _lpn_all_diff_all_2))
+lpn_all = ufunc_wrapper(_lpn_all, None, _lpn_all_diffs_all)
 
 @lpn_all.resolve_out_shapes
 def _(n, shapes):
