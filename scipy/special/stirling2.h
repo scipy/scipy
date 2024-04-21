@@ -169,7 +169,7 @@ double _stirling1_temme(double n, double k){
   // TODO: fill this in...
   return 1;
 }
-
+}
 /*
  *  This is the main entrypoint from stirling1 which handles dispatch to each
  *  of the (private) functions here in the file that implement specific
