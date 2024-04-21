@@ -42,10 +42,8 @@ T legendre_p(unsigned int n, T z, Callable callback, Args &&...args) {
 
 template <typename T, size_t N>
 struct legendre_p_diff_callback {
-    T p_prev;
-    T p_jac_prev;
-    T p_hess_prev;
-    T p_hess_prev_prev;
+    T p_prev[N + 1];
+    T p_prev_prev[N + 1];
 
     template <typename Callable>
     void operator()(unsigned int j, T z, T p, Callable callback) {
@@ -56,27 +54,22 @@ struct legendre_p_diff_callback {
         if constexpr (N >= 1) {
             if (j == 0) {
                 res[1] = 0;
-            } else if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-                res[1] = T(j) * T(j + 1) * std::pow(std::real(z), T(j + 1)) / T(2);
             } else {
-                res[1] = T(j) * (p_prev - z * p) / (T(1) - z * z);
+                res[1] = (T(2 * j - 1) * (p_prev[0] + z * p_prev[1]) - T(j - 1) * p_prev_prev[1]) / T(j);
             }
-
-            std::exchange(p_prev, p);
         }
 
         if constexpr (N >= 2) {
-            T p_hess;
             if (j == 0 || j == 1) {
-                p_hess = 0;
+                res[2] = 0;
             } else {
-                p_hess = (T(2 * j - 1) * (T(2) * p_jac_prev + z * p_hess_prev) - T(j - 1) * p_hess_prev_prev) / T(j);
+                res[2] = (T(2 * j - 1) * (T(2) * p_prev[1] + z * p_prev[2]) - T(j - 1) * p_prev_prev[2]) / T(j);
             }
+        }
 
-            res[2] = p_hess;
-
-            std::exchange(p_jac_prev, res[1]);
-            std::exchange(p_hess_prev_prev, std::exchange(p_hess_prev, p_hess));
+        for (size_t i = 0; i < N + 1; ++i) {
+            p_prev_prev[i] = p_prev[i];
+            p_prev[i] = res[i];
         }
 
         callback(j, z, res);
