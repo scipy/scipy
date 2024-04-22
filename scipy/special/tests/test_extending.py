@@ -3,10 +3,12 @@ import platform
 
 import pytest
 
-from scipy._lib._testutils import _test_cython_extension, cython
+from scipy._lib._testutils import IS_EDITABLE,_test_cython_extension, cython
 from scipy.special import beta, gamma
 
 
+@pytest.mark.skipif(IS_EDITABLE,
+                    reason='Editable install cannot find .pxd headers.')
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
                     reason="Can't start subprocess")
 @pytest.mark.skipif(cython is None, reason="requires cython")
