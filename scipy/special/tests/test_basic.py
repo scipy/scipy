@@ -3624,11 +3624,9 @@ class TestLegendreFunctions:
 
         x = rng.uniform(-0.9, 0.9, shape)
 
-        m_signbit = False
+        p, p_jac, p_hess = special.lpmn_all(m_max, n_max, x, diff_n = 2)
 
-        p, p_jac, p_hess = special.lpmn_all(m_max, n_max, m_signbit, x, diff_n = 2)
-
-        m = np.arange(m_max + 1)
+        m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)
 
         m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))

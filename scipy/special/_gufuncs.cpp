@@ -43,6 +43,19 @@ using func_F_F2F2_t =
 using func_D_D2D2_t =
     void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
+using func_f_f2_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_d_d2_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
+
+using func_f_f2f2_t =
+    void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_d_d2d2_t =
+    void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
+
+using func_f_f2f2f2_t =
+    void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_d_d2d2d2_t =
+    void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
+
 using func_bf_f2_t = void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_bd_d2_t = void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
 
@@ -122,16 +135,16 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *lpmn_all = PyTuple_Pack(
         3,
         SpecFun_NewGUFunc(
-            {static_cast<func_bf_f2_t>(::lpmn_all), static_cast<func_bd_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
-            "(),()->(mp1,np1)"
+            {static_cast<func_f_f2_t>(::lpmn_all), static_cast<func_d_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
+            "()->(mp1,np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_bf_f2f2_t>(::lpmn), static_cast<func_bd_d2d2_t>(::lpmn)}, 2, "lpmn_all", lpmn_doc,
-            "(),()->(mp1,np1),(mp1,np1)"
+            {static_cast<func_f_f2f2_t>(::lpmn_all), static_cast<func_d_d2d2_t>(::lpmn_all)}, 2, "lpmn_all", lpmn_doc,
+            "()->(mp1,np1),(mp1,np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_bf_f2f2f2_t>(::lpmn_all), static_cast<func_bd_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
-            lpmn_doc, "(),()->(mp1,np1),(mp1,np1),(mp1,np1)"
+            {static_cast<func_f_f2f2f2_t>(::lpmn_all), static_cast<func_d_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
+            lpmn_doc, "()->(mp1,np1),(mp1,np1),(mp1,np1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "lpmn_all", lpmn_all);

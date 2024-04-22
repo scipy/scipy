@@ -197,12 +197,19 @@ struct assoc_legendre_p_diff_callback {
         res[0] = p;
 
         if constexpr (N >= 1) {
-            if (i > j || j == 0) {
-                res[1] = 0;
-            } else if (i == j) {
-                res[1] = j * z * p / (z * z - 1);
+            if (std::abs(z) == 1) {
+                if (i == 1) {
+                    res[1] = std::numeric_limits<T>::infinity();
+                }
             } else {
-                res[1] = (T(2 * j - 1) * (p_prev[0] + z * p_prev[1]) - T(j + i - 1) * p_prev_prev[1]) / T(j - i);
+                if (i > j || j == 0) {
+                    res[1] = 0;
+                } else if (i == j) {
+                    res[1] = j * z * p / (z * z - 1);
+
+                } else {
+                    res[1] = (T(2 * j - 1) * (p_prev[0] + z * p_prev[1]) - T(j + i - 1) * p_prev_prev[1]) / T(j - i);
+                }
             }
         }
 
@@ -250,9 +257,40 @@ void assoc_legendre_p_all(T x, OutputMat p) {
     }
 }
 
+template <typename T, typename OutputMat1, typename OutputMat2>
+void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac) {
+    unsigned int m = (res.extent(0) - 1) / 2;
+    unsigned int n = res.extent(1) - 1;
+
+    for (unsigned int i = 0; i <= m; ++i) {
+        assoc_legendre_p(
+            n, i, x, assoc_legendre_p_diff_callback<T, 1>(),
+            [res, res_jac](unsigned int j, unsigned int i, T z, const T(&p)[2]) {
+                res(i, j) = p[0];
+                res_jac(i, j) = p[1];
+
+                if (i != 0) {
+                    if (i > j) {
+                        res(res.extent(0) - i, j) = 0;
+                        res_jac(res.extent(0) - i, j) = 0;
+                    } else {
+                        T fac = gamma_ratio(T(j) - T(i) + 1, T(j) + T(i) + 1);
+                        if (std::abs(z) < 1) {
+                            fac *= std::pow(-1, i);
+                        }
+
+                        res(res.extent(0) - i, j) = fac * res(i, j);
+                        res_jac(res.extent(0) - i, j) = fac * res_jac(i, j);
+                    }
+                }
+            }
+        );
+    }
+}
+
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    unsigned int m = res.extent(0) - 1;
+    unsigned int m = (res.extent(0) - 1) / 2;
     unsigned int n = res.extent(1) - 1;
 
     for (unsigned int i = 0; i <= m; ++i) {
@@ -262,48 +300,28 @@ void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 re
                 res(i, j) = p[0];
                 res_jac(i, j) = p[1];
                 res_hess(i, j) = p[2];
+
+                if (i != 0) {
+                    if (i > j) {
+                        res(res.extent(0) - i, j) = 0;
+                        res_jac(res.extent(0) - i, j) = 0;
+                        res_hess(res.extent(0) - i, j) = 0;
+                    } else {
+                        T fac = gamma_ratio(T(j) - T(i) + 1, T(j) + T(i) + 1);
+                        if (std::abs(z) < 1) {
+                            fac *= std::pow(-1, i);
+                        }
+
+                        res(res.extent(0) - i, j) = fac * res(i, j);
+                        res_jac(res.extent(0) - i, j) = fac * res_jac(i, j);
+                        res_hess(res.extent(0) - i, j) = fac * res_hess(i, j);
+                    }
+                }
             }
         );
     }
 }
 
-template <typename T, typename Callable>
-T assoc_legendre_p(unsigned int n, int m, T x, Callable callback) {
-    unsigned int m_abs = std::abs(m);
-    bool m_signbit = std::signbit(m);
-
-    return assoc_legendre_p(n, m_abs, x, [m_signbit, &callback](unsigned int j, unsigned int i_abs, T x, T value_unm) {
-        int i = i_abs;
-        T value = value_unm;
-        if (m_signbit) {
-            i = -i;
-            if (i_abs <= j) {
-                value *= gamma_ratio(j - i_abs + 1, j + i_abs + 1);
-                if (std::abs(x) < 1) {
-                    value *= std::pow(-1, i_abs);
-                }
-            }
-        }
-
-        callback(j, i, x, value);
-    });
-}
-
-template <typename T, typename OutputMat>
-void assoc_legendre_p_all(bool m_signbit, T x, OutputMat p) {
-    unsigned int m_abs = p.extent(0) - 1;
-    unsigned int n = p.extent(1) - 1;
-
-    int m = m_abs;
-    if (m_signbit) {
-        m = -m;
-    }
-
-    assoc_legendre_p(n, m, x, [p](unsigned int j, int i, T x, T value) {
-        unsigned int i_abs = std::abs(i);
-        p(i_abs, j) = value;
-    });
-}
 
 template <typename T>
 T assoc_legendre_p_jac_next(unsigned int n, int m, T x, T p_curr, T p_prev) {
@@ -357,19 +375,6 @@ T assoc_legendre_p_jac(unsigned int n, unsigned int m, T x, Callable callback) {
     return value_jac;
 }
 */
-
-template <typename T, typename Callable>
-T assoc_legendre_p_jac(unsigned int n, int m, T x, Callable callback) {
-    T value_jac;
-    T value_prev = std::numeric_limits<T>::quiet_NaN();
-    assoc_legendre_p(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, int i, T x, T value) {
-        value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
-        value_prev = value;
-        callback(j, i, x, value, value_jac);
-    });
-
-    return value_jac;
-}
 
 template <typename T, typename Callable>
 T sph_legendre_p(unsigned int n, unsigned int m, T phi, Callable callback) {
