@@ -49,8 +49,10 @@ class TestConstructUtils:
     def test_singleton_array_constructor(self, cls):
         with pytest.raises(
             ValueError,
-            match='scipy sparse array classes do not \
-                support instantiation from a scalar'
+            match=(
+                'scipy sparse array classes do not support'
+                'instantiation from a scalar'
+            )
         ):
             cls(0)
     
