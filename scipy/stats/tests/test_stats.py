@@ -3365,6 +3365,9 @@ class TestMoments:
                          order=order)
         xp_assert_equal(y, xp.full((), expect, dtype=dtype))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")    
     @array_api_compatible
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
@@ -3426,6 +3429,9 @@ class TestSkew(SkewKurtosisTest):
         with pytest.warns(RuntimeWarning, match=message):
             stats.kurtosis([])
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")    
     @array_api_compatible
     def test_skewness(self, xp):
         # Scalar test case
@@ -3454,6 +3460,9 @@ class TestSkew(SkewKurtosisTest):
         # `skew` must return a scalar for 1-dim input (only for NumPy arrays)
         assert_equal(stats.skew(arange(10)), 0.0)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_skew_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
@@ -3482,6 +3491,9 @@ class TestSkew(SkewKurtosisTest):
             a = 1. + xp.arange(-3., 4)*1e-16
             assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")    
     @array_api_compatible
     def test_precision_loss_gh15554(self, xp):
         # gh-15554 was one of several issues that have reported problems with
@@ -3493,6 +3505,9 @@ class TestSkew(SkewKurtosisTest):
             a[:, 0] = 1.01
             stats.skew(a)
 
+    @skip_xp_backends('jax.numpy',
+                      reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")    
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
