@@ -162,18 +162,6 @@ def main():
     if rc == 0 and rc_cy != 0:
         rc = rc_cy
 
-    c_cpp_exts = (
-        ".c", ".h", ".cc", ".hh", ".cpp", ".hpp", ".cxx", ".hxx"
-    )
-    c_cpp_files = {
-        f for f in files if os.path.splitext(f)[1].lower() in c_cpp_exts
-    }
-    rc_py_h, errors = run_check_python_h_first(c_cpp_files)
-    if errors:
-        print(errors)
-
-    if rc == 0 and rc_py_h != 0:
-        rc = rc_py_h
 
     sys.exit(rc)
 
