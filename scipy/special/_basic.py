@@ -15,7 +15,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import lpn as _lpn
-from ._gufuncs import (lpn_all, _lpmn, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._gufuncs import (lpn_all, lpmn_all, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -59,6 +59,7 @@ __all__ = [
     'kvp',
     'lmbda',
     'lpmn',
+    'lpmn_all',
     'lpn',
     'lpn_all',
     'lqmn',
@@ -1788,13 +1789,27 @@ def lpmn(m, n, z):
     p = np.empty((m_abs + 1, n + 1) + z.shape, dtype=np.float64)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _lpmn(m_signbit, z, out = (p, pd))
+        _lpmn_all(m_signbit, z, out = (p, pd))
     else:
-        _lpmn(m_signbit, z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _lpmn_all(m_signbit, z, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
 
+_lpmn_all = lpmn_all[1]
+lpmn_all = ufunc_wrapper(lpmn_all)
+
+@lpmn_all.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
+@lpmn_all.resolve_out_shapes
+def _(m, n, shapes, nout):
+#    n = _nonneg_int_or_fail(n, 'n', strict=False)
+
+    m_abs = abs(m)
+
+    return nout * ((m_abs + 1, n + 1,) + shapes[1],)
 
 def clpmn(m, n, z, type=3):
     """Associated Legendre function of the first kind for complex arguments.
@@ -2044,29 +2059,20 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = ufunc_wrapper(_lpn)
-
-@_lpn.resolve_ufunc
-def _(ufuncs, diff_n):
+def diff_resolve_ufunc(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-lpn_all = ufunc_wrapper(lpn_all)
+_lpn = ufunc_wrapper(_lpn, diff_resolve_ufunc)
+
+lpn_all = ufunc_wrapper(lpn_all, diff_resolve_ufunc)
 
 @lpn_all.resolve_out_shapes
-def _(n, shapes):
+def _(n, shapes, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return (n + 1,) + shapes[0]
+    return nout * ((n + 1,) + shapes[0],)
 
-@lpn_all.resolve_ufunc
-def _(ufuncs, diff_n):
-    return ufuncs[diff_n]
-
-@lpn_all.as_ufunc_out
-def _(out):
-    return np.moveaxis(out, 0, -1)
-
-def lpn(n, z, diff_n = 1, legacy = True):
+def lpn(n, z, diff_n = 0, legacy = True):
     if legacy:
         return lpn_all(n, z, diff_n = 1)
 

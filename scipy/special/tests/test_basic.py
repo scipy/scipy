@@ -3614,7 +3614,30 @@ class TestLegendreFunctions:
                                     approx_derivative,
                                     rtol=1e-4)
 
-    def test_lpmn(self):
+
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_lpmn_all(self, shape):
+        n_max = 10
+        m_max = 10
+
+        rng = np.random.default_rng(1234)
+
+        x = rng.uniform(-0.9, 0.9, shape)
+
+        m_signbit = False
+
+        p, p_jac, p_hess = special.lpmn_all(m_max, n_max, m_signbit, x, diff_n = 2)
+
+        m = np.arange(m_max + 1)
+        n = np.arange(n_max + 1)
+
+        m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
+        n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
+
+        err = (1 - x * x) * p_hess - 2 * x * p_jac + (n * (n + 1) - m * m / (1 - x * x)) * p
+        np.testing.assert_allclose(err, 0, atol = 1e-05)
+
+    def test_lpmn_legacy(self):
         lp = special.lpmn(0, 2, .5)
         assert_array_almost_equal(lp,(array([[1.00000,
                                                       0.50000,

@@ -38,6 +38,11 @@ void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac, OutputVec3 p_hess) {
     special::legendre_p_all(z, p, p_jac, p_hess);
 }
 
+template <typename T, typename OutputMat1>
+void lpmn_all(bool m_signbit, T x, OutputMat1 p) {
+    special::assoc_legendre_p_all(x, p);
+}
+
 template <typename T, typename OutputMat1, typename OutputMat2>
 void lpmn(bool m_signbit, T x, OutputMat1 p, OutputMat2 p_jac) {
     unsigned int m_abs = p.extent(0) - 1;
@@ -55,6 +60,11 @@ void lpmn(bool m_signbit, T x, OutputMat1 p, OutputMat2 p_jac) {
             p_jac(i_abs, j) = value_jac;
         });
     }
+}
+
+template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
+void lpmn_all(bool m_signbit, T z, OutputMat1 p, OutputMat2 p_jac, OutputMat3 p_hess) {
+    special::assoc_legendre_p_all(z, p, p_jac, p_hess);
 }
 
 template <typename T>
