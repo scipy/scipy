@@ -107,13 +107,11 @@ def test_mapwrapper_serial():
         p = MapWrapper(0)
 
 
-@pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
 def test_pool():
     with Pool(2) as p:
         p.map(math.sin, [1, 2, 3, 4])
 
 
-@pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
 def test_mapwrapper_parallel():
     in_arg = np.arange(10.)
     out_arg = np.sin(in_arg)

@@ -711,7 +711,6 @@ class TestDifferentialEvolutionSolver:
                     pass
             assert s._updating == 'deferred'
 
-    @pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]

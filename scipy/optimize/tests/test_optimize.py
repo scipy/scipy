@@ -2553,7 +2553,6 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
-    @pytest.mark.filterwarnings("ignore:.*JAX is multithreaded.*:RuntimeWarning")
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
