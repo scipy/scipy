@@ -364,11 +364,11 @@ def is_complex(x, xp):
 def scipy_namespace_for(xp):
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[Import]
+        import cupyx  # type: ignore[import]
         return cupyx.scipy
 
     if is_jax(xp):
-        import jax  # type: ignore[Import]
+        import jax  # type: ignore[import]
         return jax.scipy
 
     import scipy
