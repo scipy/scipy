@@ -273,19 +273,16 @@ htmlhelp_basename = 'scipy'
 # Check if we have access to the internet. If so, use MathJax via its CDN. If not
 # we are most likely building locally without internet access and therefore we use
 # the local vendored MathJax distribution present in the scipy-mathjax directory.
+# We assume no internet connection + use local MathJax.
 
 import socket  # noqa: E402
 
-INTERNET_AVAILABLE = False  # assume no internet connection + use local MathJax
-
 try:
-    # Attributed to https://stackoverflow.com/a/33117579/14001839
-    socket.setdefaulttimeout(1)
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM).connect(("8.8.8.8", 53))
-    socket.socket(socket.AF_INET, socket.SOCK_STREAM).close()
+    host = socket.gethostbyname("www.google.com")
+    conn = socket.create_connection((host, 80), 2)
+    conn.close()
     print("Internet connection available.")
-    INTERNET_AVAILABLE = True
-except socket.error as err:  # noqa: UP024
+except Exception as err:
     print("No internet connection available. Error:", err)
     print("Using local MathJax distribution.")
     mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
