@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'MatWriteError', 'MatReadError', 'MatReadWarning', 'MatlabObject',
-    'MatlabFunction', 'mat_struct',
+    'MatlabFunction', 'mat_struct', 'varmats_from_mat',
 ]
 
 def __dir__():
