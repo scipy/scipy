@@ -926,11 +926,16 @@ def task_check_python_h_first():
     # Lint just the diff since branching off of main using a
     # stricter configuration.
     # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
-    cmd = str(Dirs().root / 'tools' / 'check_python_h_first.py') + ' --diff-against=main'
+    cmd = "{!s} --diff-against=main".format(
+        Dirs().root / 'tools' / 'check_python_h_first.py'
+    )
     return {
         'basename': 'check_python_h_first',
         'actions': [cmd],
-        'doc': 'Check Python.h order only files modified since last commit (stricter rules)',
+        'doc': (
+            'Check Python.h order only files modified since last commit '
+            '(stricter rules)'
+        ),
     }
 
 
