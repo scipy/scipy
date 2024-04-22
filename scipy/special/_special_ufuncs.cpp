@@ -508,15 +508,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
-    PyObject *lpn = PyTuple_Pack(
-        3, SpecFun_NewUFunc({static_cast<func_lf_f_t>(::lpn), static_cast<func_ld_d_t>(::lpn)}, "lpn", nullptr),
+    PyObject *lpn = Py_BuildValue(
+        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_lf_f_t>(::lpn), static_cast<func_ld_d_t>(::lpn)}, "lpn", nullptr),
         SpecFun_NewUFunc({static_cast<func_lf_ff_t>(::lpn), static_cast<func_ld_dd_t>(::lpn)}, 2, "lpn", nullptr),
         SpecFun_NewUFunc({static_cast<func_lf_fff_t>(::lpn), static_cast<func_ld_ddd_t>(::lpn)}, 3, "lpn", nullptr)
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
-    PyObject *lpmn = PyTuple_Pack(
-        3, SpecFun_NewUFunc({static_cast<func_llf_f_t>(::lpmn), static_cast<func_lld_d_t>(::lpmn)}, "lpmn", nullptr),
+    PyObject *lpmn = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc({static_cast<func_llf_f_t>(::lpmn), static_cast<func_lld_d_t>(::lpmn)}, "lpmn", nullptr),
         SpecFun_NewUFunc({static_cast<func_llf_ff_t>(::lpmn), static_cast<func_lld_dd_t>(::lpmn)}, 2, "lpmn", nullptr),
         SpecFun_NewUFunc({static_cast<func_llf_fff_t>(::lpmn), static_cast<func_lld_ddd_t>(::lpmn)}, 3, "lpmn", nullptr)
     );

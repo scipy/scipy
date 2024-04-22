@@ -112,8 +112,8 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         return nullptr;
     }
 
-    PyObject *lpn_all = PyTuple_Pack(
-        3,
+    PyObject *lpn_all = Py_BuildValue(
+        "(N,N,N)",
         SpecFun_NewGUFunc(
             {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all),
              static_cast<func_F_F1_t>(::lpn_all), static_cast<func_D_D1_t>(::lpn_all)},
@@ -132,19 +132,22 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
 
-    PyObject *lpmn_all = PyTuple_Pack(
-        3,
-        SpecFun_NewGUFunc(
-            {static_cast<func_f_f2_t>(::lpmn_all), static_cast<func_d_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
-            "()->(mp1,np1)"
-        ),
-        SpecFun_NewGUFunc(
-            {static_cast<func_f_f2f2_t>(::lpmn_all), static_cast<func_d_d2d2_t>(::lpmn_all)}, 2, "lpmn_all", lpmn_doc,
-            "()->(mp1,np1),(mp1,np1)"
-        ),
-        SpecFun_NewGUFunc(
-            {static_cast<func_f_f2f2f2_t>(::lpmn_all), static_cast<func_d_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
-            lpmn_doc, "()->(mp1,np1),(mp1,np1),(mp1,np1)"
+    PyObject *lpmn_all = Py_BuildValue(
+        "{O:N}", Py_False,
+        Py_BuildValue(
+            "(N,N,N)",
+            SpecFun_NewGUFunc(
+                {static_cast<func_f_f2_t>(::lpmn_all), static_cast<func_d_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
+                "()->(mp1,np1)"
+            ),
+            SpecFun_NewGUFunc(
+                {static_cast<func_f_f2f2_t>(::lpmn_all), static_cast<func_d_d2d2_t>(::lpmn_all)}, 2, "lpmn_all",
+                lpmn_doc, "()->(mp1,np1),(mp1,np1)"
+            ),
+            SpecFun_NewGUFunc(
+                {static_cast<func_f_f2f2f2_t>(::lpmn_all), static_cast<func_d_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
+                lpmn_doc, "()->(mp1,np1),(mp1,np1),(mp1,np1)"
+            )
         )
     );
     PyModule_AddObjectRef(_gufuncs, "lpmn_all", lpmn_all);

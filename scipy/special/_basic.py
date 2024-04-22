@@ -1727,8 +1727,8 @@ _lpmn = ufunc_wrapper(_lpmn, diff_resolve_ufunc)
 lpmn_all = ufunc_wrapper(lpmn_all)
 
 @lpmn_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
+def _(ufuncs, norm = False, diff_n = 0):
+    return ufuncs[norm][diff_n]
 
 @lpmn_all.resolve_out_shapes
 def _(m, n, shapes, nout):
