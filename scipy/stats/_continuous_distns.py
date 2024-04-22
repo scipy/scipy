@@ -30,7 +30,6 @@ from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
-import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
@@ -134,7 +133,37 @@ class ksone_gen(rv_continuous):
        for probability distribution functions", The Annals of Mathematical
        Statistics, 22(4), pp 592-596 (1951).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import ksone
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 1e+03
+    >>> x = np.linspace(ksone.ppf(0.01, n),
+    ...                 ksone.ppf(0.99, n), 100)
+    >>> ax.plot(x, ksone.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='ksone pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = ksone(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = ksone.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], ksone.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -196,7 +225,37 @@ class kstwo_gen(rv_continuous):
        Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
        Vol 39, 11, 1-18 (2011).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstwo
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 10
+    >>> x = np.linspace(kstwo.ppf(0.01, n),
+    ...                 kstwo.ppf(0.99, n), 100)
+    >>> ax.plot(x, kstwo.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='kstwo pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = kstwo(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = kstwo.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], kstwo.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -678,7 +737,7 @@ class beta_gen(rv_continuous):
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
         with np.errstate(over='ignore'):
-            return _boost._beta_pdf(x, a, b)
+            return scu._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -686,25 +745,32 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return _boost._beta_cdf(x, a, b)
+        return sc.betainc(a, b, x)
 
     def _sf(self, x, a, b):
-        return _boost._beta_sf(x, a, b)
+        return sc.betaincc(a, b, x)
 
     def _isf(self, x, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_isf(x, a, b)
+        return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_ppf(q, a, b)
+        return scu._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
+        a_plus_b = a + b
+        _beta_mean = a/a_plus_b
+        _beta_variance = a*b / (a_plus_b**2 * (a_plus_b + 1))
+        _beta_skewness = ((2 * (b - a) * np.sqrt(a_plus_b + 1)) /
+                          ((a_plus_b + 2) * np.sqrt(a * b)))
+        _beta_kurtosis_excess_n = 6 * ((a - b)**2 * (a_plus_b + 1) -
+                                       a * b * (a_plus_b + 2))
+        _beta_kurtosis_excess_d = a * b * (a_plus_b + 2) * (a_plus_b + 3)
+        _beta_kurtosis_excess = _beta_kurtosis_excess_n / _beta_kurtosis_excess_d
         return (
-            _boost._beta_mean(a, b),
-            _boost._beta_variance(a, b),
-            _boost._beta_skewness(a, b),
-            _boost._beta_kurtosis_excess(a, b))
+            _beta_mean,
+            _beta_variance,
+            _beta_skewness,
+            _beta_kurtosis_excess)
 
     def _fitstart(self, data):
         if isinstance(data, CensoredData):
@@ -2289,7 +2355,7 @@ class f_gen(rv_continuous):
     the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
-    
+
     The probability density function for `f` is:
 
     .. math::
@@ -4789,9 +4855,9 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = _boost._invgauss_ppf(x, mu, 1)
+            ppf = scu._invgauss_ppf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
@@ -4799,9 +4865,9 @@ class invgauss_gen(rv_continuous):
     def _isf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            isf = _boost._invgauss_isf(x, mu, 1)
+            isf = scu._invgauss_isf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            isf[i_wt] = scu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(isf)
             isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
@@ -7439,39 +7505,47 @@ class ncx2_gen(rv_continuous):
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
                               f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
+            return _lazywhere(cond, (q, df, nc), f=scu._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_sf,
                               f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
+        _ncx2_mean = df + nc
+        def k_plus_cl(k, l, c):
+            return k + c*l
+        _ncx2_variance =  2.0 * k_plus_cl(df, nc, 2.0)
+        _ncx2_skewness = (np.sqrt(8.0) * k_plus_cl(df, nc, 3) /
+                          np.sqrt(k_plus_cl(df, nc, 2.0)**3))
+        _ncx2_kurtosis_excess = (12.0 * k_plus_cl(df, nc, 4.0) /
+                                 k_plus_cl(df, nc, 2.0)**2)
         return (
-            _boost._ncx2_mean(df, nc),
-            _boost._ncx2_variance(df, nc),
-            _boost._ncx2_skewness(df, nc),
-            _boost._ncx2_kurtosis_excess(df, nc),
+            _ncx2_mean,
+            _ncx2_variance,
+            _ncx2_skewness,
+            _ncx2_kurtosis_excess,
         )
 
 
@@ -7538,21 +7612,21 @@ class ncf_gen(rv_continuous):
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        return _boost._ncf_pdf(x, dfn, dfd, nc)
+        return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return _boost._ncf_cdf(x, dfn, dfd, nc)
+        return scu._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_ppf(q, dfn, dfd, nc)
+            return scu._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
-        return _boost._ncf_sf(x, dfn, dfd, nc)
+        return scu._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_isf(x, dfn, dfd, nc)
+            return scu._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7562,10 +7636,10 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
-        mu = _boost._ncf_mean(dfn, dfd, nc)
-        mu2 = _boost._ncf_variance(dfn, dfd, nc)
-        g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = _boost._ncf_kurtosis_excess(
+        mu = scu._ncf_mean(dfn, dfd, nc)
+        mu2 = scu._ncf_variance(dfn, dfd, nc)
+        g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = scu._ncf_kurtosis_excess(
             dfn, dfd, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
@@ -7753,25 +7827,25 @@ class nct_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_ppf(q, df, nc)
+            return scu._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_isf(x, df, nc)
+            return scu._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
-        mu = _boost._nct_mean(df, nc)
-        mu2 = _boost._nct_variance(df, nc)
-        g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
+        mu = scu._nct_mean(df, nc)
+        mu2 = scu._nct_variance(df, nc)
+        g1 = scu._nct_skewness(df, nc) if 's' in moments else None
+        g2 = scu._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
@@ -9195,7 +9269,7 @@ class skewnorm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
-        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        cdf = scu._skewnorm_cdf(x, 0.0, 1.0, a)
         # for some reason, a isn't broadcasted if some of x are invalid
         a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
@@ -9204,7 +9278,7 @@ class skewnorm_gen(rv_continuous):
         return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
-        return _boost._skewnorm_ppf(x, 0, 1, a)
+        return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
         # Boost's SF is implemented this way. Use whatever customizations
@@ -9212,7 +9286,7 @@ class skewnorm_gen(rv_continuous):
         return self._cdf(-x, -a)
 
     def _isf(self, x, a):
-        return _boost._skewnorm_isf(x, 0, 1, a)
+        return scu._skewnorm_isf(x, 0.0, 1.0, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
@@ -11629,13 +11703,9 @@ class studentized_range_gen(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
 
-    Calculate the first four moments:
-
-    >>> k, df = 3, 10
-    >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
-
     Display the probability density function (``pdf``):
 
+    >>> k, df = 3, 10
     >>> x = np.linspace(studentized_range.ppf(0.01, k, df),
     ...                 studentized_range.ppf(0.99, k, df), 100)
     >>> ax.plot(x, studentized_range.pdf(x, k, df),

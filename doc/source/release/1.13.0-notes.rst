@@ -2,14 +2,12 @@
 SciPy 1.13.0 Release Notes
 ==========================
 
-.. note:: SciPy 1.13.0 is not released yet!
-
 .. contents::
 
 SciPy 1.13.0 is the culmination of 3 months of hard work. This
 out-of-band release aims to support NumPy ``2.0.0``, and is backwards
 compatible to NumPy ``1.22.4``. The version of OpenBLAS used to build
-the PyPI wheels has been increased to ``0.3.26``.
+the PyPI wheels has been increased to ``0.3.26.dev``.
 
 This release requires Python 3.9+ and NumPy 1.22.4 or greater.
 
@@ -51,7 +49,7 @@ New features
 - The Modified Akima Interpolation has been added to
   ``interpolate.Akima1DInterpolator``, available via the new ``method``
   argument.
-- New method ``BSpline.insert_knot`` inserts a knot into a ``BSpline` instance.
+- New method ``BSpline.insert_knot`` inserts a knot into a ``BSpline`` instance.
   This routine is similar to the module-level `scipy.interpolate.insert`
   function, and works with the BSpline objects instead of ``tck`` tuples.
 - ``RegularGridInterpolator`` gained the functionality to compute derivatives
@@ -142,12 +140,38 @@ Deprecated features
 - Complex dtypes in ``PchipInterpolator`` and ``Akima1DInterpolator`` have
   been deprecated and will raise an error in SciPy 1.15.0. If you are trying
   to use the real components of the passed array, use ``np.real`` on ``y``.
+- Non-integer values of ``n`` together with ``exact=True`` are deprecated for
+  `scipy.special.factorial`.
 
+
+*********************
+Expired Deprecations
+*********************
+There is an ongoing effort to follow through on long-standing deprecations.
+The following previously deprecated features are affected:
+
+- ``scipy.signal.{lsim2,impulse2,step2}`` have been removed in favour of
+  ``scipy.signal.{lsim,impulse,step}``.
+- Window functions can no longer be imported from the `scipy.signal` namespace and
+  instead should be accessed through either `scipy.signal.windows` or
+  `scipy.signal.get_window`.
+- `scipy.sparse` no longer supports multi-Ellipsis indexing
+- ``scipy.signal.{bspline,quadratic,cubic}`` have been removed in favour of alternatives
+  in `scipy.interpolate`.
+- ``scipy.linalg.tri{,u,l}`` have been removed in favour of ``numpy.tri{,u,l}``.
+- Non-integer arrays in `scipy.special.factorial` with ``exact=True`` now raise an
+  error.
+- Functions from NumPy's main namespace which were exposed in SciPy's main
+  namespace, such as ``numpy.histogram`` exposed by ``scipy.histogram``, have
+  been removed from SciPy's main namespace. Please use the functions directly
+  from ``numpy``. This was originally performed for SciPy 1.12.0 however was missed from
+  the release notes so is included here for completeness.
 
 
 ******************************
 Backwards incompatible changes
 ******************************
+
 
 *************
 Other changes
@@ -178,10 +202,11 @@ Authors
 * Jake Bowhay (25)
 * Matthew Brett (1)
 * Dietrich Brunn (7)
-* Evgeni Burovski (48)
+* Evgeni Burovski (65)
 * Matthias Bussonnier (4)
+* Tim Butters (1) +
 * Cale (1) +
-* CJ Carey (4)
+* CJ Carey (5)
 * Thomas A Caswell (1)
 * Sean Cheah (44) +
 * Lucas Colley (97)
@@ -193,9 +218,10 @@ Authors
 * fancidev (13) +
 * Daniel Garcia (1) +
 * Lukas Geiger (3)
-* Ralf Gommers (139)
-* Matt Haberland (79)
+* Ralf Gommers (147)
+* Matt Haberland (81)
 * Tessa van der Heiden (2) +
+* Shawn Hsu (1) +
 * inky (3) +
 * Jannes Münchmeyer (2) +
 * Aditya Vidyadhar Kamath (2) +
@@ -203,6 +229,7 @@ Authors
 * Andrew Landau (1) +
 * Eric Larson (7)
 * Zhen-Qi Liu (1) +
+* Christian Lorentzen (2)
 * Adam Lugowski (4)
 * m-maggi (6) +
 * Chethin Manage (1) +
@@ -216,28 +243,29 @@ Authors
 * Juan Montesinos (1) +
 * Juan F. Montesinos (1) +
 * Takumasa Nakamura (1)
-* Andrew Nelson (26)
+* Andrew Nelson (27)
 * Praveer Nidamaluri (1)
 * Yagiz Olmez (5) +
 * Dimitri Papadopoulos Orfanos (1)
 * Drew Parsons (1) +
 * Tirth Patel (7)
+* Pearu Peterson (1)
 * Matti Picus (3)
 * Rambaud Pierrick (1) +
 * Ilhan Polat (30)
 * Quentin Barthélemy (1)
-* Tyler Reddy (81)
+* Tyler Reddy (117)
 * Pamphile Roy (10)
-* Atsushi Sakai (4)
+* Atsushi Sakai (8)
 * Daniel Schmitz (10)
-* Dan Schult (16)
+* Dan Schult (17)
 * Eli Schwartz (4)
 * Stefanie Senger (1) +
 * Scott Shambaugh (2)
 * Kevin Sheppard (2)
 * sidsrinivasan (4) +
 * Samuel St-Jean (1)
-* Albert Steppi (30)
+* Albert Steppi (31)
 * Adam J. Stewart (4)
 * Kai Striega (3)
 * Ruikang Sun (1) +
@@ -251,10 +279,11 @@ Authors
 * Ben Wallace (1) +
 * Xuefeng Xu (3)
 * Xiao Yuan (5)
-* Irwin Zaid (6)
+* Irwin Zaid (8)
+* Elmar Zander (1) +
 * Mathias Zechmeister (1) +
 
-A total of 91 people contributed to this release.
+A total of 96 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -269,7 +298,9 @@ Issues closed for 1.13.0
 * `#9950 <https://github.com/scipy/scipy/issues/9950>`__: "++" initialization in kmeans2 fails for univariate data
 * `#10317 <https://github.com/scipy/scipy/issues/10317>`__: scipy.stats.nbinom.interval returns wrong result for p=1
 * `#10569 <https://github.com/scipy/scipy/issues/10569>`__: API: \`s\` argument different in scipy.fft and numpy.fft
+* `#11359 <https://github.com/scipy/scipy/issues/11359>`__: lfilter error when input b is 0-dim
 * `#11577 <https://github.com/scipy/scipy/issues/11577>`__: generalized eigenvalues are sometimes wrong (on some hardware)
+* `#14001 <https://github.com/scipy/scipy/issues/14001>`__: Pycharm scipy SVD returning error code without message
 * `#14176 <https://github.com/scipy/scipy/issues/14176>`__: Add option for terminating solver after n events
 * `#14220 <https://github.com/scipy/scipy/issues/14220>`__: Documentation for dctn/idctn s-parameter is confusing
 * `#14450 <https://github.com/scipy/scipy/issues/14450>`__: Passing a numpy array as sampling frequency to signal.iirfilter...
@@ -278,7 +309,11 @@ Issues closed for 1.13.0
 * `#15108 <https://github.com/scipy/scipy/issues/15108>`__: BUG: Seg. fault in scipy.sparse.linalg tests in PROPACK
 * `#16098 <https://github.com/scipy/scipy/issues/16098>`__: BLD:1.8.0: SciPy is not LTO ready
 * `#16792 <https://github.com/scipy/scipy/issues/16792>`__: BUG: Manually vectorizing scipy.linalg.expm fails in version...
+* `#16930 <https://github.com/scipy/scipy/issues/16930>`__: BUG: scipy.linalg.blas.dnrm2 may return error result when incx...
+* `#17004 <https://github.com/scipy/scipy/issues/17004>`__: Test failures for \`Test_SVDS_PROPACK.test_small_sigma2\` test...
+* `#17125 <https://github.com/scipy/scipy/issues/17125>`__: BUG: osx-64 scipy 1.9.1 test_bad_geneig numerical error
 * `#17172 <https://github.com/scipy/scipy/issues/17172>`__: BUG: scipy.linalg.expm, coshm, sinhm and tanhm fail for read-only...
+* `#17362 <https://github.com/scipy/scipy/issues/17362>`__: Add support for Flexiblas
 * `#17436 <https://github.com/scipy/scipy/issues/17436>`__: BUG: linalg.cholesky: segmentation fault with large matrix
 * `#17530 <https://github.com/scipy/scipy/issues/17530>`__: Unnecessary approximation in \`scipy.stats.wilcoxon(x, y)\`
 * `#17681 <https://github.com/scipy/scipy/issues/17681>`__: BUG: special: \`pbvv_seq\` is broken.
@@ -289,6 +324,8 @@ Issues closed for 1.13.0
 * `#18423 <https://github.com/scipy/scipy/issues/18423>`__: ENH: Adding the SDMN Fortran routine to the python Wrapped functions.
 * `#18678 <https://github.com/scipy/scipy/issues/18678>`__: BUG: scipy.special.stdtrit is not thread-safe for df.size > 500
 * `#18722 <https://github.com/scipy/scipy/issues/18722>`__: DOC: in optimize.quadratic_assignment 2opt method, partial_match...
+* `#18767 <https://github.com/scipy/scipy/issues/18767>`__: Too-strict version restrictions on NumPy break distribution builds
+* `#18773 <https://github.com/scipy/scipy/issues/18773>`__: BUG: Update oldest-supported-numpy metadata
 * `#18902 <https://github.com/scipy/scipy/issues/18902>`__: DOC: make default bounds in scipy.optimize.linprog more obvious
 * `#19088 <https://github.com/scipy/scipy/issues/19088>`__: \`pull-request-labeler\` misbehaving and therefore disabled again
 * `#19181 <https://github.com/scipy/scipy/issues/19181>`__: TST: improve array API test skip decorators
@@ -315,6 +352,7 @@ Issues closed for 1.13.0
 * `#19774 <https://github.com/scipy/scipy/issues/19774>`__: DOC: Detail what "concatenate" means in the context of \`spatial.transform.Rotation.concatenate\`
 * `#19799 <https://github.com/scipy/scipy/issues/19799>`__: DOC: array types: update array validation guidance
 * `#19813 <https://github.com/scipy/scipy/issues/19813>`__: BUG: typo in specfun.f?
+* `#19819 <https://github.com/scipy/scipy/issues/19819>`__: BUG: In RBFInterpolator, wrong warning message if degree=-1
 * `#19831 <https://github.com/scipy/scipy/issues/19831>`__: Test failures with OpenBLAS 0.3.26
 * `#19835 <https://github.com/scipy/scipy/issues/19835>`__: DOC: \`fft\` missing from list of subpackages
 * `#19836 <https://github.com/scipy/scipy/issues/19836>`__: DOC: remove incorrect sentence about subpackage imports
@@ -331,12 +369,14 @@ Issues closed for 1.13.0
 * `#19951 <https://github.com/scipy/scipy/issues/19951>`__: BUG: boolean masking broken for sparse array classes
 * `#19963 <https://github.com/scipy/scipy/issues/19963>`__: DOC: scipy.optimize with large differences in parameter scales
 * `#19974 <https://github.com/scipy/scipy/issues/19974>`__: DOC/REL: retroactively add missing expired deprecations to 1.12.0...
+* `#19991 <https://github.com/scipy/scipy/issues/19991>`__: BUG: Scipy Optimize with Nelder-Mead method has issues when specifying...
 * `#19993 <https://github.com/scipy/scipy/issues/19993>`__: BUG: F_INT type conflict with f2py translation of INTEGER type...
 * `#19998 <https://github.com/scipy/scipy/issues/19998>`__: DOC: Boundary conditions in splrep
 * `#20001 <https://github.com/scipy/scipy/issues/20001>`__: BUG: scipy.stats.loglaplace may return negative moments
 * `#20009 <https://github.com/scipy/scipy/issues/20009>`__: BUG: ShortTimeFFT fails with complex input
 * `#20012 <https://github.com/scipy/scipy/issues/20012>`__: MAINT: Use NumPy sliding_window_view instead of as_strided in...
 * `#20014 <https://github.com/scipy/scipy/issues/20014>`__: TST: signal: TestCorrelateReal failing on Meson 3.12 job
+* `#20027 <https://github.com/scipy/scipy/issues/20027>`__: BUG: \`sparse.random\` returns transposed array in 1.12
 * `#20031 <https://github.com/scipy/scipy/issues/20031>`__: TST: prefer \`pytest.warns\` over \`np.testing.assert_warns\`
 * `#20034 <https://github.com/scipy/scipy/issues/20034>`__: TST: linalg: test_decomp_cossin.py::test_cossin_separate[float64]...
 * `#20036 <https://github.com/scipy/scipy/issues/20036>`__: MAINT: implement scipy.stats.powerlaw._munp
@@ -353,15 +393,24 @@ Issues closed for 1.13.0
 * `#20129 <https://github.com/scipy/scipy/issues/20129>`__: BUG: regression: eval_chebyt gives wrong results for complex...
 * `#20131 <https://github.com/scipy/scipy/issues/20131>`__: DOC: linalg: Unclear description for the output \`P\` of \`qr\`.
 * `#20142 <https://github.com/scipy/scipy/issues/20142>`__: Typo in the doc of the Kstwobign distribution
+* `#20156 <https://github.com/scipy/scipy/issues/20156>`__: BUG: sparse.dok_matrix throws KeyError for valid pop(key) since...
 * `#20157 <https://github.com/scipy/scipy/issues/20157>`__: MAINT, TST: test_svds_parameter_tol failures
 * `#20161 <https://github.com/scipy/scipy/issues/20161>`__: \`dev.py test\` fails to accept both \`--argument\` and \`--...
 * `#20170 <https://github.com/scipy/scipy/issues/20170>`__: Test failures due to \`asarray(..., copy=False)\` semantics change...
 * `#20180 <https://github.com/scipy/scipy/issues/20180>`__: deprecation warnings for Node.js 16 on GHA wheel build jobs
 * `#20182 <https://github.com/scipy/scipy/issues/20182>`__: BUG: \`csr_row_index\` and \`csr_column_index\` error for mixed...
 * `#20188 <https://github.com/scipy/scipy/issues/20188>`__: BUG: Raising scipy.spatial.transform.Rotation to power of 0 adds...
+* `#20214 <https://github.com/scipy/scipy/issues/20214>`__: BUG: minimize(method="newton-cg") crashes with UnboundLocalError...
 * `#20220 <https://github.com/scipy/scipy/issues/20220>`__: new problem on Cirrus with Homebrew Python in macOS arm64 jobs
 * `#20225 <https://github.com/scipy/scipy/issues/20225>`__: CI/MAINT: \`choco\` error for invalid credentials
 * `#20230 <https://github.com/scipy/scipy/issues/20230>`__: CI, DOC, TST: failure related to scipy/stats/_distn_infrastructure.py...
+* `#20268 <https://github.com/scipy/scipy/issues/20268>`__: MAINT: failing prerelease deps job - "numpy.broadcast size changed"
+* `#20291 <https://github.com/scipy/scipy/issues/20291>`__: BUG: Macro collision (\`complex\`) with Windows SDK in amos code
+* `#20294 <https://github.com/scipy/scipy/issues/20294>`__: BUG: Hang on Windows in scikit-learn with 1.13rc1 and 1.14.dev...
+* `#20300 <https://github.com/scipy/scipy/issues/20300>`__: BUG: SciPy 1.13.0rc1 not buildable on old macOS due to pocketfft...
+* `#20302 <https://github.com/scipy/scipy/issues/20302>`__: BUG: scipy.optimize.nnls fails with exception
+* `#20340 <https://github.com/scipy/scipy/issues/20340>`__: BUG: line_search_wolfe2 fails to converge due to a wrong condition
+* `#20344 <https://github.com/scipy/scipy/issues/20344>`__: MAINT/DOC: remove outdated note about NumPy imports
 
 ************************
 Pull requests for 1.13.0
@@ -442,6 +491,7 @@ Pull requests for 1.13.0
 * `#19773 <https://github.com/scipy/scipy/pull/19773>`__: DOC: stats: The docstring for scipy.stats.crystalball needs an...
 * `#19775 <https://github.com/scipy/scipy/pull/19775>`__: DOC: Docstring and examples for Rotation.concatenate
 * `#19776 <https://github.com/scipy/scipy/pull/19776>`__: ENH: stats.rankdata: vectorize calculation
+* `#19777 <https://github.com/scipy/scipy/pull/19777>`__: ENH: add \`BSpline.insert_knot\` method
 * `#19778 <https://github.com/scipy/scipy/pull/19778>`__: DOC, MAINT: fix make dist in rel process
 * `#19780 <https://github.com/scipy/scipy/pull/19780>`__: MAINT: scipy.stats: replace \`_normtest_finish\`/\`_ttest_finish\`/etc......
 * `#19781 <https://github.com/scipy/scipy/pull/19781>`__: CI, MAINT: switch to stable python release
@@ -485,6 +535,7 @@ Pull requests for 1.13.0
 * `#19871 <https://github.com/scipy/scipy/pull/19871>`__: MAINT: make isinstance check in \`stats._distn_infrastructure\`...
 * `#19874 <https://github.com/scipy/scipy/pull/19874>`__: rankdata: ensure correct shape for empty inputs
 * `#19876 <https://github.com/scipy/scipy/pull/19876>`__: MAINT: stats: Add tests to ensure consistency between \`wasserstein_distance\` and different backends of \`wasserstein_distance_nd\`
+* `#19880 <https://github.com/scipy/scipy/pull/19880>`__: DOC: prepare 1.13.0 release notes
 * `#19882 <https://github.com/scipy/scipy/pull/19882>`__: MAINT: vendor \`pocketfft\` as git submodule
 * `#19885 <https://github.com/scipy/scipy/pull/19885>`__: MAINT: fix some small array API support issues
 * `#19886 <https://github.com/scipy/scipy/pull/19886>`__: TST: stats: fix a few issues with non-reproducible seeding
@@ -591,9 +642,11 @@ Pull requests for 1.13.0
 * `#20153 <https://github.com/scipy/scipy/pull/20153>`__: BLD: interpolate: _interpnd_info does not need installing
 * `#20154 <https://github.com/scipy/scipy/pull/20154>`__: ENH: sparse: implement fromkeys for _dok_base
 * `#20163 <https://github.com/scipy/scipy/pull/20163>`__: MAINT: dev.py: allow --args after --
+* `#20168 <https://github.com/scipy/scipy/pull/20168>`__: BUG: optimize: Fix constraint condition in inner loop of nnls
 * `#20172 <https://github.com/scipy/scipy/pull/20172>`__: MAINT: (additional) array copy semantics shims
 * `#20173 <https://github.com/scipy/scipy/pull/20173>`__: TST:special:Add partial tests for nrdtrimn and nrdtrisd
 * `#20174 <https://github.com/scipy/scipy/pull/20174>`__: DOC: interpolate: \`splrep\` default boundary condition
+* `#20175 <https://github.com/scipy/scipy/pull/20175>`__: MAINT: sparse: add missing dict methods to DOK and tests
 * `#20176 <https://github.com/scipy/scipy/pull/20176>`__: MAINT: vulture/ruff fixups
 * `#20181 <https://github.com/scipy/scipy/pull/20181>`__: MAINT: Avoid \`descr->elsize\` and use intp for it.
 * `#20183 <https://github.com/scipy/scipy/pull/20183>`__: BUG: Fix fancy indexing on compressed sparse arrays with mixed...
@@ -602,6 +655,7 @@ Pull requests for 1.13.0
 * `#20191 <https://github.com/scipy/scipy/pull/20191>`__: BUG: Fix shape of single Rotation raised to the 0 or 1 power
 * `#20193 <https://github.com/scipy/scipy/pull/20193>`__: MAINT: Bump \`npy2_compat.h\` and add temporary pybind11 workaround
 * `#20195 <https://github.com/scipy/scipy/pull/20195>`__: ENH: linalg: allow readonly arrays in expm et al
+* `#20197 <https://github.com/scipy/scipy/pull/20197>`__: TST: linalg: fix complex sort in test_bad_geneig
 * `#20198 <https://github.com/scipy/scipy/pull/20198>`__: BLD: update minimum Cython version to 3.0.8
 * `#20203 <https://github.com/scipy/scipy/pull/20203>`__: TST: linalg: undo xfail TestEig::test_singular
 * `#20204 <https://github.com/scipy/scipy/pull/20204>`__: TST: linalg: add a regression test for a gen eig problem
@@ -635,3 +689,25 @@ Pull requests for 1.13.0
 * `#20259 <https://github.com/scipy/scipy/pull/20259>`__: BUG: linalg: fix \`expm\` for large arrays
 * `#20261 <https://github.com/scipy/scipy/pull/20261>`__: BUG:linalg:Remove the 2x2 branch in expm
 * `#20263 <https://github.com/scipy/scipy/pull/20263>`__: DOC/REL: add missing expired deprecations to 1.12.0 notes
+* `#20266 <https://github.com/scipy/scipy/pull/20266>`__: MAINT: stats.wilcoxon: pass \`PermutationMethod\` options to...
+* `#20270 <https://github.com/scipy/scipy/pull/20270>`__: BLD: update dependencies for 1.13.0 release and numpy 2.0
+* `#20279 <https://github.com/scipy/scipy/pull/20279>`__: MAINT: 1.13.0rc1 prep [wheel build]
+* `#20290 <https://github.com/scipy/scipy/pull/20290>`__: REL: set 1.13.0rc2 unreleased
+* `#20299 <https://github.com/scipy/scipy/pull/20299>`__: BUG: Optimize: NewtonCG min crashes with xtol=0
+* `#20313 <https://github.com/scipy/scipy/pull/20313>`__: MAINT: bump pocketfft, MacOS patch
+* `#20314 <https://github.com/scipy/scipy/pull/20314>`__: BUG: sparse: Restore random coordinate ordering to pre-1.12 results
+* `#20318 <https://github.com/scipy/scipy/pull/20318>`__: BUG: signal: Fix scalar input issue of signal.lfilter
+* `#20327 <https://github.com/scipy/scipy/pull/20327>`__: DOC: mention BSpline.insert_knot in the 1.13.0 release notes
+* `#20333 <https://github.com/scipy/scipy/pull/20333>`__: BUG: sync pocketfft again
+* `#20337 <https://github.com/scipy/scipy/pull/20337>`__: MAINT: spatial: use cython_lapack in spatial/_qhull.pyx
+* `#20341 <https://github.com/scipy/scipy/pull/20341>`__: BUG: linalg: raise an error in dnrm2(..., incx<0)
+* `#20345 <https://github.com/scipy/scipy/pull/20345>`__: BUG: nelder-mead fix degenerate simplex
+* `#20347 <https://github.com/scipy/scipy/pull/20347>`__: BLD: require pybind11 >=2.12.0 for numpy 2.0 compatibility
+* `#20349 <https://github.com/scipy/scipy/pull/20349>`__: Do not segfault in svd(a) with VT.size > INT_MAX
+* `#20350 <https://github.com/scipy/scipy/pull/20350>`__: BUG: optimize: Fix wrong condition to check invalid optimization...
+* `#20353 <https://github.com/scipy/scipy/pull/20353>`__: DOC: remove outdated NumPy imports note
+* `#20359 <https://github.com/scipy/scipy/pull/20359>`__: ENH: Converting amos to std::complex
+* `#20361 <https://github.com/scipy/scipy/pull/20361>`__: ENH: Rest of amos translation
+* `#20362 <https://github.com/scipy/scipy/pull/20362>`__: MAINT, BUG: bump OpenBLAS
+* `#20364 <https://github.com/scipy/scipy/pull/20364>`__: BUG: interpolate: Fix wrong warning message if degree=-1 in \`interpolate.RBFInterpolator\`
+* `#20374 <https://github.com/scipy/scipy/pull/20374>`__: MAINT: update pybind11 and numpy build-time requirements for...

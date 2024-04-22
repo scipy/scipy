@@ -59,8 +59,14 @@ def test_lapack_documented():
         pytest.skip('lapack.__doc__ is None')
     names = set(lapack.__doc__.split())
     ignore_list = {
-        'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function', 'HAS_ILP64',
+        "absolute_import",
+        "clapack",
+        "division",
+        "find_best_lapack_type",
+        "flapack",
+        "print_function",
+        "HAS_ILP64",
+        "np",
     }
     missing = list()
     for name in dir(lapack):
@@ -599,7 +605,7 @@ class TestTbtrs:
         elif trans == 'T':
             assert_allclose(a.T @ x, b, rtol=5e-5)
         elif trans == 'C':
-            assert_allclose(a.H @ x, b, rtol=5e-5)
+            assert_allclose(a.T.conjugate() @ x, b, rtol=5e-5)
         else:
             raise ValueError('Invalid trans argument')
 

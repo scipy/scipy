@@ -18,6 +18,7 @@ py3.install_sources([
     'test_differentiable_functions.py',
     'test_differentiate.py',
     'test_direct.py',
+    'test_extending.py',
     'test_hessian_update_strategy.py',
     'test_isotonic_regression.py',
     'test_lbfgsb_hessinv.py',
@@ -44,4 +45,9 @@ py3.install_sources([
     'test_zeros.py'
   ],
   subdir: 'scipy/optimize/tests'
+)
+
+py3.install_sources(
+  ['_cython_examples/extending.pyx', '_cython_examples/meson.build'],
+  subdir: 'scipy/optimize/tests/_cython_examples'
 )

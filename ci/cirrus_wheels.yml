@@ -1,6 +1,6 @@
 build_and_store_wheels: &BUILD_AND_STORE_WHEELS
   install_cibuildwheel_script:
-    - python -m pip install cibuildwheel==2.16.5
+    - python -m pip install cibuildwheel==2.17.0
   cibuildwheel_script:
     - cibuildwheel
   wheels_artifacts:
@@ -24,7 +24,7 @@ cirrus_wheels_linux_aarch64_task:
     # single task takes longer than 60 mins (the default time limit for a
     # cirrus-ci task).
     - env:
-        CIBW_BUILD: cp39-manylinux* cp310-manylinux*
+        CIBW_BUILD: cp310-manylinux*
     - env:
         CIBW_BUILD: cp311-manylinux* cp312-manylinux*
   env:

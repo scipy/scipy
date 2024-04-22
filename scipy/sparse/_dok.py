@@ -90,8 +90,8 @@ class _dok_base(_spbase, IndexMixin, dict):
     def clear(self):
         return self._dict.clear()
 
-    def pop(self, key, default=None, /):
-        return self._dict.pop(key, default)
+    def pop(self, /, *args):
+        return self._dict.pop(*args)
 
     def __reversed__(self):
         raise TypeError("reversed is not defined for dok_array type")
