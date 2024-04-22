@@ -204,71 +204,78 @@ struct assoc_legendre_p_diff_callback;
 
 template <typename T>
 struct assoc_legendre_p_diff_callback<T, 1> {
-    T p_jac_prev;
-    T p_jac_prev_prev;
+    T p_prev_last;
+    T p_prev_prev_last;
 
     template <typename Callable, typename... Args>
     void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
         int i_abs = std::abs(i);
 
-        T p_jac;
+        T res[2];
+        T res_prev[2] = {p_prev, p_prev_last};
+
+        res[0] = p;
         if (std::abs(z) == 1 && i_abs == 1) {
-            p_jac = std::numeric_limits<T>::infinity();
+            res[1] = std::numeric_limits<T>::infinity();
         } else {
             if (i_abs > j || j == 0) {
-                p_jac = 0;
+                res[1] = 0;
             } else if (i_abs == j) {
-                p_jac = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * -i_abs * z *
-                        std::pow(1 - z * z, i_abs / T(2) - 1);
+                res[1] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * -i_abs * z *
+                         std::pow(1 - z * z, i_abs / T(2) - 1);
                 if (i < 0) {
-                    p_jac *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
+                    res[1] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
                 }
             } else {
-                p_jac = (T(2 * j - 1) * (p_prev + z * p_jac_prev) - T(j + i - 1) * p_jac_prev_prev) / T(j - i);
+                res[1] = (T(2 * j - 1) * (p_prev + z * p_prev_last) - T(j + i - 1) * p_prev_prev_last) / T(j - i);
             }
         }
 
-        T res[2] = {p, p_jac};
-        T res_prev[2] = {p_prev, p_jac_prev};
         callback(j, i, z, res, res_prev, std::forward<Args>(args)...);
 
-        p_jac_prev_prev = p_jac_prev;
-        p_jac_prev = p_jac;
+        p_prev_prev_last = p_prev_last;
+        p_prev_last = res[1];
     }
 };
 
 template <typename T>
 struct assoc_legendre_p_diff_callback<T, 2> {
     assoc_legendre_p_diff_callback<T, 1> jac;
-    T p_hess_prev;
-    T p_hess_prev_prev;
+    T p_prev_last;
+    T p_prev_prev_last;
 
     template <typename Callable, typename... Args>
     void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
-        jac(j, i, z, p, p_prev, [this, &callback, &args...](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
-            int i_abs = std::abs(i);
+        int i_abs = std::abs(i);
 
-            T p_hess;
-            if (i_abs > j || j == 0) {
-                p_hess = 0;
-            } else if (i_abs == j) {
-                p_hess = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * i_abs * (z * z * (i_abs - 1) - 1) *
-                         std::pow(1 - z * z, i_abs / T(2) - 2);
-                if (i < 0) {
-                    p_hess *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
-                }
-            } else {
-                p_hess =
-                    (T(2 * j - 1) * (z * p_hess_prev + T(2) * p_prev[1]) - T(j + i - 1) * p_hess_prev_prev) / T(j - i);
-            }
-
-            T res[3] = {p[0], p[1], p_hess};
-            T res_prev[3] = {p_prev[0], p_prev[1], p_hess_prev};
-            callback(j, i, z, res, res_prev, std::forward<Args>(args)...);
-
-            p_hess_prev_prev = p_hess_prev;
-            p_hess_prev = p_hess;
+        T res[3];
+        T res_prev[3];
+        jac(j, i, z, p, p_prev, [&res, &res_prev](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
+            res[0] = p[0];
+            res_prev[0] = p_prev[0];
+            res[1] = p[1];
+            res_prev[1] = p_prev[1];
         });
+
+        if (i_abs > j || j == 0) {
+            res[2] = 0;
+        } else if (i_abs == j) {
+            res[2] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * i_abs * (z * z * (i_abs - 1) - 1) *
+                     std::pow(1 - z * z, i_abs / T(2) - 2);
+            if (i < 0) {
+                res[2] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
+            }
+        } else {
+            res[2] =
+                (T(2 * j - 1) * (z * p_prev_last + T(2) * res_prev[1]) - T(j + i - 1) * p_prev_prev_last) / T(j - i);
+        }
+
+        res_prev[2] = p_prev_last;
+
+        callback(j, i, z, res, res_prev, std::forward<Args>(args)...);
+
+        p_prev_prev_last = p_prev_last;
+        p_prev_last = res[2];
     }
 };
 
