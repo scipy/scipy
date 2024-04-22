@@ -311,11 +311,13 @@ class MatFile5Reader(MatFileReader):
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
+                msg = (
+                    f'Duplicate variable name "{name}" in stream'
+                    " - replacing previous with new\n"
+                    "Consider scipy.io.matlab.varmats_from_mat to split "
+                    "file into single variable files"
+                )
+                warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -405,7 +407,7 @@ def varmats_from_mat(file_obj):
     >>> import scipy.io
     >>> import numpy as np
     >>> from io import BytesIO
-    >>> from scipy.io.matlab._mio5 import varmats_from_mat
+    >>> from scipy.io.matlab import varmats_from_mat
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)
