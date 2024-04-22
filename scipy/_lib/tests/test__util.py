@@ -337,6 +337,7 @@ class TestContainsNaNTest:
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize("nan_policy", ['propagate', 'omit', 'raise'])
     def test_array_api(self, xp, nan_policy):
