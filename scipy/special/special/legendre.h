@@ -176,6 +176,10 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
         //        p *= T(2 * j - 1) * T(2 * j + 1) * (1 - x * x);
     }
 
+    if (std::abs(x) == 1) {
+        // ...
+    }
+
     T p = std::pow(-1, m_abs) * double_factorial<T>(2 * m_abs - 1) * std::pow(1 - x * x, m_abs / T(2));
     if (m < 0) {
         p *= std::pow(-1, m) / std::tgamma(2 * m_abs + 1);
@@ -212,20 +216,34 @@ struct assoc_legendre_p_diff_callback<T, 1> {
         T res[2] = {p};
         T res_prev[2] = {p_prev, p_jac_prev};
 
-        int i_abs = std::abs(i);
-        if (std::abs(z) == 1 && i_abs == 1) {
-            res[1] = std::numeric_limits<T>::infinity();
-        } else {
-            if (i_abs > j || j == 0) {
+        if (std::abs(z) == 1) {
+            if (i == 0) {
+                res[1] = T(j) * T(j + 1) / T(2);
+            } else if (i == 1) {
+                res[1] = std::numeric_limits<T>::infinity();
+            } else if (i == 2) {
+                res[1] = -T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(4);
+            } else if (i == -2) {
+                res[1] = -T(1) / T(4);
+            } else if (i == -1) {
+                res[1] = -std::numeric_limits<T>::infinity();
+            } else {
                 res[1] = 0;
-            } else if (i_abs == j) {
+            }
+        } else {
+            int i_abs = std::abs(i);
+            if (i_abs == j) {
                 res[1] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * -i_abs * z *
                          std::pow(1 - z * z, i_abs / T(2) - 1);
                 if (i < 0) {
                     res[1] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
                 }
-            } else {
+            } else if (i_abs + 1 == j) {
+                res[1] = T(2 * j - 1) * (p_prev + z * p_jac_prev) / T(j - i);
+            } else if (i_abs < j) {
                 res[1] = (T(2 * j - 1) * (p_prev + z * p_jac_prev) - T(j + i - 1) * p_jac_prev_prev) / T(j - i);
+            } else {
+                res[1] = 0;
             }
         }
 
@@ -253,18 +271,44 @@ struct assoc_legendre_p_diff_callback<T, 2> {
             res_prev[1] = p_prev[1];
         });
 
-        int i_abs = std::abs(i);
-        if (i_abs > j || j == 0) {
-            res[2] = 0;
-        } else if (i_abs == j) {
-            res[2] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * i_abs * (z * z * (i_abs - 1) - 1) *
-                     std::pow(1 - z * z, i_abs / T(2) - 2);
-            if (i < 0) {
-                res[2] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
+        if (std::abs(z) == 1) {
+            // need to complete these
+            if (i == 0) {
+                res[1] = T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(8);
+            } else if (i == 1) {
+                res[1] = std::numeric_limits<T>::infinity();
+            } else if (i == 2) {
+                res[1] = -T((j + 1) * j - 3) * T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(12);
+            } else if (i == 3) {
+                res[1] = std::numeric_limits<T>::infinity();
+            } else if (i == 4) {
+                res[1] = T(j + 4) * T(j + 3) * T(j + 2) * T(j + 1) * T(j) * T(j - 1) * T(j - 2) * T(j - 3) / T(48);
+            } else if (i == -4) {
+                res[1] = 0;
+            } else if (i == -2) {
+                res[1] = -T(1) / T(4);
+            } else if (i == -1) {
+                res[1] = -std::numeric_limits<T>::infinity();
+            } else {
+                res[1] = 0;
             }
         } else {
-            res[2] =
-                (T(2 * j - 1) * (z * p_hess_prev + T(2) * res_prev[1]) - T(j + i - 1) * p_hess_prev_prev) / T(j - i);
+            int i_abs = std::abs(i);
+            if (i_abs == j) {
+                res[2] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * i_abs * (z * z * (i_abs - 1) - 1) *
+                         std::pow(1 - z * z, i_abs / T(2) - 2);
+                if (i < 0) {
+                    res[2] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
+                }
+            } else if (i_abs + 1 == j) {
+                res[2] = T(2 * j - 1) * (z * p_hess_prev + T(2) * res_prev[1]) / T(j - i);
+
+            } else if (i_abs < j) {
+                res[2] = (T(2 * j - 1) * (z * p_hess_prev + T(2) * res_prev[1]) - T(j + i - 1) * p_hess_prev_prev) /
+                         T(j - i);
+            } else {
+                res[2] = 0;
+            }
         }
 
         res_prev[2] = p_hess_prev;

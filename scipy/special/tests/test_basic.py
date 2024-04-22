@@ -3620,7 +3620,7 @@ class TestLegendreFunctions:
 
         n = rng.integers(0, 10, shape)
         m = rng.integers(-10, 10, shape)
-        x = rng.uniform(-0.5, 0.5, shape)
+        x = rng.uniform(-1, 1, shape)
 
         p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
 
@@ -3655,7 +3655,7 @@ class TestLegendreFunctions:
     def test_lpmn_all_exact(self, shape):
         rng = np.random.default_rng(1234)
 
-        x = rng.uniform(-0.9, 0.9, shape)
+        x = rng.uniform(-0.99, 0.99, shape)
 
         p, p_jac, p_hess = special.lpmn_all(3, 3, x, diff_n = 2)
 
