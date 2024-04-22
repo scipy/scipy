@@ -20,7 +20,7 @@ namespace special {
 // ===============================================
 
 template <typename T, typename Callable, typename... Args>
-T legendre_p(unsigned int n, T z, Callable callback, Args &&...args) {
+T legendre_p(int n, T z, Callable callback, Args &&...args) {
     T p = 1;
     callback(0, z, p, std::forward<Args>(args)...);
 
@@ -29,7 +29,7 @@ T legendre_p(unsigned int n, T z, Callable callback, Args &&...args) {
         p = z;
         callback(1, z, p, std::forward<Args>(args)...);
 
-        for (unsigned int j = 2; j <= n; ++j) {
+        for (int j = 2; j <= n; ++j) {
             T p_prev_prev = p_prev;
             p_prev = p;
             p = (T(2 * j - 1) * z * p_prev - T(j - 1) * p_prev_prev) / T(j);
@@ -46,7 +46,7 @@ struct legendre_p_diff_callback {
     T p_prev_prev[N + 1];
 
     template <typename Callable, typename... Args>
-    void operator()(unsigned int j, T z, T p, Callable callback, Args &&...args) {
+    void operator()(int j, T z, T p, Callable callback, Args &&...args) {
         T res[N + 1];
 
         res[0] = p;
@@ -77,42 +77,39 @@ struct legendre_p_diff_callback {
 };
 
 template <typename T>
-T legendre_p(unsigned int n, T z) {
-    return legendre_p(n, z, [](unsigned int j, T z, T p) {});
+T legendre_p(int n, T z) {
+    return legendre_p(n, z, [](int j, T z, T p) {});
 }
 
 template <typename T>
-void legendre_p(unsigned int n, T z, T &res, T &res_jac) {
-    legendre_p(n, z, legendre_p_diff_callback<T, 1>(), [&res, &res_jac](unsigned int j, T z, const T(&p)[2]) {
+void legendre_p(int n, T z, T &res, T &res_jac) {
+    legendre_p(n, z, legendre_p_diff_callback<T, 1>(), [&res, &res_jac](int j, T z, const T(&p)[2]) {
         res = p[0];
         res_jac = p[1];
     });
 }
 
 template <typename T>
-void legendre_p(unsigned int n, T z, T &res, T &res_jac, T &res_hess) {
-    legendre_p(
-        n, z, legendre_p_diff_callback<T, 2>(),
-        [&res, &res_jac, &res_hess](unsigned int j, T z, const T(&p)[3]) {
-            res = p[0];
-            res_jac = p[1];
-            res_hess = p[2];
-        }
-    );
+void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
+    legendre_p(n, z, legendre_p_diff_callback<T, 2>(), [&res, &res_jac, &res_hess](int j, T z, const T(&p)[3]) {
+        res = p[0];
+        res_jac = p[1];
+        res_hess = p[2];
+    });
 }
 
 template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
-    unsigned int n = res.extent(0) - 1;
+    int n = res.extent(0) - 1;
 
-    legendre_p(n, z, [res](unsigned int j, T z, T p) { res(j) = p; });
+    legendre_p(n, z, [res](int j, T z, T p) { res(j) = p; });
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
-    unsigned int n = res.extent(0) - 1;
+    int n = res.extent(0) - 1;
 
-    legendre_p(n, z, legendre_p_diff_callback<T, 1>(), [res, res_jac](unsigned int j, T z, const T(&p)[2]) {
+    legendre_p(n, z, legendre_p_diff_callback<T, 1>(), [res, res_jac](int j, T z, const T(&p)[2]) {
         res(j) = p[0];
         res_jac(j) = p[1];
     });
@@ -120,9 +117,9 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
-    unsigned int n = res.extent(0) - 1;
+    int n = res.extent(0) - 1;
 
-    legendre_p(n, z, legendre_p_diff_callback<T, 2>(), [res, res_jac, res_hess](unsigned int j, T z, const T(&p)[3]) {
+    legendre_p(n, z, legendre_p_diff_callback<T, 2>(), [res, res_jac, res_hess](int j, T z, const T(&p)[3]) {
         res(j) = p[0];
         res_jac(j) = p[1];
         res_hess(j) = p[2];
@@ -144,10 +141,30 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
+template <typename T>
+T assoc_legendre_fac(int n, int m, T z) {
+    int m_abs = std::abs(m);
+    if (m_abs > n) {
+        return 0;
+    }
+
+    if (m >= 0) {
+        return 1;
+    }
+
+    T fac = gamma_ratio(T(n) - T(m_abs) + 1, T(n) + T(m_abs) + 1);
+    if (std::abs(z) < 1) {
+        fac *= std::pow(-1, m);
+    }
+
+    return fac;
+}
+
 template <typename T, typename Callable, typename... Args>
-T assoc_legendre_p(unsigned int n, unsigned int m, T x, Callable callback, Args &&...args) {
-    if (m > n) {
-        for (unsigned int j = 0; j < n; ++j) {
+T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
+    int m_abs = std::abs(m);
+    if (m_abs > n) {
+        for (int j = 0; j < n; ++j) {
             callback(j, m, x, 0, std::forward<Args>(args)...);
         }
 
@@ -161,28 +178,28 @@ T assoc_legendre_p(unsigned int n, unsigned int m, T x, Callable callback, Args 
     }
 
     T p = 1;
-    for (unsigned int j = 0; j < m; ++j) {
+    for (int j = 0; j < m_abs; ++j) {
         callback(j, m, x, 0, std::forward<Args>(args)...);
 
         p *= -T(ls) * T(2 * j + 1) * xq;
     }
 
-    callback(m, m, x, p, std::forward<Args>(args)...);
+    callback(m_abs, m, x, p * assoc_legendre_fac(m_abs, m, x), std::forward<Args>(args)...);
 
-    if (m != n) {
+    if (m_abs != n) {
         T p_prev = p;
-        p = T(2 * m + 1) * x * p_prev;
-        callback(m + 1, m, x, p, std::forward<Args>(args)...);
+        p = T(2 * m_abs + 1) * x * p_prev;
+        callback(m_abs + 1, m, x, p * assoc_legendre_fac(m_abs + 1, m, x), std::forward<Args>(args)...);
 
-        for (unsigned int j = m + 2; j <= n; ++j) {
+        for (int j = m_abs + 2; j <= n; ++j) {
             T p_prev_prev = p_prev;
             p_prev = p;
-            p = (T(2 * j - 1) * x * p_prev - T(m + j - 1) * p_prev_prev) / T(j - m);
-            callback(j, m, x, p, std::forward<Args>(args)...);
+            p = (T(2 * j - 1) * x * p_prev - T(m_abs + j - 1) * p_prev_prev) / T(j - m_abs);
+            callback(j, m, x, p * assoc_legendre_fac(j, m, x), std::forward<Args>(args)...);
         }
     }
 
-    return p;
+    return p * assoc_legendre_fac(n, m, x);
 }
 
 template <typename T, size_t N>
@@ -191,20 +208,22 @@ struct assoc_legendre_p_diff_callback {
     T p_prev_prev[N + 1];
 
     template <typename Callable, typename... Args>
-    void operator()(unsigned int j, unsigned int i, T z, T p, Callable callback, Args &&...args) {
+    void operator()(int j, int i, T z, T p, Callable callback, Args &&...args) {
         T res[N + 1];
 
         res[0] = p;
 
+        int i_abs = std::abs(i);
+
         if constexpr (N >= 1) {
             if (std::abs(z) == 1) {
-                if (i == 1) {
+                if (i_abs == 1) {
                     res[1] = std::numeric_limits<T>::infinity();
                 }
             } else {
-                if (i > j || j == 0) {
+                if (i_abs > j || j == 0) {
                     res[1] = 0;
-                } else if (i == j) {
+                } else if (i_abs == j) {
                     res[1] = j * z * p / (z * z - 1);
 
                 } else {
@@ -214,9 +233,9 @@ struct assoc_legendre_p_diff_callback {
         }
 
         if constexpr (N >= 2) {
-            if (i > j || j == 0) {
+            if (i_abs > j || j == 0) {
                 res[2] = 0;
-            } else if (i == j) {
+            } else if (i_abs == j) {
                 res[2] =
                     res[0] / (z * z - 1) + z * res[1] / (z * z - 1) - 2 * z * z * res[0] / ((z * z - 1) * (z * z - 1));
                 res[2] *= j;
@@ -243,45 +262,43 @@ struct assoc_legendre_p_diff_callback {
 */
 
 template <typename T>
-T assoc_legendre_p(unsigned int n, unsigned int m, T x) {
-    return assoc_legendre_p(n, m, x, [](unsigned int j, unsigned int i, T x, T value) {});
+T assoc_legendre_p(int n, int m, T x) {
+    return assoc_legendre_p(n, m, x, [](int j, int i, T x, T value) {});
 }
 
 template <typename T, typename OutputMat>
-void assoc_legendre_p_all(T x, OutputMat p) {
-    unsigned int m = p.extent(0) - 1;
-    unsigned int n = p.extent(1) - 1;
+void assoc_legendre_p_all(T x, OutputMat res) {
+    int m = (res.extent(0) - 1) / 2;
+    int n = res.extent(1) - 1;
 
-    for (unsigned int i = 0; i <= m; ++i) {
-        assoc_legendre_p(n, i, x, [p](unsigned int j, unsigned int i, T x, T value) { p(i, j) = value; });
+    for (int i = -m; i <= m; ++i) {
+        assoc_legendre_p(n, i, x, [res](int j, int i, T x, T p) {
+            if (i < 0) {
+                int i_abs = std::abs(i);
+                res(res.extent(0) - i_abs, j) = p;
+            } else {
+                res(i, j) = p;
+            }
+        });
     }
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
 void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac) {
-    unsigned int m = (res.extent(0) - 1) / 2;
-    unsigned int n = res.extent(1) - 1;
+    int m = (res.extent(0) - 1) / 2;
+    int n = res.extent(1) - 1;
 
-    for (unsigned int i = 0; i <= m; ++i) {
+    for (int i = -m; i <= m; ++i) {
         assoc_legendre_p(
             n, i, x, assoc_legendre_p_diff_callback<T, 1>(),
-            [res, res_jac](unsigned int j, unsigned int i, T z, const T(&p)[2]) {
-                res(i, j) = p[0];
-                res_jac(i, j) = p[1];
-
-                if (i != 0) {
-                    if (i > j) {
-                        res(res.extent(0) - i, j) = 0;
-                        res_jac(res.extent(0) - i, j) = 0;
-                    } else {
-                        T fac = gamma_ratio(T(j) - T(i) + 1, T(j) + T(i) + 1);
-                        if (std::abs(z) < 1) {
-                            fac *= std::pow(-1, i);
-                        }
-
-                        res(res.extent(0) - i, j) = fac * res(i, j);
-                        res_jac(res.extent(0) - i, j) = fac * res_jac(i, j);
-                    }
+            [res, res_jac](int j, int i, T z, const T(&p)[2]) {
+                if (i < 0) {
+                    int i_abs = std::abs(i);
+                    res(res.extent(0) - i_abs, j) = p[0];
+                    res_jac(res.extent(0) - i_abs, j) = p[1];
+                } else {
+                    res(i, j) = p[0];
+                    res_jac(i, j) = p[1];
                 }
             }
         );
@@ -290,38 +307,27 @@ void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac) {
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    unsigned int m = (res.extent(0) - 1) / 2;
-    unsigned int n = res.extent(1) - 1;
+    int m = (res.extent(0) - 1) / 2;
+    int n = res.extent(1) - 1;
 
-    for (unsigned int i = 0; i <= m; ++i) {
+    for (int i = -m; i <= m; ++i) {
         assoc_legendre_p(
             n, i, x, assoc_legendre_p_diff_callback<T, 2>(),
-            [res, res_jac, res_hess](unsigned int j, unsigned int i, T z, const T(&p)[3]) {
-                res(i, j) = p[0];
-                res_jac(i, j) = p[1];
-                res_hess(i, j) = p[2];
-
-                if (i != 0) {
-                    if (i > j) {
-                        res(res.extent(0) - i, j) = 0;
-                        res_jac(res.extent(0) - i, j) = 0;
-                        res_hess(res.extent(0) - i, j) = 0;
-                    } else {
-                        T fac = gamma_ratio(T(j) - T(i) + 1, T(j) + T(i) + 1);
-                        if (std::abs(z) < 1) {
-                            fac *= std::pow(-1, i);
-                        }
-
-                        res(res.extent(0) - i, j) = fac * res(i, j);
-                        res_jac(res.extent(0) - i, j) = fac * res_jac(i, j);
-                        res_hess(res.extent(0) - i, j) = fac * res_hess(i, j);
-                    }
+            [res, res_jac, res_hess](int j, int i, T z, const T(&p)[3]) {
+                if (i < 0) {
+                    int i_abs = std::abs(i);
+                    res(res.extent(0) - i_abs, j) = p[0];
+                    res_jac(res.extent(0) - i_abs, j) = p[1];
+                    res_hess(res.extent(0) - i_abs, j) = p[2];
+                } else {
+                    res(i, j) = p[0];
+                    res_jac(i, j) = p[1];
+                    res_hess(i, j) = p[2];
                 }
             }
         );
     }
 }
-
 
 template <typename T>
 T assoc_legendre_p_jac_next(unsigned int n, int m, T x, T p_curr, T p_prev) {

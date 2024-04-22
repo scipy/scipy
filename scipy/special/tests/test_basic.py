@@ -3614,6 +3614,48 @@ class TestLegendreFunctions:
                                     approx_derivative,
                                     rtol=1e-4)
 
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    def test_lpmn_all_exact(self, shape):
+        rng = np.random.default_rng(1234)
+
+        x = rng.uniform(-0.9, 0.9, shape)
+
+        p, p_jac, p_hess = special.lpmn_all(3, 3, x, diff_n = 2)
+
+        np.testing.assert_allclose(p[0, 1], x)
+        np.testing.assert_allclose(p[1, 1], -np.sqrt(1 - x * x))
+        np.testing.assert_allclose(p[-1, 1], np.sqrt(1 - x * x) / 2)
+
+        np.testing.assert_allclose(p[0, 2], (3 * x * x - 1) / 2)
+        np.testing.assert_allclose(p[1, 2], -3 * x * np.sqrt(1 - x * x))
+        np.testing.assert_allclose(p[2, 2], -3 * (x * x - 1))
+        np.testing.assert_allclose(p[-2, 2], (1 - x * x) / 8)
+        np.testing.assert_allclose(p[-1, 2], x * np.sqrt(1 - x * x) / 2)
+
+        np.testing.assert_allclose(p_jac[0, 1], 1)
+        np.testing.assert_allclose(p_jac[1, 1], x / np.sqrt(1 - x * x))
+        np.testing.assert_allclose(p_jac[-1, 1], -x / (2 * np.sqrt(1 - x * x)))
+
+        np.testing.assert_allclose(p_jac[0, 2], 3 * x)
+        np.testing.assert_allclose(p_jac[1, 2], (6 * x * x - 3) / np.sqrt(1 - x * x))
+        np.testing.assert_allclose(p_jac[2, 2], -6 * x)
+        np.testing.assert_allclose(p_jac[-2, 2], -x / 4)
+        np.testing.assert_allclose(p_jac[-1, 2], (1 - 2 * x * x) / (2 * np.sqrt(1 - x * x)))
+
+        np.testing.assert_allclose(p_jac[0, 3], 3 * (5 * x * x - 1) / 2)
+        np.testing.assert_allclose(p_jac[1, 3], 3 * (15 * x * x - 11) * x / (2 * np.sqrt(1 - x * x)))
+        np.testing.assert_allclose(p_jac[2, 3], 15 - 45 * x * x)
+        np.testing.assert_allclose(p_jac[3, 3], 45 * x * np.sqrt(1 - x * x))
+        np.testing.assert_allclose(p_jac[-3, 3], -x * np.sqrt(1 - x * x) / 16)
+        np.testing.assert_allclose(p_jac[-2, 3], (1 - 3 * x * x) / 8)
+        np.testing.assert_allclose(p_jac[-1, 3], (11 * x - 15 * x * x * x) / (8 * np.sqrt(1 - x * x)))
+
+
+ #       np.testing.assert_allclose(p[1, 2], -np.sqrt(1 - x * x))
+#        np.testing.assert_allclose(p[-1, 2], np.sqrt(1 - x * x) / 2)
+
+   #     print(p[0])
+    #    np.testing.assert_allclose(p[0], (3 * x * x - 1) / 2)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpmn_all(self, shape):
