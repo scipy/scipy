@@ -92,6 +92,15 @@ using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
 using func_fff_ff_t = void (*)(float, float, float, float &, float &);
 using func_ddd_dd_t = void (*)(double, double, double, double &, double &);
 
+using func_llf_f_t = float (*)(long, long, float);
+using func_lld_d_t = double (*)(long, long, double);
+
+using func_llf_ff_t = void (*)(long, long, float, float &, float &);
+using func_lld_dd_t = void (*)(long, long, double, double &, double &);
+
+using func_llf_fff_t = void (*)(long, long, float, float &, float &, float &);
+using func_lld_ddd_t = void (*)(long, long, double, double &, double &, double &);
+
 using func_llff_F_t = complex<float> (*)(long, long, float, float);
 using func_lldd_D_t = complex<double> (*)(long, long, double, double);
 using func_ffff_f_t = float (*)(float, float, float, float);
@@ -505,6 +514,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         SpecFun_NewUFunc({static_cast<func_lf_fff_t>(::lpn), static_cast<func_ld_ddd_t>(::lpn)}, 3, "lpn", nullptr)
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
+
+    PyObject *lpmn = PyTuple_Pack(
+        3, SpecFun_NewUFunc({static_cast<func_llf_f_t>(::lpmn), static_cast<func_lld_d_t>(::lpmn)}, "lpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_llf_ff_t>(::lpmn), static_cast<func_lld_dd_t>(::lpmn)}, 2, "lpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_llf_fff_t>(::lpmn), static_cast<func_lld_ddd_t>(::lpmn)}, 3, "lpmn", nullptr)
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "lpmn", lpmn);
 
     PyObject *mathieu_a = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cem_cva), static_cast<func_dd_d_t>(special::cem_cva)}, "mathieu_a",

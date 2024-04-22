@@ -14,7 +14,7 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn
+from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn
 from ._gufuncs import (lpn_all, lpmn_all, _clpmn, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
@@ -109,6 +109,10 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
     except (ValueError, TypeError) as err:
         raise err.__class__(f"{var_name} must be a non-negative integer") from err
     return n
+
+
+def diff_resolve_ufunc(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
 
 
 def diric(x, n):
@@ -1718,6 +1722,8 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
+_lpmn = ufunc_wrapper(_lpmn, diff_resolve_ufunc)
+
 lpmn_all = ufunc_wrapper(lpmn_all)
 
 @lpmn_all.resolve_ufunc
@@ -1780,30 +1786,30 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
            https://dlmf.nist.gov/14.3
 
     """
-    n = _nonneg_int_or_fail(n, 'n', strict=False)
-    if not isscalar(m) or (abs(m) > n):
-        raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
-    if np.iscomplexobj(z):
-        raise ValueError("Argument must be real. Use clpmn instead.")
 
-    if (not legacy):
-        return lpmn_all(m, n, z, diff_n = diff_n)
+    if legacy:
+        n = _nonneg_int_or_fail(n, 'n', strict=False)
+        if not isscalar(m) or (abs(m) > n):
+            raise ValueError("m must be <= n.")
+        if not isscalar(n) or (n < 0):
+            raise ValueError("n must be a non-negative integer.")
+        if np.iscomplexobj(z):
+            raise ValueError("Argument must be real. Use clpmn instead.")
 
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+        m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+        m_abs = abs(m)
 
-    m_abs = abs(m)
+        p, pd = lpmn_all(m_abs, n, z, diff_n = 1)
+        if (m < 0):
+            p = np.flip(p, axis = 0)
+            p = np.insert(p[:m_abs], 0, p[-1], axis = 0)
 
-    p, pd = lpmn_all(m_abs, n, z, diff_n = 1)
-    if (m < 0):
-        p = np.flip(p, axis = 0)
-        p = np.insert(p[:m_abs], 0, p[-1], axis = 0)
+            pd = np.flip(pd, axis = 0)
+            pd = np.insert(pd[:m_abs], 0, pd[-1], axis = 0)
 
-        pd = np.flip(pd, axis = 0)
-        pd = np.insert(pd[:m_abs], 0, pd[-1], axis = 0)
+        return p, pd
 
-    return p, pd
+    return _lpmn(m, n, z, diff_n = diff_n)
 
 def clpmn(m, n, z, type=3):
     """Associated Legendre function of the first kind for complex arguments.
@@ -2052,9 +2058,6 @@ def euler(n):
     else:
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
-
-def diff_resolve_ufunc(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
 
 _lpn = ufunc_wrapper(_lpn, diff_resolve_ufunc)
 

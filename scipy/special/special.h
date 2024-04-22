@@ -14,43 +14,58 @@ T lpn(long n, T z) {
 }
 
 template <typename T>
-void lpn(long n, T z, T &p, T &p_jac) {
-    special::legendre_p(n, z, p, p_jac);
+void lpn(long n, T z, T &res, T &res_jac) {
+    special::legendre_p(n, z, res, res_jac);
 }
 
 template <typename T>
-void lpn(long n, T z, T &p, T &p_jac, T &p_hess) {
-    special::legendre_p(n, z, p, p_jac, p_hess);
+void lpn(long n, T z, T &res, T &res_jac, T &res_hess) {
+    special::legendre_p(n, z, res, res_jac, res_hess);
 }
 
 template <typename T, typename OutputVec>
-void lpn_all(T z, OutputVec p) {
-    special::legendre_p_all(z, p);
+void lpn_all(T z, OutputVec res) {
+    special::legendre_p_all(z, res);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2>
-void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac) {
-    special::legendre_p_all(z, p, p_jac);
+void lpn_all(T z, OutputVec1 res, OutputVec2 res_jac) {
+    special::legendre_p_all(z, res, res_jac);
 }
 
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
-void lpn_all(T z, OutputVec1 p, OutputVec2 p_jac, OutputVec3 p_hess) {
-    special::legendre_p_all(z, p, p_jac, p_hess);
+void lpn_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
+    special::legendre_p_all(z, res, res_jac, res_hess);
+}
+
+template <typename T>
+T lpmn(long m, long n, T z) {
+    return special::assoc_legendre_p(n, m, z);
+}
+
+template <typename T>
+void lpmn(long m, long n, T z, T &res, T &res_jac) {
+    special::assoc_legendre_p(n, m, z, res, res_jac);
+}
+
+template <typename T>
+void lpmn(long m, long n, T z, T &res, T &res_jac, T &res_hess) {
+    special::assoc_legendre_p(n, m, z, res, res_jac, res_hess);
 }
 
 template <typename T, typename OutputMat1>
-void lpmn_all(T z, OutputMat1 p) {
-    special::assoc_legendre_p_all(z, p);
+void lpmn_all(T z, OutputMat1 res) {
+    special::assoc_legendre_p_all(z, res);
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void lpmn_all(T z, OutputMat1 p, OutputMat2 p_jac) {
-    special::assoc_legendre_p_all(z, p, p_jac);
+void lpmn_all(T z, OutputMat1 res, OutputMat2 res_jac) {
+    special::assoc_legendre_p_all(z, res, res_jac);
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void lpmn_all(T z, OutputMat1 p, OutputMat2 p_jac, OutputMat3 p_hess) {
-    special::assoc_legendre_p_all(z, p, p_jac, p_hess);
+void lpmn_all(T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+    special::assoc_legendre_p_all(z, res, res_jac, res_hess);
 }
 
 template <typename T>

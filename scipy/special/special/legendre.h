@@ -141,25 +141,6 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-template <typename T>
-T assoc_legendre_fac(int n, int m, T z) {
-    int m_abs = std::abs(m);
-    if (m_abs > n) {
-        return 0;
-    }
-
-    if (m >= 0) {
-        return 1;
-    }
-
-    T fac = gamma_ratio(T(n) - T(m_abs) + 1, T(n) + T(m_abs) + 1);
-    if (std::abs(z) < 1) {
-        fac *= std::pow(-1, m);
-    }
-
-    return fac;
-}
-
 template <typename T, typename Callable, typename... Args>
 T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
@@ -184,22 +165,29 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
         p *= -T(ls) * T(2 * j + 1) * xq;
     }
 
-    callback(m_abs, m, x, p * assoc_legendre_fac(m_abs, m, x), std::forward<Args>(args)...);
+    if (m < 0) {
+        p /= std::tgamma(2 * m_abs + 1);
+        if (std::abs(x) < 1) {
+            p *= std::pow(-1, m);
+        }
+    }
+
+    callback(m_abs, m, x, p, std::forward<Args>(args)...);
 
     if (m_abs != n) {
         T p_prev = p;
-        p = T(2 * m_abs + 1) * x * p_prev;
-        callback(m_abs + 1, m, x, p * assoc_legendre_fac(m_abs + 1, m, x), std::forward<Args>(args)...);
+        p = T(2 * (m_abs + 1) - 1) * x * p_prev / T(m_abs + 1 - m);
+        callback(m_abs + 1, m, x, p, std::forward<Args>(args)...);
 
         for (int j = m_abs + 2; j <= n; ++j) {
             T p_prev_prev = p_prev;
             p_prev = p;
-            p = (T(2 * j - 1) * x * p_prev - T(m_abs + j - 1) * p_prev_prev) / T(j - m_abs);
-            callback(j, m, x, p * assoc_legendre_fac(j, m, x), std::forward<Args>(args)...);
+            p = (T(2 * j - 1) * x * p_prev - T(m + j - 1) * p_prev_prev) / T(j - m);
+            callback(j, m, x, p, std::forward<Args>(args)...);
         }
     }
 
-    return p * assoc_legendre_fac(n, m, x);
+    return p;
 }
 
 template <typename T, size_t N>
@@ -225,7 +213,6 @@ struct assoc_legendre_p_diff_callback {
                     res[1] = 0;
                 } else if (i_abs == j) {
                     res[1] = j * z * p / (z * z - 1);
-
                 } else {
                     res[1] = (T(2 * j - 1) * (p_prev[0] + z * p_prev[1]) - T(j + i - 1) * p_prev_prev[1]) / T(j - i);
                 }
@@ -264,6 +251,29 @@ struct assoc_legendre_p_diff_callback {
 template <typename T>
 T assoc_legendre_p(int n, int m, T x) {
     return assoc_legendre_p(n, m, x, [](int j, int i, T x, T value) {});
+}
+
+template <typename T>
+void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac) {
+    assoc_legendre_p(
+        n, m, z, assoc_legendre_p_diff_callback<T, 1>(),
+        [&res, &res_jac](int j, int i, T z, const T(&p)[2]) {
+            res = p[0];
+            res_jac = p[1];
+        }
+    );
+}
+
+template <typename T>
+void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac, T &res_hess) {
+    assoc_legendre_p(
+        n, m, z, assoc_legendre_p_diff_callback<T, 2>(),
+        [&res, &res_jac, &res_hess](int j, int i, T z, const T(&p)[3]) {
+            res = p[0];
+            res_jac = p[1];
+            res_hess = p[2];
+        }
+    );
 }
 
 template <typename T, typename OutputMat>
@@ -365,22 +375,6 @@ T assoc_legendre_p_jac_next(unsigned int n, int m, T x, T p_curr, T p_prev) {
 
     return (n * x * p_curr - (n + m) * p_prev) / (x * x - 1);
 }
-
-/*
-template <typename T, typename Callable>
-T assoc_legendre_p_jac(unsigned int n, unsigned int m, T x, Callable callback) {
-    T value_jac;
-    T value_prev = std::numeric_limits<T>::quiet_NaN();
-    assoc_legendre_p(n, m, x, [&value_jac, &value_prev, &callback](unsigned int j, unsigned int i, T x, T value) {
-        value_jac = assoc_legendre_p_jac_next(j, i, x, value, value_prev);
-        value_prev = value;
-
-        callback(j, i, x, value_jac);
-    });
-
-    return value_jac;
-}
-*/
 
 template <typename T, typename Callable>
 T sph_legendre_p(unsigned int n, unsigned int m, T phi, Callable callback) {
