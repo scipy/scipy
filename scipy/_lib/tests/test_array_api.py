@@ -3,7 +3,8 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy,
+    Generator
 )
 import scipy._lib.array_api_compat.numpy as np_compat
 
@@ -107,3 +108,26 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Types do not match."):
                 xp_assert_equal(xp.asarray(0.), xp.float64(0))
             xp_assert_equal(xp.float64(0), xp.asarray(0.))
+
+    @pytest.mark.usefixtures("skip_xp_backends")
+    @pytest.mark.skip_xp_backends('array_api_strict',
+                                  reasons=["`array_api_strict` doesn't have RNG"])
+    @array_api_compatible
+    @pytest.mark.parametrize('seed', (None, 0))
+    @pytest.mark.parametrize('shape', (None, (2, 3)))
+    @pytest.mark.parametrize('dtype', ('float32', 'float64'))
+    def test_Generator(self, xp, seed, shape, dtype):
+        dtype = getattr(xp, dtype)
+
+        rng = Generator(xp, seed=seed)
+        x1 = rng.random(shape, dtype=dtype)
+        assert x1.dtype == dtype
+        assert x1.shape == () if shape is None else shape
+
+        rng = Generator(xp, seed=seed)
+        x2 = rng.random(shape, dtype=dtype)
+
+        if seed is None:
+            assert xp.all(x1 != x2)
+        else:
+            xp_assert_equal(x1, x2)

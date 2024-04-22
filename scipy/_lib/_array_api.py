@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import warnings
+import random
 
 import numpy as np
 
@@ -354,3 +355,61 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+# Random Number Generation
+
+class Generator:
+    def __new__(cls, xp, seed=None):
+        if is_numpy(xp) or is_cupy(xp):
+            # could maybe just return xp.default_rng(seed)
+            return super().__new__(_Generator_numpy_cupy)
+        elif is_torch(xp):
+            return super().__new__(_Generator_torch)
+        # elif is_jax(xp):
+        #    return super().__new__(_Generator_jax)
+        else:
+            message = f"`Generator` for {xp} is not implemented."
+            raise NotImplementedError(message)
+
+
+class _Generator_jax(Generator):
+    def __init__(self, xp, seed=None):
+        min = -2 ** 63
+        seed = random.randint(min, -min - 1) if seed is None else seed
+        self._xp = xp
+        self._key = xp.random.key(seed)
+
+    def _next(self):
+        key, subkey = self._xp.random.split(self._key)
+        self._key = subkey
+        return key
+
+    def random(self, shape=None, dtype=None):
+        key = self._next()
+        shape = () if shape is None else shape
+        return self._xp.random.uniform(key, shape, dtype=dtype)
+
+
+class _Generator_torch(Generator):
+    def __init__(self, xp, seed=None):
+        rng = xp.Generator()
+        seed = rng.seed() if seed is None else seed
+        rng.manual_seed(seed)
+        self._rng = rng
+        self._xp = xp
+
+    def random(self, shape=None, dtype=None):
+        shape = () if shape is None else shape
+        return self._xp.rand(shape, generator=self._rng, dtype=dtype)
+
+
+class _Generator_numpy_cupy(Generator):
+    def __init__(self, xp, seed=None):
+        self._xp = xp
+        self._rng = xp.random.default_rng(seed)
+
+    def random(self, shape=None, dtype=None):
+        # (for NumPy) ensure output is not Python float
+        temp = self._rng.random(size=shape, dtype=dtype)
+        return self._xp.asarray(temp, dtype=dtype)[()]
