@@ -138,15 +138,15 @@ PyMODINIT_FUNC PyInit__gufuncs() {
             "(N,N,N)",
             SpecFun_NewGUFunc(
                 {static_cast<func_f_f2_t>(::lpmn_all), static_cast<func_d_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
-                "()->(mp1,np1)"
+                "()->(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
                 {static_cast<func_f_f2f2_t>(::lpmn_all), static_cast<func_d_d2d2_t>(::lpmn_all)}, 2, "lpmn_all",
-                lpmn_doc, "()->(mp1,np1),(mp1,np1)"
+                lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
                 {static_cast<func_f_f2f2f2_t>(::lpmn_all), static_cast<func_d_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
-                lpmn_doc, "()->(mp1,np1),(mp1,np1),(mp1,np1)"
+                lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
             )
         )
     );

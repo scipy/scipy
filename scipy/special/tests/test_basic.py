@@ -3618,9 +3618,9 @@ class TestLegendreFunctions:
     def test_lpmn(self, shape):
         rng = np.random.default_rng(1234)
 
-        n = rng.integers(0, 10, shape)
-        m = rng.integers(-10, 10, shape)
-        x = rng.uniform(-1, 1, shape)
+        n = rng.integers(0, 100, shape)
+        m = rng.integers(-100, 100, shape)
+        x = rng.uniform(-0.9, 0.9, shape)
 
         p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
 
@@ -3628,13 +3628,12 @@ class TestLegendreFunctions:
         assert p_jac.shape == p.shape
         assert p_hess.shape == p_jac.shape
 
-        err = (1 - x * x) * p_hess - 2 * x * p_jac + (n * (n + 1) - m * m / (1 - x * x)) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-05)
+        np.testing.assert_allclose((1 - x * x) * p_hess, 2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p, rtol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpmn_all(self, shape):
-        n_max = 10
-        m_max = 10
+        n_max = 100
+        m_max = 40
 
         rng = np.random.default_rng(1234)
 
@@ -3648,8 +3647,7 @@ class TestLegendreFunctions:
         m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
         n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
 
-        err = (1 - x * x) * p_hess - 2 * x * p_jac + (n * (n + 1) - m * m / (1 - x * x)) * p
-        np.testing.assert_allclose(err, 0, atol = 1e-05)
+        np.testing.assert_allclose((1 - x * x) * p_hess, 2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p, rtol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpmn_all_exact(self, shape):
