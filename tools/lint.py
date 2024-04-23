@@ -90,23 +90,6 @@ def run_cython_lint(files):
     return res.returncode, res.stdout
 
 
-def run_check_python_h_first(files):
-    # type: (list[str]) -> tuple[int, str]
-    """Run check_python_h_first on files."""
-    if not files:
-        return 0, ""
-    res = subprocess.run(
-        [
-            sys.executable,
-            os.path.join(os.path.dirname(__file__), "check_python_h_first.py")
-        ]
-        + list(files),
-        stdout=subprocess.PIPE,
-        encoding="utf-8"
-    )
-    return (res.returncode, res.stdout)
-
-
 def check_ruff_version():
     min_version = packaging.version.parse('0.0.292')
     res = subprocess.run(
