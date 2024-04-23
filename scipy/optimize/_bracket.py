@@ -435,13 +435,13 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if xl0_not_supplied:
         xl0 = xl0.copy()
         cond = ~np.isinf(xmin) & (xl0 < xmin)
-        xl0[cond] = (
+        xl0[cond] = xm0[cond] - (
             xm0[cond] - xmin[cond]
         ) / np.array(16, dtype=xl0.dtype)
     if xr0_not_supplied:
         xr0 = xr0.copy()
         cond = ~np.isinf(xmax) & (xmax < xr0)
-        xr0[cond] = (
+        xr0[cond] = xm0[cond] + (
             xmax[cond] - xm0[cond]
         ) / np.array(16, dtype=xr0.dtype)
 
