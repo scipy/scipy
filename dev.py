@@ -972,8 +972,6 @@ class Lint:
             'lint': {'fix': fix},
             'unicode-check': {},
             'check-testname': {},
-        })
-        run_doit_task({
             'check_python_h_first': {},
         })
 
