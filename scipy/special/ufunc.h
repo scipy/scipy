@@ -1,12 +1,14 @@
+#pragma once
+
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+
 #include <cassert>
 #include <cstring>
 #include <memory>
 #include <type_traits>
 #include <utility>
 #include <vector>
-
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
 
 #include <numpy/arrayobject.h>
 #include <numpy/npy_3kcompat.h>
@@ -276,6 +278,11 @@ struct npy_typenum<T *> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
 };
 
+template <typename T>
+struct npy_typenum<T &> {
+    static constexpr NPY_TYPES value = npy_typenum<T>::value;
+};
+
 template <typename T, typename Extents, typename LayoutPolicy, typename AccessorPolicy>
 struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
     static constexpr NPY_TYPES value = npy_typenum<T>::value;
@@ -284,64 +291,62 @@ struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
 template <typename T>
 inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
-// Sets the value dst to be the value of type T at src
 template <typename T>
-void npy_get(char *src, T &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst = *reinterpret_cast<npy_type_t<T> *>(src);
-}
+struct npy_traits {
+    static T get(char *src, const npy_intp *dimensions, const npy_intp *steps) { return *reinterpret_cast<T *>(src); }
+
+    static void set(char *dst, const T &src) { *reinterpret_cast<npy_type_t<T> *>(dst) = src; }
+};
 
 template <typename T>
-void npy_get(char *src, std::complex<T> &dst, const npy_intp *dimensions, const npy_intp *steps) {
-    dst.real(*reinterpret_cast<npy_type_t<T> *>(src));
-    dst.imag(*reinterpret_cast<npy_type_t<T> *>(src + sizeof(T)));
-}
+struct npy_traits<std::complex<T>> {
+    static std::complex<T> get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        return *reinterpret_cast<std::complex<T> *>(src);
+    }
 
-// Sets the pointer dst to be the pointer of type T at src (helps for out arguments)
+    static void set(char *dst, const std::complex<T> &src) {
+        *reinterpret_cast<npy_type_t<T> *>(dst) = std::real(src);
+        *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = std::imag(src);
+    }
+};
+
 template <typename T>
-void npy_get(char *src, T *&dst, const npy_intp *dimensions, const npy_intp *steps) {
-    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+struct npy_traits<T *> {
+    static T *get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
-    dst = reinterpret_cast<T *>(src);
-}
+        return reinterpret_cast<T *>(src);
+    }
+};
+
+template <typename T>
+struct npy_traits<T &> {
+    static T &get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+
+        return *reinterpret_cast<T *>(src);
+    }
+};
 
 template <typename T, typename Extents, typename AccessorPolicy>
-void npy_get(
-    char *src, std::mdspan<T, Extents, std::layout_stride, AccessorPolicy> &dst, const npy_intp *dimensions,
-    const npy_intp *steps
-) {
-    static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
+struct npy_traits<std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>> {
+    static std::mdspan<T, Extents, std::layout_stride, AccessorPolicy>
+    get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
+        static_assert(sizeof(T) == sizeof(npy_type_t<T>), "NumPy type has different size than argument type");
 
-    std::array<ptrdiff_t, Extents::rank()> strides;
-    for (npy_uintp i = 0; i < strides.size(); ++i) {
-        strides[i] = steps[i] / sizeof(T);
+        std::array<ptrdiff_t, Extents::rank()> strides;
+        for (npy_uintp i = 0; i < strides.size(); ++i) {
+            strides[i] = steps[i] / sizeof(T);
+        }
+
+        std::array<ptrdiff_t, Extents::rank()> exts;
+        for (npy_uintp i = 0; i < exts.size(); ++i) {
+            exts[i] = dimensions[i];
+        }
+
+        return {reinterpret_cast<T *>(src), {exts, strides}};
     }
-
-    std::array<ptrdiff_t, Extents::rank()> exts;
-    for (npy_uintp i = 0; i < exts.size(); ++i) {
-        exts[i] = dimensions[i];
-    }
-
-    dst = {reinterpret_cast<T *>(src), {exts, strides}};
-}
-
-template <typename T>
-T npy_get(char *src, const npy_intp *dimensions, const npy_intp *steps) {
-    T dst;
-    npy_get(src, dst, dimensions, steps);
-
-    return dst;
-}
-
-template <typename T>
-void npy_set(char *dst, const T &src) {
-    *reinterpret_cast<npy_type_t<T> *>(dst) = src;
-}
-
-template <typename T>
-void npy_set(char *dst, const std::complex<T> &src) {
-    *reinterpret_cast<npy_type_t<T> *>(dst) = src.real();
-    *reinterpret_cast<npy_type_t<T> *>(dst + sizeof(T)) = src.imag();
-}
+};
 
 struct base_ufunc_data {
     const char *name;
@@ -369,8 +374,8 @@ struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            Res res = func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
-            npy_set(args[sizeof...(Args)], res); // assign to the output pointer
+            Res res = func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
+            npy_traits<Res>::set(args[sizeof...(Args)], res); // assign to the output pointer
 
             for (npy_uintp j = 0; j <= sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -395,7 +400,7 @@ struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
         void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
-            func(npy_get<Args>(args[I], dimensions + 1, steps + steps_offsets[I])...);
+            func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
 
             for (npy_uintp j = 0; j < sizeof...(Args); ++j) {
                 args[j] += steps[j];
@@ -450,7 +455,7 @@ class SpecFun_UFunc {
             if (it->has_return != m_has_return) {
                 PyErr_SetString(PyExc_RuntimeError, "all functions must be void if any function is");
             }
- 
+
             size_t i = it - func.begin();
             m_func[i] = it->func;
             m_data[i] = it->data;

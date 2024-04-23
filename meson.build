@@ -10,7 +10,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
@@ -43,8 +43,8 @@ if cc.get_id() == 'gcc'
     error('SciPy requires GCC >= 9.1')
   endif
 elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
-  if not cc.version().version_compare('>=14.0')
-    error('SciPy requires clang >= 14.0')
+  if not cc.version().version_compare('>=12.0')
+    error('SciPy requires clang >= 12.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
