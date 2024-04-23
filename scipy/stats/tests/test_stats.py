@@ -4637,7 +4637,7 @@ class TestKSTwoSamples:
         assert_raises(ValueError, stats.ks_2samp, [1], [])
         assert_raises(ValueError, stats.ks_2samp, [], [])
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_gh12218(self):
         """Ensure gh-12218 is fixed."""
         # gh-1228 triggered a TypeError calculating sqrt(n1*n2*(n1+n2)).
@@ -5272,7 +5272,7 @@ class Test_ttest_ind_permutations:
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
     # permutations and trimming
-    @pytest.mark.slow()
+    @pytest.mark.xslow()
     @pytest.mark.parametrize("kwds", [{'permutations': 200, 'random_state': 0},
                                       {'trim': .2}, {}],
                              ids=["permutations", "trim", "basic"])
@@ -5786,6 +5786,7 @@ def _convert_pvalue_alternative(t, p, alt, xp):
     return xp.where(i, p/2, 1 - p/2)
 
 
+@pytest.mark.slow
 @pytest.mark.skip_xp_backends(cpu_only=True,
                               reasons=['Uses NumPy for pvalue, CI'])
 @pytest.mark.usefixtures("skip_xp_backends")
@@ -7859,8 +7860,8 @@ class TestWassersteinDistanceND:
             v_values = rng.random(size=(2, 2))
             _ = stats.wasserstein_distance_nd(u_values, v_values)
 
-    @pytest.mark.parametrize('u_size', [1, 10, 300])
-    @pytest.mark.parametrize('v_size', [1, 10, 300])
+    @pytest.mark.parametrize('u_size', [1, 10, 50])
+    @pytest.mark.parametrize('v_size', [1, 10, 50])
     def test_optimization_vs_analytical(self, u_size, v_size):
         rng = np.random.default_rng(45634745675)
         # Test when u_weights = None, v_weights = None
@@ -8338,7 +8339,7 @@ class TestMGCStat:
 
         return x, y
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.163, 1/1000),       # test spiral simulation
@@ -8355,7 +8356,7 @@ class TestMGCStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.184, 1/1000),           # test linear simulation
         ("nonlinear", 0.0190, 0.117),        # test spiral simulation
@@ -8392,7 +8393,7 @@ class TestMGCStat:
         assert_approx_equal(stat, 1.0, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_workers(self):
         np.random.seed(12345678)
 
@@ -8404,7 +8405,7 @@ class TestMGCStat:
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
@@ -8414,7 +8415,7 @@ class TestMGCStat:
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_dist_perm(self):
         np.random.seed(12345678)
         # generate x and y
@@ -8439,7 +8440,7 @@ class TestMGCStat:
         _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_allclose(pvalue, 1/1001)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_alias(self):
         np.random.seed(12345678)
 

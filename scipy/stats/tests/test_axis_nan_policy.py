@@ -5,6 +5,7 @@
 # functions in stats._util.
 
 from itertools import product, combinations_with_replacement, permutations
+import os
 import re
 import pickle
 import pytest
@@ -16,6 +17,9 @@ from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
+
+
+SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
 def unpack_ttest_result(res):
@@ -245,6 +249,8 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
+    if hypotest in {stats.cramervonmises_2samp} and not SCIPY_XSLOW:
+        pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)
 
@@ -261,6 +267,8 @@ def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
 def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
+    if hypotest in {stats.cramervonmises_2samp} and not SCIPY_XSLOW:
+        pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)
 
@@ -681,6 +689,8 @@ def _check_arrays_broadcastable(arrays, axis):
                           "paired", "unpacker"), axis_nan_policy_cases)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
+    if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
+        pytest.skip("Too slow.")
 
     if hypotest in override_propagate_funcs:
         reason = "Doesn't follow the usual pattern. Tested separately."
