@@ -243,7 +243,6 @@ T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_
     }
 
     int m_abs = std::abs(m);
-
     if (m_abs == n) {
         return assoc_legendre_p_jac_diag(m, z);
     }
@@ -321,6 +320,10 @@ T assoc_legendre_p_hess_next(
 
         if (m == -4) {
             return 0;
+        }
+
+        if (m == -3) {
+            return -std::numeric_limits<T>::infinity();
         }
 
         if (m == -2) {
@@ -488,43 +491,6 @@ void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 re
             }
         );
     }
-}
-
-template <typename T>
-T assoc_legendre_p_jac_next(unsigned int n, int m, T x, T p_curr, T p_prev) {
-    if (std::abs(x) == 1) {
-        if (m == 0) {
-            return std::pow(x, n + 1) * n * (n + 1) / 2;
-        }
-
-        if (m == 1) {
-            return std::numeric_limits<T>::infinity();
-        }
-
-        if (m == 2) {
-            return -(n + 2) * (n + 1) * n * (n - 1) * std::pow(x, n + 1) / 4;
-        }
-
-        return 0;
-    }
-
-    if (m > n) {
-        return 0;
-    }
-
-    if (m == n) {
-        return n * x * p_curr / (x * x - 1);
-    }
-
-    int ls = (std::abs(x) > 1 ? -1 : 1);
-    T xq = std::sqrt(ls * (1 - x * x));
-    // Ensure connection to the complex-valued function for |x| > 1
-    if (x < -1) {
-        xq = -xq;
-    }
-    T xs = ls * (1 - x * x);
-
-    return (n * x * p_curr - (n + m) * p_prev) / (x * x - 1);
 }
 
 template <typename T, typename Callable>
