@@ -385,7 +385,7 @@ backend routine.
 
 """
 
-import scipy.linalg._interpolative_backend as _backend
+import scipy.linalg._decomp_interpolative as _backend
 import numpy as np
 import sys
 
