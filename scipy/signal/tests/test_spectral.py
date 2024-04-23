@@ -8,7 +8,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import signal
-from scipy.fft import fftfreq
+from scipy.fft import fftfreq, rfftfreq, irfft, fft
 from scipy.signal import (periodogram, welch, lombscargle, coherence,
                           spectrogram, check_COLA, check_NOLA)
 from scipy.signal.windows import hann
@@ -491,10 +491,8 @@ class TestWelch:
         f, p = welch(x, 10, 'hann', nperseg=8)
         win = signal.get_window('hann', 8)
         fe, pe = welch(x, 10, win, nperseg=None)
-        assert_array_almost_equal_nulp(array_api_compat.to_device(p, "cpu"),
-                                       array_api_compat.to_device(pe, "cpu"))
-        assert_array_almost_equal_nulp(array_api_compat.to_device(f, "cpu"),
-                                       array_api_compat.to_device(fe, "cpu"))
+        assert_array_almost_equal_nulp(p, pe)
+        assert_array_almost_equal_nulp(f, fe)
         assert_array_equal(fe.shape, (5,))  # because win length used as nperseg
         assert_array_equal(pe.shape, (5,))
         assert_raises(ValueError, welch, x,
@@ -641,7 +639,8 @@ class TestWelch:
 
     @skip_xp_backends("cupy", "array_api_strict",
                       reasons=["array_api_compat cupy doesn't support fft",
-                               "moveaxis absent from array_api_strict"])
+                               "moveaxis absent from array_api_strict"],
+                      cpu_only=True)
     def test_window_correction(self, xp):
         A = 20
         fs = 1e4
@@ -661,8 +660,7 @@ class TestWelch:
             # Check peak height at signal frequency for 'spectrum'
             xp_assert_close(p_spec[ii], A**2/2.0, rtol=5e-7, check_namespace=False)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(np.trapz(array_api_compat.to_device(p_dens, "cpu"),
-                                             array_api_compat.to_device(freq, "cpu"))),
+            assert_allclose(np.sqrt(np.trapz(p_dens, freq)),
                             A*np.sqrt(2)/2, rtol=1e-3)
 
     @skip_xp_backends("cupy", "array_api_strict",
@@ -1625,6 +1623,7 @@ class TestSTFT:
                       reasons=["torch hits messy np.pad codepath",
                                "lack of fft support in array_api_compat",
                                "moveaxis not available in array_api_strict"])
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
     def test_roundtrip_real(self, scaling, xp):
         np.random.seed(1234)
 

@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import fft as sp_fft
 from scipy._lib._array_api import (
-    array_namespace, size, is_complex,
+    array_namespace, size, is_complex, is_numpy, is_cupy, is_torch,
 )
 from . import _signaltools
 from .windows import get_window
@@ -2031,10 +2031,22 @@ def _fft_helper(x, win, detrend_func, nperseg, noverlap, nfft, sides):
         result = x[..., xp.newaxis]
     else:
         step = nperseg - noverlap
-        # TODO: what to do about np.lib here for array API?
-        result = np.lib.stride_tricks.sliding_window_view(
-            x, window_shape=nperseg, axis=-1, writeable=True
-        )
+        # violating the array API standard gives us 4 orders of magnitude
+        # better performance via views/striding, so preserving some special
+        # casing
+        # see: https://github.com/data-apis/array-api/issues/641#issuecomment-1604884351
+        if is_cupy(xp):
+            result = xp.lib.stride_tricks.sliding_window_view(
+                x, window_shape=nperseg, axis=-1, writeable=True
+            )
+        elif is_torch(xp):
+            result = x.unfold(-1, nperseg, 1)
+        else:
+            # not array API compliant
+            result = np.lib.stride_tricks.sliding_window_view(
+                x, window_shape=nperseg, axis=-1, writeable=True
+            )
+
         result = result[..., 0::step, :]
 
     # Detrend each data segment individually
