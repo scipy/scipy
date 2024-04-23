@@ -1,10 +1,10 @@
 import numpy as np
-from ._zeros_py import _rtol, _iter
+from ._zeros_py import _rtol
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
 def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
-                  fatol=None, frtol=0, maxiter=_iter, callback=None):
+                  fatol=None, frtol=0, maxiter=2048, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar
@@ -33,6 +33,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
         See Notes for details.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
+        Default is 2048.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
