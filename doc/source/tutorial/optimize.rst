@@ -974,7 +974,7 @@ Local optimization
 Local Optimization Solvers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Local optimization solvers are algorithms that search for a local minimum, 
+Local optimizers are algorithms that search for a local minimum, 
 starting from an initial point. These solvers are particularly useful 
 when the problem is presumed to have a smooth landscape around the initial guess.
 
