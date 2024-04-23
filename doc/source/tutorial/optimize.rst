@@ -921,7 +921,7 @@ Global Optimization Solvers
 Global optimization solvers aim to find the global minimum over the entire search space,
 which is especially important when the objective function has multiple local minima.
 
-**Global Optimization Solvers Table:**
+**Comparison of Global Optimizers:**
 
 .. list-table::
    :widths: 20 15 15 20 20 15
