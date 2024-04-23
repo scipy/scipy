@@ -7,6 +7,18 @@
 #include "gamma.h"
 
 namespace special {
+namespace detail {
+
+    template <class T>
+    T double_factorial(int n) {
+        if (n <= 0) {
+            return 1;
+        }
+
+        return T(n) * double_factorial<T>(n - 2);
+    }
+
+} // namespace detail
 
 // Translated into C++ by SciPy developers in 2024.
 //
@@ -133,15 +145,6 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-template <class T>
-T double_factorial(int n) {
-    if (n <= 0) {
-        return 1;
-    }
-
-    return T(n) * double_factorial<T>(n - 2);
-}
-
 template <typename T, typename Callable, typename... Args>
 T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
@@ -172,7 +175,7 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
         // ...
     }
 
-    T p = std::pow(-1, m_abs) * double_factorial<T>(2 * m_abs - 1) * std::pow(1 - x * x, m_abs / T(2));
+    T p = std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * std::pow(1 - x * x, m_abs / T(2));
     if (m < 0) {
         p *= std::pow(-1, m) / std::tgamma(2 * m_abs + 1);
     }
@@ -195,6 +198,109 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     return p;
 }
 
+template <typename T>
+T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
+    if (std::abs(z) == 1) {
+        if (m == 0) {
+            return T(n) * T(n + 1) / T(2);
+        }
+
+        if (m == 1) {
+            return std::numeric_limits<T>::infinity();
+        }
+
+        if (m == 2) {
+            return -T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(4);
+        }
+
+        if (m == -2) {
+            return -T(1) / T(4);
+        }
+
+        if (m == -1) {
+            return -std::numeric_limits<T>::infinity();
+        }
+
+        return 0;
+    }
+
+    int m_abs = std::abs(m);
+    if (m_abs == n) {
+        if (m >= 0) {
+            return std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * -m_abs * z *
+                   std::pow(1 - z * z, m_abs / T(2) - 1);
+        }
+
+        return gamma_ratio(T(m_abs) + 1 / T(2), 2 * T(m_abs) + 1) * std::pow(2, m_abs) * -m_abs * z *
+               std::pow(1 - z * z, m_abs / T(2) - 1) / std::sqrt(M_PI);
+    }
+
+    if (m_abs < n) {
+        return (T(2 * n - 1) * (p_prev + z * p_jac_prev) - T(n + m - 1) * p_jac_prev_prev) / T(n - m);
+    }
+
+    return 0;
+}
+
+template <typename T>
+T assoc_legendre_p_hess_next(
+    int n, int m, T z, T p, T p_prev, T p_jac, T p_jac_prev, T p_hess_prev, T p_hess_prev_prev
+) {
+    // need to complete these
+    if (std::abs(z) == 1) {
+        if (m == 0) {
+            return T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+        }
+
+        if (m == 1) {
+            return std::numeric_limits<T>::infinity();
+        }
+
+        if (m == 2) {
+            return -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+        }
+
+        if (m == 3) {
+            return std::numeric_limits<T>::infinity();
+        }
+
+        if (m == 4) {
+            return T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+        }
+
+        if (m == -4) {
+            return 0;
+        }
+
+        if (m == -2) {
+            return -T(1) / T(4);
+        }
+
+        if (m == -1) {
+            return -std::numeric_limits<T>::infinity();
+        }
+
+        return 0;
+    }
+
+    int m_abs = std::abs(m);
+    if (m_abs == n) {
+        T res = std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * m_abs * (z * z * (m_abs - 1) - 1) *
+                std::pow(1 - z * z, m_abs / T(2) - 2);
+        if (m < 0) {
+            res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+        }
+
+        return res;
+    }
+
+    if (m_abs < n) {
+        return (T(2 * n - 1) * (z * p_hess_prev + T(2) * p_jac_prev) - T(n + m - 1) * p_hess_prev_prev) / T(n - m);
+    }
+
+    return 0;
+}
+
 template <typename T, size_t N>
 struct assoc_legendre_p_diff_callback;
 
@@ -203,46 +309,15 @@ struct assoc_legendre_p_diff_callback<T, 1> {
     T p_jac_prev;
     T p_jac_prev_prev;
 
+    assoc_legendre_p_diff_callback() : p_jac_prev(0), p_jac_prev_prev(0) {}
+
     template <typename Callable, typename... Args>
     void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
-        T res[2] = {p};
-        T res_prev[2] = {p_prev, p_jac_prev};
-
-        if (std::abs(z) == 1) {
-            if (i == 0) {
-                res[1] = T(j) * T(j + 1) / T(2);
-            } else if (i == 1) {
-                res[1] = std::numeric_limits<T>::infinity();
-            } else if (i == 2) {
-                res[1] = -T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(4);
-            } else if (i == -2) {
-                res[1] = -T(1) / T(4);
-            } else if (i == -1) {
-                res[1] = -std::numeric_limits<T>::infinity();
-            } else {
-                res[1] = 0;
-            }
-        } else {
-            int i_abs = std::abs(i);
-            if (i_abs == j) {
-                res[1] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * -i_abs * z *
-                         std::pow(1 - z * z, i_abs / T(2) - 1);
-                if (i < 0) {
-                    res[1] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
-                }
-            } else if (i_abs + 1 == j) {
-                res[1] = T(2 * j - 1) * (p_prev + z * p_jac_prev) / T(j - i);
-            } else if (i_abs < j) {
-                res[1] = (T(2 * j - 1) * (p_prev + z * p_jac_prev) - T(j + i - 1) * p_jac_prev_prev) / T(j - i);
-            } else {
-                res[1] = 0;
-            }
-        }
-
-        callback(j, i, z, res, res_prev, std::forward<Args>(args)...);
+        T p_jac = assoc_legendre_p_jac_next(j, i, z, p, p_prev, p_jac_prev, p_jac_prev_prev);
+        callback(j, i, z, {p, p_jac}, {p_prev, p_jac_prev}, std::forward<Args>(args)...);
 
         p_jac_prev_prev = p_jac_prev;
-        p_jac_prev = res[1];
+        p_jac_prev = p_jac;
     }
 };
 
@@ -252,63 +327,22 @@ struct assoc_legendre_p_diff_callback<T, 2> {
     T p_hess_prev;
     T p_hess_prev_prev;
 
+    assoc_legendre_p_diff_callback() : p_hess_prev(0), p_hess_prev_prev(0) {}
+
     template <typename Callable, typename... Args>
     void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
-        T res[3];
-        T res_prev[3];
-        callback_jac(j, i, z, p, p_prev, [&res, &res_prev](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
-            res[0] = p[0];
-            res_prev[0] = p_prev[0];
-            res[1] = p[1];
-            res_prev[1] = p_prev[1];
+        T p_jac;
+        T p_jac_prev;
+        callback_jac(j, i, z, p, p_prev, [&p_jac, &p_jac_prev](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
+            p_jac = p[1];
+            p_jac_prev = p_prev[1];
         });
 
-        if (std::abs(z) == 1) {
-            // need to complete these
-            if (i == 0) {
-                res[1] = T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(8);
-            } else if (i == 1) {
-                res[1] = std::numeric_limits<T>::infinity();
-            } else if (i == 2) {
-                res[1] = -T((j + 1) * j - 3) * T(j + 2) * T(j + 1) * T(j) * T(j - 1) / T(12);
-            } else if (i == 3) {
-                res[1] = std::numeric_limits<T>::infinity();
-            } else if (i == 4) {
-                res[1] = T(j + 4) * T(j + 3) * T(j + 2) * T(j + 1) * T(j) * T(j - 1) * T(j - 2) * T(j - 3) / T(48);
-            } else if (i == -4) {
-                res[1] = 0;
-            } else if (i == -2) {
-                res[1] = -T(1) / T(4);
-            } else if (i == -1) {
-                res[1] = -std::numeric_limits<T>::infinity();
-            } else {
-                res[1] = 0;
-            }
-        } else {
-            int i_abs = std::abs(i);
-            if (i_abs == j) {
-                res[2] = std::pow(-1, i_abs) * double_factorial<T>(2 * i_abs - 1) * i_abs * (z * z * (i_abs - 1) - 1) *
-                         std::pow(1 - z * z, i_abs / T(2) - 2);
-                if (i < 0) {
-                    res[2] *= std::pow(-1, i_abs) / std::tgamma(2 * i_abs + 1);
-                }
-            } else if (i_abs + 1 == j) {
-                res[2] = T(2 * j - 1) * (z * p_hess_prev + T(2) * res_prev[1]) / T(j - i);
-
-            } else if (i_abs < j) {
-                res[2] = (T(2 * j - 1) * (z * p_hess_prev + T(2) * res_prev[1]) - T(j + i - 1) * p_hess_prev_prev) /
-                         T(j - i);
-            } else {
-                res[2] = 0;
-            }
-        }
-
-        res_prev[2] = p_hess_prev;
-
-        callback(j, i, z, res, res_prev, std::forward<Args>(args)...);
+        T p_hess = assoc_legendre_p_hess_next(j, i, z, p, p_prev, p_jac, p_jac_prev, p_hess_prev, p_hess_prev_prev);
+        callback(j, i, z, {p, p_jac, p_hess}, {p_prev, p_jac_prev, p_hess_prev}, std::forward<Args>(args)...);
 
         p_hess_prev_prev = p_hess_prev;
-        p_hess_prev = res[2];
+        p_hess_prev = p_hess;
     }
 };
 
