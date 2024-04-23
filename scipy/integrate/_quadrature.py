@@ -9,7 +9,7 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib.deprecation import (_deprecated)
+from scipy._lib.deprecation import _deprecated
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
