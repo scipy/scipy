@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import os.path
+import os
 import sys
 import subprocess
 import packaging.version
