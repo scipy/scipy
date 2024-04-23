@@ -974,7 +974,7 @@ which is especially important when the objective function has multiple local min
 Local optimization
 ------------------
 
-Local Optimization Solvers
+Local Optimizers
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Local optimizers are algorithms that search for a local minimum, 
