@@ -978,7 +978,7 @@ Local optimizers are algorithms that search for a local minimum,
 starting from an initial point. These solvers are particularly useful 
 when the problem is presumed to have a smooth landscape around the initial guess.
 
-**Local Optimization Solvers Table:**
+**Local Optimization Solver comparison:**
 
 .. list-table::
    :widths: 15 15 15 20 20 15
