@@ -82,11 +82,12 @@ py3.extension_module('_biasedurn',
     'biasedurn/stoc3.cpp',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
+    'libnpyrandom/distributions.c',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
+  include_directories: ['libnpyrandom'],
   link_args: version_link_args,
-  # Note that we're not using npymath directly, it is needed to use npyrandom
-  dependencies: [np_dep, npyrandom_lib, npymath_lib],
+  dependencies: [np_dep],
   install: true,
   subdir: 'scipy/stats'
 )

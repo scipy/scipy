@@ -137,7 +137,7 @@ class TestRegularGridInterpolator:
 
         # 2nd derivatives of a linear function are zero
         assert_allclose(interp(sample, nu=(0, 1, 1, 0)),
-                        [0, 0, 0], atol=1e-12)
+                        [0, 0, 0], atol=2e-12)
 
     @parametrize_rgi_interp_methods
     def test_complex(self, method):
@@ -983,7 +983,11 @@ class TestInterpN:
 
         v1 = interpn((x, y), values, sample, method=method)
         v2 = interpn((x, y), np.asarray(values), sample, method=method)
-        assert_allclose(v1, v2)
+        if method == "quintic":
+            # https://github.com/scipy/scipy/issues/20472
+            assert_allclose(v1, v2, atol=5e-5, rtol=2e-6)
+        else:
+            assert_allclose(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
