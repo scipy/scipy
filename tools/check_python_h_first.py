@@ -206,7 +206,7 @@ if __name__ == "__main__":
 
     args = PARSER.parse_args()
 
-    if not ((args.files is None) ^ (args.branch is None)):
+    if not ((len(args.files) == 0) ^ (args.branch is None)):
         files = find_c_cpp_files("scipy")
     elif args.branch:
         branch_point = find_branch_point(args.branch)
