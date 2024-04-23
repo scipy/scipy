@@ -51,19 +51,11 @@ struct legendre_p_diff_callback {
 
         res[0] = p;
 
-        if constexpr (N >= 1) {
-            if (j == 0) {
-                res[1] = 0;
+        for (size_t r = 1; r <= N; ++r) {
+            if (j < r) {
+                res[r] = 0;
             } else {
-                res[1] = (T(2 * j - 1) * (p_prev[0] + z * p_prev[1]) - T(j - 1) * p_prev_prev[1]) / T(j);
-            }
-        }
-
-        if constexpr (N >= 2) {
-            if (j == 0 || j == 1) {
-                res[2] = 0;
-            } else {
-                res[2] = (T(2 * j - 1) * (T(2) * p_prev[1] + z * p_prev[2]) - T(j - 1) * p_prev_prev[2]) / T(j);
+                res[r] = (T(2 * j - 1) * (T(r) * p_prev[r - 1] + z * p_prev[r]) - T(j - 1) * p_prev_prev[r]) / T(j);
             }
         }
 
