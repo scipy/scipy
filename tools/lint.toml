@@ -1,4 +1,7 @@
-exclude = ["scipy/datasets/_registry.py"]
+exclude = [
+    "scipy/_build_utils/tempita/*",
+    "scipy/datasets/_registry.py",
+]
 
 line-length = 88
 
