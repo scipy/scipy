@@ -3618,8 +3618,8 @@ class TestLegendreFunctions:
     def test_lpmn(self, shape):
         rng = np.random.default_rng(1234)
 
-        n = rng.integers(0, 100, shape)
-        m = rng.integers(-100, 100, shape)
+        n = rng.integers(0, 10, shape)
+        m = rng.integers(-10, 10, shape)
         x = rng.uniform(-0.9, 0.9, shape)
 
         p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)

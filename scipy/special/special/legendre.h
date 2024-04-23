@@ -7,18 +7,6 @@
 #include "gamma.h"
 
 namespace special {
-namespace detail {
-
-    template <class T>
-    T double_factorial(int n) {
-        if (n <= 0) {
-            return 1;
-        }
-
-        return T(n) * double_factorial<T>(n - 2);
-    }
-
-} // namespace detail
 
 // Translated into C++ by SciPy developers in 2024.
 //
@@ -145,6 +133,29 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
+template <typename T>
+T assoc_legendre_p_diag(int m, T x) {
+    int m_abs = std::abs(m);
+
+    T res = 1;
+
+    bool m_odd = m_abs % 2;
+    if (m_odd) {
+        res *= -std::sqrt(1 - x * x);
+    }
+
+    // unroll the loop to avoid the sqrt
+    for (int j = 1 + m_odd; j <= m_abs; j += 2) {
+        res *= T(2 * j - 1) * T(2 * j + 1) * (1 - x * x);
+    }
+
+    if (m < 0) {
+        res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+    }
+
+    return res;
+}
+
 template <typename T, typename Callable, typename... Args>
 T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
@@ -159,27 +170,13 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     bool m_odd = m_abs % 2;
     if (m_odd) {
         callback(0, m, x, 0, 0, std::forward<Args>(args)...);
-
-        //        p *= -std::sqrt(1 - x * x);
     }
-
-    // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
         callback(j - 1, m, x, 0, 0, std::forward<Args>(args)...);
         callback(j, m, x, 0, 0, std::forward<Args>(args)...);
-
-        //        p *= T(2 * j - 1) * T(2 * j + 1) * (1 - x * x);
     }
 
-    if (std::abs(x) == 1) {
-        // ...
-    }
-
-    T p = std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * std::pow(1 - x * x, m_abs / T(2));
-    if (m < 0) {
-        p *= std::pow(-1, m) / std::tgamma(2 * m_abs + 1);
-    }
-
+    T p = assoc_legendre_p_diag(m, x);
     callback(m_abs, m, x, p, 0, std::forward<Args>(args)...);
 
     if (m_abs != n) {
@@ -196,6 +193,27 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     }
 
     return p;
+}
+
+template <typename T>
+T assoc_legendre_p_jac_diag(int m, T x) {
+    if (m == 0) {
+        return 0;
+    }
+
+    if (m == 1) {
+        return x / std::sqrt(1 - x * x);
+    }
+
+    if (m == -1) {
+        return -x / (2 * std::sqrt(1 - x * x));
+    }
+
+    if (m < 0) {
+        return x * assoc_legendre_p_diag(m + 2, x) / (T(4) * (m + 1));
+    }
+
+    return -(4 * (m - 2) * m + 3) * m * x * assoc_legendre_p_diag(m - 2, x);
 }
 
 template <typename T>
@@ -225,14 +243,9 @@ T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_
     }
 
     int m_abs = std::abs(m);
-    if (m_abs == n) {
-        if (m >= 0) {
-            return std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * -m_abs * z *
-                   std::pow(1 - z * z, m_abs / T(2) - 1);
-        }
 
-        return gamma_ratio(T(m_abs) + 1 / T(2), 2 * T(m_abs) + 1) * std::pow(2, m_abs) * -m_abs * z *
-               std::pow(1 - z * z, m_abs / T(2) - 1) / std::sqrt(M_PI);
+    if (m_abs == n) {
+        return assoc_legendre_p_jac_diag(m, z);
     }
 
     if (m_abs < n) {
@@ -240,6 +253,44 @@ T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_
     }
 
     return 0;
+}
+
+template <typename T>
+T assoc_legendre_p_hess_diag(int m, T z) {
+    if (m == 0) {
+        return 0;
+    }
+
+    if (m == 1) {
+        return 1 / (std::sqrt(1 - z * z) * (1 - z * z));
+    }
+
+    if (m == -1) {
+        return -1 / (2 * std::sqrt(1 - z * z) * (1 - z * z));
+    }
+
+    if (m == 2) {
+        return -6;
+    }
+
+    if (m == -2) {
+        return -1 / T(4);
+    }
+
+    if (m == 3) {
+        return 45 * (1 - 2 * z * z) / std::sqrt(1 - z * z);
+    }
+
+    if (m == -3) {
+        return (2 * z * z - 1) / (16 * std::sqrt(1 - z * z));
+    }
+
+    if (m < 0) {
+        return (T(m + 1) * z * z + 1) * assoc_legendre_p_diag(m + 4, z) / T(16 * T(m + 1) * T(m + 2) * T(m + 3));
+    }
+
+    return T(2 * m - 1) * T(2 * m - 3) * T(2 * m - 5) * T(2 * m - 7) * m * ((m - 1) * z * z - 1) *
+           assoc_legendre_p_diag(m - 4, z);
 }
 
 template <typename T>
@@ -285,13 +336,7 @@ T assoc_legendre_p_hess_next(
 
     int m_abs = std::abs(m);
     if (m_abs == n) {
-        T res = std::pow(-1, m_abs) * detail::double_factorial<T>(2 * m_abs - 1) * m_abs * (z * z * (m_abs - 1) - 1) *
-                std::pow(1 - z * z, m_abs / T(2) - 2);
-        if (m < 0) {
-            res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
-        }
-
-        return res;
+        return assoc_legendre_p_hess_diag(m, z);
     }
 
     if (m_abs < n) {
