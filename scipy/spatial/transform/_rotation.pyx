@@ -1243,7 +1243,7 @@ cdef class Rotation:
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
 
-            if angle <= 1e-3:  # small angle order 5 Taylor series expansion
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
             else:  # large angle
@@ -1916,7 +1916,7 @@ cdef class Rotation:
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
-            if angle <= 1e-3:  # small angle order 5 Taylor series expansion
+            if angle <= 1e-3:  # small angle Taylor series expansion
                 angle2 = angle * angle
                 scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
             else:  # large angle
@@ -3484,26 +3484,26 @@ cdef class Rotation:
             # vectors.
             cross = np.cross(b_pri[0], a_pri[0])
             cross_norm = _norm3(cross)
-            theta = atan2(cross_norm, np.dot(a_pri[0], b_pri[0]))
+            theta = atan2(cross_norm, _dot3(a_pri[0], b_pri[0]))
             tolerance = 1e-3  # tolerance for small angle approximation (rad)
             R_flip = cls.identity()
-            if abs(np.pi - theta) < tolerance:
-                # At 180 degrees, cross = [0, 0, 0] so we need to flip the
-                # vectors (along an arbitrary orthogonal axis of rotation)
+            if (np.pi - theta) < tolerance:
+                # Near pi radians, the Taylor series appoximation of x/sin(x)
+                # diverges, so for numerical stability we flip pi and then
+                # rotate back by the small angle pi - theta
                 if cross_norm == 0:
-                    vec_non_parallel = np.roll(a_pri[0], 1) + np.array([1, 0, 0])
-                    vec_orthogonal = np.cross(a_pri[0], vec_non_parallel)
-                    r_flip = vec_orthogonal / _norm3(vec_orthogonal) * np.pi
-                    R_flip = cls.from_rotvec(r_flip)
-
-                # Near 180 degrees, the small angle appoximation of x/sin(x)
-                # diverges, so for numerical stability we flip and then rotate
-                # back by pi - theta
+                    # For antiparallel vectors, cross = [0, 0, 0] so we need to
+                    # manually set an arbitrary orthogonal axis of rotation
+                    i = np.argmin(np.abs(a_pri[0]))
+                    r = np.zeros(3)
+                    r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
                 else:
-                    R_flip = cls.from_rotvec(cross / _norm3(cross) * np.pi)
-                    theta = np.pi - theta
-                    cross = -cross
-            if theta < 1e-3:  # small angle order 5 Taylor series approximation
+                    r = cross  # Shortest angle orthogonal axis of rotation
+                R_flip = Rotation.from_rotvec(r / np.linalg.norm(r) * np.pi)
+                theta = np.pi - theta
+                cross = -cross
+            if abs(theta) < tolerance:
+                # Small angle Taylor series approximation for numerical stability
                 theta2 = theta * theta
                 r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
             else:
