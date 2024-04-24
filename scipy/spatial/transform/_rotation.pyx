@@ -3491,8 +3491,8 @@ cdef class Rotation:
                 # At 180 degrees, cross = [0, 0, 0] so we need to flip the
                 # vectors (along an arbitrary orthogonal axis of rotation)
                 if cross_norm == 0:
-                    vec_non_parallel = np.roll(a_pri, 1) + np.array([1, 0, 0])
-                    vec_orthogonal = np.cross(a_pri, vec_non_parallel)
+                    vec_non_parallel = np.roll(a_pri[0], 1) + np.array([1, 0, 0])
+                    vec_orthogonal = np.cross(a_pri[0], vec_non_parallel)
                     r_flip = vec_orthogonal / _norm3(vec_orthogonal) * np.pi
                     R_flip = cls.from_rotvec(r_flip)
 
