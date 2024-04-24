@@ -91,14 +91,19 @@ class TestHessianUpdateStrategy(TestCase):
     # Hessian update. Hence no update is
     # skiped or damped.
 
-    def test_initialize_catch_complex(self):
+    def test_initialize_catch_illegal(self):
         ndims = 3
-        init_scales = (complex(3.14),
+        init_scales = (complex(3.14),  # no complex allowed
                        np.array([3.2, 2.3, 1.2]).astype(np.complex128),
                        np.array([[43, 24, 33],
                                  [24, 36, 44, ],
-                                 [33, 44, 37, ]]).astype(np.complex128)
-                       )
+                                 [33, 44, 37, ]]).astype(np.complex128),
+                       np.array([[43, 24, 33]]),  # not square
+                       np.array([[43, 24, 33],
+                                 [24.1, 36, 44, ],
+                                 [33, 44, 37, ]]),  # not symmetric
+
+        )
         for approx_type in ['hess', 'inv_hess']:
             for init_scale in init_scales:
                 # large min_{denominator,curvatur} makes them skip an update,

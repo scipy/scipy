@@ -1,7 +1,7 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
 import numpy as np
 from numpy.linalg import norm
-from scipy.linalg import get_blas_funcs
+from scipy.linalg import get_blas_funcs, issymmetric
 from warnings import warn
 
 
@@ -202,21 +202,27 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             elif np.iscomplexobj(scale):
                 raise TypeError("scale contains complex elements, "
                                 "must be real.")
+            else:  # test explicitly for allowed shapes and values
+                scale = np.asarray(scale)  # no need for copy, not modified
+                if self.approx_type == 'hess':
+                    shape = np.shape(self.B)
+                else:
+                    shape = np.shape(self.H)
+
+                # it has to match the shape of the matrix for the multiplication,
+                # no implicit broadcasting is allowed
+                if shape != np.shape(scale):
+                    raise ValueError("If init_scale is an array, it must have the "
+                                     f"dimensions of the matrix: {shape}.")
+                if not issymmetric(scale):
+                    raise ValueError("If init_scale is an array, it must be"
+                                     " symmetric, approximating a hess/inv_hess.")
+
             # Scale initial matrix with ``scale * np.eye(n)``
             if self.approx_type == 'hess':
-                dtype = self.B.dtype
-                scale = np.array(scale, dtype=dtype)
-                if scale.shape == np.shape(self.B):
-                    self.B = scale.copy()
-                else:
-                    self.B *= scale
+                self.B *= scale
             else:
-                dtype = self.H.dtype
-                scale = np.array(scale, dtype=dtype)
-                if scale.shape == np.shape(self.H):
-                    self.H = scale.copy()
-                else:
-                    self.H *= scale
+                self.H *= scale
             self.first_iteration = False
         self._update_implementation(delta_x, delta_grad)
 
