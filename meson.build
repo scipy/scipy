@@ -131,7 +131,7 @@ if not cc.links('', name: '-Wl,--version-script', args: ['-shared', version_link
 endif
 
 generate_f2pymod = files('tools/generate_f2pymod.py')
-tempita = find_program('scipy/_build_utils/tempita.py')
+tempita = files('scipy/_build_utils/tempita.py')
 
 use_pythran = get_option('use-pythran')
 if use_pythran
