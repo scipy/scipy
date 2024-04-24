@@ -362,6 +362,13 @@ def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
 
 def scipy_namespace_for(xp):
+    """
+    Return the `scipy` namespace for alternative backends, where it exists,
+    such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
+
+    Default: return `scipy` (this package).
+    """
+
 
     if is_cupy(xp):
         import cupyx  # type: ignore[import]

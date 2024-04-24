@@ -46,9 +46,19 @@ class TestFFT1D:
         maxlen = 512
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
         xr = xp.asarray(random(maxlen))
+        # Check some powers of 2 and some primes
+        for i in [1, 2, 16, 128, 512, 53, 149, 281, 397]:
+            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-9, atol=0)
+            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-9, atol=0)
+    
+    @skip_xp_backends(np_only=True, reasons=['significant overhead for some backends'])
+    def test_identity_extensive(self, xp):
+        maxlen = 512
+        x = xp.asarray(random(maxlen) + 1j*random(maxlen))
+        xr = xp.asarray(random(maxlen))
         for i in range(1, maxlen):
-            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-7, atol=0)
-            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-7, atol=0)
+            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-9, atol=0)
+            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-9, atol=0)
 
     def test_fft(self, xp):
         x = random(30) + 1j*random(30)
