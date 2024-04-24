@@ -1,7 +1,7 @@
 _csparsetools_pyx = custom_target('_csparsetools_pyx',
   output: '_csparsetools.pyx',
   input: '_csparsetools.pyx.in',
-  command: [tempita, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 py3.extension_module('_csparsetools',
