@@ -4,8 +4,7 @@ from copy import deepcopy
 import pytest
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
-                           assert_array_equal, assert_array_less,
-                           assert_raises)
+                           assert_array_equal, assert_array_less)
 from scipy.optimize import (BFGS, SR1)
 
 
@@ -63,7 +62,8 @@ class TestHessianUpdateStrategy(TestCase):
         init_scales = (
             ('auto', np.eye(ndims)),
             (2, np.eye(ndims) * 2),
-            (np.arange(1, ndims + 1) * np.eye(ndims), np.arange(1, ndims + 1) * np.eye(ndims)),
+            (np.arange(1, ndims + 1) * np.eye(ndims),
+             np.arange(1, ndims + 1) * np.eye(ndims)),
             (symmetric_matrix, symmetric_matrix),)
         for approx_type in ['hess', 'inv_hess']:
             for init_scale, true_matrix in init_scales:
