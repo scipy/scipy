@@ -91,21 +91,36 @@ class TestHessianUpdateStrategy(TestCase):
     # Hessian update. Hence no update is
     # skiped or damped.
 
+
     def test_initialize_catch_illegal(self):
         ndims = 3
-        init_scales = (complex(3.14),  # no complex allowed
-                       np.array([3.2, 2.3, 1.2]).astype(np.complex128),
-                       np.array([[43, 24, 33],
-                                 [24, 36, 44, ],
-                                 [33, 44, 37, ]]).astype(np.complex128),
-                       np.array([[43, 24, 33]]),  # not square
-                       np.array([[43, 24, 33],
-                                 [24.1, 36, 44, ],
-                                 [33, 44, 37, ]]),  # not symmetric
+        init_scales_message = ((complex(3.14), "init_scale contains complex elements, "
+                                               "must be real."),  # no complex allowed
+                               (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
+                                "init_scale contains complex elements, "
+                                "must be real."),
 
-        )
+                               (np.array([[43, 24, 33],
+                                          [24, 36, 44, ],
+                                          [33, 44, 37, ]]).astype(np.complex128),
+                                "init_scale contains complex elements, "
+                                "must be real."),
+
+                               # not square
+                               (np.array([[43, 24, 33]]),
+                                "If init_scale is an array, it must have the "
+                                f"dimensions of the matrix: {(ndims, ndims)}."),
+
+                               # not symmetric
+                               (np.array([[43, 24, 33],
+                                          [24.1, 36, 44, ],
+                                          [33, 44, 37, ]]),
+                                "If init_scale is an array, it must be"
+                                " symmetric, approximating a hess/inv_hess."),
+
+                               )
         for approx_type in ['hess', 'inv_hess']:
-            for init_scale in init_scales:
+            for init_scale, message in init_scales_message:
                 # large min_{denominator,curvatur} makes them skip an update,
                 # so we can have our initial matrix
                 quasi_newton = (BFGS(init_scale=init_scale),
@@ -113,7 +128,7 @@ class TestHessianUpdateStrategy(TestCase):
 
                 for qn in quasi_newton:
                     qn.initialize(ndims, approx_type)
-                    with assert_raises(TypeError):
+                    with assert_raises(TypeError, match=message):
                         qn.update(np.ones(ndims), np.arange(ndims))
 
     def test_rosenbrock_with_no_exception(self):

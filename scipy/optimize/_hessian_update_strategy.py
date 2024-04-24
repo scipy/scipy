@@ -200,7 +200,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                 # to account for the legacy behavior having the exact same cast
                 scale = float(scale)
             elif np.iscomplexobj(scale):
-                raise TypeError("scale contains complex elements, "
+                raise TypeError("init_scale contains complex elements, "
                                 "must be real.")
             else:  # test explicitly for allowed shapes and values
                 scale = np.asarray(scale)  # no need for copy, not modified
