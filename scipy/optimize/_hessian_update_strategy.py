@@ -221,6 +221,8 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                                      " symmetric, approximating a hess/inv_hess.")
 
             # Scale initial matrix with ``scale * np.eye(n)`` or replace
+            # This is not ideal, we could assign the scale directly in
+            # initialize, but we would need to
             if self.approx_type == 'hess':
                 if replace:
                     self.B = scale
