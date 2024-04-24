@@ -1467,6 +1467,24 @@ def test_align_vectors_parallel():
     assert_allclose(R.apply(b[0]), a[0], atol=atol)
 
 
+def test_align_vectors_antiparallel():
+    # Test exact 180 deg rotation
+    atol = 1e-12
+    a = [[0, 1, 0], [-1, 0, 0]]
+    b = [[0, -1, 0], [-1, 0, 0]]
+    R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+    assert np.isclose(R.magnitude(), np.pi, atol=atol)
+
+    # Test exact rotations near 180 deg
+    as_to_test = [a,
+                  [[0, 1,  1e-4], [-1, 0, 0]],
+                  [[0, 1, -1e-4], [-1, 0, 0]]]
+    for a in as_to_test:
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        assert R.approx_equal(R2, atol=atol)
+
+
 def test_align_vectors_primary_only():
     atol = 1e-12
     mats_a = Rotation.random(100, random_state=0).as_matrix()
