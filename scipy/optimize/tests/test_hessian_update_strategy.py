@@ -99,7 +99,8 @@ class TestHessianUpdateStrategy(TestCase):
         ndims = 3
         # no complex allowed
         init_scales_message = ((complex(3.14), "float() argument must be a "
-                                               "string or a real number, not 'complex'"),
+                                               "string or a real number, "
+                                               "not 'complex'"),
                                (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
                                 "init_scale contains complex elements, "
                                 "must be real."),
