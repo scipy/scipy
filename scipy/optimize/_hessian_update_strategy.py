@@ -196,6 +196,7 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
             # Check for complex: numpy will silently cast a complex array to
             # a real one but not so for scalar as it raises a TypeError.
             # Checking here brings a consistent behavior.
+            replace = False
             if np.size(scale) == 1:
                 # to account for the legacy behavior having the exact same cast
                 scale = float(scale)
@@ -203,7 +204,8 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                 raise TypeError("init_scale contains complex elements, "
                                 "must be real.")
             else:  # test explicitly for allowed shapes and values
-                scale = np.asarray(scale)  # no need for copy, not modified
+                replace = True
+                scale = np.array(scale)  # copy, will replace the original
                 if self.approx_type == 'hess':
                     shape = np.shape(self.B)
                 else:
@@ -218,11 +220,17 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                     raise ValueError("If init_scale is an array, it must be"
                                      " symmetric, approximating a hess/inv_hess.")
 
-            # Scale initial matrix with ``scale * np.eye(n)``
+            # Scale initial matrix with ``scale * np.eye(n)`` or replace
             if self.approx_type == 'hess':
-                self.B *= scale
+                if replace:
+                    self.B = scale
+                else:
+                    self.B *= scale
             else:
-                self.H *= scale
+                if replace:
+                    self.H = scale
+                else:
+                    self.H *= scale
             self.first_iteration = False
         self._update_implementation(delta_x, delta_grad)
 

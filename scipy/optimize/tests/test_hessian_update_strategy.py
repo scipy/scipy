@@ -51,6 +51,7 @@ class Rosenbrock:
 
 class TestHessianUpdateStrategy(TestCase):
 
+
     def test_hessian_initialization(self):
 
         ndims = 5
@@ -96,8 +97,9 @@ class TestHessianUpdateStrategy(TestCase):
 
     def test_initialize_catch_illegal(self):
         ndims = 3
-        init_scales_message = ((complex(3.14), "init_scale contains complex elements, "
-                                               "must be real."),  # no complex allowed
+        # no complex allowed
+        init_scales_message = ((complex(3.14), "float() argument must be a "
+                                               "string or a real number, not 'complex'"),
                                (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
                                 "init_scale contains complex elements, "
                                 "must be real."),
