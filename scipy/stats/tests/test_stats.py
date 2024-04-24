@@ -3433,16 +3433,16 @@ class TestSkew(SkewKurtosisTest):
         # exact (gh-13245)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
-            assert_equal(stats.skew(a), xp.asarray(xp.nan))
-            assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
-            assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
-            assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a*2.**50), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a/2.**50), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a, bias=False), xp.asarray(xp.nan))
 
             # # similarly, from gh-11086:
             a = xp.asarray([14.3]*7)
-            assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
             a = 1. + xp.arange(-3., 4)*1e-16
-            assert_equal(stats.skew(a), xp.asarray(xp.nan))
+            xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
 
     @array_api_compatible
     def test_precision_loss_gh15554(self, xp):
