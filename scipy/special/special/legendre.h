@@ -8,17 +8,14 @@
 
 namespace special {
 
-// Translated into C++ by SciPy developers in 2024.
-//
-// ===============================================
-// Purpose: Compute Legendre polynomials Pn(z)
-//          and their derivatives Pn'(z)
-// Input :  x --- Argument of Pn(z)
-//          n --- Degree of Pn(z) ( n = 0,1,...)
-// Output:  PN(n) --- Pn(z)
-//          PD(n) --- Pn'(z)
-// ===============================================
-
+/**
+ * Compute the Legendre polynomials of degree n and argument z.
+ *
+ * @param[in] n degree of the polynomial.
+ * @param[in] z the argument, a floating-point value
+ * @param[in] callback a function to be called like callback(j, z, p, args...)
+ * @param[in] args arguments to forward to the callback
+ */
 template <typename T, typename Callable, typename... Args>
 T legendre_p(int n, T z, Callable callback, Args &&...args) {
     T p = 1;

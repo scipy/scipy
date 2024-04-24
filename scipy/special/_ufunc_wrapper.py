@@ -24,9 +24,17 @@ class ufunc_wrapper(object):
         arg_shapes = tuple(np.shape(arg) for arg in args)
         out_shapes = self._resolve_out_shapes(*resolve_out_shapes_args, arg_shapes, ufunc.nout)
 
-        arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else np.dtype(type(arg)) for arg in args) + ufunc.nout * (None,)
-        dtypes = ufunc.resolve_dtypes(arg_dtypes)
-        out_dtypes = dtypes[-ufunc.nout:]
+        arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else np.dtype(type(arg)) for arg in args)
+        if hasattr(ufunc, 'resolve_dtypes'):
+            dtypes = arg_dtypes + ufunc.nout * (None,)
+            dtypes = ufunc.resolve_dtypes(dtypes) 
+            out_dtypes = dtypes[-ufunc.nout:]
+        else:
+            out_dtype = np.result_type(*arg_dtypes)
+            if (not np.issubdtype(out_dtype, np.inexact)):
+                out_dtype = np.float64
+
+            out_dtypes = ufunc.nout * (out_dtype,)
 
         b_shape = np.broadcast_shapes(*arg_shapes)
 

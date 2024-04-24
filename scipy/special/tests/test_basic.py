@@ -3620,7 +3620,7 @@ class TestLegendreFunctions:
 
         n = rng.integers(0, 10, shape)
         m = rng.integers(-10, 10, shape)
-        x = rng.uniform(-0.9, 0.9, shape)
+        x = rng.uniform(-0.99, 0.99, shape)
 
         p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
 
@@ -3637,7 +3637,7 @@ class TestLegendreFunctions:
 
         rng = np.random.default_rng(1234)
 
-        x = rng.uniform(-0.9, 0.9, shape)
+        x = rng.uniform(-0.99, 0.99, shape)
 
         p, p_jac, p_hess = special.lpmn_all(m_max, n_max, x, diff_n = 2)
 
@@ -3646,7 +3646,6 @@ class TestLegendreFunctions:
 
         m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
         n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
-
         np.testing.assert_allclose((1 - x * x) * p_hess, 2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p, rtol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])

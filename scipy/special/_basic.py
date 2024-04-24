@@ -1722,6 +1722,7 @@ def mathieu_odd_coef(m, q):
     return fc[:km]
 
 
+
 _lpmn = ufunc_wrapper(_lpmn, diff_resolve_ufunc)
 
 lpmn_all = ufunc_wrapper(lpmn_all)
