@@ -60,7 +60,7 @@ linalg_cython_gen = generator(cython,
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c'],
   input: 'fblas.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
@@ -80,7 +80,7 @@ py3.extension_module('_fblas',
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # Note that -Wno-empty-body is Clang-specific and comes from `callstatement`s
@@ -101,7 +101,7 @@ py3.extension_module('_flapack',
 interpolative_module = custom_target('interpolative_module',
   output: '_interpolativemodule.c',
   input: 'interpolative.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 # id_dist contains a copy of FFTPACK, which has type mismatch warnings
