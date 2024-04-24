@@ -1243,7 +1243,7 @@ cdef class Rotation:
         for ind in range(num_rotations):
             angle = _norm3(crotvec[ind, :])
 
-            if angle <= 1e-3:  # small angle Taylor series expansion
+            if angle <= 1e-3:  # small angle order 5 Taylor series expansion
                 angle2 = angle * angle
                 scale = 0.5 - angle2 / 48 + angle2 * angle2 / 3840
             else:  # large angle
@@ -1916,7 +1916,7 @@ cdef class Rotation:
 
             angle = 2 * atan2(_norm3(quat), quat[3])
 
-            if angle <= 1e-3:  # small angle Taylor series expansion
+            if angle <= 1e-3:  # small angle order 5 Taylor series expansion
                 angle2 = angle * angle
                 scale = 2 + angle2 / 12 + 7 * angle2 * angle2 / 2880
             else:  # large angle
@@ -3483,13 +3483,32 @@ cdef class Rotation:
             # We first find the minimum angle rotation between the primary
             # vectors.
             cross = np.cross(b_pri[0], a_pri[0])
-            theta = atan2(_norm3(cross), np.dot(a_pri[0], b_pri[0]))
-            if theta < 1e-3:  # small angle Taylor series approximation
+            cross_norm = _norm3(cross)
+            theta = atan2(cross_norm, np.dot(a_pri[0], b_pri[0]))
+            tolerance = 1e-3  # tolerance for small angle approximation (rad)
+            R_flip = cls.identity()
+            if abs(np.pi - theta) < tolerance:
+                # At 180 degrees, cross = [0, 0, 0] so we need to flip the
+                # vectors (along an arbitrary orthogonal axis of rotation)
+                if cross_norm == 0:
+                    vec_non_parallel = np.roll(a_pri, 1) + np.array([1, 0, 0])
+                    vec_orthogonal = np.cross(a_pri, vec_non_parallel)
+                    r_flip = vec_orthogonal / _norm3(vec_orthogonal) * np.pi
+                    R_flip = cls.from_rotvec(r_flip)
+
+                # Near 180 degrees, the small angle appoximation of x/sin(x)
+                # diverges, so for numerical stability we flip and then rotate
+                # back by pi - theta
+                else:
+                    R_flip = cls.from_rotvec(cross / _norm3(cross) * np.pi)
+                    theta = np.pi - theta
+                    cross = -cross
+            if theta < 1e-3:  # small angle order 5 Taylor series approximation
                 theta2 = theta * theta
                 r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
             else:
                 r = cross * theta / np.sin(theta)
-            R_pri = cls.from_rotvec(r)
+            R_pri = cls.from_rotvec(r) * R_flip
 
             if N == 1:
                 # No secondary vectors, so we are done
