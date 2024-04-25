@@ -129,9 +129,9 @@ class TestHessianUpdateStrategy(TestCase):
                              (np.array([[43, 24, 33],
                                         [24.1, 36, 44, ],
                                         [33, 44, 37, ]]),
-                              "If init_scale is an array, it must be"
-                              " symmetric (passing scipy.linalg.issymmetric)"
-                              " to be an approximation of a hess/inv_hess.",
+                              re.escape("If init_scale is an array, it must be"
+                                        " symmetric (passing scipy.linalg.issymmetric)"
+                                        " to be an approximation of a hess/inv_hess."),
                               ValueError),
                              )
         for approx_type in ['hess', 'inv_hess']:
