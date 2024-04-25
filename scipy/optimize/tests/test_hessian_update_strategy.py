@@ -1,3 +1,5 @@
+import re
+
 import numpy as np
 from copy import deepcopy
 
@@ -133,7 +135,7 @@ class TestHessianUpdateStrategy(TestCase):
 
                 for qn in quasi_newton:
                     qn.initialize(ndims, approx_type)
-                    with pytest.raises(TypeError, match=message):
+                    with pytest.raises(TypeError, match=re.escape(message)):
                         qn.update(np.ones(ndims), np.arange(ndims))
 
     def test_rosenbrock_with_no_exception(self):
