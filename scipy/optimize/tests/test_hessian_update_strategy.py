@@ -100,9 +100,9 @@ class TestHessianUpdateStrategy(TestCase):
     def test_initialize_catch_illegal(self):
         ndims = 3
         # no complex allowed
-        init_scales_message = ((complex(3.14), "float() argument must be a "
+        init_scales_message = ((complex(3.14), re.escape("float() argument must be a "
                                                "string or a real number, "
-                                               "not 'complex'"),
+                                               "not 'complex'")),
                                (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
                                 "init_scale contains complex elements, "
                                 "must be real."),
@@ -116,7 +116,7 @@ class TestHessianUpdateStrategy(TestCase):
                                # not square
                                (np.array([[43, 55, 66]]),
                                 "If init_scale is an array, it must have the "
-                                f"dimensions of the matrix*"),
+                                f"dimensions of the matrix.*"),
 
                                # not symmetric
                                (np.array([[43, 24, 33],
@@ -135,7 +135,7 @@ class TestHessianUpdateStrategy(TestCase):
 
                 for qn in quasi_newton:
                     qn.initialize(ndims, approx_type)
-                    with pytest.raises(TypeError, match=re.escape(message)):
+                    with pytest.raises(TypeError, match=message):
                         qn.update(np.ones(ndims), np.arange(ndims))
 
     def test_rosenbrock_with_no_exception(self):
