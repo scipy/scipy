@@ -121,8 +121,8 @@ class TestHessianUpdateStrategy(TestCase):
                              (np.array([[43, 55, 66]]),
                               re.escape(
                                   "If init_scale is an array, it must have the "
-                                  f"dimensions of the hess/inv_hess: (3, 3)."
-                                  f" Got (1, 3)."),
+                                  "dimensions of the hess/inv_hess: (3, 3)."
+                                  " Got (1, 3)."),
                               ValueError),
 
                              # not symmetric
