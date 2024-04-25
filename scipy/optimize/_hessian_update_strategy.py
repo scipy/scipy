@@ -219,8 +219,8 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                                      f" Got {init_shape}.")
                 if not issymmetric(scale):
                     raise ValueError("If init_scale is an array, it must be"
-                                     " symmetric (passing scipy.linalg.issymmetric),"
-                                     " to approximate a hess/inv_hess.")
+                                     " symmetric (passing scipy.linalg.issymmetric)"
+                                     " to be an approximation of a hess/inv_hess.")
 
             # Scale initial matrix with ``scale * np.eye(n)`` or replace
             # This is not ideal, we could assign the scale directly in
