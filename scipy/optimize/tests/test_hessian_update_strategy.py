@@ -114,9 +114,9 @@ class TestHessianUpdateStrategy(TestCase):
                                 "must be real."),
 
                                # not square
-                               (np.array([[43, 24, 33]]),
+                               (np.array([[43, 55, 66]]),
                                 "If init_scale is an array, it must have the "
-                                f"dimensions of the matrix: {(ndims, ndims)}."),
+                                f"dimensions of the matrix*"),
 
                                # not symmetric
                                (np.array([[43, 24, 33],
