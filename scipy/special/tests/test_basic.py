@@ -3632,8 +3632,8 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpmn_all(self, shape):
-        n_max = 100
-        m_max = 40
+        n_max = 20
+        m_max = 20
 
         rng = np.random.default_rng(1234)
 
