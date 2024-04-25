@@ -122,8 +122,10 @@ def isotonic_regression(
     ``isotonic_regression`` takes about 200 microseconds.
     """
     yarr = np.asarray(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
+    order = slice(None) if increasing else slice(None, None, -1)
+    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
     if weights is None:
-        warr = np.ones_like(yarr)
+        wx = np.ones_like(yarr, dtype=np.float64)
     else:
         warr = np.asarray(weights)
 
@@ -134,9 +136,7 @@ def isotonic_regression(
         if np.any(warr <= 0):
             raise ValueError("Weights w must be strictly positive.")
 
-    order = slice(None) if increasing else slice(None, None, -1)
-    x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
-    wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
+        wx = np.array(warr[order], order="C", dtype=np.float64, copy=True)
     n = x.shape[0]
     r = np.full(shape=n + 1, fill_value=-1, dtype=np.intp)
     x, wx, r, b = pava(x, wx, r)
