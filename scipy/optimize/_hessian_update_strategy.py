@@ -205,11 +205,13 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                                 "must be real.")
             else:  # test explicitly for allowed shapes and values
                 replace = True
-                scale = np.array(scale)  # copy, will replace the original
                 if self.approx_type == 'hess':
                     shape = np.shape(self.B)
+                    dtype = self.B.dtype
                 else:
                     shape = np.shape(self.H)
+                    dtype = self.H.dtype
+                scale = np.array(scale, dtype=dtype, copy=True)  # copy, will replace the original
 
                 # it has to match the shape of the matrix for the multiplication,
                 # no implicit broadcasting is allowed
