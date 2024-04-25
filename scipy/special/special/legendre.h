@@ -158,7 +158,7 @@ template <typename T, typename Callable, typename... Args>
 T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
     if (m_abs > n) {
-        for (int j = 0; j < n; ++j) {
+        for (int j = 0; j <= n; ++j) {
             callback(j, m, x, 0, 0, std::forward<Args>(args)...);
         }
 

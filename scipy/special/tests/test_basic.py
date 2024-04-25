@@ -3614,7 +3614,7 @@ class TestLegendreFunctions:
                                     approx_derivative,
                                     rtol=1e-4)
 
-    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
     def test_lpmn(self, shape):
         rng = np.random.default_rng(1234)
 
