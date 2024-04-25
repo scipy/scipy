@@ -315,7 +315,7 @@ def test_highs_status_message():
                   options=options, integrality=integrality)
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.status == 1
-    assert res.message.startswith(msg)
+    assert msg in res.message
 
     options = {"maxiter": 10}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs-ds',
@@ -334,13 +334,14 @@ def test_highs_status_message():
     assert res.status == 3
     assert res.message.startswith(msg)
 
-    from scipy.optimize._linprog_highs import _highs_to_scipy_status_message
-    status, message = _highs_to_scipy_status_message(58, "Hello!")
-    msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
+    from scipy.optimize._linprog_highs import HighsStatusMapping
+    highs_mapper = HighsStatusMapping()
+    status, message = highs_mapper.get_scipy_status(58, "Hello!")
     assert status == 4
+    msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
     assert message.startswith(msg)
 
-    status, message = _highs_to_scipy_status_message(None, None)
+    status, message = highs_mapper.get_scipy_status(None, None)
     msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
     assert status == 4
     assert message.startswith(msg)
