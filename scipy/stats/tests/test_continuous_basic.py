@@ -51,21 +51,22 @@ slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
 xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
                       'recipinvgauss', 'kstwo', 'kappa4'}
 
-xslow_fit_all = {'ksone', 'kstwo', 'levy_stable', 'recipinvgauss', 'studentized_range',
-                 'gausshyper', 'kappa4', 'vonmises_line', 'genhyperbolic', 'ncx2',
-                 'powerlognorm', 'genexpon'}
-xfail_fit_all = {'trapezoid', 'truncpareto'}
-xslow_fit_mm = {'argus', 'beta', 'exponpow', 'exponweib', 'gengamma',
+xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'vonmises_line'}
+xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto'}
+skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
+xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
-                'johnsonsb', 'johnsonsu', 'powernorm', 'vonmises',
-                'truncnorm', 'kstwobign', 'rel_breitwigner', 'wrapcauchy',
-                'johnsonsu', 'truncweibull_min', 'truncexpon', 'norminvgauss'}
-xslow_fit_mle = {'ncf'}
-xfail_fit_mm = {'alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'crystalball', 'f',
-                'fisk', 'foldcauchy', 'genextreme', 'genpareto', 'halfcauchy',
-                'invgamma', 'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
-                'lomax', 'mielke', 'ncf', 'nct', 'pareto', 'skewcauchy', 't',
-                'bradford', 'tukeylambda'}
+                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
+                'truncweibull_min', 'wrapcauchy'}
+xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
+                'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
+                'genpareto', 'halfcauchy', 'invgamma', 'jf_skew_t', 'johnsonsu',
+                'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke',
+                'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
+                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
+                'tukeylambda', 'vonmises', 'vonmises_line'}
+skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
+               'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -199,30 +200,42 @@ def test_cont_basic(distname, arg, sn):
 
 
 def cases_test_cont_basic_fit():
-    message = "Test fails and may be slow"
-    fail_mark = pytest.mark.skip(reason=message)
+    xslow = pytest.mark.xslow
+    fail = pytest.mark.skip(reason="Test fails and may be slow.")
+    skip = pytest.mark.skip(reason="Test too slow to run to completion (>10m).")
 
     for distname, arg in distcont[:] + histogram_test_instances:
-        if distname in xfail_fit_all:
-            yield pytest.param(distname, arg, None, None, marks=fail_mark)
-            continue
-        if distname in xslow_fit_all:
-            yield pytest.param(distname, arg, None, None, marks=pytest.mark.xslow)
-            continue
-
         for method in ["MLE", "MM"]:
-            if method == 'MM' and distname in xfail_fit_mm:
-                yield pytest.param(distname, arg, method, None, marks=fail_mark)
-                continue
-            if method == 'MM' and distname in xslow_fit_mm:
-                yield pytest.param(distname, arg, method, None, marks=pytest.mark.xslow)
-                continue
-            if method == 'MLE' and distname in xslow_fit_mle:
-                yield pytest.param(distname, arg, method, None, marks=pytest.mark.xslow)
-                continue
-
             for fix_args in [True, False]:
+                if method == 'MLE' and distname in xslow_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=xslow)
+                    continue
+                if method == 'MLE' and distname in xfail_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=fail)
+                    continue
+                if method == 'MLE' and distname in skip_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=skip)
+                    continue
+                if method == 'MM' and distname in xslow_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=xslow)
+                    continue
+                if method == 'MM' and distname in xfail_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=fail)
+                    continue
+                if method == 'MM' and distname in skip_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=skip)
+                    continue
+
                 yield distname, arg, method, fix_args
+
+
+def test_cont_basic_fit_cases():
+    # Distribution names should not be in multiple MLE or MM sets
+    assert (len(xslow_fit_mle.union(xfail_fit_mle).union(skip_fit_mle)) ==
+            len(xslow_fit_mle) + len(xfail_fit_mle) + len(skip_fit_mle))
+    assert (len(xslow_fit_mm.union(xfail_fit_mm).union(skip_fit_mm)) ==
+            len(xslow_fit_mm) + len(xfail_fit_mm) + len(skip_fit_mm))
+
 
 @pytest.mark.parametrize('distname, arg, method, fix_args',
                          cases_test_cont_basic_fit())
