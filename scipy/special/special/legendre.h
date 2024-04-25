@@ -13,7 +13,7 @@ namespace special {
  *
  * @param[in] n degree of the polynomial.
  * @param[in] z the argument, a floating-point value
- * @param[in] callback a function to be called like callback(j, z, p, args...)
+ * @param[in] callback a function to be called like callback(j, z, p, args...) for j = 0, j = 1, ..., j = n
  * @param[in] args arguments to forward to the callback
  */
 template <typename T, typename Callable, typename... Args>
@@ -134,7 +134,7 @@ template <typename T>
 T assoc_legendre_p_diag(int m, T x) {
     int m_abs = std::abs(m);
 
-    T y_sq = std::fma(-x, x, 1);
+    T y_sq = std::fma(x, -x, 1);
     T res = 1;
 
     bool m_odd = m_abs % 2;
