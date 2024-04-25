@@ -116,8 +116,9 @@ class TestHessianUpdateStrategy(TestCase):
 
                                # not square
                                (np.array([[43, 55, 66]]),
-                                "If init_scale is an array, it"
-                                " must have the dimensions of the matrix.*"),
+                                re.escape("If init_scale is an array, it must "
+                                          "have the dimensions of "
+                                          "the matrix: (3, 3).")),
 
                                # not symmetric
                                (np.array([[43, 24, 33],
@@ -129,8 +130,8 @@ class TestHessianUpdateStrategy(TestCase):
                                )
         for approx_type in ['hess', 'inv_hess']:
             for init_scale, message in init_scales_message:
-                # large min_{denominator,curvatur} makes them skip an update,
-                # so we can have our initial matrix
+                # large min_{denominator,curvatur} makes it skip an update,
+                # so we can retrieve our initial matrix
                 quasi_newton = (BFGS(init_scale=init_scale),
                                 SR1(init_scale=init_scale))
 
