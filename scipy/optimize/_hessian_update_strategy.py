@@ -211,7 +211,8 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
                 else:
                     shape = np.shape(self.H)
                     dtype = self.H.dtype
-                scale = np.array(scale, dtype=dtype, copy=True)  # copy, will replace the original
+                # copy, will replace the original
+                scale = np.array(scale, dtype=dtype, copy=True)
 
                 # it has to match the shape of the matrix for the multiplication,
                 # no implicit broadcasting is allowed
