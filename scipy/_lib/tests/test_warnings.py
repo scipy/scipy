@@ -26,6 +26,7 @@ class ParseCall(ast.NodeVisitor):
     def visit_Name(self, node):
         self.ls.append(node.id)
 
+
 class FindFuncs(ast.NodeVisitor):
     def __init__(self, filename):
         super().__init__()
@@ -39,7 +40,21 @@ class FindFuncs(ast.NodeVisitor):
         ast.NodeVisitor.generic_visit(self, node)
 
         if p.ls[-1] == 'simplefilter' or p.ls[-1] == 'filterwarnings':
-            if node.args[0].value == "ignore":
+            # get first argument of the `args` node of the filter call
+            match node.args[0]:
+                case ast.Constant() as c:
+                    argtext = c.value
+                case ast.JoinedStr() as js:
+                    # if we get an f-string, discard the templated pieces, which
+                    # are likely the type or specific message; we're interested
+                    # in the action, which is less likely to use a template
+                    argtext = "".join(
+                        x.value for x in js.values if isinstance(x, ast.Constant)
+                    )
+                case _:
+                    raise ValueError("unknown ast node type")
+            # check if filter is set to ignore
+            if argtext == "ignore":
                 self.bad_filters.append(
                     f"{self.__filename}:{node.lineno}")
 
@@ -96,6 +111,7 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('datasets', '__init__.py'),
         os.path.join('optimize', '_optimize.py'),
         os.path.join('optimize', '_constraints.py'),
+        os.path.join('optimize', '_nnls.py'),
         os.path.join('signal', '_ltisys.py'),
         os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
         os.path.join('stats', '_discrete_distns.py'),  # gh-14901
@@ -113,23 +129,3 @@ def test_warning_calls_filters(warning_calls):
             "found in:\n    {}".format(
                 "\n    ".join(bad_filters)))
 
-
-@pytest.mark.slow
-@pytest.mark.xfail(reason="stacklevels currently missing")
-def test_warning_calls_stacklevels(warning_calls):
-    bad_filters, bad_stacklevels = warning_calls
-
-    msg = ""
-
-    if bad_filters:
-        msg += ("warning ignore filter should not be used, instead, use\n"
-                "numpy.testing.suppress_warnings (in tests only);\n"
-                "found in:\n    {}".format("\n    ".join(bad_filters)))
-        msg += "\n\n"
-
-    if bad_stacklevels:
-        msg += "warnings should have an appropriate stacklevel:\n    {}".format(
-                "\n    ".join(bad_stacklevels))
-
-    if msg:
-        raise AssertionError(msg)

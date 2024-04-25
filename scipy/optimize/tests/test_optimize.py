@@ -213,9 +213,9 @@ class CheckOptimizeParameterized(CheckOptimize):
                         [[0, -5.25060743e-01, 4.87748473e-01],
                          [0, -5.24885582e-01, 4.87530347e-01]],
                         atol=1e-14, rtol=1e-7)
-    
+
     def test_bfgs_hess_inv0_neg(self):
-        # Ensure that BFGS does not accept neg. def. initial inverse 
+        # Ensure that BFGS does not accept neg. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -223,9 +223,9 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': -np.eye(5)}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_semipos(self):
-        # Ensure that BFGS does not accept semi pos. def. initial inverse 
+        # Ensure that BFGS does not accept semi pos. def. initial inverse
         # Hessian estimate.
         with pytest.raises(ValueError, match="'hess_inv0' matrix isn't "
                            "positive definite."):
@@ -235,18 +235,18 @@ class CheckOptimizeParameterized(CheckOptimize):
             opts = {'disp': self.disp, 'hess_inv0': hess_inv0}
             optimize.minimize(optimize.rosen, x0=x0, method='BFGS', args=(),
                               options=opts)
-    
+
     def test_bfgs_hess_inv0_sanity(self):
         # Ensure that BFGS handles `hess_inv0` parameter correctly.
         fun = optimize.rosen
         x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
         opts = {'disp': self.disp, 'hess_inv0': 1e-2 * np.eye(5)}
-        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                 options=opts)
-        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(), 
+        res_true = optimize.minimize(fun, x0=x0, method='BFGS', args=(),
                                      options={'disp': self.disp})
         assert_allclose(res.fun, res_true.fun, atol=1e-6)
-            
+
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_bfgs_infinite(self):
         # Test corner case where -Inf is the minimum.  See gh-2019.
@@ -293,7 +293,7 @@ class CheckOptimizeParameterized(CheckOptimize):
         res_mod = optimize.minimize(optimize.rosen,
                                     x0, method='bfgs', options={'c2': 1e-2})
         assert res_default.nit > res_mod.nit
-    
+
     @pytest.mark.parametrize(["c1", "c2"], [[0.5, 2],
                                             [-0.1, 0.1],
                                             [0.2, 0.1]])
@@ -499,6 +499,29 @@ class CheckOptimizeParameterized(CheckOptimize):
                               full_output=True, disp=False, retall=False,
                               initial_simplex=simplex)
 
+    def test_neldermead_x0_ub(self):
+        # checks whether minimisation occurs correctly for entries where
+        # x0 == ub
+        # gh19991
+        def quad(x):
+            return np.sum(x**2)
+
+        res = optimize.minimize(
+            quad,
+            [1],
+            bounds=[(0, 1.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0])
+
+        res = optimize.minimize(
+            quad,
+            [1, 2],
+            bounds=[(0, 1.), (1, 3.)],
+            method='nelder-mead'
+        )
+        assert_allclose(res.x, [0, 1])
+
     def test_ncg_negative_maxiter(self):
         # Regression test for gh-8241
         opts = {'maxiter': -1}
@@ -506,6 +529,24 @@ class CheckOptimizeParameterized(CheckOptimize):
                                    method='Newton-CG', jac=self.grad,
                                    args=(), options=opts)
         assert result.status == 1
+
+    def test_ncg_zero_xtol(self):
+        # Regression test for gh-20214
+        def cosine(x):
+            return np.cos(x[0])
+
+        def jac(x):
+            return -np.sin(x[0])
+
+        x0 = [0.1]
+        xtol = 0
+        result = optimize.minimize(cosine,
+                                   x0=x0,
+                                   jac=jac,
+                                   method="newton-cg",
+                                   options=dict(xtol=xtol))
+        assert result.status == 0
+        assert_almost_equal(result.x[0], np.pi)
 
     def test_ncg(self):
         # line-search Newton conjugate gradient optimization routine
@@ -1160,40 +1201,6 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(optimize.rosen, x0, method=custmin,
                                 options=dict(stepsize=0.05))
         assert_allclose(res.x, 1.0, rtol=1e-4, atol=1e-4)
-
-    @pytest.mark.xfail(reason="output not reliable on all platforms")
-    def test_gh13321(self, capfd):
-        # gh-13321 reported issues with console output in fmin_l_bfgs_b;
-        # check that iprint=0 works.
-        kwargs = {'func': optimize.rosen, 'x0': [4, 3],
-                  'fprime': optimize.rosen_der, 'bounds': ((3, 5), (3, 5))}
-
-        # "L-BFGS-B" is always in output; should show when iprint >= 0
-        # "At iterate" is iterate info; should show when iprint >= 1
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" not in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=0)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=1)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" in out
-
-        # `disp is not None` overrides `iprint` behavior
-        # `disp=0` should suppress all output
-        # `disp=1` should be the same as `iprint = 1`
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=1, disp=False)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" not in out and "At iterate" not in out
-
-        optimize.fmin_l_bfgs_b(**kwargs, iprint=-1, disp=True)
-        out, _ = capfd.readouterr()
-        assert "L-BFGS-B" in out and "At iterate" in out
 
     def test_gh10771(self):
         # check that minimize passes bounds and constraints to a custom
@@ -2557,7 +2564,7 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
-    def test_runtime_warning(self):
+    def test_runtime_warning(self, capsys):
         rng = np.random.default_rng(1234)
 
         def func(z, *params):

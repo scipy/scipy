@@ -10,13 +10,12 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 import sys
-from scipy.conftest import (
-    array_api_compatible,
-    skip_if_array_api_gpu,
-    skip_if_array_api_backend
-)
+from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, SCIPY_DEVICE
 from scipy import fft
+
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -52,6 +51,7 @@ def _assert_n_smooth(x, n):
            f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
+@skip_xp_backends(np_only=True)
 class TestNextFastLen:
 
     def test_next_fast_len(self):
@@ -126,10 +126,9 @@ class TestNextFastLen:
         assert next_fast_len(target=7, real=False) == 7
 
 
+@skip_xp_backends(cpu_only=True)
 class Test_init_nd_shape_and_axes:
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_py_0d_defaults(self, xp):
         x = xp.asarray(4)
         shape = None
@@ -143,8 +142,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_0d_defaults(self, xp):
         x = xp.asarray(7.)
         shape = None
@@ -158,8 +155,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_py_1d_defaults(self, xp):
         x = xp.asarray([1, 2, 3])
         shape = None
@@ -173,8 +168,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_1d_defaults(self, xp):
         x = xp.arange(0, 1, .1)
         shape = None
@@ -188,8 +181,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_py_2d_defaults(self, xp):
         x = xp.asarray([[1, 2, 3, 4],
                         [5, 6, 7, 8]])
@@ -204,8 +195,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_2d_defaults(self, xp):
         x = xp.arange(0, 1, .1)
         x = xp.reshape(x, (5, 2))
@@ -220,8 +209,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_5d_defaults(self, xp):
         x = xp.zeros([6, 2, 5, 3, 4])
         shape = None
@@ -235,8 +222,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_5d_set_shape(self, xp):
         x = xp.zeros([6, 2, 5, 3, 4])
         shape = [10, -1, -1, 1, 4]
@@ -250,8 +235,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_5d_set_axes(self, xp):
         x = xp.zeros([6, 2, 5, 3, 4])
         shape = None
@@ -265,8 +248,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_xp_5d_set_shape_axes(self, xp):
         x = xp.zeros([6, 2, 5, 3, 4])
         shape = [10, -1, 2]
@@ -280,8 +261,6 @@ class Test_init_nd_shape_and_axes:
         assert shape_res == shape_expected
         assert axes_res == axes_expected
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_shape_axes_subset(self, xp):
         x = xp.zeros((2, 3, 4, 5))
         shape, axes = _init_nd_shape_and_axes(x, shape=(5, 5, 5), axes=None)
@@ -289,8 +268,6 @@ class Test_init_nd_shape_and_axes:
         assert shape == (5, 5, 5)
         assert axes == [1, 2, 3]
 
-    @skip_if_array_api_gpu
-    @array_api_compatible
     def test_errors(self, xp):
         x = xp.zeros(1)
         with assert_raises(ValueError, match="axes must be a scalar or "
@@ -338,35 +315,28 @@ class Test_init_nd_shape_and_axes:
             _init_nd_shape_and_axes(x, shape=-2, axes=None)
 
 
+@skip_xp_backends('torch',
+                   reasons=['torch.fft not yet implemented by array-api-compat'])
 class TestFFTShift:
 
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
     def test_definition(self, xp):
-        x = xp.asarray([0, 1, 2, 3, 4, -4, -3, -2, -1])
-        y = xp.asarray([-4, -3, -2, -1, 0, 1, 2, 3, 4])
+        x = xp.asarray([0., 1, 2, 3, 4, -4, -3, -2, -1])
+        y = xp.asarray([-4., -3, -2, -1, 0, 1, 2, 3, 4])
         xp_assert_close(fft.fftshift(x), y)
         xp_assert_close(fft.ifftshift(y), x)
-        x = xp.asarray([0, 1, 2, 3, 4, -5, -4, -3, -2, -1])
-        y = xp.asarray([-5, -4, -3, -2, -1, 0, 1, 2, 3, 4])
+        x = xp.asarray([0., 1, 2, 3, 4, -5, -4, -3, -2, -1])
+        y = xp.asarray([-5., -4, -3, -2, -1, 0, 1, 2, 3, 4])
         xp_assert_close(fft.fftshift(x), y)
         xp_assert_close(fft.ifftshift(y), x)
 
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
     def test_inverse(self, xp):
         for n in [1, 4, 9, 100, 211]:
             x = xp.asarray(np.random.random((n,)))
             xp_assert_close(fft.ifftshift(fft.fftshift(x)), x)
 
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
     def test_axes_keyword(self, xp):
-        freqs = xp.asarray([[0, 1, 2], [3, 4, -4], [-3, -2, -1]])
-        shifted = xp.asarray([[-1, -3, -2], [2, 0, 1], [-4, 3, 4]])
+        freqs = xp.asarray([[0., 1, 2], [3, 4, -4], [-3, -2, -1]])
+        shifted = xp.asarray([[-1., -3, -2], [2, 0, 1], [-4, 3, 4]])
         xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shifted)
         xp_assert_close(fft.fftshift(freqs, axes=0), fft.fftshift(freqs, axes=(0,)))
         xp_assert_close(fft.ifftshift(shifted, axes=(0, 1)), freqs)
@@ -375,23 +345,20 @@ class TestFFTShift:
         xp_assert_close(fft.fftshift(freqs), shifted)
         xp_assert_close(fft.ifftshift(shifted), freqs)
     
-    # torch.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('torch')
-    @array_api_compatible
     def test_uneven_dims(self, xp):
         """ Test 2D input, which has uneven dimension sizes """
         freqs = xp.asarray([
             [0, 1],
             [2, 3],
             [4, 5]
-        ])
+        ], dtype=xp.float64)
 
         # shift in dimension 0
         shift_dim0 = xp.asarray([
             [4, 5],
             [0, 1],
             [2, 3]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=0), shift_dim0)
         xp_assert_close(fft.ifftshift(shift_dim0, axes=0), freqs)
         xp_assert_close(fft.fftshift(freqs, axes=(0,)), shift_dim0)
@@ -402,7 +369,7 @@ class TestFFTShift:
             [1, 0],
             [3, 2],
             [5, 4]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=1), shift_dim1)
         xp_assert_close(fft.ifftshift(shift_dim1, axes=1), freqs)
 
@@ -411,7 +378,7 @@ class TestFFTShift:
             [5, 4],
             [1, 0],
             [3, 2]
-        ])
+        ], dtype=xp.float64)
         xp_assert_close(fft.fftshift(freqs, axes=(0, 1)), shift_dim_both)
         xp_assert_close(fft.ifftshift(shift_dim_both, axes=(0, 1)), freqs)
         xp_assert_close(fft.fftshift(freqs, axes=[0, 1]), shift_dim_both)
@@ -424,13 +391,11 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
+@skip_xp_backends('array_api_strict', 'cupy',
+                   reasons=['fft not yet implemented by array-api-strict',
+                            'cupy.fft not yet implemented by array-api-compat'])
 class TestFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # cupy.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('cupy')
-    @array_api_compatible
     def test_definition(self, xp):
         device = SCIPY_DEVICE
         try:
@@ -454,13 +419,11 @@ class TestFFTFreq:
         xp_assert_close(y, x2)
 
 
+@skip_xp_backends('array_api_strict', 'cupy',
+                   reasons=['fft not yet implemented by array-api-strict',
+                            'cupy.fft not yet implemented by array-api-compat'])
 class TestRFFTFreq:
 
-    # fft not yet implemented by numpy.array_api
-    @skip_if_array_api_backend('numpy.array_api')
-    # cupy.fft not yet implemented by array-api-compat
-    @skip_if_array_api_backend('cupy')
-    @array_api_compatible
     def test_definition(self, xp):
         device = SCIPY_DEVICE
         try:

@@ -1953,6 +1953,13 @@ class TestLinprogSimplexNoPresolve(LinprogSimplexTests):
 class TestLinprogIPDense(LinprogIPTests):
     options = {"sparse": False}
 
+    # see https://github.com/scipy/scipy/issues/20216 for skip reason
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on some macOS builds for reason not relevant to test"
+    )
+    def test_bug_6139(self):
+        super().test_bug_6139()
 
 if has_cholmod:
     class TestLinprogIPSparseCholmod(LinprogIPTests):
@@ -1970,6 +1977,10 @@ if has_umfpack:
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
@@ -2020,6 +2031,10 @@ class TestLinprogIPSparse(LinprogIPTests):
 class TestLinprogIPSparsePresolve(LinprogIPTests):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")

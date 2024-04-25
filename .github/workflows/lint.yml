@@ -27,19 +27,19 @@ jobs:
         python-version: ['3.11']
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4.1.1
       with:
         fetch-depth: 0
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Install Python packages
       run: |
-        python -m pip install ruff cython-lint
+        python -m pip install ruff cython-lint packaging
 
     - name: Lint
       run: |
@@ -47,3 +47,8 @@ jobs:
         python tools/lint.py --diff-against origin/$GITHUB_BASE_REF
         python tools/unicode-check.py
         python tools/check_test_name.py
+
+    - name: Check that Python.h is first in any file including it.
+      shell: bash
+      run: |
+        python tools/check_python_h_first.py 

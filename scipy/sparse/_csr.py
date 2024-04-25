@@ -114,7 +114,8 @@ class _csr_base(_cs_matrix):
 
     # these functions are used by the parent class (_cs_matrix)
     # to remove redundancy between csc_matrix and csr_array
-    def _swap(self, x):
+    @staticmethod
+    def _swap(x):
         """swap the members of x if this is a column-oriented matrix
         """
         return x

@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from scipy.stats import bootstrap, monte_carlo_test, permutation_test
+from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy import special
@@ -161,6 +161,7 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_equal(res2.standard_error.shape, result_shape)
 
 
+@pytest.mark.slow
 @pytest.mark.xfail_on_32bit("MemoryError with BCa observed in CI")
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
@@ -304,6 +305,7 @@ def test_BCa_acceleration_against_reference():
     assert_allclose(a_hat, 0.011008228344026734)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
 def test_bootstrap_against_itself_1samp(method, expected):
@@ -347,6 +349,7 @@ tests_against_itself_2samp = {"basic": 892,
                               "percentile": 890}
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_2samp.items())
 def test_bootstrap_against_itself_2samp(method, expected):
@@ -537,8 +540,10 @@ def test_bootstrap_alternative(method):
     l = stats.bootstrap(**config, confidence_level=0.95, alternative='less')
     g = stats.bootstrap(**config, confidence_level=0.95, alternative='greater')
 
-    assert_equal(l.confidence_interval.high, t.confidence_interval.high)
-    assert_equal(g.confidence_interval.low, t.confidence_interval.low)
+    assert_allclose(l.confidence_interval.high, t.confidence_interval.high,
+                    rtol=1e-14)
+    assert_allclose(g.confidence_interval.low, t.confidence_interval.low,
+                    rtol=1e-14)
     assert np.isneginf(l.confidence_interval.low)
     assert np.isposinf(g.confidence_interval.high)
 
@@ -651,6 +656,7 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_vector_valued_statistic(method):
     # Generate 95% confidence interval around MLE of normal distribution
@@ -786,7 +792,7 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
 
-
+    @pytest.mark.xslow
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
@@ -845,6 +851,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater"))
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_ks_1samp(self, alternative, a):
@@ -907,6 +914,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
@@ -926,6 +934,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
     @pytest.mark.parametrize('i', range(5))
     def test_against_anderson(self, dist_name, i):
@@ -1008,6 +1017,193 @@ class TestMonteCarloHypothesisTest:
 
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
+
+    @pytest.mark.xfail_on_32bit("Statistic may not depend on sample order on 32-bit")
+    def test_finite_precision_statistic(self):
+        # Some statistics return numerically distinct values when the values
+        # should be equal in theory. Test that `monte_carlo_test` accounts
+        # for this in some way.
+        rng = np.random.default_rng(2549824598234528)
+        n_resamples = 9999
+        def rvs(size):
+            return 1. * stats.bernoulli(p=0.333).rvs(size=size, random_state=rng)
+
+        x = rvs(100)
+        res = stats.monte_carlo_test(x, rvs, np.var, alternative='less',
+                                     n_resamples=n_resamples)
+        # show that having a tolerance matters
+        c0 = np.sum(res.null_distribution <= res.statistic)
+        c1 = np.sum(res.null_distribution <= res.statistic*(1+1e-15))
+        assert c0 != c1
+        assert res.pvalue == (c1 + 1)/(n_resamples + 1)
+
+
+class TestPower:
+    def test_input_validation(self):
+        # test that the appropriate error messages are raised for invalid input
+        rng = np.random.default_rng(8519895914314711673)
+
+        test = stats.ttest_ind
+        rvs = (rng.normal, rng.normal)
+        n_observations = (10, 12)
+
+        message = "`vectorized` must be `True`, `False`, or `None`."
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, vectorized=1.5)
+
+        message = "`rvs` must be callable or sequence of callables."
+        with pytest.raises(TypeError, match=message):
+            power(test, None, n_observations)
+        with pytest.raises(TypeError, match=message):
+            power(test, (rng.normal, 'ekki'), n_observations)
+
+        message = "If `rvs` is a sequence..."
+        with pytest.raises(ValueError, match=message):
+            power(test, (rng.normal,), n_observations)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, (10,))
+
+        message = "`significance` must contain floats between 0 and 1."
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, significance=2)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, significance=np.linspace(-1, 1))
+
+        message = "`kwargs` must be a dictionary"
+        with pytest.raises(TypeError, match=message):
+            power(test, rvs, n_observations, kwargs=(1, 2, 3))
+
+        message = "shape mismatch: objects cannot be broadcast"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, ([10, 11], [12, 13, 14]))
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, ([10, 11], [12, 13]), kwargs={'x': [1, 2, 3]})
+
+        message = "`test` must be callable"
+        with pytest.raises(TypeError, match=message):
+            power(None, rvs, n_observations)
+
+        message = "`n_resamples` must be a positive integer"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, n_resamples=-10)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, n_resamples=10.5)
+
+        message = "`batch` must be a positive integer"
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, batch=-10)
+        with pytest.raises(ValueError, match=message):
+            power(test, rvs, n_observations, batch=10.5)
+
+    @pytest.mark.slow
+    def test_batch(self):
+        # make sure that the `batch` parameter is respected by checking the
+        # maximum batch size provided in calls to `test`
+        rng = np.random.default_rng(23492340193)
+
+        def test(x, axis):
+            batch_size = 1 if x.ndim == 1 else len(x)
+            test.batch_size = max(batch_size, test.batch_size)
+            test.counter += 1
+            return stats.ttest_1samp(x, 0, axis=axis).pvalue
+        test.counter = 0
+        test.batch_size = 0
+
+        kwds = dict(test=test, n_observations=10, n_resamples=1000)
+
+        rng = np.random.default_rng(23492340193)
+        res1 = power(**kwds, rvs=rng.normal, batch=1)
+        assert_equal(test.counter, 1000)
+        assert_equal(test.batch_size, 1)
+
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res2 = power(**kwds, rvs=rng.normal, batch=50)
+        assert_equal(test.counter, 20)
+        assert_equal(test.batch_size, 50)
+
+        rng = np.random.default_rng(23492340193)
+        test.counter = 0
+        res3 = power(**kwds, rvs=rng.normal, batch=1000)
+        assert_equal(test.counter, 1)
+        assert_equal(test.batch_size, 1000)
+
+        assert_equal(res1.power, res3.power)
+        assert_equal(res2.power, res3.power)
+
+    @pytest.mark.slow
+    def test_vectorization(self):
+        # Test that `power` is vectorized as expected
+        rng = np.random.default_rng(25495254834552)
+
+        # Single vectorized call
+        popmeans = np.array([0, 0.2])
+        def test(x, alternative, axis=-1):
+            # ensure that popmeans axis is zeroth and orthogonal to the rest
+            popmeans_expanded = np.expand_dims(popmeans, tuple(range(1, x.ndim + 1)))
+            return stats.ttest_1samp(x, popmeans_expanded, alternative=alternative,
+                                     axis=axis)
+
+        # nx and kwargs broadcast against one another
+        nx = np.asarray([10, 15, 20, 50, 100])[:, np.newaxis]
+        kwargs = {'alternative': ['less', 'greater', 'two-sided']}
+
+        # This dimension is added to the beginning
+        significance = np.asarray([0.01, 0.025, 0.05, 0.1])
+        res = stats.power(test, rng.normal, nx, significance=significance,
+                          kwargs=kwargs)
+
+        # Looping over all combinations
+        ref = []
+        for significance_i in significance:
+            for nx_i in nx:
+                for alternative_i in kwargs['alternative']:
+                    for popmean_i in popmeans:
+                        def test2(x, axis=-1):
+                            return stats.ttest_1samp(x, popmean_i, axis=axis,
+                                                     alternative=alternative_i)
+
+                        tmp = stats.power(test2, rng.normal, nx_i,
+                                          significance=significance_i)
+                        ref.append(tmp.power)
+        ref = np.reshape(ref, res.power.shape)
+
+        # Show that results are similar
+        assert_allclose(res.power, ref, rtol=2e-2, atol=1e-2)
+
+    def test_ttest_ind_null(self):
+        # Check that the p-values of `ttest_ind` are uniformly distributed under
+        # the null hypothesis
+        rng = np.random.default_rng(254952548345528)
+
+        test = stats.ttest_ind
+        n_observations = rng.integers(10, 100, size=(2, 10))
+        rvs = rng.normal, rng.normal
+        significance = np.asarray([0.01, 0.05, 0.1])
+        res = stats.power(test, rvs, n_observations, significance=significance)
+        significance = np.broadcast_to(significance[:, np.newaxis], res.power.shape)
+        assert_allclose(res.power, significance, atol=1e-2)
+
+    def test_ttest_1samp_power(self):
+        # Check simulated ttest_1samp power against reference
+        rng = np.random.default_rng(254952548345528)
+
+        # Reference values computed with statmodels
+        # import numpy as np
+        # from statsmodels.stats.power import tt_solve_power
+        # tt_solve_power = np.vectorize(tt_solve_power)
+        # tt_solve_power([0.1, 0.5, 0.9], [[10], [20]], [[[0.01]], [[0.05]]])
+        ref = [[[0.0126515 , 0.10269751, 0.40415802],
+                [0.01657775, 0.29734608, 0.86228288]],
+               [[0.0592903 , 0.29317561, 0.71718121],
+                [0.07094116, 0.56450441, 0.96815163]]]
+
+        kwargs = {'popmean': [0.1, 0.5, 0.9]}
+        n_observations = [[10], [20]]
+        significance = [0.01, 0.05]
+        res = stats.power(stats.ttest_1samp, rng.normal, n_observations,
+                          significance=significance, kwargs=kwargs)
+        assert_allclose(res.power, ref, atol=1e-2)
 
 
 class TestPermutationTest:
@@ -1598,6 +1794,7 @@ class TestPermutationTest:
                                >= np.abs(S-mean))/n
         assert_allclose(expected_Pr_gte_S_mean, Pr_gte_S_mean)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative, expected_pvalue',
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),

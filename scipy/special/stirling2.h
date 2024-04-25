@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "special/binom.h"
 #include "special/lambertw.h"
 
 

@@ -400,6 +400,8 @@ class TestConstructUtils:
         assert_equal(construct.vstack([A, B], dtype=np.float32).dtype,
                      np.float32)
 
+        assert_equal(construct.vstack([A.todok(), B.todok()]).toarray(), expected)
+
         assert_equal(construct.vstack([A.tocsr(), B.tocsr()]).toarray(),
                      expected)
         result = construct.vstack([A.tocsr(), B.tocsr()],
@@ -425,7 +427,7 @@ class TestConstructUtils:
         assert isinstance(construct.vstack([coo_matrix(A), coo_matrix(B)]), spmatrix)
 
     @pytest.mark.parametrize("coo_cls", [coo_matrix, coo_array])
-    def test_hstack(self,coo_cls):
+    def test_hstack(self, coo_cls):
         A = coo_cls([[1,2],[3,4]])
         B = coo_cls([[5],[6]])
 
@@ -434,6 +436,9 @@ class TestConstructUtils:
         assert_equal(construct.hstack([A, B]).toarray(), expected)
         assert_equal(construct.hstack([A, B], dtype=np.float32).dtype,
                      np.float32)
+
+        assert_equal(construct.hstack([A.todok(), B.todok()]).toarray(), expected)
+
         assert_equal(construct.hstack([A.tocsc(), B.tocsc()]).toarray(),
                      expected)
         assert_equal(construct.hstack([A.tocsc(), B.tocsc()],

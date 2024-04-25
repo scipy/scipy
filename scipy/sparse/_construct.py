@@ -1208,7 +1208,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # rng.choice uses int64 if first arg is an int
     if tot_prod < np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
-        ind = np.unravel_index(raveled_ind, shape=shape)
+        ind = np.unravel_index(raveled_ind, shape=shape, order='F')
     else:
         # for ravel indices bigger than dtype max, use sets to remove duplicates
         ndim = len(shape)

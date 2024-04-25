@@ -3,6 +3,7 @@
 from math import ceil, log
 import operator
 import warnings
+from typing import Literal, Optional
 
 import numpy as np
 from numpy.fft import irfft, fft, ifft
@@ -10,6 +11,7 @@ from scipy.special import sinc
 from scipy.linalg import (toeplitz, hankel, solve, LinAlgError, LinAlgWarning,
                           lstsq)
 from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy.signal._arraytools import _validate_fs
 
 from . import _sigtools
 
@@ -394,6 +396,7 @@ def firwin(numtaps, cutoff, *, width=None, window='hamming', pass_zero=True,
     """
     # The major enhancements to this function added in November 2010 were
     # developed by Tom Krauss (see ticket #902).
+    fs = _validate_fs(fs, allow_none=True)
 
     nyq = 0.5 * _get_fs(fs, nyq)
 
@@ -599,6 +602,7 @@ def firwin2(numtaps, freq, gain, *, nfreqs=None, window='hamming', nyq=_NoValue,
     [-0.02286961 -0.06362756  0.57310236  0.57310236 -0.06362756 -0.02286961]
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     nyq = 0.5 * _get_fs(fs, nyq)
 
     if len(freq) != len(gain):
@@ -852,6 +856,7 @@ def remez(numtaps, bands, desired, *, weight=None, Hz=_NoValue, type='bandpass',
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     if Hz is _NoValue and fs is None:
         fs = 1.0
     elif Hz is not _NoValue:
@@ -996,6 +1001,7 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     >>> plt.show()
 
     """
+    fs = _validate_fs(fs, allow_none=True)
     nyq = 0.5 * _get_fs(fs, nyq)
 
     numtaps = int(numtaps)
@@ -1017,8 +1023,10 @@ def firls(numtaps, bands, desired, *, weight=None, nyq=_NoValue, fs=None):
     # check remaining params
     desired = np.asarray(desired).flatten()
     if bands.size != desired.size:
-        raise ValueError("desired must have one entry per frequency, got {} "
-                         "gains for {} frequencies.".format(desired.size, bands.size))
+        raise ValueError(
+            f"desired must have one entry per frequency, got {desired.size}"
+            f"gains for {bands.size} frequencies."
+        )
     desired.shape = (-1, 2)
     if (np.diff(bands) <= 0).any() or (np.diff(bands[:, 0]) < 0).any():
         raise ValueError("bands must be monotonically nondecreasing and have "
@@ -1120,7 +1128,9 @@ def _dhtm(mag):
     return recon
 
 
-def minimum_phase(h, method='homomorphic', n_fft=None):
+def minimum_phase(h: np.ndarray,
+                  method: Literal['homomorphic', 'hilbert'] = 'homomorphic',
+                  n_fft: Optional[int] = None, *, half: bool = True) -> np.ndarray:
     """Convert a linear-phase FIR filter to minimum phase
 
     Parameters
@@ -1128,13 +1138,16 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     h : array
         Linear-phase FIR filter coefficients.
     method : {'hilbert', 'homomorphic'}
-        The method to use:
+        The provided methods are:
 
             'homomorphic' (default)
                 This method [4]_ [5]_ works best with filters with an
                 odd number of taps, and the resulting minimum phase filter
                 will have a magnitude response that approximates the square
-                root of the original filter's magnitude response.
+                root of the original filter's magnitude response using half
+                the number of taps when ``half=True`` (default), or the
+                original magnitude spectrum using the same number of taps
+                when ``half=False``.
 
             'hilbert'
                 This method [1]_ is designed to be used with equiripple
@@ -1144,12 +1157,20 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     n_fft : int
         The number of points to use for the FFT. Should be at least a
         few times larger than the signal length (see Notes).
+    half : bool
+        If ``True``, create a filter that is half the length of the original, with a
+        magnitude spectrum that is the square root of the original. If ``False``,
+        create a filter that is the same length as the original, with a magnitude
+        spectrum that is designed to match the original (only supported when
+        ``method='homomorphic'``).
+
+        .. versionadded:: 1.14.0
 
     Returns
     -------
     h_minimum : array
         The minimum-phase version of the filter, with length
-        ``(length(h) + 1) // 2``.
+        ``(len(h) + 1) // 2`` when ``half is True`` or ``len(h)`` otherwise.
 
     See Also
     --------
@@ -1180,9 +1201,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
 
     Alternative implementations exist for creating minimum-phase filters,
     including zero inversion [2]_ and spectral factorization [3]_ [4]_.
-    For more information, see:
-
-        http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters
+    For more information, see `this DSPGuru page
+    <http://dspguru.com/dsp/howtos/how-to-design-minimum-phase-fir-filters>`__.
 
     References
     ----------
@@ -1200,49 +1220,66 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     .. [4] J. S. Lim, Advanced Topics in Signal Processing.
            Englewood Cliffs, N.J.: Prentice Hall, 1988.
     .. [5] A. V. Oppenheim, R. W. Schafer, and J. R. Buck,
-           "Discrete-Time Signal Processing," 2nd edition.
-           Upper Saddle River, N.J.: Prentice Hall, 1999.
+           "Discrete-Time Signal Processing," 3rd edition.
+           Upper Saddle River, N.J.: Pearson, 2009.
 
     Examples
     --------
-    Create an optimal linear-phase filter, then convert it to minimum phase:
+    Create an optimal linear-phase low-pass filter `h` with a transition band of
+    [0.2, 0.3] (assuming a Nyquist frequency of 1):
 
     >>> import numpy as np
     >>> from scipy.signal import remez, minimum_phase, freqz, group_delay
     >>> import matplotlib.pyplot as plt
     >>> freq = [0, 0.2, 0.3, 1.0]
     >>> desired = [1, 0]
-    >>> h_linear = remez(151, freq, desired, fs=2.)
+    >>> h_linear = remez(151, freq, desired, fs=2)
 
     Convert it to minimum phase:
 
-    >>> h_min_hom = minimum_phase(h_linear, method='homomorphic')
-    >>> h_min_hil = minimum_phase(h_linear, method='hilbert')
+    >>> h_hil = minimum_phase(h_linear, method='hilbert')
+    >>> h_hom = minimum_phase(h_linear, method='homomorphic')
+    >>> h_hom_full = minimum_phase(h_linear, method='homomorphic', half=False)
 
-    Compare the three filters:
+    Compare the impulse and frequency response of the four filters:
 
-    >>> fig, axs = plt.subplots(4, figsize=(4, 8))
-    >>> for h, style, color in zip((h_linear, h_min_hom, h_min_hil),
-    ...                            ('-', '-', '--'), ('k', 'r', 'c')):
-    ...     w, H = freqz(h)
-    ...     w, gd = group_delay((h, 1))
-    ...     w /= np.pi
-    ...     axs[0].plot(h, color=color, linestyle=style)
-    ...     axs[1].plot(w, np.abs(H), color=color, linestyle=style)
-    ...     axs[2].plot(w, 20 * np.log10(np.abs(H)), color=color, linestyle=style)
-    ...     axs[3].plot(w, gd, color=color, linestyle=style)
-    >>> for ax in axs:
-    ...     ax.grid(True, color='0.5')
-    ...     ax.fill_between(freq[1:3], *ax.get_ylim(), color='#ffeeaa', zorder=1)
-    >>> axs[0].set(xlim=[0, len(h_linear) - 1], ylabel='Amplitude', xlabel='Samples')
-    >>> axs[1].legend(['Linear', 'Min-Hom', 'Min-Hil'], title='Phase')
-    >>> for ax, ylim in zip(axs[1:], ([0, 1.1], [-150, 10], [-60, 60])):
-    ...     ax.set(xlim=[0, 1], ylim=ylim, xlabel='Frequency')
-    >>> axs[1].set(ylabel='Magnitude')
-    >>> axs[2].set(ylabel='Magnitude (dB)')
-    >>> axs[3].set(ylabel='Group delay')
-    >>> plt.tight_layout()
+    >>> fig0, ax0 = plt.subplots(figsize=(6, 3), tight_layout=True)
+    >>> fig1, axs = plt.subplots(3, sharex='all', figsize=(6, 6), tight_layout=True)
+    >>> ax0.set_title("Impulse response")
+    >>> ax0.set(xlabel='Samples', ylabel='Amplitude', xlim=(0, len(h_linear) - 1))
+    >>> axs[0].set_title("Frequency Response")
+    >>> axs[0].set(xlim=(0, .65), ylabel="Magnitude / dB")
+    >>> axs[1].set(ylabel="Phase / rad")
+    >>> axs[2].set(ylabel="Group Delay / samples", ylim=(-31, 81),
+    ...             xlabel='Normalized Frequency (Nyqist frequency: 1)')
+    >>> for h, lb in ((h_linear,   f'Linear ({len(h_linear)})'),
+    ...               (h_hil,      f'Min-Hilbert ({len(h_hil)})'),
+    ...               (h_hom,      f'Min-Homomorphic ({len(h_hom)})'),
+    ...               (h_hom_full, f'Min-Homom. Full ({len(h_hom_full)})')):
+    ...     w_H, H = freqz(h, fs=2)
+    ...     w_gd, gd = group_delay((h, 1), fs=2)
+    ...
+    ...     alpha = 1.0 if lb == 'linear' else 0.5  # full opacity for 'linear' line
+    ...     ax0.plot(h, '.-', alpha=alpha, label=lb)
+    ...     axs[0].plot(w_H, 20 * np.log10(np.abs(H)), alpha=alpha)
+    ...     axs[1].plot(w_H, np.unwrap(np.angle(H)), alpha=alpha, label=lb)
+    ...     axs[2].plot(w_gd, gd, alpha=alpha)
+    >>> ax0.grid(True)
+    >>> ax0.legend(title='Filter Phase (Order)')
+    >>> axs[1].legend(title='Filter Phase (Order)', loc='lower right')
+    >>> for ax_ in axs:  # shade transition band:
+    ...     ax_.axvspan(freq[1], freq[2], color='y', alpha=.25)
+    ...     ax_.grid(True)
+    >>> plt.show()
 
+    The impulse response and group delay plot depict the 75 sample delay of the linear
+    phase filter `h`. The phase should also be linear in the stop band--due to the small
+    magnitude, numeric noise dominates there. Furthermore, the plots show that the
+    minimum phase filters clearly show a reduced (negative) phase slope in the pass and
+    transition band. The plots also illustrate that the filter with parameters
+    ``method='homomorphic', half=False`` has same order and magnitude response as the
+    linear filter `h` wheras the other minimum phase filters have only half the order
+    and the square root  of the magnitude response.
     """
     h = np.asarray(h)
     if np.iscomplexobj(h):
@@ -1256,6 +1293,8 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     if not isinstance(method, str) or method not in \
             ('homomorphic', 'hilbert',):
         raise ValueError(f'method must be "homomorphic" or "hilbert", got {method!r}')
+    if method == "hilbert" and not half:
+        raise ValueError("`half=False` is only supported when `method='homomorphic'`")
     if n_fft is None:
         n_fft = 2 ** int(np.ceil(np.log2(2 * (len(h) - 1) / 0.01)))
     n_fft = int(n_fft)
@@ -1278,19 +1317,22 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
         # take 0.25*log(|H|**2) = 0.5*log(|H|)
         h_temp += 1e-7 * h_temp[h_temp > 0].min()  # don't let log blow up
         np.log(h_temp, out=h_temp)
-        h_temp *= 0.5
+        if half:  # halving of magnitude spectrum optional
+            h_temp *= 0.5
         # IDFT
         h_temp = ifft(h_temp).real
         # multiply pointwise by the homomorphic filter
         # lmin[n] = 2u[n] - d[n]
+        # i.e., double the positive frequencies and zero out the negative ones;
+        # Oppenheim+Shafer 3rd ed p991 eq13.42b and p1004 fig13.7
         win = np.zeros(n_fft)
         win[0] = 1
-        stop = (len(h) + 1) // 2
+        stop = n_fft // 2
         win[1:stop] = 2
-        if len(h) % 2:
+        if n_fft % 2:
             win[stop] = 1
         h_temp *= win
         h_temp = ifft(np.exp(fft(h_temp)))
         h_minimum = h_temp.real
-    n_out = n_half + len(h) % 2
+    n_out = (n_half + len(h) % 2) if half else len(h)
     return h_minimum[:n_out]

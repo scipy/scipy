@@ -111,7 +111,7 @@ class cKDTree(Generic[_BoxType]):
         self,
         x: npt.ArrayLike,
         r: npt.ArrayLike,
-        p: float,
+        p: float = ...,
         eps: float = ...,
         workers: int | None = ...,
         return_sorted: bool | None = ...,

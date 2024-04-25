@@ -13,56 +13,18 @@ Dependencies
 ------------
 Dependencies are things that a user has to install in order to use (or
 build/test) a package.  They usually cause trouble, especially if they're not
-optional.  SciPy tries to keep its dependencies to a minimum; currently they
-are:
+optional.  SciPy tries to keep its dependencies to a minimum; the current required
+and optional build time dependencies can be seen in `SciPy's configuration file`_, 
+``pyproject.toml``. The only non-optional runtime dependency is NumPy_.
 
-*Unconditional run-time dependencies:*
-
-- Numpy_
-
-*Conditional run-time dependencies:*
-
-- pytest (to run the test suite)
-- asv_ (to run the benchmarks)
-- matplotlib_ (for some functions that can produce plots)
-- pooch_ (for the scipy.datasets module)
-- Pillow_ (for image loading/saving)
-- scikits.umfpack_ (optionally used in ``sparse.linalg``)
-- mpmath_ (for more extended tests in ``special``)
-- pydata/sparse (compatibility support in ``scipy.sparse``)
-- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
-- Hypothesis_ (to run certain unit tests)
-
-*Unconditional build-time dependencies:*
-
-- Numpy_
-- A BLAS and LAPACK implementation (reference BLAS/LAPACK, ATLAS, OpenBLAS,
-  MKL are all known to work)
-- Cython_
-- setuptools_
-- pybind11_
-
-*Conditional build-time dependencies:*
-
-- wheel_ (``python setup.py bdist_wheel``)
-- Sphinx_ (docs)
-- `PyData Sphinx theme`_ (docs)
-- `Sphinx-Design`_  (docs)
-- matplotlib_ (docs)
-- MyST-NB_ (docs)
-
-Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
-but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
+Furthermore, of course one needs C, C++ and Fortran compilers to build SciPy,
+but we don't consider those to be dependencies, and therefore they are not discussed
+here.  For details, see :ref:`building-from-source`.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
-scipy) the package instead.  For example, decorator_ is vendored in
+SciPy) the package instead.  For example, decorator_ is vendored in
 ``scipy._lib``.
-
-The only dependency that is reported to pip_  is Numpy_, see
-``install_requires`` in SciPy's main ``setup.py``.  The other dependencies
-aren't needed for SciPy to function correctly
 
 Issues with dependency handling
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -189,6 +151,7 @@ would need to be distributed via custom channels, e.g. in a
 Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 
 
+.. _`SciPy's configuration file`: https://github.com/scipy/scipy/blob/main/pyproject.toml
 .. _Numpy: https://numpy.org
 .. _Python: https://www.python.org
 .. _nose: https://nose.readthedocs.io
