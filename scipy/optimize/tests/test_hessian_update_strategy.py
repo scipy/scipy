@@ -1,8 +1,7 @@
 import re
-
-import numpy as np
 from copy import deepcopy
 
+import numpy as np
 import pytest
 from numpy.linalg import norm
 from numpy.testing import (TestCase, assert_array_almost_equal,
@@ -100,34 +99,41 @@ class TestHessianUpdateStrategy(TestCase):
     def test_initialize_catch_illegal(self):
         ndims = 3
         # no complex allowed
-        init_scales_message = ((complex(3.14),
-                                re.escape("float() argument must be a "
-                                          "string or a real number, "
-                                          "not 'complex'")),
-                               (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
-                                "init_scale contains complex elements, "
-                                "must be real."),
+        inits_msg_errtype = ((complex(3.14),
+                              re.escape("float() argument must be a "
+                                        "string or a real number, "
+                                        "not 'complex'"),
+                              TypeError),
 
-                               (np.array([[43, 24, 33],
-                                          [24, 36, 44, ],
-                                          [33, 44, 37, ]]).astype(np.complex128),
-                                "init_scale contains complex elements, "
-                                "must be real."),
+                             (np.array([3.2, 2.3, 1.2]).astype(np.complex128),
+                              "init_scale contains complex elements, "
+                              "must be real.",
+                              TypeError),
 
-                               # not square
-                               (np.array([[43, 55, 66]]),
-                                ".*"),
+                             (np.array([[43, 24, 33],
+                                        [24, 36, 44, ],
+                                        [33, 44, 37, ]]).astype(np.complex128),
+                              "init_scale contains complex elements, "
+                              "must be real.",
+                              TypeError),
 
-                               # not symmetric
-                               (np.array([[43, 24, 33],
-                                          [24.1, 36, 44, ],
-                                          [33, 44, 37, ]]),
-                                "If init_scale is an array, it must be"
-                                " symmetric, approximating a hess/inv_hess."),
+                             # not square
+                             (np.array([[43, 55, 66]]),
+                              re.escape(
+                                  "If init_scale is an array, it must have the "
+                                  "dimensions of the matrix: (3, 3)."),
+                              ValueError),
 
-                               )
+                             # not symmetric
+                             (np.array([[43, 24, 33],
+                                        [24.1, 36, 44, ],
+                                        [33, 44, 37, ]]),
+                              "If init_scale is an array, it must be"
+                              " symmetric, approximating a hess/inv_hess.",
+                              ValueError),
+                             )
         for approx_type in ['hess', 'inv_hess']:
-            for init_scale, message in init_scales_message:
+            for init_scale, message, errortype in inits_msg_errtype:
                 # large min_{denominator,curvatur} makes it skip an update,
                 # so we can retrieve our initial matrix
                 quasi_newton = (BFGS(init_scale=init_scale),
@@ -135,7 +141,7 @@ class TestHessianUpdateStrategy(TestCase):
 
                 for qn in quasi_newton:
                     qn.initialize(ndims, approx_type)
-                    with pytest.raises(TypeError, match=message):
+                    with pytest.raises(errortype, match=message):
                         qn.update(np.ones(ndims), np.arange(ndims))
 
     def test_rosenbrock_with_no_exception(self):
