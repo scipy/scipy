@@ -3,6 +3,8 @@ exclude = [
     "scipy/datasets/_registry.py",
 ]
 
+force-exclude = true
+
 line-length = 88
 
 # Assume Python 3.9
