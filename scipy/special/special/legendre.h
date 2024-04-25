@@ -134,16 +134,17 @@ template <typename T>
 T assoc_legendre_p_diag(int m, T x) {
     int m_abs = std::abs(m);
 
+    T y_sq = std::fma(-x, x, 1);
     T res = 1;
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        res *= -std::sqrt(1 - x * x);
+        res *= -std::sqrt(y_sq);
     }
 
     // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        res *= T(2 * j - 1) * T(2 * j + 1) * (1 - x * x);
+        res *= T(2 * j - 1) * T(2 * j + 1) * (y_sq);
     }
 
     if (m < 0) {
@@ -258,11 +259,11 @@ T assoc_legendre_p_hess_diag(int m, T z) {
     }
 
     if (m == 1) {
-        return 1 / (std::sqrt(1 - z * z) * (1 - z * z));
+        return 1 / (std::sqrt(std::fma(-z, z, 1)) * std::fma(-z, z, 1));
     }
 
     if (m == -1) {
-        return -1 / (2 * std::sqrt(1 - z * z) * (1 - z * z));
+        return -1 / (2 * std::sqrt(std::fma(-z, z, 1)) * std::fma(-z, z, 1));
     }
 
     if (m == 2) {
@@ -274,11 +275,11 @@ T assoc_legendre_p_hess_diag(int m, T z) {
     }
 
     if (m == 3) {
-        return 45 * (1 - 2 * z * z) / std::sqrt(1 - z * z);
+        return 45 * (1 - 2 * z * z) / std::sqrt(std::fma(-z, z, 1));
     }
 
     if (m == -3) {
-        return (2 * z * z - 1) / (16 * std::sqrt(1 - z * z));
+        return (2 * z * z - 1) / (16 * std::sqrt(std::fma(-z, z, 1)));
     }
 
     if (m < 0) {
