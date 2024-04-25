@@ -1,3 +1,5 @@
+name: Redirect circleci artifacts
+
 on: [status]
 jobs:
   circleci_artifacts_redirector_job:

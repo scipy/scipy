@@ -155,6 +155,16 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
     array([ True,  True])
 
     """
+    def _wrapped_func(*fargs):
+        """
+        Wrapped `func` to track the number of times
+        the function has been called.
+        """
+        _wrapped_func.nfev += 1
+        return func(*fargs)
+
+    _wrapped_func.nfev = 0
+
     options = {'col_deriv': col_deriv,
                'xtol': xtol,
                'maxfev': maxfev,
@@ -163,7 +173,9 @@ def fsolve(func, x0, args=(), fprime=None, full_output=0,
                'factor': factor,
                'diag': diag}
 
-    res = _root_hybr(func, x0, args, jac=fprime, **options)
+    res = _root_hybr(_wrapped_func, x0, args, jac=fprime, **options)
+    res.nfev = _wrapped_func.nfev
+
     if full_output:
         x = res['x']
         info = {k: res.get(k)
@@ -790,6 +802,11 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     Box constraints can be handled by methods 'trf' and 'dogbox'. Refer to
     the docstring of `least_squares` for more information.
 
+    Parameters to be fitted must have similar scale. Differences of multiple
+    orders of magnitude can lead to incorrect results. For the 'trf' and
+    'dogbox' methods, the `x_scale` keyword argument can be used to scale
+    the parameters.
+
     References
     ----------
     [1] K. Vugrin et al. Confidence region estimation techniques for nonlinear
@@ -847,9 +864,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     The value is small, so it does not raise much concern. If, however, we were
     to add a fourth parameter ``d`` to `func` with the same effect as ``a``:
 
-    >>> def func(x, a, b, c, d):
+    >>> def func2(x, a, b, c, d):
     ...     return a * d * np.exp(-b * x) + c  # a and d are redundant
-    >>> popt, pcov = curve_fit(func, xdata, ydata)
+    >>> popt, pcov = curve_fit(func2, xdata, ydata)
     >>> np.linalg.cond(pcov)
     1.13250718925596e+32  # may vary
 
@@ -864,6 +881,25 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
     suggesting that the optimal values of these parameters are ambiguous and
     that only one of these parameters is needed in the model.
 
+    If the optimal parameters of `f` differ by multiple orders of magnitude, the
+    resulting fit can be inaccurate. Sometimes, `curve_fit` can fail to find any
+    results:
+
+    >>> ydata = func(xdata, 500000, 0.01, 15)
+    >>> try:
+    ...     popt, pcov = curve_fit(func, xdata, ydata, method = 'trf')
+    ... except RuntimeError as e:
+    ...     print(e)
+    Optimal parameters not found: The maximum number of function evaluations is
+    exceeded.
+
+    If parameter scale is roughly known beforehand, it can be defined in
+    `x_scale` argument:
+
+    >>> popt, pcov = curve_fit(func, xdata, ydata, method = 'trf',
+    ...                        x_scale = [1000, 1, 1])
+    >>> popt
+    array([5.00000000e+05, 1.00000000e-02, 1.49999999e+01])
     """
     if p0 is None:
         # determine number of parameters by inspecting the function

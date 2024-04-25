@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Process f2py template files (`filename.pyf.src` -> `filename.pyf`)
 
@@ -289,9 +290,9 @@ def main():
                             cwd=os.getcwd())
         out, err = p.communicate()
         if not (p.returncode == 0):
-            raise RuntimeError(f"Writing {args.outfile} with f2py failed!\n"
-                            f"{out}\n"
-                            r"{err}")
+            raise RuntimeError(f"Processing {fname_pyf} with f2py failed!\n"
+                               f"{out.decode()}\n"
+                               f"{err.decode()}")
 
 
 if __name__ == "__main__":

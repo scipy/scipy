@@ -1096,7 +1096,7 @@ The following plot shows three different spectral representations of four sine s
 
 Note that depending on the representation, the height of the peaks vary. Only the
 interpretation of the magnitude spectrum is straightforward: The peak at :math:`f_z` in
-the  represents half the magnitude :math:`|a|` of the sine signal. For all other
+the second plot represents half the magnitude :math:`|a|` of the sine signal. For all other
 representations the duration :math:`\tau` needs to be taken into account to extract
 information about the signal's amplitude.
 
@@ -1322,7 +1322,7 @@ The :func:`~scipy.signal.periodogram` function calculates a power spectral densi
 (``scaling='density'``) or a squared magnitude spectrum (``scaling='spectrum'``). To
 obtain a smoothed periodogram, the :func:`~scipy.signal.welch` function can be used. It
 does the smoothing by dividing the input signal into overlapping segments, to then
-calculate the windowed DFT of each segment. The result is to the average of thoseDFTs.
+calculate the windowed DFT of each segment. The result is to the average of those DFTs.
 
 .. Consult ``TestSampledSpectralRepresentations.test_windowed_DFT`` in file
    `signal/test/test_spectral.py` for plausibility tests that the scalings of
@@ -1472,11 +1472,11 @@ reformulate Eq. :math:numref:`eq_dSTFT` as a two-step process:
    at :math:`t[p] :=  p \Delta t = h T` (see `delta_t`),
    i.e.,
 
-    .. math::
-        :label: eq_STFT_windowing
+   .. math::
+       :label: eq_STFT_windowing
 
-        x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
-                 \quad m = 0, \ldots M-1\ ,
+       x_p[m] = x\!\big[m - \lfloor M/2\rfloor + h p\big]\, \conj{w[m]}\ ,
+                \quad m = 0, \ldots M-1\ ,
 
    where the integer :math:`\lfloor M/2\rfloor` represents ``M//2``, i.e, it is
    the mid point of the window (`m_num_mid`). For notational convenience,

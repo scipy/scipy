@@ -40,11 +40,14 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     res : ndarray
         The result, ``np.log(np.sum(np.exp(a)))`` calculated in a numerically
         more stable way. If `b` is given then ``np.log(np.sum(b*np.exp(a)))``
-        is returned.
+        is returned. If ``return_sign`` is True, ``res`` contains the log of
+        the absolute value of the argument.
     sgn : ndarray
-        If return_sign is True, this will be an array of floating-point
-        numbers matching res and +1, 0, or -1 depending on the sign
-        of the result. If False, only one result is returned.
+        If ``return_sign`` is True, this will be an array of floating-point
+        numbers matching res containing +1, 0, -1 (for real-valued inputs)
+        or a complex phase (for complex inputs). This gives the sign of the
+        argument of the logarithm in ``res``.
+        If ``return_sign`` is False, only one result is returned.
 
     See Also
     --------
@@ -97,7 +100,10 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
             a = a + 0.  # promote to at least float
             a[b == 0] = -np.inf
 
-    a_max = np.amax(a, axis=axis, keepdims=True)
+    # Scale by real part for complex inputs, because this affects
+    # the magnitude of the exponential.
+    initial_value = -np.inf if np.size(a) == 0 else None
+    a_max = np.amax(a.real, axis=axis, keepdims=True, initial=initial_value)
 
     if a_max.ndim > 0:
         a_max[~np.isfinite(a_max)] = 0
@@ -114,8 +120,12 @@ def logsumexp(a, axis=None, b=None, keepdims=False, return_sign=False):
     with np.errstate(divide='ignore'):
         s = np.sum(tmp, axis=axis, keepdims=keepdims)
         if return_sign:
-            sgn = np.sign(s)
-            s *= sgn  # /= makes more sense but we need zero -> zero
+            # For complex, use the numpy>=2.0 convention for sign.
+            if np.issubdtype(s.dtype, np.complexfloating):
+                sgn = s / np.where(s == 0, 1, abs(s))
+            else:
+                sgn = np.sign(s)
+            s = abs(s)
         out = np.log(s)
 
     if not keepdims:

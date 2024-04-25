@@ -7,7 +7,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'tf2ss', 'abcd_normalize', 'ss2tf', 'zpk2ss', 'ss2zpk',
     'cont2discrete','eye', 'atleast_2d',
-    'poly', 'prod', 'array', 'outer', 'linalg', 'tf2zpk', 'zpk2tf', 'normalize'
+    'poly', 'array', 'outer', 'linalg', 'tf2zpk', 'zpk2tf', 'normalize'
 ]
 
 

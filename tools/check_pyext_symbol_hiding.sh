@@ -8,12 +8,22 @@
 
 set -e
 
+
 count_text_symbols() {
     nm -D --defined-only "$1" | wc -l
 }
 
 check_symbols() {
     NUM=`count_text_symbols "$1"`
+    FILENAME=$(basename "$1")
+
+    # special function error handling requires shared state between extension
+    # modules that depend on it. There is a shared library encapsulating this
+    # state which is an exception.
+    if [[ "$FILENAME" == "libsf_error_state.so" ]]; then
+        return 0
+    fi
+
     if [[ "$NUM" != "1" ]]; then
         echo "$1: too many public symbols!"
         nm -D --defined-only "$1"

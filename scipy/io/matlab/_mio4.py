@@ -2,6 +2,7 @@
 '''
 import sys
 import warnings
+import math
 
 import numpy as np
 
@@ -546,7 +547,8 @@ class VarWriter4:
             self.write_bytes(arr)
 
     def write_char(self, arr, name):
-        arr = arr_to_chars(arr)
+        if arr.dtype.type == np.str_ and arr.dtype.itemsize != np.dtype('U1').itemsize:
+            arr = arr_to_chars(arr)
         arr = arr_to_2d(arr, self.oned_as)
         dims = arr.shape
         self.write_header(
@@ -556,7 +558,7 @@ class VarWriter4:
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.prod(dims)
+            n_chars = math.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)

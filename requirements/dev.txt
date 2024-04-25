@@ -4,7 +4,7 @@ mypy
 typing_extensions
 types-psutil
 pycodestyle
-ruff
+ruff>=0.0.292
 cython-lint>=0.12.2
 rich-click
 doit>=0.36.0

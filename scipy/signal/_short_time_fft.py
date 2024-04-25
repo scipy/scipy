@@ -545,8 +545,10 @@ class ShortTimeFFT:
             If the FFT length `mfft` is even, the last FFT value is not paired,
             and thus it is not scaled.
 
-        Note that the frequency values can be obtained by reading the `f`
-        property, and the number of samples by accessing the `f_pts` property.
+        Note that `onesided` and `onesided2X` do not work for complex-valued signals or
+        complex-valued windows. Furthermore, the frequency values can be obtained by
+        reading the `f` property, and the number of samples by accessing the `f_pts`
+        property.
 
         See Also
         --------
@@ -750,7 +752,8 @@ class ShortTimeFFT:
         Parameters
         ----------
         x
-            The input signal as real or complex valued array.
+            The input signal as real or complex valued array. For complex values, the
+            property `fft_mode` must be set to 'twosided' or 'centered'.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -821,6 +824,9 @@ class ShortTimeFFT:
                                    (without detrending).
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
+        if self.onesided_fft and np.iscomplexobj(x):
+            raise ValueError(f"Complex-valued `x` not allowed for {self.fft_mode=}'! "
+                             "Set property `fft_mode` to 'twosided' or 'centered'.")
         if isinstance(detr, str):
             detr = partial(detrend, type=detr)
         elif not (detr is None or callable(detr)):
@@ -1443,8 +1449,6 @@ class ShortTimeFFT:
         ----------
         n
             Number of sample of the input signal.
-        x
-            The input signal as real or complex valued array.
         p0
             The first element of the range of slices to calculate. If ``None``
             then it is set to :attr:`p_min`, which is the smallest possible
@@ -1578,7 +1582,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             return fft_lib.fft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'centered':
-            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1))
+            return fft_lib.fftshift(fft_lib.fft(x, self.mfft, axis=-1), axes=-1)
         if self.fft_mode == 'onesided':
             return fft_lib.rfft(x, n=self.mfft, axis=-1)
         if self.fft_mode == 'onesided2X':
@@ -1603,7 +1607,7 @@ class ShortTimeFFT:
         if self.fft_mode == 'twosided':
             x = fft_lib.ifft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'centered':
-            x = fft_lib.ifft(fft_lib.ifftshift(X), n=self.mfft, axis=-1)
+            x = fft_lib.ifft(fft_lib.ifftshift(X, axes=-1), n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided':
             x = fft_lib.irfft(X, n=self.mfft, axis=-1)
         elif self.fft_mode == 'onesided2X':

@@ -8,7 +8,7 @@ channels:
   - conda-forge
 dependencies:
   - python
-  - cython>=3.0.4
+  - cython>=3.0.8
   - compilers  # Currently unavailable for Windows. Comment out this line and download Rtools and add <path>\ucrt64\bin\ to your path: https://cran.r-project.org/bin/windows/Rtools/rtools40.html
   - meson
   - meson-python
@@ -29,6 +29,7 @@ dependencies:
   - pytest-timeout
   - asv >=0.6
   - hypothesis
+  - array-api-strict
   # For type annotations
   - mypy
   - typing_extensions
@@ -39,10 +40,11 @@ dependencies:
   - ipython
   - setuptools<67.3  # avoid pkg_resources deprecation warnings from MPL/scikit-umfpack
   - matplotlib
-  - pydata-sphinx-theme==0.9.0
+  - pydata-sphinx-theme>=0.15.2
   - sphinx-design
   - jupytext
   - myst-nb
+  - jupyterlite-sphinx>=0.13.1
   # Some optional test dependencies
   - mpmath
   - gmpy2
@@ -53,5 +55,5 @@ dependencies:
   - doit>=0.36.0
   - pydevtool
   # For linting
-  - ruff
+  - ruff>=0.0.292
   - cython-lint

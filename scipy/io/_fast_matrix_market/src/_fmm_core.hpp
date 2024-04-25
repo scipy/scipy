@@ -8,6 +8,7 @@
 #define FMM_NO_VECTOR
 #endif
 
+#include <Python.h>
 #include <fstream>
 
 #include <pybind11/pybind11.h>
