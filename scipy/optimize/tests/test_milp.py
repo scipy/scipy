@@ -112,7 +112,6 @@ def test_result():
     assert not res.success
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.message.startswith(msg)
-    assert msg in res.message
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
@@ -291,15 +290,14 @@ def test_infeasible_prob_16609():
 
 
 _msg_time = "Time limit reached. (HiGHS Status 13:"
-_msg_sol = "Serious numerical difficulties encountered. (HiGHS Status 16:"
+_msg_iter = "Iteration limit reached. (HiGHS Status 14:"
 
 
-# See https://github.com/scipy/scipy/pull/19255#issuecomment-1778438888
-@pytest.mark.xfail(reason="Often buggy, revisit with callbacks, gh-19255")
 @pytest.mark.skipif(np.intp(0).itemsize < 8,
                     reason="Unhandled 32-bit GCC FP bug")
+@pytest.mark.slow
 @pytest.mark.parametrize(["options", "msg"], [({"time_limit": 0.1}, _msg_time),
-                                              ({"node_limit": 1}, _msg_sol)])
+                                              ({"node_limit": 1}, _msg_iter)])
 def test_milp_timeout_16545(options, msg):
     # Ensure solution is not thrown away if MILP solver times out
     # -- see gh-16545
