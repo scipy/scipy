@@ -13,184 +13,97 @@ References
 
 """
 
-from enum import Enum
+import inspect
 import numpy as np
 from ._optimize import OptimizeWarning, OptimizeResult
 from warnings import warn
 from ._highs._highs_wrapper import _highs_wrapper
+from ._highs._highs_constants import (
+    CONST_INF,
+    MESSAGE_LEVEL_NONE,
+    HIGHS_OBJECTIVE_SENSE_MINIMIZE,
+
+    MODEL_STATUS_NOTSET,
+    MODEL_STATUS_LOAD_ERROR,
+    MODEL_STATUS_MODEL_ERROR,
+    MODEL_STATUS_PRESOLVE_ERROR,
+    MODEL_STATUS_SOLVE_ERROR,
+    MODEL_STATUS_POSTSOLVE_ERROR,
+    MODEL_STATUS_MODEL_EMPTY,
+    MODEL_STATUS_OPTIMAL,
+    MODEL_STATUS_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED,
+    MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
+    as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_OBJECTIVE_TARGET,
+    MODEL_STATUS_REACHED_TIME_LIMIT,
+    MODEL_STATUS_REACHED_ITERATION_LIMIT,
+
+    HIGHS_SIMPLEX_STRATEGY_DUAL,
+
+    HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
+
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
+    HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+)
 from scipy.sparse import csc_matrix, vstack, issparse
 
-import scipy.optimize._highs.highspy._highs as _h
-import scipy.optimize._highs.highspy._highs.simplex_constants as simpc
 
+def _highs_to_scipy_status_message(highs_status, highs_message):
+    """Converts HiGHS status number/message to SciPy status number/message"""
 
-class HighsStatusMapping:
-    """Class to map HiGHS statuses to SciPy-like Return Codes and Messages"""
-
-    class SciPyRC(Enum):
-        """Return codes like SciPy's for solvers"""
-
-        OPTIMAL = 0
-        ITERATION_LIMIT = 1
-        INFEASIBLE = 2
-        UNBOUNDED = 3
-        NUMERICAL = 4
-
-    def __init__(self):
-        self.highs_to_scipy = {
-            _h.HighsModelStatus.kNotset: (
-                self.SciPyRC.NUMERICAL,
-                "Not set",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kLoadError: (
-                self.SciPyRC.NUMERICAL,
-                "Load Error",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kModelError: (
-                self.SciPyRC.INFEASIBLE,
-                "Model Error",
-                "The problem is infeasible.",
-            ),
-            _h.HighsModelStatus.kPresolveError: (
-                self.SciPyRC.NUMERICAL,
-                "Presolve Error",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kSolveError: (
-                self.SciPyRC.NUMERICAL,
-                "Solve Error",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kPostsolveError: (
-                self.SciPyRC.NUMERICAL,
-                "Postsolve Error",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kModelEmpty: (
-                self.SciPyRC.NUMERICAL,
-                "Model Empty",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kOptimal: (
-                self.SciPyRC.OPTIMAL,
-                "Optimal",
-                "Optimization terminated successfully.",
-            ),
-            _h.HighsModelStatus.kInfeasible: (
-                self.SciPyRC.INFEASIBLE,
-                "Infeasible",
-                "The problem is infeasible.",
-            ),
-            _h.HighsModelStatus.kUnboundedOrInfeasible: (
-                self.SciPyRC.NUMERICAL,
-                "Unbounded or Infeasible",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kUnbounded: (
-                self.SciPyRC.UNBOUNDED,
-                "Unbounded",
-                "The problem is unbounded.",
-            ),
-            _h.HighsModelStatus.kObjectiveBound: (
-                self.SciPyRC.NUMERICAL,
-                "Objective Bound",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kObjectiveTarget: (
-                self.SciPyRC.NUMERICAL,
-                "Objective Target",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kTimeLimit: (
-                self.SciPyRC.ITERATION_LIMIT,
-                "Time Limit",
-                "Time limit reached.",
-            ),
-            _h.HighsModelStatus.kIterationLimit: (
-                self.SciPyRC.ITERATION_LIMIT,
-                "Iteration Limit",
-                "Iteration limit reached.",
-            ),
-            _h.HighsModelStatus.kUnknown: (
-                self.SciPyRC.NUMERICAL,
-                "Unknown",
-                "Serious numerical difficulties encountered.",
-            ),
-            _h.HighsModelStatus.kSolutionLimit: (
-                self.SciPyRC.NUMERICAL,
-                "Solution Limit",
-                "Serious numerical difficulties encountered.",
-            ),
-        }
-
-    def get_scipy_status(self, highs_status, highs_message):
-        """Converts HiGHS status and message to SciPy-like status and messages"""
-        if highs_status is None or highs_message is None:
-            print(f"Highs Status: {highs_status}, Message: {highs_message}")
-            return (
-                self.SciPyRC.NUMERICAL.value,
-                "HiGHS did not provide a status code. (HiGHS Status None: None)",
-            )
-
-        scipy_status_enum, message_prefix, scipy_message = self.highs_to_scipy.get(
-            _h.HighsModelStatus(highs_status),
-            (
-                self.SciPyRC.NUMERICAL,
-                "Unknown HiGHS Status",
-                "The HiGHS status code was not recognized.",
-            ),
-        )
-        full_scipy_msg = (
-            f"{scipy_message} (HiGHS Status {int(highs_status)}: {highs_message})"
-        )
-        return scipy_status_enum.value, full_scipy_msg
+    scipy_statuses_messages = {
+        None: (4, "HiGHS did not provide a status code. "),
+        MODEL_STATUS_NOTSET: (4, ""),
+        MODEL_STATUS_LOAD_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_ERROR: (2, ""),
+        MODEL_STATUS_PRESOLVE_ERROR: (4, ""),
+        MODEL_STATUS_SOLVE_ERROR: (4, ""),
+        MODEL_STATUS_POSTSOLVE_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_EMPTY: (4, ""),
+        MODEL_STATUS_RDOVUB: (4, ""),
+        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (4, ""),
+        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully. "),
+        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached. "),
+        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
+        MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
+        MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "
+                                               "or infeasible. ")}
+    unrecognized = (4, "The HiGHS status code was not recognized. ")
+    scipy_status, scipy_message = (
+        scipy_statuses_messages.get(highs_status, unrecognized))
+    scipy_message = (f"{scipy_message}"
+                     f"(HiGHS Status {highs_status}: {highs_message})")
+    return scipy_status, scipy_message
 
 
 def _replace_inf(x):
-    # Replace `np.inf` with kHighsInf
+    # Replace `np.inf` with CONST_INF
     infs = np.isinf(x)
     with np.errstate(invalid="ignore"):
-        x[infs] = np.sign(x[infs]) * _h.kHighsInf
+        x[infs] = np.sign(x[infs])*CONST_INF
     return x
 
 
-class SimplexStrategy(Enum):
-    DANTZIG = "dantzig"
-    DEVEX = "devex"
-    STEEPEST_DEVEX = "steepest-devex"  # highs min, choose
-    STEEPEST = "steepest"  # highs max
-
-    def to_highs_enum(self):
-        mapping = {
-            SimplexStrategy.DANTZIG:
-                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDantzig.value,
-            SimplexStrategy.DEVEX:
-                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyDevex.value,
-            SimplexStrategy.STEEPEST_DEVEX:
-                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategyChoose.value,
-            SimplexStrategy.STEEPEST:
-                simpc.SimplexEdgeWeightStrategy.kSimplexEdgeWeightStrategySteepestEdge.value,
-        }
-        return mapping.get(self)
-
-
-def convert_to_highs_enum(option, option_str, choices_enum, default_value):
-    if option is None:
-        return choices_enum[default_value.upper()].to_highs_enum()
+def _convert_to_highs_enum(option, option_str, choices):
+    # If option is in the choices we can look it up, if not use
+    # the default value taken from function signature and warn:
     try:
-        enum_value = choices_enum[option.upper()]
+        return choices[option.lower()]
+    except AttributeError:
+        return choices[option]
     except KeyError:
-        warn(
-            f"Option {option_str} is {option}, but only values in "
-            f"{[e.value for e in choices_enum]} are allowed. Using default: "
-            f"{default_value}.",
-            OptimizeWarning,
-            stacklevel=3,
-        )
-        enum_value = choices_enum[default_value.upper()]
-    return enum_value.to_highs_enum()
+        sig = inspect.signature(_linprog_highs)
+        default_str = sig.parameters[option_str].default
+        warn(f"Option {option_str} is {option}, but only values in "
+             f"{set(choices.keys())} are allowed. Using default: "
+             f"{default_str}.",
+             OptimizeWarning, stacklevel=3)
+        return choices[default_str]
 
 
 def _linprog_highs(lp, solver, time_limit=None, presolve=True,
@@ -396,12 +309,15 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         warn(message, OptimizeWarning, stacklevel=3)
 
     # Map options to HiGHS enum values
-    simplex_dual_edge_weight_strategy_enum = convert_to_highs_enum(
+    simplex_dual_edge_weight_strategy_enum = _convert_to_highs_enum(
         simplex_dual_edge_weight_strategy,
-        "simplex_dual_edge_weight_strategy",
-        choices_enum=SimplexStrategy,
-        default_value="dantzig",
-    )
+        'simplex_dual_edge_weight_strategy',
+        choices={'dantzig': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DANTZIG,
+                 'devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_DEVEX,
+                 'steepest-devex': HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_CHOOSE,
+                 'steepest':
+                 HIGHS_SIMPLEX_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+                 None: None})
 
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
@@ -423,19 +339,20 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     options = {
         'presolve': presolve,
-        'sense': _h.ObjSense.kMinimize,
+        'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
         'solver': solver,
         'time_limit': time_limit,
-        # 'highs_debug_level': _h.kHighs, # TODO
+        'highs_debug_level': MESSAGE_LEVEL_NONE,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
         'mip_max_nodes': mip_max_nodes,
         'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
-        'simplex_dual_edge_weight_strategy': simplex_dual_edge_weight_strategy_enum,
-        'simplex_strategy': simpc.kSimplexStrategyDual.value,
-        # 'simplex_crash_strategy': simpc.SimplexCrashStrategy.kSimplexCrashStrategyOff,
+        'simplex_dual_edge_weight_strategy':
+            simplex_dual_edge_weight_strategy_enum,
+        'simplex_strategy': HIGHS_SIMPLEX_STRATEGY_DUAL,
+        'simplex_crash_strategy': HIGHS_SIMPLEX_CRASH_STRATEGY_OFF,
         'ipm_iteration_limit': maxiter,
         'simplex_iteration_limit': maxiter,
         'mip_rel_gap': mip_rel_gap,
@@ -480,19 +397,12 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # this needs to be updated if we start choosing the solver intelligently
 
     # Convert to scipy-style status and message
-    highs_mapper = HighsStatusMapping()
-    highs_status = res.get("status", None)
-    highs_message = res.get("message", None)
-    status, message = highs_mapper.get_scipy_status(highs_status, highs_message)
+    highs_status = res.get('status', None)
+    highs_message = res.get('message', None)
+    status, message = _highs_to_scipy_status_message(highs_status,
+                                                     highs_message)
 
-    def is_valid_x(val):
-        if isinstance(val, np.ndarray):
-            if val.dtype == object and None in val:
-                return False
-        return val is not None
-
-    x = np.array(res["x"]) if "x" in res and is_valid_x(res["x"]) else None
-
+    x = np.array(res['x']) if 'x' in res else None
     sol = {'x': x,
            'slack': slack,
            'con': con,
@@ -514,7 +424,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             }),
            'fun': res.get('fun'),
            'status': status,
-           'success': res['status'] == _h.HighsModelStatus.kOptimal,
+           'success': res['status'] == MODEL_STATUS_OPTIMAL,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
