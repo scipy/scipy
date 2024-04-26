@@ -18,23 +18,23 @@
         }
     },
     "_igam_fac": {
-        "cephes.h": {
-            "igam_fac": "dd->d"
+        "special_wrappers.h": {
+            "cephes_igam_fac": "dd->d"
         }
     },
     "_lanczos_sum_expg_scaled": {
-        "cephes.h": {
-            "lanczos_sum_expg_scaled": "d->d"
+        "special_wrappers.h": {
+            "cephes_lanczos_sum_expg_scaled": "d->d"
         }
     },
     "_lgam1p": {
-        "cephes.h": {
-            "lgam1p": "d->d"
+        "special_wrappers.h": {
+            "cephes_lgam1p": "d->d"
         }
     },
     "_log1pmx": {
-        "cephes.h": {
-            "log1pmx": "d->d"
+        "special_wrappers.h": {
+            "cephes_log1pmx": "d->d"
         }
     },
     "_sf_error_test_function": {
@@ -42,67 +42,19 @@
             "_sf_error_test_function": "i->i"
         }
     },
-    "_spherical_in": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_complex": "lD->D",
-            "spherical_in_real": "ld->d"
-        }
-    },
-    "_spherical_in_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_in_d_complex": "lD->D",
-            "spherical_in_d_real": "ld->d"
-        }
-    },
-    "_spherical_jn": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_complex": "lD->D",
-            "spherical_jn_real": "ld->d"
-        }
-    },
-    "_spherical_jn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_jn_d_complex": "lD->D",
-            "spherical_jn_d_real": "ld->d"
-        }
-    },
-    "_spherical_kn": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_complex": "lD->D",
-            "spherical_kn_real": "ld->d"
-        }
-    },
-    "_spherical_kn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_kn_d_complex": "lD->D",
-            "spherical_kn_d_real": "ld->d"
-        }
-    },
-    "_spherical_yn": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_complex": "lD->D",
-            "spherical_yn_real": "ld->d"
-        }
-    },
-    "_spherical_yn_d": {
-        "_spherical_bessel.pxd": {
-            "spherical_yn_d_complex": "lD->D",
-            "spherical_yn_d_real": "ld->d"
-        }
-    },
     "_struve_asymp_large_z": {
-        "cephes.h": {
-            "struve_asymp_large_z": "ddi*d->d"
+        "special_wrappers.h": {
+            "cephes__struve_asymp_large_z": "ddi*d->d"
         }
     },
     "_struve_bessel_series": {
-        "cephes.h": {
-            "struve_bessel_series": "ddi*d->d"
+        "special_wrappers.h": {
+            "cephes__struve_bessel_series": "ddi*d->d"
         }
     },
     "_struve_power_series": {
-        "cephes.h": {
-            "struve_power_series": "ddi*d->d"
+        "special_wrappers.h": {
+            "cephes__struve_power_series": "ddi*d->d"
         }
     },
     "voigt_profile" : {
@@ -111,8 +63,8 @@
         }
     },
     "_zeta": {
-        "cephes.h": {
-            "zeta": "dd->d"
+        "special_wrappers.h": {
+            "cephes_zeta": "dd->d"
         }
     },
     "agm": {
@@ -124,24 +76,24 @@
         "_legacy.pxd": {
             "bdtr_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtr": "did->d"
+        "special_wrappers.h": {
+            "cephes_bdtr": "did->d"
         }
     },
     "bdtrc": {
         "_legacy.pxd": {
             "bdtrc_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtrc": "did->d"
+        "special_wrappers.h": {
+            "cephes_bdtrc": "did->d"
         }
     },
     "bdtri": {
         "_legacy.pxd": {
             "bdtri_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "bdtri": "did->d"
+        "special_wrappers.h": {
+            "cephes_bdtri": "did->d"
         }
     },
     "bdtrik": {
@@ -154,13 +106,13 @@
             "bdtrin": "ddd->d"        }
     },
     "besselpoly": {
-        "cephes.h": {
-            "besselpoly": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_besselpoly": "ddd->d"
         }
     },
     "beta": {
-        "cephes.h": {
-            "beta": "dd->d"
+        "special_wrappers.h": {
+            "cephes_beta": "dd->d"
         }
     },
     "betainc": {
@@ -188,8 +140,8 @@
         }
     },
     "betaln": {
-        "cephes.h": {
-            "lbeta": "dd->d"
+        "special_wrappers.h": {
+            "cephes_lbeta": "dd->d"
         }
     },
     "boxcox": {
@@ -203,13 +155,13 @@
         }
     },
     "btdtr": {
-        "cephes.h": {
-            "btdtr": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_btdtr": "ddd->d"
         }
     },
     "btdtri": {
-        "cephes.h": {
-            "incbi": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_btdtri": "ddd->d"
         }
     },
     "btdtria": {
@@ -223,23 +175,23 @@
         }
     },
     "cbrt": {
-        "cephes.h": {
-            "cbrt": "d->d"
+        "special_wrappers.h": {
+            "cephes_cbrt": "d->d"
         }
     },
     "chdtr": {
-        "cephes.h": {
-            "chdtr": "dd->d"
+        "special_wrappers.h": {
+            "cephes_chdtr": "dd->d"
         }
     },
     "chdtrc": {
-        "cephes.h": {
-            "chdtrc": "dd->d"
+        "special_wrappers.h": {
+            "cephes_chdtrc": "dd->d"
         }
     },
     "chdtri": {
-        "cephes.h": {
-            "chdtri": "dd->d"
+        "special_wrappers.h": {
+            "cephes_chdtri": "dd->d"
         }
     },
     "chdtriv": {
@@ -263,18 +215,18 @@
             "chndtrix": "ddd->d"        }
     },
     "cosdg": {
-        "cephes.h": {
-            "cosdg": "d->d"
+        "special_wrappers.h": {
+            "cephes_cosdg": "d->d"
         }
     },
     "cosm1": {
-        "cephes.h": {
-            "cosm1": "d->d"
+        "special_wrappers.h": {
+            "cephes_cosm1": "d->d"
         }
     },
     "cotdg": {
-        "cephes.h": {
-            "cotdg": "d->d"
+        "special_wrappers.h": {
+            "cephes_cotdg": "d->d"
         }
     },
     "dawsn": {
@@ -284,34 +236,34 @@
         }
     },
     "ellipe": {
-        "cephes.h": {
-            "ellpe": "d->d"
+        "special_wrappers.h": {
+            "cephes_ellpe": "d->d"
         }
     },
     "ellipeinc": {
-        "cephes.h": {
-            "ellie": "dd->d"
+        "special_wrappers.h": {
+            "cephes_ellie": "dd->d"
         }
     },
     "ellipj": {
-        "cephes.h": {
-            "ellpj": "dd*dddd->*i"
+        "special_wrappers.h": {
+            "cephes_ellpj_wrap": "dd*dddd->*i"
         }
     },
     "ellipkinc": {
-        "cephes.h": {
-            "ellik": "dd->d"
+        "special_wrappers.h": {
+            "cephes_ellik": "dd->d"
         }
     },
     "ellipkm1": {
-        "cephes.h": {
-            "ellpk": "d->d"
-        }
+        "special_wrappers.h": {
+            "cephes_ellpk": "d->d"
+         }
     },
     "ellipk": {
-	"_ellipk.pxd": {
-	    "ellipk": "d->d"
-	}
+    	"special_wrappers.h": {
+	        "special_ellipk": "d->d"
+    	}
     },
     "_factorial": {
 	"_factorial.pxd": {
@@ -357,16 +309,16 @@
         "_faddeeva.h++": {
             "faddeeva_erf": "D->D"
         },
-        "cephes.h": {
-            "erf": "d->d"
+        "special_wrappers.h": {
+            "cephes_erf": "d->d"
         }
     },
     "erfc": {
         "_faddeeva.h++": {
             "faddeeva_erfc_complex": "D->D"
         },
-        "cephes.h": {
-            "erfc": "d->d"
+        "special_wrappers.h": {
+            "cephes_erfc": "d->d"
         }
     },
     "erfcx": {
@@ -388,8 +340,8 @@
         }
     },
     "erfcinv": {
-        "cephes.h": {
-            "erfcinv": "d->d"
+        "special_wrappers.h": {
+            "cephes_erfcinv": "d->d"
         }
     },
     "eval_chebyc": {
@@ -493,50 +445,45 @@
             "eval_sh_legendre_l": "ld->d"
         }
     },
-    "_scaled_exp1": {
-        "scaled_exp1.h": {
-            "scaled_exp1": "d->d"
-        }
-    },
     "exp10": {
-        "cephes.h": {
-            "exp10": "d->d"
+        "special_wrappers.h": {
+            "cephes_exp10": "d->d"
         }
     },
     "exp2": {
-        "cephes.h": {
-            "exp2": "d->d"
+        "special_wrappers.h": {
+            "cephes_exp2": "d->d"
         }
     },
     "expm1": {
         "_cunity.pxd": {
             "cexpm1": "D->D"
         },
-        "cephes.h": {
-            "expm1": "d->d"
+        "special_wrappers.h": {
+            "cephes_expm1": "d->d"
         }
     },
     "expn": {
         "_legacy.pxd": {
             "expn_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "expn": "id->d"
+        "special_wrappers.h": {
+            "cephes_expn": "id->d"
         }
     },
     "fdtr": {
-        "cephes.h": {
-            "fdtr": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_fdtr": "ddd->d"
         }
     },
     "fdtrc": {
-        "cephes.h": {
-            "fdtrc": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_fdtrc": "ddd->d"
         }
     },
     "fdtri": {
-        "cephes.h": {
-            "fdtri": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_fdtri": "ddd->d"
         }
     },
     "fdtridfd": {
@@ -544,51 +491,49 @@
             "fdtridfd": "ddd->d"        }
     },
     "fresnel": {
-        "cephes.h": {
-            "fresnl": "d*dd->*i"
-        },
         "special_wrappers.h": {
+            "cephes_fresnl_wrap": "d*dd->*i",
             "cfresnl_wrap": "D*DD->*i"
         }
     },
     "gammainc": {
-        "cephes.h": {
-            "igam": "dd->d"
+        "special_wrappers.h": {
+            "cephes_igam": "dd->d"
         }
     },
     "gammaincc": {
-        "cephes.h": {
-            "igamc": "dd->d"
+        "special_wrappers.h": {
+            "cephes_igamc": "dd->d"
         }
     },
     "gammainccinv": {
-        "cephes.h": {
-            "igamci": "dd->d"
+        "special_wrappers.h": {
+            "cephes_igamci": "dd->d"
         }
     },
     "gammaincinv": {
-        "cephes.h": {
-            "igami": "dd->d"
+        "special_wrappers.h": {
+            "cephes_igami": "dd->d"
         }
     },
     "gammaln": {
-        "cephes.h": {
-            "lgam": "d->d"
+        "special_wrappers.h": {
+            "gammaln": "d->d"
         }
     },
     "gammasgn": {
-        "cephes.h": {
-            "gammasgn": "d->d"
+        "special_wrappers.h": {
+            "cephes_gammasgn": "d->d"
         }
     },
     "gdtr": {
-        "cephes.h": {
-            "gdtr": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_gdtr": "ddd->d"
         }
     },
     "gdtrc": {
-        "cephes.h": {
-            "gdtrc": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_gdtrc": "ddd->d"
         }
     },
     "gdtria": {
@@ -629,23 +574,23 @@
         }
     },
     "i0": {
-        "cephes.h": {
-            "i0": "d->d"
+        "special_wrappers.h": {
+            "cephes_i0": "d->d"
         }
     },
     "i0e": {
-        "cephes.h": {
-            "i0e": "d->d"
+        "special_wrappers.h": {
+            "cephes_i0e": "d->d"
         }
     },
     "i1": {
-        "cephes.h": {
-            "i1": "d->d"
+        "special_wrappers.h": {
+            "cephes_i1": "d->d"
         }
     },
     "i1e": {
-        "cephes.h": {
-            "i1e": "d->d"
+        "special_wrappers.h": {
+            "cephes_i1e": "d->d"
         }
     },
     "inv_boxcox": {
@@ -659,33 +604,33 @@
         }
     },
     "j0": {
-        "cephes.h": {
-            "j0": "d->d"
+        "special_wrappers.h": {
+            "cephes_j0": "d->d"
         }
     },
     "j1": {
-        "cephes.h": {
-            "j1": "d->d"
+        "special_wrappers.h": {
+            "cephes_j1": "d->d"
         }
     },
     "k0": {
-        "cephes.h": {
-            "k0": "d->d"
+        "special_wrappers.h": {
+            "cephes_k0": "d->d"
         }
     },
     "k0e": {
-        "cephes.h": {
-            "k0e": "d->d"
+        "special_wrappers.h": {
+            "cephes_k0e": "d->d"
         }
     },
     "k1": {
-        "cephes.h": {
-            "k1": "d->d"
+        "special_wrappers.h": {
+            "cephes_k1": "d->d"
         }
     },
     "k1e": {
-        "cephes.h": {
-            "k1e": "d->d"
+        "special_wrappers.h": {
+            "cephes_k1e": "d->d"
         }
     },
     "kl_div": {
@@ -697,41 +642,41 @@
         "_legacy.pxd": {
             "kn_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "cbesk_wrap_real_int": "id->d"
+        "special_wrappers.h": {
+            "special_cyl_bessel_k_int": "id->d"
         }
     },
     "_kolmogc": {
-        "cephes.h": {
-            "kolmogc": "d->d"
+        "special_wrappers.h": {
+            "cephes_kolmogc": "d->d"
         }
     },
     "_kolmogci": {
-        "cephes.h": {
-            "kolmogci": "d->d"
+        "special_wrappers.h": {
+            "cephes_kolmogci": "d->d"
         }
     },
     "kolmogi": {
-        "cephes.h": {
-            "kolmogi": "d->d"
+        "special_wrappers.h": {
+            "cephes_kolmogi": "d->d"
         }
     },
     "_kolmogp": {
-        "cephes.h": {
-            "kolmogp": "d->d"
+        "special_wrappers.h": {
+            "cephes_kolmogp": "d->d"
         }
     },
     "kolmogorov": {
-        "cephes.h": {
-            "kolmogorov": "d->d"
+        "special_wrappers.h": {
+            "cephes_kolmogorov": "d->d"
         }
     },
     "log1p": {
         "_cunity.pxd": {
             "clog1p": "D->D"
         },
-        "cephes.h": {
-            "log1p": "d->d"
+        "special_wrappers.h": {
+            "cephes_log1p": "d->d"
         }
     },
     "log_ndtr": {
@@ -746,32 +691,32 @@
         }
     },
     "modstruve": {
-        "cephes.h": {
-            "struve_l": "dd->d"
+        "special_wrappers.h": {
+            "cephes_struve_l": "dd->d"
         }
     },
     "nbdtr": {
         "_legacy.pxd": {
             "nbdtr_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtr": "iid->d"
+        "special_wrappers.h": {
+            "cephes_nbdtr": "iid->d"
         }
     },
     "nbdtrc": {
         "_legacy.pxd": {
             "nbdtrc_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtrc": "iid->d"
+        "special_wrappers.h": {
+            "cephes_nbdtrc": "iid->d"
         }
     },
     "nbdtri": {
         "_legacy.pxd": {
             "nbdtri_unsafe": "ddd->d"
         },
-        "cephes.h": {
-            "nbdtri": "iid->d"
+        "special_wrappers.h": {
+            "cephes_nbdtri": "iid->d"
         }
     },
     "nbdtrik": {
@@ -829,13 +774,13 @@
         "_faddeeva.h++": {
             "faddeeva_ndtr": "D->D"
         },
-        "cephes.h": {
-            "ndtr": "d->d"
+        "special_wrappers.h": {
+            "cephes_ndtr": "d->d"
         }
     },
     "ndtri": {
-        "cephes.h": {
-            "ndtri": "d->d"
+        "special_wrappers.h": {
+            "cephes_ndtri": "d->d"
         }
     },
     "nrdtrimn": {
@@ -848,26 +793,26 @@
         }
     },
     "owens_t": {
-        "cephes.h": {
-            "owens_t": "dd->d"
+        "special_wrappers.h": {
+            "cephes_owens_t": "dd->d"
         }
     },
     "pdtr": {
-        "cephes.h": {
-            "pdtr": "dd->d"
+        "special_wrappers.h": {
+            "cephes_pdtr": "dd->d"
         }
     },
     "pdtrc": {
-        "cephes.h": {
-            "pdtrc": "dd->d"
+        "special_wrappers.h": {
+            "cephes_pdtrc": "dd->d"
         }
     },
     "pdtri": {
         "_legacy.pxd": {
             "pdtri_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "pdtri": "id->d"
+        "special_wrappers.h": {
+            "cephes_pdtri": "id->d"
         }
     },
     "pdtrik": {
@@ -875,8 +820,8 @@
             "pdtrik": "dd->d"        }
     },
     "poch": {
-        "cephes.h": {
-            "poch": "dd->d"
+        "special_wrappers.h": {
+            "cephes_poch": "dd->d"
         }
     },
     "powm1": {
@@ -891,8 +836,8 @@
         }
     },
     "radian": {
-        "cephes.h": {
-            "radian": "ddd->d"
+        "special_wrappers.h": {
+            "cephes_radian": "ddd->d"
         }
     },
     "rel_entr": {
@@ -901,77 +846,77 @@
         }
     },
     "round": {
-        "cephes.h": {
-            "round": "d->d"
+        "special_wrappers.h": {
+            "cephes_round": "d->d"
         }
     },
     "shichi": {
         "_sici.pxd": {
             "cshichi": "D*DD->*i"
         },
-        "cephes.h": {
-            "shichi": "d*dd->*i"
+        "special_wrappers.h": {
+            "cephes_shichi_wrap": "d*dd->*i"
         }
     },
     "sici": {
         "_sici.pxd": {
             "csici": "D*DD->*i"
         },
-        "cephes.h": {
-            "sici": "d*dd->*i"
+        "special_wrappers.h": {
+            "cephes_sici_wrap": "d*dd->*i"
         }
     },
     "sindg": {
-        "cephes.h": {
-            "sindg": "d->d"
+        "special_wrappers.h": {
+            "cephes_sindg": "d->d"
         }
     },
     "smirnov": {
         "_legacy.pxd": {
             "smirnov_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnov": "id->d"
+        "special_wrappers.h": {
+            "cephes_smirnov": "id->d"
         }
     },
     "_smirnovc": {
         "_legacy.pxd": {
             "smirnovc_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovc": "id->d"
+        "special_wrappers.h": {
+            "cephes_smirnovc": "id->d"
         }
     },
     "_smirnovci": {
         "_legacy.pxd": {
             "smirnovci_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovci": "id->d"
+        "special_wrappers.h": {
+            "cephes_smirnovci": "id->d"
         }
     },
     "smirnovi": {
         "_legacy.pxd": {
             "smirnovi_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovi": "id->d"
+        "special_wrappers.h": {
+            "cephes_smirnovi": "id->d"
         }
     },
     "_smirnovp": {
         "_legacy.pxd": {
             "smirnovp_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "smirnovp": "id->d"
+        "special_wrappers.h": {
+            "cephes_smirnovp": "id->d"
         }
     },
     "spence": {
         "_spence.pxd": {
             "cspence": "D-> D"
         },
-        "cephes.h": {
-            "spence": "d->d"
+        "special_wrappers.h": {
+            "cephes_spence": "d->d"
         }
     },
     "stdtr": {
@@ -994,18 +939,18 @@
         }
     },
     "struve": {
-        "cephes.h": {
-            "struve_h": "dd->d"
+        "special_wrappers.h": {
+            "cephes_struve_h": "dd->d"
         }
     },
     "tandg": {
-        "cephes.h": {
-            "tandg": "d->d"
+        "special_wrappers.h": {
+            "cephes_tandg": "d->d"
         }
     },
     "tklmbda": {
-        "cephes.h": {
-            "tukeylambdacdf": "dd->d"
+        "special_wrappers.h": {
+            "cephes_tukeylambdacdf": "dd->d"
         }
     },
     "wofz": {
@@ -1032,31 +977,31 @@
         }
     },
     "y0": {
-        "cephes.h": {
-            "y0": "d->d"
+        "special_wrappers.h": {
+            "cephes_y0": "d->d"
         }
     },
     "y1": {
-        "cephes.h": {
-            "y1": "d->d"
+        "special_wrappers.h": {
+            "cephes_y1": "d->d"
         }
     },
     "yn": {
         "_legacy.pxd": {
             "yn_unsafe": "dd->d"
         },
-        "cephes.h": {
-            "yn": "id->d"
+        "special_wrappers.h": {
+            "cephes_yn": "id->d"
         }
     },
     "zetac": {
-        "cephes.h": {
-            "zetac": "d->d"
+        "special_wrappers.h": {
+            "cephes_zetac": "d->d"
         }
     },
     "_riemann_zeta": {
-        "cephes.h": {
-            "riemann_zeta": "d->d"
+        "special_wrappers.h": {
+            "cephes_riemann_zeta": "d->d"
         }
     },
     "ndtri_exp": {

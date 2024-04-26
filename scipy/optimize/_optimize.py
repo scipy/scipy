@@ -745,8 +745,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         # check bounds
         if (lower_bound > upper_bound).any():
             raise ValueError("Nelder Mead - one of the lower bounds "
-                             "is greater than an upper bound.",
-                             stacklevel=3)
+                             "is greater than an upper bound.")
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
@@ -999,7 +998,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     >>> c0, c1 = (1, 200)
     >>> eps = np.sqrt(np.finfo(float).eps)
     >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
-    array([   2.        ,  400.00004198])
+    array([   2.        ,  400.00004208])
 
     """
     xk = np.asarray(xk, float)

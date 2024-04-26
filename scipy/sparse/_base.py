@@ -1,8 +1,6 @@
 """Base class for sparse matrices"""
-from warnings import warn
 
 import numpy as np
-from scipy._lib._util import VisibleDeprecationWarning
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
@@ -119,11 +117,9 @@ class _spbase:
                              " to be instantiated directly.")
         self.maxprint = maxprint
 
-    # Use this in 1.14.0 and later:
-    #
-    # @property
-    # def shape(self):
-    #   return self._shape
+    @property
+    def shape(self):
+        return self._shape
 
     def reshape(self, *args, **kwargs):
         """reshape(self, shape, order='C', copy=False)
@@ -317,39 +313,9 @@ class _spbase:
         return self._format
 
     @property
-    def A(self) -> np.ndarray:
-        """DEPRECATED: Return a dense array.
-
-        .. deprecated:: 1.11.0
-
-            `.A` is deprecated and will be removed in v1.14.0.
-            Use `.toarray()` instead.
-        """
-        if isinstance(self, sparray):
-            message = ("`.A` is deprecated and will be removed in v1.14.0. "
-                       "Use `.toarray()` instead.")
-            warn(VisibleDeprecationWarning(message), stacklevel=2)
-        return self.toarray()
-
-    @property
     def T(self):
         """Transpose."""
         return self.transpose()
-
-    @property
-    def H(self):
-        """DEPRECATED: Returns the (complex) conjugate transpose.
-
-        .. deprecated:: 1.11.0
-
-            `.H` is deprecated and will be removed in v1.14.0.
-            Please use `.T.conjugate()` instead.
-        """
-        if isinstance(self, sparray):
-            message = ("`.H` is deprecated and will be removed in v1.14.0. "
-                       "Please use `.T.conjugate()` instead.")
-            warn(VisibleDeprecationWarning(message), stacklevel=2)
-        return self.T.conjugate()
 
     @property
     def real(self):
@@ -1351,158 +1317,6 @@ class _spbase:
         return get_index_dtype(arrays,
                                maxval,
                                (check_contents and not isinstance(self, sparray)))
-
-
-    ## All methods below are deprecated and should be removed in
-    ## scipy 1.14.0
-    ##
-    ## Also uncomment the definition of shape above.
-
-    def get_shape(self):
-        """Get shape of a sparse array/matrix.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use `X.shape` instead.
-        """
-        msg = (
-            "`get_shape` is deprecated and will be removed in v1.14.0; "
-            "use `X.shape` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        return self._shape
-
-    def set_shape(self, shape):
-        """See `reshape`.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use `X.reshape` instead.
-        """
-        msg = (
-            "Shape assignment is deprecated and will be removed in v1.14.0; "
-            "use `reshape` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-
-        # Make sure copy is False since this is in place
-        # Make sure format is unchanged because we are doing a __dict__ swap
-        new_self = self.reshape(shape, copy=False).asformat(self.format)
-        self.__dict__ = new_self.__dict__
-
-    shape = property(
-        fget=lambda self: self._shape,
-        fset=set_shape,
-        doc="""The shape of the array.
-
-Note that, starting in SciPy 1.14.0, this property will no longer be
-settable. To change the array shape, use `X.reshape` instead.
-"""
-    )
-
-    def asfptype(self):
-        """Upcast array/matrix to a floating point format (if necessary)
-
-        .. deprecated:: 1.11.0
-           This method is for internal use only, and will be removed from the
-           public API in SciPy 1.14.0.
-        """
-        msg = (
-            "`asfptype` is an internal function, and is deprecated "
-            "as part of the public API. It will be removed in v1.14.0."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._asfptype()
-
-    def getmaxprint(self):
-        """Maximum number of elements to display when printed.
-
-        .. deprecated:: 1.11.0
-           This method is for internal use only, and will be removed from the
-           public API in SciPy 1.14.0.
-        """
-        msg = (
-            "`getmaxprint` is an internal function, and is deprecated "
-            "as part of the public API. It will be removed in v1.14.0."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getmaxprint()
-
-    def getformat(self):
-        """Sparse array/matrix storage format.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use `X.format` instead.
-        """
-        msg = (
-            "`getformat` is deprecated and will be removed in v1.14.0; "
-            "use `X.format` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self.format
-
-    def getnnz(self, axis=None):
-        """Number of stored values, including explicit zeros.
-
-        Parameters
-        ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole array/matrix, in
-            each column, or in each row.
-
-        See also
-        --------
-        count_nonzero : Number of non-zero entries
-        """
-        return self._getnnz(axis=axis)
-
-    def getH(self):
-        """Return the Hermitian transpose of this array/matrix.
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use `X.conj().T` instead.
-        """
-        msg = (
-            "`getH` is deprecated and will be removed in v1.14.0; "
-            "use `X.conj().T` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self.conjugate().transpose()
-
-    def getcol(self, j):
-        """Returns a copy of column j of the array/matrix, as an (m x 1) sparse
-        array/matrix (column vector).
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use array/matrix indexing instead.
-        """
-        msg = (
-            "`getcol` is deprecated and will be removed in v1.14.0; "
-            f"use `X[:, [{j}]]` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getcol(j)
-
-    def getrow(self, i):
-        """Returns a copy of row i of the array/matrix, as a (1 x n) sparse
-        array/matrix (row vector).
-
-        .. deprecated:: 1.11.0
-           This method will be removed in SciPy 1.14.0.
-           Use array/matrix indexing instead.
-        """
-        msg = (
-            "`getrow` is deprecated and will be removed in v1.14.0; "
-            f"use `X[[{i}]]` instead."
-        )
-        warn(msg, DeprecationWarning, stacklevel=2)
-        return self._getrow(i)
-
-    ## End 1.14.0 deprecated methods
 
 
 class sparray:

@@ -23,7 +23,7 @@ namespace detail {
     // Series evaluators.
     template <typename Generator, typename T>
     SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, double tol, std::uint64_t max_terms,
-                                           const char *func_name) {
+                                      const char *func_name) {
         /* Sum an infinite series to a given precision.
          *
          * g : a generator of terms for the series.

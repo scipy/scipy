@@ -925,6 +925,17 @@ class TestEigh:
                         atol=1000*np.finfo(dtype_).eps,
                         rtol=0.)
 
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_1x1_lwork(self, driver):
+        w, v = eigh([[1]], driver=driver)
+        assert_allclose(w, array([1.]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
+        # complex case now
+        w, v = eigh([[1j]], driver=driver)
+        assert_allclose(w, array([0]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
     def test_various_drivers_generalized(self, driver, type):

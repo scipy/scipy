@@ -13,6 +13,7 @@ import sysconfig
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
+import scipy
 
 try:
     # Need type: ignore[import-untyped] for mypy >= 1.6
@@ -41,6 +42,9 @@ IS_MUSL = False
 _v = sysconfig.get_config_var('HOST_GNU_TYPE') or ''
 if 'musl' in _v:
     IS_MUSL = True
+
+
+IS_EDITABLE = 'editable' in scipy.__path__[0]
 
 
 class FPUModeChangeWarning(RuntimeWarning):
