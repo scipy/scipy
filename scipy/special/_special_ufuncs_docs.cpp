@@ -398,16 +398,16 @@ const char *binom_doc = R"(
     ``y`` is negative or ``x`` is less than ``y``.
 
     >>> x, y = -3, 2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (nan, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (nan, 0.0)
 
     >>> x, y = -3.1, 2.2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (18.714147876804432, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (18.714147876804432, 0.0)
 
     >>> x, y = 2.2, 3.1
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (0.037399983365134115, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (0.037399983365134115, 0.0)
     )";
 
 const char *exp1_doc = R"(
