@@ -93,7 +93,8 @@ foreach ele: elements
       _fflag_Wno_intrinsic_shadow,
       _fflag_Wno_uninitialized,
       _fflag_fpp,
-    ]
+    ],
+    gnu_symbol_visibility: 'hidden',
   )
 
   propack_module = custom_target('propack_module' + ele[0],
@@ -104,10 +105,10 @@ foreach ele: elements
 
   propacklib = py3.extension_module(ele[0],
     propack_module,
-    link_with: [propack_lib, g77_abi_wrappers],
+    link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,
-    dependencies: [lapack, blas, fortranobject_dep],
+    dependencies: [lapack_dep, blas_dep, fortranobject_dep],
     link_args: version_link_args,
     install: true,
     link_language: 'fortran',

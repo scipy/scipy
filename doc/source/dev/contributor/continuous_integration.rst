@@ -40,7 +40,7 @@ GitHub Actions
 * ``Check the rendered docs here!``: live preview of the documentation
 * ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
   dependencies and check coverage
-* ``gcc-8``: build with minimal supported version of GCC, install the wheel,
+* ``gcc-9``: build with minimal supported version of GCC, install the wheel,
   then run the test suite with `python -OO`
 * ``Array API``: test Array API support
 

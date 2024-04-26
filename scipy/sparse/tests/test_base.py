@@ -4141,7 +4141,7 @@ class TestDOK(sparse_test_class(minmax=False, nnz_axis=False)):
         A[0,3] = 10
         A[5,6] = 20
         D = A*A.T
-        E = A*A.H
+        E = A*A.T.conjugate()
         assert_array_equal(D.toarray(), E.toarray())
 
     def test_add_nonzero(self):
@@ -4543,6 +4543,17 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
         assert csr.indices.dtype == np.int32
         csc = dia.tocsc()
         assert csc.indices.dtype == np.int32
+
+    def test_mul_scalar(self):
+        # repro for gh-20434
+        m = dia_matrix([[1, 2], [0, 4]])
+        res = m * 3
+        assert isinstance(res, dia_matrix)
+        assert_array_equal(res.toarray(), [[3, 6], [0, 12]])
+
+        res2 = m.multiply(3)
+        assert isinstance(res2, dia_matrix)
+        assert_array_equal(res2.toarray(), [[3, 6], [0, 12]])
 
 
 TestDIA.init_class()

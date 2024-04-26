@@ -2,6 +2,7 @@
 '''
 import sys
 import warnings
+import math
 
 import numpy as np
 
@@ -557,7 +558,7 @@ class VarWriter4:
             T=mxCHAR_CLASS)
         if arr.dtype.kind == 'U':
             # Recode unicode to latin1
-            n_chars = np.prod(dims)
+            n_chars = math.prod(dims)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr)

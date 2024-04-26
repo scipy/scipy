@@ -1494,7 +1494,8 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-
+        
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
@@ -1504,8 +1505,6 @@ class LatinHypercube(QMCEngine):
                 idx = oa_sample[:, j] == k
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
-
-                lhs_engine = lhs_engine.reset()
 
         oa_lhs_sample /= p
 
@@ -1799,12 +1798,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 

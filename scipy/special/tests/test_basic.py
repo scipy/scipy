@@ -40,7 +40,6 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
-from scipy._lib.deprecation import _NoValue
 from scipy._lib._util import np_long, np_ulong
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
@@ -1429,8 +1428,8 @@ class TestBetaInc:
 
 class TestCombinatorics:
     def test_comb(self):
-        assert_array_almost_equal(special.comb([10, 10], [3, 4]), [120., 210.])
-        assert_almost_equal(special.comb(10, 3), 120.)
+        assert_allclose(special.comb([10, 10], [3, 4]), [120., 210.])
+        assert_allclose(special.comb(10, 3), 120.)
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
 
@@ -1442,39 +1441,6 @@ class TestCombinatorics:
 
         expected = 100891344545564193334812497256
         assert special.comb(100, 50, exact=True) == expected
-
-    @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
-    @pytest.mark.parametrize("k", [3.5, 3])
-    @pytest.mark.parametrize("N", [4.5, 4])
-    def test_comb_legacy(self, N, k, legacy, repetition):
-        # test is only relevant for exact=True
-        if legacy is not _NoValue:
-            with pytest.warns(
-                DeprecationWarning,
-                match=r"Using 'legacy' keyword is deprecated"
-            ):
-                result = special.comb(N, k, exact=True, legacy=legacy,
-                                      repetition=repetition)
-        else:
-            result = special.comb(N, k, exact=True, legacy=legacy,
-                                  repetition=repetition)
-        if legacy:
-            # for exact=True and legacy=True, cast input arguments, else don't
-            if repetition:
-                # the casting in legacy mode happens AFTER transforming N & k,
-                # so rounding can change (e.g. both floats, but sum to int);
-                # hence we need to emulate the repetition-transformation here
-                N, k = int(N + k - 1), int(k)
-                repetition = False
-            else:
-                N, k = int(N), int(k)
-        # expected result is the same as with exact=False
-        with suppress_warnings() as sup:
-            if legacy is not _NoValue:
-                sup.filter(DeprecationWarning)
-            expected = special.comb(N, k, legacy=legacy, repetition=repetition)
-        assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
         n = 70
@@ -1490,11 +1456,10 @@ class TestCombinatorics:
         assert_equal(special.comb(-1, 3, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
-        assert_array_almost_equal(special.comb([2, -1, 2, 10], [3, 3, -1, 3]),
-                [0., 0., 0., 120.])
+        assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
     def test_perm(self):
-        assert_array_almost_equal(special.perm([10, 10], [3, 4]), [720., 5040.])
+        assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
         assert_almost_equal(special.perm(10, 3), 720.)
         assert_equal(special.perm(10, 3, exact=True), 720)
 
@@ -1503,14 +1468,8 @@ class TestCombinatorics:
         assert_equal(special.perm(-1, 3, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=False), 0)
-        assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
-                [0., 0., 0., 720.])
-
-    def test_positional_deprecation(self):
-        with pytest.deprecated_call(match="use keyword arguments"):
-            # from test_comb
-            special.comb([10, 10], [3, 4], False, False)
-
+        assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
+    
 
 class TestTrigonometric:
     def test_cbrt(self):
@@ -3169,6 +3128,11 @@ class TestBessel:
         yn2n = special.yn(1,.2)
         assert_almost_equal(yn2n,-3.3238249881118471,8)
 
+    def test_yn_gh_20405(self):
+        # Enforce correct asymptotic behavior for large n.
+        observed = cephes.yn(500, 1)
+        assert observed == -np.inf
+
     def test_negv_yv(self):
         assert_almost_equal(special.yv(-3,2), -special.yv(3,2), 14)
 
@@ -3669,6 +3633,75 @@ class TestLegendreFunctions:
         lqf = special.lqn(2,.5)
         assert_array_almost_equal(lqf,(array([0.5493, -0.7253, -0.8187]),
                                        array([1.3333, 1.216, -0.8427])),4)
+
+    @pytest.mark.parametrize("function", [special.lpn, special.lqn])
+    @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])
+    @pytest.mark.parametrize("z_complex", [False, True])
+    @pytest.mark.parametrize("z_inexact", [False, True])
+    @pytest.mark.parametrize(
+        "input_shape",
+        [
+            (), (1, ), (2, ), (2, 1), (1, 2), (2, 2), (2, 2, 1), (2, 2, 2)
+        ]
+    )
+    def test_array_inputs_lxn(self, function, n, z_complex, z_inexact, input_shape):
+        """Tests for correct output shapes."""
+        rng = np.random.default_rng(1234)
+        if z_inexact:
+            z = rng.integers(-3, 3, size=input_shape)
+        else:
+            z = rng.uniform(-1, 1, size=input_shape)
+
+        if z_complex:
+            z = 1j * z + 0.5j * z
+
+        P_z, P_d_z = function(n, z)
+        assert P_z.shape == (n + 1, ) + input_shape
+        assert P_d_z.shape == (n + 1, ) + input_shape
+
+    @pytest.mark.parametrize("function", [special.lqmn])
+    @pytest.mark.parametrize(
+        "m,n",
+        [(0, 1), (1, 2), (1, 4), (3, 8), (11, 16), (19, 32)]
+    )
+    @pytest.mark.parametrize("z_inexact", [False, True])
+    @pytest.mark.parametrize(
+        "input_shape", [
+            (), (1, ), (2, ), (2, 1), (1, 2), (2, 2), (2, 2, 1)
+        ]
+    )
+    def test_array_inputs_lxmn(self, function, m, n, z_inexact, input_shape):
+        """Tests for correct output shapes and dtypes."""
+        rng = np.random.default_rng(1234)
+        if z_inexact:
+            z = rng.integers(-3, 3, size=input_shape)
+        else:
+            z = rng.uniform(-1, 1, size=input_shape)
+
+        P_z, P_d_z = function(m, n, z)
+        assert P_z.shape == (m + 1, n + 1) + input_shape
+        assert P_d_z.shape == (m + 1, n + 1) + input_shape
+
+
+    @pytest.mark.parametrize("function", [special.clpmn, special.lqmn])
+    @pytest.mark.parametrize(
+        "m,n",
+        [(0, 1), (1, 2), (1, 4), (3, 8), (11, 16), (19, 32)]
+    )
+    @pytest.mark.parametrize(
+        "input_shape", [
+            (), (1, ), (2, ), (2, 1), (1, 2), (2, 2), (2, 2, 1)
+        ]
+    )
+    def test_array_inputs_clxmn(self, function, m, n, input_shape):
+        """Tests for correct output shapes and dtypes."""
+        rng = np.random.default_rng(1234)
+        z = rng.uniform(-1, 1, size=input_shape)
+        z = 1j * z + 0.5j * z
+
+        P_z, P_d_z = function(m, n, z)
+        assert P_z.shape == (m + 1, n + 1) + input_shape
+        assert P_d_z.shape == (m + 1, n + 1) + input_shape
 
 
 class TestMathieu:

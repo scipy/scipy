@@ -100,9 +100,12 @@ variable is set:
 Support is provided in `scipy.special` for the following functions:
 `scipy.special.log_ndtr`, `scipy.special.ndtr`, `scipy.special.ndtri`,
 `scipy.special.erf`, `scipy.special.erfc`, `scipy.special.i0`,
-`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`, 
+`scipy.special.i0e`, `scipy.special.i1`, `scipy.special.i1e`,
 `scipy.special.gammaln`, `scipy.special.gammainc`, `scipy.special.gammaincc`,
 `scipy.special.logit`, and `scipy.special.expit`.
+
+Support is provided in `scipy.stats` for the following functions:
+`scipy.stats.pearsonr` and `scipy.stats.moment`.
 
 
 Implementation notes
@@ -164,7 +167,7 @@ have to change is:
 
 Input array validation uses the following pattern::
 
-   xp = array_namespace(arr) # where arr is the input array 
+   xp = array_namespace(arr) # where arr is the input array
    # alternatively, if there are multiple array inputs, include them all:
    xp = array_namespace(arr1, arr2)
 
@@ -230,33 +233,52 @@ The following pytest markers are available:
 
 * ``array_api_compatible -> xp``: use a parametrisation to run a test on
   multiple array backends.
-* ``skip_if_array_api(*backends, reasons=None, np_only=False, cpu_only=False)``:
+* ``skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False)``:
   skip certain backends and/or devices. ``np_only`` skips tests for all backends
   other than the default NumPy backend.
-  ``@pytest.mark.usefixtures("skip_if_array_api")`` must be used alongside this
+  ``@pytest.mark.usefixtures("skip_xp_backends")`` must be used alongside this
   marker for the skipping to apply.
+* ``skip_xp_invalid_arg`` is used to skip tests that use arguments which
+  are invalid when ``SCIPY_ARRAY_API`` is used. For instance, some tests of
+  `scipy.stats` functions pass masked arrays to the function being tested, but
+  masked arrays are incompatible with the array API. Use of the
+  ``skip_xp_invalid_arg`` decorator allows these tests to protect against
+  regressions when ``SCIPY_ARRAY_API`` is not used without resulting in failures
+  when ``SCIPY_ARRAY_API`` is used. In time, we will want these functions to emit
+  deprecation warnings when they receive array API invalid input, and this
+  decorator will check that the deprecation warning is emitted without it
+  causing the test to fail. When ``SCIPY_ARRAY_API=1`` behavior becomes the
+  default and only behavior, these tests (and the decorator itself) will be
+  removed.
 
 The following is an example using the markers::
 
-  from scipy.conftest import array_api_compatible
+  from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
   ...
-  @pytest.mark.skip_if_array_api(np_only=True,
+  @pytest.mark.skip_xp_backends(np_only=True,
                                  reasons=['skip reason'])
-  @pytest.mark.usefixtures("skip_if_array_api")
+  @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto1(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
       toto(a, b)
   ...
-  @pytest.mark.skip_if_array_api('array_api_strict', 'cupy',
+  @pytest.mark.skip_xp_backends('array_api_strict', 'cupy',
                                  reasons=['skip reason 1',
                                           'skip reason 2',])
-  @pytest.mark.usefixtures("skip_if_array_api")
+  @pytest.mark.usefixtures("skip_xp_backends")
   @array_api_compatible
   def test_toto2(self, xp):
       a = xp.asarray([1, 2, 3])
       b = xp.asarray([0, 2, 5])
+      toto(a, b)
+  ...
+  # Do not run when SCIPY_ARRAY_API is used
+  @skip_xp_invalid_arg
+  def test_toto_masked_array(self):
+      a = np.ma.asarray([1, 2, 3])
+      b = np.ma.asarray([0, 2, 5])
       toto(a, b)
 
 Passing a custom reason to ``reasons`` when ``cpu_only=True`` is unsupported
@@ -269,11 +291,11 @@ compatibility, one can reduce verbosity by telling ``pytest`` to apply the
 markers to every test function using ``pytestmark``::
 
     from scipy.conftest import array_api_compatible
-    
-    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-    skip_if_array_api = pytest.mark.skip_if_array_api
+
+    pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+    skip_xp_backends = pytest.mark.skip_xp_backends
     ...
-    @skip_if_array_api(np_only=True, reasons=['skip reason'])
+    @skip_xp_backends(np_only=True, reasons=['skip reason'])
     def test_toto1(self, xp):
         a = xp.asarray([1, 2, 3])
         b = xp.asarray([0, 2, 5])

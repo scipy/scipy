@@ -38,72 +38,35 @@ not for numerically exact results.
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 _IS_32BIT = (sys.maxsize < 2**32)
 
-# For skipping test_cont_basic
-distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
-            'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm', 'truncweibull_min']
+# Sets of tests to skip.
+# Entries sorted by speed (very slow to slow).
+# xslow took > 1s; slow took > 0.5s
 
-# distxslow are sorted by speed (very slow to slow)
-distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
+xslow_test_cont_basic = {'studentized_range', 'kstwo', 'ksone', 'vonmises', 'kappa4',
+                         'recipinvgauss', 'vonmises_line', 'gausshyper',
+                         'rel_breitwigner', 'norminvgauss'}
+slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
 
-# For skipping test_moments, which is already marked slow
-distxslow_test_moments = ['studentized_range', 'vonmises', 'vonmises_line',
-                          'ksone', 'kstwo', 'recipinvgauss', 'genexpon']
+# test_moments is already marked slow
+xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
+                      'recipinvgauss', 'kstwo', 'kappa4'}
 
-# skip check_fit_args (test is slow)
-skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                     'halfgennorm', 'gompertz', 'johnsonsb', 'johnsonsu',
-                     'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
-                     'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
-                     'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
-                     'rv_histogram_instance', 'studentized_range']
-
-# these were really slow in `test_fit`.py.
-# note that this list is used to skip both fit_test and fit_fix tests
-slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                    'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                    'kappa4', 'kstwobign', 'recipinvgauss',
-                    'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
-                    'studentized_range']
-# pearson3 fails due to something weird
-# the first list fails due to non-finite distribution moments encountered
-# most of the rest fail due to integration warnings
-# pearson3 is overridden as not implemented due to gh-11746
-fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
-                     'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
-                     'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                     'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
-                     'lomax', 'mielke', 'nakagami', 'ncf', 'skewcauchy', 't',
-                     'tukeylambda', 'invweibull', 'rel_breitwigner']
-                     + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                        'nct', 'pareto', 'powernorm', 'powerlognorm']
-                     + ['pearson3'])
-
-skip_fit_test = {"MLE": skip_fit_test_mle,
-                 "MM": slow_fit_test_mm + fail_fit_test_mm}
-
-# skip check_fit_args_fix (test is slow)
-skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
-                         'genexpon', 'halfgennorm', 'gompertz', 'johnsonsb',
-                         'johnsonsu', 'kappa4', 'ksone', 'kstwo', 'kstwobign',
-                         'levy_stable', 'mielke', 'ncf', 'ncx2',
-                         'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
-                         'trapezoid', 'truncpareto', 'vonmises', 'vonmises_line',
-                         'studentized_range']
-# the first list fails due to non-finite distribution moments encountered
-# most of the rest fail due to integration warnings
-# pearson3 is overridden as not implemented due to gh-11746
-fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
-                         'crystalball', 'f', 'fisk', 'foldcauchy',
-                         'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
-                         'jf_skew_t', 'kappa3', 'levy', 'levy_l', 'loglaplace',
-                         'lomax', 'mielke', 'nakagami', 'ncf', 'nct',
-                         'skewcauchy', 't', 'truncpareto', 'invweibull']
-                        + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
-                           'pareto', 'powernorm', 'powerlognorm']
-                        + ['pearson3'])
-skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
-                     "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
+xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'vonmises_line'}
+xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto'}
+skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
+xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
+                'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
+                'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
+                'truncweibull_min', 'wrapcauchy'}
+xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
+                'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
+                'genpareto', 'halfcauchy', 'invgamma', 'jf_skew_t', 'johnsonsu',
+                'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke',
+                'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
+                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
+                'tukeylambda', 'vonmises', 'vonmises_line'}
+skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
+               'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
 # These distributions fail the complex derivative test below.
 # Here 'fail' mean produce wrong results and/or raise exceptions, depending
@@ -139,21 +102,19 @@ for case, density in itertools.product([case1, case2], [True, False]):
 
 def cases_test_cont_basic():
     for distname, arg in distcont[:] + histogram_test_instances:
-        if distname == 'levy_stable':
+        if distname == 'levy_stable':  # fails; tested separately
             continue
-        elif distname in distslow:
+        if distname in slow_test_cont_basic:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
-        elif distname in distxslow:
+        elif distname in xslow_test_cont_basic:
             yield pytest.param(distname, arg, marks=pytest.mark.xslow)
         else:
             yield distname, arg
 
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
-@pytest.mark.parametrize('sn, n_fit_samples', [(500, 200)])
-def test_cont_basic(distname, arg, sn, n_fit_samples):
-    # this test skips slow distributions
-
+@pytest.mark.parametrize('sn', [500])
+def test_cont_basic(distname, arg, sn):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -237,13 +198,60 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     if distname != 'truncnorm':
         check_ppf_private(distfn, arg, distname)
 
-    for method in ["MLE", "MM"]:
-        if distname not in skip_fit_test[method]:
-            check_fit_args(distfn, arg, rvs[:n_fit_samples], method)
 
-        if distname not in skip_fit_fix_test[method]:
-            check_fit_args_fix(distfn, arg, rvs[:n_fit_samples], method)
+def cases_test_cont_basic_fit():
+    xslow = pytest.mark.xslow
+    fail = pytest.mark.skip(reason="Test fails and may be slow.")
+    skip = pytest.mark.skip(reason="Test too slow to run to completion (>10m).")
 
+    for distname, arg in distcont[:] + histogram_test_instances:
+        for method in ["MLE", "MM"]:
+            for fix_args in [True, False]:
+                if method == 'MLE' and distname in xslow_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=xslow)
+                    continue
+                if method == 'MLE' and distname in xfail_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=fail)
+                    continue
+                if method == 'MLE' and distname in skip_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=skip)
+                    continue
+                if method == 'MM' and distname in xslow_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=xslow)
+                    continue
+                if method == 'MM' and distname in xfail_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=fail)
+                    continue
+                if method == 'MM' and distname in skip_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=skip)
+                    continue
+
+                yield distname, arg, method, fix_args
+
+
+def test_cont_basic_fit_cases():
+    # Distribution names should not be in multiple MLE or MM sets
+    assert (len(xslow_fit_mle.union(xfail_fit_mle).union(skip_fit_mle)) ==
+            len(xslow_fit_mle) + len(xfail_fit_mle) + len(skip_fit_mle))
+    assert (len(xslow_fit_mm.union(xfail_fit_mm).union(skip_fit_mm)) ==
+            len(xslow_fit_mm) + len(xfail_fit_mm) + len(skip_fit_mm))
+
+
+@pytest.mark.parametrize('distname, arg, method, fix_args',
+                         cases_test_cont_basic_fit())
+@pytest.mark.parametrize('n_fit_samples', [200])
+def test_cont_basic_fit(distname, arg, n_fit_samples, method, fix_args):
+    try:
+        distfn = getattr(stats, distname)
+    except TypeError:
+        distfn = distname
+
+    rng = np.random.RandomState(765456)
+    rvs = distfn.rvs(size=n_fit_samples, *arg, random_state=rng)
+    if fix_args:
+        check_fit_args_fix(distfn, arg, rvs, method)
+    else:
+        check_fit_args(distfn, arg, rvs, method)
 
 @pytest.mark.parametrize('distname,arg', cases_test_cont_basic())
 def test_rvs_scalar(distname, arg):
@@ -275,7 +283,7 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
-        if distname in distxslow_test_moments:
+        if distname in xslow_test_moments:
             yield pytest.param(distname, arg, True, True, True, True,
                                marks=pytest.mark.xslow(reason="too slow"))
             continue
@@ -920,6 +928,7 @@ def test_broadcasting_in_moments_gh12192_regression():
     assert vals3.shape == expected3.shape
 
 
+@pytest.mark.slow
 def test_kappa3_array_gh13582():
     # https://github.com/scipy/scipy/pull/15140#issuecomment-994958241
     shapes = [0.5, 1.5, 2.5, 3.5, 4.5]

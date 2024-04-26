@@ -2,10 +2,10 @@
 ltisys -- a collection of functions to convert linear time invariant systems
 from one representation to another.
 """
-import numpy
+
 import numpy as np
 from numpy import (r_, eye, atleast_2d, poly, dot,
-                   asarray, prod, zeros, array, outer)
+                   asarray, zeros, array, outer)
 from scipy import linalg
 
 from ._filter_design import tf2zpk, zpk2tf, normalize
@@ -266,15 +266,15 @@ def ss2tf(A, B, C, D, input=0):
     except ValueError:
         den = 1
 
-    if (prod(B.shape, axis=0) == 0) and (prod(C.shape, axis=0) == 0):
-        num = numpy.ravel(D)
-        if (prod(D.shape, axis=0) == 0) and (prod(A.shape, axis=0) == 0):
+    if (B.size == 0) and (C.size == 0):
+        num = np.ravel(D)
+        if (D.size == 0) and (A.size == 0):
             den = []
         return num, den
 
     num_states = A.shape[0]
     type_test = A[:, 0] + B[:, 0] + C[0, :] + D + 0.0
-    num = numpy.empty((nout, num_states + 1), type_test.dtype)
+    num = np.empty((nout, num_states + 1), type_test.dtype)
     for k in range(nout):
         Ck = atleast_2d(C[k, :])
         num[k] = poly(A - dot(B, Ck)) + (D[k] - 1) * den
