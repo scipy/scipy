@@ -100,9 +100,13 @@ class IndexMixin:
             return res
         if not hasattr(self, '_get_int') and len(new_shape) != 2:
             return res.tocoo().reshape(new_shape)
-        if res.shape == () and new_shape != ():
-            return self.__class__([res], shape=new_shape, dtype=self.dtype)
-        return res.reshape(new_shape)
+        # avoid reshaping a numpy array
+        if res.shape != new_shape:
+            if not issparse(res):
+                res = res.reshape(new_shape)
+                return self.__class__(res, shape=new_shape, dtype=self.dtype)
+            return res.reshape(new_shape)
+        return res
 
     def __setitem__(self, key, x):
         index, _ = self._validate_indices(key)
