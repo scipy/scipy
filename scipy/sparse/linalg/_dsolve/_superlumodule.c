@@ -271,10 +271,10 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     int L_N = 0, L_nnz = 0;
     PyArrayObject *L_nzvals = NULL, *L_colind = NULL, *L_rowptr = NULL;
     /* compressed sparse column matrix U */
-    int U_N=0, U_nnz=0;
+    int U_N = 0, U_nnz = 0;
     PyArrayObject *U_nzvals = NULL, *U_rowind = NULL, *U_colptr = NULL;
     /* right hand side / solution */
-    PyObject *X_py=NULL;
+    PyObject *X_py = NULL;
     /* whether the matrix is transposed ('T'), conjugate transposed ('H') or normal ('N') */
     volatile int itrans = 'N';
     volatile jmp_buf* jmpbuf_ptr;
@@ -298,13 +298,13 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
         return NULL;
 
     volatile trans_t trans;
-    if (itrans == 'n' || itrans == 'N')
+    if (itrans == 'n' || itrans == 'N') {
         trans = NOTRANS;
-    else if (itrans == 't' || itrans == 'T')
+    } else if (itrans == 't' || itrans == 'T') {
         trans = TRANS;
-    else if (itrans == 'h' || itrans == 'H')
+    } else if (itrans == 'h' || itrans == 'H') {
         trans = CONJ;
-    else {
+    } else {
         PyErr_SetString(PyExc_ValueError, "trans must be N, T, or H");
         return NULL;
     }
