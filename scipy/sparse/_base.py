@@ -248,8 +248,9 @@ class _spbase:
                 if self.dtype <= np.dtype(fp_type):
                     return self.astype(fp_type)
 
-            raise TypeError('cannot upcast [%s] to a floating '
-                            'point format' % self.dtype.name)
+            raise TypeError(
+                f'cannot upcast [{self.dtype.name}] to a floating point format'
+            )
 
     def __iter__(self):
         for r in range(self.shape[0]):
@@ -268,8 +269,8 @@ class _spbase:
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
         """
-        raise NotImplementedError("count_nonzero not implemented for %s." %
-                                  self.__class__.__name__)
+        raise NotImplementedError("count_nonzero not implemented for "
+                                  f"{self.__class__.__name__}.")
 
     def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
@@ -284,8 +285,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for %s." %
-                                  self.__class__.__name__)
+        raise NotImplementedError("getnnz not implemented for "
+                                  f"{self.__class__.__name__}.")
 
     @property
     def nnz(self) -> int:

@@ -4280,7 +4280,7 @@ class TestLIL(sparse_test_class(minmax=False)):
 
         for op, (other, expected) in data.items():
             result = A.copy()
-            getattr(result, '__i%s__' % op)(other)
+            getattr(result, f'__i{op}__')(other)
 
             assert_array_equal(result.toarray(), expected.toarray())
 
