@@ -1,3 +1,5 @@
+import pytest
+
 import scipy.constants as sc
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close
@@ -26,6 +28,14 @@ def test_convert_temperature(xp):
                     [491.67, 491.67], rtol=0., atol=1e-13)
     xp_assert_close(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
                     [273.15, 0.], rtol=0., atol=1e-13)
+
+
+@array_api_compatible
+def test_convert_temperature_errors(xp):
+    with pytest.raises(NotImplementedError, match="old_scale="):
+        sc.convert_temperature(1, old_scale="cheddar", new_scale="kelvin")
+    with pytest.raises(NotImplementedError, match="new_scale="):
+        sc.convert_temperature(1, old_scale="kelvin", new_scale="brie")
 
 
 @array_api_compatible
