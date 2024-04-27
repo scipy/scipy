@@ -13,7 +13,8 @@ import math as _math
 from typing import TYPE_CHECKING, Any
 
 from ._codata import value as _cd
-import numpy as np
+
+from scipy._lib._array_api import array_namespace
 
 if TYPE_CHECKING:
     import numpy.typing as npt
@@ -269,19 +270,21 @@ def convert_temperature(
     array([ 233.15,  313.15])
 
     """
+    xp = array_namespace(val)
+    val = xp.asarray(val)
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
-        tempo = np.asanyarray(val) + zero_Celsius
+        tempo = val + zero_Celsius
     elif old_scale.lower() in ['kelvin', 'k']:
-        tempo = np.asanyarray(val)
+        tempo = val
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (np.asanyarray(val) - 32) * 5 / 9 + zero_Celsius
+        tempo = (val - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = np.asanyarray(val) * 5 / 9
+        tempo = val * 5 / 9
     else:
-        raise NotImplementedError("%s scale is unsupported: supported scales "
-                                  "are Celsius, Kelvin, Fahrenheit, and "
-                                  "Rankine" % old_scale)
+        raise NotImplementedError(f"{old_scale=} is unsupported: supported scales "
+                                   "are Celsius, Kelvin, Fahrenheit, and "
+                                   "Rankine")
     # and from Kelvin to `new_scale`.
     if new_scale.lower() in ['celsius', 'c']:
         res = tempo - zero_Celsius
@@ -292,9 +295,9 @@ def convert_temperature(
     elif new_scale.lower() in ['rankine', 'r']:
         res = tempo * 9 / 5
     else:
-        raise NotImplementedError("'%s' scale is unsupported: supported "
-                                  "scales are 'Celsius', 'Kelvin', "
-                                  "'Fahrenheit', and 'Rankine'" % new_scale)
+        raise NotImplementedError(f"{new_scale=} is unsupported: supported "
+                                   "scales are 'Celsius', 'Kelvin', "
+                                   "'Fahrenheit', and 'Rankine'")
 
     return res
 
@@ -329,7 +332,8 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / np.asanyarray(lambda_)
+    xp = array_namespace(lambda_)
+    return c / xp.asarray(lambda_)
 
 
 def nu2lambda(nu: npt.ArrayLike) -> Any:
@@ -359,4 +363,5 @@ def nu2lambda(nu: npt.ArrayLike) -> Any:
     array([  2.99792458e+08,   1.00000000e+00])
 
     """
-    return c / np.asanyarray(nu)
+    xp = array_namespace(nu)
+    return c / xp.asarray(nu)
