@@ -602,8 +602,8 @@ class TestCurveFit:
         assert_allclose(result_with_nan, result_without_nan)
 
         # not valid policy test
-        error_msg = ("nan_policy must be one of "
-                     "{'None', 'raise', 'omit'}")
+        valid_policies = {None, 'raise', 'omit'}
+        error_msg = f"nan_policy must be one of {valid_policies}"
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 

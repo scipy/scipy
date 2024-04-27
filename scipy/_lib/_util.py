@@ -268,8 +268,8 @@ def check_random_state(seed):
     if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
 
-    raise ValueError(f'{seed} cannot be used to seed a numpy.random.RandomState'
-                     ' instance')
+    raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
+                     " instance")
 
 
 def _asarray_validated(a, check_finite=True,
@@ -716,9 +716,9 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
     if not_numpy:
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
-        policies = ['propagate', 'raise', 'omit']
+        policies = {'propagate', 'raise', 'omit'}
     if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {policies}.")
+        raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))

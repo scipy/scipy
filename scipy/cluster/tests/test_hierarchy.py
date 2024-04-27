@@ -769,7 +769,7 @@ class TestMaxDists:
         Z = xp.asarray([[0, 1, 0.3, 4]], dtype=xp.float64)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z, xp)
-        xp_assert_close(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, rtol=1e-7, atol=1e-15)
 
     def test_maxdists_Q_linkage(self, xp):
         for method in ['single', 'complete', 'ward', 'centroid', 'median']:
@@ -781,7 +781,7 @@ class TestMaxDists:
         Z = linkage(X, method)
         MD = maxdists(Z)
         expectedMD = calculate_maximum_distances(Z, xp)
-        xp_assert_close(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, rtol=1e-7, atol=1e-15)
 
 
 class TestMaxInconsts:
@@ -808,7 +808,7 @@ class TestMaxInconsts:
         R = xp.asarray([[0, 0, 0, 0.3]], dtype=xp.float64)
         MD = maxinconsts(Z, R)
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
-        xp_assert_close(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, rtol=1e-7, atol=1e-15)
 
     @skip_xp_backends(cpu_only=True)
     def test_maxinconsts_Q_linkage(self, xp):
@@ -822,7 +822,7 @@ class TestMaxInconsts:
         R = inconsistent(Z)
         MD = maxinconsts(Z, R)
         expectedMD = calculate_maximum_inconsistencies(Z, R, xp=xp)
-        xp_assert_close(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, rtol=1e-7, atol=1e-15)
 
 
 class TestMaxRStat:
@@ -889,7 +889,7 @@ class TestMaxRStat:
         R = inconsistent(Z)
         MD = maxRstat(Z, R, 1)
         expectedMD = calculate_maximum_inconsistencies(Z, R, 1, xp)
-        xp_assert_close(MD, expectedMD, atol=1e-15)
+        xp_assert_close(MD, expectedMD, rtol=1e-7, atol=1e-15)
 
 
 @skip_xp_backends(cpu_only=True)
