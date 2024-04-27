@@ -7,7 +7,7 @@ import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
                    compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2)  # noqa: F401
+                   arctan2, hypot)  # noqa: F401
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -4490,10 +4490,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)
     cos_mean = xp.mean(cos_samp, axis=axis)
-    hypot = (sin_mean**2. + cos_mean**2.)**0.5
-    # hypot can go slightly above 1 due to rounding errors
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1., dtype=hypot.dtype), hypot)
+        one = xp.asarray(1., dtype=hypotenuse.dtype)
+        R = xp_minimum(one, hypotenuse)
 
     res = 1. - R
     return res
@@ -4589,10 +4590,11 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
-    hypot = (sin_mean**2. + cos_mean**2.)**0.5
-    # hypot can go slightly above 1 due to rounding errors
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1., dtype=hypot.dtype), hypot)  # [1] (2.2.4)
+        one = xp.asarray(1., dtype=hypotenuse.dtype)
+        R = xp_minimum(one, hypotenuse)  # [1] (2.2.4)
 
     res = xp.sqrt(-2*xp.log(R))
     if not normalize:
