@@ -472,9 +472,6 @@ Legendre functions
    lpmv     -- Associated Legendre function of integer order and real degree.
    sph_harm -- Compute spherical harmonics.
 
-The following functions do not accept NumPy arrays (they are not
-universal functions):
-
 .. autosummary::
    :toctree: generated/
 
@@ -770,7 +767,39 @@ Convenience functions
 
 """  # noqa: E501
 
+import os
 import warnings
+
+
+def _load_libsf_error_state():
+    """Load libsf_error_state.dll shared library on Windows
+
+    libsf_error_state manages shared state used by
+    ``scipy.special.seterr`` and ``scipy.special.geterr`` so that these
+    can work consistently between special functions provided by different
+    extension modules. This shared library is installed in scipy/special
+    alongside this __init__.py file. Due to lack of rpath support, Windows
+    cannot find shared libraries installed within wheels. To circumvent this,
+    we pre-load ``lib_sf_error_state.dll`` when on Windows.
+
+    The logic for this function was borrowed from the function ``make_init``
+    in `scipy/tools/openblas_support.py`:
+    https://github.com/scipy/scipy/blob/bb92c8014e21052e7dde67a76b28214dd1dcb94a/tools/openblas_support.py#L239-L274
+    """  # noqa: E501
+    if os.name == "nt":
+        try:
+            from ctypes import WinDLL
+            basedir = os.path.dirname(__file__)
+        except:  # noqa: E722
+            pass
+        else:
+            dll_path = os.path.join(basedir, "libsf_error_state.dll")
+            if os.path.exists(dll_path):
+                WinDLL(dll_path)
+
+
+_load_libsf_error_state()
+
 
 from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
@@ -861,3 +890,4 @@ def _get_include():
     """
     import os
     return os.path.dirname(__file__)
+

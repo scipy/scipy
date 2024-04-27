@@ -397,14 +397,17 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -np.inf if xmin is None else xmin
     xmax = np.inf if xmax is None else xmax
 
+    # If xl0 (xr0) is not supplied, fill with a dummy value for the sake
+    # of broadcasting. We need to wait until xmin (xmax) has been validated
+    # to compute the default values.
     xl0_not_supplied = False
     if xl0 is None:
-        xl0 = xm0 - 0.5
+        xl0 = np.nan
         xl0_not_supplied = True
 
     xr0_not_supplied = False
     if xr0 is None:
-        xr0 = xm0 + 0.5
+        xr0 = np.nan
         xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
@@ -429,21 +432,13 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not np.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
 
-    # Default choices for xl or xr might have exceeded xmin or xmax. Adjust
-    # to make sure this doesn't happen. We replace with copies because xl, and xr
-    # are read-only views produced by broadcast_arrays.
+    # Calculate default values of xl0 and/or xr0 if they have not been supplied
+    # by the user. We need to be careful to ensure xl0 and xr0 are not outside
+    # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xl0.copy()
-        cond = ~np.isinf(xmin) & (xl0 < xmin)
-        xl0[cond] = (
-            xm0[cond] - xmin[cond]
-        ) / np.array(16, dtype=xl0.dtype)
+        xl0 = xm0 - np.minimum((xm0 - xmin)/16, 0.5)
     if xr0_not_supplied:
-        xr0 = xr0.copy()
-        cond = ~np.isinf(xmax) & (xmax < xr0)
-        xr0[cond] = (
-            xmax[cond] - xm0[cond]
-        ) / np.array(16, dtype=xr0.dtype)
+        xr0 = xm0 + np.minimum((xmax - xm0)/16, 0.5)
 
     maxiter = np.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'

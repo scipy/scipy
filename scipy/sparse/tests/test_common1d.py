@@ -4,7 +4,7 @@ import pytest
 
 import numpy as np
 
-import scipy as sp
+from scipy.sparse import coo_array, dok_array, SparseEfficiencyWarning
 from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
 
@@ -13,7 +13,7 @@ sup_complex = np.testing.suppress_warnings()
 sup_complex.filter(ComplexWarning)
 
 
-spcreators = [sp.sparse.coo_array, sp.sparse.dok_array]
+spcreators = [coo_array, dok_array]
 math_dtypes = [np.int64, np.float64, np.complex128]
 
 
@@ -26,8 +26,8 @@ def dat1d():
 def datsp_math_dtypes(dat1d):
     dat_dtypes = {dtype: dat1d.astype(dtype) for dtype in math_dtypes}
     return {
-        sp: [(dtype, dat, sp(dat)) for dtype, dat in dat_dtypes.items()]
-        for sp in spcreators
+        spcreator: [(dtype, dat, spcreator(dat)) for dtype, dat in dat_dtypes.items()]
+        for spcreator in spcreators
     }
 
 
@@ -231,13 +231,13 @@ class TestCommon1D:
     @sup_complex
     def test_from_sparse(self, spcreator):
         D = np.array([1, 0, 0])
-        S = sp.sparse.coo_array(D)
+        S = coo_array(D)
         assert np.array_equal(spcreator(S).toarray(), D)
         S = spcreator(D)
         assert np.array_equal(spcreator(S).toarray(), D)
 
         D = np.array([1.0 + 3j, 0, -1])
-        S = sp.sparse.coo_array(D)
+        S = coo_array(D)
         assert np.array_equal(spcreator(S).toarray(), D)
         assert np.array_equal(spcreator(S, dtype='int16').toarray(), D.astype('int16'))
         S = spcreator(D)
@@ -397,7 +397,7 @@ class TestCommon1D:
         assert np.array_equal(S.toarray(), [1, 0, 3, 0, 0])
 
 
-@pytest.mark.parametrize("spcreator", [sp.sparse.dok_array])
+@pytest.mark.parametrize("spcreator", [dok_array])
 class TestGetSet1D:
     def test_getelement(self, spcreator):
         D = np.array([4, 3, 0])
@@ -423,10 +423,7 @@ class TestGetSet1D:
         dtype = np.float64
         A = spcreator((12,), dtype=dtype)
         with np.testing.suppress_warnings() as sup:
-            sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of a cs[cr]_matrix is expensive",
-            )
+            sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
             A[0] = dtype(0)
             A[1] = dtype(3)
             A[8] = dtype(9.0)

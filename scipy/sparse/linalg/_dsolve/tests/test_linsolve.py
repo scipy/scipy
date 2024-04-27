@@ -411,7 +411,7 @@ class TestLinsolve:
         assert_equal(ident.nnz, 3)
         assert_equal(b.nnz, 2)
         assert_equal(x.nnz, 2)
-        assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
+        assert_allclose(x.toarray(), b.toarray(), atol=1e-12, rtol=1e-12)
 
     def test_dtype_cast(self):
         A_real = scipy.sparse.csr_matrix([[1, 2, 0],
@@ -661,7 +661,7 @@ class TestSplu:
         A = A.astype(np.float32)
         spilu(A)
         A = A + 1j*A
-        B = A.A
+        B = A.toarray()
         assert_(not np.isnan(B).any())
 
     @sup_sparse_efficiency

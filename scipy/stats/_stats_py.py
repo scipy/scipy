@@ -45,7 +45,9 @@ from scipy._lib._util import (check_random_state, MapWrapper, _get_nan,
                               AxisError)
 
 import scipy.special as special
-from scipy import linalg
+# Import unused here but needs to stay until end of deprecation periode
+# See https://github.com/scipy/scipy/issues/15765#issuecomment-1875564522
+from scipy import linalg  # noqa: F401
 from . import distributions
 from . import _mstats_basic as mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
@@ -64,8 +66,9 @@ from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 from scipy._lib._util import normalize_axis_index
+from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
 from scipy._lib._util import float_factorial  # noqa: F401
@@ -98,16 +101,19 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'expectile']
 
 
-def _chk_asarray(a, axis):
+def _chk_asarray(a, axis, *, xp=None):
+    if xp is None:
+        xp = array_namespace(a)
+
     if axis is None:
-        a = np.ravel(a)
+        a = xp.reshape(a, (-1,))
         outaxis = 0
     else:
-        a = np.asarray(a)
+        a = xp.asarray(a)
         outaxis = axis
 
     if a.ndim == 0:
-        a = np.atleast_1d(a)
+        a = xp.reshape(a, (-1,))
 
     return a, outaxis
 
@@ -887,11 +893,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 
 def _moment_outputs(kwds):
-    moment = np.atleast_1d(kwds.get('order', 1))
-    if moment.size == 0:
+    order = np.atleast_1d(kwds.get('order', 1))
+    if order.size == 0:
         raise ValueError("'order' must be a scalar or a non-empty 1D "
                          "list/array.")
-    return len(moment)
+    return len(order)
 
 
 def _moment_result_object(*args):
@@ -938,7 +944,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     ----------
     a : array_like
        Input array.
-    order : int or array_like of ints, optional
+    order : int or 1-D array_like of ints, optional
        Order of central moment that is returned. Default is 1.
     axis : int or None, optional
        Axis along which the central moment is computed. Default is 0.
@@ -996,92 +1002,116 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
     2.0
 
     """
-    moment = order  # parameter was renamed
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
-    # for array_like moment input, return a value for each.
-    if not np.isscalar(moment):
-        # Calculated the mean once at most, and only if it will be used
-        calculate_mean = center is None and np.any(np.asarray(moment) > 1)
-        mean = a.mean(axis, keepdims=True) if calculate_mean else None
-        mmnt = []
-        for i in moment:
-            if center is None and i > 1:
-                mmnt.append(_moment(a, i, axis, mean=mean))
-            else:
-                mmnt.append(_moment(a, i, axis, mean=center))
-        return np.array(mmnt)
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.asarray(a, dtype=xp.float64)
     else:
-        return _moment(a, moment, axis, mean=center)
+        a = xp.asarray(a)
+
+    order = xp.asarray(order, dtype=a.dtype)
+    if xp_size(order) == 0:
+        # This is tested by `_moment_outputs`, which is run by the `_axis_nan_policy`
+        # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
+        # is a non-NumPy array, so we need to check again. When the decorator is
+        # updated for array API compatibility, we can remove this second check.
+        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
+    if xp.any(order != xp.round(order)):
+        raise ValueError("All elements of `order` must be integral.")
+    order = order[()] if order.ndim == 0 else order
+
+    # for array_like order input, return a value for each.
+    if order.ndim > 0:
+        # Calculated the mean once at most, and only if it will be used
+        calculate_mean = center is None and xp.any(order > 1)
+        mean = xp.mean(a, axis=axis, keepdims=True) if calculate_mean else None
+        mmnt = []
+        for i in order:
+            if center is None and i > 1:
+                mmnt.append(_moment(a, i, axis, mean=mean)[np.newaxis, ...])
+            else:
+                mmnt.append(_moment(a, i, axis, mean=center)[np.newaxis, ...])
+        return xp.concat(mmnt, axis=0)
+    else:
+        return _moment(a, order, axis, mean=center)
 
 
-# Moment with optional pre-computed mean, equal to a.mean(axis, keepdims=True)
-def _moment(a, moment, axis, *, mean=None):
-    if np.abs(moment - np.round(moment)) > 0:
-        raise ValueError("All moment parameters must be integers")
+def _moment(a, order, axis, *, mean=None, xp=None):
+    """Vectorized calculation of raw moment about specified center
+
+    When `mean` is None, the mean is computed and used as the center;
+    otherwise, the provided value is used as the center.
+
+    """
+    xp = array_namespace(a) if xp is None else xp
+
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.asarray(a, dtype=xp.float64)
+
+    dtype = a.dtype
 
     # moment of empty array is the same regardless of order
-    if a.size == 0:
-        return np.mean(a, axis=axis)
+    if xp_size(a) == 0:
+        return xp.mean(a, axis=axis)
 
-    dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
-
-    if moment == 0 or (moment == 1 and mean is None):
+    if order == 0 or (order == 1 and mean is None):
         # By definition the zeroth moment is always 1, and the first *central*
         # moment is 0.
         shape = list(a.shape)
         del shape[axis]
 
-        if len(shape) == 0:
-            return dtype(1.0 if moment == 0 else 0.0)
+        temp = (xp.ones(shape, dtype=dtype) if order == 0
+                else xp.zeros(shape, dtype=dtype))
+        return temp[()] if temp.ndim == 0 else temp
+
+    # Exponentiation by squares: form exponent sequence
+    n_list = [order]
+    current_n = order
+    while current_n > 2:
+        if current_n % 2:
+            current_n = (current_n - 1) / 2
         else:
-            return (np.ones(shape, dtype=dtype) if moment == 0
-                    else np.zeros(shape, dtype=dtype))
+            current_n /= 2
+        n_list.append(current_n)
+
+    # Starting point for exponentiation by squares
+    mean = (xp.mean(a, axis=axis, keepdims=True) if mean is None
+            else xp.asarray(mean, dtype=dtype))
+    mean = mean[()] if mean.ndim == 0 else mean
+    a_zero_mean = a - mean
+
+    eps = xp.finfo(dtype).eps * 10
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        rel_diff = xp.max(xp.abs(a_zero_mean), axis=axis,
+                          keepdims=True) / xp.abs(mean)
+    with np.errstate(invalid='ignore'):
+        precision_loss = xp.any(rel_diff < eps)
+    n = a.shape[axis] if axis is not None else a.size
+    if precision_loss and n > 1:
+        message = ("Precision loss occurred in moment calculation due to "
+                   "catastrophic cancellation. This occurs when the data "
+                   "are nearly identical. Results may be unreliable.")
+        warnings.warn(message, RuntimeWarning, stacklevel=4)
+
+    if n_list[-1] == 1:
+        s = xp.asarray(a_zero_mean, copy=True)
     else:
-        # Exponentiation by squares: form exponent sequence
-        n_list = [moment]
-        current_n = moment
-        while current_n > 2:
-            if current_n % 2:
-                current_n = (current_n - 1) / 2
-            else:
-                current_n /= 2
-            n_list.append(current_n)
+        s = a_zero_mean**2
 
-        # Starting point for exponentiation by squares
-        mean = (a.mean(axis, keepdims=True) if mean is None
-                else np.asarray(mean, dtype=dtype)[()])
-        a_zero_mean = a - mean
-
-        eps = np.finfo(a_zero_mean.dtype).resolution * 10
-        with np.errstate(divide='ignore', invalid='ignore'):
-            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
-                              keepdims=True) / np.abs(mean)
-        with np.errstate(invalid='ignore'):
-            precision_loss = np.any(rel_diff < eps)
-        n = a.shape[axis] if axis is not None else a.size
-        if precision_loss and n > 1:
-            message = ("Precision loss occurred in moment calculation due to "
-                       "catastrophic cancellation. This occurs when the data "
-                       "are nearly identical. Results may be unreliable.")
-            warnings.warn(message, RuntimeWarning, stacklevel=4)
-
-        if n_list[-1] == 1:
-            s = a_zero_mean.copy()
-        else:
-            s = a_zero_mean**2
-
-        # Perform multiplications
-        for n in n_list[-2::-1]:
-            s = s**2
-            if n % 2:
-                s *= a_zero_mean
-        return np.mean(s, axis)
+    # Perform multiplications
+    for n in n_list[-2::-1]:
+        s = s**2
+        if n % 2:
+            s *= a_zero_mean
+    return xp.mean(s, axis=axis)
 
 
-def _var(x, axis=0, ddof=0, mean=None):
+def _var(x, axis=0, ddof=0, mean=None, xp=None):
     # Calculate variance of sample, warning if precision is lost
-    var = _moment(x, 2, axis, mean=mean)
+    xp = array_namespace(x) if xp is None else xp
+    var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
         n = x.shape[axis] if axis is not None else x.size
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
@@ -1091,6 +1121,8 @@ def _var(x, axis=0, ddof=0, mean=None):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -1165,30 +1197,27 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     0.2650554122698573
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
     n = a.shape[axis]
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.skew(a, axis, bias)
-
-    mean = a.mean(axis, keepdims=True)
+    mean = xp.mean(a, axis=axis, keepdims=True)
+    mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
     m2 = _moment(a, 2, axis, mean=mean)
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, np.nan, m3 / m2**1.5)
+        eps = xp.finfo(m2.dtype).eps
+        zero = m2 <= (eps * mean_reduced)**2
+        vals = xp.where(zero, xp.asarray(xp.nan), m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
-        if can_correct.any():
-            m2 = np.extract(can_correct, m2)
-            m3 = np.extract(can_correct, m3)
-            nval = np.sqrt((n - 1.0) * n) / (n - 2.0) * m3 / m2**1.5
-            np.place(vals, can_correct, nval)
+        if xp.any(can_correct):
+            m2 = m2[can_correct]
+            m3 = m3[can_correct]
+            nval = ((n - 1.0) * n)**0.5 / (n - 2.0) * m3 / m2**1.5
+            vals[can_correct] = nval
 
-    return vals[()]
+    return vals[()] if vals.ndim == 0 else vals
 
 
 @_axis_nan_policy_factory(
@@ -4347,47 +4376,49 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
     Fisher's transformation is used to compute the confidence interval
     (https://en.wikipedia.org/wiki/Fisher_transformation).
     """
-    if r == 1:
-        zr = np.inf
-    elif r == -1:
-        zr = -np.inf
-    else:
-        zr = np.arctanh(r)
+    xp = array_namespace(r)
 
+    with np.errstate(divide='ignore'):
+        zr = xp.atanh(r)
+
+    ones = xp.ones_like(r)
+    n, confidence_level = xp.asarray([n, confidence_level], dtype=r.dtype)
     if n > 3:
-        se = np.sqrt(1 / (n - 3))
+        se = xp.sqrt(1 / (n - 3))
         if alternative == "two-sided":
             h = special.ndtri(0.5 + confidence_level/2)
             zlo = zr - h*se
             zhi = zr + h*se
-            rlo = np.tanh(zlo)
-            rhi = np.tanh(zhi)
+            rlo = xp.tanh(zlo)
+            rhi = xp.tanh(zhi)
         elif alternative == "less":
             h = special.ndtri(confidence_level)
             zhi = zr + h*se
-            rhi = np.tanh(zhi)
-            rlo = -1.0
+            rhi = xp.tanh(zhi)
+            rlo = -ones
         else:
             # alternative == "greater":
             h = special.ndtri(confidence_level)
             zlo = zr - h*se
-            rlo = np.tanh(zlo)
-            rhi = 1.0
+            rlo = xp.tanh(zlo)
+            rhi = ones
     else:
-        rlo, rhi = -1.0, 1.0
+        rlo, rhi = -ones, ones
 
+    rlo = rlo[()] if rlo.ndim == 0 else rlo
+    rhi = rhi[()] if rhi.ndim == 0 else rhi
     return ConfidenceInterval(low=rlo, high=rhi)
 
 
-def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative):
+def _pearsonr_bootstrap_ci(confidence_level, method, x, y, alternative, axis):
     """
     Compute the confidence interval for Pearson's R using the bootstrap.
     """
-    def statistic(x, y):
-        statistic, _ = pearsonr(x, y)
+    def statistic(x, y, axis):
+        statistic, _ = pearsonr(x, y, axis=axis)
         return statistic
 
-    res = bootstrap((x, y), statistic, confidence_level=confidence_level,
+    res = bootstrap((x, y), statistic, confidence_level=confidence_level, axis=axis,
                     paired=True, alternative=alternative, **method._asdict())
     # for one-sided confidence intervals, bootstrap gives +/- inf on one side
     res.confidence_interval = np.clip(res.confidence_interval, -1, 1)
@@ -4419,12 +4450,13 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
-    def __init__(self, statistic, pvalue, alternative, n, x, y):
+    def __init__(self, statistic, pvalue, alternative, n, x, y, axis):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
         self._n = n
         self._x = x
         self._y = y
+        self._axis = axis
 
         # add alias for consistency with other correlation functions
         self.correlation = statistic
@@ -4475,8 +4507,14 @@ class PearsonRResult(PearsonRResultBase):
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
         if isinstance(method, BootstrapMethod):
-            ci = _pearsonr_bootstrap_ci(confidence_level, method,
-                                        self._x, self._y, self._alternative)
+            xp = array_namespace(self._x)
+            message = ('`method` must be `None` if `pearsonr` '
+                       'arguments were not NumPy arrays.')
+            if not is_numpy(xp):
+                raise ValueError(message)
+
+            ci = _pearsonr_bootstrap_ci(confidence_level, method, self._x, self._y,
+                                        self._alternative, self._axis)
         elif method is None:
             ci = _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
                                      self._alternative)
@@ -4486,7 +4524,22 @@ class PearsonRResult(PearsonRResultBase):
             raise ValueError(message)
         return ci
 
-def pearsonr(x, y, *, alternative='two-sided', method=None):
+
+def _move_axis_to_end(x, source, xp):
+    axes = list(range(x.ndim))
+    temp = axes.pop(source)
+    axes = axes + [temp]
+    return xp.permute_dims(x, axes)
+
+
+def _clip(x, a, b, xp):
+    y = xp.asarray(x, copy=True)
+    y[y < a] = a
+    y[y > b] = b
+    return y
+
+
+def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
@@ -4508,10 +4561,15 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
 
     Parameters
     ----------
-    x : (N,) array_like
+    x : array_like
         Input array.
-    y : (N,) array_like
+    y : array_like
         Input array.
+    axis : int or None, default
+        Axis along which to perform the calculation. Default is 0.
+        If None, ravel both arrays before performing the calculation.
+
+        .. versionadded:: 1.13.0
     alternative : {'two-sided', 'greater', 'less'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -4669,6 +4727,24 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     >>> res.confidence_interval(confidence_level=0.9, method=method)
     ConfidenceInterval(low=-0.9983163756488651, high=-0.22771001702132443)  # may vary
 
+    If N-dimensional arrays are provided, multiple tests are performed in a
+    single call according to the same conventions as most `scipy.stats` functions:
+
+    >>> rng = np.random.default_rng(2348246935601934321)
+    >>> x = rng.standard_normal((8, 15))
+    >>> y = rng.standard_normal((8, 15))
+    >>> stats.pearsonr(x, y, axis=0).statistic.shape  # between corresponding columns
+    (15,)
+    >>> stats.pearsonr(x, y, axis=1).statistic.shape  # between corresponding rows
+    (8,)
+
+    To perform all pairwise comparisons between slices of the arrays,
+    use standard NumPy broadcasting techniques. For instance, to compute the
+    correlation between all pairs of rows:
+
+    >>> stats.pearsonr(x[:, np.newaxis, :], y, axis=-1).statistic.shape
+    (8, 8)
+
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
@@ -4716,85 +4792,123 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
     than zero which happens in about half of the cases if we sample x and y.
 
     """
-    n = len(x)
-    if n != len(y):
-        raise ValueError('x and y must have the same length.')
+    xp = array_namespace(x, y)
+    x = xp.asarray(x)
+    y = xp.asarray(y)
+
+    if not is_numpy(xp) and method is not None:
+        method = 'invalid'
+
+    if axis is None:
+        x = xp.reshape(x, (-1,))
+        y = xp.reshape(y, (-1,))
+        axis = -1
+
+    axis_int = int(axis)
+    if axis_int != axis:
+        raise ValueError('`axis` must be an integer.')
+    axis = axis_int
+
+    n = x.shape[axis]
+    if n != y.shape[axis]:
+        raise ValueError('`x` and `y` must have the same length along `axis`.')
 
     if n < 2:
-        raise ValueError('x and y must have length at least 2.')
+        raise ValueError('`x` and `y` must have length at least 2.')
 
-    x = np.asarray(x)
-    y = np.asarray(y)
+    try:
+        x, y = xp.broadcast_arrays(x, y)
+    except (ValueError, RuntimeError) as e:
+        message = '`x` and `y` must be broadcastable.'
+        raise ValueError(message) from e
 
-    if (np.issubdtype(x.dtype, np.complexfloating)
-            or np.issubdtype(y.dtype, np.complexfloating)):
+    # `moveaxis` only recently added to array API, so it's not yey available in
+    # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
+    x = _move_axis_to_end(x, axis, xp)
+    y = _move_axis_to_end(y, axis, xp)
+    axis = -1
+
+    dtype = xp.result_type(x.dtype, y.dtype)
+    if xp.isdtype(dtype, "integral"):
+        dtype = xp.float64
+
+    if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
 
+    x = xp.astype(x, dtype, copy=False)
+    y = xp.astype(y, dtype, copy=False)
+    threshold = xp.finfo(dtype).eps ** 0.75
+
     # If an input is constant, the correlation coefficient is not defined.
-    if (x == x[0]).all() or (y == y[0]).all():
+    const_x = xp.all(x == x[..., 0:1], axis=-1)
+    const_y = xp.all(y == y[..., 0:1], axis=-1)
+    const_xy = const_x | const_y
+    if xp.any(const_xy):
         msg = ("An input array is constant; the correlation coefficient "
                "is not defined.")
         warnings.warn(stats.ConstantInputWarning(msg), stacklevel=2)
-        result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
-                                alternative=alternative, x=x, y=y)
-        return result
 
     if isinstance(method, PermutationMethod):
-        def statistic(y):
-            statistic, _ = pearsonr(x, y, alternative=alternative)
+        def statistic(y, axis):
+            statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
         res = permutation_test((y,), statistic, permutation_type='pairings',
-                               alternative=alternative, **method._asdict())
+                               axis=axis, alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
-                              alternative=alternative, x=x, y=y)
+                              alternative=alternative, x=x, y=y, axis=axis)
     elif isinstance(method, MonteCarloMethod):
-        def statistic(x, y):
-            statistic, _ = pearsonr(x, y, alternative=alternative)
+        def statistic(x, y, axis):
+            statistic, _ = pearsonr(x, y, axis=axis, alternative=alternative)
             return statistic
 
         if method.rvs is None:
             rng = np.random.default_rng()
             method.rvs = rng.normal, rng.normal
 
-        res = monte_carlo_test((x, y,), statistic=statistic,
+        res = monte_carlo_test((x, y,), statistic=statistic, axis=axis,
                                alternative=alternative, **method._asdict())
 
         return PearsonRResult(statistic=res.statistic, pvalue=res.pvalue, n=n,
-                              alternative=alternative, x=x, y=y)
+                              alternative=alternative, x=x, y=y, axis=axis)
+    elif method == 'invalid':
+        message = '`method` must be `None` if arguments are not NumPy arrays.'
+        raise ValueError(message)
     elif method is not None:
         message = ('`method` must be an instance of `PermutationMethod`,'
                    '`MonteCarloMethod`, or None.')
         raise ValueError(message)
 
-    # dtype is the data type for the calculations.  This expression ensures
-    # that the data type is at least 64 bit floating point.  It might have
-    # more precision if the input is, for example, np.longdouble.
-    dtype = type(1.0 + x[0] + y[0])
-
     if n == 2:
-        r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
-        result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
-                                alternative=alternative, x=x, y=y)
+        r = (xp.sign(x[..., 1] - x[..., 0])*xp.sign(y[..., 1] - y[..., 0]))
+        r = r[()] if r.ndim == 0 else r
+        pvalue = xp.ones_like(r)
+        pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+        result = PearsonRResult(statistic=r, pvalue=pvalue, n=n,
+                                alternative=alternative, x=x, y=y, axis=axis)
         return result
 
-    xmean = x.mean(dtype=dtype)
-    ymean = y.mean(dtype=dtype)
+    xmean = xp.mean(x, axis=axis, keepdims=True)
+    ymean = xp.mean(y, axis=axis, keepdims=True)
+    xm = x - xmean
+    ym = y - ymean
 
-    # By using `astype(dtype)`, we ensure that the intermediate calculations
-    # use at least 64 bit floating point.
-    xm = x.astype(dtype) - xmean
-    ym = y.astype(dtype) - ymean
-
-    # Unlike np.linalg.norm or the expression sqrt((xm*xm).sum()),
-    # scipy.linalg.norm(xm) does not overflow if xm is, for example,
+    # scipy.linalg.norm(xm) avoids premature overflow when xm is e.g.
     # [-5e210, 5e210, 3e200, -3e200]
-    normxm = linalg.norm(xm)
-    normym = linalg.norm(ym)
+    # but not when `axis` is provided, so scale manually. scipy.linalg.norm
+    # also raises an error with NaN input rather than returning NaN, so
+    # use np.linalg.norm.
+    xmax = xp.max(xp.abs(xm), axis=axis, keepdims=True)
+    ymax = xp.max(xp.abs(ym), axis=axis, keepdims=True)
+    with np.errstate(invalid='ignore'):
+        normxm = xmax * xp.linalg.vector_norm(xm/xmax, axis=axis, keepdims=True)
+        normym = ymax * xp.linalg.vector_norm(ym/ymax, axis=axis, keepdims=True)
 
-    threshold = 1e-13
-    if normxm < threshold*abs(xmean) or normym < threshold*abs(ymean):
+    nconst_x = xp.any(normxm < threshold*xp.abs(xmean), axis=axis)
+    nconst_y = xp.any(normym < threshold*xp.abs(ymean), axis=axis)
+    nconst_xy = nconst_x | nconst_y
+    if xp.any(nconst_xy & (~const_xy)):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
@@ -4802,20 +4916,29 @@ def pearsonr(x, y, *, alternative='two-sided', method=None):
                "correlation coefficient may be inaccurate.")
         warnings.warn(stats.NearConstantInputWarning(msg), stacklevel=2)
 
-    r = np.dot(xm/normxm, ym/normym)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        r = xp.sum(xm/normxm * ym/normym, axis=axis)
 
     # Presumably, if abs(r) > 1, then it is only some small artifact of
     # floating point arithmetic.
-    r = max(min(r, 1.0), -1.0)
+    one = xp.asarray(1, dtype=dtype)
+    # `clip` only recently added to array API, so it's not yet available in
+    # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
+    r = xp.asarray(_clip(r, -one, one, xp))
+    r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
+    # This needs to be done with NumPy arrays given the existing infrastructure.
     ab = n/2 - 1
     dist = stats.beta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(r, dist, alternative)
+    pvalue = _get_pvalue(np.asarray(r), dist, alternative)
+    pvalue = xp.asarray(pvalue, dtype=dtype)
 
+    r = r[()] if r.ndim == 0 else r
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return PearsonRResult(statistic=r, pvalue=pvalue, n=n,
-                          alternative=alternative, x=x, y=y)
+                          alternative=alternative, x=x, y=y, axis=axis)
 
 
 def fisher_exact(table, alternative='two-sided'):
@@ -5539,8 +5662,7 @@ def pointbiserialr(x, y):
     return res
 
 
-@_deprecate_positional_args(version="1.14")
-def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
+def kendalltau(x, y, *, nan_policy='propagate',
                method='auto', variant='b', alternative='two-sided'):
     r"""Calculate Kendall's tau, a correlation measure for ordinal data.
 
@@ -5558,12 +5680,6 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     x, y : array_like
         Arrays of rankings, of the same shape. If arrays are not 1-D, they
         will be flattened to 1-D.
-    initial_lexsort : bool, optional, deprecated
-        This argument is unused.
-
-        .. deprecated:: 1.10.0
-           `kendalltau` keyword argument `initial_lexsort` is deprecated as it
-           is unused and will be removed in SciPy 1.14.0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5664,7 +5780,7 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     >>> y = np.array([2.8, 2.9, 2.8, 2.6, 3.5, 4.6, 5.0])
 
     These data were analyzed in [7]_ using Spearman's correlation coefficient,
-    a statistic similar to to Kendall's tau in that it is also sensitive to
+    a statistic similar to Kendall's tau in that it is also sensitive to
     ordinal correlation between the samples. Let's perform an analogous study
     using Kendall's tau.
 
@@ -5778,11 +5894,6 @@ def kendalltau(x, y, *, initial_lexsort=_NoValue, nan_policy='propagate',
     accurate results.
 
     """
-    if initial_lexsort is not _NoValue:
-        msg = ("'kendalltau' keyword argument 'initial_lexsort' is deprecated"
-               " as it is unused and will be removed in SciPy 1.12.0.")
-        warnings.warn(msg, DeprecationWarning, stacklevel=2)
-
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -6663,11 +6774,16 @@ class TtestResult(TtestResultBase):
     """
 
     def __init__(self, statistic, pvalue, df,  # public
-                 alternative, standard_error, estimate):  # private
+                 alternative, standard_error, estimate,  # private
+                 statistic_np=None, xp=None):  # private
         super().__init__(statistic, pvalue, df=df)
         self._alternative = alternative
         self._standard_error = standard_error  # denominator of t-statistic
         self._estimate = estimate  # point estimate of sample mean
+        self._statistic_np = statistic if statistic_np is None else statistic_np
+        self._dtype = statistic.dtype
+        self._xp = array_namespace(statistic, pvalue) if xp is None else xp
+
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -6684,8 +6800,9 @@ class TtestResult(TtestResultBase):
             fields `low` and `high`.
 
         """
-        low, high = _t_confidence_interval(self.df, self.statistic,
-                                           confidence_level, self._alternative)
+        low, high = _t_confidence_interval(self.df, self._statistic_np,
+                                           confidence_level, self._alternative,
+                                           self._dtype, self._xp)
         low = low * self._standard_error + self._estimate
         high = high * self._standard_error + self._estimate
         return ConfidenceInterval(low=low, high=high)
@@ -6709,6 +6826,8 @@ def unpack_TtestResult(res):
 
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6864,35 +6983,49 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     953
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = a.shape[axis]
     df = n - 1
 
-    mean = np.mean(a, axis)
+    mean = xp.mean(a, axis=axis)
     try:
-        popmean = np.squeeze(popmean, axis=axis)
+        popmean = xp.asarray(popmean)
+        popmean = xp.squeeze(popmean, axis=axis) if popmean.ndim > 0 else popmean
     except ValueError as e:
         raise ValueError("`popmean.shape[axis]` must equal 1.") from e
     d = mean - popmean
-    v = _var(a, axis, ddof=1)
-    denom = np.sqrt(v / n)
+    v = _var(a, axis=axis, ddof=1)
+    denom = xp.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+        t = xp.divide(d, denom)
+        t = t[()] if t.ndim == 0 else t
+    # This will only work for CPU backends for now. That's OK. In time,
+    # `from_dlpack` will enable the transfer from other devices, and
+    # `_get_pvalue` will even be reworked to support the native backend.
+    t_np = np.asarray(t)
+    prob = _get_pvalue(t_np, distributions.t(df), alternative)
+    prob = xp.asarray(prob, dtype=t.dtype)
+    prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
+    df = xp.broadcast_to(xp.asarray(df), t.shape)
+    df = df[()] if df.ndim == 0 else df
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
     return TtestResult(t, prob, df=df, alternative=alternative_num,
-                       standard_error=denom, estimate=mean)
+                       standard_error=denom, estimate=mean,
+                       statistic_np=t_np, xp=xp)
 
 
-def _t_confidence_interval(df, t, confidence_level, alternative):
+def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=None):
     # Input validation on `alternative` is already done
     # We just need IV on confidence_level
+    dtype = t.dtype if dtype is None else dtype
+    xp = array_namespace(t) if xp is None else xp
+
     if confidence_level < 0 or confidence_level > 1:
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
@@ -6913,7 +7046,11 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
         p, nans = np.broadcast_arrays(t, np.nan)
         low, high = nans, nans
 
-    return low[()], high[()]
+    low = xp.asarray(low, dtype=dtype)
+    low = low[()] if low.ndim == 0 else low
+    high = xp.asarray(high, dtype=dtype)
+    high = high[()] if high.ndim == 0 else high
+    return low, high
 
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 

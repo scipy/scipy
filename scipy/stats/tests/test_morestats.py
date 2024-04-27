@@ -21,6 +21,7 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
+from scipy._lib._array_api import SCIPY_ARRAY_API
 
 distcont = dict(distcont)  # type: ignore
 
@@ -190,7 +191,8 @@ class TestShapiro:
 
     def test_not_enough_values(self):
         assert_raises(ValueError, stats.shapiro, [1, 2])
-        assert_raises(ValueError, stats.shapiro, np.array([[], [2]], dtype=object))
+        error_type = TypeError if SCIPY_ARRAY_API else ValueError
+        assert_raises(error_type, stats.shapiro, np.array([[], [2]], dtype=object))
 
     def test_bad_arg(self):
         # Length of x is less than 3.
@@ -423,7 +425,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -2066,6 +2068,7 @@ class TestBoxcoxNormmax:
         assert np.all(bounds[0] < maxlog)
         assert np.all(maxlog < bounds[1])
 
+    @pytest.mark.slow
     def test_user_defined_optimizer(self):
         # tests an optimizer that is not based on scipy.optimize.minimize
         lmbda = stats.boxcox_normmax(self.x)
