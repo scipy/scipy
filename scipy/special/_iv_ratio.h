@@ -57,7 +57,7 @@ inline double iv_ratio(double v, double x) {
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
-    if (v < 0 || x < 0) {
+    if (v < 1 || x < 0) {
         special::set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
@@ -73,9 +73,7 @@ inline double iv_ratio(double v, double x) {
         return 1.0;
     }
 
-    // Now v >= 0 and x >= 0 and both are finite.
-    v += 1;
-
+    // Now v >= 1 and x >= 0 and both are finite.
     int e;
     std::frexp(std::fmax(v, x), &e);
     double c = std::ldexp(1, 1-e); // rescaling multiplier
