@@ -40,7 +40,6 @@ import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef, stirling2
-from scipy._lib.deprecation import _NoValue
 from scipy._lib._util import np_long, np_ulong
 
 from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
@@ -1429,8 +1428,8 @@ class TestBetaInc:
 
 class TestCombinatorics:
     def test_comb(self):
-        assert_array_almost_equal(special.comb([10, 10], [3, 4]), [120., 210.])
-        assert_almost_equal(special.comb(10, 3), 120.)
+        assert_allclose(special.comb([10, 10], [3, 4]), [120., 210.])
+        assert_allclose(special.comb(10, 3), 120.)
         assert_equal(special.comb(10, 3, exact=True), 120)
         assert_equal(special.comb(10, 3, exact=True, repetition=True), 220)
 
@@ -1442,39 +1441,6 @@ class TestCombinatorics:
 
         expected = 100891344545564193334812497256
         assert special.comb(100, 50, exact=True) == expected
-
-    @pytest.mark.parametrize("repetition", [True, False])
-    @pytest.mark.parametrize("legacy", [True, False, _NoValue])
-    @pytest.mark.parametrize("k", [3.5, 3])
-    @pytest.mark.parametrize("N", [4.5, 4])
-    def test_comb_legacy(self, N, k, legacy, repetition):
-        # test is only relevant for exact=True
-        if legacy is not _NoValue:
-            with pytest.warns(
-                DeprecationWarning,
-                match=r"Using 'legacy' keyword is deprecated"
-            ):
-                result = special.comb(N, k, exact=True, legacy=legacy,
-                                      repetition=repetition)
-        else:
-            result = special.comb(N, k, exact=True, legacy=legacy,
-                                  repetition=repetition)
-        if legacy:
-            # for exact=True and legacy=True, cast input arguments, else don't
-            if repetition:
-                # the casting in legacy mode happens AFTER transforming N & k,
-                # so rounding can change (e.g. both floats, but sum to int);
-                # hence we need to emulate the repetition-transformation here
-                N, k = int(N + k - 1), int(k)
-                repetition = False
-            else:
-                N, k = int(N), int(k)
-        # expected result is the same as with exact=False
-        with suppress_warnings() as sup:
-            if legacy is not _NoValue:
-                sup.filter(DeprecationWarning)
-            expected = special.comb(N, k, legacy=legacy, repetition=repetition)
-        assert_equal(result, expected)
 
     def test_comb_with_np_int64(self):
         n = 70
@@ -1490,11 +1456,10 @@ class TestCombinatorics:
         assert_equal(special.comb(-1, 3, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
-        assert_array_almost_equal(special.comb([2, -1, 2, 10], [3, 3, -1, 3]),
-                [0., 0., 0., 120.])
+        assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
 
     def test_perm(self):
-        assert_array_almost_equal(special.perm([10, 10], [3, 4]), [720., 5040.])
+        assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
         assert_almost_equal(special.perm(10, 3), 720.)
         assert_equal(special.perm(10, 3, exact=True), 720)
 
@@ -1503,14 +1468,8 @@ class TestCombinatorics:
         assert_equal(special.perm(-1, 3, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=False), 0)
-        assert_array_almost_equal(special.perm([2, -1, 2, 10], [3, 3, -1, 3]),
-                [0., 0., 0., 720.])
-
-    def test_positional_deprecation(self):
-        with pytest.deprecated_call(match="use keyword arguments"):
-            # from test_comb
-            special.comb([10, 10], [3, 4], False, False)
-
+        assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
+    
 
 class TestTrigonometric:
     def test_cbrt(self):

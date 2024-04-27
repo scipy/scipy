@@ -5,7 +5,6 @@ python_sources = [
   'test_coo.py',
   'test_common1d.py',
   'test_construct.py',
-  'test_deprecations.py',
   'test_csc.py',
   'test_csr.py',
   'test_dok.py',

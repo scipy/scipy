@@ -142,4 +142,9 @@ SPECFUN_HOST_DEVICE inline std::complex<double> lambertw(std::complex<double> z,
     return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
 }
 
+SPECFUN_HOST_DEVICE inline std::complex<float> lambertw(std::complex<float> z, long k, float tol) {
+    return static_cast<std::complex<float>>(
+        lambertw(static_cast<std::complex<double>>(z), k, static_cast<double>(tol)));
+}
+
 } // namespace special
