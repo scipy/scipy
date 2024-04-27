@@ -11,7 +11,7 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_minimum, size as xp_size
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -4336,9 +4336,13 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 def _circfuncs_common(samples, high, low, xp=None):
     xp = array_namespace(samples) if xp is None else xp
     # Ensure samples are array-like and size is not zero
-    if samples.size == 0:
+    if xp_size(samples) == 0:
         NaN = _get_nan(samples, xp=xp)
         return NaN, NaN, NaN
+
+    if xp.isdtype(samples.dtype, 'integral'):
+        dtype = xp.asarray(1.).dtype  # get default float type
+        samples = xp.asarray(samples, dtype=dtype)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
@@ -4491,7 +4495,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     hypot = (sin_mean**2. + cos_mean**2.)**0.5
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = xp.minimum(1, hypot)
+        R = xp_minimum(xp.asarray(1., dtype=hypot.dtype), hypot)
 
     res = 1. - R
     return res
@@ -4590,7 +4594,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     hypot = (sin_mean**2. + cos_mean**2.)**0.5
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot)  # [1] (2.2.4)
+        R = xp_minimum(xp.asarray(1., dtype=hypot.dtype), hypot)  # [1] (2.2.4)
 
     res = xp.sqrt(-2*xp.log(R))
     if not normalize:

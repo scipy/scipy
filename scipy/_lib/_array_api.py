@@ -283,13 +283,22 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
+def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
                             check_dtype=check_dtype, check_shape=check_shape)
+
+    xp_test = array_namespace(desired)
+    floating = (xp_test.isdtype(desired.dtype, 'real floating')
+                or xp_test.isdtype(desired.dtype, 'complex floating'))
+    if rtol is None and floating:
+        rtol = xp_test.finfo(desired.dtype).eps**0.5
+    elif rtol is None:
+        rtol = 1e-7
+
     if is_cupy(xp):
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)
@@ -354,3 +363,15 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+# temporary substitute for xp.minimum, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_minimum(x1, x2):
+    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
+    xp = array_namespace(x1, x2)
+    x1, x2 = xp.broadcast_arrays(x1, x2)
+    res = xp.asarray(x1, copy=True)
+    i = (x2 < x1) | xp.isnan(x2)
+    res[i] = x2[i]
+    return res

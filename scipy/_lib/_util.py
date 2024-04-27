@@ -820,7 +820,7 @@ def _get_nan(*data, xp=None):
     # Get NaN of appropriate dtype for data
     data = [xp.asarray(item) for item in data]
     try:
-        dtype = xp.result_type(*data, xp.float16)  # must be a float16 at least
+        dtype = xp.result_type(*data, xp.float32)  # must be a float16 at least
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
