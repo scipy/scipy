@@ -19,21 +19,28 @@ def test_convert_temperature(xp):
                     xp.asarray([32., 32.]))
     xp_assert_equal(sc.convert_temperature(xp.asarray([0., 0.]), 'C', 'fahrenheit'),
                     xp.asarray([32., 32.]))
-    xp_assert_close(sc.convert_temperature(xp.asarray([0., 0.]), 'c', 'r'),
-                    xp.asarray([491.67, 491.67]),
+    xp_assert_close(sc.convert_temperature(xp.asarray([0., 0.], dtype=xp.float64),
+                                           'c', 'r'),
+                    xp.asarray([491.67, 491.67], dtype=xp.float64),
                     rtol=0., atol=1e-13)
-    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 491.67]),
+    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 491.67],
+                                                      dtype=xp.float64),
                                            'Rankine', 'C'),
-                    xp.asarray([0., 0.]), rtol=0., atol=1e-13)
-    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 491.67]), 'r', 'F'),
-                    xp.asarray([32., 32.]), rtol=0., atol=1e-13)
-    xp_assert_close(sc.convert_temperature(xp.asarray([32., 32.]), 'fahrenheit', 'R'),
-                    xp.asarray([491.67, 491.67]), rtol=0., atol=1e-13)
-    xp_assert_close(sc.convert_temperature(xp.asarray([273.15, 273.15]), 'K', 'R'),
-                    xp.asarray([491.67, 491.67]), rtol=0., atol=1e-13)
-    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 0.]),
+                    xp.asarray([0., 0.], dtype=xp.float64), rtol=0., atol=1e-13)
+    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 491.67],
+                                                      dtype=xp.float64),
+                                           'r', 'F'),
+                    xp.asarray([32., 32.], dtype=xp.float64), rtol=0., atol=1e-13)
+    xp_assert_close(sc.convert_temperature(xp.asarray([32., 32.], dtype=xp.float64),
+                                           'fahrenheit', 'R'),
+                    xp.asarray([491.67, 491.67], dtype=xp.float64), rtol=0., atol=1e-13)
+    xp_assert_close(sc.convert_temperature(xp.asarray([273.15, 273.15],
+                                                      dtype=xp.float64),
+                                           'K', 'R'),
+                    xp.asarray([491.67, 491.67], dtype=xp.float64), rtol=0., atol=1e-13)
+    xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 0.], dtype=xp.float64),
                                            'rankine', 'kelvin'),
-                    xp.asarray([273.15, 0.]), rtol=0., atol=1e-13)
+                    xp.asarray([273.15, 0.], dtype=xp.float64), rtol=0., atol=1e-13)
 
 
 @array_api_compatible
