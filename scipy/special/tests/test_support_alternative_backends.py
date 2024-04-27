@@ -16,15 +16,15 @@ except ImportError:
     HAVE_ARRAY_API_STRICT = False
 
 
-# @pytest.mark.skipif(not HAVE_ARRAY_API_STRICT,
-#                     reason="`array_api_strict` not installed")
-# def test_dispatch_to_unrecognize_library():
-#     xp = array_api_strict
-#     f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
-#     x = [1, 2, 3]
-#     res = f(xp.asarray(x))
-#     ref = xp.asarray(special.ndtr(np.asarray(x)))
-#     xp_assert_close(res, ref, xp=xp)
+@pytest.mark.skipif(not HAVE_ARRAY_API_STRICT,
+                    reason="`array_api_strict` not installed")
+def test_dispatch_to_unrecognize_library():
+    xp = array_api_strict
+    f = get_array_special_func('ndtr', xp=xp, n_array_args=1)
+    x = [1, 2, 3]
+    res = f(xp.asarray(x))
+    ref = xp.asarray(special.ndtr(np.asarray(x)))
+    xp_assert_close(res, ref, xp=xp)
 
 
 @array_api_compatible

@@ -268,8 +268,8 @@ def check_random_state(seed):
     if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
 
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
+    raise ValueError(f'{seed} cannot be used to seed a numpy.random.RandomState'
+                     ' instance')
 
 
 def _asarray_validated(a, check_finite=True,
@@ -718,8 +718,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
     if policies is None:
         policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
+        raise ValueError("nan_policy must be one of {policies}.")
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
@@ -820,7 +819,8 @@ def _get_nan(*data, xp=None):
     # Get NaN of appropriate dtype for data
     data = [xp.asarray(item) for item in data]
     try:
-        dtype = xp.result_type(*data, xp.float32)  # must be a float16 at least
+        min_float = getattr(xp, 'float16', xp.float32)
+        dtype = xp.result_type(*data, min_float)  # must be at least a float
     except DTypePromotionError:
         # fallback to float64
         dtype = xp.float64
