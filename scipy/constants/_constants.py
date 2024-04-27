@@ -10,14 +10,12 @@ The list is not meant to be comprehensive, but just convenient for everyday use.
 from __future__ import annotations
 
 import math as _math
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ._codata import value as _cd
 
 from scipy._lib._array_api import array_namespace
 
-if TYPE_CHECKING:
-    import numpy.typing as npt
 
 """
 BasSw 2006
@@ -227,7 +225,7 @@ kgf = kilogram_force = g  # * 1 kg
 
 
 def convert_temperature(
-    val: npt.ArrayLike,
+    val: Any,
     old_scale: str,
     new_scale: str,
 ) -> Any:
@@ -305,7 +303,7 @@ def convert_temperature(
 # optics
 
 
-def lambda2nu(lambda_: npt.ArrayLike) -> Any:
+def lambda2nu(lambda_: Any) -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -336,7 +334,7 @@ def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     return c / xp.asarray(lambda_)
 
 
-def nu2lambda(nu: npt.ArrayLike) -> Any:
+def nu2lambda(nu: Any) -> Any:
     """
     Convert optical frequency to wavelength.
 
