@@ -46,7 +46,11 @@ class IndexMixin:
             if not isinstance(self, sparray):
                 return res
             if res.shape == () and new_shape != ():
-                return self.__class__([res], shape=new_shape, dtype=self.dtype)
+                if len(new_shape) == 1:
+                    res = [res]
+                if len(new_shape) == 2:
+                    res = [[res]]
+                return self.__class__(res, shape=new_shape, dtype=self.dtype)
             return res.reshape(new_shape)
 
         # 2D array
