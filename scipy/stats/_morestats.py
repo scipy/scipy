@@ -6,12 +6,12 @@ from collections import namedtuple
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)
+                   compress, pi, exp, ravel, count_nonzero, sin, cos)  # noqa: F401
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._array_api import array_namespace
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -4333,16 +4333,17 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, xp=None):
+    xp = array_namespace(samples) if xp is None else xp
     # Ensure samples are array-like and size is not zero
     if samples.size == 0:
-        NaN = _get_nan(samples)
+        NaN = _get_nan(samples, xp=xp)
         return NaN, NaN, NaN
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = sin((samples - low)*2.*pi / (high - low))
-    cos_samp = cos((samples - low)*2.*pi / (high - low))
+    sin_samp = xp.sin((samples - low)*2.*xp.pi / (high - low))
+    cos_samp = xp.cos((samples - low)*2.*xp.pi / (high - low))
 
     return samples, sin_samp, cos_samp
 
@@ -4403,16 +4404,17 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum = sin_samp.sum(axis)
-    cos_sum = cos_samp.sum(axis)
-    res = arctan2(sin_sum, cos_sum)
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_sum = xp.sum(sin_samp, axis=axis)
+    cos_sum = xp.sum(cos_samp, axis=axis)
+    res = xp.atan2(sin_sum, cos_sum)
 
-    res = np.asarray(res)
-    res[res < 0] += 2*pi
-    res = res[()]
+    res = xp.asarray(res)
+    res[res < 0] += 2*xp.pi
+    res = res[()] if res.ndim == 0 else res
 
-    return res*(high - low)/2.0/pi + low
+    return res*(high - low)/2.0/xp.pi + low
 
 
 @_axis_nan_policy_factory(
@@ -4482,12 +4484,14 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)
-    cos_mean = cos_samp.mean(axis)
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)
+    cos_mean = xp.mean(cos_samp, axis=axis)
+    hypot = (sin_mean**2. + cos_mean**2.)**0.5
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))
+        R = xp.minimum(1, hypot)
 
     res = 1. - R
     return res
@@ -4579,16 +4583,18 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
-    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
+    cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
+    hypot = (sin_mean**2. + cos_mean**2.)**0.5
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
+        R = np.minimum(1, hypot)  # [1] (2.2.4)
 
-    res = sqrt(-2*log(R))
+    res = xp.sqrt(-2*xp.log(R))
     if not normalize:
-        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+        res *= (high-low)/(2.*xp.pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
 
