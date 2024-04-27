@@ -13,19 +13,19 @@
  *
  * The Perron continued fraction is studied in [1].  It is given by
  *
- *       iv(v, x)      x    -(2v+1)x   -(2v+3)x   -(2v+5)x
- *   f = --------- = ------ ---------- ---------- ---------- ...
- *       iv(v-1,x)   2v+x + 2(v+x)+1 + 2(v+x)+2 + 2(v+x)+3 +
+ *         iv(v, x)      x    -(2v+1)x   -(2v+3)x   -(2v+5)x
+ *   R := --------- = ------ ---------- ---------- ---------- ...
+ *        iv(v-1,x)   2v+x + 2(v+x)+1 + 2(v+x)+2 + 2(v+x)+3 +
  *
  * Rearrange the expression by making an equivalent transform to prevent
  * floating point overflow and extracting the first fraction to simplify
  * the recurrence relation.  This leads to
  *
- *    xc            -(2vc+c)(xc) -(2vc+3c)(xc) -(2vc+5c)(xc)
- *   --- = 2vc+xc + ------------ ------------- ------------- ...
- *    f             2(vc+xc)+c + 2(vc+xc)+2c + 2(vc+xc)+3c +
+ *        xc                -(2vc+c)(xc) -(2vc+3c)(xc) -(2vc+5c)(xc)
+ *   R = -----,  fc = 2vc + ------------ ------------- ------------- ...
+ *       xc+fc              2(vc+xc)+c + 2(vc+xc)+2c + 2(vc+xc)+3c +
  *
- * This class generates the fractions after 2vc+xc.
+ * This class generates the fractions of fc after 2vc.
  *
  * [1] Gautschi, W. and Slavik, J. (1978). "On the computation of modified
  *     Bessel function ratios." Mathematics of Computation, 32(143):865-875.
@@ -52,7 +52,7 @@ private:
     std::uint64_t k_; // current index
 };
 
-inline double iv_ratio(double v, double x) {
+inline double iv_ratio(double v, double x, int comp) {
 
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
@@ -67,10 +67,10 @@ inline double iv_ratio(double v, double x) {
         return std::numeric_limits<double>::signaling_NaN();
     }
     if (std::isinf(v)) {
-        return 0.0;
+        return comp ? 1.0 : 0.0;
     }
     if (std::isinf(x)) {
-        return 1.0;
+        return comp ? 0.0 : 1.0;
     }
 
     // Now v >= 1 and x >= 0 and both are finite.
@@ -81,16 +81,16 @@ inline double iv_ratio(double v, double x) {
     double xc = x * c;
 
     IvRatioCFTailGenerator cf(vc, xc, c);
-    auto [result, terms] = special::detail::series_eval_kahan(
+    auto [fc, terms] = special::detail::series_eval_kahan(
         special::detail::continued_fraction_series(cf),
         std::numeric_limits<double>::epsilon() * 0.5,
         1000,
-        2*vc+xc);
+        2*vc);
 
     if (terms == 0) { // failed to converge; should not happen
         special::set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
 
-    return xc / result;
+    return (comp ? fc : xc) / (xc + fc);
 }
