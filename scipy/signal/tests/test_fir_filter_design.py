@@ -692,7 +692,7 @@ class TestFwind1:
         taps_kaiser = fwind1(hsize, window, fc)
         window = ("hamming", "hamming")
         taps_hamming = fwind1(hsize, window, fc)
-        assert_array_almost_equal(taps_hamming, taps_kaiser, decimal=5)
+        assert_allclose(taps_hamming, taps_kaiser, rtol=1e-5) 
 
     def test_impulse_response(self):
         # Test the impulse response of the filter
@@ -702,7 +702,7 @@ class TestFwind1:
         taps = fwind1(hsize, window, fc)
         h = dimpulse(([1], taps), n=30)
         expected_impulse_response = np.squeeze(h[1])
-        assert_array_almost_equal(expected_impulse_response, taps, decimal=5)
+        assert_allclose(expected_impulse_response, taps, rtol=1e-5)
 
     def test_frequency_response(self):
         # Test the frequency response of the filter
@@ -711,7 +711,7 @@ class TestFwind1:
         fc = 0.4
         taps = fwind1(hsize, window, fc)
         w, h = freqz(taps)
-        assert_array_almost_equal(abs(h), 1.0, decimal=3)
+        assert_allclose(abs(h), 1.0, rtol=1e-3)
         assert_array_less(abs(w), fc * np.pi, err_msg="Filter does not meet cutoff frequency")
 
     def test_symmetry(self):
@@ -720,4 +720,4 @@ class TestFwind1:
         window = ("hamming", "hamming")
         fc = 0.4
         taps = fwind1(hsize, window, fc)
-        assert_array_almost_equal(taps, np.flip(taps), decimal=5)
+        assert_allclose(taps, np.flip(taps), rtol=1e-5)

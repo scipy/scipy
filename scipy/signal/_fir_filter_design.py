@@ -1356,9 +1356,4 @@ def fwind1(hsize, window, fc, fs=2):
     row_filter = firwin(hsize[0], cutoff=fc, window=window[0], fs=fs)
     col_filter = firwin(hsize[1], cutoff=fc, window=window[1], fs=fs)
 
-    row_filter_2d = row_filter.reshape(-1, 1)
-    col_filter_2d = col_filter.reshape(1, -1)
-
-    filter_2d = row_filter_2d @ col_filter_2d
-
-    return filter_2d
+    return np.outer(row_filter, col_filter)
