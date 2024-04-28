@@ -1802,12 +1802,12 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
         m_abs = abs(m)
 
         p, pd = lpmn_all(m_abs, n, z, diff_n = 1)
-        if (m < 0):
-            p = np.flip(p, axis = 0)
-            p = np.insert(p[:m_abs], 0, p[-1], axis = 0)
-
-            pd = np.flip(pd, axis = 0)
-            pd = np.insert(pd[:m_abs], 0, pd[-1], axis = 0)
+        if (m >= 0):
+            p = p[:(m + 1)]
+            pd = pd[:(m + 1)]
+        else:
+            p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
+            pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
 
         return p, pd
 
