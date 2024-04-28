@@ -371,11 +371,11 @@ def scipy_namespace_for(xp):
 
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import]
+        import cupyx  # type: ignore[import-not-found]
         return cupyx.scipy
 
     if is_jax(xp):
-        import jax  # type: ignore[import]
+        import jax  # type: ignore[import-not-found]
         return jax.scipy
 
     import scipy
