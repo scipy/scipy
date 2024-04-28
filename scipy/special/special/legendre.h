@@ -138,40 +138,30 @@ T assoc_legendre_p_diag(int m, int type, T x) {
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        res *= -std::sqrt(T(1) - x * x);
-    }
-
-
-    /*
-
-
-        int ls;
-        if (ntype == 2) {
-            // sqrt(1 - z**2) with branch cut on |x|>1
-            zs = (static_cast<T>(1) - z * z);
-            zq = -std::sqrt(zs);
-            ls = -1;
-        } else {
-            // sqrt(z**2 - 1) with branch cut between [-1, 1]
-            zs = (z * z - static_cast<T>(1));
-            zq = std::sqrt(zs);
-            if (std::real(z) < 0) {
-                zq = -zq;
+        if (type == 2) {
+            res *= -std::sqrt(T(1) - x * x);
+        } else if (type == 3) {
+            res *= std::sqrt(x * x - T(1));
+            if (std::real(x) < 0) {
+                res *= -1;
             }
-            ls = 1;
         }
-
-    */
+    }
 
     // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        res *= T(2 * j - 1) * T(2 * j + 1) * (T(1) - x * x);
+        if (type == 2) {
+            res *= T(2 * j - 1) * T(2 * j + 1) * (T(1) - x * x);
+        } else if (type == 3) {
+            res *= T(2 * j - 1) * T(2 * j + 1) * (x * x - T(1));
+        }
     }
 
     if (m < 0) {
         res *= 1 / std::tgamma(2 * m_abs + 1);
-        if (std::abs(x) < 1) {
-            res *= std::pow(-1, m_abs);
+        res *= std::pow(-1, m_abs);
+        if (m_odd && type == 3) {
+            res *= -1;
         }
     }
 
@@ -218,6 +208,16 @@ T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...arg
 }
 
 template <typename T>
+T copysign_(T x, T s) {
+    return std::copysign(x, s);
+}
+
+template <typename T>
+std::complex<T> copysign_(std::complex<T> x, T s) {
+    return std::complex(std::copysign(std::real(x), s), std::copysign(std::imag(x), s));
+}
+
+template <typename T>
 T assoc_legendre_p_jac_diag(int m, int type, T x) {
     if (m == 0) {
         return 0;
@@ -225,25 +225,45 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
 
     if (m == 1) {
         if (type == 3) {
-            return x / std::sqrt(x * x - 1);
+            T res = x / std::sqrt(x * x - T(1));
+            if (std::real(x) < 0) {
+                res *= -1;
+            }
+
+            return res;
         }
 
-        return x / std::sqrt(1 - x * x);
+        return x / std::sqrt(T(1) - x * x);
     }
 
     if (m == -1) {
         if (type == 3) {
-            return -x / (2 * std::sqrt(x * x - 1));
+            T res = x / (T(2) * std::sqrt(x * x - T(1)));
+            if (std::real(x) < 0) {
+                res *= -1;
+            }
+
+            return res;
         }
 
-        return -x / (2 * std::sqrt(1 - x * x));
+        return -x / (T(2) * std::sqrt(T(1) - x * x));
     }
 
     if (m < 0) {
-        return x * assoc_legendre_p_diag(m + 2, type, x) / (T(4) * (m + 1));
+        T out = x * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
+        if (type == 3) {
+            return -out;
+        }
+
+        return out;
     }
 
-    return -(4 * (m - 2) * m + 3) * m * x * assoc_legendre_p_diag(m - 2, type, x);
+    T res = -T(4 * (m - 2) * m + 3) * T(m) * x * assoc_legendre_p_diag(m - 2, type, x);
+    if (type == 3) {
+        res *= -1;
+    }
+
+    return res;
 }
 
 template <typename T>

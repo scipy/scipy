@@ -1900,8 +1900,8 @@ def clpmn_legacy(m, n, z, type=3):
 clpmn_all = ufunc_wrapper(clpmn_all)
 
 @clpmn_all.resolve_ufunc
-def _(ufunc):
-    return ufunc
+def _(ufuncs, n_diff = 0):
+    return ufuncs[n_diff]
 
 @clpmn_all.resolve_out_shapes
 def _(m, n, shapes, nout):
@@ -1915,10 +1915,13 @@ def clpmn(m, n, z, type=3, *, legacy = True):
     if legacy:
         return clpmn_legacy(m, n, z, type)
 
-    out_pos, _ = clpmn_legacy(m, n, z, type)
-    out_neg, _ = clpmn_legacy(-m, n, z, type)
+    out_pos, out_jac_pos = clpmn_legacy(m, n, z, type)
+    out_neg, out_jac_neg = clpmn_legacy(-m, n, z, type)
 
-    return np.concatenate([out_pos, np.flip(out_neg[1:], axis = 0)], axis = 0)
+    out = np.concatenate([out_pos, np.flip(out_neg[1:], axis = 0)], axis = 0)
+    out_jac = np.concatenate([out_jac_pos, np.flip(out_jac_neg[1:], axis = 0)], axis = 0)
+
+    return out, out_jac
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.

@@ -37,6 +37,11 @@ using func_D_D1D1D1_t =
 using func_lF_F2_t = void (*)(long, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_lD_D2_t = void (*)(long, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
 
+using func_lF_F2F2_t =
+    void (*)(long, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_lD_D2D2_t =
+    void (*)(long, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+
 using func_f_f2f2_t =
     void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_d_d2d2_t =
@@ -161,9 +166,17 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "clpmn_legacy", clpmn_legacy);
 
-    PyObject *clpmn_all = SpecFun_NewGUFunc(
-        {static_cast<func_lF_F2_t>(::clpmn_all), static_cast<func_lD_D2_t>(::clpmn_all)}, 1, "clpmn_all", clpmn_doc,
-        "(),()->(mp1,np1)"
+    PyObject *clpmn_all = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewGUFunc(
+            {static_cast<func_lF_F2_t>(::clpmn_all), static_cast<func_lD_D2_t>(::clpmn_all)}, 1, "clpmn_all", clpmn_doc,
+            "(),()->(mp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {static_cast<func_lF_F2F2_t>(::clpmn_all), static_cast<func_lD_D2D2_t>(::clpmn_all)}, 2, "clpmn_all",
+            clpmn_doc, "(),()->(mp1,np1),(mp1,np1)"
+        ),
+        Py_None
     );
     PyModule_AddObjectRef(_gufuncs, "clpmn_all", clpmn_all);
 
