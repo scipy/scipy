@@ -136,17 +136,11 @@ T assoc_legendre_p_diag(int m, int type, T x) {
 
     T res = 1;
 
-    T ls;
-    if (std::abs(x) < 1) {
-        ls = 1;
-    } else {
-        ls = -1;
-    }
-
     bool m_odd = m_abs % 2;
     if (m_odd) {
         res *= -std::sqrt(T(1) - x * x);
     }
+
 
     /*
 

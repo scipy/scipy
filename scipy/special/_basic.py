@@ -15,7 +15,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn, clpmn as _clpmn
-from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
+from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, clpmn_legacy as _clpmn_legacy, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -1890,18 +1890,30 @@ def clpmn_legacy(m, n, z, type=3):
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        clpmn_all(z, type, m_signbit, out = (p, pd))
+        _clpmn_legacy(z, type, m_signbit, out = (p, pd))
     else:
-        clpmn_all(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        _clpmn_legacy(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
 
+clpmn_all = ufunc_wrapper(clpmn_all)
+
+@clpmn_all.resolve_ufunc
+def _(ufunc):
+    return ufunc
+
+@clpmn_all.resolve_out_shapes
+def _(m, n, shapes, nout):
+#    n = _nonneg_int_or_fail(n, 'n', strict=False)
+
+    m_abs = abs(m)
+
+    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(*shapes),)
+
 def clpmn(m, n, z, type=3, *, legacy = True):
     if legacy:
         return clpmn_legacy(m, n, z, type)
-
-
 
     out_pos, _ = clpmn_legacy(m, n, z, type)
     out_neg, _ = clpmn_legacy(-m, n, z, type)

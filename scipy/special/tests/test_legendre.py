@@ -232,6 +232,7 @@ class TestLegendreFunctions:
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
 
         p = special.clpmn(4, 4, z, type = type, legacy = False)
+#        p = special.clpmn_all(4, 4, type, z)
 
         np.testing.assert_allclose(p[0, 0], lp00(z, type = type))
 

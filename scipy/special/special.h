@@ -125,6 +125,11 @@ void clpmn(long m, long n, long type, T z, T &res, T &res_jac, T &res_hess) {
     special::assoc_legendre_p(n, m, type, z, res, res_jac, res_hess);
 }
 
+template <typename T, typename OutputMat1>
+void clpmn_all(long type, std::complex<T> z, OutputMat1 res) {
+    special::assoc_legendre_p_all(type, z, res);
+}
+
 template <typename T>
 std::complex<T> sph_harm(long m, long n, T theta, T phi) {
     if (n < 0) {
