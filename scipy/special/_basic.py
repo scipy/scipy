@@ -1799,9 +1799,8 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
             raise ValueError("Argument must be real. Use clpmn instead.")
 
         m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-        m_abs = abs(m)
 
-        p, pd = lpmn_all(m_abs, n, z, diff_n = 1)
+        p, pd = lpmn_all(abs(m), n, z, diff_n = 1)
         if (m >= 0):
             p = p[:(m + 1)]
             pd = pd[:(m + 1)]
