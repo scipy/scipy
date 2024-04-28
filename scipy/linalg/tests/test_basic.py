@@ -20,7 +20,6 @@ from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
 from scipy.linalg._testutils import assert_no_overwrite
 from scipy._lib._testutils import check_free_memory, IS_MUSL
 from scipy.linalg.blas import HAS_ILP64
-from scipy._lib.deprecation import _NoValue
 
 REAL_DTYPES = (np.float32, np.float64, np.longdouble)
 COMPLEX_DTYPES = (np.complex64, np.complex128, np.clongdouble)
@@ -1534,21 +1533,6 @@ class TestPinv:
         adiff2 = a_m @ a_p @ a_m - a_m
         assert_allclose(np.linalg.norm(adiff1), 4.233, rtol=0.01)
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
-
-    @pytest.mark.parametrize("cond", [1, None, _NoValue])
-    @pytest.mark.parametrize("rcond", [1, None, _NoValue])
-    def test_cond_rcond_deprecation(self, cond, rcond):
-        if cond is _NoValue and rcond is _NoValue:
-            # the defaults if cond/rcond aren't set -> no warning
-            pinv(np.ones((2,2)), cond=cond, rcond=rcond)
-        else:
-            # at least one of cond/rcond has a user-supplied value -> warn
-            with pytest.deprecated_call(match='"cond" and "rcond"'):
-                pinv(np.ones((2,2)), cond=cond, rcond=rcond)
-
-    def test_positional_deprecation(self):
-        with pytest.deprecated_call(match="use keyword arguments"):
-            pinv(np.ones((2,2)), 0., 1e-10)
 
     @pytest.mark.parametrize('dt', [float, np.float32, complex, np.complex64])
     def test_empty(self, dt):

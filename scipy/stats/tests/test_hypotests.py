@@ -1353,6 +1353,7 @@ class TestCvm_2samp:
         # The values are taken from Table 2, 3, 4 and 5
         assert_equal(_pval_cvm_2samp_exact(statistic, m, n), pval)
 
+    @pytest.mark.slow
     def test_large_sample(self):
         # for large samples, the statistic U gets very large
         # do a sanity check that p-value is not 0, 1 or nan

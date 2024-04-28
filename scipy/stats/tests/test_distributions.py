@@ -220,6 +220,7 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
+    @pytest.mark.slow
     def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
@@ -1861,6 +1862,7 @@ class TestHypergeom:
         rm = n / M * N
         assert_allclose(hm, rm)
 
+    @pytest.mark.xslow
     def test_sf_gh18506(self):
         # gh-18506 reported that `sf` was incorrect for large population;
         # check that this is resolved
@@ -5082,6 +5084,7 @@ class TestLevyStable:
         )
         return data
 
+    @pytest.mark.slow
     @pytest.mark.parametrize(
         "sample_size", [
             pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
@@ -5110,7 +5113,7 @@ class TestLevyStable:
         )
         assert p > 0.05
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
@@ -5208,6 +5211,7 @@ class TestLevyStable:
         assert alpha2 > 1, f"Expected alpha > 1, got {alpha2}"
         assert loc2 > max(x2), f"Expected loc > {max(x2)}, got {loc2}"
 
+    @pytest.mark.slow
     @pytest.mark.parametrize(
         "pct_range,alpha_range,beta_range", [
             pytest.param(
@@ -6025,7 +6029,7 @@ class TestFitMethod:
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize("method", ["MLE", "MM"])
     def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
@@ -7549,13 +7553,14 @@ class TestStudentizedRange:
         (1, 10, np.inf, 0.000519869467083),
     ]
 
+    @pytest.mark.slow
     def test_cdf_against_tables(self):
         for pvk, q in self.data:
             p_expected, v, k = pvk
             res_p = stats.studentized_range.cdf(q, k, v)
             assert_allclose(res_p, p_expected, rtol=1e-4)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
             p, v, k = pvk
@@ -7589,7 +7594,7 @@ class TestStudentizedRange:
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
     def test_moment_against_mp(self, case_result):
@@ -7606,6 +7611,7 @@ class TestStudentizedRange:
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
+    @pytest.mark.slow
     def test_pdf_integration(self):
         k, v = 3, 10
         # Test whether PDF integration is 1 like it should be.
@@ -7636,7 +7642,7 @@ class TestStudentizedRange:
             res = stats.studentized_range.cdf(q, k, v)
         assert_allclose(res, r_res)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
@@ -9543,6 +9549,7 @@ class TestRelativisticBW:
         ref = pdf(x, rho*Gamma, Gamma)
         assert_allclose(res, ref, rtol=rtol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize(
         "rho,gamma", [
             pytest.param(

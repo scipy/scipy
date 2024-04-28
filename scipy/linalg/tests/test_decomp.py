@@ -844,31 +844,15 @@ class TestEigh:
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], subset_by_index=[2, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[0, 4])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[-2, 2])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[2, 0])
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
-            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -963,38 +947,6 @@ class TestEigh:
         w3 = eigvalsh(b, subset_by_value=[1, 1.4])
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
-
-    @pytest.mark.parametrize("method", [eigh, eigvalsh])
-    def test_deprecation_warnings(self, method):
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'turbo'"):
-            method(np.zeros((2, 2)), turbo=True)
-        with pytest.warns(DeprecationWarning,
-                          match="Keyword argument 'eigvals'"):
-            method(np.zeros((2, 2)), eigvals=[0, 1])
-        with pytest.deprecated_call(match="use keyword arguments"):
-            method(np.zeros((2,2)), np.eye(2, 2), True)
-
-    def test_deprecation_results(self):
-        a = _random_hermitian_matrix(3)
-        b = _random_hermitian_matrix(3, posdef=True)
-
-        # check turbo gives same result as driver='gvd'
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
-            w_dep, v_dep = eigh(a, b, turbo=True)
-        w, v = eigh(a, b, driver='gvd')
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
-        # check eigvals gives the same result as subset_by_index
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
-            w_dep, v_dep = eigh(a, eigvals=[0, 1])
-        w, v = eigh(a, subset_by_index=[0, 1])
-        assert_allclose(w_dep, w)
-        assert_allclose(v_dep, v)
-
 
     @pytest.mark.parametrize('dt', [int, float, np.float32, complex, np.complex64])
     def test_empty(self, dt):

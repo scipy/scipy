@@ -116,7 +116,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import torch  # type: ignore[import]
+        import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
@@ -124,7 +124,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import cupy  # type: ignore[import]
+        import cupy  # type: ignore[import-not-found]
         xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass
