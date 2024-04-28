@@ -262,33 +262,29 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
 
 template <typename T>
 T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
-    if (std::abs(z) == 1) {
+    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
+        if (std::abs(m) > n) {
+            return 0;
+        }
+
         if (m == 0) {
-            return T(n) * T(n + 1) / T(2);
+            return T(n) * T(n + 1) * std::pow(std::real(z), T(n + 1)) / T(2);
         }
 
         if (m == 1) {
-            return std::numeric_limits<T>::infinity();
+            return std::pow(std::real(z), T(n)) * std::numeric_limits<T>::infinity();
         }
 
         if (m == 2) {
-            if (type == 3) {
-                return T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(4);
-            }
-
-            return -T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(4);
+            return -T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(std::real(z), T(n + 1)) / T(4);
         }
 
         if (m == -2) {
-            if (type == 3) {
-                return T(1) / T(4);
-            }
-
-            return -T(1) / T(4);
+            return -std::pow(std::real(z), T(n + 1)) / T(4);
         }
 
         if (m == -1) {
-            return -std::numeric_limits<T>::infinity();
+            return -std::pow(std::real(z), T(n)) * std::numeric_limits<T>::infinity();
         }
 
         return 0;

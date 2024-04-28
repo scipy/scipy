@@ -218,6 +218,26 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 4], lpmn_jac(-2, 4, x))
         np.testing.assert_allclose(p_jac[-1, 4], lpmn_jac(-1, 4, x))
 
+    @pytest.mark.parametrize("m_max", [7])
+    @pytest.mark.parametrize("n_max", [10])
+    @pytest.mark.parametrize("x", [1, -1])
+    def test_lpmn_all_limits(self, m_max, n_max, x):
+        rng = np.random.default_rng(1234)
+
+        p, p_jac = special.lpmn_all(m_max, n_max, x, diff_n = 1)
+
+        n = np.arange(n_max + 1)
+
+        np.testing.assert_allclose(p_jac[0], pow(x, n + 1) * n * (n + 1) / 2)
+        np.testing.assert_allclose(p_jac[1], np.where(n >= 1, pow(x, n) * np.inf, 0))
+        np.testing.assert_allclose(p_jac[2], np.where(n >= 2, -pow(x, n + 1) * (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[-2], np.where(n >= 2, -pow(x, n + 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[-1], np.where(n >= 1, -pow(x, n) * np.inf, 0))
+
+        for m in range(3, m_max + 1):
+            np.testing.assert_allclose(p_jac[m], 0)
+            np.testing.assert_allclose(p_jac[-m], 0)
+
     def test_lpmn_legacy(self):
         lp = special.lpmn(0, 2, .5)
         assert_array_almost_equal(lp,(array([[1.00000,
@@ -234,8 +254,8 @@ class TestLegendreFunctions:
 
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
 
-        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
-#        p, p_jac = special.clpmn_all(4, 4, type, z, n_diff = 1)
+#        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
+        p, p_jac = special.clpmn_all(4, 4, type, z, n_diff = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
