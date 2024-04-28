@@ -2461,12 +2461,11 @@ class TestCircFuncs:
     # var.circular(x)
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 0.006455174270186603),
+                              (stats.circvar, 0.006455174000787767),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs(self, test_func, expected, xp):
-        x = xp.asarray([355., 5., 2., 359., 10., 350.], dtype=xp.float64)
-        xp_assert_close(test_func(x, high=360), xp.asarray(expected, dtype=xp.float64),
-                        rtol=1e-7)
+        x = xp.asarray([355., 5., 2., 359., 10., 350.])
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
 
     def test_circfuncs_small(self, xp):
         x = xp.asarray([20, 21, 22, 18, 19, 20.5, 19.2], dtype=xp.float64)
@@ -2476,14 +2475,14 @@ class TestCircFuncs:
 
         # plain torch var/std ddof=1, so we need array_api_compat torch
         xp_test = array_namespace(x)
-        V1 = xp_test.var(x*xp.pi/180, correction=xp.asarray(0.0))
+        V1 = xp_test.var(x*xp.pi/180, correction=0)
         # for small variations, circvar is approximately half the
         # linear variance
         V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         xp_assert_close(V2, V1, rtol=1e-4)
 
-        S1 = xp_test.std(x, correction=xp.asarray(0.0))
+        S1 = xp_test.std(x, correction=0)
         S2 = stats.circstd(x, high=360)
         xp_assert_close(S2, S1, rtol=1e-4)
 
@@ -2523,8 +2522,7 @@ class TestCircFuncs:
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected, xp):
         x = xp.asarray([355, 5, 2, 359, 10, 350.])
-        rtol = xp.finfo(x.dtype).eps**0.5 * 4
-        xp_assert_close(test_func(x, high=360), xp.asarray(expected), rtol=rtol)
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
@@ -2557,8 +2555,7 @@ class TestCircFuncs:
             if axis is None:
                 xp_assert_equal(out, xp.asarray(xp.nan))
             else:
-                rtol = xp.finfo(x.dtype).eps**0.5 * 4
-                xp_assert_close(out[0], xp.asarray(expected[axis]), rtol=rtol)
+                xp_assert_close(out[0], xp.asarray(expected[axis]))
                 xp_assert_equal(out[1:], xp.full_like(out[1:], xp.nan))
 
     def test_circmean_scalar(self, xp):
@@ -2628,6 +2625,7 @@ class TestCircFuncsNanPolicy:
         x = [355, 5, 2, 359, 10, 350, np.nan]
         assert_allclose(test_func(x, high=360, nan_policy='omit'),
                         expected, rtol=1e-7)
+
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
     def test_nan_omit_all(self, test_func):

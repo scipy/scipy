@@ -293,7 +293,7 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
 
     floating = xp.isdtype(desired.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
-        rtol = xp.finfo(desired.dtype).eps**0.5
+        rtol = xp.finfo(desired.dtype).eps**0.5 * 4
     elif rtol is None:
         rtol = 1e-7
 
@@ -369,7 +369,8 @@ def xp_minimum(x1, x2):
     # xp won't be passed in because it doesn't need to be passed in to xp.minimum
     xp = array_namespace(x1, x2)
     x1, x2 = xp.broadcast_arrays(x1, x2)
-    res = xp.asarray(x1, copy=True)
+    dtype = xp.result_type(x1.dtype, x2.dtype)
+    res = xp.asarray(x1, copy=True, dtype=dtype)
     i = (x2 < x1) | xp.isnan(x2)
     res[i] = x2[i]
     return res

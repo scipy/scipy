@@ -4493,8 +4493,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        one = xp.asarray(1., dtype=hypotenuse.dtype)
-        R = xp_minimum(one, hypotenuse)
+        R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4593,8 +4592,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        one = xp.asarray(1., dtype=hypotenuse.dtype)
-        R = xp_minimum(one, hypotenuse)  # [1] (2.2.4)
+        R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
     res = xp.sqrt(-2*xp.log(R))
     if not normalize:
