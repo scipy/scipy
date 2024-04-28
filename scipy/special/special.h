@@ -40,32 +40,89 @@ void lpn_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
 
 template <typename T>
 T lpmn(long m, long n, T z) {
-    return special::assoc_legendre_p(n, m, z);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    return special::assoc_legendre_p(n, m, type, z);
 }
 
 template <typename T>
 void lpmn(long m, long n, T z, T &res, T &res_jac) {
-    special::assoc_legendre_p(n, m, z, res, res_jac);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    special::assoc_legendre_p(n, m, type, z, res, res_jac);
 }
 
 template <typename T>
 void lpmn(long m, long n, T z, T &res, T &res_jac, T &res_hess) {
-    special::assoc_legendre_p(n, m, z, res, res_jac, res_hess);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    special::assoc_legendre_p(n, m, type, z, res, res_jac, res_hess);
 }
 
 template <typename T, typename OutputMat1>
 void lpmn_all(T z, OutputMat1 res) {
-    special::assoc_legendre_p_all(z, res);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    special::assoc_legendre_p_all(type, z, res);
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
 void lpmn_all(T z, OutputMat1 res, OutputMat2 res_jac) {
-    special::assoc_legendre_p_all(z, res, res_jac);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    special::assoc_legendre_p_all(type, z, res, res_jac);
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void lpmn_all(T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    special::assoc_legendre_p_all(z, res, res_jac, res_hess);
+    int type;
+    if (std::abs(z) <= 1) {
+        type = 2;
+    } else {
+        type = 3;
+    }
+
+    special::assoc_legendre_p_all(type, z, res, res_jac, res_hess);
+}
+
+template <typename T>
+std::complex<T> clpmn(long m, long n, long type, std::complex<T> z) {
+    return special::assoc_legendre_p(n, m, type, z);
+}
+
+template <typename T>
+void clpmn(long m, long n, long type, T z, T &res, T &res_jac) {
+    special::assoc_legendre_p(n, m, type, z, res, res_jac);
+}
+
+template <typename T>
+void clpmn(long m, long n, long type, T z, T &res, T &res_jac, T &res_hess) {
+    special::assoc_legendre_p(n, m, type, z, res, res_jac, res_hess);
 }
 
 template <typename T>

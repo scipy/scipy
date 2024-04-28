@@ -131,35 +131,65 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 // =====================================================
 
 template <typename T>
-T assoc_legendre_p_diag(int m, T x) {
+T assoc_legendre_p_diag(int m, int type, T x) {
     int m_abs = std::abs(m);
 
-    T y_sq = std::fma(x, -x, 1);
     T res = 1;
+
+    T ls;
+    if (std::abs(x) < 1) {
+        ls = 1;
+    } else {
+        ls = -1;
+    }
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        res *= -std::sqrt(y_sq);
+        res *= -std::sqrt(T(1) - x * x);
     }
+
+    /*
+
+
+        int ls;
+        if (ntype == 2) {
+            // sqrt(1 - z**2) with branch cut on |x|>1
+            zs = (static_cast<T>(1) - z * z);
+            zq = -std::sqrt(zs);
+            ls = -1;
+        } else {
+            // sqrt(z**2 - 1) with branch cut between [-1, 1]
+            zs = (z * z - static_cast<T>(1));
+            zq = std::sqrt(zs);
+            if (std::real(z) < 0) {
+                zq = -zq;
+            }
+            ls = 1;
+        }
+
+    */
 
     // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        res *= T(2 * j - 1) * T(2 * j + 1) * (y_sq);
+        res *= T(2 * j - 1) * T(2 * j + 1) * (T(1) - x * x);
     }
 
     if (m < 0) {
-        res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+        res *= 1 / std::tgamma(2 * m_abs + 1);
+        if (std::abs(x) < 1) {
+            res *= std::pow(-1, m_abs);
+        }
     }
 
     return res;
 }
 
 template <typename T, typename Callable, typename... Args>
-T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
+T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
-            callback(j, m, x, 0, 0, std::forward<Args>(args)...);
+            callback(j, m, type, x, 0, 0, std::forward<Args>(args)...);
         }
 
         return 0;
@@ -167,26 +197,26 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        callback(0, m, x, 0, 0, std::forward<Args>(args)...);
+        callback(0, m, type, x, 0, 0, std::forward<Args>(args)...);
     }
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        callback(j - 1, m, x, 0, 0, std::forward<Args>(args)...);
-        callback(j, m, x, 0, 0, std::forward<Args>(args)...);
+        callback(j - 1, m, type, x, 0, 0, std::forward<Args>(args)...);
+        callback(j, m, type, x, 0, 0, std::forward<Args>(args)...);
     }
 
-    T p = assoc_legendre_p_diag(m, x);
-    callback(m_abs, m, x, p, 0, std::forward<Args>(args)...);
+    T p = assoc_legendre_p_diag(m, type, x);
+    callback(m_abs, m, type, x, p, 0, std::forward<Args>(args)...);
 
     if (m_abs != n) {
         T p_prev = p;
         p = T(2 * (m_abs + 1) - 1) * x * p_prev / T(m_abs + 1 - m);
-        callback(m_abs + 1, m, x, p, p_prev, std::forward<Args>(args)...);
+        callback(m_abs + 1, m, type, x, p, p_prev, std::forward<Args>(args)...);
 
         for (int j = m_abs + 2; j <= n; ++j) {
             T p_prev_prev = p_prev;
             p_prev = p;
             p = (T(2 * j - 1) * x * p_prev - T(m + j - 1) * p_prev_prev) / T(j - m);
-            callback(j, m, x, p, p_prev, std::forward<Args>(args)...);
+            callback(j, m, type, x, p, p_prev, std::forward<Args>(args)...);
         }
     }
 
@@ -194,28 +224,36 @@ T assoc_legendre_p(int n, int m, T x, Callable callback, Args &&...args) {
 }
 
 template <typename T>
-T assoc_legendre_p_jac_diag(int m, T x) {
+T assoc_legendre_p_jac_diag(int m, int type, T x) {
     if (m == 0) {
         return 0;
     }
 
     if (m == 1) {
+        if (type == 3) {
+            return x / std::sqrt(x * x - 1);
+        }
+
         return x / std::sqrt(1 - x * x);
     }
 
     if (m == -1) {
+        if (type == 3) {
+            return -x / (2 * std::sqrt(x * x - 1));
+        }
+
         return -x / (2 * std::sqrt(1 - x * x));
     }
 
     if (m < 0) {
-        return x * assoc_legendre_p_diag(m + 2, x) / (T(4) * (m + 1));
+        return x * assoc_legendre_p_diag(m + 2, type, x) / (T(4) * (m + 1));
     }
 
-    return -(4 * (m - 2) * m + 3) * m * x * assoc_legendre_p_diag(m - 2, x);
+    return -(4 * (m - 2) * m + 3) * m * x * assoc_legendre_p_diag(m - 2, type, x);
 }
 
 template <typename T>
-T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
+T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
     if (std::abs(z) == 1) {
         if (m == 0) {
             return T(n) * T(n + 1) / T(2);
@@ -242,7 +280,7 @@ T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_
 
     int m_abs = std::abs(m);
     if (m_abs == n) {
-        return assoc_legendre_p_jac_diag(m, z);
+        return assoc_legendre_p_jac_diag(m, type, z);
     }
 
     if (m_abs < n) {
@@ -253,17 +291,17 @@ T assoc_legendre_p_jac_next(int n, int m, T z, T p, T p_prev, T p_jac_prev, T p_
 }
 
 template <typename T>
-T assoc_legendre_p_hess_diag(int m, T z) {
+T assoc_legendre_p_hess_diag(int m, int type, T z) {
     if (m == 0) {
         return 0;
     }
 
     if (m == 1) {
-        return 1 / (std::sqrt(std::fma(-z, z, 1)) * std::fma(-z, z, 1));
+        return 1 / (std::sqrt(1 - z * z) * (1 - z * z));
     }
 
     if (m == -1) {
-        return -1 / (2 * std::sqrt(std::fma(-z, z, 1)) * std::fma(-z, z, 1));
+        return -1 / (2 * std::sqrt(1 - z * z) * (1 - z * z));
     }
 
     if (m == 2) {
@@ -275,24 +313,24 @@ T assoc_legendre_p_hess_diag(int m, T z) {
     }
 
     if (m == 3) {
-        return 45 * (1 - 2 * z * z) / std::sqrt(std::fma(-z, z, 1));
+        return 45 * (1 - 2 * z * z) / std::sqrt(1 - z * z);
     }
 
     if (m == -3) {
-        return (2 * z * z - 1) / (16 * std::sqrt(std::fma(-z, z, 1)));
+        return (2 * z * z - 1) / (16 * std::sqrt(1 - z * z));
     }
 
     if (m < 0) {
-        return (T(m + 1) * z * z + 1) * assoc_legendre_p_diag(m + 4, z) / T(16 * T(m + 1) * T(m + 2) * T(m + 3));
+        return (T(m + 1) * z * z + 1) * assoc_legendre_p_diag(m + 4, type, z) / T(16 * T(m + 1) * T(m + 2) * T(m + 3));
     }
 
     return T(2 * m - 1) * T(2 * m - 3) * T(2 * m - 5) * T(2 * m - 7) * m * ((m - 1) * z * z - 1) *
-           assoc_legendre_p_diag(m - 4, z);
+           assoc_legendre_p_diag(m - 4, type, z);
 }
 
 template <typename T>
 T assoc_legendre_p_hess_next(
-    int n, int m, T z, T p, T p_prev, T p_jac, T p_jac_prev, T p_hess_prev, T p_hess_prev_prev
+    int n, int m, int type, T z, T p, T p_prev, T p_jac, T p_jac_prev, T p_hess_prev, T p_hess_prev_prev
 ) {
     // need to complete these
     if (std::abs(z) == 1) {
@@ -337,7 +375,7 @@ T assoc_legendre_p_hess_next(
 
     int m_abs = std::abs(m);
     if (m_abs == n) {
-        return assoc_legendre_p_hess_diag(m, z);
+        return assoc_legendre_p_hess_diag(m, type, z);
     }
 
     if (m_abs < n) {
@@ -358,9 +396,9 @@ struct assoc_legendre_p_diff_callback<T, 1> {
     assoc_legendre_p_diff_callback() : p_jac_prev(0), p_jac_prev_prev(0) {}
 
     template <typename Callable, typename... Args>
-    void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
-        T p_jac = assoc_legendre_p_jac_next(j, i, z, p, p_prev, p_jac_prev, p_jac_prev_prev);
-        callback(j, i, z, {p, p_jac}, {p_prev, p_jac_prev}, std::forward<Args>(args)...);
+    void operator()(int j, int i, int type, T z, T p, T p_prev, Callable callback, Args &&...args) {
+        T p_jac = assoc_legendre_p_jac_next(j, i, type, z, p, p_prev, p_jac_prev, p_jac_prev_prev);
+        callback(j, i, type, z, {p, p_jac}, {p_prev, p_jac_prev}, std::forward<Args>(args)...);
 
         p_jac_prev_prev = p_jac_prev;
         p_jac_prev = p_jac;
@@ -376,16 +414,20 @@ struct assoc_legendre_p_diff_callback<T, 2> {
     assoc_legendre_p_diff_callback() : p_hess_prev(0), p_hess_prev_prev(0) {}
 
     template <typename Callable, typename... Args>
-    void operator()(int j, int i, T z, T p, T p_prev, Callable callback, Args &&...args) {
+    void operator()(int j, int i, int type, T z, T p, T p_prev, Callable callback, Args &&...args) {
         T p_jac;
         T p_jac_prev;
-        callback_jac(j, i, z, p, p_prev, [&p_jac, &p_jac_prev](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
-            p_jac = p[1];
-            p_jac_prev = p_prev[1];
-        });
+        callback_jac(
+            j, i, type, z, p, p_prev,
+            [&p_jac, &p_jac_prev](int j, int i, int type, T z, const T(&p)[2], const T(&p_prev)[2]) {
+                p_jac = p[1];
+                p_jac_prev = p_prev[1];
+            }
+        );
 
-        T p_hess = assoc_legendre_p_hess_next(j, i, z, p, p_prev, p_jac, p_jac_prev, p_hess_prev, p_hess_prev_prev);
-        callback(j, i, z, {p, p_jac, p_hess}, {p_prev, p_jac_prev, p_hess_prev}, std::forward<Args>(args)...);
+        T p_hess =
+            assoc_legendre_p_hess_next(j, i, type, z, p, p_prev, p_jac, p_jac_prev, p_hess_prev, p_hess_prev_prev);
+        callback(j, i, type, z, {p, p_jac, p_hess}, {p_prev, p_jac_prev, p_hess_prev}, std::forward<Args>(args)...);
 
         p_hess_prev_prev = p_hess_prev;
         p_hess_prev = p_hess;
@@ -401,15 +443,15 @@ struct assoc_legendre_p_diff_callback<T, 2> {
 */
 
 template <typename T>
-T assoc_legendre_p(int n, int m, T x) {
-    return assoc_legendre_p(n, m, x, [](int j, int i, T x, T value, T value_prev) {});
+T assoc_legendre_p(int n, int m, int type, T x) {
+    return assoc_legendre_p(n, m, type, x, [](int j, int i, int type, T x, T value, T value_prev) {});
 }
 
 template <typename T>
-void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac) {
+void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
     assoc_legendre_p(
-        n, m, z, assoc_legendre_p_diff_callback<T, 1>(),
-        [&res, &res_jac](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
+        n, m, type, z, assoc_legendre_p_diff_callback<T, 1>(),
+        [&res, &res_jac](int j, int i, int type, T z, const T(&p)[2], const T(&p_prev)[2]) {
             res = p[0];
             res_jac = p[1];
         }
@@ -417,10 +459,10 @@ void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac) {
 }
 
 template <typename T>
-void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac, T &res_hess) {
+void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
     assoc_legendre_p(
-        n, m, z, assoc_legendre_p_diff_callback<T, 2>(),
-        [&res, &res_jac, &res_hess](int j, int i, T z, const T(&p)[3], const T(&p_prev)[3]) {
+        n, m, type, z, assoc_legendre_p_diff_callback<T, 2>(),
+        [&res, &res_jac, &res_hess](int j, int i, int type, T z, const T(&p)[3], const T(&p_prev)[3]) {
             res = p[0];
             res_jac = p[1];
             res_hess = p[2];
@@ -429,12 +471,12 @@ void assoc_legendre_p(int n, int m, T z, T &res, T &res_jac, T &res_hess) {
 }
 
 template <typename T, typename OutputMat>
-void assoc_legendre_p_all(T x, OutputMat res) {
+void assoc_legendre_p_all(int type, T x, OutputMat res) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        assoc_legendre_p(n, i, x, [res](int j, int i, T x, T p, T p_prev) {
+        assoc_legendre_p(n, i, type, x, [res](int j, int i, int type, T x, T p, T p_prev) {
             if (i < 0) {
                 int i_abs = std::abs(i);
                 res(res.extent(0) - i_abs, j) = p;
@@ -446,14 +488,14 @@ void assoc_legendre_p_all(T x, OutputMat res) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2>
-void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac) {
+void assoc_legendre_p_all(int type, T x, OutputMat1 res, OutputMat2 res_jac) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
         assoc_legendre_p(
-            n, i, x, assoc_legendre_p_diff_callback<T, 1>(),
-            [res, res_jac](int j, int i, T z, const T(&p)[2], const T(&p_prev)[2]) {
+            n, i, type, x, assoc_legendre_p_diff_callback<T, 1>(),
+            [res, res_jac](int j, int i, int type, T z, const T(&p)[2], const T(&p_prev)[2]) {
                 if (i < 0) {
                     int i_abs = std::abs(i);
                     res(res.extent(0) - i_abs, j) = p[0];
@@ -468,14 +510,14 @@ void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac) {
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void assoc_legendre_p_all(T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+void assoc_legendre_p_all(int type, T x, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
         assoc_legendre_p(
-            n, i, x, assoc_legendre_p_diff_callback<T, 2>(),
-            [res, res_jac, res_hess](int j, int i, T z, const T(&p)[3], const T(&p_prev)[3]) {
+            n, i, type, x, assoc_legendre_p_diff_callback<T, 2>(),
+            [res, res_jac, res_hess](int j, int i, int type, T z, const T(&p)[3], const T(&p_prev)[3]) {
                 if (i < 0) {
                     int i_abs = std::abs(i);
                     res(res.extent(0) - i_abs, j) = p[0];

@@ -152,11 +152,11 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     );
     PyModule_AddObjectRef(_gufuncs, "lpmn_all", lpmn_all);
 
-    PyObject *_clpmn = SpecFun_NewGUFunc(
-        {static_cast<func_Flb_F2F2_t>(special::clpmn), static_cast<func_Dlb_D2D2_t>(special::clpmn)}, 2, "_clpmn",
+    PyObject *clpmn_all = SpecFun_NewGUFunc(
+        {static_cast<func_Flb_F2F2_t>(special::clpmn), static_cast<func_Dlb_D2D2_t>(special::clpmn)}, 2, "clpmn_all",
         clpmn_doc, "(),(),()->(mp1,np1),(mp1,np1)"
     );
-    PyModule_AddObjectRef(_gufuncs, "_clpmn", _clpmn);
+    PyModule_AddObjectRef(_gufuncs, "clpmn_all", clpmn_all);
 
     PyObject *_lqn = SpecFun_NewGUFunc(
         {static_cast<func_f_f1f1_t>(special::lqn), static_cast<func_d_d1d1_t>(special::lqn),

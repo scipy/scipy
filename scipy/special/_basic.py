@@ -14,8 +14,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn
-from ._gufuncs import (lpn_all, lpmn_all, _clpmn, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn, clpmn as _clpmn
+from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -32,6 +32,7 @@ __all__ = [
     'berp_zeros',
     'bi_zeros',
     'clpmn',
+    'clpmn_all',
     'comb',
     'digamma',
     'diric',
@@ -1889,9 +1890,9 @@ def clpmn(m, n, z, type=3):
     p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
     pd = np.empty_like(p)
     if (z.ndim == 0):
-        _clpmn(z, type, m_signbit, out = (p, pd))
+        clpmn_all(z, type, m_signbit, out = (p, pd))
     else:
-        _clpmn(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+        clpmn_all(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
             np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
