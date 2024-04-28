@@ -158,7 +158,7 @@ class TestLegendreFunctions:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac, p_hess = special.lpmn_all(3, 3, x, diff_n = 2)
+        p, p_jac, p_hess = special.lpmn_all(4, 4, x, diff_n = 2)
 
         np.testing.assert_allclose(p[0, 0], lp00(x))
 
@@ -179,6 +179,16 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[-3, 3], lp33(x, m_signbit = True))
         np.testing.assert_allclose(p[-2, 3], lp23(x, m_signbit = True))
         np.testing.assert_allclose(p[-1, 3], lp13(x, m_signbit = True))
+
+        np.testing.assert_allclose(p[0, 4], lp04(x))
+        np.testing.assert_allclose(p[1, 4], lp14(x))
+        np.testing.assert_allclose(p[2, 4], lp24(x))
+        np.testing.assert_allclose(p[3, 4], lp34(x))
+        np.testing.assert_allclose(p[4, 4], lp44(x))
+        np.testing.assert_allclose(p[-4, 4], lp44(x, m_signbit = True))
+        np.testing.assert_allclose(p[-3, 4], lp34(x, m_signbit = True))
+        np.testing.assert_allclose(p[-2, 4], lp24(x, m_signbit = True))
+        np.testing.assert_allclose(p[-1, 4], lp14(x, m_signbit = True))
 
         np.testing.assert_allclose(p_jac[0, 1], 1)
         np.testing.assert_allclose(p_jac[1, 1], x / np.sqrt(1 - x * x))
@@ -221,7 +231,7 @@ class TestLegendreFunctions:
 
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
 
-        p = special.clpmn(3, 3, z, type = type, legacy = False)
+        p = special.clpmn(4, 4, z, type = type, legacy = False)
 
         np.testing.assert_allclose(p[0, 0], lp00(z, type = type))
 
@@ -242,6 +252,16 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[-3, 3], lp33(z, m_signbit = True, type = type))
         np.testing.assert_allclose(p[-2, 3], lp23(z, m_signbit = True, type = type))
         np.testing.assert_allclose(p[-1, 3], lp13(z, m_signbit = True, type = type))
+
+        np.testing.assert_allclose(p[0, 4], lp04(z, type = type))
+        np.testing.assert_allclose(p[1, 4], lp14(z, type = type))
+        np.testing.assert_allclose(p[2, 4], lp24(z, type = type))
+        np.testing.assert_allclose(p[3, 4], lp34(z, type = type))
+        np.testing.assert_allclose(p[4, 4], lp44(z, type = type))
+        np.testing.assert_allclose(p[-4, 4], lp44(z, m_signbit = True, type = type))
+        np.testing.assert_allclose(p[-3, 4], lp34(z, m_signbit = True, type = type))
+        np.testing.assert_allclose(p[-2, 4], lp24(z, m_signbit = True, type = type))
+        np.testing.assert_allclose(p[-1, 4], lp14(z, m_signbit = True, type = type))
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpn(self, shape):
@@ -477,3 +497,48 @@ def lp33(z, *, m_signbit = False, type = 2):
         return 15 * np.sign(np.real(z)) * (z * z - 1) * np.sqrt(z * z - 1)
 
     return -15 * (1 - z * z) * np.sqrt(1 - z * z)
+
+def lp04(z, *, type = 2):
+    return ((35 * z * z - 30) * z * z + 3) / 8
+
+def lp14(z, *, m_signbit = False, type = 2):
+    if m_signbit:
+        if (type == 3):
+            return np.sign(np.real(z)) * z * np.sqrt(z * z - 1) * (7 * z * z - 3) / 8
+
+        return -z * np.sqrt(1 - z * z) * (3 - 7 * z * z) / 8
+
+    if (type == 3):
+        return 5 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1) * (7 * z * z - 3) / 2
+
+    return 5 * z * np.sqrt(1 - z * z) * (3 - 7 * z * z) / 2
+
+def lp24(z, *, m_signbit = False, type = 2):
+    if m_signbit:
+        if (type == 3):
+            return -((8 - 7 * z * z) * z * z - 1) / 48
+
+        return -(1 - (8 - 7 * z * z) * z * z) / 48
+
+    if (type == 3):
+        return -15 * ((8 - 7 * z * z) * z * z - 1) / 2
+
+    return -15 * (1 - (8 - 7 * z * z) * z * z) / 2
+
+def lp34(z, *, m_signbit = False, type = 2):
+    if m_signbit:
+        if (type == 3):
+            return np.sign(np.real(z)) * z * (z * z - 1) * np.sqrt(z * z - 1) / 48
+
+        return z * (1 - z * z) * np.sqrt(1 - z * z) / 48
+
+    if (type == 3):
+        return 105 * np.sign(np.real(z)) * z * (z * z - 1) * np.sqrt(z * z - 1)
+
+    return -105 * z * (1 - z * z) * np.sqrt(1 - z * z)
+
+def lp44(z, *, m_signbit = False, type = 2):
+    if m_signbit:
+        return np.square(z * z - 1) / 384
+
+    return 105 * np.square(z * z - 1)
