@@ -72,14 +72,10 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 
 class TestLinkage:
 
-    @skip_xp_backends('jax.numpy',
-                      reasons=['jax arrays do not support item assignment'],
-                      cpu_only=True)
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
         # Exception expected.
-        y = xp.zeros((6,))
-        y[0] = xp.nan
+        y = xp.asarray([xp.nan] + [0.0]*5)
         assert_raises(ValueError, linkage, y)
 
     @skip_xp_backends(cpu_only=True)
