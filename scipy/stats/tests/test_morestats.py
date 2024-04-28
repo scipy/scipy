@@ -425,7 +425,7 @@ class TestAndersonKSamp:
                                   tm[0:5], 4)
         assert_allclose(p, 0.0020, atol=0.00025)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_example2a(self):
         # Example data taken from an earlier technical report of
         # Scholz and Stephens
@@ -2068,6 +2068,7 @@ class TestBoxcoxNormmax:
         assert np.all(bounds[0] < maxlog)
         assert np.all(maxlog < bounds[1])
 
+    @pytest.mark.slow
     def test_user_defined_optimizer(self):
         # tests an optimizer that is not based on scipy.optimize.minimize
         lmbda = stats.boxcox_normmax(self.x)

@@ -26,15 +26,17 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 
 #define CBLAS_INDEX size_t  /* this may vary between platforms */
 
-#ifdef ACCELERATE_NEW_LAPACK
-#define NO_APPEND_FORTRAN
-#define BLAS_SYMBOL_SUFFIX $NEWLAPACK
-#endif
-
 #ifdef NO_APPEND_FORTRAN
 #define BLAS_FORTRAN_SUFFIX
 #else
 #define BLAS_FORTRAN_SUFFIX _
+#endif
+
+// New Accelerate suffix is always $NEWLAPACK (no underscore)
+#ifdef ACCELERATE_NEW_LAPACK
+#undef BLAS_FORTRAN_SUFFIX
+#define BLAS_FORTRAN_SUFFIX
+#define BLAS_SYMBOL_SUFFIX $NEWLAPACK
 #endif
 
 #ifndef BLAS_SYMBOL_PREFIX

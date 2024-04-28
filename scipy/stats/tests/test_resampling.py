@@ -161,6 +161,7 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_equal(res2.standard_error.shape, result_shape)
 
 
+@pytest.mark.slow
 @pytest.mark.xfail_on_32bit("MemoryError with BCa observed in CI")
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
@@ -304,6 +305,7 @@ def test_BCa_acceleration_against_reference():
     assert_allclose(a_hat, 0.011008228344026734)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
 def test_bootstrap_against_itself_1samp(method, expected):
@@ -347,6 +349,7 @@ tests_against_itself_2samp = {"basic": 892,
                               "percentile": 890}
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_2samp.items())
 def test_bootstrap_against_itself_2samp(method, expected):
@@ -653,6 +656,7 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_vector_valued_statistic(method):
     # Generate 95% confidence interval around MLE of normal distribution
@@ -788,7 +792,7 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
 
-
+    @pytest.mark.xslow
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
@@ -847,6 +851,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater"))
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_ks_1samp(self, alternative, a):
@@ -909,6 +914,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
@@ -928,6 +934,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
     @pytest.mark.parametrize('i', range(5))
     def test_against_anderson(self, dist_name, i):
@@ -1088,6 +1095,7 @@ class TestPower:
         with pytest.raises(ValueError, match=message):
             power(test, rvs, n_observations, batch=10.5)
 
+    @pytest.mark.slow
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `test`
@@ -1123,6 +1131,7 @@ class TestPower:
         assert_equal(res1.power, res3.power)
         assert_equal(res2.power, res3.power)
 
+    @pytest.mark.slow
     def test_vectorization(self):
         # Test that `power` is vectorized as expected
         rng = np.random.default_rng(25495254834552)
@@ -1785,6 +1794,7 @@ class TestPermutationTest:
                                >= np.abs(S-mean))/n
         assert_allclose(expected_Pr_gte_S_mean, Pr_gte_S_mean)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative, expected_pvalue',
                              (('less', 0.9708333333333),
                               ('greater', 0.05138888888889),

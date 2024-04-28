@@ -2705,8 +2705,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-@_deprecate_positional_args(version="1.14")
-def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
+def comb(N, k, *, exact=False, repetition=False):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2719,21 +2718,10 @@ def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
         Number of elements taken.
     exact : bool, optional
         For integers, if `exact` is False, then floating point precision is
-        used, otherwise the result is computed exactly. For non-integers, if
-        `exact` is True, is disregarded.
+        used, otherwise the result is computed exactly.
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
-    legacy : bool, optional
-        If `legacy` is True and `exact` is True, then non-integral arguments
-        are cast to ints; if `legacy` is False, the result for non-integral
-        arguments is unaffected by the value of `exact`.
-
-        .. deprecated:: 1.9.0
-            Using `legacy` is deprecated and will removed by
-            Scipy 1.14.0. If you want to keep the legacy behaviour, cast
-            your inputs directly, e.g.
-            ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2765,24 +2753,11 @@ def comb(N, k, *, exact=False, repetition=False, legacy=_NoValue):
     220
 
     """
-    if legacy is not _NoValue:
-        warnings.warn(
-            "Using 'legacy' keyword is deprecated and will be removed by "
-            "Scipy 1.14.0. If you want to keep the legacy behaviour, cast "
-            "your inputs directly, e.g. "
-            "'comb(int(your_N), int(your_k), exact=True)'.",
-            DeprecationWarning,
-            stacklevel=2
-        )
     if repetition:
-        return comb(N + k - 1, k, exact=exact, legacy=legacy)
+        return comb(N + k - 1, k, exact=exact)
     if exact:
         if int(N) == N and int(k) == k:
             # _comb_int casts inputs to integers, which is safe & intended here
-            return _comb_int(N, k)
-        elif legacy:
-            # here at least one number is not an integer; legacy behavior uses
-            # lossy casts to int
             return _comb_int(N, k)
         # otherwise, we disregard `exact=True`; it makes no sense for
         # non-integral arguments
