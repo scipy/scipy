@@ -1447,6 +1447,8 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether the skew is different from the normal distribution.
 
@@ -1606,23 +1608,29 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     agree fairly closely, even for our small sample.
 
     """
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
+
     b2 = skew(a, axis)
     n = a.shape[axis]
     if n < 8:
         raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % int(n))
+            f"skewtest is not valid with less than 8 samples; {n} samples were given.")
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
-    y = np.where(y == 0, 1, y)
-    Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
+    y = xp.where(y == 0, 1, y)
+    Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    pvalue = _get_pvalue(Z, distributions.norm, alternative)
-    return SkewtestResult(Z[()], pvalue[()])
+    Z_np = np.asarray(Z)
+    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return SkewtestResult(Z, pvalue)
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))

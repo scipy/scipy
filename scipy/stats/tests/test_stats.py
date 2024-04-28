@@ -6010,7 +6010,11 @@ class TestDescribe:
         assert_raises(ValueError, stats.describe, [])
 
 
-def test_normalitytests():
+@pytest.mark.skip_xp_backends(cpu_only=True,
+                              reasons=['Uses NumPy for pvalue'])
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
+def test_normalitytests(xp):
     assert_raises(ValueError, stats.skewtest, 4.)
     assert_raises(ValueError, stats.kurtosistest, 4.)
     assert_raises(ValueError, stats.normaltest, 4.)
@@ -6025,11 +6029,15 @@ def test_normalitytests():
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
-    assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
-    assert_array_almost_equal(stats.skewtest(x, alternative='less'),
-                              (st_skew, pv_skew_less))
-    assert_array_almost_equal(stats.skewtest(x, alternative='greater'),
-                              (st_skew, pv_skew_greater))
+    res = stats.skewtest(xp.asarray(x, dtype=xp.float64))
+    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
+    xp_assert_close(res.pvalue, xp.asarray(pv_skew, dtype=xp.float64))
+    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), alternative='less')
+    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
+    xp_assert_close(res.pvalue, xp.asarray(pv_skew_less, dtype=xp.float64))
+    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), alternative='greater')
+    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
+    xp_assert_close(res.pvalue, xp.asarray(pv_skew_greater, dtype=xp.float64))
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
     assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
@@ -6042,8 +6050,8 @@ def test_normalitytests():
     # see gh-13549.
     # skew parameter is 1 > 0
     a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
-    pval = stats.skewtest(a1, alternative='greater').pvalue
-    assert_almost_equal(pval, 0.0, decimal=5)
+    pval = stats.skewtest(xp.asarray(a1), alternative='greater').pvalue
+    xp_assert_close(pval, xp.asarray(0.0, dtype=xp.float64), atol=9e-6)
     # excess kurtosis of laplace is 3 > 0
     a2 = stats.laplace.rvs(size=10000, random_state=123)
     pval = stats.kurtosistest(a2, alternative='greater').pvalue
@@ -6052,8 +6060,9 @@ def test_normalitytests():
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
                               (st_normal, pv_normal))
-    assert_array_almost_equal(stats.skewtest(x, axis=None),
-                              (st_skew, pv_skew))
+    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), axis=None)
+    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
+    xp_assert_close(res.pvalue, xp.asarray(pv_skew, dtype=xp.float64))
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
                               (st_kurt, pv_kurt))
 
@@ -6062,6 +6071,7 @@ def test_normalitytests():
     with np.errstate(invalid="ignore"):
         assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
 
+    # nan_policy only compatible with NumPy arrays
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
