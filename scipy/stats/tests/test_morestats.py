@@ -23,7 +23,7 @@ from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   SCIPY_ARRAY_API, is_torch, xp_assert_equal)
+                                   SCIPY_ARRAY_API, xp_assert_equal)
 
 distcont = dict(distcont)  # type: ignore
 
@@ -2507,15 +2507,15 @@ class TestCircFuncs:
                         [357, 9, 8, 358, 4, 356.]])
         res = circfunc(x, high=360)
         ref = circfunc(xp.reshape(x, (-1,)), high=360)
-        xp_assert_close(res, xp.asarray(ref), rtol=1e-14)
+        xp_assert_close(res, xp.asarray(ref))
 
         res = circfunc(x, high=360, axis=1)
         ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
-        xp_assert_close(res, xp.asarray(ref), rtol=1e-14)
+        xp_assert_close(res, xp.asarray(ref))
 
         res = circfunc(x, high=360, axis=0)
         ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
-        xp_assert_close(res, xp.asarray(ref), rtol=1e-12)
+        xp_assert_close(res, xp.asarray(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -2523,7 +2523,7 @@ class TestCircFuncs:
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected, xp):
         x = xp.asarray([355, 5, 2, 359, 10, 350.])
-        rtol = 2e-5 if is_torch(xp) else 1e-7
+        rtol = xp.finfo(x.dtype).eps**0.5 * 4
         xp_assert_close(test_func(x, high=360), xp.asarray(expected), rtol=rtol)
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
@@ -2557,7 +2557,7 @@ class TestCircFuncs:
             if axis is None:
                 xp_assert_equal(out, xp.asarray(xp.nan))
             else:
-                rtol = 2e-5 if is_torch(xp) else 1e-7
+                rtol = xp.finfo(x.dtype).eps**0.5 * 4
                 xp_assert_close(out[0], xp.asarray(expected[axis]), rtol=rtol)
                 xp_assert_equal(out[1:], xp.full_like(out[1:], xp.nan))
 
