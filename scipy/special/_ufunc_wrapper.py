@@ -1,11 +1,11 @@
-
 import numpy as np
 
-class ufunc_wrapper(object):
-    def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None):
+class ufunc_wrapper:
+    def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None, force_out_dtypes_complex = False):
         self.ufuncs = ufuncs
         self._resolve_out_shapes = resolve_out_shapes
         self._resolve_ufunc = resolve_ufunc
+        self.force_out_dtypes_complex = force_out_dtypes_complex
 
     def resolve_ufunc(self, func):
         self._resolve_ufunc = func
@@ -35,6 +35,9 @@ class ufunc_wrapper(object):
                 out_dtype = np.float64
 
             out_dtypes = ufunc.nout * (out_dtype,)
+
+        if self.force_out_dtypes_complex:
+            out_dtypes = tuple(np.result_type(1j, out_dtype) for out_dtype in out_dtypes)
 
         b_shape = np.broadcast_shapes(*arg_shapes)
 

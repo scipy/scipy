@@ -19,7 +19,7 @@ from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, clpmn_legacy as _clpmn_lega
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+
 from ._ufunc_wrapper import ufunc_wrapper
 
 __all__ = [
@@ -1896,7 +1896,7 @@ def clpmn_legacy(m, n, z, type=3):
 
     return p, pd
 
-clpmn_all = ufunc_wrapper(clpmn_all)
+clpmn_all = ufunc_wrapper(clpmn_all, force_out_dtypes_complex = True)
 
 @clpmn_all.resolve_ufunc
 def _(ufuncs, n_diff = 0):

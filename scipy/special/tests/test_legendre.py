@@ -1,9 +1,3 @@
-import functools
-import itertools
-import operator
-import platform
-import sys
-
 import numpy as np
 from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
         log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
@@ -17,8 +11,6 @@ from numpy.testing import (assert_equal, assert_almost_equal,
         suppress_warnings)
 
 from scipy import special
-
-import math
 
 # Base polynomials come from Abrahmowitz and Stegan
 class TestLegendre:
@@ -153,7 +145,7 @@ class TestLegendreFunctions:
         np.testing.assert_allclose((1 - x * x) * p_hess, 2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p, rtol = 1e-05, atol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpmn_all_exact(self, shape):
+    def test_lpmn_all_specific(self, shape):
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-5, 5, shape)
@@ -254,7 +246,7 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("type", [2, 3])
-    def test_clpmn_all_exact(self, shape, type):
+    def test_clpmn_all_specific(self, shape, type):
         rng = np.random.default_rng(1234)
 
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
@@ -346,7 +338,7 @@ class TestLegendreFunctions:
             np.testing.assert_allclose(p_jac[-m], 0)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpn(self, shape):
+    def test_lpn_ode(self, shape):
         rng = np.random.default_rng(1234)
 
         n = rng.integers(0, 100, shape)
@@ -363,7 +355,7 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("n_max", [1, 2, 4, 8, 16, 32])
     @pytest.mark.parametrize("x_shape", [(10,), (4, 9), (3, 5, 7)])
-    def test_lpn_all(self, n_max, x_shape):
+    def test_lpn_all_ode(self, n_max, x_shape):
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, x_shape)
