@@ -3,7 +3,7 @@
 import numpy as np
 from scipy import fft as sp_fft
 from scipy._lib._array_api import (
-    array_namespace, size, is_complex, is_numpy, is_cupy, is_torch,
+    array_namespace, size, is_complex, is_cupy, is_torch,
 )
 from . import _signaltools
 from .windows import get_window
@@ -1790,8 +1790,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     """
     xp = array_namespace(y)
     if mode not in ['psd', 'stft']:
-        raise ValueError("Unknown value for mode %s, must be one of: "
-                         "{'psd', 'stft'}" % mode)
+        raise ValueError(f"Unknown value for mode {mode}, must be one of: "
+                         "{'psd', 'stft'}")
 
     boundary_funcs = {'even': even_ext,
                       'odd': odd_ext,
@@ -1800,8 +1800,9 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{}', must be one of: {}"
-                         .format(boundary, list(boundary_funcs.keys())))
+        boundary_keys = list(boundary_funcs.keys())
+        raise ValueError(f"Unknown boundary option '{boundary}',"
+                         f" must be one of: {boundary_keys}")
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
@@ -1931,7 +1932,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
     elif scaling == 'spectrum':
         scale = 1.0 / xp.sum(win) ** 2
     else:
-        raise ValueError('Unknown scaling: %r' % scaling)
+        raise ValueError(f'Unknown scaling: {scaling}')
 
     if mode == 'stft':
         scale = xp.sqrt(scale)

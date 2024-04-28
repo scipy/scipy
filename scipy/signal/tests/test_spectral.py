@@ -660,7 +660,7 @@ class TestWelch:
             # Check peak height at signal frequency for 'spectrum'
             xp_assert_close(p_spec[ii], A**2/2.0, rtol=5e-7, check_namespace=False)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(np.trapz(p_dens, freq)),
+            assert_allclose(np.sqrt(np.trapezoid(p_dens, freq)),
                             A*np.sqrt(2)/2, rtol=1e-3)
 
     @skip_xp_backends("cupy", "array_api_strict",
@@ -910,7 +910,11 @@ class TestCSD:
         assert p.shape == (2, 1, 6)
         xp_assert_close(p[0,0,:], p[1,0,:], atol=1e-13, rtol=1e-13)
         f0, p0 = csd(x[0,0,:], x[0,0,:], nperseg=10)
-        xp_assert_close(p0[xp.newaxis,:], p[1,:], atol=1e-13, rtol=1e-13, check_dtype=False)
+        xp_assert_close(p0[xp.newaxis,:],
+                        p[1,:],
+                        atol=1e-13,
+                        rtol=1e-13,
+                        check_dtype=False)
 
     @skip_xp_backends("cupy", "array_api_strict", "torch",
                       reasons=["array_api_compat cupy doesn't support fft",
@@ -1656,7 +1660,7 @@ class TestSTFT:
             xp_assert_close(x, xr, err_msg=msg)
 
     @skip_xp_backends("torch", "cupy", "array_api_strict",
-            reasons=["torch errors out where x.imag is called but x is real (this may be standard compliant though: https://data-apis.org/array-api/latest/API_specification/generated/array_api.imag.html?highlight=imag#array_api.imag)",
+            reasons=["torch error with x.imag called but x is real"
                      "lack of fft support in array_api_compat",
                      "moveaxis not available in array_api_strict"])
     def test_roundtrip_not_nola(self, xp):
@@ -1775,7 +1779,8 @@ class TestSTFT:
             msg = f'{window}, {nperseg}, {noverlap}'
             # NOTE: here and below it may not be surprising that namespace checks
             # fail because there are no input array types to key off of
-            xp_assert_close(t, tr, err_msg=msg, check_namespace=False, check_dtype=False)
+            xp_assert_close(t, tr, err_msg=msg,
+                            check_namespace=False, check_dtype=False)
             xp_assert_close(x, xr, err_msg=msg)
 
         # Check that asking for onesided switches to twosided
