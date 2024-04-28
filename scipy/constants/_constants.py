@@ -331,7 +331,7 @@ def lambda2nu(lambda_: Any) -> Any:
 
     """
     xp = array_namespace(lambda_)
-    return c / _asarray(lambda_, xp=xp , subok=True)
+    return c / _asarray(lambda_, xp=xp, subok=True)
 
 
 def nu2lambda(nu: Any) -> Any:
