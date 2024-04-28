@@ -2474,16 +2474,16 @@ class TestCircFuncs:
         M2 = stats.circmean(x, high=360)
         xp_assert_close(M2, M1, rtol=1e-5)
 
-        xp_test = array_namespace(x)
         # plain torch var/std ddof=1, so we need array_api_compat torch
-        V1 = xp_test.var(x*xp.pi/180)
+        xp_test = array_namespace(x)
+        V1 = xp_test.var(x*xp.pi/180, correction=xp.asarray(0.0))
         # for small variations, circvar is approximately half the
         # linear variance
         V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         xp_assert_close(V2, V1, rtol=1e-4)
 
-        S1 = xp_test.std(x)
+        S1 = xp_test.std(x, correction=xp.asarray(0.0))
         S2 = stats.circstd(x, high=360)
         xp_assert_close(S2, S1, rtol=1e-4)
 

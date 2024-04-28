@@ -291,10 +291,9 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
                             check_dtype=check_dtype, check_shape=check_shape)
 
-    xp_test = array_namespace(desired)
-    floating = xp_test.isdtype(desired.dtype, ('real floating', 'complex floating'))
+    floating = xp.isdtype(desired.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
-        rtol = xp_test.finfo(desired.dtype).eps**0.5
+        rtol = xp.finfo(desired.dtype).eps**0.5
     elif rtol is None:
         rtol = 1e-7
 
