@@ -1,7 +1,6 @@
 import numpy as np
 
 import pytest
-from pytest import raises as assert_raises
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,  assert_, assert_allclose)
 
 from scipy import special

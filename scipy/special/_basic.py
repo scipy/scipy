@@ -19,7 +19,7 @@ from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, clpmn_legacy as _clpmn_lega
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
-from .multiufunc import multiufunc
+from ._multiufunc import multiufunc
 
 __all__ = [
     'ai_zeros',
