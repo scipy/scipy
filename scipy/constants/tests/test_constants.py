@@ -57,6 +57,7 @@ class TestConvertTemperature:
                         [273.15, 0.], rtol=0., atol=1e-13)
 
 
+    @skip_xp_backends(np_only=True, reasons=['Python int input uses NumPy backend'])
     def test_convert_temperature_errors(self, xp):
         with pytest.raises(NotImplementedError, match="old_scale="):
             sc.convert_temperature(1, old_scale="cheddar", new_scale="kelvin")
