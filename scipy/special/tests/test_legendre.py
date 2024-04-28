@@ -158,55 +158,57 @@ class TestLegendreFunctions:
 
         x = rng.uniform(-5, 5, shape)
 
+        type = np.where(np.abs(x) <= 1, 2, 3)
+
         p, p_jac = special.lpmn_all(4, 4, x, diff_n = 1)
 
-        np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, x))
+        np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, x, type = type))
 
-        np.testing.assert_allclose(p[0, 1], lpmn_ref(0, 1, x))
-        np.testing.assert_allclose(p[1, 1], lpmn_ref(1, 1, x))
-        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, x))
+        np.testing.assert_allclose(p[0, 1], lpmn_ref(0, 1, x, type = type))
+        np.testing.assert_allclose(p[1, 1], lpmn_ref(1, 1, x, type = type))
+        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, x, type = type))
 
-        np.testing.assert_allclose(p[0, 2], lpmn_ref(0, 2, x))
-        np.testing.assert_allclose(p[1, 2], lpmn_ref(1, 2, x))
-        np.testing.assert_allclose(p[2, 2], lpmn_ref(2, 2, x))
-        np.testing.assert_allclose(p[-2, 2], lpmn_ref(-2, 2, x))
-        np.testing.assert_allclose(p[-1, 2], lpmn_ref(-1, 2, x))
+        np.testing.assert_allclose(p[0, 2], lpmn_ref(0, 2, x, type = type))
+        np.testing.assert_allclose(p[1, 2], lpmn_ref(1, 2, x, type = type))
+        np.testing.assert_allclose(p[2, 2], lpmn_ref(2, 2, x, type = type))
+        np.testing.assert_allclose(p[-2, 2], lpmn_ref(-2, 2, x, type = type))
+        np.testing.assert_allclose(p[-1, 2], lpmn_ref(-1, 2, x, type = type))
 
-        np.testing.assert_allclose(p[0, 3], lpmn_ref(0, 3, x))
-        np.testing.assert_allclose(p[1, 3], lpmn_ref(1, 3, x))
-        np.testing.assert_allclose(p[2, 3], lpmn_ref(2, 3, x))
-        np.testing.assert_allclose(p[3, 3], lpmn_ref(3, 3, x))
-        np.testing.assert_allclose(p[-3, 3], lpmn_ref(-3, 3, x))
-        np.testing.assert_allclose(p[-2, 3], lpmn_ref(-2, 3, x))
-        np.testing.assert_allclose(p[-1, 3], lpmn_ref(-1, 3, x))
+        np.testing.assert_allclose(p[0, 3], lpmn_ref(0, 3, x, type = type))
+        np.testing.assert_allclose(p[1, 3], lpmn_ref(1, 3, x, type = type))
+        np.testing.assert_allclose(p[2, 3], lpmn_ref(2, 3, x, type = type))
+        np.testing.assert_allclose(p[3, 3], lpmn_ref(3, 3, x, type = type))
+        np.testing.assert_allclose(p[-3, 3], lpmn_ref(-3, 3, x, type = type))
+        np.testing.assert_allclose(p[-2, 3], lpmn_ref(-2, 3, x, type = type))
+        np.testing.assert_allclose(p[-1, 3], lpmn_ref(-1, 3, x, type = type))
 
-        np.testing.assert_allclose(p[0, 4], lpmn_ref(0, 4, x))
-        np.testing.assert_allclose(p[1, 4], lpmn_ref(1, 4, x))
-        np.testing.assert_allclose(p[2, 4], lpmn_ref(2, 4, x))
-        np.testing.assert_allclose(p[3, 4], lpmn_ref(3, 4, x))
-        np.testing.assert_allclose(p[4, 4], lpmn_ref(4, 4, x))
-        np.testing.assert_allclose(p[-4, 4], lpmn_ref(-4, 4, x))
-        np.testing.assert_allclose(p[-3, 4], lpmn_ref(-3, 4, x))
-        np.testing.assert_allclose(p[-2, 4], lpmn_ref(-2, 4, x))
-        np.testing.assert_allclose(p[-1, 4], lpmn_ref(-1, 4, x))
+        np.testing.assert_allclose(p[0, 4], lpmn_ref(0, 4, x, type = type))
+        np.testing.assert_allclose(p[1, 4], lpmn_ref(1, 4, x, type = type))
+        np.testing.assert_allclose(p[2, 4], lpmn_ref(2, 4, x, type = type))
+        np.testing.assert_allclose(p[3, 4], lpmn_ref(3, 4, x, type = type))
+        np.testing.assert_allclose(p[4, 4], lpmn_ref(4, 4, x, type = type))
+        np.testing.assert_allclose(p[-4, 4], lpmn_ref(-4, 4, x, type = type))
+        np.testing.assert_allclose(p[-3, 4], lpmn_ref(-3, 4, x, type = type))
+        np.testing.assert_allclose(p[-2, 4], lpmn_ref(-2, 4, x, type = type))
+        np.testing.assert_allclose(p[-1, 4], lpmn_ref(-1, 4, x, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 1], lpmn_jac(0, 1, x))
-        np.testing.assert_allclose(p_jac[1, 1], lpmn_jac(1, 1, x))
-        np.testing.assert_allclose(p_jac[-1, 1], lpmn_jac(-1, 1, x))
+        np.testing.assert_allclose(p_jac[0, 1], lpmn_jac(0, 1, x, type = type))
+        np.testing.assert_allclose(p_jac[1, 1], lpmn_jac(1, 1, x, type = type))
+        np.testing.assert_allclose(p_jac[-1, 1], lpmn_jac(-1, 1, x, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 2], lpmn_jac(0, 2, x))
-        np.testing.assert_allclose(p_jac[1, 2], lpmn_jac(1, 2, x))
-        np.testing.assert_allclose(p_jac[2, 2], lpmn_jac(2, 2, x))
-        np.testing.assert_allclose(p_jac[-2, 2], lpmn_jac(-2, 2, x))
-        np.testing.assert_allclose(p_jac[-1, 2], lpmn_jac(-1, 2, x))
+        np.testing.assert_allclose(p_jac[0, 2], lpmn_jac(0, 2, x, type = type))
+        np.testing.assert_allclose(p_jac[1, 2], lpmn_jac(1, 2, x, type = type))
+        np.testing.assert_allclose(p_jac[2, 2], lpmn_jac(2, 2, x, type = type))
+        np.testing.assert_allclose(p_jac[-2, 2], lpmn_jac(-2, 2, x, type = type))
+        np.testing.assert_allclose(p_jac[-1, 2], lpmn_jac(-1, 2, x, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 3], lpmn_jac(0, 3, x))
-        np.testing.assert_allclose(p_jac[1, 3], lpmn_jac(1, 3, x))
-        np.testing.assert_allclose(p_jac[2, 3], lpmn_jac(2, 3, x))
-        np.testing.assert_allclose(p_jac[3, 3], lpmn_jac(3, 3, x))
-        np.testing.assert_allclose(p_jac[-3, 3], lpmn_jac(-3, 3, x))
-        np.testing.assert_allclose(p_jac[-2, 3], lpmn_jac(-2, 3, x))
-        np.testing.assert_allclose(p_jac[-1, 3], lpmn_jac(-1, 3, x))
+        np.testing.assert_allclose(p_jac[0, 3], lpmn_jac(0, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[1, 3], lpmn_jac(1, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[2, 3], lpmn_jac(2, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[3, 3], lpmn_jac(3, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[-3, 3], lpmn_jac(-3, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[-2, 3], lpmn_jac(-2, 3, x, type = type))
+        np.testing.assert_allclose(p_jac[-1, 3], lpmn_jac(-1, 3, x, type = type))
 
     def test_lpmn_legacy(self):
         lp = special.lpmn(0, 2, .5)
@@ -217,65 +219,65 @@ class TestLegendreFunctions:
                                                       1.00000,
                                                       1.50000]])), 4)
 
-    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
+    @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("type", [2, 3])
     def test_clpmn_all_exact(self, shape, type):
         rng = np.random.default_rng(1234)
 
-        z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
+        z = rng.uniform(-100, 100, shape) + 1j * rng.uniform(-100, 100, shape)
 
 #        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
         p, p_jac = special.clpmn_all(4, 4, type, z, n_diff = 1)
 
-        np.testing.assert_allclose(p[0, 0], clpmn_ref(0, 0, z, type = type))
+        np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
-        np.testing.assert_allclose(p[0, 1], clpmn_ref(0, 1, z, type = type))
-        np.testing.assert_allclose(p[1, 1], clpmn_ref(1, 1, z, type = type))
-        np.testing.assert_allclose(p[-1, 1], clpmn_ref(-1, 1, z, type = type))
+        np.testing.assert_allclose(p[0, 1], lpmn_ref(0, 1, z, type = type))
+        np.testing.assert_allclose(p[1, 1], lpmn_ref(1, 1, z, type = type))
+        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, z, type = type))
 
-        np.testing.assert_allclose(p[0, 2], clpmn_ref(0, 2, z, type = type))
-        np.testing.assert_allclose(p[1, 2], clpmn_ref(1, 2, z, type = type))
-        np.testing.assert_allclose(p[2, 2], clpmn_ref(2, 2, z, type = type))
-        np.testing.assert_allclose(p[-2, 2], clpmn_ref(-2, 2, z, type = type))
-        np.testing.assert_allclose(p[-1, 2], clpmn_ref(-1, 2, z, type = type))
+        np.testing.assert_allclose(p[0, 2], lpmn_ref(0, 2, z, type = type))
+        np.testing.assert_allclose(p[1, 2], lpmn_ref(1, 2, z, type = type))
+        np.testing.assert_allclose(p[2, 2], lpmn_ref(2, 2, z, type = type))
+        np.testing.assert_allclose(p[-2, 2], lpmn_ref(-2, 2, z, type = type))
+        np.testing.assert_allclose(p[-1, 2], lpmn_ref(-1, 2, z, type = type))
  
-        np.testing.assert_allclose(p[0, 3], clpmn_ref(0, 3, z, type = type))
-        np.testing.assert_allclose(p[1, 3], clpmn_ref(1, 3, z, type = type))
-        np.testing.assert_allclose(p[2, 3], clpmn_ref(2, 3, z, type = type))
-        np.testing.assert_allclose(p[3, 3], clpmn_ref(3, 3, z, type = type))
-        np.testing.assert_allclose(p[-3, 3], clpmn_ref(-3, 3, z, type = type))
-        np.testing.assert_allclose(p[-2, 3], clpmn_ref(-2, 3, z, type = type))
-        np.testing.assert_allclose(p[-1, 3], clpmn_ref(-1, 3, z, type = type))
+        np.testing.assert_allclose(p[0, 3], lpmn_ref(0, 3, z, type = type))
+        np.testing.assert_allclose(p[1, 3], lpmn_ref(1, 3, z, type = type))
+        np.testing.assert_allclose(p[2, 3], lpmn_ref(2, 3, z, type = type))
+        np.testing.assert_allclose(p[3, 3], lpmn_ref(3, 3, z, type = type))
+        np.testing.assert_allclose(p[-3, 3], lpmn_ref(-3, 3, z, type = type))
+        np.testing.assert_allclose(p[-2, 3], lpmn_ref(-2, 3, z, type = type))
+        np.testing.assert_allclose(p[-1, 3], lpmn_ref(-1, 3, z, type = type))
 
-        np.testing.assert_allclose(p[0, 4], clpmn_ref(0, 4, z, type = type))
-        np.testing.assert_allclose(p[1, 4], clpmn_ref(1, 4, z, type = type))
-        np.testing.assert_allclose(p[2, 4], clpmn_ref(2, 4, z, type = type))
-        np.testing.assert_allclose(p[3, 4], clpmn_ref(3, 4, z, type = type))
-        np.testing.assert_allclose(p[4, 4], clpmn_ref(4, 4, z, type = type))
-        np.testing.assert_allclose(p[-4, 4], clpmn_ref(-4, 4, z, type = type))
-        np.testing.assert_allclose(p[-3, 4], clpmn_ref(-3, 4, z, type = type))
-        np.testing.assert_allclose(p[-2, 4], clpmn_ref(-2, 4, z, type = type))
-        np.testing.assert_allclose(p[-1, 4], clpmn_ref(-1, 4, z, type = type))
+        np.testing.assert_allclose(p[0, 4], lpmn_ref(0, 4, z, type = type))
+        np.testing.assert_allclose(p[1, 4], lpmn_ref(1, 4, z, type = type))
+        np.testing.assert_allclose(p[2, 4], lpmn_ref(2, 4, z, type = type))
+        np.testing.assert_allclose(p[3, 4], lpmn_ref(3, 4, z, type = type))
+        np.testing.assert_allclose(p[4, 4], lpmn_ref(4, 4, z, type = type))
+        np.testing.assert_allclose(p[-4, 4], lpmn_ref(-4, 4, z, type = type))
+        np.testing.assert_allclose(p[-3, 4], lpmn_ref(-3, 4, z, type = type))
+        np.testing.assert_allclose(p[-2, 4], lpmn_ref(-2, 4, z, type = type))
+        np.testing.assert_allclose(p[-1, 4], lpmn_ref(-1, 4, z, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 0], clpmn_jac(0, 0, z, type = type))
+        np.testing.assert_allclose(p_jac[0, 0], lpmn_jac(0, 0, z, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 1], clpmn_jac(0, 1, z, type = type))
-        np.testing.assert_allclose(p_jac[1, 1], clpmn_jac(1, 1, z, type = type))
-        np.testing.assert_allclose(p_jac[-1, 1], clpmn_jac(-1, 1, z, type = type))
+        np.testing.assert_allclose(p_jac[0, 1], lpmn_jac(0, 1, z, type = type))
+        np.testing.assert_allclose(p_jac[1, 1], lpmn_jac(1, 1, z, type = type))
+        np.testing.assert_allclose(p_jac[-1, 1], lpmn_jac(-1, 1, z, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 2], clpmn_jac(0, 2, z, type = type))
-        np.testing.assert_allclose(p_jac[1, 2], clpmn_jac(1, 2, z, type = type))
-        np.testing.assert_allclose(p_jac[2, 2], clpmn_jac(2, 2, z, type = type))
-        np.testing.assert_allclose(p_jac[-2, 2], clpmn_jac(-2, 2, z, type = type))
-        np.testing.assert_allclose(p_jac[-1, 2], clpmn_jac(-1, 2, z, type = type))
+        np.testing.assert_allclose(p_jac[0, 2], lpmn_jac(0, 2, z, type = type))
+        np.testing.assert_allclose(p_jac[1, 2], lpmn_jac(1, 2, z, type = type))
+        np.testing.assert_allclose(p_jac[2, 2], lpmn_jac(2, 2, z, type = type))
+        np.testing.assert_allclose(p_jac[-2, 2], lpmn_jac(-2, 2, z, type = type))
+        np.testing.assert_allclose(p_jac[-1, 2], lpmn_jac(-1, 2, z, type = type))
 
-        np.testing.assert_allclose(p_jac[0, 3], clpmn_jac(0, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[1, 3], clpmn_jac(1, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[2, 3], clpmn_jac(2, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[3, 3], clpmn_jac(3, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[-3, 3], clpmn_jac(-3, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[-2, 3], clpmn_jac(-2, 3, z, type = type))
-        np.testing.assert_allclose(p_jac[-1, 3], clpmn_jac(-1, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[0, 3], lpmn_jac(0, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[1, 3], lpmn_jac(1, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[2, 3], lpmn_jac(2, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[3, 3], lpmn_jac(3, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[-3, 3], lpmn_jac(-3, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[-2, 3], lpmn_jac(-2, 3, z, type = type))
+        np.testing.assert_allclose(p_jac[-1, 3], lpmn_jac(-1, 3, z, type = type))
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpn(self, shape):
@@ -407,7 +409,6 @@ class TestLegendreFunctions:
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
 
-
     @pytest.mark.parametrize("function", [special.clpmn, special.lqmn])
     @pytest.mark.parametrize(
         "m,n",
@@ -428,7 +429,10 @@ class TestLegendreFunctions:
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
 
-def clpmn_ref(m, n, z, *, type = 2):
+def lpmn_ref(m, n, z, *, type = 2):
+    ls = np.where(type == 3, -1, 1)
+    qs = np.where(type == 3, np.sign(np.real(z)), 1)
+
     if (n == 0):
         if (m == 0):
             return np.ones_like(z)
@@ -438,134 +442,83 @@ def clpmn_ref(m, n, z, *, type = 2):
             return z
 
         if (m == 1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * np.sqrt(z * z - 1),
-                    -np.sqrt(1 - z * z)
-                )
+            return qs * -ls * np.sqrt(ls * (1 - z * z))
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * np.sqrt(z * z - 1) / 2,
-                    np.sqrt(1 - z * z) / 2        
-            )
+            return qs * np.sqrt(ls * (1 - z * z)) / 2
 
     if (n == 2):
         if (m == 0):
             return (3 * z * z - 1) / 2
 
         if (m == 1):
-            return np.where(type == 3,
-                    3 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1),
-                    -3 * z * np.sqrt(1 - z * z)
-                )
+            return -3 * ls * qs * z * np.sqrt(ls * (1 - z * z))
 
         if (m == 2):
-            return np.where(type == 3,
-                    3 * (z * z - 1),
-                    3 * (1 - z * z)
-                )
+            return 3 * ls * (1 - z * z)
 
         if (m == -2):
-            return np.where(type == 3,
-                    (z * z - 1) / 8,
-                    (1 - z * z) / 8
-                )
+            return ls * (1 - z * z) / 8
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z * np.sqrt(z * z - 1) / 2,
-                    z * np.sqrt(1 - z * z) / 2
-                )
+            return qs * z * np.sqrt(ls * (1 - z * z)) / 2
 
     if (n == 3):
         if (m == 0):
             return (5 * z * z - 3) * z / 2
 
         if (m == 1):
-            return np.where(type == 3,
-                    3 * np.sign(np.real(z)) * (5 * z * z - 1) * np.sqrt(z * z - 1) / 2,
-                    3 * (1 - 5 * z * z) * np.sqrt(1 - z * z) / 2
-                )
+            return 3 * (1 - 5 * z * z) * ls * qs * np.sqrt(ls * (1 - z * z)) / 2
 
         if (m == 2):
-            return np.where(type == 3,
-                    15 * z * (z * z - 1),
-                    15 * z * (1 - z * z)
-                )
+            return 15 * z * ls * (1 - z * z)
 
         if (m == 3):
-            return np.where(type == 3,
-                    15 * np.sign(np.real(z)) * (z * z - 1) * np.sqrt(z * z - 1),
-                    -15 * (1 - z * z) * np.sqrt(1 - z * z)
-                )
+            return -15 * qs * (1 - z * z) * np.sqrt(ls * (1 - z * z))
 
         if (m == -3):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * (z * z - 1) * np.sqrt(z * z - 1) / 48,
-                    (1 - z * z) * np.sqrt(1 - z * z) / 48
-                )
+            return (1 - z * z) * qs * ls * np.sqrt(ls * (1 - z * z)) / 48
 
         if (m == -2):
-            return np.where(type == 3,
-                    z * (z * z - 1) / 8,
-                    z * (1 - z * z) / 8
-                )
+            return z * ls * (1 - z * z) / 8
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * (5 * z * z - 1) * np.sqrt(z * z - 1) / 8,
-                    -(1 - 5 * z * z) * np.sqrt(1 - z * z) / 8
-                )
+            return -qs * (1 - 5 * z * z) * np.sqrt(ls * (1 - z * z)) / 8
 
     if (n == 4):
         if (m == 0):
             return ((35 * z * z - 30) * z * z + 3) / 8
 
         if (m == 1):
-            return np.where(type == 3,
-                    5 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1) * (7 * z * z - 3) / 2,
-                    5 * z * np.sqrt(1 - z * z) * (3 - 7 * z * z) / 2
-                )
+            return 5 * ls * qs * z * np.sqrt(ls * (1 - z * z)) * (3 - 7 * z * z) / 2
 
         if (m == 2):
-            return np.where(type == 3,
-                    -15 * ((8 - 7 * z * z) * z * z - 1) / 2,
-                    -15 * (1 - (8 - 7 * z * z) * z * z) / 2
-                )
+            return -15 * ls * (1 - (8 - 7 * z * z) * z * z) / 2
 
         if (m == 3):
-            return np.where(type == 3,
-                    105 * np.sign(np.real(z)) * z * (z * z - 1) * np.sqrt(z * z - 1),
-                    -105 * z * (1 - z * z) * np.sqrt(1 - z * z)
-                )
+            return -105 * z * qs * (1 - z * z) * np.sqrt(ls * (1 - z * z))
 
         if (m == 4):
             return 105 * np.square(z * z - 1)
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z * np.sqrt(z * z - 1) * (7 * z * z - 3) / 8,
-                    -z * np.sqrt(1 - z * z) * (3 - 7 * z * z) / 8
-                )
+            return -z * qs * np.sqrt(ls * (1 - z * z)) * (3 - 7 * z * z) / 8
 
         if (m == -2):
-            return np.where(type == 3,
-                    -((8 - 7 * z * z) * z * z - 1) / 48,
-                    -(1 - (8 - 7 * z * z) * z * z) / 48
-                )
+            return -ls * (1 - (8 - 7 * z * z) * z * z) / 48
 
         if (m == -3):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z * (z * z - 1) * np.sqrt(z * z - 1) / 48,
-                    z * (1 - z * z) * np.sqrt(1 - z * z) / 48
-                )
+            return z * ls * qs * (1 - z * z) * np.sqrt(ls * (1 - z * z)) / 48
 
         if (m == -4):
             return np.square(z * z - 1) / 384
 
     raise NotImplementedError
 
-def clpmn_jac(m, n, z, type):
+def lpmn_jac(m, n, z, type):
+    ls = np.where(type == 3, -1, 1)
+    qs = np.where(type == 3, np.sign(np.real(z)), 1)
+
     if (n == 0):
         if (m == 0):
             return np.zeros_like(z)
@@ -575,93 +528,47 @@ def clpmn_jac(m, n, z, type):
             return np.ones_like(z)
 
         if (m == 1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z / np.sqrt(z * z - 1),
-                    z / np.sqrt(1 - z * z)
-                )
+            return qs * z / np.sqrt(ls * (1 - z * z))
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z / (2 * np.sqrt(z * z - 1)),
-                    -z / (2 * np.sqrt(1 - z * z))
-                )
+            return -qs * ls * z / (2 * np.sqrt(ls * (1 - z * z)))
 
     if (n == 2):
         if (m == 0):
             return 3 * z
 
         if (m == 1):
-            return np.where(type == 3,
-                    3 * np.sign(np.real(z)) * (2 * z * z - 1) / np.sqrt(z * z - 1),
-                    -3 * (1 - 2 * z * z) / np.sqrt(1 - z * z)
-                )
+            return -qs * 3 * (1 - 2 * z * z) / np.sqrt(ls * (1 - z * z))
 
         if (m == 2):
-            return np.where(type == 3,
-                    6 * z,
-                    -6 * z
-                )
+            return ls * -6 * z
 
         if (m == -2):
-            return np.where(type == 3,
-                    z / 4,
-                    -z / 4
-                )
+            return ls * -z / 4
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * (2 * z * z - 1) / (2 * np.sqrt(z * z - 1)),
-                    (1 - 2 * z * z) / (2 * np.sqrt(1 - z * z))
-                )
+            return ls * qs * (1 - 2 * z * z) / (2 * np.sqrt(ls * (1 - z * z)))
 
     if (n == 3):
         if (m == 0):
             return 3 * (5 * z * z - 1) / 2
 
         if (m == 1):
-            return np.where(type == 3,
-                    3 * np.sign(np.real(z)) * (15 * z * z - 11) * z / (2 * np.sqrt(z * z - 1)),
-                    -3 * (11 - 15 * z * z) * z / (2 * np.sqrt(1 - z * z))
-                )
+            return -qs * 3 * (11 - 15 * z * z) * z / (2 * np.sqrt(ls * (1 - z * z)))
 
         if (m == 2):
-            return np.where(type == 3,
-                    15 * (3 * z * z - 1),
-                    15 * (1 - 3 * z * z)
-                )
+            return 15 * ls * (1 - 3 * z * z)
 
         if (m == 3):
-            return np.where(type == 3,
-                    45 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1),
-                    45 * z * np.sqrt(1 - z * z)
-                )
+            return 45 * z * qs * np.sqrt(ls * (1 - z * z))
 
         if (m == -3):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * z * np.sqrt(z * z - 1) / 16,
-                    -z * np.sqrt(1 - z * z) / 16
-                )
+            return -z * qs * ls * np.sqrt(ls * (1 - z * z)) / 16
 
         if (m == -2):
-            return np.where(type == 3,
-                    (3 * z * z - 1) / 8,
-                    (1 - 3 * z * z) / 8
-                )
+            return ls * (1 - 3 * z * z) / 8
 
         if (m == -1):
-            return np.where(type == 3,
-                    np.sign(np.real(z)) * (15 * z * z - 11) * z / (8 * np.sqrt(z * z - 1)),
-                    (11 - 15 * z * z) * z / (8 * np.sqrt(1 - z * z))
-                )
+            return qs * ls * (11 - 15 * z * z) * z / (8 * np.sqrt(ls * (1 - z * z)))
 
     raise NotImplementedError
-
-def lpmn_ref(m, n, x):
-    x_complex = x.astype(complex)
-
-    return np.real(clpmn_ref(m, n, x_complex, type = np.where(np.abs(x) <= 1, 2, 3)))
-
-def lpmn_jac(m, n, x):
-    x_complex = x.astype(complex)
-
-    return np.real(clpmn_jac(m, n, x_complex, type = np.where(np.abs(x) <= 1, 2, 3)))

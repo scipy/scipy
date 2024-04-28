@@ -278,10 +278,18 @@ T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_
         }
 
         if (m == 2) {
+            if (type == 3) {
+                return T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(4);
+            }
+
             return -T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(4);
         }
 
         if (m == -2) {
+            if (type == 3) {
+                return T(1) / T(4);
+            }
+
             return -T(1) / T(4);
         }
 
