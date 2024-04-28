@@ -41,6 +41,9 @@ def test_convert_temperature(xp):
     xp_assert_close(sc.convert_temperature(xp.asarray([491.67, 0.], dtype=xp.float64),
                                            'rankine', 'kelvin'),
                     xp.asarray([273.15, 0.], dtype=xp.float64), rtol=0., atol=1e-13)
+    # NumPy only test
+    xp_assert_close(sc.convert_temperature([491.67, 0.], 'rankine', 'kelvin'),
+                    [273.15, 0.], rtol=0., atol=1e-13)
 
 
 @array_api_compatible
@@ -55,10 +58,16 @@ def test_convert_temperature_errors(xp):
 def test_lambda_to_nu(xp):
     xp_assert_equal(sc.lambda2nu(xp.asarray([sc.speed_of_light, 1])),
                     xp.asarray([1, sc.speed_of_light]))
+    # NumPy only test
+    xp_assert_equal(sc.lambda2nu([sc.speed_of_light, 1]),
+                    [1, sc.speed_of_light])
 
 
 @array_api_compatible
 def test_nu_to_lambda(xp):
     xp_assert_equal(sc.nu2lambda(xp.asarray([sc.speed_of_light, 1])),
                     xp.asarray([1, sc.speed_of_light]))
+    # NumPy only test
+    xp_assert_equal(sc.nu2lambda([sc.speed_of_light, 1]),
+                    [1, sc.speed_of_light])
 
