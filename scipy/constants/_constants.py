@@ -235,7 +235,7 @@ def convert_temperature(
 
     Parameters
     ----------
-    val : array_like
+    val : array
         Value(s) of the temperature(s) to be converted expressed in the
         original scale.
     old_scale : str
@@ -309,7 +309,7 @@ def lambda2nu(lambda_: Any) -> Any:
 
     Parameters
     ----------
-    lambda_ : array_like
+    lambda_ : array
         Wavelength(s) to be converted.
 
     Returns
@@ -340,7 +340,7 @@ def nu2lambda(nu: Any) -> Any:
 
     Parameters
     ----------
-    nu : array_like
+    nu : array
         Optical frequency to be converted.
 
     Returns
