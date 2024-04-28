@@ -10,9 +10,12 @@ The list is not meant to be comprehensive, but just convenient for everyday use.
 from __future__ import annotations
 
 import math as _math
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from ._codata import value as _cd
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 from scipy._lib._array_api import array_namespace, _asarray
 
@@ -225,7 +228,7 @@ kgf = kilogram_force = g  # * 1 kg
 
 
 def convert_temperature(
-    val: Any,
+    val: npt.ArrayLike,
     old_scale: str,
     new_scale: str,
 ) -> Any:
@@ -269,16 +272,16 @@ def convert_temperature(
 
     """
     xp = array_namespace(val)
-    val = _asarray(val, xp=xp, subok=True)
+    _val = _asarray(val, xp=xp, subok=True)
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
-        tempo = val + zero_Celsius
+        tempo = _val + zero_Celsius
     elif old_scale.lower() in ['kelvin', 'k']:
-        tempo = val
+        tempo = _val
     elif old_scale.lower() in ['fahrenheit', 'f']:
-        tempo = (val - 32) * 5 / 9 + zero_Celsius
+        tempo = (_val - 32) * 5 / 9 + zero_Celsius
     elif old_scale.lower() in ['rankine', 'r']:
-        tempo = val * 5 / 9
+        tempo = _val * 5 / 9
     else:
         raise NotImplementedError(f"{old_scale=} is unsupported: supported scales "
                                    "are Celsius, Kelvin, Fahrenheit, and "
@@ -303,7 +306,7 @@ def convert_temperature(
 # optics
 
 
-def lambda2nu(lambda_: Any) -> Any:
+def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -334,7 +337,7 @@ def lambda2nu(lambda_: Any) -> Any:
     return c / _asarray(lambda_, xp=xp, subok=True)
 
 
-def nu2lambda(nu: Any) -> Any:
+def nu2lambda(nu: npt.ArrayLike) -> Any:
     """
     Convert optical frequency to wavelength.
 
