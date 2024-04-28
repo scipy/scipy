@@ -660,7 +660,11 @@ class TestWelch:
             # Check peak height at signal frequency for 'spectrum'
             xp_assert_close(p_spec[ii], A**2/2.0, rtol=5e-7, check_namespace=False)
             # Check integrated spectrum RMS for 'density'
-            assert_allclose(np.sqrt(np.trapezoid(p_dens, freq)),
+            if np.lib.NumpyVersion(np.__version__) >= "2.0.0rc1":
+                trapezoid = np.trapezoid
+            else:
+                trapezoid = np.trapz
+            assert_allclose(np.sqrt(trapezoid(p_dens, freq)),
                             A*np.sqrt(2)/2, rtol=1e-3)
 
     @skip_xp_backends("cupy", "array_api_strict",
@@ -1660,7 +1664,7 @@ class TestSTFT:
             xp_assert_close(x, xr, err_msg=msg)
 
     @skip_xp_backends("torch", "cupy", "array_api_strict",
-            reasons=["torch error with x.imag called but x is real"
+            reasons=["torch error with x.imag called but x is real",
                      "lack of fft support in array_api_compat",
                      "moveaxis not available in array_api_strict"])
     def test_roundtrip_not_nola(self, xp):
