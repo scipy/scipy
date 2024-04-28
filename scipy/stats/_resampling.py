@@ -8,7 +8,7 @@ from dataclasses import dataclass
 import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, xp_minimum, xp_clip
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -723,7 +723,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         raise ValueError(f"`alternative` must be in {alternatives}")
 
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int)
+            batch_iv, alternative, axis_int, xp)
 
 
 @dataclass
@@ -916,10 +916,10 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
     (data, rvs, statistic, vectorized,
-     n_resamples, batch, alternative, axis) = args
+     n_resamples, batch, alternative, axis, xp) = args
 
     # Some statistics return plain floats; ensure they're at least a NumPy float
-    observed = np.asarray(statistic(*data, axis=-1))[()]
+    observed = xp.asarray(statistic(*data, axis=-1))[()]
 
     n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples
@@ -929,29 +929,29 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
         resamples = [rvs_i(size=(batch_actual, n_observations_i))
                      for rvs_i, n_observations_i in zip(rvs, n_observations)]
         null_distribution.append(statistic(*resamples, axis=-1))
-    null_distribution = np.concatenate(null_distribution)
-    null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
+    null_distribution = xp.concat(null_distribution)
+    null_distribution = xp.reshape(null_distribution, [-1] + [1]*observed.ndim)
 
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
-    eps =  (0 if not np.issubdtype(observed.dtype, np.inexact)
-            else np.finfo(observed.dtype).eps*100)
-    gamma = np.abs(eps * observed)
+    eps =  (0 if not xp.isdtype(observed.dtype, ('real floating'))
+            else xp.finfo(observed.dtype).eps*100)
+    gamma = xp.abs(eps * observed)
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
-        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
+        pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def two_sided(null_distribution, observed):
         pvalues_less = less(null_distribution, observed)
         pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        pvalues = xp_minimum(pvalues_less, pvalues_greater) * 2
         return pvalues
 
     compare = {"less": less,
@@ -959,7 +959,7 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
                "two-sided": two_sided}
 
     pvalues = compare[alternative](null_distribution, observed)
-    pvalues = np.clip(pvalues, 0, 1)
+    pvalues = xp_clip(pvalues, 0., 1., xp=xp)
 
     return MonteCarloTestResult(observed, pvalues, null_distribution)
 

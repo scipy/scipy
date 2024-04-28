@@ -354,3 +354,26 @@ def xp_unsupported_param_msg(param):
 
 def is_complex(x, xp):
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+# temporary substitute for xp.minimum, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_minimum(x1, x2):
+    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
+    xp = array_namespace(x1, x2)
+    x1, x2 = xp.broadcast_arrays(x1, x2)
+    dtype = xp.result_type(x1.dtype, x2.dtype)
+    res = xp.asarray(x1, copy=True, dtype=dtype)
+    i = (x2 < x1) | xp.isnan(x2)
+    res[i] = x2[i]
+    return res[()] if res.ndim == 0 else res
+
+
+# temporary substitute for xp.clip, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_clip(x, a, b, xp=None):
+    xp = array_namespace(xp) if xp is None else xp
+    y = xp.asarray(x, copy=True)
+    y[y < a] = a
+    y[y > b] = b
+    return y[()] if y.ndim == 0 else y
