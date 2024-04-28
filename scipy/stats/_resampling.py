@@ -936,7 +936,8 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
      batch, alternative, axis, dtype, xp) = args
 
     # Some statistics return plain floats; ensure they're at least a NumPy float
-    observed = xp.asarray(statistic(*data, axis=-1))[()]
+    observed = xp.asarray(statistic(*data, axis=-1))
+    observed = observed[()] if observed.ndim == 0 else observed
 
     n_observations = [sample.shape[-1] for sample in data]
     batch_nominal = batch or n_resamples

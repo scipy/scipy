@@ -5,7 +5,7 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy
+from scipy._lib._array_api import is_numpy, xp_assert_close, array_namespace
 from scipy import stats, special
 from scipy.optimize import root
 
@@ -806,7 +806,6 @@ class TestMonteCarloHypothesisTest:
         except ValueError as e:
             assert str(e).startswith(message)
 
-
     @array_api_compatible
     def test_input_validation_xp(self, xp):
         def non_vectorized_statistic(x):
@@ -861,26 +860,40 @@ class TestMonteCarloHypothesisTest:
         assert_equal(res1.pvalue, res3.pvalue)
         assert_equal(res2.pvalue, res3.pvalue)
 
+    @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
-    def test_axis(self, axis):
+    def test_axis(self, axis, xp):
         # test that Nd-array samples are handled correctly for valid values
         # of the `axis` parameter
         rng = np.random.default_rng(2389234)
-        norm_rvs = self.rvs(stats.norm.rvs, rng)
-
         size = [2, 3, 4]
         size[axis] = 100
-        x = norm_rvs(size=size)
-        expected = stats.skewtest(x, axis=axis)
+
+        # ttest_1samp is CPU array-API compatible, but it would be good to
+        # include CuPy in this test. We'll perform ttest_1samp with a
+        # NumPy array, but all the rest with be done with fully array-API
+        # compatible code.
+        x = rng.normal(size=size)
+        expected = stats.ttest_1samp(x, popmean=0., axis=axis)
+
+        x = xp.asarray(x)
+        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
 
         def statistic(x, axis):
-            return stats.skewtest(x, axis=axis).statistic
+            m = xp.mean(x, axis=axis)
+            v = xp_test.var(x, axis=axis, correction=1)
+            n = x.shape[axis]
+            return m / (v/n)**0.5
+            # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
+
+        def norm_rvs(size):
+            return xp.asarray(rng.normal(size=size))
 
         res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                n_resamples=20000, axis=axis)
 
-        assert_allclose(res.statistic, expected.statistic)
-        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+        xp_assert_close(res.statistic, xp.asarray(expected.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=self.atol)
 
     @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater"))
