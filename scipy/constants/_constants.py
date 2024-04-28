@@ -16,7 +16,7 @@ import numpy as np
 
 from ._codata import value as _cd
 
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, _asarray
 
 
 """
@@ -271,7 +271,7 @@ def convert_temperature(
 
     """
     xp = array_namespace(val)
-    val = np.asanyarray(val) if is_numpy(xp) else xp.asarray(val)
+    val = _asarray(val, xp=xp, subok=True)
     # Convert from `old_scale` to Kelvin
     if old_scale.lower() in ['celsius', 'c']:
         tempo = val + zero_Celsius
@@ -333,8 +333,7 @@ def lambda2nu(lambda_: Any) -> Any:
 
     """
     xp = array_namespace(lambda_)
-    lambda_ = np.asanyarray(lambda_) if is_numpy(xp) else xp.asarray(lambda_)
-    return c / lambda_
+    return c / _asarray(lambda_, xp=xp , subok=True)
 
 
 def nu2lambda(nu: Any) -> Any:
@@ -365,5 +364,4 @@ def nu2lambda(nu: Any) -> Any:
 
     """
     xp = array_namespace(nu)
-    nu = np.asanyarray(nu) if is_numpy(xp) else xp.asarray(nu)
-    return c / nu
+    return c / _asarray(nu, xp=xp, subok=True)
