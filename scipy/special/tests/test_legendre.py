@@ -1,14 +1,8 @@
 import numpy as np
-from numpy import (array, isnan, r_, arange, finfo, pi, sin, cos, tan, exp,
-        log, zeros, sqrt, asarray, inf, nan_to_num, real, arctan, double,
-        array_equal)
 
 import pytest
 from pytest import raises as assert_raises
-from numpy.testing import (assert_equal, assert_almost_equal,
-        assert_array_equal, assert_array_almost_equal, assert_approx_equal,
-        assert_, assert_allclose, assert_array_almost_equal_nulp,
-        suppress_warnings)
+from numpy.testing import (assert_equal, assert_almost_equal, assert_array_almost_equal,  assert_, assert_allclose)
 
 from scipy import special
 
@@ -23,10 +17,10 @@ class TestLegendre:
         leg5 = special.legendre(5)
         assert_equal(leg0.c, [1])
         assert_equal(leg1.c, [1,0])
-        assert_almost_equal(leg2.c, array([3,0,-1])/2.0, decimal=13)
-        assert_almost_equal(leg3.c, array([5,0,-3,0])/2.0)
-        assert_almost_equal(leg4.c, array([35,0,-30,0,3])/8.0)
-        assert_almost_equal(leg5.c, array([63,0,-70,0,15,0])/8.0)
+        assert_almost_equal(leg2.c, np.array([3,0,-1])/2.0, decimal=13)
+        assert_almost_equal(leg3.c, np.array([5,0,-3,0])/2.0)
+        assert_almost_equal(leg4.c, np.array([35,0,-30,0,3])/8.0)
+        assert_almost_equal(leg5.c, np.array([63,0,-70,0,15,0])/8.0)
 
     @pytest.mark.parametrize('n', [1, 2, 3, 4, 5])
     @pytest.mark.parametrize('zr', [0.5241717, 12.80232, -9.699001,
@@ -45,11 +39,11 @@ class TestLegendreFunctions:
         z = 0.5+0.3j
         clp = special.clpmn(2, 2, z, 3)
         assert_array_almost_equal(clp,
-                   (array([[1.0000, z, 0.5*(3*z*z-1)],
-                           [0.0000, sqrt(z*z-1), 3*z*sqrt(z*z-1)],
+                   (np.array([[1.0000, z, 0.5*(3*z*z-1)],
+                           [0.0000, np.sqrt(z*z-1), 3*z*np.sqrt(z*z-1)],
                            [0.0000, 0.0000, 3*(z*z-1)]]),
-                    array([[0.0000, 1.0000, 3*z],
-                           [0.0000, z/sqrt(z*z-1), 3*(2*z*z-1)/sqrt(z*z-1)],
+                    np.array([[0.0000, 1.0000, 3*z],
+                           [0.0000, z/np.sqrt(z*z-1), 3*(2*z*z-1)/np.sqrt(z*z-1)],
                            [0.0000, 0.0000, 6*z]])),
                     7)
 
@@ -60,8 +54,8 @@ class TestLegendreFunctions:
         x = 0.5
         clp_plus = special.clpmn(m, n, x+1j*eps, 2)[0][m, n]
         clp_minus = special.clpmn(m, n, x-1j*eps, 2)[0][m, n]
-        assert_array_almost_equal(array([clp_plus, clp_minus]),
-                                  array([special.lpmv(m, n, x),
+        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
+                                  np.array([special.lpmv(m, n, x),
                                          special.lpmv(m, n, x)]),
                                   7)
 
@@ -72,8 +66,8 @@ class TestLegendreFunctions:
         x = 0.5
         clp_plus = special.clpmn(m, n, x+1j*eps, 3)[0][m, n]
         clp_minus = special.clpmn(m, n, x-1j*eps, 3)[0][m, n]
-        assert_array_almost_equal(array([clp_plus, clp_minus]),
-                                  array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
+        assert_array_almost_equal(np.array([clp_plus, clp_minus]),
+                                  np.array([special.lpmv(m, n, x)*np.exp(-0.5j*m*np.pi),
                                          special.lpmv(m, n, x)*np.exp(0.5j*m*np.pi)]),
                                   7)
 
@@ -416,8 +410,8 @@ class TestLegendreFunctions:
 
     def test_lqn(self):
         lqf = special.lqn(2,.5)
-        assert_array_almost_equal(lqf,(array([0.5493, -0.7253, -0.8187]),
-                                       array([1.3333, 1.216, -0.8427])),4)
+        assert_array_almost_equal(lqf,(np.array([0.5493, -0.7253, -0.8187]),
+                                       np.array([1.3333, 1.216, -0.8427])),4)
 
     @pytest.mark.parametrize("function", [special.lpn, special.lqn])
     @pytest.mark.parametrize("n", [1, 2, 4, 8, 16, 32])

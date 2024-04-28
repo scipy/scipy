@@ -1,6 +1,6 @@
 import numpy as np
 
-class ufunc_wrapper:
+class multiufunc:
     def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None, force_out_dtypes_complex = False):
         self.ufuncs = ufuncs
         self._resolve_out_shapes = resolve_out_shapes

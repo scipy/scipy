@@ -19,8 +19,7 @@ from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, clpmn_legacy as _clpmn_lega
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
-
-from ._ufunc_wrapper import ufunc_wrapper
+from .multiufunc import multiufunc
 
 __all__ = [
     'ai_zeros',
@@ -1724,9 +1723,9 @@ def mathieu_odd_coef(m, q):
 
 
 
-_lpmn = ufunc_wrapper(_lpmn, diff_resolve_ufunc)
+_lpmn = multiufunc(_lpmn, diff_resolve_ufunc)
 
-lpmn_all = ufunc_wrapper(lpmn_all)
+lpmn_all = multiufunc(lpmn_all)
 
 @lpmn_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
@@ -1896,7 +1895,7 @@ def clpmn_legacy(m, n, z, type=3):
 
     return p, pd
 
-clpmn_all = ufunc_wrapper(clpmn_all, force_out_dtypes_complex = True)
+clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
 
 @clpmn_all.resolve_ufunc
 def _(ufuncs, n_diff = 0):
@@ -2085,9 +2084,9 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = ufunc_wrapper(_lpn, diff_resolve_ufunc)
+_lpn = multiufunc(_lpn, diff_resolve_ufunc)
 
-lpn_all = ufunc_wrapper(lpn_all, diff_resolve_ufunc)
+lpn_all = multiufunc(lpn_all, diff_resolve_ufunc)
 
 @lpn_all.resolve_out_shapes
 def _(n, shapes, nout):
