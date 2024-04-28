@@ -1813,7 +1813,7 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 
     return _lpmn(m, n, z, diff_n = diff_n)
 
-def clpmn(m, n, z, type=3):
+def clpmn_legacy(m, n, z, type=3):
     """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
@@ -1897,6 +1897,16 @@ def clpmn(m, n, z, type=3):
 
     return p, pd
 
+def clpmn(m, n, z, type=3, *, legacy = True):
+    if legacy:
+        return clpmn_legacy(m, n, z, type)
+
+
+
+    out_pos, _ = clpmn_legacy(m, n, z, type)
+    out_neg, _ = clpmn_legacy(-m, n, z, type)
+
+    return np.concatenate([out_pos, np.flip(out_neg[1:], axis = 0)], axis = 0)
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
