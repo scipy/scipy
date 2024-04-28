@@ -98,7 +98,7 @@ doc = [
     "jupyterlite-pyodide-kernel",
 ]
 dev = [
-    "mypy",
+    "mypy==1.10.0",
     "typing_extensions",
     "types-psutil",
     "pycodestyle",
