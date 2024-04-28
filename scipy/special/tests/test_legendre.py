@@ -207,73 +207,25 @@ class TestLegendreFunctions:
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("type", [2, 3])
     def test_clpmn_all_exact(self, shape, type):
-        def p00(z, *, type):
-            return 1
-
-        def p01(z, *, type):
-            return z
-
-        def p11(z, *, type):
-            if (type == 3):
-                return np.sign(np.real(z)) * np.sqrt(z * z - 1)
-
-            return -np.sqrt(1 - z * z)
-
-        def p02(z, *, type):
-            return (3 * z * z - 1) / 2
-
-        def p12(z, *, type):
-            if (type == 3):
-                return 3 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1)
-
-            return -3 * z * np.sqrt(1 - z * z)
-
-        def p22(z, *, type):
-            if (type == 3):
-                return 3 * (z * z - 1)
-
-            return 3 * (1 - z * z)
-
-        def p03(z, *, type):
-            return (5 * z * z - 3) * z / 2
-
-        def p13(z, *, type):
-            if (type == 3):
-                return 3 * np.sign(np.real(z)) * (5 * z * z - 1) * np.sqrt(z * z - 1) / 2
-
-            return 3 * (1 - 5 * z * z) * np.sqrt(1 - z * z) / 2
-
-        def p23(z, *, type):
-            if (type == 3):
-                return 15 * z * (z * z - 1)
-
-            return 15 * z * (1 - z * z)
-
-        def p33(z, *, type):
-            if (type == 3):
-                return 15 * np.sign(np.real(z)) * (z * z - 1) * np.sqrt(z * z - 1)
-
-            return -15 * (1 - z * z) * np.sqrt(1 - z * z)
-
         rng = np.random.default_rng(1234)
 
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
 
         p, pd = special.clpmn(3, 3, z, type = type)
 
-        np.testing.assert_allclose(p[0, 0], p00(z, type = type))
+        np.testing.assert_allclose(p[0, 0], lp00(z, type = type))
 
-        np.testing.assert_allclose(p[0, 1], p01(z, type = type))
-        np.testing.assert_allclose(p[1, 1], p11(z, type = type))
+        np.testing.assert_allclose(p[0, 1], lp01(z, type = type))
+        np.testing.assert_allclose(p[1, 1], lp11(z, type = type))
 
-        np.testing.assert_allclose(p[0, 2], p02(z, type = type))
-        np.testing.assert_allclose(p[1, 2], p12(z, type = type))
-        np.testing.assert_allclose(p[2, 2], p22(z, type = type))
+        np.testing.assert_allclose(p[0, 2], lp02(z, type = type))
+        np.testing.assert_allclose(p[1, 2], lp12(z, type = type))
+        np.testing.assert_allclose(p[2, 2], lp22(z, type = type))
 
-        np.testing.assert_allclose(p[0, 3], p03(z, type = type))
-        np.testing.assert_allclose(p[1, 3], p13(z, type = type))
-        np.testing.assert_allclose(p[2, 3], p23(z, type = type))
-        np.testing.assert_allclose(p[3, 3], p33(z, type = type))
+        np.testing.assert_allclose(p[0, 3], lp03(z, type = type))
+        np.testing.assert_allclose(p[1, 3], lp13(z, type = type))
+        np.testing.assert_allclose(p[2, 3], lp23(z, type = type))
+        np.testing.assert_allclose(p[3, 3], lp33(z, type = type))
 
 #        np.testing.assert_allclose(p[0, 4], p04(z, type = type))
 #        np.testing.assert_allclose(p[1, 3], p13(z, type = type))
@@ -430,3 +382,51 @@ class TestLegendreFunctions:
         P_z, P_d_z = function(m, n, z)
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
+
+def lp00(z, *, type):
+    return 1
+
+def lp01(z, *, type):
+    return z
+
+def lp11(z, *, type):
+    if (type == 3):
+        return np.sign(np.real(z)) * np.sqrt(z * z - 1)
+
+    return -np.sqrt(1 - z * z)
+
+def lp02(z, *, type):
+    return (3 * z * z - 1) / 2
+
+def lp12(z, *, type):
+    if (type == 3):
+        return 3 * np.sign(np.real(z)) * z * np.sqrt(z * z - 1)
+
+    return -3 * z * np.sqrt(1 - z * z)
+
+def lp22(z, *, type):
+    if (type == 3):
+        return 3 * (z * z - 1)
+
+    return 3 * (1 - z * z)
+
+def lp03(z, *, type):
+    return (5 * z * z - 3) * z / 2
+
+def lp13(z, *, type):
+    if (type == 3):
+        return 3 * np.sign(np.real(z)) * (5 * z * z - 1) * np.sqrt(z * z - 1) / 2
+
+    return 3 * (1 - 5 * z * z) * np.sqrt(1 - z * z) / 2
+
+def lp23(z, *, type):
+    if (type == 3):
+        return 15 * z * (z * z - 1)
+
+    return 15 * z * (1 - z * z)
+
+def lp33(z, *, type):
+    if (type == 3):
+        return 15 * np.sign(np.real(z)) * (z * z - 1) * np.sqrt(z * z - 1)
+
+    return -15 * (1 - z * z) * np.sqrt(1 - z * z)
