@@ -5,7 +5,8 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
-from scipy._lib._array_api import is_numpy, xp_assert_close, array_namespace
+from scipy._lib._array_api import (is_numpy, xp_assert_close,
+                                   xp_assert_equal, array_namespace)
 from scipy import stats, special
 from scipy.optimize import root
 
@@ -736,8 +737,17 @@ def test_vector_valued_statistic_gh17715():
 class TestMonteCarloHypothesisTest:
     atol = 2.5e-2  # for comparing p-value
 
-    def rvs(self, rvs_in, rs, xp=np):
+    def get_rvs(self, rvs_in, rs, xp=np):
         return lambda *args, **kwds: xp.asarray(rvs_in(*args, random_state=rs, **kwds))
+
+    def get_statistic(self, xp):
+        def statistic(x, axis):
+            m = xp.mean(x, axis=axis)
+            v = xp.var(x, axis=axis, correction=1)
+            n = x.shape[axis]
+            return m / (v/n)**0.5
+            # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
+        return statistic
 
     @array_api_compatible
     def test_input_validation(self, xp):
@@ -823,42 +833,45 @@ class TestMonteCarloHypothesisTest:
             monte_carlo_test(sample, stats.norm.rvs, xp.mean, vectorized=False)
 
     @pytest.mark.xslow
-    def test_batch(self):
+    @array_api_compatible
+    def test_batch(self, xp):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
         rng = np.random.default_rng(23492340193)
-        x = rng.random(10)
+        x = xp.asarray(rng.standard_normal(size=10))
+
+        xp = array_namespace(x)
 
         def statistic(x, axis):
-            batch_size = 1 if x.ndim == 1 else len(x)
+            batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return stats.skewtest(x, axis=axis).statistic
+            return self.get_statistic(xp)(x, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
         kwds = {'sample': x, 'statistic': statistic,
                 'n_resamples': 1000, 'vectorized': True}
 
-        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        kwds['rvs'] = self.get_rvs(stats.norm.rvs, np.random.default_rng(328423), xp=xp)
         res1 = monte_carlo_test(batch=1, **kwds)
         assert_equal(statistic.counter, 1001)
         assert_equal(statistic.batch_size, 1)
 
-        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        kwds['rvs'] = self.get_rvs(stats.norm.rvs, np.random.default_rng(328423), xp=xp)
         statistic.counter = 0
         res2 = monte_carlo_test(batch=50, **kwds)
         assert_equal(statistic.counter, 21)
         assert_equal(statistic.batch_size, 50)
 
-        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        kwds['rvs'] = self.get_rvs(stats.norm.rvs, np.random.default_rng(328423), xp=xp)
         statistic.counter = 0
         res3 = monte_carlo_test(**kwds)
         assert_equal(statistic.counter, 2)
         assert_equal(statistic.batch_size, 1000)
 
-        assert_equal(res1.pvalue, res3.pvalue)
-        assert_equal(res2.pvalue, res3.pvalue)
+        xp_assert_equal(res1.pvalue, res3.pvalue)
+        xp_assert_equal(res2.pvalue, res3.pvalue)
 
     @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
@@ -878,22 +891,34 @@ class TestMonteCarloHypothesisTest:
 
         x = xp.asarray(x)
         xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
+        statistic = self.get_statistic(xp_test)
+        rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
 
-        def statistic(x, axis):
-            m = xp.mean(x, axis=axis)
-            v = xp_test.var(x, axis=axis, correction=1)
-            n = x.shape[axis]
-            return m / (v/n)**0.5
-            # return stats.ttest_1samp(x, popmean=0., axis=axis).statistic)
-
-        def norm_rvs(size):
-            return xp.asarray(rng.normal(size=size))
-
-        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
+        res = monte_carlo_test(x, rvs, statistic, vectorized=True,
                                n_resamples=20000, axis=axis)
 
         xp_assert_close(res.statistic, xp.asarray(expected.statistic))
         xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=self.atol)
+
+    @array_api_compatible
+    @pytest.mark.parametrize('alternative', ("two-sided", "less", "greater"))
+    def test_alternative(self, alternative, xp):
+        # test that `alternative` is working as expected
+        rng = np.random.default_rng(65723433)
+
+        x = rng.standard_normal(size=30)
+        ref = stats.ttest_1samp(x, 0., alternative=alternative)
+
+        x = xp.asarray(x)
+        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
+        statistic = self.get_statistic(xp_test)
+        rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
+
+        res = monte_carlo_test(x, rvs, statistic, alternative=alternative)
+
+        xp_assert_close(res.statistic, xp.asarray(ref.statistic))
+        xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol)
+
 
     @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater"))
@@ -909,7 +934,7 @@ class TestMonteCarloHypothesisTest:
             return stats.ks_1samp(x, stats.norm.cdf, mode='asymp',
                                   alternative=alternative).statistic
 
-        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        norm_rvs = self.get_rvs(stats.norm.rvs, rng)
         res = monte_carlo_test(x, norm_rvs, statistic1d,
                                n_resamples=1000, vectorized=False,
                                alternative=alternative)
@@ -933,7 +958,7 @@ class TestMonteCarloHypothesisTest:
         def statistic(x, axis):
             return hypotest(x, axis=axis).statistic
 
-        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        norm_rvs = self.get_rvs(stats.norm.rvs, rng)
         res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                alternative=alternative)
 
@@ -951,7 +976,7 @@ class TestMonteCarloHypothesisTest:
         def statistic(x, axis):
             return stats.normaltest(x, axis=axis).statistic
 
-        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        norm_rvs = self.get_rvs(stats.norm.rvs, rng)
         res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                alternative='greater')
 
@@ -970,7 +995,7 @@ class TestMonteCarloHypothesisTest:
         def statistic1d(x):
             return stats.cramervonmises(x, stats.norm.cdf).statistic
 
-        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        norm_rvs = self.get_rvs(stats.norm.rvs, rng)
         res = monte_carlo_test(x, norm_rvs, statistic1d,
                                n_resamples=1000, vectorized=False,
                                alternative='greater')
@@ -1013,7 +1038,7 @@ class TestMonteCarloHypothesisTest:
         def statistic1d(x):
             return stats.anderson(x, dist_name).statistic
 
-        dist_rvs = self.rvs(getattr(stats, dist_name).rvs, rng)
+        dist_rvs = self.get_rvs(getattr(stats, dist_name).rvs, rng)
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
             res = monte_carlo_test(x, dist_rvs,

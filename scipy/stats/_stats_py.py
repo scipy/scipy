@@ -2508,7 +2508,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s" % extrapoints,
+        warnings.warn(f"Points outside given histogram range = {extrapoints}",
                       stacklevel=3,)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
@@ -8488,7 +8488,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected {alternative=}")
 
     N = len(x)
     x = np.sort(x)
@@ -9141,7 +9141,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected {alternative=}")
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
