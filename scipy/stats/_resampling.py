@@ -4,12 +4,13 @@ import warnings
 import numpy as np
 from itertools import combinations, permutations, product
 from collections.abc import Sequence
+from dataclasses import dataclass
 import inspect
 
-from scipy._lib._util import check_random_state, _rename_parameter
+from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
+from scipy._lib._array_api import array_namespace, is_numpy
 from scipy.special import ndtr, ndtri, comb, factorial
-from scipy._lib._util import rng_integers
-from dataclasses import dataclass
+
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
 from ._warnings_errors import DegenerateDataWarning
@@ -662,6 +663,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
+    xp = array_namespace(*data)
 
     axis_int = int(axis)
     if axis != axis_int:
@@ -688,15 +690,20 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
-        statistic_vectorized = _vectorize_statistic(statistic)
+        if is_numpy(xp):
+            statistic_vectorized = _vectorize_statistic(statistic)
+        else:
+            message = ("`statistic` must be vectorized (i.e. support an `axis` argument) "
+                       f"when `data` contains {xp.__name__} arrays.")
+            raise ValueError(message)
     else:
         statistic_vectorized = statistic
 
-    data = _broadcast_arrays(data, axis)
+    data = _broadcast_arrays(data, axis, xp=xp)
     data_iv = []
     for sample in data:
-        sample = np.atleast_1d(sample)
-        sample = np.moveaxis(sample, axis_int, -1)
+        sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
+        sample = xp.moveaxis(sample, axis_int, -1)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)

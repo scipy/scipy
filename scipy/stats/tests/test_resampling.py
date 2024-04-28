@@ -1,12 +1,16 @@
-import numpy as np
 import pytest
-from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
+
+import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
-from scipy import stats
-from scipy import special
-from .. import _resampling as _resampling
+
+from scipy.conftest import array_api_compatible
 from scipy._lib._util import rng_integers
+from scipy._lib._array_api import is_numpy
+from scipy import stats, special
 from scipy.optimize import root
+
+from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
+from .. import _resampling as _resampling
 
 
 def test_bootstrap_iv():
@@ -791,6 +795,22 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
                              alternative='ekki')
+
+    @array_api_compatible
+    def test_input_validation_xp(self, xp):
+        def non_vectorized_statistic(x):
+            return xp.mean(x)
+
+        message = "`statistic` must be vectorized..."
+        sample = xp.asarray([1., 2., 3.])
+        if is_numpy(xp):
+            monte_carlo_test(sample, stats.norm.rvs, non_vectorized_statistic)
+            return
+
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test(sample, stats.norm.rvs, non_vectorized_statistic)
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test(sample, stats.norm.rvs, xp.mean, vectorized=False)
 
     @pytest.mark.xslow
     def test_batch(self):
