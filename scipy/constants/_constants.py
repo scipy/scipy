@@ -12,11 +12,9 @@ from __future__ import annotations
 import math as _math
 from typing import Any
 
-import numpy as np
-
 from ._codata import value as _cd
 
-from scipy._lib._array_api import array_namespace, is_numpy, _asarray
+from scipy._lib._array_api import array_namespace, _asarray
 
 
 """
