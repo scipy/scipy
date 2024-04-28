@@ -317,6 +317,29 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 4], lpmn_jac(-2, 4, z, type = type))
         np.testing.assert_allclose(p_jac[-1, 4], lpmn_jac(-1, 4, z, type = type))
 
+    @pytest.mark.parametrize("m_max", [3])
+    @pytest.mark.parametrize("n_max", [5])
+    @pytest.mark.parametrize("z", [-1])
+    def test_clpmn_all_limits(self, m_max, n_max, z):
+        rng = np.random.default_rng(1234)
+
+        type = 2
+
+#        p, p_jac = special.clpmn(m_max, n_max, z, type = type, legacy = False)
+        p, p_jac = special.clpmn_all(m_max, n_max, type, z, n_diff = 1)
+
+        n = np.arange(n_max + 1)
+
+        np.testing.assert_allclose(p_jac[0], pow(z, n + 1) * n * (n + 1) / 2)
+        np.testing.assert_allclose(p_jac[1], np.where(n >= 1, pow(z, n) * np.inf, 0))
+        np.testing.assert_allclose(p_jac[2], np.where(n >= 2, -pow(z, n + 1) * (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[-2], np.where(n >= 2, -pow(z, n + 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[-1], np.where(n >= 1, -pow(z, n) * np.inf, 0))
+
+        for m in range(3, m_max + 1):
+            np.testing.assert_allclose(p_jac[m], 0)
+            np.testing.assert_allclose(p_jac[-m], 0)
+
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpn(self, shape):
         rng = np.random.default_rng(1234)
