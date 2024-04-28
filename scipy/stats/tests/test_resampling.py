@@ -10,7 +10,7 @@ from scipy import stats, special
 from scipy.optimize import root
 
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test, power
-from .. import _resampling as _resampling
+import scipy.stats._resampling as _resampling
 
 
 def test_bootstrap_iv():
@@ -736,65 +736,76 @@ def test_vector_valued_statistic_gh17715():
 class TestMonteCarloHypothesisTest:
     atol = 2.5e-2  # for comparing p-value
 
-    def rvs(self, rvs_in, rs):
-        return lambda *args, **kwds: rvs_in(*args, random_state=rs, **kwds)
+    def rvs(self, rvs_in, rs, xp=np):
+        return lambda *args, **kwds: xp.asarray(rvs_in(*args, random_state=rs, **kwds))
 
-    def test_input_validation(self):
+    @array_api_compatible
+    def test_input_validation(self, xp):
         # test that the appropriate error messages are raised for invalid input
 
-        def stat(x):
-            return stats.skewnorm(x).statistic
+        data = xp.asarray([1., 2., 3.])
+        def stat(x, axis=None):
+            return xp.mean(x, axis=axis)
 
         message = "Array shapes are incompatible for broadcasting."
-        data = (np.zeros((2, 5)), np.zeros((3, 5)))
+        temp = (xp.zeros((2, 5)), xp.zeros((3, 5)))
         rvs = (stats.norm.rvs, stats.norm.rvs)
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test(data, rvs, lambda x, y: 1, axis=-1)
+            monte_carlo_test(temp, rvs, lambda x, y, axis: 1, axis=-1)
 
         message = "`axis` must be an integer."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
+            monte_carlo_test(data, stats.norm.rvs, stat, axis=1.5)
 
         message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
+            monte_carlo_test(data, stats.norm.rvs, stat, vectorized=1.5)
 
         message = "`rvs` must be callable or sequence of callables."
         with pytest.raises(TypeError, match=message):
-            monte_carlo_test([1, 2, 3], None, stat)
+            monte_carlo_test(data, None, stat)
         with pytest.raises(TypeError, match=message):
-            monte_carlo_test([[1, 2], [3, 4]], [lambda x: x, None], stat)
+            temp = xp.asarray([[1., 2.], [3., 4.]])
+            monte_carlo_test(temp, [lambda x: x, None], stat)
 
         message = "If `rvs` is a sequence..."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([[1, 2, 3]], [lambda x: x, lambda x: x], stat)
+            temp = xp.asarray([[1., 2., 3.]])
+            monte_carlo_test(temp, [lambda x: x, lambda x: x], stat)
 
         message = "`statistic` must be callable."
         with pytest.raises(TypeError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, None)
+            monte_carlo_test(data, stats.norm.rvs, None)
 
         message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
-                             n_resamples=-1000)
+            monte_carlo_test(data, stats.norm.rvs, stat, n_resamples=-1000)
 
         message = "`n_resamples` must be a positive integer."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
-                             n_resamples=1000.5)
+            monte_carlo_test(data, stats.norm.rvs, stat, n_resamples=1000.5)
 
         message = "`batch` must be a positive integer or None."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, batch=-1000)
+            monte_carlo_test(data, stats.norm.rvs, stat, batch=-1000)
 
         message = "`batch` must be a positive integer or None."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, batch=1000.5)
+            monte_carlo_test(data, stats.norm.rvs, stat, batch=1000.5)
 
         message = "`alternative` must be in..."
         with pytest.raises(ValueError, match=message):
-            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
-                             alternative='ekki')
+            monte_carlo_test(data, stats.norm.rvs, stat, alternative='ekki')
+
+        # *If* this raises a value error, make sure it has the intended message
+        message = "Signature inspection of statistic"
+        def rvs(size):
+            return xp.asarray(stats.norm.rvs(size=size))
+        try:
+            monte_carlo_test(data, rvs, xp.mean)
+        except ValueError as e:
+            assert str(e).startswith(message)
+
 
     @array_api_compatible
     def test_input_validation_xp(self, xp):

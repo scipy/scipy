@@ -377,3 +377,13 @@ def xp_clip(x, a, b, xp=None):
     y[y < a] = a
     y[y > b] = b
     return y[()] if y.ndim == 0 else y
+
+
+# temporary substitute for xp.moveaxis, which is not yet in all backends
+# or covered by array_api_compat.
+def _move_axis_to_end(x, source, xp=None):
+    xp = array_namespace(xp) if xp is None else xp
+    axes = list(range(x.ndim))
+    temp = axes.pop(source)
+    axes = axes + [temp]
+    return xp.permute_dims(x, axes)

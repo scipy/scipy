@@ -8,7 +8,8 @@ from dataclasses import dataclass
 import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
-from scipy._lib._array_api import array_namespace, is_numpy, xp_minimum, xp_clip
+from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
+                                   xp_clip, _move_axis_to_end)
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -663,8 +664,6 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
                          batch, alternative, axis):
     """Input validation for `monte_carlo_test`."""
-    xp = array_namespace(*data)
-
     axis_int = int(axis)
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
@@ -679,22 +678,36 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
         if not callable(rvs_i):
             raise TypeError("`rvs` must be callable or sequence of callables.")
 
+    # At this point, `data` should be a sequence
+    # If it isn't, the user passed a sequence for `rvs` but not `data`
+    message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
+    try:
+        len(data)
+    except TypeError as e:
+        raise ValueError(message) from e
     if not len(rvs) == len(data):
-        message = "If `rvs` is a sequence, `len(rvs)` must equal `len(data)`."
         raise ValueError(message)
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
 
     if vectorized is None:
-        vectorized = 'axis' in inspect.signature(statistic).parameters
+        try:
+            signature = inspect.signature(statistic).parameters
+        except ValueError as e:
+            message = (f"Signature inspection of {statistic=} failed; "
+                       "pass `vectorize` explicitly.")
+            raise ValueError(message) from e
+        vectorized = 'axis' in signature
+
+    xp = array_namespace(*data)
 
     if not vectorized:
         if is_numpy(xp):
             statistic_vectorized = _vectorize_statistic(statistic)
         else:
-            message = ("`statistic` must be vectorized (i.e. support an `axis` argument) "
-                       f"when `data` contains {xp.__name__} arrays.")
+            message = ("`statistic` must be vectorized (i.e. support an `axis` "
+                       f"argument) when `data` contains {xp.__name__} arrays.")
             raise ValueError(message)
     else:
         statistic_vectorized = statistic
@@ -703,7 +716,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = xp.moveaxis(sample, axis_int, -1)
+        sample = _move_axis_to_end(sample, axis_int, xp=xp)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)
@@ -722,8 +735,12 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     if alternative not in alternatives:
         raise ValueError(f"`alternative` must be in {alternatives}")
 
+    # Infer the desired p-value dtype based on the input types
+    min_float = getattr(xp, 'float16', xp.float32)
+    dtype = xp.result_type(*data_iv, min_float)
+
     return (data_iv, rvs, statistic_vectorized, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int, xp)
+            batch_iv, alternative, axis_int, dtype, xp)
 
 
 @dataclass
@@ -915,8 +932,8 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     """
     args = _monte_carlo_test_iv(data, rvs, statistic, vectorized,
                                 n_resamples, batch, alternative, axis)
-    (data, rvs, statistic, vectorized,
-     n_resamples, batch, alternative, axis, xp) = args
+    (data, rvs, statistic, vectorized, n_resamples,
+     batch, alternative, axis, dtype, xp) = args
 
     # Some statistics return plain floats; ensure they're at least a NumPy float
     observed = xp.asarray(statistic(*data, axis=-1))[()]
@@ -940,11 +957,13 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
+        cmps = xp.asarray(cmps, dtype=dtype)
         pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
+        cmps = xp.asarray(cmps, dtype=dtype)
         pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 

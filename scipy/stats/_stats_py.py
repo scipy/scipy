@@ -67,7 +67,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy, xp_clip
+from scipy._lib._array_api import array_namespace, is_numpy, xp_clip, _move_axis_to_end
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -4523,13 +4523,6 @@ class PearsonRResult(PearsonRResultBase):
                        'or None.')
             raise ValueError(message)
         return ci
-
-
-def _move_axis_to_end(x, source, xp):
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
 
 
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
