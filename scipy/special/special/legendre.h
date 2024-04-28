@@ -136,12 +136,15 @@ T assoc_legendre_p_diag(int m, int type, T x) {
 
     T res = 1;
 
+    T ls = 1;
+    if (type == 3) {
+        ls = -1;
+    }
+
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        if (type == 2) {
-            res *= -std::sqrt(T(1) - x * x);
-        } else if (type == 3) {
-            res *= std::sqrt(x * x - T(1));
+        res *= -ls * std::sqrt(ls * (T(1) - x * x));
+        if (type == 3) {
             if (std::real(x) < 0) {
                 res *= -1;
             }
@@ -150,11 +153,7 @@ T assoc_legendre_p_diag(int m, int type, T x) {
 
     // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        if (type == 2) {
-            res *= T(2 * j - 1) * T(2 * j + 1) * (T(1) - x * x);
-        } else if (type == 3) {
-            res *= T(2 * j - 1) * T(2 * j + 1) * (x * x - T(1));
-        }
+        res *= T(2 * j - 1) * T(2 * j + 1) * ls * (T(1) - x * x);
     }
 
     if (m < 0) {
@@ -223,6 +222,11 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         return 0;
     }
 
+    T ls = 1;
+    if (type == 3) {
+        ls = -1;
+    }
+
     if (m == 1) {
         if (type == 3) {
             T res = x / std::sqrt(x * x - T(1));
@@ -250,20 +254,10 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
     }
 
     if (m < 0) {
-        T out = x * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
-        if (type == 3) {
-            return -out;
-        }
-
-        return out;
+        return x * ls * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
     }
 
-    T res = -T(4 * (m - 2) * m + 3) * T(m) * x * assoc_legendre_p_diag(m - 2, type, x);
-    if (type == 3) {
-        res *= -1;
-    }
-
-    return res;
+    return -T(4 * (m - 2) * m + 3) * T(m) * ls * x * assoc_legendre_p_diag(m - 2, type, x);
 }
 
 template <typename T>
