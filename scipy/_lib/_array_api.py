@@ -283,13 +283,20 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
-def xp_assert_close(actual, desired, rtol=1e-07, atol=0, check_namespace=True,
+def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
                     check_dtype=True, check_shape=True, err_msg='', xp=None):
     __tracebackhide__ = True  # Hide traceback for py.test
     if xp is None:
         xp = array_namespace(actual)
     desired = _strict_check(actual, desired, xp, check_namespace=check_namespace,
                             check_dtype=check_dtype, check_shape=check_shape)
+    
+    floating = xp.isdtype(desired.dtype, ('real floating', 'complex floating'))
+    if rtol is None and floating:
+        rtol = xp.finfo(desired.dtype).eps**0.5 * 6
+    elif rtol is None:
+        rtol = 1e-7
+
     if is_cupy(xp):
         return xp.testing.assert_allclose(actual, desired, rtol=rtol,
                                           atol=atol, err_msg=err_msg)

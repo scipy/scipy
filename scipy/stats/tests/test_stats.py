@@ -6020,24 +6020,25 @@ def test_normalitytests(xp):
     assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
-    st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
-    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
+    st_normal, st_skew, st_kurt = (3.92371918, xp.asarray(1.98078826), -0.01403734)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, xp.asarray(0.04761502), 0.98880019)
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
     pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
-    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
+    x = np.array((-2, -1, 0, 1, 2, 3.)*4)**2
+    x_xp = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
-    res = stats.skewtest(xp.asarray(x, dtype=xp.float64))
-    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
-    xp_assert_close(res.pvalue, xp.asarray(pv_skew, dtype=xp.float64))
-    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), alternative='less')
-    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
-    xp_assert_close(res.pvalue, xp.asarray(pv_skew_less, dtype=xp.float64))
-    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), alternative='greater')
-    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
-    xp_assert_close(res.pvalue, xp.asarray(pv_skew_greater, dtype=xp.float64))
+    res = stats.skewtest(x_xp)
+    xp_assert_close(res.statistic , st_skew)
+    xp_assert_close(res.pvalue, pv_skew)
+    res = stats.skewtest(x_xp, alternative='less')
+    xp_assert_close(res.statistic , st_skew)
+    xp_assert_close(res.pvalue, pv_skew_less)
+    res = stats.skewtest(x_xp, alternative='greater')
+    xp_assert_close(res.statistic , st_skew)
+    xp_assert_close(res.pvalue, pv_skew_greater)
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
     assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
@@ -6050,8 +6051,9 @@ def test_normalitytests(xp):
     # see gh-13549.
     # skew parameter is 1 > 0
     a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
-    pval = stats.skewtest(xp.asarray(a1), alternative='greater').pvalue
-    xp_assert_close(pval, xp.asarray(0.0, dtype=xp.float64), atol=9e-6)
+    a1_xp = xp.asarray(a1)
+    pval = stats.skewtest(a1_xp, alternative='greater').pvalue
+    xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
     # excess kurtosis of laplace is 3 > 0
     a2 = stats.laplace.rvs(size=10000, random_state=123)
     pval = stats.kurtosistest(a2, alternative='greater').pvalue
@@ -6060,9 +6062,9 @@ def test_normalitytests(xp):
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
                               (st_normal, pv_normal))
-    res = stats.skewtest(xp.asarray(x, dtype=xp.float64), axis=None)
-    xp_assert_close(res.statistic , xp.asarray(st_skew, dtype=xp.float64))
-    xp_assert_close(res.pvalue, xp.asarray(pv_skew, dtype=xp.float64))
+    res = stats.skewtest(x_xp, axis=None)
+    xp_assert_close(res.statistic , st_skew)
+    xp_assert_close(res.pvalue, pv_skew)
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
                               (st_kurt, pv_kurt))
 
