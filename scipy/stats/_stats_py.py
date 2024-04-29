@@ -8510,7 +8510,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError(f"Unexpected alternative: {alternative}")
+        raise ValueError(f"Unexpected value {alternative=}")
 
     N = len(x)
     x = np.sort(x)
