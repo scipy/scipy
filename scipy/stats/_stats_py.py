@@ -1622,7 +1622,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
-    y = xp.where(y == 0, 1, y)
+    y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
     Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
     Z_np = np.asarray(Z)
