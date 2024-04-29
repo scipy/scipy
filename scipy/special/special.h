@@ -9,17 +9,17 @@
 namespace {
 
 template <typename T>
-T lpn(long n, T z) {
+T lpn(long long n, T z) {
     return special::legendre_p(n, z);
 }
 
 template <typename T>
-void lpn(long n, T z, T &res, T &res_jac) {
+void lpn(long long n, T z, T &res, T &res_jac) {
     special::legendre_p(n, z, res, res_jac);
 }
 
 template <typename T>
-void lpn(long n, T z, T &res, T &res_jac, T &res_hess) {
+void lpn(long long n, T z, T &res, T &res_jac, T &res_hess) {
     special::legendre_p(n, z, res, res_jac, res_hess);
 }
 

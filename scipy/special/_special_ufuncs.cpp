@@ -76,6 +76,15 @@ using func_ld_d_t = double (*)(long, double);
 using func_lF_F_t = complex<float> (*)(long, complex<float>);
 using func_lD_D_t = complex<double> (*)(long, complex<double>);
 
+using func_lf_f_t_ = float (*)(long long, float);
+using func_ld_d_t_ = double (*)(long long, double);
+
+using func_lf_ff_t_ = void (*)(long long, float, float &, float &);
+using func_ld_dd_t_ = void (*)(long long, double, double &, double &);
+
+using func_lf_fff_t_ = void (*)(long long, float, float &, float &, float &);
+using func_ld_ddd_t_ = void (*)(long long, double, double &, double &, double &);
+
 using func_ff_ff_t = void (*)(float, float, float &, float &);
 using func_dd_dd_t = void (*)(double, double, double &, double &);
 using func_lf_ff_t = void (*)(long, float, float &, float &);
@@ -518,9 +527,9 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
     PyObject *lpn = Py_BuildValue(
-        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_lf_f_t>(::lpn), static_cast<func_ld_d_t>(::lpn)}, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_lf_ff_t>(::lpn), static_cast<func_ld_dd_t>(::lpn)}, 2, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_lf_fff_t>(::lpn), static_cast<func_ld_ddd_t>(::lpn)}, 3, "lpn", nullptr)
+        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_lf_f_t_>(::lpn), static_cast<func_ld_d_t_>(::lpn)}, "lpn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_lf_ff_t_>(::lpn), static_cast<func_ld_dd_t_>(::lpn)}, 2, "lpn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_lf_fff_t_>(::lpn), static_cast<func_ld_ddd_t_>(::lpn)}, 3, "lpn", nullptr)
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
