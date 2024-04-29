@@ -1884,21 +1884,29 @@ def clpmn_legacy(m, n, z, type=3):
     if (not np.issubdtype(z.dtype, np.inexact)):
         z = z.astype(np.complex128)
 
-    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
-    pd = np.empty_like(p)
-    if (z.ndim == 0):
-        _clpmn_legacy(z, type, m_signbit, out = (p, pd))
+    p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
+    if (m >= 0):
+        p = p[:(m + 1)]
+        pd = pd[:(m + 1)]
     else:
-        _clpmn_legacy(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-            np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
+        p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
+        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
+
+#    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
+ #   pd = np.empty_like(p)
+  #  if (z.ndim == 0):
+   #     _clpmn_legacy(z, type, m_signbit, out = (p, pd))
+    #else:
+     #   _clpmn_legacy(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
+      #      np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
 
     return p, pd
 
 clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
 
 @clpmn_all.resolve_ufunc
-def _(ufuncs, n_diff = 0):
-    return ufuncs[n_diff]
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
 
 @clpmn_all.resolve_out_shapes
 def _(m, n, shapes, nout):

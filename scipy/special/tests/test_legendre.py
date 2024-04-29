@@ -245,7 +245,7 @@ class TestLegendreFunctions:
         z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
 
 #        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
-        p, p_jac = special.clpmn_all(4, 4, type, z, n_diff = 1)
+        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
@@ -316,7 +316,7 @@ class TestLegendreFunctions:
         type = 2
 
 #        p, p_jac = special.clpmn(m_max, n_max, z, type = type, legacy = False)
-        p, p_jac = special.clpmn_all(m_max, n_max, type, z, n_diff = 1)
+        p, p_jac = special.clpmn_all(m_max, n_max, type, z, diff_n = 1)
 
         n = np.arange(n_max + 1)
 
