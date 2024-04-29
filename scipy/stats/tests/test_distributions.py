@@ -9660,13 +9660,10 @@ def test_irwinhall():
     assert_allclose(cdf_ih1, cdf_unif) # should be identical to uniform
 
     ih2 = stats.irwinhall(2)
-    pdf_ih2 = ih2.pdf(1)
-    assert_allclose(pdf_ih2, 1) # should be 1 at x=1
-
-    npts = 100
+    npts = 101
     pts = np.linspace(0, 2, npts)
     expected = np.linspace(0, 2, npts)
-    expected[npts//2:] = 2 - expected[npts//2:]
+    expected[(npts+1)//2:] = 2 - expected[(npts+1)//2:]
     pdf_ih2 = ih2.pdf(pts)
     assert_allclose(pdf_ih2, expected) # should be a triangle
 
