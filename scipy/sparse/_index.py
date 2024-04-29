@@ -47,10 +47,9 @@ class IndexMixin:
                 return res
             if res.shape == () and new_shape != ():
                 if len(new_shape) == 1:
-                    res = [res]
+                    return self.__class__([res], shape=new_shape, dtype=self.dtype)
                 if len(new_shape) == 2:
-                    res = [[res]]
-                return self.__class__(res, shape=new_shape, dtype=self.dtype)
+                    return self.__class__([[res]], shape=new_shape, dtype=self.dtype)
             return res.reshape(new_shape)
 
         # 2D array
