@@ -4,7 +4,7 @@ import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
 def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
-                  fatol=None, frtol=0, maxiter=2048, callback=None):
+                  fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar
@@ -33,7 +33,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
         See Notes for details.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
-        Default is 2048.
+        The default is the maximum possible number of bisections within
+        the (normal) floating point numbers of the relevant dtype.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -133,6 +134,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
     xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
+    maxiter = 2**np.finfo(dtype).nexp if maxiter is None else maxiter
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
                        xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
                        nit=nit, nfev=nfev, status=status)
@@ -246,9 +248,10 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
             or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError('Tolerances must be non-negative scalars.')
 
-    maxiter_int = int(maxiter)
-    if maxiter != maxiter_int or maxiter < 0:
-        raise ValueError('`maxiter` must be a non-negative integer.')
+    if maxiter is not None:
+        maxiter_int = int(maxiter)
+        if maxiter != maxiter_int or maxiter < 0:
+            raise ValueError('`maxiter` must be a non-negative integer.')
 
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
