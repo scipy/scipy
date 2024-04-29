@@ -144,6 +144,15 @@ fortranobject_dep = declare_dependency(
   compile_args: _f2py_c_args,
 )
 
+f2py = find_program('f2py')
+# Note: cannot handle .pyf.src or targets with #include's (due to no
+#       `depend_files` - see feature request at meson#8295)
+f2py_gen = generator(generate_f2pymod,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+)
+
+
 # TODO: 64-bit BLAS and LAPACK
 #
 # Note that this works as long as BLAS and LAPACK are detected properly via
@@ -252,6 +261,7 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
+version_utils = find_program('../tools/version_utils.py')
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -259,7 +269,7 @@ generate_version = custom_target(
   build_by_default: true,
   output: 'version.py',
   input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
+  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
   install_dir: scipy_dir,
   install_tag: 'python-runtime',
 )
