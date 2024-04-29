@@ -15,7 +15,7 @@
 #   was added to the "See Also" section of each method/property. These links
 #   can be removed, when SciPy updates ``pydata-sphinx-theme`` to >= 0.13.3
 #   (currently 0.9). Consult Issue 18512 and PR 16660 for further details.
-#
+
 
 # Provides typing union operator ``|`` in Python 3.9:
 from __future__ import annotations
@@ -30,7 +30,7 @@ import scipy.fft as fft_lib
 from scipy.signal import detrend
 from scipy.signal.windows import get_window
 
-__all__ = ['ShortTimeFFT']
+__all__ = ['closest_STFT_dual_window', 'ShortTimeFFT']
 
 
 #: Allowed values for parameter `padding` of method `ShortTimeFFT.stft()`:
@@ -44,7 +44,7 @@ def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
     """Calculate canonical dual window for 1d window `win` and a time step
     of `hop` samples.
 
-    A ``ValueError`` is raised, if the inversion fails.
+    A ``ValueError`` is raised if the inversion fails.
 
     This is a separate function not a method, since it is also used in the
     class method ``ShortTimeFFT.from_dual()``.
@@ -74,6 +74,154 @@ def _calc_dual_canonical_window(win: np.ndarray, hop: int) -> np.ndarray:
     return win / DD
 
 
+def closest_STFT_dual_window(win: np.ndarray, hop: int, desired_dual: np.ndarray, *,
+                             scaled: bool = True) \
+        -> tuple[np.ndarray, float | complex]:
+    r"""Calculate the STFT dual window of a given window closest to a desired dual
+        window.
+
+        For a given short-time Fourier transform window `win` incremented by `hop`
+        samples, the dual window is calculated, which minimizes
+        `abs(dual_win - desired_dual)**2` when `scaled` is ``False``. For `scaled`
+        set to ``True``, `abs(alpha*dual_win - desired_dual)**2` is minimized with
+        `alpha` being the optimal scaling factor.
+        A ``ValueError`` is raised if no valid dual window can be determined.
+
+
+        Parameters
+        ----------
+        win : np.ndarray
+            The window must be a real- or complex-valued 1d array.
+        hop : int
+            The increment in samples by which the window is shifted in each step.
+        desired_dual: np.ndarray
+            The desired dual window must be a 1d array of the same length as `win`.
+        scaled : bool
+            If set (default), the closest scaled version instead of closest dual window
+            is calculated.
+
+        Returns
+        -------
+        dual_win : np.ndarray
+            A dual window of ``alpha*win`` (with hop interval `hop`), which is closest
+            to `desired_dual`. Note that the dual window of `win` is `dual_win/alpha`
+            and that the dual window of `dual_win` is `alpha*win`.
+            `dual_win` has the same shape as `win` and `desired_win`.
+        alpha : float | complex
+            Scale factor for `win`. It is always one if `scaled` is set to ``False``.
+
+        Notes
+        -----
+        For a given window and `hop` interval, all possible dual windows are expressed
+        by the `hop` linear conditions of Eq. :math:numref:`eq_STFT_AllDualWinsCond` in
+        the :ref:`tutorial_stft` section of the :ref:`user_guide`. Hence, decreasing
+        `hop`, increases the number of degrees of freedom of the set of all possible
+        dual windows, improving the ability to better approximate a `desired_dual`.
+
+        This function can also be used to determine windows which fulfill the
+        so-called "Constant OverLap Add" (COLA) condition [1]_. It states that summing
+        all touching window values at any given sample position results in the same
+        constant :math:`\alpha`. Eq. :math:numref:`eq_STFT_AllDualWinsCond0` shows that
+        this is equal to having a rectangular dual window, i.e., the dual being
+        ``alpha*np.ones(m)``.
+
+        Some examples of windows that satisfy COLA (taken from [2]_):
+
+        - Rectangular window at overlap of 0, 1/2, 2/3, 3/4, ...
+        - Bartlett window at overlap of 1/2, 3/4, 5/6, ...
+        - Hann window at 1/2, 2/3, 3/4, ...
+        - Any Blackman family window at 2/3 overlap
+        - Any window with ``hop=1``
+
+        References
+        ----------
+        .. [1] Julius O. Smith III, "Spectral Audio Signal Processing",
+               online book, 2011, https://www.dsprelated.com/freebooks/sasp/
+        .. [2] G. Heinzel, A. Ruediger and R. Schilling, "Spectrum and spectral density
+               estimation by the Discrete Fourier transform (DFT), including a
+               comprehensive list of window functions and some new at-top windows",
+               2002, http://hdl.handle.net/11858/00-001M-0000-0013-557A-5
+
+        Examples
+        --------
+        Let's show that a Bartlett window with 75% overlap fulfills the COLA condition:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.signal import closest_STFT_dual_window, windows
+        ...
+        >>> m = 24
+        >>> win, w_rect = windows.bartlett(m, sym=False), np.ones(m)
+        >>> d_win, alpha = closest_STFT_dual_window(win, m//4, w_rect, scaled=True)
+        >>> print(f"COLA: {np.allclose(d_win, w_rect*alpha)}, {alpha = :g}")
+        COLA: True, alpha = 0.5
+
+        We can also determine for which hop intervals the COLA condition is fulfilled:
+
+        >>> hops, deviations, alphas = np.arange(1, 16), [], []
+        >>> for h_ in hops:
+        ...     w_cola, alpha = closest_STFT_dual_window(w_rect, h_, win, scaled=True)
+        ...     deviations.append(np.std(w_cola - win*alpha))
+        ...     alphas.append(alpha)
+        ...
+        >>> fg0, (ax0, ax1) = plt.subplots(2, 1, sharex='all', tight_layout=True)
+        >>> ax0.set_title(f"COLA Window closest to a {m}-Sample Bartlett Window")
+        >>> ax0.set(ylabel="Standard Dev.", xlim=(0, hops[-1]-.5))
+        >>> ax1.set(xlabel="Hop Interval", ylabel=r"Scaling factor $\alpha$",
+        ...         ylim=(0, 1.25))
+        >>> ax0.plot(hops, deviations, 'C0.-', label="Std. Dev.")
+        >>> ax1.plot(hops, alphas, 'C1.-', label=r"$\alpha$")
+        >>> for ax_ in (ax0, ax1):
+        ...     ax_.grid()
+        >>> plt.show()
+
+        The lower plot shows the calculated scaling factor :math:`\alpha` for different
+        `hops` whereas the upper displays the standard deviation between the scaled
+        Bartlett window and the calculated window. Since for `hops` 1 to 4 as well as
+        for 6 and 12 the standard deviation is practically zero, the COLA condition is
+        fulfilled for those.
+
+        See Also
+        --------
+        ShortTimeFFT: Short-time Fourier transform which is able to utilize a dual
+                      window for calculating the inverse.
+        ShortTimeFFT.from_win_equals_dual: Create instance where the window and its
+                                           dual are equal.
+
+
+    """
+    if not (win.ndim == 1 and win.shape == desired_dual.shape):
+        raise ValueError("Parameters `win` and `desired_dual` are not 1d arrays of " +
+                         f"equal length ({win.shape=}, {desired_dual.shape=})!")
+    if not all(np.isfinite(win)):
+        raise ValueError("Parameter win must have finite entries!")
+    if not all(np.isfinite(desired_dual)):
+        raise ValueError("Parameter desired_dual must have finite entries!")
+    if not (1 <= hop <= len(win) and isinstance(hop, (int, np.integer))):
+        raise ValueError(f"Parameter {hop=} is not an integer between 1 and " +
+                         f"{len(win)=}!")
+
+    w_d = _calc_dual_canonical_window(win, hop)
+    wdd = win.conjugate() * desired_dual
+    q_d = wdd.copy()
+    for k_ in range(hop, len(win), hop):
+        q_d[k_:] += wdd[:-k_]
+        q_d[:-k_] += wdd[k_:]
+    q_d = w_d * q_d
+
+    if not scaled:
+        return w_d + desired_dual - q_d, 1.
+
+    numerator = q_d.conjugate().T @ w_d
+    denominator = q_d.T.real @ q_d.real + q_d.T.imag @ q_d.imag  # always >= 0
+    if not (abs(numerator) > 0 and denominator > np.finfo(w_d.dtype).resolution):
+        raise ValueError(
+            "Unable to calculate scaled closest dual window due to numerically " +
+            "unstable scaling factor! Try setting parameter `scaled` to False.")
+    alpha = numerator / denominator
+    return w_d + alpha * (desired_dual - q_d), alpha
+
+
 # noinspection PyShadowingNames
 class ShortTimeFFT:
     r"""Provide a parametrized discrete Short-time Fourier transform (stft)
@@ -98,6 +246,11 @@ class ShortTimeFFT:
     p * `delta_t` and add the result to previous shifted results to reconstruct
     the signal. If only the dual window is known and the STFT is invertible,
     `from_dual` can be used to instantiate this class.
+
+    By default, the so-called canonical dual window is used. It is the window with
+    minimal energy among all possible dual windows. `closest_STFT_dual_window` and
+    `from_win_equals_dual` provide means for utilizing alterantive dual windows.
+    Note that `win` is also always a dual window of `dual_win`.
 
     Due to the convention of time t = 0 being at the first sample of the input
     signal, the STFT values typically have negative time slots. Hence,
@@ -131,14 +284,32 @@ class ShortTimeFFT:
         needed.
     scale_to : 'magnitude', 'psd' | None
         If not ``None`` (default) the window function is scaled, so each STFT
-        column represents  either a 'magnitude' or a power spectral density
+        column represents either a 'magnitude' or a power spectral density
         ('psd') spectrum. This parameter sets the property `scaling` to the
         same value. See method `scale_to` for details.
     phase_shift : int | None
         If set, add a linear phase `phase_shift` / `mfft` * `f` to each
-        frequency `f`. The default value 0 ensures that there is no phase shift
+        frequency `f`. The default value of 0 ensures that there is no phase shift
         on the zeroth slice (in which t=0 is centered). See property
         `phase_shift` for more details.
+
+    Notes
+    -----
+    A typical STFT application is the creation of various types of time-frequency
+    plots, often subsumed under the term "spectrogram". Note this term is also
+    used to refer to the absolute square of a STFT [11]_ as distinction of
+    representations, as done in `~ShortTimeFFT.spectrogram`.
+
+    The STFT can also be used for filtering and filter banks as discussed in [12]_.
+
+
+    References
+    ----------
+    .. [11] Karlheinz Gröchenig: "Foundations of Time-Frequency Analysis",
+           Birkhäuser Boston 2001, `10.1007/978-1-4612-0003-1`
+    .. [12] Julius O. Smith III, "Spectral Audio Signal Processing", online book, 2011,
+           https://www.dsprelated.com/freebooks/sasp/
+
 
     Examples
     --------
@@ -167,7 +338,7 @@ class ShortTimeFFT:
     In the plot, the time extent of the signal `x` is marked by vertical dashed
     lines. Note that the SFT produces values outside the time range of `x`. The
     shaded areas on the left and the right indicate border effects caused
-    by  the window slices in that area not fully being inside time range of
+    by the window slices in that area not fully being inside time range of
     `x`:
 
     >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
@@ -256,7 +427,7 @@ class ShortTimeFFT:
             raise ValueError(f"Parameter win must be 1d, but {win.shape=}!")
         if not all(np.isfinite(win)):
             raise ValueError("Parameter win must have finite entries!")
-        if not (hop >= 1 and isinstance(hop, int)):
+        if not (hop >= 1 and isinstance(hop, (int, np.integer))):
             raise ValueError(f"Parameter {hop=} is not an integer >= 1!")
         self._win, self._hop, self.fs = win, hop, fs
 
@@ -431,15 +602,108 @@ class ShortTimeFFT:
         return cls(win, hop=nperseg-noverlap, fs=fs, fft_mode=fft_mode,
                    mfft=mfft, scale_to=scale_to, phase_shift=phase_shift)
 
+    @classmethod
+    def from_win_equals_dual(
+            cls, desired_win: np.ndarray, hop: int, fs: float, *,
+            fft_mode: FFT_MODE_TYPE = 'onesided', mfft: int | None = None,
+            scale_to: Literal['magnitude', 'psd'] | None = None,
+            phase_shift: int | None = 0):
+        r"""Create instance where the window and its dual are equal.
+
+        An instance is created were window and dual window are equal as well as being
+        closest to the parameter `desired_win` in the least-squares sense, i.e.,
+        minimizing `abs(win-desired_win)**2`. Hence, `win` has the same length as
+        `desired_win`.
+
+        To be able to calculate a valid window, `desired_win` needs to have a valid
+        dual STFT window for the given `hop` interval.
+        If this is not the case, a ``ValueError`` is raised.
+
+        All other parameters have the identical meaning as in the initializer. Note
+        that the parameter `scale_to` is applied after the window is calculated.
+        Hence, if `scale_to` is not ``None``, `win` and `dual_win` are only equal up to
+        a scaling factor.
+
+        The set of all possible windows with identical dual is defined by the set of
+        linear constraints of Eq. :math:numref:`eq_STFT_EqualWindDualCond` in the
+        :ref:`tutorial_stft` section of the :ref:`user_guide`. There, it is also
+        explained why the STFT is a unitary mapping if the window and its dual are
+        identical. Consult the `~ShortTimeFFT.spectrogram` method docstring for an
+        example illustrating that a unitary STFT preserves the scalar product value of
+        two signals.
+
+        Examples
+        --------
+        The following example checks that window and dual window are indeed equal:
+
+        >>> import matplotlib.pyplot as plt
+        >>> import numpy as np
+        >>> from scipy.signal import ShortTimeFFT, windows
+        ...
+        >>> m, hop, std = 32, 8, 5
+        >>> desired_win = windows.gaussian(m, std, sym=True)
+        >>> SFT = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1/m,
+        ...                                         scale_to=None)
+        >>> print("SFT.win == SFT.dual_win:", np.allclose(SFT.dual_win, SFT.win))
+        SFT.win == SFT.dual_win: True
+
+        Let's plot the window and its magnitude spectrum:
+
+        >>> fg1, (ax11, ax12) = plt.subplots(1, 2, tight_layout=True, figsize=(8, 4))
+        >>> _ = fg1.suptitle(f"Unitary Window of {m} Sample Gaussian with " +
+        ...                  rf"{hop=}, $\sigma={std}$")  #  `_ = ` needed for doctest
+        >>> ax11.set(ylabel="Amplitude", xlabel="Samples", xlim=(0, m))
+        >>> ax12.set(xlabel="Frequency Bins", ylabel="Magnitude Spectrum",
+        ...          xlim=(0, 15), ylim=(1e-5, 1.5))
+        >>> for x_, n_ in zip((desired_win, SFT.win), ('Desired', 'Unitary')):
+        ...     ax11.plot(x_, '.-', alpha=0.5, label=n_)
+        ...     X_ = np.fft.rfft(x_) / np.sum(abs(x_))
+        ...     ax12.semilogy(abs(X_), '.-', alpha=0.5, label=n_)
+        >>> for ax_ in (ax11, ax12):
+        ...     ax_.grid(True)
+        ...     ax_.legend()
+        >>> plt.show()
+
+
+        See Also
+        --------
+        closest_STFT_dual_window: Calculate the STFT dual window of a given window
+                                  closest to a desired dual window.
+        ShortTimeFFT: Class this property belongs to.
+        """
+        if not (desired_win.ndim == 1 and desired_win.size > 0):
+            raise ValueError(f"Parameter desired_win is not 1d, but "
+                             f"{desired_win.shape=}!")
+        if issubclass(desired_win.dtype.type, np.integer):
+            raise ValueError("Parameter desired_win cannot be of integer type, " +
+                             f"but {desired_win.dtype=} => cast to float | complex ")
+        if not all(np.isfinite(desired_win)):
+            raise ValueError("Parameter desired_win must have finite entries!")
+        if not (1 <= hop <= len(desired_win) and isinstance(hop, (int, np.integer))):
+            raise ValueError(f"Parameter {hop=} is not an integer between 1 and " +
+                             f"{len(desired_win)=}!")
+
+        win = desired_win.copy()
+        relative_resolution = np.finfo(win.dtype).resolution * max(win)
+        for m in range(hop):
+            a = np.linalg.norm(desired_win[m::hop])
+            if not (a > relative_resolution):
+                raise ValueError("Parameter desired_win does not have valid STFT dual "
+                                 f"window for {hop=}!")
+            win[m::hop] /= a
+
+        return cls(win=win, hop=hop, fs=fs, fft_mode=fft_mode, mfft=mfft, dual_win=win,
+                   scale_to=scale_to,  phase_shift=phase_shift)
+
     @property
     def win(self) -> np.ndarray:
         """Window function as real- or complex-valued 1d array.
 
-        This attribute is read only, since `dual_win` depends on it.
+        This attribute is read-only, since `dual_win` depends on it.
 
         See Also
         --------
-        dual_win: Canonical dual window.
+        dual_win: Dual window.
         m_num: Number of samples in window `win`.
         m_num_mid: Center index of window `win`.
         mfft: Length of input for the FFT used - may be larger than `m_num`.
@@ -702,7 +966,7 @@ class ShortTimeFFT:
         if v is None:
             self._phase_shift = v
             return
-        if not isinstance(v, int):
+        if not isinstance(v, (int, np.integer)):
             raise ValueError(f"phase_shift={v} has the unit samples. Hence " +
                              "it needs to be an int or it may be None!")
         if not (-self.mfft < v < self.mfft):
@@ -862,13 +1126,25 @@ class ShortTimeFFT:
         r"""Calculate spectrogram or cross-spectrogram.
 
         The spectrogram is the absolute square of the STFT, i.e., it is
-        ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
+        ``abs(S[q,p])**2`` for given ``S[q,p]`` and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
         as ``Sx[q,p] * np.conj(Sy[q,p])`` and is complex-valued.
         This is a convenience function for calling `~ShortTimeFFT.stft` /
         `stft_detrend`, hence all parameters are discussed there. If `y` is not
         ``None`` it needs to have the same shape as `x`.
+
+        The cross-spectrogram may be interpreted as the time-frequency analogon of the
+        cross-spectral density (consult `csd`). The absolute square `abs(Sxy)**2` of a
+        cross-spectrogram `Sxy` divided by the spectrograms `Sxx` and `Syy` can be
+        interpreted as a coherence spectrogram `Cxy := abs(Sxy)**2 / (Sxx*Syy)`, which
+        is the time-frequency analogon to `~coherence`.
+
+        If the STFT is parametrized to be a unitary transform, i.e., utilitzing
+        `~from_win_equals_dual` with `scale_to` being ``None``, then the value of
+        the scalar product is preserved. This is illustrated in the second example
+        below by utilizing a cross-spectrogram.
+
 
         Examples
         --------
@@ -878,7 +1154,7 @@ class ShortTimeFFT:
 
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-        >>> from scipy.signal import square, ShortTimeFFT
+        >>> from scipy.signal import square, ShortTimeFFT, windows
         >>> from scipy.signal.windows import gaussian
         ...
         >>> T_x, N = 1 / 20, 1000  # 20 Hz sampling rate for 50 s signal
@@ -898,7 +1174,7 @@ class ShortTimeFFT:
 
         The plot's colormap is logarithmically scaled as the power spectral
         density is in dB. The time extent of the signal `x` is marked by
-        vertical dashed lines and the shaded areas mark the presence of border
+        vertical dashed lines, and the shaded areas mark the presence of border
         effects:
 
         >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
@@ -931,11 +1207,33 @@ class ShortTimeFFT:
         which are reflected at the Nyquist frequency of 10 Hz. This aliasing
         is also the main source of the noise artifacts in the plot.
 
+        Two signals `x` and `y` are called orthogonal if their scalar product is zero,
+        i.e., if ``sum(x*conj(y)) == 0``. Unitary mappings preserve this property,
+        which can be illustrated by utilizing an STFT:
+
+        >>> m, hop = 12, 7
+        >>> w_des = windows.hamming(m, sym=True)  # desired window
+        >>> # STFT is unitary if its window and its dual are identical:
+        >>> SFT_u = ShortTimeFFT.from_win_equals_dual(w_des, hop, fs=1, scale_to=None,
+        ...                                           fft_mode='twosided')
+        ...
+        >>> t = np.linspace(0, 2*np.pi, 30, endpoint=False)
+        >>> x1, x2 = np.cos(t), np.sin(t) # orthogonal signals
+        >>> sum(x1 * np.conj(x2))  # scalar product is zero (up to numerical accuracy)
+        7.494005416219807e-16  # may vary
+        >>> Sx12 = SFT_u.spectrogram(x1, x2)  # cross-spectrum
+        >>> np.sum(Sx12)  # STFT scalar product is also zero (up to numerical accuracy)
+        (-7.105427357601002e-15+0j)  # may vary
+
+        Note that the summation needs to be carried out over the complete
+        time-frequency plane. Hence, a `onesided_fft` cannot be used.
+
 
         See Also
         --------
         :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
         stft_detrend: STFT with a trend subtracted from each segment.
+        from_win_equals_dual: Create Instance, where the STFT is a unitary transform.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
@@ -949,12 +1247,15 @@ class ShortTimeFFT:
 
     @property
     def dual_win(self) -> np.ndarray:
-        """Canonical dual window.
+        """Dual window (canonical dual window by default).
 
         A STFT can be interpreted as the input signal being expressed as a
-        weighted sum of modulated and time-shifted dual windows. Note that for
-        a given window there exist many dual windows. The canonical window is
-        the one with the minimal energy (i.e., :math:`L_2` norm).
+        weighted sum of modulated and time-shifted dual windows. If no dual window is
+        given on instantiation, the canonical dual window, i.e., the window with the
+        minimal energy (i.e., minimal :math:`L_2` norm) is calculated. Alternative
+        means for determining dual windows are provided by `closest_STFT_dual_window`
+        and the `from_win_equals_dual` class-method. Note that `win` is also always a
+        dual window of `dual_win`.
 
         `dual_win` has same length as `win`, namely `m_num` samples.
 
@@ -963,9 +1264,10 @@ class ShortTimeFFT:
 
         See Also
         --------
-        dual_win: Canonical dual window.
-        m_num: Number of samples in window `win`.
+        m_num: Number of samples in window `win` and `dual_win`.
         win: Window function as real- or complex-valued 1d array.
+        from_win_equals_dual: Create instance where `win` and `dual_win` are equal.
+        closest_STFT_dual_window: Calculate dual window closest to a desired window.
         ShortTimeFFT: Class this property belongs to.
         """
         if self._dual_win is None:
@@ -982,7 +1284,7 @@ class ShortTimeFFT:
         --------
         :meth:`~ShortTimeFFT.istft`: Inverse short-time Fourier transform.
         m_num: Number of samples in window `win` and `dual_win`.
-        dual_win: Canonical dual window.
+        dual_win: Dual window.
         win: Window for STFT.
         ShortTimeFFT: Class this property belongs to.
         """
@@ -1445,7 +1747,7 @@ class ShortTimeFFT:
         the same  parametrization. Note that the slices are
         ``delta_t = hop * T`` time units apart.
 
-         Parameters
+        Parameters
         ----------
         n
             Number of sample of the input signal.
