@@ -91,6 +91,7 @@ jobs:
         export OMP_NUM_THREADS=2
         # expand as new modules are added
         python dev.py --no-build test -b all -s cluster -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -s constants -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -s fft -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.special.tests.test_support_alternative_backends -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy._lib.tests.test_array_api
