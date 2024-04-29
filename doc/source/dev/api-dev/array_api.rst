@@ -95,6 +95,7 @@ variable is set:
 
 - `scipy.cluster.hierarchy`
 - `scipy.cluster.vq`
+- `scipy.constants`
 - `scipy.fft`
 
 Support is provided in `scipy.special` for the following functions:
