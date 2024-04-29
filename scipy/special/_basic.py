@@ -1733,11 +1733,13 @@ def _(ufuncs, norm = False, diff_n = 0):
 
 @lpmn_all.resolve_out_shapes
 def _(m, n, shapes, nout):
-#    n = _nonneg_int_or_fail(n, 'n', strict=False)
+    if ((not np.isscalar(m)) or (abs(m) > n)):
+        raise ValueError("m must be <= n.")
 
-    m_abs = abs(m)
+    if ((not np.isscalar(n)) or (n < 0)):
+        raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((2 * m_abs + 1, n + 1,) + shapes[0],)
+    return nout * ((2 * abs(m) + 1, n + 1,) + np.broadcast_shapes(*shapes),)
 
 def lpmn(m, n, z, diff_n = None, legacy = True):
     """Sequence of associated Legendre functions of the first kind.
@@ -1790,10 +1792,7 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 
     if legacy:
         n = _nonneg_int_or_fail(n, 'n', strict=False)
-        if not isscalar(m) or (abs(m) > n):
-            raise ValueError("m must be <= n.")
-        if not isscalar(n) or (n < 0):
-            raise ValueError("n must be a non-negative integer.")
+
         if np.iscomplexobj(z):
             raise ValueError("Argument must be real. Use clpmn instead.")
 

@@ -49,7 +49,7 @@ struct legendre_p_diff_callback {
         res[0] = p;
 
         for (size_t r = 1; r <= N; ++r) {
-            if (j < r) {
+            if (int(r) > j) {
                 res[r] = 0;
             } else {
                 res[r] = (T(2 * j - 1) * (T(r) * p_prev[r - 1] + z * p_prev[r]) - T(j - 1) * p_prev_prev[r]) / T(j);
