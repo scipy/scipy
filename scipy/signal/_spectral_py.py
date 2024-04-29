@@ -807,7 +807,24 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
 
 def check_COLA(window, nperseg, noverlap, tol=1e-10):
-    r"""Check whether the Constant OverLap Add (COLA) constraint is met.
+    r"""Check whether the Constant OverLap Add (COLA) constraint is met
+        (leagcy function).
+
+    .. legacy:: function
+
+        The COLA constraint is equivalent of having a constant dual window, i.e.,
+        ``all(ShortTimeFFT.dual_win == ShortTimeFFT.dual_win[0])``. Hence,
+        `closest_STFT_dual_window` generalizes this function, as the following
+        example shows:
+
+        >>> import numpy as np
+        >>> from scipy.signal import closest_STFT_dual_window, windows
+        ...
+        >>> win, w_rect, hop = windows.hann(12, sym=False), np.ones(12), 4
+        >>> dual_win, alpha = closest_STFT_dual_window(win, hop, w_rect, scaled=True)
+        >>> np.allclose(dual_win/alpha, w_rect, atol=1e-10, rtol=0)
+        True
+
 
     Parameters
     ----------
@@ -834,8 +851,9 @@ def check_COLA(window, nperseg, noverlap, tol=1e-10):
     See Also
     --------
     check_NOLA: Check whether the Nonzero Overlap Add (NOLA) constraint is met
-    stft: Short Time Fourier Transform
-    istft: Inverse Short Time Fourier Transform
+    ShortTimeFFT: Provide short-time Fourier transform and its inverse
+    stft: Short-time Fourier transform (legacy)
+    istft: Inverse Short-time Fourier transform (legacy)
 
     Notes
     -----
@@ -1771,8 +1789,8 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
                       None: None}
 
     if boundary not in boundary_funcs:
-        raise ValueError("Unknown boundary option '{}', must be one of: {}"
-                         .format(boundary, list(boundary_funcs.keys())))
+        raise ValueError(f"Unknown boundary option '{boundary}', must be one of: " +
+                         f"{list(boundary_funcs.keys())}")
 
     # If x and y are the same object we can save ourselves some computation.
     same_data = y is x
