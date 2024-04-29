@@ -959,13 +959,13 @@ def monte_carlo_test(data, rvs, statistic, *, vectorized=None,
     def less(null_distribution, observed):
         cmps = null_distribution <= observed + gamma
         cmps = xp.asarray(cmps, dtype=dtype)
-        pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed - gamma
         cmps = xp.asarray(cmps, dtype=dtype)
-        pvalues = (xp.sum(cmps, axis=0) + 1) / (n_resamples + 1)  # see [1]
+        pvalues = (xp.sum(cmps, axis=0, dtype=dtype) + 1.) / (n_resamples + 1.)
         return pvalues
 
     def two_sided(null_distribution, observed):

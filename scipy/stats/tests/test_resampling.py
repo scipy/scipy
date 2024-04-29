@@ -737,8 +737,9 @@ def test_vector_valued_statistic_gh17715():
 class TestMonteCarloHypothesisTest:
     atol = 2.5e-2  # for comparing p-value
 
-    def get_rvs(self, rvs_in, rs, xp=np):
-        return lambda *args, **kwds: xp.asarray(rvs_in(*args, random_state=rs, **kwds))
+    def get_rvs(self, rvs_in, rs, dtype=None, xp=np):
+        return lambda *args, **kwds: xp.asarray(rvs_in(*args, random_state=rs, **kwds),
+                                                dtype=dtype)
 
     def get_statistic(self, xp):
         def statistic(x, axis):
@@ -840,13 +841,13 @@ class TestMonteCarloHypothesisTest:
         rng = np.random.default_rng(23492340193)
         x = xp.asarray(rng.standard_normal(size=10))
 
-        xp = array_namespace(x)
+        xp_test = array_namespace(x)
 
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
             statistic.counter += 1
-            return self.get_statistic(xp)(x, axis=axis)
+            return self.get_statistic(xp_test)(x, axis=axis)
         statistic.counter = 0
         statistic.batch_size = 0
 
@@ -875,30 +876,38 @@ class TestMonteCarloHypothesisTest:
 
     @array_api_compatible
     @pytest.mark.parametrize('axis', range(-3, 3))
-    def test_axis(self, axis, xp):
+    def test_axis_dtype(self, axis, xp):
         # test that Nd-array samples are handled correctly for valid values
-        # of the `axis` parameter
+        # of the `axis` parameter; also make sure non-default dtype is maintained
         rng = np.random.default_rng(2389234)
         size = [2, 3, 4]
         size[axis] = 100
+
+        # Determine non-default dtype
+        dtype_default = xp.asarray(1.).dtype
+        dtype_str = 'float32'if ("64" in str(dtype_default)) else 'float64'
+        dtype_np = getattr(np, dtype_str)
+        dtype = getattr(xp, dtype_str)
 
         # ttest_1samp is CPU array-API compatible, but it would be good to
         # include CuPy in this test. We'll perform ttest_1samp with a
         # NumPy array, but all the rest with be done with fully array-API
         # compatible code.
-        x = rng.normal(size=size)
+        x = rng.standard_normal(size=size, dtype=dtype_np)
         expected = stats.ttest_1samp(x, popmean=0., axis=axis)
 
-        x = xp.asarray(x)
+        x = xp.asarray(x, dtype=dtype)
         xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
         statistic = self.get_statistic(xp_test)
-        rvs = self.get_rvs(stats.norm.rvs, rng, xp=xp)
+        rvs = self.get_rvs(stats.norm.rvs, rng, dtype=dtype, xp=xp)
 
         res = monte_carlo_test(x, rvs, statistic, vectorized=True,
                                n_resamples=20000, axis=axis)
 
-        xp_assert_close(res.statistic, xp.asarray(expected.statistic))
-        xp_assert_close(res.pvalue, xp.asarray(expected.pvalue), atol=self.atol)
+        ref_statistic = xp.asarray(expected.statistic, dtype=dtype)
+        ref_pvalue = xp.asarray(expected.pvalue, dtype=dtype)
+        xp_assert_close(res.statistic, ref_statistic)
+        xp_assert_close(res.pvalue, ref_pvalue, atol=self.atol)
 
     @array_api_compatible
     @pytest.mark.parametrize('alternative', ("two-sided", "less", "greater"))
