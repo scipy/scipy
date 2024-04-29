@@ -2130,9 +2130,13 @@ class TestFactorialFunctions:
         _check(special.factorialk(n, 3, exact=exact), exp_nucleus[3])
 
     @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dtype", [
+        None, int, np.int8, np.int16, np.int32, np.int64,
+        np.uint8, np.uint16, np.uint32, np.uint64
+    ])
     @pytest.mark.parametrize("dim", range(0, 5))
-    def test_factorialx_array_dimension(self, dim, exact):
-        n = np.array(5, ndmin=dim)
+    def test_factorialx_array_dimension(self, dim, dtype, exact):
+        n = np.array(5, dtype=dtype, ndmin=dim)
         exp = {1: 120, 2: 15, 3: 10}
         assert_allclose(special.factorial(n, exact=exact),
                         np.array(exp[1], ndmin=dim))
