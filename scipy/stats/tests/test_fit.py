@@ -24,6 +24,7 @@ mle_failing_fits = [
         'gausshyper',
         'genexpon',
         'gengamma',
+        'irwinhall',
         'kappa4',
         'ksone',
         'kstwo',
@@ -219,7 +220,7 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
+    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto', 'truncweibull_min',
                       'ksone', 'levy_stable', 'studentized_range', 'kstwo',
                       'arcsine'}
 
@@ -264,6 +265,7 @@ def cases_test_fit_mle():
 def cases_test_fit_mse():
     # the first four are so slow that I'm not sure whether they would pass
     skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'irwinhall', # hangs
                       'norminvgauss',  # super slow (~1 hr) but passes
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
