@@ -9118,12 +9118,12 @@ class irwinhall_gen(rv_continuous):
     def _rvs(self, n, size=None, random_state=None, *args):
         @_vectorize_rvs_over_shapes
         def _rvs1(n, size=None, random_state=None):
-            if not self._argcheck(n):
-                raise ValueError("n must be a positive integer")
+            if not _isintegral(n):
+                raise ValueError("n must be an integer")
             n = np.floor(n).astype(int)
-            size = () if size is None else size
-            ret = random_state.uniform(size=(n,)+size).sum(axis=0)[()]
-            return ret
+            if size is None:
+                return random_state.uniform(size=(n,)).sum(axis=0).item()
+            return random_state.uniform(size=(n, *size)).sum(axis=0)
         return _rvs1(n, size=size, random_state=random_state)
     
     def _stats(self, n):
