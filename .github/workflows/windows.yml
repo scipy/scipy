@@ -97,7 +97,7 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2 --mode full -- --durations=10 --timeout=60 --fail-slow=5
+          python dev.py test -j2 --mode full -- --durations=0 --durations-min=1.0 --timeout=60 --fail-slow=5.0
 
 
   #############################################################################

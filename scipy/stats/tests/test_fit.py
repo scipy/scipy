@@ -39,8 +39,8 @@ mle_failing_fits = [
 ]
 
 # these pass but are XSLOW (>1s)
-mle_Xslow_fits = ['recipinvgauss', 'geninvgauss', 'vonmises_line', 'exponweib',
-                  'rel_breitwigner', 'betaprime', 'f', 'jf_skew_t', 'crystallball']
+mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
+                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -105,27 +105,18 @@ def cases_test_cont_fit():
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
 @pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
-    if distname in failing_fits[method]:
-        # Skip failing fits unless overridden
-        try:
-            xfail = not int(os.environ['SCIPY_XFAIL'])
-        except Exception:
-            xfail = True
-        if xfail:
-            msg = "Fitting %s doesn't work reliably yet" % distname
-            msg += (" [Set environment variable SCIPY_XFAIL=1 to run this"
-                    " test nevertheless.]")
-            pytest.xfail(msg)
+    run_xfail = int(os.getenv('SCIPY_XFAIL', default=False))
+    run_xslow = int(os.getenv('SCIPY_XSLOW', default=False))
 
-    if distname in xslow_fits[method]:
-        # Skip xslow fits unless SCIPY_XLSOW=1
-        try:
-            xslow = not int(os.environ['SCIPY_XSLOW'])
-        except Exception:
-            xslow = True
-        if xslow:
-            msg = "very slow test; set environment variable SCIPY_XSLOW=1 to run."
-            pytest.skip(msg)
+    if distname in failing_fits[method] and not run_xfail:
+        # The generic `fit` method can't be expected to work perfectly for all
+        # distributions, data, and guesses. Some failures are expected.
+        msg = "Failure expected; set environment variable SCIPY_XFAIL=1 to run."
+        pytest.xfail(msg)
+
+    if distname in xslow_fits[method] and not run_xslow:
+        msg = "Very slow; set environment variable SCIPY_XSLOW=1 to run."
+        pytest.skip(msg)
 
     distfn = getattr(stats, distname)
 
