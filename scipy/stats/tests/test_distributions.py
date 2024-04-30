@@ -7513,6 +7513,19 @@ class TestBurr12:
         res = stats.burr12(c, d).stats('mvsk')
         assert_allclose(res, ref, rtol=1e-14)
 
+    # Reference values were computed with mpmath using mp.dps = 80
+    # and then cast to float.
+    @pytest.mark.parametrize(
+        'p, c, d, ref',
+        [(1e-12, 20, 0.5, 15.848931924611135),
+         (1e-19, 20, 0.5, 79.43282347242815),
+         (1e-12, 0.25, 35, 2.0888618213462466),
+         (1e-80, 0.25, 35, 1360930951.7972188)]
+    )
+    def test_isf_near_zero(self, p, c, d, ref):
+        x = stats.burr12.isf(p, c, d)
+        assert_allclose(x, ref, rtol=1e-14)
+
 
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
