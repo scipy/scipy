@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_equal, assert_almost_equal, assert_allclose
 from scipy.special import boxcox, boxcox1p, inv_boxcox, inv_boxcox1p
+import pytest
 
 
 # There are more tests of boxcox and boxcox1p in test_mpmath.py.
@@ -104,3 +105,21 @@ def test_inv_boxcox1p_underflow():
     y = inv_boxcox1p(x, lam)
     assert_allclose(y, x, rtol=1e-14)
 
+
+@pytest.mark.parametrize(
+    "x, lmb",
+    [[100, 155],
+     [0.01, -155]]
+)
+def test_boxcox_premature_overflow(x, lmb):
+    # test boxcox & inv_boxcox
+    y = boxcox(x, lmb)
+    assert np.isfinite(y)
+    x_inv = inv_boxcox(y, lmb)
+    assert_allclose(x, x_inv)
+
+    # test boxcox1p & inv_boxcox1p
+    y1p = boxcox1p(x-1, lmb)
+    assert np.isfinite(y1p)
+    x1p_inv = inv_boxcox1p(y1p, lmb)
+    assert_allclose(x-1, x1p_inv)

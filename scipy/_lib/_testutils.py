@@ -13,11 +13,12 @@ import sysconfig
 from importlib.util import module_from_spec, spec_from_file_location
 
 import numpy as np
+import scipy
 
 try:
     # Need type: ignore[import-untyped] for mypy >= 1.6
-    import cython  # type: ignore[import]
-    from Cython.Compiler.Version import (  # type: ignore[import]
+    import cython  # type: ignore[import-untyped]
+    from Cython.Compiler.Version import (  # type: ignore[import-untyped]
         version as cython_version,
     )
 except ImportError:
@@ -41,6 +42,9 @@ IS_MUSL = False
 _v = sysconfig.get_config_var('HOST_GNU_TYPE') or ''
 if 'musl' in _v:
     IS_MUSL = True
+
+
+IS_EDITABLE = 'editable' in scipy.__path__[0]
 
 
 class FPUModeChangeWarning(RuntimeWarning):

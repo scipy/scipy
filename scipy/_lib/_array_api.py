@@ -120,9 +120,11 @@ def array_namespace(*arrays):
 
 
 def _asarray(
-    array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False
+    array, dtype=None, order=None, copy=None, *, xp=None, check_finite=False,
+    subok=False
 ):
-    """SciPy-specific replacement for `np.asarray` with `order` and `check_finite`.
+    """SciPy-specific replacement for `np.asarray` with `order`, `check_finite`, and
+    `subok`.
 
     Memory layout parameter `order` is not exposed in the Array API standard.
     `order` is only enforced if the input array implementation
@@ -131,13 +133,18 @@ def _asarray(
     `check_finite` is also not a keyword in the array API standard; included
     here for convenience rather than that having to be a separate function
     call inside SciPy functions.
+    
+    `subok` is included to allow this function to preserve the behaviour of
+    `np.asanyarray` for NumPy based inputs.
     """
     if xp is None:
         xp = array_namespace(array)
     if xp.__name__ in {"numpy", "scipy._lib.array_api_compat.numpy"}:
         # Use NumPy API to support order
         if copy is True:
-            array = np.array(array, order=order, dtype=dtype)
+            array = np.array(array, order=order, dtype=dtype, subok=subok)
+        elif subok:
+            array = np.asanyarray(array, order=order, dtype=dtype)
         else:
             array = np.asarray(array, order=order, dtype=dtype)
 

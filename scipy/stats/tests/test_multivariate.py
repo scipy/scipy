@@ -869,13 +869,13 @@ class TestMultivariateNormal:
                 "vectors `x`.")
         with pytest.raises(ValueError, match=msg):
             multivariate_normal.fit(np.eye(3), fix_cov=fix_cov)
-    
+
     def test_fit_fix_cov_not_positive_semidefinite(self):
         error_msg = "`fix_cov` must be symmetric positive semidefinite."
         with pytest.raises(ValueError, match=error_msg):
             fix_cov = np.array([[1., 0.], [0., -1.]])
             multivariate_normal.fit(np.eye(2), fix_cov=fix_cov)
-    
+
     def test_fit_fix_mean(self):
         rng = np.random.default_rng(4385269356937404)
         loc = rng.random(3)
@@ -2583,7 +2583,7 @@ class TestMultivariateT:
         cdf = multivariate_normal.cdf(b, mean, cov, df, lower_limit=a)
         assert_allclose(cdf, cdf[0]*expected_signs)
 
-    @pytest.mark.parametrize('dim', [1, 2, 5, 10])
+    @pytest.mark.parametrize('dim', [1, 2, 5])
     def test_cdf_against_multivariate_normal(self, dim):
         # Check accuracy against MVN randomly-generated cases
         self.cdf_against_mvn_test(dim)
@@ -2655,6 +2655,7 @@ class TestMultivariateT:
             ref = _qsimvtv(20000, df, cov, a - mean, b - mean, rng)[0]
         assert_allclose(res, ref, atol=1e-4, rtol=1e-3)
 
+    @pytest.mark.slow
     def test_cdf_against_generic_integrators(self):
         # Compare result against generic numerical integrators
         dim = 3

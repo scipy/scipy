@@ -123,7 +123,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import torch  # type: ignore[import]
+        import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
@@ -131,7 +131,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import cupy  # type: ignore[import]
+        import cupy  # type: ignore[import-not-found]
         xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass
@@ -157,6 +157,10 @@ if 'cupy' in xp_available_backends:
     SCIPY_DEVICE = 'cuda'
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
+
+skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
+    reason = ('Test involves masked arrays, object arrays, or other types '
+              'that are not valid input when `SCIPY_ARRAY_API` is used.'))
 
 
 @pytest.fixture

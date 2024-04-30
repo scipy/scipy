@@ -605,7 +605,7 @@ class TestTbtrs:
         elif trans == 'T':
             assert_allclose(a.T @ x, b, rtol=5e-5)
         elif trans == 'C':
-            assert_allclose(a.H @ x, b, rtol=5e-5)
+            assert_allclose(a.T.conjugate() @ x, b, rtol=5e-5)
         else:
             raise ValueError('Invalid trans argument')
 
