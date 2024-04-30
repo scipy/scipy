@@ -6077,12 +6077,13 @@ def test_normalitytests(xp):
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
                               (st_kurt, pv_kurt))
 
-    x = np.arange(10.)
-    x[9] = np.nan
+    x = xp.arange(10.)
+    x[9] = xp.nan
     with np.errstate(invalid="ignore"):
-        assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
+        assert_array_equal(stats.skewtest(x), (xp.nan, xp.nan))
 
     # nan_policy only compatible with NumPy arrays
+    x = np.asarray(x)
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
