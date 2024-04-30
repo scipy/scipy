@@ -220,9 +220,9 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'arcsine'}
+    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto', 
+                      'truncweibull_min', 'ksone', 'levy_stable', 
+                      'studentized_range', 'kstwo', 'arcsine'}
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',

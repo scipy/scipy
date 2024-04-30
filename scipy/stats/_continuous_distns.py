@@ -9038,9 +9038,9 @@ class irwinhall_gen(rv_continuous):
     r"""An Irwin-Hall (Uniform Sum) continuous random variable.
 
     An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_ 
-    [1]_ [2]_ continuous random variable is the sum 
-    of :math:`n` independent standard uniform r.v.'s. 
-    
+    continuous random variable is the sum of :math:`n` independent 
+    standard uniform random variables [1]_ [2]_.
+
     %(before_notes)s
 
     Notes
@@ -9052,7 +9052,7 @@ class irwinhall_gen(rv_continuous):
     Conveniently, the pdf and cdf are the :math:`n`-fold convolution of 
     the ones for the standard uniform distribution, which is also the 
     definition of the cardinal B-splines of degree :math:`n-1` 
-    having knots evenly spaced from :math:`1` to :math:`n` [4]_.
+    having knots evenly spaced from :math:`1` to :math:`n` [4]_ [5]_.
 
     The Bates distribution is simply the Irwin-Hall distribution scaled 
     by :math:`1/n`: ``bates = irwinhall(n, name="bates", scale=1/n)``
@@ -9081,6 +9081,8 @@ class irwinhall_gen(rv_continuous):
             https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf
     .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
             https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html
 
     %(example)s
     """
