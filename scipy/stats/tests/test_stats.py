@@ -6020,8 +6020,17 @@ def test_normalitytests(xp):
     assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
-    st_normal, st_skew, st_kurt = (3.92371918, xp.asarray(1.98078826), -0.01403734)
-    pv_normal, pv_skew, pv_kurt = (0.14059673, xp.asarray(0.04761502), 0.98880019)
+    # library(fBasics)
+    # options(digits=16)
+    # x = c(-2, -1, 0, 1, 2, 3)**2
+    # x = rep(x, times=4)
+    # test_result <- dagoTest(x)
+    # test_result@test$statistic
+    # test_result@test$p.value
+    st_normal, st_skew, st_kurt = (3.92371918, xp.asarray(1.98078826090875881),
+                                   -0.01403734)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, xp.asarray(0.04761502382843208),
+                                   0.98880019)
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
     pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
     x = np.array((-2, -1, 0, 1, 2, 3.)*4)**2

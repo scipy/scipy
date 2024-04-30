@@ -293,7 +293,7 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
     
     floating = xp.isdtype(desired.dtype, ('real floating', 'complex floating'))
     if rtol is None and floating:
-        rtol = xp.finfo(desired.dtype).eps**0.5 * 6
+        rtol = xp.finfo(desired.dtype).eps**0.5 * 4
     elif rtol is None:
         rtol = 1e-7
 
