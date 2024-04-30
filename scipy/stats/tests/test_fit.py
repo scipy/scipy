@@ -38,6 +38,10 @@ mle_failing_fits = [
         'studentized_range',
 ]
 
+# these pass but are XSLOW (>1s)
+mle_Xslow_fits = ['recipinvgauss', 'geninvgauss', 'vonmises_line', 'exponweib',
+                  'rel_breitwigner', 'betaprime', 'f', 'jf_skew_t', 'crystallball']
+
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
 mle_use_floc0 = [
@@ -68,12 +72,16 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
-mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss',
-                'truncexpon', 'vonmises', 'vonmises_line']
+mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                  'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                  'kappa4', 'kstwobign', 'recipinvgauss',
+                  'truncexpon', 'vonmises', 'vonmises_line']
 
-failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+# these pass but are XSLOW (>1s)
+mm_Xslow_fits = ['wrapcauchy']
+
+failing_fits = {"MM": mm_failing_fits + mm_XXslow_fits, "MLE": mle_failing_fits}
+xslow_fits = {"MM": mm_Xslow_fits, "MLE": mle_Xslow_fits}
 fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
@@ -108,6 +116,16 @@ def test_cont_fit(distname, arg, method):
             msg += (" [Set environment variable SCIPY_XFAIL=1 to run this"
                     " test nevertheless.]")
             pytest.xfail(msg)
+
+    if distname in xslow_fits[method]:
+        # Skip xslow fits unless SCIPY_XLSOW=1
+        try:
+            xslow = not int(os.environ['SCIPY_XSLOW'])
+        except Exception:
+            xslow = True
+        if xslow:
+            msg = "very slow test; set environment variable SCIPY_XSLOW=1 to run."
+            pytest.skip(msg)
 
     distfn = getattr(stats, distname)
 
@@ -292,7 +310,7 @@ def cases_test_fit_mse():
     # Please keep this list in alphabetical order...
     xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
                        'dgamma', 'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t'
+                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
                        'johnsonsb', 'kappa4', 'loguniform', 'mielke',
                        'nakagami', 'ncf', 'nchypergeom_fisher',
                        'nchypergeom_wallenius', 'nct', 'ncx2',

@@ -8429,6 +8429,7 @@ class TestMGCStat:
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
+    @pytest.mark.fail_slow(10)  # all other tests are XSLOW; we need at least one to run
     @pytest.mark.slow
     def test_pvalue_literature(self):
         np.random.seed(12345678)

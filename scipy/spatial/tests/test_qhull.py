@@ -345,6 +345,8 @@ class TestUtilities:
         self._check_barycentric_transforms(tri)
 
     @pytest.mark.slow
+    @pytest.mark.fail_slow(10)
+    # OK per https://github.com/scipy/scipy/pull/20487#discussion_r1572684869
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 
