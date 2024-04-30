@@ -99,16 +99,11 @@ class IndexMixin:
                     res = self._get_arrayXarray(row, col)
 
         # package the result and return
-        if not isinstance(self, sparray):
-            return res
-        if not hasattr(self, '_get_int') and len(new_shape) != 2:
-            return res.tocoo().reshape(new_shape)
-        # avoid reshaping a numpy array
-        if res.shape != new_shape:
-            if not issparse(res):
-                res = res.reshape(new_shape)
-                return self.__class__(res, shape=new_shape, dtype=self.dtype)
-            return res.reshape(new_shape)
+        if isinstance(self, sparray):
+            if not hasattr(self, '_get_int') and len(new_shape) != 2:
+                return res.tocoo().reshape(new_shape)
+            if res.shape != new_shape:
+                return res.reshape(new_shape)
         return res
 
     def __setitem__(self, key, x):
@@ -237,7 +232,7 @@ class IndexMixin:
                 idx = int(idx + N if idx < 0 else idx)
                 index.append(idx)
                 index_ndim += 1
-            elif (ix := self._compatible_boolean_index(idx)) is not None:
+            elif (ix := _compatible_boolean_index(idx, self.ndim)) is not None:
                 tmp_ndim = index_ndim + ix.ndim
                 mid_shape = self._shape[index_ndim:tmp_ndim]
                 if ix.shape != mid_shape:
@@ -285,27 +280,6 @@ class IndexMixin:
             ndim = len(idx_shape)
             raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
         return tuple(index), tuple(idx_shape)
-
-    def _compatible_boolean_index(self, idx):
-        """Check for boolean array or array-like. peek before asarray for array-like"""
-        # assume already an array if attr ndim exists: skip to bottom
-        if not hasattr(idx, 'ndim'):
-            # is first element boolean?
-            try:
-                ix = next(iter(idx), None)
-                for _ in range(self.ndim):
-                    if isinstance(ix, bool):
-                        break
-                    ix = next(iter(ix), None)
-                else:
-                    return None
-            except TypeError:
-                return None
-            # since first is boolean, construct array and check all elements
-            idx = np.asanyarray(idx)
-
-        if idx.dtype.kind == 'b':
-            return idx
 
     def _asindices(self, idx, length):
         """Convert `idx` to a valid index for an axis with a given length.
@@ -400,3 +374,25 @@ class IndexMixin:
         x = np.asarray(x.toarray(), dtype=self.dtype)
         x, _ = _broadcast_arrays(x, row)
         self._set_arrayXarray(row, col, x)
+
+
+def _compatible_boolean_index(idx, desired_ndim):
+    """Check for boolean array or array-like. peek before asarray for array-like"""
+    # assume already an array if attr ndim exists: skip to bottom
+    if not hasattr(idx, 'ndim'):
+        # is first element boolean?
+        try:
+            ix = next(iter(idx), None)
+            for _ in range(desired_ndim):
+                if isinstance(ix, bool):
+                    break
+                ix = next(iter(ix), None)
+            else:
+                return None
+        except TypeError:
+            return None
+        # since first is boolean, construct array and check all elements
+        idx = np.asanyarray(idx)
+
+    if idx.dtype.kind == 'b':
+        return idx
