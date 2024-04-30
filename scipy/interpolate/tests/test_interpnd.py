@@ -10,6 +10,7 @@ import scipy.interpolate.interpnd as interpnd
 import scipy.spatial._qhull as qhull
 
 import pickle
+import threading
 
 
 def data_file(basename):
@@ -165,6 +166,43 @@ class TestLinearNDInterpolation:
         ip2 = pickle.loads(pickle.dumps(ip))
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
+
+    def test_threading(self):
+        r_ticks = np.arange(0, 500, 10)
+        phi_ticks = np.arange(0, 500, 10)
+        r_grid, phi_grid = np.meshgrid(r_ticks, phi_ticks)
+
+        def do_interp(interpolator, slice_rows, slice_cols):
+            grid_x, grid_y = np.mgrid[slice_rows, slice_cols]
+            res = interpolator((grid_x, grid_y))
+            return res
+
+        points = np.vstack((r_grid.ravel(), phi_grid.ravel())).T
+        values = (r_grid * phi_grid).ravel()
+        interpolator = interpnd.LinearNDInterpolator(points, values)
+
+        worker_thread_1 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2500), slice(0, 2500)))
+        worker_thread_2 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2500, 5000), slice(0, 2500)))
+        worker_thread_3 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2500), slice(2500, 5000)))
+        worker_thread_4 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2500, 5000), slice(2500, 5000)))
+
+        worker_thread_1.start()
+        worker_thread_2.start()
+        worker_thread_3.start()
+        worker_thread_4.start()
+
+        worker_thread_1.join()
+        worker_thread_2.join()
+        worker_thread_3.join()
+        worker_thread_4.join()
 
 
 class TestEstimateGradients2DGlobal:
