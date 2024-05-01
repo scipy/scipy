@@ -14,8 +14,7 @@ def test_gh10880():
     minimize(lambda x: x**2, x0=2., method='trust-constr',
              bounds=bnds, options=opts)
 
-@pytest.mark.slow
-@pytest.mark.fail_slow(10)
+@pytest.mark.xslow
 def test_gh12922():
     # checks that verbose reporting works with trust-constr for
     # general constraints
