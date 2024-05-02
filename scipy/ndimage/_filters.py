@@ -38,6 +38,7 @@ from scipy._lib._util import normalize_axis_index
 from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
+from . import _rank_filter_1d
 
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
@@ -1486,8 +1487,28 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
         mode = _ni_support._extend_mode_to_code(mode)
-        _nd_image.rank_filter(input, rank, footprint, output, mode, cval,
-                              origins)
+        if input.ndim == 1:
+            rank = int(rank)
+            origin = int(origin)
+            # legacy mode handling
+            if mode == 6:
+                mode = 4
+            if mode == 5:
+                mode = 1
+            casting_cond = input.dtype.name not in ['int64', 'float64', 'float32']
+            if casting_cond:
+                x = input.astype('int64')
+                x_out = np.empty_like(x)
+            else:
+                x = input
+                x_out = output
+            cval = x.dtype.type(cval)
+            _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
+                                        origin)
+            if casting_cond:
+                np.copyto(output, x_out, casting='unsafe')
+        else:
+            _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)
         if temp_needed:
             temp[...] = output
             output = temp

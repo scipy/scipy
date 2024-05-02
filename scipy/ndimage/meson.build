@@ -25,6 +25,13 @@ py3.extension_module('_ni_label',
   subdir: 'scipy/ndimage'
 )
 
+py3.extension_module('_rank_filter_1d',
+  'src/_rank_filter_1d.cpp',
+  install: true,
+  dependencies: np_dep,
+  subdir: 'scipy/ndimage'
+)
+
 py3.extension_module('_ctest',
   'src/_ctest.c',
   dependencies: np_dep,
