@@ -16,6 +16,8 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 import numpy as np
 cimport numpy as np
 cimport cython
+from cpython.pythread cimport (PyThread_type_lock, PyThread_allocate_lock, PyThread_free_lock, PyThread_acquire_lock, PyThread_release_lock)
+
 from . cimport _qhull
 from . cimport setlist
 from libc cimport stdlib
@@ -203,15 +205,6 @@ cdef extern from "qhull_src/src/poly_r.h":
 cdef extern from "qhull_src/src/mem_r.h":
     void qh_memfree(qhT *, void *object, int insize)
 
-cdef extern from "Python.h":
-    ctypedef void* PyThread_type_lock
-
-    PyThread_type_lock* PyThread_allocate_lock() nogil
-    void PyThread_free_lock(PyThread_type_lock* lock) nogil
-    int PyThread_acquire_lock(PyThread_type_lock* lock, int flags) nogil
-    void PyThread_release_lock(PyThread_type_lock* lock) nogil
-
-
 from libc.stdlib cimport qsort
 
 
@@ -251,7 +244,7 @@ cdef class _Qhull:
     cdef int _nridges
 
     cdef np.ndarray _ridge_equations
-    cdef PyThread_type_lock* _lock
+    cdef PyThread_type_lock _lock
 
     @cython.final
     def __init__(self,
@@ -388,6 +381,8 @@ cdef class _Qhull:
                 self._messages.close()
         finally:
             self.release_lock()
+
+        PyThread_free_lock(self._lock)
 
     @cython.final
     def close(self):
