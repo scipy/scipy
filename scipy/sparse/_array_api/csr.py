@@ -26,18 +26,18 @@ def full(shape, fill_value, *, dtype=None, device=None):
 def full_like(x, fill_value, *, dtype=None, device=None):
     return sparse.csr_array(np.full_like(x, fill_value, dtype=dtype))
 
-def ones(shape, *, dtype=None):
+def ones(shape, *, dtype=None, device=None):
     return sparse.csr_array(np.ones(shape, dtype=dtype))
 
-def ones_like(x, *, dtype=None):
+def ones_like(x, *, dtype=None, device=None):
     return sparse.csr_array(np.ones_like(x, dtype=dtype))
 
-def zeros(shape, *, dtype=None):
+def zeros(shape, *, dtype=None, device=None):
     if isinstance(shape, int):
         return sparse.csr_array((shape,1), dtype=dtype)
     return sparse.csr_array(shape, dtype=dtype)
 
-def zeros_like(x, *, dtype=None):
+def zeros_like(x, *, dtype=None, device=None):
     if dtype is None:
         dtype = x.dtype
     return sparse.csr_array(x.shape, dtype=dtype)

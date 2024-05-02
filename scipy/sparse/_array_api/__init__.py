@@ -1,5 +1,7 @@
+from .utils import fill_array_with_not_implemented, fill_linalg_with_not_implemented, fill_array_module_with_not_implemented
+
 from .csr import *
-from ... import linalg
+from ..import linalg
 from numpy.array_api import(
     bool,
     int8,
@@ -65,7 +67,7 @@ from numpy import (
     trunc,
 )
 
-__array_api_version__ = "2022.12"
+from .array_api_version import __array_api_version__
 
 # From numpy
 __all__ = [
@@ -189,3 +191,7 @@ __all__ += [
     "bitwise_or",
     "bitwise_and",
 ]
+
+fill_array_with_not_implemented()
+fill_linalg_with_not_implemented()
+fill_array_module_with_not_implemented(globals())
