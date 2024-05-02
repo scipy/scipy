@@ -30,6 +30,7 @@ from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeResult
+from scipy.optimize._bracket import _bracket_minimum
 from scipy.optimize import rosen, rosen_der, rosen_hess
 
 from scipy.sparse import (coo_matrix, csc_matrix, csr_matrix, coo_array,
@@ -1840,8 +1841,8 @@ class TestOptimizeScalar:
             return x**2
         optimize.fminbound(fun, 0, 0)
 
-    def test_minimize_scalar(self):
-        # combine all tests above for the minimize_scalar wrapper
+    def test_minimize_scalar_brent(self):
+        # perform `test_brent` above but with `minimize_scalar` wrapper
         x = optimize.minimize_scalar(self.fun).x
         assert_allclose(x, self.solution, atol=1e-6)
 
@@ -1864,6 +1865,8 @@ class TestOptimizeScalar:
                                      args=(1.5, ), method='Brent').x
         assert_allclose(x, self.solution, atol=1e-6)
 
+    def test_minimize_scalar_golden(self):
+        # perform `test_golden` above but with `minimize_scalar` wrapper
         x = optimize.minimize_scalar(self.fun, bracket=(-3, -2),
                                      args=(1.5, ), method='golden').x
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1876,6 +1879,8 @@ class TestOptimizeScalar:
                                      args=(1.5, ), method='golden').x
         assert_allclose(x, self.solution, atol=1e-6)
 
+    def test_minimize_scalar_bounded(self):
+        # perform `test_fminbound` above but with `minimize_scalar` wrapper
         x = optimize.minimize_scalar(self.fun, bounds=(0, 1), args=(1.5,),
                                      method='Bounded').x
         assert_allclose(x, 1, atol=1e-4)
@@ -1899,6 +1904,57 @@ class TestOptimizeScalar:
         x = optimize.minimize_scalar(self.fun, bounds=(1, np.array(5)),
                                      method='bounded').x
         assert_allclose(x, self.solution, atol=1e-6)
+
+
+    def _minimize_scalar_chandrupatla(self, fun, bracket=(), bounds=(), args=(), tol=None,
+                                      options={}):
+        if not bracket and not bounds:
+            kwargs = dict(xm0=0.0, xr0=1.0)
+        elif len(bracket) == 2:
+            kwargs = dict(xm0=bracket[0], xr0=bracket[1])
+        elif len(bracket) == 3:
+            kwargs = dict(xl0=bracket[0], xm0=bracket[1], xr0=bracket[2])
+        elif bounds and not bracket:
+            kwargs = dict(xm0=(bounds[0] + bounds[1])/2, xmin=bounds[0], xmax=bounds[1])
+
+        res = _bracket_minimum(self.fun, args=args, **kwargs)
+        if res.status == -1:  # bracket converges to single point
+            res.x = res.xm
+            return res
+
+        bracket = (res.xl, res.xm, res.xr)
+        return optimize.minimize_scalar(fun, bracket=bracket, method='chandrupatla',
+                                        args=args, tol=tol, options=options)
+
+
+    def test_minimize_scalar_chandrupatla(self):
+        # perform relevant tests of other methods with method='chandrupatla'
+
+        x = self._minimize_scalar_chandrupatla(self.fun).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        res = self._minimize_scalar_chandrupatla(self.fun, options=dict(maxiter=3))
+        assert not res.success
+
+        x = self._minimize_scalar_chandrupatla(self.fun, bracket=(-3, -2), args=(1.5, )).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = self._minimize_scalar_chandrupatla(self.fun, args=(1.5, )).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = self._minimize_scalar_chandrupatla(self.fun, bracket=(-15, -1, 15), args=(1.5,)).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = self._minimize_scalar_chandrupatla(self.fun, bounds=(0, 1), args=(1.5,)).x
+        assert_allclose(x, 1, atol=1e-4)
+
+        x = self._minimize_scalar_chandrupatla(self.fun, bounds=(1, 5), args=(1.5, )).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
+        x = self._minimize_scalar_chandrupatla(self.fun, bounds=(np.array([1]), np.array([5])),
+                                               args=(np.array([1.5]), )).x
+        assert_allclose(x, self.solution, atol=1e-6)
+
 
     def test_minimize_scalar_custom(self):
         # This function comes from the documentation example.
@@ -1939,25 +1995,32 @@ class TestOptimizeScalar:
         # Regression test for gh-3503
         optimize.minimize_scalar(self.fun, args=1.5)
 
-    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden', 'chandrupatla'])
     def test_disp(self, method):
         # test that all minimize_scalar methods accept a disp option.
+        # sure, chandrupatla accepts it, but ignores it
         for disp in [0, 1, 2, 3]:
             optimize.minimize_scalar(self.fun, options={"disp": disp})
 
-    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden', 'chandrupatla'])
     def test_result_attributes(self, method):
         kwargs = {"bounds": [-10, 10]} if method == 'bounded' else {}
-        result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
+        if method == 'chandrupatla':
+            result = self._minimize_scalar_chandrupatla(self.fun, **kwargs)
+        else:
+            result = optimize.minimize_scalar(self.fun, method=method, **kwargs)
         assert hasattr(result, "x")
         assert hasattr(result, "success")
-        assert hasattr(result, "message")
+        if method == 'chandrupatla':
+            assert hasattr(result, "status")
+        else:
+            assert hasattr(result, "message")
         assert hasattr(result, "fun")
         assert hasattr(result, "nfev")
         assert hasattr(result, "nit")
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
-    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden'])
+    @pytest.mark.parametrize('method', ['brent', 'bounded', 'golden', 'chandrupatla'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -1967,20 +2030,15 @@ class TestOptimizeScalar:
         def func(x):
             count[0] += 1
             if count[0] > 4:
-                return np.nan
+                return np.nan*x
             else:
                 return x**2 + 0.1 * np.sin(x)
 
         bracket = (-1, 0, 1)
         bounds = (-1, 1)
 
-        with np.errstate(invalid='ignore'), suppress_warnings() as sup:
-            sup.filter(UserWarning, "delta_grad == 0.*")
-            sup.filter(RuntimeWarning, ".*does not use Hessian.*")
-            sup.filter(RuntimeWarning, ".*does not use gradient.*")
-
+        with np.errstate(invalid='ignore'):
             count = [0]
-
             kwargs = {"bounds": bounds} if method == 'bounded' else {}
             sol = optimize.minimize_scalar(func, bracket=bracket,
                                            **kwargs, method=method,
@@ -2029,11 +2087,17 @@ class TestOptimizeScalar:
             return np.array(x**4).reshape(fshape)
 
         a, b = -0.1, 0.2
+        if method == 'chandrupatla':
+            a = np.broadcast_to(a, fshape)
+            b = np.broadcast_to(b, fshape)
         kwargs = (dict(bracket=(a, b)) if method != "bounded"
                   else dict(bounds=(a, b)))
         kwargs.update(dict(method=method, tol=tol))
 
-        res = optimize.minimize_scalar(f, **kwargs)
+        if kwargs.pop('method') == 'chandrupatla':
+            res = self._minimize_scalar_chandrupatla(f, **kwargs)
+        else:
+            res = optimize.minimize_scalar(f, **kwargs)
         assert res.x.shape == res.fun.shape == f(res.x).shape == fshape
 
     @pytest.mark.parametrize('method', ['bounded', 'brent', 'golden'])

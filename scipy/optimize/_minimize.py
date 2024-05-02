@@ -36,6 +36,7 @@ from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds,
                            PreparedConstraint)
 from ._differentiable_functions import FD_METHODS
+from ._chandrupatla import _chandrupatla_minimize
 
 MINIMIZE_METHODS = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                     'l-bfgs-b', 'tnc', 'cobyla', 'slsqp', 'trust-constr',
@@ -46,7 +47,7 @@ MINIMIZE_METHODS_NEW_CB = ['nelder-mead', 'powell', 'cg', 'bfgs', 'newton-cg',
                            'l-bfgs-b', 'trust-constr', 'dogleg', 'trust-ncg',
                            'trust-exact', 'trust-krylov']
 
-MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden']
+MINIMIZE_SCALAR_METHODS = ['brent', 'bounded', 'golden', 'chandrupatla']
 
 def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
              hessp=None, bounds=None, constraints=(), tol=None,
@@ -792,12 +793,14 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         Tolerance for termination. For detailed control, use solver-specific
         options.
     options : dict, optional
-        A dictionary of solver options.
+        A dictionary of solver options. With exceptions where noted, all solvers
+        support the following options.
 
             maxiter : int
                 Maximum number of iterations to perform.
             disp : bool
-                Set to True to print convergence messages.
+                Set to True to print convergence messages. Ignored by
+                `method='chandrupatla'`.
 
         See :func:`show_options()` for solver-specific options.
 
@@ -912,8 +915,9 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     if options is None:
         options = {}
 
-    if bounds is not None and meth in {'brent', 'golden'}:
-        message = f"Use of `bounds` is incompatible with 'method={method}'."
+    if bounds is not None and meth in {'brent', 'golden', 'chandrupatla'}:
+        message = (f"Use of `bounds` is incompatible with '{method=}'. "
+                   "To enforce bounds, provide a three-point bracket.")
         raise ValueError(message)
 
     if tol is not None:
@@ -925,6 +929,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
             options['xatol'] = tol
         elif meth == '_custom':
             options.setdefault('tol', tol)
+        elif meth == 'chandrupatla':
+            options.setdefault('xrtol', tol)
         else:
             options.setdefault('xtol', tol)
 
@@ -946,6 +952,8 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     elif meth == 'golden':
         res = _recover_from_bracket_error(_minimize_scalar_golden,
                                           fun, bracket, args, **options)
+    elif method == 'chandrupatla':
+        res = _chandrupatla_minimize(fun, *bracket, args=args, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
 

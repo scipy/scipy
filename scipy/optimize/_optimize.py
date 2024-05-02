@@ -2874,6 +2874,23 @@ def _minimize_scalar_golden(func, brack=None, args=(),
                           success=success, message=message)
 
 
+
+def _minimize_scalar_chandrupatla(func, brack=None, args=(), tol=1.48e-8,
+                                  maxiter=500, disp=0, **unknown_options):
+    """
+    Options
+    -------
+    maxiter : int
+        Maximum number of iterations to perform.
+    xatol, xrtol, fatol, frtol : float
+        Blah blah
+    disp: int, optional
+        Ignored.
+
+    """
+    pass
+
+
 def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     """
     Bracket the minimum of a function.
@@ -4037,6 +4054,7 @@ def show_options(solver=None, method=None, disp=True):
             ('brent', 'scipy.optimize._optimize._minimize_scalar_brent'),
             ('bounded', 'scipy.optimize._optimize._minimize_scalar_bounded'),
             ('golden', 'scipy.optimize._optimize._minimize_scalar_golden'),
+            ('chandrupatla', 'scipy.optimize._optimize._minimize_scalar_chandrupatla'),
         ),
     }
 
