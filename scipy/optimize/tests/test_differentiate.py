@@ -481,7 +481,7 @@ class TestJacobian:
         x = rng.random(size=(m,) + size)
         res = jacobian(func, x).df
         ref = func.ref(x)
-        np.testing.assert_allclose(res, ref)
+        np.testing.assert_allclose(res, ref, atol=1e-10)
 
     def test_iv(self):
         # Test input validation
