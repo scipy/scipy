@@ -16,7 +16,9 @@ Wrappers for Qhull triangulation, plus some additional N-D geometry utilities
 import numpy as np
 cimport numpy as np
 cimport cython
-from cpython.pythread cimport (PyThread_type_lock, PyThread_allocate_lock, PyThread_free_lock, PyThread_acquire_lock, PyThread_release_lock)
+from cpython.pythread cimport (
+    PyThread_type_lock, PyThread_allocate_lock, PyThread_free_lock,
+    PyThread_acquire_lock, PyThread_release_lock)
 
 from . cimport _qhull
 from . cimport setlist
