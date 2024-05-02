@@ -34,3 +34,6 @@ else
   unzip $target -d /c/opt/
   cp /c/opt/64/bin/*.dll /c/opt/openblas/openblas_dll
 fi
+# attempt to deal with:
+# https://github.com/scipy/scipy/pull/20362#issuecomment-2028517797
+python -c "import tools.openblas_support as obs; obs.reformat_pkg_file('C:/opt/')"

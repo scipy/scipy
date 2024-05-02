@@ -96,7 +96,7 @@ namespace cephes {
         /* 30 Nov 86 -- error in third coefficient fixed */
     } // namespace detail
 
-    SPECFUN_HOST_DEVICE double zeta(double x, double q) {
+    SPECFUN_HOST_DEVICE double inline zeta(double x, double q) {
         int i;
         double a, b, k, s, t, w;
 

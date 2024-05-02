@@ -32,6 +32,13 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_FORTRAN_SUFFIX _
 #endif
 
+// New Accelerate suffix is always $NEWLAPACK (no underscore)
+#ifdef ACCELERATE_NEW_LAPACK
+#undef BLAS_FORTRAN_SUFFIX
+#define BLAS_FORTRAN_SUFFIX
+#define BLAS_SYMBOL_SUFFIX $NEWLAPACK
+#endif
+
 #ifndef BLAS_SYMBOL_PREFIX
 #define BLAS_SYMBOL_PREFIX
 #endif
@@ -44,7 +51,16 @@ enum CBLAS_SIDE {CblasLeft=141, CblasRight=142};
 #define BLAS_FUNC_EXPAND(name,prefix,suffix,suffix2) BLAS_FUNC_CONCAT(name,prefix,suffix,suffix2)
 
 #define CBLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,,BLAS_SYMBOL_SUFFIX)
+/*
+ * Use either the OpenBLAS scheme with the `64_` suffix behind the Fortran
+ * compiler symbol mangling, or the MKL scheme (and upcoming
+ * reference-lapack#666) which does it the other way around and uses `_64`.
+ */
+#ifdef OPENBLAS_ILP64_NAMING_SCHEME
 #define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_FORTRAN_SUFFIX,BLAS_SYMBOL_SUFFIX)
+#else
+#define BLAS_FUNC(name) BLAS_FUNC_EXPAND(name,BLAS_SYMBOL_PREFIX,BLAS_SYMBOL_SUFFIX,BLAS_FORTRAN_SUFFIX)
+#endif
 
 #ifdef HAVE_BLAS_ILP64
 #define CBLAS_INT npy_int64

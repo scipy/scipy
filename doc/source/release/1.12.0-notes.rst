@@ -258,7 +258,7 @@ Deprecated features
   supposed to be imported at all.
 - `scipy.signal.cmplx_sort` has been deprecated and will be removed in
   SciPy 1.15. A replacement you can use is provided in the deprecation message.
-- Values the the argument ``initial`` of `scipy.integrate.cumulative_trapezoid`
+- Values the argument ``initial`` of `scipy.integrate.cumulative_trapezoid`
   other than ``0`` and ``None`` are now deprecated.
 - `scipy.stats.rvs_ratio_uniforms` is deprecated in favour of
   `scipy.stats.sampling.RatioUniforms`
@@ -303,6 +303,10 @@ The following previously deprecated features are affected:
 - ``scipy.stats.binom_test`` has been removed in favour of `scipy.stats.binomtest`.
 - In `scipy.stats.iqr`, the use of ``scale='raw'`` has been removed in favour 
   of ``scale=1``.
+- Functions from NumPy's main namespace which were exposed in SciPy's main
+  namespace, such as ``numpy.histogram`` exposed by ``scipy.histogram``, have
+  been removed from SciPy's main namespace. Please use the functions directly
+  from ``numpy``.
 
 
 ******************************

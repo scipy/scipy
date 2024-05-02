@@ -27,9 +27,16 @@ def pytest_configure(config):
     except Exception:
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
+    try:
+        # This is a more reliable test of whether pytest_fail_slow is installed
+        # When I uninstalled it, `import pytest_fail_slow` didn't fail!
+        from pytest_fail_slow import parse_duration  # type: ignore[import-not-found] # noqa:F401,E501
+    except Exception:
+        config.addinivalue_line(
+            "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
-        "skip_if_array_api(*backends, reasons=None, np_only=False, cpu_only=False): "
-        "mark the desired skip configuration for the `skip_if_array_api` fixture.")
+        "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
+        "mark the desired skip configuration for the `skip_xp_backends` fixture.")
 
 
 def _get_mark(item, name):
@@ -116,7 +123,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import torch  # type: ignore[import]
+        import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
@@ -124,7 +131,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import cupy  # type: ignore[import]
+        import cupy  # type: ignore[import-not-found]
         xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass
@@ -151,11 +158,15 @@ if 'cupy' in xp_available_backends:
 
 array_api_compatible = pytest.mark.parametrize("xp", xp_available_backends.values())
 
+skip_xp_invalid_arg = pytest.mark.skipif(SCIPY_ARRAY_API,
+    reason = ('Test involves masked arrays, object arrays, or other types '
+              'that are not valid input when `SCIPY_ARRAY_API` is used.'))
+
 
 @pytest.fixture
-def skip_if_array_api(xp, request):
+def skip_xp_backends(xp, request):
     """
-    Skip based on the ``skip_if_array_api`` marker.
+    Skip based on the ``skip_xp_backends`` marker.
 
     Parameters
     ----------
@@ -180,10 +191,10 @@ def skip_if_array_api(xp, request):
         but any ``backends`` will also be skipped on the CPU.
         Default: ``False``.
     """
-    if "skip_if_array_api" not in request.keywords:
+    if "skip_xp_backends" not in request.keywords:
         return
-    backends = request.keywords["skip_if_array_api"].args
-    kwargs = request.keywords["skip_if_array_api"].kwargs
+    backends = request.keywords["skip_xp_backends"].args
+    kwargs = request.keywords["skip_xp_backends"].kwargs
     np_only = kwargs.get("np_only", False)
     cpu_only = kwargs.get("cpu_only", False)
     if np_only:

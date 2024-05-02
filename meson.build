@@ -4,13 +4,13 @@ project(
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
-  version: '1.13.0.dev0',
+  version: '1.14.0.dev0',
   license: 'BSD-3',
   meson_version: '>= 1.1.0',
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
@@ -39,8 +39,12 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=8.0')
-    error('SciPy requires GCC >= 8.0')
+  if not cc.version().version_compare('>=9.1')
+    error('SciPy requires GCC >= 9.1')
+  endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=12.0')
+    error('SciPy requires clang >= 12.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
@@ -48,8 +52,8 @@ elif cc.get_id() == 'msvc'
           'when building with MSVC')
   endif
 endif
-if not cy.version().version_compare('>=3.0.4')
-  error('SciPy requires Cython >= 3.0.4')
+if not cy.version().version_compare('>=3.0.8')
+  error('SciPy requires Cython >= 3.0.8')
 endif
 
 _global_c_args = cc.get_supported_arguments(
@@ -81,9 +85,15 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
-if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
-  # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
-  add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
+if host_machine.system() == 'darwin'
+  if cc.has_link_argument('-Wl,-ld_classic')
+    # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
+    add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
+  endif
+  if cc.has_link_argument('-Wl,-dead_strip')
+    # Allow linker to strip unused symbols
+    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+  endif
 endif
 
 # Intel compilers default to fast-math, so disable it if we detect Intel
