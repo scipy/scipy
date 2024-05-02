@@ -3943,6 +3943,7 @@ class TestStruve:
         assert_allclose(special.struve(-8.01, 21), 0.0398716951023, rtol=1e-8)
         assert_allclose(special.struve(-3.0, 200), 0.0142134427432, rtol=1e-12)
         assert_allclose(special.struve(-8.0, -41), 0.0192469727846, rtol=1e-11)
+        assert_allclose(special.struve(0, 25.765368073883174), 4.381964346416636e-07)
         assert_equal(special.struve(-12, -41), -special.struve(-12, 41))
         assert_equal(special.struve(+12, -41), -special.struve(+12, 41))
         assert_equal(special.struve(-11, -41), +special.struve(-11, 41))
