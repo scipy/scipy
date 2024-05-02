@@ -65,6 +65,7 @@ from numpy import (
     tanh,
     trunc,
 )
+from scipy.sparse import csr_array
 
 from .array_api_version import __array_api_version__
 
@@ -190,6 +191,6 @@ __all__ += [
     "equal",
 ]
 
-fill_array_with_not_implemented()
+fill_array_with_not_implemented(csr_array)
 fill_linalg_with_not_implemented()
 fill_array_module_with_not_implemented(globals())

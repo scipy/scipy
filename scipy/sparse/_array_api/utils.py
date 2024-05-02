@@ -7,13 +7,15 @@ from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import Dict, List
 
-from scipy import sparse
+from scipy.sparse import linalg
 
-from ..import linalg
 from .array_api_version import __array_api_version__
 
 def not_implemented(*args, **kwargs):
-    raise NotImplementedError(inspect.stack()[1][3])
+    raise NotImplementedError(
+        f"{inspect.stack()[1][3]} is not implemented likely "
+        f"because the operation does not make sense for sparse data."
+    )
 
 def fill_with_not_implemented(object_to_be_filled, expected_methods):
     is_dict = isinstance(object_to_be_filled, dict)
@@ -67,8 +69,8 @@ array_methods_with_names_without___init__ = [
     if n != "__init__"  # probably exists for Sphinx
 ]
 
-def fill_array_with_not_implemented():
-    return fill_with_not_implemented(sparse.csr_array, array_methods_with_names_without___init__)
+def fill_array_with_not_implemented(array):
+    return fill_with_not_implemented(array, array_methods_with_names_without___init__)
 
 
 top_level_functions = []
