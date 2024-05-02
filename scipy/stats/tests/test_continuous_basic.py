@@ -51,7 +51,7 @@ slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
 xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
                       'recipinvgauss', 'kstwo', 'kappa4'}
 
-xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'vonmises_line'}
+xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
 xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',

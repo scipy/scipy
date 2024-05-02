@@ -281,3 +281,8 @@ Name: array-api-compat
 Files: scipy/_lib/array-api-compat/*
 License: MIT
   For details, see scipy/_lib/array-api-compat/LICENCE
+
+Name: Tempita
+Files: scipy/_build_utils/tempita/*
+License: MIT
+  For details, see scipy/_build_utils/tempita/LICENCE.txt
