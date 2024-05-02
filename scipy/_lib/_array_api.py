@@ -319,6 +319,7 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
         # roughly half way between sqrt(eps) and the default for
         # `numpy.testing.assert_allclose`, 1e-7
         rtol = xp.finfo(actual.dtype).eps**0.5 * 4
+
     elif rtol is None:
         rtol = 1e-7
 

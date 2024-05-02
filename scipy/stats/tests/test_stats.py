@@ -6009,26 +6009,44 @@ class TestDescribe:
         assert_raises(ValueError, stats.describe, [])
 
 
-def test_normalitytests():
+@pytest.mark.skip_xp_backends(cpu_only=True,
+                              reasons=['Uses NumPy for pvalue'])
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
+def test_normalitytests(xp):
     assert_raises(ValueError, stats.skewtest, 4.)
     assert_raises(ValueError, stats.kurtosistest, 4.)
     assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
-    st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
-    pv_normal, pv_skew, pv_kurt = (0.14059673, 0.04761502, 0.98880019)
+    # library(fBasics)
+    # options(digits=16)
+    # x = c(-2, -1, 0, 1, 2, 3)**2
+    # x = rep(x, times=4)
+    # test_result <- dagoTest(x)
+    # test_result@test$statistic
+    # test_result@test$p.value
+    st_normal, st_skew, st_kurt = (3.92371918, xp.asarray(1.98078826090875881),
+                                   -0.01403734)
+    pv_normal, pv_skew, pv_kurt = (0.14059673, xp.asarray(0.04761502382843208),
+                                   0.98880019)
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
     pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
-    x = np.array((-2, -1, 0, 1, 2, 3)*4)**2
+    x = np.array((-2, -1, 0, 1, 2, 3.)*4)**2
+    x_xp = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
     attributes = ('statistic', 'pvalue')
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
-    assert_array_almost_equal(stats.skewtest(x), (st_skew, pv_skew))
-    assert_array_almost_equal(stats.skewtest(x, alternative='less'),
-                              (st_skew, pv_skew_less))
-    assert_array_almost_equal(stats.skewtest(x, alternative='greater'),
-                              (st_skew, pv_skew_greater))
+    res = stats.skewtest(x_xp)
+    xp_assert_close(res.statistic, st_skew)
+    xp_assert_close(res.pvalue, pv_skew)
+    res = stats.skewtest(x_xp, alternative='less')
+    xp_assert_close(res.statistic, st_skew)
+    xp_assert_close(res.pvalue, pv_skew_less)
+    res = stats.skewtest(x_xp, alternative='greater')
+    xp_assert_close(res.statistic, st_skew)
+    xp_assert_close(res.pvalue, pv_skew_greater)
     check_named_results(stats.skewtest(x), attributes)
     assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
     assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
@@ -6041,8 +6059,9 @@ def test_normalitytests():
     # see gh-13549.
     # skew parameter is 1 > 0
     a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
-    pval = stats.skewtest(a1, alternative='greater').pvalue
-    assert_almost_equal(pval, 0.0, decimal=5)
+    a1_xp = xp.asarray(a1)
+    pval = stats.skewtest(a1_xp, alternative='greater').pvalue
+    xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
     # excess kurtosis of laplace is 3 > 0
     a2 = stats.laplace.rvs(size=10000, random_state=123)
     pval = stats.kurtosistest(a2, alternative='greater').pvalue
@@ -6051,16 +6070,19 @@ def test_normalitytests():
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
                               (st_normal, pv_normal))
-    assert_array_almost_equal(stats.skewtest(x, axis=None),
-                              (st_skew, pv_skew))
+    res = stats.skewtest(x_xp, axis=None)
+    xp_assert_close(res.statistic, st_skew)
+    xp_assert_close(res.pvalue, pv_skew)
     assert_array_almost_equal(stats.kurtosistest(x, axis=None),
                               (st_kurt, pv_kurt))
 
-    x = np.arange(10.)
-    x[9] = np.nan
+    x = xp.arange(10.)
+    x[9] = xp.nan
     with np.errstate(invalid="ignore"):
-        assert_array_equal(stats.skewtest(x), (np.nan, np.nan))
+        assert_array_equal(stats.skewtest(x), (xp.nan, xp.nan))
 
+    # nan_policy only compatible with NumPy arrays
+    x = np.asarray(x)
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
@@ -6831,7 +6853,7 @@ def test_binomtest():
 
     for p, res in zip(pp, results):
         assert_approx_equal(stats.binomtest(x, n, p).pvalue, res,
-                            significant=12, err_msg='fail forp=%f' % p)
+                            significant=12, err_msg=f'fail forp={p}')
     assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
                         5.8320387857343647e-024,
                         significant=12)
@@ -7393,7 +7415,7 @@ class TestFOneWay:
                 rtol = 1e-4
 
             assert_allclose(res[0], f, rtol=rtol,
-                            err_msg='Failing testcase: %s' % test_case)
+                            err_msg=f'Failing testcase: {test_case}')
 
     @pytest.mark.parametrize("a, b, expected", [
         (np.array([42, 42, 42]), np.array([7, 7, 7]), (np.inf, 0)),
