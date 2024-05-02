@@ -162,9 +162,6 @@ def logical_xor(x1, x2, /):
     x2_bool = x2.astype('bool')
     return x2_bool != x1_bool
 
-def logical_not(x, /):
-    raise NotImplementedError
-
 def multiply(x1, x2, /):
     # TODO: Does scipy obey the type promotions listed for multiply?
     # https://data-apis.org/array-api/latest/API_specification/generated/array_api.multiply.html#multiply
