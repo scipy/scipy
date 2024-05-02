@@ -2821,8 +2821,8 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     """
     xp = array_namespace(a)
     a = atleast_nd(a, ndim=1, xp=xp)
-    n = xp.asarray(a.shape[axis], dtype=a.dtype)
-    s = xp.std(a, axis=axis, correction=ddof) / xp.sqrt(n)
+    n = a.shape[axis]
+    s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
 

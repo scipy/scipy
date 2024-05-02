@@ -2637,7 +2637,7 @@ class TestSEM:
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
-        scalar_testcase = xp.asarray(self.scalar_testcase)
+        scalar_testcase = xp.asarray(self.scalar_testcase)[()]
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             # numpy
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
@@ -2649,8 +2649,8 @@ class TestSEM:
         testcase = xp.asarray(self.testcase)
         y = stats.sem(testcase)
         xp_assert_close(y, xp.asarray(0.6454972244))
-        n = xp.asarray(len(self.testcase), dtype=testcase.dtype)
-        assert_allclose(stats.sem(testcase, ddof=0) * xp.sqrt(n/(n-2)),
+        n = len(self.testcase)
+        assert_allclose(stats.sem(testcase, ddof=0) * (n/(n-2))**0.5,
                         stats.sem(testcase, ddof=2))
 
         x = xp.arange(10.)
@@ -2659,7 +2659,7 @@ class TestSEM:
     
     @skip_xp_backends(np_only=True,
                       reasons=['`nan_policy` only supports NumPy backend'])
-    def test_sem_nan(self, xp):
+    def test_sem_nan_policy(self, xp):
         x = np.arange(10.)
         x[9] = np.nan
         assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
