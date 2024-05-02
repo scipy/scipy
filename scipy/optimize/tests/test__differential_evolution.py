@@ -1339,7 +1339,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail(platform.machine() == 'ppc64le',
                        reason="fails on ppc64le")
     def test_L8(self):

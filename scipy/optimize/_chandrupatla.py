@@ -1,10 +1,10 @@
 import numpy as np
-from ._zeros_py import _xtol, _rtol, _iter
+from ._zeros_py import _rtol
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
-def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
-                  fatol=None, frtol=0, maxiter=_iter, callback=None):
+def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
+                  fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
     For each element of the output of `func`, `chandrupatla` seeks the scalar
@@ -33,6 +33,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
         See Notes for details.
     maxiter : int, optional
         The maximum number of iterations of the algorithm to perform.
+        The default is the maximum possible number of bisections within
+        the (normal) floating point numbers of the relevant dtype.
     callback : callable, optional
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
@@ -84,9 +86,9 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     ``fun(xmin) <= fatol + abs(fmin0) * frtol``. This is equivalent to the
     termination condition described in [1]_ with ``xrtol = 4e-10``,
     ``xatol = 1e-5``, and ``fatol = frtol = 0``. The default values are
-    ``xatol = 2e-12``, ``xrtol = 4 * np.finfo(float).eps``, ``frtol = 0``,
-    and ``fatol`` is the smallest normal number of the ``dtype`` returned
-    by ``func``.
+    ``xatol = 4*tiny``, ``xrtol = 4*eps``, ``frtol = 0``, and ``fatol = tiny``,
+    where ``eps`` and ``tiny`` are the precision and smallest normal number
+    of the result ``dtype`` of function inputs and outputs.
 
     References
     ----------
@@ -128,10 +130,11 @@ def _chandrupatla(func, a, b, *, args=(), xatol=_xtol, xrtol=_rtol,
     f1, f2 = fs
     status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
     nit, nfev = 0, 2  # two function evaluations performed above
-    xatol = _xtol if xatol is None else xatol
+    xatol = 4*np.finfo(dtype).tiny if xatol is None else xatol
     xrtol = _rtol if xrtol is None else xrtol
     fatol = np.finfo(dtype).tiny if fatol is None else fatol
     frtol = frtol * np.minimum(np.abs(f1), np.abs(f2))
+    maxiter = 2**np.finfo(dtype).nexp if maxiter is None else maxiter
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
                        xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
                        nit=nit, nfev=nfev, status=status)
@@ -245,9 +248,10 @@ def _chandrupatla_iv(func, args, xatol, xrtol,
             or np.any(np.isnan(tols)) or tols.shape != (4,)):
         raise ValueError('Tolerances must be non-negative scalars.')
 
-    maxiter_int = int(maxiter)
-    if maxiter != maxiter_int or maxiter < 0:
-        raise ValueError('`maxiter` must be a non-negative integer.')
+    if maxiter is not None:
+        maxiter_int = int(maxiter)
+        if maxiter != maxiter_int or maxiter < 0:
+            raise ValueError('`maxiter` must be a non-negative integer.')
 
     if callback is not None and not callable(callback):
         raise ValueError('`callback` must be callable.')
@@ -344,7 +348,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     or ``(f1 - 2*f2 + f3)/2 <= abs(f2)*frtol + fatol``. Note that first of
     these differs from the termination conditions described in [1]_. The
     default values of `xrtol` is the square root of the precision of the
-    appropriate dtype, and ``xatol=fatol = frtol`` is the smallest normal
+    appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
     number of the appropriate dtype.
 
     References

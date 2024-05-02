@@ -871,8 +871,8 @@ class _RichResult(dict):
         except KeyError as e:
             raise AttributeError(name) from e
 
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+    __setattr__ = dict.__setitem__  # type: ignore[assignment]
+    __delattr__ = dict.__delitem__  # type: ignore[assignment]
 
     def __repr__(self):
         order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',

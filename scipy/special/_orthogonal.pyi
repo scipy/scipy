@@ -288,7 +288,7 @@ class orthopoly1d(np.poly1d):
     @overload
     def __call__(self, x: _ArrayLike0D) -> Any: ...
     @overload
-    def __call__(self, x: np.poly1d) -> np.poly1d: ...  # type: ignore[misc]
+    def __call__(self, x: np.poly1d) -> np.poly1d: ...  # type: ignore[overload-overlap]
     @overload
     def __call__(self, x: np.typing.ArrayLike) -> np.ndarray: ...
 
