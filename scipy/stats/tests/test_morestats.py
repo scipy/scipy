@@ -2468,6 +2468,9 @@ class TestCircFuncs:
         xp_assert_close(test_func(x, high=360), xp.asarray(expected))
 
     def test_circfuncs_small(self, xp):
+        # Default tolerances won't work here because the reference values
+        # are approximations. Ensure all array types work in float64 to
+        # avoid needing separate float32 and float64 tolerances.
         x = xp.asarray([20, 21, 22, 18, 19, 20.5, 19.2], dtype=xp.float64)
         M1 = xp.mean(x)
         M2 = stats.circmean(x, high=360)

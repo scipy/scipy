@@ -815,8 +815,6 @@ def _rng_spawn(rng, n_children):
 
 
 def _get_nan(*data, xp=None):
-    if data == ():
-        return None
     xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
     data = [xp.asarray(item) for item in data]
