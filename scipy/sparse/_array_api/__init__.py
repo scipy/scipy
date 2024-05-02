@@ -42,7 +42,6 @@ from numpy import (
     cos,
     cosh,
     divide,
-    equal,
     exp,
     expm1,
     imag,
@@ -108,7 +107,6 @@ __all__ = [
     "cos",
     "cosh",
     "divide",
-    "equal",
     "exp",
     "expm1",
     "imag",
@@ -190,6 +188,7 @@ __all__ += [
     "bitwise_or",
     "bitwise_or",
     "bitwise_and",
+    "equal",
 ]
 
 fill_array_with_not_implemented()

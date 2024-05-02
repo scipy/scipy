@@ -394,7 +394,7 @@ class _spbase:
             return self.nnz != 0
         else:
             raise ValueError("The truth value of an array with more than one "
-                             "element is ambiguous. Use a.any() or a.all().")
+                             f"element is ambiguous. Use a.any() or a.all() for {self}.")
     __nonzero__ = __bool__
 
     # What should len(sparse) return? For consistency with dense matrices,

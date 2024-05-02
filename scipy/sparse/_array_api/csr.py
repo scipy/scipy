@@ -14,6 +14,9 @@ def asarray(obj, *, dtype=None, copy=None, device=None):
 def empty(shape, *, dtype=None, device=None):
     return sparse.csr_array(shape, dtype=dtype)
 
+def equal(x1, x2, /):
+    return x1 == x2
+
 def empty_like(x, *, dtype=None, device=None):
     return sparse.csr_array(x, dtype=dtype, copy=False)
 
@@ -147,7 +150,7 @@ def where(condition, x1, x2, /):
 def logical_and(x1, x2, /):
     x1_bool = x1.astype('bool') 
     x2_bool = x2.astype('bool')
-    return x1_bool @ x2_bool
+    return x1_bool * x2_bool
 
 def logical_or(x1, x2, /):
     x1_bool = x1.astype('bool') 
