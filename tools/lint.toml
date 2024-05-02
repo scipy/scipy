@@ -12,7 +12,7 @@ target-version = "py39"
 # `B028` added in gh-19623.
 select = ["E", "F", "PGH004", "UP", "B028"]
 # UP031 should be enabled once someone fixes the errors.
-ignore = ["E741", "UP031"]
+ignore = ["E741", "UP031", "UP032"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
