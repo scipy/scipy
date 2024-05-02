@@ -67,7 +67,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, atleast_nd
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -2819,8 +2819,10 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
-    n = a.shape[axis]
-    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
+    xp = array_namespace(a)
+    a = atleast_nd(a, ndim=1, xp=xp)
+    n = xp.asarray(a.shape[axis], dtype=a.dtype)
+    s = xp.std(a, axis=axis, correction=ddof) / xp.sqrt(n)
     return s
 
 
