@@ -1802,6 +1802,8 @@ class Delaunay(_QhullUser):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
+        if points.ndim != 2:
+            raise ValueError("Input points array must have 2 dimensions.")
 
         if qhull_options is None:
             if not incremental:
@@ -2592,6 +2594,8 @@ class Voronoi(_QhullUser):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
+        if points.ndim != 2:
+            raise ValueError("Input points array must have 2 dimensions.")
 
         if qhull_options is None:
             if not incremental:
