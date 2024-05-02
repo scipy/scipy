@@ -382,8 +382,8 @@ class TestPearsonr:
         a = xp.asarray([-1, 0, 1])
         b = xp.asarray([0, 0, 3])
         r, prob = stats.pearsonr(a, b)
-        xp_assert_close(r, xp.asarray(np.sqrt(3)/2))
-        xp_assert_close(prob, xp.asarray(1/3, dtype=xp.float64))
+        xp_assert_close(r, xp.asarray(3**0.5/2))
+        xp_assert_close(prob, xp.asarray(1/3))
 
     def test_constant_input(self, xp):
         # Zero variance input
@@ -512,13 +512,13 @@ class TestPearsonr:
         xp_assert_close(test_less.pvalue, xp.asarray(0.), atol=1e-20)
 
     def test_length3_r_exactly_negative_one(self, xp):
-        x = xp.asarray([1, 2, 3])
-        y = xp.asarray([5, -4, -13])
+        x = xp.asarray([1., 2., 3.])
+        y = xp.asarray([5., -4., -13.])
         res = stats.pearsonr(x, y)
 
         # The expected r and p are exact.
         r, p = res
-        one = xp.asarray(1.0, dtype=xp.float64)
+        one = xp.asarray(1.0)
         xp_assert_close(r, -one)
         xp_assert_close(p, 0*one, atol=1e-7)
         low, high = res.confidence_interval()
@@ -641,8 +641,8 @@ class TestPearsonr:
 
     def test_nd_special_cases(self, xp):
         rng = np.random.default_rng(34989235492245)
-        x0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
-        y0 = xp.asarray(rng.random((3, 5)), dtype=xp.float64)
+        x0 = xp.asarray(rng.random((3, 5)))
+        y0 = xp.asarray(rng.random((3, 5)))
 
         message = 'An input array is constant'
         with pytest.warns(stats.ConstantInputWarning, match=message):
@@ -3331,11 +3331,10 @@ class TestMoments:
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a = xp.asarray(a)
+        a = xp.reshape(xp.arange(8.), (2, -1))
         a[1, 0] = np.nan
         mm = stats.moment(a, 2, axis=1)
-        xp_assert_close(mm, xp.asarray([1.25, np.nan], dtype=xp.float64), atol=1e-15)
+        xp_assert_close(mm, xp.asarray([1.25, np.nan]), atol=1e-15)
 
     @array_api_compatible
     def test_moment_empty_order(self, xp):
@@ -3395,12 +3394,12 @@ class TestSkew(SkewKurtosisTest):
         xp_assert_close(y, xp.asarray(xp.nan))
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
-        y = stats.skew(xp.asarray(self.testmathworks, dtype=xp.float64))
-        xp_assert_close(y, xp.asarray(-0.29322304336607, dtype=xp.float64), atol=1e-10)
-        y = stats.skew(xp.asarray(self.testmathworks, dtype=xp.float64), bias=0)
-        xp_assert_close(y, xp.asarray(-0.437111105023940, dtype=xp.float64), atol=1e-10)
-        y = stats.skew(xp.asarray(self.testcase, dtype=xp.float64))
-        xp_assert_close(y, xp.asarray(0.0, dtype=xp.float64), atol=1e-10)
+        y = stats.skew(xp.asarray(self.testmathworks))
+        xp_assert_close(y, xp.asarray(-0.29322304336607), atol=1e-10)
+        y = stats.skew(xp.asarray(self.testmathworks), bias=0)
+        xp_assert_close(y, xp.asarray(-0.437111105023940), atol=1e-10)
+        y = stats.skew(xp.asarray(self.testcase))
+        xp_assert_close(y, xp.asarray(0.0), atol=1e-10)
 
     def test_nan_policy(self):
         # initially, nan_policy is ignored with alternative backends
@@ -3619,10 +3618,10 @@ class TestStudentTest:
         xp_assert_close(t, xp.asarray(self.T1_1))
         xp_assert_close(p, xp.asarray(self.P1_1))
 
-        t, p = stats.ttest_1samp(xp.asarray(self.X1, dtype=xp.float64), 2.)
+        t, p = stats.ttest_1samp(xp.asarray(self.X1), 2.)
 
-        xp_assert_close(t, xp.asarray(self.T1_2, dtype=xp.float64))
-        xp_assert_close(p, xp.asarray(self.P1_2, dtype=xp.float64))
+        xp_assert_close(t, xp.asarray(self.T1_2))
+        xp_assert_close(p, xp.asarray(self.P1_2))
 
     def test_onesample_nan_policy(self, xp):
         # check nan policy
@@ -3696,8 +3695,8 @@ class TestStudentTest:
     def test_pvalue_ci(self, alpha, data_axis, alternative, xp):
         # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        data = data.astype(np.float64, copy=True)  # ensure byte order
-        data = xp.asarray(data, dtype=xp.float64)
+        data = data.astype(copy=True)  # ensure byte order
+        data = xp.asarray(data)
         res = stats.ttest_1samp(data, 0.,
                                 alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
@@ -3707,7 +3706,7 @@ class TestStudentTest:
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
         shape = list(data.shape)
         shape.pop(axis)
-        ref = xp.broadcast_to(xp.asarray(1-alpha, dtype=xp.float64), shape)
+        ref = xp.broadcast_to(xp.asarray(1-alpha), shape)
         xp_assert_close(res.pvalue, ref)
 
 

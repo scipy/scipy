@@ -4830,7 +4830,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     dtype = xp.result_type(x.dtype, y.dtype)
     if xp.isdtype(dtype, "integral"):
-        dtype = xp.float64
+        dtype = xp.asarray(1.).dtype
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
