@@ -343,7 +343,10 @@ cdef inline double spherical_in_d_real(long n, double x) noexcept nogil:
         return spherical_in_real(1, x)
     else:
         if x == 0:
-            return 0
+            if n == 1:
+                return 1 / 3.
+            else:
+                return 0
         return (spherical_in_real(n - 1, x) -
                 (n + 1)*spherical_in_real(n, x)/x)
 
