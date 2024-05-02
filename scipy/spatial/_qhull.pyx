@@ -727,6 +727,8 @@ cdef class _Qhull:
         cdef int i, j, numpoints, point_ndim
         cdef np.ndarray[np.npy_double, ndim=2] points
 
+        self.acquire_lock()
+
         try:
             self.check_active()
 
