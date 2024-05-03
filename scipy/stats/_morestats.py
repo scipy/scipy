@@ -298,7 +298,7 @@ def kstat(data, n=2):
 
     # on nan input, return nan without warning
     if xp.isnan(xp.sum(data)):
-        return xp.nan
+        return _get_nan(data, xp=xp)
 
     for k in range(1, n + 1):
         S[k] = xp.sum(data**k, axis=0)

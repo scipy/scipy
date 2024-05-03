@@ -1681,7 +1681,7 @@ class TestKstat:
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
-        
+
     def test_empty_input(self, xp):
         assert_raises(ValueError, stats.kstat, xp.asarray([]))
 
@@ -1692,7 +1692,7 @@ class TestKstat:
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
-                      reasons=['input validatio of `n` does not depend on backend'])
+                      reasons=['input validation of `n` does not depend on backend'])
     def test_kstat_bad_arg(self, xp):
         # Raise ValueError if n > 4 or n < 1.
         data = np.arange(10)
@@ -1712,7 +1712,7 @@ class TestKstatVar:
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
-                      reasons=['input validatio of `n` does not depend on backend'])
+                      reasons=['input validation of `n` does not depend on backend'])
     def test_bad_arg(self, xp):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
