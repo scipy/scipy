@@ -71,7 +71,7 @@ namespace detail {
     SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
         /* 2. Taylor series expansion in x=0, for large a.
          *
-         * Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k + b).
+         * Phi(a, b, x) = sum_k x^k / k! / Gamma(a*k + b)
          *
          * Use Stirling's formula to find k=k_max, the maximum term.
          * Then use n terms of Taylor series around k_max.
@@ -85,9 +85,13 @@ namespace detail {
 
         double res = 0;
         double lnx = std::log(x);
+        // For numerical stability, we factor out the maximum term exp(..) with k=k_max
+        // but only if it is larger than 0.
+        double max_exponent = std::fmax(0, k_max * lnx - cephes::lgam(k_max + 1) - cephes::lgam(a * k_max + b));
         for (int k = nstart; k < nstart + n; k++) {
-            res += std::exp(k * lnx - cephes::lgam(k + 1) - cephes::lgam(a * k + b));
+            res += std::exp(k * lnx - cephes::lgam(k + 1) - cephes::lgam(a * k + b) - max_exponent);
         }
+        res *= std::exp(max_exponent);
 
         return res;
     }
@@ -115,8 +119,21 @@ namespace detail {
          */
         double A[6]; // coefficients of a^k  (1, -x * Psi(b), ...)
         double B[6]; // powers of b^k/k! or terms in polygamma functions
-        double C[6]; // coefficients of a^k1 * b^k2
-        double X[6]; // polynomials in x;
+        constexpr double C[5] = {  // coefficients of a^k1 * b^k2
+            1.0000000000000000,   // C[0]
+            1.1544313298030657,   // C[1]
+            -3.9352684291215233,  // C[2]
+            -1.0080632408182857,  // C[3]
+            19.984633365874979,   // C[4]
+        };
+        double X[6] = {  // polynomials in x;
+            1,  // X[0]
+            x,  // X[1]
+            x * (x + 1),  // X[2]
+            x * (x * (x + 3) + 1),  // X[3]
+            x * (x * (x * (x + 6) + 7) + 1),  // X[4]
+            x * (x * (x * (x * (x + 10) + 25) + 15) + 1),  // X[5]
+        };
         double res;
 
         if (b <= 1E-3) {
@@ -124,35 +141,25 @@ namespace detail {
              * M_PI = pi
              * M_EG = Euler Gamma aka Euler Mascheroni constant
              * M_Z3 = zeta(3)
-             * C[0] = 1 */
-            C[0] = 1.0000000000000000;
-            // C[1] = 2*M_EG
-            C[1] = 1.1544313298030657;
-            // C[2] = 3*M_EG^2 - M_PI^2/2
-            C[2] = -3.9352684291215233;
-            // C[3] = 4*M_EG^3 - 2*M_EG*M_PI^2 + 8*M_Z3
-            C[3] = -1.0080632408182857;
-            // C[4] = 5*M_EG^4 - 5*M_EG^2*M_PI^2 + 40*M_EG*M_Z3 + M_PI^4/12
-            C[4] = 19.984633365874979;
-            X[0] = 1;
-            X[1] = x;
-            X[2] = x * (x + 1);
-            X[3] = x * (x * (x + 3) + 1);
-            X[4] = x * (x * (x * (x + 6) + 7) + 1);
-            X[5] = x * (x * (x * (x * (x + 10) + 25) + 15) + 1);
+             * C[0] = 1
+             * C[1] = 2*M_EG
+             * C[2] = 3*M_EG^2 - M_PI^2/2
+             * C[3] = 4*M_EG^3 - 2*M_EG*M_PI^2 + 8*M_Z3
+             * C[4] = 5*M_EG^4 - 5*M_EG^2*M_PI^2 + 40*M_EG*M_Z3 + M_PI^4/12
+             */
             B[0] = 1.;
             for (int k = 1; k < 5; k++) {
                 B[k] = b / k * B[k - 1];
             }
             // Note that polevl assumes inverse ordering => A[5] = 0th term
             A[5] = cephes::rgamma(b);
-            A[4] = x * (C[0] + C[1] * b + C[2] * B[2] + C[3] * B[3] + C[4] * B[4]);
-            A[3] = X[2] / 2. * (C[1] + C[2] * b + C[3] * B[2] + C[4] * B[3]);
-            A[2] = X[3] / 6. * (C[2] + C[3] * b + C[4] * B[2]);
-            A[1] = X[4] / 24. * (C[3] + C[4] * b);
+            A[4] = X[1]        * (C[0] + C[1] * b + C[2] * B[2] + C[3] * B[3] + C[4] * B[4]);
+            A[3] = X[2] / 2.   * (C[1] + C[2] * b + C[3] * B[2] + C[4] * B[3]);
+            A[2] = X[3] / 6.   * (C[2] + C[3] * b + C[4] * B[2]);
+            A[1] = X[4] / 24.  * (C[3] + C[4] * b);
             A[0] = X[5] / 120. * C[4];
+            // res = exp(x) * (A[5] + A[4] * a + A[3] * a^2 + A[2] * a^3 + ...)
             res = exp(x) * cephes::polevl(a, A, 5);
-            // res = exp(x) * (A[5] + A[4] * a + A[3] * a^2 + A[2] * a^3)
         } else {
             /* Phi(a, b, x) = exp(x)/gamma(b) * sum(A[i] * X[i] * B[i], i=0..5)
              * A[n] = a^n/n!
@@ -169,10 +176,6 @@ namespace detail {
                 }
                 // pg2 = polygamma(2, b)
                 double pg2 = -2 * cephes::zeta(3, b);
-                X[0] = 1;
-                X[1] = x;
-                X[2] = x * (x + 1);
-                X[3] = x * (x * (x + 3) + 1);
                 B[0] = 1;
                 B[1] = -dg;
                 B[2] = dg * dg - pg1;
@@ -184,13 +187,11 @@ namespace detail {
                 if (order >= 4) {
                     // double pg3 = polygamma(3, b)
                     double pg3 = 6 * cephes::zeta(4, b);
-                    X[4] = x * (x * (x * (x + 6) + 7) + 1);
                     B[4] = ((dg * dg - 6 * pg1) * dg + 4 * pg2) * dg + 3 * pg1 * pg1 - pg3;
                     A[order - 4] = X[4] * B[4] / 24.;
                     if (order >= 5) {
                         // pg4 = polygamma(4, b)
                         double pg4 = -24 * cephes::zeta(5, b);
-                        X[5] = x * (x * (x * (x * (x + 10) + 25) + 15) + 1);
                         B[5] =
                             ((((-dg * dg + 10 * pg1) * dg - 10 * pg2) * dg - 15 * pg1 * pg1 + 5 * pg3) * dg +
                              10 * pg1 * pg2 - pg4);
@@ -433,6 +434,9 @@ namespace detail {
         /* Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
          *
          * K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
+         * 
+         * Kmod(eps, a, b, x, r) = exp(x * (r+eps)^(-a) * cos(pi*a)) * (r+eps)^(-b)
+         *                       * sin(x * (r+eps)^(-a) * sin(pi*a) + pi * b)
          */
         double x_r_a = x * std::pow(r + eps, -a);
         return std::exp(x_r_a * cephes::cospi(a)) * std::pow(r + eps, -b) *
@@ -442,11 +446,10 @@ namespace detail {
     SPECFUN_HOST_DEVICE inline double wb_P(double eps, double a, double b, double x, double phi) {
         /* Compute integrand P for Gauss-Legendre quadrature.
          *
-         * P(eps, a, b, x, phi) =
-         *                      * exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
+         * P(eps, a, b, x, phi) = exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
          *                      * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
-                                      + (1-b)*phi)
-        */
+         *                            + (1-b)*phi)
+         */
         double x_eps_a = x * std::pow(eps, -a);
         return std::exp(eps * std::cos(phi) + x_eps_a * std::cos(a * phi)) *
                std::cos(eps * std::sin(phi) - x_eps_a * std::sin(a * phi) + (1 - b) * phi);
@@ -520,9 +523,8 @@ namespace detail {
         /* 5. Integral representation
          *
          * K(a, b, x, r) = exp(-r + x * r^(-a) * cos(pi*a)) * r^(-b)
-         * * sin(x * r^(-a) * sin(pi*a) + pi * b)
-         * P(eps, a, b, x, phi) =
-         *                      * exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
+         *               * sin(x * r^(-a) * sin(pi*a) + pi * b)
+         * P(eps, a, b, x, phi) = exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
          *                      * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
          *                        + (1-b)*phi)
          *
@@ -531,10 +533,14 @@ namespace detail {
          *
          * for any eps > 0.
          *
-         * Note that P has a misprint in Luchko (2008).
+         * Note that P has a misprint in Luchko (2008) Eq. 9, the cos(phi(beta-1)) at
+         * the end of the first line should be removed.
          * This integral representation introduced the free parameter eps (from the
          * radius of complex contour integration). We try to choose eps such that
-         * the integrand behaves smoothly.
+         * the integrand behaves smoothly. Note that this is quite diffrent from how
+         * Luchko (2008) deals with eps: he is either looking for the limit eps -> 0
+         * or he sets (silently) eps=1. But having the freedom to set eps is much more
+         * powerful for numerical evaluation.
          *
          * As K has a leading exp(-r), we factor this out and apply Gauss-Laguerre
          * quadrature rule:
@@ -610,27 +616,27 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
      * There are 5 different approaches depending on the ranges of the arguments:
      *
      * 1. Taylor series expansion in x=0 [1], for x <= 1.
-     * Involves gamma funtions in each term.
+     *    Involves gamma funtions in each term.
      * 2. Taylor series expansion in x=0 [2], for large a.
      * 3. Taylor series in a=0, for tiny a and not too large x.
      * 4. Asymptotic expansion for large x [3, 4].
-     * Suitable for large x while still small a and b.
+     *    Suitable for large x while still small a and b.
      * 5. Integral representation [5], in principle for all arguments.
      *
      * References
      * ----------
      * [1] https://dlmf.nist.gov/10.46.E1
      * [2] P. K. Dunn, G. K. Smyth (2005), Series evaluation of Tweedie exponential
-     * dispersion model densities. Statistics and Computing 15 (2005): 267-280.
+     *     dispersion model densities. Statistics and Computing 15 (2005): 267-280.
      * [3] E. M. Wright (1935), The asymptotic expansion of the generalized Bessel
-     * function. Proc. London Math. Soc. (2) 38, pp. 257-270.
-     * https://doi.org/10.1112/plms/s2-38.1.257
+     *     function. Proc. London Math. Soc. (2) 38, pp. 257-270.
+     *     https://doi.org/10.1112/plms/s2-38.1.257
      * [4] R. B. Paris (2017), The asymptotics of the generalised Bessel function,
-     * Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
-     * https://arxiv.org/abs/1711.03006
+     *     Mathematica Aeterna, Vol. 7, 2017, no. 4, 381 - 406,
+     *     https://arxiv.org/abs/1711.03006
      * [5] Y. F. Luchko (2008), Algorithms for Evaluation of the Wright Function for
-     * the Real Arguments' Values, Fractional Calculus and Applied Analysis 11(1)
-     * http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
+     *     the Real Arguments' Values, Fractional Calculus and Applied Analysis 11(1)
+     *     http://sci-gems.math.bas.bg/jspui/bitstream/10525/1298/1/fcaa-vol11-num1-2008-57p-75p.pdf
      */
     if (std::isnan(a) || std::isnan(b) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
