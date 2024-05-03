@@ -21,7 +21,10 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
-from scipy._lib._array_api import SCIPY_ARRAY_API
+from scipy._lib._array_api import SCIPY_ARRAY_API, xp_assert_equal, xp_assert_close
+from scipy.conftest import array_api_compatible
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 distcont = dict(distcont)  # type: ignore
 
@@ -1659,48 +1662,55 @@ class TestWilcoxon:
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
 
+@array_api_compatible
 class TestKstat:
-    def test_moments_normal_distribution(self):
+    def test_moments_normal_distribution(self, xp):
         np.random.seed(32149)
-        data = np.random.randn(12345)
-        moments = [stats.kstat(data, n) for n in [1, 2, 3, 4]]
+        data = xp.asarray(np.random.randn(12345))
+        moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
-        expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
-        assert_allclose(moments, expected, rtol=1e-4)
+        expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
+                              dtype=data.dtype)
+        xp_assert_close(moments, expected, rtol=1e-4)
 
         # test equivalence with `stats.moment`
         m1 = stats.moment(data, order=1)
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
-        assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
+        xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
+        
+    def test_empty_input(self, xp):
+        assert_raises(ValueError, stats.kstat, xp.asarray([]))
 
-    def test_empty_input(self):
-        assert_raises(ValueError, stats.kstat, [])
+    def test_nan_input(self, xp):
+        data = xp.arange(10.)
+        data[6] = xp.nan
 
-    def test_nan_input(self):
-        data = np.arange(10.)
-        data[6] = np.nan
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
-        assert_equal(stats.kstat(data), np.nan)
-
-    def test_kstat_bad_arg(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=['input validatio of `n` does not depend on backend'])
+    def test_kstat_bad_arg(self, xp):
         # Raise ValueError if n > 4 or n < 1.
         data = np.arange(10)
         for n in [0, 4.001]:
             assert_raises(ValueError, stats.kstat, data, n=n)
 
 
+@array_api_compatible
 class TestKstatVar:
-    def test_empty_input(self):
-        assert_raises(ValueError, stats.kstatvar, [])
+    def test_empty_input(self, xp):
+        assert_raises(ValueError, stats.kstatvar, xp.asarray([]))
 
-    def test_nan_input(self):
-        data = np.arange(10.)
-        data[6] = np.nan
+    def test_nan_input(self, xp):
+        data = xp.arange(10.)
+        data[6] = xp.nan
 
-        assert_equal(stats.kstat(data), np.nan)
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
-    def test_bad_arg(self):
+    @skip_xp_backends(np_only=True,
+                      reasons=['input validatio of `n` does not depend on backend'])
+    def test_bad_arg(self, xp):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10

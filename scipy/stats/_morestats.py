@@ -12,6 +12,7 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._array_api import array_namespace
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -283,23 +284,25 @@ def kstat(data, n=2):
     0.00166 0.00166 -4.99e-09
     -2.88e-06 -2.88e-06 8.63e-13
     """
+    xp = array_namespace(data)
+    data = xp.asarray(data)
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
-    S = np.zeros(n + 1, np.float64)
-    data = ravel(data)
-    N = data.size
+    S = xp.zeros(n + 1, dtype=xp.float64)
+    data = xp.reshape(data, (-1,))
+    N = data.shape[0]
 
     # raise ValueError on empty input
     if N == 0:
         raise ValueError("Data input must not be empty")
 
     # on nan input, return nan without warning
-    if np.isnan(np.sum(data)):
-        return np.nan
+    if xp.isnan(xp.sum(data)):
+        return xp.nan
 
     for k in range(1, n + 1):
-        S[k] = np.sum(data**k, axis=0)
+        S[k] = xp.sum(data**k, axis=0)
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
@@ -356,9 +359,11 @@ def kstatvar(data, n=2):
                      \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
-    """  # noqa: E501
-    data = ravel(data)
-    N = len(data)
+    """
+    xp = array_namespace(data)
+    xp.asarray(data)
+    data = xp.reshape(data, (-1,))
+    N = data.shape[0]
     if n == 1:
         return kstat(data, n=2) * 1.0/N
     elif n == 2:
