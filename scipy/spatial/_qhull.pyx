@@ -361,7 +361,8 @@ cdef class _Qhull:
                     "qhull: did not free %d bytes (%d pieces)" %
                     (totlong, curlong))
 
-        self._messages.close()
+        if self._messages is not None:
+            self._messages.close()
 
     @cython.final
     def close(self):
@@ -387,7 +388,8 @@ cdef class _Qhull:
                     "qhull: did not free %d bytes (%d pieces)" %
                     (totlong, curlong))
 
-        self._messages.close()
+        if self._messages is not None:
+            self._messages.close()
 
     @cython.final
     def get_points(self):
