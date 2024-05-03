@@ -2020,7 +2020,7 @@ class TestRegression:
         y = 0.2 * np.linspace(0, 100, 100) + 10  # slope is greater than zero
         y += np.sin(np.linspace(0, 20, 100))
 
-        with pytest.raises(ValueError, match="alternative must be 'less'..."):
+        with pytest.raises(ValueError, match="`alternative` must be 'less'..."):
             stats.linregress(x, y, alternative="ekki-ekki")
 
         res1 = stats.linregress(x, y, alternative="two-sided")
