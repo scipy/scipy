@@ -21,7 +21,9 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
-from scipy._lib._array_api import SCIPY_ARRAY_API
+from scipy.conftest import array_api_compatible
+from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
+                                   SCIPY_ARRAY_API, xp_assert_equal)
 
 distcont = dict(distcont)  # type: ignore
 
@@ -2449,6 +2451,7 @@ class TestYeojohnsonNormmax:
         assert np.allclose(lmbda, 1.305, atol=1e-3)
 
 
+@array_api_compatible
 class TestCircFuncs:
     # In gh-5747, the R package `circular` was used to calculate reference
     # values for the circular variance, e.g.:
@@ -2458,108 +2461,84 @@ class TestCircFuncs:
     # var.circular(x)
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 0.006455174270186603),
+                              (stats.circvar, 0.006455174000787767),
                               (stats.circstd, 6.520702116)])
-    def test_circfuncs(self, test_func, expected):
-        x = np.array([355, 5, 2, 359, 10, 350])
-        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
+    def test_circfuncs(self, test_func, expected, xp):
+        x = xp.asarray([355., 5., 2., 359., 10., 350.])
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
 
-    def test_circfuncs_small(self):
-        x = np.array([20, 21, 22, 18, 19, 20.5, 19.2])
-        M1 = x.mean()
+    def test_circfuncs_small(self, xp):
+        # Default tolerances won't work here because the reference values
+        # are approximations. Ensure all array types work in float64 to
+        # avoid needing separate float32 and float64 tolerances.
+        x = xp.asarray([20, 21, 22, 18, 19, 20.5, 19.2], dtype=xp.float64)
+        M1 = xp.mean(x)
         M2 = stats.circmean(x, high=360)
-        assert_allclose(M2, M1, rtol=1e-5)
+        xp_assert_close(M2, M1, rtol=1e-5)
 
-        V1 = (x*np.pi/180).var()
+        # plain torch var/std ddof=1, so we need array_api_compat torch
+        xp_test = array_namespace(x)
+        V1 = xp_test.var(x*xp.pi/180, correction=0)
         # for small variations, circvar is approximately half the
         # linear variance
         V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
-        assert_allclose(V2, V1, rtol=1e-4)
+        xp_assert_close(V2, V1, rtol=1e-4)
 
-        S1 = x.std()
+        S1 = xp_test.std(x, correction=0)
         S2 = stats.circstd(x, high=360)
-        assert_allclose(S2, S1, rtol=1e-4)
+        xp_assert_close(S2, S1, rtol=1e-4)
 
     @pytest.mark.parametrize("test_func, numpy_func",
                              [(stats.circmean, np.mean),
                               (stats.circvar, np.var),
                               (stats.circstd, np.std)])
-    def test_circfuncs_close(self, test_func, numpy_func):
+    def test_circfuncs_close(self, test_func, numpy_func, xp):
         # circfuncs should handle very similar inputs (gh-12740)
-        x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
-        circstat = test_func(x)
-        normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=2e-8)
+        x = np.asarray([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
+        circstat = test_func(xp.asarray(x))
+        normal = xp.asarray(numpy_func(x))
+        xp_assert_close(circstat, normal, atol=2e-8)
 
-    def test_circmean_axis(self):
-        x = np.array([[355, 5, 2, 359, 10, 350],
-                      [351, 7, 4, 352, 9, 349],
-                      [357, 9, 8, 358, 4, 356]])
-        M1 = stats.circmean(x, high=360)
-        M2 = stats.circmean(x.ravel(), high=360)
-        assert_allclose(M1, M2, rtol=1e-14)
+    @pytest.mark.parametrize('circfunc', [stats.circmean,
+                                          stats.circvar,
+                                          stats.circstd])
+    def test_circmean_axis(self, xp, circfunc):
+        x = xp.asarray([[355, 5, 2, 359, 10, 350],
+                        [351, 7, 4, 352, 9, 349],
+                        [357, 9, 8, 358, 4, 356.]])
+        res = circfunc(x, high=360)
+        ref = circfunc(xp.reshape(x, (-1,)), high=360)
+        xp_assert_close(res, xp.asarray(ref))
 
-        M1 = stats.circmean(x, high=360, axis=1)
-        M2 = [stats.circmean(x[i], high=360) for i in range(x.shape[0])]
-        assert_allclose(M1, M2, rtol=1e-14)
+        res = circfunc(x, high=360, axis=1)
+        ref = [circfunc(x[i, :], high=360) for i in range(x.shape[0])]
+        xp_assert_close(res, xp.asarray(ref))
 
-        M1 = stats.circmean(x, high=360, axis=0)
-        M2 = [stats.circmean(x[:, i], high=360) for i in range(x.shape[1])]
-        assert_allclose(M1, M2, rtol=1e-14)
-
-    def test_circvar_axis(self):
-        x = np.array([[355, 5, 2, 359, 10, 350],
-                      [351, 7, 4, 352, 9, 349],
-                      [357, 9, 8, 358, 4, 356]])
-
-        V1 = stats.circvar(x, high=360)
-        V2 = stats.circvar(x.ravel(), high=360)
-        assert_allclose(V1, V2, rtol=1e-11)
-
-        V1 = stats.circvar(x, high=360, axis=1)
-        V2 = [stats.circvar(x[i], high=360) for i in range(x.shape[0])]
-        assert_allclose(V1, V2, rtol=1e-11)
-
-        V1 = stats.circvar(x, high=360, axis=0)
-        V2 = [stats.circvar(x[:, i], high=360) for i in range(x.shape[1])]
-        assert_allclose(V1, V2, rtol=1e-11)
-
-    def test_circstd_axis(self):
-        x = np.array([[355, 5, 2, 359, 10, 350],
-                      [351, 7, 4, 352, 9, 349],
-                      [357, 9, 8, 358, 4, 356]])
-
-        S1 = stats.circstd(x, high=360)
-        S2 = stats.circstd(x.ravel(), high=360)
-        assert_allclose(S1, S2, rtol=1e-11)
-
-        S1 = stats.circstd(x, high=360, axis=1)
-        S2 = [stats.circstd(x[i], high=360) for i in range(x.shape[0])]
-        assert_allclose(S1, S2, rtol=1e-11)
-
-        S1 = stats.circstd(x, high=360, axis=0)
-        S2 = [stats.circstd(x[:, i], high=360) for i in range(x.shape[1])]
-        assert_allclose(S1, S2, rtol=1e-11)
+        res = circfunc(x, high=360, axis=0)
+        ref = [circfunc(x[:, i], high=360) for i in range(x.shape[1])]
+        xp_assert_close(res, xp.asarray(ref))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
                               (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
-    def test_circfuncs_array_like(self, test_func, expected):
-        x = [355, 5, 2, 359, 10, 350]
-        assert_allclose(test_func(x, high=360), expected, rtol=1e-7)
+    def test_circfuncs_array_like(self, test_func, expected, xp):
+        x = xp.asarray([355, 5, 2, 359, 10, 350.])
+        xp_assert_close(test_func(x, high=360), xp.asarray(expected))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
-    def test_empty(self, test_func):
-        assert_(np.isnan(test_func([])))
+    def test_empty(self, test_func, xp):
+        dtype = xp.float64
+        x = xp.asarray([], dtype=dtype)
+        xp_assert_equal(test_func(x), xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
-    def test_nan_propagate(self, test_func):
-        x = [355, 5, 2, 359, 10, 350, np.nan]
-        assert_(np.isnan(test_func(x, high=360)))
+    def test_nan_propagate(self, test_func, xp):
+        x = xp.asarray([355, 5, 2, 359, 10, 350, np.nan])
+        xp_assert_equal(test_func(x, high=360), xp.asarray(xp.nan))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
@@ -2570,18 +2549,46 @@ class TestCircFuncs:
                                 1: 0.005545914017677123}),
                               (stats.circstd,
                                {None: np.nan, 0: 4.11093193, 1: 6.04265394})])
-    def test_nan_propagate_array(self, test_func, expected):
-        x = np.array([[355, 5, 2, 359, 10, 350, 1],
-                      [351, 7, 4, 352, 9, 349, np.nan],
-                      [1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
+    def test_nan_propagate_array(self, test_func, expected, xp):
+        x = xp.asarray([[355, 5, 2, 359, 10, 350, 1],
+                        [351, 7, 4, 352, 9, 349, np.nan],
+                        [1, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
         for axis in expected.keys():
             out = test_func(x, high=360, axis=axis)
             if axis is None:
-                assert_(np.isnan(out))
+                xp_assert_equal(out, xp.asarray(xp.nan))
             else:
-                assert_allclose(out[0], expected[axis], rtol=1e-7)
-                assert_(np.isnan(out[1:]).all())
+                xp_assert_close(out[0], xp.asarray(expected[axis]))
+                xp_assert_equal(out[1:], xp.full_like(out[1:], xp.nan))
 
+    def test_circmean_scalar(self, xp):
+        x = xp.asarray(1.)[()]
+        M1 = x
+        M2 = stats.circmean(x)
+        xp_assert_close(M2, M1, rtol=1e-5)
+
+    def test_circmean_range(self, xp):
+        # regression test for gh-6420: circmean(..., high, low) must be
+        # between `high` and `low`
+        m = stats.circmean(xp.arange(0, 2, 0.1), xp.pi, -xp.pi)
+        xp_assert_less(m, xp.asarray(xp.pi))
+        xp_assert_less(-m, xp.asarray(xp.pi))
+
+    def test_circfuncs_uint8(self, xp):
+        # regression test for gh-7255: overflow when working with
+        # numpy uint8 data type
+        x = xp.asarray([150, 10], dtype=xp.uint8)
+        xp_assert_close(stats.circmean(x, high=180), xp.asarray(170.0))
+        xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
+        xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
+
+
+class TestCircFuncsNanPolicy:
+    # `nan_policy` is implemented by the `_axis_nan_policy` decorator, which is
+    # not yet array-API compatible. When it is array-API compatible, the generic
+    # tests run on every function will be much stronger than these, so these
+    # will not be necessary. So I don't see a need to make these array-API compatible;
+    # when the time comes, they can just be removed.
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean,
                                {None: 359.4178026893944,
@@ -2654,27 +2661,6 @@ class TestCircFuncs:
                                            stats.circstd])
     def test_bad_nan_policy(self, test_func, x):
         assert_raises(ValueError, test_func, x, high=360, nan_policy='foobar')
-
-    def test_circmean_scalar(self):
-        x = 1.
-        M1 = x
-        M2 = stats.circmean(x)
-        assert_allclose(M2, M1, rtol=1e-5)
-
-    def test_circmean_range(self):
-        # regression test for gh-6420: circmean(..., high, low) must be
-        # between `high` and `low`
-        m = stats.circmean(np.arange(0, 2, 0.1), np.pi, -np.pi)
-        assert_(m < np.pi)
-        assert_(m > -np.pi)
-
-    def test_circfuncs_uint8(self):
-        # regression test for gh-7255: overflow when working with
-        # numpy uint8 data type
-        x = np.array([150, 10], dtype='uint8')
-        assert_equal(stats.circmean(x, high=180), 170.0)
-        assert_allclose(stats.circvar(x, high=180), 0.2339555554617, rtol=1e-7)
-        assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 
 class TestMedianTest:

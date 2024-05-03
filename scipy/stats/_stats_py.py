@@ -68,7 +68,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_swapaxes, xp_diff,
-                                   xp_take_along_axis, xp_repeat_1d)
+                                   xp_take_along_axis, xp_repeat_1d, atleast_nd)
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -2828,8 +2828,10 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
+    xp = array_namespace(a)
+    a = atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
-    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
+    s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
 
