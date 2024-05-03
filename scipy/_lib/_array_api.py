@@ -415,31 +415,9 @@ def xp_take_along_axis(arr, indices, axis, xp=None):
     offset = (xp.arange(indices.shape[0]) * m)[:, xp.newaxis]
     indices = xp.reshape(offset + indices, (-1,))
 
-    out = arr[indices]
+    out = xp.take(arr, indices)  # because arr[indices] not in array API : (
     out = xp.reshape(out, shape)
     return xp_swapaxes(out, axis, -1)
-
-
-def xp_put_along_axis(arr, indices, values, axis, xp=None):
-    xp = array_namespace(arr) if xp is None else xp
-    arr = xp_swapaxes(arr, axis, -1)
-    indices, values = xp.broadcast_arrays(indices, values)
-    indices = xp_swapaxes(indices, axis, -1)
-    values = xp_swapaxes(values, axis, -1)
-
-    m = arr.shape[-1]
-    n = indices.shape[-1]
-
-    arr = xp.reshape(arr, (-1,))
-    indices = xp.reshape(indices, (-1, n))
-    values = xp.reshape(values, (-1, n))
-
-    offset = (xp.arange(indices.shape[0]) * m)[:, xp.newaxis]
-    indices = xp.reshape(offset + indices, (-1,))
-    values = xp.reshape(values, (-1,))
-
-    arr[indices] = values
-    return
 
 
 # partial substitute for np.moveaxis, which is not yet in the array API
@@ -484,3 +462,12 @@ def xp_move_axis_to_end(x, source, *, xp=None):
     temp = axes.pop(source)
     axes = axes + [temp]
     return xp.permute_dims(x, axes)
+
+
+# temporary substitute for xp.repeat, which is not yet in all backends
+# or covered by array_api_compat
+def xp_repeat_1d(a, repeats, *, xp):
+    out = []
+    for i in range(a.shape[0]):
+        out.append(xp.asarray([a[i]]*int(repeats[i])))
+    return xp.concat(tuple(out))

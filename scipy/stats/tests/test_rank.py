@@ -2,10 +2,10 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
 
-from scipy.conftest import skip_xp_invalid_arg
+from scipy.conftest import skip_xp_invalid_arg, array_api_compatible
 from scipy.stats import rankdata, tiecorrect
 from scipy._lib._util import np_long
-
+from scipy._lib._array_api import xp_assert_equal, is_numpy
 
 class TestTieCorrect:
 
@@ -73,63 +73,118 @@ class TestTieCorrect:
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
+_rankdata_cases = (
+    # values, method, expected
+    ([], 'average', []),
+    ([], 'min', []),
+    ([], 'max', []),
+    ([], 'dense', []),
+    ([], 'ordinal', []),
+    #
+    ([100], 'average', [1.0]),
+    ([100], 'min', [1.0]),
+    ([100], 'max', [1.0]),
+    ([100], 'dense', [1.0]),
+    ([100], 'ordinal', [1.0]),
+    #
+    ([100, 100, 100], 'average', [2.0, 2.0, 2.0]),
+    ([100, 100, 100], 'min', [1.0, 1.0, 1.0]),
+    ([100, 100, 100], 'max', [3.0, 3.0, 3.0]),
+    ([100, 100, 100], 'dense', [1.0, 1.0, 1.0]),
+    ([100, 100, 100], 'ordinal', [1.0, 2.0, 3.0]),
+    #
+    ([100, 300, 200], 'average', [1.0, 3.0, 2.0]),
+    ([100, 300, 200], 'min', [1.0, 3.0, 2.0]),
+    ([100, 300, 200], 'max', [1.0, 3.0, 2.0]),
+    ([100, 300, 200], 'dense', [1.0, 3.0, 2.0]),
+    ([100, 300, 200], 'ordinal', [1.0, 3.0, 2.0]),
+    #
+    ([100, 200, 300, 200], 'average', [1.0, 2.5, 4.0, 2.5]),
+    ([100, 200, 300, 200], 'min', [1.0, 2.0, 4.0, 2.0]),
+    ([100, 200, 300, 200], 'max', [1.0, 3.0, 4.0, 3.0]),
+    ([100, 200, 300, 200], 'dense', [1.0, 2.0, 3.0, 2.0]),
+    ([100, 200, 300, 200], 'ordinal', [1.0, 2.0, 4.0, 3.0]),
+    #
+    ([100, 200, 300, 200, 100], 'average', [1.5, 3.5, 5.0, 3.5, 1.5]),
+    ([100, 200, 300, 200, 100], 'min', [1.0, 3.0, 5.0, 3.0, 1.0]),
+    ([100, 200, 300, 200, 100], 'max', [2.0, 4.0, 5.0, 4.0, 2.0]),
+    ([100, 200, 300, 200, 100], 'dense', [1.0, 2.0, 3.0, 2.0, 1.0]),
+    ([100, 200, 300, 200, 100], 'ordinal', [1.0, 3.0, 5.0, 4.0, 2.0]),
+    #
+    ([10] * 30, 'ordinal', np.arange(1.0, 31.0)),
+)
+
+
 class TestRankData:
 
-    def test_empty(self):
-        """stats.rankdata([]) should return an empty array."""
-        a = np.array([], dtype=int)
-        r = rankdata(a)
-        assert_array_equal(r, np.array([], dtype=np.float64))
-        r = rankdata([])
-        assert_array_equal(r, np.array([], dtype=np.float64))
+    def desired_dtype(self, method='average', has_nans=False, *, xp):
+        if has_nans:
+            return xp.asarray(1.).dtype
+        return xp.asarray(1.).dtype if method=='average' else xp.asarray(1).dtype
 
+    @array_api_compatible
+    def test_empty(self, xp):
+        """stats.rankdata of empty array should return an empty array."""
+        a = xp.asarray([], dtype=xp.int64)
+        r = rankdata(a)
+        xp_assert_equal(r, xp.asarray([], dtype=self.desired_dtype(xp=xp)))
+        if is_numpy(xp):
+            r = rankdata([])
+            assert_array_equal(r, np.array([], self.desired_dtype(xp=xp)))
+
+    @array_api_compatible
     @pytest.mark.parametrize("shape", [(0, 1, 2)])
     @pytest.mark.parametrize("axis", [None, *range(3)])
-    def test_empty_multidim(self, shape, axis):
-        a = np.empty(shape, dtype=int)
+    def test_empty_multidim(self, shape, axis, xp):
+        a = xp.empty(shape, dtype=xp.int64)
         r = rankdata(a, axis=axis)
         expected_shape = (0,) if axis is None else shape
-        assert_equal(r.shape, expected_shape)
-        assert_equal(r.dtype, np.float64)
+        xp_assert_equal(r, xp.empty(expected_shape, dtype=self.desired_dtype(xp=xp)))
 
-    def test_one(self):
+    @array_api_compatible
+    def test_one(self, xp):
         """Check stats.rankdata with an array of length 1."""
         data = [100]
-        a = np.array(data, dtype=int)
+        a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64))
-        r = rankdata(data)
-        assert_array_equal(r, np.array([1.0], dtype=np.float64))
+        xp_assert_equal(r, xp.asarray([1.0], dtype=self.desired_dtype(xp=xp)))
 
-    def test_basic(self):
+    @array_api_compatible
+    def test_basic(self, xp):
         """Basic tests of stats.rankdata."""
+        desired_dtype = self.desired_dtype(xp=xp)
+
         data = [100, 10, 50]
-        expected = np.array([3.0, 1.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=int)
+        expected = xp.asarray([3.0, 1.0, 2.0], dtype=desired_dtype)
+        a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
-        assert_array_equal(r, expected)
-        r = rankdata(data)
-        assert_array_equal(r, expected)
+        xp_assert_equal(r, expected)
+        if is_numpy(xp):
+            r = rankdata(data)
+            xp_assert_equal(r, expected)
 
         data = [40, 10, 30, 10, 50]
-        expected = np.array([4.0, 1.5, 3.0, 1.5, 5.0], dtype=np.float64)
-        a = np.array(data, dtype=int)
+        expected = xp.asarray([4.0, 1.5, 3.0, 1.5, 5.0], dtype=desired_dtype)
+        a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
-        assert_array_equal(r, expected)
-        r = rankdata(data)
-        assert_array_equal(r, expected)
+        xp_assert_equal(r, expected)
+        if is_numpy(xp):
+            r = rankdata(data)
+            xp_assert_equal(r, expected)
 
         data = [20, 20, 20, 10, 10, 10]
-        expected = np.array([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=np.float64)
-        a = np.array(data, dtype=int)
+        expected = xp.asarray([5.0, 5.0, 5.0, 2.0, 2.0, 2.0], dtype=desired_dtype)
+        a = xp.asarray(data, dtype=xp.int64)
         r = rankdata(a)
-        assert_array_equal(r, expected)
-        r = rankdata(data)
-        assert_array_equal(r, expected)
-        # The docstring states explicitly that the argument is flattened.
-        a2d = a.reshape(2, 3)
+        xp_assert_equal(r, expected)
+        if is_numpy(xp):
+            r = rankdata(data)
+            xp_assert_equal(r, expected)
+
+        # # The docstring states explicitly that the argument is flattened.
+        a2d = xp.reshape(a, (2, 3))
         r = rankdata(a2d)
-        assert_array_equal(r, expected)
+        xp_assert_equal(r, expected)
 
     @skip_xp_invalid_arg
     def test_rankdata_object_string(self):
@@ -165,50 +220,57 @@ class TestRankData:
         val = np.array([0, 1, 2, 2.718, 3, 3.141], dtype='object')
         check_ranks(np.random.choice(val, 200).astype('object'))
 
-    def test_large_int(self):
-        data = np.array([2**60, 2**60+1], dtype=np.uint64)
-        r = rankdata(data)
-        assert_array_equal(r, [1.0, 2.0])
+    @array_api_compatible
+    def test_large_int(self, xp):
+        ref = xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp))
 
-        data = np.array([2**60, 2**60+1], dtype=np.int64)
-        r = rankdata(data)
-        assert_array_equal(r, [1.0, 2.0])
-
-        data = np.array([2**60, -2**60+1], dtype=np.int64)
-        r = rankdata(data)
-        assert_array_equal(r, [2.0, 1.0])
-
-    def test_big_tie(self):
-        for n in [10000, 100000, 1000000]:
-            data = np.ones(n, dtype=int)
+        if hasattr(xp, 'uint64'):
+            data = xp.asarray([2**60, 2**60+1], dtype=xp.uint64)
             r = rankdata(data)
-            expected_rank = 0.5 * (n + 1)
-            assert_array_equal(r, expected_rank * data,
-                               "test failed with n=%d" % n)
+            xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
 
-    def test_axis(self):
-        data = [[0, 2, 1],
-                [4, 2, 2]]
-        expected0 = [[1., 1.5, 1.],
-                     [2., 1.5, 2.]]
+        data = xp.asarray([2**60, 2**60+1], dtype=xp.int64)
+        r = rankdata(data)
+        xp_assert_equal(r, xp.asarray([1.0, 2.0], dtype=self.desired_dtype(xp=xp)))
+
+        data = xp.asarray([2**60, -2**60+1], dtype=xp.int64)
+        r = rankdata(data)
+        xp_assert_equal(r, xp.asarray([2.0, 1.0], dtype=self.desired_dtype(xp=xp)))
+
+    @pytest.mark.parametrize('n', [10000, 100000, 1000000])
+    @array_api_compatible
+    def test_big_tie(self, n, xp):
+        data = xp.ones(n)
+        r = rankdata(data)
+        expected_rank = 0.5 * (n + 1)
+        ref = xp.asarray(expected_rank * data, dtype=self.desired_dtype(xp=xp))
+        xp_assert_equal(r, ref)
+
+    @array_api_compatible
+    def test_axis(self, xp):
+        data = xp.asarray([[0, 2, 1], [4, 2, 2]])
+
+        expected0 = xp.asarray([[1., 1.5, 1.], [2., 1.5, 2.]])
         r0 = rankdata(data, axis=0)
-        assert_array_equal(r0, expected0)
-        expected1 = [[1., 3., 2.],
-                     [3., 1.5, 1.5]]
+        xp_assert_equal(r0, expected0)
+
+        expected1 = xp.asarray([[1., 3., 2.], [3., 1.5, 1.5]])
         r1 = rankdata(data, axis=1)
-        assert_array_equal(r1, expected1)
+        xp_assert_equal(r1, expected1)
 
-    methods = ["average", "min", "max", "dense", "ordinal"]
-    dtypes = [np.float64] + [np_long]*4
+    methods= ["average", "min", "max", "dense", "ordinal"]
 
+    @array_api_compatible
     @pytest.mark.parametrize("axis", [0, 1])
-    @pytest.mark.parametrize("method, dtype", zip(methods, dtypes))
-    def test_size_0_axis(self, axis, method, dtype):
+    @pytest.mark.parametrize("method", methods)
+    def test_size_0_axis(self, axis, method, xp):
         shape = (3, 0)
-        data = np.zeros(shape)
+        desired_dtype = self.desired_dtype(method, xp=xp)
+        data = xp.zeros(shape)
         r = rankdata(data, method=method, axis=axis)
         assert_equal(r.shape, shape)
-        assert_equal(r.dtype, dtype)
+        assert_equal(r.dtype, desired_dtype)
+        xp_assert_equal(r, xp.empty(shape, dtype=desired_dtype))
 
     @pytest.mark.parametrize('axis', range(3))
     @pytest.mark.parametrize('method', methods)
@@ -289,50 +351,10 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
-
-_cases = (
-    # values, method, expected
-    ([], 'average', []),
-    ([], 'min', []),
-    ([], 'max', []),
-    ([], 'dense', []),
-    ([], 'ordinal', []),
-    #
-    ([100], 'average', [1.0]),
-    ([100], 'min', [1.0]),
-    ([100], 'max', [1.0]),
-    ([100], 'dense', [1.0]),
-    ([100], 'ordinal', [1.0]),
-    #
-    ([100, 100, 100], 'average', [2.0, 2.0, 2.0]),
-    ([100, 100, 100], 'min', [1.0, 1.0, 1.0]),
-    ([100, 100, 100], 'max', [3.0, 3.0, 3.0]),
-    ([100, 100, 100], 'dense', [1.0, 1.0, 1.0]),
-    ([100, 100, 100], 'ordinal', [1.0, 2.0, 3.0]),
-    #
-    ([100, 300, 200], 'average', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'min', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'max', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'dense', [1.0, 3.0, 2.0]),
-    ([100, 300, 200], 'ordinal', [1.0, 3.0, 2.0]),
-    #
-    ([100, 200, 300, 200], 'average', [1.0, 2.5, 4.0, 2.5]),
-    ([100, 200, 300, 200], 'min', [1.0, 2.0, 4.0, 2.0]),
-    ([100, 200, 300, 200], 'max', [1.0, 3.0, 4.0, 3.0]),
-    ([100, 200, 300, 200], 'dense', [1.0, 2.0, 3.0, 2.0]),
-    ([100, 200, 300, 200], 'ordinal', [1.0, 2.0, 4.0, 3.0]),
-    #
-    ([100, 200, 300, 200, 100], 'average', [1.5, 3.5, 5.0, 3.5, 1.5]),
-    ([100, 200, 300, 200, 100], 'min', [1.0, 3.0, 5.0, 3.0, 1.0]),
-    ([100, 200, 300, 200, 100], 'max', [2.0, 4.0, 5.0, 4.0, 2.0]),
-    ([100, 200, 300, 200, 100], 'dense', [1.0, 2.0, 3.0, 2.0, 1.0]),
-    ([100, 200, 300, 200, 100], 'ordinal', [1.0, 3.0, 5.0, 4.0, 2.0]),
-    #
-    ([10] * 30, 'ordinal', np.arange(1.0, 31.0)),
-)
-
-
-def test_cases():
-    for values, method, expected in _cases:
-        r = rankdata(values, method=method)
-        assert_array_equal(r, expected)
+    @array_api_compatible
+    @pytest.mark.parametrize('case', _rankdata_cases)
+    def test_cases(self, case, xp):
+        values, method, expected = case
+        r = rankdata(xp.asarray(values), method=method)
+        ref = xp.asarray(expected, dtype=self.desired_dtype(method, xp=xp))
+        xp_assert_equal(r, ref)

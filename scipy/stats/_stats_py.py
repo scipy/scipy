@@ -68,7 +68,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_swapaxes, xp_diff,
-                                   xp_put_along_axis, xp_take_along_axis)
+                                   xp_take_along_axis, xp_repeat_1d)
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -10988,8 +10988,8 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         x = xp.reshape(x, (-1,))  # ravel
         axis = -1
 
-    if x.size == 0:
-        dtype = xp.float64 if method == 'average' else xp.int32
+    if xp_size(x) == 0:
+        dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
         return xp.empty(x.shape, dtype=dtype)
 
     contains_nan, nan_policy = _contains_nan(x, nan_policy, xp=xp)
@@ -10998,9 +10998,10 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     ranks = _rankdata(x, method, xp=xp)
 
     if contains_nan:
+        default_float = xp.asarray(1.).dtype
         i_nan = (xp.isnan(x) if nan_policy == 'omit'
                  else xp.any(xp.isnan(x), axis=-1))
-        ranks = xp.asarray(ranks, dtype=xp.float64)  # copy=False when implemented
+        ranks = xp.asarray(ranks, dtype=default_float)  # copy=False when implemented
         ranks[i_nan] = xp.nan
 
     ranks = xp_swapaxes(ranks, axis, -1, xp=xp)
@@ -11010,8 +11011,11 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
 def _order_ranks(ranks, j, *, xp):
     # Reorder ascending order `ranks` according to `j`
     xp = array_namespace(ranks) if xp is None else xp
-    ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
-    xp_put_along_axis(ordered_ranks, j, ranks, axis=-1, xp=xp)
+    # Can't use `put`, so we need to argsort the argsort and take...
+    # ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
+    # xp_put_along_axis(ordered_ranks, j, ranks, axis=-1, xp=xp)
+    j_inv = xp.argsort(j, axis=-1)
+    ordered_ranks = xp_take_along_axis(ranks, j_inv, axis=-1)
     return ordered_ranks
 
 
@@ -11019,10 +11023,11 @@ def _rankdata(x, method, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties` if desired
     xp = array_namespace(x) if xp is None else xp
     shape = x.shape
+    dtype = xp.asarray(1.).dtype if method == 'average' else xp.asarray(1).dtype
 
     # Get sort order
     j = xp.argsort(x, axis=-1)
-    ordinal_ranks = xp.broadcast_to(xp.arange(1, shape[-1]+1, dtype=xp.int64), shape)
+    ordinal_ranks = xp.broadcast_to(xp.arange(1, shape[-1]+1, dtype=dtype), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
@@ -11035,9 +11040,9 @@ def _rankdata(x, method, return_ties=False, xp=None):
                    y[..., :-1] != y[..., 1:]], axis=-1)
 
     # Integer indices of unique elements
-    indices = xp.arange(y.size)[xp.reshape(i, (-1,))]  # i gets raveled
+    indices = xp.arange(xp_size(y))[xp.reshape(i, (-1,))]  # i gets raveled
     # Counts of unique elements
-    counts = xp_diff(indices, append=y.size)
+    counts = xp_diff(indices, append=xp_size(y))
 
     # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
     if method == 'min':
@@ -11045,11 +11050,12 @@ def _rankdata(x, method, return_ties=False, xp=None):
     elif method == 'max':
         ranks = ordinal_ranks[i] + counts - 1
     elif method == 'average':
-        ranks = ordinal_ranks[i] + (counts - 1)/2
+        # array API doesn't promote integers to floats
+        ranks = ordinal_ranks[i] + (xp.asarray(counts, dtype=dtype) - 1)/2
     elif method == 'dense':
         ranks = xp.cumsum(i, axis=-1)[i]  # should be cumulative_sum; not available yet
 
-    ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    ranks = xp.reshape(xp_repeat_1d(ranks, counts, xp=xp), shape)
     ranks = _order_ranks(ranks, j, xp=xp)
 
     if return_ties:
