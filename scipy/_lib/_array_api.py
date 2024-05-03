@@ -148,7 +148,7 @@ def _asarray(
     `check_finite` is also not a keyword in the array API standard; included
     here for convenience rather than that having to be a separate function
     call inside SciPy functions.
-    
+
     `subok` is included to allow this function to preserve the behaviour of
     `np.asanyarray` for NumPy based inputs.
     """
@@ -319,7 +319,6 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
         # roughly half way between sqrt(eps) and the default for
         # `numpy.testing.assert_allclose`, 1e-7
         rtol = xp.finfo(actual.dtype).eps**0.5 * 4
-
     elif rtol is None:
         rtol = 1e-7
 
@@ -387,3 +386,16 @@ def xp_unsupported_param_msg(param: Any) -> str:
 
 def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+# temporary substitute for xp.minimum, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_minimum(x1, x2):
+    # xp won't be passed in because it doesn't need to be passed in to xp.minimum
+    xp = array_namespace(x1, x2)
+    x1, x2 = xp.broadcast_arrays(x1, x2)
+    dtype = xp.result_type(x1.dtype, x2.dtype)
+    res = xp.asarray(x1, copy=True, dtype=dtype)
+    i = (x2 < x1) | xp.isnan(x2)
+    res[i] = x2[i]
+    return res

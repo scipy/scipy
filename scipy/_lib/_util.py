@@ -268,8 +268,8 @@ def check_random_state(seed):
     if isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
 
-    raise ValueError('%r cannot be used to seed a numpy.random.RandomState'
-                     ' instance' % seed)
+    raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
+                     " instance")
 
 
 def _asarray_validated(a, check_finite=True,
@@ -716,10 +716,9 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
     if not_numpy:
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
-        policies = ['propagate', 'raise', 'omit']
+        policies = {'propagate', 'raise', 'omit'}
     if nan_policy not in policies:
-        raise ValueError("nan_policy must be one of {%s}" %
-                         ', '.join("'%s'" % s for s in policies))
+        raise ValueError(f"nan_policy must be one of {set(policies)}.")
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
@@ -815,15 +814,17 @@ def _rng_spawn(rng, n_children):
     return child_rngs
 
 
-def _get_nan(*data):
+def _get_nan(*data, xp=None):
+    xp = array_namespace(*data) if xp is None else xp
     # Get NaN of appropriate dtype for data
-    data = [np.asarray(item) for item in data]
+    data = [xp.asarray(item) for item in data]
     try:
-        dtype = np.result_type(*data, np.half)  # must be a float16 at least
+        min_float = getattr(xp, 'float16', xp.float32)
+        dtype = xp.result_type(*data, min_float)  # must be at least a float
     except DTypePromotionError:
         # fallback to float64
-        return np.array(np.nan, dtype=np.float64)[()]
-    return np.array(np.nan, dtype=dtype)[()]
+        dtype = xp.float64
+    return xp.asarray(xp.nan, dtype=dtype)[()]
 
 
 def normalize_axis_index(axis, ndim):

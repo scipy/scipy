@@ -511,7 +511,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 samples = [sample.reshape(new_shape)
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
-            NaN = _get_nan(*samples)
+            NaN = _get_nan(*samples) if samples else np.nan
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])

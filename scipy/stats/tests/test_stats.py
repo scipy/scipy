@@ -43,6 +43,9 @@ from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_names
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API)
 
 
+skip_xp_backends = pytest.mark.skip_xp_backends
+
+
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
     considered to be essential functionality.  True testing and
@@ -179,7 +182,7 @@ class TestTrimmedStats:
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-            msg = "'propagate', 'raise', 'omit'"
+            msg = "nan_policy must be one of..."
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
@@ -2621,31 +2624,44 @@ class TestMode:
         with pytest.raises(TypeError, match=message):
             stats.mode(np.arange(3, dtype=object))
 
+
+@array_api_compatible
 class TestSEM:
 
-    testcase = [1, 2, 3, 4]
+    testcase = [1., 2., 3., 4.]
     scalar_testcase = 4.
 
-    def test_sem(self):
+    def test_sem(self, xp):
         # This is not in R, so used:
         #     sqrt(var(testcase)*3/4)/sqrt(3)
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
+        scalar_testcase = xp.asarray(self.scalar_testcase)[()]
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+            # numpy
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
-            y = stats.sem(self.scalar_testcase)
-        assert_(np.isnan(y))
+            # torch
+            sup.filter(UserWarning, "std*")
+            y = stats.sem(scalar_testcase)
+        assert xp.isnan(y)
 
-        y = stats.sem(self.testcase)
-        assert_approx_equal(y, 0.6454972244)
+        testcase = xp.asarray(self.testcase)
+        y = stats.sem(testcase)
+        xp_assert_close(y, xp.asarray(0.6454972244))
         n = len(self.testcase)
-        assert_allclose(stats.sem(self.testcase, ddof=0) * np.sqrt(n/(n-2)),
-                        stats.sem(self.testcase, ddof=2))
+        assert_allclose(stats.sem(testcase, ddof=0) * (n/(n-2))**0.5,
+                        stats.sem(testcase, ddof=2))
 
+        x = xp.arange(10.)
+        x[9] = xp.nan
+        assert_equal(stats.sem(x), xp.asarray(xp.nan))
+    
+    @skip_xp_backends(np_only=True,
+                      reasons=['`nan_policy` only supports NumPy backend'])
+    def test_sem_nan_policy(self, xp):
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.sem(x), np.nan)
         assert_equal(stats.sem(x, nan_policy='omit'), 0.9128709291752769)
         assert_raises(ValueError, stats.sem, x, nan_policy='raise')
         assert_raises(ValueError, stats.sem, x, nan_policy='foobar')
