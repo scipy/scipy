@@ -351,6 +351,9 @@ class TestRankData:
                             [np.nan, np.nan, np.nan],
                             [1, 2.5, 2.5]])
 
+    @pytest.mark.skip_xp_backends('array_api_strict',
+                                  reasons=["Doesn't implement cumulative_sum yet."])
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('case', _rankdata_cases)
     def test_cases(self, case, xp):
