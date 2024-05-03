@@ -148,7 +148,7 @@ def _asarray(
     `check_finite` is also not a keyword in the array API standard; included
     here for convenience rather than that having to be a separate function
     call inside SciPy functions.
-    
+
     `subok` is included to allow this function to preserve the behaviour of
     `np.asanyarray` for NumPy based inputs.
     """
@@ -387,3 +387,100 @@ def xp_unsupported_param_msg(param: Any) -> str:
 
 def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+def xp_swapaxes(a, axis1, axis2, xp=None):
+    xp = array_namespace(a) if xp is None else xp
+    axes = list(range(a.ndim))
+    axes[axis1], axes[axis2] = axes[axis2], axes[axis1]
+    a = xp.permute_dims(a, axes)
+    return a
+
+
+def xp_take_along_axis(arr, indices, axis, xp=None):
+    xp = array_namespace(arr) if xp is None else xp
+    arr = xp_swapaxes(arr, axis, -1)
+    indices = xp_swapaxes(indices, axis, -1)
+
+    m = arr.shape[-1]
+    n = indices.shape[-1]
+
+    shape = list(arr.shape)
+    shape.pop(-1)
+    shape = shape + [n,]
+
+    arr = xp.reshape(arr, (-1,))
+    indices = xp.reshape(indices, (-1, n))
+
+    offset = (xp.arange(indices.shape[0]) * m)[:, xp.newaxis]
+    indices = xp.reshape(offset + indices, (-1,))
+
+    out = arr[indices]
+    out = xp.reshape(out, shape)
+    return xp_swapaxes(out, axis, -1)
+
+
+def xp_put_along_axis(arr, indices, values, axis, xp=None):
+    xp = array_namespace(arr) if xp is None else xp
+    arr = xp_swapaxes(arr, axis, -1)
+    indices, values = xp.broadcast_arrays(indices, values)
+    indices = xp_swapaxes(indices, axis, -1)
+    values = xp_swapaxes(values, axis, -1)
+
+    m = arr.shape[-1]
+    n = indices.shape[-1]
+
+    arr = xp.reshape(arr, (-1,))
+    indices = xp.reshape(indices, (-1, n))
+    values = xp.reshape(values, (-1, n))
+
+    offset = (xp.arange(indices.shape[0]) * m)[:, xp.newaxis]
+    indices = xp.reshape(offset + indices, (-1,))
+    values = xp.reshape(values, (-1,))
+
+    arr[indices] = values
+    return
+
+
+# partial substitute for np.moveaxis, which is not yet in the array API
+def xp_diff(a, *, axis=-1, prepend=np._NoValue, append=np._NoValue, xp=None):
+    # Doesn't support `n`.
+    # `prepend` and `append` will only work properly for scalars now.
+    # I would use the private `_broadcast` from `_axis_nan_policy` to
+    # broadcast ignoring axis, but the xp-version hasn't merged yet.
+    # Instead, for simplicity, I'll broadcast `prepend` and `append` to
+    # the full shape of `a` and use only one element along `axis`.
+
+    xp = array_namespace(a) if xp is None else xp
+    arrays = []
+    has_prepend = (prepend is not np._NoValue)
+    has_append = (append is not np._NoValue)
+
+    if has_prepend:
+        arrays.append(xp.asarray(prepend))
+    arrays.append(a)
+    if has_append:
+        arrays.append(xp.asarray(append))
+
+    arrays = xp.broadcast_arrays(*arrays)
+    arrays = [xp_swapaxes(arr, axis, -1, xp=xp) for arr in arrays]
+
+    if has_prepend:
+        arrays[0] = arrays[0][..., 0:1]
+    if has_append:
+        arrays[-1] = arrays[-1][..., 0:1]
+
+    a = xp.concat(arrays, axis=-1)
+    res = a[..., 1:] - a[..., :-1]
+    res = xp_swapaxes(res, -1, axis, xp=xp)
+    return res
+
+
+# temporary substitute for xp.moveaxis, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_move_axis_to_end(x, source, *, xp=None):
+    xp = array_namespace(xp) if xp is None else xp
+    axes = list(range(x.ndim))
+    temp = axes.pop(source)
+    axes = axes + [temp]
+    return xp.permute_dims(x, axes)

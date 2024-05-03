@@ -67,7 +67,8 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import (array_namespace, is_numpy, xp_swapaxes, xp_diff,
+                                   xp_put_along_axis, xp_take_along_axis)
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -10980,61 +10981,63 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     if method not in methods:
         raise ValueError(f'unknown method "{method}"')
 
-    x = np.asarray(a)
+    xp = array_namespace(a)
+    x = xp.asarray(a)
 
     if axis is None:
-        x = x.ravel()
+        x = xp.reshape(x, (-1,))  # ravel
         axis = -1
 
     if x.size == 0:
-        dtype = float if method == 'average' else np.dtype("long")
-        return np.empty(x.shape, dtype=dtype)
+        dtype = xp.float64 if method == 'average' else xp.int32
+        return xp.empty(x.shape, dtype=dtype)
 
-    contains_nan, nan_policy = _contains_nan(x, nan_policy)
+    contains_nan, nan_policy = _contains_nan(x, nan_policy, xp=xp)
 
-    x = np.swapaxes(x, axis, -1)
-    ranks = _rankdata(x, method)
+    x = xp_swapaxes(x, axis, -1, xp=xp)
+    ranks = _rankdata(x, method, xp=xp)
 
     if contains_nan:
-        i_nan = (np.isnan(x) if nan_policy == 'omit'
-                 else np.isnan(x).any(axis=-1))
-        ranks = ranks.astype(float, copy=False)
-        ranks[i_nan] = np.nan
+        i_nan = (xp.isnan(x) if nan_policy == 'omit'
+                 else xp.any(xp.isnan(x), axis=-1))
+        ranks = xp.asarray(ranks, dtype=xp.float64)  # copy=False when implemented
+        ranks[i_nan] = xp.nan
 
-    ranks = np.swapaxes(ranks, axis, -1)
+    ranks = xp_swapaxes(ranks, axis, -1, xp=xp)
     return ranks
 
 
-def _order_ranks(ranks, j):
+def _order_ranks(ranks, j, *, xp):
     # Reorder ascending order `ranks` according to `j`
-    ordered_ranks = np.empty(j.shape, dtype=ranks.dtype)
-    np.put_along_axis(ordered_ranks, j, ranks, axis=-1)
+    xp = array_namespace(ranks) if xp is None else xp
+    ordered_ranks = xp.empty(j.shape, dtype=ranks.dtype)
+    xp_put_along_axis(ordered_ranks, j, ranks, axis=-1, xp=xp)
     return ordered_ranks
 
 
-def _rankdata(x, method, return_ties=False):
+def _rankdata(x, method, return_ties=False, xp=None):
     # Rank data `x` by desired `method`; `return_ties` if desired
+    xp = array_namespace(x) if xp is None else xp
     shape = x.shape
 
     # Get sort order
-    kind = 'mergesort' if method == 'ordinal' else 'quicksort'
-    j = np.argsort(x, axis=-1, kind=kind)
-    ordinal_ranks = np.broadcast_to(np.arange(1, shape[-1]+1, dtype=int), shape)
+    j = xp.argsort(x, axis=-1)
+    ordinal_ranks = xp.broadcast_to(xp.arange(1, shape[-1]+1, dtype=xp.int64), shape)
 
     # Ordinal ranks is very easy because ties don't matter. We're done.
     if method == 'ordinal':
-        return _order_ranks(ordinal_ranks, j)  # never return ties
+        return _order_ranks(ordinal_ranks, j, xp=xp)  # never return ties
 
     # Sort array
-    y = np.take_along_axis(x, j, axis=-1)
+    y = xp_take_along_axis(x, j, axis=-1)
     # Logical indices of unique elements
-    i = np.concatenate([np.ones(shape[:-1] + (1,), dtype=np.bool_),
-                       y[..., :-1] != y[..., 1:]], axis=-1)
+    i = xp.concat([xp.ones(shape[:-1] + (1,), dtype=xp.bool),
+                   y[..., :-1] != y[..., 1:]], axis=-1)
 
     # Integer indices of unique elements
-    indices = np.arange(y.size)[i.ravel()]
+    indices = xp.arange(y.size)[xp.reshape(i, (-1,))]  # i gets raveled
     # Counts of unique elements
-    counts = np.diff(indices, append=y.size)
+    counts = xp_diff(indices, append=y.size)
 
     # Compute `'min'`, `'max'`, and `'mid'` ranks of unique elements
     if method == 'min':
@@ -11044,10 +11047,10 @@ def _rankdata(x, method, return_ties=False):
     elif method == 'average':
         ranks = ordinal_ranks[i] + (counts - 1)/2
     elif method == 'dense':
-        ranks = np.cumsum(i, axis=-1)[i]
+        ranks = xp.cumsum(i, axis=-1)[i]  # should be cumulative_sum; not available yet
 
-    ranks = np.repeat(ranks, counts).reshape(shape)
-    ranks = _order_ranks(ranks, j)
+    ranks = xp.reshape(xp.repeat(ranks, counts), shape)
+    ranks = _order_ranks(ranks, j, xp=xp)
 
     if return_ties:
         # Tie information is returned in a format that is useful to functions that
@@ -11066,7 +11069,7 @@ def _rankdata(x, method, return_ties=False):
         #   sorted order, so this does not unnecesarily reorder them.
         # - One exception is `wilcoxon`, which needs the number of zeros. Zeros always
         #   have the lowest rank, so it is easy to find them at the zeroth index.
-        t = np.zeros(shape, dtype=float)
+        t = xp.zeros(shape, dtype=xp.float64)
         t[i] = counts
         return ranks, t
     return ranks
