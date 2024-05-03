@@ -182,7 +182,7 @@ class TestTrimmedStats:
             assert_equal(stats.tmin(x, nan_policy='omit'), 0.)
             assert_raises(ValueError, stats.tmin, x, nan_policy='raise')
             assert_raises(ValueError, stats.tmin, x, nan_policy='foobar')
-            msg = "'propagate', 'raise', 'omit'"
+            msg = "nan_policy must be one of..."
             with assert_raises(ValueError, match=msg):
                 stats.tmin(x, nan_policy='foo')
 
