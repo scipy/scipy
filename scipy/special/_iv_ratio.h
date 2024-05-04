@@ -76,7 +76,7 @@ inline double iv_ratio(double v, double x, int comp) {
     // Now v >= 1 and x >= 0 and both are finite.
     int e;
     std::frexp(std::fmax(v, x), &e);
-    double c = std::ldexp(1, 1-e); // rescaling multiplier
+    double c = std::ldexp(1, 2-e); // rescaling multiplier
     double vc = v * c;
     double xc = x * c;
 
