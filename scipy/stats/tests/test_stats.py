@@ -2650,13 +2650,13 @@ class TestSEM:
         y = stats.sem(testcase)
         xp_assert_close(y, xp.asarray(0.6454972244))
         n = len(self.testcase)
-        assert_allclose(stats.sem(testcase, ddof=0) * (n/(n-2))**0.5,
+        xp_assert_close(stats.sem(testcase, ddof=0) * (n/(n-2))**0.5,
                         stats.sem(testcase, ddof=2))
 
         x = xp.arange(10.)
         x[9] = xp.nan
-        assert_equal(stats.sem(x), xp.asarray(xp.nan))
-    
+        xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
+
     @skip_xp_backends(np_only=True,
                       reasons=['`nan_policy` only supports NumPy backend'])
     def test_sem_nan_policy(self, xp):
