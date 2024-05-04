@@ -3711,8 +3711,8 @@ class TestStudentTest:
     def test_pvalue_ci(self, alpha, data_axis, alternative, xp):
         # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        data = data.astype(copy=True)  # ensure byte order
-        data = xp.asarray(data)
+        data = data.astype(np.float64, copy=True)  # ensure byte order
+        data = xp.asarray(data, dtype=xp.float64)
         res = stats.ttest_1samp(data, 0.,
                                 alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
@@ -3722,7 +3722,7 @@ class TestStudentTest:
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
         shape = list(data.shape)
         shape.pop(axis)
-        ref = xp.broadcast_to(xp.asarray(1-alpha), shape)
+        ref = xp.broadcast_to(xp.asarray(1-alpha, dtype=xp.float64), shape)
         xp_assert_close(res.pvalue, ref)
 
 
