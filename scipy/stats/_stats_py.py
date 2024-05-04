@@ -67,7 +67,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, atleast_nd
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -1108,9 +1108,10 @@ def _moment(a, order, axis, *, mean=None, xp=None):
     return xp.mean(s, axis=axis)
 
 
-def _var(x, axis=0, ddof=0, mean=None):
+def _var(x, axis=0, ddof=0, mean=None, xp=None):
     # Calculate variance of sample, warning if precision is lost
-    var = _moment(x, 2, axis, mean=mean)
+    xp = array_namespace(x) if xp is None else xp
+    var = _moment(x, 2, axis, mean=mean, xp=xp)
     if ddof != 0:
         n = x.shape[axis] if axis is not None else x.size
         var *= np.divide(n, n-ddof)  # to avoid error on division by zero
@@ -1120,7 +1121,7 @@ def _var(x, axis=0, ddof=0, mean=None):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
-# nan_policy handled by `_axis_nan_policy, but needs to be left
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
@@ -1446,6 +1447,8 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether the skew is different from the normal distribution.
 
@@ -1605,23 +1608,29 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     agree fairly closely, even for our small sample.
 
     """
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
+
     b2 = skew(a, axis)
     n = a.shape[axis]
     if n < 8:
         raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % int(n))
+            f"skewtest is not valid with less than 8 samples; {n} samples were given.")
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
-    y = np.where(y == 0, 1, y)
-    Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
+    y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
+    Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    pvalue = _get_pvalue(Z, distributions.norm, alternative)
-    return SkewtestResult(Z[()], pvalue[()])
+    Z_np = np.asarray(Z)
+    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return SkewtestResult(Z, pvalue)
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -2507,7 +2516,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s" % extrapoints,
+        warnings.warn(f"Points outside given histogram range = {extrapoints}",
                       stacklevel=3,)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
@@ -2818,8 +2827,10 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
+    xp = array_namespace(a)
+    a = atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
-    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
+    s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
 
@@ -4829,7 +4840,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     dtype = xp.result_type(x.dtype, y.dtype)
     if xp.isdtype(dtype, "integral"):
-        dtype = xp.float64
+        dtype = xp.asarray(1.).dtype
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -6773,11 +6784,16 @@ class TtestResult(TtestResultBase):
     """
 
     def __init__(self, statistic, pvalue, df,  # public
-                 alternative, standard_error, estimate):  # private
+                 alternative, standard_error, estimate,  # private
+                 statistic_np=None, xp=None):  # private
         super().__init__(statistic, pvalue, df=df)
         self._alternative = alternative
         self._standard_error = standard_error  # denominator of t-statistic
         self._estimate = estimate  # point estimate of sample mean
+        self._statistic_np = statistic if statistic_np is None else statistic_np
+        self._dtype = statistic.dtype
+        self._xp = array_namespace(statistic, pvalue) if xp is None else xp
+
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -6794,8 +6810,9 @@ class TtestResult(TtestResultBase):
             fields `low` and `high`.
 
         """
-        low, high = _t_confidence_interval(self.df, self.statistic,
-                                           confidence_level, self._alternative)
+        low, high = _t_confidence_interval(self.df, self._statistic_np,
+                                           confidence_level, self._alternative,
+                                           self._dtype, self._xp)
         low = low * self._standard_error + self._estimate
         high = high * self._standard_error + self._estimate
         return ConfidenceInterval(low=low, high=high)
@@ -6819,6 +6836,8 @@ def unpack_TtestResult(res):
 
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6974,35 +6993,49 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     953
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = a.shape[axis]
     df = n - 1
 
-    mean = np.mean(a, axis)
+    mean = xp.mean(a, axis=axis)
     try:
-        popmean = np.squeeze(popmean, axis=axis)
+        popmean = xp.asarray(popmean)
+        popmean = xp.squeeze(popmean, axis=axis) if popmean.ndim > 0 else popmean
     except ValueError as e:
         raise ValueError("`popmean.shape[axis]` must equal 1.") from e
     d = mean - popmean
-    v = _var(a, axis, ddof=1)
-    denom = np.sqrt(v / n)
+    v = _var(a, axis=axis, ddof=1)
+    denom = xp.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+        t = xp.divide(d, denom)
+        t = t[()] if t.ndim == 0 else t
+    # This will only work for CPU backends for now. That's OK. In time,
+    # `from_dlpack` will enable the transfer from other devices, and
+    # `_get_pvalue` will even be reworked to support the native backend.
+    t_np = np.asarray(t)
+    prob = _get_pvalue(t_np, distributions.t(df), alternative)
+    prob = xp.asarray(prob, dtype=t.dtype)
+    prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
+    df = xp.broadcast_to(xp.asarray(df), t.shape)
+    df = df[()] if df.ndim == 0 else df
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
     return TtestResult(t, prob, df=df, alternative=alternative_num,
-                       standard_error=denom, estimate=mean)
+                       standard_error=denom, estimate=mean,
+                       statistic_np=t_np, xp=xp)
 
 
-def _t_confidence_interval(df, t, confidence_level, alternative):
+def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=None):
     # Input validation on `alternative` is already done
     # We just need IV on confidence_level
+    dtype = t.dtype if dtype is None else dtype
+    xp = array_namespace(t) if xp is None else xp
+
     if confidence_level < 0 or confidence_level > 1:
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
@@ -7023,7 +7056,11 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
         p, nans = np.broadcast_arrays(t, np.nan)
         low, high = nans, nans
 
-    return low[()], high[()]
+    low = xp.asarray(low, dtype=dtype)
+    low = low[()] if low.ndim == 0 else low
+    high = xp.asarray(high, dtype=dtype)
+    high = high[()] if high.ndim == 0 else high
+    return low, high
 
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
@@ -8475,7 +8512,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected value {alternative=}")
 
     N = len(x)
     x = np.sort(x)
@@ -9128,7 +9165,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected alternative: {alternative}")
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,

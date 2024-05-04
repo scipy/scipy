@@ -7,11 +7,12 @@ import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
                    arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
                    compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)
+                   arctan2, hypot)  # noqa: F401
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._array_api import array_namespace, xp_minimum, size as xp_size
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -130,8 +131,7 @@ def bayes_mvs(data, alpha=0.90):
     """
     m, v, s = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
-        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
-                         % alpha)
+        raise ValueError(f"0 < alpha < 1 is required, but {alpha=} was given.")
 
     m_res = Mean(m.mean(), m.interval(alpha))
     v_res = Variance(v.mean(), v.interval(alpha))
@@ -454,7 +454,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         try:
             dist = getattr(distributions, dist)
         except AttributeError as e:
-            raise ValueError("%s is not a valid distribution name" % dist) from e
+            raise ValueError(f"{dist} is not a valid distribution name") from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -831,7 +831,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
         plot.plot(svals, ppcc, 'x')
         _add_axis_labels_title(plot, xlabel='Shape Values',
                                ylabel='Prob Plot Corr. Coef.',
-                               title='(%s) PPCC Plot' % dist)
+                               title=f'({dist}) PPCC Plot')
 
     return svals, ppcc
 
@@ -1323,7 +1323,7 @@ def boxcox_normmax(
                'mle': _mle,
                'all': _all}
     if method not in methods.keys():
-        raise ValueError("Method %s not recognized." % method)
+        raise ValueError(f"Method {method} not recognized.")
 
     optimfunc = methods[method]
 
@@ -4311,11 +4311,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # a zero in the table of expected frequencies.
     rowsums = table.sum(axis=1)
     if rowsums[0] == 0:
-        raise ValueError("All values are below the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are below the grand median ({grand_median}).")
     if rowsums[1] == 0:
-        raise ValueError("All values are above the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are above the grand median ({grand_median}).")
     if ties == "ignore":
         # We already checked that each sample has at least one value, but it
         # is possible that all those values equal the grand median.  If `ties`
@@ -4333,16 +4331,21 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, xp=None):
+    xp = array_namespace(samples) if xp is None else xp
     # Ensure samples are array-like and size is not zero
-    if samples.size == 0:
-        NaN = _get_nan(samples)
+    if xp_size(samples) == 0:
+        NaN = _get_nan(samples, xp=xp)
         return NaN, NaN, NaN
+
+    if xp.isdtype(samples.dtype, 'integral'):
+        dtype = xp.asarray(1.).dtype  # get default float type
+        samples = xp.asarray(samples, dtype=dtype)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = sin((samples - low)*2.*pi / (high - low))
-    cos_samp = cos((samples - low)*2.*pi / (high - low))
+    sin_samp = xp.sin((samples - low)*2.*xp.pi / (high - low))
+    cos_samp = xp.cos((samples - low)*2.*xp.pi / (high - low))
 
     return samples, sin_samp, cos_samp
 
@@ -4403,16 +4406,17 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum = sin_samp.sum(axis)
-    cos_sum = cos_samp.sum(axis)
-    res = arctan2(sin_sum, cos_sum)
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_sum = xp.sum(sin_samp, axis=axis)
+    cos_sum = xp.sum(cos_samp, axis=axis)
+    res = xp.atan2(sin_sum, cos_sum)
 
-    res = np.asarray(res)
-    res[res < 0] += 2*pi
-    res = res[()]
+    res = xp.asarray(res)
+    res[res < 0] += 2*xp.pi
+    res = res[()] if res.ndim == 0 else res
 
-    return res*(high - low)/2.0/pi + low
+    return res*(high - low)/2.0/xp.pi + low
 
 
 @_axis_nan_policy_factory(
@@ -4482,12 +4486,14 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)
-    cos_mean = cos_samp.mean(axis)
-    # hypot can go slightly above 1 due to rounding errors
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)
+    cos_mean = xp.mean(cos_samp, axis=axis)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))
+        R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4579,16 +4585,18 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
-    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
-    # hypot can go slightly above 1 due to rounding errors
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
+    cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
+        R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
-    res = sqrt(-2*log(R))
+    res = xp.sqrt(-2*xp.log(R))
     if not normalize:
-        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+        res *= (high-low)/(2.*xp.pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
 

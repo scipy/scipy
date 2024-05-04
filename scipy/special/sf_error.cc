@@ -1,9 +1,4 @@
 #include <Python.h>
-
-#include <stdarg.h>
-#include <stdlib.h>
-
-#include <Python.h>
 #include <numpy/npy_math.h>
 
 #include <stdarg.h>

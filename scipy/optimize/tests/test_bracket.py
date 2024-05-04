@@ -778,3 +778,29 @@ class TestBracketMinimum:
             [result.fl, result.fm, result.fr],
             [f(xl0, *args), f(xm0, *args), f(xr0, *args)],
         )
+
+    def test_gh_20562_left(self):
+        # Regression test for https://github.com/scipy/scipy/issues/20562
+        # minimum of f in [xmin, xmax] is at xmin.
+        xmin, xmax = 0.21933608, 1.39713606
+
+        def f(x):
+            log_a, log_b = np.log([xmin, xmax])
+            return -((log_b - log_a)*x)**-1
+
+        result = _bracket_minimum(f, 0.5535723499480897, xmin=xmin, xmax=xmax)
+        assert not result.success
+        assert xmin == result.xl
+
+    def test_gh_20562_right(self):
+        # Regression test for https://github.com/scipy/scipy/issues/20562
+        # minimum of f in [xmin, xmax] is at xmax.
+        xmin, xmax = -1.39713606, -0.21933608,
+
+        def f(x):
+            log_a, log_b = np.log([-xmax, -xmin])
+            return ((log_b - log_a)*x)**-1
+
+        result = _bracket_minimum(f, -0.5535723499480897, xmin=xmin, xmax=xmax)
+        assert not result.success
+        assert xmax == result.xr

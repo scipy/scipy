@@ -921,6 +921,23 @@ def task_lint(fix):
         'doc': 'Lint only files modified since last commit (stricter rules)',
     }
 
+@task_params([])
+def task_check_python_h_first():
+    # Lint just the diff since branching off of main using a
+    # stricter configuration.
+    # emit_cmdstr(os.path.join('tools', 'lint.py') + ' --diff-against main')
+    cmd = "{!s} --diff-against=main".format(
+        Dirs().root / 'tools' / 'check_python_h_first.py'
+    )
+    return {
+        'basename': 'check_python_h_first',
+        'actions': [cmd],
+        'doc': (
+            'Check Python.h order only files modified since last commit '
+            '(stricter rules)'
+        ),
+    }
+
 
 def task_unicode_check():
     # emit_cmdstr(os.path.join('tools', 'unicode-check.py'))
@@ -955,6 +972,7 @@ class Lint:
             'lint': {'fix': fix},
             'unicode-check': {},
             'check-testname': {},
+            'check_python_h_first': {},
         })
 
 
