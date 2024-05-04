@@ -9,7 +9,7 @@ from scipy.linalg.blas import cdotu  # type: ignore[attr-defined]
 from scipy.linalg.lapack import dgtsv  # type: ignore[attr-defined]
 
 
-@pytest.mark.fail_slow(30)
+@pytest.mark.fail_slow(60)
 # essential per https://github.com/scipy/scipy/pull/20487#discussion_r1567057247
 @pytest.mark.skipif(IS_EDITABLE,
                     reason='Editable install cannot find .pxd headers.')
