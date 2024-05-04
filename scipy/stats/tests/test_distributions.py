@@ -4012,8 +4012,8 @@ class TestSkewNorm:
     def test_ppf(self):
         # gh20124 reported that Boost's ppf was wrong for high skewness values
         # Reference CDF value was calculated using
-        # CDF[SkewNormalDistribution[0, 1, a], x] in Wolfram Alpha.
-        assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-8)
+        # CDF[SkewNormalDistribution[0, 1, 500], 0.01] in Wolfram Alpha.
+        assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
 
 
 class TestExpon:
