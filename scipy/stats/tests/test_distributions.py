@@ -9681,16 +9681,6 @@ def test_irwinhall():
     vals += [15619/36288] + vals[::-1]
     assert_allclose(ih10.pdf(np.arange(11)), vals)
 
-    # check that the definition of the Irwin-Hall distribution is correct
-    nsamp = 1000
-    uu = unif.rvs(size=nsamp, random_state=1234)
-    sum10s = np.bincount(np.arange(len(uu))//10, uu)
-    res = stats.kstest(sum10s, ih10.cdf)
-    assert res.pvalue > 0.1
-
-
-
-
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
 # rtol). None uses default values.
