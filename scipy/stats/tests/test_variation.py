@@ -117,7 +117,7 @@ class TestVariation:
         y2 = variation(x2, axis=1)
         xp_assert_equal(y2, xp.asarray([xp.inf, xp.inf]))
 
-    @pytest.mark.parametrize('x', [np.zeros(5), [], [1, 2, np.inf, 9]])
+    @pytest.mark.parametrize('x', [[0.]*5, [], [1, 2, np.inf, 9]])
     def test_return_nan(self, x, xp):
         x = xp.asarray(x)
         # Test some cases where `variation` returns nan.
@@ -137,16 +137,17 @@ class TestVariation:
             y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
-    @skip_xp_backends(np_only=True,
-                      reasons=['`nan_policy` only supports NumPy backend'])
     def test_neg_inf(self, xp):
         # Edge case that produces -inf: ddof equals the number of non-nan
         # values, the values are not constant, and the mean is negative.
         x1 = xp.asarray([-3., -5.])
         xp_assert_equal(variation(x1, ddof=2), xp.asarray(-xp.inf))
 
+    @skip_xp_backends(np_only=True,
+                      reasons=['`nan_policy` only supports NumPy backend'])
+    def test_neg_inf_nan(self, xp):
         x2 = xp.asarray([[xp.nan, 1, -10, xp.nan],
-                       [-20, -3, xp.nan, xp.nan]])
+                         [-20, -3, xp.nan, xp.nan]])
         xp_assert_equal(variation(x2, axis=1, ddof=2, nan_policy='omit'),
                         [-xp.inf, -xp.inf])
 

@@ -118,10 +118,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     if ddof == n:
         # Another special case.  Result is either inf or nan.
         std_a = xp.std(a, axis=axis, correction=0)
-        result = xp.full_like(std_a, fill_value=NaN)
-        i = std_a > 0
-        result[i] = xp.inf
-        result[i] = xp.copysign(result[i], mean_a[i])
+        result = xp.where(std_a > 0, xp.copysign(xp.asarray(xp.inf), mean_a), NaN)
         return result[()] if result.ndim == 0 else result
 
     with np.errstate(divide='ignore', invalid='ignore'):
