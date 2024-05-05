@@ -52,7 +52,7 @@ xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
                       'recipinvgauss', 'kstwo', 'kappa4'}
 
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'vonmises_line'}
-xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto'}
+xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
@@ -60,7 +60,7 @@ xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
-                'genpareto', 'halfcauchy', 'invgamma', 'jf_skew_t', 'johnsonsu',
+                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t', 'johnsonsu',
                 'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke',
                 'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
                 'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
