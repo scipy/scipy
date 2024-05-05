@@ -1266,7 +1266,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
-        origins = _ni_support._normalize_sequence(origin, input.ndim)
+        origins = _ni_support._normalize_sequence(origin, num_axes)
         if num_axes < input.ndim:
             if footprint.ndim != num_axes:
                 raise RuntimeError("footprint array has incorrect shape")
@@ -1274,17 +1274,23 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 footprint,
                 tuple(ax for ax in range(input.ndim) if ax not in axes)
             )
+            # set origin = 0 for any axes not being filtered
+            origins_temp = [0,] * input.ndim
+            for o, ax in zip(origins, axes):
+                origins_temp[ax] = o
+            origins = origins_temp
+
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
             raise RuntimeError('footprint array has incorrect shape.')
         for origin, lenf in zip(origins, fshape):
             if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
-                raise ValueError('invalid origin')
+                raise ValueError("invalid origin")
         if not footprint.flags.contiguous:
             footprint = footprint.copy()
         if structure is not None:
             if len(structure.shape) != input.ndim:
-                raise RuntimeError('structure array has incorrect shape')
+                raise RuntimeError("structure array has incorrect shape")
             if num_axes != structure.ndim:
                 structure = numpy.expand_dims(
                     structure,
