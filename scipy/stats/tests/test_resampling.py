@@ -929,6 +929,8 @@ class TestMonteCarloHypothesisTest:
         xp_assert_close(res.pvalue, xp.asarray(ref.pvalue), atol=self.atol)
 
 
+    # Tests below involve statistics that are not yet array-API compatible.
+    # They can be converted when the statistics are converted.
     @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater"))
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
