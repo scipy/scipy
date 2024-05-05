@@ -841,8 +841,7 @@ class TestMonteCarloHypothesisTest:
         rng = np.random.default_rng(23492340193)
         x = xp.asarray(rng.standard_normal(size=10))
 
-        xp_test = array_namespace(x)
-
+        xp_test = array_namespace(x)  # numpy.std doesn't have `correction`
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else x.shape[0]
             statistic.batch_size = max(batch_size, statistic.batch_size)
