@@ -608,7 +608,7 @@ class ShortTimeFFT:
             fft_mode: FFT_MODE_TYPE = 'onesided', mfft: int | None = None,
             scale_to: Literal['magnitude', 'psd'] | None = None,
             phase_shift: int | None = 0):
-        """Create instance where the window and its dual are equal.
+        r"""Create instance where the window and its dual are equal.
 
         An instance is created were window and dual window are equal as well as being
         closest to the parameter `desired_win` in the least-squares sense, i.e.,
