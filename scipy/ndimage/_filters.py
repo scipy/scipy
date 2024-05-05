@@ -1486,26 +1486,23 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             raise RuntimeError(
                 "A sequence of modes is not supported by non-separable rank "
                 "filters")
-        mode = _ni_support._extend_mode_to_code(mode)
+        mode = _ni_support._extend_mode_to_code(mode, is_filter=True)
         if input.ndim == 1:
-            rank = int(rank)
-            origin = int(origin)
-            # legacy mode handling
-            if mode == 6:
-                mode = 4
-            if mode == 5:
-                mode = 1
-            casting_cond = input.dtype.name not in ['int64', 'float64', 'float32']
-            if casting_cond:
-                x = input.astype('int64')
-                x_out = np.empty_like(x)
-            else:
+            if input.dtype in (np.int64, np.float64, np.float32):
                 x = input
                 x_out = output
+            elif input.dtype == np.float16:
+                x = input.astype('float32')
+                x_out = np.empty(x, dtype='float32')
+            elif np.result_type(input, np.int64) == np.int64:
+                x = input.astype('int64')
+                x_out = np.empty(x, dtype='int64')
+            else:
+                raise RuntimeError('Unsupported array type')
             cval = x.dtype.type(cval)
             _rank_filter_1d.rank_filter(x, rank, footprint.size, x_out, mode, cval,
                                         origin)
-            if casting_cond:
+            if input.dtype not in (np.int64, np.float64, np.float32):
                 np.copyto(output, x_out, casting='unsafe')
         else:
             _nd_image.rank_filter(input, rank, footprint, output, mode, cval, origins)
