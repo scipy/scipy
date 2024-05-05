@@ -12,23 +12,18 @@ from scipy._lib._array_api import array_namespace, is_numpy
 import inspect
 
 
-def _broadcast_arrays(arrays, axis=None):
+def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
-    new_shapes = _broadcast_array_shapes(arrays, axis=axis)
+    xp = array_namespace(*arrays) if xp is None else xp
+    arrays = [xp.asarray(arr) for arr in arrays]
+    shapes = [arr.shape for arr in arrays]
+    new_shapes = _broadcast_shapes(shapes, axis)
     if axis is None:
         new_shapes = [new_shapes]*len(arrays)
-    return [np.broadcast_to(array, new_shape)
+    return [xp.broadcast_to(array, new_shape)
             for array, new_shape in zip(arrays, new_shapes)]
-
-
-def _broadcast_array_shapes(arrays, axis=None):
-    """
-    Broadcast shapes of arrays, ignoring incompatibility of specified axes
-    """
-    shapes = [np.asarray(arr).shape for arr in arrays]
-    return _broadcast_shapes(shapes, axis)
 
 
 def _broadcast_shapes(shapes, axis=None):
@@ -103,10 +98,10 @@ def _broadcast_array_shapes_remove_axis(arrays, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats._axis_nan_policy import _broadcast_array_shapes
+    >>> from scipy.stats._axis_nan_policy import _broadcast_array_shapes_remove_axis
     >>> a = np.zeros((5, 2, 1))
     >>> b = np.zeros((9, 3))
-    >>> _broadcast_array_shapes((a, b), 1)
+    >>> _broadcast_array_shapes_remove_axis((a, b), 1)
     (5, 3)
     """
     # Note that here, `axis=None` means do not consume/drop any axes - _not_
@@ -119,7 +114,7 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     """
     Broadcast shapes, dropping specified axes
 
-    Same as _broadcast_array_shapes, but given a sequence
+    Same as _broadcast_array_shapes_remove_axis, but given a sequence
     of array shapes `shapes` instead of the arrays themselves.
     """
     shapes = _broadcast_shapes(shapes, axis)
