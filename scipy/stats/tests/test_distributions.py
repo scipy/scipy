@@ -3158,6 +3158,7 @@ class TestLogLaplace:
 
         _assert_less_or_close_loglike(stats.loglaplace, data, **kwds)
 
+
 class TestPowerlaw:
 
     # In the following data, `sf` was computed with mpmath.
@@ -3810,6 +3811,7 @@ class TestJFSkewT:
         x, pdf = data["x"], data["pdf"]
         assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
 
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter
@@ -4000,6 +4002,7 @@ class TestSkewNorm:
         # Compare overridden fit against stats.fit
         rng = np.random.default_rng(9842356982345693637)
         bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
+
         def optimizer(fun, bounds):
             return differential_evolution(fun, bounds, seed=rng)
 
@@ -4792,6 +4795,7 @@ class TestGamma:
             assert_allclose(dist.moment(2), np.mean(data**2))
         if nfree >= 3:
             assert_allclose(dist.moment(3), np.mean(data**3))
+
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
@@ -7508,6 +7512,19 @@ class TestBurr12:
         ref = [mean, var, skew, kurtosis]
         res = stats.burr12(c, d).stats('mvsk')
         assert_allclose(res, ref, rtol=1e-14)
+
+    # Reference values were computed with mpmath using mp.dps = 80
+    # and then cast to float.
+    @pytest.mark.parametrize(
+        'p, c, d, ref',
+        [(1e-12, 20, 0.5, 15.848931924611135),
+         (1e-19, 20, 0.5, 79.43282347242815),
+         (1e-12, 0.25, 35, 2.0888618213462466),
+         (1e-80, 0.25, 35, 1360930951.7972188)]
+    )
+    def test_isf_near_zero(self, p, c, d, ref):
+        x = stats.burr12.isf(p, c, d)
+        assert_allclose(x, ref, rtol=1e-14)
 
 
 class TestStudentizedRange:
