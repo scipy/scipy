@@ -68,6 +68,7 @@ namespace detail {
         return res;
     }
 
+    template<bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_large_a(double a, double b, double x, int n) {
         /* 2. Taylor series expansion in x=0, for large a.
          *
@@ -91,11 +92,17 @@ namespace detail {
         for (int k = nstart; k < nstart + n; k++) {
             res += std::exp(k * lnx - cephes::lgam(k + 1) - cephes::lgam(a * k + b) - max_exponent);
         }
-        res *= std::exp(max_exponent);
 
+        if (!log_wb) {
+            res *= std::exp(max_exponent);
+        } else {
+            // logarithm of Wright's function
+            res = max_exponent + std::log(res);
+        }
         return res;
     }
 
+    template<bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_small_a(double a, double b, double x, int order) {
         /* 3. Taylor series in a=0 up to order 5, for tiny a and not too large x
          *
@@ -159,7 +166,12 @@ namespace detail {
             A[1] = X[4] / 24.  * (C[3] + C[4] * b);
             A[0] = X[5] / 120. * C[4];
             // res = exp(x) * (A[5] + A[4] * a + A[3] * a^2 + A[2] * a^3 + ...)
-            res = exp(x) * cephes::polevl(a, A, 5);
+            if (!log_wb) {
+                res = exp(x) * cephes::polevl(a, A, 5);
+            } else {
+                // logarithm of Wright's function
+                res = x + std::log(cephes::polevl(a, A, 5));
+            }
         } else {
             /* Phi(a, b, x) = exp(x)/gamma(b) * sum(A[i] * X[i] * B[i], i=0..5)
              * A[n] = a^n/n!
@@ -201,11 +213,17 @@ namespace detail {
                 res = cephes::polevl(a, A, order);
             }
             // res *= exp(x) * rgamma(b)
-            res *= exp_rgamma(x, b);
+            if (!log_wb) {
+                res *= exp_rgamma(x, b);
+            } else {
+                // logarithm of Wright's function
+                res = x - cephes::lgam(b) + std::log(res);
+            }
         }
         return res;
     }
 
+    template<bool log_wb>
     SPECFUN_HOST_DEVICE inline double wb_asymptotic(double a, double b, double x) {
         /* 4. Asymptotic expansion for large x up to order 8
          *
@@ -426,32 +444,43 @@ namespace detail {
             Zp /= Z;
             res += (k % 2 == 0 ? 1 : -1) * C[k] * Zp;
         }
-        res *= std::pow(Z, 0.5 - b) * std::exp(Ap1[1] / a * Z);
+        if (!log_wb) {
+            res *= std::pow(Z, 0.5 - b) * std::exp(Ap1[1] / a * Z);
+        } else {
+            // logarithm of Wright's function
+            res = std::log(Z) * (0.5 - b) + Ap1[1] / a * Z + std::log(res);
+        }
         return res;
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_Kmod(double eps, double a, double b, double x, double r) {
+    SPECFUN_HOST_DEVICE inline double wb_Kmod(double exp_term, double eps, double a, double b, double x, double r) {
         /* Compute integrand Kmod(eps, a, b, x, r) for Gauss-Laguerre quadrature.
          *
          * K(a, b, x, r+eps) = exp(-r-eps) * Kmod(eps, a, b, x, r)
          * 
          * Kmod(eps, a, b, x, r) = exp(x * (r+eps)^(-a) * cos(pi*a)) * (r+eps)^(-b)
          *                       * sin(x * (r+eps)^(-a) * sin(pi*a) + pi * b)
+         * 
+         * Note that we additionally factor out exp(exp_term) which helps with large
+         * terms in the exponent of exp(...)
          */
         double x_r_a = x * std::pow(r + eps, -a);
-        return std::exp(x_r_a * cephes::cospi(a)) * std::pow(r + eps, -b) *
+        return std::exp(x_r_a * cephes::cospi(a) + exp_term) * std::pow(r + eps, -b) *
                std::sin(x_r_a * cephes::sinpi(a) + M_PI * b);
     }
 
-    SPECFUN_HOST_DEVICE inline double wb_P(double eps, double a, double b, double x, double phi) {
+    SPECFUN_HOST_DEVICE inline double wb_P(double exp_term, double eps, double a, double b, double x, double phi) {
         /* Compute integrand P for Gauss-Legendre quadrature.
          *
          * P(eps, a, b, x, phi) = exp(eps * cos(phi) + x * eps^(-a) * cos(a*phi))
          *                      * cos(eps * sin(phi) - x * eps^(-a) * sin(a*phi)
          *                            + (1-b)*phi)
+         * 
+         * Note that we additionally factor out exp(exp_term) which helps with large
+         * terms in the exponent of exp(...)
          */
         double x_eps_a = x * std::pow(eps, -a);
-        return std::exp(eps * std::cos(phi) + x_eps_a * std::cos(a * phi)) *
+        return std::exp(eps * std::cos(phi) + x_eps_a * std::cos(a * phi) + exp_term) *
                std::cos(eps * std::sin(phi) - x_eps_a * std::sin(a * phi) + (1 - b) * phi);
     }
 
@@ -519,6 +548,7 @@ namespace detail {
      * Call: python _precompute/wright_bessel.py 4 */
     constexpr double wb_A[] = {0.41037, 0.30833, 6.9952, 18.382, -2.8566, 2.1122};
 
+    template<bool log_wb>
     SPECFUN_HOST_DEVICE inline double wright_bessel_integral(double a, double b, double x) {
         /* 5. Integral representation
          *
@@ -587,25 +617,47 @@ namespace detail {
         eps = std::fmin(eps, 150.);
         eps = std::fmax(eps, 3.); // 3 seems to be a pretty good choice in general.
 
+        // We factor out exp(-exp_term) from wb_Kmod and wb_P to avoid overflow of
+        // exp(..).
+        double exp_term = 0;
+        // From the exponent of K:
+        double r = wb_x_laguerre[50-1];  // largest value of x used in wb_Kmod
+        double x_r_a = x * std::pow(r + eps, -a);
+        exp_term = std::fmax(exp_term, x_r_a * cephes::cospi(a));
+        // From the exponent of P:
+        double x_eps_a = x * std::pow(eps, -a);
+        // phi = 0  =>  cos(phi) = cos(a * phi) = 1
+        exp_term = std::fmax(exp_term, eps + x_eps_a);
+        // phi = pi  => cos(phi) = -1
+        exp_term = std::fmax(exp_term, -eps + x_eps_a * cephes::cospi(a));
+
         double res1 = 0;
         double res2 = 0;
 
         double y;
         for (int k = 0; k < 50; k++) {
-            res1 += wb_w_laguerre[k] * wb_Kmod(eps, a, b, x, wb_x_laguerre[k]);
+            res1 += wb_w_laguerre[k] * wb_Kmod(-exp_term, eps, a, b, x, wb_x_laguerre[k]);
             // y = (b-a)*(x+1)/2.0 + a  for integration from a=0 to b=pi
             y = M_PI * (wb_x_legendre[k] + 1) / 2.0;
-            res2 += wb_w_legendre[k] * wb_P(eps, a, b, x, y);
+            res2 += wb_w_legendre[k] * wb_P(-exp_term, eps, a, b, x, y);
         }
         res1 *= std::exp(-eps);
         // (b-a)/2.0 * np.sum(w*func(y, *args), axis=-1)
         res2 *= M_PI / 2.0;
         res2 *= std::pow(eps, 1 - b);
-        return 1. / M_PI * (res1 + res2);
+
+        if (!log_wb) {
+            // Remember the factored out exp_term from wb_Kmod and wb_P
+            return std::exp(exp_term) / M_PI * (res1 + res2);
+        } else {
+            // logarithm of Wright's function
+            return exp_term + std::log((res1 + res2) / M_PI);
+        }
     }
 } // namespace detail
 
-SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
+template<bool log_wb>
+SPECFUN_HOST_DEVICE inline double wright_bessel_t(double a, double b, double x) {
     /* Compute Wright's generalized Bessel function for scalar arguments.
      *
      * According to [1], it is an entire function defined as
@@ -659,17 +711,28 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (x == 0) {
-        return cephes::rgamma(b);
+        // return rgamma(b)
+        if (!log_wb) {
+            return cephes::rgamma(b);
+        } else {
+            // logarithm of Wright's function
+            return -cephes::lgam(b);
+        }
     }
     if (a == 0) {
         // return exp(x) * rgamma(b)
-        return detail::exp_rgamma(x, b);
+        if (!log_wb) {
+            return detail::exp_rgamma(x, b);
+        } else {
+            // logarithm of Wright's function
+            return x - cephes::lgam(b);
+        }
     }
 
     constexpr double exp_inf = 709.78271289338403;
     int order;
     if ((a <= 1e-3 && b <= 50 && x <= 9) || (a <= 1e-4 && b <= 70 && x <= 100) ||
-        (a <= 1e-5 and b <= 170 and x < exp_inf)) {
+        (a <= 1e-5 && b <= 170 && (x < exp_inf || (log_wb && x <= 1e3)))) {
         /* Taylor Series expansion in a=0 to order=order => precision <= 1e-11
          * If beta is also small => precision <= 1e-11.
          * max order = 5 */
@@ -705,12 +768,14 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
             }
         }
 
-        return detail::wb_small_a(a, b, x, order);
+        return detail::wb_small_a<log_wb>(a, b, x, order);
     }
 
     if (x <= 1) {
         // 18 term Taylor Series => error mostly smaller 5e-14
-        return detail::wb_series(a, b, x, 0, 18);
+        double res = detail::wb_series(a, b, x, 0, 18);
+        if (log_wb) res = std::log(res);
+        return res;
     }
     if (x <= 2) {
         // 20 term Taylor Series => error mostly smaller 1e-12 to 1e-13
@@ -736,10 +801,7 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
                 order = static_cast<int>(std::fmin(6 * std::log10(x) - 36, 100));
             }
         }
-        return detail::wb_large_a(a, b, x, order);
-    }
-    if (0.5 <= a && a <= 1.8 && 100 <= b && 1e5 <= x) {
-        return std::numeric_limits<double>::quiet_NaN();
+        return detail::wb_large_a<log_wb>(a, b, x, order);
     }
     if (std::pow(a * x, 1 / (1. + a)) >= 14 + b * b / (2 * (1 + a))) {
         /* Asymptotic expansion in Z = (a*x)^(1/(1+a)) up to 8th term 1/Z^8.
@@ -748,13 +810,31 @@ SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
          * domain of good convergence set above.
          * => precision ~ 1e-11 but can go down to ~1e-8 or 1e-7
          * Note: We ensured a <= 5 as this is a bad approximation for large a. */
-        return detail::wb_asymptotic(a, b, x);
+        return detail::wb_asymptotic<log_wb>(a, b, x);
     }
-    return detail::wright_bessel_integral(a, b, x);
+    if (0.5 <= a && a <= 1.8 && 100 <= b && 1e5 <= x) {
+        // This is a very hard domain. This condition is placed after wb_asymptotic.
+        // TODO: Explore ways to cover this domain.
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    return detail::wright_bessel_integral<log_wb>(a, b, x);
+}
+
+
+SPECFUN_HOST_DEVICE inline double wright_bessel(double a, double b, double x) {
+    return wright_bessel_t<false>(a, b, x);
 }
 
 SPECFUN_HOST_DEVICE inline float wright_bessel(float a, float b, float x) {
     return wright_bessel(static_cast<double>(a), static_cast<double>(b), static_cast<double>(x));
+}
+
+SPECFUN_HOST_DEVICE inline double log_wright_bessel(double a, double b, double x) {
+    return wright_bessel_t<true>(a, b, x);
+}
+
+SPECFUN_HOST_DEVICE inline float log_wright_bessel(float a, float b, float x) {
+    return log_wright_bessel(static_cast<double>(a), static_cast<double>(b), static_cast<double>(x));
 }
 
 } // namespace special
