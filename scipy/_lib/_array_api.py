@@ -398,4 +398,24 @@ def xp_minimum(x1, x2):
     res = xp.asarray(x1, copy=True, dtype=dtype)
     i = (x2 < x1) | xp.isnan(x2)
     res[i] = x2[i]
-    return res
+    return res[()] if res.ndim == 0 else res
+
+
+# temporary substitute for xp.clip, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_clip(x, a, b, xp=None):
+    xp = array_namespace(xp) if xp is None else xp
+    y = xp.asarray(x, copy=True)
+    y[y < a] = a
+    y[y > b] = b
+    return y[()] if y.ndim == 0 else y
+
+
+# temporary substitute for xp.moveaxis, which is not yet in all backends
+# or covered by array_api_compat.
+def _move_axis_to_end(x, source, xp=None):
+    xp = array_namespace(xp) if xp is None else xp
+    axes = list(range(x.ndim))
+    temp = axes.pop(source)
+    axes = axes + [temp]
+    return xp.permute_dims(x, axes)
