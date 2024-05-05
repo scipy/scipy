@@ -2781,12 +2781,14 @@ const char *log_wright_bessel_doc = R"(
     Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
 
+    .. versionadded:: 1.14.0
+
     Examples
     --------
     >>> from scipy.special import log_wright_bessel
     >>> a, b, x = 1.5, 1.1, 2.5
-    >>> wright_bessel(a, b-1, x)
-    1.511041224929469
+    >>> log_wright_bessel(a, b, x)
+    1.1947654935299217
     )";
 
 const char *mathieu_a_doc = R"(
@@ -3934,6 +3936,8 @@ const char *wright_bessel_doc = R"(
     -----
     Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
+
+    .. versionadded:: 1.7.0
 
     References
     ----------
