@@ -3559,10 +3559,12 @@ class TestKurtosis(SkewKurtosisTest):
 @hypothesis.strategies.composite
 def ttest_data_axis_strategy(draw):
     # draw an array under shape and value constraints
-    dtype = npst.floating_dtypes()
     elements = dict(allow_nan=False, allow_infinity=False)
     shape = npst.array_shapes(min_dims=1, min_side=2)
-    data = draw(npst.arrays(dtype=dtype, elements=elements, shape=shape))
+    # The test that uses this, `test_pvalue_ci`, uses `float64` to test
+    # extreme `alpha`. It could be adjusted to test a dtype-dependent
+    # range of `alpha` if this strategy is needed to generate other floats.
+    data = draw(npst.arrays(dtype=np.float64, elements=elements, shape=shape))
 
     # determine axes over which nonzero variance can be computed accurately
     ok_axes = []
@@ -3711,8 +3713,7 @@ class TestStudentTest:
     def test_pvalue_ci(self, alpha, data_axis, alternative, xp):
         # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        data = data.astype(np.float64, copy=True)  # ensure byte order
-        data = xp.asarray(data, dtype=xp.float64)
+        data = xp.asarray(data)
         res = stats.ttest_1samp(data, 0.,
                                 alternative=alternative, axis=axis)
         l, u = res.confidence_interval(confidence_level=alpha)
@@ -3722,6 +3723,7 @@ class TestStudentTest:
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
         shape = list(data.shape)
         shape.pop(axis)
+        # `float64` is used to correspond with extreme range of `alpha`
         ref = xp.broadcast_to(xp.asarray(1-alpha, dtype=xp.float64), shape)
         xp_assert_close(res.pvalue, ref)
 
