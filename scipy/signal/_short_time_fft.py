@@ -628,8 +628,9 @@ class ShortTimeFFT:
         linear constraints of Eq. :math:numref:`eq_STFT_EqualWindDualCond` in the
         :ref:`tutorial_stft` section of the :ref:`user_guide`. There, it is also
         explained why the STFT is a unitary mapping if the window and its dual are
-        equal. Consult the `~ShortTimeFFT.spectrogram` method docstring for an example
-        utilizing a cross-spectrogram.
+        identical. Consult the `~ShortTimeFFT.spectrogram` method docstring for an
+        example illustrating that a unitary STFT preserves the scalar product value of
+        two signals.
 
         Examples
         --------
@@ -649,8 +650,8 @@ class ShortTimeFFT:
         Let's plot the window and its magnitude spectrum:
 
         >>> fg1, (ax11, ax12) = plt.subplots(1, 2, tight_layout=True, figsize=(8, 4))
-        >>> fg1.suptitle(f"Unitary Window of {m} Sample Gaussian with " +
-        ...                rf"{hop=}, $\sigma={std}$")
+        >>> _ = fg1.suptitle(f"Unitary Window of {m} Sample Gaussian with " +
+        ...                  rf"{hop=}, $\sigma={std}$")  #  `_ = ` needed for doctest
         >>> ax11.set(ylabel="Amplitude", xlabel="Samples", xlim=(0, m))
         >>> ax12.set(xlabel="Frequency Bins", ylabel="Magnitude Spectrum",
         ...          xlim=(0, 15), ylim=(1e-5, 1.5))
