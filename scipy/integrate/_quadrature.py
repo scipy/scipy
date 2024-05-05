@@ -217,13 +217,9 @@ def fixed_quad(func, a, b, args=(), n=5):
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
     tplquad : triple integrals
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
 
     Examples
     --------
@@ -345,7 +341,6 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
 
     See Also
     --------
-    romberg : adaptive Romberg quadrature
     fixed_quad : fixed-order Gaussian quadrature
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
@@ -353,8 +348,6 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     romb : integrator for sampled data
     simpson : integrator for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
 
     Examples
     --------
@@ -437,14 +430,10 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     numpy.cumsum, numpy.cumprod
     cumulative_simpson : cumulative integration using Simpson's 1/3 rule
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     romb : integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -987,15 +976,11 @@ def romb(y, dx=1.0, axis=-1, show=False):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -1202,8 +1187,6 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     romb : Integrators for sampled data.
     simpson : Integrators for sampled data.
     cumulative_trapezoid : Cumulative integration for sampled data.
-    ode : ODE integrator.
-    odeint : ODE integrator.
 
     References
     ----------
