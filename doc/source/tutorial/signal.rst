@@ -1628,7 +1628,7 @@ We begin by reformulating the windowing of Eq. :math:numref:`eq_STFT_windowing`
         &&\cdots & 0 & 0 & w[M-1] & 0 & \cdots
       \end{bmatrix}\begin{bmatrix}
         x[0]\\ x[1]\\ \vdots\\ x[N-1]
-      \end{bmatrix}\ ,
+      \end{bmatrix} ,
 
 where the :math:`M\times N` matrix :math:`\vb{W}_{\!p}` has only non-zeros
 entries on the :math:`(ph)`-th minor diagonal, i.e.,
@@ -1823,7 +1823,7 @@ programming problem
     \qquad\Leftrightarrow\qquad
      \begin{bmatrix} \vb{I} & \vb{V}\\
                      \conjT{\vb{V}} & \vb{0}        \end{bmatrix}
-    \begin{bmatrix} \vb{u} \\ \vb{\lambda} \end{bmatrix} =
+    \begin{bmatrix} \vb{u}_d \\ \vb{\lambda} \end{bmatrix} =
     \begin{bmatrix} \vb{d}\\ \vb{1} \end{bmatrix}\ .
 
 A closed form solution can be calculated by inverting the :math:`2\times2` block matrix
@@ -1835,8 +1835,8 @@ symbolically, which gives
    \vb{u}_d &= \underbrace{\vb{V}\inv{\conjT{\vb{V}}\vb{V}}}_{%
                                                    =:\vb{Q}\in\IC^{M\times h}} \vb{1} +
                 \big(\vb{I} - \vb{Q}\conjT{\vb{V}}\big)\vb{d}
-            = \vb{w}_d + \vb{d} - \vb{q}_d\ ,\qquad
-   \vb{w}_d = \vb{Q}\vb{1}\ ,\qquad
+            = \vb{w}_d + \vb{d} - \vb{q}_d\ ,\\
+   \vb{w}_d &= \vb{Q}\vb{1}\ ,\qquad
    \vb{q}_d = \vb{Q}\conjT{\vb{V}}\vb{d}\ ,\\
    Q[i,j] &= \frac{ w[i] \delta_{i-j, \eta h} }{%
                              \sum_{k=0}^M |w[k]|^2\,\delta_{i-k, \xi h} } ,\qquad
@@ -1859,11 +1859,11 @@ can be achieved by introducing a scaling factor :math:`\alpha\in\IC` to minimize
 
 .. math::
 
-    \alpha_{\min} = \min_{\alpha}{
+    \alpha_{\min} &= \min_{\alpha}{
          \frac{1}{2}\big\lVert\alpha\vb{d} - \vb{u}(\alpha)\big\rVert^2 }\ ,\qquad
    \vb{u}(\alpha) = \vb{w}_d + \alpha\vb{d} - \alpha\vb{q}_d
-   \qquad\Leftrightarrow\qquad
-   \alpha_{\min} = \conjT{\vb{q}_d}\vb{w}_d \big/\,
+   \qquad\Leftrightarrow\\
+   \alpha_{\min} &= \conjT{\vb{q}_d}\vb{w}_d \big/\,
                     \conjT{\vb{q}_d}\vb{q}_d \ .
 
 The case where the window :math:`w[m]` and the dual window :math:`u[m]` are equal can

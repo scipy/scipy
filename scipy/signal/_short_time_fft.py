@@ -626,40 +626,43 @@ class ShortTimeFFT:
 
         The set of all possible windows with identical dual is defined by the set of
         linear constraints of Eq. :math:numref:`eq_STFT_EqualWindDualCond` in the
-        :ref:`tutorial_stft` section of the :ref:`user_guide`. It also explained in
-        that section why the STFT is a unitary mapping if the window and its dual are
-        equal.
+        :ref:`tutorial_stft` section of the :ref:`user_guide`. There, it is also
+        explained why the STFT is a unitary mapping if the window and its dual are
+        equal. Consult the `~ShortTimeFFT.spectrogram` method docstring for an example
+        utilizing a cross-spectrogram.
 
         Examples
         --------
         The following example checks that window and dual window are indeed equal:
 
+        >>> import matplotlib.pyplot as plt
         >>> import numpy as np
         >>> from scipy.signal import ShortTimeFFT, windows
         ...
-        >>> m, hop = 12, 7
-        >>> w_des = windows.hamming(m, sym=True)  # desired window
-        >>> SFT = ShortTimeFFT.from_win_equals_dual(w_des, hop, fs=1, scale_to=None,
-        ...                                         fft_mode='centered')
+        >>> m, hop, std = 32, 8, 5
+        >>> desired_win = windows.gaussian(m, std, sym=True)
+        >>> SFT = ShortTimeFFT.from_win_equals_dual(desired_win, hop, fs=1/m,
+        ...                                         scale_to=None)
         >>> print("SFT.win == SFT.dual_win:", np.allclose(SFT.dual_win, SFT.win))
         SFT.win == SFT.dual_win: True
 
-        Two signals are called orthogoanl if their scalar product is zero, i.e., if
-        ``sum(x*conj(y)) == 0``. Unitary mappings (here: when `scale_to` is ``None``)
-        preserve the value of the scalar product. The sum over the cross-spectrogram,
-        as defined in `spectrogram`, may be interpreted as the STFT scalar product.
-        The following example verifies this:
+        Let's plot the window and its magnitude spectrum:
 
-        >>> t = np.linspace(0, 2*np.pi, 30, endpoint=False)
-        >>> x, y = np.cos(t), np.sin(t) # orthogonal signals
-        >>> sum(x * np.conj(y))  # scalar product is zero (up to numerical accuracy)
-        7.494005416219807e-16    # may vary
-        >>> Sxy = SFT.spectrogram(x, y)  # cross-spectrogram
-        >>> np.sum(Sxy)  # STFT scalar product is also zero (up to numerical accuracy)
-        (-7.105427357601002e-15+0j)      # may vary
+        >>> fg1, (ax11, ax12) = plt.subplots(1, 2, tight_layout=True, figsize=(8, 4))
+        >>> fg1.suptitle(f"Unitary Window of {m} Sample Gaussian with " +
+        ...                rf"{hop=}, $\sigma={std}$")
+        >>> ax11.set(ylabel="Amplitude", xlabel="Samples", xlim=(0, m))
+        >>> ax12.set(xlabel="Frequency Bins", ylabel="Magnitude Spectrum",
+        ...          xlim=(0, 15), ylim=(1e-5, 1.5))
+        >>> for x_, n_ in zip((desired_win, SFT.win), ('Desired', 'Unitary')):
+        ...     ax11.plot(x_, '.-', alpha=0.5, label=n_)
+        ...     X_ = np.fft.rfft(x_) / np.sum(abs(x_))
+        ...     ax12.semilogy(abs(X_), '.-', alpha=0.5, label=n_)
+        >>> for ax_ in (ax11, ax12):
+        ...     ax_.grid(True)
+        ...     ax_.legend()
+        >>> plt.show()
 
-        Note that the summation needs to be carried over the complete time-frequency
-        plane. Hence, a `onesided_fft` cannot be used.
 
         See Also
         --------
@@ -1130,6 +1133,12 @@ class ShortTimeFFT:
         `stft_detrend`, hence all parameters are discussed there. If `y` is not
         ``None`` it needs to have the same shape as `x`.
 
+        The cross-spectrogram may be interpreted as the time-frequency analogon of the
+        cross-spectral density (consult `csd`). If the STFT is parametrized to be a
+        unitary transform, i.e., utilitzing `~from_win_equals_dual` with `scale_to`
+        being ``None``, then the value of the scalar product is preserved. This is
+        shown in the second example below.
+
         Examples
         --------
         The following example shows the spectrogram of a square wave with
@@ -1138,7 +1147,7 @@ class ShortTimeFFT:
 
         >>> import matplotlib.pyplot as plt
         >>> import numpy as np
-        >>> from scipy.signal import square, ShortTimeFFT
+        >>> from scipy.signal import square, ShortTimeFFT, windows
         >>> from scipy.signal.windows import gaussian
         ...
         >>> T_x, N = 1 / 20, 1000  # 20 Hz sampling rate for 50 s signal
@@ -1158,7 +1167,7 @@ class ShortTimeFFT:
 
         The plot's colormap is logarithmically scaled as the power spectral
         density is in dB. The time extent of the signal `x` is marked by
-        vertical dashed lines and the shaded areas mark the presence of border
+        vertical dashed lines, and the shaded areas mark the presence of border
         effects:
 
         >>> fig1, ax1 = plt.subplots(figsize=(6., 4.))  # enlarge plot a bit
@@ -1191,11 +1200,33 @@ class ShortTimeFFT:
         which are reflected at the Nyquist frequency of 10 Hz. This aliasing
         is also the main source of the noise artifacts in the plot.
 
+        Two signals `x` and `y` are called orthogonal if their scalar product is zero,
+        i.e., if ``sum(x*conj(y)) == 0``. Unitary mappings preserve this property,
+        which can be illustrated by utilizing an STFT:
+
+        >>> m, hop = 12, 7
+        >>> w_des = windows.hamming(m, sym=True)  # desired window
+        >>> # STFT is unitary if its window and its dual are identical:
+        >>> SFT_u = ShortTimeFFT.from_win_equals_dual(w_des, hop, fs=1, scale_to=None,
+        ...                                           fft_mode='twosided')
+        ...
+        >>> t = np.linspace(0, 2*np.pi, 30, endpoint=False)
+        >>> x1, x2 = np.cos(t), np.sin(t) # orthogonal signals
+        >>> sum(x1 * np.conj(x2))  # scalar product is zero (up to numerical accuracy)
+        7.494005416219807e-16  # may vary
+        >>> Sx12 = SFT.spectrogram(x1, x2)  # cross-spectrum
+        >>> np.sum(Sx12)  # STFT scalar product is also zero (up to numerical accuracy)
+        (-7.105427357601002e-15+0j)  # may vary
+
+        Note that the summation needs to be carried out over the complete
+        time-frequency plane. Hence, a `onesided_fft` cannot be used.
+
 
         See Also
         --------
         :meth:`~ShortTimeFFT.stft`: Perform the short-time Fourier transform.
         stft_detrend: STFT with a trend subtracted from each segment.
+        from_win_equals_dual: Create Instance, where the STFT is a unitary transform.
         :class:`scipy.signal.ShortTimeFFT`: Class this method belongs to.
         """
         Sx = self.stft_detrend(x, detr, p0, p1, k_offset=k_offset,
