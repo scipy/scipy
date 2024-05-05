@@ -338,19 +338,25 @@ class _spbase:
 
         A = self.tocoo()
 
+
         # helper function, outputs "(i,j)  v"
-        def tostr(row, col, data):
-            triples = zip(list(zip(row, col)), data)
+        def tostr(coords, data):
+            triples = zip(list(zip(*coords)), data)
             return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
 
+        out = repr(self)
+        if self.nnz == 0:
+            return out
+
+        out += '\n  Coords\tValues\n'
         if self.nnz > maxprint:
             half = maxprint // 2
-            out = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out += tostr(tuple(c[:half] for c in A.coords), A.data[:half])
             out += "\n  :\t:\n"
             half = maxprint - maxprint//2
-            out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
+            out += tostr(tuple(c[-half:] for c in A.coords), A.data[-half:])
         else:
-            out = tostr(A.row, A.col, A.data)
+            out += tostr(A.coords, A.data)
 
         return out
 

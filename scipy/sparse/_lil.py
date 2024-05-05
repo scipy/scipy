@@ -112,7 +112,11 @@ class _lil_base(_spbase, IndexMixin):
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def __str__(self):
-        val = ''
+        val = repr(self)
+        if self.nnz == 0:
+            return val
+
+        val += '\n  Coords\tValue\n'
         for i, row in enumerate(self.rows):
             for pos, j in enumerate(row):
                 val += f"  {str((i, j))}\t{str(self.data[i][pos])}\n"
