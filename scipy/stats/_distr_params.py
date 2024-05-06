@@ -142,7 +142,7 @@ distdiscrete = [
     ['poisson', (0.6,)],
     ['randint', (7, 31)],
     ['skellam', (15, 8)],
-    ['zipf', (6.5,)],
+    ['zipf', (6.6,)],
     ['zipfian', (0.75, 15)],
     ['zipfian', (1.25, 10)],
     ['yulesimon', (11.0,)],
