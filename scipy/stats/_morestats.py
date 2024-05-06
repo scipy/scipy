@@ -291,6 +291,7 @@ def kstat(data, n=2, *, axis=None):
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
+    data = np.asarray(data)
     if axis is None:
         data = ravel(data)
         axis = 0
@@ -319,7 +320,7 @@ def kstat(data, n=2, *, axis=None):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
-def kstatvar(data, n=2):
+def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
@@ -330,6 +331,11 @@ def kstatvar(data, n=2):
         Input array. Note that n-D input gets flattened.
     n : int, {1, 2}, optional
         Default is equal to 2.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
@@ -359,13 +365,17 @@ def kstatvar(data, n=2):
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
     """  # noqa: E501
-    data = ravel(data)
-    N = len(data)
+    data = np.asarray(data)
+    if axis is None:
+        data = ravel(data)
+        axis = 0
+    N = data.shape[axis]
+
     if n == 1:
-        return kstat(data, n=2) * 1.0/N
+        return kstat(data, n=2, axis=axis) * 1.0/N
     elif n == 2:
-        k2 = kstat(data, n=2)
-        k4 = kstat(data, n=4)
+        k2 = kstat(data, n=2, axis=axis)
+        k4 = kstat(data, n=4, axis=axis)
         return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
