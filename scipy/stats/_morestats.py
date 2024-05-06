@@ -228,7 +228,7 @@ def kstat(data, n=2, *, axis=None):
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2, 3, 4}, optional
         Default is equal to 2.
     axis : int or None, default: None
@@ -328,7 +328,7 @@ def kstatvar(data, n=2, *, axis=None):
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2}, optional
         Default is equal to 2.
     axis : int or None, default: None
