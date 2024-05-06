@@ -1,4 +1,3 @@
-import warnings
 import numpy.testing as npt
 from numpy.testing import assert_allclose
 
