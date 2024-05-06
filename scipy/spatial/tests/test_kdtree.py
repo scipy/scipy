@@ -448,10 +448,10 @@ def test_query_ball_point_multithreading(kdtree_type):
 
 
 def test_concurrent_access(kdtree_type):
-    np.random.seed(0)
+    rng = np.random.default_rng(0)
     n = 10000
     k = 2
-    points = np.random.randn(n, k)
+    points = rng.random((n, k))
     T = kdtree_type(points)
 
     workers = []
