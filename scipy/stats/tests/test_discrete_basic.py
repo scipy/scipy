@@ -91,7 +91,7 @@ def test_moments(distname, arg):
     check_mean_expect(distfn, arg, m, distname)
     check_var_expect(distfn, arg, m, v, distname)
     check_skew_expect(distfn, arg, m, v, s, distname)
-    if distname not in ['zipf', 'yulesimon', 'betanbinom']:
+    if distname not in ['zipf', 'betanbinom']:
         check_kurt_expect(distfn, arg, m, v, k, distname)
 
     # frozen distr moments
