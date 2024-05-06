@@ -20,7 +20,7 @@ class _dia_base(_data_matrix):
     _format = 'dia'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+        _data_matrix.__init__(self, arg1)
 
         if issparse(arg1):
             if arg1.format == "dia":
@@ -413,7 +413,7 @@ def isspmatrix_dia(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class dia_array(sparray, _dia_base):
+class dia_array(_dia_base, sparray):
     """
     Sparse array with DIAgonal storage.
 

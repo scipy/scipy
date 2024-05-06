@@ -112,11 +112,15 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    def __init__(self, maxprint=MAXPRINT):
+    def __init__(self, arg1, maxprint=MAXPRINT):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
+        if isinstance(self, sparray) and np.isscalar(arg1):
+            raise ValueError(
+                "scipy sparse array classes do not support instantiation from a scalar"
+            )
         self.maxprint = maxprint
 
     # Use this in 1.14.0 and later:
@@ -1505,14 +1509,7 @@ settable. To change the array shape, use `X.reshape` instead.
 
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
-    
-    
-    def __init__(self, *args, **kwargs):
-        if np.isscalar(args[0]):
-            raise ValueError(
-                "scipy sparse array classes do not support instantiation from a scalar"
-            )
-        super().__init__(*args, **kwargs)
+
 
 sparray.__doc__ = _spbase.__doc__
 

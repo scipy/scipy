@@ -25,7 +25,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
     _format = 'bsr'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False, blocksize=None):
-        _data_matrix.__init__(self)
+        _data_matrix.__init__(self, arg1)
 
         if issparse(arg1):
             if arg1.format == self.format and copy:
@@ -642,7 +642,7 @@ def isspmatrix_bsr(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class bsr_array(sparray, _bsr_base):
+class bsr_array(_bsr_base, sparray):
     """
     Block Sparse Row format sparse array.
 

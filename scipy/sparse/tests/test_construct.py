@@ -50,7 +50,7 @@ class TestConstructUtils:
         with pytest.raises(
             ValueError,
             match=(
-                'scipy sparse array classes do not support'
+                'scipy sparse array classes do not support '
                 'instantiation from a scalar'
             )
         ):

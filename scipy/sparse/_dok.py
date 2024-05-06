@@ -18,7 +18,7 @@ class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+        _spbase.__init__(self, arg1)
 
         is_array = isinstance(self, sparray)
         if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
@@ -519,7 +519,7 @@ def isspmatrix_dok(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class dok_array(sparray, _dok_base):
+class dok_array(_dok_base, sparray):
     """
     Dictionary Of Keys based sparse array.
 

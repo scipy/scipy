@@ -21,7 +21,7 @@ class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+        _spbase.__init__(self, arg1)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -488,7 +488,7 @@ def isspmatrix_lil(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class lil_array(sparray, _lil_base):
+class lil_array(_lil_base, sparray):
     """
     Row-based LIst of Lists sparse array.
 

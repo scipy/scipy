@@ -173,7 +173,7 @@ def isspmatrix_csc(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class csc_array(sparray, _csc_base):
+class csc_array(_csc_base, sparray):
     """
     Compressed Sparse Column array.
 

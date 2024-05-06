@@ -244,7 +244,7 @@ def isspmatrix_csr(x):
 
 
 # This namespace class separates array from matrix with isinstance
-class csr_array(sparray, _csr_base):
+class csr_array(_csr_base, sparray):
     """
     Compressed Sparse Row array.
 
