@@ -1665,7 +1665,14 @@ class TestWilcoxon:
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
 
-@array_api_compatible
+# data for k-statistics tests from
+# https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
+# see nKS "Examples"
+x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
+           16.08, 19.43, 8.12, 11.20, 12.95, 14.77, 16.83, 19.80, 8.55, 11.58,
+           12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
+
+
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         np.random.seed(32149)
@@ -1682,8 +1689,10 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    def test_empty_input(self, xp):
-        assert_raises(ValueError, stats.kstat, xp.asarray([]))
+    def test_empty_input(self):
+        message = 'Data input must not be empty'
+        with pytest.raises(ValueError, match=message):
+            stats.kstat([])
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1691,19 +1700,39 @@ class TestKstat:
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
-    @skip_xp_backends(np_only=True,
-                      reasons=['input validation of `n` does not depend on backend'])
-    def test_kstat_bad_arg(self, xp):
+    @pytest.mark.parametrize('n', [0, 4.001])
+    def test_kstat_bad_arg(self, n):
         # Raise ValueError if n > 4 or n < 1.
         data = np.arange(10)
-        for n in [0, 4.001]:
-            assert_raises(ValueError, stats.kstat, data, n=n)
+        message = 'k-statistics only supported for 1<=n<=4'
+        with pytest.raises(ValueError, match=message):
+            stats.kstat(data, n=n)
+
+    @pytest.mark.parametrize('case', [(1, 14.02166666666667),
+                                      (2, 12.65006954022974),
+                                      (3, -1.447059503280798),
+                                      (4, -141.6682291883626)])
+    def test_against_R(self, case):
+        # Test against reference values computed with R kStatistics, e.g.
+        # options(digits=16)
+        # library(kStatistics)
+        # data <-c (16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22,
+        #           12.52, 14.68, 16.08, 19.43, 8.12, 11.20, 12.95, 14.77,
+        #           16.83, 19.80, 8.55, 11.58, 12.10, 15.02, 16.83, 16.98,
+        #           19.92, 9.47, 11.68, 13.41, 15.35, 19.11)
+        # nKS(4, data)
+        n, ref = case
+        res = stats.kstat(x_kstat, n)
+        assert_allclose(res, ref)
+
 
 
 @array_api_compatible
 class TestKstatVar:
-    def test_empty_input(self, xp):
-        assert_raises(ValueError, stats.kstatvar, xp.asarray([]))
+    def test_empty_input(self):
+        message = 'Data input must not be empty'
+        with pytest.raises(ValueError, match=message):
+            stats.kstatvar([])
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1717,7 +1746,27 @@ class TestKstatVar:
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10
-        assert_raises(ValueError, stats.kstatvar, data, n=n)
+        message = 'Only n=1 or n=2 supported.'
+        with pytest.raises(ValueError, match=message):
+            stats.kstatvar(data, n=n)
+
+    def test_against_R_mathworld(self):
+        # Test against reference values computed using formulas exactly as
+        # they appear at https://mathworld.wolfram.com/k-Statistic.html
+        # This is *really* similar to how they appear in the implementation,
+        # but that could change, and this should not.
+        n = len(x_kstat)
+        k2 = 12.65006954022974  # see source code in TestKstat
+        k4 = -141.6682291883626
+
+        res = stats.kstatvar(x_kstat, 1)
+        ref = k2 / n
+        assert_allclose(res, ref)
+
+        res = stats.kstatvar(x_kstat, 2)
+        # *unbiased estimator* for var(k2)
+        ref = (2*k2**2*n + (n-1)*k4) / (n * (n+1))
+        assert_allclose(res, ref)
 
 
 class TestPpccPlot:
@@ -2968,3 +3017,31 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([0.25]), [0.25])
         assert_array_equal(stats.false_discovery_control(0.25), 0.25)
         assert_array_equal(stats.false_discovery_control([]), [])
+
+
+class TestCommonAxis:
+    # More thorough testing of `axis` in `test_axis_nan_policy`,
+    # but those testa aren't run with array API yet. This class
+    # is in `test_morestats` instead of `test_axis_nan_policy`
+    # because there is no reason to run `test_axis_nan_policy`
+    # with the array API CI job right now.
+
+    @pytest.mark.parametrize('case', [(stats.sem, {}),
+                                      (stats.kstat, {'n': 4}),
+                                      (stats.kstat, {'n': 2})])
+    def test_axis(self, case):
+        fun, kwargs = case
+        rng = np.random.default_rng(24598245982345)
+        x = rng.random((6, 7))
+
+        res = fun(x, **kwargs, axis=0)
+        ref = [fun(x[:, i], **kwargs) for i in range(x.shape[1])]
+        assert_allclose(res, ref)
+
+        res = fun(x, **kwargs, axis=1)
+        ref = [fun(x[i, :], **kwargs) for i in range(x.shape[0])]
+        assert_allclose(res, ref)
+
+        res = fun(x, **kwargs, axis=None)
+        ref = fun(x.ravel(), **kwargs)
+        assert_allclose(res, ref)

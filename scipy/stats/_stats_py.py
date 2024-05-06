@@ -67,7 +67,8 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy, atleast_nd
+from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
+                                   xp_clip, _move_axis_to_end)
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -4535,20 +4536,6 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-def _move_axis_to_end(x, source, xp):
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
-
-
-def _clip(x, a, b, xp):
-    y = xp.asarray(x, copy=True)
-    y[y < a] = a
-    y[y > b] = b
-    return y
-
-
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -4934,7 +4921,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     one = xp.asarray(1, dtype=dtype)
     # `clip` only recently added to array API, so it's not yet available in
     # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(_clip(r, -one, one, xp))
+    r = xp.asarray(xp_clip(r, -one, one, xp))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
