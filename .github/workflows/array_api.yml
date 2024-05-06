@@ -98,4 +98,5 @@ jobs:
         python dev.py --no-build test -b all -t scipy._lib.tests.test__util -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.stats.tests.test_stats -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.stats.tests.test_morestats -- --durations 3 --timeout=60
+        python dev.py --no-build test -b all -t scipy.stats.tests.test_variation -- --durations 3 --timeout=60
         python dev.py --no-build test -b all -t scipy.stats.tests.test_resampling -- --durations 3 --timeout=60
