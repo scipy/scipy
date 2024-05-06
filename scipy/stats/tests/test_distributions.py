@@ -4009,6 +4009,12 @@ class TestSkewNorm:
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
 
+    def test_ppf(self):
+        # gh-20124 reported that Boost's ppf was wrong for high skewness
+        # Reference value was calculated using
+        # N[InverseCDF[SkewNormalDistribution[0, 1, 500], 1/100], 14] in Wolfram Alpha.
+        assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
+
 
 class TestExpon:
     def test_zero(self):
