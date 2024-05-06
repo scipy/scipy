@@ -1695,9 +1695,10 @@ class TestKstat:
         ref = stats.kstat(x.ravel(), n)
         assert_allclose(res, ref)
 
-
     def test_empty_input(self):
-        assert_raises(ValueError, stats.kstat, [])
+        message = 'Data input must not be empty'
+        with pytest.raises(ValueError, match=message):
+            stats.kstat([])
 
     def test_nan_input(self):
         data = np.arange(10.)
@@ -1705,11 +1706,13 @@ class TestKstat:
 
         assert_equal(stats.kstat(data), np.nan)
 
-    def test_kstat_bad_arg(self):
+    @pytest.mark.parametrize('n', [0, 4.001])
+    def test_kstat_bad_arg(self, n):
         # Raise ValueError if n > 4 or n < 1.
         data = np.arange(10)
-        for n in [0, 4.001]:
-            assert_raises(ValueError, stats.kstat, data, n=n)
+        message = 'k-statistics only supported for 1<=n<=4'
+        with pytest.raises(ValueError, match=message):
+            stats.kstat(data, n=n)
 
 
 class TestKstatVar:
