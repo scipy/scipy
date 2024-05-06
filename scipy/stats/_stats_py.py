@@ -68,7 +68,7 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, _move_axis_to_end)
+                                   xp_clip, xp_moveaxis_to_end)
 from scipy._lib.array_api_compat import size as xp_size
 
 # In __all__ but deprecated for removal in SciPy 1.13.0
@@ -4821,8 +4821,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
-    x = _move_axis_to_end(x, axis, xp)
-    y = _move_axis_to_end(y, axis, xp)
+    x = xp_moveaxis_to_end(x, axis, xp)
+    y = xp_moveaxis_to_end(y, axis, xp)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)

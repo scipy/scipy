@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace
+from scipy._lib._array_api import array_namespace, xp_copysign
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
@@ -118,7 +118,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     if ddof == n:
         # Another special case.  Result is either inf or nan.
         std_a = xp.std(a, axis=axis, correction=0)
-        result = xp.where(std_a > 0, xp.copysign(xp.asarray(xp.inf), mean_a), NaN)
+        result = xp.where(std_a > 0, xp_copysign(xp.asarray(xp.inf), mean_a), NaN)
         return result[()] if result.ndim == 0 else result
 
     with np.errstate(divide='ignore', invalid='ignore'):

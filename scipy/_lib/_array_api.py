@@ -413,9 +413,18 @@ def xp_clip(x, a, b, xp=None):
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
 # or covered by array_api_compat.
-def _move_axis_to_end(x, source, xp=None):
+def xp_moveaxis_to_end(x, source, xp=None):
     xp = array_namespace(xp) if xp is None else xp
     axes = list(range(x.ndim))
     temp = axes.pop(source)
     axes = axes + [temp]
     return xp.permute_dims(x, axes)
+
+
+# temporary substitute for xp.copysign, which is not yet in all backends
+# or covered by array_api_compat.
+def xp_copysign(x1, x2, xp=None):
+    # no attempt to account for special cases
+    xp = array_namespace(x1, x2) if xp is None else xp
+    abs_x1 = xp.abs(x1)
+    return xp.where(x2 >= 0, abs_x1, -abs_x1)
