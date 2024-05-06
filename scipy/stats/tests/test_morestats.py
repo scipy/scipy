@@ -1676,6 +1676,26 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
 
+    @pytest.mark.parametrize('n', [1, 2, 3, 4])
+    def test_axis(self, n):
+        # more thorough testing of `axis` in `test_axis_nan_policy`,
+        # but that isn't run for array API yet
+        rng = np.random.default_rng(24598245982345)
+        x = rng.random((6, 7))
+
+        res = stats.kstat(x, n, axis=0)
+        ref = [stats.kstat(x[:, i], n) for i in range(x.shape[1])]
+        assert_allclose(res, ref)
+
+        res = stats.kstat(x, n, axis=1)
+        ref = [stats.kstat(x[i, :], n) for i in range(x.shape[0])]
+        assert_allclose(res, ref)
+
+        res = stats.kstat(x, n, axis=None)
+        ref = stats.kstat(x.ravel(), n)
+        assert_allclose(res, ref)
+
+
     def test_empty_input(self):
         assert_raises(ValueError, stats.kstat, [])
 
