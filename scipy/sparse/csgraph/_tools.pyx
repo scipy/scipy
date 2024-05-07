@@ -51,8 +51,8 @@ def csgraph_from_masked(graph):
     ... fill_value = 0)
 
     >>> csgraph_from_masked(graph_masked)
-    <4x4 sparse matrix of type '<class 'numpy.float64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 4 stored elements and shape (4, 4)>
 
     """
     # check that graph is a square matrix
@@ -209,8 +209,8 @@ def csgraph_from_dense(graph,
     ... ]
 
     >>> csgraph_from_dense(graph)
-    <4x4 sparse matrix of type '<class 'numpy.float64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 4 stored elements and shape (4, 4)>
 
     """
     return csgraph_from_masked(csgraph_masked_from_dense(graph,
@@ -303,8 +303,8 @@ def csgraph_to_dense(csgraph, null_value=0):
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <4x4 sparse matrix of type '<class 'numpy.int64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_dense(graph)
     array([[0., 1., 2., 0.],
@@ -367,8 +367,8 @@ def csgraph_to_masked(csgraph):
     ... [0, 0, 0, 0]
     ... ])
     >>> graph
-    <4x4 sparse matrix of type '<class 'numpy.int64'>'
-        with 4 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
 
     >>> csgraph_to_masked(graph)
     masked_array(
@@ -453,6 +453,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -562,6 +565,9 @@ def construct_dist_matrix(graph,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1

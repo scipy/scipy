@@ -222,7 +222,7 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         b = 'x'.join(str(x) for x in self.blocksize)
         return (
-            f"<{fmt} sparse {sparse_cls} of type '{self.dtype}'\n"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
             f"\twith {self.nnz} stored elements (blocksize={b}) and shape {self.shape}>"
         )
 

@@ -98,7 +98,7 @@ class _dia_base(_data_matrix):
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         d = self.data.shape[0]
         return (
-            f"<{fmt} sparse {sparse_cls} of type '{self.dtype}'\n"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
             f"\twith {self.nnz} stored elements ({d} diagonals) and shape {self.shape}>"
         )
 

@@ -329,7 +329,7 @@ class _spbase:
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
         return (
-            f"<{format_name} sparse {sparse_cls} of type '{self.dtype}'\n"
+            f"<{format_name} sparse {sparse_cls} of dtype '{self.dtype}'\n"
             f"\twith {self.nnz} stored elements and shape {self.shape}>"
         )
 

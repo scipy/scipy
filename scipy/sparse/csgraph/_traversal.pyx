@@ -75,6 +75,9 @@ def connected_components(csgraph, directed=True, connection='weak',
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (5, 5)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	1
       (1, 2)	1
@@ -332,6 +335,9 @@ cpdef breadth_first_order(csgraph, i_start,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)    1
       (0, 2)    2
       (1, 3)    1
@@ -538,6 +544,9 @@ cpdef depth_first_order(csgraph, i_start,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1

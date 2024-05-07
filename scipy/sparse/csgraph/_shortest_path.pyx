@@ -148,6 +148,9 @@ def shortest_path(csgraph, method='auto',
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -294,6 +297,9 @@ def floyd_warshall(csgraph, directed=True,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -519,6 +525,9 @@ def dijkstra(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -1004,6 +1013,9 @@ def bellman_ford(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -1241,6 +1253,9 @@ def johnson(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
       (0, 1)	1
       (0, 2)	2
       (1, 3)	1
@@ -1771,6 +1786,9 @@ def yen(
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
+    <Compressed Sparse Row sparse matrix of dtype 'int64'
+        with 5 stored elements and shape (4, 4)>
+      Coords    Values
     (0, 1)	1
     (0, 2)	2
     (1, 3)	1
