@@ -25,7 +25,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     """
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+        _data_matrix.__init__(self, arg1)
         is_array = isinstance(self, sparray)
 
         if issparse(arg1):

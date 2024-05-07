@@ -21,7 +21,7 @@ class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+        _spbase.__init__(self, arg1)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape

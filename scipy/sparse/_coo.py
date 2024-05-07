@@ -25,7 +25,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+        _data_matrix.__init__(self, arg1)
         is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
