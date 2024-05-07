@@ -95,6 +95,7 @@ def warning_calls():
     return bad_filters, bad_stacklevels
 
 
+@pytest.mark.fail_slow(20)
 @pytest.mark.slow
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls

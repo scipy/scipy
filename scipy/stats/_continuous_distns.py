@@ -1321,6 +1321,9 @@ class burr12_gen(rv_continuous):
         # that does a better job handling small values of q.
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
 
+    def _isf(self, p, c, d):
+        return sc.expm1(-1/d * np.log(p))**(1/c)
+
     def _munp(self, n, c, d):
         def moment_if_exists(n, c, d):
             nc = 1. * n / c

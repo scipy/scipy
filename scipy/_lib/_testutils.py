@@ -17,8 +17,8 @@ import scipy
 
 try:
     # Need type: ignore[import-untyped] for mypy >= 1.6
-    import cython  # type: ignore[import]
-    from Cython.Compiler.Version import (  # type: ignore[import]
+    import cython  # type: ignore[import-untyped]
+    from Cython.Compiler.Version import (  # type: ignore[import-untyped]
         version as cython_version,
     )
 except ImportError:
