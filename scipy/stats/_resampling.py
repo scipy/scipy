@@ -9,7 +9,7 @@ import inspect
 
 from scipy._lib._util import check_random_state, _rename_parameter, rng_integers
 from scipy._lib._array_api import (array_namespace, is_numpy, xp_minimum,
-                                   xp_clip, _move_axis_to_end)
+                                   xp_clip, xp_moveaxis_to_end)
 from scipy.special import ndtr, ndtri, comb, factorial
 
 from ._common import ConfidenceInterval
@@ -716,7 +716,7 @@ def _monte_carlo_test_iv(data, rvs, statistic, vectorized, n_resamples,
     data_iv = []
     for sample in data:
         sample = xp.broadcast_to(sample, (1,)) if sample.ndim == 0 else sample
-        sample = _move_axis_to_end(sample, axis_int, xp=xp)
+        sample = xp_moveaxis_to_end(sample, axis_int, xp=xp)
         data_iv.append(sample)
 
     n_resamples_int = int(n_resamples)

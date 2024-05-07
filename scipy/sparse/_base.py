@@ -569,8 +569,6 @@ class _spbase:
         if issparse(other):
             if self.shape[-1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
-            if other.ndim == 1:
-                raise ValueError('Cannot yet multiply a 1d sparse array')
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
