@@ -1690,11 +1690,10 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_empty_input(self, xp):
         message = 'Data input must not be empty'
         with pytest.raises(ValueError, match=message):
-            stats.kstat([])
+            stats.kstat(xp.asarray([]))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1714,7 +1713,6 @@ class TestKstat:
                                       (2, 12.65006954022974),
                                       (3, -1.447059503280798),
                                       (4, -141.6682291883626)])
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_against_R(self, case, xp):
         # Test against reference values computed with R kStatistics, e.g.
         # options(digits=16)
@@ -1725,18 +1723,17 @@ class TestKstat:
         #           19.92, 9.47, 11.68, 13.41, 15.35, 19.11)
         # nKS(4, data)
         n, ref = case
-        res = stats.kstat(x_kstat, n)
-        xp_assert_close(res, ref)
+        res = stats.kstat(xp.asarray(x_kstat), n)
+        xp_assert_close(res, xp.asarray(ref))
 
 
 
 @array_api_compatible
 class TestKstatVar:
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_empty_input(self, xp):
         message = 'Data input must not be empty'
         with pytest.raises(ValueError, match=message):
-            stats.kstatvar([])
+            stats.kstatvar(xp.asarray([]))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1754,7 +1751,6 @@ class TestKstatVar:
         with pytest.raises(ValueError, match=message):
             stats.kstatvar(data, n=n)
 
-    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
     def test_against_R_mathworld(self, xp):
         # Test against reference values computed using formulas exactly as
         # they appear at https://mathworld.wolfram.com/k-Statistic.html
@@ -1764,14 +1760,14 @@ class TestKstatVar:
         k2 = 12.65006954022974  # see source code in TestKstat
         k4 = -141.6682291883626
 
-        res = stats.kstatvar(x_kstat, 1)
+        res = stats.kstatvar(xp.asarray(x_kstat), 1)
         ref = k2 / n
-        xp_assert_close(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
-        res = stats.kstatvar(x_kstat, 2)
+        res = stats.kstatvar(xp.asarray(x_kstat), 2)
         # *unbiased estimator* for var(k2)
         ref = (2*k2**2*n + (n-1)*k4) / (n * (n+1))
-        xp_assert_close(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
 
 class TestPpccPlot:
