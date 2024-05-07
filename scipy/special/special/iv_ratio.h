@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include "special/tools.h"
-#include "special/error.h"
-#include <cstdint>    // for uint64_t
-#include <cmath>      // for frexp, ldexp, fmax, fma
-#include <utility>    // for pair
+#include "config.h"
+#include "tools.h"
+#include "error.h"
+
+namespace special {
 
 /* Generates the "tail" of Perron's continued fraction for `iv(v,x)/iv(v-1,x)`
  * for v >= 1 and x >= 0.
@@ -58,12 +58,12 @@ inline double iv_ratio(double v, double x) {
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (v < 1 || x < 0) {
-        special::set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
     if (std::isinf(v) && std::isinf(x)) {
         // There is not a unique limit as both v and x tends to infinity.
-        special::set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
     if (std::isinf(v)) {
@@ -81,16 +81,18 @@ inline double iv_ratio(double v, double x) {
     double xc = x * c;
 
     IvRatioCFTailGenerator cf(vc, xc, c);
-    auto [fc, terms] = special::detail::series_eval_kahan(
-        special::detail::continued_fraction_series(cf),
+    auto [fc, terms] = detail::series_eval_kahan(
+        detail::continued_fraction_series(cf),
         std::numeric_limits<double>::epsilon() * 0.5,
         1000,
         2*vc);
 
     if (terms == 0) { // failed to converge; should not happen
-        special::set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
+        set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
         return std::numeric_limits<double>::signaling_NaN();
     }
 
     return xc / (xc + fc);
 }
+
+} // namespace special
