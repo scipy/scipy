@@ -9101,45 +9101,6 @@ class irwinhall_gen(rv_continuous):
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
-    #  todo: this cumulant -> moment calculation is generic and should be moved to the base class
-    #  IH moments are difficult to calculate explicitly, but the cumulants are easy
-    #  So we need to use a sort of 'inversion formula' to get the moments from the cumulants.
-    #  MGF = moment generating function => moment(m) = D^m(MGF)(0)
-    #  CGF = cumulant generating function => cumulant(m) = D^m(CGF)(0)
-    #  since log(MGF) = CGF by definition
-    #  D(MGF) = D(CGF)*MGF
-    #  now we expand these into their series
-    #  MGF = sum_{m=0}^inf mu_m x^m/m!
-    #  CGF = sum_{m=0}^inf kappa_m x^m/m!
-    #  D(MGF) = D(sum_{m=0}^inf mu_m x^m/m!) = sum_{m=0}^inf m*mu_m x^{m-1}/m!
-    #  D(CGF) = D(sum_{m=0}^inf kappa_m x^m/m!) = sum_{m=0}^inf m*kappa_m x^{m-1}/m!
-    #  as exponential generating functions, their cauchy product becomes
-    #  \sum_{k=0}^{m}\binom{m}{k}\mu_k\kappa_{m+1-k}
-    #  if we define \mu_0 as 1 and \kappa_0 as 0
-    #  Equating the two sides of the equation, then collecting terms of like powers of x,
-    #  mu_{m+1} = sum_{k=0}^{m}\binom{m}{k}\mu_k\kappa_{m+1-k}
-    #  or mu_{m} = sum_{k=0}^{m-1}\binom{m-1}{k}\mu_k\kappa_{m-k}
-    #
-    #  for the cumulants of the Irwin-Hall(n) distribution, we have
-    #  kappa_m = Bernoulli(m)/m * n ; Bernoulli(1) := 1/2 ; Bernoulli(2j+1) = 0 for j > 0
-
-    # in this code, n:= moment order ; m := parameter of the IH distribution (swapped from above)
-    # def _munp(self, n, m):
-        # cumulants = sc.special.bernoulli(n)
-        # cumulants[1:] /= np.arange(1, n+1)
-        # cumulants[0] = 0
-        # cumulants[1] = 1/2
-        # cumulants *= m
-        # moments = np.zeros(n+1)
-        # moments[0] = 1
-        #
-        # for i in range(1, n+1):
-        #     # moments[i] = cumulants[i]
-        #     # moments[i] += sum(sc.special.binom(i-1, j-1)*cumulants[j]*moments[i-j] for j in range(1, i+1))
-        #     moments[i] = np.dot(cumulants[1:i+1]*moments[i-1::-1], sc.special.binom(i-1,np.arange(0, i)))
-        #
-        # return moments[n]
-        
     @staticmethod
     def _cardbspl(n):
         t = np.arange(n+1) 
