@@ -18,40 +18,6 @@ from ._compressed import _cs_matrix
 class _csr_base(_cs_matrix):
     _format = 'csr'
 
-    # override IndexMixin.__getitem__ for 1d case until fully implemented
-    def __getitem__(self, key):
-        if self.ndim == 2:
-            return super().__getitem__(key)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._get_int(key)
-        else:
-            raise IndexError('array/slice index for 1d csr_array not yet supported')
-
-    # override IndexMixin.__setitem__ for 1d case until fully implemented
-    def __setitem__(self, key, value):
-        if self.ndim == 2:
-            return super().__setitem__(key, value)
-
-        if isinstance(key, tuple) and len(key) == 1:
-            key = key[0]
-        INT_TYPES = (int, np.integer)
-        if isinstance(key, INT_TYPES):
-            if key < 0:
-                key += self.shape[-1]
-            if key < 0 or key >= self.shape[-1]:
-                raise IndexError('index value out of bounds')
-            return self._set_int(key, value)
-        else:
-            raise IndexError('array index for 1d csr_array not yet provided')
-
     def transpose(self, axes=None, copy=False):
         if axes is not None and axes != (1, 0):
             raise ValueError("Sparse arrays/matrices do not support "
