@@ -37,7 +37,7 @@ robert.kern@gmail.com
 """
 import os
 
-import numpy
+import numpy as np
 from warnings import warn
 from scipy.odr import __odrpack
 
@@ -91,9 +91,9 @@ def _conv(obj, dtype=None):
         return obj
     else:
         if dtype is None:
-            obj = numpy.asarray(obj)
+            obj = np.asarray(obj)
         else:
-            obj = numpy.asarray(obj, dtype)
+            obj = np.asarray(obj, dtype)
         if obj.shape == ():
             # Scalar.
             return obj.dtype.type(obj)
@@ -260,7 +260,7 @@ class Data:
     def __init__(self, x, y=None, we=None, wd=None, fix=None, meta=None):
         self.x = _conv(x)
 
-        if not isinstance(self.x, numpy.ndarray):
+        if not isinstance(self.x, np.ndarray):
             raise ValueError("Expected an 'ndarray' of data for 'x', "
                              f"but instead got data of type '{type(self.x).__name__}'")
 
@@ -338,11 +338,11 @@ class RealData(Data):
     The weights `wd` and `we` are computed from provided values as follows:
 
     `sx` and `sy` are converted to weights by dividing 1.0 by their squares.
-    For example, ``wd = 1./numpy.power(`sx`, 2)``.
+    For example, ``wd = 1./np.power(`sx`, 2)``.
 
     `covx` and `covy` are arrays of covariance matrices and are converted to
     weights by performing a matrix inversion on each observation's covariance
-    matrix. For example, ``we[i] = numpy.linalg.inv(covy[i])``.
+    matrix. For example, ``we[i] = np.linalg.inv(covy[i])``.
 
     These arguments follow the same structured argument conventions as wd and
     we only restricted by their natures: `sx` and `sy` can't be rank-3, but
@@ -373,7 +373,7 @@ class RealData(Data):
 
         self.x = _conv(x)
 
-        if not isinstance(self.x, numpy.ndarray):
+        if not isinstance(self.x, np.ndarray):
             raise ValueError("Expected an 'ndarray' of data for 'x', "
                               f"but instead got data of type '{type(self.x).__name__}'")
 
@@ -389,7 +389,7 @@ class RealData(Data):
         """ Convert standard deviation to weights.
         """
 
-        return 1./numpy.power(sd, 2)
+        return 1./np.power(sd, 2)
 
     def _cov2wt(self, cov):
         """ Convert covariance matrix(-ices) to weights.
@@ -400,7 +400,7 @@ class RealData(Data):
         if len(cov.shape) == 2:
             return inv(cov)
         else:
-            weights = numpy.zeros(cov.shape, float)
+            weights = np.zeros(cov.shape, float)
 
             for i in range(cov.shape[-1]):  # n
                 weights[:,:,i] = inv(cov[:,:,i])
@@ -763,8 +763,8 @@ class ODR:
         # These really are 32-bit integers in FORTRAN (gfortran), even on 64-bit
         # platforms.
         # XXX: some other FORTRAN compilers may not agree.
-        self.ifixx = _conv(ifixx, dtype=numpy.int32)
-        self.ifixb = _conv(ifixb, dtype=numpy.int32)
+        self.ifixx = _conv(ifixx, dtype=np.int32)
+        self.ifixb = _conv(ifixb, dtype=np.int32)
         self.job = job
         self.iprint = iprint
         self.errfile = errfile
@@ -792,7 +792,7 @@ class ODR:
 
         x_s = list(self.data.x.shape)
 
-        if isinstance(self.data.y, numpy.ndarray):
+        if isinstance(self.data.y, np.ndarray):
             y_s = list(self.data.y.shape)
             if self.model.implicit:
                 raise OdrError("an implicit model cannot use response data")
@@ -917,12 +917,12 @@ class ODR:
             lwork = (18 + 11*p + p*p + m + m*m + 4*n*q + 2*n*m + 2*n*q*p +
                      5*q + q*(p+m) + ldwe*ld2we*q)
 
-        if isinstance(self.work, numpy.ndarray) and self.work.shape == (lwork,)\
+        if isinstance(self.work, np.ndarray) and self.work.shape == (lwork,)\
                 and self.work.dtype.str.endswith('f8'):
             # the existing array is fine
             return
         else:
-            self.work = numpy.zeros((lwork,), float)
+            self.work = np.zeros((lwork,), float)
 
     def set_job(self, fit_type=None, deriv=None, var_calc=None,
         del_init=None, restart=None):
@@ -1098,7 +1098,7 @@ class ODR:
             # delta0 provided and fit is not a restart
             self._gen_work()
 
-            d0 = numpy.ravel(self.delta0)
+            d0 = np.ravel(self.delta0)
 
             self.work[:len(d0)] = d0
 

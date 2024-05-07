@@ -180,5 +180,11 @@ def test_mixed_index_dtype_int_indexing(cls):
     indices_64bit.indices = base_mtx.indices.astype(np.int64)
 
     for mtx in [base_mtx, indptr_64bit, indices_64bit]:
-        np.testing.assert_array_equal(mtx[[1,2], :].toarray(), base_mtx[[1, 2], :].toarray())
-        np.testing.assert_array_equal(mtx[:, [1, 2]].toarray(), base_mtx[:, [1, 2]].toarray())
+        np.testing.assert_array_equal(
+            mtx[[1,2], :].toarray(),
+            base_mtx[[1, 2], :].toarray()
+        )
+        np.testing.assert_array_equal(
+            mtx[:, [1, 2]].toarray(),
+            base_mtx[:, [1, 2]].toarray()
+        )

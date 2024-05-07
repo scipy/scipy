@@ -462,7 +462,7 @@ cdef int _estimate_gradients_2d_global(const qhull.DelaunayInfo_t *d,
     #     W(x) = f(x) + w(x)^T y
     #
     # where y = [ F_x(V); F_y(V) ], it is clear that the solution to
-    # the local problem is is given as a solution of the 2x2 matrix
+    # the local problem is given as a solution of the 2x2 matrix
     # equation.
     #
     # Here, we use the Clough-Tocher interpolant, which restricted to

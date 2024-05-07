@@ -14,8 +14,8 @@ from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close, SCIPY_DEVICE
 from scipy import fft
 
-pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_if_array_api")]
-skip_if_array_api = pytest.mark.skip_if_array_api
+pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 _5_smooth_numbers = [
     2, 3, 4, 5, 6, 8, 9, 10,
@@ -51,7 +51,7 @@ def _assert_n_smooth(x, n):
            f'x={x_orig} is not {n}-smooth, remainder={x}'
 
 
-@skip_if_array_api(np_only=True)
+@skip_xp_backends(np_only=True)
 class TestNextFastLen:
 
     def test_next_fast_len(self):
@@ -126,7 +126,7 @@ class TestNextFastLen:
         assert next_fast_len(target=7, real=False) == 7
 
 
-@skip_if_array_api(cpu_only=True)
+@skip_xp_backends(cpu_only=True)
 class Test_init_nd_shape_and_axes:
 
     def test_py_0d_defaults(self, xp):
@@ -315,7 +315,7 @@ class Test_init_nd_shape_and_axes:
             _init_nd_shape_and_axes(x, shape=-2, axes=None)
 
 
-@skip_if_array_api('torch',
+@skip_xp_backends('torch',
                    reasons=['torch.fft not yet implemented by array-api-compat'])
 class TestFFTShift:
 
@@ -391,7 +391,7 @@ class TestFFTShift:
         xp_assert_close(fft.ifftshift(shift_dim_both), freqs)
 
 
-@skip_if_array_api('array_api_strict', 'cupy',
+@skip_xp_backends('array_api_strict', 'cupy',
                    reasons=['fft not yet implemented by array-api-strict',
                             'cupy.fft not yet implemented by array-api-compat'])
 class TestFFTFreq:
@@ -419,7 +419,7 @@ class TestFFTFreq:
         xp_assert_close(y, x2)
 
 
-@skip_if_array_api('array_api_strict', 'cupy',
+@skip_xp_backends('array_api_strict', 'cupy',
                    reasons=['fft not yet implemented by array-api-strict',
                             'cupy.fft not yet implemented by array-api-compat'])
 class TestRFFTFreq:

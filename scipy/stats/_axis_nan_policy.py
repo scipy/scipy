@@ -8,26 +8,22 @@ import numpy as np
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
 from scipy._lib._util import _contains_nan, AxisError, _get_nan
+from scipy._lib._array_api import array_namespace, is_numpy
 import inspect
 
 
-def _broadcast_arrays(arrays, axis=None):
+def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
-    new_shapes = _broadcast_array_shapes(arrays, axis=axis)
+    xp = array_namespace(*arrays) if xp is None else xp
+    arrays = [xp.asarray(arr) for arr in arrays]
+    shapes = [arr.shape for arr in arrays]
+    new_shapes = _broadcast_shapes(shapes, axis)
     if axis is None:
         new_shapes = [new_shapes]*len(arrays)
-    return [np.broadcast_to(array, new_shape)
+    return [xp.broadcast_to(array, new_shape)
             for array, new_shape in zip(arrays, new_shapes)]
-
-
-def _broadcast_array_shapes(arrays, axis=None):
-    """
-    Broadcast shapes of arrays, ignoring incompatibility of specified axes
-    """
-    shapes = [np.asarray(arr).shape for arr in arrays]
-    return _broadcast_shapes(shapes, axis)
 
 
 def _broadcast_shapes(shapes, axis=None):
@@ -102,10 +98,10 @@ def _broadcast_array_shapes_remove_axis(arrays, axis=None):
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats._axis_nan_policy import _broadcast_array_shapes
+    >>> from scipy.stats._axis_nan_policy import _broadcast_array_shapes_remove_axis
     >>> a = np.zeros((5, 2, 1))
     >>> b = np.zeros((9, 3))
-    >>> _broadcast_array_shapes((a, b), 1)
+    >>> _broadcast_array_shapes_remove_axis((a, b), 1)
     (5, 3)
     """
     # Note that here, `axis=None` means do not consume/drop any axes - _not_
@@ -118,7 +114,7 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     """
     Broadcast shapes, dropping specified axes
 
-    Same as _broadcast_array_shapes, but given a sequence
+    Same as _broadcast_array_shapes_remove_axis, but given a sequence
     of array shapes `shapes` instead of the arrays themselves.
     """
     shapes = _broadcast_shapes(shapes, axis)
@@ -393,6 +389,21 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             if _no_deco:  # for testing, decorator does nothing
                 return hypotest_fun_in(*args, **kwds)
 
+            # For now, skip the decorator entirely if using array API. In the future,
+            # we'll probably want to use it for `keepdims`, `axis` tuples, etc.
+            if len(args) == 0:  # extract sample from `kwds` if there are no `args`
+                used_kwd_samples = list(set(kwds).intersection(set(kwd_samples)))
+                temp = used_kwd_samples[:1]
+            else:
+                temp = args[0]
+
+            if not is_numpy(array_namespace(temp)):
+                msg = ("Use of `nan_policy` and `keepdims` "
+                       "is incompatible with non-NumPy arrays.")
+                if 'nan_policy' in kwds or 'keepdims' in kwds:
+                    raise NotImplementedError(msg)
+                return hypotest_fun_in(*args, **kwds)
+
             # We need to be flexible about whether position or keyword
             # arguments are used, but we need to make sure users don't pass
             # both for the same parameter. To complicate matters, some
@@ -495,7 +506,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 samples = [sample.reshape(new_shape)
                            for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
-            NaN = _get_nan(*samples)
+            NaN = _get_nan(*samples) if samples else np.nan
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
