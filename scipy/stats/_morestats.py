@@ -366,10 +366,10 @@ def kstatvar(data, n=2, *, axis=None):
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
     """  # noqa: E501
-    xp = array_namespace
+    xp = array_namespace(data)
     data = xp.asarray(data)
     if axis is None:
-        data = xp.reshape(data, (1,))
+        data = xp.reshape(data, (-1,))
         axis = 0
     N = data.shape[axis]
 
