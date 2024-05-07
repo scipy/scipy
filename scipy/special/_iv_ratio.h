@@ -52,7 +52,7 @@ private:
     std::uint64_t k_; // current index
 };
 
-inline double iv_ratio(double v, double x, int comp) {
+inline double iv_ratio(double v, double x) {
 
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
@@ -67,10 +67,10 @@ inline double iv_ratio(double v, double x, int comp) {
         return std::numeric_limits<double>::signaling_NaN();
     }
     if (std::isinf(v)) {
-        return comp ? 1.0 : 0.0;
+        return 0.0;
     }
     if (std::isinf(x)) {
-        return comp ? 0.0 : 1.0;
+        return 1.0;
     }
 
     // Now v >= 1 and x >= 0 and both are finite.
@@ -92,5 +92,5 @@ inline double iv_ratio(double v, double x, int comp) {
         return std::numeric_limits<double>::signaling_NaN();
     }
 
-    return (comp ? fc : xc) / (xc + fc);
+    return xc / (xc + fc);
 }

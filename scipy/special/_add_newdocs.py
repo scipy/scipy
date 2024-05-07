@@ -12848,10 +12848,9 @@ add_newdoc(
 
 add_newdoc("_iv_ratio",
     r"""
-    _iv_ratio(v, x, comp)
+    _iv_ratio(v, x)
 
     Internal function, do not use.
 
-    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0` if `comp == 0`,
-    or one minus that ratio if `comp != 0`.
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
     """)
