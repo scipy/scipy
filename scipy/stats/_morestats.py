@@ -293,9 +293,8 @@ def kstat(data, n=2, *, axis=None):
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
-    data = np.asarray(data)
     if axis is None:
-        data = ravel(data)
+        data = xp.reshape(data, (-1,))
         axis = 0
 
     N = data.shape[axis]
