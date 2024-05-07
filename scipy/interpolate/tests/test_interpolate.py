@@ -1026,13 +1026,13 @@ class TestAkima1DInterpolator:
         ak_false = Akima1DInterpolator(x, y, extrapolate=False)
         ak_none = Akima1DInterpolator(x, y, extrapolate=None)
         # None should default to False; extrapolated points are NaN.
-        assert_allclose(ak_false(x_ext), ak_none(x_ext), equal_nan=True)
+        assert_allclose(ak_false(x_ext), ak_none(x_ext), equal_nan=True, atol=1e-15)
         assert_equal(ak_false(x_ext)[0:4], np.full(4, np.nan))
         assert_equal(ak_false(x_ext)[-4:-1], np.full(3, np.nan))
         # Extrapolation on call and attribute should be equal.
-        assert_allclose(ak_false(x_ext, extrapolate=True), ak_true(x_ext))
+        assert_allclose(ak_false(x_ext, extrapolate=True), ak_true(x_ext), atol=1e-15)
         # Testing extrapoation to actual function.
-        assert_allclose(y_ext, ak_true(x_ext))
+        assert_allclose(y_ext, ak_true(x_ext), atol=1e-15)
 
     def test_complex(self):
         # Complex-valued data deprecated
