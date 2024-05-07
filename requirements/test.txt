@@ -3,6 +3,7 @@
 pytest
 pytest-cov
 pytest-timeout
+pytest-fail-slow
 pytest-xdist
 asv
 mpmath

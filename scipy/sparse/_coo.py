@@ -25,7 +25,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+        _data_matrix.__init__(self, arg1)
         is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
@@ -335,27 +335,35 @@ class _coo_base(_data_matrix, _minmax_mixin):
                [0, 0, 0, 1]])
 
         """
-        if self.ndim != 2:
-            raise ValueError("Cannot convert a 1d sparse array to csr format")
         if self.nnz == 0:
             return self._csr_container(self.shape, dtype=self.dtype)
         else:
             from ._csr import csr_array
-            indptr, indices, data, shape = self._coo_to_compressed(csr_array._swap)
+            arrays = self._coo_to_compressed(csr_array._swap, copy=copy)
+            indptr, indices, data, shape = arrays
 
             x = self._csr_container((data, indices, indptr), shape=self.shape)
             if not self.has_canonical_format:
                 x.sum_duplicates()
             return x
 
-    def _coo_to_compressed(self, swap):
+    def _coo_to_compressed(self, swap, copy=False):
         """convert (shape, coords, data) to (indptr, indices, data, shape)"""
-        M, N = swap(self.shape)
-        major, minor = swap(self.coords)
-        nnz = len(major)
+        M, N = swap(self._shape_as_2d)
         # convert idx_dtype intc to int32 for pythran.
         # tested in scipy/optimize/tests/test__numdiff.py::test_group_columns
         idx_dtype = self._get_index_dtype(self.coords, maxval=max(self.nnz, N))
+
+        if self.ndim == 1:
+            indices = self.coords[0].copy() if copy else self.coords[0]
+            nnz = len(indices)
+            indptr = np.array([0, nnz], dtype=idx_dtype)
+            data = self.data.copy() if copy else self.data
+            return indptr, indices, data, self.shape
+
+        # ndim == 2
+        major, minor = swap(self.coords)
+        nnz = len(major)
         major = major.astype(idx_dtype, copy=False)
         minor = minor.astype(idx_dtype, copy=False)
 

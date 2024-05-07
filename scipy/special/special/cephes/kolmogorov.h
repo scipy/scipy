@@ -818,7 +818,6 @@ namespace cephes {
              */
             double x, logpcdf;
             int iterations = 0;
-            int function_calls = 0;
             double a = 0, b = 1;
             double maxlogpcdf, psfrootn;
             double dx, dxold;
@@ -923,7 +922,6 @@ namespace cephes {
                 SPECFUN_ASSERT(x > 0);
                 {
                     ThreeProbs probs = _smirnov(n, x0);
-                    ++function_calls;
                     df = ((pcdf < 0.5) ? (pcdf - probs.cdf) : (probs.sf - psf));
                     dfdx = -probs.pdf;
                 }
