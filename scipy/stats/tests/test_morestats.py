@@ -3034,7 +3034,8 @@ class TestCommonAxis:
 
     @pytest.mark.parametrize('case', [(stats.sem, {}),
                                       (stats.kstat, {'n': 4}),
-                                      (stats.kstat, {'n': 2})])
+                                      (stats.kstat, {'n': 2}),
+                                      (stats.variation, {})])
     def test_axis(self, case, xp):
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
