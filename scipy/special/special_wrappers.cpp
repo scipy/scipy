@@ -544,6 +544,7 @@ double cephes_p1evl_wrap(double x, const double coef[], int N) { return special:
 
 double gammaln_wrap(double x) { return special::gammaln(x); }
 double special_wright_bessel(double a, double b, double x) { return special::wright_bessel(a, b, x); }
+double special_log_wright_bessel(double a, double b, double x) { return special::log_wright_bessel(a, b, x); }
 
 double special_scaled_exp1(double x) { return special::scaled_exp1(x); }
 
