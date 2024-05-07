@@ -1673,10 +1673,11 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@array_api_compatible
 class TestKstat:
     def test_moments_normal_distribution(self, xp):
         np.random.seed(32149)
-        data = xp.asarray(np.random.randn(12345))
+        data = xp.asarray(np.random.randn(12345), dtype=xp.float64)
         moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
         expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
@@ -1689,7 +1690,8 @@ class TestKstat:
         m3 = stats.moment(data, order=3)
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    def test_empty_input(self):
+    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    def test_empty_input(self, xp):
         message = 'Data input must not be empty'
         with pytest.raises(ValueError, match=message):
             stats.kstat([])
@@ -1701,9 +1703,9 @@ class TestKstat:
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
     @pytest.mark.parametrize('n', [0, 4.001])
-    def test_kstat_bad_arg(self, n):
+    def test_kstat_bad_arg(self, n, xp):
         # Raise ValueError if n > 4 or n < 1.
-        data = np.arange(10)
+        data = xp.arange(10)
         message = 'k-statistics only supported for 1<=n<=4'
         with pytest.raises(ValueError, match=message):
             stats.kstat(data, n=n)
@@ -1712,7 +1714,8 @@ class TestKstat:
                                       (2, 12.65006954022974),
                                       (3, -1.447059503280798),
                                       (4, -141.6682291883626)])
-    def test_against_R(self, case):
+    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    def test_against_R(self, case, xp):
         # Test against reference values computed with R kStatistics, e.g.
         # options(digits=16)
         # library(kStatistics)
@@ -1723,13 +1726,14 @@ class TestKstat:
         # nKS(4, data)
         n, ref = case
         res = stats.kstat(x_kstat, n)
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)
 
 
 
 @array_api_compatible
 class TestKstatVar:
-    def test_empty_input(self):
+    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    def test_empty_input(self, xp):
         message = 'Data input must not be empty'
         with pytest.raises(ValueError, match=message):
             stats.kstatvar([])
@@ -1750,7 +1754,8 @@ class TestKstatVar:
         with pytest.raises(ValueError, match=message):
             stats.kstatvar(data, n=n)
 
-    def test_against_R_mathworld(self):
+    @skip_xp_backends(np_only=True, reasons=['Python list input uses NumPy backend'])
+    def test_against_R_mathworld(self, xp):
         # Test against reference values computed using formulas exactly as
         # they appear at https://mathworld.wolfram.com/k-Statistic.html
         # This is *really* similar to how they appear in the implementation,
@@ -1761,12 +1766,12 @@ class TestKstatVar:
 
         res = stats.kstatvar(x_kstat, 1)
         ref = k2 / n
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)
 
         res = stats.kstatvar(x_kstat, 2)
         # *unbiased estimator* for var(k2)
         ref = (2*k2**2*n + (n-1)*k4) / (n * (n+1))
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)
 
 
 class TestPpccPlot:
@@ -3019,9 +3024,10 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([]), [])
 
 
+@array_api_compatible
 class TestCommonAxis:
     # More thorough testing of `axis` in `test_axis_nan_policy`,
-    # but those testa aren't run with array API yet. This class
+    # but those tests aren't run with array API yet. This class
     # is in `test_morestats` instead of `test_axis_nan_policy`
     # because there is no reason to run `test_axis_nan_policy`
     # with the array API CI job right now.
@@ -3029,19 +3035,19 @@ class TestCommonAxis:
     @pytest.mark.parametrize('case', [(stats.sem, {}),
                                       (stats.kstat, {'n': 4}),
                                       (stats.kstat, {'n': 2})])
-    def test_axis(self, case):
+    def test_axis(self, case, xp):
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
-        x = rng.random((6, 7))
+        x = xp.asarray(rng.random((6, 7)))
 
         res = fun(x, **kwargs, axis=0)
-        ref = [fun(x[:, i], **kwargs) for i in range(x.shape[1])]
-        assert_allclose(res, ref)
+        ref = xp.asarray([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
+        xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=1)
-        ref = [fun(x[i, :], **kwargs) for i in range(x.shape[0])]
-        assert_allclose(res, ref)
+        ref = xp.asarray([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
+        xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=None)
-        ref = fun(x.ravel(), **kwargs)
-        assert_allclose(res, ref)
+        ref = fun(xp.reshape(x, (-1,)), **kwargs)
+        xp_assert_close(res, ref)

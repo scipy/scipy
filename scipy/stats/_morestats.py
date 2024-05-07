@@ -304,7 +304,7 @@ def kstat(data, n=2, *, axis=None):
     if N == 0:
         raise ValueError("Data input must not be empty")
 
-    S = [None] + [np.sum(data**k, axis=axis) for k in range(1, n + 1)]
+    S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
@@ -367,9 +367,10 @@ def kstatvar(data, n=2, *, axis=None):
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
     """  # noqa: E501
-    data = np.asarray(data)
+    xp = array_namespace
+    data = xp.asarray(data)
     if axis is None:
-        data = ravel(data)
+        data = xp.reshape(data, (1,))
         axis = 0
     N = data.shape[axis]
 
