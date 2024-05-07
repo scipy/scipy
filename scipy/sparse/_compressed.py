@@ -1044,8 +1044,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             return
 
         else:
-            warn(f"Changing the sparsity structure of {self.__class__.__name__}"
-                 " is expensive. lil or dok is more efficient.",
+            warn(f"Changing the sparsity structure of a {self.__class__.__name__} is"
+                 " expensive. lil and dok are more efficient.",
                  SparseEfficiencyWarning, stacklevel=3)
             # replace where possible
             mask = offsets > -1

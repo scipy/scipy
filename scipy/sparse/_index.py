@@ -259,7 +259,6 @@ class IndexMixin:
             raise IndexError(
                 f'invalid index ndim. Array is {self.ndim}D. Index needs {index_ndim}D'
             )
-                # raise IndexError('invalid ndim for array index')
         if len(array_indices) > 1:
             idx_arrays = _broadcast_arrays(*(index[i] for i in array_indices))
             if any(idx_arrays[0].shape != ix.shape for ix in idx_arrays[1:]):
@@ -271,7 +270,7 @@ class IndexMixin:
             if ellps_pos is None:
                 ellps_pos = index_ndim
             index = index[:ellps_pos] + [slice(None)] * nslice + index[ellps_pos:]
-            mid_shape = list(self.shape[ellps_pos:ellps_pos + nslice])
+            mid_shape = list(self.shape[ellps_pos : ellps_pos + nslice])
             idx_shape = idx_shape[:ellps_pos] + mid_shape + idx_shape[ellps_pos:]
 
         if array_indices:

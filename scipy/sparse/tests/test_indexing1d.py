@@ -3,17 +3,16 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal
 
-import scipy as sp
+from scipy.sparse import csr_array, dok_array, SparseEfficiencyWarning
 from .test_arithmetic1d import toarray
 
 
-formats_for_index1d = [sp.sparse.csr_array, sp.sparse.dok_array]
+formats_for_index1d = [csr_array, dok_array]
 
 
 @contextlib.contextmanager
 def check_remains_sorted(X):
-    """Checks that sorted indices property is retained through an operation
-    """
+    """Checks that sorted indices property is retained through an operation"""
     if not hasattr(X, 'has_sorted_indices') or not X.has_sorted_indices:
         yield
         return
@@ -21,8 +20,7 @@ def check_remains_sorted(X):
     indices = X.indices.copy()
     X.has_sorted_indices = False
     X.sort_indices()
-    assert_equal(indices, X.indices,
-                       'Expected sorted indices, found unsorted')
+    assert_equal(indices, X.indices, 'Expected sorted indices, found unsorted')
 
 
 @pytest.mark.parametrize("spcreator", formats_for_index1d)
@@ -46,13 +44,13 @@ class TestGetSet1D:
         assert A[None, 1, 2, None].shape == (1, 1)
 
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[None, 2 , 1, None, None]
+            A[None, 2, 1, None, None]
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[None, 0:2 , None, 1]
+            A[None, 0:2, None, 1]
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[0:1 , 1:, None]
+            A[0:1, 1:, None]
         with pytest.raises(IndexError, match='Only 1D or 2D arrays'):
-            A[1: , 1, None, None]
+            A[1:, 1, None, None]
 
     def test_getelement(self, spcreator):
         D = np.array([4, 3, 0])
@@ -77,8 +75,8 @@ class TestGetSet1D:
         A = spcreator((12,), dtype=dtype)
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             A[0] = dtype(0)
             A[1] = dtype(3)
@@ -96,15 +94,15 @@ class TestGetSet1D:
 
 @pytest.mark.parametrize("spcreator", formats_for_index1d)
 class TestSlicingAndFancy1D:
-    #####################
+    #######################
     #  Int-like Array Index
-    #####################
+    #######################
     def test_get_array_index(self, spcreator):
-        D = np.array([4,3,0])
+        D = np.array([4, 3, 0])
         A = spcreator(D)
 
         assert_equal(A[()].toarray(), D[()])
-        for ij in [(0,3), (3,)]:
+        for ij in [(0, 3), (3,)]:
             with pytest.raises(IndexError, match='out of (range|bounds)|many indices'):
                 A.__getitem__(ij)
 
@@ -113,18 +111,18 @@ class TestSlicingAndFancy1D:
         A = spcreator((12,), dtype=dtype)
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             A[np.array(6)] = dtype(4.0)  # scalar index
             A[np.array(6)] = dtype(2.0)  # overwrite with scalar index
             assert_equal(A.toarray(), [0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0])
 
-            for ij in [(13,),(-14,)]:
+            for ij in [(13,), (-14,)]:
                 with pytest.raises(IndexError, match='index .* out of (range|bounds)'):
                     A.__setitem__(ij, 123.0)
 
-            for v in [(), (0, 3), [1,2,3], np.array([1,2,3])]:
+            for v in [(), (0, 3), [1, 2, 3], np.array([1, 2, 3])]:
                 msg = 'Trying to assign a sequence to an item'
                 with pytest.raises(ValueError, match=msg):
                     A.__setitem__(0, v)
@@ -206,8 +204,8 @@ class TestSlicingAndFancy1D:
         B = np.zeros((5,))
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             for C in [A, B]:
                 C[0:1] = 1
@@ -224,8 +222,8 @@ class TestSlicingAndFancy1D:
             A = spcreator(shape)
             with np.testing.suppress_warnings() as sup:
                 sup.filter(
-                    sp.sparse.SparseEfficiencyWarning,
-                    "Changing the sparsity structure of .* is expensive"
+                    SparseEfficiencyWarning,
+                    "Changing the sparsity structure of .* is expensive",
                 )
                 A[idx] = 1
             B = np.zeros(shape)
@@ -238,8 +236,8 @@ class TestSlicingAndFancy1D:
         B = spcreator((5,))
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             B[0] = 2
             B[1] = 0
@@ -265,15 +263,15 @@ class TestSlicingAndFancy1D:
 
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             B[0] = 5
             B[2] = 7
             B[:] = B + B
             assert_equal(B.toarray(), expected)
 
-            B[:2] = sp.sparse.csr_array(block)
+            B[:2] = csr_array(block)
             assert_equal(B.toarray()[:2], block)
 
     def test_set_slice(self, spcreator):
@@ -287,8 +285,8 @@ class TestSlicingAndFancy1D:
 
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             for j, a in enumerate(slices):
                 A[a] = j
@@ -324,12 +322,12 @@ class TestSlicingAndFancy1D:
         A = spcreator(np.zeros(5))
         with pytest.raises(
             (IndexError, ValueError, TypeError),
-            match='Index dimension must be 1 or 2|only integers'
+            match='Index dimension must be 1 or 2|only integers',
         ):
             A.__getitem__("foo")
         with pytest.raises(
             (IndexError, ValueError, TypeError),
-            match='tuple index out of range|only integers'
+            match='tuple index out of range|only integers',
         ):
             A.__getitem__((2, "foo"))
 
@@ -347,19 +345,18 @@ class TestSlicingAndFancy1D:
         assert_equal(A[np.array([-1, 2])].toarray(), B[[-1, 2]])
         assert_equal(A[np.array(5)], B[np.array(5)])
 
-
         # [[[1],[2]]]
         ind = np.array([[1], [3]])
         assert_equal(A[ind].toarray(), B[ind])
         ind = np.array([[-1], [-3], [-2]])
         assert_equal(A[ind].toarray(), B[ind])
 
-        # [[1,2]]
+        # [[1, 2]]
         assert_equal(A[[1, 3]].toarray(), B[[1, 3]])
         assert_equal(A[[-1, -3]].toarray(), B[[-1, -3]])
         assert_equal(A[np.array([-1, -3])].toarray(), B[[-1, -3]])
 
-        # [[1,2]][[1,2]]
+        # [[1, 2]][[1, 2]]
         assert_equal(A[[1, 5, 2, 8]][[1, 3]].toarray(),
                      B[[1, 5, 2, 8]][[1, 3]])
         assert_equal(A[[-1, -5, 2, 8]][[1, -4]].toarray(),
@@ -397,14 +394,14 @@ class TestSlicingAndFancy1D:
         A = spcreator(B)
 
         X = np.array(np.random.randint(0, 2, size=20), dtype=bool)
-        Xsp = sp.sparse.csr_array(X)
+        Xsp = csr_array(X)
 
         assert_equal(toarray(A[Xsp]), B[X])
         assert_equal(toarray(A[A > 9]), B[B > 9])
 
         Y = np.array(np.random.randint(0, 2, size=60), dtype=bool)
 
-        Ysp = sp.sparse.csr_array(Y)
+        Ysp = csr_array(Y)
 
         with pytest.raises(IndexError, match='bool index .* has shape|only integers'):
             A.__getitem__(Ysp)
@@ -414,7 +411,7 @@ class TestSlicingAndFancy1D:
     def test_fancy_indexing_seq_assign(self, spcreator):
         mat = spcreator(np.array([1, 0]))
         with pytest.raises(ValueError, match='Trying to assign a sequence to an item'):
-            mat.__setitem__(0, np.array([1,2]))
+            mat.__setitem__(0, np.array([1, 2]))
 
     def test_fancy_indexing_empty(self, spcreator):
         B = np.arange(50)
@@ -448,8 +445,8 @@ class TestSlicingAndFancy1D:
             B = np.zeros(M)
             with np.testing.suppress_warnings() as sup:
                 sup.filter(
-                    sp.sparse.SparseEfficiencyWarning,
-                    "Changing the sparsity structure of .* is expensive"
+                    SparseEfficiencyWarning,
+                    "Changing the sparsity structure of .* is expensive",
                 )
                 B[j] = 1
                 with check_remains_sorted(A):
@@ -460,14 +457,14 @@ class TestSlicingAndFancy1D:
         A = spcreator((4,))
         B = spcreator((3,))
 
-        i0 = [0,1,2]
-        i1 = (0,1,2)
+        i0 = [0, 1, 2]
+        i1 = (0, 1, 2)
         i2 = np.array(i0)
 
         with np.testing.suppress_warnings() as sup:
             sup.filter(
-                sp.sparse.SparseEfficiencyWarning,
-                "Changing the sparsity structure of .* is expensive"
+                SparseEfficiencyWarning,
+                "Changing the sparsity structure of .* is expensive",
             )
             with check_remains_sorted(A):
                 A[i0] = B[i0]
@@ -481,7 +478,7 @@ class TestSlicingAndFancy1D:
             # slice
             A = spcreator((4,))
             with check_remains_sorted(A):
-                A[1:3] = [10,20]
+                A[1:3] = [10, 20]
             assert_equal(A.toarray(), [0, 10, 20, 0])
 
             # array
@@ -489,7 +486,7 @@ class TestSlicingAndFancy1D:
             B = np.zeros(4)
             with check_remains_sorted(A):
                 for C in [A, B]:
-                    C[[0,1,2]] = [4,5,6]
+                    C[[0, 1, 2]] = [4, 5, 6]
             assert_equal(A.toarray(), B)
 
     def test_fancy_assign_empty(self, spcreator):

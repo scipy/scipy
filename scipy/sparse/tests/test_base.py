@@ -3723,8 +3723,10 @@ def sparse_test_class(getset=True, slicing=True, slicing_assign=True,
                 continue
             old_cls = names.get(name)
             if old_cls is not None:
-                raise ValueError(f"Test class {cls.__name__} overloads test {name}"
-                                 f" defined in {old_cls.__name__}")
+                raise ValueError(
+                    f"Test class {cls.__name__} overloads"
+                    f" test {name} defined in {old_cls.__name__}"
+                )
             names[name] = cls
 
     return type("TestBase", bases, {})
