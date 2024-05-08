@@ -153,6 +153,7 @@ extern const char *lambertw_doc;
 extern const char *logit_doc;
 extern const char *loggamma_doc;
 extern const char *log_expit_doc;
+extern const char *log_wright_bessel_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -479,6 +480,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "log_expit", log_expit_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "log_expit", log_expit);
+
+    PyObject *log_wright_bessel = SpecFun_NewUFunc(
+        {static_cast<func_ddd_d_t>(special::log_wright_bessel), static_cast<func_fff_f_t>(special::log_wright_bessel)},
+        "log_wright_bessel", log_wright_bessel_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "log_wright_bessel", log_wright_bessel);
 
     PyObject *logit = SpecFun_NewUFunc(
         {static_cast<func_d_d_t>(special::logit), static_cast<func_f_f_t>(special::logit),

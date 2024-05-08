@@ -18,7 +18,7 @@ target-version = "py39"
 # `ICN001` added in gh-20382 to enforce common conventions for imports
 select = ["E", "F", "PGH004", "UP", "B028", "ICN001"]
 # UP031 should be enabled once someone fixes the errors.
-ignore = ["E741", "UP031"]
+ignore = ["E741", "UP031", "UP032"]
 
 # Allow unused variables when underscore-prefixed.
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"

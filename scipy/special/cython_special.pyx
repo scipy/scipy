@@ -1043,6 +1043,10 @@ Available functions
 
         double wright_bessel(double, double, double)
 
+- :py:func:`~scipy.special.log_wright_bessel`::
+
+        double log_wright_bessel(double, double, double)
+
 - :py:func:`~scipy.special.ndtri_exp`::
 
         double ndtri_exp(double)
@@ -1261,6 +1265,7 @@ cdef extern from r"special_wrappers.h":
     double _func_cephes_iv_wrap "cephes_iv_wrap"(double, double) nogil
 
     npy_double special_wright_bessel(npy_double, npy_double, npy_double) nogil
+    npy_double special_log_wright_bessel(npy_double, npy_double, npy_double) nogil
     double special_ellipk(double m) nogil
 
     double cephes_besselpoly(double a, double lmbda, double nu) nogil
@@ -3507,6 +3512,10 @@ cpdef double zetac(double x0) noexcept nogil:
 cpdef double wright_bessel(double x0, double x1, double x2) noexcept nogil:
     """See the documentation for scipy.special.wright_bessel"""
     return special_wright_bessel(x0, x1, x2)
+
+cpdef double log_wright_bessel(double x0, double x1, double x2) noexcept nogil:
+    """See the documentation for scipy.special.log_wright_bessel"""
+    return special_log_wright_bessel(x0, x1, x2)
 
 cpdef double ndtri_exp(double x0) noexcept nogil:
     """See the documentation for scipy.special.ndtri_exp"""

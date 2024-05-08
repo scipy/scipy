@@ -321,7 +321,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
 
     def test_input_untouched(self):
         p0 = array([0,0,0],dtype=float64)
@@ -330,7 +330,7 @@ class TestLeastSq:
                               args=(self.y_meas, self.x),
                               full_output=True)
         params_fit, cov_x, infodict, mesg, ier = full_output
-        assert_(ier in (1,2,3,4), 'solution not found: %s' % mesg)
+        assert_(ier in (1,2,3,4), f'solution not found: {mesg}')
         assert_array_equal(p0, p0_copy)
 
     def test_wrong_shape_func_callable(self):
@@ -602,8 +602,9 @@ class TestCurveFit:
         assert_allclose(result_with_nan, result_without_nan)
 
         # not valid policy test
-        error_msg = ("nan_policy must be one of "
-                     "{'None', 'raise', 'omit'}")
+        # check for argument names in any order
+        error_msg = (r"nan_policy must be one of \{(?:'raise'|'omit'|None)"
+                     r"(?:, ?(?:'raise'|'omit'|None))*\}")
         with assert_raises(ValueError, match=error_msg):
             curve_fit(**kwargs, nan_policy="hi")
 
