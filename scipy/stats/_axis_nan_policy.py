@@ -16,6 +16,8 @@ def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
     """
+    if not arrays:
+        return arrays
     xp = array_namespace(*arrays) if xp is None else xp
     arrays = [xp.asarray(arr) for arr in arrays]
     shapes = [arr.shape for arr in arrays]
