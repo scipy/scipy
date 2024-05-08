@@ -84,9 +84,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError(f"unrecognized {self.__class__.__name__} "
                                  f"constructor input: {arg1}") from e
-            if isinstance(self, sparray) and arg1.ndim < 2 and self.format != "csr":
+            if isinstance(self, sparray) and arg1.ndim < 2 and self.format == "csc":
                 raise ValueError(
-                    f"Non-CSR Compressed arrays don't take {arg1.ndim}D input. Use 2D"
+                    f"CSC arrays don't support {arg1.ndim}D input. Use 2D"
                 )
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)

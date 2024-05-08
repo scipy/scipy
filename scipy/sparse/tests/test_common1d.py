@@ -43,13 +43,6 @@ def test_no_1d_support_in_init(spcreator):
         spcreator([0, 1, 2, 3])
 
 
-# csr_array -- will soon support 1D
-@pytest.mark.parametrize("spcreator", [csr_array])
-def test_csr_init_of_1d(spcreator):
-    with pytest.raises(ValueError, match="arrays don't support 1D input yet"):
-        spcreator([0, 1, 2, 3])
-
-
 # Main tests class
 @pytest.mark.parametrize("spcreator", spcreators)
 class TestCommon1D:
