@@ -204,7 +204,7 @@ int build_ckdtree(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
 {
     std::vector<bool> taboo(self->m);
     for (intptr_t i=0; i<self->m; ++i) taboo[i] = false;
-    taboo_depth = 0;
+    intptr_t taboo_depth = 0;
       
     build(self, start_idx, end_idx, maxes, mins, _median, _compact, taboo, taboo_depth);
     return 0;
