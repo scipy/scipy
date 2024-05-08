@@ -247,15 +247,6 @@ class _dok_base(_spbase, IndexMixin, dict):
         elif idx in self._dict:
             del self._dict[idx]
 
-    def _set_slice(self, idx, x):
-        i_range = range(*idx.indices(self.shape[0]))
-        x = x.ravel()
-        for i, v in zip(i_range, x):
-            if v:
-                self._dict[i] = v
-            elif i in self._dict:
-                del self._dict[i]
-
     def _set_array(self, idx, x):
         idx_set = idx.ravel()
         x_set = x.ravel()

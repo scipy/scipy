@@ -9,7 +9,7 @@ import numpy as np
 from ._matrix import spmatrix
 from ._base import _spbase, sparray
 from ._sparsetools import (csr_tocsc, csr_tobsr, csr_count_blocks,
-                           get_csr_submatrix)
+                           get_csr_submatrix, csr_sample_values)
 from ._sputils import upcast
 
 from ._compressed import _cs_matrix
@@ -189,6 +189,38 @@ class _csr_base(_cs_matrix):
         return self.__class__((data, indices, indptr), shape=(M, 1),
                               dtype=self.dtype, copy=False)
 
+    def _get_int(self, idx):
+        if 0 <= idx <= self.shape[0]:
+            spot = np.flatnonzero(self.indices == idx)
+            if spot.size:
+                return self.data[spot[0]]
+            return self.data.dtype.type(0)
+        raise IndexError(f'index ({idx}) out of range')
+
+    def _get_slice(self, idx):
+        if idx == slice(None):
+            return self.copy()
+        if idx.step in (1, None):
+            ret = self._get_submatrix(0, idx, copy=True)
+            return ret.reshape(ret.shape[-1])
+        return self._minor_slice(idx)
+
+    def _get_array(self, idx):
+        idx_dtype = self._get_index_dtype(self.indices)
+        idx = np.asarray(idx, dtype=idx_dtype)
+        if idx.size == 0:
+            return self.__class__([], dtype=self.dtype)
+
+        M, N = 1, self.shape[0]
+        row = np.zeros_like(idx, dtype=idx_dtype)
+        col = np.asarray(idx, dtype=idx_dtype)
+        val = np.empty(row.size, dtype=self.dtype)
+        csr_sample_values(M, N, self.indptr, self.indices, self.data,
+                          row.size, row.ravel(), col.ravel(), val)
+
+        new_shape = col.shape if col.shape[0] > 1 else (col.shape[0],)
+        return self.__class__(val.reshape(new_shape))
+
     def _get_intXarray(self, row, col):
         return self._getrow(row)._minor_index_fancy(col)
 
@@ -241,6 +273,14 @@ class _csr_base(_cs_matrix):
             col = np.arange(*col.indices(self.shape[1]))
             return self._get_arrayXarray(row, col)
         return self._major_index_fancy(row)._get_submatrix(minor=col)
+
+    def _set_int(self, idx, x):
+        major, minor = self._swap((0, idx))
+        self._set_many(major, minor, x)
+
+    def _set_array(self, idx, x):
+        x = np.broadcast_to(x, idx.shape)
+        self._set_many(np.zeros_like(idx), idx, x)
 
 
 def isspmatrix_csr(x):

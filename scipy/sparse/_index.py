@@ -73,7 +73,8 @@ class IndexMixin:
             elif isinstance(col, slice):
                 if row == slice(None) and row == col:
                     res = self.copy()
-                res = self._get_sliceXslice(row, col)
+                else:
+                    res = self._get_sliceXslice(row, col)
             elif col.ndim == 1:
                 res = self._get_sliceXarray(row, col)
             else:
@@ -100,7 +101,8 @@ class IndexMixin:
 
         # package the result and return
         if isinstance(self, sparray):
-            if not hasattr(self, '_get_int') and len(new_shape) != 2:
+            # handle formats that support indexing but not 1D (lil for now)
+            if self.format == "lil" and len(new_shape) != 2:
                 return res.tocoo().reshape(new_shape)
             if res.shape != new_shape:
                 return res.reshape(new_shape)
@@ -129,19 +131,12 @@ class IndexMixin:
                 N = len(idx_range)
                 if N == 1 and x.size == 1:
                     self._set_int(idx_range[0], x.flat[0])
-
-                # broadcast scalar to full 1d
-                if x.squeeze().shape != (N,):
-                    x = np.broadcast_to(x, (N,))
-                if x.size != N:
-                    raise ValueError(f'size mismatch: put {x.size} values in {N} spots')
-                if x.size == 0:
-                    return
-                self._set_slice(idx, x)
-                return
-
+                idx = np.arange(*idx.indices(self.shape[0]))
+                idx_shape = idx.shape
+            else:
+                idx_shape = idx.squeeze().shape
             # broadcast scalar to full 1d
-            if x.squeeze().shape != idx.squeeze().shape:
+            if x.squeeze().shape != idx_shape:
                 x = np.broadcast_to(x, idx.shape)
             if x.size == 0:
                 return
@@ -332,6 +327,15 @@ class IndexMixin:
             i += N
         return self._get_sliceXint(slice(None), i)
 
+    def _get_int(self, idx):
+        raise NotImplementedError()
+
+    def _get_slice(self, idx):
+        raise NotImplementedError()
+
+    def _get_array(self, idx):
+        raise NotImplementedError()
+
     def _get_intXint(self, row, col):
         raise NotImplementedError()
 
@@ -360,6 +364,12 @@ class IndexMixin:
         raise NotImplementedError()
 
     def _get_arrayXarray(self, row, col):
+        raise NotImplementedError()
+
+    def _set_int(self, idx, x):
+        raise NotImplementedError()
+
+    def _set_array(self, idx, x):
         raise NotImplementedError()
 
     def _set_intXint(self, row, col, x):
