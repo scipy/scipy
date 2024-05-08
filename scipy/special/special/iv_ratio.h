@@ -52,7 +52,7 @@ private:
     std::uint64_t k_; // current index
 };
 
-inline double iv_ratio(double v, double x) {
+SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
 
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
@@ -93,6 +93,10 @@ inline double iv_ratio(double v, double x) {
     }
 
     return xc / (xc + fc);
+}
+
+SPECFUN_HOST_DEVICE inline float iv_ratio(float v, float x) {
+    return iv_ratio(static_cast<double>(v), static_cast<double>(x));
 }
 
 } // namespace special

@@ -416,7 +416,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *iv_ratio = SpecFun_NewUFunc(
-        {static_cast<func_dd_d_t>(special::iv_ratio)},
+        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
         "_iv_ratio", iv_ratio_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
