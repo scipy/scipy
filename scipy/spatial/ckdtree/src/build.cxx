@@ -12,6 +12,7 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
+#include <limits>
 
 #define tree_buffer_root(buf) (&(buf)[0][0])
 
@@ -114,7 +115,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
                 node_indices, mid, node_indices + n_points, index_compare);
 
             split = data[*mid * m + d];
-            p = partition_pivot(node_indices, mid, split);
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
         else {
             /* split with the sliding midpoint rule */
@@ -127,14 +128,14 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
                 /* no points less than split */
                 auto min_idx = *std::min_element(
                     indices + start_idx, indices + end_idx, index_compare);
-                split = std::nextafter(data[min_idx * m + d], HUGE_VAL);
+                split = std::nextafter(data[min_idx * m + d], std::numeric_limits<double>::max() );
                 p = partition_pivot(indices + start_idx, indices + end_idx, split);
             }
             else if (p == end_idx) {
                 /* no points greater than split */
                 auto max_idx = *std::max_element(
                     indices + start_idx, indices + end_idx, index_compare);
-                split = data[max_idx * m + d];
+                split = std::nextafter(data[max_idx * m + d], std::numeric_limits<double>::lowest() );
                 p = partition_pivot(indices + start_idx, indices + end_idx, split);
             }
         }
