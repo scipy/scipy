@@ -120,34 +120,34 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
             auto mid = node_indices + n_points / 2;
             std::nth_element(
                 node_indices, mid, node_indices + n_points, index_compare);
-
             split = data[*mid * m + d];
             p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
         else {
             /* split with the sliding midpoint rule */
             split = (maxval + minval) / 2;
-
-            p = partition_pivot(indices + start_idx, indices + end_idx, split);
-
-            /* slide midpoint if necessary */
-            if (p == start_idx) {
-                /* no points less than split */
-                auto min_idx = *std::min_element(
-                    indices + start_idx, indices + end_idx, index_compare);
-                split = std::nextafter(data[min_idx * m + d], std::numeric_limits<double>::max() );
-                p = partition_pivot(indices + start_idx, indices + end_idx, split);
-            }
-            else if (p == end_idx) {
-                /* no points greater than split */
-                auto max_idx = *std::max_element(
-                    indices + start_idx, indices + end_idx, index_compare);
-                split = std::nextafter(data[max_idx * m + d], std::numeric_limits<double>::lowest() );
-                p = partition_pivot(indices + start_idx, indices + end_idx, split);
-            }
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);            
         }
-
-        if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
+        
+        // slide midpoint/pivot if necessary
+        // we might even need to do this for the median pivot to avoid infinite
+        // recursion          
+        if (p == start_idx) {
+            /* no points less than split */
+            auto min_idx = *std::min_element(
+                    indices + start_idx, indices + end_idx, index_compare);
+            split = std::nextafter(data[min_idx * m + d], std::numeric_limits<double>::max() );
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
+         }
+         else if (p == end_idx) {
+            /* no points greater than split */
+            auto max_idx = *std::max_element(
+                    indices + start_idx, indices + end_idx, index_compare);
+            split = std::nextafter(data[max_idx * m + d], std::numeric_limits<double>::lowest() );
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
+         }
+          
+         if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
             // All children are equal in this dimension, try again with 
             // this dimension tabooed
             assert(!_compact);
