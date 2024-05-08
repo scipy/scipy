@@ -1531,3 +1531,10 @@ def test_gh_18800(incantation):
     tree = incantation(points, 10)
     tree.query(arr_like, 1)
     tree.query_ball_point(arr_like, 200)
+
+
+def test_gh_20605():
+    data = np.full((100, 2), 4)
+    data[:50, :] = 5
+    data[52:60, 1] = 8
+    balanced_tree = KDTree(data=data,balanced_tree=True)
