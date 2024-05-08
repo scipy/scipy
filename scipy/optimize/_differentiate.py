@@ -68,7 +68,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
             func(x: ndarray, *fargs) -> ndarray
 
-         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+         where each element of ``x`` is a finite real number and ``fargs`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`. ``func`` must be an elementwise function: each element
          ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.

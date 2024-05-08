@@ -409,8 +409,8 @@ class TestJacobian:
         x, y = z
         return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
 
-    f1.mn = 2, 2
-    f1.ref = df1
+    f1.mn = 2, 2  # type: ignore[attr-defined]
+    f1.ref = df1  # type: ignore[attr-defined]
 
     def f2(z):
         r, phi = z
@@ -421,8 +421,8 @@ class TestJacobian:
         return [[np.cos(phi), -r * np.sin(phi)],
                 [np.sin(phi), r * np.cos(phi)]]
 
-    f2.mn = 2, 2
-    f2.ref = df2
+    f2.mn = 2, 2  # type: ignore[attr-defined]
+    f2.ref = df2  # type: ignore[attr-defined]
 
     def f3(z):
         r, phi, th = z
@@ -437,8 +437,8 @@ class TestJacobian:
                  r * np.sin(phi) * np.cos(th)],
                 [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
 
-    f3.mn = 3, 3
-    f3.ref = df3
+    f3.mn = 3, 3  # type: ignore[attr-defined]
+    f3.ref = df3  # type: ignore[attr-defined]
 
     def f4(x):
         x1, x2, x3 = x
@@ -452,8 +452,8 @@ class TestJacobian:
                 [0 * one, 8 * x2, -2 * one],
                 [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
 
-    f4.mn = 3, 4
-    f4.ref = df4
+    f4.mn = 3, 4  # type: ignore[attr-defined]
+    f4.ref = df4  # type: ignore[attr-defined]
 
     def f5(x):
         x1, x2, x3 = x
@@ -466,12 +466,12 @@ class TestJacobian:
                 [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
                 [0 * one, x3, x2]]
 
-    f5.mn = 3, 3
-    f5.ref = df5
+    f5.mn = 3, 3  # type: ignore[attr-defined]
+    f5.ref = df5  # type: ignore[attr-defined]
 
     rosen = optimize.rosen
-    rosen.mn = 5, 1
-    rosen.ref = optimize.rosen_der
+    rosen.mn = 5, 1  # type: ignore[attr-defined]
+    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
 
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
