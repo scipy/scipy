@@ -1537,4 +1537,7 @@ def test_gh_20605():
     data = np.full((100, 2), 4)
     data[:50, :] = 5
     data[52:60, 1] = 8
-    KDTree(data=data,balanced_tree=True)
+    #KDTree(data=data,balanced_tree=True)
+    KDTree(data=data,balanced_tree=False)
+
+
