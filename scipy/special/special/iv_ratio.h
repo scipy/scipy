@@ -59,12 +59,12 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
     }
     if (v < 1 || x < 0) {
         set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
-        return std::numeric_limits<double>::signaling_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (std::isinf(v) && std::isinf(x)) {
         // There is not a unique limit as both v and x tends to infinity.
         set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
-        return std::numeric_limits<double>::signaling_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
     if (std::isinf(v)) {
         return 0.0;
@@ -89,7 +89,7 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
 
     if (terms == 0) { // failed to converge; should not happen
         set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
-        return std::numeric_limits<double>::signaling_NaN();
+        return std::numeric_limits<double>::quiet_NaN();
     }
 
     return xc / (xc + fc);
