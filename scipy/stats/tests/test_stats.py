@@ -3580,7 +3580,7 @@ class TestKurtosis(SkewKurtosisTest):
             xp_test = array_namespace(a)  # plain torch ddof=1 by default
             mean = xp_test.mean(a, axis=axis, keepdims=True)
             mu4 = xp_test.mean((a - mean)**4, axis=axis)
-            mu2 = xp_test.var(a, axis=axis)
+            mu2 = xp_test.var(a, axis=axis, correction=0)
             if bias:
                 res = mu4 / mu2**2 - 3
             else:
