@@ -86,7 +86,7 @@ def equality_constrained_sqp(fun_and_constr, grad_and_jac, lagr_hess,
             raise ValueError(
                 "The 'expected square matrix' error can occur if there are"
                 " more equality constraints than independent variables."
-                " Consider how your constraints are setup, or use"
+                " Consider how your constraints are set up, or use"
                 " factorization_method='SVDFactorization'."
             ) from e
         else:
