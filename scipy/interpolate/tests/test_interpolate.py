@@ -1015,6 +1015,25 @@ class TestAkima1DInterpolator:
         with pytest.raises(NotImplementedError, match=match):
             Akima1DInterpolator(x, y, method="invalid")  # type: ignore
 
+    def test_extrapolate_attr(self):
+        # 
+        x = np.linspace(-5, 5, 11)
+        y = x**2
+        x_ext = np.linspace(-10, 10, 17)
+        y_ext = x_ext**2
+        # Testing all extrapolate cases.
+        ak_true = Akima1DInterpolator(x, y, extrapolate=True)
+        ak_false = Akima1DInterpolator(x, y, extrapolate=False)
+        ak_none = Akima1DInterpolator(x, y, extrapolate=None)
+        # None should default to False; extrapolated points are NaN.
+        assert_allclose(ak_false(x_ext), ak_none(x_ext), equal_nan=True, atol=1e-15)
+        assert_equal(ak_false(x_ext)[0:4], np.full(4, np.nan))
+        assert_equal(ak_false(x_ext)[-4:-1], np.full(3, np.nan))
+        # Extrapolation on call and attribute should be equal.
+        assert_allclose(ak_false(x_ext, extrapolate=True), ak_true(x_ext), atol=1e-15)
+        # Testing extrapoation to actual function.
+        assert_allclose(y_ext, ak_true(x_ext), atol=1e-15)
+
     def test_complex(self):
         # Complex-valued data deprecated
         x = np.arange(0., 11.)
