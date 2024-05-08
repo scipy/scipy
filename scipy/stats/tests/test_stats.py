@@ -6003,13 +6003,14 @@ class TestDescribe:
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
-        # n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
-        # assert_equal(n, nc)
-        # assert_equal(mm, mmc)
-        # assert_equal(m, mc)
-        # assert_equal(v, vc)
-        # assert_array_almost_equal(sk, skc, decimal=13)
-        # assert_array_almost_equal(kurt, kurtc, decimal=13)
+        n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
+        assert n == nc
+        xp_assert_equal(mm[0], mmc[0])
+        xp_assert_equal(mm[1], mmc[1])
+        xp_assert_equal(m, mc)
+        xp_assert_equal(v, vc)
+        xp_assert_close(sk, skc)
+        xp_assert_close(kurt, kurtc)
 
     def describe_nan_policy_omit_test(self):
         x = np.arange(10.)
