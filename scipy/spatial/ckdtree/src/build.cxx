@@ -139,23 +139,6 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
                 p = partition_pivot(indices + start_idx, indices + end_idx, split);
             }
         }
-          
-        if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
-            // All children are equal in this dimension, try again with new bounds
-            assert(!_compact);
-            self->tree_buffer->pop_back();
-            std::vector<double> tmp_bounds(2 * m);
-            double* tmp_mins = &tmp_bounds[0];
-            std::copy_n(mins, m, tmp_mins);
-            double* tmp_maxes = &tmp_bounds[m];
-            std::copy_n(maxes, m, tmp_maxes);
-
-            const auto fixed_val = data[indices[start_idx]*m + d];
-            tmp_mins[d] = fixed_val;
-            tmp_maxes[d] = fixed_val;
-
-            return build(self, start_idx, end_idx, tmp_maxes, tmp_mins, _median, _compact);
-        }
 
         if (CKDTREE_LIKELY(_compact)) {
             _less = build(self, start_idx, p, maxes, mins, _median, _compact);
