@@ -107,11 +107,11 @@ namespace detail {
 
     /* Performs one step of Kahan summation. */
     template <typename T>
-    SPECFUN_HOST_DEVICE void kahan_step(T *sum, T *comp, T x) {
-        T y = x - *comp;
-        T t = *sum + y;
-        *comp = (t - *sum) - y;
-        *sum = t;
+    SPECFUN_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {
+        T y = x - comp;
+        T t = sum + y;
+        comp = (t - sum) - y;
+        sum = t;
     }
 
     /* Evaluates an infinite series using Kahan summation.
@@ -160,7 +160,7 @@ namespace detail {
         T comp = 0;
         for (std::uint64_t i = 0; i < max_terms; ++i) {
             T term = g();
-            kahan_step(&sum, &comp, term);
+            kahan_step(sum, comp, term);
             if (std::abs(term) <= tol * std::abs(sum)) {
                 return {sum, i + 1};
             }
