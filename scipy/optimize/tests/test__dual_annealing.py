@@ -361,9 +361,11 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
 
-    def test_callable_jac_with_args_gh11052(self):
+    def test_callable_jac_hess_with_args_gh11052(self):
         # dual_annealing used to fail when `jac` was callable and `args` were
         # used; check that this is resolved. Example is from gh-11052.
+
+        # extended to hess as part of closing gh20614
         rng = np.random.default_rng(94253637693657847462)
         def f(x, power):
             return np.sum(np.exp(x ** power))
@@ -371,9 +373,27 @@ class TestDualAnnealing:
         def jac(x, power):
             return np.exp(x ** power) * power * x ** (power - 1)
 
+        def hess(x, power):
+            # calculated using WolframAlpha as d^2/dx^2 e^(x^p)
+            return np.diag(
+                power * np.exp(x ** power) * x ** (power - 2) *
+                (power * x ** power + power - 1)
+            )
+
+        def hessp(x, p, power):
+            return hess(x, power) @ p
+
         res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B'))
         res2 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B',
                                                     jac=jac))
+        res3 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hess=hess))
+        res4 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hessp=hessp))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res3.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res4.fun, res2.fun, rtol=1e-6)
