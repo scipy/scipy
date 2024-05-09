@@ -378,6 +378,7 @@ class TestDualAnnealing:
             return np.diag(
                 power * np.exp(x ** power) * x ** (power - 2) *
                 (power * x ** power + power - 1)
+            )
 
         def hessp(x, p, power):
             return hess(x, power) @ p
