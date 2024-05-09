@@ -478,11 +478,11 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Keyword arguments to be passed to the local minimizer
         (`minimize`). An important option could be ``method`` for the minimizer
         method to use.
-        If no keyword arguments are provided the local minimizer defaults to
+        If no keyword arguments are provided, the local minimizer defaults to
         'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
         is specified, then the dict must contain all parameters required to
-        control the local minimization. Do not include `args` as this is passed
-        automatically. `bounds` is not automatically passed on to the local
+        control the local minimization except `args`. Do not include `args`, as this is
+        passed automatically. `bounds` is not automatically passed on to the local
         minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
