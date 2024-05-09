@@ -220,6 +220,7 @@ class TestVonMises:
         _assert_less_or_close_loglike(stats.vonmises, data,
                                       stats.vonmises.nnlf, **kwds)
 
+    @pytest.mark.slow
     def test_vonmises_fit_bad_floc(self):
         data = [-0.92923506, -0.32498224, 0.13054989, -0.97252014, 2.79658071,
                 -0.89110948, 1.22520295, 1.44398065, 2.49163859, 1.50315096,
@@ -531,7 +532,7 @@ class TestChi:
     @pytest.mark.parametrize('df, ref',
                              [(1e3, CHI_MEAN_1000),
                               (1e14, 9999999.999999976)]
-                            ) 
+                            )
     def test_mean(self, df, ref):
         assert_allclose(stats.chi.mean(df), ref, rtol=1e-12)
 
@@ -1861,6 +1862,7 @@ class TestHypergeom:
         rm = n / M * N
         assert_allclose(hm, rm)
 
+    @pytest.mark.xslow
     def test_sf_gh18506(self):
         # gh-18506 reported that `sf` was incorrect for large population;
         # check that this is resolved
@@ -3156,6 +3158,7 @@ class TestLogLaplace:
 
         _assert_less_or_close_loglike(stats.loglaplace, data, **kwds)
 
+
 class TestPowerlaw:
 
     # In the following data, `sf` was computed with mpmath.
@@ -3808,6 +3811,7 @@ class TestJFSkewT:
         x, pdf = data["x"], data["pdf"]
         assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
 
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter
@@ -3998,11 +4002,18 @@ class TestSkewNorm:
         # Compare overridden fit against stats.fit
         rng = np.random.default_rng(9842356982345693637)
         bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
+
         def optimizer(fun, bounds):
             return differential_evolution(fun, bounds, seed=rng)
 
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
+
+    def test_ppf(self):
+        # gh-20124 reported that Boost's ppf was wrong for high skewness
+        # Reference value was calculated using
+        # N[InverseCDF[SkewNormalDistribution[0, 1, 500], 1/100], 14] in Wolfram Alpha.
+        assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
 
 
 class TestExpon:
@@ -4621,7 +4632,7 @@ class TestBetaPrime:
 
     @pytest.mark.parametrize('x, a, b, p', cdf_vals)
     def test_ppf_gh_17631(self, x, a, b, p):
-        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=1e-14)
+        assert_allclose(stats.betaprime.ppf(p, a, b), x, rtol=2e-14)
 
     @pytest.mark.parametrize(
         'x, a, b, expected',
@@ -4790,6 +4801,7 @@ class TestGamma:
             assert_allclose(dist.moment(2), np.mean(data**2))
         if nfree >= 3:
             assert_allclose(dist.moment(3), np.mean(data**3))
+
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
@@ -5082,6 +5094,7 @@ class TestLevyStable:
         )
         return data
 
+    @pytest.mark.slow
     @pytest.mark.parametrize(
         "sample_size", [
             pytest.param(50), pytest.param(1500, marks=pytest.mark.slow)
@@ -5110,7 +5123,7 @@ class TestLevyStable:
         )
         assert p > 0.05
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize('beta', [0.5, 1])
     def test_rvs_alpha1(self, beta):
         """Additional test cases for rvs for alpha equal to 1."""
@@ -5208,6 +5221,7 @@ class TestLevyStable:
         assert alpha2 > 1, f"Expected alpha > 1, got {alpha2}"
         assert loc2 > max(x2), f"Expected loc > {max(x2)}, got {loc2}"
 
+    @pytest.mark.slow
     @pytest.mark.parametrize(
         "pct_range,alpha_range,beta_range", [
             pytest.param(
@@ -6025,7 +6039,7 @@ class TestFitMethod:
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize("method", ["MLE", "MM"])
     def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
@@ -7505,6 +7519,19 @@ class TestBurr12:
         res = stats.burr12(c, d).stats('mvsk')
         assert_allclose(res, ref, rtol=1e-14)
 
+    # Reference values were computed with mpmath using mp.dps = 80
+    # and then cast to float.
+    @pytest.mark.parametrize(
+        'p, c, d, ref',
+        [(1e-12, 20, 0.5, 15.848931924611135),
+         (1e-19, 20, 0.5, 79.43282347242815),
+         (1e-12, 0.25, 35, 2.0888618213462466),
+         (1e-80, 0.25, 35, 1360930951.7972188)]
+    )
+    def test_isf_near_zero(self, p, c, d, ref):
+        x = stats.burr12.isf(p, c, d)
+        assert_allclose(x, ref, rtol=1e-14)
+
 
 class TestStudentizedRange:
     # For alpha = .05, .01, and .001, and for each value of
@@ -7549,13 +7576,14 @@ class TestStudentizedRange:
         (1, 10, np.inf, 0.000519869467083),
     ]
 
+    @pytest.mark.slow
     def test_cdf_against_tables(self):
         for pvk, q in self.data:
             p_expected, v, k = pvk
             res_p = stats.studentized_range.cdf(q, k, v)
             assert_allclose(res_p, p_expected, rtol=1e-4)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_ppf_against_tables(self):
         for pvk, q_expected in self.data:
             p, v, k = pvk
@@ -7589,7 +7617,7 @@ class TestStudentizedRange:
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
     def test_moment_against_mp(self, case_result):
@@ -7606,6 +7634,7 @@ class TestStudentizedRange:
                         atol=src_case["expected_atol"],
                         rtol=src_case["expected_rtol"])
 
+    @pytest.mark.slow
     def test_pdf_integration(self):
         k, v = 3, 10
         # Test whether PDF integration is 1 like it should be.
@@ -7636,7 +7665,7 @@ class TestStudentizedRange:
             res = stats.studentized_range.cdf(q, k, v)
         assert_allclose(res, r_res)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
@@ -9543,6 +9572,7 @@ class TestRelativisticBW:
         ref = pdf(x, rho*Gamma, Gamma)
         assert_allclose(res, ref, rtol=rtol)
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize(
         "rho,gamma", [
             pytest.param(

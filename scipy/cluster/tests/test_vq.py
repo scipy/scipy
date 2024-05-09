@@ -413,9 +413,9 @@ class TestKMean:
             # test for kmeans
             res1, _ = kmeans(data, 2, seed=seed1)
             res2, _ = kmeans(data, 2, seed=seed2)
-            xp_assert_close(res1, res2, xp=xp)  # should be same results
+            xp_assert_close(res1, res2)  # should be same results
             # test for kmeans2
             for minit in ["random", "points", "++"]:
                 res1, _ = kmeans2(data, 2, minit=minit, seed=seed1)
                 res2, _ = kmeans2(data, 2, minit=minit, seed=seed2)
-                xp_assert_close(res1, res2, xp=xp)  # should be same results
+                xp_assert_close(res1, res2)  # should be same results

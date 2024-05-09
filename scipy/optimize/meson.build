@@ -39,7 +39,8 @@ minpack_lib = static_library('minpack',
     'minpack/r1mpyq.f',
     'minpack/r1updt.f',
     'minpack/rwupdt.f'
-  ]
+  ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_minpack',
@@ -58,6 +59,7 @@ rectangular_lsap = static_library('rectangular_lsap',
     'rectangular_lsap/rectangular_lsap.h',
     'rectangular_lsap/rectangular_lsap.cpp'
   ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_lsap',
@@ -77,7 +79,8 @@ rootfind_lib = static_library('rootfind',
     'Zeros/brentq.c',
     'Zeros/ridder.c',
     'Zeros/zeros.h'
-  ]
+  ],
+  gnu_symbol_visibility: 'hidden',
 )
 
 py3.extension_module('_zeros',
@@ -104,7 +107,7 @@ py3.extension_module('_lbfgsb',
   ],
   fortran_args: fortran_ignore_warnings,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',

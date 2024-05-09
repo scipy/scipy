@@ -13,13 +13,11 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  command: [py3, '@INPUT@', '-o', '@OUTDIR@', accelerate_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
   ],
-  # Set PYTHONPATH to import from _build_utils/_wrappers_common.py
-  env: {'PYTHONPATH': meson.global_source_root() / 'scipy/_build_utils'},
   # TODO - we only want to install the .pxd files! See comments for
   #        `pxd_files` further down.
   install: true,
@@ -75,14 +73,12 @@ fblas_module = custom_target('fblas_module',
 py3.extension_module('_fblas',
   fblas_module,
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
 
 # flapack
-
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c'],
   input: 'flapack.pyf.src',
@@ -106,8 +102,7 @@ py3.extension_module('_flapack',
   flapack_module,
   c_args: [Wno_empty_body],
   link_args: version_link_args,
-  dependencies: [lapack, blas, fortranobject_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, fortranobject_dep],
   install: true,
   subdir: 'scipy/linalg'
 )
@@ -168,7 +163,7 @@ py3.extension_module('_interpolative',
   ],
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   link_args: version_link_args,
-  dependencies: [lapack, fortranobject_dep],
+  dependencies: [lapack_dep, fortranobject_dep],
   override_options: ['b_lto=false'],
   install: true,
   link_language: 'fortran',
@@ -202,8 +197,7 @@ cython_blas = py3.extension_module('cython_blas',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack, blas, np_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'
@@ -216,8 +210,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   ],
   c_args: cython_c_args,
   link_args: version_link_args,
-  dependencies: [lapack, blas, np_dep],
-  link_with: [g77_abi_wrappers],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   install: true,
   include_directories: ['../_build_utils/src'],
   subdir: 'scipy/linalg'

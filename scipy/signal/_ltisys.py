@@ -2980,7 +2980,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                                                   poles, B, maxiter, rtol)
             if not stop and rtol > 0:
                 # if rtol<=0 the user has probably done that on purpose,
-                # don't annoy him
+                # don't annoy them
                 err_msg = (
                     "Convergence was not reached after maxiter iterations.\n"
                     f"You asked for a tolerance of {rtol}, we got {cur_rtol}."
