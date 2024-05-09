@@ -113,6 +113,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
             - ``-4`` : Iteration was terminated by `callback`.
+            - ``-5``: Initial bracket was invalid.
             - ``1`` : The algorithm is proceeding normally (in `callback` only).
             - ``2`` : A bracket was found in the opposite search direction (in `callback` only).
 
@@ -529,6 +530,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                        minimizer.
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
+            - ``-5``: Initial bracket was invalid.
 
         success : bool
             ``True`` when the algorithm terminated successfully (status ``0``).
