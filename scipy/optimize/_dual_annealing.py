@@ -397,7 +397,7 @@ class LocalSearchWrapper:
         self.jac = self.kwargs.get('jac', None)
         self.hess = self.kwargs.get('hess', None)
         self.hessp = self.kwargs.get('hessp', None)
-        self.kwargs.pop("args")
+        self.kwargs.pop("args", None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
