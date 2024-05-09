@@ -9675,7 +9675,7 @@ def test_irwinhall():
 
     cdf_unif = unif.cdf(pts)
     cdf_ih1 = ih1.cdf(pts)
-    assert_allclose(cdf_ih1, cdf_unif) # should be identical to uniform
+    assert_allclose(cdf_ih1, cdf_unif)  # should be identical to uniform
 
     ih2 = stats.irwinhall(2)
     npts = 101
@@ -9683,7 +9683,7 @@ def test_irwinhall():
     expected = np.linspace(0, 2, npts)
     expected[(npts+1)//2:] = 2 - expected[(npts+1)//2:]
     pdf_ih2 = ih2.pdf(pts)
-    assert_allclose(pdf_ih2, expected) # should be a triangle
+    assert_allclose(pdf_ih2, expected)  # should be a triangle
 
     # PDF is symmetric so CDF should be 0.5 at n/2
     n = np.arange(1, 10)
@@ -9692,7 +9692,8 @@ def test_irwinhall():
     assert_allclose(ih_cdf, 0.5)
 
     ih10 = stats.irwinhall(10)
-    # from Wolfram Alpha: "values of pdf of UniformSumDistribution[10] for x=0 to x=10"
+    # from Wolfram Alpha:
+    # "values of pdf of UniformSumDistribution[10] for x=0 to x=10"
     # symmetric about n/2 = 5
     vals = [0, 1/362880, 251/181440, 913/22680, 44117/181440]
     vals += [15619/36288] + vals[::-1]

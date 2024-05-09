@@ -60,11 +60,11 @@ xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
-                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t', 'johnsonsu',
-                'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke',
-                'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
-                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
-                'tukeylambda', 'vonmises', 'vonmises_line'}
+                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t',
+                'johnsonsu', 'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace',
+                'lomax', 'mielke', 'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm',
+                'rel_breitwigner',  'skewcauchy', 't', 'trapezoid', 'truncexpon',
+                'truncpareto', 'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 

@@ -9040,25 +9040,29 @@ rice = rice_gen(a=0.0, name="rice")
 class irwinhall_gen(rv_continuous):
     r"""An Irwin-Hall (Uniform Sum) continuous random variable.
 
-    An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_ 
-    continuous random variable is the sum of :math:`n` independent 
+    An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_
+    continuous random variable is the sum of :math:`n` independent
     standard uniform random variables [1]_ [2]_.
 
     %(before_notes)s
 
     Notes
     -----
-    Applications include `Rao's Spacing Test <https://jammalam.faculty.pstat.ucsb.edu/html/favorite/test.htm>`_, 
-    a more powerful alternative to the Rayleigh test 
+    Applications include `Rao's Spacing Test
+    <https://jammalam.faculty.pstat.ucsb.edu/html/favorite/test.htm>`_,
+    a more powerful alternative to the Rayleigh test
     when the data are not unimodal, and radar [3]_.
 
-    Conveniently, the pdf and cdf are the :math:`n`-fold convolution of 
-    the ones for the standard uniform distribution, which is also the 
-    definition of the cardinal B-splines of degree :math:`n-1` 
+    Conveniently, the pdf and cdf are the :math:`n`-fold convolution of
+    the ones for the standard uniform distribution, which is also the
+    definition of the cardinal B-splines of degree :math:`n-1`
     having knots evenly spaced from :math:`1` to :math:`n` [4]_ [5]_.
 
-    The Bates distribution is simply the Irwin-Hall distribution scaled 
-    by :math:`1/n`:
+    The Bates distribution, which represents the *mean* of statistically
+    independent, uniformly distributed random variables, is simply the
+    Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
+    distribution ``bates = irwinhall(10, scale=1/10)`` represents the
+    distribution of the mean of 10 uniformly distributed random variables.
     
     %(after_notes)s
 
@@ -9067,30 +9071,37 @@ class irwinhall_gen(rv_continuous):
     .. [1] P. Hall, "The distribution of means for samples of size N drawn
             from a population in which the variate takes values between 0 and 1,
             all such values being equally probable",
-            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 240-244, 
-            :doi:`10.1093/biomet/19.3-4.240`
-    .. [2] J. O. IRWIN, "On the frequency distribution of the means of samples
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 240-244,
+            :doi:`10.1093/biomet/19.3-4.240`.
+    .. [2] J. O. Irwin, "On the frequency distribution of the means of samples
             from a population having any law of frequency with finite moments,
             with special reference to Pearson's Type II,
-            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239, 
-            :doi:`0.1093/biomet/19.3-4.225`
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
+            :doi:`0.1093/biomet/19.3-4.225`.
     .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
-            "Sidelobe behavior and bandwidth characteristics 
-            of distributed antenna arrays," 
-            2018 United States National Committee of 
-            URSI National Radio Science Meeting (USNC-URSI NRSM), 
+            "Sidelobe behavior and bandwidth characteristics
+            of distributed antenna arrays,"
+            2018 United States National Committee of
+            URSI National Radio Science Meeting (USNC-URSI NRSM),
             Boulder, CO, USA, 2018, pp. 1-2.
-            https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf
+            https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
     .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
-            https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf
+            https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
     .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
-            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html
+            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
 
     %(example)s
-    """
+    """  # noqa: E501
 
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        Raises a ``NotImplementedError`` for the Irwin-Hall distribution because
+        the generic `fit` implementation is unreliable and no custom implementation
+        is available. Consider using `scipy.stats.fit`.\n\n""")
     def fit(self, data, *args, **kwds):
-        raise NotImplementedError("Fitting not implemented for the Irwin-Hall distribution")
+        fit_notes = ("The generic `fit` implementation is unreliable for this "
+                     "distribution, and no custom implementation is available. "
+                     "Consider using `scipy.stats.fit`.")
+        raise NotImplementedError(fit_notes)
 
     def _argcheck(self, n):
         return (n > 0) & _isintegral(n) & np.isrealobj(n)
@@ -9119,12 +9130,9 @@ class irwinhall_gen(rv_continuous):
     def _rvs(self, n, size=None, random_state=None, *args):
         @_vectorize_rvs_over_shapes
         def _rvs1(n, size=None, random_state=None):
-            # if not _isintegral(n):
-            #     raise ValueError("n must be an integer")
             n = np.floor(n).astype(int)
-            if size is None:
-                return random_state.uniform(size=(n,)).sum(axis=0).item()
-            return random_state.uniform(size=(n, *size)).sum(axis=0)
+            usize = (n,) if size is None else (n, *size)
+            return random_state.uniform(size=usize).sum(axis=0)
         return _rvs1(n, size=size, random_state=random_state)
     
     def _stats(self, n):
@@ -9136,6 +9144,7 @@ class irwinhall_gen(rv_continuous):
         # Var(IH((n))) = n*Var(U(0,1)) = n/12
         # Skew(IH((n))) = Skew(U(0,1))/sqrt(n) = 0
         # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n)
+        # See e.g. https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
 
         return n/2, n/12, 0, -6/(5*n)
 
