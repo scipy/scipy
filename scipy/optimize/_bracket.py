@@ -158,7 +158,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     xs = (xl0, xr0)
     temp = eim._initialize(func, xs, args)
-    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
 
     # The approach is to treat the left and right searches as though they were
     # (almost) totally independent one-sided bracket searches. (The interaction
@@ -379,7 +379,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp)
 
 
 def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
@@ -562,7 +563,8 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter = temp
 
     xs = (xl0, xm0, xr0)
-    func, xs, fs, args, shape, dtype = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args)
+    func, xs, fs, args, shape, dtype, xp = temp
 
     xl0, xm0, xr0 = xs
     fl0, fm0, fr0 = fs
@@ -655,4 +657,4 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval,
                      check_termination, post_termination_check,
-                     customize_result, res_work_pairs)
+                     customize_result, res_work_pairs, xp)

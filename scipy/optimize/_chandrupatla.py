@@ -125,7 +125,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
 
     # Initialization
     temp = eim._initialize(func, (a, b), args)
-    func, xs, fs, args, shape, dtype = temp
+    func, xs, fs, args, shape, dtype, xp = temp
     x1, x2 = xs
     f1, f2 = fs
     status = np.full_like(x1, eim._EINPROGRESS, dtype=int)  # in progress
@@ -227,7 +227,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp=xp)
 
 
 def _chandrupatla_iv(func, args, xatol, xrtol,
@@ -383,7 +384,7 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
     # Initialization
     xs = (x1, x2, x3)
     temp = eim._initialize(func, xs, args)
-    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     x1, x2, x3 = xs
     f1, f2, f3 = fs
     phi = dtype.type(0.5 + 0.5*5**0.5)  # golden ratio
@@ -533,4 +534,5 @@ def _chandrupatla_minimize(func, x1, x2, x3, *, args=(), xatol=None,
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp=xp)
