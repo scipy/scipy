@@ -424,8 +424,8 @@ class LocalSearchWrapper:
                     return self.hess(x, *args)
                 self.kwargs['hess'] = wrapped_hess
             if callable(self.hessp):
-                def wrapped_hessp(x):
-                    return self.hessp(x, *args)
+                def wrapped_hessp(x, p):
+                    return self.hessp(x, p, *args)
                 self.kwargs['hessp'] = wrapped_hessp
 
     def local_search(self, x, e):
