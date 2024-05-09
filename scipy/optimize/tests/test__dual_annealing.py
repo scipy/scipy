@@ -378,7 +378,9 @@ class TestDualAnnealing:
             return np.diag(
                 power * np.exp(x ** power) * x ** (power - 2) *
                 (power * x ** power + power - 1)
-            )
+
+        def hessp(x, p, power):
+            return hess(x, power) @ p
 
         res1 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='L-BFGS-B'))
@@ -388,5 +390,9 @@ class TestDualAnnealing:
         res3 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
                               minimizer_kwargs=dict(method='newton-cg',
                                                     jac=jac, hess=hess))
+        res4 = dual_annealing(f, args=(2, ), bounds=[[0, 1], [0, 1]], seed=rng,
+                              minimizer_kwargs=dict(method='newton-cg',
+                                                    jac=jac, hessp=hessp))
         assert_allclose(res1.fun, res2.fun, rtol=1e-6)
         assert_allclose(res3.fun, res2.fun, rtol=1e-6)
+        assert_allclose(res4.fun, res2.fun, rtol=1e-6)
