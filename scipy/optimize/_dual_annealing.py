@@ -397,6 +397,7 @@ class LocalSearchWrapper:
         self.jac = self.kwargs.get('jac', None)
         self.hess = self.kwargs.get('hess', None)
         self.hessp = self.kwargs.get('hessp', None)
+        self.kwargs.pop("args")
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -481,9 +482,9 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         If no keyword arguments are provided, the local minimizer defaults to
         'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
         is specified, then the dict must contain all parameters required to
-        control the local minimization except `args`. Do not include `args`, as this is
-        passed automatically. `bounds` is not automatically passed on to the local
-        minimizer as the method may not support them.
+        control the local minimization. `args` is ignored in this dict, as it is
+        passed automatically. `bounds` is not automatically passed on to the
+        local minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape
