@@ -564,7 +564,8 @@ namespace detail {
          * for any eps > 0.
          *
          * Note that P has a misprint in Luchko (2008) Eq. 9, the cos(phi(beta-1)) at
-         * the end of the first line should be removed.
+         * the end of the first line should be removed and the −sin(phi(beta−1)) at
+         * the end of the second line should read +(1-b)*phi.
          * This integral representation introduced the free parameter eps (from the
          * radius of complex contour integration). We try to choose eps such that
          * the integrand behaves smoothly. Note that this is quite diffrent from how
