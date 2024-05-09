@@ -9,23 +9,25 @@ from . import _ufuncs
 # that these are defined in this file / report an error in __init__.py
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa: F401
-    gammaln, gammainc, gammaincc, logit, expit)  # noqa: F401
+    gammaln, gammainc, gammaincc, logit, expit, entr, rel_entr)  # noqa: F401
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
 def get_array_special_func(f_name, xp, n_array_args):
+    f = None
     if is_numpy(xp):
         f = getattr(_ufuncs, f_name, None)
-    elif is_torch(xp):
+    if is_torch(xp):
         f = getattr(xp.special, f_name, None)
-    elif is_cupy(xp):
+    if is_cupy(xp):
         import cupyx  # type: ignore[import-not-found]
         f = getattr(cupyx.scipy.special, f_name, None)
-    elif xp.__name__ == f"{array_api_compat_prefix}.jax":
+    if xp.__name__ == f"{array_api_compat_prefix}.jax":
         f = getattr(xp.scipy.special, f_name, None)
-    else:
+
+    if f is None:
         f_scipy = getattr(_ufuncs, f_name, None)
         def f(*args, **kwargs):
             array_args = args[:n_array_args]
@@ -65,6 +67,8 @@ array_special_func_map = {
     'gammaincc': 2,
     'logit': 1,
     'expit': 1,
+    'entr': 1,
+    'rel_entr': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
