@@ -449,7 +449,7 @@ def _mode_result(mode, count):
     # but `count` should not be NaN; it should be zero.
     i = np.isnan(count)
     if i.shape == ():
-        count = count.dtype(0) if i else count
+        count = np.asarray(0, dtype=count.dtype)[()] if i else count
     else:
         count[i] = 0
     return ModeResult(mode, count)

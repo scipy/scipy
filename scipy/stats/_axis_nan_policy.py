@@ -533,11 +533,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     # consider passing in contains_nan
                     samples = _remove_nans(samples, paired)
 
-                # ideally, this is what the behavior would be:
-                # if is_too_small(samples):
-                #     return tuple_to_result(NaN, NaN)
-                # but some existing functions raise exceptions, and changing
-                # behavior of those would break backward compatibility.
+                if is_too_small(samples, kwds):
+                    return tuple_to_result(*np.full(n_out, NaN))
 
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
