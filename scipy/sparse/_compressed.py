@@ -55,6 +55,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     coo = self._coo_container(arg1, shape=shape, dtype=dtype)
                     arrays = coo._coo_to_compressed(self._swap)
                     self.indptr, self.indices, self.data, self._shape = arrays
+                    if not self.has_canonical_format:
+                        self.sum_duplicates()
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -91,6 +93,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays
+            if not self.has_canonical_format:
+                self.sum_duplicates()
 
         # Read matrix dimensions given, if any
         if shape is not None:
