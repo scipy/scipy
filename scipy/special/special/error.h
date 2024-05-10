@@ -24,7 +24,7 @@ typedef enum {
 
 #ifdef __cplusplus
 
-#include <complex>
+#include "config.h"
 
 namespace special {
 
