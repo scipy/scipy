@@ -39,11 +39,12 @@ _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *
     /* Compute the row norms. */
     npy_intp i, j;
     for (i = 0; i < num_rows; ++i) {
-        for (j = 0; j < num_cols; ++j, ++X) {
-            const double curr_val = *X;
-            norms_buff[i] += curr_val * curr_val;
+        double accumulator = 0.0;
+        for (j = 0; j < num_cols; ++j) {
+            const double curr_val = X[(i * num_cols) + j];
+            accumulator += curr_val * curr_val;
         }
-        norms_buff[i] = sqrt(norms_buff[i]);
+        norms_buff[i] = sqrt(accumulator);
     }
 }
 
