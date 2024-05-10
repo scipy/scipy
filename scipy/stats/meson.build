@@ -32,7 +32,6 @@ py3.extension_module('_ansari_swilk_statistics',
 )
 
 py3.extension_module('_mvn',
-  #[mvn_module, 'mvndst.f'],
   [f2py_gen.process('mvn.pyf'), 'mvndst.f'],
   # Wno-surprising is to suppress a pointless warning with GCC 10-12
   # (see GCC bug 98411: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98411)

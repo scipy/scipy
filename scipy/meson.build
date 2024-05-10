@@ -158,8 +158,10 @@ if f2py_version.version_compare('<'+min_numpy_version)
   error(f'Found f2py executable is too old: @f2py_version@')
 endif
 
-# Note: cannot handle .pyf.src or targets with #include's (due to no
-#       `depend_files` - see feature request at meson#8295)
+# Note: this generato cannot handle:
+# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
+# 2. targets with #include's (due to no `depend_files` - see feature request
+#    at meson#8295)
 f2py_gen = generator(generate_f2pymod,
   arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
   output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
