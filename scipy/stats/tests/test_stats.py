@@ -7680,6 +7680,11 @@ class TestKruskal:
         expected = 0
         assert_approx_equal(p, expected)
 
+    def test_no_args_gh20661(self):
+        message = r"Need at least two groups in stats.kruskal\(\)"
+        with pytest.raises(ValueError, match=message):
+            stats.kruskal()
+
 
 class TestCombinePvalues:
 

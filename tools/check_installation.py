@@ -6,8 +6,8 @@ Examples::
     $ python check_installation.py install_directory_name
 
         install_directory_name:
-            the relative path to the directory where SciPy is installed after
-            building and running `meson install`.
+            the relative path from the root of the repo to the directory where
+            SciPy is installed (for dev.py usually "build-install")
 
 Notes
 =====
@@ -34,13 +34,23 @@ changed_installed_path = {
         'scipy/_lib/tests/test_scipy_version.py'
 }
 
-# We do not want the following tests to be checked
+# We do not want the following tests to be checked.
+# Note: only 3 subdirs are listed here, due to how `get_test_files` is
+# implemented.
+# If this list gets too annoying, we should implement excluding directories
+# rather than (or in addition to) files.
 exception_list_test_files = [
     "_lib/array_api_compat/tests/test_all.py",
     "_lib/array_api_compat/tests/test_array_namespace.py",
     "_lib/array_api_compat/tests/test_common.py",
     "_lib/array_api_compat/tests/test_isdtype.py",
     "_lib/array_api_compat/tests/test_vendoring.py",
+    "_lib/array_api_compat/tests/test_array_namespace.py",
+    "cobyqa/cobyqa/tests/test_main.py",
+    "cobyqa/cobyqa/tests/test_models.py",
+    "cobyqa/cobyqa/tests/test_problem.py",
+    "cobyqa/utils/tests/test_exceptions.py",
+    "cobyqa/utils/tests/test_math.py",
 ]
 
 
@@ -58,7 +68,9 @@ def main(install_dir):
             continue
 
         if test_file not in installed_test_files.keys():
-            raise Exception("%s is not installed" % scipy_test_files[test_file])
+            raise Exception(f"{scipy_test_files[test_file]} is not installed; "
+                            f"either install it or add `{test_file}` to the "
+                            "exception list in `tools/check_installation.py`")
 
     print("----------- All the test files were installed --------------")
 

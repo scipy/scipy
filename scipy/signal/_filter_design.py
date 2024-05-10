@@ -4562,7 +4562,7 @@ def ellipap(N, rp, rs):
 
     References
     ----------
-    .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
+    .. [1] Lutovac, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",
