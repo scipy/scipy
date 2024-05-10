@@ -475,7 +475,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 #     - 1D with NaN propagation
 #     - Zero-sized output
 @pytest.mark.filterwarnings('ignore:All axis-slices of one...')
-@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
 @pytest.mark.parametrize(
     ("hypotest", "args", "kwds", "n_samples", "unpacker"),
@@ -887,7 +887,7 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
-@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 @pytest.mark.parametrize(("axis"), range(-3, 3))
@@ -913,7 +913,7 @@ def test_masked_stat_3d(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 def test_mixed_mask_nan_1():
@@ -963,7 +963,7 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res4, res)
 
 
-@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 def test_mixed_mask_nan_2():
@@ -1084,7 +1084,7 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:After omitting NaNs...')
 @pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 @pytest.mark.parametrize(

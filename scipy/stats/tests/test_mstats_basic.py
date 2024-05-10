@@ -21,6 +21,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
 from scipy.conftest import skip_xp_invalid_arg
+from scipy.stats._axis_nan_policy import too_small_1d_not_omit
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -1100,7 +1101,10 @@ class TestNormalitytests:
         mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
         x = [1, 2, 3, 4]
         for func, mfunc in zip(funcs, mfuncs):
-            assert_raises(ValueError, func, x)
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = func(x)
+                assert np.isnan(res.statistic)
+                assert np.isnan(res.pvalue)
             assert_raises(ValueError, mfunc, x)
 
     def test_axis_None(self):

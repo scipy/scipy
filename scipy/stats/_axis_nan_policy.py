@@ -13,6 +13,34 @@ from scipy._lib._array_api import array_namespace, is_numpy
 import inspect
 
 
+too_small_1d_not_omit = (
+    "One or more sample arguments is too small; all "
+    "returned values will be NaN. "
+    "See documentation for sample size requirements.")
+
+too_small_1d_omit = (
+    "After omitting NaNs, one or more sample arguments "
+    "is too small; all returned values will be NaN. "
+    "See documentation for sample size requirements.")
+
+too_small_nd_all = (
+    "All axis-slices of one or more sample arguments are "
+    "too small; all elements of returned arrays will be NaN. "
+    "See documentation for sample size requirements.")
+
+too_small_nd_not_omit = (
+    "One or more axis-slices of one or more sample "
+    "arguments is too small; corresponding elements of "
+    "returned arrays will be NaN. "
+    "See documentation for sample size requirements.")
+
+too_small_nd_omit = (
+    "After omitting NaNs, one or more axis-slices of one "
+    "or more sample arguments is too small; corresponding "
+    "elements of returned arrays will be NaN. "
+    "See documentation for sample size requirements.")
+
+
 def _broadcast_arrays(arrays, axis=None, xp=None):
     """
     Broadcast shapes of arrays, ignoring incompatibility of specified axes
@@ -530,17 +558,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
-                too_small_message = (
-                    "One or more sample arguments is too small; all "
-                    "returned values will be NaN. See documentation "
-                    "for sample size requirements.")
+                too_small_message = too_small_1d_not_omit
                 if any(contains_nan) and nan_policy == 'omit':
                     # consider passing in contains_nan
                     samples = _remove_nans(samples, paired)
-                    too_small_message = (
-                        "After omitting NaNs, one or more sample arguments "
-                        "is too small; all returned values will be NaN. "
-                        "See documentation for sample size requirements.")
+                    too_small_message = too_small_1d_omit
+
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_message, UserWarning, stacklevel=2)
@@ -561,11 +584,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 and (is_too_small(samples, kwds) or empty_output.size == 0)
             ):
                 if is_too_small(samples, kwds):
-                    too_small_message = (
-                        "All axis-slices of one or more sample arguments are "
-                        "too small; all elements of returned arrays will be NaN. "
-                        "See documentation for sample size requirements.")
-                    warnings.warn(too_small_message, UserWarning, stacklevel=2)
+                    warnings.warn(too_small_nd_all, UserWarning, stacklevel=2)
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
@@ -588,19 +607,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
-            too_small_message = (
-                "One or more axis-slices of one or more sample "
-                "arguments is too small; corresponding elements of "
-                "returned arrays will be NaN. See documentation "
-                "for sample size requirements.")
+            too_small_message = too_small_nd_not_omit
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
-                too_small_message = (
-                    "After removing NaNs, one or more axis-slices of one or "
-                    "more sample arguments is too small; corresponding "
-                    "elements of returned arrays will be NaN. "
-                    "See documentation for sample size requirements.")
+                too_small_message = too_small_nd_omit
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     samples = _remove_nans(samples, paired)
