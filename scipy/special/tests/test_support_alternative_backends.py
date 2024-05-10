@@ -27,6 +27,7 @@ def test_dispatch_to_unrecognize_library():
     xp_assert_close(res, ref, xp=xp)
 
 
+@pytest.mark.fail_slow(2)
 @array_api_compatible
 @given(data=strategies.data())
 @pytest.mark.parametrize('f_name_n_args', array_special_func_map.items())
