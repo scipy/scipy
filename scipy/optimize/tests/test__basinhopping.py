@@ -200,8 +200,8 @@ class TestBasinHopping:
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
     def test_all_minimizers(self):
-        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, and COBYLA
-        # don't accept jac=True, so aren't included here.
+        # Test 2-D minimizations with gradient. Nelder-Mead, Powell, COBYLA, and
+        # COBYQA don't accept jac=True, so aren't included here.
         i = 1
         methods = ['CG', 'BFGS', 'Newton-CG', 'L-BFGS-B', 'TNC', 'SLSQP']
         minimizer_kwargs = copy.copy(self.kwargs)
@@ -217,7 +217,7 @@ class TestBasinHopping:
         # so not included here.
         i = 1
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
-                   'Nelder-Mead', 'Powell', 'COBYLA']
+                   'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA']
         minimizer_kwargs = copy.copy(self.kwargs_nograd)
         for method in methods:
             minimizer_kwargs["method"] = method

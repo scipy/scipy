@@ -246,6 +246,7 @@ py3.install_sources([
   '_bracket.py',
   '_chandrupatla.py',
   '_cobyla_py.py',
+  '_cobyqa_py.py',
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
