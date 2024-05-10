@@ -42,12 +42,12 @@ namespace detail {
 
     // Return NaN, handling both real and complex types.
     template <typename T>
-    SPECFUN_HOST_DEVICE inline std::enable_if_t<std::is_floating_point_v<T>, T> maybe_complex_NaN() {
+    SPECFUN_HOST_DEVICE inline typename std::enable_if<std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
         return std::numeric_limits<T>::quiet_NaN();
     }
 
     template <typename T>
-    SPECFUN_HOST_DEVICE inline std::enable_if_t<!std::is_floating_point_v<T>, T> maybe_complex_NaN() {
+    SPECFUN_HOST_DEVICE inline typename std::enable_if<!std::is_floating_point<T>::value, T>::type maybe_complex_NaN() {
         using V = typename T::value_type;
         return {std::numeric_limits<V>::quiet_NaN(), std::numeric_limits<V>::quiet_NaN()};
     }
