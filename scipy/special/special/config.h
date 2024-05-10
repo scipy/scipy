@@ -56,7 +56,7 @@
 #ifdef __CUDACC__
 #define SPECFUN_HOST_DEVICE __host__ __device__
 
-#include <cuda/std/algorithm>
+
 #include <cuda/std/cmath>
 #include <cuda/std/cstdint>
 #include <cuda/std/limits>
@@ -93,7 +93,7 @@ SPECFUN_HOST_DEVICE inline double tan(double x) { return cuda::std::tan(x); }
 
 SPECFUN_HOST_DEVICE inline double atan(double x) { return cuda::std::atan(x); }
 
-SPECFUN_HOSt_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
+SPECFUN_HOST_DEVICE inline double acos(double x) { return cuda::std::acos(x); }
 
 SPECFUN_HOST_DEVICE inline double sinh(double x) { return cuda::std::sinh(x); }
 
@@ -116,8 +116,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return cuda::std::f
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return cuda::std::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return cuda::std::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return cuda::std::log1p(num); }
-SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return cuda::std::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return cuda::std::frexp(num, exp); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int exp) { return cuda::std::ldexp(num, exp); }
 SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return cuda::std::fmod(x, y); }
 #else
 SPECFUN_HOST_DEVICE inline double ceil(double x) { return ::ceil(x); }
@@ -131,8 +131,8 @@ SPECFUN_HOST_DEVICE inline double fmax(double x, double y) { return ::fmax(x, y)
 SPECFUN_HOST_DEVICE inline double fmin(double x, double y) { return ::fmin(x, y); }
 SPECFUN_HOST_DEVICE inline double log10(double num) { return ::log10(num); }
 SPECFUN_HOST_DEVICE inline double log1p(double num) { return ::log1p(num); }
-SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num); }
-SPECFUN_HOST_DEVICE inline double ldexp(double num, int *exp) { return ::ldexp(num); }
+SPECFUN_HOST_DEVICE inline double frexp(double num, int *exp) { return ::frexp(num, exp); }
+SPECFUN_HOST_DEVICE inline double ldexp(double num, int exp) { return ::ldexp(num, exp); }
 SPECFUN_HOST_DEVICE inline double fmod(double x, double y) { return ::fmod(x, y); }
 #endif
 
@@ -141,9 +141,10 @@ SPECFUN_HOST_DEVICE void swap(T &a, T &b) {
     cuda::std::swap(a, b);
 }
 
-template <typename T>
-SPECFUN_HOST_DEVICE const T &clamp(const T &v, const T &lo, const T &hi) {
-    return cuda::std::clamp(v, lo, hi);
+// Reimplement std::clamp until it's available in CuPy
+template<typename T>
+SPECFUN_HOST_DEVICE constexpr T clamp(T &v, T &lo, T &hi) {
+    return v < lo ? lo : (v > hi ? lo : v);
 }
 
 template <typename T>
