@@ -105,7 +105,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     n = a.shape[axis]
     NaN = _get_nan(a)
 
-    if a.size == 0 or ddof > n:
+    if ddof > n:
         # Handle as a special case to avoid spurious warnings.
         # The return values, if any, are all nan.
         shp = list(a.shape)

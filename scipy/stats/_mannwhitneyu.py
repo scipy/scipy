@@ -178,8 +178,6 @@ def _mwu_input_validation(x, y, use_continuity, alternative, axis, method):
     x, y = np.atleast_1d(x), np.atleast_1d(y)
     if np.isnan(x).any() or np.isnan(y).any():
         raise ValueError('`x` and `y` must not contain NaNs.')
-    if np.size(x) == 0 or np.size(y) == 0:
-        raise ValueError('`x` and `y` must be of nonzero size.')
 
     bools = {True, False}
     if use_continuity not in bools:

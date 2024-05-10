@@ -115,33 +115,34 @@ axis_nan_policy_cases = [
 
 # If the message is one of those expected, put nans in
 # appropriate places of `statistics` and `pvalues`
-too_small_messages = {"The input contains nan",  # for nan_policy="raise"
-                      "Degrees of freedom <= 0 for slice",
-                      "x and y should have at least 5 elements",
-                      "Data must be at least length 3",
-                      "The sample must contain at least two",
-                      "x and y must contain at least two",
-                      "division by zero",
-                      "Mean of empty slice",
-                      "Data passed to ks_2samp must not be empty",
-                      "Not enough test observations",
-                      "Not enough other observations",
-                      "Not enough observations.",
-                      "At least one observation is required",
-                      "zero-size array to reduction operation maximum",
-                      "`x` and `y` must be of nonzero size.",
-                      "The exact distribution of the Wilcoxon test",
-                      "Data input must not be empty",
-                      "Window length (0) must be positive and less",
-                      "Window length (1) must be positive and less",
-                      "Window length (2) must be positive and less",
-                      "skewtest is not valid with less than",
-                      "kurtosistest requires at least 5",
-                      "attempt to get argmax of an empty sequence",
-                      "No array values within given limits",
-                      "Input sample size must be greater than one.",
-                      "invalid value encountered in scalar divide",
-                      "at least one input has length 0"}
+# too_small_messages = {"The input contains nan",  # for nan_policy="raise"
+#                       "Degrees of freedom <= 0 for slice",
+#                       "x and y should have at least 5 elements",
+#                       "Data must be at least length 3",
+#                       "The sample must contain at least two",
+#                       "x and y must contain at least two",
+#                       "division by zero",
+#                       "Mean of empty slice",
+#                       "Data passed to ks_2samp must not be empty",
+#                       "Not enough test observations",
+#                       "Not enough other observations",
+#                       "Not enough observations.",
+#                       "At least one observation is required",
+#                       "zero-size array to reduction operation maximum",
+#                       "`x` and `y` must be of nonzero size.",
+#                       "The exact distribution of the Wilcoxon test",
+#                       "Data input must not be empty",
+#                       "Window length (0) must be positive and less",
+#                       "Window length (1) must be positive and less",
+#                       "Window length (2) must be positive and less",
+#                       "skewtest is not valid with less than",
+#                       "kurtosistest requires at least 5",
+#                       "attempt to get argmax of an empty sequence",
+#                       "No array values within given limits",
+#                       "Input sample size must be greater than one.",
+#                       "invalid value encountered in scalar divide",
+#                       "at least one input has length 0"}
+too_small_messages = {'out of bounds for axis'}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -342,8 +343,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             # of the output.
             except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as e:
 
-                if any([str(e).startswith(message)
-                        for message in too_small_messages]):
+                if any([message in str(e) for message in too_small_messages]):
                     res1d = np.full(n_outputs, np.nan)
                 elif any([str(e).startswith(message)
                           for message in inaccuracy_messages]):
@@ -357,6 +357,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                               **kwds)
                 else:
                     raise e
+
         statistics[i] = res1d[0]
         if len(res1d) == 2:
             pvalues[i] = res1d[1]

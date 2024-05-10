@@ -299,10 +299,6 @@ def kstat(data, n=2, *, axis=None):
 
     N = data.shape[axis]
 
-    # raise ValueError on empty input
-    if N == 0:
-        raise ValueError("Data input must not be empty")
-
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
         return S[1] * 1.0/N
@@ -1880,7 +1876,7 @@ def shapiro(x):
     Parameters
     ----------
     x : array_like
-        Array of sample data.
+        Array of sample data. Must contain at least three observations.
 
     Returns
     -------
@@ -2002,8 +1998,6 @@ def shapiro(x):
     x = np.ravel(x).astype(np.float64)
 
     N = len(x)
-    if N < 3:
-        raise ValueError("Data must be at least length 3.")
 
     a = zeros(N//2, dtype=np.float64)
     init = 0
@@ -2788,10 +2782,6 @@ def ansari(x, y, alternative='two-sided'):
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
-    if m < 1:
-        raise ValueError("Not enough other observations.")
-    if n < 1:
-        raise ValueError("Not enough test observations.")
 
     N = m + n
     xy = r_[x, y]  # combine
@@ -3055,12 +3045,6 @@ def bartlett(*samples):
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
-
-    # Handle empty input and input that is not 1d
-    for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
-            return BartlettResult(NaN, NaN)
 
     Ni = np.empty(k)
     ssq = np.empty(k, 'd')
@@ -3604,12 +3588,6 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle empty input
-    for sample in samples:
-        if sample.size == 0:
-            NaN = _get_nan(*samples)
-            return FlignerResult(NaN, NaN)
-
     if center == 'median':
 
         def func(x):
@@ -3743,7 +3721,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     Parameters
     ----------
     x, y : array_like
-        Arrays of sample data.
+        Arrays of sample data. There must be at least three observations
+        total.
     axis : int, optional
         The axis along which the samples are tested.  `x` and `y` can be of
         different length along `axis`.
@@ -3838,8 +3817,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     n = x.shape[axis]
     m = y.shape[axis]
     N = m + n
-    if N < 3:
-        raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
     # determine if any of the samples contain ties
@@ -4347,10 +4324,6 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
 def _circfuncs_common(samples, high, low, xp=None):
     xp = array_namespace(samples) if xp is None else xp
-    # Ensure samples are array-like and size is not zero
-    if xp_size(samples) == 0:
-        NaN = _get_nan(samples, xp=xp)
-        return NaN, NaN, NaN
 
     if xp.isdtype(samples.dtype, 'integral'):
         dtype = xp.asarray(1.).dtype  # get default float type

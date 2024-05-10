@@ -37,7 +37,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     ----------
     x, y : array-like
         The two samples of observations to be tested. Input must not have more
-        than one dimension. Samples can have different lengths.
+        than one dimension. Samples can have different lengths, but both
+        must have at least five observations.
     t : array-like, optional
         The points (t1, ..., tn) where the empirical characteristic function is
         to be evaluated. It should be positive distinct numbers. The default
@@ -97,9 +98,6 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     t = np.asarray(t)
     # check if x and y are valid inputs
     nx, ny = len(x), len(y)
-    if (nx < 5) or (ny < 5):
-        raise ValueError('x and y should have at least 5 elements, but len(x) '
-                         f'= {nx} and len(y) = {ny}.')
     if not np.isfinite(x).all():
         raise ValueError('x must not contain nonfinite values.')
     if not np.isfinite(y).all():
@@ -500,6 +498,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     rvs : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        The sample must contain at least two observations.
     cdf : str or callable
         The cumulative distribution function :math:`F` to test the
         observations against. If a string, it should be the name of a
@@ -585,9 +584,6 @@ def cramervonmises(rvs, cdf, args=()):
         cdf = getattr(distributions, cdf).cdf
 
     vals = np.sort(np.asarray(rvs))
-
-    if vals.size <= 1:
-        raise ValueError('The sample must contain at least two observations.')
 
     n = len(vals)
     cdfvals = cdf(vals, *args)
@@ -1554,8 +1550,10 @@ def cramervonmises_2samp(x, y, method='auto'):
     ----------
     x : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        Must contain at least two observations.
     y : array_like
         A 1-D array of observed values of the random variables :math:`Y_i`.
+        Must contain at least two observations.
     method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.
@@ -1642,8 +1640,6 @@ def cramervonmises_2samp(x, y, method='auto'):
     xa = np.sort(np.asarray(x))
     ya = np.sort(np.asarray(y))
 
-    if xa.size <= 1 or ya.size <= 1:
-        raise ValueError('x and y must contain at least two observations.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 
