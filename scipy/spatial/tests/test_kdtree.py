@@ -391,8 +391,8 @@ class _Test_random_ball_far(_Test_random_ball):
         super().setup_method()
         self.d = 2.
 
-@pytest.mark.fail_slow(5)
 @KDTreeTest
+@pytest.mark.fail_slow(5)
 class _Test_random_ball_far_periodic(_Test_random_ball_periodic):
 
     def setup_method(self):
