@@ -340,17 +340,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             # hypothesis tests raise errors instead of returning nans .
             # For vectorized calls, we put nans in the corresponding elements
             # of the output.
-            except (RuntimeWarning, UserWarning, ValueError,
-                    ZeroDivisionError) as e:
-
-                # whatever it is, make sure same error is raised by both
-                # `nan_policy_1d` and `hypotest`
-                with pytest.raises(type(e), match=re.escape(str(e))):
-                    nan_policy_1d(hypotest, data1d, unpacker, *args,
-                                  n_outputs=n_outputs, nan_policy=nan_policy,
-                                  paired=paired, _no_deco=True, **kwds)
-                # with pytest.raises(type(e), match=re.escape(str(e))):
-                #     hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
+            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as e:
 
                 if any([str(e).startswith(message)
                         for message in too_small_messages]):
@@ -447,25 +437,28 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                    n_outputs=n_outputs,
                                    nan_policy=nan_policy, paired=paired,
                                    _no_deco=True, **kwds)
-        except (RuntimeWarning, ValueError, ZeroDivisionError) as ea:
+        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ea:
             ea_str = str(ea)
 
         try:
             res1db = unpacker(hypotest(*data_raveled, *args,
                                        nan_policy=nan_policy, **kwds))
-        except (RuntimeWarning, ValueError, ZeroDivisionError) as eb:
+        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as eb:
             eb_str = str(eb)
 
         try:
             res1dc = unpacker(hypotest(*data, *args, axis=None,
                                        nan_policy=nan_policy, **kwds))
-        except (RuntimeWarning, ValueError, ZeroDivisionError) as ec:
+        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ec:
             ec_str = str(ec)
 
         if ea_str or eb_str or ec_str:
-            assert any([str(ea_str).startswith(message)
-                        for message in too_small_messages])
-            # assert ea_str == eb_str == ec_str
+            too_small_message = "See documentation for sample size requirements."
+            messages_same = ea_str == eb_str == ec_str
+            messages_ok = ((too_small_message in eb_str)
+                           and (too_small_message in ec_str))
+            assert messages_same or messages_ok
+
         else:
             assert_equal(res1db, res1da)
             assert_equal(res1dc, res1da)
@@ -481,6 +474,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 #     - 1D with no NaNs
 #     - 1D with NaN propagation
 #     - Zero-sized output
+@pytest.mark.filterwarnings('ignore:All axis-slices of one...')
+@pytest.mark.filterwarnings('ignore:After removing NaNs...')
 @pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
 @pytest.mark.parametrize(
     ("hypotest", "args", "kwds", "n_samples", "unpacker"),
@@ -760,6 +755,8 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     stats._stats_py._broadcast_concatenate(samples, axis, paired)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
+            except UserWarning as e:
+                assert "See documentation for sample size requirements." in str(e)
 
 
 def test_masked_array_2_sentinel_array():
@@ -890,6 +887,8 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
+@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
@@ -914,6 +913,8 @@ def test_masked_stat_3d(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 def test_mixed_mask_nan_1():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
@@ -962,6 +963,8 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res4, res)
 
 
+@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
@@ -1081,6 +1084,8 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@pytest.mark.filterwarnings('ignore:After removing NaNs...')
+@pytest.mark.filterwarnings('ignore:One or more axis-slices of one...')
 @skip_xp_invalid_arg
 @pytest.mark.parametrize(
     ("weighted_fun_name, unpacker"),

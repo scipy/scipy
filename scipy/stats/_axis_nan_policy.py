@@ -4,6 +4,7 @@
 # that support `axis` and `nan_policy`, including a decorator that
 # automatically adds `axis` and `nan_policy` arguments to a function.
 
+import warnings
 import numpy as np
 from functools import wraps
 from scipy._lib._docscrape import FunctionDoc, Parameter
@@ -529,11 +530,20 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
+                too_small_message = (
+                    "One or more sample arguments is too small; all "
+                    "returned values will be NaN. See documentation "
+                    "for sample size requirements.")
                 if any(contains_nan) and nan_policy == 'omit':
                     # consider passing in contains_nan
                     samples = _remove_nans(samples, paired)
+                    too_small_message = (
+                        "After omitting NaNs, one or more sample arguments "
+                        "is too small; all returned values will be NaN. "
+                        "See documentation for sample size requirements.")
 
                 if is_too_small(samples, kwds):
+                    warnings.warn(too_small_message, UserWarning, stacklevel=2)
                     return tuple_to_result(*np.full(n_out, NaN))
 
                 if sentinel:
@@ -544,15 +554,18 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 return tuple_to_result(*res)
 
             # check for empty input
-            # ideally, move this to the top, but some existing functions raise
-            # exceptions for empty input, so overriding it would break
-            # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             # only return empty output if zero sized input is too small.
             if (
                 empty_output is not None
                 and (is_too_small(samples, kwds) or empty_output.size == 0)
             ):
+                if is_too_small(samples, kwds):
+                    too_small_message = (
+                        "All axis-slices of one or more sample arguments are "
+                        "too small; all elements of returned arrays will be NaN. "
+                        "See documentation for sample size requirements.")
+                    warnings.warn(too_small_message, UserWarning, stacklevel=2)
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
@@ -575,14 +588,26 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
+            too_small_message = (
+                "One or more axis-slices of one or more sample "
+                "arguments is too small; corresponding elements of "
+                "returned arrays will be NaN. See documentation "
+                "for sample size requirements.")
+
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
+                too_small_message = (
+                    "After removing NaNs, one or more axis-slices of one or "
+                    "more sample arguments is too small; corresponding "
+                    "elements of returned arrays will be NaN. "
+                    "See documentation for sample size requirements.")
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     samples = _remove_nans(samples, paired)
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
+                        warnings.warn(too_small_message, UserWarning, stacklevel=4)
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -597,6 +622,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
+                        warnings.warn(too_small_message, UserWarning, stacklevel=4)
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
@@ -606,6 +632,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples, kwds):
+                        warnings.warn(too_small_message, UserWarning, stacklevel=4)
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
