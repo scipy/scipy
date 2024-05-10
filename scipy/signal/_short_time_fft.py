@@ -1126,7 +1126,7 @@ class ShortTimeFFT:
         r"""Calculate spectrogram or cross-spectrogram.
 
         The spectrogram is the absolute square of the STFT, i.e, it is
-        ``abs(S[q,p])**2`` for given ``S[q,p]``  and thus is always
+        ``abs(S[q,p])**2`` for given ``S[q,p]`` and thus is always
         non-negative.
         For two STFTs ``Sx[q,p], Sy[q,p]``, the cross-spectrogram is defined
         as ``Sx[q,p] * np.conj(Sx[q,p])`` and is complex-valued.
@@ -1135,10 +1135,16 @@ class ShortTimeFFT:
         ``None`` it needs to have the same shape as `x`.
 
         The cross-spectrogram may be interpreted as the time-frequency analogon of the
-        cross-spectral density (consult `csd`). If the STFT is parametrized to be a
-        unitary transform, i.e., utilitzing `~from_win_equals_dual` with `scale_to`
-        being ``None``, then the value of the scalar product is preserved. This is
-        shown in the second example below.
+        cross-spectral density (consult `csd`). The absolute square `abs(Sxy)**2` of a
+        cross-spectrogram `Sxy` divided by the spectrograms `Sxx` and `Syy` can be
+        interpreted as a coherence spectrogram `Cxy := abs(Sxy)**2 / (Sxx*Syy)`, which
+        is the time-frequency analogon to `~coherence`.
+
+        If the STFT is parametrized to be a unitary transform, i.e., utilitzing
+        `~from_win_equals_dual` with `scale_to` being ``None``, then the value of
+        the scalar product is preserved. This is illustrated in the second example
+        below by utilizing a cross-spectrogram.
+
 
         Examples
         --------
