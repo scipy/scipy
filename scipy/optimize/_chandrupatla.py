@@ -1,8 +1,16 @@
+import math
 import numpy as np
 from ._zeros_py import _rtol
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
-from scipy._lib._array_api import xp_clip
+from scipy._lib._array_api import xp_clip, xp_minimum, xp_sign
+
+# TODO:
+# - debug test_maxiter_callback
+# - debug torch failure in test_special_cases - `float64` is fine?
+# - (maybe?) don't use fancy indexing assignment
+# - figure out how to replace the new `try`/`except`s
+
 
 def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
                   fatol=None, frtol=0, maxiter=None, callback=None):
@@ -135,8 +143,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
     xatol = 4*finfo.smallest_normal if xatol is None else xatol
     xrtol = _rtol if xrtol is None else xrtol
     fatol = finfo.smallest_normal if fatol is None else fatol
-    frtol = frtol * xp.minimum(xp.abs(f1), xp.abs(f2))
-    maxiter = (xp.log2(finfo.max) - xp.log2(finfo.smallest_normal)
+    frtol = frtol * xp_minimum(xp.abs(f1), xp.abs(f2))
+    maxiter = (math.log2(finfo.max) - math.log2(finfo.smallest_normal)
                if maxiter is None else maxiter)
     work = _RichResult(x1=x1, f1=f1, x2=x2, f2=f2, x3=None, f3=None, t=0.5,
                        xatol=xatol, xrtol=xrtol, fatol=fatol, frtol=frtol,
@@ -153,7 +161,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
     def post_func_eval(x, f, work):
         # [1] Figure 1 (first diamond and boxes)
         # Note: y/n are reversed in figure; compare to BASIC in appendix
-        work.x3, work.f3 = work.x2.copy(), work.f2.copy()
+        work.x3, work.f3 = xp.asarray(work.x2, copy=True), xp.asarray(work.f2, copy=True)
         j = xp.sign(f) == xp.sign(work.f1)
         nj = ~j
         work.x3[j], work.f3[j] = work.x1[j], work.f1[j]
@@ -180,7 +188,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
 
         # If the bracket is no longer valid, report failure (unless a function
         # tolerance is met, as detected above).
-        i = (xp.sign(work.f1) == xp.sign(work.f2)) & ~stop
+        i = (xp_sign(work.f1) == xp_sign(work.f2)) & ~stop
         NaN = xp.asarray(xp.nan)
         work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True

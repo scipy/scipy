@@ -431,3 +431,19 @@ def xp_copysign(x1, x2, xp=None):
     xp = array_namespace(x1, x2) if xp is None else xp
     abs_x1 = xp.abs(x1)
     return xp.where(x2 >= 0, abs_x1, -abs_x1)
+
+
+# partial substitute for xp.sign, which does not cover the NaN special case
+# that I need. (https://github.com/data-apis/array-api-compat/issues/136)
+def xp_sign(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+
+    if is_numpy(xp):
+        return xp.sign(x)
+
+    sign = xp.full_like(x, xp.nan)
+    one = xp.asarray(1, dtype=x.dtype)
+    sign = xp.where(x > 0, one, sign)
+    sign = xp.where(x < 0, -one, sign)
+    sign = xp.where(x == 0, 0*one, sign)
+    return sign

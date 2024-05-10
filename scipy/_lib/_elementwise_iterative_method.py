@@ -82,7 +82,7 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     xat = xp.result_type(*[xa.dtype for xa in xas])
     xat = xp.asarray(1.).dtype if xp.isdtype(xat, "integral") else xat
     xs, args = xas[:nx], xas[nx:]
-    xs = [xp.asarray(x, dtype=xat)[()] for x in xs]  # use copy=False when implemented
+    xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
     fs = [xp.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
     fshape = fs[0].shape
@@ -110,8 +110,8 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     xfat = xp.result_type(*([f.dtype for f in fs] + [xat]))
     if not complex_ok and not xp.isdtype(xfat, "real floating"):
         raise ValueError("Abscissae and function output must be real numbers.")
-    xs = [xp.asarray(x, dtype=xfat, copy=True)[()] for x in xs]
-    fs = [xp.asarray(f, dtype=xfat, copy=True)[()] for f in fs]
+    xs = [xp.asarray(x, dtype=xfat, copy=True) for x in xs]
+    fs = [xp.asarray(f, dtype=xfat, copy=True) for f in fs]
 
     # To ensure that we can do indexing, we'll work with at least 1d arrays,
     # but remember the appropriate shape of the output.
@@ -198,7 +198,7 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
     active = xp.arange(n_elements)  # in-progress element indices
     res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
     res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
-    res_dict['status'] = xp.full(n_elements, _EINPROGRESS)
+    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32)
     res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
     res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
     res = _RichResult(res_dict)
@@ -282,6 +282,8 @@ def _check_termination(work, res, res_work_pairs, active, check_termination,
             for key, val in work.items():
                 # Need to find a better way than these try/excepts
                 # Somehow need to keep compressible numerical args separate
+                if key == 'args':
+                    continue
                 try:
                     work[key] = val[proceed]
                 except (IndexError, TypeError, KeyError):  # not a compressible array
