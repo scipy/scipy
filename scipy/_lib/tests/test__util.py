@@ -20,6 +20,7 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
 
+@pytest.mark.fail_slow(2)
 def test__aligned_zeros():
     niter = 10
 
@@ -389,6 +390,7 @@ class TestLazywhere:
     p = strategies.floats(min_value=0, max_value=1)
     data = strategies.data()
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @array_api_compatible
     @given(n_arrays=n_arrays, rng_seed=rng_seed, dtype=dtype, p=p, data=data)
