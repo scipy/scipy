@@ -9124,10 +9124,13 @@ class irwinhall_gen(rv_continuous):
     
     def _cdf(self, x, n):
         def vcdf(x, n):
-            if x > n/2:
-                return 1 - self._cardbspl(n).antiderivative()(n - x)
             return self._cardbspl(n).antiderivative()(x)
         return np.vectorize(vcdf, otypes=[np.float64])(x, n)
+
+    def _sf(self, x, n):
+        def vsf(x, n):
+            return self._cardbspl(n).antiderivative()(n-x)
+        return np.vectorize(vsf, otypes=[np.float64])(x, n)
 
 
     def _rvs(self, n, size=None, random_state=None, *args):

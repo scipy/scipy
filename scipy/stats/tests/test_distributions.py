@@ -9718,6 +9718,10 @@ class TestIrwinHall:
         vals += [15619 / 36288] + vals[::-1]
         assert_allclose(self.ih10.pdf(np.arange(11)), vals)
 
+    def test_sf_ih10(self):
+        assert_allclose(self.ih10.sf(np.arange(11)), 1 - self.ih10.cdf(np.arange(11)))
+        assert_equal(self.ih10.sf(9.9), 2.7557319223984903e-17)
+
 
 # Cases are (distribution name, log10 of smallest probability mass to test,
 # log10 of the complement of the largest probability mass to test, atol,
