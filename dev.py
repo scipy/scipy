@@ -431,6 +431,11 @@ class Build(Task):
         ['--with-scipy-openblas'], default=False, is_flag=True,
         help=("If set, use the `scipy-openblas32` wheel installed into the "
               "current environment as the BLAS/LAPACK to build against."))
+    with_accelerate = Option(
+        ['--with-accelerate'], default=False, is_flag=True,
+        help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
+              " Takes precedence over -with-scipy-openblas (macOS only)")
+    )
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -483,7 +488,10 @@ class Build(Task):
             cmd += ['-Db_sanitize=address,undefined']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
-        if args.with_scipy_openblas:
+        if args.with_accelerate:
+            # on a mac you probably want to use accelerate over scipy_openblas
+            cmd += ["-Dblas=accelerate"]
+        elif args.with_scipy_openblas:
             cls.configure_scipy_openblas()
             env['PKG_CONFIG_PATH'] = os.pathsep.join([
                     os.path.join(os.getcwd(), '.openblas'),

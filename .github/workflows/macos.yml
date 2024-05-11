@@ -220,7 +220,7 @@ jobs:
         export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
 
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build -C-Dblas=accelerate
+        python dev.py build --with-accelerate
 
         pip install pooch pytest hypothesis
         python dev.py -n test
