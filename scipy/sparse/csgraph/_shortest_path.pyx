@@ -3,7 +3,7 @@ Routines for performing shortest-path graph searches
 
 The main interface is in the function :func:`shortest_path`.  This
 calls cython routines that compute the shortest path using
-the Floyd-Warshall algorithm, Dijkstra's algorithm with Fibonacci Heaps,
+the Floyd-Warshall algorithm, Dijkstra's algorithm with priority queue,
 the Bellman-Ford algorithm, or Johnson's Algorithm.
 
 Yen's k-Shortest Path Algorithm is available for
@@ -24,7 +24,6 @@ from scipy.sparse._sputils import (convert_pydata_sparse_to_scipy,
 
 cimport cython
 
-from libc.stdlib cimport malloc, free
 from libc.math cimport INFINITY
 
 from libcpp.queue cimport priority_queue
@@ -72,9 +71,11 @@ def shortest_path(csgraph, method='auto',
                      Computational cost is approximately ``O[N^3]``.
                      The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
-                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
-                     where ``k`` is the average number of connected edges per node.
+           'D'    -- Dijkstra's algorithm with priority queue.
+                     Computational cost is approximately ``O[I * (E + N) * log(N)]``,
+                     where ``E`` is the number of edges in the graph,
+                     and ``I = len(indices)`` if ``indices`` is passed. Otherwise,
+                     ``I = N``.
                      The input csgraph will be converted to a csr representation.
 
            'BF'   -- Bellman-Ford algorithm.
@@ -434,7 +435,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
 
-    Dijkstra algorithm using Fibonacci Heaps
+    Dijkstra algorithm using priority queue
 
     .. versionadded:: 0.11.0
 
@@ -672,7 +673,7 @@ ctypedef pair[DTYPE_t, uint_t] dist_index_pair_t
 ctypedef priority_queue[dist_index_pair_t] dijkstra_queue_t
 
 @cython.boundscheck(False)
-cdef _dijkstra_scan_heap(dijkstra_queue_t &heap,
+cdef void _dijkstra_scan_heap(dijkstra_queue_t &heap,
                          dist_index_pair_t v,
                          const double[:] csr_weights,
                          const int[:] csr_indices,
@@ -682,7 +683,7 @@ cdef _dijkstra_scan_heap(dijkstra_queue_t &heap,
                          int return_pred,
                          int[:] sources,
                          int return_source,
-                         DTYPE_t limit):
+                         DTYPE_t limit) noexcept nogil:
     cdef:
         ITYPE_t j
         unsigned int j_current
@@ -718,33 +719,37 @@ cdef int _dijkstra(
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
-            DTYPE_t limit) except -1:
+            DTYPE_t limit) except -1 nogil:
     cdef:
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
         unsigned int i, j_source
-        DTYPE_t next_val
-        int return_pred = (pred.size > 0)
-        int return_sources = (sources.size > 0)
-        int directed = (csrT_weights.size == 0)
+        bint return_pred = (pred.shape[0] > 0)
+        bint return_sources = (sources.shape[0] > 0)
+        bint directed = (csrT_weights.shape[0] == 0)
 
         # pairs of {-distance, vertex index} will be pushed
         # to treat it as a min-heap instead of max-heap
         dijkstra_queue_t heap = dijkstra_queue_t()
         dist_index_pair_t v
-    
+
+    if return_pred and pred.shape[0] != N:
+        raise RuntimeError(
+            f"Invalid predecessors array shape {pred.shape}. Expected {(N,)}."
+        )
+    if return_sources and sources.shape[0] != N:
+        raise RuntimeError(
+            f"Invalid sources array shape {sources.shape}. Expected {(N,)}."
+        )
+
     for i in range(Nind):
         j_source = source_indices[i]
         dist_matrix[j_source] = 0
         heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
         if return_sources:
             sources[j_source] = j_source
-    
-    if return_pred:
-        assert pred.size == N
-    if return_sources:
-        assert sources.size == N
-    
+
+
     while heap.size():
         v = heap.top()
         heap.pop()
@@ -757,7 +762,7 @@ cdef int _dijkstra(
         # and the total complexity is O(Mlog(M)) per source
         if dist_matrix[v.second] < v.first :
             continue
-        
+
         _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
                             dist_matrix, pred, return_pred,
                             sources, return_sources, limit)
@@ -785,10 +790,20 @@ cdef int _dijkstra_multi_separate(
         unsigned int Nind = source_indices.shape[0]
         unsigned int i
         int source_list[1]
-    
-    assert dist_matrix.shape[0] == Nind
-    assert pred.shape[0] == Nind
-    assert sources.shape[0] == Nind
+
+    if dist_matrix.shape[0] != Nind:
+        raise RuntimeError(
+            f"Not enough rows in distances matrix. Got {dist_matrix.shape[0]}, expected {Nind}."
+        )
+    if pred.shape[0] != Nind:
+        raise RuntimeError(
+            f"Not enough rows in predecessors matrix. Got {pred.shape[0]}, expected {Nind}."
+        )
+    if sources.shape[0] != Nind:
+        raise RuntimeError(
+            f"Not enough rows in sources matrix. Got {sources.shape[0]}, expected {Nind}."
+        )
+
     for i in range(Nind):
         source_list[0] = source_indices[i]
         _dijkstra(source_list,
