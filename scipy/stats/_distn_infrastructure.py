@@ -410,7 +410,7 @@ def _skew(data):
 
 
 def _kurtosis(data):
-    """kurtosis is fourth central moment / variance**2 - 3."""
+    """Fisher's excess kurtosis is fourth central moment / variance**2 - 3."""
     data = np.ravel(data)
     mu = data.mean()
     m2 = ((data - mu)**2).mean()

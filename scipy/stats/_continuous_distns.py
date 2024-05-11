@@ -9112,6 +9112,15 @@ class irwinhall_gen(rv_continuous):
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
+    def _munp(self, order, n):
+        # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
+        # page 640, with m=n, j=n+order
+        def vmunp(order, n):
+            return sc.stirling2(n+order, n, exact=True) / sc.comb(n+order, n, exact=True)
+
+        # exact rationals, but we convert to float anyway
+        return np.vectorize(vmunp, otypes=[np.float64])(order, n)
+
     @staticmethod
     def _cardbspl(n):
         t = np.arange(n+1) 
@@ -9132,7 +9141,6 @@ class irwinhall_gen(rv_continuous):
             return self._cardbspl(n).antiderivative()(n-x)
         return np.vectorize(vsf, otypes=[np.float64])(x, n)
 
-
     def _rvs(self, n, size=None, random_state=None, *args):
         @_vectorize_rvs_over_shapes
         def _rvs1(n, size=None, random_state=None):
@@ -9149,7 +9157,7 @@ class irwinhall_gen(rv_continuous):
         # E(IH((n))) = n*E(U(0,1)) = n/2
         # Var(IH((n))) = n*Var(U(0,1)) = n/12
         # Skew(IH((n))) = Skew(U(0,1))/sqrt(n) = 0
-        # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n)
+        # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n) -- Fisher's excess kurtosis
         # See e.g. https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
 
         return n/2, n/12, 0, -6/(5*n)
