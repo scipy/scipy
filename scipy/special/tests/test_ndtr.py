@@ -7,7 +7,7 @@ def test_ndtr():
     assert_equal(sc.ndtr(0), 0.5)
     assert_allclose(sc.ndtr(1), 0.8413447460685429)
     with pytest.warns(sc.SpecialFunctionWarning):
-        sc.ndtr(25)
+        sc.ndtr(25) # ndtr(25) returns 1.0 but it should raise a warning  because the results of ndtr should be in (0,1), not [0,1].
 
 
 class TestNdtri:
