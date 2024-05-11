@@ -265,10 +265,10 @@ namespace cephes {
             y = 0.5 * erfc(z);
             if (x > 0) {
                 t = 1.0 - y;
-				if (t == 1.0 && y != 0) {
-					set_error("ndtr", SF_ERROR_LOSS, NULL);
-				}
-				return t;
+		if (t == 1.0 && y != 0) {
+			set_error("ndtr", SF_ERROR_LOSS, NULL);
+		}
+		return t;
             }
         }
 
