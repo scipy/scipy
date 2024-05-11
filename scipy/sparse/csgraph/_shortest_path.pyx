@@ -3,7 +3,7 @@ Routines for performing shortest-path graph searches
 
 The main interface is in the function :func:`shortest_path`.  This
 calls cython routines that compute the shortest path using
-the Floyd-Warshall algorithm, Dijkstra's algorithm with Fibonacci Heaps,
+the Floyd-Warshall algorithm, Dijkstra's algorithm with priority queue,
 the Bellman-Ford algorithm, or Johnson's Algorithm.
 
 Yen's k-Shortest Path Algorithm is available for
@@ -23,7 +23,6 @@ from scipy.sparse._sputils import convert_pydata_sparse_to_scipy
 
 cimport cython
 
-from libc.stdlib cimport malloc, free
 from libc.math cimport INFINITY
 
 from libcpp.queue cimport priority_queue
@@ -71,9 +70,9 @@ def shortest_path(csgraph, method='auto',
                      Computational cost is approximately ``O[N^3]``.
                      The input csgraph will be converted to a dense representation.
 
-           'D'    -- Dijkstra's algorithm with Fibonacci heaps.
-                     Computational cost is approximately ``O[N(N*k + N*log(N))]``,
-                     where ``k`` is the average number of connected edges per node.
+           'D'    -- Dijkstra's algorithm with priority queue.
+                     Computational cost is approximately ``O[(E + N)*log(N)]``,
+                     where ``E`` is the number of edges in the graph.
                      The input csgraph will be converted to a csr representation.
 
            'BF'   -- Bellman-Ford algorithm.
@@ -427,7 +426,7 @@ def dijkstra(csgraph, directed=True, indices=None,
     dijkstra(csgraph, directed=True, indices=None, return_predecessors=False,
              unweighted=False, limit=np.inf, min_only=False)
 
-    Dijkstra algorithm using Fibonacci Heaps
+    Dijkstra algorithm using priority queue
 
     .. versionadded:: 0.11.0
 
@@ -612,7 +611,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         csgraph_indices = csgraph_indices.astype(ITYPE)
     if csgraph_indptr.dtype != ITYPE:
         csgraph_indptr = csgraph_indptr.astype(ITYPE)
-    
+
     if directed:
         # for null transposed CSR
         dummy_double_array = np.empty(0, dtype=DTYPE)
@@ -719,7 +718,6 @@ cdef int _dijkstra(
         unsigned int Nind = source_indices.shape[0]
         unsigned int N = dist_matrix.shape[0]
         unsigned int i, j_source
-        DTYPE_t next_val
         int return_pred = (pred.size > 0)
         int return_sources = (sources.size > 0)
         int directed = (csrT_weights.size == 0)
@@ -728,19 +726,19 @@ cdef int _dijkstra(
         # to treat it as a min-heap instead of max-heap
         dijkstra_queue_t heap = dijkstra_queue_t()
         dist_index_pair_t v
-    
+
     for i in range(Nind):
         j_source = source_indices[i]
         dist_matrix[j_source] = 0
         heap.push(dist_index_pair_t(-dist_matrix[j_source], j_source))
         if return_sources:
             sources[j_source] = j_source
-    
+
     if return_pred:
         assert pred.size == N
     if return_sources:
         assert sources.size == N
-    
+
     while heap.size():
         v = heap.top()
         heap.pop()
@@ -753,7 +751,7 @@ cdef int _dijkstra(
         # and the total complexity is O(Mlog(M)) per source
         if dist_matrix[v.second] < v.first :
             continue
-        
+
         _dijkstra_scan_heap(heap, v, csr_weights, csr_indices, csr_indptr,
                             dist_matrix, pred, return_pred,
                             sources, return_sources, limit)
@@ -781,7 +779,7 @@ cdef int _dijkstra_multi_separate(
         unsigned int Nind = source_indices.shape[0]
         unsigned int i
         int source_list[1]
-    
+
     assert dist_matrix.shape[0] == Nind
     assert pred.shape[0] == Nind
     assert sources.shape[0] == Nind
