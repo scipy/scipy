@@ -1,5 +1,5 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_warns
+from numpy.testing import assert_equal, assert_allclose
 import scipy.special as sc
 
 
