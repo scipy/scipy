@@ -119,6 +119,15 @@ using func_llld_dd_t = void (*)(long, long, long, double, double &, double &);
 using func_lllf_fff_t = void (*)(long, long, long, float, float &, float &, float &);
 using func_llld_ddd_t = void (*)(long, long, long, double, double &, double &, double &);
 
+using func_qqqF_F_t = complex<float> (*)(long long int, long long int, long long int, complex<float>);
+using func_qqqD_D_t = complex<double> (*)(long long int, long long int, long long int, complex<double>);
+
+using func_qqqf_ff_t = void (*)(long long int, long long int, long long int, float, float &, float &);
+using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, double, double &, double &);
+
+using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
+using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
+
 using func_llff_F_t = complex<float> (*)(long, long, float, float);
 using func_lldd_D_t = complex<double> (*)(long, long, double, double);
 using func_ffff_f_t = float (*)(float, float, float, float);
@@ -543,12 +552,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *clpmn = Py_BuildValue(
         "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_lllF_F_t>(::clpmn), static_cast<func_lllD_D_t>(::clpmn)}, "clpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqqF_F_t>(::clpmn), static_cast<func_qqqD_D_t>(::clpmn)}, "clpmn", nullptr),
         SpecFun_NewUFunc(
-            {static_cast<func_lllf_ff_t>(::clpmn), static_cast<func_llld_dd_t>(::clpmn)}, 2, "clpmn", nullptr
+            {static_cast<func_qqqf_ff_t>(::clpmn), static_cast<func_qqqd_dd_t>(::clpmn)}, 2, "clpmn", nullptr
         ),
         SpecFun_NewUFunc(
-            {static_cast<func_lllf_fff_t>(::clpmn), static_cast<func_llld_ddd_t>(::clpmn)}, 3, "clpmn", nullptr
+            {static_cast<func_qqqf_fff_t>(::clpmn), static_cast<func_qqqd_ddd_t>(::clpmn)}, 3, "clpmn", nullptr
         )
     );
     PyModule_AddObjectRef(_special_ufuncs, "clpmn", clpmn);
