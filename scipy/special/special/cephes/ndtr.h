@@ -266,7 +266,7 @@ namespace cephes {
             if (x > 0) {
                 t = 1.0 - y;
 		if (t == 1.0 && y != 0) {
-			set_error("ndtr", SF_ERROR_LOSS, NULL);
+		    set_error("ndtr", SF_ERROR_LOSS, NULL);
 		}
 		return t;
             }
