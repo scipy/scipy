@@ -222,9 +222,9 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         return 0;
     }
 
-    T ls = 1;
+    T type_sign = 1;
     if (type == 3) {
-        ls = -1;
+        type_sign = -1;
     }
 
     if (m == 1) {
@@ -254,10 +254,10 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
     }
 
     if (m < 0) {
-        return x * ls * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
+        return x * type_sign * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
     }
 
-    return -T(4 * (m - 2) * m + 3) * T(m) * ls * x * assoc_legendre_p_diag(m - 2, type, x);
+    return -T(4 * (m - 2) * m + 3) * T(m) * type_sign * x * assoc_legendre_p_diag(m - 2, type, x);
 }
 
 template <typename T>
@@ -281,15 +281,8 @@ T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_
     }
 
     T type_sign;
-    switch (type) {
-    case 2:
-        type_sign = 1;
-        break;
-    case 3:
+    if (type == 3) {
         type_sign = -1;
-        break;
-    default:
-        break;
     }
 
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
