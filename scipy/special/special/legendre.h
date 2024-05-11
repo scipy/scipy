@@ -275,32 +275,42 @@ using remove_complex_t = typename remove_complex<T>::type;
 
 template <typename T>
 T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
-    using R = remove_complex_t<T>;
-
     int m_abs = std::abs(m);
     if (m_abs > n) {
         return 0;
     }
 
+    T type_sign;
+    switch (type) {
+    case 2:
+        type_sign = 1;
+        break;
+    case 3:
+        type_sign = -1;
+        break;
+    default:
+        break;
+    }
+
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
         if (m == 0) {
-            return T(n) * T(n + 1) * std::pow(std::real(z), R(n + 1)) / T(2);
+            return T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
         }
 
         if (m == 1) {
-            return std::pow(std::real(z), R(n)) * std::numeric_limits<R>::infinity();
+            return std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
         }
 
         if (m == 2) {
-            return -T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(std::real(z), R(n + 1)) / T(4);
+            return -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
         }
 
         if (m == -2) {
-            return -std::pow(std::real(z), R(n + 1)) / T(4);
+            return -type_sign * std::pow(z, T(n + 1)) / T(4);
         }
 
         if (m == -1) {
-            return -std::pow(std::real(z), R(n)) * std::numeric_limits<R>::infinity();
+            return -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
         }
 
         return 0;

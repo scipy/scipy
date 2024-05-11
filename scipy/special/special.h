@@ -39,7 +39,7 @@ void lpn_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
 }
 
 template <typename T>
-T lpmn(long m, long n, T z) {
+T lpmn(long long int m, long long int n, T z) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -51,7 +51,7 @@ T lpmn(long m, long n, T z) {
 }
 
 template <typename T>
-void lpmn(long m, long n, T z, T &res, T &res_jac) {
+void lpmn(long long int m, long long int n, T z, T &res, T &res_jac) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -63,7 +63,7 @@ void lpmn(long m, long n, T z, T &res, T &res_jac) {
 }
 
 template <typename T>
-void lpmn(long m, long n, T z, T &res, T &res_jac, T &res_hess) {
+void lpmn(long long int m, long long int n, T z, T &res, T &res_jac, T &res_hess) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
