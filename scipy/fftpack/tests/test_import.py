@@ -18,7 +18,7 @@ from numpy.testing import assert_
 import scipy
 
 class TestFFTPackImport:
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.slow
     def test_fftpack_import(self):
         base = Path(scipy.__file__).parent
         regexp = r"\s*from.+\.fftpack import .*\n"

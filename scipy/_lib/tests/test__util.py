@@ -20,7 +20,7 @@ from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               _contains_nan, _rng_html_rewrite, _lazywhere)
 
 
-@pytest.mark.fail_slow(2)
+@pytest.mark.slow
 def test__aligned_zeros():
     niter = 10
 

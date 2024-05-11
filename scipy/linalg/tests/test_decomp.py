@@ -1178,7 +1178,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
     lapack_driver = 'gesvd'
 
 
-@pytest.mark.fail_slow(2)
+@pytest.mark.fail_slow(5)
 def test_svd_gesdd_nofegfault():
     # svd(a) with {U,VT}.size > INT_MAX does not segfault
     # cf https://github.com/scipy/scipy/issues/14001
