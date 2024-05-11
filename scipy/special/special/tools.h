@@ -41,7 +41,7 @@ namespace detail {
          *     of non-convergence.
          */
         T result = init_val;
-        T term, previous;
+        T term;
         for (std::uint64_t i = 0; i < max_terms; ++i) {
             term = g();
             result += term;

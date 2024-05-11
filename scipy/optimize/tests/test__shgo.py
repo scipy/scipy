@@ -637,7 +637,7 @@ class TestShgoArguments:
     def test_7_1_minkwargs(self):
         """Test the minimizer_kwargs arguments for solvers with constraints"""
         # Test solvers
-        for solver in ['COBYLA', 'SLSQP']:
+        for solver in ['COBYLA', 'COBYQA', 'SLSQP']:
             # Note that passing global constraints to SLSQP is tested in other
             # unittests which run test4_1 normally
             minimizer_kwargs = {'method': solver,

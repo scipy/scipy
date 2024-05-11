@@ -345,6 +345,8 @@ class TestUtilities:
         self._check_barycentric_transforms(tri)
 
     @pytest.mark.slow
+    @pytest.mark.fail_slow(10)
+    # OK per https://github.com/scipy/scipy/pull/20487#discussion_r1572684869
     def test_more_barycentric_transforms(self):
         # Triangulate some "nasty" grids
 
@@ -1176,3 +1178,11 @@ class Test_HalfspaceIntersection:
             assert set(a) == set(b)  # facet orientation can differ
 
         assert_allclose(hs.dual_points, qhalf_points)
+
+
+@pytest.mark.parametrize("diagram_type", [Voronoi, qhull.Delaunay])
+def test_gh_20623(diagram_type):
+    rng = np.random.default_rng(123)
+    invalid_data = rng.random((4, 10, 3))
+    with pytest.raises(ValueError, match="dimensions"):
+        diagram_type(invalid_data)
