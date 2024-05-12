@@ -137,13 +137,10 @@ T assoc_legendre_p_diag(int m, int type, T x) {
     T res = 1;
 
     T type_sign;
-    switch (type) {
-    case 3:
+    if (type == 3) {
         type_sign = -1;
-        break;
-    default:
+    } else {
         type_sign = 1;
-        break;
     }
 
     // need to take care with complex arithmetic, due to signed zeros and sqrt(0j) != sqrt(-0j)
@@ -212,16 +209,6 @@ T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...arg
     }
 
     return p;
-}
-
-template <typename T>
-T copysign_(T x, T s) {
-    return std::copysign(x, s);
-}
-
-template <typename T>
-std::complex<T> copysign_(std::complex<T> x, T s) {
-    return std::complex(std::copysign(std::real(x), s), std::copysign(std::imag(x), s));
 }
 
 template <typename T>

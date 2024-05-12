@@ -241,39 +241,40 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("type", [2, 3])
-    def test_clpmn_all_specific(self, type, shape):
+    @pytest.mark.parametrize("z_min, z_max", [(-10 - 10j, 10 + 10j), (-10j, 10j)])
+    def test_clpmn_all_specific(self, shape, type, z_min, z_max):
         rng = np.random.default_rng(1234)
 
-        z = rng.uniform(-10, 10, shape) + 1j * rng.uniform(-10, 10, shape)
+        z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
-        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = True)
+        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
 #        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
         np.testing.assert_allclose(p[0, 1], lpmn_ref(0, 1, z, type = type))
         np.testing.assert_allclose(p[1, 1], lpmn_ref(1, 1, z, type = type))
-#        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, z, type = type))
+        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, z, type = type))
 
         np.testing.assert_allclose(p[0, 2], lpmn_ref(0, 2, z, type = type))
         np.testing.assert_allclose(p[1, 2], lpmn_ref(1, 2, z, type = type))
         np.testing.assert_allclose(p[2, 2], lpmn_ref(2, 2, z, type = type))
-#        np.testing.assert_allclose(p[-2, 2], lpmn_ref(-2, 2, z, type = type))
- #       np.testing.assert_allclose(p[-1, 2], lpmn_ref(-1, 2, z, type = type))
+        np.testing.assert_allclose(p[-2, 2], lpmn_ref(-2, 2, z, type = type))
+        np.testing.assert_allclose(p[-1, 2], lpmn_ref(-1, 2, z, type = type))
  
         np.testing.assert_allclose(p[0, 3], lpmn_ref(0, 3, z, type = type))
         np.testing.assert_allclose(p[1, 3], lpmn_ref(1, 3, z, type = type))
         np.testing.assert_allclose(p[2, 3], lpmn_ref(2, 3, z, type = type))
         np.testing.assert_allclose(p[3, 3], lpmn_ref(3, 3, z, type = type))
-      #  np.testing.assert_allclose(p[-3, 3], lpmn_ref(-3, 3, z, type = type))
-       # np.testing.assert_allclose(p[-2, 3], lpmn_ref(-2, 3, z, type = type))
-        #np.testing.assert_allclose(p[-1, 3], lpmn_ref(-1, 3, z, type = type))
+        np.testing.assert_allclose(p[-3, 3], lpmn_ref(-3, 3, z, type = type))
+        np.testing.assert_allclose(p[-2, 3], lpmn_ref(-2, 3, z, type = type))
+        np.testing.assert_allclose(p[-1, 3], lpmn_ref(-1, 3, z, type = type))
 
-#        np.testing.assert_allclose(p[0, 4], lpmn_ref(0, 4, z, type = type))
- #       np.testing.assert_allclose(p[1, 4], lpmn_ref(1, 4, z, type = type))
-  #      np.testing.assert_allclose(p[2, 4], lpmn_ref(2, 4, z, type = type))
-   #     np.testing.assert_allclose(p[3, 4], lpmn_ref(3, 4, z, type = type))
-    #    np.testing.assert_allclose(p[4, 4], lpmn_ref(4, 4, z, type = type))
+        np.testing.assert_allclose(p[0, 4], lpmn_ref(0, 4, z, type = type))
+        np.testing.assert_allclose(p[1, 4], lpmn_ref(1, 4, z, type = type))
+        np.testing.assert_allclose(p[2, 4], lpmn_ref(2, 4, z, type = type))
+        np.testing.assert_allclose(p[3, 4], lpmn_ref(3, 4, z, type = type))
+        np.testing.assert_allclose(p[4, 4], lpmn_ref(4, 4, z, type = type))
      #   np.testing.assert_allclose(p[-4, 4], lpmn_ref(-4, 4, z, type = type))
       #  np.testing.assert_allclose(p[-3, 4], lpmn_ref(-3, 4, z, type = type))
        # np.testing.assert_allclose(p[-2, 4], lpmn_ref(-2, 4, z, type = type))
@@ -486,12 +487,6 @@ class TestLegendreFunctions:
         assert P_z.shape == (m + 1, n + 1) + input_shape
         assert P_d_z.shape == (m + 1, n + 1) + input_shape
 
-def make_positive_zeros(x):
-    return np.where(np.abs(x.imag), x.real, x)
-
-def make_negative_zeros(x):
-    return np.where(np.abs(x.imag) == 0, x.real + (-1) * x.imag, x)
-
 def lpmn_ref(m, n, z, *, type = None):
     if (type is None):
         type = np.where(np.abs(z) <= 1, 2, 3)
@@ -517,7 +512,7 @@ def lpmn_ref(m, n, z, *, type = None):
             return out11
 
         if (m == -1):
-            return qs * np.sqrt(ls * (1 - z * z)) / 2
+            return -type_sign * out11 / 2
 
     if (n == 2):
         if (m == 0):
@@ -530,10 +525,10 @@ def lpmn_ref(m, n, z, *, type = None):
             return 3 * type_sign * (1 - z * z)
 
         if (m == -2):
-            return ls * (1 - z * z) / 8
+            return type_sign * (1 - z * z) / 8
 
         if (m == -1):
-            return qs * z * np.sqrt(ls * (1 - z * z)) / 2
+            return -type_sign * z * out11 / 2
 
     if (n == 3):
         if (m == 0):
@@ -543,32 +538,32 @@ def lpmn_ref(m, n, z, *, type = None):
             return 3 * (5 * z * z - 1) * out11 / 2
 
         if (m == 2):
-            return 15 * z * ls * (1 - z * z)
+            return 15 * type_sign * (1 - z * z) * z
 
         if (m == 3):
             return 15 * type_sign * (1 - z * z) * out11
 
         if (m == -3):
-            return (1 - z * z) * qs * ls * np.sqrt(ls * (1 - z * z)) / 48
+            return (z * z - 1) * out11 / 48
 
         if (m == -2):
-            return z * ls * (1 - z * z) / 8
+            return type_sign * (1 - z * z) * z / 8
 
         if (m == -1):
-            return -qs * (1 - 5 * z * z) * np.sqrt(ls * (1 - z * z)) / 8
+            return type_sign * (1 - 5 * z * z) * out11 / 8
 
     if (n == 4):
         if (m == 0):
             return ((35 * z * z - 30) * z * z + 3) / 8
 
         if (m == 1):
-            return 5 * ls * qs * z * np.sqrt(ls * (1 - z * z)) * (3 - 7 * z * z) / 2
+            return 5 * (7 * z * z - 3) * z * out11 / 2
 
         if (m == 2):
-            return -15 * ls * (1 - (8 - 7 * z * z) * z * z) / 2
+            return -15 * type_sign * (1 - (8 - 7 * z * z) * z * z) / 2
 
         if (m == 3):
-            return -105 * z * qs * (1 - z * z) * np.sqrt(ls * (1 - z * z))
+            return 105 * type_sign * (1 - z * z) * z * out11
 
         if (m == 4):
             return 105 * np.square(z * z - 1)
