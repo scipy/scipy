@@ -66,6 +66,10 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
         set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
+    if (x == 0.0) {
+        // If x is +/-0.0, return +/-0.0 to agree with the limiting behavior.
+        return x;
+    }
     if (std::isinf(v)) {
         return 0.0;
     }
