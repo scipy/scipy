@@ -217,9 +217,11 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         return 0;
     }
 
-    T type_sign = 1;
+    T type_sign;
     if (type == 3) {
         type_sign = -1;
+    } else {
+        type_sign = 1;
     }
 
     if (m == 1) {
