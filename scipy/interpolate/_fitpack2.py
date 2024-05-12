@@ -25,7 +25,7 @@ from numpy import zeros, concatenate, ravel, diff, array, ones  # noqa:F401
 import numpy as np
 
 from . import _fitpack_impl
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype

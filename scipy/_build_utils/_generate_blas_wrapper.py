@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Generate wrappers to dispatch BLAS/LAPACK calls to the properly prefixed/
 suffixed symbols.
