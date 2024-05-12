@@ -136,24 +136,36 @@ T assoc_legendre_p_diag(int m, int type, T x) {
 
     T res = 1;
 
-    T ls = 1;
-    if (type == 3) {
-        ls = -1;
+    T type_sign;
+    switch (type) {
+    case 3:
+        type_sign = -1;
+        break;
+    default:
+        type_sign = 1;
+        break;
     }
+
+    //  //  if (std::imag(w) == 0 && std::signbit(std::imag(w))) {
+    // see https://cplusplus.github.io/LWG/issue2597
+    //  w = std::conj(w);
+    //    }
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        res *= -ls * std::sqrt(ls * (T(1) - x * x));
         if (type == 3) {
+            res *= std::sqrt(x * x - T(1));
             if (std::real(x) < 0) {
-                res *= -1;
+                res = -res;
             }
+        } else {
+            res *= -std::sqrt(T(1) - x * x);
         }
     }
 
     // unroll the loop to avoid the sqrt
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        res *= T(2 * j - 1) * T(2 * j + 1) * ls * (T(1) - x * x);
+        res *= T(2 * j - 1) * T(2 * j + 1) * type_sign * (T(1) - x * x);
     }
 
     if (m < 0) {
@@ -686,22 +698,13 @@ void clpmn(std::complex<T> z, long ntype, OutputMat1 cpm, OutputMat2 cpd) {
     } else {
         // sqrt(z**2 - 1) with branch cut between [-1, 1]
 
-        zs = (z * z - static_cast<T>(1));
-        if (std::imag(zs) == 0 && std::signbit(std::imag(zs))) {
-            zs = std::conj(zs);
-        }
-
+        zs = z * z - static_cast<T>(1);
         zq = std::sqrt(zs);
-
-        std::complex<T> zq2 = zq;
 
         if (std::real(z) < 0) {
             zq = -zq;
         }
         ls = 1;
-
-        std::cout << "z = " << z << "; z^2 - 1 = " << zs << "; sqrt(z^2 - 1) = " << zq2 << "; out = " << zq
-                  << std::endl;
     }
 
     for (int i = 1; i <= m; i++) {

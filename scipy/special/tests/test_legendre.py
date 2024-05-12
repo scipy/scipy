@@ -254,9 +254,9 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[0, 1], lpmn_ref(0, 1, z, type = type))
         np.testing.assert_allclose(p[1, 1], lpmn_ref(1, 1, z, type = type))
 
-#        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, z, type = type))
-
         return
+
+#        np.testing.assert_allclose(p[-1, 1], lpmn_ref(-1, 1, z, type = type))
 
         np.testing.assert_allclose(p[0, 2], lpmn_ref(0, 2, z, type = type))
         np.testing.assert_allclose(p[1, 2], lpmn_ref(1, 2, z, type = type))
@@ -506,6 +506,8 @@ def lpmn_ref(m, n, z, *, type = None):
 
     qs = branch_sign
 
+    w = np.where(type == 3, z * z - 1, 1 - z * z)
+
     if (n == 0):
         if (m == 0):
             return np.ones_like(z)
@@ -515,7 +517,7 @@ def lpmn_ref(m, n, z, *, type = None):
             return z
 
         if (m == 1):
-            return branch_sign * -type_sign * np.sqrt(type_sign * (1 - z * z))
+            return branch_sign * -type_sign * np.sqrt(w)
 
         if (m == -1):
             return qs * np.sqrt(ls * (1 - z * z)) / 2
