@@ -157,6 +157,10 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     xs = (xl0, xr0)
     temp = eim._initialize(func, xs, args)
     func, xs, fs, args, shape, dtype = temp  # line split for PEP8
+    xl0, xr0 = xs
+    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
+    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    invalid_bracket = ~((xmin <= xl0) & (xl0 < xr0) & (xr0 <= xmax))
 
     # The approach is to treat the left and right searches as though they were
     # (almost) totally independent one-sided bracket searches. (The interaction
@@ -165,6 +169,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # `x` is the "moving" end of the bracket
     x = np.concatenate(xs)
     f = np.concatenate(fs)
+    invalid_bracket = np.concatenate((invalid_bracket, invalid_bracket))
     n = len(x) // 2
 
     # `x_last` is the previous location of the moving end of the bracket. If
@@ -177,19 +182,6 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # We don't need to retain the corresponding function value, since the
     # fixed end of the bracket is only needed to compute the new value of the
     # moving end; it is never returned.
-    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False)
-    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False)
-
-    status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
-    # Stop with error code when initial bracket is invalid.
-    i = ~((xmin <= xl0) & (xl0 < xr0) & (xr0 <= xmax))
-    if i.ndim == 0:
-        i = np.array([i, i])
-    else:
-        i = np.concatenate((i, i))
-
-    xmin, xmax, i = xmin.ravel(), xmax.ravel(), i.ravel()
-    status[i] = eim._EINPUTERR
     limit = np.concatenate((xmin, xmax))
 
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=False).ravel()
@@ -213,8 +205,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     d[i] = x[i] - x0[i]
     d[ni] = limit[ni] - x[ni]
 
-
-    # We'll terminate with error status when initial bracket is invalid.
+    status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
+    status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 1  # one function evaluation per side performed above
 
     work = _RichResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
@@ -575,14 +567,10 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     fl0, fm0, fr0 = fs
     xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
     xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    invalid_bracket = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
     # We will modify factor later on so make a copy. np.broadcast_to returns
     # a read-only view.
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
-
-    # Stop with error code when initial bracket is invalid.
-    status = np.full_like(xl0, eim._EINPROGRESS, dtype=int)
-    i = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
-    status[i] = eim._EINPUTERR
 
     # To simplify the logic, swap xl and xr if f(xl) < f(xr). We should always be
     # marching downhill in the direction from xl to xr.
@@ -601,6 +589,9 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     # Step size is divided by factor for case where there is a limit.
     factor[limited] = 1 / factor[limited]
+
+    status = np.full_like(xl0, eim._EINPROGRESS, dtype=int)
+    status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 3
 
     work = _RichResult(xl=xl0, xm=xm0, xr=xr0, xr0=xr0, fl=fl0, fm=fm0, fr=fr0,
