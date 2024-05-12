@@ -280,6 +280,8 @@ T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_
     T type_sign;
     if (type == 3) {
         type_sign = -1;
+    } else {
+        type_sign = 1;
     }
 
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {

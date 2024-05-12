@@ -1926,6 +1926,14 @@ def clpmn(m, n, z, type=3, *, legacy = True):
     out = np.concatenate([out_pos, np.flip(out_neg[1:], axis = 0)], axis = 0)
     out_jac = np.concatenate([out_jac_pos, np.flip(out_jac_neg[1:], axis = 0)], axis = 0)
 
+#    p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
+ #   if (m >= 0):
+  #      p = p[:(m + 1)]
+   #     pd = pd[:(m + 1)]
+    #else:
+     #   p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
+      #  pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
+
     return out, out_jac
 
 def lqmn(m, n, z):

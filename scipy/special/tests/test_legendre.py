@@ -247,8 +247,8 @@ class TestLegendreFunctions:
 
         z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
-#        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
-        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
+        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
+#        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
@@ -291,8 +291,6 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[2, 2], lpmn_jac(2, 2, z, type = type))
         np.testing.assert_allclose(p_jac[-2, 2], lpmn_jac(-2, 2, z, type = type))
         np.testing.assert_allclose(p_jac[-1, 2], lpmn_jac(-1, 2, z, type = type))
-
-        return 
 
         np.testing.assert_allclose(p_jac[0, 3], lpmn_jac(0, 3, z, type = type))
         np.testing.assert_allclose(p_jac[1, 3], lpmn_jac(1, 3, z, type = type))
@@ -585,11 +583,7 @@ def lpmn_jac(m, n, z, type = None):
     type_sign = np.where(type == 3, -1, 1)
     branch_sign = np.where(type == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
 
-    out11_ = type_sign * branch_sign * np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
-    out11_div_z = -type_sign / out11_
-
-    qs = -branch_sign
-    ls = type_sign
+    out11_div_z = -branch_sign / np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
 
     if (n == 0):
         if (m == 0):
@@ -626,49 +620,49 @@ def lpmn_jac(m, n, z, type = None):
             return 3 * (5 * z * z - 1) / 2
 
         if (m == 1):
-            return -qs * 3 * (11 - 15 * z * z) * z / (2 * np.sqrt(ls * (1 - z * z)))
+            return 3 * (15 * z * z - 11) * z * out11_div_z / 2
 
         if (m == 2):
-            return 15 * ls * (1 - 3 * z * z)
+            return 15 * type_sign * (1 - 3 * z * z)
 
         if (m == 3):
-            return 45 * z * qs * np.sqrt(ls * (1 - z * z))
+            return 45 * type_sign * (1 - z * z) * z * out11_div_z
 
         if (m == -3):
-            return -z * qs * ls * np.sqrt(ls * (1 - z * z)) / 16
+            return (z * z - 1) * z * out11_div_z / 16
 
         if (m == -2):
-            return ls * (1 - 3 * z * z) / 8
+            return type_sign * (1 - 3 * z * z) / 8
 
         if (m == -1):
-            return qs * ls * (11 - 15 * z * z) * z / (8 * np.sqrt(ls * (1 - z * z)))
+            return type_sign * (11 - 15 * z * z) * z * out11_div_z / 8
 
     if (n == 4):
         if (m == 0):
             return 5 * (7 * z * z - 3) * z / 2
 
         if (m == 1):
-            return 5 * qs * (28 * z * z * z * z - 27 * z * z + 3) / (2 * np.sqrt(ls * (1 - z * z)))
+            return 5 * ((28 * z * z - 27) * z * z + 3) * out11_div_z / 2
 
         if (m == 2):
-            return 30 * ls * (4 - 7 * z * z) * z
+            return 30 * type_sign * (4 - 7 * z * z) * z
 
         if (m == 3):
-            return 105 * (4 * z * z - 1) * qs * np.sqrt(ls * (1 - z * z))
+            return 105 * type_sign * ((5 - 4 * z * z) * z * z - 1) * out11_div_z
 
         if (m == 4):
-            return -420 * (1 - z * z) * z
+            return 420 * (z * z - 1) * z
 
         if (m == -4):
-            return -(1 - z * z) * z / 96
+            return (z * z - 1) * z / 96
 
         if (m == -3):
-            return ls * (1 - 4 * z * z) * qs * np.sqrt(ls * (1 - z * z)) / 48
+            return ((4 * z * z - 5) * z * z + 1) * out11_div_z / 48
 
         if (m == -2):
-            return ls * (4 - 7 * z * z) * z / 12
+            return type_sign * (4 - 7 * z * z) * z / 12
 
         if (m == -1):
-            return ls * qs * (-3 + 27 * z * z - 28 * z * z * z * z) / (8 * np.sqrt(ls * (1 - z * z)))
+            return type_sign * ((27 - 28 * z * z) * z * z - 3) * out11_div_z / 8
 
     raise NotImplementedError
