@@ -1313,8 +1313,9 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
+        k = k.astype(np.float64)
         # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
-        Pk = 1.0 / special.zeta(a, 1) / k**a
+        Pk = 1.0 / special.zeta(a, 1) * k**-a
         return Pk
 
     def _munp(self, n, a):
