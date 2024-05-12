@@ -1,6 +1,5 @@
 import math
 import numpy as np
-from ._zeros_py import _rtol
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 from scipy._lib._array_api import xp_clip, xp_minimum, xp_sign
@@ -12,7 +11,7 @@ from scipy._lib._array_api import xp_clip, xp_minimum, xp_sign
 # - figure out how to replace the new `try`/`except`s
 
 
-def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
+def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
                   fatol=None, frtol=0, maxiter=None, callback=None):
     """Find the root of an elementwise function using Chandrupatla's algorithm.
 
@@ -141,7 +140,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
     nit, nfev = 0, 2  # two function evaluations performed above
     finfo = xp.finfo(dtype)
     xatol = 4*finfo.smallest_normal if xatol is None else xatol
-    xrtol = _rtol if xrtol is None else xrtol
+    xrtol = 4*finfo.eps if xrtol is None else xrtol
     fatol = finfo.smallest_normal if fatol is None else fatol
     frtol = frtol * xp_minimum(xp.abs(f1), xp.abs(f2))
     maxiter = (math.log2(finfo.max) - math.log2(finfo.smallest_normal)

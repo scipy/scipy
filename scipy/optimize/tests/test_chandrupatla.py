@@ -820,10 +820,8 @@ class TestChandrupatla(TestScalarRootFinders):
         with np.errstate(divide='ignore', invalid='ignore'):
             res = _chandrupatla_root(f, a, b)
 
-        if not is_torch(xp):
-            # torch fails with float32 but passes with 64? debug
-            assert xp.all(res.success)
-            xp_assert_close(res.x[1:], xp.full((3,), res.x[0]))
+        assert xp.all(res.success)
+        xp_assert_close(res.x[1:], xp.full((3,), res.x[0]))
 
         # Test that integers are not passed to `f`
         # (otherwise this would overflow)
