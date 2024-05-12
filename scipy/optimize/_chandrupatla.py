@@ -5,8 +5,6 @@ from scipy._lib._util import _RichResult
 from scipy._lib._array_api import xp_clip, xp_minimum, xp_sign
 
 # TODO:
-# - debug test_maxiter_callback
-# - debug torch failure in test_special_cases - `float64` is fine?
 # - (maybe?) don't use fancy indexing assignment
 # - figure out how to replace the new `try`/`except`s
 

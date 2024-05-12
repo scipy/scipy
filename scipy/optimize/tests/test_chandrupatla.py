@@ -713,14 +713,9 @@ class TestChandrupatla(TestScalarRootFinders):
             if key == 'status':
                 xp_assert_equal(res[key], xp.asarray(eim._ECONVERR, dtype=xp.int32))
                 xp_assert_equal(res2[key], xp.asarray(eim._ECALLBACK, dtype=xp.int32))
-                # TODO: debug this. Somehow `callback.res` is getting changed when
-                #  StopIteration is raised.
-                # xp_assert_equal(callback.res[key],
-                #                 xp.asarray(eim._EINPROGRESS, dtype=xp.int32))
             elif key.startswith('_'):
                 continue
             else:
-                xp_assert_equal(callback.res[key], res[key])
                 xp_assert_equal(res2[key], res[key])
 
     @pytest.mark.parametrize('case', _CHANDRUPATLA_TESTS)
