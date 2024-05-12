@@ -146,11 +146,7 @@ T assoc_legendre_p_diag(int m, int type, T x) {
         break;
     }
 
-    //  //  if (std::imag(w) == 0 && std::signbit(std::imag(w))) {
-    // see https://cplusplus.github.io/LWG/issue2597
-    //  w = std::conj(w);
-    //    }
-
+    // need to take care with complex arithmetic, due to signed zeros and sqrt(0j) != sqrt(-0j)
     bool m_odd = m_abs % 2;
     if (m_odd) {
         if (type == 3) {
