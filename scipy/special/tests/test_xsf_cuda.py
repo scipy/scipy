@@ -17,12 +17,12 @@ except ImportError:
 
 def get_test_cases():
     cases_source = [
-        (sc.beta, "cephes/beta.h", "out0 = sc::cephes::beta(in0, in1)"),
-        (sc.binom, "binom.h", "out0 = sc::binom(in0, in1)"),
-        (sc.digamma, "digamma.h", "sc::digamma(in0)"),
-        (sc.expn, "cephes/expn.h", "out0 = sc::cephes::expn(in0, in1)"),
-        (sc.hyp2f1, "hyp2f1.h", "out0 = sc::hyp2f1(in0, in1, in2, in3)"),
-        (sc._ufuncs._lambertw, "lambertw.h", "out0 = sc::lambertw(in0, in1, in2)"),
+        (sc.beta, "cephes/beta.h", "out0 = special::cephes::beta(in0, in1)"),
+        (sc.binom, "binom.h", "out0 = special::binom(in0, in1)"),
+        (sc.digamma, "digamma.h", "special::digamma(in0)"),
+        (sc.expn, "cephes/expn.h", "out0 = special::cephes::expn(in0, in1)"),
+        (sc.hyp2f1, "hyp2f1.h", "out0 = special::hyp2f1(in0, in1, in2, in3)"),
+        (sc._ufuncs._lambertw, "lambertw.h", "out0 = special::lambertw(in0, in1, in2)"),
     ]
 
     cases = []
