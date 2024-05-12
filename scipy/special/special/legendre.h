@@ -685,12 +685,23 @@ void clpmn(std::complex<T> z, long ntype, OutputMat1 cpm, OutputMat2 cpd) {
         ls = -1;
     } else {
         // sqrt(z**2 - 1) with branch cut between [-1, 1]
+
         zs = (z * z - static_cast<T>(1));
+        if (std::imag(zs) == 0 && std::signbit(std::imag(zs))) {
+            zs = std::conj(zs);
+        }
+
         zq = std::sqrt(zs);
+
+        std::complex<T> zq2 = zq;
+
         if (std::real(z) < 0) {
             zq = -zq;
         }
         ls = 1;
+
+        std::cout << "z = " << z << "; z^2 - 1 = " << zs << "; sqrt(z^2 - 1) = " << zq2 << "; out = " << zq
+                  << std::endl;
     }
 
     for (int i = 1; i <= m; i++) {
