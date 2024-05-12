@@ -5,8 +5,9 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_less
 from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal, xp_assert_less,
-                                   xp_minimum, is_numpy, is_cupy, is_torch)
+from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
+                                   xp_assert_less, xp_minimum, is_numpy, is_cupy,
+                                   is_torch)
 
 from scipy.optimize._chandrupatla import (_chandrupatla_minimize,
                                           _chandrupatla as _chandrupatla_root)
@@ -500,7 +501,6 @@ class TestChandrupatla(TestScalarRootFinders):
         # input shapes.
         p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
         p_xp = xp.asarray(p)
-        args = (p,)
         args_xp = (p_xp,)
         dtype = p_xp.dtype
         xp_test = array_namespace(p_xp)  # need xp.bool
@@ -708,8 +708,10 @@ class TestChandrupatla(TestScalarRootFinders):
             if key == 'status':
                 xp_assert_equal(res[key], xp.asarray(eim._ECONVERR, dtype=xp.int32))
                 xp_assert_equal(res2[key], xp.asarray(eim._ECALLBACK, dtype=xp.int32))
-                # TODO: debug this. Somehow `callback.res` is getting changed when StopIteration is raised.
-                # xp_assert_equal(callback.res[key], xp.asarray(eim._EINPROGRESS, dtype=xp.int32))
+                # TODO: debug this. Somehow `callback.res` is getting changed when
+                #  StopIteration is raised.
+                # xp_assert_equal(callback.res[key],
+                #                 xp.asarray(eim._EINPROGRESS, dtype=xp.int32))
             elif key.startswith('_'):
                 continue
             else:

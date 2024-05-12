@@ -161,7 +161,8 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=_rtol,
     def post_func_eval(x, f, work):
         # [1] Figure 1 (first diamond and boxes)
         # Note: y/n are reversed in figure; compare to BASIC in appendix
-        work.x3, work.f3 = xp.asarray(work.x2, copy=True), xp.asarray(work.f2, copy=True)
+        work.x3, work.f3 = (xp.asarray(work.x2, copy=True),
+                            xp.asarray(work.f2, copy=True))
         j = xp.sign(f) == xp.sign(work.f1)
         nj = ~j
         work.x3[j], work.f3[j] = work.x1[j], work.f1[j]
