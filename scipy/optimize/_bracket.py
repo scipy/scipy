@@ -246,9 +246,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         work.f = f
 
     def check_termination(work):
-        stop = np.zeros_like(work.x, dtype=bool)
         # Condition 0: initial bracket is invalid
-        stop[work.status == eim._EINPUTERR] = True
+        stop = (work.status == eim._EINPUTERR)
 
         # Condition 1: a valid bracket (or the root itself) has been found
         sf = np.sign(work.f)
@@ -623,9 +622,8 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         work.fl, work.fm, work.fr = work.fm, work.fr, f
 
     def check_termination(work):
-        stop = np.zeros_like(work.xr, dtype=bool)
         # Condition 0: Initial bracket is invalid.
-        stop[work.status == eim._EINPUTERR] = True
+        stop = (work.status == eim._EINPUTERR)
 
         # Condition 1: A valid bracket has been found.
         i = (
