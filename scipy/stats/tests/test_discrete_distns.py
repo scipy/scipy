@@ -627,3 +627,14 @@ class TestBetaNBinom:
         #      return float(fourth_moment/var**2 - 3.)
         assert_allclose(betanbinom.stats(n, a, b, moments="k"),
                         ref, rtol=3e-15)
+
+
+class TestZipf:
+    def test_gh20692(self):
+        # test that int32 data for k generates same output as double
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipf(9)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
