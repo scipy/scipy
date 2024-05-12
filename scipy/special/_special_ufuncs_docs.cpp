@@ -398,16 +398,16 @@ const char *binom_doc = R"(
     ``y`` is negative or ``x`` is less than ``y``.
 
     >>> x, y = -3, 2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (nan, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (nan, 0.0)
 
     >>> x, y = -3.1, 2.2
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (18.714147876804432, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (18.714147876804432, 0.0)
 
     >>> x, y = 2.2, 3.1
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (0.037399983365134115, 0.0, 0)
+    >>> (binom(x, y), comb(x, y))
+    (0.037399983365134115, 0.0)
     )";
 
 const char *exp1_doc = R"(
@@ -2754,6 +2754,43 @@ const char *log_expit_doc = R"(
     lose all precision and return 0.
     )";
 
+const char *log_wright_bessel_doc = R"(
+    log_wright_bessel(a, b, x, out=None)
+
+    Natural logarithm of Wright's generalized Bessel function, see `wright_bessel`.
+    This function comes in handy in particular for large values of x.
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the logarithm of Wright's generalized Bessel function
+
+    Notes
+    -----
+    Due to the complexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    .. versionadded:: 1.14.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> log_wright_bessel(a, b, x)
+    1.1947654935299217
+    )";
+
 const char *mathieu_a_doc = R"(
     mathieu_a(m, q, out=None)
 
@@ -3899,6 +3936,8 @@ const char *wright_bessel_doc = R"(
     -----
     Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
+
+    .. versionadded:: 1.7.0
 
     References
     ----------

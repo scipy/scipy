@@ -27,6 +27,13 @@ def pytest_configure(config):
     except Exception:
         config.addinivalue_line(
             "markers", 'timeout: mark a test for a non-default timeout')
+    try:
+        # This is a more reliable test of whether pytest_fail_slow is installed
+        # When I uninstalled it, `import pytest_fail_slow` didn't fail!
+        from pytest_fail_slow import parse_duration  # type: ignore[import-not-found] # noqa:F401,E501
+    except Exception:
+        config.addinivalue_line(
+            "markers", 'fail_slow: mark a test for a non-default timeout failure')
     config.addinivalue_line("markers",
         "skip_xp_backends(*backends, reasons=None, np_only=False, cpu_only=False): "
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
@@ -116,7 +123,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import torch  # type: ignore[import]
+        import torch  # type: ignore[import-not-found]
         xp_available_backends.update({'pytorch': torch})
         # can use `mps` or `cpu`
         torch.set_default_device(SCIPY_DEVICE)
@@ -124,7 +131,7 @@ if SCIPY_ARRAY_API and isinstance(SCIPY_ARRAY_API, str):
         pass
 
     try:
-        import cupy  # type: ignore[import]
+        import cupy  # type: ignore[import-not-found]
         xp_available_backends.update({'cupy': cupy})
     except ImportError:
         pass

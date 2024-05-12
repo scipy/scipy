@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Code generator script to make the Cython BLAS and LAPACK wrappers
 from the files "cython_blas_signatures.txt" and

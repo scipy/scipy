@@ -2,6 +2,9 @@ fs = import('fs')
 if not fs.exists('boost_math/README.md')
   error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('highs/README.md')
+  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
+endif
 if not fs.exists('unuran/README.md')
   error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
 endif
@@ -10,6 +13,9 @@ if not fs.exists('array_api_compat/README.md')
 endif
 if not fs.exists('pocketfft/README.md')
   error('Missing the `pocketfft` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('cobyqa/README.rst')
+  error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
 
 _lib_pxd = [
@@ -194,6 +200,37 @@ py3.install_sources(
     'array_api_compat/array_api_compat/torch/linalg.py',
   ],
   subdir: 'scipy/_lib/array_api_compat/torch',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/__init__.py',
+    'cobyqa/cobyqa/framework.py',
+    'cobyqa/cobyqa/main.py',
+    'cobyqa/cobyqa/models.py',
+    'cobyqa/cobyqa/problem.py',
+    'cobyqa/cobyqa/settings.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/subsolvers/__init__.py',
+    'cobyqa/cobyqa/subsolvers/geometry.py',
+    'cobyqa/cobyqa/subsolvers/optim.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/subsolvers',
+)
+
+py3.install_sources(
+  [
+    'cobyqa/cobyqa/utils/__init__.py',
+    'cobyqa/cobyqa/utils/exceptions.py',
+    'cobyqa/cobyqa/utils/math.py',
+    'cobyqa/cobyqa/utils/versions.py',
+  ],
+  subdir: 'scipy/_lib/cobyqa/utils',
 )
 
 subdir('_uarray')

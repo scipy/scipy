@@ -540,8 +540,8 @@ Constrained minimization of multivariate scalar functions (:func:`minimize`)
 ----------------------------------------------------------------------------
 
 The :func:`minimize` function provides algorithms for constrained minimization,
-namely ``'trust-constr'`` ,  ``'SLSQP'`` and ``'COBYLA'``. They require the constraints
-to be defined using slightly different structures. The method ``'trust-constr'`` requires
+namely ``'trust-constr'`` ,  ``'SLSQP'``, ``'COBYLA'``, and ``'COBYQA'``. They require the constraints
+to be defined using slightly different structures. The methods ``'trust-constr'`` and ``'COBYQA'`` require
 the  constraints to be defined as a sequence of objects :func:`LinearConstraint` and
 :func:`NonlinearConstraint`. Methods ``'SLSQP'`` and ``'COBYLA'``, on the other hand,
 require constraints to be defined  as a sequence of dictionaries, with keys
@@ -1762,7 +1762,7 @@ Finally, we can solve the transformed problem using :func:`linprog`.
     >>> bounds = [x0_bounds, x1_bounds, x2_bounds, x3_bounds]
     >>> result = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq, bounds=bounds)
     >>> print(result.message)
-    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is None)
+    The problem is infeasible. (HiGHS Status 8: model_status is Infeasible; primal_status is At lower/fixed bound)
 
 The result states that our problem is infeasible, meaning that there is no solution vector that satisfies all the
 constraints. That doesn't necessarily mean we did anything wrong; some problems truly are infeasible.

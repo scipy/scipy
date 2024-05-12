@@ -315,7 +315,7 @@ def test_highs_status_message():
                   options=options, integrality=integrality)
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.status == 1
-    assert msg in res.message
+    assert res.message.startswith(msg)
 
     options = {"maxiter": 10}
     res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs-ds',
@@ -334,14 +334,13 @@ def test_highs_status_message():
     assert res.status == 3
     assert res.message.startswith(msg)
 
-    from scipy.optimize._linprog_highs import HighsStatusMapping
-    highs_mapper = HighsStatusMapping()
-    status, message = highs_mapper.get_scipy_status(58, "Hello!")
-    assert status == 4
+    from scipy.optimize._linprog_highs import _highs_to_scipy_status_message
+    status, message = _highs_to_scipy_status_message(58, "Hello!")
     msg = "The HiGHS status code was not recognized. (HiGHS Status 58:"
+    assert status == 4
     assert message.startswith(msg)
 
-    status, message = highs_mapper.get_scipy_status(None, None)
+    status, message = _highs_to_scipy_status_message(None, None)
     msg = "HiGHS did not provide a status code. (HiGHS Status None: None)"
     assert status == 4
     assert message.startswith(msg)
@@ -1702,6 +1701,21 @@ class LinprogCommonTests:
             res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
+
+    def test_bug_20584(self):
+        """
+        Test that when integrality is a list of all zeros, linprog gives the
+        same result as when it is an array of all zeros / integrality=None
+        """
+        c = [1, 1]
+        A_ub = [[-1, 0]]
+        b_ub = [-2.5]
+        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=[0, 0])
+        res2 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=np.asarray([0, 0]))
+        res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
+        assert_equal(res1.x, res2.x)
+        assert_equal(res1.x, res3.x)
+
 
 #########################
 # Method-specific Tests #
