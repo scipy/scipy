@@ -499,7 +499,8 @@ class TestChandrupatla(TestScalarRootFinders):
     def test_vectorization(self, shape, xp):
         # Test for correct functionality, output shapes, and dtypes for various
         # input shapes.
-        p = np.linspace(-0.05, 1.05, 12).reshape(shape) if shape else 0.6
+        p = (np.linspace(-0.05, 1.05, 12).reshape(shape) if shape
+             else np.float64(0.6))
         p_xp = xp.asarray(p)
         args_xp = (p_xp,)
         dtype = p_xp.dtype
@@ -539,7 +540,7 @@ class TestChandrupatla(TestScalarRootFinders):
         if is_numpy(xp):
             xp_assert_equal(res.nfev, ref_nfev)
             assert xp.max(res.nfev) == f.f_evals
-        else:  # different backend (and dtype) may lead to different nfev
+        else:  # different backend may lead to different nfev
             assert res.nfev.shape == shape
             assert res.nfev.dtype == xp.int32
 
@@ -565,14 +566,18 @@ class TestChandrupatla(TestScalarRootFinders):
         assert xp.all((res.x[finite] == res.xl[finite])
                       | (res.x[finite] == res.xr[finite]))
 
+        # Torch and NumPy don't solve to precisely the same accuracy
+        # on all machines. That's OK.
+        atol = 1e-9 if is_torch(xp) else 1e-15
+
         ref_fl = [ref.fl for ref in refs]
         ref_fl = xp.reshape(xp.asarray(ref_fl, dtype=dtype), shape)
-        xp_assert_close(res.fl, ref_fl, atol=1e-7)
+        xp_assert_close(res.fl, ref_fl, atol=atol)
         xp_assert_equal(res.fl, self.f(res.xl, *args_xp))
 
         ref_fr = [ref.fr for ref in refs]
         ref_fr = xp.reshape(xp.asarray(ref_fr, dtype=dtype), shape)
-        xp_assert_close(res.fr, ref_fr, atol=1e-7)
+        xp_assert_close(res.fr, ref_fr, atol=atol)
         xp_assert_equal(res.fr, self.f(res.xr, *args_xp))
 
         assert xp.all(xp.abs(res.fun[finite]) ==
