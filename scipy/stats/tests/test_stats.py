@@ -3444,8 +3444,7 @@ class TestSkew(SkewKurtosisTest):
 
     @array_api_compatible
     def test_skew_constant_value(self, xp):
-        # Skewness of a constant input should be zero even when the mean is not
-        # exact (gh-13245)
+        # Skewness of a constant input should be NaN (gh-16061)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
@@ -3500,10 +3499,11 @@ class TestSkew(SkewKurtosisTest):
 
 
 class TestKurtosis(SkewKurtosisTest):
-    def test_kurtosis(self):
+    @array_api_compatible
+    def test_kurtosis(self, xp):
         # Scalar test case
-        y = stats.kurtosis(self.scalar_testcase)
-        assert np.isnan(y)
+        y = stats.kurtosis(xp.asarray(self.scalar_testcase))
+        assert xp.isnan(y)
 
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)
         #   / ((sqrt(var(testcase)*3/4))**4)
@@ -3515,29 +3515,36 @@ class TestKurtosis(SkewKurtosisTest):
         #
         #   Set flags for axis = 0 and
         #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
-        y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
-        assert_approx_equal(y, 2.1658856802973, 10)
+        y = stats.kurtosis(xp.asarray(self.testmathworks), 0, fisher=0, bias=1)
+        xp_assert_close(y, xp.asarray(2.1658856802973))
 
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
-        y = stats.kurtosis(self.testmathworks, fisher=0, bias=0)
-        assert_approx_equal(y, 3.663542721189047, 10)
-        y = stats.kurtosis(self.testcase, 0, 0)
-        assert_approx_equal(y, 1.64)
+        y = stats.kurtosis(xp.asarray(self.testmathworks), fisher=0, bias=0)
+        xp_assert_close(y, xp.asarray(3.663542721189047))
+        y = stats.kurtosis(xp.asarray(self.testcase), 0, 0)
+        xp_assert_close(y, xp.asarray(1.64))
 
+        x = xp.arange(10.)
+        x = xp.where(x == 8, xp.asarray(xp.nan), x)
+        xp_assert_equal(stats.kurtosis(x), xp.asarray(xp.nan))
+
+    def test_kurtosis_nan_policy(self):
+        # nan_policy only for NumPy right now
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.kurtosis(x), np.nan)
         assert_almost_equal(stats.kurtosis(x, nan_policy='omit'), -1.230000)
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='raise')
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='foobar')
 
     def test_kurtosis_array_scalar(self):
+        # "array scalars" do not exist in other backends
         assert_equal(type(stats.kurtosis([1, 2, 3])), np.float64)
 
     def test_kurtosis_propagate_nan(self):
+        # nan_policy only for NumPy right now
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = np.arange(8).reshape(2, -1).astype(float)
@@ -3545,15 +3552,49 @@ class TestKurtosis(SkewKurtosisTest):
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
 
-    def test_kurtosis_constant_value(self):
-        # Kurtosis of a constant input should be zero, even when the mean is not
-        # exact (gh-13245)
-        a = np.repeat(-0.27829495, 10)
+    @array_api_compatible
+    def test_kurtosis_constant_value(self, xp):
+        # Kurtosis of a constant input should be NaN (gh-16061)
+        a = xp.asarray([-0.27829495]*10)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            assert np.isnan(stats.kurtosis(a, fisher=False))
-            assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
-            assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
-            assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
+            assert xp.isnan(stats.kurtosis(a, fisher=False))
+            assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+            assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+            assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
+
+    @array_api_compatible
+    @pytest.mark.parametrize('axis', [-1, 0, 2, None])
+    @pytest.mark.parametrize('bias', [False, True])
+    @pytest.mark.parametrize('fisher', [False, True])
+    def test_vectorization(self, xp, axis, bias, fisher):
+        # Behavior with array input is not tested above. Compare
+        # against naive implementation.
+        rng = np.random.default_rng(1283413549926)
+        x = xp.asarray(rng.random((4, 5, 6)))
+
+        def kurtosis(a, axis, bias, fisher):
+            # Simple implementation of kurtosis
+            if axis is None:
+                a = xp.reshape(a, (-1,))
+                axis = 0
+            xp_test = array_namespace(a)  # plain torch ddof=1 by default
+            mean = xp_test.mean(a, axis=axis, keepdims=True)
+            mu4 = xp_test.mean((a - mean)**4, axis=axis)
+            mu2 = xp_test.var(a, axis=axis, correction=0)
+            if bias:
+                res = mu4 / mu2**2 - 3
+            else:
+                n = a.shape[axis]
+                # https://en.wikipedia.org/wiki/Kurtosis#Standard_unbiased_estimator
+                res = (n-1) / ((n-2) * (n-3)) * ((n + 1) * mu4/mu2**2 - 3*(n-1))
+
+            # I know it looks strange to subtract then add 3,
+            # but it is simpler than the alternatives
+            return res if fisher else res + 3
+
+        res = stats.kurtosis(x, axis=axis, bias=bias, fisher=fisher)
+        ref = kurtosis(x, axis=axis, bias=bias, fisher=fisher)
+        xp_assert_close(res, ref)
 
 
 @hypothesis.strategies.composite
@@ -7637,6 +7678,11 @@ class TestKruskal:
         h, p = stats.kruskal(x, y)
         expected = 0
         assert_approx_equal(p, expected)
+
+    def test_no_args_gh20661(self):
+        message = r"Need at least two groups in stats.kruskal\(\)"
+        with pytest.raises(ValueError, match=message):
+            stats.kruskal()
 
 
 class TestCombinePvalues:

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 python _generate_pyx.py
 

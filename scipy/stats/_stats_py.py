@@ -1204,8 +1204,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean)
-    m3 = _moment(a, 3, axis, mean=mean)
+    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
+    m3 = _moment(a, 3, axis, mean=mean, xp=xp)
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
@@ -1224,6 +1224,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
@@ -1305,31 +1307,29 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     tail.
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.kurtosis(a, axis, fisher, bias)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = a.shape[axis]
-    mean = a.mean(axis, keepdims=True)
-    m2 = _moment(a, 2, axis, mean=mean)
-    m4 = _moment(a, 4, axis, mean=mean)
+    mean = xp.mean(a, axis=axis, keepdims=True)
+    mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
+    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
+    m4 = _moment(a, 4, axis, mean=mean, xp=xp)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, np.nan, m4 / m2**2.0)
+        zero = m2 <= (xp.finfo(m2.dtype).eps * mean_reduced)**2
+        NaN = _get_nan(m4, xp=xp)
+        vals = xp.where(zero, NaN, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
-        if can_correct.any():
-            m2 = np.extract(can_correct, m2)
-            m4 = np.extract(can_correct, m4)
+        if xp.any(can_correct):
+            m2 = m2[can_correct]
+            m4 = m4[can_correct]
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            np.place(vals, can_correct, nval + 3.0)
+            vals[can_correct] = nval + 3.0
 
-    return vals[()] - 3 if fisher else vals[()]
+    vals = vals - 3 if fisher else vals
+    return vals[()] if vals.ndim == 0 else vals
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -2829,6 +2829,9 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
 
     """
     xp = array_namespace(a)
+    if axis is None:
+        a = xp.reshape(a, (-1,))
+        axis = 0
     a = atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
     s = xp.std(a, axis=axis, correction=ddof) / n**0.5
