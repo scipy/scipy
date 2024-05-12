@@ -180,30 +180,26 @@ mahalanobis_distance(const double *u, const double *v, const double *covinv,
 }
 
 static inline double
-hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w)
+hamming_distance_double(const double *u, const double *v, const npy_intp n, const double *w, const double w_sum)
 {
     npy_intp i;
     double s = 0;
-    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
         s += ((double) (u[i] != v[i])) * w[i];
-        w_sum += w[i];
     }
 
     return s / w_sum;
 }
 
 static inline double
-hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w)
+hamming_distance_char(const char *u, const char *v, const npy_intp n, const double *w, const double w_sum)
 {
     npy_intp i;
     double s = 0;
-    double w_sum = 0;
 
     for (i = 0; i < n; ++i) {
         s += ((double) (u[i] != v[i])) * w[i];
-        w_sum += w[i];
     }
 
     return s / w_sum;
@@ -653,13 +649,18 @@ static inline int
 pdist_hamming_double(const double *X, double *dm, npy_intp num_rows,
                          const npy_intp num_cols, const double *w)
 {
-    npy_intp i, j;
+    npy_intp i, j, w_idx;
+
+    double w_sum = 0.0;
+    for (w_idx = 0; w_idx < num_cols; ++w_idx) {
+        w_sum += w[w_idx];
+    }
 
     for (i = 0; i < num_rows; ++i) {
         const double *u = X + (num_cols * i);
         for (j = i + 1; j < num_rows; ++j, ++dm) {
             const double *v = X + (num_cols * j);
-            *dm = hamming_distance_double(u, v, num_cols, w);
+            *dm = hamming_distance_double(u, v, num_cols, w, w_sum);
         }
     }
     return 0;
@@ -669,13 +670,18 @@ static inline int
 pdist_hamming_char(const char *X, double *dm, npy_intp num_rows,
                          const npy_intp num_cols, const double *w)
 {
-    npy_intp i, j;
+    npy_intp i, j, w_idx;
+
+    double w_sum = 0.0;
+    for (w_idx = 0; w_idx < num_cols; ++w_idx) {
+        w_sum += w[w_idx];
+    }
 
     for (i = 0; i < num_rows; ++i) {
         const char *u = X + (num_cols * i);
         for (j = i + 1; j < num_rows; ++j, ++dm) {
             const char *v = X + (num_cols * j);
-            *dm = hamming_distance_char(u, v, num_cols, w);
+            *dm = hamming_distance_char(u, v, num_cols, w, w_sum);
         }
     }
     return 0;
@@ -881,13 +887,18 @@ cdist_hamming_double(const double *XA, const double *XB, double *dm,
                          const npy_intp num_cols,
                          const double *w)
 {
-    npy_intp i, j;
+    npy_intp i, j, w_idx;
+
+    double w_sum = 0.0;
+    for (w_idx = 0; w_idx < num_cols; ++w_idx) {
+        w_sum += w[w_idx];
+    }
 
     for (i = 0; i < num_rowsA; ++i) {
         const double *u = XA + (num_cols * i);
         for (j = 0; j < num_rowsB; ++j, ++dm) {
             const double *v = XB + (num_cols * j);
-            *dm = hamming_distance_double(u, v, num_cols, w);
+            *dm = hamming_distance_double(u, v, num_cols, w, w_sum);
         }
     }
     return 0;
@@ -899,13 +910,18 @@ cdist_hamming_char(const char *XA, const char *XB, double *dm,
                          const npy_intp num_cols,
                          const double *w)
 {
-    npy_intp i, j;
+    npy_intp i, j, w_idx;
+
+    double w_sum = 0.0;
+    for (w_idx = 0; w_idx < num_cols; ++w_idx) {
+        w_sum += w[w_idx];
+    }
 
     for (i = 0; i < num_rowsA; ++i) {
         const char *u = XA + (num_cols * i);
         for (j = 0; j < num_rowsB; ++j, ++dm) {
             const char *v = XB + (num_cols * j);
-            *dm = hamming_distance_char(u, v, num_cols, w);
+            *dm = hamming_distance_char(u, v, num_cols, w, w_sum);
         }
     }
     return 0;
