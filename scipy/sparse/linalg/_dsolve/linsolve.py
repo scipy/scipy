@@ -318,7 +318,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
 def splu(A, permc_spec=None, diag_pivot_thresh=None,
          relax=None, panel_size=None, options=dict()):
     """
-    Compute the LU decomposition of a sparse, square matrix.
+    Compute the LU decomposition of a sparse matrix.
 
     Parameters
     ----------
@@ -398,8 +398,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     A = A.asfptype()  # upcast to a floating point format
 
     M, N = A.shape
-    if (M != N):
-        raise ValueError("can only factor square matrices")  # is this true?
+    # if (M < N):
+    #     raise ValueError("can only factor matrices where rows >= cols")  # is this true?
 
     _options = dict(DiagPivotThresh=diag_pivot_thresh, ColPerm=permc_spec,
                     PanelSize=panel_size, Relax=relax)
@@ -410,7 +410,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     if (_options["ColPerm"] == "NATURAL"):
         _options["SymmetricMode"] = True
 
-    return _superlu.gstrf(N, A.nnz, A.data, A.indices, A.indptr,
+    return _superlu.gstrf(M, N, A.nnz, A.data, A.indices, A.indptr,
                           csc_construct_func=csc_construct_func,
                           ilu=False, options=_options)
 

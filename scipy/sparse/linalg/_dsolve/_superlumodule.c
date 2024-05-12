@@ -203,7 +203,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 			  PyObject * keywds)
 {
     /* default value for SuperLU parameters */
-    int N, nnz;
+    int M, N, nnz;
     PyArrayObject *rowind, *colptr, *nzvals;
     SuperMatrix A = { 0 };
     PyObject *result;
@@ -212,14 +212,14 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
     int type;
     int ilu = 0;
 
-    static char *kwlist[] = { "N", "nnz", "nzvals", "colind", "rowptr",
+    static char *kwlist[] = { "M", "N", "nnz", "nzvals", "colind", "rowptr",
         "csc_construct_func", "options", "ilu",
 	NULL
     };
 
     int res =
-	PyArg_ParseTupleAndKeywords(args, keywds, "iiO!O!O!O|Oi", kwlist,
-				    &N, &nnz,
+	PyArg_ParseTupleAndKeywords(args, keywds, "iiiO!O!O!O|Oi", kwlist,
+				    &M, &N, &nnz,
 				    &PyArray_Type, &nzvals,
 				    &PyArray_Type, &rowind,
 				    &PyArray_Type, &colptr,
@@ -243,7 +243,7 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 	return NULL;
     }
 
-    if (NCFormat_from_spMatrix(&A, N, N, nnz, nzvals, rowind, colptr,
+    if (NCFormat_from_spMatrix(&A, M, N, nnz, nzvals, rowind, colptr,
 			       type)) {
 	goto fail;
     }
@@ -268,17 +268,19 @@ static char gssv_doc[] =
 
 static char gstrf_doc[] = "gstrf(A, ...)\n\
 \n\
-performs a factorization of the sparse matrix A=*(N,nnz,nzvals,rowind,colptr) and \n\
+performs a factorization of the sparse matrix A=*(M,N,nnz,nzvals,rowind,colptr) and \n\
 returns a factored_lu object.\n\
 \n\
 Parameters\n\
 ----------\n\
 \n\
-Matrix to be factorized is represented as N,nnz,nzvals,rowind,colptr\n\
+Matrix to be factorized is represented as M,N,nnz,nzvals,rowind,colptr\n\
   as separate arguments.  This is compressed sparse column representation.\n\
 \n\
+M : int \n\
+    number of rows \n\
 N : int \n\
-    number of rows and columns\n\
+    number of columns\n\
 nnz : int\n\
     number of non-zero elements\n\
 nzvals : array\n\

@@ -255,7 +255,7 @@ dgstrf (superlu_options_t *options, SuperMatrix *A,
     *info = dLUMemInit(fact, work, lwork, m, n, Astore->nnz,
                        panel_size, fill_ratio, L, U, Glu, &iwork, &dwork);
     if ( *info ) return;
-    
+
     xsup    = Glu->xsup;
     supno   = Glu->supno;
     xlsub   = Glu->xlsub;
@@ -328,11 +328,16 @@ dgstrf (superlu_options_t *options, SuperMatrix *A,
         	    dense[asub[k]] = a[k];
 
 	       	/* Numeric update within the snode */
-	        dsnode_bmod(icol, jsupno, fsupc, dense, tempv, Glu, stat);
+	        dsnode_bmod(icol, jsupno, fsupc, dense, tempv, Glu, stat); // SCIPY_FIX inhibits "nsupr < nsupc" - see inside dsnode_bmod (PROBLEM 1)
 
 		if ( (*info = dpivotL(icol, diag_pivot_thresh, &usepr, perm_r,
 				      iperm_r, iperm_c, &pivrow, Glu, stat)) )
-		    if ( iinfo == 0 ) iinfo = *info;
+                      { 
+                        /* dpivotL returns - Factor is exactly singular for 2x3 and 2x4 matrices if SCIPY_FIX is removed from 331 - dsnode_bmod (PROBLEM 2)
+                        *  info is not 0 for 2x3 or 2x4 matrix :: singular result UpperMatrix[info][info]=0 
+		                */
+                        if ( iinfo == 0 ) iinfo = *info;
+                      }
 		
 #ifdef DEBUG
 		dprint_lu_col("[1]: ", icol, pivrow, xprune, Glu);
@@ -383,12 +388,12 @@ dgstrf (superlu_options_t *options, SuperMatrix *A,
 	        /* Copy the U-segments to ucol[*] */
 		if ((*info = dcopy_to_ucol(jj, nseg, segrep, &repfnz[k],
 					  perm_r, &dense[k], Glu)) != 0)
-		    return;
-
+		                    return;
+            
 	    	if ( (*info = dpivotL(jj, diag_pivot_thresh, &usepr, perm_r,
 				      iperm_r, iperm_c, &pivrow, Glu, stat)) )
 		    if ( iinfo == 0 ) iinfo = *info;
-
+                      
 		/* Prune columns (0:jj-1) using column jj */
 	    	dpruneL(jj, perm_r, pivrow, nseg, segrep,
                         &repfnz[k], xprune, Glu);

@@ -435,7 +435,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     NCformat *Ustore;
     PyObject *U_indices = NULL, *U_indptr = NULL, *U_data = NULL;
     PyObject *L_indices = NULL, *L_indptr = NULL, *L_data = NULL;
-    PyObject *datatuple = NULL, *shape = NULL;
+    PyObject *datatuple = NULL, *shapeL = NULL, *shapeU = NULL;
     int result = -1, ok;
     int type;
     npy_intp dims[1];
@@ -445,8 +445,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
 
     if (U->Stype != SLU_NC || L->Stype != SLU_SC ||
         U->Mtype != SLU_TRU || L->Mtype != SLU_TRLU ||
-        L->nrow != U->nrow || L->ncol != L->nrow ||
-        U->ncol != U->nrow || L->Dtype != U->Dtype)
+        L->Dtype != U->Dtype)
+
     {
         PyErr_SetString(PyExc_RuntimeError,
                         "internal error: invalid Superlu matrix data");
@@ -493,8 +493,8 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
     }
 
     /* Create sparse matrices */
-    shape = Py_BuildValue("ii", L->nrow, L->ncol);
-    if (shape == NULL) {
+    shapeL = Py_BuildValue("ii", L->nrow, L->ncol);
+    if (shapeL == NULL) {
         goto fail;
     }
 
@@ -503,12 +503,16 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
         goto fail;
     }
     *L_csc = PyObject_CallFunction(py_csc_construct_func,
-                                   "OO", datatuple, shape);
+                                   "OO", datatuple, shapeL);
     if (*L_csc == NULL) {
         goto fail;
     }
 
     Py_DECREF(datatuple);
+    shapeU = Py_BuildValue("ii", U->nrow, U->ncol);
+    if (shapeU == NULL) {
+        goto fail;
+    }
     datatuple = Py_BuildValue("OOO", U_data, U_indices, U_indptr);
     if (datatuple == NULL) {
         Py_DECREF(*L_csc);
@@ -516,7 +520,7 @@ int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
         goto fail;
     }
     *U_csc = PyObject_CallFunction(py_csc_construct_func,
-                                   "OO", datatuple, shape);
+                                   "OO", datatuple, shapeU);
     if (*U_csc == NULL) {
         Py_DECREF(*L_csc);
         *L_csc = NULL;
@@ -532,7 +536,8 @@ fail:
     Py_XDECREF(L_indices);
     Py_XDECREF(L_indptr);
     Py_XDECREF(L_data);
-    Py_XDECREF(shape);
+    Py_XDECREF(shapeL);
+    Py_XDECREF(shapeU);
     Py_XDECREF(datatuple);
 
     return result;
@@ -632,7 +637,8 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
             }
 
             /* Add unit diagonal in L */
-            if (L_nnz >= Lstore->nnz) return -1;
+            if (L_nnz >= Lstore->nnz)
+                goto size_error;
             dst = L_data + elsize * L_nnz;
             switch (dtype) {
             case SLU_S: *(float*)dst = 1.0; break;
@@ -642,7 +648,7 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
             }
             L_rowind[L_nnz] = icol;
             ++L_nnz;
-
+            
             /* Lower triangle part */
             for (; iptr < iend; ++iptr) {
                 if (!IS_ZERO(src)) {
@@ -655,13 +661,13 @@ LU_to_csc(SuperMatrix *L, SuperMatrix *U,
                 }
                 src += elsize;
             }
-
+            
             /* Record column pointers */
             U_colptr[icol+1] = U_nnz;
             L_colptr[icol+1] = L_nnz;
         }
     }
-
+    
     return 0;
 
 size_error:
@@ -681,7 +687,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     volatile int lwork = 0;
     volatile int *etree = NULL;
     volatile int info;
-    volatile int n;
+    volatile int m, n;
     volatile superlu_options_t options;
     volatile SuperLUStat_t stat = { 0 };
     volatile int panel_size, relax;
@@ -691,6 +697,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
     volatile jmp_buf *jmpbuf_ptr;
     SLU_BEGIN_THREADS_DEF;
 
+    m = A->nrow;
     n = A->ncol;
 
     if (!set_superlu_options_from_dict((superlu_options_t*)&options, ilu, option_dict,
@@ -720,7 +727,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
 
     /* Calculate and apply minimum degree ordering */
     etree = intMalloc(n);
-    self->perm_r = intMalloc(n);
+    self->perm_r = intMalloc(m);
     self->perm_c = intMalloc(n);
     StatInit((SuperLUStat_t *)&stat);
 
@@ -775,7 +782,7 @@ PyObject *newSuperLUObject(SuperMatrix * A, PyObject * option_dict,
         else {
             if (info <= n)
                 PyErr_SetString(PyExc_RuntimeError,
-                                "Factor is exactly singular");
+                               "Factor is exactly singular");
             else
                 PyErr_NoMemory();
         }
