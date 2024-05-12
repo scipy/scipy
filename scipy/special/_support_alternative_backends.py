@@ -62,12 +62,9 @@ def _get_shape_dtype(*args, xp):
 def _rel_entr(x, y, *, xp):
     args, shape, dtype = _get_shape_dtype(x, y, xp=xp)
     x, y = args
-    x_gt_0 = x > 0
-    y_gt_0 = y > 0
-    x_eq_0 = x == 0
     res = xp.full(x.shape, xp.inf, dtype=dtype)
-    res[x_eq_0 & y_gt_0] = xp.asarray(0, dtype=dtype)
-    i = x_gt_0 & y_gt_0
+    res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=dtype)
+    i = (x > 0) & (y > 0)
     res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
     return res
 
