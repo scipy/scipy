@@ -144,7 +144,7 @@ def entropy(pk: np.typing.ArrayLike,
 
     pk = xp.asarray(pk)
     with np.errstate(invalid='ignore'):
-        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)
+        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
     if qk is None:
         vec = special.entr(pk)
     else:
