@@ -9,7 +9,7 @@
 import math
 import numpy as np
 
-from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -194,6 +194,11 @@ class _minmax_mixin:
         mask = value != 0
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
+
+        if isinstance(self, sparray):
+            coords = (major_index,)
+            shape = (M,)
+            return self._coo_container((value, coords), shape=shape, dtype=self.dtype)
 
         if axis == 0:
             return self._coo_container(
