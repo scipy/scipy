@@ -833,14 +833,13 @@ class TestChandrupatla(TestScalarRootFinders):
         xp_test = array_namespace(a)  # need isdtype
         def f(x):
             assert xp_test.isdtype(x.dtype, "real floating")
-            return x ** 99 - 1
+            # this would overflow if x were an xp integer dtype
+            return x ** 31 - 1
 
         # note that all inputs are integer type; result is automatically default float
         res = _chandrupatla_root(f, xp.asarray(-7), xp.asarray(5))
-        if not is_torch(xp):
-            # torch fails, probably because of overflow
-            assert res.success
-            xp_assert_close(res.x, xp.asarray(1.))
+        assert res.success
+        xp_assert_close(res.x, xp.asarray(1.))
 
         # Test that if both ends of bracket equal root, algorithm reports
         # convergence.
