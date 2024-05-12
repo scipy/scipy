@@ -247,8 +247,8 @@ class TestLegendreFunctions:
 
         z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
-        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
-#        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
+#        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
+        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 
@@ -280,8 +280,6 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[-2, 4], lpmn_ref(-2, 4, z, type = type))
         np.testing.assert_allclose(p[-1, 4], lpmn_ref(-1, 4, z, type = type))
 
-        return 
-
         np.testing.assert_allclose(p_jac[0, 0], lpmn_jac(0, 0, z, type = type))
 
         np.testing.assert_allclose(p_jac[0, 1], lpmn_jac(0, 1, z, type = type))
@@ -293,6 +291,8 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[2, 2], lpmn_jac(2, 2, z, type = type))
         np.testing.assert_allclose(p_jac[-2, 2], lpmn_jac(-2, 2, z, type = type))
         np.testing.assert_allclose(p_jac[-1, 2], lpmn_jac(-1, 2, z, type = type))
+
+        return 
 
         np.testing.assert_allclose(p_jac[0, 3], lpmn_jac(0, 3, z, type = type))
         np.testing.assert_allclose(p_jac[1, 3], lpmn_jac(1, 3, z, type = type))
@@ -582,8 +582,14 @@ def lpmn_jac(m, n, z, type = None):
     if (type is None):
         type = np.where(np.abs(z) <= 1, 2, 3)
 
-    ls = np.where(type == 3, -1, 1)
-    qs = np.where(type == 3, np.where(np.sign(np.real(z)) >= 0, 1, -1), 1)
+    type_sign = np.where(type == 3, -1, 1)
+    branch_sign = np.where(type == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
+
+    out11_ = type_sign * branch_sign * np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
+    out11_div_z = -type_sign / out11_
+
+    qs = -branch_sign
+    ls = type_sign
 
     if (n == 0):
         if (m == 0):
@@ -594,26 +600,26 @@ def lpmn_jac(m, n, z, type = None):
             return np.ones_like(z)
 
         if (m == 1):
-            return qs * z / np.sqrt(ls * (1 - z * z))
+            return z * out11_div_z
 
         if (m == -1):
-            return -qs * ls * z / (2 * np.sqrt(ls * (1 - z * z)))
+            return -type_sign * z * out11_div_z / 2
 
     if (n == 2):
         if (m == 0):
             return 3 * z
 
         if (m == 1):
-            return -qs * 3 * (1 - 2 * z * z) / np.sqrt(ls * (1 - z * z))
+            return 3 * (2 * z * z - 1) * out11_div_z
 
         if (m == 2):
-            return ls * -6 * z
+            return -6 * type_sign * z
 
         if (m == -2):
-            return ls * -z / 4
+            return -type_sign * z / 4
 
         if (m == -1):
-            return ls * qs * (1 - 2 * z * z) / (2 * np.sqrt(ls * (1 - z * z)))
+            return type_sign * (1 - 2 * z * z) * out11_div_z / 2
 
     if (n == 3):
         if (m == 0):
