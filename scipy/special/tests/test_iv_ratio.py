@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from scipy.special._ufuncs import _iv_ratio as iv_ratio
+from scipy.special._ufuncs import _iv_ratio as iv_ratio  # type: ignore[attr-defined]
 
 
 class TestIvRatio:
