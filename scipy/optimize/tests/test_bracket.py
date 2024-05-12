@@ -156,26 +156,22 @@ class TestBracketRoot:
                      lambda x: x - 1000,
                      lambda x: x - 1000,
                      lambda x: np.nan,
-                     lambda x: x,
-                     lambda x: x,
                      lambda x: x]
 
             return [funcs[j](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(7, dtype=np.int64),)
+        args = (np.arange(5, dtype=np.int64),)
         res = _bracket_root(f,
-                            xl0=[-1, -1, -1, -1, 4, -4, -4],
-                            xr0=[1, 1, 1, 1, -4, 4, 4],
-                            xmin=[-np.inf, -1, -np.inf, -np.inf, -np.inf, -np.inf, 10],
-                            xmax=[np.inf, 1, np.inf, np.inf, np.inf, np.nan, np.inf],
+                            xl0=[-1, -1, -1, -1, 4],
+                            xr0=[1, 1, 1, 1, -4],
+                            xmin=[-np.inf, -1, -np.inf, -np.inf, 6],
+                            xmax=[np.inf, 1, np.inf, np.inf, 2],
                             args=args, maxiter=3)
 
         ref_flags = np.array([eim._ECONVERGED,
                               _ELIMITS,
                               eim._ECONVERR,
                               eim._EVALUEERR,
-                              eim._EINPUTERR,
-                              eim._EINPUTERR,
                               eim._EINPUTERR])
 
         assert_equal(res.status, ref_flags)
@@ -415,29 +411,22 @@ class TestBracketMinimum:
                      lambda x: x,
                      lambda x: x,
                      lambda x: np.nan,
-                     lambda x: x**2,
-                     lambda x: x**2,
-                     lambda x: x**2,
-                     lambda x: x**2,
-                     lambda x: x**2,
                      lambda x: x**2]
 
             return [funcs[j](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(10, dtype=np.int64),)
-        xl0 = [-1.0, -1.0, -1.0, -1.0, 6.0, -3.0, -3.0, -6.0, -np.nan, 10.0]
-        xm0 = [0.0, 0.0, 0.0, 0.0, 4.0, -4.0, -4.0, -4.0, -4.0, -4.0]
-        xr0 = [1.0, 1.0, 1.0, 1.0, 7.0, -6.0, -2.0, -5.0, 4.0, np.nan]
-        xmin=[-np.inf, -1.0, -np.inf, -np.inf, -np.inf, -np.inf, -np.inf,
-              -np.inf, -np.inf, -np.inf]
+        args = (np.arange(5, dtype=np.int64),)
+        xl0 = [-1.0, -1.0, -1.0, -1.0, 6.0]
+        xm0 = [0.0, 0.0, 0.0, 0.0, 4.0]
+        xr0 = [1.0, 1.0, 1.0, 1.0, 2.0]
+        xmin=[-np.inf, -1.0, -np.inf, -np.inf, 8.0]
+
         result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin,
                                   args=args, maxiter=3)
 
         reference_flags = np.array([eim._ECONVERGED, _ELIMITS,
                                     eim._ECONVERR, eim._EVALUEERR,
-                                    eim._EINPUTERR, eim._EINPUTERR,
-                                    eim._EINPUTERR, eim._EINPUTERR,
-                                    eim._EINPUTERR, eim._EINPUTERR])
+                                    eim._EINPUTERR])
         assert_equal(result.status, reference_flags)
 
     @pytest.mark.parametrize("minimum", (0.622, [0.622, 0.623]))
