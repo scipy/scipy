@@ -247,8 +247,8 @@ class TestLegendreFunctions:
 
         z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
-        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
-#        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
+#        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
+        p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))
 

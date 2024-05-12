@@ -15,7 +15,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn, clpmn as _clpmn
-from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, clpmn_legacy as _clpmn_legacy, _lqn, _lqmn, _rctj, _rcty,
+from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -1810,7 +1810,21 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 
     return _lpmn(m, n, z, diff_n = diff_n)
 
-def clpmn_legacy(m, n, z, type=3):
+clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
+
+@clpmn_all.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
+@clpmn_all.resolve_out_shapes
+def _(m, n, shapes, nout):
+#    n = _nonneg_int_or_fail(n, 'n', strict=False)
+
+    m_abs = abs(m)
+
+    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(*shapes),)
+
+def clpmn(m, n, z, type = 3, *, legacy = True):
     """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
@@ -1865,76 +1879,26 @@ def clpmn_legacy(m, n, z, type=3):
            https://dlmf.nist.gov/14.21
 
     """
-    if not isscalar(m) or (abs(m) > n):
-        raise ValueError("m must be <= n.")
-    if not isscalar(n) or (n < 0):
-        raise ValueError("n must be a non-negative integer.")
+
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
 
-    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
-    if (m < 0):
-        mp = -m
-        m_signbit = True
-    else:
-        mp = m
-        m_signbit = False
-
-    z = np.asarray(z)
-    if (not np.issubdtype(z.dtype, np.inexact)):
-        z = z.astype(np.complex128)
-
-    p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
-    if (m >= 0):
-        p = p[:(m + 1)]
-        pd = pd[:(m + 1)]
-    else:
-        p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
-        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
-
-#    p = np.empty((mp + 1, n + 1) + z.shape, dtype=np.complex128)
- #   pd = np.empty_like(p)
-  #  if (z.ndim == 0):
-   #     _clpmn_legacy(z, type, m_signbit, out = (p, pd))
-   # else:
-    #    _clpmn_legacy(z, type, m_signbit, out = (np.moveaxis(p, (0, 1), (-2, -1)),
-     #       np.moveaxis(pd, (0, 1), (-2, -1))))  # new axes must be last for the ufunc
-
-    return p, pd
-
-clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
-
-@clpmn_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-@clpmn_all.resolve_out_shapes
-def _(m, n, shapes, nout):
-#    n = _nonneg_int_or_fail(n, 'n', strict=False)
-
-    m_abs = abs(m)
-
-    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(*shapes),)
-
-def clpmn(m, n, z, type=3, *, legacy = True):
     if legacy:
-        return clpmn_legacy(m, n, z, type)
+        n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    out_pos, out_jac_pos = clpmn_legacy(m, n, z, type)
-    out_neg, out_jac_neg = clpmn_legacy(-m, n, z, type)
+        m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out = np.concatenate([out_pos, np.flip(out_neg[1:], axis = 0)], axis = 0)
-    out_jac = np.concatenate([out_jac_pos, np.flip(out_jac_neg[1:], axis = 0)], axis = 0)
+        p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
+        if (m >= 0):
+            p = p[:(m + 1)]
+            pd = pd[:(m + 1)]
+        else:
+            p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
+            pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
 
-#    p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
- #   if (m >= 0):
-  #      p = p[:(m + 1)]
-   #     pd = pd[:(m + 1)]
-    #else:
-     #   p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
-      #  pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
+        return p, pd
 
-    return out, out_jac
+    raise NotImplementedError
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
