@@ -104,6 +104,10 @@ dsnode_bmod (
 	SGEMV( ftcs2, &nrow, &nsupc, &alpha, &lusup[luptr+nsupc], &nsupr, 
 		&lusup[ufirst], &incx, &beta, &lusup[ufirst+nsupc], &incy );
 #else
+/* SCIPY_FIX stopped non-square factorisation - scipy.saprse.linalg.splu(dgstrf).
+*  stopped - 2x3 and 2x4 matrices
+*  not stopped - 3x2 and 4x2 matrices
+*/
 #if SCIPY_FIX
 	if (nsupr < nsupc) {
 	    /* Fail early rather than passing in invalid parameters to DTRSV. */
