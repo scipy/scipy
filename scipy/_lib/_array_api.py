@@ -407,7 +407,7 @@ def xp_minimum(x1, x2):
 # or covered by array_api_compat.
 def xp_clip(x, a, b, xp=None):
     xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(a), xp.asarray(b)
+    a, b = xp.asarray(a, dtype=x.dtype), xp.asarray(b, dtype=x.dtype)
     if hasattr(xp, 'clip'):
         return xp.clip(x, a, b)
     x, a, b = xp.broadcast_arrays(x, a, b)
