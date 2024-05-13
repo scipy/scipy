@@ -168,6 +168,10 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
             The value at which the derivative of `func` was evaluated
             (after broadcasting with `args` and `step_direction`).
 
+    See Also
+    --------
+    _jacobian, _hessian
+
     Notes
     -----
     The implementation was inspired by jacobi [1]_, numdifftools [2]_, and
@@ -681,7 +685,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
             func(x: ndarray) -> ndarray
 
          where each element of ``x`` is a finite real. If the function to be
-         differentiated accepts additional, arguments wrap it (e.g. using
+         differentiated accepts additional arguments, wrap it (e.g. using
          `functools.partial` or ``lambda``) and pass the wrapped callable
          into `_jacobian`. See Notes regarding vectorization and the dimensionality
          of the input and output.
@@ -713,35 +717,40 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     -------
     res : _RichResult
         An instance of `scipy._lib._util._RichResult` with the following
-        attributes.
+        attributes. All elements are arrays with the same shape as the
+        Jacobian `df`.
 
         success : bool array
-            ``True`` when the algorithm terminated successfully (status ``0``).
+            ``True`` where the algorithm terminated successfully (status ``0``).
         status : int array
             An integer representing the exit status of the algorithm.
-            ``0`` : The algorithm converged to the specified tolerances.
-            ``-1`` : The error estimate increased, so iteration was terminated.
-            ``-2`` : The maximum number of iterations was reached.
-            ``-3`` : A non-finite value was encountered.
-            ``-4`` : Iteration was terminated by `callback`.
-            ``1`` : The algorithm is proceeding normally (in `callback` only).
+
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : The error estimate increased, so iteration was terminated.
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : Iteration was terminated by `callback`.
+            - ``1`` : The algorithm is proceeding normally (in `callback` only).
+
         df : float array
             The Jacobian of `func` at `x`, if the algorithm terminated
             successfully.
         error : float array
             An estimate of the error: the magnitude of the difference between
-            the current estimate of the derivative and the estimate in the
-            previous iteration.
+            the current estimate and the estimate in the previous iteration.
         nit : int array
             The number of iterations performed.
         nfev : int array
             The number of points at which `func` was evaluated.
-        x : float array
-            The value at which the derivative of `func` was evaluated.
+
+        Each element of an attribute is associated with the corresponding
+        element of `df`. For instance, element ``i`` of `nfev` is the
+        number of points at which `func` was evaluated for the sake of
+        computing element ``i`` of `df`.
 
     See Also
     --------
-    _differentiate
+    _differentiate, _hessian
 
     Notes
     -----
@@ -776,7 +785,7 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     --------
     The Rosenbrock function maps from :math:`\mathbf{R}^m \righarrow \mathbf{R}`;
     the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
-    array of shape ``(m, p)`` and return an array of shape ``m``. Suppose we wish
+    array of shape ``(m, p)`` and return an array of shape ``p``. Suppose we wish
     to evaluate the Jacobian (AKA the gradient because the function returns a scalar)
     at ``[0.5, 0.5, 0.5]``.
 
@@ -854,3 +863,159 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
                          step_factor=step_factor, preserve_shape=True)
     del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
     return res
+
+
+# todo:
+# - figure out *args; user really can't work with them right now
+# - what to report for status? iterations?
+# - error estimate stack
+# - add tests of attributes for both _hessian and _jacobian. I'm not sure if
+#   nfev is really working.
+
+def _hessian(f, x, **kwargs):
+    r"""Evaluate the Hessian of a function numerically.
+
+    Parameters
+    ----------
+    func : callable
+        The function whose Hessian is desired. The signature must be::
+
+            func(x: ndarray) -> ndarray
+
+         where each element of ``x`` is a finite real. If the function to be
+         differentiated accepts additional arguments, wrap it (e.g. using
+         `functools.partial` or ``lambda``) and pass the wrapped callable
+         into `_hessian`. See Notes regarding vectorization and the dimensionality
+         of the input and output.
+    x : array_like
+        Points at which to evaluate the Hessian. Must have at least one dimension.
+        See Notes regarding the dimensionality and vectorization.
+    atol, rtol : float, optional
+        Absolute and relative tolerances for the stopping condition: iteration
+        will stop for each element of the Hessian when
+        ``res.error < atol + rtol * abs(res.df)``. The default `atol` is the
+        smallest normal number of the appropriate dtype, and the default `rtol`
+        is the square root of the precision of the appropriate dtype.
+    order : int, default: 8
+        The (positive integer) order of the finite difference formula to be
+        used. Odd integers will be rounded up to the next even integer.
+    initial_step : float, default: 0.5
+        The (absolute) initial step size for the finite difference derivative
+        approximation.
+    step_factor : float, default: 2.0
+        The factor by which the step size is *reduced* in each iteration; i.e.
+        the step size in iteration 1 is ``initial_step/step_factor``. If
+        ``step_factor < 1``, subsequent steps will be greater than the initial
+        step; this may be useful if steps smaller than some threshold are
+        undesirable (e.g. due to subtractive cancellation error).
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform.
+
+    Returns
+    -------
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
+        attributes. All elements are arrays with the same shape as the
+        Hessian `ddf`.
+
+        success : bool array
+            ``True`` where the algorithm terminated successfully (status ``0``).
+        status : int array
+            An integer representing the exit status of the algorithm.
+
+            - ``0`` : The algorithm converged to the specified tolerances.
+            - ``-1`` : The error estimate increased, so iteration was terminated.
+            - ``-2`` : The maximum number of iterations was reached.
+            - ``-3`` : A non-finite value was encountered.
+
+        ddf : float array
+            The Hessian of `func` at `x`, if the algorithm terminated
+            successfully.
+        error : float array
+            An estimate of the error: the magnitude of the difference between
+            the current estimate and the estimate in the previous iteration.
+        nit : int array
+            The number of iterations performed.
+        nfev : int array
+            The number of points at which `func` was evaluated.
+
+        Each element of an attribute is associated with the corresponding
+        element of `ddf`. For instance, element ``[i, j]`` of `nfev` is the
+        number of points at which `func` was evaluated for the sake of
+        computing element ``[i, j]`` of `ddf`.
+
+    See Also
+    --------
+    _differentiate, _jacobian
+
+    Notes
+    -----
+    Suppose we wish to evaluate the Hessian of a function
+    :math:`f: \mathbf{R^m} \rightarrow \mathbf{R}`, and we assign to variable
+    ``m`` the positive integer value of :math:`m`. If we wish to evaluate
+    the Hessian at a single point, then:
+
+    - argument `x` must be an array of shape ``(m,)``
+    - argument `func` must be vectorized to accept an array of shape
+      ``(m, ...)``. The first axis represents the :math:`m` inputs of
+      :math:`f`; the remaining axes indicated by ellipses are for evaluating
+      the function at several abscissae in a single call.
+    - argument `func` must return an array of shape ``(...)``.
+    - attribute ``dff`` of the result object will be an array of shape ``(m, m)``,
+      the Hessian.
+
+    This function is also vectorized in the sense that the Hessian can be
+    evaluated at ``k`` points in a single call. In this case, `x` would be an
+    array of shape ``(m, k)``, `func` would accept an array of shape
+    ``(m, ...)`` and return an array of shape ``(...)``, and the ``ddf``
+    attribute of the result would have shape ``(m, m, k)``. Note that the
+    axis associated with the ``k`` points is included within the axes
+    denoted by ``(...)``.
+
+    References
+    ----------
+    .. [1] Hessian matrix, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Hessian_matrix
+
+    Examples
+    --------
+    The Rosenbrock function maps from :math:`\mathbf{R}^m \righarrow \mathbf{R}`;
+    the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
+    array of shape ``(m, ...)`` and return an array of shape ``...``. Suppose we
+    wish to evaluate the Hessian at ``[0.5, 0.5, 0.5]``.
+
+    >>> import numpy as np
+    >>> from scipy.optimize._differentiate import _hessian as hessian
+    >>> from scipy.optimize import rosen, rosen_hess
+    >>> m = 3
+    >>> x = np.full(m, 0.5)
+    >>> res = hessian(rosen, x)
+    >>> ref = rosen_hess(x)  # reference value of the Hessian
+    >>> np.allclose(res.ddf, ref)
+    True
+
+    `_hessian` is vectorized to evaluate the Hessian at multiple points
+    in a single call.
+
+    >>> rng = np.random.default_rng(4589245925010)
+    >>> x = rng.random((m, 10))
+    >>> res = hessian(rosen, x)
+    >>> ref = [rosen_hess(xi) for xi in x.T]
+    >>> ref = np.moveaxis(ref, 0, -1)
+    >>> np.allclose(res.ddf, ref)
+    True
+
+    """
+    def df(x):
+        temp = _jacobian(f, x, **kwargs)
+        if df.res is None:
+            df.res = temp
+        else:
+            df.res.nfev += temp.nfev.sum(axis=-1)
+        return temp.df
+    df.res = None
+    temp = _jacobian(df, x, **kwargs)
+    temp.nfev = df.res.nfev
+    temp.ddf = temp.df
+    del temp.df
+    return temp

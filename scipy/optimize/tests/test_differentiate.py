@@ -5,8 +5,9 @@ from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
 import scipy._lib._elementwise_iterative_method as eim
 from scipy import stats, optimize
-from scipy.optimize._differentiate import (_differentiate as differentiate,
-                                           _jacobian as jacobian, _EERRORINCREASE)
+from scipy.optimize._differentiate import (
+    _differentiate as differentiate, _jacobian as jacobian, _hessian as hessian,
+    _EERRORINCREASE)
 
 class TestDifferentiate:
 
@@ -396,7 +397,7 @@ class TestDifferentiate:
         assert_allclose(res.df, 0, atol=atol)
 
 
-class TestJacobian:
+class TestJacobianHessian:
 
     # Example functions and Jacobians from Wikipedia:
     # https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant#Examples
@@ -475,7 +476,7 @@ class TestJacobian:
 
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
-    def test_examples(self, size, func):
+    def test_examples_jacobian(self, size, func):
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
         x = rng.random(size=(m,) + size)
@@ -483,11 +484,27 @@ class TestJacobian:
         ref = func.ref(x)
         np.testing.assert_allclose(res, ref, atol=1e-10)
 
-    def test_iv(self):
+    @pytest.mark.parametrize('shape', [(), (4,), (2, 4)])
+    def test_examples_hessian(self, shape):
+        rng = np.random.default_rng(458912319542)
+        m = 3
+        x = rng.random((m,) + shape)
+        res = hessian(optimize.rosen, x)
+        if shape:
+            x = np.reshape(x, (m, -1))
+            ref = [optimize.rosen_hess(xi) for xi in x.T]
+            ref = np.moveaxis(ref, 0, -1)
+            ref = np.reshape(ref, (m, m,) + shape)
+        else:
+            ref = optimize.rosen_hess(x)
+        assert_allclose(res.ddf, ref, atol=1e-8)
+
+    @pytest.mark.parametrize('jh_func', [jacobian, hessian])
+    def test_iv(self, jh_func):
         # Test input validation
         message = "Argument `x` must be at least 1-D."
         with pytest.raises(ValueError, match=message):
-            jacobian(np.sin, 1, atol=-1)
+            jh_func(np.sin, 1, atol=-1)
 
         # Confirm that other parameters are being passed to `_derivative`,
         # which raises an appropriate error message.
@@ -495,18 +512,18 @@ class TestJacobian:
         func = optimize.rosen
         message = 'Tolerances and step parameters must be non-negative scalars.'
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, atol=-1)
+            jh_func(func, x, atol=-1)
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, rtol=-1)
+            jh_func(func, x, rtol=-1)
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, initial_step=-1)
+            jh_func(func, x, initial_step=-1)
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, step_factor=-1)
+            jh_func(func, x, step_factor=-1)
 
         message = '`order` must be a positive integer.'
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, order=-1)
+            jh_func(func, x, order=-1)
 
         message = '`maxiter` must be a positive integer.'
         with pytest.raises(ValueError, match=message):
-            jacobian(func, x, maxiter=-1)
+            jh_func(func, x, maxiter=-1)
