@@ -1,109 +1,60 @@
 #include "ufunc.h"
 
 #include "special.h"
-#include "special/bessel.h"
-#include "special/legendre.h"
-#include "special/sph_harm.h"
 
 using namespace std;
 
-using float1_mdspan = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
-using double1_mdspan = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
-using complex_float1_mdspan = mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>;
-using complex_double1_mdspan = mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>;
+using cfloat = complex<float>;
+using cdouble = complex<double>;
 
-using func_f_f1_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_d_d1_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_F_F1_t = void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_D_D1_t = void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
+using float_1dspan = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
+using float_2dspan = mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>;
+using double_1dspan = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
+using double_2dspan = mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>;
+using cfloat_1dspan = mdspan<cfloat, dextents<ptrdiff_t, 1>, layout_stride>;
+using cfloat_2dspan = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
+using cdouble_1dspan = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
+using cdouble_2dspan = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
 
-using func_f_f1f1_t = void (*)(float, float1_mdspan, float1_mdspan);
-using func_d_d1d1_t =
-    void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_F_F1F1_t =
-    void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_D_D1D1_t =
-    void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
+// 1 input, 1 output
+using func_f_f1_t = void (*)(float, float_1dspan);
+using func_f_f2_t = void (*)(float, float_2dspan);
+using func_d_d1_t = void (*)(double, double_1dspan);
+using func_d_d2_t = void (*)(double, double_2dspan);
+using func_F_F1_t = void (*)(cfloat, cfloat_1dspan);
+using func_D_D1_t = void (*)(cdouble, cdouble_1dspan);
 
-using func_f_f1f1f1_t =
-    void (*)(float, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_d_d1d1d1_t =
-    void (*)(double, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_F_F1F1F1_t =
-    void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 1>, layout_stride>);
-using func_D_D1D1D1_t =
-    void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 1>, layout_stride>);
+// 1 input, 2 outputs
+using func_f_f1f1_t = void (*)(float, float_1dspan, float_1dspan);
+using func_f_f2f2_t = void (*)(float, float_2dspan, float_2dspan);
+using func_d_d1d1_t = void (*)(double, double_1dspan, double_1dspan);
+using func_d_d2d2_t = void (*)(double, double_2dspan, double_2dspan);
+using func_F_F1F1_t = void (*)(cfloat, cfloat_1dspan, cfloat_1dspan);
+using func_F_F2F2_t = void (*)(cfloat, cfloat_2dspan, cfloat_2dspan);
+using func_D_D1D1_t = void (*)(cdouble, cdouble_1dspan, cdouble_1dspan);
+using func_D_D2D2_t = void (*)(cdouble, cdouble_2dspan, cdouble_2dspan);
 
-using func_lF_F2_t = void (*)(long, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_lD_D2_t = void (*)(long, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+// 1 input, 3 outputs
+using func_f_f1f1f1_t = void (*)(float, float_1dspan, float_1dspan, float_1dspan);
+using func_f_f2f2f2_t = void (*)(float, float_2dspan, float_2dspan, float_2dspan);
+using func_d_d1d1d1_t = void (*)(double, double_1dspan, double_1dspan, double_1dspan);
+using func_d_d2d2d2_t = void (*)(double, double_2dspan, double_2dspan, double_2dspan);
+using func_F_F1F1F1_t = void (*)(cfloat, cfloat_1dspan, cfloat_1dspan, cfloat_1dspan);
+using func_D_D1D1D1_t = void (*)(cdouble, cdouble_1dspan, cdouble_1dspan, cdouble_1dspan);
 
-using func_qF_F2_t =
-    void (*)(long long int, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_qD_D2_t =
-    void (*)(long long int, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+// 2 inputs, 1 output
+using func_ff_F2_t = void (*)(float, float, cfloat_2dspan);
+using func_dd_D2_t = void (*)(double, double, cdouble_2dspan);
+using func_qF_F2_t = void (*)(long long int, cfloat, cfloat_2dspan);
+using func_qD_D2_t = void (*)(long long int, cdouble, cdouble_2dspan);
 
-using func_lF_F2F2_t =
-    void (*)(long, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_lD_D2D2_t =
-    void (*)(long, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+// 2 inputs, 2 outputs
+using func_qF_F2F2_t = void (*)(long long int, cfloat, cfloat_2dspan, cfloat_2dspan);
+using func_qD_D2D2_t = void (*)(long long int, cdouble, cdouble_2dspan, cdouble_2dspan);
 
-using func_qF_F2F2_t =
-    void (*)(long long int, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_qD_D2D2_t =
-    void (*)(long long int, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_f_f2f2_t =
-    void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_d_d2d2_t =
-    void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_F_F2F2_t =
-    void (*)(complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_D_D2D2_t =
-    void (*)(complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_f_f2_t = void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_d_d2_t = void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_f_f2f2_t =
-    void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_d_d2d2_t =
-    void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_f_f2f2f2_t =
-    void (*)(float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_d_d2d2d2_t =
-    void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_qF_F2F2F2_t =
-    void (*)(long long int, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_qD_D2D2D2_t =
-    void (*)(long long int, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_bf_f2_t = void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_bd_d2_t = void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_bf_f2f2_t =
-    void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_bd_d2d2_t =
-    void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_bf_f2f2f2_t =
-    void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_bd_d2d2d2_t =
-    void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_fb_f2f2_t =
-    void (*)(float, bool, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_db_d2d2_t =
-    void (*)(double, bool, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_Flb_F2F2_t =
-    void (*)(complex<float>, long, bool, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_Dlb_D2D2_t =
-    void (*)(complex<double>, long, bool, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
-
-using func_ff_F2_t = void (*)(float, float, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
-using func_dd_D2_t = void (*)(double, double, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+// 2 inputs, 3 outputs
+using func_qF_F2F2F2_t = void (*)(long long int, cfloat, cfloat_2dspan, cfloat_2dspan, cfloat_2dspan);
+using func_qD_D2D2D2_t = void (*)(long long int, cdouble, cdouble_2dspan, cdouble_2dspan, cdouble_2dspan);
 
 extern const char *lpn_all_doc;
 extern const char *lpmn_doc;

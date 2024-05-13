@@ -2,6 +2,7 @@
 
 #include "Python.h"
 
+#include "special/bessel.h"
 #include "special/legendre.h"
 #include "special/specfun.h"
 #include "special/sph_harm.h"
