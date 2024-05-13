@@ -968,7 +968,7 @@ def firls(numtaps, bands, desired, *, weight=None, fs=None):
     desired = np.asarray(desired).flatten()
     if bands.size != desired.size:
         raise ValueError(
-            f"desired must have one entry per frequency, got {desired.size}"
+            f"desired must have one entry per frequency, got {desired.size} "
             f"gains for {bands.size} frequencies."
         )
     desired.shape = (-1, 2)
