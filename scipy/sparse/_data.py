@@ -272,6 +272,9 @@ class _minmax_mixin:
                 else:
                     ret[i] = zero_ind
 
+        if isinstance(self, sparray):
+            return ret
+
         if axis == 1:
             ret = ret.reshape(-1, 1)
 

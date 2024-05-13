@@ -6,7 +6,8 @@ import numpy as np
 
 from numpy.testing import assert_equal, assert_array_equal
 
-from scipy.sparse import coo_array
+from scipy.sparse import coo_array, csr_array, csc_array, bsr_array
+from scipy.sparse import coo_matrix, csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse._sputils import isscalarlike
 
 
@@ -16,10 +17,11 @@ def toarray(a):
     return a.toarray()
 
 
-formats_for_minmax = [coo_array]
+formats_for_minmax_1d = [coo_array, csr_array]
+formats_for_minmax_not1d = [csc_array, bsr_array]
 
 
-@pytest.mark.parametrize("spcreator", formats_for_minmax)
+@pytest.mark.parametrize("spcreator", formats_for_minmax_1d)
 class Test_MinMaxMixin1D:
     def test_minmax(self, spcreator):
         D = np.arange(5)
@@ -29,7 +31,6 @@ class Test_MinMaxMixin1D:
         assert_equal(X.max(), 4)
         assert_equal((-X).min(), -4)
         assert_equal((-X).max(), 0)
-
 
     def test_minmax_axis(self, spcreator):
         D = np.arange(50)
@@ -47,7 +48,6 @@ class Test_MinMaxMixin1D:
                 X.min(axis=axis)
             with pytest.raises(ValueError, match="axis out of range"):
                 X.max(axis=axis)
-
 
     def test_numpy_minmax(self, spcreator):
         dat = np.array([0, 1, 2])
@@ -80,3 +80,58 @@ class Test_MinMaxMixin1D:
                 mat.argmin(axis=axis)
             with pytest.raises(ValueError, match="to an empty matrix"):
                 mat.argmax(axis=axis)
+
+
+@pytest.mark.parametrize("spcreator", formats_for_minmax_1d + formats_for_minmax_not1d)
+class Test_ShapeMinMax2DWithAxis:
+    def test_minmax(self, spcreator):
+        dat = np.array([[-1, 5, 0, 3], [0, 0, -1, -2], [0, 0, 1, 2]])
+        datsp = spcreator(dat)
+
+        for (spminmax, npminmax) in [
+            (datsp.min, np.min),
+            (datsp.max, np.max),
+            (datsp.nanmin, np.nanmin),
+            (datsp.nanmax, np.nanmax),
+            (datsp.argmin, np.argmin),
+            (datsp.argmax, np.argmax),
+        ]:
+            assert_equal(toarray(spminmax(axis=0)), npminmax(dat, axis=0))
+            assert_equal(toarray(spminmax(axis=1)), npminmax(dat, axis=1))
+            assert_equal(spminmax(axis=0).shape, (4,))
+            assert_equal(spminmax(axis=1).shape, (3,))
+
+        # verify spmatrix behavior
+        spmat_form = {
+            'coo': coo_matrix,
+            'csr': csr_matrix,
+            'csc': csc_matrix,
+            'bsr': bsr_matrix,
+        }
+        datspm = spmat_form[datsp.format](dat)
+
+        for (spminax, npminax) in [
+            (datspm.min, np.min),
+            (datspm.max, np.max),
+            (datspm.nanmin, np.nanmin),
+            (datspm.nanmax, np.nanmax),
+            (datspm.argmin, np.argmin),
+            (datspm.argmax, np.argmax),
+        ]:
+            assert_equal(toarray(spminax(axis=0)), npminax(dat, axis=0, keepdims=True))
+            assert_equal(toarray(spminax(axis=1)), npminax(dat, axis=1, keepdims=True))
+            assert_equal(spminax(axis=0).shape, (1, 4))
+            assert_equal(spminax(axis=1).shape, (3, 1))
+
+        assert datspm.min(axis=0).format == "coo"
+        assert datspm.min(axis=1).format == "coo"
+        assert datspm.max(axis=0).format == "coo"
+        assert datspm.max(axis=1).format == "coo"
+        assert datspm.nanmin(axis=0).format == "coo"
+        assert datspm.nanmin(axis=1).format == "coo"
+        assert datspm.nanmax(axis=0).format == "coo"
+        assert datspm.nanmax(axis=1).format == "coo"
+        assert isinstance(datspm.argmin(axis=0), np.ndarray)
+        assert isinstance(datspm.argmin(axis=1), np.ndarray)
+        assert isinstance(datspm.argmax(axis=0), np.ndarray)
+        assert isinstance(datspm.argmax(axis=1), np.ndarray)
