@@ -156,7 +156,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     xs = (xl0, xr0)
     temp = eim._initialize(func, xs, args)
-    func, xs, fs, args, shape, dtype, _ = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
     xl0, xr0 = xs
     xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
     xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
