@@ -210,9 +210,12 @@ using cuda::std::uint64_t;
 #include <cmath>
 #include <complex>
 #include <cstdint>
+#include <cstddef>
+#include <iterator>
 #include <limits>
 #include <math.h>
 #include <type_traits>
+#include <utility>
 
 #ifdef DEBUG
 #define SPECFUN_ASSERT(a) assert(a)
