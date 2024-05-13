@@ -119,6 +119,28 @@ class TestLegendreFunctions:
 
         np.testing.assert_allclose((1 - x * x) * p_hess, 2 * x * p_jac - (n * (n + 1) - m * m / (1 - x * x)) * p, rtol = 1e-05, atol = 1e-08)
 
+    @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7, 10)])
+    @pytest.mark.parametrize("m_max", [5, 4])
+    @pytest.mark.parametrize("n_max", [7, 10])
+    def test_lpmn(self, shape, n_max, m_max):
+        rng = np.random.default_rng(1234)
+
+        x = rng.uniform(-0.99, 0.99, shape)
+        p_all, p_all_jac, p_all_hess = special.lpmn_all(m_max, n_max, x, diff_n = 2)
+
+        n = np.arange(n_max + 1)
+        n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
+
+        m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
+        m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
+
+        x = np.expand_dims(x, axis = (0, 1))
+        p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
+
+        np.testing.assert_allclose(p, p_all)
+        np.testing.assert_allclose(p_jac, p_all_jac)
+        np.testing.assert_allclose(p_hess, p_all_hess)
+
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
     def test_lpmn_all(self, shape):
         rng = np.random.default_rng(1234)
