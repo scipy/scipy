@@ -221,6 +221,28 @@ def test_dijkstra_min_only_random(n):
             p = pred[p]
 
 
+@pytest.mark.parametrize('n', (10, 100))
+@pytest.mark.parametrize("method", ['FW', 'J', 'BF'])
+@pytest.mark.parametrize('directed', (True, False))
+def test_star_graph(n, method, directed):
+    # Build the star graph
+    star_arr = np.zeros((n, n), dtype=float)
+    star_center_idx = 0
+    star_arr[star_center_idx, :] = star_arr[:, star_center_idx] = range(n)
+    G = scipy.sparse.csr_matrix(star_arr, shape=(n, n))
+    # Build the distances matrix
+    SP_solution = np.zeros((n, n), dtype=float)
+    SP_solution[:] = star_arr[star_center_idx]
+    for idx in range(1, n):
+        SP_solution[idx] += star_arr[idx, star_center_idx]
+    np.fill_diagonal(SP_solution, 0)
+
+    SP = shortest_path(G, method=method, directed=directed)
+    assert_allclose(
+        SP_solution, SP
+    )
+
+
 def test_dijkstra_random():
     # reproduces the hang observed in gh-17782
     n = 10
@@ -433,6 +455,7 @@ def test_yen_undirected():
     )
     assert_allclose(distances, [1., 4., 5., 8.])
 
+
 def test_yen_unweighted():
     # Ask for more paths than there are, verify only the available paths are returned
     distances, predecessors = yen(
@@ -446,6 +469,7 @@ def test_yen_unweighted():
     assert_allclose(distances, [2., 3.])
     assert_allclose(predecessors, directed_2SP_0_to_3)
 
+
 def test_yen_no_paths():
     distances = yen(
         directed_G,
@@ -454,6 +478,7 @@ def test_yen_no_paths():
         K=1,
     )
     assert distances.size == 0
+
 
 def test_yen_negative_weights():
     distances = yen(
