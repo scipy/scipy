@@ -131,10 +131,9 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 // =====================================================
 
 template <typename T>
-T assoc_legendre_p_diag(int m, int type, T x) {
+T assoc_legendre_p_diag(int m, int type, T z) {
     int m_abs = std::abs(m);
-
-    T res = 1;
+    bool m_odd = m_abs % 2;
 
     T type_sign;
     if (type == 3) {
@@ -144,26 +143,25 @@ T assoc_legendre_p_diag(int m, int type, T x) {
     }
 
     // need to take care with complex arithmetic, due to signed zeros and sqrt(0j) != sqrt(-0j)
-    bool m_odd = m_abs % 2;
+    T res = 1;
     if (m_odd) {
         if (type == 3) {
-            res *= std::sqrt(x * x - T(1));
-            if (std::real(x) < 0) {
+            res *= std::sqrt(z * z - T(1));
+            if (std::real(z) < 0) {
                 res = -res;
             }
         } else {
-            res *= -std::sqrt(T(1) - x * x);
+            res *= -std::sqrt(T(1) - z * z);
         }
     }
 
-    // unroll the loop to avoid the sqrt
-    for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        res *= T(2 * j - 1) * T(2 * j + 1) * type_sign * (T(1) - x * x);
+    // other square roots can be avoided if each iteration increments by 2
+    for (int i = m_odd + 1; i <= m_abs; i += 2) {
+        res *= type_sign * T((2 * i - 1) * (2 * i + 1)) * (T(1) - z * z);
     }
 
     if (m < 0) {
-        res *= 1 / std::tgamma(2 * m_abs + 1);
-        res *= std::pow(-1, m_abs);
+        res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
         if (m_odd && type == 3) {
             res *= -1;
         }
@@ -217,18 +215,11 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         return 0;
     }
 
-    T type_sign;
-    if (type == 3) {
-        type_sign = -1;
-    } else {
-        type_sign = 1;
-    }
-
     if (m == 1) {
         if (type == 3) {
             T res = x / std::sqrt(x * x - T(1));
             if (std::real(x) < 0) {
-                res *= -1;
+                res = -res;
             }
 
             return res;
@@ -241,7 +232,7 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         if (type == 3) {
             T res = x / (T(2) * std::sqrt(x * x - T(1)));
             if (std::real(x) < 0) {
-                res *= -1;
+                res = -res;
             }
 
             return res;
@@ -250,25 +241,19 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
         return -x / (T(2) * std::sqrt(T(1) - x * x));
     }
 
-    if (m < 0) {
-        return x * type_sign * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
+    T type_sign;
+    if (type == 3) {
+        type_sign = -1;
+    } else {
+        type_sign = 1;
     }
 
-    return -T(4 * (m - 2) * m + 3) * T(m) * type_sign * x * assoc_legendre_p_diag(m - 2, type, x);
+    if (m < 0) {
+        return type_sign * x * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
+    }
+
+    return -type_sign * T((4 * (m - 2) * m + 3) * m) * x * assoc_legendre_p_diag(m - 2, type, x);
 }
-
-template <typename T>
-struct remove_complex {
-    using type = T;
-};
-
-template <typename T>
-struct remove_complex<std::complex<T>> {
-    using type = T;
-};
-
-template <typename T>
-using remove_complex_t = typename remove_complex<T>::type;
 
 template <typename T>
 T assoc_legendre_p_jac_next(int n, int m, int type, T z, T p, T p_prev, T p_jac_prev, T p_jac_prev_prev) {
@@ -463,14 +448,6 @@ struct assoc_legendre_p_diff_callback<T, 2> {
     }
 };
 
-/*
-    if (std::abs(x) == 1) {
-        for (long i = 1; i <= n; i++) {
-            p(0, i) = std::pow(x, i);
-        }
-    }
-*/
-
 template <typename T>
 T assoc_legendre_p(int n, int m, int type, T x) {
     return assoc_legendre_p(n, m, type, x, [](int j, int i, int type, T x, T value, T value_prev) {});
@@ -506,12 +483,14 @@ void assoc_legendre_p_all(int type, T x, OutputMat res) {
 
     for (int i = -m; i <= m; ++i) {
         assoc_legendre_p(n, i, type, x, [res](int j, int i, int type, T x, T p, T p_prev) {
+            int i_offset;
             if (i < 0) {
-                int i_abs = std::abs(i);
-                res(res.extent(0) - i_abs, j) = p;
+                i_offset = res.extent(0);
             } else {
-                res(i, j) = p;
+                i_offset = 0;
             }
+
+            res(i + i_offset, j) = p;
         });
     }
 }
@@ -525,14 +504,15 @@ void assoc_legendre_p_all(int type, T x, OutputMat1 res, OutputMat2 res_jac) {
         assoc_legendre_p(
             n, i, type, x, assoc_legendre_p_diff_callback<T, 1>(),
             [res, res_jac](int j, int i, int type, T z, const T(&p)[2], const T(&p_prev)[2]) {
+                int i_offset;
                 if (i < 0) {
-                    int i_abs = std::abs(i);
-                    res(res.extent(0) - i_abs, j) = p[0];
-                    res_jac(res.extent(0) - i_abs, j) = p[1];
+                    i_offset = res.extent(0);
                 } else {
-                    res(i, j) = p[0];
-                    res_jac(i, j) = p[1];
+                    i_offset = 0;
                 }
+
+                res(i + i_offset, j) = p[0];
+                res_jac(i + i_offset, j) = p[1];
             }
         );
     }
@@ -547,16 +527,16 @@ void assoc_legendre_p_all(int type, T x, OutputMat1 res, OutputMat2 res_jac, Out
         assoc_legendre_p(
             n, i, type, x, assoc_legendre_p_diff_callback<T, 2>(),
             [res, res_jac, res_hess](int j, int i, int type, T z, const T(&p)[3], const T(&p_prev)[3]) {
+                int i_offset;
                 if (i < 0) {
-                    int i_abs = std::abs(i);
-                    res(res.extent(0) - i_abs, j) = p[0];
-                    res_jac(res.extent(0) - i_abs, j) = p[1];
-                    res_hess(res.extent(0) - i_abs, j) = p[2];
+                    i_offset = res.extent(0);
                 } else {
-                    res(i, j) = p[0];
-                    res_jac(i, j) = p[1];
-                    res_hess(i, j) = p[2];
+                    i_offset = 0;
                 }
+
+                res(i + i_offset, j) = p[0];
+                res_jac(i + i_offset, j) = p[1];
+                res_hess(i + i_offset, j) = p[2];
             }
         );
     }

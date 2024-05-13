@@ -209,8 +209,8 @@ using cuda::std::uint64_t;
 #include <cassert>
 #include <cmath>
 #include <complex>
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 #include <iterator>
 #include <limits>
 #include <math.h>
@@ -224,3 +224,16 @@ using cuda::std::uint64_t;
 #endif
 
 #endif
+
+template <typename T>
+struct remove_complex {
+    using type = T;
+};
+
+template <typename T>
+struct remove_complex<std::complex<T>> {
+    using type = T;
+};
+
+template <typename T>
+using remove_complex_t = typename remove_complex<T>::type;
