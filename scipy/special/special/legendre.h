@@ -326,11 +326,11 @@ T assoc_legendre_p_hess_diag(int m, int type, T z) {
     }
 
     if (m == 1) {
-        return 1 / (std::sqrt(1 - z * z) * (1 - z * z));
+        return T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z));
     }
 
     if (m == -1) {
-        return -1 / (2 * std::sqrt(1 - z * z) * (1 - z * z));
+        return -T(1) / (T(2) * std::sqrt(T(1) - z * z) * (T(1) - z * z));
     }
 
     if (m == 2) {
@@ -338,22 +338,22 @@ T assoc_legendre_p_hess_diag(int m, int type, T z) {
     }
 
     if (m == -2) {
-        return -1 / T(4);
+        return -T(1) / T(4);
     }
 
     if (m == 3) {
-        return 45 * (1 - 2 * z * z) / std::sqrt(1 - z * z);
+        return T(45) * (T(1) - T(2) * z * z) / std::sqrt(T(1) - z * z);
     }
 
     if (m == -3) {
-        return (2 * z * z - 1) / (16 * std::sqrt(1 - z * z));
+        return (T(2) * z * z - T(1)) / (T(16) * std::sqrt(T(1) - z * z));
     }
 
     if (m < 0) {
-        return (T(m + 1) * z * z + 1) * assoc_legendre_p_diag(m + 4, type, z) / T(16 * T(m + 1) * T(m + 2) * T(m + 3));
+        return (T(m + 1) * z * z + T(1)) * assoc_legendre_p_diag(m + 4, type, z) / T(16 * (m + 1) * (m + 2) * (m + 3));
     }
 
-    return T(2 * m - 1) * T(2 * m - 3) * T(2 * m - 5) * T(2 * m - 7) * m * ((m - 1) * z * z - 1) *
+    return T(2 * m - 1) * T(2 * m - 3) * T(2 * m - 5) * T(2 * m - 7) * T(m) * (T(m - 1) * z * z - T(1)) *
            assoc_legendre_p_diag(m - 4, type, z);
 }
 

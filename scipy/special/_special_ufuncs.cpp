@@ -124,9 +124,17 @@ using func_qqqD_D_t = complex<double> (*)(long long int, long long int, long lon
 
 using func_qqqf_ff_t = void (*)(long long int, long long int, long long int, float, float &, float &);
 using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, double, double &, double &);
+using func_qqqF_FF_t =
+    void (*)(long long int, long long int, long long int, complex<float>, complex<float> &, complex<float> &);
+using func_qqqD_DD_t =
+    void (*)(long long int, long long int, long long int, complex<double>, complex<double> &, complex<double> &);
 
 using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
 using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
+using func_qqqF_FFF_t =
+    void (*)(long long int, long long int, long long int, complex<float>, complex<float> &, complex<float> &, complex<float> &);
+using func_qqqD_DDD_t =
+    void (*)(long long int, long long int, long long int, complex<double>, complex<double> &, complex<double> &, complex<double> &);
 
 using func_llff_F_t = complex<float> (*)(long, long, float, float);
 using func_lldd_D_t = complex<double> (*)(long, long, double, double);
@@ -551,20 +559,20 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *lpmn = Py_BuildValue(
         "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_qqf_f_t>(::lpmn), static_cast<func_qqd_d_t>(::lpmn)}, "lpmn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qqf_ff_t>(::lpmn), static_cast<func_qqd_dd_t>(::lpmn)}, 2, "lpmn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qqf_fff_t>(::lpmn), static_cast<func_qqd_ddd_t>(::lpmn)}, 3, "lpmn", nullptr)
+        SpecFun_NewUFunc({static_cast<func_qqd_d_t>(::lpmn), static_cast<func_qqf_f_t>(::lpmn)}, "lpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqd_dd_t>(::lpmn), static_cast<func_qqf_ff_t>(::lpmn)}, 2, "lpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqd_ddd_t>(::lpmn), static_cast<func_qqf_fff_t>(::lpmn)}, 3, "lpmn", nullptr)
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpmn", lpmn);
 
     PyObject *clpmn = Py_BuildValue(
         "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_qqqF_F_t>(::clpmn), static_cast<func_qqqD_D_t>(::clpmn)}, "clpmn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qqqD_D_t>(::clpmn), static_cast<func_qqqF_F_t>(::clpmn)}, "clpmn", nullptr),
         SpecFun_NewUFunc(
-            {static_cast<func_qqqf_ff_t>(::clpmn), static_cast<func_qqqd_dd_t>(::clpmn)}, 2, "clpmn", nullptr
+            {static_cast<func_qqqD_DD_t>(::clpmn), static_cast<func_qqqF_FF_t>(::clpmn)}, 2, "clpmn", nullptr
         ),
         SpecFun_NewUFunc(
-            {static_cast<func_qqqf_fff_t>(::clpmn), static_cast<func_qqqd_ddd_t>(::clpmn)}, 3, "clpmn", nullptr
+            {static_cast<func_qqqD_DDD_t>(::clpmn), static_cast<func_qqqF_FFF_t>(::clpmn)}, 3, "clpmn", nullptr
         )
     );
     PyModule_AddObjectRef(_special_ufuncs, "clpmn", clpmn);

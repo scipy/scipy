@@ -74,6 +74,11 @@ using func_f_f2f2f2_t =
 using func_d_d2d2d2_t =
     void (*)(double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
 
+using func_qF_F2F2F2_t =
+    void (*)(long long int, complex<float>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<float>, dextents<ptrdiff_t, 2>, layout_stride>);
+using func_qD_D2D2D2_t =
+    void (*)(long long int, complex<double>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>, mdspan<complex<double>, dextents<ptrdiff_t, 2>, layout_stride>);
+
 using func_bf_f2_t = void (*)(bool, float, mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>);
 using func_bd_d2_t = void (*)(bool, double, mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>);
 
@@ -133,18 +138,18 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *lpn_all = Py_BuildValue(
         "(N,N,N)",
         SpecFun_NewGUFunc(
-            {static_cast<func_f_f1_t>(::lpn_all), static_cast<func_d_d1_t>(::lpn_all),
-             static_cast<func_F_F1_t>(::lpn_all), static_cast<func_D_D1_t>(::lpn_all)},
+            {static_cast<func_d_d1_t>(::lpn_all), static_cast<func_f_f1_t>(::lpn_all),
+             static_cast<func_D_D1_t>(::lpn_all), static_cast<func_F_F1_t>(::lpn_all)},
             1, "lpn_all", lpn_all_doc, "()->(np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_f_f1f1_t>(::lpn_all), static_cast<func_d_d1d1_t>(::lpn_all),
-             static_cast<func_F_F1F1_t>(::lpn_all), static_cast<func_D_D1D1_t>(::lpn_all)},
+            {static_cast<func_d_d1d1_t>(::lpn_all), static_cast<func_f_f1f1_t>(::lpn_all),
+             static_cast<func_D_D1D1_t>(::lpn_all), static_cast<func_F_F1F1_t>(::lpn_all)},
             2, "lpn_all", lpn_all_doc, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_f_f1f1f1_t>(::lpn_all), static_cast<func_d_d1d1d1_t>(::lpn_all),
-             static_cast<func_F_F1F1F1_t>(::lpn_all), static_cast<func_D_D1D1D1_t>(::lpn_all)},
+            {static_cast<func_d_d1d1d1_t>(::lpn_all), static_cast<func_f_f1f1f1_t>(::lpn_all),
+             static_cast<func_D_D1D1D1_t>(::lpn_all), static_cast<func_F_F1F1F1_t>(::lpn_all)},
             3, "lpn_all", lpn_all_doc, "()->(np1),(np1),(np1)"
         )
     );
@@ -155,15 +160,15 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         Py_BuildValue(
             "(N,N,N)",
             SpecFun_NewGUFunc(
-                {static_cast<func_f_f2_t>(::lpmn_all), static_cast<func_d_d2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
+                {static_cast<func_d_d2_t>(::lpmn_all), static_cast<func_f_f2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
                 "()->(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
-                {static_cast<func_f_f2f2_t>(::lpmn_all), static_cast<func_d_d2d2_t>(::lpmn_all)}, 2, "lpmn_all",
+                {static_cast<func_d_d2d2_t>(::lpmn_all), static_cast<func_f_f2f2_t>(::lpmn_all)}, 2, "lpmn_all",
                 lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
-                {static_cast<func_f_f2f2f2_t>(::lpmn_all), static_cast<func_d_d2d2d2_t>(::lpmn_all)}, 3, "lpmn_all",
+                {static_cast<func_d_d2d2d2_t>(::lpmn_all), static_cast<func_f_f2f2f2_t>(::lpmn_all)}, 3, "lpmn_all",
                 lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
             )
         )
@@ -174,47 +179,50 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         "(N,N,N)",
         SpecFun_NewGUFunc(
             {static_cast<func_qD_D2_t>(::clpmn_all), static_cast<func_qF_F2_t>(::clpmn_all)}, 1, "clpmn_all", clpmn_doc,
-            "(),()->(mp1,np1)"
+            "(),()->(mpmp1,np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_qD_D2D2_t>(::clpmn_all), static_cast<func_qF_F2F2_t>(::clpmn_all)}, 2, "clpmn_all",
-            clpmn_doc, "(),()->(mp1,np1),(mp1,np1)"
+            clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1)"
         ),
-        Py_None
+        SpecFun_NewGUFunc(
+            {static_cast<func_qD_D2D2D2_t>(::clpmn_all), static_cast<func_qF_F2F2F2_t>(::clpmn_all)}, 3, "clpmn_all",
+            clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
+        )
     );
     PyModule_AddObjectRef(_gufuncs, "clpmn_all", clpmn_all);
 
     PyObject *_lqn = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(special::lqn), static_cast<func_d_d1d1_t>(special::lqn),
-         static_cast<func_F_F1F1_t>(special::lqn), static_cast<func_D_D1D1_t>(special::lqn)},
+        {static_cast<func_d_d1d1_t>(special::lqn), static_cast<func_f_f1f1_t>(special::lqn),
+         static_cast<func_D_D1D1_t>(special::lqn), static_cast<func_F_F1F1_t>(special::lqn)},
         2, "_lqn", lqn_doc, "()->(np1),(np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_lqn", _lqn);
 
     PyObject *_lqmn = SpecFun_NewGUFunc(
-        {static_cast<func_f_f2f2_t>(special::lqmn), static_cast<func_d_d2d2_t>(special::lqmn),
-         static_cast<func_F_F2F2_t>(special::lqmn), static_cast<func_D_D2D2_t>(special::lqmn)},
+        {static_cast<func_d_d2d2_t>(special::lqmn), static_cast<func_f_f2f2_t>(special::lqmn),
+         static_cast<func_D_D2D2_t>(special::lqmn), static_cast<func_F_F2F2_t>(special::lqmn)},
         2, "_lqmn", lqmn_doc, "()->(mp1,np1),(mp1,np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_lqmn", _lqmn);
-
-    PyObject *_rctj = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(special::rctj), static_cast<func_d_d1d1_t>(special::rctj)}, 2, "_rctj", rctj_doc,
-        "()->(np1),(np1)"
-    );
-    PyModule_AddObjectRef(_gufuncs, "_rctj", _rctj);
-
-    PyObject *_rcty = SpecFun_NewGUFunc(
-        {static_cast<func_f_f1f1_t>(special::rcty), static_cast<func_d_d1d1_t>(special::rcty)}, 2, "_rcty", rcty_doc,
-        "()->(np1),(np1)"
-    );
-    PyModule_AddObjectRef(_gufuncs, "_rcty", _rcty);
 
     PyObject *_sph_harm_all = SpecFun_NewGUFunc(
         {static_cast<func_dd_D2_t>(special::sph_harm_all), static_cast<func_ff_F2_t>(special::sph_harm_all)}, 1,
         "_sph_harm_all", sph_harm_all_doc, "(),()->(mp1,np1)"
     );
     PyModule_AddObjectRef(_gufuncs, "_sph_harm_all", _sph_harm_all);
+
+    PyObject *_rctj = SpecFun_NewGUFunc(
+        {static_cast<func_d_d1d1_t>(special::rctj), static_cast<func_f_f1f1_t>(special::rctj)}, 2, "_rctj", rctj_doc,
+        "()->(np1),(np1)"
+    );
+    PyModule_AddObjectRef(_gufuncs, "_rctj", _rctj);
+
+    PyObject *_rcty = SpecFun_NewGUFunc(
+        {static_cast<func_d_d1d1_t>(special::rcty), static_cast<func_f_f1f1_t>(special::rcty)}, 2, "_rcty", rcty_doc,
+        "()->(np1),(np1)"
+    );
+    PyModule_AddObjectRef(_gufuncs, "_rcty", _rcty);
 
     return _gufuncs;
 }
