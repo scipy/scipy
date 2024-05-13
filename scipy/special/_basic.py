@@ -5,6 +5,7 @@
 import operator
 import numpy as np
 import math
+import numbers
 import warnings
 from collections import defaultdict
 from heapq import heapify, heappop
@@ -1818,7 +1819,10 @@ def _(ufuncs, diff_n = 0):
 
 @clpmn_all.resolve_out_shapes
 def _(m, n, shapes, nout):
-#    n = _nonneg_int_or_fail(n, 'n', strict=False)
+    if not isinstance(m, numbers.Integral) or (abs(m) > n):
+        raise ValueError("m must be <= n.")
+    if not isinstance(n, numbers.Integral) or (n < 0):
+        raise ValueError("n must be a non-negative integer.")
 
     m_abs = abs(m)
 
@@ -1880,25 +1884,21 @@ def clpmn(m, n, z, type=3, *, legacy = True):
 
     """
 
-    if legacy:
-        if not isscalar(m) or (abs(m) > n):
-            raise ValueError("m must be <= n.")
-        if not isscalar(n) or (n < 0):
-            raise ValueError("n must be a non-negative integer.")
-        if not (type == 2 or type == 3):
-            raise ValueError("type must be either 2 or 3.")
+    if not (type == 2 or type == 3):
+        raise ValueError("type must be either 2 or 3.")
 
+    if legacy:
         m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-        p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
+        out, out_jac = clpmn_all(abs(m), n, type, z, diff_n = 1)
         if (m >= 0):
-            p = p[:(m + 1)]
-            pd = pd[:(m + 1)]
+            out = out[:(m + 1)]
+            out_jac = out_jac[:(m + 1)]
         else:
-            p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
-            pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
+            out = np.insert(out[:(m - 1):-1], 0, out[0], axis = 0)
+            out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis = 0)
 
-        return p, pd
+        return out, out_jac
 
     raise NotImplementedError
 
