@@ -1890,10 +1890,6 @@ def clpmn(m, n, z, type=3, *, legacy = True):
 
         m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-        z = np.asarray(z)
-        if (not np.issubdtype(z.dtype, np.inexact)):
-            z = z.astype(np.complex128)
-
         p, pd = clpmn_all(abs(m), n, type, z, diff_n = 1)
         if (m >= 0):
             p = p[:(m + 1)]
