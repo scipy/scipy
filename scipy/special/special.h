@@ -148,7 +148,7 @@ void clpmn_all(long long int type, std::complex<T> z, OutputMat1 res, OutputMat2
 }
 
 template <typename T>
-std::complex<T> sph_harm(long m, long n, T theta, T phi) {
+std::complex<T> sph_harm(long long int m, long long int n, T theta, T phi) {
     if (n < 0) {
         special::set_error("sph_harm", SF_ERROR_ARG, "n should not be negative");
         return std::numeric_limits<T>::quiet_NaN();

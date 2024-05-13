@@ -41,114 +41,111 @@
 using namespace std;
 
 // The following are based off NumPy's dtype type codes and functions like PyUFunc_dd_d
-// And also the following modifiers
-// p for pointer
-// r for reference
-// c for const
-// v for volative
 
+using cfloat = complex<float>;
+using cdouble = complex<double>;
+
+// 1 input, 1 output
 using func_f_f_t = float (*)(float);
 using func_d_d_t = double (*)(double);
-using func_F_F_t = complex<float> (*)(complex<float>);
-using func_D_D_t = complex<double> (*)(complex<double>);
+using func_F_F_t = cfloat (*)(cfloat);
+using func_D_D_t = cdouble (*)(cdouble);
 
+// 1 input, 2 outputs
 using func_f_ff_t = void (*)(float, float &, float &);
 using func_d_dd_t = void (*)(double, double &, double &);
-using func_f_FF_t = void (*)(float, complex<float> &, complex<float> &);
-using func_d_DD_t = void (*)(double, complex<double> &, complex<double> &);
+using func_f_FF_t = void (*)(float, cfloat &, cfloat &);
+using func_d_DD_t = void (*)(double, cdouble &, cdouble &);
 
+// 1 input, 4 outputs
 using func_f_ffff_t = void (*)(float, float &, float &, float &, float &);
 using func_d_dddd_t = void (*)(double, double &, double &, double &, double &);
+using func_f_FFFF_t = void (*)(float, cfloat &, cfloat &, cfloat &, cfloat &);
+using func_d_DDDD_t = void (*)(double, cdouble &, cdouble &, cdouble &, cdouble &);
+using func_F_FFFF_t = void (*)(cfloat, cfloat &, cfloat &, cfloat &, cfloat &);
+using func_D_DDDD_t = void (*)(cdouble, cdouble &, cdouble &, cdouble &, cdouble &);
 
-using func_f_FFFF_t = void (*)(float, complex<float> &, complex<float> &, complex<float> &, complex<float> &);
-using func_d_DDDD_t = void (*)(double, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
-using func_F_FFFF_t = void (*)(complex<float>, complex<float> &, complex<float> &, complex<float> &, complex<float> &);
-using func_D_DDDD_t =
-    void (*)(complex<double>, complex<double> &, complex<double> &, complex<double> &, complex<double> &);
-
-using func_ff_f_t = float (*)(float, float);
-using func_dd_d_t = double (*)(double, double);
-using func_FF_F_t = complex<float> (*)(complex<float>, complex<float>);
-using func_DD_D_t = complex<double> (*)(complex<double>, complex<double>);
-using func_fF_F_t = complex<float> (*)(float, complex<float>);
-using func_dD_D_t = complex<double> (*)(double, complex<double>);
-using func_lf_f_t = float (*)(long, float);
-using func_ld_d_t = double (*)(long, double);
-using func_lF_F_t = complex<float> (*)(long, complex<float>);
-using func_lD_D_t = complex<double> (*)(long, complex<double>);
-
+// 2 inputs, 1 output
 using func_qf_f_t = float (*)(long long int, float);
 using func_qd_d_t = double (*)(long long int, double);
+using func_ff_f_t = float (*)(float, float);
+using func_dd_d_t = double (*)(double, double);
+using func_FF_F_t = cfloat (*)(cfloat, cfloat);
+using func_DD_D_t = cdouble (*)(cdouble, cdouble);
+using func_fF_F_t = cfloat (*)(float, cfloat);
+using func_dD_D_t = cdouble (*)(double, cdouble);
+using func_lf_f_t = float (*)(long, float);
+using func_ld_d_t = double (*)(long, double);
+using func_lF_F_t = cfloat (*)(long, cfloat);
+using func_lD_D_t = cdouble (*)(long, cdouble);
 
+// 2 inputs, 2 outputs
 using func_qf_ff_t = void (*)(long long int, float, float &, float &);
 using func_qd_dd_t = void (*)(long long int, double, double &, double &);
 
+// 2 inputs, 3 outputs
 using func_qf_fff_t = void (*)(long long int, float, float &, float &, float &);
 using func_qd_ddd_t = void (*)(long long int, double, double &, double &, double &);
 
+// 2 inputs, 2 outputs
 using func_ff_ff_t = void (*)(float, float, float &, float &);
 using func_dd_dd_t = void (*)(double, double, double &, double &);
 using func_lf_ff_t = void (*)(long, float, float &, float &);
 using func_ld_dd_t = void (*)(long, double, double &, double &);
 
+// 2 inputs, 3 outputs
 using func_lf_fff_t = void (*)(long, float, float &, float &, float &);
 using func_ld_ddd_t = void (*)(long, double, double &, double &, double &);
 
+// 3 inputs, 1 output
 using func_fff_f_t = float (*)(float, float, float);
 using func_ddd_d_t = double (*)(double, double, double);
-using func_Flf_F_t = complex<float> (*)(complex<float>, long, float);
-using func_Dld_D_t = complex<double> (*)(complex<double>, long, double);
+using func_Flf_F_t = cfloat (*)(cfloat, long, float);
+using func_Dld_D_t = cdouble (*)(cdouble, long, double);
 
+// 3 inputs, 2 outputs
 using func_fff_ff_t = void (*)(float, float, float, float &, float &);
 using func_ddd_dd_t = void (*)(double, double, double, double &, double &);
 
+// 3 inputs, 1 output
 using func_qqf_f_t = float (*)(long long int, long long int, float);
 using func_qqd_d_t = double (*)(long long int, long long int, double);
 
+// 3 inputs, 2 outputs
 using func_qqf_ff_t = void (*)(long long int, long long int, float, float &, float &);
 using func_qqd_dd_t = void (*)(long long int, long long int, double, double &, double &);
 
+// 3 inputs, 3 outputs
 using func_qqf_fff_t = void (*)(long long int, long long int, float, float &, float &, float &);
 using func_qqd_ddd_t = void (*)(long long int, long long int, double, double &, double &, double &);
 
-using func_lllF_F_t = complex<float> (*)(long, long, long, complex<float>);
-using func_lllD_D_t = complex<double> (*)(long, long, long, complex<double>);
-
-using func_lllf_ff_t = void (*)(long, long, long, float, float &, float &);
-using func_llld_dd_t = void (*)(long, long, long, double, double &, double &);
-
-using func_lllf_fff_t = void (*)(long, long, long, float, float &, float &, float &);
-using func_llld_ddd_t = void (*)(long, long, long, double, double &, double &, double &);
-
-using func_qqqF_F_t = complex<float> (*)(long long int, long long int, long long int, complex<float>);
-using func_qqqD_D_t = complex<double> (*)(long long int, long long int, long long int, complex<double>);
-
-using func_qqqf_ff_t = void (*)(long long int, long long int, long long int, float, float &, float &);
-using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, double, double &, double &);
-using func_qqqF_FF_t =
-    void (*)(long long int, long long int, long long int, complex<float>, complex<float> &, complex<float> &);
-using func_qqqD_DD_t =
-    void (*)(long long int, long long int, long long int, complex<double>, complex<double> &, complex<double> &);
-
-using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
-using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
-using func_qqqF_FFF_t =
-    void (*)(long long int, long long int, long long int, complex<float>, complex<float> &, complex<float> &, complex<float> &);
-using func_qqqD_DDD_t =
-    void (*)(long long int, long long int, long long int, complex<double>, complex<double> &, complex<double> &, complex<double> &);
-
-using func_llff_F_t = complex<float> (*)(long, long, float, float);
-using func_lldd_D_t = complex<double> (*)(long, long, double, double);
+// 4 inputs, 1 outputs
+using func_qqqF_F_t = cfloat (*)(long long int, long long int, long long int, cfloat);
+using func_qqqD_D_t = cdouble (*)(long long int, long long int, long long int, cdouble);
+using func_qqff_F_t = cfloat (*)(long long int, long long int, float, float);
+using func_qqdd_D_t = cdouble (*)(long long int, long long int, double, double);
 using func_ffff_f_t = float (*)(float, float, float, float);
 using func_dddd_d_t = double (*)(double, double, double, double);
-using func_fffF_F_t = complex<float> (*)(float, float, float, complex<float>);
-using func_dddD_D_t = complex<double> (*)(double, double, double, complex<double>);
-using func_ffff_F_t = complex<float> (*)(float, float, float, float);
-using func_dddd_D_t = complex<double> (*)(double, double, double, double);
+using func_fffF_F_t = cfloat (*)(float, float, float, cfloat);
+using func_dddD_D_t = cdouble (*)(double, double, double, cdouble);
+using func_ffff_F_t = cfloat (*)(float, float, float, float);
+using func_dddd_D_t = cdouble (*)(double, double, double, double);
 
+// 4 inputs, 2 outputs
+using func_qqqf_ff_t = void (*)(long long int, long long int, long long int, float, float &, float &);
 using func_ffff_ff_t = void (*)(float, float, float, float, float &, float &);
+using func_qqqd_dd_t = void (*)(long long int, long long int, long long int, double, double &, double &);
 using func_dddd_dd_t = void (*)(double, double, double, double, double &, double &);
+using func_qqqF_FF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &);
+using func_qqqD_DD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &);
 
+// 4 inputs, 3 outputs
+using func_qqqf_fff_t = void (*)(long long int, long long int, long long int, float, float &, float &, float &);
+using func_qqqd_ddd_t = void (*)(long long int, long long int, long long int, double, double &, double &, double &);
+using func_qqqF_FFF_t = void (*)(long long int, long long int, long long int, cfloat, cfloat &, cfloat &, cfloat &);
+using func_qqqD_DDD_t = void (*)(long long int, long long int, long long int, cdouble, cdouble &, cdouble &, cdouble &);
+
+// 5 inputs, 2 outputs
 using func_fffff_ff_t = void (*)(float, float, float, float, float, float &, float &);
 using func_ddddd_dd_t = void (*)(double, double, double, double, double, double &, double &);
 
@@ -837,8 +834,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "_spherical_kn_d", _spherical_kn_d);
 
     PyObject *sph_harm = SpecFun_NewUFunc(
-        {static_cast<func_lldd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
-         static_cast<func_llff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
+        {static_cast<func_qqdd_D_t>(::sph_harm), static_cast<func_dddd_D_t>(::sph_harm),
+         static_cast<func_qqff_F_t>(::sph_harm), static_cast<func_ffff_F_t>(::sph_harm)},
         "sph_harm", sph_harm_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "sph_harm", sph_harm);

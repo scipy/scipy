@@ -7,54 +7,54 @@ using namespace std;
 using cfloat = complex<float>;
 using cdouble = complex<double>;
 
-using float_1dspan = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
-using float_2dspan = mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>;
-using double_1dspan = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
-using double_2dspan = mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>;
-using cfloat_1dspan = mdspan<cfloat, dextents<ptrdiff_t, 1>, layout_stride>;
-using cfloat_2dspan = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
-using cdouble_1dspan = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
-using cdouble_2dspan = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
+using float_1d = mdspan<float, dextents<ptrdiff_t, 1>, layout_stride>;
+using float_2d = mdspan<float, dextents<ptrdiff_t, 2>, layout_stride>;
+using double_1d = mdspan<double, dextents<ptrdiff_t, 1>, layout_stride>;
+using double_2d = mdspan<double, dextents<ptrdiff_t, 2>, layout_stride>;
+using cfloat_1d = mdspan<cfloat, dextents<ptrdiff_t, 1>, layout_stride>;
+using cfloat_2d = mdspan<cfloat, dextents<ptrdiff_t, 2>, layout_stride>;
+using cdouble_1d = mdspan<cdouble, dextents<ptrdiff_t, 1>, layout_stride>;
+using cdouble_2d = mdspan<cdouble, dextents<ptrdiff_t, 2>, layout_stride>;
 
 // 1 input, 1 output
-using func_f_f1_t = void (*)(float, float_1dspan);
-using func_f_f2_t = void (*)(float, float_2dspan);
-using func_d_d1_t = void (*)(double, double_1dspan);
-using func_d_d2_t = void (*)(double, double_2dspan);
-using func_F_F1_t = void (*)(cfloat, cfloat_1dspan);
-using func_D_D1_t = void (*)(cdouble, cdouble_1dspan);
+using func_f_f1_t = void (*)(float, float_1d);
+using func_f_f2_t = void (*)(float, float_2d);
+using func_d_d1_t = void (*)(double, double_1d);
+using func_d_d2_t = void (*)(double, double_2d);
+using func_F_F1_t = void (*)(cfloat, cfloat_1d);
+using func_D_D1_t = void (*)(cdouble, cdouble_1d);
 
 // 1 input, 2 outputs
-using func_f_f1f1_t = void (*)(float, float_1dspan, float_1dspan);
-using func_f_f2f2_t = void (*)(float, float_2dspan, float_2dspan);
-using func_d_d1d1_t = void (*)(double, double_1dspan, double_1dspan);
-using func_d_d2d2_t = void (*)(double, double_2dspan, double_2dspan);
-using func_F_F1F1_t = void (*)(cfloat, cfloat_1dspan, cfloat_1dspan);
-using func_F_F2F2_t = void (*)(cfloat, cfloat_2dspan, cfloat_2dspan);
-using func_D_D1D1_t = void (*)(cdouble, cdouble_1dspan, cdouble_1dspan);
-using func_D_D2D2_t = void (*)(cdouble, cdouble_2dspan, cdouble_2dspan);
+using func_f_f1f1_t = void (*)(float, float_1d, float_1d);
+using func_f_f2f2_t = void (*)(float, float_2d, float_2d);
+using func_d_d1d1_t = void (*)(double, double_1d, double_1d);
+using func_d_d2d2_t = void (*)(double, double_2d, double_2d);
+using func_F_F1F1_t = void (*)(cfloat, cfloat_1d, cfloat_1d);
+using func_F_F2F2_t = void (*)(cfloat, cfloat_2d, cfloat_2d);
+using func_D_D1D1_t = void (*)(cdouble, cdouble_1d, cdouble_1d);
+using func_D_D2D2_t = void (*)(cdouble, cdouble_2d, cdouble_2d);
 
 // 1 input, 3 outputs
-using func_f_f1f1f1_t = void (*)(float, float_1dspan, float_1dspan, float_1dspan);
-using func_f_f2f2f2_t = void (*)(float, float_2dspan, float_2dspan, float_2dspan);
-using func_d_d1d1d1_t = void (*)(double, double_1dspan, double_1dspan, double_1dspan);
-using func_d_d2d2d2_t = void (*)(double, double_2dspan, double_2dspan, double_2dspan);
-using func_F_F1F1F1_t = void (*)(cfloat, cfloat_1dspan, cfloat_1dspan, cfloat_1dspan);
-using func_D_D1D1D1_t = void (*)(cdouble, cdouble_1dspan, cdouble_1dspan, cdouble_1dspan);
+using func_f_f1f1f1_t = void (*)(float, float_1d, float_1d, float_1d);
+using func_f_f2f2f2_t = void (*)(float, float_2d, float_2d, float_2d);
+using func_d_d1d1d1_t = void (*)(double, double_1d, double_1d, double_1d);
+using func_d_d2d2d2_t = void (*)(double, double_2d, double_2d, double_2d);
+using func_F_F1F1F1_t = void (*)(cfloat, cfloat_1d, cfloat_1d, cfloat_1d);
+using func_D_D1D1D1_t = void (*)(cdouble, cdouble_1d, cdouble_1d, cdouble_1d);
 
 // 2 inputs, 1 output
-using func_ff_F2_t = void (*)(float, float, cfloat_2dspan);
-using func_dd_D2_t = void (*)(double, double, cdouble_2dspan);
-using func_qF_F2_t = void (*)(long long int, cfloat, cfloat_2dspan);
-using func_qD_D2_t = void (*)(long long int, cdouble, cdouble_2dspan);
+using func_ff_F2_t = void (*)(float, float, cfloat_2d);
+using func_dd_D2_t = void (*)(double, double, cdouble_2d);
+using func_qF_F2_t = void (*)(long long int, cfloat, cfloat_2d);
+using func_qD_D2_t = void (*)(long long int, cdouble, cdouble_2d);
 
 // 2 inputs, 2 outputs
-using func_qF_F2F2_t = void (*)(long long int, cfloat, cfloat_2dspan, cfloat_2dspan);
-using func_qD_D2D2_t = void (*)(long long int, cdouble, cdouble_2dspan, cdouble_2dspan);
+using func_qF_F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d);
+using func_qD_D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d);
 
 // 2 inputs, 3 outputs
-using func_qF_F2F2F2_t = void (*)(long long int, cfloat, cfloat_2dspan, cfloat_2dspan, cfloat_2dspan);
-using func_qD_D2D2D2_t = void (*)(long long int, cdouble, cdouble_2dspan, cdouble_2dspan, cdouble_2dspan);
+using func_qF_F2F2F2_t = void (*)(long long int, cfloat, cfloat_2d, cfloat_2d, cfloat_2d);
+using func_qD_D2D2D2_t = void (*)(long long int, cdouble, cdouble_2d, cdouble_2d, cdouble_2d);
 
 extern const char *lpn_all_doc;
 extern const char *lpmn_doc;
