@@ -112,10 +112,6 @@ def _nonneg_int_or_fail(n, var_name, strict=True):
     return n
 
 
-def diff_resolve_ufunc(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
-
-
 def diric(x, n):
     """Periodic sinc function, also called the Dirichlet function.
 
@@ -1722,9 +1718,11 @@ def mathieu_odd_coef(m, q):
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
+_lpmn = multiufunc(_lpmn)
 
-
-_lpmn = multiufunc(_lpmn, diff_resolve_ufunc)
+@_lpmn.resolve_ufunc
+def _(ufuncs, norm = False, diff_n = 0):
+    return ufuncs[norm][diff_n]
 
 lpmn_all = multiufunc(lpmn_all)
 
@@ -1733,14 +1731,14 @@ def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
 @lpmn_all.resolve_out_shapes
-def _(m, n, shapes, nout):
+def _(m, n, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
 
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((2 * abs(m) + 1, n + 1,) + np.broadcast_shapes(*shapes),)
+    return nout * ((2 * abs(m) + 1, n + 1,) + z_shape,)
 
 def lpmn(m, n, z, diff_n = None, legacy = True):
     """Sequence of associated Legendre functions of the first kind.
@@ -1814,11 +1812,11 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
 
 @clpmn_all.resolve_ufunc
-def _(ufuncs, diff_n = 0):
-    return ufuncs[diff_n]
+def _(ufuncs, norm = False, diff_n = 0):
+    return ufuncs[norm][diff_n]
 
 @clpmn_all.resolve_out_shapes
-def _(m, n, shapes, nout):
+def _(m, n, type_shape, z_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
@@ -1826,7 +1824,7 @@ def _(m, n, shapes, nout):
 
     m_abs = abs(m)
 
-    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(*shapes),)
+    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(type_shape, z_shape),)
 
 def clpmn(m, n, z, type=3, *, legacy = True):
     """Associated Legendre function of the first kind for complex arguments.
@@ -1900,7 +1898,7 @@ def clpmn(m, n, z, type=3, *, legacy = True):
 
         return out, out_jac
 
-    raise NotImplementedError
+    return _clpmn(m, n, type, z, diff_n = diff_n)
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.
@@ -2065,15 +2063,23 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = multiufunc(_lpn, diff_resolve_ufunc)
+_lpn = multiufunc(_lpn)
 
-lpn_all = multiufunc(lpn_all, diff_resolve_ufunc)
+@_lpn.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
+
+lpn_all = multiufunc(lpn_all)
+
+@lpn_all.resolve_ufunc
+def _(ufuncs, diff_n = 0):
+    return ufuncs[diff_n]
 
 @lpn_all.resolve_out_shapes
-def _(n, shapes, nout):
+def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-    return nout * ((n + 1,) + shapes[0],)
+    return nout * ((n + 1,) + z_shape,)
 
 def lpn(n, z, diff_n = 0, legacy = True):
     if legacy:

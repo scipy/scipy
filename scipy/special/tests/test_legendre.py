@@ -203,7 +203,6 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 4], lpmn_jac(-2, 4, x))
         np.testing.assert_allclose(p_jac[-1, 4], lpmn_jac(-1, 4, x))
 
-    """
     @pytest.mark.parametrize("m_max", [7])
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
@@ -223,7 +222,6 @@ class TestLegendreFunctions:
         for m in range(3, m_max + 1):
             np.testing.assert_allclose(p_jac[m], 0)
             np.testing.assert_allclose(p_jac[-m], 0)
-    """
 
     @pytest.mark.parametrize("m_max", [3, 5, 10])
     @pytest.mark.parametrize("n_max", [10])
@@ -247,7 +245,6 @@ class TestLegendreFunctions:
 
         z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
-#        p, p_jac = special.clpmn(4, 4, z, type = type, legacy = False)
         p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], lpmn_ref(0, 0, z, type = type))

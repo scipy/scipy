@@ -465,8 +465,8 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
     PyObject *iv_ratio = SpecFun_NewUFunc(
-        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
-        "_iv_ratio", iv_ratio_doc
+        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)}, "_iv_ratio",
+        iv_ratio_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
 
@@ -559,28 +559,40 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
     PyObject *lpn = Py_BuildValue(
-        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_qf_f_t>(::lpn), static_cast<func_qd_d_t>(::lpn)}, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qf_ff_t>(::lpn), static_cast<func_qd_dd_t>(::lpn)}, 2, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qf_fff_t>(::lpn), static_cast<func_qd_ddd_t>(::lpn)}, 3, "lpn", nullptr)
+        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_qd_d_t>(::lpn), static_cast<func_qf_f_t>(::lpn)}, "lpn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_dd_t>(::lpn), static_cast<func_qf_ff_t>(::lpn)}, 2, "lpn", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_ddd_t>(::lpn), static_cast<func_qf_fff_t>(::lpn)}, 3, "lpn", nullptr)
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
     PyObject *lpmn = Py_BuildValue(
-        "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_qqd_d_t>(::lpmn), static_cast<func_qqf_f_t>(::lpmn)}, "lpmn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qqd_dd_t>(::lpmn), static_cast<func_qqf_ff_t>(::lpmn)}, 2, "lpmn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qqd_ddd_t>(::lpmn), static_cast<func_qqf_fff_t>(::lpmn)}, 3, "lpmn", nullptr)
+        "{O:N}", Py_False,
+        Py_BuildValue(
+            "(N,N,N)",
+            SpecFun_NewUFunc({static_cast<func_qqd_d_t>(::lpmn), static_cast<func_qqf_f_t>(::lpmn)}, "lpmn", nullptr),
+            SpecFun_NewUFunc(
+                {static_cast<func_qqd_dd_t>(::lpmn), static_cast<func_qqf_ff_t>(::lpmn)}, 2, "lpmn", nullptr
+            ),
+            SpecFun_NewUFunc(
+                {static_cast<func_qqd_ddd_t>(::lpmn), static_cast<func_qqf_fff_t>(::lpmn)}, 3, "lpmn", nullptr
+            )
+        )
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpmn", lpmn);
 
     PyObject *clpmn = Py_BuildValue(
-        "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_qqqD_D_t>(::clpmn), static_cast<func_qqqF_F_t>(::clpmn)}, "clpmn", nullptr),
-        SpecFun_NewUFunc(
-            {static_cast<func_qqqD_DD_t>(::clpmn), static_cast<func_qqqF_FF_t>(::clpmn)}, 2, "clpmn", nullptr
-        ),
-        SpecFun_NewUFunc(
-            {static_cast<func_qqqD_DDD_t>(::clpmn), static_cast<func_qqqF_FFF_t>(::clpmn)}, 3, "clpmn", nullptr
+        "{O:N}", Py_False,
+        Py_BuildValue(
+            "(N,N,N)",
+            SpecFun_NewUFunc(
+                {static_cast<func_qqqD_D_t>(::clpmn), static_cast<func_qqqF_F_t>(::clpmn)}, "clpmn", nullptr
+            ),
+            SpecFun_NewUFunc(
+                {static_cast<func_qqqD_DD_t>(::clpmn), static_cast<func_qqqF_FF_t>(::clpmn)}, 2, "clpmn", nullptr
+            ),
+            SpecFun_NewUFunc(
+                {static_cast<func_qqqD_DDD_t>(::clpmn), static_cast<func_qqqF_FFF_t>(::clpmn)}, 3, "clpmn", nullptr
+            )
         )
     );
     PyModule_AddObjectRef(_special_ufuncs, "clpmn", clpmn);

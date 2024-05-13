@@ -22,7 +22,7 @@ class multiufunc:
         args = args[-ufunc.nin:]
 
         arg_shapes = tuple(np.shape(arg) for arg in args)
-        out_shapes = self._resolve_out_shapes(*resolve_out_shapes_args, arg_shapes, ufunc.nout)
+        out_shapes = self._resolve_out_shapes(*resolve_out_shapes_args, *arg_shapes, ufunc.nout)
 
         arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else np.dtype(type(arg)) for arg in args)
         if hasattr(ufunc, 'resolve_dtypes'):
