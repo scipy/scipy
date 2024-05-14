@@ -340,10 +340,8 @@ class _spbase:
 
         # helper function, outputs "(i,j)  v"
         def tostr(coords, data):
-            pairs = zip(zip(*coords), data)
+            pairs = zip(zip(*(c.tolist() for c in coords)), data)
             return '\n'.join(f'  {idx}\t{val}' for idx, val in pairs)
-#            pairs = zip(zip(*(c.tolist() for c in coords)), data)
-#            return '\n'.join(f'  {idx}\t{val}' for idx, val in pairs)
 
         out = repr(self)
         if self.nnz == 0:
