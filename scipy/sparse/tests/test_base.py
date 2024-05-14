@@ -15,7 +15,6 @@ import operator
 import platform
 import itertools
 import sys
-from scipy._lib import _pep440
 
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
@@ -5032,15 +5031,10 @@ def cases_64bit():
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
 
-                if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
-                    markers = getattr(method, 'pytestmark', [])
-                    for mark in markers:
-                        if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
-                            marks.append(mark)
-                else:
-                    for mname in ['skipif', 'skip', 'xfail', 'xslow']:
-                        if hasattr(method, mname):
-                            marks += [getattr(method, mname)]
+                markers = getattr(method, 'pytestmark', [])
+                for mark in markers:
+                    if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):
+                        marks.append(mark)
 
                 yield pytest.param(cls, method_name, marks=marks)
 

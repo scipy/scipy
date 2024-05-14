@@ -32,7 +32,6 @@ from scipy import stats
 
 from scipy.integrate import romb, qmc_quad, tplquad
 from scipy.special import multigammaln
-from scipy._lib._pep440 import Version
 
 from .common_tests import check_random_state_property
 from .data._mvt import _qsimvtv

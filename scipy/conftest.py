@@ -11,7 +11,6 @@ import hypothesis
 
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
-from scipy._lib import _pep440
 from scipy._lib._array_api import SCIPY_ARRAY_API, SCIPY_DEVICE
 
 
@@ -39,16 +38,8 @@ def pytest_configure(config):
         "mark the desired skip configuration for the `skip_xp_backends` fixture.")
 
 
-def _get_mark(item, name):
-    if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
-        mark = item.get_closest_marker(name)
-    else:
-        mark = item.get_marker(name)
-    return mark
-
-
 def pytest_runtest_setup(item):
-    mark = _get_mark(item, "xslow")
+    mark = item.get_closest_marker("xslow")
     if mark is not None:
         try:
             v = int(os.environ.get('SCIPY_XSLOW', '0'))
@@ -57,7 +48,7 @@ def pytest_runtest_setup(item):
         if not v:
             pytest.skip("very slow test; "
                         "set environment variable SCIPY_XSLOW=1 to run it")
-    mark = _get_mark(item, 'xfail_on_32bit')
+    mark = item.get_closest_marker("xfail_on_32bit")
     if mark is not None and np.intp(0).itemsize < 8:
         pytest.xfail(f'Fails on our 32-bit test platform(s): {mark.args[0]}')
 
