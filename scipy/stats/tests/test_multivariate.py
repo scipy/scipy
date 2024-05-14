@@ -3775,10 +3775,6 @@ class TestDirichletMultinomial:
         assert_allclose(res, ref)
 
     def test_moments(self):
-        message = 'Needs NumPy 1.22.0 for multinomial broadcasting'
-        if Version(np.__version__) < Version("1.22.0"):
-            pytest.skip(reason=message)
-
         rng = np.random.default_rng(28469824356873456)
         dim = 5
         n = rng.integers(1, 100)
