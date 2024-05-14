@@ -1408,13 +1408,9 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
-        if is_numpy(xp):
-            a = ma.masked_invalid(a)
-            return mstats_basic.describe(a, axis, ddof, bias)
-        else:
-            msg = ("Use of `nan_policy` and `keepdims` "
-                   "is incompatible with non-NumPy arrays.")
-            raise NotImplementedError(msg)
+        # only NumPy gets here; `_contains_nan` raises error for the rest
+        a = ma.masked_invalid(a)
+        return mstats_basic.describe(a, axis, ddof, bias)
 
     if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
