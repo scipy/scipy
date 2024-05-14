@@ -230,7 +230,6 @@ py3.extension_module('unuran_wrapper',
   include_directories: [unuran_include_dirs],
   dependencies: np_dep,
   link_args: version_link_args,
-  install: true,
   subdir: 'scipy/stats/_unuran'
 )
 

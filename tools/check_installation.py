@@ -54,7 +54,7 @@ exception_list_test_files = [
 ]
 
 
-def main(install_dir):
+def main(install_dir, no_tests):
     INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
     if not os.path.exists(INSTALLED_DIR):
         raise ValueError(f"Provided install dir {INSTALLED_DIR} does not exist")
@@ -67,12 +67,21 @@ def main(install_dir):
         if test_file in exception_list_test_files:
             continue
 
+        if no_tests:
+            if test_file in installed_test_files:
+                raise Exception(f"{test_file} should not be installed but "
+                        "is found in the installation directory.")
+            continue
+
         if test_file not in installed_test_files.keys():
             raise Exception(f"{scipy_test_files[test_file]} is not installed; "
                             f"either install it or add `{test_file}` to the "
                             "exception list in `tools/check_installation.py`")
 
-    print("----------- All the test files were installed --------------")
+    if no_tests:
+        print("----------- No test files were installed --------------")
+    else:
+        print("----------- All the test files were installed --------------")
 
     scipy_pyi_files = get_pyi_files(SCIPY_DIR)
     installed_pyi_files = get_pyi_files(INSTALLED_DIR)
@@ -114,9 +123,12 @@ def get_pyi_files(dir):
 
 
 if __name__ == '__main__':
-    if not len(sys.argv) == 2:
+    if len(sys.argv) < 2:
         raise ValueError("Incorrect number of input arguments, need "
                          "check_installation.py relpath/to/installed/scipy")
 
     install_dir = sys.argv[1]
-    main(install_dir)
+    no_tests = False
+    if len(sys.argv) == 3:
+        no_tests = sys.argv[2] == "--no-tests"
+    main(install_dir, no_tests)

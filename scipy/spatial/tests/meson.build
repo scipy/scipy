@@ -9,7 +9,8 @@ py3.install_sources([
     'test_slerp.py',
     'test_spherical_voronoi.py'
   ],
-  subdir: 'scipy/spatial/tests'
+  subdir: 'scipy/spatial/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([

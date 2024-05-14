@@ -11,5 +11,6 @@ py3.install_sources([
     'SmLs08.dat',
     'SmLs09.dat'
   ],
-  subdir: 'scipy/stats/tests/data/nist_anova'
+  subdir: 'scipy/stats/tests/data/nist_anova',
+  install_tag: 'tests'
 )

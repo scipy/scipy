@@ -563,22 +563,36 @@ lapack_dep = declare_dependency(
   dependencies: lapack_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
 )
-subdir('_lib')
-subdir('special')
-subdir('linalg')
-subdir('sparse')
-subdir('stats')
-subdir('fft')
-subdir('io')
-subdir('spatial')
-subdir('cluster')
-subdir('constants')
-subdir('fftpack')
-subdir('integrate')
-subdir('signal')
-subdir('interpolate')
-subdir('ndimage')
-subdir('odr')
-subdir('optimize')
-subdir('datasets')
-subdir('misc')
+
+scipy_subdirs = [
+  '_lib',
+  'special',
+  'linalg',
+  'sparse',
+  'stats',
+  'fft',
+  'io',
+  'spatial',
+  'cluster',
+  'constants',
+  'fftpack',
+  'integrate',
+  'signal',
+  'interpolate',
+  'ndimage',
+  'odr',
+  'optimize',
+  'datasets',
+  'misc'
+]
+
+foreach subdir: scipy_subdirs
+  subdir(subdir)
+endforeach
+
+foreach subdir: scipy_subdirs
+  install_subdir(subdir, install_dir: scipy_dir, exclude_directories: ['tests'])
+  if fs.is_dir(subdir/'tests')
+    install_subdir(subdir/'tests', install_dir: scipy_dir/subdir, install_tag: 'tests')
+  endif
+endforeach
