@@ -509,6 +509,7 @@ cdef class cKDTree:
         readonly np.ndarray      mins
         readonly np.ndarray      indices
         readonly object          boxsize
+        readonly object          _tree_lock
         np.ndarray               boxsize_data
 
     property n:
