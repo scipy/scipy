@@ -574,7 +574,7 @@ class interp1d(_Interpolator1D):
 
 class _PPolyBase:
     """Base class for piecewise polynomials."""
-    __slots__ = ('c', 'x', 'extrapolate', 'axis')
+    __slots__ = ('c', 'x', 'extrapolate', 'axis', '_c_lock')
 
     def __init__(self, c, x, extrapolate=None, axis=0):
         self.c = np.asarray(c)
@@ -643,6 +643,7 @@ class _PPolyBase:
         self.c = c
         self.x = x
         self.axis = axis
+        self._c_lock = threading.RLock()
         if extrapolate is None:
             extrapolate = True
         self.extrapolate = extrapolate
