@@ -21,6 +21,8 @@ from scipy.integrate import nquad
 
 from scipy.special import binom
 
+import threading
+
 
 class TestInterp2D:
     def test_interp2d(self):
@@ -929,7 +931,7 @@ class TestAkima1DInterpolator:
             Akima1DInterpolator(x, y, method="invalid")  # type: ignore
 
     def test_extrapolate_attr(self):
-        # 
+        #
         x = np.linspace(-5, 5, 11)
         y = x**2
         x_ext = np.linspace(-10, 10, 17)
@@ -957,6 +959,28 @@ def test_complex(method):
     msg = "real values"
     with pytest.raises(ValueError, match=msg):
         method(x, y)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to Akima1D
+        x = np.linspace(-5, 5, 11)
+        y = x**2
+        x_ext = np.linspace(-10, 10, 17)
+        ak = Akima1DInterpolator(x, y, extrapolate=True)
+
+        def worker_fn(ak, x_ext):
+            ak(x_ext)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(ak, x_ext)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
 
 
 class TestPPolyCommon:
