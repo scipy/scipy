@@ -351,6 +351,14 @@ class TestZipfian:
         assert_allclose(zipfian.stats(a, n, moments="mvsk"),
                         [mean, var, skew, kurtosis])
 
+    def test_pmf_integer_k(self):
+        k = np.arange(0, 1000)
+        k_int32 = k.astype(np.int32)
+        dist = zipfian(111, 22)
+        pmf = dist.pmf(k)
+        pmf_k_int32 = dist.pmf(k_int32)
+        assert_equal(pmf, pmf_k_int32)
+
 
 class TestNCH:
     np.random.seed(2)  # seeds 0 and 1 had some xl = xu; randint failed

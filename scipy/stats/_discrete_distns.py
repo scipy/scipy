@@ -1413,7 +1413,8 @@ class zipfian_gen(rv_discrete):
         return 1, n
 
     def _pmf(self, k, a, n):
-        return 1.0 / _gen_harmonic(n, a) / k**a
+        k = k.astype(np.float64)
+        return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
