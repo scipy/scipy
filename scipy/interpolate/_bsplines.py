@@ -802,7 +802,7 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted"
+            raise NotImplementedError("Only CubicSpline objects are accepted "
                                       "for now. Got %s instead." % type(pp))
         x = pp.x
         coef = pp.c

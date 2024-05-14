@@ -2390,8 +2390,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy, use_summation=False)
-    cns, nps = _contains_nan(score, nan_policy, use_summation=False)
+    cna, npa = _contains_nan(a, nan_policy)
+    cns, nps = _contains_nan(score, nan_policy)
 
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")

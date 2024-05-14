@@ -92,6 +92,7 @@ py3.extension_module('_specfun',
 #       There's no good way around this currently, because py3.install_sources
 #       doesn't accept generated targets. See TODO near the end of
 #       scipy/linalg/meson.build for more details.
+_generate_pyx = find_program('_generate_pyx.py')
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
@@ -101,7 +102,7 @@ cython_special = custom_target('cython_special',
     '_ufuncs_cxx_defs.h'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  command: [_generate_pyx, '-o', '@OUTDIR@'],
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/special',
   install_tag: 'devel',

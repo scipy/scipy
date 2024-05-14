@@ -79,7 +79,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if not is_array:
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
-                        raise TypeError('expected dimension <= 2 array or matrix')
+                        raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:
