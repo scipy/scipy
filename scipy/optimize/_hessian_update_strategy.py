@@ -99,6 +99,9 @@ class HessianUpdateStrategy:
         raise NotImplementedError("The method ``get_matrix(p)``"
                                   " is not implemented.")
 
+    def __matmul__(self, p):
+        return self.dot(p)
+
 
 class FullHessianUpdateStrategy(HessianUpdateStrategy):
     """Hessian update strategy with full dimensional internal representation.
@@ -382,7 +385,7 @@ class BFGS(FullHessianUpdateStrategy):
             z = delta_x
         # Do some common operations
         wz = np.dot(w, z)
-        Mw = self.dot(w)
+        Mw = self@(w)
         wMw = Mw.dot(w)
         # Guarantee that wMw > 0 by reinitializing matrix.
         # While this is always true in exact arithmetic,
@@ -461,7 +464,7 @@ class SR1(FullHessianUpdateStrategy):
             w = delta_grad
             z = delta_x
         # Do some common operations
-        Mw = self.dot(w)
+        Mw = self@w
         z_minus_Mw = z - Mw
         denominator = np.dot(w, z_minus_Mw)
         # If the denominator is too small
