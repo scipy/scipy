@@ -528,13 +528,14 @@ cdef class cKDTree:
         def __get__(cKDTree self):
             cdef cKDTreeNode n
             cdef ckdtree *cself = self.cself
-            if self._python_tree is not None:
-                return self._python_tree
-            else:
-                n = cKDTreeNode()
-                n._setup(self, node=cself.ctree, level=0)
-                self._python_tree = n
-                return self._python_tree
+            with self._tree_lock:
+                if self._python_tree is not None:
+                    return self._python_tree
+                else:
+                    n = cKDTreeNode()
+                    n._setup(self, node=cself.ctree, level=0)
+                    self._python_tree = n
+                    return self._python_tree
 
     def __cinit__(cKDTree self):
         self.cself = <ckdtree * > PyMem_Malloc(sizeof(ckdtree))
@@ -551,6 +552,7 @@ cdef class cKDTree:
             int compact, median
 
         self._python_tree = None
+        self._tree_lock = threading.Lock()
 
         if not copy_data:
             copy_data = copy_if_needed
@@ -946,7 +948,7 @@ cdef class cKDTree:
 
             const np.float64_t *vxx = <np.float64_t*>x_arr.data
             const np.float64_t *vrr = <np.float64_t*>r_arr.data
-        
+
         if not np.isfinite(x_arr).all():
             raise ValueError("'x' must be finite, check for nan or inf values")
 
