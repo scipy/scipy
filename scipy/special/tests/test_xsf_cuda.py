@@ -89,7 +89,7 @@ def manage_cupy_cache():
     shutil.rmtree(temp_cache_dir)
 
 
-# @check_version(cupy, "13.0.0")
+@check_version(cupy, "13.0.0")
 @pytest.mark.parametrize("signature,preamble,routine", get_test_cases())
 @pytest.mark.xslow
 def test_compiles_in_cupy(signature, preamble, routine, manage_cupy_cache):
