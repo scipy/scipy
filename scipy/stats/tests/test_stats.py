@@ -6143,10 +6143,12 @@ def test_normalitytests(xp):
     # test_result <- dagoTest(x)
     # test_result@test$statistic
     # test_result@test$p.value
-    st_normal, st_skew, st_kurt = (3.92371918, xp.asarray(1.98078826090875881),
-                                   -0.01403734)
-    pv_normal, pv_skew, pv_kurt = (0.14059673, xp.asarray(0.04761502382843208),
-                                   0.98880019)
+    st_normal, st_skew, st_kurt = (3.92371918158185551,
+                                   xp.asarray(1.98078826090875881),
+                                   xp.asarray(-0.01403734404759738))
+    pv_normal, pv_skew, pv_kurt = (0.14059672529747502,
+                                   xp.asarray(0.04761502382843208),
+                                   xp.asarray(0.98880018772590561))
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
     pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
     x = np.array((-2, -1, 0, 1, 2, 3.)*4)**2
@@ -6155,6 +6157,7 @@ def test_normalitytests(xp):
 
     assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
     check_named_results(stats.normaltest(x), attributes)
+
     res = stats.skewtest(x_xp)
     xp_assert_close(res.statistic, st_skew)
     xp_assert_close(res.pvalue, pv_skew)
@@ -6165,11 +6168,16 @@ def test_normalitytests(xp):
     xp_assert_close(res.statistic, st_skew)
     xp_assert_close(res.pvalue, pv_skew_greater)
     check_named_results(stats.skewtest(x), attributes)
-    assert_array_almost_equal(stats.kurtosistest(x), (st_kurt, pv_kurt))
-    assert_array_almost_equal(stats.kurtosistest(x, alternative='less'),
-                              (st_kurt, pv_kurt_less))
-    assert_array_almost_equal(stats.kurtosistest(x, alternative='greater'),
-                              (st_kurt, pv_kurt_greater))
+
+    res = stats.kurtosistest(x_xp)
+    xp_assert_close(res.statistic, st_kurt)
+    xp_assert_close(res.pvalue, pv_kurt)
+    res = stats.kurtosistest(x_xp, alternative='less')
+    xp_assert_close(res.statistic, st_kurt)
+    xp_assert_close(res.pvalue, pv_kurt_less)
+    res = stats.kurtosistest(x_xp, alternative='greater')
+    xp_assert_close(res.statistic, st_kurt)
+    xp_assert_close(res.pvalue, pv_kurt_greater)
     check_named_results(stats.kurtosistest(x), attributes)
 
     # some more intuitive tests for kurtosistest and skewtest.
@@ -6179,10 +6187,12 @@ def test_normalitytests(xp):
     a1_xp = xp.asarray(a1)
     pval = stats.skewtest(a1_xp, alternative='greater').pvalue
     xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
+
     # excess kurtosis of laplace is 3 > 0
     a2 = stats.laplace.rvs(size=10000, random_state=123)
-    pval = stats.kurtosistest(a2, alternative='greater').pvalue
-    assert_almost_equal(pval, 0.0)
+    a2_xp = xp.asarray(a2)
+    pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
+    xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
     # Test axis=None (equal to axis=0 for 1-D input)
     assert_array_almost_equal(stats.normaltest(x, axis=None),
@@ -6190,16 +6200,29 @@ def test_normalitytests(xp):
     res = stats.skewtest(x_xp, axis=None)
     xp_assert_close(res.statistic, st_skew)
     xp_assert_close(res.pvalue, pv_skew)
-    assert_array_almost_equal(stats.kurtosistest(x, axis=None),
-                              (st_kurt, pv_kurt))
+
+    res = stats.kurtosistest(x_xp, axis=None)
+    xp_assert_close(res.statistic, st_kurt)
+    xp_assert_close(res.pvalue, pv_kurt)
 
     x = xp.arange(10.)
-    x[9] = xp.nan
+    NaN = xp.asarray(xp.nan, dtype=x.dtype)
+    x[9] = NaN
     with np.errstate(invalid="ignore"):
-        assert_array_equal(stats.skewtest(x), (xp.nan, xp.nan))
+        res = stats.skewtest(x)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+
+    x = xp.arange(30.)
+    x[29] = NaN
+    with np.errstate(all='ignore'):
+        res = stats.kurtosistest(x)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
 
     # nan_policy only compatible with NumPy arrays
-    x = np.asarray(x)
+    x = np.arange(10.)
+    x[9] = np.nan
     expected = (1.0184643553962129, 0.30845733195153502)
     assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
 
@@ -6221,9 +6244,8 @@ def test_normalitytests(xp):
 
     x = np.arange(30.)
     x[29] = np.nan
-    with np.errstate(all='ignore'):
-        assert_array_equal(stats.kurtosistest(x), (np.nan, np.nan))
 
+    # nan_policy only compatible with NumPy arrays
     expected = (-2.2683547379505273, 0.023307594135872967)
     assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
                               expected)
@@ -6258,7 +6280,8 @@ def test_normalitytests(xp):
     # negative denom needs to be handled correctly to reject normality
     counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
     x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
-    assert_equal(stats.kurtosistest(x)[1] < 0.01, True)
+    x = xp.asarray(x, dtype=xp.float64)
+    assert stats.kurtosistest(x)[1] < 0.01
 
 
 class TestRankSums:
@@ -6347,11 +6370,14 @@ def test_skewtest_too_few_samples():
     assert_raises(ValueError, stats.skewtest, x)
 
 
-def test_kurtosistest_too_few_samples():
+@array_api_compatible
+def test_kurtosistest_too_few_samples(xp):
     # Regression test for ticket #1425.
     # kurtosistest requires at least 5 samples; 4 should raise a ValueError.
-    x = np.arange(4.0)
-    assert_raises(ValueError, stats.kurtosistest, x)
+    x = xp.arange(4.0)
+    message = 'kurtosistest requires at least 5 observations...'
+    with pytest.raises(ValueError, match=message):
+        stats.kurtosistest(x)
 
 
 class TestMannWhitneyU:
