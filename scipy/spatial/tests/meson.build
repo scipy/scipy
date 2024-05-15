@@ -46,5 +46,6 @@ py3.install_sources([
     'data/random-uint-data.txt',
     'data/selfdual-4d-polytope.txt'
   ],
-  subdir: 'scipy/spatial/tests/data'
+  subdir: 'scipy/spatial/tests/data',
+  install_tag: 'tests'
 )
