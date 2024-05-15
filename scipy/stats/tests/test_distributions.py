@@ -4460,7 +4460,7 @@ class TestBeta:
         assert_equal(stats.beta.pdf(1, a, b), 5)
         assert_equal(stats.beta.pdf(1-1e-310, a, b), 5)
 
-    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
+    @pytest.mark.xfail(reason="Does not warn on special codepath")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
         with pytest.warns(RuntimeWarning):
