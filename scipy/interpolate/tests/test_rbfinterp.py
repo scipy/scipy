@@ -1,4 +1,5 @@
 import pickle
+import threading
 import pytest
 import numpy as np
 from numpy.linalg import LinAlgError
@@ -495,6 +496,31 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
             yitp2.append(RBFInterpolator(x[nbr], y[nbr])(xi[None])[0])
 
         assert_allclose(yitp1, yitp2, atol=1e-8)
+
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+        seq = Halton(2, scramble=False, seed=np.random.RandomState())
+        x = seq.random(100)
+        xitp = seq.random(100)
+
+        y = _2d_test_function(x)
+
+        interp = self.build(x, y)
+
+        def worker_fn(interp, xp):
+            interp(xp)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(interp, xitp)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
 
 
 class TestRBFInterpolatorNeighborsInf(TestRBFInterpolatorNeighborsNone):
