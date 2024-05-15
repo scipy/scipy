@@ -273,8 +273,8 @@ and construct the design matrix in the sparse CSR format
 >>> from scipy.interpolate import BSpline
 >>> mat = BSpline.design_matrix(xnew, t, k=3)
 >>> mat
-<3x7 sparse array of type '<class 'numpy.float64'>'
-	with 12 stored elements in Compressed Sparse Row format>
+<Compressed Sparse Row sparse array of dtype 'float64'
+	with 12 stored elements and shape (3, 7)>
 
 Here each row of the design matrix corresponds to a value in the ``xnew`` array,
 and a row has no more than ``k+1 = 4`` non-zero elements; row ``j``
