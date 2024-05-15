@@ -33,6 +33,7 @@ import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         eye, issparse, SparseEfficiencyWarning, sparray)
+from scipy.sparse._base import _formats
 from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
                                    get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
@@ -644,10 +645,37 @@ class _TestCommon:
         assert_raises(ValueError, self.spcreator, (-1,-1))
 
     def test_repr(self):
-        repr(self.datsp)
+        datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
+        extra = (
+            "(1 diagonals) " if datsp.format == "dia"
+            else "(blocksize=1x1) " if datsp.format == "bsr"
+            else ""
+        )
+        _, fmt = _formats[datsp.format]
+        expected = (
+            f"<{fmt} sparse matrix of dtype '{datsp.dtype}'\n"
+            f"\twith {datsp.nnz} stored elements {extra}and shape {datsp.shape}>"
+        )
+        assert repr(datsp) == expected
 
     def test_str(self):
-        str(self.datsp)
+        datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
+        if datsp.nnz != 2:
+            return
+        extra = (
+            "(1 diagonals) " if datsp.format == "dia"
+            else "(blocksize=1x1) " if datsp.format == "bsr"
+            else ""
+        )
+        _, fmt = _formats[datsp.format]
+        expected = (
+            f"<{fmt} sparse matrix of dtype '{datsp.dtype}'\n"
+            f"\twith {datsp.nnz} stored elements {extra}and shape {datsp.shape}>"
+            "\n  Coords\tValues"
+            "\n  (0, 0)\t1"
+            "\n  (2, 2)\t-2"
+        )
+        assert str(datsp) == expected
 
     def test_empty_arithmetic(self):
         # Test manipulating empty matrices. Fails in SciPy SVN <= r1768
