@@ -219,9 +219,9 @@ class TestBasinHopping:
         methods = ['CG', 'BFGS', 'L-BFGS-B', 'TNC', 'SLSQP',
                    'Nelder-Mead', 'Powell', 'COBYLA', 'COBYQA']
         minimizer_kwargs = copy.copy(self.kwargs_nograd)
-        # COBYQA takes extensive amount of time on this problem
-        niter = 10 if method == 'COBYQA' else self.niter
         for method in methods:
+            # COBYQA takes extensive amount of time on this problem
+            niter = 10 if method == 'COBYQA' else self.niter
             minimizer_kwargs["method"] = method
             res = basinhopping(func2d_nograd, self.x0[i],
                                minimizer_kwargs=minimizer_kwargs,
