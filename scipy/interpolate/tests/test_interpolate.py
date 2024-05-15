@@ -1082,6 +1082,31 @@ class TestPPolyCommon:
 
             assert_raises(ValueError, p, np.array([[0.1, 0.2], [0.4]], dtype=object))
 
+    def test_concurrency(self):
+        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+        c = np.random.rand(8, 12, 5, 6, 7)
+        x = np.sort(np.random.rand(13))
+        xp = np.random.rand(3, 4)
+
+        for cls in (PPoly, BPoly):
+            interp = cls(c, x)
+
+            def worker_fn(interp, xp):
+                interp(xp)
+
+            workers = []
+            for _ in range(0, 10):
+                workers.append(threading.Thread(
+                    target=worker_fn,
+                    args=(interp, xp)))
+
+            for worker in workers:
+                worker.start()
+
+            for worker in workers:
+                worker.join()
+
+
     def test_complex_coef(self):
         np.random.seed(12345)
         x = np.sort(np.random.random(13))
