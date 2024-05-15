@@ -498,7 +498,8 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
     def test_concurrency(self):
-        # Check that no segfaults appear with concurrent access to BPoly, PPoly
+        # Check that no segfaults appear with concurrent access to
+        # RbfInterpolator
         seq = Halton(2, scramble=False, seed=np.random.RandomState())
         x = seq.random(100)
         xitp = seq.random(100)
