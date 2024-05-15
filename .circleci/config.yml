@@ -184,7 +184,7 @@ jobs:
           no_output_timeout: 35m
           command: |
             pip install matplotlib hypothesis
-            pip install git+https://github.com/scipy/scipy_doctest.git@main
+            pip install scipy-doctest
             python dev.py smoke-docs
 
       - run:
