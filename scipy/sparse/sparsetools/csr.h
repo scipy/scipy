@@ -803,14 +803,12 @@ bool csr_binop_csr_canonical(const I n_row, const I n_col,
         I A_end = Ap[i+1];
         I B_end = Bp[i+1];
 
-        // for checking if matrices are canonical
-        I A_j_prev, B_j_prev;
-        I A_pos_start = A_pos;
-        I B_pos_start = B_pos;
-
         // Check if row pointers are canonical
-        if (Ap[i] > Ap[i+1] || Bp[i] > Bp[i+1])
-            return false;
+        if (A_pos > A_end || B_pos > B_end) return false;
+
+        // for checking if column indices are canonical
+        I A_j_prev = Aj[A_pos] - 1;
+        I B_j_prev = Bj[B_pos] - 1;
 
         //while not finished with either row
         while(A_pos < A_end && B_pos < B_end){
@@ -818,9 +816,7 @@ bool csr_binop_csr_canonical(const I n_row, const I n_col,
             I B_j = Bj[B_pos];
 
             // check if matrices are canonical
-            if ((A_pos != A_pos_start && !(A_j_prev < A_j)) ||
-                (B_pos != B_pos_start && !(B_j_prev < B_j)))
-                return false;
+            if (A_j_prev >= A_j || B_j_prev >= B_j) return false;
             A_j_prev = A_j;
             B_j_prev = B_j;
 
@@ -858,8 +854,7 @@ bool csr_binop_csr_canonical(const I n_row, const I n_col,
             I A_j = Aj[A_pos];
 
             // check if matrices are canonical
-            if (A_pos != A_pos_start && !(A_j_prev < A_j))
-                return false;
+            if (A_j_prev >= A_j) return false;
             A_j_prev = A_j;
 
             T result = op(Ax[A_pos],0);
@@ -874,8 +869,7 @@ bool csr_binop_csr_canonical(const I n_row, const I n_col,
             I B_j = Bj[B_pos];
 
             // check if matrices are canonical
-            if (B_pos != B_pos_start && !(B_j_prev < B_j))
-                return false;
+            if (B_j_prev >= B_j) return false;
             B_j_prev = B_j;
 
             T result = op(0,Bx[B_pos]);
