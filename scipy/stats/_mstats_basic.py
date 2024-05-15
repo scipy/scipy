@@ -2971,13 +2971,14 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+    DescribeResult(nobs=np.int64(3), minmax=(masked_array(data=0,
                  mask=False,
            fill_value=999999), masked_array(data=2,
                  mask=False,
-           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           fill_value=999999)), mean=np.float64(1.0),
+           variance=np.float64(0.6666666666666666),
            skewness=masked_array(data=0., mask=False, fill_value=1e+20),
-            kurtosis=-1.5)
+            kurtosis=np.float64(-1.5))
 
     """
     a, axis = _chk_asarray(a, axis)

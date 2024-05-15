@@ -629,9 +629,9 @@ def logrank(
 
     >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
-    -2.73799...
+    -2.73799
     >>> res.pvalue
-    0.00618...
+    0.00618
 
     The p-value is less than 1%, so we can consider the data to be evidence
     against the null hypothesis in favor of the alternative that there is a

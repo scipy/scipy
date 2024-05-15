@@ -117,6 +117,26 @@ DOCTEST_SKIPLIST = set([
     'scipy.linalg.LinAlgError',
     'scipy.optimize.show_options',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
+    # XXX: skips to match smoke-docs
+    'scipy.stats.mstats.describe',
+    'scipy.io.hb_read',
+    'scipy.io.hb_write',
+    'scipy.sparse.csgraph.connected_components',
+    'scipy.sparse.csgraph.depth_first_order',
+    'scipy.sparse.csgraph.shortest_path',
+    'scipy.sparse.csgraph.floyd_warshall',
+    'scipy.sparse.csgraph.dijkstra',
+    'scipy.sparse.csgraph.bellman_ford',
+    'scipy.sparse.csgraph.johnson',
+    'scipy.sparse.csgraph.yen',
+    'scipy.sparse.csgraph.breadth_first_order',
+    'scipy.sparse.csgraph.reverse_cuthill_mckee',
+    'scipy.sparse.csgraph.structural_rank',
+    'scipy.sparse.csgraph.construct_dist_matrix',
+    'scipy.sparse.csgraph.reconstruct_path',
+    'scipy.ndimage.value_indices',
+    'scipy.special.jve',
+    'scipy.special.yve',
 ])
 
 # these names are not required to be present in ALL despite being in
@@ -676,7 +696,7 @@ class Checker(doctest.OutputChecker):
                 return True
         except Exception:
             pass
-        return np.allclose(want, got, atol=self.atol, rtol=self.rtol)
+        return np.allclose(want, got, atol=self.atol, rtol=self.rtol, equal_nan=True)
 
 
 def _run_doctests(tests, full_name, verbose, doctest_warnings):
