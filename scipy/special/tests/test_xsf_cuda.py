@@ -101,7 +101,7 @@ def test_compiles_in_cupy(signature, preamble, routine, manage_cupy_cache):
         routine,
         name,
         preamble=preamble,
-        options=(f"--include-path={sc._get_include()}", "-std=c++11")
+        options=(f"--include-path={sc._get_include()}", "-std=c++17")
     )
 
     _ = func(*get_sample_input(signature, cupy))
