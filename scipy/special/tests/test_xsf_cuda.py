@@ -10,9 +10,9 @@ from scipy.special._testutils import check_version
 from scipy.special._testutils import MissingModule
 
 try:
-    import cupy
+    import cupy  # type: ignore
 except ImportError:
-    cupy = MissingModule('cupy')  # type: ignore
+    cupy = MissingModule('cupy')
 
 
 def get_test_cases():
