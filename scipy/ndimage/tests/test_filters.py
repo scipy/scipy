@@ -8,6 +8,7 @@ from numpy.testing import (assert_equal, assert_allclose,
                            assert_array_almost_equal,
                            assert_array_equal, assert_almost_equal,
                            suppress_warnings, assert_)
+import numpy as np
 import pytest
 from pytest import raises as assert_raises
 

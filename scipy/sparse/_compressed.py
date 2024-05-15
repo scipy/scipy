@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array, copy_if_needed
 
-from ._base import _spbase, issparse, SparseEfficiencyWarning
+from ._base import _spbase, issparse, SparseEfficiencyWarning, sparray
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
