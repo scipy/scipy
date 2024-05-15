@@ -201,6 +201,12 @@ using is_floating_point = cuda::std::is_floating_point<T>;
 template <bool Cond, typename T = void>
 using enable_if = cuda::std::enable_if<Cond, T>;
 
+template <typename T>
+using decay = cuda::std::decay<T>;
+
+template <typename T>
+using invoke_result = cuda::std::invoke_result<T>;
+
 using cuda::std::pair;
 using cuda::std::uint64_t;
 

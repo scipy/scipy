@@ -12,7 +12,8 @@ namespace detail {
      * each time it is called.
      */
     template <typename Generator>
-    using generator_result_t = std::decay_t<std::invoke_result_t<Generator>>;
+    using generator_result_t = typename std::decay<typename std::invoke_result<Generator>::type>::type;
+
 
     /* Used to deduce the type of the numerator/denominator of a fraction. */
     template <typename Pair>
