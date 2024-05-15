@@ -55,6 +55,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     coo = self._coo_container(arg1, shape=shape, dtype=dtype)
                     arrays = coo._coo_to_compressed(self._swap)
                     self.indptr, self.indices, self.data, self._shape = arrays
+                    self.sum_duplicates()
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
