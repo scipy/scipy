@@ -61,6 +61,7 @@
 #include <cuda/std/cstdint>
 #include <cuda/std/limits>
 #include <cuda/std/type_traits>
+#include <cuda/std/utility>
 
 // Fallback to global namespace for functions unsupported on NVRTC Jit
 #ifdef _LIBCUDACXX_COMPILER_NVRTC
@@ -207,7 +208,9 @@ using decay = cuda::std::decay<T>;
 template <typename T>
 using invoke_result = cuda::std::invoke_result<T>;
 
-using cuda::std::pair;
+template <typename T1, typename T2>
+using pair = cuda::std::pair<T1, T2>;
+
 using cuda::std::uint64_t;
 
 #define SPECFUN_ASSERT(a)
