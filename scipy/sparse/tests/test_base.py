@@ -658,6 +658,26 @@ class _TestCommon:
         )
         assert repr(datsp) == expected
 
+    def test_str_maxprint(self):
+        datsp = self.spcreator(np.arange(75).reshape(5, 15))
+        assert datsp.maxprint == 50
+        assert len(str(datsp).split('\n')) == 51 + 3
+
+        dat = np.arange(15).reshape(5,3)
+        datsp = self.spcreator(dat)
+        # format dia reports nnz=15, but we want 14
+        nnz_small = 14 if datsp.format == 'dia' else datsp.nnz
+        datsp_mp6 = self.spcreator(dat, maxprint=6)
+
+        assert len(str(datsp).split('\n')) == nnz_small + 3
+        assert len(str(datsp_mp6).split('\n')) == 6 + 4
+
+        # Check parameter `maxprint` is keyword only
+        datsp = self.spcreator(dat, shape=(5, 3), dtype='i', copy=False, maxprint=4)
+        datsp = self.spcreator(dat, (5, 3), 'i', False, maxprint=4)
+        with pytest.raises(TypeError, match="positional argument|unpack non-iterable"):
+            self.spcreator(dat, (5, 3), 'i', False, 4)
+
     def test_str(self):
         datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
         if datsp.nnz != 2:
@@ -4888,11 +4908,11 @@ def _same_sum_duplicate(data, *inds, **kwargs):
 
 
 class _NonCanonicalMixin:
-    def spcreator(self, D, sorted_indices=False, **kwargs):
+    def spcreator(self, D, *args, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
         construct = super().spcreator
-        M = construct(D, **kwargs)
+        M = construct(D, *args, **kwargs)
 
         zero_pos = (M.toarray() == 0).nonzero()
         has_zeros = (zero_pos[0].size > 0)
