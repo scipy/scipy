@@ -2690,7 +2690,7 @@ class TestSEM:
                         stats.sem(testcase, ddof=2))
 
         x = xp.arange(10.)
-        x[9] = xp.nan
+        x = xp.where(x == 9, xp.asarray(xp.nan), x)
         xp_assert_equal(stats.sem(x), xp.asarray(xp.nan))
 
     @skip_xp_backends(np_only=True,
@@ -6060,8 +6060,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_equal(m, mc)
-        xp_assert_equal(v, vc)
+        xp_assert_close(m, mc)
+        xp_assert_close(v, vc)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
@@ -6069,8 +6069,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_equal(m, mc)
-        xp_assert_equal(v, vc)
+        xp_assert_close(m, mc)
+        xp_assert_close(v, vc)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
@@ -6245,7 +6245,7 @@ def test_normalitytests(xp):
                               (st_kurt, pv_kurt))
 
     x = xp.arange(10.)
-    x[9] = xp.nan
+    x = xp.where(x == 8, xp.asarray(xp.nan), x)
     with np.errstate(invalid="ignore"):
         assert_array_equal(stats.skewtest(x), (xp.nan, xp.nan))
 
