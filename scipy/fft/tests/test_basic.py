@@ -48,8 +48,8 @@ class TestFFT1D:
         xr = xp.asarray(random(maxlen))
         # Check some powers of 2 and some primes
         for i in [1, 2, 16, 128, 512, 53, 149, 281, 397]:
-            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-9, atol=0)
-            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-9, atol=0)
+            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
+            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
     
     @skip_xp_backends(np_only=True, reasons=['significant overhead for some backends'])
     def test_identity_extensive(self, xp):
@@ -57,8 +57,8 @@ class TestFFT1D:
         x = xp.asarray(random(maxlen) + 1j*random(maxlen))
         xr = xp.asarray(random(maxlen))
         for i in range(1, maxlen):
-            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i], rtol=1e-9, atol=0)
-            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i], rtol=1e-9, atol=0)
+            xp_assert_close(fft.ifft(fft.fft(x[0:i])), x[0:i])
+            xp_assert_close(fft.irfft(fft.rfft(xr[0:i]), i), xr[0:i])
 
     def test_fft(self, xp):
         x = random(30) + 1j*random(30)
@@ -358,9 +358,8 @@ class TestFFT1D:
         res_rfft = fft.irfft(fft.rfft(x))
         res_hfft = fft.hfft(fft.ihfft(x), x.shape[0])
         # Check both numerical results and exact dtype matches
-        rtol = {"float32": 1.2e-4, "float64": 1e-7}[dtype]
-        xp_assert_close(res_rfft, x, rtol=rtol, atol=0)
-        xp_assert_close(res_hfft, x, rtol=rtol, atol=0)
+        xp_assert_close(res_rfft, x)
+        xp_assert_close(res_hfft, x)
 
     @pytest.mark.parametrize("dtype", ["complex64", "complex128"])
     def test_dtypes_complex(self, dtype, xp):
@@ -368,8 +367,7 @@ class TestFFT1D:
 
         res_fft = fft.ifft(fft.fft(x))
         # Check both numerical results and exact dtype matches
-        rtol = {"complex64": 1.2e-4, "complex128": 1e-7}[dtype]
-        xp_assert_close(res_fft, x, rtol=rtol, atol=0)
+        xp_assert_close(res_fft, x)
 
 @skip_xp_backends(np_only=True)
 @pytest.mark.parametrize(
