@@ -485,7 +485,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 @pytest.mark.parametrize(
     ("hypotest", "args", "kwds", "n_samples", "unpacker"),
     ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
-     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None))
+     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None),
+     (stats.ttest_1samp, (np.array([0]),), dict(), 1, unpack_ttest_result))
 )
 @pytest.mark.parametrize(
     ("sample_shape", "axis_cases"),
