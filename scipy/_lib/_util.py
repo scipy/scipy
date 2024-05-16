@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
 
 
 AxisError: type[Exception]
@@ -707,14 +707,11 @@ def _nan_allsame(a, axis, keepdims=False):
     return ((a0 == a) | np.isnan(a)).all(axis=axis, keepdims=keepdims)
 
 
-def _contains_nan(a, nan_policy='propagate', use_summation=True,
-                  policies=None, *, xp=None):
+def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
     if xp is None:
         xp = array_namespace(a)
     not_numpy = not is_numpy(xp)
 
-    if not_numpy:
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     if policies is None:
         policies = {'propagate', 'raise', 'omit'}
     if nan_policy not in policies:
@@ -722,13 +719,11 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True,
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if inexact:
-        # The summation method avoids creating another (potentially huge) array
-        if use_summation:
-            with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = xp.isnan(xp.sum(a))
-        else:
-            contains_nan = xp.any(xp.isnan(a))
+    if xp_size(a) == 0:
+        contains_nan = False
+    elif inexact:
+        # Faster and less memory-intensive than xp.any(xp.isnan(a))
+        contains_nan = xp.isnan(xp.max(a))
     elif is_numpy(xp) and np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():

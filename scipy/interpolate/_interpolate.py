@@ -12,7 +12,7 @@ from scipy._lib._util import copy_if_needed
 from scipy.special import comb
 
 from . import _fitpack_py
-from . import dfitpack
+from . import _dfitpack as dfitpack
 from ._polyint import _Interpolator1D
 from . import _ppoly
 from .interpnd import _ndim_coords_from_arrays

@@ -3491,8 +3491,7 @@ class TestSkew(SkewKurtosisTest):
 
     @array_api_compatible
     def test_skew_constant_value(self, xp):
-        # Skewness of a constant input should be zero even when the mean is not
-        # exact (gh-13245)
+        # Skewness of a constant input should be NaN (gh-16061)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             a = xp.asarray([-0.27829495]*10)  # xp.repeat not currently available
             xp_assert_equal(stats.skew(a), xp.asarray(xp.nan))
@@ -3553,10 +3552,11 @@ class TestSkew(SkewKurtosisTest):
 
 
 class TestKurtosis(SkewKurtosisTest):
-    def test_kurtosis(self):
+    @array_api_compatible
+    def test_kurtosis(self, xp):
         # Scalar test case
-        y = stats.kurtosis(self.scalar_testcase)
-        assert np.isnan(y)
+        y = stats.kurtosis(xp.asarray(self.scalar_testcase))
+        assert xp.isnan(y)
 
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)
         #   / ((sqrt(var(testcase)*3/4))**4)
@@ -3568,29 +3568,36 @@ class TestKurtosis(SkewKurtosisTest):
         #
         #   Set flags for axis = 0 and
         #   fisher=0 (Pearson's defn of kurtosis for compatibility with Matlab)
-        y = stats.kurtosis(self.testmathworks, 0, fisher=0, bias=1)
-        assert_approx_equal(y, 2.1658856802973, 10)
+        y = stats.kurtosis(xp.asarray(self.testmathworks), 0, fisher=0, bias=1)
+        xp_assert_close(y, xp.asarray(2.1658856802973))
 
         # Note that MATLAB has confusing docs for the following case
         #  kurtosis(x,0) gives an unbiased estimate of Pearson's skewness
         #  kurtosis(x)  gives a biased estimate of Fisher's skewness (Pearson-3)
         #  The MATLAB docs imply that both should give Fisher's
-        y = stats.kurtosis(self.testmathworks, fisher=0, bias=0)
-        assert_approx_equal(y, 3.663542721189047, 10)
-        y = stats.kurtosis(self.testcase, 0, 0)
-        assert_approx_equal(y, 1.64)
+        y = stats.kurtosis(xp.asarray(self.testmathworks), fisher=0, bias=0)
+        xp_assert_close(y, xp.asarray(3.663542721189047))
+        y = stats.kurtosis(xp.asarray(self.testcase), 0, 0)
+        xp_assert_close(y, xp.asarray(1.64))
 
+        x = xp.arange(10.)
+        x = xp.where(x == 8, xp.asarray(xp.nan), x)
+        xp_assert_equal(stats.kurtosis(x), xp.asarray(xp.nan))
+
+    def test_kurtosis_nan_policy(self):
+        # nan_policy only for NumPy right now
         x = np.arange(10.)
         x[9] = np.nan
-        assert_equal(stats.kurtosis(x), np.nan)
         assert_almost_equal(stats.kurtosis(x, nan_policy='omit'), -1.230000)
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='raise')
         assert_raises(ValueError, stats.kurtosis, x, nan_policy='foobar')
 
     def test_kurtosis_array_scalar(self):
+        # "array scalars" do not exist in other backends
         assert_equal(type(stats.kurtosis([1, 2, 3])), np.float64)
 
     def test_kurtosis_propagate_nan(self):
+        # nan_policy only for NumPy right now
         # Check that the shape of the result is the same for inputs
         # with and without nans, cf gh-5817
         a = np.arange(8).reshape(2, -1).astype(float)
@@ -3598,24 +3605,60 @@ class TestKurtosis(SkewKurtosisTest):
         k = stats.kurtosis(a, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(k, [-1.36, np.nan], atol=1e-15)
 
-    def test_kurtosis_constant_value(self):
-        # Kurtosis of a constant input should be zero, even when the mean is not
-        # exact (gh-13245)
-        a = np.repeat(-0.27829495, 10)
+    @array_api_compatible
+    def test_kurtosis_constant_value(self, xp):
+        # Kurtosis of a constant input should be NaN (gh-16061)
+        a = xp.asarray([-0.27829495]*10)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            assert np.isnan(stats.kurtosis(a, fisher=False))
-            assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
-            assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
-            assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
+            assert xp.isnan(stats.kurtosis(a, fisher=False))
+            assert xp.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+            assert xp.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+            assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
+
+    @array_api_compatible
+    @pytest.mark.parametrize('axis', [-1, 0, 2, None])
+    @pytest.mark.parametrize('bias', [False, True])
+    @pytest.mark.parametrize('fisher', [False, True])
+    def test_vectorization(self, xp, axis, bias, fisher):
+        # Behavior with array input is not tested above. Compare
+        # against naive implementation.
+        rng = np.random.default_rng(1283413549926)
+        x = xp.asarray(rng.random((4, 5, 6)))
+
+        def kurtosis(a, axis, bias, fisher):
+            # Simple implementation of kurtosis
+            if axis is None:
+                a = xp.reshape(a, (-1,))
+                axis = 0
+            xp_test = array_namespace(a)  # plain torch ddof=1 by default
+            mean = xp_test.mean(a, axis=axis, keepdims=True)
+            mu4 = xp_test.mean((a - mean)**4, axis=axis)
+            mu2 = xp_test.var(a, axis=axis, correction=0)
+            if bias:
+                res = mu4 / mu2**2 - 3
+            else:
+                n = a.shape[axis]
+                # https://en.wikipedia.org/wiki/Kurtosis#Standard_unbiased_estimator
+                res = (n-1) / ((n-2) * (n-3)) * ((n + 1) * mu4/mu2**2 - 3*(n-1))
+
+            # I know it looks strange to subtract then add 3,
+            # but it is simpler than the alternatives
+            return res if fisher else res + 3
+
+        res = stats.kurtosis(x, axis=axis, bias=bias, fisher=fisher)
+        ref = kurtosis(x, axis=axis, bias=bias, fisher=fisher)
+        xp_assert_close(res, ref)
 
 
 @hypothesis.strategies.composite
 def ttest_data_axis_strategy(draw):
     # draw an array under shape and value constraints
-    dtype = npst.floating_dtypes()
     elements = dict(allow_nan=False, allow_infinity=False)
     shape = npst.array_shapes(min_dims=1, min_side=2)
-    data = draw(npst.arrays(dtype=dtype, elements=elements, shape=shape))
+    # The test that uses this, `test_pvalue_ci`, uses `float64` to test
+    # extreme `alpha`. It could be adjusted to test a dtype-dependent
+    # range of `alpha` if this strategy is needed to generate other floats.
+    data = draw(npst.arrays(dtype=np.float64, elements=elements, shape=shape))
 
     # determine axes over which nonzero variance can be computed accurately
     ok_axes = []
@@ -3764,7 +3807,6 @@ class TestStudentTest:
     def test_pvalue_ci(self, alpha, data_axis, alternative, xp):
         # test relationship between one-sided p-values and confidence intervals
         data, axis = data_axis
-        data = data.astype(copy=True)  # ensure byte order
         data = xp.asarray(data)
         res = stats.ttest_1samp(data, 0.,
                                 alternative=alternative, axis=axis)
@@ -3775,7 +3817,8 @@ class TestStudentTest:
         res = stats.ttest_1samp(data, popmean, alternative=alternative, axis=axis)
         shape = list(data.shape)
         shape.pop(axis)
-        ref = xp.broadcast_to(xp.asarray(1-alpha), shape)
+        # `float64` is used to correspond with extreme range of `alpha`
+        ref = xp.broadcast_to(xp.asarray(1-alpha, dtype=xp.float64), shape)
         xp_assert_close(res.pvalue, ref)
 
 
@@ -4358,6 +4401,17 @@ class TestKSTest:
         self._test_kstest_and_ks1samp(x, 'two-sided')
         self._test_kstest_and_ks1samp(x, 'greater', mode='exact')
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
+
+    def test_pm_inf_gh20386(self):
+        # Check that gh-20386 is resolved - `kstest` does not
+        # return NaNs when both -inf and inf are in sample.
+        vals = [-np.inf, 0, 1, np.inf]
+        res = stats.kstest(vals, stats.cauchy.cdf)
+        ref = stats.kstest(vals, stats.cauchy.cdf, _no_deco=True)
+        assert np.all(np.isfinite(res))
+        assert_equal(res, ref)
+        assert not np.isnan(res.statistic)
+        assert not np.isnan(res.pvalue)
 
     # missing: no test that uses *args
 
@@ -5980,40 +6034,49 @@ def test_ttest_1samp_popmean_array(xp):
 
 
 class TestDescribe:
-    def test_describe_scalar(self):
+    @array_api_compatible
+    def test_describe_scalar(self, xp):
         with suppress_warnings() as sup, \
               np.errstate(invalid="ignore", divide="ignore"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
-            n, mm, m, v, sk, kurt = stats.describe(4.)
-        assert_equal(n, 1)
-        assert_equal(mm, (4.0, 4.0))
-        assert_equal(m, 4.0)
-        assert np.isnan(v)
-        assert np.isnan(sk)
-        assert np.isnan(kurt)
+            n, mm, m, v, sk, kurt = stats.describe(xp.asarray(4.)[()])
+        assert n == 1
+        xp_assert_equal(mm[0], xp.asarray(4.0))
+        xp_assert_equal(mm[1], xp.asarray(4.0))
+        xp_assert_equal(m, xp.asarray(4.0))
+        xp_assert_equal(v ,xp.asarray(xp.nan))
+        xp_assert_equal(sk, xp.asarray(xp.nan))
+        xp_assert_equal(kurt, xp.asarray(xp.nan))
 
-    def test_describe_numbers(self):
-        x = np.vstack((np.ones((3,4)), np.full((2, 4), 2)))
-        nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
-        mc = np.array([1.4, 1.4, 1.4, 1.4])
-        vc = np.array([0.3, 0.3, 0.3, 0.3])
-        skc = [0.40824829046386357] * 4
-        kurtc = [-1.833333333333333] * 4
+    @array_api_compatible
+    def test_describe_numbers(self, xp):
+        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
+        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
+        nc = 5
+        mmc = (xp.asarray([1., 1., 1., 1.]), xp.asarray([2., 2., 2., 2.]))
+        mc = xp.asarray([1.4, 1.4, 1.4, 1.4])
+        vc = xp.asarray([0.3, 0.3, 0.3, 0.3])
+        skc = xp.asarray([0.40824829046386357] * 4)
+        kurtc = xp.asarray([-1.833333333333333] * 4)
         n, mm, m, v, sk, kurt = stats.describe(x)
-        assert_equal(n, nc)
-        assert_equal(mm, mmc)
-        assert_equal(m, mc)
-        assert_equal(v, vc)
-        assert_array_almost_equal(sk, skc, decimal=13)
-        assert_array_almost_equal(kurt, kurtc, decimal=13)
-        n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
-        assert_equal(n, nc)
-        assert_equal(mm, mmc)
-        assert_equal(m, mc)
-        assert_equal(v, vc)
-        assert_array_almost_equal(sk, skc, decimal=13)
-        assert_array_almost_equal(kurt, kurtc, decimal=13)
+        assert n == nc
+        xp_assert_equal(mm[0], mmc[0])
+        xp_assert_equal(mm[1], mmc[1])
+        xp_assert_equal(m, mc)
+        xp_assert_equal(v, vc)
+        xp_assert_close(sk, skc)
+        xp_assert_close(kurt, kurtc)
 
+        n, mm, m, v, sk, kurt = stats.describe(x.T, axis=1)
+        assert n == nc
+        xp_assert_equal(mm[0], mmc[0])
+        xp_assert_equal(mm[1], mmc[1])
+        xp_assert_equal(m, mc)
+        xp_assert_equal(v, vc)
+        xp_assert_close(sk, skc)
+        xp_assert_close(kurt, kurtc)
+
+    def describe_nan_policy_omit_test(self):
         x = np.arange(10.)
         x[9] = np.nan
 
@@ -6030,52 +6093,90 @@ class TestDescribe:
         assert_array_almost_equal(sk, skc)
         assert_array_almost_equal(kurt, kurtc, decimal=13)
 
-        assert_raises(ValueError, stats.describe, x, nan_policy='raise')
-        assert_raises(ValueError, stats.describe, x, nan_policy='foobar')
+    @array_api_compatible
+    def test_describe_nan_policy_other(self, xp):
+        x = xp.arange(10.)
+        x = xp.where(x==9, xp.asarray(xp.nan), x)
 
-    def test_describe_result_attributes(self):
-        actual = stats.describe(np.arange(5))
-        attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness',
-                      'kurtosis')
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            stats.describe(x, nan_policy='raise')
+
+        n, mm, m, v, sk, kurt = stats.describe(x, nan_policy='propagate')
+        ref = xp.asarray(xp.nan)[()]
+        assert n == 10
+        xp_assert_equal(mm[0], ref)
+        xp_assert_equal(mm[1], ref)
+        xp_assert_equal(m, ref)
+        xp_assert_equal(v, ref)
+        xp_assert_equal(sk, ref)
+        xp_assert_equal(kurt, ref)
+
+        if is_numpy(xp):
+            self.describe_nan_policy_omit_test()
+        else:
+            message = "`nan_policy='omit' is incompatible with non-NumPy arrays."
+            with pytest.raises(ValueError, match=message):
+                stats.describe(x, nan_policy='omit')
+
+        message = 'nan_policy must be one of...'
+        with pytest.raises(ValueError, match=message):
+            stats.describe(x, nan_policy='foobar')
+
+    @array_api_compatible
+    def test_describe_result_attributes(self, xp):
+        actual = stats.describe(xp.arange(5.))
+        attributes = ('nobs', 'minmax', 'mean', 'variance', 'skewness', 'kurtosis')
         check_named_results(actual, attributes)
 
-    def test_describe_ddof(self):
-        x = np.vstack((np.ones((3, 4)), np.full((2, 4), 2)))
-        nc, mmc = (5, ([1., 1., 1., 1.], [2., 2., 2., 2.]))
-        mc = np.array([1.4, 1.4, 1.4, 1.4])
-        vc = np.array([0.24, 0.24, 0.24, 0.24])
-        skc = [0.40824829046386357] * 4
-        kurtc = [-1.833333333333333] * 4
+    @array_api_compatible
+    def test_describe_ddof(self, xp):
+        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
+        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
+        nc = 5
+        mmc = (xp.asarray([1., 1., 1., 1.]), xp.asarray([2., 2., 2., 2.]))
+        mc = xp.asarray([1.4, 1.4, 1.4, 1.4])
+        vc = xp.asarray([0.24, 0.24, 0.24, 0.24])
+        skc = xp.asarray([0.40824829046386357] * 4)
+        kurtc = xp.asarray([-1.833333333333333] * 4)
         n, mm, m, v, sk, kurt = stats.describe(x, ddof=0)
-        assert_equal(n, nc)
-        assert_allclose(mm, mmc, rtol=1e-15)
-        assert_allclose(m, mc, rtol=1e-15)
-        assert_allclose(v, vc, rtol=1e-15)
-        assert_array_almost_equal(sk, skc, decimal=13)
-        assert_array_almost_equal(kurt, kurtc, decimal=13)
+        assert n == nc
+        xp_assert_equal(mm[0], mmc[0])
+        xp_assert_equal(mm[1], mmc[1])
+        xp_assert_close(m, mc)
+        xp_assert_close(v, vc)
+        xp_assert_close(sk, skc)
+        xp_assert_close(kurt, kurtc)
 
-    def test_describe_axis_none(self):
-        x = np.vstack((np.ones((3, 4)), np.full((2, 4), 2)))
+    @array_api_compatible
+    def test_describe_axis_none(self, xp):
+        xp_test = array_namespace(xp.asarray(1.))  # numpy needs `concat`
+        x = xp_test.concat((xp.ones((3, 4)), xp.full((2, 4), 2.)))
 
         # expected values
-        e_nobs, e_minmax = (20, (1.0, 2.0))
-        e_mean = 1.3999999999999999
-        e_var = 0.25263157894736848
-        e_skew = 0.4082482904638634
-        e_kurt = -1.8333333333333333
+        nc = 20
+        mmc = (xp.asarray(1.0), xp.asarray(2.0))
+        mc = xp.asarray(1.3999999999999999)
+        vc = xp.asarray(0.25263157894736848)
+        skc = xp.asarray(0.4082482904638634)
+        kurtc = xp.asarray(-1.8333333333333333)
 
         # actual values
-        a = stats.describe(x, axis=None)
+        n, mm, m, v, sk, kurt = stats.describe(x, axis=None)
 
-        assert_equal(a.nobs, e_nobs)
-        assert_almost_equal(a.minmax, e_minmax)
-        assert_almost_equal(a.mean, e_mean)
-        assert_almost_equal(a.variance, e_var)
-        assert_array_almost_equal(a.skewness, e_skew, decimal=13)
-        assert_array_almost_equal(a.kurtosis, e_kurt, decimal=13)
+        assert n == nc
+        xp_assert_equal(mm[0], mmc[0])
+        xp_assert_equal(mm[1], mmc[1])
+        xp_assert_close(m, mc)
+        xp_assert_close(v, vc)
+        xp_assert_close(sk, skc)
+        xp_assert_close(kurt, kurtc)
 
-    def test_describe_empty(self):
-        assert_raises(ValueError, stats.describe, [])
+    @array_api_compatible
+    def test_describe_empty(self, xp):
+        message = "The input must not be empty."
+        with pytest.raises(ValueError, match=message):
+            stats.describe(xp.asarray([]))
 
 
 @pytest.mark.skip_xp_backends(cpu_only=True,
@@ -7688,6 +7789,11 @@ class TestKruskal:
         h, p = stats.kruskal(x, y)
         expected = 0
         assert_approx_equal(p, expected)
+
+    def test_no_args_gh20661(self):
+        message = r"Need at least two groups in stats.kruskal\(\)"
+        with pytest.raises(ValueError, match=message):
+            stats.kruskal()
 
 
 class TestCombinePvalues:

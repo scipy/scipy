@@ -59,11 +59,11 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> reverse_cuthill_mckee(graph)
     array([3, 2, 1, 0], dtype=int32)
@@ -215,14 +215,14 @@ def structural_rank(graph):
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 0)	1
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
-      (3, 1)	1
-      (3, 2)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(0))	1
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
+      (np.int32(3), np.int32(1))	1
+      (np.int32(3), np.int32(2))	3
 
     >>> structural_rank(graph)
     4

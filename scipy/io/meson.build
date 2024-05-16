@@ -1,12 +1,6 @@
-_test_fortran_module = custom_target('_test_fortran_module',
-  output: ['_test_fortranmodule.c'],
-  input: '_test_fortran.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_test_fortran',
   [
-    _test_fortran_module,
+    f2py_gen.process('test_fortran.pyf'),
     '_test_fortran.f'
   ],
   c_args: [Wno_unused_variable],

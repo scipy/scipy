@@ -148,11 +148,11 @@ def shortest_path(csgraph, method='auto',
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = shortest_path(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -294,12 +294,11 @@ def floyd_warshall(csgraph, directed=True,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
-
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = floyd_warshall(csgraph=graph, directed=False, return_predecessors=True)
     >>> dist_matrix
@@ -519,10 +518,10 @@ def dijkstra(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = dijkstra(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1004,11 +1003,11 @@ def bellman_ford(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = bellman_ford(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1241,11 +1240,11 @@ def johnson(csgraph, directed=True, indices=None,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_matrix, predecessors = johnson(csgraph=graph, directed=False, indices=0, return_predecessors=True)
     >>> dist_matrix
@@ -1771,11 +1770,11 @@ def yen(
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-    (0, 1)	1
-    (0, 2)	2
-    (1, 3)	1
-    (2, 0)	2
-    (2, 3)	3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> dist_array, predecessors = yen(csgraph=graph, source=0, sink=3, K=2,
     ...                                directed=False, return_predecessors=True)
