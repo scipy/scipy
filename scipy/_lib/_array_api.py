@@ -393,6 +393,8 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
 def xp_minimum(x1, x2):
     # xp won't be passed in because it doesn't need to be passed in to xp.minimum
     xp = array_namespace(x1, x2)
+    if hasattr(xp, 'minimum'):
+        return xp.minimum(x1, x2)
     x1, x2 = xp.broadcast_arrays(x1, x2)
     dtype = xp.result_type(x1.dtype, x2.dtype)
     res = xp.asarray(x1, copy=True, dtype=dtype)
@@ -404,10 +406,16 @@ def xp_minimum(x1, x2):
 # temporary substitute for xp.clip, which is not yet in all backends
 # or covered by array_api_compat.
 def xp_clip(x, a, b, xp=None):
-    xp = array_namespace(xp) if xp is None else xp
+    xp = array_namespace(x) if xp is None else xp
+    a, b = xp.asarray(a, dtype=x.dtype), xp.asarray(b, dtype=x.dtype)
+    if hasattr(xp, 'clip'):
+        return xp.clip(x, a, b)
+    x, a, b = xp.broadcast_arrays(x, a, b)
     y = xp.asarray(x, copy=True)
-    y[y < a] = a
-    y[y > b] = b
+    ia = y < a
+    y[ia] = a[ia]
+    ib = y > b
+    y[ib] = b[ib]
     return y[()] if y.ndim == 0 else y
 
 
@@ -428,3 +436,17 @@ def xp_copysign(x1, x2, xp=None):
     xp = array_namespace(x1, x2) if xp is None else xp
     abs_x1 = xp.abs(x1)
     return xp.where(x2 >= 0, abs_x1, -abs_x1)
+
+
+# partial substitute for xp.sign, which does not cover the NaN special case
+# that I need. (https://github.com/data-apis/array-api-compat/issues/136)
+def xp_sign(x, xp=None):
+    xp = array_namespace(x) if xp is None else xp
+    if is_numpy(xp):  # only NumPy implements the special cases correctly
+        return xp.sign(x)
+    sign = xp.full_like(x, xp.nan)
+    one = xp.asarray(1, dtype=x.dtype)
+    sign = xp.where(x > 0, one, sign)
+    sign = xp.where(x < 0, -one, sign)
+    sign = xp.where(x == 0, 0*one, sign)
+    return sign

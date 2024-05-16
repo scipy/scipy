@@ -1402,20 +1402,23 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
+        # only NumPy gets here; `_contains_nan` raises error for the rest
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
 
-    if a.size == 0:
+    if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
+
     n = a.shape[axis]
-    mm = (np.min(a, axis=axis), np.max(a, axis=axis))
-    m = np.mean(a, axis=axis)
-    v = _var(a, axis=axis, ddof=ddof)
+    mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
+    m = xp.mean(a, axis=axis)
+    v = _var(a, axis=axis, ddof=ddof, xp=xp)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -2383,8 +2386,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy, use_summation=False)
-    cns, nps = _contains_nan(score, nan_policy, use_summation=False)
+    cna, npa = _contains_nan(a, nan_policy)
+    cns, nps = _contains_nan(score, nan_policy)
 
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
