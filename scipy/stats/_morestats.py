@@ -4455,21 +4455,36 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     result_to_tuple=lambda x: (x,)
 )
 def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """Compute the circular variance for samples assumed to be in a range.
+    r"""Compute the circular variance of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radian, their circular variance is defined by
+
+    .. math::
+
+       1 - \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right|
+
+    where :math:`i` is the imaginary unit and :math:`|z|` gives the length
+    of the complex number :math:`z`.  :math:`z` in the above expression is
+    known as the `mean resultant vector`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
 
     Returns
     -------
     circvar : float
-        Circular variance.
+        Circular variance.  The returned value is in the range ``[0, 1]``,
+        where ``0`` indicates no variance and ``1`` indicates large variance.
+
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
@@ -4478,11 +4493,8 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses the following definition of circular variance: ``1-R``, where
-    ``R`` is the mean resultant vector. The
-    returned value is in the range [0, 1], 0 standing for no variance, and 1
-    for a large variance. In the limit of small angles, this value is similar
-    to half the 'linear' variance.
+    In the limit of small angles, the circular variance is close to
+    half the 'linear' variance if measured in radian.
 
     References
     ----------
@@ -4536,27 +4548,41 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 )
 def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
             normalize=False):
-    """
-    Compute the circular standard deviation for samples assumed to be in the
-    range [low to high].
+    r"""
+    Compute the circular standard deviation of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radian, their circular standard deviation is defined by
+
+    .. math::
+
+       \sqrt{ -2 \log \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right| }
+
+    where :math:`i` is the imaginary unit and :math:`|z|` gives the length
+    of the complex number :math:`z`.  :math:`z` in the above expression is
+    known as the `mean resultant vector`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
     normalize : boolean, optional
-        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
-        not depend on the variable units. If False (default), the returned
-        value is scaled by ``((high-low)/(2*pi))``.
+        If ``False`` (the default), the return value is computed from the
+        above formula with the input scaled by ``(2*pi)/(high-low)`` and
+        the output scaled (back) by ``(high-low)/(2*pi)``.  If ``True``,
+        the output is not scaled and is returned directly.
 
     Returns
     -------
     circstd : float
-        Circular standard deviation.
+        Circular standard deviation, optionally normalized.
+
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
@@ -4565,20 +4591,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Notes
     -----
-    This uses a definition of circular standard deviation from [1]_.
-    Essentially, the calculation is as follows.
-
-    .. code-block:: python
-
-        import numpy as np
-        C = np.cos(samples).mean()
-        S = np.sin(samples).mean()
-        R = np.sqrt(C**2 + S**2)
-        l = 2*np.pi / (high-low)
-        circstd = np.sqrt(-2*np.log(R)) / l
-
-    In the limit of small angles, it returns a number close to the 'linear'
-    standard deviation.
+    In the limit of small angles, the circular standard deviation is close
+    to the 'linear' standard deviation if ``normalize`` is ``False``.
 
     References
     ----------
