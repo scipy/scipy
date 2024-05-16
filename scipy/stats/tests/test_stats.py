@@ -42,8 +42,6 @@ from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API)
 
-skip_xp_backends = pytest.mark.skip_xp_backends
-
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
