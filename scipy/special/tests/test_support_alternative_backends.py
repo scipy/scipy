@@ -59,7 +59,7 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
         if f_name in ['gammainc', 'gammaincc']:
             pytest.skip("google/jax#20507")
         if f_name == 'rel_entr':
-            pytest.skip("JAX returns `1.` on input `(0., 1.)`, should return `0.`")
+            pytest.skip("google/jax#21265")
 
     f = getattr(special, f_name)
 
