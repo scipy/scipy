@@ -110,6 +110,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+        mamba install python=${{ matrix.python-version}}
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
