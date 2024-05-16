@@ -4369,21 +4369,38 @@ def _circfuncs_common(samples, high, low, xp=None):
     result_to_tuple=lambda x: (x,)
 )
 def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
-    """Compute the circular mean for samples in a range.
+    r"""Compute the circular mean of a sample of angle observations.
+
+    Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
+    radian, their circular mean is defined by
+
+    .. math::
+
+       \mathrm{Arg} \left( \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right)
+
+    where :math:`i` is the imaginary unit and :math:`\mathop{\mathrm{Arg}} z`
+    gives the principal value of the argument of complex number :math:`z`,
+    restricted to the range :math:`[0,2\pi]` by default.  :math:`z` in the
+    above expression is known as the `mean resultant vector`.
 
     Parameters
     ----------
     samples : array_like
-        Input array.
-    high : float or int, optional
-        High boundary for the sample range. Default is ``2*pi``.
-    low : float or int, optional
-        Low boundary for the sample range. Default is 0.
+        Input array of angle observations.  The value of a full angle is
+        equal to ``(high - low)``.
+    high : float, optional
+        Upper boundary of the principal value of an angle.  Default is ``2*pi``.
+    low : float, optional
+        Lower boundary of the principal value of an angle.  Default is ``0``.
 
     Returns
     -------
     circmean : float
-        Circular mean.
+        Circular mean, restricted to the range ``[low, high]``.
+
+        If the mean resultant vector is zero, an input-dependent,
+        implementation-defined number between ``[low, high]`` is returned.
+        If the input array is empty, ``np.nan`` is returned.
 
     See Also
     --------
@@ -4392,7 +4409,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
-    For simplicity, all angles are printed out in degrees.
+    For readability, all angles are printed out in degrees.
 
     >>> import numpy as np
     >>> from scipy.stats import circmean
