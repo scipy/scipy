@@ -3554,6 +3554,7 @@ class TestKurtosis(SkewKurtosisTest):
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
                       cpu_only=True)
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_kurtosis(self, xp):
         # Scalar test case
@@ -3620,6 +3621,7 @@ class TestKurtosis(SkewKurtosisTest):
     @skip_xp_backends('jax.numpy',
                       reasons=['JAX arrays do not support item assignment'],
                       cpu_only=True)
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
