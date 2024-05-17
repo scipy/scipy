@@ -4427,7 +4427,8 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     res = xp.atan2(sin_sum, cos_sum)
 
     res = xp.asarray(res)
-    res[res < 0] += 2*xp.pi
+    res_shifted = res + 2*xp.pi
+    res = xp.where(res < 0, res_shifted, res)
     res = res[()] if res.ndim == 0 else res
 
     return res*(high - low)/2.0/xp.pi + low
