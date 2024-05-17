@@ -87,7 +87,9 @@ class GridData(Benchmark):
                              method=method)
         
 class GridDataPeakMem(Benchmark):
-
+    """
+    Benchmark based on https://github.com/scipy/scipy/issues/20357
+    """
     def setup(self):
         shape = (7395, 6408)
         num_nonzero = 488686
