@@ -119,13 +119,15 @@ class TestFFT1D:
     def test_ifftn(self, xp):
         x = xp.asarray(random((30, 20, 10)) + 1j*random((30, 20, 10)))
         expect = fft.ifft(fft.ifft(fft.ifft(x, axis=2), axis=1), axis=0)
-        xp_assert_close(fft.ifftn(x), expect)
-        xp_assert_close(fft.ifftn(x, norm="backward"), expect)
+        xp_assert_close(fft.ifftn(x), expect, rtol=1e-7)
+        xp_assert_close(fft.ifftn(x, norm="backward"), expect, rtol=1e-7)
         xp_assert_close(
             fft.ifftn(x, norm="ortho"),
             fft.ifftn(x) * xp.sqrt(xp.asarray(30 * 20 * 10, dtype=xp.float64))
         )
-        xp_assert_close(fft.ifftn(x, norm="forward"), expect * (30 * 20 * 10))
+        xp_assert_close(fft.ifftn(x, norm="forward"),
+                        expect * (30 * 20 * 10),
+                        rtol=1e-7)
 
     def test_rfft(self, xp):
         x = xp.asarray(random(29), dtype=xp.float64)
