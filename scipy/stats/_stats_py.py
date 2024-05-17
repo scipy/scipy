@@ -2001,9 +2001,16 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     """
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    k2 = s*s + k*k
+    Z = s*s + k*k
 
-    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
+    xp = array_namespace(Z)
+    Z_np = np.asarray(Z)
+    pvalue = distributions.chi2.sf(Z_np, 2)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return NormaltestResult(Z, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)

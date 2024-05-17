@@ -6143,10 +6143,10 @@ def test_normalitytests(xp):
     # test_result <- dagoTest(x)
     # test_result@test$statistic
     # test_result@test$p.value
-    st_normal, st_skew, st_kurt = (3.92371918158185551,
+    st_normal, st_skew, st_kurt = (xp.asarray(3.92371918158185551),
                                    xp.asarray(1.98078826090875881),
                                    xp.asarray(-0.01403734404759738))
-    pv_normal, pv_skew, pv_kurt = (0.14059672529747502,
+    pv_normal, pv_skew, pv_kurt = (xp.asarray(0.14059672529747502),
                                    xp.asarray(0.04761502382843208),
                                    xp.asarray(0.98880018772590561))
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
@@ -6155,7 +6155,9 @@ def test_normalitytests(xp):
     x_xp = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
     attributes = ('statistic', 'pvalue')
 
-    assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
+    res = stats.normaltest(x_xp)
+    xp_assert_close(res.statistic, st_normal)
+    xp_assert_close(res.pvalue, pv_normal)
     check_named_results(stats.normaltest(x), attributes)
 
     res = stats.skewtest(x_xp)
@@ -6195,8 +6197,10 @@ def test_normalitytests(xp):
     xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
     # Test axis=None (equal to axis=0 for 1-D input)
-    assert_array_almost_equal(stats.normaltest(x, axis=None),
-                              (st_normal, pv_normal))
+    res = stats.normaltest(x_xp, axis=None)
+    xp_assert_close(res.statistic, st_normal)
+    xp_assert_close(res.pvalue, pv_normal)
+
     res = stats.skewtest(x_xp, axis=None)
     xp_assert_close(res.statistic, st_skew)
     xp_assert_close(res.pvalue, pv_skew)
@@ -6205,18 +6209,19 @@ def test_normalitytests(xp):
     xp_assert_close(res.statistic, st_kurt)
     xp_assert_close(res.pvalue, pv_kurt)
 
-    x = xp.arange(10.)
+    x = xp.arange(30.)
     NaN = xp.asarray(xp.nan, dtype=x.dtype)
-    x[9] = NaN
+    x[29] = NaN
     with np.errstate(invalid="ignore"):
         res = stats.skewtest(x)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    x = xp.arange(30.)
-    x[29] = NaN
-    with np.errstate(all='ignore'):
         res = stats.kurtosistest(x)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+
+        res = stats.normaltest(x)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
@@ -6266,9 +6271,6 @@ def test_normalitytests(xp):
     assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
     assert_raises(ValueError, stats.kurtosistest, list(range(20)),
                   alternative='foobar')
-
-    with np.errstate(all='ignore'):
-        assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
 
     expected = (6.2260409514287449, 0.04446644248650191)
     assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
