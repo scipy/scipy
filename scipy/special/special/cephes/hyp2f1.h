@@ -68,6 +68,8 @@
  * Copyright 1984, 1987, 1992, 2000 by Stephen L. Moshier
  */
 
+#pragma once
+
 #include "../config.h"
 #include "../error.h"
 

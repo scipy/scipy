@@ -19,6 +19,7 @@ python_sources = [
   'test_gammainc.py',
   'test_hyp2f1.py',
   'test_hypergeometric.py',
+  'test_iv_ratio.py',
   'test_kolmogorov.py',
   'test_lambertw.py',
   'test_log_softmax.py',

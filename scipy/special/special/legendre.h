@@ -1,7 +1,7 @@
 #pragma once
 
-#include "config.h"
 #include "cephes/poch.h"
+#include "config.h"
 
 namespace special {
 
@@ -16,27 +16,43 @@ namespace special {
 //          PD(n) --- Pn'(z)
 // ===============================================
 
-template <typename T, typename OutputVec1, typename OutputVec2>
-void lpn(T z, OutputVec1 pn, OutputVec2 pd) {
-    pn(0) = 1;
-    pd(0) = 0;
+template <typename T, typename OutputVec>
+void legendre_all(T z, OutputVec p) {
+    long n = p.extent(0) - 1;
 
-    if (pn.extent(0) > 1) {
-        pn(1) = z;
-        pd(1) = 1;
+    T p0 = 1;
+    p(0) = p0;
 
-        T p0 = 1;
+    if (n >= 1) {
         T p1 = z;
-        for (int k = 2; k < pn.extent(0); k++) {
+        p(1) = p1;
+
+        for (long k = 2; k <= n; k++) {
             T pf = (static_cast<T>(2 * k - 1) * z * p1 - static_cast<T>(k - 1) * p0) / static_cast<T>(k);
-            pn(k) = pf;
-            if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-                pd(k) = std::pow(std::real(z), k + 1) * k * (k + 1) / 2;
-            } else {
-                pd(k) = static_cast<T>(k) * (p1 - z * pf) / (static_cast<T>(1) - z * z);
-            }
+            p(k) = pf;
+
             p0 = p1;
             p1 = pf;
+        }
+    }
+}
+
+template <typename T, typename InputVec, typename OutputVec>
+void legendre_all_jac(T z, InputVec p, OutputVec pd) {
+    long n = p.extent(0) - 1;
+
+    pd(0) = 0;
+    if (n >= 1) {
+        pd(1) = 1;
+
+        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
+            for (long k = 2; k <= n; k++) {
+                pd(k) = k * (k + 1) * std::pow(std::real(z), k + 1) / 2;
+            }
+        } else {
+            for (long k = 2; k <= n; k++) {
+                pd(k) = static_cast<T>(k) * (p(k - 1) - z * p(k)) / (static_cast<T>(1) - z * z);
+            }
         }
     }
 }
@@ -56,62 +72,57 @@ void lpn(T z, OutputVec1 pn, OutputVec2 pd) {
 //          PD(m,n) --- Pmn'(x)
 // =====================================================
 
-template <typename T, typename OutputMat1>
-void lpmn(T x, OutputMat1 pm) {
-    int m = pm.extent(0) - 1;
-    int n = pm.extent(1) - 1;
+template <typename T, typename OutputMat>
+void assoc_legendre_all(T x, OutputMat p) {
+    long m = p.extent(0) - 1;
+    long n = p.extent(1) - 1;
 
-    for (int i = 0; i < m + 1; ++i) {
-        for (int j = 0; j < n + 1; ++j) {
-            pm(i, j) = 0;
+    for (long i = 0; i <= m; ++i) {
+        for (long j = 0; j <= n; ++j) {
+            p(i, j) = 0;
         }
     }
 
-    pm(0, 0) = 1;
-    if (n == 0) {
-        return;
-    }
+    p(0, 0) = 1;
+    if (n > 0) {
+        if (std::abs(x) == 1) {
+            for (long i = 1; i <= n; i++) {
+                p(0, i) = std::pow(x, i);
+            }
+        } else {
+            long ls = (std::abs(x) > 1 ? -1 : 1);
+            T xq = std::sqrt(ls * (1 - x * x));
+            if (x < -1) {
+                xq = -xq; // Ensure connection to the complex-valued function for |x| > 1
+            }
 
-    if (std::abs(x) == 1) {
-        for (int i = 1; i <= n; i++) {
-            pm(0, i) = std::pow(x, i);
-        }
+            for (long i = 1; i <= m; ++i) {
+                p(i, i) = -ls * (2 * i - 1) * xq * p(i - 1, i - 1);
+            }
+            for (long i = 0; i <= std::min(n - 1, m); i++) {
+                p(i, i + 1) = (2 * i + 1) * x * p(i, i);
+            }
 
-        return;
-    }
-
-    int ls = (std::abs(x) > 1 ? -1 : 1);
-    T xq = std::sqrt(ls * (1 - x * x));
-    // Ensure connection to the complex-valued function for |x| > 1
-    if (x < -1) {
-        xq = -xq;
-    }
-
-    for (int i = 1; i <= m; ++i) {
-        pm(i, i) = -ls * (2 * i - 1) * xq * pm(i - 1, i - 1);
-    }
-    for (int i = 0; i <= (m > (n - 1) ? n - 1 : m); i++) {
-        pm(i, i + 1) = (2 * i + 1) * x * pm(i, i);
-    }
-
-    for (int i = 0; i <= m; i++) {
-        for (int j = i + 2; j <= n; j++) {
-            pm(i, j) =
-                ((2 * j - 1) * x * pm(i, j - 1) - static_cast<T>(i + j - 1) * pm(i, j - 2)) / static_cast<T>(j - i);
+            for (long i = 0; i <= m; i++) {
+                for (long j = i + 2; j <= n; j++) {
+                    p(i, j) = ((2 * j - 1) * x * p(i, j - 1) - static_cast<T>(i + j - 1) * p(i, j - 2)) /
+                              static_cast<T>(j - i);
+                }
+            }
         }
     }
 }
 
-template <typename T, typename OutputMat1>
-void lpmn(T x, bool m_signbit, OutputMat1 pm) {
-    lpmn(x, pm);
+template <typename T, typename OutputMat>
+void assoc_legendre_all(T x, bool m_signbit, OutputMat p) {
+    assoc_legendre_all(x, p);
 
-    int m = pm.extent(0) - 1;
-    int n = pm.extent(1) - 1;
+    int m = p.extent(0) - 1;
+    int n = p.extent(1) - 1;
 
     if (m_signbit) {
-        for (int j = 0; j < n + 1; ++j) {
-            for (int i = 0; i < m + 1; ++i) {
+        for (int j = 0; j <= n; ++j) {
+            for (int i = 0; i <= m; ++i) {
                 T fac = 0;
                 if (i <= j) {
                     fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
@@ -120,27 +131,14 @@ void lpmn(T x, bool m_signbit, OutputMat1 pm) {
                     }
                 }
 
-                pm(i, j) *= fac;
+                p(i, j) *= fac;
             }
         }
     }
 }
 
-template <typename T, typename OutMat>
-void sph_legendre_all(T phi, OutMat p) {
-    long n = p.extent(1) - 1;
-
-    lpmn(std::cos(phi), p);
-
-    for (long j = 0; j <= n; ++j) {
-        for (long i = 0; i <= j; ++i) {
-            p(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
-        }
-    }
-}
-
-template <typename T, typename InputMat1, typename OutputMat2>
-void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
+template <typename T, typename InputMat, typename OutputMat>
+void assoc_legendre_all_jac(T x, InputMat pm, OutputMat pd) {
     int m = pm.extent(0) - 1;
     int n = pm.extent(1) - 1;
 
@@ -191,26 +189,36 @@ void lpmn_jac(T x, InputMat1 pm, OutputMat2 pd) {
     }
 }
 
-template <typename T, typename InputMat1, typename OutputMat2>
-void lpmn_jac(T x, bool m_signbit, InputMat1 pm, OutputMat2 pd) {
-    lpmn_jac(x, pm, pd);
+template <typename T, typename InputMat, typename OutputMat>
+void assoc_legendre_all_jac(T x, bool m_signbit, InputMat p, OutputMat p_jac) {
+    long m = p.extent(0) - 1;
+    long n = p.extent(1) - 1;
 
-    int m = pm.extent(0) - 1;
-    int n = pm.extent(1) - 1;
+    assoc_legendre_all_jac(x, p, p_jac);
 
     if (m_signbit) {
-        for (int j = 0; j < n + 1; ++j) {
-            for (int i = 0; i < m + 1; ++i) {
-                T fac = 0;
-                if (i <= j) {
-                    fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
-                    if (std::abs(x) < 1) {
-                        fac *= std::pow(-1, i);
-                    }
+        for (long j = 0; j <= n; ++j) {
+            for (long i = 0; i <= std::min(j, m); ++i) {
+                T fac = std::tgamma(j - i + 1) / std::tgamma(j + i + 1);
+                if (std::abs(x) < 1) {
+                    fac *= std::pow(-1, i);
                 }
 
-                pd(i, j) *= fac;
+                p_jac(i, j) *= fac;
             }
+        }
+    }
+}
+
+template <typename T, typename OutMat>
+void sph_legendre_all(T phi, OutMat p) {
+    long n = p.extent(1) - 1;
+
+    assoc_legendre_all(std::cos(phi), p);
+
+    for (long j = 0; j <= n; ++j) {
+        for (long i = 0; i <= j; ++i) {
+            p(i, j) *= std::sqrt((2 * j + 1) * cephes::poch(j + i + 1, -2 * i) / (4 * M_PI));
         }
     }
 }

@@ -143,15 +143,9 @@ py3.extension_module('_fitpack',
   subdir: 'scipy/interpolate'
 )
 
-dfitpack_module = custom_target('dfitpack_module',
-  output: ['dfitpack-f2pywrappers.f', 'dfitpackmodule.c'],
-  input: 'src/fitpack.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 # TODO: Add flags for 64 bit ints
-py3.extension_module('dfitpack',
-  dfitpack_module,
+py3.extension_module('_dfitpack',
+  f2py_gen.process('src/dfitpack.pyf'),
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
   dependencies: [lapack_dep, fortranobject_dep],
@@ -193,6 +187,7 @@ py3.install_sources([
     '_rbfinterp.py',
     '_rgi.py',
     '_ndbspline.py',
+    'dfitpack.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',

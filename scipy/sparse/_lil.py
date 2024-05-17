@@ -21,7 +21,7 @@ class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
     def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self)
+        _spbase.__init__(self, arg1)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape
@@ -57,13 +57,14 @@ class _lil_base(_spbase, IndexMixin):
                 A = self._ascontainer(arg1)
             except TypeError as e:
                 raise TypeError('unsupported matrix type') from e
-            else:
-                A = self._csr_container(A, dtype=dtype).tolil()
+            if isinstance(self, sparray) and A.ndim != 2:
+                raise ValueError(f"LIL arrays don't support {A.ndim}D input. Use 2D")
+            A = self._csr_container(A, dtype=dtype).tolil()
 
-                self._shape = check_shape(A.shape)
-                self.dtype = A.dtype
-                self.rows = A.rows
-                self.data = A.data
+            self._shape = check_shape(A.shape)
+            self.dtype = A.dtype
+            self.rows = A.rows
+            self.data = A.data
 
     def __iadd__(self,other):
         self[:,:] = self + other
@@ -110,13 +111,6 @@ class _lil_base(_spbase, IndexMixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
-
-    def __str__(self):
-        val = ''
-        for i, row in enumerate(self.rows):
-            for pos, j in enumerate(row):
-                val += f"  {str((i, j))}\t{str(self.data[i][pos])}\n"
-        return val[:-1]
 
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).

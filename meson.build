@@ -10,7 +10,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
@@ -20,6 +20,8 @@ project(
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
+
+min_numpy_version = '1.23.5'  # keep in sync with pyproject.toml
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
 # unexpected from-source builds there because we no longer provide wheels.
@@ -39,8 +41,12 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=8.0')
-    error('SciPy requires GCC >= 8.0')
+  if not cc.version().version_compare('>=9.1')
+    error('SciPy requires GCC >= 9.1')
+  endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=12.0')
+    error('SciPy requires clang >= 12.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')

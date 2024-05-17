@@ -3,9 +3,13 @@ import platform
 
 import pytest
 
-from scipy._lib._testutils import _test_cython_extension, cython
+from scipy._lib._testutils import IS_EDITABLE, _test_cython_extension, cython
 
 
+@pytest.mark.fail_slow(20)
+# essential per https://github.com/scipy/scipy/pull/20487#discussion_r1567057247
+@pytest.mark.skipif(IS_EDITABLE,
+                    reason='Editable install cannot find .pxd headers.')
 @pytest.mark.skipif(platform.machine() in ["wasm32", "wasm64"],
                     reason="Can't start subprocess")
 @pytest.mark.skipif(cython is None, reason="requires cython")

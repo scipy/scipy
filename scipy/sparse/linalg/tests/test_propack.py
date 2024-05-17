@@ -89,6 +89,7 @@ def test_svdp(ctor, dtype, irl, which):
         check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
+@pytest.mark.xslow
 @pytest.mark.parametrize('dtype', _dtypes)
 @pytest.mark.parametrize('irl', (False, True))
 @pytest.mark.timeout(120)  # True, complex64 > 60 s: prerel deps cov 64bit blas

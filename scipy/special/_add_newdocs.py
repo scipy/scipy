@@ -4202,59 +4202,6 @@ add_newdoc("eval_hermitenorm",
 
     """)
 
-add_newdoc(
-    "_scaled_exp1",
-    """
-    _scaled_exp1(x, out=None):
-
-    Compute the scaled exponential integral.
-
-    This is a private function, subject to change or removal with no
-    deprecation.
-
-    This function computes F(x), where F is the factor remaining in E_1(x)
-    when exp(-x)/x is factored out.  That is,::
-
-        E_1(x) = exp(-x)/x * F(x)
-
-    or
-
-        F(x) = x * exp(x) * E_1(x)
-
-    The function is defined for real x >= 0.  For x < 0, nan is returned.
-
-    F has the properties:
-
-    * F(0) = 0
-    * F(x) is increasing on [0, inf).
-    * The limit as x goes to infinity of F(x) is 1.
-
-    Parameters
-    ----------
-    x: array_like
-        The input values. Must be real.  The implementation is limited to
-        double precision floating point, so other types will be cast to
-        to double precision.
-    out : ndarray, optional
-        Optional output array for the function results
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the scaled exponential integral.
-
-    See Also
-    --------
-    exp1 : exponential integral E_1
-
-    Examples
-    --------
-    >>> from scipy.special import _scaled_exp1
-    >>> _scaled_exp1([0, 0.1, 1, 10, 100])
-
-    """
-)
-
 
 add_newdoc("exp10",
     """

@@ -2699,9 +2699,9 @@ cdef class Rotation:
             return self.inv()
         elif n == 1:
             if self._single:
-                return self.__class__(self._quat[0], copy=True)
+                return self.__class__(self._quat[0], normalize=False, copy=True)
             else:
-                return self.__class__(self._quat, copy=True)
+                return self.__class__(self._quat, normalize=False, copy=True)
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
@@ -2744,7 +2744,7 @@ cdef class Rotation:
         quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)
@@ -3483,13 +3483,32 @@ cdef class Rotation:
             # We first find the minimum angle rotation between the primary
             # vectors.
             cross = np.cross(b_pri[0], a_pri[0])
-            theta = atan2(_norm3(cross), np.dot(a_pri[0], b_pri[0]))
-            if theta < 1e-3:  # small angle Taylor series approximation
+            cross_norm = _norm3(cross)
+            theta = atan2(cross_norm, _dot3(a_pri[0], b_pri[0]))
+            tolerance = 1e-3  # tolerance for small angle approximation (rad)
+            R_flip = cls.identity()
+            if (np.pi - theta) < tolerance:
+                # Near pi radians, the Taylor series appoximation of x/sin(x)
+                # diverges, so for numerical stability we flip pi and then
+                # rotate back by the small angle pi - theta
+                if cross_norm == 0:
+                    # For antiparallel vectors, cross = [0, 0, 0] so we need to
+                    # manually set an arbitrary orthogonal axis of rotation
+                    i = np.argmin(np.abs(a_pri[0]))
+                    r = np.zeros(3)
+                    r[i - 1], r[i - 2] = a_pri[0][i - 2], -a_pri[0][i - 1]
+                else:
+                    r = cross  # Shortest angle orthogonal axis of rotation
+                R_flip = Rotation.from_rotvec(r / np.linalg.norm(r) * np.pi)
+                theta = np.pi - theta
+                cross = -cross
+            if abs(theta) < tolerance:
+                # Small angle Taylor series approximation for numerical stability
                 theta2 = theta * theta
                 r = cross * (1 + theta2 / 6 + theta2 * theta2 * 7 / 360)
             else:
                 r = cross * theta / np.sin(theta)
-            R_pri = cls.from_rotvec(r)
+            R_pri = cls.from_rotvec(r) * R_flip
 
             if N == 1:
                 # No secondary vectors, so we are done

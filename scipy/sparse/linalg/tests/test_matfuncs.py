@@ -100,12 +100,12 @@ class TestExpM:
         assert_allclose(expm([[1]]), A)
         assert_allclose(expm(matrix([[1]])), A)
         assert_allclose(expm(np.array([[1]])), A)
-        assert_allclose(expm(csc_matrix([[1]])).A, A)
+        assert_allclose(expm(csc_matrix([[1]])).toarray(), A)
         B = expm(np.array([[1j]]))
         assert_allclose(expm(((1j,),)), B)
         assert_allclose(expm([[1j]]), B)
         assert_allclose(expm(matrix([[1j]])), B)
-        assert_allclose(expm(csc_matrix([[1j]])).A, B)
+        assert_allclose(expm(csc_matrix([[1j]])).toarray(), B)
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -188,7 +188,7 @@ class TestExpM:
         assert_allclose(expm(Q), expm(1.0 * Q))
 
         Q = csc_matrix(Q)
-        assert_allclose(expm(Q).A, expm(1.0 * Q).A)
+        assert_allclose(expm(Q).toarray(), expm(1.0 * Q).toarray())
 
     def test_triangularity_perturbation(self):
         # Experiment (1) of

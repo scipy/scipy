@@ -1,11 +1,11 @@
 python_sources = [
   '__init__.py',
+  'test_arithmetic1d.py',
   'test_array_api.py',
   'test_base.py',
   'test_coo.py',
   'test_common1d.py',
   'test_construct.py',
-  'test_deprecations.py',
   'test_csc.py',
   'test_csr.py',
   'test_dok.py',
