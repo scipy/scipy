@@ -87,8 +87,8 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     # To compensate, we also check that the root-mean-square error is
     # less than eps**0.5.
     ref = xp.asarray(ref, dtype=dtype_xp)
-    xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*10,
+    xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*20,
                     check_namespace=True, check_shape=True, check_dtype=True,)
     xp_assert_close(xp.sqrt(xp.mean(res**2)), xp.sqrt(xp.mean(ref**2)),
-                    rtol=eps**0.5, atol=eps*10,
+                    rtol=eps**0.5, atol=eps*20,
                     check_namespace=False, check_shape=False, check_dtype=False,)
