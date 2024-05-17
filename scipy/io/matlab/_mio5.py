@@ -313,8 +313,8 @@ class MatFile5Reader(MatFileReader):
             if name in mdict:
                 msg = (
                     f'Duplicate variable name "{name}" in stream'
-                    " - replacing previous with new\n"
-                    "Consider scipy.io.matlab.varmats_from_mat to split "
+                    " - replacing previous with new\nConsider"
+                    "scipy.io.matlab._mio5.varmats_from_mat to split "
                     "file into single variable files"
                 )
                 warnings.warn(msg, MatReadWarning, stacklevel=2)
@@ -407,7 +407,7 @@ def varmats_from_mat(file_obj):
     >>> import scipy.io
     >>> import numpy as np
     >>> from io import BytesIO
-    >>> from scipy.io.matlab import varmats_from_mat
+    >>> from scipy.io.matlab._mio5 import varmats_from_mat
     >>> mat_fileobj = BytesIO()
     >>> scipy.io.savemat(mat_fileobj, {'b': np.arange(10), 'a': 'a string'})
     >>> varmats = varmats_from_mat(mat_fileobj)

@@ -43,7 +43,7 @@ Drive, Natick, MA 01760-2098, USA.
 """
 # Matlab file read and write utilities
 from ._mio import loadmat, savemat, whosmat
-from ._mio5 import MatlabFunction, varmats_from_mat
+from ._mio5 import MatlabFunction
 from ._mio5_params import MatlabObject, MatlabOpaque, mat_struct
 from ._miobase import (matfile_version, MatReadError, MatReadWarning,
                       MatWriteError)
@@ -53,7 +53,7 @@ from .import (mio, mio5, mio5_params, mio4, byteordercodes,
             miobase, mio_utils, streams, mio5_utils)
 
 __all__ = [
-    'loadmat', 'savemat', 'varmats_from_mat', 'whosmat', 'MatlabObject',
+    'loadmat', 'savemat', 'whosmat', 'MatlabObject',
     'matfile_version', 'MatReadError', 'MatReadWarning',
     'MatWriteError', 'mat_struct', 'MatlabOpaque', 'MatlabFunction'
 ]
