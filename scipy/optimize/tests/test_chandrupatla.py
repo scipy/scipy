@@ -480,8 +480,9 @@ class TestChandrupatlaMinimize:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason=['Currently uses fancy indexing assignment.'])
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+                              reasons=['Currently uses fancy indexing assignment.',
+                                       'JAX arrays do not support item assignment.'])
 class TestChandrupatla(TestScalarRootFinders):
 
     def f(self, q, p):
