@@ -3552,8 +3552,7 @@ class TestSkew(SkewKurtosisTest):
 class TestKurtosis(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_kurtosis(self, xp):
@@ -3619,8 +3618,7 @@ class TestKurtosis(SkewKurtosisTest):
             assert xp.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     @skip_xp_backends('jax.numpy',
-                      reasons=['JAX arrays do not support item assignment'],
-                      cpu_only=True)
+                      reasons=['JAX arrays do not support item assignment'])
     @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
