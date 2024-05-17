@@ -6060,8 +6060,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_close(m, mc)
-        xp_assert_close(v, vc)
+        xp_assert_close(m, mc, rtol=4 * xp.finfo(m.dtype).eps)
+        xp_assert_close(v, vc, rtol=4 * xp.finfo(m.dtype).eps)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
@@ -6069,8 +6069,8 @@ class TestDescribe:
         assert n == nc
         xp_assert_equal(mm[0], mmc[0])
         xp_assert_equal(mm[1], mmc[1])
-        xp_assert_close(m, mc)
-        xp_assert_close(v, vc)
+        xp_assert_close(m, mc, rtol=4 * xp.finfo(m.dtype).eps)
+        xp_assert_close(v, vc, rtol=4 * xp.finfo(m.dtype).eps)
         xp_assert_close(sk, skc)
         xp_assert_close(kurt, kurtc)
 
