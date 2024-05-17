@@ -60,6 +60,8 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
             pytest.skip("google/jax#20507")
         if f_name == 'rel_entr':
             pytest.skip("google/jax#21265")
+        if f_name == 'gammaln':
+            pytest.skip("google/jax#21284")
 
     f = getattr(special, f_name)
 
