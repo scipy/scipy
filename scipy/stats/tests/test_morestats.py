@@ -1713,7 +1713,7 @@ class TestKstat:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1753,7 +1753,7 @@ class TestKstatVar:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
