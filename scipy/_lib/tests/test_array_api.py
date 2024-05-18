@@ -3,7 +3,8 @@ import pytest
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (
-    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy
+    _GLOBAL_CONFIG, array_namespace, _asarray, copy, xp_assert_equal, is_numpy,
+    xp_mean, xp_assert_close
 )
 import scipy._lib.array_api_compat.numpy as np_compat
 
@@ -112,3 +113,117 @@ class TestArrayAPI:
             with pytest.raises(AssertionError, match="Types do not match."):
                 xp_assert_equal(xp.asarray(0.), xp.float64(0))
             xp_assert_equal(xp.float64(0), xp.asarray(0.))
+
+
+@array_api_compatible
+class TestXP_Mean:
+    @pytest.mark.parametrize('axis', [None, 1, -1, (-2, 2)])
+    @pytest.mark.parametrize('weights', [None, True])
+    @pytest.mark.parametrize('keepdims', [False, True])
+    def test_xp_mean_basic(self, xp, axis, weights, keepdims):
+        rng = np.random.default_rng(90359458245906)
+        x = rng.random((3, 4, 5))
+        x_xp = xp.asarray(x)
+        w = w_xp = None
+
+        if weights:
+            w = rng.random((1, 5))
+            w_xp = xp.asarray(w)
+            x, w = np.broadcast_arrays(x, w)
+
+        res = xp_mean(x_xp, weights=w_xp, axis=axis, keepdims=keepdims)
+        ref = np.average(x, weights=w, axis=axis, keepdims=keepdims)
+
+        xp_assert_close(res, xp.asarray(ref))
+
+    def test_special_cases(self, xp):
+        # non-broadcastable x and weights
+        message = "...mismatch: objects cannot be broadcast to a single shape"
+        x, w = xp.arange(10.), xp.zeros(5)
+        with pytest.raises((ValueError, RuntimeError), match=message):
+            xp_mean(x, weights=w)
+
+        # weights sum to zero
+        weights = xp.asarray([-1., 0., 1.])
+
+        res = xp_mean(xp.asarray([1., 1., 1.]), weights=weights)
+        xp_assert_close(res, xp.asarray(xp.nan))
+
+        res = xp_mean(xp.asarray([2., 1., 1.]), weights=weights)
+        xp_assert_close(res, xp.asarray(-np.inf))
+
+        res = xp_mean(xp.asarray([1., 1., 2.]), weights=weights)
+        xp_assert_close(res, xp.asarray(np.inf))
+
+        res = xp_mean(xp.asarray([0., 0., 0.]), weights=xp.asarray([0., 0., 0.]))
+        xp_assert_close(res, xp.asarray(xp.nan))
+
+    def test_nan_policy(self, xp):
+        x = xp.arange(10.)
+        mask = (x == 3)
+        x = xp.where(mask, xp.asarray(xp.nan), x)
+
+        message = 'The input contains nan values'
+        with pytest.raises(ValueError, match=message):
+            xp_mean(x, nan_policy='raise')
+
+        res1 = xp_mean(x)
+        res2 = xp_mean(x, nan_policy='propagate')
+        ref = xp.asarray(xp.nan)
+        xp_assert_equal(res1, ref)
+        xp_assert_equal(res2, ref)
+
+        res = xp_mean(x, nan_policy='omit')
+        ref = xp.mean(x[~mask])
+        xp_assert_close(res, ref)
+
+        # NaNs in weights
+        weights = xp.ones(10)
+        weights = xp.where(mask, xp.asarray(xp.nan), weights)
+        res = xp_mean(xp.arange(10.), weights=weights, nan_policy='omit')
+        ref = xp.mean(x[~mask])
+        xp_assert_close(res, ref)
+
+        message = 'After omitting NaNs...'
+        with pytest.warns(UserWarning, match=message):
+            res = xp_mean(x * np.nan,  nan_policy='omit')
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+    def test_empty(self, xp):
+        message = 'At least one slice along `axis` has...'
+
+        with pytest.warns(UserWarning, match=message):
+            res = xp_mean(xp.asarray([]))
+            ref = xp.asarray(xp.nan)
+            xp_assert_equal(res, ref)
+
+        with pytest.warns(UserWarning, match=message):
+            res = xp_mean(xp.asarray([[]]), axis=1)
+            ref = xp.asarray([xp.nan])
+            xp_assert_equal(res, ref)
+
+        res = xp_mean(xp.asarray([[]]), axis=0)
+        ref = xp.asarray([])
+        xp_assert_equal(res, ref)
+
+    def test_dtype(self, xp):
+        max = xp.finfo(xp.float32).max
+        x_np = np.asarray([max, max], dtype=np.float32)
+        x_xp = xp.asarray(x_np)
+
+        with np.errstate(over='ignore'):
+            res = xp_mean(x_xp)
+            ref = np.mean(x_np)
+            np.testing.assert_equal(ref, np.inf)
+            xp_assert_close(res, xp.asarray(ref))
+
+        res = xp_mean(x_xp, dtype=xp.float64)
+        ref = xp.asarray(np.mean(np.asarray(x_np, dtype=np.float64)))
+        xp_assert_close(res, ref)
+
+    def test_integer(self, xp):
+        x = xp.arange(10)
+        y = xp.arange(10.)
+        xp_assert_equal(xp_mean(x), xp_mean(y))
+        xp_assert_equal(xp_mean(y, weights=x), xp_mean(y, weights=y))

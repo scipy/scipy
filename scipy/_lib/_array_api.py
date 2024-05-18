@@ -475,3 +475,144 @@ def xp_sign(x, xp=None):
     sign = xp.where(x < 0, -one, sign)
     sign = xp.where(x == 0, 0*one, sign)
     return sign
+
+
+def xp_add_reduced_axes(res, axis, initial_shape, *, xp=None):
+    xp = array_namespace(res) if xp is None else xp
+
+    if axis is None:
+        final_shape = (1,) * len(initial_shape)
+    else:
+        # axis can be a scalar or sequence
+        axes = (axis,) if xp.asarray(axis).ndim == 0 else axis
+        final_shape = list(initial_shape)
+        for i in axes:
+            final_shape[i] = 1
+
+    return xp.reshape(res, final_shape)
+
+
+# array-API compatible substitute for np.mean, np.nanmean, np.average
+def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
+            dtype=None, xp=None):
+    r"""Compute the arithmetic mean along the specified axis.
+
+    Parameters
+    ----------
+    x : real floating array
+        Array containing real numbers whose mean is desired.
+    axis : int or tuple of ints, default: None
+        If an int or tuple of ints, the axis or axes of the input along which
+        to compute the statistic. The statistic of each axis-slice (e.g. row)
+        of the input will appear in a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
+    weights : real floating array, optional
+        If specified, an array of weights associated with the values in `x`;
+        otherwise ``1``. If `weights` and `x` do not have the same shape, the
+        arrays will be broadcasted before performing the calculation. See
+        Notes for details.
+    keepdims : boolean, optional
+        If this is set to True, the axes which are reduced are left
+        in the result as dimensions with length one. With this option,
+        the result will broadcast correctly against the input array.
+    nan_policy : {'propagate', 'omit', 'raise'}, default: 'propagate'
+        Defines how to handle input NaNs.
+
+        - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
+          which the  statistic is computed, the corresponding entry of the output
+          will be NaN.
+        - ``omit``: NaNs will be omitted when performing the calculation.
+          If insufficient data remains in the axis slice along which the
+          statistic is computed, the corresponding entry of the output will be
+          NaN.
+        - ``raise``: if a NaN is present, a ``ValueError`` will be raised.
+
+    dtype : dtype, optional
+        Type to use in computing the mean. For integer inputs, the default is
+        the default float type of the array library; for floating point inputs,
+        the dtype is that of the input.
+
+    Returns
+    -------
+    out : array
+        The mean of each slice
+
+    Notes
+    -----
+    Let :math:`x_i` represent element :math:`i` of data `x` and let :math:`w_i`
+    represent the corresponding element of `weights` after broadcasting. Then the
+    mean is given by:
+
+    .. math::
+
+        \frac{ \sum_{i=0}^{n-1} w_i x_i }
+             { \sum_{i=0}^{n-1} i w_i }
+
+    where `n` is the number of elements along a slice. Note that this simplifies
+    to the familiar :math:`(\sum_i x_i) / n` when the weights are all ``1`` (default).
+
+    The behavior of this function with respect to weights is somewhat different
+    from that of `np.average`. For instance,
+    `np.average` raises an error when `axis` is not specified and the shapes of `x`
+    and a `weights` array are not the same; `xp_mean` simply broadcasts the two.
+    Also, `np.average` raises an error when weights sum to zero along a slice;
+    `xp_mean` computes the appropriate result.
+
+    Note that according to the formula, including NaNs with zero weights is not
+    the same as *omitting* NaNs with `nan_policy='omit'`; in the former case,
+    the NaNs will continue to propagate through the calculation whereas in the
+    latter case, the NaNs are excluded entirely.
+
+    """
+    xp = array_namespace(x) if xp is None else xp
+    x = xp.asarray(x, dtype=dtype)
+    weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
+
+    if not xp.isdtype(x.dtype, 'real floating'):
+        dtype = xp.asarray(1.).dtype
+        x = xp.asarray(x, dtype=dtype)
+    if weights is not None and not xp.isdtype(weights.dtype, 'real floating'):
+        dtype = xp.asarray(1.).dtype
+        weights = xp.asarray(weights, dtype=dtype)
+
+    if weights is not None and x.shape != weights.shape:
+        x, weights = xp.broadcast_arrays(x, weights)
+
+    message = ('At least one slice along `axis` has zero length; '
+               'corresponding slices of the output will be NaN.')
+    if size(x) == 0:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = xp.mean(x, axis=axis, keepdims=keepdims)
+        if size(res) != 0:
+            warnings.warn(message, UserWarning, stacklevel=2)
+        return res
+
+    # avoid circular import
+    from scipy._lib._util import _contains_nan
+    contains_nan, _ = _contains_nan(x, nan_policy, xp_ok=True, xp=xp)
+    if weights is not None:
+        contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_ok=True, xp=xp)
+        contains_nan = contains_nan | contains_nan_w
+
+    message = ('After omitting NaNs, at least one slice along `axis` has zero '
+               'length; corresponding slices of the output will be NaN.')
+    if contains_nan and nan_policy == 'omit':
+        i = xp.isnan(x)
+        i = (i | xp.isnan(weights)) if weights is not None else i
+        if xp.any(xp.all(i, axis=axis)):
+            warnings.warn(message, UserWarning, stacklevel=2)
+        weights = xp.ones_like(x) if weights is None else weights
+        x = xp.where(i, xp.asarray(0, dtype=x.dtype), x)
+        weights = xp.where(i, xp.asarray(0, dtype=x.dtype), weights)
+
+    if weights is None:
+        return xp.mean(x, axis=axis, keepdims=keepdims)
+
+    norm = xp.sum(weights, axis=axis)
+    wsum = xp.sum(x * weights, axis=axis)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        res = wsum/norm
+
+    res = xp_add_reduced_axes(res, axis, x.shape, xp=xp) if keepdims else res
+    return res[()] if res.ndim == 0 else res
