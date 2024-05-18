@@ -6364,11 +6364,14 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, resT.pvalue)
 
 
-def test_skewtest_too_few_samples():
+@array_api_compatible
+def test_skewtest_too_few_samples(xp):
     # Regression test for ticket #1492.
     # skewtest requires at least 8 samples; 7 should raise a ValueError.
-    x = np.arange(7.0)
-    assert_raises(ValueError, stats.skewtest, x)
+    x = xp.arange(7.0)
+    message = 'skewtest is not valid with less than 8 samples...'
+    with pytest.raises(ValueError, match=message):
+        stats.skewtest(x)
 
 
 @array_api_compatible
