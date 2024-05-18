@@ -72,6 +72,7 @@ skip_xp_backends = pytest.mark.skip_xp_backends
 
 class TestLinkage:
 
+    @skip_xp_backends(cpu_only=True)
     def test_linkage_non_finite_elements_in_distance_matrix(self, xp):
         # Tests linkage(Y) where Y contains a non-finite element (e.g. NaN or Inf).
         # Exception expected.
@@ -205,6 +206,7 @@ class TestMLabLinkageConversion:
         xp_assert_equal(from_mlab_linkage(X), X)
         xp_assert_equal(to_mlab_linkage(X), X)
 
+    @skip_xp_backends(cpu_only=True)
     def test_mlab_linkage_conversion_single_row(self, xp):
         # Tests from/to_mlab_linkage on linkage array with single row.
         Z = xp.asarray([[0., 1., 3., 2.]])
@@ -214,6 +216,7 @@ class TestMLabLinkageConversion:
         xp_assert_close(to_mlab_linkage(Z), xp.asarray(Zm, dtype=xp.float64),
                         rtol=1e-15)
 
+    @skip_xp_backends(cpu_only=True)
     def test_mlab_linkage_conversion_multiple_rows(self, xp):
         # Tests from/to_mlab_linkage on linkage array with multiple rows.
         Zm = xp.asarray([[3, 6, 138], [4, 5, 219],
