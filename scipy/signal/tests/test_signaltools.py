@@ -1094,12 +1094,13 @@ class TestMedFilt:
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
     @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
-                                       np.clongdouble, np.float16, np.longdouble,
-                                       np.object_])
+                                       np.clongdouble, np.float16, np.object_,
+                                       "float96", "float128"])
     def test_invalid_dtypes(self, dtype):
+        if np.finfo(np.longdouble).dtype != dtype and dtype in ["float96", "float128"]:
+            pytest.skip(f"Platform does not support {dtype}")
+        
         in_typed = np.array(self.IN, dtype=dtype)
-        if in_typed.dtype is np.float64:
-            pytest.mark.skip("Platform does not support `float128`")
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
 
