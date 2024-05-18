@@ -1,3 +1,7 @@
+/* Translated into C++ by SciPy developers in 2024.
+ * Original header with Copyright information appears below.
+ */
+
 /*                                                     polevl.c
  *                                                     p1evl.c
  *
@@ -56,6 +60,7 @@
 /* Scipy changes:
  * - 06-23-2016: add code for evaluating rational functions
  */
+
 #pragma once
 
 #include "../config.h"
@@ -111,6 +116,7 @@ namespace cephes {
 
     /* Evaluate a rational function. See [1]. */
 
+    /* The function ratevl is only used once in cephes/lanczos.h. */
     SPECFUN_HOST_DEVICE inline double ratevl(double x, const double num[], int M, const double denom[], int N) {
         int i, dir;
         double y, num_ans, denom_ans;
@@ -151,7 +157,7 @@ namespace cephes {
         }
 
         if (absx > 1) {
-            i = N - M;
+            i = M - N;
             return std::pow(x, i) * num_ans / denom_ans;
         } else {
             return num_ans / denom_ans;

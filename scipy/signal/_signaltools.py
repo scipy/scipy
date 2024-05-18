@@ -1628,11 +1628,11 @@ def wiener(im, mysize=None, noise=None):
         mysize = np.repeat(mysize.item(), im.ndim)
 
     # Estimate the local mean
-    lMean = correlate(im, np.ones(mysize), 'same') / np.prod(mysize, axis=0)
+    size = math.prod(mysize)
+    lMean = correlate(im, np.ones(mysize), 'same') / size
 
     # Estimate the local variance
-    lVar = (correlate(im ** 2, np.ones(mysize), 'same') /
-            np.prod(mysize, axis=0) - lMean ** 2)
+    lVar = (correlate(im ** 2, np.ones(mysize), 'same') / size - lMean ** 2)
 
     # Estimate the noise power if needed.
     if noise is None:
@@ -1792,11 +1792,11 @@ def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     image:
 
     >>> import numpy as np
-    >>> from scipy import signal
-    >>> from scipy import datasets
+    >>> from scipy import signal, datasets, ndimage
     >>> rng = np.random.default_rng()
     >>> face = datasets.face(gray=True) - datasets.face(gray=True).mean()
-    >>> template = np.copy(face[300:365, 670:750])  # right eye
+    >>> face = ndimage.zoom(face[30:500, 400:950], 0.5)  # extract the face
+    >>> template = np.copy(face[135:165, 140:175])  # right eye
     >>> template -= template.mean()
     >>> face = face + rng.standard_normal(face.shape) * 50  # add noise
     >>> corr = signal.correlate2d(face, template, boundary='symm', mode='same')
@@ -2070,6 +2070,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     >>> plt.show()
 
     """
+    b = np.atleast_1d(b)
     a = np.atleast_1d(a)
     if len(a) == 1:
         # This path only supports types fdgFDGO to mirror _linear_filter below.
@@ -2114,9 +2115,9 @@ def lfilter(b, a, x, axis=-1, zi=None):
             raise NotImplementedError("input type '%s' not supported" % dtype)
 
         b = np.array(b, dtype=dtype)
-        a = np.array(a, dtype=dtype, copy=False)
+        a = np.asarray(a, dtype=dtype)
         b /= a[0]
-        x = np.array(x, dtype=dtype, copy=False)
+        x = np.asarray(x, dtype=dtype)
 
         out_full = np.apply_along_axis(lambda y: np.convolve(b, y), axis, x)
         ind = out_full.ndim * [slice(None)]
@@ -2446,8 +2447,8 @@ def hilbert2(x, N=None):
     return x
 
 
-_msg_cplx_sort="""cmplx_sort is deprecated in SciPy 1.12 and will be removed
-in SciPy 1.14. The exact equivalent for a numpy array argument is
+_msg_cplx_sort="""cmplx_sort was deprecated in SciPy 1.12 and will be removed
+in SciPy 1.15. The exact equivalent for a numpy array argument is
 >>> def cmplx_sort(p):
 ...    idx = np.argsort(abs(p))
 ...    return np.take(p, idx, 0), idx

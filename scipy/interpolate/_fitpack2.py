@@ -21,11 +21,11 @@ __all__ = [
 
 import warnings
 
-from numpy import zeros, concatenate, ravel, diff, array, ones  # noqa:F401
+from numpy import zeros, concatenate, ravel, diff, array
 import numpy as np
 
 from . import _fitpack_impl
-from . import dfitpack
+from . import _dfitpack as dfitpack
 
 
 dfitpack_int = dfitpack.types.intvar.dtype

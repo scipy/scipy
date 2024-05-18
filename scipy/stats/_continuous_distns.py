@@ -30,7 +30,6 @@ from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 from ._censored_data import CensoredData
-import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
@@ -134,7 +133,37 @@ class ksone_gen(rv_continuous):
        for probability distribution functions", The Annals of Mathematical
        Statistics, 22(4), pp 592-596 (1951).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import ksone
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 1e+03
+    >>> x = np.linspace(ksone.ppf(0.01, n),
+    ...                 ksone.ppf(0.99, n), 100)
+    >>> ax.plot(x, ksone.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='ksone pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = ksone(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = ksone.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], ksone.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -196,7 +225,37 @@ class kstwo_gen(rv_continuous):
        Kolmogorov-Smirnov Distribution",  Journal of Statistical Software,
        Vol 39, 11, 1-18 (2011).
 
-    %(example)s
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import kstwo
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+
+    Display the probability density function (``pdf``):
+
+    >>> n = 10
+    >>> x = np.linspace(kstwo.ppf(0.01, n),
+    ...                 kstwo.ppf(0.99, n), 100)
+    >>> ax.plot(x, kstwo.pdf(x, n),
+    ...         'r-', lw=5, alpha=0.6, label='kstwo pdf')
+
+    Alternatively, the distribution object can be called (as a function)
+    to fix the shape, location and scale parameters. This returns a "frozen"
+    RV object holding the given parameters fixed.
+
+    Freeze the distribution and display the frozen ``pdf``:
+
+    >>> rv = kstwo(n)
+    >>> ax.plot(x, rv.pdf(x), 'k-', lw=2, label='frozen pdf')
+    >>> ax.legend(loc='best', frameon=False)
+    >>> plt.show()
+
+    Check accuracy of ``cdf`` and ``ppf``:
+
+    >>> vals = kstwo.ppf([0.001, 0.5, 0.999], n)
+    >>> np.allclose([0.001, 0.5, 0.999], kstwo.cdf(vals, n))
+    True
 
     """
     def _argcheck(self, n):
@@ -678,7 +737,7 @@ class beta_gen(rv_continuous):
         # beta.pdf(x, a, b) = ------------------------------------
         #                              gamma(a)*gamma(b)
         with np.errstate(over='ignore'):
-            return _boost._beta_pdf(x, a, b)
+            return scu._beta_pdf(x, a, b)
 
     def _logpdf(self, x, a, b):
         lPx = sc.xlog1py(b - 1.0, -x) + sc.xlogy(a - 1.0, x)
@@ -686,25 +745,32 @@ class beta_gen(rv_continuous):
         return lPx
 
     def _cdf(self, x, a, b):
-        return _boost._beta_cdf(x, a, b)
+        return sc.betainc(a, b, x)
 
     def _sf(self, x, a, b):
-        return _boost._beta_sf(x, a, b)
+        return sc.betaincc(a, b, x)
 
     def _isf(self, x, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_isf(x, a, b)
+        return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_ppf(q, a, b)
+        return scu._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
+        a_plus_b = a + b
+        _beta_mean = a/a_plus_b
+        _beta_variance = a*b / (a_plus_b**2 * (a_plus_b + 1))
+        _beta_skewness = ((2 * (b - a) * np.sqrt(a_plus_b + 1)) /
+                          ((a_plus_b + 2) * np.sqrt(a * b)))
+        _beta_kurtosis_excess_n = 6 * ((a - b)**2 * (a_plus_b + 1) -
+                                       a * b * (a_plus_b + 2))
+        _beta_kurtosis_excess_d = a * b * (a_plus_b + 2) * (a_plus_b + 3)
+        _beta_kurtosis_excess = _beta_kurtosis_excess_n / _beta_kurtosis_excess_d
         return (
-            _boost._beta_mean(a, b),
-            _boost._beta_variance(a, b),
-            _boost._beta_skewness(a, b),
-            _boost._beta_kurtosis_excess(a, b))
+            _beta_mean,
+            _beta_variance,
+            _beta_skewness,
+            _beta_kurtosis_excess)
 
     def _fitstart(self, data):
         if isinstance(data, CensoredData):
@@ -1254,6 +1320,9 @@ class burr12_gen(rv_continuous):
         #   ((1 - q)**(-1.0/d) - 1)**(1.0/c)
         # that does a better job handling small values of q.
         return sc.expm1(-1/d * sc.log1p(-q))**(1/c)
+
+    def _isf(self, p, c, d):
+        return sc.expm1(-1/d * np.log(p))**(1/c)
 
     def _munp(self, n, c, d):
         def moment_if_exists(n, c, d):
@@ -2289,7 +2358,7 @@ class f_gen(rv_continuous):
     the distribution of the ratio of two independent chi-squared distributions with
     :math:`df_1` and :math:`df_2` degrees of freedom, after rescaling by
     :math:`df_2 / df_1`.
-    
+
     The probability density function for `f` is:
 
     .. math::
@@ -3196,7 +3265,7 @@ class genextreme_gen(rv_continuous):
         # skewness
         sk1 = _lazywhere(c >= -1./3,
                          (c, g1, g2, g3, g2mg12),
-                         lambda c, g1, g2, g3, g2gm12:
+                         lambda c, g1, g2, g3, g2mg12:
                              np.sign(c)*(-g3 + (g2 + 2*g2mg12)*g1)/g2mg12**1.5,
                          fillvalue=np.nan)
         sk = np.where(abs(c) <= eps**0.29, 12*np.sqrt(6)*_ZETA3/np.pi**3, sk1)
@@ -3393,8 +3462,8 @@ class gamma_gen(rv_continuous):
         floc = kwds.get('floc', None)
         method = kwds.get('method', 'mle')
 
-        if (isinstance(data, CensoredData) or floc is None
-                or method.lower() == 'mm'):
+        if (isinstance(data, CensoredData) or
+                floc is None and method.lower() != 'mm'):
             # loc is not fixed or we're not doing standard MLE.
             # Use the default fit method.
             return super().fit(data, *args, **kwds)
@@ -3407,9 +3476,7 @@ class gamma_gen(rv_continuous):
 
         _remove_optimizer_parameters(kwds)
 
-        # Special case: loc is fixed.
-
-        if f0 is not None and fscale is not None:
+        if f0 is not None and floc is not None and fscale is not None:
             # This check is for consistency with `rv_continuous.fit`.
             # Without this check, this function would just return the
             # parameters that were given.
@@ -3422,6 +3489,34 @@ class gamma_gen(rv_continuous):
         if not np.isfinite(data).all():
             raise ValueError("The data contains non-finite values.")
 
+        # Use explicit formulas for mm (gh-19884)
+        if method.lower() == 'mm':
+            m1 = np.mean(data)
+            m2 = np.var(data)
+            m3 = np.mean((data - m1) ** 3)
+            a, loc, scale = f0, floc, fscale
+            # Three unknowns
+            if a is None and loc is None and scale is None:
+                scale = m3 / (2 * m2)
+            # Two unknowns
+            if loc is None and scale is None:
+                scale = np.sqrt(m2 / a)
+            if a is None and scale is None:
+                scale = m2 / (m1 - loc)
+            if a is None and loc is None:
+                a = m2 / (scale ** 2)
+            # One unknown
+            if a is None:
+                a = (m1 - loc) / scale
+            if loc is None:
+                loc = m1 - a * scale
+            if scale is None:
+                scale = (m1 - loc) / a
+            return a, loc, scale
+
+        # Special case: loc is fixed.
+
+        # NB: data == loc is ok if a >= 1; the below check is more strict.
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
 
@@ -4482,7 +4577,7 @@ class halfnorm_gen(rv_continuous):
         if fscale is not None:
             scale = fscale
         else:
-            scale = stats.moment(data, moment=2, center=loc)**0.5
+            scale = stats.moment(data, order=2, center=loc)**0.5
 
         return loc, scale
 
@@ -4698,14 +4793,26 @@ class invgauss_gen(rv_continuous):
 
     .. math::
 
-        f(x, \mu) = \frac{1}{\sqrt{2 \pi x^3}}
-                    \exp(-\frac{(x-\mu)^2}{2 x \mu^2})
+        f(x; \mu) = \frac{1}{\sqrt{2 \pi x^3}}
+                    \exp\left(-\frac{(x-\mu)^2}{2 \mu^2 x}\right)
 
-    for :math:`x >= 0` and :math:`\mu > 0`.
+    for :math:`x \ge 0` and :math:`\mu > 0`.
 
     `invgauss` takes ``mu`` as a shape parameter for :math:`\mu`.
 
     %(after_notes)s
+
+    A common shape-scale parameterization of the inverse Gaussian distribution
+    has density
+
+    .. math::
+
+        f(x; \nu, \lambda) = \sqrt{\frac{\lambda}{2 \pi x^3}}
+                    \exp\left( -\frac{\lambda(x-\nu)^2}{2 \nu^2 x}\right)
+
+    Using ``nu`` for :math:`\nu` and ``lam`` for :math:`\lambda`, this
+    parameterization is equivalent to the one above with ``mu = nu/lam``,
+    ``loc = 0``, and ``scale = lam``.
 
     %(example)s
 
@@ -4751,9 +4858,9 @@ class invgauss_gen(rv_continuous):
     def _ppf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            ppf = _boost._invgauss_ppf(x, mu, 1)
+            ppf = scu._invgauss_ppf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            ppf[i_wt] = scu._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
             ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
@@ -4761,9 +4868,9 @@ class invgauss_gen(rv_continuous):
     def _isf(self, x, mu):
         with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
             x, mu = np.broadcast_arrays(x, mu)
-            isf = _boost._invgauss_isf(x, mu, 1)
+            isf = scu._invgauss_isf(x, mu, 1)
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
-            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            isf[i_wt] = scu._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(isf)
             isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
@@ -6304,6 +6411,10 @@ class loglaplace_gen(rv_continuous):
 
     %(after_notes)s
 
+    Suppose a random variable ``X`` follows the Laplace distribution with
+    location ``a`` and scale ``b``.  Then ``Y = exp(X)`` follows the
+    log-Laplace distribution with ``c = 1 / b`` and ``scale = exp(a)``.
+
     References
     ----------
     T.J. Kozubowski and K. Podgorski, "A log-Laplace growth rate model",
@@ -6335,11 +6446,45 @@ class loglaplace_gen(rv_continuous):
         return np.where(q > 0.5, (2.0*(1.0 - q))**(1.0/c), (2*q)**(-1.0/c))
 
     def _munp(self, n, c):
-        return c**2 / (c**2 - n**2)
+        with np.errstate(divide='ignore'):
+            c2, n2 = c**2, n**2
+            return np.where(n2 < c2, c2 / (c2 - n2), np.inf)
 
     def _entropy(self, c):
         return np.log(2.0/c) + 1.0
 
+    @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
+    def fit(self, data, *args, **kwds):
+        data, fc, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # Specialize MLE only when location is known.
+        if floc is None:
+            return super(type(self), self).fit(data, *args, **kwds)
+
+        # Raise an error if any observation has zero likelihood.
+        if np.any(data <= floc):
+            raise FitDataError("loglaplace", lower=floc, upper=np.inf)
+
+        # Remove location from data.
+        if floc != 0:
+            data = data - floc
+
+        # When location is zero, the log-Laplace distribution is related to
+        # the Laplace distribution in that if X ~ Laplace(loc=a, scale=b),
+        # then Y = exp(X) ~ LogLaplace(c=1/b, loc=0, scale=exp(a)).  It can
+        # be shown that the MLE for Y is the same as the MLE for X = ln(Y).
+        # Therefore, we reuse the formulas from laplace.fit() and transform
+        # the result back into log-laplace's parameter space.
+        a, b = laplace.fit(np.log(data),
+                           floc=np.log(fscale) if fscale is not None else None,
+                           fscale=1/fc if fc is not None else None,
+                           method='mle')
+        loc = floc
+        scale = np.exp(a) if fscale is None else fscale
+        c = 1 / b if fc is None else fc
+        return c, loc, scale
 
 loglaplace = loglaplace_gen(a=0.0, name='loglaplace')
 
@@ -7363,39 +7508,47 @@ class ncx2_gen(rv_continuous):
     def _pdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_pdf,
                               f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_cdf,
                               f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
+            return _lazywhere(cond, (q, df, nc), f=scu._ncx2_ppf,
                               f2=lambda x, df, _: chi2._ppf(x, df))
 
     def _sf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_sf,
                               f2=lambda x, df, _: chi2._sf(x, df))
 
     def _isf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
         with np.errstate(over='ignore'):  # see gh-17432
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
+            return _lazywhere(cond, (x, df, nc), f=scu._ncx2_isf,
                               f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
+        _ncx2_mean = df + nc
+        def k_plus_cl(k, l, c):
+            return k + c*l
+        _ncx2_variance =  2.0 * k_plus_cl(df, nc, 2.0)
+        _ncx2_skewness = (np.sqrt(8.0) * k_plus_cl(df, nc, 3) /
+                          np.sqrt(k_plus_cl(df, nc, 2.0)**3))
+        _ncx2_kurtosis_excess = (12.0 * k_plus_cl(df, nc, 4.0) /
+                                 k_plus_cl(df, nc, 2.0)**2)
         return (
-            _boost._ncx2_mean(df, nc),
-            _boost._ncx2_variance(df, nc),
-            _boost._ncx2_skewness(df, nc),
-            _boost._ncx2_kurtosis_excess(df, nc),
+            _ncx2_mean,
+            _ncx2_variance,
+            _ncx2_skewness,
+            _ncx2_kurtosis_excess,
         )
 
 
@@ -7462,21 +7615,21 @@ class ncf_gen(rv_continuous):
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        return _boost._ncf_pdf(x, dfn, dfd, nc)
+        return scu._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return _boost._ncf_cdf(x, dfn, dfd, nc)
+        return scu._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_ppf(q, dfn, dfd, nc)
+            return scu._ncf_ppf(q, dfn, dfd, nc)
 
     def _sf(self, x, dfn, dfd, nc):
-        return _boost._ncf_sf(x, dfn, dfd, nc)
+        return scu._ncf_sf(x, dfn, dfd, nc)
 
     def _isf(self, x, dfn, dfd, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._ncf_isf(x, dfn, dfd, nc)
+            return scu._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -7486,10 +7639,10 @@ class ncf_gen(rv_continuous):
         return val
 
     def _stats(self, dfn, dfd, nc, moments='mv'):
-        mu = _boost._ncf_mean(dfn, dfd, nc)
-        mu2 = _boost._ncf_variance(dfn, dfd, nc)
-        g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = _boost._ncf_kurtosis_excess(
+        mu = scu._ncf_mean(dfn, dfd, nc)
+        mu2 = scu._ncf_variance(dfn, dfd, nc)
+        g1 = scu._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = scu._ncf_kurtosis_excess(
             dfn, dfd, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
@@ -7677,25 +7830,25 @@ class nct_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_ppf(q, df, nc)
+            return scu._nct_ppf(q, df, nc)
 
     def _sf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+            return np.clip(scu._nct_sf(x, df, nc), 0, 1)
 
     def _isf(self, x, df, nc):
         with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._nct_isf(x, df, nc)
+            return scu._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
-        mu = _boost._nct_mean(df, nc)
-        mu2 = _boost._nct_variance(df, nc)
-        g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
-        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
+        mu = scu._nct_mean(df, nc)
+        mu2 = scu._nct_variance(df, nc)
+        g1 = scu._nct_skewness(df, nc) if 's' in moments else None
+        g2 = scu._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
@@ -8176,6 +8329,10 @@ class powerlaw_gen(rv_continuous):
 
     def _sf(self, p, a):
         return -sc.powm1(p, a)
+
+    def _munp(self, n, a):
+        # The following expression is correct for all real n (provided a > 0).
+        return a / (a + n)
 
     def _stats(self, a):
         return (a / (a + 1.0),
@@ -9115,7 +9272,7 @@ class skewnorm_gen(rv_continuous):
 
     def _cdf(self, x, a):
         a = np.atleast_1d(a)
-        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        cdf = scu._skewnorm_cdf(x, 0.0, 1.0, a)
         # for some reason, a isn't broadcasted if some of x are invalid
         a = np.broadcast_to(a, cdf.shape)
         # Boost is not accurate in left tail when a > 0
@@ -9124,7 +9281,7 @@ class skewnorm_gen(rv_continuous):
         return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
-        return _boost._skewnorm_ppf(x, 0, 1, a)
+        return scu._skewnorm_ppf(x, 0.0, 1.0, a)
 
     def _sf(self, x, a):
         # Boost's SF is implemented this way. Use whatever customizations
@@ -9132,7 +9289,7 @@ class skewnorm_gen(rv_continuous):
         return self._cdf(-x, -a)
 
     def _isf(self, x, a):
-        return _boost._skewnorm_isf(x, 0, 1, a)
+        return scu._skewnorm_isf(x, 0.0, 1.0, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)
@@ -10422,7 +10579,7 @@ class vonmises_gen(rv_continuous):
 
         f(x, \kappa) = \frac{ \exp(\kappa \cos(x)) }{ 2 \pi I_0(\kappa) }
 
-    for :math:`-\pi \le x \le \pi`, :math:`\kappa > 0`. :math:`I_0` is the
+    for :math:`-\pi \le x \le \pi`, :math:`\kappa \ge 0`. :math:`I_0` is the
     modified Bessel function of order zero (`scipy.special.i0`).
 
     `vonmises` is a circular distribution which does not restrict the
@@ -10453,39 +10610,39 @@ class vonmises_gen(rv_continuous):
 
     Compute the probability density at ``x=0`` via the ``pdf`` method.
 
-    >>> vonmises.pdf(loc, kappa, 0)
+    >>> vonmises.pdf(0, loc=loc, kappa=kappa)
     0.12570826359722018
 
     Verify that the percentile function ``ppf`` inverts the cumulative
     distribution function ``cdf`` up to floating point accuracy.
 
     >>> x = 1
-    >>> cdf_value = vonmises.cdf(loc=loc, kappa=kappa, x=x)
+    >>> cdf_value = vonmises.cdf(x, loc=loc, kappa=kappa)
     >>> ppf_value = vonmises.ppf(cdf_value, loc=loc, kappa=kappa)
     >>> x, cdf_value, ppf_value
     (1, 0.31489339900904967, 1.0000000000000004)
 
     Draw 1000 random variates by calling the ``rvs`` method.
 
-    >>> number_of_samples = 1000
-    >>> samples = vonmises(loc=loc, kappa=kappa).rvs(number_of_samples)
+    >>> sample_size = 1000
+    >>> sample = vonmises(loc=loc, kappa=kappa).rvs(sample_size)
 
     Plot the von Mises density on a Cartesian and polar grid to emphasize
-    that is is a circular distribution.
+    that it is a circular distribution.
 
     >>> fig = plt.figure(figsize=(12, 6))
     >>> left = plt.subplot(121)
     >>> right = plt.subplot(122, projection='polar')
     >>> x = np.linspace(-np.pi, np.pi, 500)
-    >>> vonmises_pdf = vonmises.pdf(loc, kappa, x)
+    >>> vonmises_pdf = vonmises.pdf(x, loc=loc, kappa=kappa)
     >>> ticks = [0, 0.15, 0.3]
 
     The left image contains the Cartesian plot.
 
     >>> left.plot(x, vonmises_pdf)
     >>> left.set_yticks(ticks)
-    >>> number_of_bins = int(np.sqrt(number_of_samples))
-    >>> left.hist(samples, density=True, bins=number_of_bins)
+    >>> number_of_bins = int(np.sqrt(sample_size))
+    >>> left.hist(sample, density=True, bins=number_of_bins)
     >>> left.set_title("Cartesian plot")
     >>> left.set_xlim(-np.pi, np.pi)
     >>> left.grid(True)
@@ -10494,14 +10651,17 @@ class vonmises_gen(rv_continuous):
 
     >>> right.plot(x, vonmises_pdf, label="PDF")
     >>> right.set_yticks(ticks)
-    >>> right.hist(samples, density=True, bins=number_of_bins,
+    >>> right.hist(sample, density=True, bins=number_of_bins,
     ...            label="Histogram")
     >>> right.set_title("Polar plot")
     >>> right.legend(bbox_to_anchor=(0.15, 1.06))
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("kappa", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("kappa", False, (0, np.inf), (True, False))]
+
+    def _argcheck(self, kappa):
+        return kappa >= 0
 
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)
@@ -10588,13 +10748,40 @@ class vonmises_gen(rv_continuous):
             r = np.sum(np.cos(loc - data))/len(data)
             # See gh-18128 for more information.
 
-            if r > 0:
+            # The function r[0](kappa) := I[1](kappa)/I[0](kappa) is monotonic
+            # increasing from r[0](0) = 0 to r[0](+inf) = 1.  The partial
+            # derivative of the log likelihood function with respect to kappa
+            # is monotonic decreasing in kappa.
+            if r == 1:
+                # All observations are (almost) equal to the mean.  Return
+                # some large kappa such that r[0](kappa) = 1.0 numerically.
+                return 1e16
+            elif r > 0:
                 def solve_for_kappa(kappa):
                     return sc.i1e(kappa)/sc.i0e(kappa) - r
 
-                root_res = root_scalar(solve_for_kappa, method="brentq",
-                                       bracket=(np.finfo(float).tiny, 1e16))
-                return root_res.root
+                # The bounds of the root of r[0](kappa) = r are derived from
+                # selected bounds of r[0](x) given in [1, Eq. 11 & 16].  See
+                # gh-20102 for details.
+                #
+                # [1] Amos, D. E. (1973).  Computation of Modified Bessel
+                #     Functions and Their Ratios.  Mathematics of Computation,
+                #     28(125): 239-251.
+                lower_bound = r/(1-r)/(1+r)
+                upper_bound = 2*lower_bound
+
+                # The bounds are violated numerically for certain values of r,
+                # where solve_for_kappa evaluated at the bounds have the same
+                # sign.  This indicates numerical imprecision of i1e()/i0e().
+                # Return the violated bound in this case as it's more accurate.
+                if solve_for_kappa(lower_bound) >= 0:
+                    return lower_bound
+                elif solve_for_kappa(upper_bound) <= 0:
+                    return upper_bound
+                else:
+                    root_res = root_scalar(solve_for_kappa, method="brentq",
+                                           bracket=(lower_bound, upper_bound))
+                    return root_res.root
             else:
                 # if the provided floc is very far from the circular mean,
                 # the mean resultant length r can become negative.
@@ -11100,7 +11287,8 @@ class argus_gen(rv_continuous):
     with :math:`\Phi` and :math:`\phi` being the CDF and PDF of a standard
     normal distribution, respectively.
 
-    `argus` takes :math:`\chi` as shape a parameter.
+    `argus` takes :math:`\chi` as shape a parameter. Details about sampling
+    from the ARGUS distribution can be found in [2]_.
 
     %(after_notes)s
 
@@ -11108,6 +11296,9 @@ class argus_gen(rv_continuous):
     ----------
     .. [1] "ARGUS distribution",
            https://en.wikipedia.org/wiki/ARGUS_distribution
+    .. [2] Christoph Baumgarten "Random variate generation by fast numerical
+           inversion in the varying parameter case." Research in Statistics,
+           vol. 1, 2023, doi:10.1080/27684520.2023.2279060.
 
     .. versionadded:: 0.19.0
 
@@ -11515,13 +11706,9 @@ class studentized_range_gen(rv_continuous):
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)
 
-    Calculate the first four moments:
-
-    >>> k, df = 3, 10
-    >>> mean, var, skew, kurt = studentized_range.stats(k, df, moments='mvsk')
-
     Display the probability density function (``pdf``):
 
+    >>> k, df = 3, 10
     >>> x = np.linspace(studentized_range.ppf(0.01, k, df),
     ...                 studentized_range.ppf(0.99, k, df), 100)
     >>> ax.plot(x, studentized_range.pdf(x, k, df),

@@ -782,12 +782,17 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
         to the Monte Carlo samples drawn from the null-hypothesized
         distribution. The purpose of these `guessed_params` is to be used as
         initial values for the numerical fitting procedure.
-    statistic : {"ad", "ks", "cvm", "filliben"}, optional
+    statistic : {"ad", "ks", "cvm", "filliben"} or callable, optional
         The statistic used to compare data to a distribution after fitting
         unknown parameters of the distribution family to the data. The
         Anderson-Darling ("ad") [1]_, Kolmogorov-Smirnov ("ks") [1]_,
         Cramer-von Mises ("cvm") [1]_, and Filliben ("filliben") [7]_
-        statistics are available.
+        statistics are available.  Alternatively, a callable with signature
+        ``(dist, data, axis)`` may be supplied to compute the statistic. Here
+        ``dist`` is a frozen distribution object (potentially with array
+        parameters), ``data`` is an array of Monte Carlo samples (of
+        compatible shape), and ``axis`` is the axis of ``data`` along which
+        the statistic must be computed.
     n_mc_samples : int, default: 9999
         The number of Monte Carlo samples drawn from the null hypothesized
         distribution to form the null distribution of the statistic. The
@@ -899,7 +904,7 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
                  {m + 1}
 
     where :math:`b` is the number of statistic values in the Monte Carlo null
-    distribution that are greater than or equal to the the statistic value
+    distribution that are greater than or equal to the statistic value
     calculated for `data`, and :math:`m` is the number of elements in the
     Monte Carlo null distribution (`n_mc_samples`). The addition of :math:`1`
     to the numerator and denominator can be thought of as including the
@@ -1125,15 +1130,18 @@ def goodness_of_fit(dist, data, *, known_params=None, fit_params=None,
 
     # Define statistic
     fit_fun = _get_fit_fun(dist, data, guessed_rfd_params, fixed_rfd_params)
-    compare_fun = _compare_dict[statistic]
+    if callable(statistic):
+        compare_fun = statistic
+    else:
+        compare_fun = _compare_dict[statistic]
     alternative = getattr(compare_fun, 'alternative', 'greater')
 
-    def statistic_fun(data, axis=-1):
+    def statistic_fun(data, axis):
         # Make things simple by always working along the last axis.
         data = np.moveaxis(data, axis, -1)
         rfd_vals = fit_fun(data)
         rfd_dist = dist(*rfd_vals)
-        return compare_fun(rfd_dist, data)
+        return compare_fun(rfd_dist, data, axis=-1)
 
     res = stats.monte_carlo_test(data, rvs, statistic_fun, vectorized=True,
                                  n_resamples=n_mc_samples, axis=-1,
@@ -1210,7 +1218,7 @@ _fit_funs = {stats.norm: _fit_norm}  # type: ignore[attr-defined]
 # a sample.
 
 
-def _anderson_darling(dist, data):
+def _anderson_darling(dist, data, axis):
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
     i = np.arange(1, n+1)
@@ -1224,12 +1232,12 @@ def _compute_dplus(cdfvals):  # adapted from _stats_py before gh-17062
     return (np.arange(1.0, n + 1) / n - cdfvals).max(axis=-1)
 
 
-def _compute_dminus(cdfvals, axis=-1):
+def _compute_dminus(cdfvals):
     n = cdfvals.shape[-1]
     return (cdfvals - np.arange(0.0, n)/n).max(axis=-1)
 
 
-def _kolmogorov_smirnov(dist, data):
+def _kolmogorov_smirnov(dist, data, axis):
     x = np.sort(data, axis=-1)
     cdfvals = dist.cdf(x)
     Dplus = _compute_dplus(cdfvals)  # always works along last axis
@@ -1248,7 +1256,7 @@ def _corr(X, M):
     return num/den
 
 
-def _filliben(dist, data):
+def _filliben(dist, data, axis):
     # [7] Section 8 # 1
     X = np.sort(data, axis=-1)
 
@@ -1273,7 +1281,7 @@ def _filliben(dist, data):
 _filliben.alternative = 'less'  # type: ignore[attr-defined]
 
 
-def _cramer_von_mises(dist, data):
+def _cramer_von_mises(dist, data, axis):
     x = np.sort(data, axis=-1)
     n = data.shape[-1]
     cdfvals = dist.cdf(x)
@@ -1308,7 +1316,7 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     known_params_f = {("f"+key): val for key, val in known_params.items()}
     fit_params_f = {("f"+key): val for key, val in fit_params.items()}
 
-    # These the the values of parameters of the null distribution family
+    # These are the values of parameters of the null distribution family
     # with which resamples are drawn
     fixed_nhd_params = known_params_f.copy()
     fixed_nhd_params.update(fit_params_f)
@@ -1325,11 +1333,12 @@ def _gof_iv(dist, data, known_params, fit_params, guessed_params, statistic,
     guessed_rfd_params = fit_params.copy()
     guessed_rfd_params.update(guessed_params)
 
-    statistic = statistic.lower()
-    statistics = {'ad', 'ks', 'cvm', 'filliben'}
-    if statistic not in statistics:
-        message = f"`statistic` must be one of {statistics}."
-        raise ValueError(message)
+    if not callable(statistic):
+        statistic = statistic.lower()
+        statistics = {'ad', 'ks', 'cvm', 'filliben'}
+        if statistic not in statistics:
+            message = f"`statistic` must be one of {statistics}."
+            raise ValueError(message)
 
     n_mc_samples_int = int(n_mc_samples)
     if n_mc_samples_int != n_mc_samples:

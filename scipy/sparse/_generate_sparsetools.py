@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 python generate_sparsetools.py
 
@@ -175,7 +176,7 @@ static PY_LONG_LONG %(name)s_thunk(int I_typenum, int T_typenum, void **a)
 """
 
 METHOD_TEMPLATE = """
-NPY_VISIBILITY_HIDDEN PyObject *
+PyObject *
 %(name)s_method(PyObject *self, PyObject *args)
 {
     return call_thunk('%(ret_spec)s', "%(arg_spec)s", %(name)s_thunk, args);
@@ -419,7 +420,7 @@ def main():
     # Generate code for method struct
     method_defs = ""
     for name in names:
-        method_defs += (f"NPY_VISIBILITY_HIDDEN PyObject *{name}"
+        method_defs += (f"PyObject *{name}"
                         f"_method(PyObject *, PyObject *);\n")
 
     method_struct = """\nstatic struct PyMethodDef sparsetools_methods[] = {"""

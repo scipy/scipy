@@ -332,9 +332,9 @@ def mmread(source):
 
     >>> m = mmread(StringIO(text))
     >>> m
-    <5x5 sparse matrix of type '<class 'numpy.float64'>'
-    with 7 stored elements in COOrdinate format>
-    >>> m.A
+    <COOrdinate sparse matrix of dtype 'float64'
+        with 7 stored elements and shape (5, 5)>
+    >>> m.toarray()
     array([[0., 0., 0., 0., 0.],
            [0., 0., 1., 0., 0.],
            [0., 0., 0., 2., 3.],

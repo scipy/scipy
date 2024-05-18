@@ -18,7 +18,7 @@ Any non-trivial change (where trivial means a typo, or a one-liner maintenance
 commit) has to go in through a pull request (PR).  It has to be reviewed by
 another developer.  In case review doesn't happen quickly enough and it is
 important that the PR is merged quickly, the submitter of the PR should send a
-message to mailing list saying he/she intends to merge that PR without review
+message to mailing list saying they intend to merge that PR without review
 at time X for reason Y unless someone reviews it before then.
 
 Changes and new additions should be tested. Untested code is broken code.

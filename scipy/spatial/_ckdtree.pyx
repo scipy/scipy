@@ -9,6 +9,7 @@
 
 import numpy as np
 import scipy.sparse
+from scipy._lib._util import copy_if_needed
 
 cimport numpy as np
 
@@ -551,10 +552,12 @@ cdef class cKDTree:
 
         self._python_tree = None
 
+        if not copy_data:
+            copy_data = copy_if_needed
         data = np.array(data, order='C', copy=copy_data, dtype=np.float64)
 
         if data.ndim != 2:
-            raise ValueError("data must be of shape (n, m), where there are"
+            raise ValueError("data must be of shape (n, m), where there are "
                              "n points of dimension m")
 
         if not np.isfinite(data).all():

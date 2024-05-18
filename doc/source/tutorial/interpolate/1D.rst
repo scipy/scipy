@@ -135,7 +135,7 @@ B-splines form an alternative (if formally equivalent) representation of piecewi
     >>> xx = np.linspace(0, 3/2, 51)
     >>> plt.plot(xx, bspl(xx), '--', label=r'$\sin(\pi x)$ approx')
     >>> plt.plot(x, y, 'o', label='data')
-    >>> plt.plot(xx, der(xx)/np.pi, '--', label='$d \sin(\pi x)/dx / \pi$ approx')
+    >>> plt.plot(xx, der(xx)/np.pi, '--', label=r'$d \sin(\pi x)/dx / \pi$ approx')
     >>> plt.legend()
     >>> plt.show()
 

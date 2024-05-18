@@ -39,7 +39,8 @@ from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
                           LineSearchWarning)
 from ._numdiff import approx_derivative
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper, check_random_state
+from scipy._lib._util import (MapWrapper, check_random_state, _RichResult,
+                              _call_callback_maybe_halt)
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -83,59 +84,9 @@ class MemoizeJac:
         return self.jac
 
 
-def _indenter(s, n=0):
-    """
-    Ensures that lines after the first are indented by the specified amount
-    """
-    split = s.split("\n")
-    indent = " "*n
-    return ("\n" + indent).join(split)
-
-
-def _float_formatter_10(x):
-    """
-    Returns a string representation of a float with exactly ten characters
-    """
-    if np.isposinf(x):
-        return "       inf"
-    elif np.isneginf(x):
-        return "      -inf"
-    elif np.isnan(x):
-        return "       nan"
-    return np.format_float_scientific(x, precision=3, pad_left=2, unique=False)
-
-
-def _dict_formatter(d, n=0, mplus=1, sorter=None):
-    """
-    Pretty printer for dictionaries
-
-    `n` keeps track of the starting indentation;
-    lines are indented by this much after a line break.
-    `mplus` is additional left padding applied to keys
-    """
-    if isinstance(d, dict):
-        m = max(map(len, list(d.keys()))) + mplus  # width to print keys
-        s = '\n'.join([k.rjust(m) + ': ' +  # right justified, width m
-                       _indenter(_dict_formatter(v, m+n+2, 0, sorter), m+2)
-                       for k, v in sorter(d)])  # +2 for ': '
-    else:
-        # By default, NumPy arrays print with linewidth=76. `n` is
-        # the indent at which a line begins printing, so it is subtracted
-        # from the default to avoid exceeding 76 characters total.
-        # `edgeitems` is the number of elements to include before and after
-        # ellipses when arrays are not shown in full.
-        # `threshold` is the maximum number of elements for which an
-        # array is shown in full.
-        # These values tend to work well for use with OptimizeResult.
-        with np.printoptions(linewidth=76-n, edgeitems=2, threshold=12,
-                             formatter={'float_kind': _float_formatter_10}):
-            s = str(d)
-    return s
-
-
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -157,34 +108,9 @@ def _wrap_callback(callback, method=None):
     return wrapped_callback
 
 
-def _call_callback_maybe_halt(callback, res):
-    """Call wrapped callback; return True if minimization should stop.
-
-    Parameters
-    ----------
-    callback : callable or None
-        A user-provided callback wrapped with `_wrap_callback`
-    res : OptimizeResult
-        Information about the current iterate
-
-    Returns
-    -------
-    halt : bool
-        True if minimization should stop
-
+class OptimizeResult(_RichResult):
     """
-    if callback is None:
-        return False
-    try:
-        callback(res)
-        return False
-    except StopIteration:
-        callback.stop_iteration = True  # make `minimize` override status/msg
-        return True
-
-
-class OptimizeResult(dict):
-    """ Represents the optimization result.
+    Represents the optimization result.
 
     Attributes
     ----------
@@ -220,49 +146,9 @@ class OptimizeResult(dict):
     attributes not listed here. Since this class is essentially a
     subclass of dict with attribute accessors, one can see which
     attributes are available using the `OptimizeResult.keys` method.
+
     """
-
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError as e:
-            raise AttributeError(name) from e
-
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
-
-    def __repr__(self):
-        order_keys = ['message', 'success', 'status', 'fun', 'funl', 'x', 'xl',
-                      'col_ind', 'nit', 'lower', 'upper', 'eqlin', 'ineqlin',
-                      'converged', 'flag', 'function_calls', 'iterations',
-                      'root']
-        order_keys = getattr(self, '_order_keys', order_keys)
-        # 'slack', 'con' are redundant with residuals
-        # 'crossover_nit' is probably not interesting to most users
-        omit_keys = {'slack', 'con', 'crossover_nit', '_order_keys'}
-
-        def key(item):
-            try:
-                return order_keys.index(item[0].lower())
-            except ValueError:  # item not in list
-                return np.inf
-
-        def omit_redundant(items):
-            for item in items:
-                if item[0] in omit_keys:
-                    continue
-                yield item
-
-        def item_sorter(d):
-            return sorted(omit_redundant(d.items()), key=key)
-
-        if self.keys():
-            return _dict_formatter(self, sorter=item_sorter)
-        else:
-            return self.__class__.__name__ + "()"
-
-    def __dir__(self):
-        return list(self.keys())
+    pass
 
 
 class OptimizeWarning(UserWarning):
@@ -281,8 +167,8 @@ def _check_positive_definite(Hk):
     if Hk is not None:
         if not is_pos_def(Hk):
             raise ValueError("'hess_inv0' matrix isn't positive definite.")
-        
-        
+
+
 def _check_unknown_options(unknown_options):
     if unknown_options:
         msg = ", ".join(map(str, unknown_options.keys()))
@@ -859,8 +745,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         # check bounds
         if (lower_bound > upper_bound).any():
             raise ValueError("Nelder Mead - one of the lower bounds "
-                             "is greater than an upper bound.",
-                             stacklevel=3)
+                             "is greater than an upper bound.")
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
@@ -911,6 +796,15 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
             maxfun = np.inf
 
     if bounds is not None:
+        # The default simplex construction may make all entries (for a given
+        # parameter) greater than an upper bound if x0 is very close to the
+        # upper bound. If one simply clips the simplex to the bounds this could
+        # make the simplex entries degenerate. If that occurs reflect into the
+        # interior.
+        msk = sim > upper_bound
+        # reflect into the interior
+        sim = np.where(msk, 2*upper_bound - sim, sim)
+        # but make sure the reflection is no less than the lower_bound
         sim = np.clip(sim, lower_bound, upper_bound)
 
     one2np1 = list(range(1, N + 1))
@@ -1104,7 +998,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     >>> c0, c1 = (1, 200)
     >>> eps = np.sqrt(np.finfo(float).eps)
     >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
-    array([   2.        ,  400.00004198])
+    array([   2.        ,  400.00004208])
 
     """
     xk = np.asarray(xk, float)
@@ -1267,7 +1161,7 @@ def _line_search_wolfe12(f, fprime, xk, pk, gfk, old_fval, old_old_fval,
 
 def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
               epsilon=_epsilon, maxiter=None, full_output=0, disp=1,
-              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9, 
+              retall=0, callback=None, xrtol=0, c1=1e-4, c2=0.9,
               hess_inv0=None):
     """
     Minimize a function using the BFGS algorithm.
@@ -1340,7 +1234,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
     Optimize the function, `f`, whose gradient is given by `fprime`
     using the quasi-Newton method of Broyden, Fletcher, Goldfarb,
     and Shanno (BFGS).
-    
+
     Parameters `c1` and `c2` must satisfy ``0 < c1 < c2 < 1``.
 
     See Also
@@ -1412,7 +1306,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=np.inf,
 def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
                    gtol=1e-5, norm=np.inf, eps=_epsilon, maxiter=None,
                    disp=False, return_all=False, finite_diff_rel_step=None,
-                   xrtol=0, c1=1e-4, c2=0.9, 
+                   xrtol=0, c1=1e-4, c2=0.9,
                    hess_inv0=None, **unknown_options):
     """
     Minimization of scalar function of one or more variables using the
@@ -2139,7 +2033,8 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
     cg_maxiter = 20*len(x0)
 
     xtol = len(x0) * avextol
-    update_l1norm = 2 * xtol
+    # Make sure we enter the while loop.
+    update_l1norm = np.finfo(float).max
     xk = np.copy(x0)
     if retall:
         allvecs = [xk]
@@ -2230,7 +2125,7 @@ def _minimize_newtoncg(fun, x0, args=(), jac=None, hess=None, hessp=None,
         update_l1norm = np.linalg.norm(update, ord=1)
 
     else:
-        if np.isnan(old_fval) or np.isnan(update).any():
+        if np.isnan(old_fval) or np.isnan(update_l1norm):
             return terminate(3, _status_message['nan'])
 
         msg = _status_message['success']
@@ -4013,6 +3908,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
     - :ref:`COBYLA      <optimize.minimize-cobyla>`
+    - :ref:`COBYQA      <optimize.minimize-cobyqa>`
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
@@ -4087,6 +3983,7 @@ def show_options(solver=None, method=None, disp=True):
             ('bfgs', 'scipy.optimize._optimize._minimize_bfgs'),
             ('cg', 'scipy.optimize._optimize._minimize_cg'),
             ('cobyla', 'scipy.optimize._cobyla_py._minimize_cobyla'),
+            ('cobyqa', 'scipy.optimize._cobyqa_py._minimize_cobyqa'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize._lbfgsb_py._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize._optimize._minimize_neldermead'),

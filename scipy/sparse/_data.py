@@ -6,6 +6,7 @@
 
 """
 
+import math
 import numpy as np
 
 from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
@@ -17,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1):
+        _spbase.__init__(self, arg1)
 
     @property
     def dtype(self):
@@ -223,7 +224,7 @@ class _minmax_mixin:
             if self.nnz == 0:
                 return zero
             m = min_or_max.reduce(self._deduped_data().ravel())
-            if self.nnz != np.prod(self.shape):
+            if self.nnz != math.prod(self.shape):
                 m = min_or_max(zero, m)
             return m
 
@@ -306,7 +307,7 @@ class _minmax_mixin:
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
         # Cheap test for the rare case where we have no implicit zeros.
-        size = np.prod(self.shape)
+        size = math.prod(self.shape)
         if size == mat.nnz:
             return int(mat.row[extreme_index]) * num_col + int(mat.col[extreme_index])
 
