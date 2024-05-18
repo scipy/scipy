@@ -438,7 +438,7 @@ def dijkstra(csgraph, directed=True, indices=None,
         algorithm can progress from point i to j or j to i along either
         csgraph[i, j] or csgraph[j, i].
 
-        .. warning:: Refer the notes below while using with `directed=False`.
+        .. warning:: Refer the notes below while using with ``directed=False``.
     indices : array_like or int, optional
         if specified, only compute the paths from the points at the given
         indices.
