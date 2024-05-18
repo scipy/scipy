@@ -441,7 +441,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType:
 
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found]
+        import cupyx  # type: ignore[import-not-found,import-untyped]
         return cupyx.scipy
 
     if is_jax(xp):
@@ -454,7 +454,7 @@ def scipy_namespace_for(xp: ModuleType) -> ModuleType:
 
 # temporary substitute for xp.minimum, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_minimum(x1, x2):
+def xp_minimum(x1: Array, x2: Array, /) -> Array:
     # xp won't be passed in because it doesn't need to be passed in to xp.minimum
     xp = array_namespace(x1, x2)
     if hasattr(xp, 'minimum'):
@@ -469,9 +469,15 @@ def xp_minimum(x1, x2):
 
 # temporary substitute for xp.clip, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_clip(x, a, b, xp=None):
+def xp_clip(
+        x: Array,
+        /,
+        min: int | float | Array | None = None,
+        max: int | float | Array | None = None,
+        *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(a, dtype=x.dtype), xp.asarray(b, dtype=x.dtype)
+    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
     if hasattr(xp, 'clip'):
         return xp.clip(x, a, b)
     x, a, b = xp.broadcast_arrays(x, a, b)
@@ -485,7 +491,11 @@ def xp_clip(x, a, b, xp=None):
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_moveaxis_to_end(x, source, xp=None):
+def xp_moveaxis_to_end(
+        x: Array,
+        source: int,
+        /, *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(xp) if xp is None else xp
     axes = list(range(x.ndim))
     temp = axes.pop(source)
@@ -495,7 +505,7 @@ def xp_moveaxis_to_end(x, source, xp=None):
 
 # temporary substitute for xp.copysign, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_copysign(x1, x2, xp=None):
+def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
     # no attempt to account for special cases
     xp = array_namespace(x1, x2) if xp is None else xp
     abs_x1 = xp.abs(x1)
@@ -504,7 +514,7 @@ def xp_copysign(x1, x2, xp=None):
 
 # partial substitute for xp.sign, which does not cover the NaN special case
 # that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x, xp=None):
+def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
