@@ -1453,6 +1453,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
 
+    if not all(0 <= i <= k for i in deriv_l_ords):
+        raise ValueError(f"Bad boundary conditions at {x[0]}.")
+
+    if not all(0 <= i <= k for i in deriv_r_ords):
+        raise ValueError(f"Bad boundary conditions at {x[-1]}.")
+
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     n = x.size
     nt = t.size - k - 1
