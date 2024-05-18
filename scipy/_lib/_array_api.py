@@ -492,7 +492,6 @@ def xp_add_reduced_axes(res, axis, initial_shape, *, xp=None):
     return xp.reshape(res, final_shape)
 
 
-# array-API compatible substitute for np.mean, np.nanmean, np.average
 def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
@@ -519,7 +518,7 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         Defines how to handle input NaNs.
 
         - ``propagate``: if a NaN is present in the axis slice (e.g. row) along
-          which the  statistic is computed, the corresponding entry of the output
+          which the statistic is computed, the corresponding entry of the output
           will be NaN.
         - ``omit``: NaNs will be omitted when performing the calculation.
           If insufficient data remains in the axis slice along which the
@@ -541,14 +540,14 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     -----
     Let :math:`x_i` represent element :math:`i` of data `x` and let :math:`w_i`
     represent the corresponding element of `weights` after broadcasting. Then the
-    mean is given by:
+    (weighted) mean :math:`\bar{x}_w` is given by:
 
     .. math::
 
-        \frac{ \sum_{i=0}^{n-1} w_i x_i }
-             { \sum_{i=0}^{n-1} i w_i }
+        \bar{x}_w = \frac{ \sum_{i=0}^{n-1} w_i x_i }
+                         { \sum_{i=0}^{n-1} i w_i }
 
-    where `n` is the number of elements along a slice. Note that this simplifies
+    where :math:`n` is the number of elements along a slice. Note that this simplifies
     to the familiar :math:`(\sum_i x_i) / n` when the weights are all ``1`` (default).
 
     The behavior of this function with respect to weights is somewhat different
@@ -564,10 +563,14 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     latter case, the NaNs are excluded entirely.
 
     """
+    # ensure that `x` and `weights` are array-API compatible arrays of identical shape
     xp = array_namespace(x) if xp is None else xp
     x = xp.asarray(x, dtype=dtype)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
+    if weights is not None and x.shape != weights.shape:
+        x, weights = xp.broadcast_arrays(x, weights)
 
+    # convert integers to the default float of the array library
     if not xp.isdtype(x.dtype, 'real floating'):
         dtype = xp.asarray(1.).dtype
         x = xp.asarray(x, dtype=dtype)
@@ -575,9 +578,7 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         dtype = xp.asarray(1.).dtype
         weights = xp.asarray(weights, dtype=dtype)
 
-    if weights is not None and x.shape != weights.shape:
-        x, weights = xp.broadcast_arrays(x, weights)
-
+    # handle the special case of zero-sized arrays
     message = ('At least one slice along `axis` has zero length; '
                'corresponding slices of the output will be NaN.')
     if size(x) == 0:
@@ -595,6 +596,8 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         contains_nan_w, _ = _contains_nan(weights, nan_policy, xp_ok=True, xp=xp)
         contains_nan = contains_nan | contains_nan_w
 
+    # Handle `nan_policy='omit'` by giving zero weight to NaNs, whether they
+    # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
     message = ('After omitting NaNs, at least one slice along `axis` has zero '
                'length; corresponding slices of the output will be NaN.')
     if contains_nan and nan_policy == 'omit':
@@ -614,5 +617,6 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     with np.errstate(divide='ignore', invalid='ignore'):
         res = wsum/norm
 
+    # Respect `keepdims` and convert NumPy 0-D arrays to scalars
     res = xp_add_reduced_axes(res, axis, x.shape, xp=xp) if keepdims else res
     return res[()] if res.ndim == 0 else res

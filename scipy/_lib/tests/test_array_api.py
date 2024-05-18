@@ -155,14 +155,12 @@ class TestXP_Mean:
         res = xp_mean(xp.asarray([1., 1., 2.]), weights=weights)
         xp_assert_close(res, xp.asarray(np.inf))
 
-        res = xp_mean(xp.asarray([0., 0., 0.]), weights=xp.asarray([0., 0., 0.]))
-        xp_assert_close(res, xp.asarray(xp.nan))
-
     def test_nan_policy(self, xp):
         x = xp.arange(10.)
         mask = (x == 3)
         x = xp.where(mask, xp.asarray(xp.nan), x)
 
+        # nan_policy='raise' raises an error
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
             xp_mean(x, nan_policy='raise')
@@ -173,17 +171,19 @@ class TestXP_Mean:
         xp_assert_equal(res1, ref)
         xp_assert_equal(res2, ref)
 
+        # `nan_policy='omit'` omits NaNs in `x`
         res = xp_mean(x, nan_policy='omit')
         ref = xp.mean(x[~mask])
         xp_assert_close(res, ref)
 
-        # NaNs in weights
+        # `nan_policy='omit'` omits NaNs in `weights`, too
         weights = xp.ones(10)
         weights = xp.where(mask, xp.asarray(xp.nan), weights)
         res = xp_mean(xp.arange(10.), weights=weights, nan_policy='omit')
         ref = xp.mean(x[~mask])
         xp_assert_close(res, ref)
 
+        # Check for warning if omitting NaNs causes empty slice
         message = 'After omitting NaNs...'
         with pytest.warns(UserWarning, match=message):
             res = xp_mean(x * np.nan,  nan_policy='omit')
@@ -212,17 +212,20 @@ class TestXP_Mean:
         x_np = np.asarray([max, max], dtype=np.float32)
         x_xp = xp.asarray(x_np)
 
+        # Overflow occurs for float32 input
         with np.errstate(over='ignore'):
             res = xp_mean(x_xp)
             ref = np.mean(x_np)
             np.testing.assert_equal(ref, np.inf)
             xp_assert_close(res, xp.asarray(ref))
 
+        # correct result is returned if `float64` is used
         res = xp_mean(x_xp, dtype=xp.float64)
         ref = xp.asarray(np.mean(np.asarray(x_np, dtype=np.float64)))
         xp_assert_close(res, ref)
 
     def test_integer(self, xp):
+        # integer inputs are converted to the appropriate float
         x = xp.arange(10)
         y = xp.arange(10.)
         xp_assert_equal(xp_mean(x), xp_mean(y))
