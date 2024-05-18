@@ -741,6 +741,10 @@ class TestChandrupatla(TestScalarRootFinders):
     @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
     def test_dtype(self, root, dtype, xp):
         # Test that dtypes are preserved
+        not_numpy = not is_numpy(xp)
+        if not_numpy and dtype == 'float16':
+            pytest.skip("`float16` dtype only supported for NumPy arrays.")
+
         dtype = getattr(xp, dtype, None)
         if dtype is None:
             pytest.skip(f"{xp} does not support {dtype}")

@@ -889,7 +889,7 @@ fun6.root = 0
 
 def fun7(x):
     xp = array_namespace(x)
-    return 0 if abs(x) < 3.8e-4 else x*xp.exp(-x**(-2))
+    return 0 if xp.abs(x) < 3.8e-4 else x*xp.exp(-x**(-2))
 fun7.root = 0
 
 
