@@ -742,8 +742,8 @@ class complex_ode(ode):
         if self._integrator.supports_solout:
             self._integrator.set_solout(solout, complex=True)
         else:
-            raise TypeError("selected integrator does not support solouta,"
-                            + "choose another one")
+            raise TypeError("selected integrator does not support solouta, "
+                            "choose another one")
 
 
 # ------------------------------------------------------------------------------

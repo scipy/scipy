@@ -1083,9 +1083,9 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
     >>> import scipy.stats as stats
     >>> res = stats.barnard_exact([[7, 12], [8, 3]], alternative="less")
     >>> res.statistic
-    -1.894...
+    -1.894
     >>> res.pvalue
-    0.03407...
+    0.03407
 
     Under the null hypothesis that the vaccine will not lower the chance of
     becoming infected, the probability of obtaining test results at least as
@@ -1097,7 +1097,7 @@ def barnard_exact(table, alternative="two-sided", pooled=True, n=32):
 
     >>> _, pvalue = stats.fisher_exact([[7, 12], [8, 3]], alternative="less")
     >>> pvalue
-    0.0640...
+    0.0640
 
     With the same threshold significance of 5%, we would not have been able
     to reject the null hypothesis in favor of the alternative. As stated in
@@ -1307,9 +1307,9 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     >>> import scipy.stats as stats
     >>> res = stats.boschloo_exact([[74, 31], [43, 32]], alternative="greater")
     >>> res.statistic
-    0.0483...
+    0.0483
     >>> res.pvalue
-    0.0355...
+    0.0355
 
     Under the null hypothesis that scientists are happier in their work than
     college professors, the probability of obtaining test

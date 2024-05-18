@@ -148,40 +148,29 @@ class TestQuadrature:
         numeric_integral = np.dot(wts, y)
         assert_almost_equal(numeric_integral, exact_integral)
 
-    # ignore the DeprecationWarning emitted by the even kwd
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_simpson(self):
         y = np.arange(17)
         assert_equal(simpson(y), 128)
         assert_equal(simpson(y, dx=0.5), 64)
         assert_equal(simpson(y, x=np.linspace(0, 4, 17)), 32)
 
-        y = np.arange(4)
-        x = 2**y
-        assert_equal(simpson(y, x=x, even='avg'), 13.875)
-        assert_equal(simpson(y, x=x, even='first'), 13.75)
-        assert_equal(simpson(y, x=x, even='last'), 14)
-
-        # `even='simpson'`
         # integral should be exactly 21
         x = np.linspace(1, 4, 4)
         def f(x):
             return x**2
 
-        assert_allclose(simpson(f(x), x=x, even='simpson'), 21.0)
-        assert_allclose(simpson(f(x), x=x, even='avg'), 21 + 1/6)
+        assert_allclose(simpson(f(x), x=x), 21.0)
 
         # integral should be exactly 114
         x = np.linspace(1, 7, 4)
-        assert_allclose(simpson(f(x), dx=2.0, even='simpson'), 114)
-        assert_allclose(simpson(f(x), dx=2.0, even='avg'), 115 + 1/3)
+        assert_allclose(simpson(f(x), dx=2.0), 114)
 
-        # `even='simpson'`, test multi-axis behaviour
+        # test multi-axis behaviour
         a = np.arange(16).reshape(4, 4)
         x = np.arange(64.).reshape(4, 4, 4)
         y = f(x)
         for i in range(3):
-            r = simpson(y, x=x, even='simpson', axis=i)
+            r = simpson(y, x=x, axis=i)
             it = np.nditer(a, flags=['multi_index'])
             for _ in it:
                 idx = list(it.multi_index)
@@ -192,11 +181,10 @@ class TestQuadrature:
         # test when integration axis only has two points
         x = np.arange(16).reshape(8, 2)
         y = f(x)
-        for even in ['simpson', 'avg', 'first', 'last']:
-            r = simpson(y, x=x, even=even, axis=-1)
+        r = simpson(y, x=x, axis=-1)
 
-            integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
-            assert_allclose(r, integral)
+        integral = 0.5 * (y[:, 1] + y[:, 0]) * (x[:, 1] - x[:, 0])
+        assert_allclose(r, integral)
 
         # odd points, test multi-axis behaviour
         a = np.arange(25).reshape(5, 5)
@@ -227,7 +215,7 @@ class TestQuadrature:
         zero_axis = [0.0, 0.0, 0.0, 0.0]
         default_axis = [170 + 1/3] * 3   # 8**3 / 3 - 1/3
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
-        # the following should be exact for even='simpson'
+        # the following should be exact
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
         x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
@@ -237,13 +225,6 @@ class TestQuadrature:
         assert_allclose(simpson(y, x=x, axis=0), zero_axis)
         assert_allclose(simpson(y, x=x, axis=-1), default_axis)
 
-    def test_simpson_deprecations(self):
-        x = np.linspace(0, 3, 4)
-        y = x**2
-        with pytest.deprecated_call(match="The 'even' keyword is deprecated"):
-            simpson(y, x=x, even='first')
-        with pytest.deprecated_call(match="use keyword arguments"):
-            simpson(y, x)
 
     @pytest.mark.parametrize('droplast', [False, True])
     def test_simpson_2d_integer_no_x(self, droplast):

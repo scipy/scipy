@@ -65,6 +65,7 @@ The `minimize` function supports the following methods:
    optimize.minimize-lbfgsb
    optimize.minimize-tnc
    optimize.minimize-cobyla
+   optimize.minimize-cobyqa
    optimize.minimize-slsqp
    optimize.minimize-trustconstr
    optimize.minimize-dogleg

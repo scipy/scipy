@@ -337,7 +337,7 @@ T keip(T x) {
 }
 
 template <typename T>
-void kelvin(T x, std::complex<T> *Be, std::complex<T> *Ke, std::complex<T> *Bep, std::complex<T> *Kep) {
+void kelvin(T x, std::complex<T> &Be, std::complex<T> &Ke, std::complex<T> &Bep, std::complex<T> &Kep) {
     int flag = 0;
     T ber, bei, ger, gei, der, dei, her, hei;
     if (x < 0) {
@@ -346,26 +346,26 @@ void kelvin(T x, std::complex<T> *Be, std::complex<T> *Ke, std::complex<T> *Bep,
     }
 
     detail::klvna(x, &ber, &bei, &ger, &gei, &der, &dei, &her, &hei);
-    Be->real(ber);
-    Be->imag(bei);
-    Ke->real(ger);
-    Ke->imag(gei);
-    Bep->real(der);
-    Bep->imag(dei);
-    Kep->real(her);
-    Kep->imag(hei);
+    Be.real(ber);
+    Be.imag(bei);
+    Ke.real(ger);
+    Ke.imag(gei);
+    Bep.real(der);
+    Bep.imag(dei);
+    Kep.real(her);
+    Kep.imag(hei);
 
-    SPECFUN_ZCONVINF("klvna", *Be);
-    SPECFUN_ZCONVINF("klvna", *Ke);
-    SPECFUN_ZCONVINF("klvna", *Bep);
-    SPECFUN_ZCONVINF("klvna", *Kep);
+    SPECFUN_ZCONVINF("klvna", Be);
+    SPECFUN_ZCONVINF("klvna", Ke);
+    SPECFUN_ZCONVINF("klvna", Bep);
+    SPECFUN_ZCONVINF("klvna", Kep);
     if (flag) {
-        Bep->real(-Bep->real());
-        Bep->imag(-Bep->imag());
-        Ke->real(std::numeric_limits<T>::quiet_NaN());
-        Ke->imag(std::numeric_limits<T>::quiet_NaN());
-        Kep->real(std::numeric_limits<T>::quiet_NaN());
-        Kep->imag(std::numeric_limits<T>::quiet_NaN());
+        Bep.real(-Bep.real());
+        Bep.imag(-Bep.imag());
+        Ke.real(std::numeric_limits<T>::quiet_NaN());
+        Ke.imag(std::numeric_limits<T>::quiet_NaN());
+        Kep.real(std::numeric_limits<T>::quiet_NaN());
+        Kep.imag(std::numeric_limits<T>::quiet_NaN());
     }
 }
 

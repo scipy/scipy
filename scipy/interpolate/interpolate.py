@@ -12,20 +12,11 @@ __all__ = [  # noqa: F822
     'PPoly',
     'RectBivariateSpline',
     'RegularGridInterpolator',
-    'array',
-    'asarray',
-    'comb',
-    'dfitpack',
     'interp1d',
     'interp2d',
     'interpn',
-    'itertools',
     'lagrange',
     'make_interp_spline',
-    'poly1d',
-    'prod',
-    'searchsorted',
-    'spec',
 ]
 
 

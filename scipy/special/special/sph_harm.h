@@ -3,6 +3,9 @@
 #include "error.h"
 #include "legendre.h"
 #include "mdspan.h"
+#include "specfun.h"
+
+#include "cephes/poch.h"
 
 namespace special {
 
@@ -15,8 +18,7 @@ std::complex<T> sph_harm(long m, long n, T theta, T phi) {
 
     long m_abs = std::abs(m);
     if (m_abs > n) {
-        set_error("sph_harm", SF_ERROR_ARG, "m should not be greater than n");
-        return NAN;
+        return 0;
     }
 
     std::complex<T> val = pmv(m_abs, n, std::cos(phi));

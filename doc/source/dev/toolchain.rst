@@ -124,29 +124,31 @@ As explained in more detail below, the current minimal compiler versions are:
  Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
 ==========  ===========================  ===============================  ============================
  GCC         Linux                        AIX, Alpine Linux, OSX           GCC 9.x
- LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 14.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 12.x
  MSVC        Windows                      -                                Visual Studio 2019 (vc142)
 ==========  ===========================  ===============================  ============================
 
-Note that the lower bound for LLVM is not enforced. Older versions should
-work - as long as they support core (non-stdlib) C++17 -, but no version
-below LLVM 14 is tested regularly during development. Please file an issue
-if you encounter a problem during compilation.
+Note that there is currently no dedicated CI job to test the minimum supported
+LLVM/Clang version. Older versions than used in SciPy CI should work, as long
+as they support core (non-stdlib) C++17. Please file an issue if you encounter
+a problem during compilation.
 
 Official Builds
 ~~~~~~~~~~~~~~~
 
 Currently, SciPy wheels are being built as follows:
 
-================    ==============================   ==============================   =============================
- Platform            `CI`_ `Base`_ `Images`_          Compilers                        Comment
-================    ==============================   ==============================   =============================
-Linux x86            ``ubuntu-22.04``                 GCC 10.2.1                       ``cibuildwheel``
-Linux arm            ``docker-builder-arm64``         GCC 11.3.0                       ``cibuildwheel``
-OSX x86_64           ``macos-latest``                 clang-14/gfortran 13.0           ``cibuildwheel``
-OSX arm64            ``macos-14``                     clang-14/gfortran 13.0           ``cibuildwheel``
-Windows              ``windows-2019``                 GCC 10.3 (`rtools`_)             ``cibuildwheel``
-================    ==============================   ==============================   =============================
+=========================   ==============================   ====================================   =============================
+ Platform                    `CI`_ `Base`_ `Images`_          Compilers                              Comment
+=========================   ==============================   ====================================   =============================
+ Linux x86                   ``ubuntu-22.04``                 GCC 10.2.1                             ``cibuildwheel``
+ Linux arm                   ``docker-builder-arm64``         GCC 11.3.0                             ``cibuildwheel``
+ OSX x86_64 (OpenBLAS)       ``macos-12``                     Apple clang 13.1.6/gfortran 11.3.0     ``cibuildwheel``
+ OSX x86_64 (Accelerate)     ``macos-13``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
+ OSX arm64 (OpenBLAS)        ``macos-14``                     Apple clang 15.0.0/gfortran 12.1.0     ``cibuildwheel``
+ OSX arm64 (Accelerate)      ``macos-14``                     Apple clang 15.0.0/gfortran 13.2.0     ``cibuildwheel``
+ Windows                     ``windows-2019``                 GCC 10.3.0 (`rtools`_)                 ``cibuildwheel``
+=========================   ==============================   ====================================   =============================
 
 .. _CI: https://github.com/actions/runner-images
 .. _Base: https://cirrus-ci.org/guide/docker-builder-vm/#under-the-hood

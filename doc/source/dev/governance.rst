@@ -74,17 +74,17 @@ Pauli Virtanen. As Dictator, the BDFL has the authority to make all final
 decisions for The Project. As Benevolent, the BDFL, in practice, chooses to
 defer that authority to the consensus of the community discussion channels and
 the Steering Council (see below). It is expected, and in the past has been the
-case, that the BDFL will only rarely assert his/her final authority. Because
+case, that the BDFL will only rarely assert their final authority. Because
 rarely used, we refer to BDFL’s final authority as a “special” or “overriding”
 vote. When it does occur, the BDFL override typically happens in situations
 where there is a deadlock in the Steering Council or if the Steering Council
 asks the BDFL to make a decision on a specific matter. To ensure the
 benevolence of the BDFL, The Project encourages others to fork the project if
 they disagree with the overall direction the BDFL is taking. The BDFL may
-delegate his/her authority on a particular decision or set of decisions to
-any other Council member at his/her discretion.
+delegate their authority on a particular decision or set of decisions to
+any other Council member at their discretion.
 
-The BDFL can appoint his/her successor, but it is expected that the Steering
+The BDFL can appoint their successor, but it is expected that the Steering
 Council would be consulted on this decision. If the BDFL is unable to appoint a
 successor, the Steering Council will make this decision - preferably by
 consensus, but if needed, by a majority vote.
@@ -178,7 +178,7 @@ Council Chair
 ~~~~~~~~~~~~~
 
 The Chair will be appointed by the Steering Council. The Chair can stay on as
-long as he/she wants, but may step down at any time and will listen to
+long as they want, but may step down at any time and will listen to
 serious calls to do so (similar to the BDFL role). The Chair will be
 responsible for:
 
@@ -224,7 +224,7 @@ All members of the Council, BDFL included, shall disclose to the rest of the
 Council any conflict of interest they may have. Members with a conflict of
 interest in a particular issue may participate in Council discussions on that
 issue, but must recuse themselves from voting on the issue. If the BDFL has
-recused his/herself for a particular decision, the Council will appoint a
+recused themself for a particular decision, the Council will appoint a
 substitute BDFL for that decision.
 
 Private communications of the Council

@@ -48,7 +48,7 @@ class Bench(Benchmark):
         self.P_sparse = _create_sparse_poisson2d(n)
 
         if solver == 'dense':
-            self.P_dense = self.P_sparse.A
+            self.P_dense = self.P_sparse.toarray()
 
     def time_solve(self, n, solver):
         if solver == 'dense':
