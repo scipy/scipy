@@ -136,13 +136,15 @@ class TestXP_Mean:
 
         xp_assert_close(res, xp.asarray(ref))
 
-    def test_special_cases(self, xp):
+    def test_non_broadcastable(self, xp):
         # non-broadcastable x and weights
-        message = "...mismatch: objects cannot be broadcast to a single shape"
         x, w = xp.arange(10.), xp.zeros(5)
-        with pytest.raises((ValueError, RuntimeError), match=message):
+        message = "Array shapes are incompatible for broadcasting."
+        with pytest.raises(ValueError, match=message):
             xp_mean(x, weights=w)
 
+
+    def test_special_cases(self, xp):
         # weights sum to zero
         weights = xp.asarray([-1., 0., 1.])
 
@@ -186,7 +188,7 @@ class TestXP_Mean:
 
         # Check for warning if omitting NaNs causes empty slice
         message = 'After omitting NaNs...'
-        with pytest.warns(UserWarning, match=message):
+        with pytest.warns(RuntimeWarning, match=message):
             res = xp_mean(x * np.nan,  nan_policy='omit')
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
@@ -194,12 +196,12 @@ class TestXP_Mean:
     def test_empty(self, xp):
         message = 'At least one slice along `axis` has...'
 
-        with pytest.warns(UserWarning, match=message):
+        with pytest.warns(RuntimeWarning, match=message):
             res = xp_mean(xp.asarray([]))
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
 
-        with pytest.warns(UserWarning, match=message):
+        with pytest.warns(RuntimeWarning, match=message):
             res = xp_mean(xp.asarray([[]]), axis=1)
             ref = xp.asarray([xp.nan])
             xp_assert_equal(res, ref)

@@ -569,8 +569,13 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     xp = array_namespace(x) if xp is None else xp
     x = xp.asarray(x, dtype=dtype)
     weights = xp.asarray(weights, dtype=dtype) if weights is not None else weights
+
     if weights is not None and x.shape != weights.shape:
-        x, weights = xp.broadcast_arrays(x, weights)
+        try:
+            x, weights = xp.broadcast_arrays(x, weights)
+        except (ValueError, RuntimeError) as e:
+            message = "Array shapes are incompatible for broadcasting."
+            raise ValueError(message) from e
 
     # convert integers to the default float of the array library
     if not xp.isdtype(x.dtype, 'real floating'):
@@ -588,7 +593,7 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
             warnings.simplefilter("ignore")
             res = xp.mean(x, axis=axis, keepdims=keepdims)
         if size(res) != 0:
-            warnings.warn(message, UserWarning, stacklevel=2)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         return res
 
     # avoid circular import
@@ -606,7 +611,7 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         i = xp.isnan(x)
         i = (i | xp.isnan(weights)) if weights is not None else i
         if xp.any(xp.all(i, axis=axis)):
-            warnings.warn(message, UserWarning, stacklevel=2)
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
         x = xp.where(i, xp.asarray(0, dtype=x.dtype), x)
         weights = xp.where(i, xp.asarray(0, dtype=x.dtype), weights)
