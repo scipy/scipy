@@ -395,6 +395,9 @@ class LocalSearchWrapper:
         self.func_wrapper = func_wrapper
         self.kwargs = kwargs
         self.jac = self.kwargs.get('jac', None)
+        self.hess = self.kwargs.get('hess', None)
+        self.hessp = self.kwargs.get('hessp', None)
+        self.kwargs.pop("args", None)
         self.minimizer = minimize
         bounds_list = list(zip(*search_bounds))
         self.lower = np.array(bounds_list[0])
@@ -411,10 +414,19 @@ class LocalSearchWrapper:
                 'maxiter': ls_max_iter,
             }
             self.kwargs['bounds'] = list(zip(self.lower, self.upper))
-        elif callable(self.jac):
-            def wrapped_jac(x):
-                return self.jac(x, *args)
-            self.kwargs['jac'] = wrapped_jac
+        else:
+            if callable(self.jac):
+                def wrapped_jac(x):
+                    return self.jac(x, *args)
+                self.kwargs['jac'] = wrapped_jac
+            if callable(self.hess):
+                def wrapped_hess(x):
+                    return self.hess(x, *args)
+                self.kwargs['hess'] = wrapped_hess
+            if callable(self.hessp):
+                def wrapped_hessp(x, p):
+                    return self.hessp(x, p, *args)
+                self.kwargs['hessp'] = wrapped_hessp
 
     def local_search(self, x, e):
         # Run local search from the given x location where energy value is e
@@ -464,10 +476,15 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     maxiter : int, optional
         The maximum number of global search iterations. Default value is 1000.
     minimizer_kwargs : dict, optional
-        Extra keyword arguments to be passed to the local minimizer
-        (`minimize`). Some important options could be:
-        ``method`` for the minimizer method to use and ``args`` for
-        objective function additional arguments.
+        Keyword arguments to be passed to the local minimizer
+        (`minimize`). An important option could be ``method`` for the minimizer
+        method to use.
+        If no keyword arguments are provided, the local minimizer defaults to
+        'L-BFGS-B' and uses the already supplied bounds. If `minimizer_kwargs`
+        is specified, then the dict must contain all parameters required to
+        control the local minimization. `args` is ignored in this dict, as it is
+        passed automatically. `bounds` is not automatically passed on to the
+        local minimizer as the method may not support them.
     initial_temp : float, optional
         The initial temperature, use higher values to facilitates a wider
         search of the energy landscape, allowing dual_annealing to escape

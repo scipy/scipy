@@ -97,14 +97,8 @@ foreach ele: elements
     gnu_symbol_visibility: 'hidden',
   )
 
-  propack_module = custom_target('propack_module' + ele[0],
-    output: [ele[0] + '-f2pywrappers.f', ele[0] + 'module.c'],
-    input: ele[2],
-    command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-  )
-
   propacklib = py3.extension_module(ele[0],
-    propack_module,
+    f2py_gen.process(ele[2]),
     link_with: propack_lib,
     c_args: ['-U_OPENMP', _cpp_Wno_cpp],
     fortran_args: _fflag_Wno_maybe_uninitialized,

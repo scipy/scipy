@@ -144,6 +144,30 @@ fortranobject_dep = declare_dependency(
   compile_args: _f2py_c_args,
 )
 
+f2py = find_program('f2py')
+# It should be quite rare for the `f2py` executable to not be the one from
+# `numpy` installed in the Python env we are building for (unless we are
+# cross-compiling). If it is from a different env, that is still fine as long
+# as it's not too old. We are only using f2py as a code generator, and the
+# output is not dependent on platform or Python version (see gh-20612 for more
+# details).
+# This should be robust enough. If not, we can make this more complex, using
+# a fallback to `python -m f2py` rather than erroring out.
+f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
+if f2py_version.version_compare('<'+min_numpy_version)
+  error(f'Found f2py executable is too old: @f2py_version@')
+endif
+
+# Note: this generato cannot handle:
+# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
+# 2. targets with #include's (due to no `depend_files` - see feature request
+#    at meson#8295)
+f2py_gen = generator(generate_f2pymod,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+)
+
+
 # TODO: 64-bit BLAS and LAPACK
 #
 # Note that this works as long as BLAS and LAPACK are detected properly via
@@ -252,6 +276,7 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
+version_utils = find_program('../tools/version_utils.py')
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -259,7 +284,7 @@ generate_version = custom_target(
   build_by_default: true,
   output: 'version.py',
   input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
+  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
   install_dir: scipy_dir,
   install_tag: 'python-runtime',
 )

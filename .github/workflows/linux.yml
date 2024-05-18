@@ -387,3 +387,48 @@ jobs:
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
+
+  #################################################################################
+  distro_multiple_pythons:
+    # Purpose is to build for a non-default Python interpreter in a Linux distro
+    # For such a build config, `python`/`python3` executables may not have
+    # build dependencies like Cython or NumPy installed.
+    name: non-default Python interpreter, fast, py3.10/npMin, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          # `python3-dev` yields Python 3.10 on Ubuntu 22.04
+          sudo apt install -y python3-dev python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+
+      - name: Setup Python build deps
+        run: |
+          python3.11 -m pip install build pythran pybind11 cython numpy meson-python
+
+      - name: Build wheel and install
+        run: |
+          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3.11 -m pip install dist/*.whl
+
+      - name: Install test dependencies
+        run: |
+          python3.11 -m pip install pytest hypothesis
+          python3.10 -m pip install meson  # ensure compile test work with this
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python3.11 -m pytest --pyargs scipy.cluster
+          python3.11 -m pytest --pyargs scipy.linalg
+          popd

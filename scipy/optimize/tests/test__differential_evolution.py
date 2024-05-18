@@ -2,6 +2,7 @@
 Unit tests for the differential global minimization algorithm.
 """
 import multiprocessing
+from multiprocessing.dummy import Pool as ThreadPool
 import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
@@ -714,16 +715,19 @@ class TestDifferentialEvolutionSolver:
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
-        with multiprocessing.Pool(2) as p, DifferentialEvolutionSolver(
-                rosen, bounds, updating='deferred', workers=p.map) as solver:
-            assert_(solver._mapwrapper.pool is not None)
-            assert_(solver._updating == 'deferred')
+        # use threads instead of Process to speed things up for this simple example
+        with ThreadPool(2) as p, DifferentialEvolutionSolver(
+            rosen, bounds, updating='deferred', workers=p.map, tol=0.1, popsize=3
+        ) as solver:
+            assert solver._mapwrapper.pool is not None
+            assert solver._updating == 'deferred'
             solver.solve()
 
-        with DifferentialEvolutionSolver(rosen, bounds, updating='deferred',
-                                         workers=2) as solver:
-            assert_(solver._mapwrapper.pool is not None)
-            assert_(solver._updating == 'deferred')
+        with DifferentialEvolutionSolver(
+            rosen, bounds, updating='deferred', workers=2, popsize=3, tol=0.1
+        ) as solver:
+            assert solver._mapwrapper.pool is not None
+            assert solver._updating == 'deferred'
             solver.solve()
 
     def test_converged(self):
@@ -741,7 +745,7 @@ class TestDifferentialEvolutionSolver:
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc))
+                                             constraints=(nlc,))
 
         cv = solver._constraint_violation_fn(np.array([1.0, 1.0]))
         assert_almost_equal(cv, 0.1)
@@ -798,7 +802,7 @@ class TestDifferentialEvolutionSolver:
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc))
+                                             constraints=(nlc,))
 
         # are population feasibilities correct
         # [0.5, 0.5] corresponds to scaled values of [1., 1.]
@@ -840,7 +844,7 @@ class TestDifferentialEvolutionSolver:
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc))
+                                             constraints=(nlc,))
 
         # trust-constr warns if the constraint function is linear
         with warns(UserWarning):
@@ -855,9 +859,9 @@ class TestDifferentialEvolutionSolver:
 
         nlc = NonlinearConstraint(constr_f, -np.inf, -1)
 
-        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc), popsize=3,
-                                             seed=1)
+        solver = DifferentialEvolutionSolver(
+            rosen, [(0, 2), (0, 2)], constraints=(nlc,), popsize=1, seed=1, maxiter=100
+        )
 
         # a UserWarning is issued because the 'trust-constr' polishing is
         # attempted on the least infeasible solution found.
@@ -870,8 +874,8 @@ class TestDifferentialEvolutionSolver:
         # test _promote_lowest_energy works when none of the population is
         # feasible. In this case, the solution with the lowest constraint
         # violation should be promoted.
-        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc), polish=False)
+        solver = DifferentialEvolutionSolver(
+            rosen, [(0, 2), (0, 2)], constraints=(nlc,), polish=False)
         next(solver)
         assert not solver.feasible.all()
         assert not np.isfinite(solver.population_energies).all()
@@ -895,7 +899,7 @@ class TestDifferentialEvolutionSolver:
             return [x[0] + x[1]]
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc))
+                                             constraints=(nlc,))
         fn = solver._accept_trial
         # both solutions are feasible, select lower energy
         assert fn(0.1, True, np.array([0.]), 1.0, True, np.array([0.]))
@@ -1033,8 +1037,10 @@ class TestDifferentialEvolutionSolver:
         bounds = [(0, 1)]*9 + [(0, 100)]*3 + [(0, 1)]
 
         # using a lower popsize to speed the test up
-        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
-                                     constraints=(L), popsize=2)
+        res = differential_evolution(
+            f, bounds, strategy='best1bin', seed=1234, constraints=(L,),
+            popsize=2, tol=0.05
+        )
 
         x_opt = (1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 1)
         f_opt = -15
@@ -1054,8 +1060,10 @@ class TestDifferentialEvolutionSolver:
         L = LinearConstraint(csr_matrix(A), -np.inf, b)
 
         # using a lower popsize to speed the test up
-        res = differential_evolution(f, bounds, strategy='best1bin', seed=1234,
-                                     constraints=(L), popsize=2)
+        res = differential_evolution(
+            f, bounds, strategy='best1bin', seed=1234, constraints=(L,),
+            popsize=2, tol=0.05
+        )
 
         assert_allclose(f(x_opt), f_opt)
         assert res.success
@@ -1085,9 +1093,10 @@ class TestDifferentialEvolutionSolver:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
-                                         seed=1234, constraints=constraints,
-                                         popsize=2)
+            res = differential_evolution(
+                f, bounds, strategy='best1bin', seed=1234,
+                constraints=constraints, popsize=2, tol=0.05
+            )
 
         assert_allclose(res.x, x_opt, atol=6e-4)
         assert_allclose(res.fun, f_opt, atol=5e-3)
@@ -1119,7 +1128,7 @@ class TestDifferentialEvolutionSolver:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
+            res = differential_evolution(f, bounds, strategy='best1bin',
                                          seed=1234, constraints=constraints)
 
         f_opt = 680.6300599487869
@@ -1210,9 +1219,10 @@ class TestDifferentialEvolutionSolver:
 
         with suppress_warnings() as sup:
             sup.filter(UserWarning)
-            res = differential_evolution(f, bounds, strategy='rand1bin',
-                                     seed=1234, constraints=constraints,
-                                     popsize=3)
+            res = differential_evolution(
+                f, bounds, strategy='best1bin', seed=1234,
+                constraints=constraints, popsize=3, tol=0.05
+            )
 
         f_opt = 7049.248
 
