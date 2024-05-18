@@ -52,29 +52,32 @@ private:
     std::uint64_t k_; // current index
 };
 
-SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
+SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
+                                                 bool complement) {
+
+    const char *func_name = complement ? "iv_ratio_c" : "iv_ratio";
 
     if (std::isnan(v) || std::isnan(x)) {
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (v < 1 || x < 0) {
-        set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        set_error(func_name, SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (std::isinf(v) && std::isinf(x)) {
         // There is not a unique limit as both v and x tends to infinity.
-        set_error("iv_ratio", SF_ERROR_DOMAIN, NULL);
+        set_error(func_name, SF_ERROR_DOMAIN, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
     if (x == 0.0) {
         // If x is +/-0.0, return +/-0.0 to agree with the limiting behavior.
-        return x;
+        return complement ? 1.0 : x;
     }
     if (std::isinf(v)) {
-        return 0.0;
+        return complement ? 1.0 : 0.0;
     }
     if (std::isinf(x)) {
-        return 1.0;
+        return complement ? 0.0 : 1.0;
     }
 
     // Now v >= 1 and x >= 0 and both are finite.
@@ -92,15 +95,27 @@ SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
         2*vc);
 
     if (terms == 0) { // failed to converge; should not happen
-        set_error("iv_ratio", SF_ERROR_NO_RESULT, NULL);
+        set_error(func_name, SF_ERROR_NO_RESULT, NULL);
         return std::numeric_limits<double>::quiet_NaN();
     }
 
-    return xc / (xc + fc);
+    return (complement ? fc : xc) / (xc + fc);
+}
+
+SPECFUN_HOST_DEVICE inline double iv_ratio(double v, double x) {
+    return _iv_ratio_impl(v, x, false);
 }
 
 SPECFUN_HOST_DEVICE inline float iv_ratio(float v, float x) {
     return iv_ratio(static_cast<double>(v), static_cast<double>(x));
+}
+
+SPECFUN_HOST_DEVICE inline double iv_ratio_c(double v, double x) {
+    return _iv_ratio_impl(v, x, true);
+}
+
+SPECFUN_HOST_DEVICE inline float iv_ratio_c(float v, float x) {
+    return iv_ratio_c(static_cast<double>(v), static_cast<double>(x));
 }
 
 } // namespace special

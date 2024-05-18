@@ -1,9 +1,12 @@
-# This file contains unit tests for the iv_ratio() function.
+# This file contains unit tests for iv_ratio() and related functions.
 
 import pytest
 import numpy as np
 from numpy.testing import assert_equal, assert_allclose
-from scipy.special._ufuncs import _iv_ratio as iv_ratio  # type: ignore[attr-defined]
+from scipy.special._ufuncs import (  # type: ignore[attr-defined]
+    _iv_ratio as iv_ratio,
+    _iv_ratio_c as iv_ratio_c,
+)
 
 
 class TestIvRatio:
@@ -134,3 +137,7 @@ class TestIvRatio:
         t = x / v
         expected = t / (1 + np.hypot(1, t))
         assert_allclose(iv_ratio(v, x), expected, rtol=4e-16, atol=0)
+
+
+class TestIvRatioC:
+    pass
