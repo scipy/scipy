@@ -21,7 +21,7 @@ from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
 from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
-
+from scipy.interpolate import UnivariateSpline
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
@@ -30,7 +30,7 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
-           'filtfilt', 'decimate', 'vectorstrength']
+           'filtfilt', 'decimate', 'vectorstrength', 'envelope']
 
 
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
@@ -4626,3 +4626,139 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]
+
+def envelope(x, N=None, method='analytic'):
+    """
+    Calculate the upper and lower envelopes of a 1-D signal.
+
+    By default, the envelopes of `x` are calculated by the magnitude of its
+    analytical signal.
+
+    Parameters
+    ----------
+    x : array_like
+        The 1-D array holding the signal data for which the envelopes are
+        calculated.
+    N : int
+        If `method` is `'analytic'`, `N` represents the number of Fourier components.
+        If `method` is `'rms'`, `N` is the sliding window length.
+        If `method` is `'peak'`, `N` is the required minimal horizontal distance
+        between neighboring peaks. For `'rms'` and `'peak'` methods, `N` must be
+        specified and must be positive. Default: ``x.shape[0]``
+    method : str {`'analytic'`, `'rms'`, `'peak'`}, optional
+        A string indicating which method to use to calculate the envelopes.
+
+        ``analytic``
+            The envelopes of `x` are calculated by the magnitude of its
+            analytical signal.
+        ``rms``
+            Calculates the upper and lower root-mean-square envelopes of `x`. The
+            mean is determined by a sliding window of `N` samples.
+        ``peak``
+            Calculates the upper and lower peak envelopes of `x`. The envelopes
+            are determined by employing spline interpolation between adjacent
+            local maxima that are at least `N` samples apart.
+
+    Returns
+    -------
+    upper : ndarray
+        The upper envelope of the signal.
+    lower : ndarray
+        The lower envelope of the signal.
+
+    See Also
+    --------
+    hilbert : Compute the analytic signal, using the Hilbert transform.
+    find_peaks : Find peaks inside a signal based on peak properties.
+
+    Notes
+    -----
+    .. versionadded:: 1.12.0
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.signal import envelope
+    >>> import matplotlib.pyplot as plt
+
+    Create a signal and calculate its analytical envelopes.
+
+    >>> t = np.arange(0, 2, 1/2000)
+    >>> signal = (1 + 0.5 * np.cos(2 * np.pi * 1 * t)) * np.cos(2 * np.pi * 10 * t) + 5
+    >>> upper, lower = envelope(signal)
+    >>> plt.plot(t, signal)
+    >>> plt.plot(t, upper)
+    >>> plt.plot(t, lower)
+    >>> plt.show()
+
+    Generate an amplitude modulated Gaussian white noise and calculate its
+    root-mean-square envelopes.
+
+    >>> t = np.arange(0, 2, 1/2000)
+    >>> gaussian_white_noise = np.random.normal(size=t.shape[0])
+    >>> signal = (1 + 0.5 * np.cos(2 * np.pi * 1 * t)) * gaussian_white_noise + 5
+    >>> upper, lower = envelope(signal, N=150, method='rms')
+    >>> plt.plot(t, signal)
+    >>> plt.plot(t, upper)
+    >>> plt.plot(t, lower)
+    >>> plt.show()
+
+    Use `'peak'` method to calculate the upper and lower envelopes of
+    the electrocardiogram data in SciPy (see `scipy.datasets.electrocardiogram`).
+
+    >>> from scipy.datasets import electrocardiogram
+    >>> signal = electrocardiogram()
+    >>> upper, lower = envelope(signal, N=150, method='peak')
+    >>> plt.plot(signal)
+    >>> plt.plot(upper)
+    >>> plt.plot(lower)
+    >>> plt.show()
+    
+    Raises
+    ------
+    ValueError
+        If the input array is not 1D.
+        If `N` is not a positive integer.
+        If `N` is not specified when using the `'rms'` or `'peak'` method.
+        If the specified method is not valid.
+    """
+    x = np.squeeze(np.asarray(x))
+    if x.ndim != 1:
+        raise ValueError("Input array must be a 1D array")
+    if N is not None and (not isinstance(N, int) or N <= 0):
+        raise ValueError('If N is not None, it must be a positive integer.')
+    if method == 'analytic':
+        x_mean = np.mean(x)
+        x_zero_mean = x - x_mean
+        zero_mean_envelope = np.abs(hilbert(x_zero_mean, N=N))
+        return x_mean + zero_mean_envelope, x_mean - zero_mean_envelope
+    elif method == 'rms':
+        if N is None:
+            raise ValueError('N cannot be None when using the rms method; '
+                             'it must specify the sliding window length.')
+        x_mean = np.mean(x)
+        x_zero_mean = x - x_mean
+        zero_mean_envelope = np.sqrt(convolve(x_zero_mean**2, np.ones(N)/N,
+                                              mode='same', method='direct'))
+        return x_mean + zero_mean_envelope, x_mean - zero_mean_envelope
+    elif method == 'peak':
+        # Doing this import at the top of the file throws a circular import
+        # error. One way to avoid this error is doing a local import as
+        # implemented here. Another way is to move this function to
+        # _peak_finding and importing hilbert,convolve and UnivariateSpline
+        # there.
+        from ._peak_finding import find_peaks
+
+        if N is None:
+            msg = ('N cannot be None when using the peak method; it must specify '
+                   'the minimal horizontal distance between neighbouring peaks')
+            raise ValueError(msg)
+        peaks_upper, _ = find_peaks(x, distance=N)
+        peaks_lower, _ = find_peaks(-x, distance=N)
+        upper_spline = UnivariateSpline(peaks_upper, x[peaks_upper], s=0)
+        lower_spline = UnivariateSpline(peaks_lower, x[peaks_lower], s=0)
+        upper_envelope = upper_spline(np.arange(x.shape[0]))
+        lower_envelope = lower_spline(np.arange(x.shape[0]))
+        return upper_envelope, lower_envelope
+    else:
+        raise ValueError(f'{method} is not a valid method')
