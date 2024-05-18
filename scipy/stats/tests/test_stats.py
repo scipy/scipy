@@ -6310,31 +6310,22 @@ class TestRankSums:
 
 
 class TestJarqueBera:
-    def test_jarque_bera_stats(self):
-        np.random.seed(987654321)
-        x = np.random.normal(0, 1, 100000)
-        y = np.random.chisquare(10000, 100000)
-        z = np.random.rayleigh(1, 100000)
-
-        assert_equal(stats.jarque_bera(x)[0], stats.jarque_bera(x).statistic)
-        assert_equal(stats.jarque_bera(x)[1], stats.jarque_bera(x).pvalue)
-
-        assert_equal(stats.jarque_bera(y)[0], stats.jarque_bera(y).statistic)
-        assert_equal(stats.jarque_bera(y)[1], stats.jarque_bera(y).pvalue)
-
-        assert_equal(stats.jarque_bera(z)[0], stats.jarque_bera(z).statistic)
-        assert_equal(stats.jarque_bera(z)[1], stats.jarque_bera(z).pvalue)
-
-        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1])
-        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(y).pvalue)
-
-        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1])
-        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(z).pvalue)
-
-        assert_(stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1])
-        assert_(stats.jarque_bera(y).pvalue > stats.jarque_bera(z).pvalue)
+    @array_api_compatible
+    def test_jarque_bera_against_R(self, xp):
+        # library(tseries)
+        # options(digits=16)
+        # x < - rnorm(5)
+        # jarque.bera.test(x)
+        x = [-0.160104223201523288,  1.131262000934478040, -0.001235254523709458,
+             -0.776440091309490987, -2.072959999533182884]
+        x = xp.asarray(x)
+        ref = xp.asarray([0.17651605223752, 0.9155246169805])
+        res = stats.jarque_bera(x)
+        xp_assert_close(res.statistic, ref[0])
+        xp_assert_close(res.pvalue, ref[1])
 
     def test_jarque_bera_array_like(self):
+        # array-like only relevant for NumPy
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
 
@@ -6345,24 +6336,32 @@ class TestJarqueBera:
         assert JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic  # noqa: E501
         assert p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue
 
-    def test_jarque_bera_size(self):
-        assert_raises(ValueError, stats.jarque_bera, [])
+    @array_api_compatible
+    def test_jarque_bera_size(self, xp):
+        x = xp.asarray([])
+        message = "At least one observation is required."
+        with pytest.raises(ValueError, match=message):
+            stats.jarque_bera(x)
 
-    def test_axis(self):
+    @array_api_compatible
+    def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)
-        x = rng.random(size=(2, 45))
+        x = xp.asarray(rng.random(size=(2, 45)))
 
-        assert_equal(stats.jarque_bera(x, axis=None),
-                     stats.jarque_bera(x.ravel()))
+        res = stats.jarque_bera(x, axis=None)
+        ref = stats.jarque_bera(xp.reshape(x, (-1,)))
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
 
         res = stats.jarque_bera(x, axis=1)
         s0, p0 = stats.jarque_bera(x[0, :])
         s1, p1 = stats.jarque_bera(x[1, :])
-        assert_allclose(res.statistic, [s0, s1])
-        assert_allclose(res.pvalue, [p0, p1])
+        xp_assert_close(res.statistic, xp.asarray([s0, s1]))
+        xp_assert_close(res.pvalue, xp.asarray([p0, p1]))
 
         resT = stats.jarque_bera(x.T, axis=0)
-        assert_allclose(res, resT)
+        xp_assert_close(res.statistic, resT.statistic)
+        xp_assert_close(res.pvalue, resT.pvalue)
 
 
 def test_skewtest_too_few_samples():
