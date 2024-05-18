@@ -71,12 +71,6 @@ from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
                                    xp_clip, xp_moveaxis_to_end, xp_sign)
 from scipy._lib.array_api_compat import size as xp_size
 
-# In __all__ but deprecated for removal in SciPy 1.13.0
-from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (  # noqa: F401
-    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
-)
-
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',

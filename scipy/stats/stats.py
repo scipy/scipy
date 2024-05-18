@@ -26,19 +26,8 @@ __all__ = [  # noqa: F822
     'tiecorrect', 'ranksums', 'kruskal', 'friedmanchisquare',
     'rankdata',
     'combine_pvalues', 'wasserstein_distance', 'energy_distance',
-    'brunnermunzel', 'alexandergovern', 'gcd', 'namedtuple', 'array',
-    'ma', 'cdist', 'check_random_state', 'MapWrapper',
-    'rng_integers', 'float_factorial', 'linalg', 'distributions',
-    'mstats_basic', 'ModeResult', 'DescribeResult',
-    'SkewtestResult', 'KurtosistestResult', 'NormaltestResult',
-    'HistogramResult', 'CumfreqResult',
-    'RelfreqResult', 'SigmaclipResult', 'F_onewayResult',
-    'AlexanderGovernResult',
-    'PointbiserialrResult',
-    'MGCResult', 'Ttest_1sampResult', 'Ttest_indResult',
-    'Ttest_relResult', 'Power_divergenceResult', 'KstestResult',
-    'Ks_2sampResult', 'RanksumsResult', 'KruskalResult',
-    'FriedmanchisquareResult', 'BrunnerMunzelResult', 'RepeatedResults'
+    'brunnermunzel', 'alexandergovern', 'distributions',
+    'mstats_basic',
 ]
 
 

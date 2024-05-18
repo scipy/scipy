@@ -480,8 +480,9 @@ class TestChandrupatlaMinimize:
 
 @array_api_compatible
 @pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends('array_api_strict',
-                              reason=['Currently uses fancy indexing assignment.'])
+@pytest.mark.skip_xp_backends('array_api_strict', 'jax.numpy',
+                              reasons=['Currently uses fancy indexing assignment.',
+                                       'JAX arrays do not support item assignment.'])
 class TestChandrupatla(TestScalarRootFinders):
 
     def f(self, q, p):
@@ -655,11 +656,11 @@ class TestChandrupatla(TestScalarRootFinders):
         x1, x2 = bracket
         f0 = xp_minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(np.abs(res1.fun), 1e-3*f0)
+        xp_assert_less(xp.abs(res1.fun), 1e-3*f0)
         kwargs['frtol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(np.abs(res2.fun), 1e-6*f0)
-        xp_assert_less(np.abs(res2.fun), np.abs(res1.fun))
+        xp_assert_less(xp.abs(res2.fun), 1e-6*f0)
+        xp_assert_less(xp.abs(res2.fun), xp.abs(res1.fun))
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
@@ -741,6 +742,10 @@ class TestChandrupatla(TestScalarRootFinders):
     @pytest.mark.parametrize("dtype", ('float16', 'float32', 'float64'))
     def test_dtype(self, root, dtype, xp):
         # Test that dtypes are preserved
+        not_numpy = not is_numpy(xp)
+        if not_numpy and dtype == 'float16':
+            pytest.skip("`float16` dtype only supported for NumPy arrays.")
+
         dtype = getattr(xp, dtype, None)
         if dtype is None:
             pytest.skip(f"{xp} does not support {dtype}")
