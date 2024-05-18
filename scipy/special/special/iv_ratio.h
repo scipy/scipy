@@ -57,8 +57,11 @@ SPECFUN_HOST_DEVICE inline double _iv_ratio_impl(double v, double x,
 
     const char *func_name = complement ? "iv_ratio_c" : "iv_ratio";
 
-    if (std::isnan(v) || std::isnan(x)) {
-        return std::numeric_limits<double>::quiet_NaN();
+    if (std::isnan(x)) {
+        return x;
+    }
+    if (std::isnan(v)) {
+        return v;
     }
     if (v < 1 || x < 0) {
         set_error(func_name, SF_ERROR_DOMAIN, NULL);
