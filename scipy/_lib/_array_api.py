@@ -395,9 +395,9 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp: ModuleType) -> list[str | None]:
+def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
     """Returns a list of available devices for the given namespace."""
-    devices: list[str | None] = []
+    devices: list[str] = []
     if is_torch(xp):
         devices += ['cpu']
         import torch # type: ignore[import]
