@@ -395,30 +395,27 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp):
+def get_xp_devices(xp: ModuleType) -> list[str]:
     """Returns a list of available devices for the given namespace."""
+    devices = []
     if is_torch(xp):
-        devices = ['cpu']
+        devices += ['cpu']
         import torch # type: ignore[import]
         num_cuda = torch.cuda.device_count()
         for i in range(0, num_cuda):
             devices += [f'cuda:{i}']
         if torch.backends.mps.is_available():
             devices += ['mps']
-        return devices
-
-    if is_cupy(xp):
-        devices = []
+    elif is_cupy(xp):
         import cupy # type: ignore[import]
         num_cuda = cupy.cuda.runtime.getDeviceCount()
         for i in range(0, num_cuda):
             devices += [f'cuda:{i}']
-        return devices
 
-    return [None]
+    return devices
 
 
-def scipy_namespace_for(xp):
+def scipy_namespace_for(xp: ModuleType) -> ModuleType:
     """
     Return the `scipy` namespace for alternative backends, where it exists,
     such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
