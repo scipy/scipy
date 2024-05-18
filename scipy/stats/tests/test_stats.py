@@ -6367,8 +6367,10 @@ class TestRankSums:
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends(cpu_only=True)
+@array_api_compatible
 class TestJarqueBera:
-    @array_api_compatible
     def test_jarque_bera_against_R(self, xp):
         # library(tseries)
         # options(digits=16)
@@ -6382,6 +6384,7 @@ class TestJarqueBera:
         xp_assert_close(res.statistic, ref[0])
         xp_assert_close(res.pvalue, ref[1])
 
+    @skip_xp_backends(np_only=True)
     def test_jarque_bera_array_like(self):
         # array-like only relevant for NumPy
         np.random.seed(987654321)
@@ -6394,14 +6397,12 @@ class TestJarqueBera:
         assert JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic  # noqa: E501
         assert p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue
 
-    @array_api_compatible
     def test_jarque_bera_size(self, xp):
         x = xp.asarray([])
         message = "At least one observation is required."
         with pytest.raises(ValueError, match=message):
             stats.jarque_bera(x)
 
-    @array_api_compatible
     def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)
         x = xp.asarray(rng.random(size=(2, 45)))
