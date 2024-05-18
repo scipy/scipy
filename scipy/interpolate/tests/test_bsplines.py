@@ -1349,7 +1349,7 @@ class TestInterp:
     def test_deriv_order_too_large(self):
         x = np.arange(7)
         y = x**2
-        l, r = [(1, 0)], [(-6, 0)]    # 6th derivative = 0 at x[-1] for k=3
+        l, r = [(1, 0)], [(6, 0)]    # 6th derivative = 0 at x[-1] for k=3
         with assert_raises(ValueError):
             # cannot fix 6th derivative at x[-1]: does not segfault
             make_interp_spline(x, y, bc_type=(l, r))
