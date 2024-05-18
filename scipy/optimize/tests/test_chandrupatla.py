@@ -655,11 +655,11 @@ class TestChandrupatla(TestScalarRootFinders):
         x1, x2 = bracket
         f0 = xp_minimum(xp.abs(self.f(x1, *args)), xp.abs(self.f(x2, *args)))
         res1 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(np.abs(res1.fun), 1e-3*f0)
+        xp_assert_less(xp.abs(res1.fun), 1e-3*f0)
         kwargs['frtol'] = 1e-6
         res2 = _chandrupatla_root(self.f, *bracket, **kwargs)
-        xp_assert_less(np.abs(res2.fun), 1e-6*f0)
-        xp_assert_less(np.abs(res2.fun), np.abs(res1.fun))
+        xp_assert_less(xp.abs(res2.fun), 1e-6*f0)
+        xp_assert_less(xp.abs(res2.fun), xp.abs(res1.fun))
 
     def test_maxiter_callback(self, xp):
         # Test behavior of `maxiter` parameter and `callback` interface
