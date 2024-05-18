@@ -2158,23 +2158,29 @@ def jarque_bera(x, *, axis=None):
     hypothesis [4]_.
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     if axis is None:
-        x = x.ravel()
+        x = xp.reshape(x, (-1,))
         axis = 0
 
     n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean(axis=axis, keepdims=True)
+    mu = xp.mean(x, axis=axis, keepdims=True)
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    statistic = n / 6 * (s**2 + k**2 / 4)
-    pvalue = distributions.chi2.sf(statistic, df=2)
+    k2 = n / 6 * (s**2 + k**2 / 4)
 
-    return SignificanceResult(statistic, pvalue)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, df=2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return SignificanceResult(k2, pvalue)
 
 
 #####################################
