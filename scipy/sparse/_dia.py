@@ -196,6 +196,9 @@ class _dia_base(_data_matrix):
         if self_d == other_d and len(new_offsets) == len(self.offsets):
             new_data = self.data[_invert_index(self_idx)]
             new_data[other_idx, :] += other.data
+        elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            new_data = other.data[_invert_index(other_idx)]
+            new_data[self_idx, :] += self.data
         else:
             # Maximum diagonal length of the result.
             d = min(self.shape[0] + new_offsets[-1], self.shape[1])
