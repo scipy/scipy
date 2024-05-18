@@ -165,6 +165,7 @@ class TestXP_Mean:
         with pytest.raises(ValueError, match=message):
             xp_mean(x, nan_policy='raise')
 
+        # `nan_policy='propagate'` is the default, and the result is NaN
         res1 = xp_mean(x)
         res2 = xp_mean(x, nan_policy='propagate')
         ref = xp.asarray(xp.nan)

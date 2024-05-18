@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import warnings
+from collections.abc import Sequence
 
 from types import ModuleType
 from typing import Any, Literal, TYPE_CHECKING
@@ -484,7 +485,7 @@ def xp_add_reduced_axes(res, axis, initial_shape, *, xp=None):
         final_shape = (1,) * len(initial_shape)
     else:
         # axis can be a scalar or sequence
-        axes = (axis,) if xp.asarray(axis).ndim == 0 else axis
+        axes = (axis,) if not isinstance(axis, Sequence) else axis
         final_shape = list(initial_shape)
         for i in axes:
             final_shape[i] = 1
@@ -553,9 +554,10 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     The behavior of this function with respect to weights is somewhat different
     from that of `np.average`. For instance,
     `np.average` raises an error when `axis` is not specified and the shapes of `x`
-    and a `weights` array are not the same; `xp_mean` simply broadcasts the two.
+    and the `weights` array are not the same; `xp_mean` simply broadcasts the two.
     Also, `np.average` raises an error when weights sum to zero along a slice;
-    `xp_mean` computes the appropriate result.
+    `xp_mean` computes the appropriate result. The intent is for this function's
+    interface to be consistent with the rest of `scipy.stats`.
 
     Note that according to the formula, including NaNs with zero weights is not
     the same as *omitting* NaNs with `nan_policy='omit'`; in the former case,
@@ -609,6 +611,7 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         x = xp.where(i, xp.asarray(0, dtype=x.dtype), x)
         weights = xp.where(i, xp.asarray(0, dtype=x.dtype), weights)
 
+    # Perform the mean calculation itself
     if weights is None:
         return xp.mean(x, axis=axis, keepdims=keepdims)
 
