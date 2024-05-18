@@ -4372,7 +4372,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radian, their circular mean is defined by
+    radians, their circular mean is defined by
 
     .. math::
 
@@ -4458,15 +4458,15 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radian, their circular variance is defined by
+    radians, their circular variance is defined by
 
     .. math::
 
        1 - \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right|
 
     where :math:`i` is the imaginary unit and :math:`|z|` gives the length
-    of the complex number :math:`z`.  :math:`z` in the above expression is
-    known as the `mean resultant vector`.
+    of the complex number :math:`z`.  :math:`|z|` in the above expression
+    is known as the `mean resultant length`.
 
     Parameters
     ----------
@@ -4494,7 +4494,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     Notes
     -----
     In the limit of small angles, the circular variance is close to
-    half the 'linear' variance if measured in radian.
+    half the 'linear' variance if measured in radians.
 
     References
     ----------
@@ -4552,15 +4552,15 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     Compute the circular standard deviation of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radian, their circular standard deviation is defined by
+    radians, their circular standard deviation is defined by
 
     .. math::
 
        \sqrt{ -2 \log \left| \frac{1}{n} \sum_{k=1}^n e^{i x_k} \right| }
 
     where :math:`i` is the imaginary unit and :math:`|z|` gives the length
-    of the complex number :math:`z`.  :math:`z` in the above expression is
-    known as the `mean resultant vector`.
+    of the complex number :math:`z`.  :math:`|z|` in the above expression
+    is known as the `mean resultant length`.
 
     Parameters
     ----------
