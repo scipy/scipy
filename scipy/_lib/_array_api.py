@@ -395,35 +395,40 @@ def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
 
-def get_xp_devices(xp: ModuleType) -> list[str]:
+def get_xp_devices(xp: ModuleType) -> list[str | None]:
     """Returns a list of available devices for the given namespace."""
-    devices = []
+    devices: list[str | None] = []
     if is_torch(xp):
-        devices += 'cpu'
+        devices += ['cpu']
         import torch # type: ignore[import]
         num_cuda = torch.cuda.device_count()
         for i in range(0, num_cuda):
-            devices += f'cuda:{i}'
+            devices += [f'cuda:{i}']
         if torch.backends.mps.is_available():
-            devices += 'mps'
+            devices += ['mps']
+        return devices
     elif is_cupy(xp):
         import cupy # type: ignore[import]
         num_cuda = cupy.cuda.runtime.getDeviceCount()
         for i in range(0, num_cuda):
-            devices += f'cuda:{i}'
+            devices += [f'cuda:{i}']
+        return devices
     elif is_jax(xp):
         import jax # type: ignore[import]
         num_cpu = jax.device_count(backend='cpu')
         for i in range(0, num_cpu):
-            devices += f'cpu:{i}'
+            devices += [f'cpu:{i}']
         num_gpu = jax.device_count(backend='gpu')
         for i in range(0, num_gpu):
-            devices += f'gpu:{i}'
+            devices += [f'gpu:{i}']
         num_tpu = jax.device_count(backend='tpu')
         for i in range(0, num_tpu):
-            devices += f'tpu:{i}'
+            devices += [f'tpu:{i}']
+        return devices
 
-    return devices
+    # given namespace is not known to have a list of available devices;
+    # return `[None]` so that one can use this in tests for `device=None`.
+    return [None] 
 
 
 def scipy_namespace_for(xp: ModuleType) -> ModuleType:
