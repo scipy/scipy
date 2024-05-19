@@ -1740,7 +1740,7 @@ def _(m, n, z_shape, nout):
 
     return nout * ((2 * abs(m) + 1, n + 1,) + z_shape,)
 
-def lpmn(m, n, z, diff_n = None, legacy = True):
+def lpmn(m, n, z, *, diff_n = None, legacy = True):
     """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
