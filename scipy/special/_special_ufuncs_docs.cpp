@@ -1765,7 +1765,62 @@ const char *iv_ratio_doc = R"(
 
     Internal function.
 
-    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`, where `iv`
+    is the modified Bessel function of the first kind.
+
+    Parameters
+    ----------
+    v : array_like of float
+        Order.  Must be `>= 1`.  May be `+inf` if `x` is finite.
+    x : array_like of float
+        Argument.  Must be `>= 0`.  May be `+inf` if `v` is finite.
+    out : ndarray, optional
+        Optional output array for the function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Ratio between modified Bessel functions of adjacent orders.
+        The return value is between `0` and `1`, inclusive.
+
+        Any `nan` in the input is propagated as follows:
+
+        - If `x` is `nan`, return `x`.
+        - If `x` is not `nan` and `v` is `nan`, return `v`.
+
+        If neither `x` nor `v` is `nan`, the special values are:
+
+        - If `x` and `v` are both `+inf`, set "domain" error and return `nan`.
+        - If `x < 0` or `v < 1`, set "domain" error and return `nan`.
+        - If `x == 0` and `v >= 1`, return `x`.
+        - If `x > 0` and `v == +inf`, return `0.0`.
+        - If `x == +inf` and `v == 1`, return `1.0`.
+
+    See Also
+    --------
+    iv : Compute modified Bessel functions.
+
+    Notes
+    -----
+    This function does not support complex order or argument.
+
+    The function is computed using the _Perron continued fraction_ of [1]_.
+    The continued fraction is evaluated using the "series method" of [2]_.
+    Kahan summation is used to evaluate the series.
+
+    The accuracy (in terms of relative error) is tested empirically with
+    500,000 trials; the peak relative error is `4.1e-16`, and the RMSE is
+    `0.9e-16`.
+
+    Reference
+    ---------
+    .. [1] Gautschi, W. and Slavik, J. (1978). "On the computation of
+           modified Bessel function ratios." Mathematics of Computation,
+           32(143):865-875.
+
+    .. [2] Gautschi, W. (1967). “Computational Aspects of Three-Term
+           Recurrence Relations.” SIAM Review, 9(1):24-82.
+
     )";
 
 const char *iv_ratio_c_doc = R"(
@@ -1773,7 +1828,18 @@ const char *iv_ratio_c_doc = R"(
 
     Internal function.
 
-    Return `1 - iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    Return `1 - iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`, where
+    `iv` is the modified Bessel function of the first kind.
+
+    Notes
+    -----
+    See `_iv_ratio` for details about the parameters, return value, and
+    algorithm.
+
+    The accuracy (in terms of relative error) is tested empirically with
+    500,000 trials; the peak relative error is `12.5e-16`, and the RMSE is
+    `1.9e-16`.
+
     )";
 
 const char *ive_doc = R"(
