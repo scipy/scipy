@@ -1790,6 +1790,9 @@ def lpmn(m, n, z, *, diff_n = None, legacy = True):
     """
 
     if legacy:
+        if (diff_n is not None):
+            raise ValueError('diff_n must be None if legacy is True')
+
         n = _nonneg_int_or_fail(n, 'n', strict=False)
 
         if np.iscomplexobj(z):
@@ -1889,6 +1892,9 @@ def clpmn(m, n, z, type = 3, *, diff_n = None, legacy = True):
         raise ValueError("type must be either 2 or 3.")
 
     if legacy:
+        if (diff_n is not None):
+            raise ValueError('diff_n must be None if legacy is True')
+
         m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
         out, out_jac = clpmn_all(abs(m), n, type, z, diff_n = 1)
@@ -2089,6 +2095,9 @@ def _(n, z_shape, nout):
 
 def lpn(n, z, *, diff_n = None, legacy = True):
     if legacy:
+        if (diff_n is not None):
+            raise ValueError('diff_n must be None if legacy is True')
+
         return lpn_all(n, z, diff_n = 1)
 
     if (diff_n is None):
