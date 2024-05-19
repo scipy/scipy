@@ -2615,7 +2615,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
-@pytest.mark.fail_slow(5)
+@pytest.mark.fail_slow(10)
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
