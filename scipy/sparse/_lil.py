@@ -112,13 +112,6 @@ class _lil_base(_spbase, IndexMixin):
     _getnnz.__doc__ = _spbase._getnnz.__doc__
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
-    def __str__(self):
-        val = ''
-        for i, row in enumerate(self.rows):
-            for pos, j in enumerate(row):
-                val += f"  {str((i, j))}\t{str(self.data[i][pos])}\n"
-        return val[:-1]
-
     def getrowview(self, i):
         """Returns a view of the 'i'th row (without copying).
         """

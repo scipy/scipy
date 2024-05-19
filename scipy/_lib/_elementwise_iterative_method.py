@@ -11,13 +11,16 @@
 # `scipy.optimize._bracket._bracket_minimize for finding minimization brackets,
 # `scipy.integrate._tanhsinh._tanhsinh` for numerical quadrature.
 
+import math
 import numpy as np
 from ._util import _RichResult, _call_callback_maybe_halt
+from ._array_api import array_namespace, size as xp_size
 
 _ESIGNERR = -1
 _ECONVERR = -2
 _EVALUEERR = -3
 _ECALLBACK = -4
+_EINPUTERR = -5
 _ECONVERGED = 0
 _EINPROGRESS = 1
 
@@ -69,18 +72,19 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
     `scipy.optimize._chandrupatla`.
     """
     nx = len(xs)
+    xp = array_namespace(*xs)
 
     # Try to preserve `dtype`, but we need to ensure that the arguments are at
     # least floats before passing them into the function; integers can overflow
     # and cause failure.
     # There might be benefit to combining the `xs` into a single array and
     # calling `func` once on the combined array. For now, keep them separate.
-    xas = np.broadcast_arrays(*xs, *args)  # broadcast and rename
-    xat = np.result_type(*[xa.dtype for xa in xas])
-    xat = np.float64 if np.issubdtype(xat, np.integer) else xat
+    xas = xp.broadcast_arrays(*xs, *args)  # broadcast and rename
+    xat = xp.result_type(*[xa.dtype for xa in xas])
+    xat = xp.asarray(1.).dtype if xp.isdtype(xat, "integral") else xat
     xs, args = xas[:nx], xas[nx:]
-    xs = [x.astype(xat, copy=False)[()] for x in xs]
-    fs = [np.asarray(func(x, *args)) for x in xs]
+    xs = [xp.asarray(x, dtype=xat) for x in xs]  # use copy=False when implemented
+    fs = [xp.asarray(func(x, *args)) for x in xs]
     shape = xs[0].shape
     fshape = fs[0].shape
 
@@ -89,38 +93,38 @@ def _initialize(func, xs, args, complex_ok=False, preserve_shape=None):
         def func(x, *args, shape=shape, func=func,  **kwargs):
             i = (0,)*(len(fshape) - len(shape))
             return func(x[i], *args, **kwargs)
-        shape = np.broadcast_shapes(fshape, shape)
-        xs = [np.broadcast_to(x, shape) for x in xs]
-        args = [np.broadcast_to(arg, shape) for arg in args]
+        shape = np.broadcast_shapes(fshape, shape)  # just shapes; use of NumPy OK
+        xs = [xp.broadcast_to(x, shape) for x in xs]
+        args = [xp.broadcast_to(arg, shape) for arg in args]
 
     message = ("The shape of the array returned by `func` must be the same as "
                "the broadcasted shape of `x` and all other `args`.")
     if preserve_shape is not None:  # only in tanhsinh for now
         message = f"When `preserve_shape=False`, {message.lower()}"
     shapes_equal = [f.shape == shape for f in fs]
-    if not np.all(shapes_equal):
+    if not all(shapes_equal):  # use Python all to reduce overhead
         raise ValueError(message)
 
     # These algorithms tend to mix the dtypes of the abscissae and function
     # values, so figure out what the result will be and convert them all to
     # that type from the outset.
-    xfat = np.result_type(*([f.dtype for f in fs] + [xat]))
-    if not complex_ok and not np.issubdtype(xfat, np.floating):
+    xfat = xp.result_type(*([f.dtype for f in fs] + [xat]))
+    if not complex_ok and not xp.isdtype(xfat, "real floating"):
         raise ValueError("Abscissae and function output must be real numbers.")
-    xs = [x.astype(xfat, copy=True)[()] for x in xs]
-    fs = [f.astype(xfat, copy=True)[()] for f in fs]
+    xs = [xp.asarray(x, dtype=xfat, copy=True) for x in xs]
+    fs = [xp.asarray(f, dtype=xfat, copy=True) for f in fs]
 
     # To ensure that we can do indexing, we'll work with at least 1d arrays,
     # but remember the appropriate shape of the output.
-    xs = [x.ravel() for x in xs]
-    fs = [f.ravel() for f in fs]
-    args = [arg.flatten() for arg in args]
-    return func, xs, fs, args, shape, xfat
+    xs = [xp.reshape(x, (-1,)) for x in xs]
+    fs = [xp.reshape(f, (-1,)) for f in fs]
+    args = [xp.reshape(xp.asarray(arg, copy=True), (-1,)) for arg in args]
+    return func, xs, fs, args, shape, xfat, xp
 
 
 def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
           post_func_eval, check_termination, post_termination_check,
-          customize_result, res_work_pairs, preserve_shape=False):
+          customize_result, res_work_pairs, xp, preserve_shape=False):
     """Main loop of a vectorized scalar optimization algorithm
 
     Parameters
@@ -185,82 +189,88 @@ def _loop(work, callback, shape, maxiter, func, args, dtype, pre_func_eval,
       computation on elements that have already converged.
 
     """
+    if xp is None:
+        raise NotImplementedError("Must provide xp.")
+
     cb_terminate = False
 
     # Initialize the result object and active element index array
-    n_elements = int(np.prod(shape))
-    active = np.arange(n_elements)  # in-progress element indices
-    res_dict = {i: np.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
-    res_dict['success'] = np.zeros(n_elements, dtype=bool)
-    res_dict['status'] = np.full(n_elements, _EINPROGRESS)
-    res_dict['nit'] = np.zeros(n_elements, dtype=int)
-    res_dict['nfev'] = np.zeros(n_elements, dtype=int)
+    n_elements = math.prod(shape)
+    active = xp.arange(n_elements)  # in-progress element indices
+    res_dict = {i: xp.zeros(n_elements, dtype=dtype) for i, j in res_work_pairs}
+    res_dict['success'] = xp.zeros(n_elements, dtype=xp.bool)
+    res_dict['status'] = xp.full(n_elements, _EINPROGRESS, dtype=xp.int32)
+    res_dict['nit'] = xp.zeros(n_elements, dtype=xp.int32)
+    res_dict['nfev'] = xp.zeros(n_elements, dtype=xp.int32)
     res = _RichResult(res_dict)
     work.args = args
 
     active = _check_termination(work, res, res_work_pairs, active,
-                                check_termination, preserve_shape)
+                                check_termination, preserve_shape, xp)
 
     if callback is not None:
         temp = _prepare_result(work, res, res_work_pairs, active, shape,
-                               customize_result, preserve_shape)
+                               customize_result, preserve_shape, xp)
         if _call_callback_maybe_halt(callback, temp):
             cb_terminate = True
 
-    while work.nit < maxiter and active.size and not cb_terminate and n_elements:
+    while work.nit < maxiter and xp_size(active) and not cb_terminate and n_elements:
         x = pre_func_eval(work)
 
         if work.args and work.args[0].ndim != x.ndim:
             # `x` always starts as 1D. If the SciPy function that uses
             # _loop added dimensions to `x`, we need to
             # add them to the elements of `args`.
-            dims = np.arange(x.ndim, dtype=np.int64)
-            work.args = [np.expand_dims(arg, tuple(dims[arg.ndim:]))
-                         for arg in work.args]
+            args = []
+            for arg in work.args:
+                n_new_dims = x.ndim - arg.ndim
+                new_shape = arg.shape + (1,)*n_new_dims
+                args.append(xp.reshape(arg, new_shape))
+            work.args = args
 
         x_shape = x.shape
         if preserve_shape:
-            x = x.reshape(shape + (-1,))
+            x = xp.reshape(x, (shape + (-1,)))
         f = func(x, *work.args)
-        f = np.asarray(f, dtype=dtype)
+        f = xp.asarray(f, dtype=dtype)
         if preserve_shape:
-            x = x.reshape(x_shape)
-            f = f.reshape(x_shape)
+            x = xp.reshape(x, x_shape)
+            f = xp.reshape(f, x_shape)
         work.nfev += 1 if x.ndim == 1 else x.shape[-1]
 
         post_func_eval(x, f, work)
 
         work.nit += 1
         active = _check_termination(work, res, res_work_pairs, active,
-                                    check_termination, preserve_shape)
+                                    check_termination, preserve_shape, xp)
 
         if callback is not None:
             temp = _prepare_result(work, res, res_work_pairs, active, shape,
-                                   customize_result, preserve_shape)
+                                   customize_result, preserve_shape, xp)
             if _call_callback_maybe_halt(callback, temp):
                 cb_terminate = True
                 break
-        if active.size == 0:
+        if xp_size(active) == 0:
             break
 
         post_termination_check(work)
 
     work.status[:] = _ECALLBACK if cb_terminate else _ECONVERR
     return _prepare_result(work, res, res_work_pairs, active, shape,
-                           customize_result, preserve_shape)
+                           customize_result, preserve_shape, xp)
 
 
 def _check_termination(work, res, res_work_pairs, active, check_termination,
-                       preserve_shape):
+                       preserve_shape, xp):
     # Checks termination conditions, updates elements of `res` with
     # corresponding elements of `work`, and compresses `work`.
 
     stop = check_termination(work)
 
-    if np.any(stop):
+    if xp.any(stop):
         # update the active elements of the result object with the active
         # elements for which a termination condition has been met
-        _update_active(work, res, res_work_pairs, active, stop, preserve_shape)
+        _update_active(work, res, res_work_pairs, active, stop, preserve_shape, xp)
 
         if preserve_shape:
             stop = stop[active]
@@ -271,13 +281,20 @@ def _check_termination(work, res, res_work_pairs, active, check_termination,
         if not preserve_shape:
             # compress the arrays to avoid unnecessary computation
             for key, val in work.items():
-                work[key] = val[proceed] if isinstance(val, np.ndarray) else val
+                # Need to find a better way than these try/excepts
+                # Somehow need to keep compressible numerical args separate
+                if key == 'args':
+                    continue
+                try:
+                    work[key] = val[proceed]
+                except (IndexError, TypeError, KeyError):  # not a compressible array
+                    work[key] = val
             work.args = [arg[proceed] for arg in work.args]
 
     return active
 
 
-def _update_active(work, res, res_work_pairs, active, mask, preserve_shape):
+def _update_active(work, res, res_work_pairs, active, mask, preserve_shape, xp):
     # Update `active` indices of the arrays in result object `res` with the
     # contents of the scalars and arrays in `update_dict`. When provided,
     # `mask` is a boolean array applied both to the arrays in `update_dict`
@@ -287,34 +304,45 @@ def _update_active(work, res, res_work_pairs, active, mask, preserve_shape):
 
     if mask is not None:
         if preserve_shape:
-            active_mask = np.zeros_like(mask)
+            active_mask = xp.zeros_like(mask)
             active_mask[active] = 1
             active_mask = active_mask & mask
             for key, val in update_dict.items():
-                res[key][active_mask] = (val[active_mask] if np.size(val) > 1
-                                         else val)
+                try:
+                    res[key][active_mask] = val[active_mask]
+                except (IndexError, TypeError, KeyError):
+                    res[key][active_mask] = val
         else:
             active_mask = active[mask]
             for key, val in update_dict.items():
-                res[key][active_mask] = val[mask] if np.size(val) > 1 else val
+                try:
+                    res[key][active_mask] = val[mask]
+                except (IndexError, TypeError, KeyError):
+                    res[key][active_mask] = val
     else:
         for key, val in update_dict.items():
-            if preserve_shape and not np.isscalar(val):
-                val = val[active]
+            if preserve_shape:
+                try:
+                    val = val[active]
+                except (IndexError, TypeError, KeyError):
+                    pass
             res[key][active] = val
 
 
 def _prepare_result(work, res, res_work_pairs, active, shape, customize_result,
-                    preserve_shape):
+                    preserve_shape, xp):
     # Prepare the result object `res` by creating a copy, copying the latest
     # data from work, running the provided result customization function,
     # and reshaping the data to the original shapes.
     res = res.copy()
-    _update_active(work, res, res_work_pairs, active, None, preserve_shape)
+    _update_active(work, res, res_work_pairs, active, None, preserve_shape, xp)
 
     shape = customize_result(res, shape)
 
     for key, val in res.items():
-        res[key] = np.reshape(val, shape)[()]
+        # this looks like it won't work for xp != np if val is not numeric
+        temp = xp.reshape(val, shape)
+        res[key] = temp[()] if temp.ndim == 0 else temp
+
     res['_order_keys'] = ['success'] + [i for i, j in res_work_pairs]
     return _RichResult(**res)

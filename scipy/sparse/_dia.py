@@ -98,11 +98,10 @@ class _dia_base(_data_matrix):
     def __repr__(self):
         _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
-        ndiag = self.data.shape[0]
+        d = self.data.shape[0]
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements ({ndiag} diagonals) in {fmt} format>"
+            f"<{fmt} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements ({d} diagonals) and shape {self.shape}>"
         )
 
     def _data_mask(self):
