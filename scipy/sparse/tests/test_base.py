@@ -43,8 +43,6 @@ from scipy.sparse.linalg import splu, expm, inv
 from scipy._lib.decorator import decorator
 from scipy._lib._util import ComplexWarning
 
-import pytest
-
 
 IS_COLAB = ('google.colab' in sys.modules)
 
