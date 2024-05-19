@@ -225,6 +225,8 @@ using cuda::std::uint64_t;
 
 #endif
 
+namespace special {
+
 template <typename T>
 struct remove_complex {
     using type = T;
@@ -237,3 +239,5 @@ struct remove_complex<std::complex<T>> {
 
 template <typename T>
 using remove_complex_t = typename remove_complex<T>::type;
+
+} // namespace special

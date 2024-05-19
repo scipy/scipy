@@ -74,10 +74,10 @@ using func_FF_F_t = cfloat (*)(cfloat, cfloat);
 using func_DD_D_t = cdouble (*)(cdouble, cdouble);
 using func_fF_F_t = cfloat (*)(float, cfloat);
 using func_dD_D_t = cdouble (*)(double, cdouble);
-using func_lf_f_t = float (*)(long, float);
-using func_ld_d_t = double (*)(long, double);
-using func_lF_F_t = cfloat (*)(long, cfloat);
-using func_lD_D_t = cdouble (*)(long, cdouble);
+using func_lf_f_t = float (*)(long int, float);
+using func_ld_d_t = double (*)(long int, double);
+using func_lF_F_t = cfloat (*)(long int, cfloat);
+using func_lD_D_t = cdouble (*)(long int, cdouble);
 
 // 2 inputs, 2 outputs
 using func_qf_ff_t = void (*)(long long int, float, float &, float &);
@@ -90,18 +90,18 @@ using func_qd_ddd_t = void (*)(long long int, double, double &, double &, double
 // 2 inputs, 2 outputs
 using func_ff_ff_t = void (*)(float, float, float &, float &);
 using func_dd_dd_t = void (*)(double, double, double &, double &);
-using func_lf_ff_t = void (*)(long, float, float &, float &);
-using func_ld_dd_t = void (*)(long, double, double &, double &);
+using func_lf_ff_t = void (*)(long int, float, float &, float &);
+using func_ld_dd_t = void (*)(long int, double, double &, double &);
 
 // 2 inputs, 3 outputs
-using func_lf_fff_t = void (*)(long, float, float &, float &, float &);
-using func_ld_ddd_t = void (*)(long, double, double &, double &, double &);
+using func_lf_fff_t = void (*)(long int, float, float &, float &, float &);
+using func_ld_ddd_t = void (*)(long int, double, double &, double &, double &);
 
 // 3 inputs, 1 output
 using func_fff_f_t = float (*)(float, float, float);
 using func_ddd_d_t = double (*)(double, double, double);
-using func_Flf_F_t = cfloat (*)(cfloat, long, float);
-using func_Dld_D_t = cdouble (*)(cdouble, long, double);
+using func_Flf_F_t = cfloat (*)(cfloat, long int, float);
+using func_Dld_D_t = cdouble (*)(cdouble, long int, double);
 
 // 3 inputs, 2 outputs
 using func_fff_ff_t = void (*)(float, float, float, float &, float &);
