@@ -67,6 +67,14 @@ struct legendre_p_diff_callback {
     }
 };
 
+/**
+ * Compute the Legendre polynomial of degree n.
+ *
+ * @param n degree of the polynomial
+ * @param z argument of the polynomial, either real or complex
+ *
+ * @return value of the polynomial
+ */
 template <typename T>
 T legendre_p(int n, T z) {
     return legendre_p(n, z, [](int j, T z, T p) {});
@@ -177,11 +185,11 @@ T assoc_legendre_p_diag(int m, int type, T z) {
  * @return value of the polynomial
  */
 template <typename T, typename Callable, typename... Args>
-T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...args) {
+T assoc_legendre_p(int n, int m, int type, T z, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
-            callback(j, m, type, x, 0, 0, std::forward<Args>(args)...);
+            callback(j, m, type, z, 0, 0, std::forward<Args>(args)...);
         }
 
         return 0;
@@ -189,26 +197,26 @@ T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...arg
 
     bool m_odd = m_abs % 2;
     if (m_odd) {
-        callback(0, m, type, x, 0, 0, std::forward<Args>(args)...);
+        callback(0, m, type, z, 0, 0, std::forward<Args>(args)...);
     }
     for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        callback(j - 1, m, type, x, 0, 0, std::forward<Args>(args)...);
-        callback(j, m, type, x, 0, 0, std::forward<Args>(args)...);
+        callback(j - 1, m, type, z, 0, 0, std::forward<Args>(args)...);
+        callback(j, m, type, z, 0, 0, std::forward<Args>(args)...);
     }
 
-    T p = assoc_legendre_p_diag(m, type, x);
-    callback(m_abs, m, type, x, p, 0, std::forward<Args>(args)...);
+    T p = assoc_legendre_p_diag(m, type, z);
+    callback(m_abs, m, type, z, p, 0, std::forward<Args>(args)...);
 
     if (m_abs != n) {
         T p_prev = p;
-        p = T(2 * (m_abs + 1) - 1) * x * p_prev / T(m_abs + 1 - m);
-        callback(m_abs + 1, m, type, x, p, p_prev, std::forward<Args>(args)...);
+        p = T(2 * (m_abs + 1) - 1) * z * p_prev / T(m_abs + 1 - m);
+        callback(m_abs + 1, m, type, z, p, p_prev, std::forward<Args>(args)...);
 
         for (int j = m_abs + 2; j <= n; ++j) {
             T p_prev_prev = p_prev;
             p_prev = p;
-            p = (T(2 * j - 1) * x * p_prev - T(m + j - 1) * p_prev_prev) / T(j - m);
-            callback(j, m, type, x, p, p_prev, std::forward<Args>(args)...);
+            p = (T(2 * j - 1) * z * p_prev - T(m + j - 1) * p_prev_prev) / T(j - m);
+            callback(j, m, type, z, p, p_prev, std::forward<Args>(args)...);
         }
     }
 
@@ -454,9 +462,19 @@ struct assoc_legendre_p_diff_callback<T, 2> {
     }
 };
 
+/**
+ * Compute the associated Legendre polynomial of degree n and order m.
+ *
+ * @param n degree of the polynomial
+ * @param m order of the polynomial
+ * @param type specifies the branch cut of the polynomial, either 1, 2, or 3
+ * @param z argument of the polynomial, either real or complex
+ *
+ * @return value of the polynomial
+ */
 template <typename T>
-T assoc_legendre_p(int n, int m, int type, T x) {
-    return assoc_legendre_p(n, m, type, x, [](int j, int i, int type, T x, T value, T value_prev) {});
+T assoc_legendre_p(int n, int m, int type, T z) {
+    return assoc_legendre_p(n, m, type, z, [](int j, int i, int type, T x, T p, T p_prev) {});
 }
 
 template <typename T>
