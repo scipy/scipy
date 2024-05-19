@@ -45,10 +45,8 @@ class multiufunc:
 
         new_dims = tuple(len(out_shape) - len(b_shape) for out_shape in out_shapes)
 
-        out_src_axes = tuple(range(new_dim))
-        out_dst_axes = tuple(range(-new_dim, 0))
-
-        out_ufunc = tuple(np.moveaxis(out, out_src_axes, out_dst_axes) for out, new_dim in zip(out, new_dims))
+        out_ufunc = tuple(np.moveaxis(out, tuple(range(new_dim)), tuple(range(-new_dim, 0)))
+            for out, new_dim in zip(out, new_dims))
         ufunc(*args, out = out_ufunc)
 
         if (len(out) == 1):
