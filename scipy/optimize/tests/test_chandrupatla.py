@@ -6,8 +6,7 @@ from scipy import stats, special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_equal,
-                                   xp_assert_less, xp_minimum, is_numpy, is_cupy,
-                                   is_torch)
+                                   xp_assert_less, xp_minimum, is_numpy, is_cupy)
 
 from scipy.optimize._chandrupatla import (_chandrupatla_minimize,
                                           _chandrupatla as _chandrupatla_root)
@@ -567,9 +566,8 @@ class TestChandrupatla(TestScalarRootFinders):
         assert xp.all((res.x[finite] == res.xl[finite])
                       | (res.x[finite] == res.xr[finite]))
 
-        # Torch and NumPy don't solve to precisely the same accuracy
-        # on all machines. That's OK.
-        atol = 1e-9 if is_torch(xp) else 1e-15
+        # PyTorch and CuPy don't solve to the same accuracy as NumPy - that's OK.
+        atol = 1e-15 if is_numpy(xp) else 1e-9
 
         ref_fl = [ref.fl for ref in refs]
         ref_fl = xp.reshape(xp.asarray(ref_fl, dtype=dtype), shape)

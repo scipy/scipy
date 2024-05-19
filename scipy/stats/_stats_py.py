@@ -4842,8 +4842,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
-    x = xp_moveaxis_to_end(x, axis, xp)
-    y = xp_moveaxis_to_end(y, axis, xp)
+    x = xp_moveaxis_to_end(x, axis, xp=xp)
+    y = xp_moveaxis_to_end(y, axis, xp=xp)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)
@@ -4942,7 +4942,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     one = xp.asarray(1, dtype=dtype)
     # `clip` only recently added to array API, so it's not yet available in
     # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(xp_clip(r, -one, one, xp))
+    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
