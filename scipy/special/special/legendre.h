@@ -1,7 +1,5 @@
 #pragma once
 
-#include <iostream>
-
 #include "config.h"
 #include "error.h"
 #include "gamma.h"
@@ -13,30 +11,30 @@ namespace special {
  *
  * @param n degree of the polynomial
  * @param z argument of the polynomial, either real or complex
- * @param callback a function to be called like callback(j, z, p, args...) for 0 <= j <= n
+ * @param callback a function to be called as callback(j, z, p, args...) for 0 <= j <= n
  * @param args arguments to forward to the callback
  *
  * @return value of the polynomial
  */
 template <typename T, typename Callable, typename... Args>
 T legendre_p(int n, T z, Callable callback, Args &&...args) {
-    T p = 1;
-    callback(0, z, p, std::forward<Args>(args)...);
+    T res = 1;
+    callback(0, z, res, std::forward<Args>(args)...);
 
     if (n > 0) {
-        T p_prev = p;
-        p = z;
-        callback(1, z, p, std::forward<Args>(args)...);
+        T res_prev = res;
+        res = z;
+        callback(1, z, res, std::forward<Args>(args)...);
 
         for (int j = 2; j <= n; ++j) {
-            T p_prev_prev = p_prev;
-            p_prev = p;
-            p = (T(2 * j - 1) * z * p_prev - T(j - 1) * p_prev_prev) / T(j);
-            callback(j, z, p, std::forward<Args>(args)...);
+            T res_prev_prev = res_prev;
+            res_prev = res;
+            res = (T(2 * j - 1) * z * res_prev - T(j - 1) * res_prev_prev) / T(j);
+            callback(j, z, res, std::forward<Args>(args)...);
         }
     }
 
-    return p;
+    return res;
 }
 
 template <typename T, size_t N>
@@ -80,6 +78,14 @@ T legendre_p(int n, T z) {
     return legendre_p(n, z, [](int j, T z, T p) {});
 }
 
+/**
+ * Compute the Legendre polynomial of degree n.
+ *
+ * @param n degree of the polynomial
+ * @param z argument of the polynomial, either real or complex
+ * @param res value of the polynomial
+ * @param res_jac value of the polynomial first derivative
+ */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac) {
     legendre_p(n, z, legendre_p_diff_callback<T, 1>(), [&res, &res_jac](int j, T z, const T(&p)[2]) {
@@ -88,6 +94,15 @@ void legendre_p(int n, T z, T &res, T &res_jac) {
     });
 }
 
+/**
+ * Compute the Legendre polynomial of degree n.
+ *
+ * @param n degree of the polynomial
+ * @param z argument of the polynomial, either real or complex
+ * @param res value of the polynomial
+ * @param res_jac value of the polynomial first derivative
+ * @param res_hess value of the polynomial second derivative
+ */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
     legendre_p(n, z, legendre_p_diff_callback<T, 2>(), [&res, &res_jac, &res_hess](int j, T z, const T(&p)[3]) {
@@ -100,9 +115,9 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
 /**
  * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
  *
- * @param n largest degree of the polynomials
  * @param z argument of the polynomials, either real or complex
- * @param res a view into the output with element type T and size n + 1
+ * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
+ *            polynomial
  */
 template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
@@ -111,6 +126,14 @@ void legendre_p_all(T z, OutputVec res) {
     legendre_p(n, z, [res](int j, T z, T p) { res(j) = p; });
 }
 
+/**
+ * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
+ *
+ * @param z argument of the polynomials, either real or complex
+ * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
+ *            polynomial
+ * @param res_jac same as res, but for the polynomial first derivatives
+ */
 template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     int n = res.extent(0) - 1;
@@ -121,6 +144,15 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     });
 }
 
+/**
+ * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
+ *
+ * @param z argument of the polynomials, either real or complex
+ * @param res a view into a multidimensional array with element type T and size n + 1 to store the value of each
+ *            polynomial
+ * @param res_jac same as res, but for the polynomial first derivatives
+ * @param res_hess same as res, but for the polynomial second derivatives
+ */
 template <typename T, typename OutputVec1, typename OutputVec2, typename OutputVec3>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
     int n = res.extent(0) - 1;
@@ -132,6 +164,13 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     });
 }
 
+/**
+ * Compute the associated Legendre polynomial of degree n and order n.
+ *
+ * We need to be careful with complex arithmetic, in particular the square roots
+ * should not be modified. This is because the sign bit of a real or imaginary part,
+ * even if it is equal to zero, can alter the branch cut.
+ */
 template <typename T>
 T assoc_legendre_p_diag(int m, int type, T z) {
     int m_abs = std::abs(m);
@@ -144,21 +183,19 @@ T assoc_legendre_p_diag(int m, int type, T z) {
         type_sign = 1;
     }
 
-    // need to take care with complex arithmetic, due to signed zeros and sqrt(0j) != sqrt(-0j)
     T res = 1;
     if (m_odd) {
         if (type == 3) {
-            res *= std::sqrt(z * z - T(1));
+            res *= std::sqrt(z * z - T(1)); // do not modify, see function comment
             if (std::real(z) < 0) {
                 res = -res;
             }
         } else {
-            res *= -std::sqrt(T(1) - z * z);
+            res *= -std::sqrt(T(1) - z * z); // do not modify, see function comment
         }
     }
 
-    // other square roots can be avoided if each iteration increments by 2
-    for (int i = m_odd + 1; i <= m_abs; i += 2) {
+    for (int i = m_odd + 1; i <= m_abs; i += 2) { // other square roots can be avoided if each iteration increments by 2
         res *= type_sign * T((2 * i - 1) * (2 * i + 1)) * (T(1) - z * z);
     }
 
@@ -224,35 +261,35 @@ T assoc_legendre_p(int n, int m, int type, T z, Callable callback, Args &&...arg
 }
 
 template <typename T>
-T assoc_legendre_p_jac_diag(int m, int type, T x) {
+T assoc_legendre_p_jac_diag(int m, int type, T z) {
     if (m == 0) {
         return 0;
     }
 
     if (m == 1) {
         if (type == 3) {
-            T res = x / std::sqrt(x * x - T(1));
-            if (std::real(x) < 0) {
+            T res = z / std::sqrt(z * z - T(1));
+            if (std::real(z) < 0) {
                 res = -res;
             }
 
             return res;
         }
 
-        return x / std::sqrt(T(1) - x * x);
+        return z / std::sqrt(T(1) - z * z);
     }
 
     if (m == -1) {
         if (type == 3) {
-            T res = x / (T(2) * std::sqrt(x * x - T(1)));
-            if (std::real(x) < 0) {
+            T res = z / (T(2) * std::sqrt(z * z - T(1)));
+            if (std::real(z) < 0) {
                 res = -res;
             }
 
             return res;
         }
 
-        return -x / (T(2) * std::sqrt(T(1) - x * x));
+        return -z / (T(2) * std::sqrt(T(1) - z * z));
     }
 
     T type_sign;
@@ -263,10 +300,10 @@ T assoc_legendre_p_jac_diag(int m, int type, T x) {
     }
 
     if (m < 0) {
-        return type_sign * x * assoc_legendre_p_diag(m + 2, type, x) / T(4 * (m + 1));
+        return type_sign * z * assoc_legendre_p_diag(m + 2, type, z) / T(4 * (m + 1));
     }
 
-    return -type_sign * T((4 * (m - 2) * m + 3) * m) * x * assoc_legendre_p_diag(m - 2, type, x);
+    return -type_sign * T((4 * (m - 2) * m + 3) * m) * z * assoc_legendre_p_diag(m - 2, type, z);
 }
 
 template <typename T>
