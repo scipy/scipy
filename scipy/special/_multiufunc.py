@@ -5,7 +5,7 @@ class multiufunc:
         self.ufuncs = ufuncs
         self._resolve_out_shapes = resolve_out_shapes
         self._resolve_ufunc = resolve_ufunc
-        self.force_out_dtypes_complex = force_out_complex
+        self.force_out_complex = force_out_complex
 
     def resolve_ufunc(self, func):
         self._resolve_ufunc = func
@@ -36,7 +36,7 @@ class multiufunc:
 
             out_dtypes = ufunc.nout * (out_dtype,)
 
-        if self.force_out_dtypes_complex:
+        if self.force_out_complex:
             out_dtypes = tuple(np.result_type(1j, out_dtype) for out_dtype in out_dtypes)
 
         b_shape = np.broadcast_shapes(*arg_shapes)
