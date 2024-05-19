@@ -234,8 +234,6 @@ class TestLegendreFunctions:
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
     def test_lpmn_all_limits(self, m_max, n_max, x):
-        rng = np.random.default_rng(1234)
-
         p, p_jac = special.lpmn_all(m_max, n_max, x, diff_n = 1)
 
         n = np.arange(n_max + 1)
