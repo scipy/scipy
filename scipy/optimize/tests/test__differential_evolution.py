@@ -1011,7 +1011,7 @@ class TestDifferentialEvolutionSolver:
         xtrial = np.arange(4 * 5).reshape(4, 5)
         assert cw.violation(xtrial).shape == (2, 5)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 

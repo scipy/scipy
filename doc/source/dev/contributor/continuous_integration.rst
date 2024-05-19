@@ -132,7 +132,7 @@ Adjustment options include:
 - For truly critical tests that are unavoidably slow, add an exception
   using ``pytest.mark.fail_slow``.
 
-See `devpy-test`_ for more information about working with slow tests
+See :ref:`devpy-test` for more information about working with slow tests
 locally.
 
 Wheel builds
