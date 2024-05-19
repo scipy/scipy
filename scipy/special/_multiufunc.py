@@ -42,7 +42,8 @@ class multiufunc:
                 for ufunc_out_dtype in ufunc_out_dtypes)
 
         b = np.broadcast(*ufunc_args)
-        ufunc_out_new_dims = tuple(len(out_shape) - b.ndim for out_shape in ufunc_out_shapes)
+        ufunc_out_new_dims = tuple(len(ufunc_out_shape) - b.ndim
+            for ufunc_out_shape in ufunc_out_shapes)
 
         out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
             for ufunc_out_shape, ufunc_out_dtype in zip(ufunc_out_shapes, ufunc_out_dtypes))
