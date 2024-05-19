@@ -9,12 +9,14 @@
 namespace special {
 
 /**
- * Compute the Legendre polynomials of degree n and argument z.
+ * Compute the Legendre polynomial of degree n.
  *
- * @param[in] n degree of the polynomial.
- * @param[in] z the argument, a floating-point value
- * @param[in] callback a function to be called like callback(j, z, p, args...) for j = 0, j = 1, ..., j = n
- * @param[in] args arguments to forward to the callback
+ * @param n degree of the polynomial
+ * @param z argument of the polynomial, either real or complex
+ * @param callback a function to be called like callback(j, z, p, args...) for 0 <= j <= n
+ * @param args arguments to forward to the callback
+ *
+ * @return value of the polynomial
  */
 template <typename T, typename Callable, typename... Args>
 T legendre_p(int n, T z, Callable callback, Args &&...args) {
@@ -87,6 +89,13 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
     });
 }
 
+/**
+ * Compute all Legendre polynomials of degree j, where 0 <= j <= n.
+ *
+ * @param n largest degree of the polynomials
+ * @param z argument of the polynomials, either real or complex
+ * @param res a view into the output with element type T and size n + 1
+ */
 template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
@@ -114,21 +123,6 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
         res_hess(j) = p[2];
     });
 }
-
-// Translated into C++ by SciPy developers in 2024.
-// Original comments appear below.
-//
-// =====================================================
-// Purpose: Compute the associated Legendre functions
-//          Pmn(x) and their derivatives Pmn'(x) for
-//          real argument
-// Input :  x  --- Argument of Pmn(x)
-//          m  --- Order of Pmn(x),  m = 0,1,2,...,n
-//          n  --- Degree of Pmn(x), n = 0,1,2,...,N
-//          mm --- Physical dimension of PM and PD
-// Output:  PM(m,n) --- Pmn(x)
-//          PD(m,n) --- Pmn'(x)
-// =====================================================
 
 template <typename T>
 T assoc_legendre_p_diag(int m, int type, T z) {
@@ -170,6 +164,18 @@ T assoc_legendre_p_diag(int m, int type, T z) {
     return res;
 }
 
+/**
+ * Compute the associated Legendre polynomial of degree n and order m.
+ *
+ * @param n degree of the polynomial
+ * @param m order of the polynomial
+ * @param type specifies the branch cut of the polynomial, either 1, 2, or 3
+ * @param z argument of the polynomial, either real or complex
+ * @param callback a function to be called like callback(j, m, type, z, p, args...) for 0 <= j <= n
+ * @param args arguments to forward to the callback
+ *
+ * @return value of the polynomial
+ */
 template <typename T, typename Callable, typename... Args>
 T assoc_legendre_p(int n, int m, int type, T x, Callable callback, Args &&...args) {
     int m_abs = std::abs(m);
@@ -476,6 +482,15 @@ void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac, T &res_he
     );
 }
 
+/**
+ * Compute all associated Legendre polynomials of degree j and order i, where 0 <= j <= n and -m <= i <= m.
+ *
+ * @param type specifies the branch cut of the polynomial, either 1, 2, or 3
+ * @param z argument of the polynomial, either real or complex
+ * @param res a view into the output with element type T and extents (2 * m + 1, n + 1)
+ *
+ * @return value of the polynomial
+ */
 template <typename T, typename OutputMat>
 void assoc_legendre_p_all(int type, T x, OutputMat res) {
     int m = (res.extent(0) - 1) / 2;
