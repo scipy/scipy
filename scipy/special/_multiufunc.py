@@ -1,11 +1,12 @@
 import numpy as np
 
 class multiufunc:
-    def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None, force_out_complex = False):
+    def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None,
+                 force_out_complex = False):
         self.ufuncs = ufuncs
         self._resolve_out_shapes = resolve_out_shapes
         self._resolve_ufunc = resolve_ufunc
-        self.force_out_complex = force_out_complex
+        self._force_out_complex = force_out_complex
 
     def resolve_ufunc(self, func):
         self._resolve_ufunc = func
@@ -37,7 +38,7 @@ class multiufunc:
 
             ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
-        if self.force_out_complex:
+        if self._force_out_complex:
             ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype)
                 for ufunc_out_dtype in ufunc_out_dtypes)
 

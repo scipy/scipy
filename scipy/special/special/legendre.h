@@ -216,7 +216,7 @@ T assoc_legendre_p_diag(int m, int type, T z) {
  * @param m order of the polynomial
  * @param type specifies the branch cut of the polynomial, either 1, 2, or 3
  * @param z argument of the polynomial, either real or complex
- * @param callback a function to be called like callback(j, m, type, z, p, args...) for 0 <= j <= n
+ * @param callback a function to be called as callback(j, m, type, z, p, p_prev, args...) for 0 <= j <= n
  * @param args arguments to forward to the callback
  *
  * @return value of the polynomial
