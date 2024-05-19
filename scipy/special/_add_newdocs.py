@@ -11838,7 +11838,6 @@ add_newdoc("_stirling2_inexact",
     Internal function, do not use.
     """)
 
-<<<<<<< HEAD
 add_newdoc(
     "_beta_pdf",
     r"""
