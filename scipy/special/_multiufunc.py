@@ -20,8 +20,9 @@ class multiufunc:
 
         ufunc_args = args[-ufunc.nin:] # array arguments to be passed to the ufunc
 
-        ufunc_arg_shapes = tuple(np.shape(arg) for arg in ufunc_args)
-        ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin], *ufunc_arg_shapes, ufunc.nout)
+        ufunc_arg_shapes = tuple(np.shape(ufunc_arg) for ufunc_arg in ufunc_args)
+        ufunc_out_shapes = self._resolve_out_shapes(*args[:-ufunc.nin], *ufunc_arg_shapes,
+            ufunc.nout)
 
         ufunc_arg_dtypes = tuple(arg.dtype if hasattr(arg, 'dtype') else np.dtype(type(arg)) for arg in ufunc_args)
         if hasattr(ufunc, 'resolve_dtypes'):
@@ -36,16 +37,17 @@ class multiufunc:
             ufunc_out_dtypes = ufunc.nout * (ufunc_out_dtype,)
 
         if self.force_out_complex:
-            ufunc_out_dtypes = tuple(np.result_type(1j, out_dtype) for out_dtype in ufunc_out_dtypes)
+            ufunc_out_dtypes = tuple(np.result_type(1j, ufunc_out_dtype) for ufunc_out_dtype in ufunc_out_dtypes)
 
         b = np.broadcast(*ufunc_args)
-        out = tuple(np.empty(out_shape, dtype = out_dtype) for out_shape, out_dtype in zip(ufunc_out_shapes, ufunc_out_dtypes))
+        ufunc_out_new_dims = tuple(len(out_shape) - b.ndim for out_shape in ufunc_out_shapes)
 
-        new_dims = tuple(len(out_shape) - b.ndim for out_shape in ufunc_out_shapes)
+        out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
+            for ufunc_out_shape, ufunc_out_dtype in zip(ufunc_out_shapes, ufunc_out_dtypes))
 
-        out_ufunc = tuple(np.moveaxis(out, tuple(range(new_dim)), tuple(range(-new_dim, 0)))
-            for out, new_dim in zip(out, new_dims))
-        ufunc(*ufunc_args, out = out_ufunc)
+        ufunc_out = tuple(np.moveaxis(out, tuple(range(new_dim)), tuple(range(-new_dim, 0)))
+            for out, new_dim in zip(out, ufunc_out_new_dims))
+        ufunc(*ufunc_args, out = ufunc_out)
 
         if (len(out) == 1):
             out, = out
