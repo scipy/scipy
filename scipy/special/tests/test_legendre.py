@@ -266,11 +266,13 @@ class TestLegendreFunctions:
 
     @pytest.mark.parametrize("shape", [(1000,), (4, 9), (3, 5, 7)])
     @pytest.mark.parametrize("type", [2, 3])
-    @pytest.mark.parametrize("z_min, z_max", [(-10 - 10j, 10 + 10j), (-1, 1), (-10j, 10j)])
+    @pytest.mark.parametrize("z_min, z_max", [(-10 - 10j, 10 + 10j),
+        (-1, 1), (-10j, 10j)])
     def test_clpmn_all_specific(self, shape, type, z_min, z_max):
         rng = np.random.default_rng(1234)
 
-        z = rng.uniform(z_min.real, z_max.real, shape) + 1j * rng.uniform(z_min.imag, z_max.imag, shape)
+        z = rng.uniform(z_min.real, z_max.real, shape) + \
+            1j * rng.uniform(z_min.imag, z_max.imag, shape)
 
         p, p_jac = special.clpmn_all(4, 4, type, z, diff_n = 1)
 
