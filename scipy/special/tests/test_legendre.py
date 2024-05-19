@@ -281,7 +281,8 @@ class TestLegendreFunctions:
 
         np.testing.assert_allclose(p_jac[0], pow(x, n + 1) * n * (n + 1) / 2)
         np.testing.assert_allclose(p_jac[1], np.where(n >= 1, pow(x, n) * np.inf, 0))
-        np.testing.assert_allclose(p_jac[2], np.where(n >= 2, -pow(x, n + 1) * (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
+        np.testing.assert_allclose(p_jac[2], np.where(n >= 2, -pow(x, n + 1) *
+            (n + 2) * (n + 1) * n * (n - 1) / 4, 0))
         np.testing.assert_allclose(p_jac[-2], np.where(n >= 2, -pow(x, n + 1) / 4, 0))
         np.testing.assert_allclose(p_jac[-1], np.where(n >= 1, -pow(x, n) * np.inf, 0))
 
