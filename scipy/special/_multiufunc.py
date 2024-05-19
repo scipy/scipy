@@ -48,8 +48,8 @@ class multiufunc:
         out = tuple(np.empty(ufunc_out_shape, dtype = ufunc_out_dtype)
             for ufunc_out_shape, ufunc_out_dtype in zip(ufunc_out_shapes, ufunc_out_dtypes))
 
-        ufunc_out = tuple(np.moveaxis(out, tuple(range(new_dim)), tuple(range(-new_dim, 0)))
-            for out, new_dim in zip(out, ufunc_out_new_dims))
+        ufunc_out = tuple(np.moveaxis(out, tuple(range(axis)), tuple(range(-axis, 0)))
+            for out, axis in zip(out, ufunc_out_new_dims))
         ufunc(*ufunc_args, out = ufunc_out)
 
         if (len(out) == 1):
