@@ -22,9 +22,10 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size,
     numpy as np_compat,
+    device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size', 'device']
 
 
 # To enable array API and strict array-like input validation
@@ -228,6 +229,9 @@ def is_cupy(xp: ModuleType) -> bool:
 def is_torch(xp: ModuleType) -> bool:
     return xp.__name__ in ('torch', 'scipy._lib.array_api_compat.torch')
 
+def is_jax(xp):
+    return xp.__name__ in ('jax.numpy', 'jax.experimental.array_api')
+
 
 def _strict_check(actual, desired, xp,
                   check_namespace=True, check_dtype=True, check_shape=True):
@@ -302,6 +306,7 @@ def xp_assert_equal(actual, desired, check_namespace=True, check_dtype=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=0, atol=0, equal_nan=True,
                                        check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_array_equal(actual, desired, err_msg=err_msg)
 
 
@@ -329,6 +334,7 @@ def xp_assert_close(actual, desired, rtol=None, atol=0, check_namespace=True,
         err_msg = None if err_msg == '' else err_msg
         return xp.testing.assert_close(actual, desired, rtol=rtol, atol=atol,
                                        equal_nan=True, check_dtype=False, msg=err_msg)
+    # JAX uses `np.testing`
     return np.testing.assert_allclose(actual, desired, rtol=rtol,
                                       atol=atol, err_msg=err_msg)
 
@@ -348,6 +354,7 @@ def xp_assert_less(actual, desired, check_namespace=True, check_dtype=True,
             actual = actual.cpu()
         if desired.device.type != 'cpu':
             desired = desired.cpu()
+    # JAX uses `np.testing`
     return np.testing.assert_array_less(actual, desired,
                                         err_msg=err_msg, verbose=verbose)
 
@@ -386,6 +393,63 @@ def xp_unsupported_param_msg(param: Any) -> str:
 
 def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
+
+
+def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
+    """Returns a list of available devices for the given namespace."""
+    devices: list[str] = []
+    if is_torch(xp):
+        devices += ['cpu']
+        import torch # type: ignore[import]
+        num_cuda = torch.cuda.device_count()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        if torch.backends.mps.is_available():
+            devices += ['mps']
+        return devices
+    elif is_cupy(xp):
+        import cupy # type: ignore[import]
+        num_cuda = cupy.cuda.runtime.getDeviceCount()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        return devices
+    elif is_jax(xp):
+        import jax # type: ignore[import]
+        num_cpu = jax.device_count(backend='cpu')
+        for i in range(0, num_cpu):
+            devices += [f'cpu:{i}']
+        num_gpu = jax.device_count(backend='gpu')
+        for i in range(0, num_gpu):
+            devices += [f'gpu:{i}']
+        num_tpu = jax.device_count(backend='tpu')
+        for i in range(0, num_tpu):
+            devices += [f'tpu:{i}']
+        return devices
+
+    # given namespace is not known to have a list of available devices;
+    # return `[None]` so that one can use this in tests for `device=None`.
+    return [None] 
+
+
+def scipy_namespace_for(xp: ModuleType) -> ModuleType:
+    """
+    Return the `scipy` namespace for alternative backends, where it exists,
+    such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
+
+    Default: return `scipy` (this package).
+    """
+
+
+    if is_cupy(xp):
+        import cupyx  # type: ignore[import-not-found]
+        return cupyx.scipy
+
+    if is_jax(xp):
+        import jax  # type: ignore[import-not-found]
+        return jax.scipy
+
+    import scipy
+    return scipy
 
 
 # temporary substitute for xp.minimum, which is not yet in all backends

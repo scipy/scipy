@@ -5,9 +5,8 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)  # noqa: F401
+                   arange, sort, amin, amax, sqrt, array,
+                   pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -4424,12 +4423,9 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
-    res = xp.atan2(sin_sum, cos_sum)
+    res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
 
-    res = xp.asarray(res)
-    res[res < 0] += 2*xp.pi
     res = res[()] if res.ndim == 0 else res
-
     return res*(high - low)/2.0/xp.pi + low
 
 

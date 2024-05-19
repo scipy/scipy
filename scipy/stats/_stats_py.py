@@ -68,14 +68,8 @@ from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, xp_moveaxis_to_end)
+                                   xp_clip, xp_moveaxis_to_end, xp_sign)
 from scipy._lib.array_api_compat import size as xp_size
-
-# In __all__ but deprecated for removal in SciPy 1.13.0
-from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (  # noqa: F401
-    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
-)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -1805,6 +1799,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     hypothesis [4]_.
 
     """
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
+
     n = a.shape[axis]
     if n < 5:
         raise ValueError(
@@ -1818,25 +1815,30 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
-    x = (b2-E) / np.sqrt(varb2)  # [1]_ Eq. 4
+    x = (b2-E) / varb2**0.5  # [1]_ Eq. 4
     # [1]_ Eq. 2:
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
-                                                        (n*(n-2)*(n-3)))
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * ((6.0*(n+3)*(n+5))
+                                                 / (n*(n-2)*(n-3)))**0.5
     # [1]_ Eq. 3:
-    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + (1+4.0/(sqrtbeta1**2))**0.5)
     term1 = 1 - 2/(9.0*A)
-    denom = 1 + x*np.sqrt(2/(A-4.0))
-    term2 = np.sign(denom) * np.where(denom == 0.0, np.nan,
-                                      np.power((1-2.0/A)/np.abs(denom), 1/3.0))
-    if np.any(denom == 0):
+    denom = 1 + x * (2/(A-4.0))**0.5
+    NaN = _get_nan(x, xp=xp)
+    term2 = xp_sign(denom) * xp.where(denom == 0.0, NaN,
+                                      ((1-2.0/A)/xp.abs(denom))**(1/3))
+    if xp.any(denom == 0):
         msg = ("Test statistic not defined in some cases due to division by "
                "zero. Return nan in that case...")
         warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
-    Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
+    Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
 
-    pvalue = _get_pvalue(Z, distributions.norm, alternative)
-    return KurtosistestResult(Z[()], pvalue[()])
+    Z_np = np.asarray(Z)
+    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return KurtosistestResult(Z, pvalue)
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -1995,7 +1997,14 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
+    xp = array_namespace(k2)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, 2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return NormaltestResult(k2, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2143,23 +2152,29 @@ def jarque_bera(x, *, axis=None):
     hypothesis [4]_.
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     if axis is None:
-        x = x.ravel()
+        x = xp.reshape(x, (-1,))
         axis = 0
 
     n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean(axis=axis, keepdims=True)
+    mu = xp.mean(x, axis=axis, keepdims=True)
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    statistic = n / 6 * (s**2 + k**2 / 4)
-    pvalue = distributions.chi2.sf(statistic, df=2)
+    k2 = n / 6 * (s**2 + k**2 / 4)
 
-    return SignificanceResult(statistic, pvalue)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, df=2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return SignificanceResult(k2, pvalue)
 
 
 #####################################

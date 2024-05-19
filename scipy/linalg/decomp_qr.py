@@ -6,7 +6,7 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'qr', 'qr_multiply', 'rq', 'get_lapack_funcs', 'safecall'
+    'qr', 'qr_multiply', 'rq', 'get_lapack_funcs'
 ]
 
 

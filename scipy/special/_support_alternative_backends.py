@@ -3,7 +3,10 @@ import sys
 import functools
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_cupy, is_torch, is_numpy
+import scipy
+from scipy._lib._array_api import (
+    array_namespace, scipy_namespace_for, is_numpy, is_torch
+)
 from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
@@ -16,16 +19,14 @@ array_api_compat_prefix = "scipy._lib.array_api_compat"
 
 
 def get_array_special_func(f_name, xp, n_array_args):
+    spx = scipy_namespace_for(xp)
     f = None
     if is_numpy(xp):
         f = getattr(_ufuncs, f_name, None)
     elif is_torch(xp):
         f = getattr(xp.special, f_name, None)
-    elif is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found]
-        f = getattr(cupyx.scipy.special, f_name, None)
-    elif xp.__name__ == f"{array_api_compat_prefix}.jax":
-        f = getattr(xp.scipy.special, f_name, None)
+    elif spx is not scipy:
+        f = getattr(spx.special, f_name, None)
 
     if f is not None:
         return f

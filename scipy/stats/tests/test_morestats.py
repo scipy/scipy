@@ -1664,6 +1664,22 @@ class TestWilcoxon:
         assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
+    def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
+        # When method!='approx', nan_policy='propagate', and a slice of
+        # a >1 dimensional array input contained NaN, the result object of
+        # `wilcoxon` could (under yet other conditions) return `zstatistic`
+        # for some slices but not others. This resulted in an error because
+        # `apply_along_axis` would have to create a ragged array.
+        # Check that this is resolved.
+        rng = np.random.default_rng(235889269872456)
+        A = rng.normal(size=(51, 2))  # length along slice > exact threshold
+        A[5, 1] = np.nan
+        res = stats.wilcoxon(A)
+        ref = stats.wilcoxon(A, method='approx')
+        assert_allclose(res, ref)
+        assert hasattr(ref, 'zstatistic')
+        assert not hasattr(res, 'zstatistic')
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
@@ -1697,7 +1713,7 @@ class TestKstat:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1737,7 +1753,7 @@ class TestKstatVar:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
