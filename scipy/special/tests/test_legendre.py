@@ -172,10 +172,20 @@ class TestLegendreFunctions:
 
         p, p_jac = special.lpmn_all(4, 4, x, diff_n = 1)
 
-        np.testing.assert_allclose(p[0, 0], lpmn_desired(0, 0, x))
+        np.testing.assert_allclose(p[0, 0], lpmn_desired(0, 0, x))        
+        np.testing.assert_allclose(p[1, 0], 0)
+        np.testing.assert_allclose(p[2, 0], 0)
+        np.testing.assert_allclose(p[3, 0], 0)
+        np.testing.assert_allclose(p[-3, 0], 0)
+        np.testing.assert_allclose(p[-2, 0], 0)
+        np.testing.assert_allclose(p[-1, 0], 0)
 
         np.testing.assert_allclose(p[0, 1], lpmn_desired(0, 1, x))
         np.testing.assert_allclose(p[1, 1], lpmn_desired(1, 1, x))
+        np.testing.assert_allclose(p[2, 0], 0)
+        np.testing.assert_allclose(p[3, 0], 0)
+        np.testing.assert_allclose(p[-3, 0], 0)
+        np.testing.assert_allclose(p[-2, 0], 0)
         np.testing.assert_allclose(p[-1, 1], lpmn_desired(-1, 1, x))
 
         np.testing.assert_allclose(p[0, 2], lpmn_desired(0, 2, x))
