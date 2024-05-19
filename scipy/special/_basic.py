@@ -1807,6 +1807,9 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 
         return p, pd
 
+    if (diff_n is None):
+        diff_n = 0
+
     return _lpmn(m, n, z, diff_n = diff_n)
 
 clpmn_all = multiufunc(clpmn_all, force_out_complex = True)
@@ -1826,7 +1829,7 @@ def _(m, n, type_shape, z_shape, nout):
 
     return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(type_shape, z_shape),)
 
-def clpmn(m, n, z, type=3, *, legacy = True, diff_n = None):
+def clpmn(m, n, z, type = 3, *, diff_n = None, legacy = True):
     """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
