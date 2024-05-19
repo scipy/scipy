@@ -1809,7 +1809,7 @@ def lpmn(m, n, z, diff_n = None, legacy = True):
 
     return _lpmn(m, n, z, diff_n = diff_n)
 
-clpmn_all = multiufunc(clpmn_all, force_out_dtypes_complex = True)
+clpmn_all = multiufunc(clpmn_all, force_out_complex = True)
 
 @clpmn_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
