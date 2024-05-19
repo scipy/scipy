@@ -2087,9 +2087,12 @@ def _(n, z_shape, nout):
 
     return nout * ((n + 1,) + z_shape,)
 
-def lpn(n, z, diff_n = 0, legacy = True):
+def lpn(n, z, *, diff_n = None, legacy = True):
     if legacy:
         return lpn_all(n, z, diff_n = 1)
+
+    if (diff_n is None):
+        diff_n = 0
 
     return _lpn(n, z, diff_n = diff_n)
 
