@@ -248,17 +248,23 @@ def kstat(data, n=2, *, axis=None):
 
     Notes
     -----
-    For a sample size n, the first few k-statistics are given by:
+    For a sample size :math:`n`, the first few k-statistics are given by
 
     .. math::
 
-        k_{1} = \mu
-        k_{2} = \frac{n}{n-1} m_{2}
-        k_{3} = \frac{ n^{2} } {(n-1) (n-2)} m_{3}
-        k_{4} = \frac{ n^{2} [(n + 1)m_{4} - 3(n - 1) m^2_{2}]} {(n-1) (n-2) (n-3)}
+        k_1 &= \frac{S_1}{n}, \\
+        k_2 &= \frac{nS_2 - S_1^2}{n(n-1)}, \\
+        k_3 &= \frac{2S_1^3 - 3nS_1S_2 + n^2S_3}{n(n-1)(n-2)}, \\
+        k_4 &= \frac{-6S_1^2 + 12nS_1^2S_2 - 3n(n-1)S_2^2 - 4n(n+1)S_1S_3
+        + n^2(n+1)S_4}{n (n-1)(n-2)(n-3)},
 
-    where :math:`\mu` is the sample mean, :math:`m_2` is the sample
-    variance, and :math:`m_i` is the i-th sample central moment.
+    where
+
+    .. math::
+
+        S_r \equiv \sum_{i=1}^n X_i^r,
+        
+    and :math:`X_i` is the :math:`i` th data point.
 
     References
     ----------
@@ -349,21 +355,12 @@ def kstatvar(data, n=2, *, axis=None):
 
     Notes
     -----
-    The variances of the first few k-statistics are given by:
+    The variances of the first two k-statistics are given by
 
     .. math::
 
-        var(k_{1}) = \frac{\kappa^2}{n}
-        var(k_{2}) = \frac{\kappa^4}{n} + \frac{2\kappa^2_{2}}{n - 1}
-        var(k_{3}) = \frac{\kappa^6}{n} + \frac{9 \kappa_2 \kappa_4}{n - 1} +
-                     \frac{9 \kappa^2_{3}}{n - 1} +
-                     \frac{6 n \kappa^3_{2}}{(n-1) (n-2)}
-        var(k_{4}) = \frac{\kappa^8}{n} + \frac{16 \kappa_2 \kappa_6}{n - 1} +
-                     \frac{48 \kappa_{3} \kappa_5}{n - 1} +
-                     \frac{34 \kappa^2_{4}}{n-1} +
-                     \frac{72 n \kappa^2_{2} \kappa_4}{(n - 1) (n - 2)} +
-                     \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
-                     \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
+        \mathrm{var}(k_1) &= \frac{k_2}{n}, \\
+        \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n - 1)}.
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
