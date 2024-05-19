@@ -1826,7 +1826,7 @@ def _(m, n, type_shape, z_shape, nout):
 
     return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(type_shape, z_shape),)
 
-def clpmn(m, n, z, type=3, *, legacy = True):
+def clpmn(m, n, z, type=3, *, legacy = True, diff_n = None):
     """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
@@ -1897,6 +1897,9 @@ def clpmn(m, n, z, type=3, *, legacy = True):
             out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis = 0)
 
         return out, out_jac
+
+    if (diff_n is None):
+        diff_n = 0
 
     return _clpmn(m, n, type, z, diff_n = diff_n)
 
