@@ -8154,7 +8154,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     # cases of lambda_.
     if lambda_ == 1:
         # Pearson's chi-squared statistic
-        terms = (f_obs_float - f_exp)**2 / f_exp
+        terms = (f_obs - f_exp)**2 / f_exp
     elif lambda_ == 0:
         # Log-likelihood ratio (i.e. G-test)
         terms = 2.0 * special.xlogy(f_obs, f_obs / f_exp)

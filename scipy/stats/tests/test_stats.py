@@ -40,7 +40,8 @@ from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _mo
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
-                                   copy, is_numpy, is_torch, SCIPY_ARRAY_API)
+                                   copy, is_numpy, is_torch, SCIPY_ARRAY_API,
+                                   size as xp_size)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -4008,82 +4009,52 @@ power_div_empty_cases = [
 class TestPowerDivergence:
 
     def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
-                               expected_stat):
-        f_obs = np.asarray(f_obs)
+                               expected_stat, xp):
+        dtype = xp.asarray(1.).dtype
+
+        f_obs = xp.asarray(f_obs, dtype=dtype)
+        f_exp = xp.asarray(f_exp, dtype=dtype) if f_exp is not None else f_exp
+
         if axis is None:
-            num_obs = f_obs.size
+            num_obs = xp_size(f_obs)
         else:
-            b = np.broadcast(f_obs, f_exp)
-            num_obs = b.shape[axis]
+            xp_test = array_namespace(f_obs)  # torch needs broadcast_arrays
+            arrays = (xp_test.broadcast_arrays(f_obs, f_exp) if f_exp is not None
+                      else (f_obs,))
+            num_obs = arrays[0].shape[axis]
 
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "Mean of empty slice")
             stat, p = stats.power_divergence(
                                 f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                 axis=axis, lambda_=lambda_)
-            assert_allclose(stat, expected_stat)
+            xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
             if lambda_ == 1 or lambda_ == "pearson":
                 # Also test stats.chisquare.
                 stat, p = stats.chisquare(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                           axis=axis)
-                assert_allclose(stat, expected_stat)
+                xp_assert_close(stat, xp.asarray(expected_stat, dtype=dtype))
 
         ddof = np.asarray(ddof)
         expected_p = stats.distributions.chi2.sf(expected_stat,
                                                  num_obs - 1 - ddof)
-        assert_allclose(p, expected_p)
+        xp_assert_close(p, xp.asarray(expected_p, dtype=dtype))
 
-    def test_basic(self):
-        for case in power_div_1d_cases:
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   None, case.chi2)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "pearson", case.chi2)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   1, case.chi2)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "log-likelihood", case.log)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "mod-log-likelihood", case.mod_log)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   "cressie-read", case.cr)
-            self.check_power_divergence(
-                   case.f_obs, case.f_exp, case.ddof, case.axis,
-                   2/3, case.cr)
+    @array_api_compatible
+    @pytest.mark.parametrize('case', power_div_1d_cases)
+    @pytest.mark.parametrize('lambda_stat',
+        [(None, 'chi2'), ('pearson', 'chi2'), (1, 'chi2'),
+         ('log-likelihood', 'log'), ('mod-log-likelihood', 'mod_log'),
+         ('cressie-read', 'cr'), (2/3, 'cr')])
+    def test_basic(self, case, lambda_stat, xp):
+        lambda_, attr = lambda_stat
+        expected_stat = getattr(case, attr)
+        self.check_power_divergence(case.f_obs, case.f_exp, case.ddof, case.axis,
+                                    lambda_, expected_stat, xp)
 
-    def test_basic_masked(self):
-        for case in power_div_1d_cases:
-            mobs = np.ma.array(case.f_obs)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   None, case.chi2)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   "pearson", case.chi2)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   1, case.chi2)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   "log-likelihood", case.log)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   "mod-log-likelihood", case.mod_log)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   "cressie-read", case.cr)
-            self.check_power_divergence(
-                   mobs, case.f_exp, case.ddof, case.axis,
-                   2/3, case.cr)
-
-    def test_axis(self):
+    @array_api_compatible
+    def test_axis(self, xp):
         case0 = power_div_1d_cases[0]
         case1 = power_div_1d_cases[1]
         f_obs = np.vstack((case0.f_obs, case1.f_obs))
@@ -4091,25 +4062,29 @@ class TestPowerDivergence:
                            case1.f_exp))
         # Check the four computational code paths in power_divergence
         # using a 2D array with axis=1.
+        f_obs = xp.asarray(f_obs)
+        f_exp = xp.asarray(f_exp) if f_exp is not None else f_exp
         self.check_power_divergence(
                f_obs, f_exp, 0, 1,
-               "pearson", [case0.chi2, case1.chi2])
+               "pearson", [case0.chi2, case1.chi2], xp=xp)
         self.check_power_divergence(
                f_obs, f_exp, 0, 1,
-               "log-likelihood", [case0.log, case1.log])
+               "log-likelihood", [case0.log, case1.log], xp=xp)
         self.check_power_divergence(
                f_obs, f_exp, 0, 1,
-               "mod-log-likelihood", [case0.mod_log, case1.mod_log])
+               "mod-log-likelihood", [case0.mod_log, case1.mod_log], xp=xp)
         self.check_power_divergence(
                f_obs, f_exp, 0, 1,
-               "cressie-read", [case0.cr, case1.cr])
+               "cressie-read", [case0.cr, case1.cr], xp=xp)
         # Reshape case0.f_obs to shape (2,2), and use axis=None.
         # The result should be the same.
+        f_obs_reshape = xp.reshape(xp.asarray(case0.f_obs), (2, 2))
         self.check_power_divergence(
-               np.array(case0.f_obs).reshape(2, 2), None, 0, None,
-               "pearson", case0.chi2)
+               f_obs_reshape, None, 0, None,
+               "pearson", case0.chi2, xp=xp)
 
-    def test_ddof_broadcasting(self):
+    @array_api_compatible
+    def test_ddof_broadcasting(self, xp):
         # Test that ddof broadcasts correctly.
         # ddof does not affect the test statistic.  It is broadcast
         # with the computed test statistic for the computation of
@@ -4124,57 +4099,70 @@ class TestPowerDivergence:
 
         expected_chi2 = [case0.chi2, case1.chi2]
 
+        dtype = xp.asarray(1.).dtype
+        f_obs = xp.asarray(f_obs, dtype=dtype)
+        f_exp = xp.asarray(f_exp, dtype=dtype)
+        expected_chi2 = xp.asarray(expected_chi2, dtype=dtype)
+
         # ddof has shape (2, 1).  This is broadcast with the computed
         # statistic, so p will have shape (2,2).
-        ddof = np.array([[0], [1]])
+        ddof = xp.asarray([[0], [1]])
 
         stat, p = stats.power_divergence(f_obs, f_exp, ddof=ddof)
-        assert_allclose(stat, expected_chi2)
+        xp_assert_close(stat, expected_chi2)
 
         # Compute the p values separately, passing in scalars for ddof.
-        stat0, p0 = stats.power_divergence(f_obs, f_exp, ddof=ddof[0,0])
-        stat1, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1,0])
+        stat0, p0 = stats.power_divergence(f_obs, f_exp, ddof=ddof[0, 0])
+        stat1, p1 = stats.power_divergence(f_obs, f_exp, ddof=ddof[1, 0])
 
-        assert_array_equal(p, np.vstack((p0, p1)))
+        xp_test = array_namespace(f_obs)  # needs `concat`, `newaxis`
+        expected_p = xp_test.concat((p0[xp_test.newaxis, :],
+                                     p1[xp_test.newaxis, :]),
+                                    axis=0)
+        xp_assert_close(p, expected_p)
 
-    def test_empty_cases(self):
+    @array_api_compatible
+    @pytest.mark.parametrize('case', power_div_empty_cases)
+    @pytest.mark.parametrize('lambda_stat',
+        [('pearson', 'chi2'), ('log-likelihood', 'log'),
+         ('mod-log-likelihood', 'mod_log'),
+         ('cressie-read', 'cr'), (2/3, 'cr')])
+    def test_empty_cases(self, case, lambda_stat, xp):
+        lambda_, attr = lambda_stat
+        expected_stat = getattr(case, attr)
         with warnings.catch_warnings():
-            for case in power_div_empty_cases:
-                self.check_power_divergence(
-                       case.f_obs, case.f_exp, case.ddof, case.axis,
-                       "pearson", case.chi2)
-                self.check_power_divergence(
-                       case.f_obs, case.f_exp, case.ddof, case.axis,
-                       "log-likelihood", case.log)
-                self.check_power_divergence(
-                       case.f_obs, case.f_exp, case.ddof, case.axis,
-                       "mod-log-likelihood", case.mod_log)
-                self.check_power_divergence(
-                       case.f_obs, case.f_exp, case.ddof, case.axis,
-                       "cressie-read", case.cr)
+            self.check_power_divergence(
+                case.f_obs, case.f_exp, case.ddof, case.axis,
+                lambda_, expected_stat, xp)
 
-    def test_power_divergence_result_attributes(self):
+    @array_api_compatible
+    def test_power_divergence_result_attributes(self, xp):
         f_obs = power_div_1d_cases[0].f_obs
         f_exp = power_div_1d_cases[0].f_exp
         ddof = power_div_1d_cases[0].ddof
         axis = power_div_1d_cases[0].axis
+        dtype = xp.asarray(1.).dtype
+        f_obs = xp.asarray(f_obs, dtype=dtype)
+        # f_exp is None
 
         res = stats.power_divergence(f_obs=f_obs, f_exp=f_exp, ddof=ddof,
                                      axis=axis, lambda_="pearson")
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    def test_power_divergence_gh_12282(self):
+    @array_api_compatible
+    def test_power_divergence_gh_12282(self, xp):
         # The sums of observed and expected frequencies must match
-        f_obs = np.array([[10, 20], [30, 20]])
-        f_exp = np.array([[5, 15], [35, 25]])
-        with assert_raises(ValueError, match='For each axis slice...'):
-            stats.power_divergence(f_obs=[10, 20], f_exp=[30, 60])
-        with assert_raises(ValueError, match='For each axis slice...'):
+        f_obs = xp.asarray([[10., 20.], [30., 20.]])
+        f_exp = xp.asarray([[5., 15.], [35., 25.]])
+        message = 'For each axis slice...'
+        with pytest.raises(ValueError, match=message):
+            stats.power_divergence(f_obs=f_obs, f_exp=xp.asarray([30., 60.]))
+        with pytest.raises(ValueError, match=message):
             stats.power_divergence(f_obs=f_obs, f_exp=f_exp, axis=1)
         stat, pval = stats.power_divergence(f_obs=f_obs, f_exp=f_exp)
-        assert_allclose(stat, [5.71428571, 2.66666667])
-        assert_allclose(pval, [0.01682741, 0.10247043])
+        xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
+        xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
 
 
 def test_gh_chisquare_12282():
