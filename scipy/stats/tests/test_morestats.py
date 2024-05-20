@@ -735,33 +735,37 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestBartlett:
-
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         T, pval = stats.bartlett(*args)
-        assert_almost_equal(T, 20.78587342806484, 7)
-        assert_almost_equal(pval, 0.0136358632781, 7)
+        xp_assert_close(T, xp.asarray(20.78587342806484))
+        xp_assert_close(pval, xp.asarray(0.0136358632781))
 
-    def test_bad_arg(self):
-        # Too few args raises ValueError.
-        assert_raises(ValueError, stats.bartlett, [1])
+    def test_too_few_args(self, xp):
+        message = "Must enter at least two input sample vectors."
+        with pytest.raises(ValueError, match=message):
+            stats.bartlett(xp.asarray([1.]))
 
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    def test_empty_arg(self):
+    def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
-        assert_equal((np.nan, np.nan), stats.bartlett(*args))
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.bartlett, g1, x)
+        args = [xp.asarray(arg) for arg in args]
+        res = stats.bartlett(*args)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
 
 
 class TestLevene:
