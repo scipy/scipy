@@ -8108,6 +8108,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     """
     xp = array_namespace(f_obs)
+    default_float = xp.asarray(1.).dtype
 
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
@@ -8120,11 +8121,18 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         lambda_ = 1
 
     f_obs = f_obs if np.ma.isMaskedArray(f_obs) else xp.asarray(f_obs)
+    dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
+    f_obs = (f_obs.astype(dtype) if np.ma.isMaskedArray(f_obs)
+             else xp.asarray(f_obs, dtype=dtype))
     f_obs_float = (f_obs.astype(np.float64) if hasattr(f_obs, 'mask')
                    else xp.asarray(f_obs, dtype=xp.float64))
 
     if f_exp is not None:
         f_exp = f_exp if np.ma.isMaskedArray(f_obs) else xp.asarray(f_exp)
+        dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
+        f_exp = (f_exp.astype(dtype) if np.ma.isMaskedArray(f_exp)
+                 else xp.asarray(f_exp, dtype=dtype))
+
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
         f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
