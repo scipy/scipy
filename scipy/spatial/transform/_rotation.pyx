@@ -2699,9 +2699,9 @@ cdef class Rotation:
             return self.inv()
         elif n == 1:
             if self._single:
-                return self.__class__(self._quat[0], copy=True)
+                return self.__class__(self._quat[0], normalize=False, copy=True)
             else:
-                return self.__class__(self._quat, copy=True)
+                return self.__class__(self._quat, normalize=False, copy=True)
         else:  # general scaling of rotation angle
             return Rotation.from_rotvec(n * self.as_rotvec())
 
@@ -2744,7 +2744,7 @@ cdef class Rotation:
         quat[:, 2] *= -1
         if self._single:
             quat = quat[0]
-        return self.__class__(quat, copy=False)
+        return self.__class__(quat, normalize=False, copy=False)
 
     @cython.embedsignature(True)
     @cython.boundscheck(False)

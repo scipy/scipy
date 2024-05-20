@@ -30,6 +30,7 @@ The variant that is implemented uses squeezes proportional to hat function ([1]_
 
 An example of using this method is shown below:
 
+    >>> import numpy as np
     >>> from scipy.stats.sampling import TransformedDensityRejection
     >>> from scipy.stats import norm
     >>> 

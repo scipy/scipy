@@ -15,7 +15,7 @@ from typing import (
 )
 
 import numpy as np
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
 
 
 AxisError: type[Exception]
@@ -719,7 +719,7 @@ def _contains_nan(a, nan_policy='propagate', policies=None, *, xp=None):
 
     inexact = (xp.isdtype(a.dtype, "real floating")
                or xp.isdtype(a.dtype, "complex floating"))
-    if a.size == 0:
+    if xp_size(a) == 0:
         contains_nan = False
     elif inexact:
         # Faster and less memory-intensive than xp.any(xp.isnan(a))

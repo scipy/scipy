@@ -5,9 +5,8 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)  # noqa: F401
+                   arange, sort, amin, amax, sqrt, array,
+                   pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
@@ -99,7 +98,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> mean
     Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
-    Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
+    Variance(statistic=10.0, minmax=(3.176724206, 24.45910382))
     >>> std
     Std_dev(statistic=2.9724954732045084,
             minmax=(1.7823367265645143, 4.945614605014631))
@@ -1261,7 +1260,7 @@ def boxcox_normmax(
     ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
     ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
-    6.000...
+    6.000000000
     """
     x = np.asarray(x)
 
@@ -4446,12 +4445,9 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
-    res = xp.atan2(sin_sum, cos_sum)
+    res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
 
-    res = xp.asarray(res)
-    res[res < 0] += 2*xp.pi
     res = res[()] if res.ndim == 0 else res
-
     return res*(high - low)/2.0/xp.pi + low
 
 

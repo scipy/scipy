@@ -8,9 +8,6 @@ from scipy._lib.deprecation import _sub_module_deprecation
 __all__ = [  # noqa: F822
     'Rotation',
     'Slerp',
-    'check_random_state',
-    'create_group',
-    're',
 ]
 
 
