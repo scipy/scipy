@@ -9699,8 +9699,9 @@ class TestIrwinHall:
     def test_pdf_ih1_unif(self):
         # IH(1) PDF is by definition U(0,1)
         # we should be too, but differences in floating point eval order happen
-        # it's unclear if we can get down to the single ulp for doubles unless quads are used
-        # we're within 6-10 ulps otherwise (across sf/cdf/pdf) which is pretty good
+        # it's unclear if we can get down to the single ulp for doubles unless
+        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf) 
+        # which is pretty good
 
         pts = np.linspace(0, 1, 100)
         pdf_unif = self.unif.pdf(pts)
@@ -9747,7 +9748,8 @@ class TestIrwinHall:
         assert_array_max_ulp(self.ih10.cdf(np.arange(11)), vals, maxulp=10)
 
         assert_array_max_ulp(self.ih10.cdf(1/10), 1/36288000000000000, maxulp=10)
-        assert_array_max_ulp(self.ih10.cdf(99/10), 36287999999999999/36288000000000000, maxulp=10)
+        ref = 36287999999999999/36288000000000000
+        assert_array_max_ulp(self.ih10.cdf(99/10), ref, maxulp=10)
 
     def test_pdf_ih10_exact(self):
         # from Wolfram Alpha "values PDF[UniformSumDistribution[10], x] x=0 to x=10"
@@ -9761,7 +9763,8 @@ class TestIrwinHall:
         # from Wolfram Alpha "SurvivalFunction[UniformSumDistribution[10],x] at x=1/10"
         # and symmetry about n/2 = 5
         # W|A returns 1 for CDF @ x=9.9
-        assert_array_max_ulp(self.ih10.sf(1/10), 36287999999999999/36288000000000000, maxulp=10)
+        ref = 36287999999999999/36288000000000000
+        assert_array_max_ulp(self.ih10.sf(1/10), ref, maxulp=10)
 
 
 # Cases are (distribution name, log10 of smallest probability mass to test,
