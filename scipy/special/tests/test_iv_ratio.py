@@ -62,10 +62,7 @@ class TestIvRatio:
     ])
     def test_inf(self, v, x, r):
         """If exactly one of v or x is inf and the other is within domain,
-        should return 0 or 1 accordingly.
-
-        Also check that the function
-        never returns -0.0."""
+        should return 0 or 1 accordingly."""
         assert_equal(iv_ratio(v, x), r)
 
     @pytest.mark.parametrize('v', [np.nextafter(1, 0), -np.inf, np.nan, np.inf])
@@ -107,7 +104,7 @@ class TestIvRatio:
         (1e20, 1e40),
         (np.sqrt(np.finfo(float).max), np.finfo(float).max),
     ])
-    def test_huge_x(self, v, x):
+    def test_huge_x(self, v, x):  # TODO
         """If x is much greater than v, the bounds
 
                     x                                 x
@@ -140,4 +137,104 @@ class TestIvRatio:
 
 
 class TestIvRatioC:
-    pass
+
+    @pytest.mark.parametrize('v,x,r', [
+        (1, 0.3380952380952381, 0.8333226950829686),
+        (1, 0.7083333333333333, 0.6663355641301008),
+        (1, 1.1666666666666667, 0.4976644768462577),
+        (1, 1.8666666666666665, 0.325383427747836),
+        (1, 3.560606060606061, 0.155792340496837),
+        (2.34, 0.7975238095238094, 0.8329509691844672),
+        (2.34, 1.7133333333333334, 0.6639784068731155),
+        (2.34, 2.953333333333333, 0.49318090682197),
+        (2.34, 5.0826666666666656, 0.3244747301199321),
+        (2.34, 10.869696969696973, 0.16206488955012377),
+        (56.789, 19.46575238095238, 0.8332979494608591),
+        (56.789, 42.55008333333333, 0.6664619000306697),
+        (56.789, 75.552, 0.4996067618822174),
+        (56.789, 135.76026666666667, 0.3329471778053873),
+        (56.789, 307.8642424242425, 0.16650005585392025),
+    ])
+    def test_against_reference_values(self, v, x, r):
+        """The reference values are one minus those of TestIvRatio."""
+        assert_allclose(iv_ratio_c(v, x), r, rtol=10e-16, atol=0)
+
+    @pytest.mark.parametrize('v,x,r', [
+        (1, np.inf, 0),
+        (np.inf, 1, 1),
+    ])
+    def test_inf(self, v, x, r):
+        """If exactly one of v or x is inf and the other is within domain,
+        should return 0 or 1 accordingly."""
+        assert_equal(iv_ratio_c(v, x), r)
+
+    @pytest.mark.parametrize('v', [np.nextafter(1, 0), -np.inf, np.nan, np.inf])
+    @pytest.mark.parametrize('x', [-np.finfo(float).smallest_normal,
+                                   -np.finfo(float).smallest_subnormal,
+                                   -np.inf, np.nan, np.inf])
+    def test_nan(self, v, x):
+        """If at least one argument is out of domain, or if v = x = inf,
+        the function should return nan."""
+        assert_equal(iv_ratio_c(v, x), np.nan)
+
+    @pytest.mark.parametrize('v', [1, np.finfo(float).max, np.inf])
+    def test_zero_x(self, v):
+        """If x is +/-0.0, return 1."""
+        assert_equal(iv_ratio_c(v, 0.0), 1.0)
+        assert_equal(iv_ratio_c(v, -0.0), 1.0)
+
+    @pytest.mark.parametrize('v,x', [
+        (1, np.finfo(float).smallest_normal),
+        (1, np.finfo(float).smallest_subnormal),
+        (1, np.finfo(float).smallest_subnormal*2),
+        (1e20, 123),
+        (np.finfo(float).max, 1),
+        (np.finfo(float).max, np.sqrt(np.finfo(float).max)),
+    ])
+    def test_tiny_x(self, v, x):
+        """If x is much less than v, the bounds
+
+                    x                                 x
+        --------------------------- <= R <= -----------------------
+        v-0.5+sqrt(x**2+(v+0.5)**2)         v-1+sqrt(x**2+(v+1)**2)
+
+        collapses to 1-R ~= 1-x/2v.  Test against this asymptotic expression.
+        """
+        assert_equal(iv_ratio_c(v, x), 1.0-(0.5*x)/v)
+
+    @pytest.mark.parametrize('v,x', [
+        (1, 1e16),
+        (1e20, 1e40),
+        (np.sqrt(np.finfo(float).max), np.finfo(float).max),
+    ])
+    def test_huge_x(self, v, x):  # TODO
+        """If x is much greater than v, the bounds
+
+                    x                                 x
+        --------------------------- <= R <= -----------------------
+        v-0.5+sqrt(x**2+(v+0.5)**2)         v-1+sqrt(x**2+(v+1)**2)
+
+        collapses to 1-R ~= (v-0.5)/x.  Test against this asymptotic expression.
+        """
+        # assert_equal(iv_ratio_c(v, x), (v-0.5)/x-((v-1)**2-0.25)/(2*x*x))
+        assert_equal(iv_ratio_c(v, x), (v-0.5)/x)
+
+    @pytest.mark.parametrize('v,x', [
+        (np.finfo(float).max, np.finfo(float).max),
+        (np.finfo(float).max / 3, np.finfo(float).max),
+        (np.finfo(float).max, np.finfo(float).max / 3),
+    ])
+    def test_huge_v_x(self, v, x):
+        """If both x and v are very large, the bounds
+
+                    x                                 x
+        --------------------------- <= R <= -----------------------
+        v-0.5+sqrt(x**2+(v+0.5)**2)         v-1+sqrt(x**2+(v+1)**2)
+
+        collapses to 1 - R ~= 1 - x/(v+sqrt(x**2+v**2).  Test against this
+        asymptotic expression, and in particular that no numerical overflow
+        occurs during intermediate calculations.
+        """
+        t = x / v
+        expected = 1 - t / (1 + np.hypot(1, t))
+        assert_allclose(iv_ratio_c(v, x), expected, rtol=4e-16, atol=0)
