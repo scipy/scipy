@@ -169,7 +169,7 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
  *
  * We need to be careful with complex arithmetic, in particular the square roots
  * should not be modified. This is because the sign bit of a real or imaginary part,
- * even if it is equal to zero, can alter the branch cut.
+ * even if it is equal to zero, can affect the branch cut.
  */
 template <typename T>
 T assoc_legendre_p_diag(int m, int type, T z) {
@@ -232,12 +232,7 @@ T assoc_legendre_p(int n, int m, int type, T z, Callable callback, Args &&...arg
         return 0;
     }
 
-    bool m_odd = m_abs % 2;
-    if (m_odd) {
-        callback(0, m, type, z, 0, 0, std::forward<Args>(args)...);
-    }
-    for (int j = 1 + m_odd; j <= m_abs; j += 2) {
-        callback(j - 1, m, type, z, 0, 0, std::forward<Args>(args)...);
+    for (int j = 0; j < m_abs; ++j) {
         callback(j, m, type, z, 0, 0, std::forward<Args>(args)...);
     }
 
