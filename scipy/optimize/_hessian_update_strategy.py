@@ -385,7 +385,7 @@ class BFGS(FullHessianUpdateStrategy):
             z = delta_x
         # Do some common operations
         wz = np.dot(w, z)
-        Mw = self@(w)
+        Mw = self@w
         wMw = Mw.dot(w)
         # Guarantee that wMw > 0 by reinitializing matrix.
         # While this is always true in exact arithmetic,
@@ -398,7 +398,7 @@ class BFGS(FullHessianUpdateStrategy):
             else:
                 self.H = scale * np.eye(self.n, dtype=float)
             # Do common operations for new matrix
-            Mw = self.dot(w)
+            Mw = self@w
             wMw = Mw.dot(w)
         # Check if curvature condition is violated
         if wz <= self.min_curvature * wMw:
