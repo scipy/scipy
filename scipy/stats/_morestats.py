@@ -3060,7 +3060,7 @@ def bartlett(*samples, axis=0):
 
     # Handle 1d empty input; _axis_nan_policy takes care of N-D
     for sample in samples:
-        if xp.asarray(sample).size == 0:
+        if xp_size(xp.asarray(sample)) == 0:
             NaN = _get_nan(*samples, xp=xp)  # get NaN of result_dtype of all samples
             return BartlettResult(NaN, NaN)
 
