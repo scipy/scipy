@@ -3067,7 +3067,7 @@ def bartlett(*samples, axis=0):
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
     samples = [xp_moveaxis_to_end(sample, source=axis, xp=xp) for sample in samples]
 
-    Ni = [xp.asarray(sample.shape[-1]) for sample in samples]
+    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
     Ni = [xp.broadcast_to(N, sample.shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
