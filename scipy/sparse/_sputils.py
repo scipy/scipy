@@ -4,6 +4,7 @@
 import sys
 from typing import Any, Literal, Optional, Union
 import operator
+from warnings import warn
 import numpy as np
 from math import prod
 import scipy.sparse as sp
@@ -130,7 +131,9 @@ def getdtype(dtype, a=None, default=None):
             raise ValueError(
                 "object dtype is not supported by sparse matrices"
             )
-
+    if newdtype not in supported_dtypes:
+        warn(f"dtype {newdtype} is not supported", stacklevel=3)
+    
     return newdtype
 
 
