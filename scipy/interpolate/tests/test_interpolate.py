@@ -2393,6 +2393,38 @@ class TestNdPPoly:
         assert_allclose(pz((u, v)), paz((u, v, b)) - paz((u, v, a)))
 
 
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+        rng = np.random.default_rng(12345)
+
+        c = rng.uniform(size=(4, 5, 6, 7, 8, 9))
+        x = np.linspace(0, 1, 7+1)
+        y = np.linspace(0, 1, 8+1)**2
+        z = np.linspace(0, 1, 9+1)**3
+
+        p = NdPPoly(c, (x, y, z))
+
+        def worker_fn(spl):
+            xi = rng.uniform(size=40)
+            yi = rng.uniform(size=40)
+            zi = rng.uniform(size=40)
+            barrier.wait()
+            spl((xi, yi, zi))
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(p,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
+
+
+
 def _ppoly_eval_1(c, x, xps):
     """Evaluate piecewise polynomial manually"""
     out = np.zeros((len(xps), c.shape[2]))
