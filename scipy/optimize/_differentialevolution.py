@@ -1650,7 +1650,7 @@ class DifferentialEvolutionSolver:
         # trial either has shape (N, ) or (L, N), where L is the number of
         # solutions being scaled
         scaled = self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
-        if np.any(self.integrality):
+        if np.count_nonzero(self.integrality):
             i = np.broadcast_to(self.integrality, scaled.shape)
             scaled[i] = np.round(scaled[i])
         return scaled
