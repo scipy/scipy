@@ -52,7 +52,7 @@ xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
                       'recipinvgauss', 'kstwo', 'kappa4'}
 
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
-xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto'}
+xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
@@ -60,11 +60,11 @@ xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'truncweibull_min', 'wrapcauchy'}
 xfail_fit_mm = {'alpha', 'betaprime', 'bradford', 'burr', 'burr12', 'cauchy',
                 'crystalball', 'exponweib', 'f', 'fisk', 'foldcauchy', 'genextreme',
-                'genpareto', 'halfcauchy', 'invgamma', 'jf_skew_t', 'johnsonsu',
-                'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace', 'lomax', 'mielke',
-                'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm', 'rel_breitwigner',
-                'skewcauchy', 't', 'trapezoid', 'truncexpon', 'truncpareto',
-                'tukeylambda', 'vonmises', 'vonmises_line'}
+                'genpareto', 'halfcauchy', 'invgamma', 'irwinhall', 'jf_skew_t',
+                'johnsonsu', 'kappa3', 'kappa4', 'levy', 'levy_l', 'loglaplace',
+                'lomax', 'mielke', 'ncf', 'nct', 'pareto', 'powerlognorm', 'powernorm',
+                'rel_breitwigner',  'skewcauchy', 't', 'trapezoid', 'truncexpon',
+                'truncpareto', 'tukeylambda', 'vonmises', 'vonmises_line'}
 skip_fit_mm = {'genexpon', 'genhyperbolic', 'ksone', 'kstwo', 'levy_stable',
                'recipinvgauss', 'studentized_range'}  # far too slow (>10min)
 
@@ -76,7 +76,7 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'dgamma', 'dweibull', 'erlang', 'f', 'foldcauchy', 'gamma',
                'gausshyper', 'gengamma', 'genhyperbolic',
                'geninvgauss', 'gennorm', 'genpareto',
-               'halfcauchy', 'halfgennorm', 'invgamma', 'jf_skew_t',
+               'halfcauchy', 'halfgennorm', 'invgamma', 'irwinhall', 'jf_skew_t',
                'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                'logistic', 'loguniform', 'maxwell', 'nakagami',
                'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3',

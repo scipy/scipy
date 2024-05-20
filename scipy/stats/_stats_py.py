@@ -1997,7 +1997,14 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
+    xp = array_namespace(k2)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, 2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return NormaltestResult(k2, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2145,23 +2152,29 @@ def jarque_bera(x, *, axis=None):
     hypothesis [4]_.
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     if axis is None:
-        x = x.ravel()
+        x = xp.reshape(x, (-1,))
         axis = 0
 
     n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean(axis=axis, keepdims=True)
+    mu = xp.mean(x, axis=axis, keepdims=True)
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    statistic = n / 6 * (s**2 + k**2 / 4)
-    pvalue = distributions.chi2.sf(statistic, df=2)
+    k2 = n / 6 * (s**2 + k**2 / 4)
 
-    return SignificanceResult(statistic, pvalue)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, df=2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return SignificanceResult(k2, pvalue)
 
 
 #####################################
@@ -4829,8 +4842,8 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
-    x = xp_moveaxis_to_end(x, axis, xp)
-    y = xp_moveaxis_to_end(y, axis, xp)
+    x = xp_moveaxis_to_end(x, axis, xp=xp)
+    y = xp_moveaxis_to_end(y, axis, xp=xp)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)
@@ -4929,7 +4942,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     one = xp.asarray(1, dtype=dtype)
     # `clip` only recently added to array API, so it's not yet available in
     # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(xp_clip(r, -one, one, xp))
+    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null

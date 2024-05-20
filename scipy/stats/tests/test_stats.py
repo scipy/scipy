@@ -6201,10 +6201,10 @@ def test_normalitytests(xp):
     # test_result <- dagoTest(x)
     # test_result@test$statistic
     # test_result@test$p.value
-    st_normal, st_skew, st_kurt = (3.92371918158185551,
+    st_normal, st_skew, st_kurt = (xp.asarray(3.92371918158185551),
                                    xp.asarray(1.98078826090875881),
                                    xp.asarray(-0.01403734404759738))
-    pv_normal, pv_skew, pv_kurt = (0.14059672529747502,
+    pv_normal, pv_skew, pv_kurt = (xp.asarray(0.14059672529747502),
                                    xp.asarray(0.04761502382843208),
                                    xp.asarray(0.98880018772590561))
     pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
@@ -6213,7 +6213,9 @@ def test_normalitytests(xp):
     x_xp = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
     attributes = ('statistic', 'pvalue')
 
-    assert_array_almost_equal(stats.normaltest(x), (st_normal, pv_normal))
+    res = stats.normaltest(x_xp)
+    xp_assert_close(res.statistic, st_normal)
+    xp_assert_close(res.pvalue, pv_normal)
     check_named_results(stats.normaltest(x), attributes)
 
     res = stats.skewtest(x_xp)
@@ -6253,8 +6255,10 @@ def test_normalitytests(xp):
     xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
     # Test axis=None (equal to axis=0 for 1-D input)
-    assert_array_almost_equal(stats.normaltest(x, axis=None),
-                              (st_normal, pv_normal))
+    res = stats.normaltest(x_xp, axis=None)
+    xp_assert_close(res.statistic, st_normal)
+    xp_assert_close(res.pvalue, pv_normal)
+
     res = stats.skewtest(x_xp, axis=None)
     xp_assert_close(res.statistic, st_skew)
     xp_assert_close(res.pvalue, pv_skew)
@@ -6263,18 +6267,19 @@ def test_normalitytests(xp):
     xp_assert_close(res.statistic, st_kurt)
     xp_assert_close(res.pvalue, pv_kurt)
 
-    x = xp.arange(10.)
+    x = xp.arange(30.)
     NaN = xp.asarray(xp.nan, dtype=x.dtype)
-    x = xp.where(x == 9, NaN, x)
+    x = xp.where(x == 29, NaN, x)
     with np.errstate(invalid="ignore"):
         res = stats.skewtest(x)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
-    x = xp.arange(30.)
-    x = xp.where(x == 29, NaN, x)
-    with np.errstate(all='ignore'):
         res = stats.kurtosistest(x)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
+
+        res = stats.normaltest(x)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
 
@@ -6325,9 +6330,6 @@ def test_normalitytests(xp):
     assert_raises(ValueError, stats.kurtosistest, list(range(20)),
                   alternative='foobar')
 
-    with np.errstate(all='ignore'):
-        assert_array_equal(stats.normaltest(x), (np.nan, np.nan))
-
     expected = (6.2260409514287449, 0.04446644248650191)
     assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
 
@@ -6365,32 +6367,26 @@ class TestRankSums:
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
+@pytest.mark.usefixtures("skip_xp_backends")
+@skip_xp_backends(cpu_only=True)
+@array_api_compatible
 class TestJarqueBera:
-    def test_jarque_bera_stats(self):
-        np.random.seed(987654321)
-        x = np.random.normal(0, 1, 100000)
-        y = np.random.chisquare(10000, 100000)
-        z = np.random.rayleigh(1, 100000)
+    def test_jarque_bera_against_R(self, xp):
+        # library(tseries)
+        # options(digits=16)
+        # x < - rnorm(5)
+        # jarque.bera.test(x)
+        x = [-0.160104223201523288,  1.131262000934478040, -0.001235254523709458,
+             -0.776440091309490987, -2.072959999533182884]
+        x = xp.asarray(x)
+        ref = xp.asarray([0.17651605223752, 0.9155246169805])
+        res = stats.jarque_bera(x)
+        xp_assert_close(res.statistic, ref[0])
+        xp_assert_close(res.pvalue, ref[1])
 
-        assert_equal(stats.jarque_bera(x)[0], stats.jarque_bera(x).statistic)
-        assert_equal(stats.jarque_bera(x)[1], stats.jarque_bera(x).pvalue)
-
-        assert_equal(stats.jarque_bera(y)[0], stats.jarque_bera(y).statistic)
-        assert_equal(stats.jarque_bera(y)[1], stats.jarque_bera(y).pvalue)
-
-        assert_equal(stats.jarque_bera(z)[0], stats.jarque_bera(z).statistic)
-        assert_equal(stats.jarque_bera(z)[1], stats.jarque_bera(z).pvalue)
-
-        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(y)[1])
-        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(y).pvalue)
-
-        assert_(stats.jarque_bera(x)[1] > stats.jarque_bera(z)[1])
-        assert_(stats.jarque_bera(x).pvalue > stats.jarque_bera(z).pvalue)
-
-        assert_(stats.jarque_bera(y)[1] > stats.jarque_bera(z)[1])
-        assert_(stats.jarque_bera(y).pvalue > stats.jarque_bera(z).pvalue)
-
+    @skip_xp_backends(np_only=True)
     def test_jarque_bera_array_like(self):
+        # array-like only relevant for NumPy
         np.random.seed(987654321)
         x = np.random.normal(0, 1, 100000)
 
@@ -6401,31 +6397,40 @@ class TestJarqueBera:
         assert JB1 == JB2 == JB3 == jb_test1.statistic == jb_test2.statistic == jb_test3.statistic  # noqa: E501
         assert p1 == p2 == p3 == jb_test1.pvalue == jb_test2.pvalue == jb_test3.pvalue
 
-    def test_jarque_bera_size(self):
-        assert_raises(ValueError, stats.jarque_bera, [])
+    def test_jarque_bera_size(self, xp):
+        x = xp.asarray([])
+        message = "At least one observation is required."
+        with pytest.raises(ValueError, match=message):
+            stats.jarque_bera(x)
 
-    def test_axis(self):
+    def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)
-        x = rng.random(size=(2, 45))
+        x = xp.asarray(rng.random(size=(2, 45)))
 
-        assert_equal(stats.jarque_bera(x, axis=None),
-                     stats.jarque_bera(x.ravel()))
+        res = stats.jarque_bera(x, axis=None)
+        ref = stats.jarque_bera(xp.reshape(x, (-1,)))
+        xp_assert_equal(res.statistic, ref.statistic)
+        xp_assert_equal(res.pvalue, ref.pvalue)
 
         res = stats.jarque_bera(x, axis=1)
         s0, p0 = stats.jarque_bera(x[0, :])
         s1, p1 = stats.jarque_bera(x[1, :])
-        assert_allclose(res.statistic, [s0, s1])
-        assert_allclose(res.pvalue, [p0, p1])
+        xp_assert_close(res.statistic, xp.asarray([s0, s1]))
+        xp_assert_close(res.pvalue, xp.asarray([p0, p1]))
 
         resT = stats.jarque_bera(x.T, axis=0)
-        assert_allclose(res, resT)
+        xp_assert_close(res.statistic, resT.statistic)
+        xp_assert_close(res.pvalue, resT.pvalue)
 
 
-def test_skewtest_too_few_samples():
+@array_api_compatible
+def test_skewtest_too_few_samples(xp):
     # Regression test for ticket #1492.
     # skewtest requires at least 8 samples; 7 should raise a ValueError.
-    x = np.arange(7.0)
-    assert_raises(ValueError, stats.skewtest, x)
+    x = xp.arange(7.0)
+    message = 'skewtest is not valid with less than 8 samples...'
+    with pytest.raises(ValueError, match=message):
+        stats.skewtest(x)
 
 
 @array_api_compatible

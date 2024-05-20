@@ -22,9 +22,10 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size,
     numpy as np_compat,
+    device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size', 'device']
 
 
 # To enable array API and strict array-like input validation
@@ -393,7 +394,44 @@ def xp_unsupported_param_msg(param: Any) -> str:
 def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
-def scipy_namespace_for(xp):
+
+def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
+    """Returns a list of available devices for the given namespace."""
+    devices: list[str] = []
+    if is_torch(xp):
+        devices += ['cpu']
+        import torch # type: ignore[import]
+        num_cuda = torch.cuda.device_count()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        if torch.backends.mps.is_available():
+            devices += ['mps']
+        return devices
+    elif is_cupy(xp):
+        import cupy # type: ignore[import]
+        num_cuda = cupy.cuda.runtime.getDeviceCount()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        return devices
+    elif is_jax(xp):
+        import jax # type: ignore[import]
+        num_cpu = jax.device_count(backend='cpu')
+        for i in range(0, num_cpu):
+            devices += [f'cpu:{i}']
+        num_gpu = jax.device_count(backend='gpu')
+        for i in range(0, num_gpu):
+            devices += [f'gpu:{i}']
+        num_tpu = jax.device_count(backend='tpu')
+        for i in range(0, num_tpu):
+            devices += [f'tpu:{i}']
+        return devices
+
+    # given namespace is not known to have a list of available devices;
+    # return `[None]` so that one can use this in tests for `device=None`.
+    return [None] 
+
+
+def scipy_namespace_for(xp: ModuleType) -> ModuleType:
     """
     Return the `scipy` namespace for alternative backends, where it exists,
     such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
@@ -403,7 +441,7 @@ def scipy_namespace_for(xp):
 
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found]
+        import cupyx  # type: ignore[import-not-found,import-untyped]
         return cupyx.scipy
 
     if is_jax(xp):
@@ -413,9 +451,10 @@ def scipy_namespace_for(xp):
     import scipy
     return scipy
 
+
 # temporary substitute for xp.minimum, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_minimum(x1, x2):
+def xp_minimum(x1: Array, x2: Array, /) -> Array:
     # xp won't be passed in because it doesn't need to be passed in to xp.minimum
     xp = array_namespace(x1, x2)
     if hasattr(xp, 'minimum'):
@@ -430,9 +469,15 @@ def xp_minimum(x1, x2):
 
 # temporary substitute for xp.clip, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_clip(x, a, b, xp=None):
+def xp_clip(
+        x: Array,
+        /,
+        min: int | float | Array | None = None,
+        max: int | float | Array | None = None,
+        *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(a, dtype=x.dtype), xp.asarray(b, dtype=x.dtype)
+    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
     if hasattr(xp, 'clip'):
         return xp.clip(x, a, b)
     x, a, b = xp.broadcast_arrays(x, a, b)
@@ -446,7 +491,11 @@ def xp_clip(x, a, b, xp=None):
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_moveaxis_to_end(x, source, xp=None):
+def xp_moveaxis_to_end(
+        x: Array,
+        source: int,
+        /, *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(xp) if xp is None else xp
     axes = list(range(x.ndim))
     temp = axes.pop(source)
@@ -456,7 +505,7 @@ def xp_moveaxis_to_end(x, source, xp=None):
 
 # temporary substitute for xp.copysign, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_copysign(x1, x2, xp=None):
+def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
     # no attempt to account for special cases
     xp = array_namespace(x1, x2) if xp is None else xp
     abs_x1 = xp.abs(x1)
@@ -465,7 +514,7 @@ def xp_copysign(x1, x2, xp=None):
 
 # partial substitute for xp.sign, which does not cover the NaN special case
 # that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x, xp=None):
+def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)

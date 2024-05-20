@@ -11,7 +11,8 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
-from scipy._lib._array_api import array_namespace, xp_minimum, size as xp_size
+from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
+                                   xp_moveaxis_to_end)
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -20,7 +21,7 @@ from ._stats_py import find_repeats, _get_pvalue, SignificanceResult  # noqa: F4
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._axis_nan_policy import _axis_nan_policy_factory
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 
 __all__ = ['mvsdist',
@@ -2841,7 +2842,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
-def bartlett(*samples):
+def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
@@ -3051,30 +3052,41 @@ def bartlett(*samples):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
+    xp = array_namespace(*samples)
+
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle empty input and input that is not 1d
+    # Handle 1d empty input; _axis_nan_policy takes care of N-D
     for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
+        if xp_size(xp.asarray(sample)) == 0:
+            NaN = _get_nan(*samples, xp=xp)  # get NaN of result_dtype of all samples
             return BartlettResult(NaN, NaN)
 
-    Ni = np.empty(k)
-    ssq = np.empty(k, 'd')
-    for j in range(k):
-        Ni[j] = len(samples[j])
-        ssq[j] = np.var(samples[j], ddof=1)
-    Ntot = np.sum(Ni, axis=0)
-    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
-                                     1.0/(Ntot - k))
-    T = numer / denom
-    pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
+    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
 
-    return BartlettResult(T, pval)
+    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.broadcast_to(N, sample.shape[:-1]) for N in Ni]
+    ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
+    Ni = [arr[xp.newaxis, ...] for arr in Ni]
+    ssq = [arr[xp.newaxis, ...] for arr in ssq]
+    Ni = xp.concat(Ni, axis=0)
+    ssq = xp.concat(ssq, axis=0)
+    Ntot = xp.sum(Ni, axis=0)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
+    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
+    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
+    T = numer / denom
+
+    T_np = np.asarray(T)
+    pvalue = distributions.chi2.sf(T_np, k-1)
+    pvalue = xp.asarray(pvalue, dtype=T.dtype)
+    T = T[()] if T.ndim == 0 else T
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return BartlettResult(T, pvalue)
 
 
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
