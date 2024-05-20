@@ -7928,9 +7928,10 @@ def _m_broadcast_to(a, shape, *, xp):
     return xp.broadcast_to(a, shape)
 
 
-def _m_sum(a, *, axis, xp):
+def _m_sum(a, *, axis, preserve_mask, xp):
     if np.ma.isMaskedArray(a):
-        return np.asarray(a.sum(axis))
+        sum = a.sum(axis)
+        return sum if preserve_mask else np.asarray(sum)
     return xp.sum(a, axis=axis)
 
 
@@ -7955,9 +7956,19 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ----------
     f_obs : array_like
         Observed frequencies in each category.
+
+        .. deprecated:: 1.14.0
+            Support for masked array input was deprecated in
+            SciPy 1.14.0 and will be removed in version 1.16.0.
+
     f_exp : array_like, optional
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
+
+        .. deprecated:: 1.14.0
+            Support for masked array input was deprecated in
+            SciPy 1.14.0 and will be removed in version 1.16.0.
+
     ddof : int, optional
         "Delta degrees of freedom": adjustment to the degrees of freedom
         for the p-value.  The p-value is computed using a chi-squared
@@ -8011,7 +8022,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `power_divergence` raises an error if the sums
-    do not agree within a relative tolerance of ``1e-8``.
+    do not agree within a relative tolerance of ``eps**0.5``, where ``eps``
+    is the precision of the input dtype.
 
     When `lambda_` is less than zero, the formula for the statistic involves
     dividing by `f_obs`, so a warning or error may be generated if any value
@@ -8027,12 +8039,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     dof can be between k-1-p and k-1. However, it is also possible that
     the asymptotic distribution is not a chisquare, in which case this
     test is not appropriate.
-
-    This function handles masked arrays.  If an element of `f_obs` or `f_exp`
-    is masked, then data at that position is ignored, and does not count
-    towards the size of the data set.
-
-    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -8120,6 +8126,14 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     elif lambda_ is None:
         lambda_ = 1
 
+    def warn_masked(arg):
+        if isinstance(arg, ma.MaskedArray):
+            message = (
+                "`power_divergence` and `chisquare` support for masked array input was "
+                "deprecated in SciPy 1.14.0 and will be removed in version 1.16.0.")
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+    warn_masked(f_obs)
     f_obs = f_obs if np.ma.isMaskedArray(f_obs) else xp.asarray(f_obs)
     dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
     f_obs = (f_obs.astype(dtype) if np.ma.isMaskedArray(f_obs)
@@ -8128,6 +8142,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
                    else xp.asarray(f_obs, dtype=xp.float64))
 
     if f_exp is not None:
+        warn_masked(f_exp)
         f_exp = f_exp if np.ma.isMaskedArray(f_obs) else xp.asarray(f_exp)
         dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
         f_exp = (f_exp.astype(dtype) if np.ma.isMaskedArray(f_exp)
@@ -8136,10 +8151,11 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
         f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
         f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
-        rtol = 1e-8  # to pass existing tests
+        dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
+        rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
         with np.errstate(invalid='ignore'):
-            f_obs_sum = _m_sum(f_obs_float, axis=axis, xp=xp)
-            f_exp_sum = _m_sum(f_exp, axis=axis, xp=xp)
+            f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
+            f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
             relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
                              xp_minimum(f_obs_sum, f_exp_sum))
             diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
@@ -8174,7 +8190,7 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         terms = f_obs * ((f_obs / f_exp)**lambda_ - 1)
         terms /= 0.5 * lambda_ * (lambda_ + 1)
 
-    stat = _m_sum(terms, axis=axis, xp=xp)
+    stat = _m_sum(terms, axis=axis, preserve_mask=True, xp=xp)
 
     num_obs = _m_count(terms, axis=axis, xp=xp)
     ddof = xp.asarray(ddof)

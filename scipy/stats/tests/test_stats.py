@@ -3382,7 +3382,7 @@ class TestMoments:
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
@@ -3445,7 +3445,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_skewness(self, xp):
         # Scalar test case
@@ -3506,7 +3506,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_precision_loss_gh15554(self, xp):
         # gh-15554 was one of several issues that have reported problems with
@@ -3520,7 +3520,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
@@ -4006,6 +4006,9 @@ power_div_empty_cases = [
 ]
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestPowerDivergence:
 
     def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
@@ -4041,7 +4044,6 @@ class TestPowerDivergence:
                                                  num_obs - 1 - ddof)
         xp_assert_close(p, xp.asarray(expected_p, dtype=dtype))
 
-    @array_api_compatible
     @pytest.mark.parametrize('case', power_div_1d_cases)
     @pytest.mark.parametrize('lambda_stat',
         [(None, 'chi2'), ('pearson', 'chi2'), (1, 'chi2'),
@@ -4053,7 +4055,6 @@ class TestPowerDivergence:
         self.check_power_divergence(case.f_obs, case.f_exp, case.ddof, case.axis,
                                     lambda_, expected_stat, xp)
 
-    @array_api_compatible
     def test_axis(self, xp):
         case0 = power_div_1d_cases[0]
         case1 = power_div_1d_cases[1]
@@ -4083,7 +4084,6 @@ class TestPowerDivergence:
                f_obs_reshape, None, 0, None,
                "pearson", case0.chi2, xp=xp)
 
-    @array_api_compatible
     def test_ddof_broadcasting(self, xp):
         # Test that ddof broadcasts correctly.
         # ddof does not affect the test statistic.  It is broadcast
@@ -4121,7 +4121,6 @@ class TestPowerDivergence:
                                     axis=0)
         xp_assert_close(p, expected_p)
 
-    @array_api_compatible
     @pytest.mark.parametrize('case', power_div_empty_cases)
     @pytest.mark.parametrize('lambda_stat',
         [('pearson', 'chi2'), ('log-likelihood', 'log'),
@@ -4135,7 +4134,6 @@ class TestPowerDivergence:
                 case.f_obs, case.f_exp, case.ddof, case.axis,
                 lambda_, expected_stat, xp)
 
-    @array_api_compatible
     def test_power_divergence_result_attributes(self, xp):
         f_obs = power_div_1d_cases[0].f_obs
         f_exp = power_div_1d_cases[0].f_exp
@@ -4150,7 +4148,6 @@ class TestPowerDivergence:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    @array_api_compatible
     def test_power_divergence_gh_12282(self, xp):
         # The sums of observed and expected frequencies must match
         f_obs = xp.asarray([[10., 20.], [30., 20.]])
@@ -4164,7 +4161,58 @@ class TestPowerDivergence:
         xp_assert_close(stat, xp.asarray([5.71428571, 2.66666667]))
         xp_assert_close(pval, xp.asarray([0.01682741, 0.10247043]))
 
+    def test_power_divergence_against_cressie_read_data(self, xp):
+        # Test stats.power_divergence against tables 4 and 5 from
+        # Cressie and Read, "Multimonial Goodness-of-Fit Tests",
+        # J. R. Statist. Soc. B (1984), Vol 46, No. 3, pp. 440-464.
+        # This tests the calculation for several values of lambda.
+
+        # Table 4 data recalculated for greater precision according to:
+        # Shelby J. Haberman, Analysis of Qualitative Data: Volume 1
+        # Introductory Topics, Academic Press, New York, USA (1978).
+        obs = xp.asarray([15., 11., 14., 17., 5., 11., 10., 4., 8.,
+                          10., 7., 9., 11., 3., 6., 1., 1., 4.])
+        beta = -0.083769  # Haberman (1978), p. 15
+        i = xp.arange(1., obs.shape[0] + 1.)
+        alpha = xp.log(xp.sum(obs) / xp.sum(xp.exp(beta*i)))
+        expected_counts = xp.exp(alpha + beta*i)
+
+        # `table4` holds just the second and third columns from Table 4.
+        xp_test = array_namespace(obs)  # NumPy needs concat, torch needs newaxis
+        table4 = xp_test.concat((obs[xp_test.newaxis, :],
+                                 expected_counts[xp_test.newaxis, :])).T
+
+        table5 = xp.asarray([
+            # lambda, statistic
+            -10.0, 72.2e3,
+            -5.0, 28.9e1,
+            -3.0, 65.6,
+            -2.0, 40.6,
+            -1.5, 34.0,
+            -1.0, 29.5,
+            -0.5, 26.5,
+            0.0, 24.6,
+            0.5, 23.4,
+            0.67, 23.1,
+            1.0, 22.7,
+            1.5, 22.6,
+            2.0, 22.9,
+            3.0, 24.8,
+            5.0, 35.5,
+            10.0, 21.4e1,
+            ])
+        table5 = xp.reshape(table5, (-1, 2))
+
+        for i in range(table5.shape[0]):
+            lambda_, expected_stat = table5[i, 0], table5[i, 1]
+            stat, p = stats.power_divergence(table4[:,0], table4[:,1],
+                                             lambda_=lambda_)
+            assert_allclose(stat, expected_stat, rtol=5e-3)
+
+
 @array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestChisquare:
     def test_gh_chisquare_12282(self, xp):
         # Currently `chisquare` is implemented via power_divergence
@@ -4188,124 +4236,92 @@ class TestChisquare:
         xp_assert_equal(res.statistic, stat)
         xp_assert_equal(res.pvalue, p)
 
-    def test_power_divergence_against_cressie_read_data(self, xp):
-        # Test stats.power_divergence against tables 4 and 5 from
-        # Cressie and Read, "Multimonial Goodness-of-Fit Tests",
-        # J. R. Statist. Soc. B (1984), Vol 46, No. 3, pp. 440-464.
-        # This tests the calculation for several values of lambda.
 
-        # Table 4 data recalculated for greater precision according to:
-        # Shelby J. Haberman, Analysis of Qualitative Data: Volume 1
-        # Introductory Topics, Academic Press, New York, USA (1978).
-        obs = np.array([15, 11, 14, 17, 5, 11, 10, 4, 8,
-                        10, 7, 9, 11, 3, 6, 1, 1, 4])
-        beta = -0.083769  # Haberman (1978), p. 15
-        i = np.arange(1, len(obs) + 1)
-        alpha = np.log(obs.sum() / np.exp(beta*i).sum())
-        expected_counts = np.exp(alpha + beta*i)
+@skip_xp_invalid_arg
+class TestChisquareMA:
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
+    def test_chisquare_masked_arrays(self):
+        # Test masked arrays.
+        obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
+        mask = np.array([[0, 0, 0, 0, 1], [1, 1, 0, 0, 0]]).T
+        mobs = np.ma.masked_array(obs, mask)
+        expected_chisq = np.array([24.0, 0.5])
+        expected_g = np.array([2*(2*8*np.log(0.5) + 32*np.log(2.0)),
+                               2*(3*np.log(0.75) + 5*np.log(1.25))])
 
-        # `table4` holds just the second and third columns from Table 4.
-        table4 = np.vstack((obs, expected_counts)).T
+        chi2 = stats.distributions.chi2
 
-        table5 = np.array([
-            # lambda, statistic
-            -10.0, 72.2e3,
-            -5.0, 28.9e1,
-            -3.0, 65.6,
-            -2.0, 40.6,
-            -1.5, 34.0,
-            -1.0, 29.5,
-            -0.5, 26.5,
-            0.0, 24.6,
-            0.5, 23.4,
-            0.67, 23.1,
-            1.0, 22.7,
-            1.5, 22.6,
-            2.0, 22.9,
-            3.0, 24.8,
-            5.0, 35.5,
-            10.0, 21.4e1,
-            ]).reshape(-1, 2)
+        chisq, p = stats.chisquare(mobs)
+        mat.assert_array_equal(chisq, expected_chisq)
+        mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
+                                                 mobs.count(axis=0) - 1))
 
-        for lambda_, expected_stat in table5:
-            stat, p = stats.power_divergence(table4[:,0], table4[:,1],
-                                             lambda_=lambda_)
-            assert_allclose(stat, expected_stat, rtol=5e-3)
+        g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
+        mat.assert_array_almost_equal(g, expected_g, decimal=15)
+        mat.assert_array_almost_equal(p, chi2.sf(expected_g,
+                                                 mobs.count(axis=0) - 1))
 
+        chisq, p = stats.chisquare(mobs.T, axis=1)
+        mat.assert_array_equal(chisq, expected_chisq)
+        mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
+                                                 mobs.T.count(axis=1) - 1))
+        g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
+        mat.assert_array_almost_equal(g, expected_g, decimal=15)
+        mat.assert_array_almost_equal(p, chi2.sf(expected_g,
+                                                 mobs.count(axis=0) - 1))
 
-def test_chisquare_masked_arrays():
-    # Test masked arrays.
-    obs = np.array([[8, 8, 16, 32, -1], [-1, -1, 3, 4, 5]]).T
-    mask = np.array([[0, 0, 0, 0, 1], [1, 1, 0, 0, 0]]).T
-    mobs = np.ma.masked_array(obs, mask)
-    expected_chisq = np.array([24.0, 0.5])
-    expected_g = np.array([2*(2*8*np.log(0.5) + 32*np.log(2.0)),
-                           2*(3*np.log(0.75) + 5*np.log(1.25))])
+        obs1 = np.ma.array([3, 5, 6, 99, 10], mask=[0, 0, 0, 1, 0])
+        exp1 = np.ma.array([2, 4, 8, 10, 99], mask=[0, 0, 0, 0, 1])
+        chi2, p = stats.chisquare(obs1, f_exp=exp1)
+        # Because of the mask at index 3 of obs1 and at index 4 of exp1,
+        # only the first three elements are included in the calculation
+        # of the statistic.
+        mat.assert_array_equal(chi2, 1/2 + 1/4 + 4/8)
 
-    chi2 = stats.distributions.chi2
+        # When axis=None, the two values should have type np.float64.
+        chisq, p = stats.chisquare(np.ma.array([1,2,3]), axis=None)
+        assert_(isinstance(chisq, np.float64))
+        assert_(isinstance(p, np.float64))
+        assert_equal(chisq, 1.0)
+        assert_almost_equal(p, stats.distributions.chi2.sf(1.0, 2))
 
-    chisq, p = stats.chisquare(mobs)
-    mat.assert_array_equal(chisq, expected_chisq)
-    mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
-                                             mobs.count(axis=0) - 1))
+        # Empty arrays:
+        # A data set with length 0 returns a masked scalar.
+        with np.errstate(invalid='ignore'):
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                chisq, p = stats.chisquare(np.ma.array([]))
+        assert_(isinstance(chisq, np.ma.MaskedArray))
+        assert_equal(chisq.shape, ())
+        assert_(chisq.mask)
 
-    g, p = stats.power_divergence(mobs, lambda_='log-likelihood')
-    mat.assert_array_almost_equal(g, expected_g, decimal=15)
-    mat.assert_array_almost_equal(p, chi2.sf(expected_g,
-                                             mobs.count(axis=0) - 1))
+        empty3 = np.ma.array([[],[],[]])
 
-    chisq, p = stats.chisquare(mobs.T, axis=1)
-    mat.assert_array_equal(chisq, expected_chisq)
-    mat.assert_array_almost_equal(p, chi2.sf(expected_chisq,
-                                             mobs.T.count(axis=1) - 1))
-    g, p = stats.power_divergence(mobs.T, axis=1, lambda_="log-likelihood")
-    mat.assert_array_almost_equal(g, expected_g, decimal=15)
-    mat.assert_array_almost_equal(p, chi2.sf(expected_g,
-                                             mobs.count(axis=0) - 1))
+        # empty3 is a collection of 0 data sets (whose lengths would be 3, if
+        # there were any), so the return value is an array with length 0.
+        chisq, p = stats.chisquare(empty3)
+        assert_(isinstance(chisq, np.ma.MaskedArray))
+        mat.assert_array_equal(chisq, [])
 
-    obs1 = np.ma.array([3, 5, 6, 99, 10], mask=[0, 0, 0, 1, 0])
-    exp1 = np.ma.array([2, 4, 8, 10, 99], mask=[0, 0, 0, 0, 1])
-    chi2, p = stats.chisquare(obs1, f_exp=exp1)
-    # Because of the mask at index 3 of obs1 and at index 4 of exp1,
-    # only the first three elements are included in the calculation
-    # of the statistic.
-    mat.assert_array_equal(chi2, 1/2 + 1/4 + 4/8)
+        # empty3.T is an array containing 3 data sets, each with length 0,
+        # so an array of size (3,) is returned, with all values masked.
+        with np.errstate(invalid='ignore'):
+            with suppress_warnings() as sup:
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                chisq, p = stats.chisquare(empty3.T)
 
-    # When axis=None, the two values should have type np.float64.
-    chisq, p = stats.chisquare(np.ma.array([1,2,3]), axis=None)
-    assert_(isinstance(chisq, np.float64))
-    assert_(isinstance(p, np.float64))
-    assert_equal(chisq, 1.0)
-    assert_almost_equal(p, stats.distributions.chi2.sf(1.0, 2))
+        assert_(isinstance(chisq, np.ma.MaskedArray))
+        assert_equal(chisq.shape, (3,))
+        assert_(np.all(chisq.mask))
 
-    # Empty arrays:
-    # A data set with length 0 returns a masked scalar.
-    with np.errstate(invalid='ignore'):
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "Mean of empty slice")
-            chisq, p = stats.chisquare(np.ma.array([]))
-    # assert_(isinstance(chisq, np.ma.MaskedArray))
-    assert_equal(chisq.shape, ())
-    # assert_(chisq.mask)
-
-    empty3 = np.ma.array([[],[],[]])
-
-    # empty3 is a collection of 0 data sets (whose lengths would be 3, if
-    # there were any), so the return value is an array with length 0.
-    chisq, p = stats.chisquare(empty3)
-    # assert_(isinstance(chisq, np.ma.MaskedArray))
-    mat.assert_array_equal(chisq, [])
-
-    # empty3.T is an array containing 3 data sets, each with length 0,
-    # so an array of size (3,) is returned, with all values masked.
-    with np.errstate(invalid='ignore'):
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "Mean of empty slice")
-            chisq, p = stats.chisquare(empty3.T)
-
-    # assert_(isinstance(chisq, np.ma.MaskedArray))
-    assert_equal(chisq.shape, (3,))
-    # assert_(np.all(chisq.mask))
+    def test_deprecation_warning(self):
+        a = np.asarray([1., 2., 3.])
+        ma = np.ma.masked_array(a)
+        message = "`power_divergence` and `chisquare` support for masked..."
+        with pytest.warns(DeprecationWarning, match=message):
+            stats.chisquare(ma)
+        with pytest.warns(DeprecationWarning, match=message):
+            stats.chisquare(a, ma)
 
 
 def test_friedmanchisquare():
