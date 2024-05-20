@@ -132,7 +132,7 @@ def getdtype(dtype, a=None, default=None):
                 "object dtype is not supported by sparse matrices"
             )
     if newdtype not in supported_dtypes:
-        warn(f"dtype {newdtype} is not supported", stacklevel=3)
+        warn(f"scipy.sparse does not support dtype {newdtype}", stacklevel=3)
     
     return newdtype
 
