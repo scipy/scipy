@@ -119,6 +119,7 @@ def test_warning_calls_filters(warning_calls):
         os.path.join('stats', '_continuous_distns.py'),
         os.path.join('stats', '_binned_statistic.py'),  # gh-19345
         os.path.join('_lib', '_util.py'),  # gh-19341
+        "conftest.py",
     )
     bad_filters = [item for item in bad_filters if item.split(':')[0] not in
                    allowed_filters]

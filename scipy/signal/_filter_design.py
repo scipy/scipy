@@ -2392,7 +2392,7 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     fs = _validate_fs(fs, allow_none=True)
 
     if wp.shape[0] != ws.shape[0] or wp.shape not in [(1,), (2,)]:
-        raise ValueError("wp and ws must have one or two elements each, and"
+        raise ValueError("wp and ws must have one or two elements each, and "
                          f"the same shape, got {wp.shape} and {ws.shape}")
 
     if any(wp <= 0) or any(ws <= 0):
@@ -2403,14 +2403,14 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
             if any(wp >= 1) or any(ws >= 1):
                 raise ValueError("Values for wp, ws must be less than 1")
         elif any(wp >= fs/2) or any(ws >= fs/2):
-            raise ValueError("Values for wp, ws must be less than fs/2"
-                             f" (fs={fs} -> fs/2={fs/2})")
+            raise ValueError("Values for wp, ws must be less than fs/2 "
+                             f"(fs={fs} -> fs/2={fs/2})")
 
     if wp.shape[0] == 2:
         if not ((ws[0] < wp[0] and wp[1] < ws[1]) or
                (wp[0] < ws[0] and ws[1] < wp[1])):
-            raise ValueError("Passband must lie strictly inside stopband"
-                             " or vice versa")
+            raise ValueError("Passband must lie strictly inside stopband "
+                             "or vice versa")
 
     band_type = 2 * (len(wp) - 1)
     band_type += 1
@@ -4562,7 +4562,7 @@ def ellipap(N, rp, rs):
 
     References
     ----------
-    .. [1] Lutova, Tosic, and Evans, "Filter Design for Signal Processing",
+    .. [1] Lutovac, Tosic, and Evans, "Filter Design for Signal Processing",
            Chapters 5 and 12.
 
     .. [2] Orfanidis, "Lecture Notes on Elliptic Filter Design",

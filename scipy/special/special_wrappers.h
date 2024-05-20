@@ -216,6 +216,7 @@ double cephes_yn_wrap(int n, double x);
 double cephes_polevl_wrap(double x, const double coef[], int N);
 double cephes_p1evl_wrap(double x, const double coef[], int N);
 double special_wright_bessel(double a, double b, double x);
+double special_log_wright_bessel(double a, double b, double x);
 
 double special_scaled_exp1(double x);
 

@@ -9,7 +9,7 @@
 ! This limit can be overridden with -fmax-stack-var-size, or -frecursive can
 ! be used to force all local arrays to be allocated on the stack.
 !
-python module dfitpack ! in
+python module _dfitpack ! in
 
   usercode '''
 

@@ -95,7 +95,16 @@ class PytestTester:
         pytest_args = ['--showlocals', '--tb=short']
 
         if doctests:
-            raise ValueError("Doctests not supported")
+            pytest_args += [
+                "--doctest-modules",
+                "--ignore=scipy/interpolate/_interpnd_info.py",
+                "--ignore=scipy/_lib/array_api_compat",
+                "--ignore=scipy/_lib/highs",
+                "--ignore=scipy/_lib/unuran",
+                "--ignore=scipy/_lib/_gcutils.py",
+                "--ignore=scipy/_lib/doccer.py",
+                "--ignore=scipy/_lib/_uarray",
+            ]
 
         if extra_argv:
             pytest_args += list(extra_argv)
@@ -280,20 +289,36 @@ def _test_cython_extension(tmp_path, srcdir):
     Helper function to test building and importing Cython modules that
     make use of the Cython APIs for BLAS, LAPACK, optimize, and special.
     """
+    import pytest
+    try:
+        subprocess.check_call(["meson", "--version"])
+    except FileNotFoundError:
+        pytest.skip("No usable 'meson' found")
+
     # build the examples in a temporary directory
     mod_name = os.path.split(srcdir)[1]
     shutil.copytree(srcdir, tmp_path / mod_name)
     build_dir = tmp_path / mod_name / 'tests' / '_cython_examples'
     target_dir = build_dir / 'build'
     os.makedirs(target_dir, exist_ok=True)
+
+    # Ensure we use the correct Python interpreter even when `meson` is
+    # installed in a different Python environment (see numpy#24956)
+    native_file = str(build_dir / 'interpreter-native-file.ini')
+    with open(native_file, 'w') as f:
+        f.write("[binaries]\n")
+        f.write(f"python = '{sys.executable}'")
+
     if sys.platform == "win32":
         subprocess.check_call(["meson", "setup",
                                "--buildtype=release",
+                               "--native-file", native_file,
                                "--vsenv", str(build_dir)],
                               cwd=target_dir,
                               )
     else:
-        subprocess.check_call(["meson", "setup", str(build_dir)],
+        subprocess.check_call(["meson", "setup",
+                               "--native-file", native_file, str(build_dir)],
                               cwd=target_dir
                               )
     subprocess.check_call(["meson", "compile", "-vv"], cwd=target_dir)
