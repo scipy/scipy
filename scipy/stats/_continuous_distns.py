@@ -9,6 +9,7 @@ import ctypes
 
 import numpy as np
 from numpy.polynomial import Polynomial
+from scipy.interpolate import BSpline
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -23,8 +24,8 @@ from scipy._lib._util import _lazyselect, _lazywhere
 from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
-from ._distn_infrastructure import (
-    get_distribution_names, _kurtosis,
+from ._distn_infrastructure import (_vectorize_rvs_over_shapes,
+    get_distribution_names, _kurtosis, _isintegral,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _LOGXMIN, _EULER, _ZETA3, _SQRT_PI,
@@ -9036,6 +9037,133 @@ class rice_gen(rv_continuous):
 
 rice = rice_gen(a=0.0, name="rice")
 
+class irwinhall_gen(rv_continuous):
+    r"""An Irwin-Hall (Uniform Sum) continuous random variable.
+
+    An `Irwin-Hall <https://en.wikipedia.org/wiki/Irwin-Hall_distribution/>`_
+    continuous random variable is the sum of :math:`n` independent
+    standard uniform random variables [1]_ [2]_.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    Applications include `Rao's Spacing Test
+    <https://jammalam.faculty.pstat.ucsb.edu/html/favorite/test.htm>`_,
+    a more powerful alternative to the Rayleigh test
+    when the data are not unimodal, and radar [3]_.
+
+    Conveniently, the pdf and cdf are the :math:`n`-fold convolution of
+    the ones for the standard uniform distribution, which is also the
+    definition of the cardinal B-splines of degree :math:`n-1`
+    having knots evenly spaced from :math:`1` to :math:`n` [4]_ [5]_.
+
+    The Bates distribution, which represents the *mean* of statistically
+    independent, uniformly distributed random variables, is simply the
+    Irwin-Hall distribution scaled by :math:`1/n`. For example, the frozen
+    distribution ``bates = irwinhall(10, scale=1/10)`` represents the
+    distribution of the mean of 10 uniformly distributed random variables.
+    
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] P. Hall, "The distribution of means for samples of size N drawn
+            from a population in which the variate takes values between 0 and 1,
+            all such values being equally probable",
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 240-244,
+            :doi:`10.1093/biomet/19.3-4.240`.
+    .. [2] J. O. Irwin, "On the frequency distribution of the means of samples
+            from a population having any law of frequency with finite moments,
+            with special reference to Pearson's Type II,
+            Biometrika, Volume 19, Issue 3-4, December 1927, Pages 225-239,
+            :doi:`0.1093/biomet/19.3-4.225`.
+    .. [3] K. Buchanan, T. Adeyemi, C. Flores-Molina, S. Wheeland and D. Overturf, 
+            "Sidelobe behavior and bandwidth characteristics
+            of distributed antenna arrays,"
+            2018 United States National Committee of
+            URSI National Radio Science Meeting (USNC-URSI NRSM),
+            Boulder, CO, USA, 2018, pp. 1-2.
+            https://www.usnc-ursi-archive.org/nrsm/2018/papers/B15-9.pdf.
+    .. [4] Amos Ron, "Lecture 1: Cardinal B-splines and convolution operators", p. 1
+            https://pages.cs.wisc.edu/~deboor/887/lec1new.pdf.
+    .. [5] Trefethen, N. (2012, July). B-splines and convolution. Chebfun. 
+            Retrieved April 30, 2024, from http://www.chebfun.org/examples/approx/BSplineConv.html.
+
+    %(example)s
+    """  # noqa: E501
+
+    @replace_notes_in_docstring(rv_continuous, notes="""\
+        Raises a ``NotImplementedError`` for the Irwin-Hall distribution because
+        the generic `fit` implementation is unreliable and no custom implementation
+        is available. Consider using `scipy.stats.fit`.\n\n""")
+    def fit(self, data, *args, **kwds):
+        fit_notes = ("The generic `fit` implementation is unreliable for this "
+                     "distribution, and no custom implementation is available. "
+                     "Consider using `scipy.stats.fit`.")
+        raise NotImplementedError(fit_notes)
+
+    def _argcheck(self, n):
+        return (n > 0) & _isintegral(n) & np.isrealobj(n)
+    
+    def _get_support(self, n):
+        return 0, n 
+    
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
+    def _munp(self, order, n):
+        # see https://link.springer.com/content/pdf/10.1007/s10959-020-01050-9.pdf
+        # page 640, with m=n, j=n+order
+        def vmunp(order, n):
+            return (sc.stirling2(n+order, n, exact=True) 
+                    / sc.comb(n+order, n, exact=True))
+
+        # exact rationals, but we convert to float anyway
+        return np.vectorize(vmunp, otypes=[np.float64])(order, n)
+
+    @staticmethod
+    def _cardbspl(n):
+        t = np.arange(n+1) 
+        return BSpline.basis_element(t)
+
+    def _pdf(self, x, n):
+        def vpdf(x, n):
+            return self._cardbspl(n)(x)
+        return np.vectorize(vpdf, otypes=[np.float64])(x, n)
+    
+    def _cdf(self, x, n):
+        def vcdf(x, n):
+            return self._cardbspl(n).antiderivative()(x)
+        return np.vectorize(vcdf, otypes=[np.float64])(x, n)
+
+    def _sf(self, x, n):
+        def vsf(x, n):
+            return self._cardbspl(n).antiderivative()(n-x)
+        return np.vectorize(vsf, otypes=[np.float64])(x, n)
+
+    def _rvs(self, n, size=None, random_state=None, *args):
+        @_vectorize_rvs_over_shapes
+        def _rvs1(n, size=None, random_state=None):
+            n = np.floor(n).astype(int)
+            usize = (n,) if size is None else (n, *size)
+            return random_state.uniform(size=usize).sum(axis=0)
+        return _rvs1(n, size=size, random_state=random_state)
+    
+    def _stats(self, n):
+        # mgf = ((exp(t) - 1)/t)**n
+        # m'th derivative follows from the generalized Leibniz rule
+        # Moments follow directly from the definition as the sum of n iid unif(0,1)
+        # and the summation rules for moments of a sum of iid random variables
+        # E(IH((n))) = n*E(U(0,1)) = n/2
+        # Var(IH((n))) = n*Var(U(0,1)) = n/12
+        # Skew(IH((n))) = Skew(U(0,1))/sqrt(n) = 0
+        # Kurt(IH((n))) = Kurt(U(0,1))/n = -6/(5*n) -- Fisher's excess kurtosis
+        # See e.g. https://en.wikipedia.org/wiki/Irwin%E2%80%93Hall_distribution
+
+        return n/2, n/12, 0, -6/(5*n)
+
+irwinhall = irwinhall_gen(name="irwinhall")    
 
 class recipinvgauss_gen(rv_continuous):
     r"""A reciprocal inverse Gaussian continuous random variable.
