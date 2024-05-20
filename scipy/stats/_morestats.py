@@ -4371,7 +4371,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular mean of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their _circular mean_ is defined by ([1]_, Eq. 2.2.4)
+    radians, their `circular mean` is defined by ([1]_, Eq. 2.2.4)
 
     .. math::
 
@@ -4409,7 +4409,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     References
     ----------
     .. [1] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
-           John Wiley & Sons, 2000.
+           John Wiley & Sons, 1999.
 
     Examples
     --------
@@ -4459,7 +4459,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     r"""Compute the circular variance of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their _circular variance_ is defined by ([2]_, Eq. 2.3.3)
+    radians, their `circular variance` is defined by ([2]_, Eq. 2.3.3)
 
     .. math::
 
@@ -4502,7 +4502,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
            University Press, 1993.
     .. [2] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
-           John Wiley & Sons, 2000.
+           John Wiley & Sons, 1999.
 
     Examples
     --------
@@ -4555,7 +4555,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     Compute the circular standard deviation of a sample of angle observations.
 
     Given :math:`n` angle observations :math:`x_1, \cdots, x_n` measured in
-    radians, their _circular standard deviation_ is defined by
+    radians, their `circular standard deviation` is defined by
     ([2]_, Eq. 2.3.11)
 
     .. math::
@@ -4603,7 +4603,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     .. [1] Mardia, K. V. (1972). 2. In *Statistics of Directional Data*
        (pp. 18-24). Academic Press. :doi:`10.1016/C2013-0-07425-7`.
     .. [2] Mardia, K. V. and Jupp, P. E. *Directional Statistics*.
-           John Wiley & Sons, 2000.
+           John Wiley & Sons, 1999.
 
     Examples
     --------
