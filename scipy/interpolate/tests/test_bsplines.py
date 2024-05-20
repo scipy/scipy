@@ -2354,6 +2354,36 @@ class TestNdBSpline:
         with assert_raises(ValueError, match="Data and knots*"):
             NdBSpline.design_matrix([[1, 2]], t3, [k]*3)
 
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+        rng = np.random.default_rng(12345)
+        k = 3
+        tx = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=7)) * 3, 3, 3, 3, 3]
+        ty = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        tz = np.r_[0, 0, 0, 0, np.sort(rng.uniform(size=8)) * 4, 4, 4, 4, 4]
+        c = rng.uniform(size=(tx.size-k-1, ty.size-k-1, tz.size-k-1))
+
+        spl = NdBSpline((tx, ty, tz), c, k=k)
+
+        def worker_fn(spl):
+            xi = np.c_[[1, 1.5, 2],
+                       [1.1, 1.6, 2.1],
+                       [0.9, 1.4, 1.9]]
+            barrier.wait()
+            spl(xi)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(spl,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
+
 
 class TestMakeND:
     def test_2D_separable_simple(self):
