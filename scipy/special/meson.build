@@ -274,7 +274,7 @@ foreach npz_file: npz_files
     ],
     install: true,
     install_dir: py3.get_install_dir() / 'scipy/special/tests/data',
-    install_tag: 'python-runtime',
+    install_tag: 'tests',
   )
 endforeach
 
