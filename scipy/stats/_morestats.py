@@ -255,7 +255,7 @@ def kstat(data, n=2, *, axis=None):
         k_1 &= \frac{S_1}{n}, \\
         k_2 &= \frac{nS_2 - S_1^2}{n(n-1)}, \\
         k_3 &= \frac{2S_1^3 - 3nS_1S_2 + n^2S_3}{n(n-1)(n-2)}, \\
-        k_4 &= \frac{-6S_1^2 + 12nS_1^2S_2 - 3n(n-1)S_2^2 - 4n(n+1)S_1S_3
+        k_4 &= \frac{-6S_1^4 + 12nS_1^2S_2 - 3n(n-1)S_2^2 - 4n(n+1)S_1S_3
         + n^2(n+1)S_4}{n (n-1)(n-2)(n-3)},
 
     where
@@ -355,7 +355,7 @@ def kstatvar(data, n=2, *, axis=None):
 
     Notes
     -----
-    The variances of the first two k-statistics are given by
+   Unbiased estimators of the variances of the first two k-statistics are given by
 
     .. math::
 
