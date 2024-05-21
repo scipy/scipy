@@ -1563,7 +1563,11 @@ class DifferentialEvolutionSolver:
                 self._ensure_constraint(trial)
 
                 # scale from [0, 1) to the actual parameter value
-                parameters = self._scale_parameters(trial)
+                # _mutate should return an array (S, N) where S is the
+                # number of candidates that were mutated.
+                # For `immediate` S = 1. For `deferred` this will
+                # probably be the entire population, S = num_population_members
+                parameters = self._scale_parameters(trial)[0]
 
                 # determine the energy of the objective function
                 if self._wrapped_constraints:
@@ -1606,8 +1610,7 @@ class DifferentialEvolutionSolver:
 
             # 'deferred' approach, vectorised form.
             # create trial solutions
-            trial_pop = np.array(
-                [self._mutate(i) for i in range(self.num_population_members)])
+            trial_pop = self._mutate(np.arange(self.num_population_members))
 
             # enforce bounds
             self._ensure_constraint(trial_pop)
@@ -1669,12 +1672,16 @@ class DifferentialEvolutionSolver:
         """Create a trial vector based on a mutation strategy."""
         rng = self.random_number_generator
 
+        candidate = np.atleast_1d(candidate)
+        S = len(candidate)
+
         if callable(self.strategy):
             _population = self._scale_parameters(self.population)
             trial = np.array(
-                self.strategy(candidate, _population, rng=rng), dtype=float
+                [self.strategy(c, _population, rng=rng) for c in candidate],
+                dtype=float
             )
-            if trial.shape != (self.parameter_count,):
+            if trial.shape != (S, self.parameter_count):
                 raise RuntimeError(
                     "strategy must have signature"
                     " f(candidate: int, population: np.ndarray, rng=None)"
@@ -1682,53 +1689,58 @@ class DifferentialEvolutionSolver:
                 )
             return self._unscale_parameters(trial)
 
+        # trial should be at least 2-D, (S, N), because len(candidate) >= 1
         trial = np.copy(self.population[candidate])
-        fill_point = rng.choice(self.parameter_count)
+        fill_point = rng.choice(self.parameter_count, size=S)
+
+        # (S, 5)
+        samples = np.array([self._select_samples(c, 5) for c in candidate])
 
         if self.strategy in ['currenttobest1exp', 'currenttobest1bin']:
-            bprime = self.mutation_func(candidate,
-                                        self._select_samples(candidate, 5))
+            bprime = self.mutation_func(candidate, samples)
         else:
-            bprime = self.mutation_func(self._select_samples(candidate, 5))
+            bprime = self.mutation_func(samples)
 
+        crossovers = rng.uniform(size=(S, self.parameter_count))
+        crossovers = crossovers < self.cross_over_probability
         if self.strategy in self._binomial:
-            crossovers = rng.uniform(size=self.parameter_count)
-            crossovers = crossovers < self.cross_over_probability
             # the last one is always from the bprime vector for binomial
             # If you fill in modulo with a loop you have to set the last one to
             # true. If you don't use a loop then you can have any random entry
             # be True.
-            crossovers[fill_point] = True
+            idx = np.arange(S)
+            crossovers[idx, fill_point[idx]] = True
             trial = np.where(crossovers, bprime, trial)
             return trial
 
         elif self.strategy in self._exponential:
-            i = 0
-            crossovers = rng.uniform(size=self.parameter_count)
-            crossovers = crossovers < self.cross_over_probability
-            crossovers[0] = True
-            while (i < self.parameter_count and crossovers[i]):
-                trial[fill_point] = bprime[fill_point]
-                fill_point = (fill_point + 1) % self.parameter_count
-                i += 1
+            crossovers[:, 0] = True
+            for j in range(S):
+                i = 0
+                init_fill = fill_point[j]
+                while (i < self.parameter_count and crossovers[j, i]):
+                    trial[j, init_fill] = bprime[j, init_fill]
+                    init_fill = (init_fill + 1) % self.parameter_count
+                    i += 1
 
             return trial
 
     def _best1(self, samples):
         """best1bin, best1exp"""
-        r0, r1 = samples[:2]
+        # samples.shape == (S, 5)
+        r0, r1 = samples.T[:2]
         return (self.population[0] + self.scale *
                 (self.population[r0] - self.population[r1]))
 
     def _rand1(self, samples):
         """rand1bin, rand1exp"""
-        r0, r1, r2 = samples[:3]
+        r0, r1, r2 = samples.T[:3]
         return (self.population[r0] + self.scale *
                 (self.population[r1] - self.population[r2]))
 
     def _randtobest1(self, samples):
         """randtobest1bin, randtobest1exp"""
-        r0, r1, r2 = samples[:3]
+        r0, r1, r2 = samples.T[:3]
         bprime = np.copy(self.population[r0])
         bprime += self.scale * (self.population[0] - bprime)
         bprime += self.scale * (self.population[r1] -
@@ -1737,7 +1749,7 @@ class DifferentialEvolutionSolver:
 
     def _currenttobest1(self, candidate, samples):
         """currenttobest1bin, currenttobest1exp"""
-        r0, r1 = samples[:2]
+        r0, r1 = samples.T[:2]
         bprime = (self.population[candidate] + self.scale *
                   (self.population[0] - self.population[candidate] +
                    self.population[r0] - self.population[r1]))
@@ -1745,7 +1757,7 @@ class DifferentialEvolutionSolver:
 
     def _best2(self, samples):
         """best2bin, best2exp"""
-        r0, r1, r2, r3 = samples[:4]
+        r0, r1, r2, r3 = samples.T[:4]
         bprime = (self.population[0] + self.scale *
                   (self.population[r0] + self.population[r1] -
                    self.population[r2] - self.population[r3]))
@@ -1754,7 +1766,7 @@ class DifferentialEvolutionSolver:
 
     def _rand2(self, samples):
         """rand2bin, rand2exp"""
-        r0, r1, r2, r3, r4 = samples
+        r0, r1, r2, r3, r4 = samples.T[:5]
         bprime = (self.population[r0] + self.scale *
                   (self.population[r1] + self.population[r2] -
                    self.population[r3] - self.population[r4]))

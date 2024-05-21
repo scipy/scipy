@@ -126,11 +126,11 @@ class TestDifferentialEvolutionSolver:
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
-        trial = self.dummy_solver2._best1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._best1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
         result = np.array([0.25])
-        trial = self.dummy_solver2._rand1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._rand1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__mutate2(self):
@@ -138,23 +138,26 @@ class TestDifferentialEvolutionSolver:
         # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
         result = np.array([-0.1])
-        trial = self.dummy_solver2._best2((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._best2(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
         result = np.array([0.1])
-        trial = self.dummy_solver2._rand2((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._rand2(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
         result = np.array([0.15])
-        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._randtobest1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__currenttobest1(self):
         # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(
+            1,
+            np.array([2, 3, 4, 5, 6])
+        )
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):
