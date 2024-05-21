@@ -1760,6 +1760,14 @@ const char *iv_doc = R"(
 
     )";
 
+const char *iv_ratio_doc = R"(
+    _iv_ratio(v, x, out=None)
+
+    Internal function, do not use.
+
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    )";
+
 const char *ive_doc = R"(
     ive(v, z, out=None)
 

@@ -735,36 +735,38 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@array_api_compatible
+@pytest.mark.usefixtures("skip_xp_backends")
+@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestBartlett:
-
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         T, pval = stats.bartlett(*args)
-        assert_almost_equal(T, 20.78587342806484, 7)
-        assert_almost_equal(pval, 0.0136358632781, 7)
+        xp_assert_close(T, xp.asarray(20.78587342806484))
+        xp_assert_close(pval, xp.asarray(0.0136358632781))
 
-    def test_bad_arg(self):
-        # Too few args raises ValueError.
-        assert_raises(ValueError, stats.bartlett, [1])
+    def test_too_few_args(self, xp):
+        message = "Must enter at least two input sample vectors."
+        with pytest.raises(ValueError, match=message):
+            stats.bartlett(xp.asarray([1.]))
 
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    def test_empty_arg(self):
+    def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            args = [xp.asarray(arg) for arg in args]
             res = stats.bartlett(*args)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.bartlett, g1, x)
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
 
 class TestLevene:
@@ -1672,6 +1674,22 @@ class TestWilcoxon:
         assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
+    def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
+        # When method!='approx', nan_policy='propagate', and a slice of
+        # a >1 dimensional array input contained NaN, the result object of
+        # `wilcoxon` could (under yet other conditions) return `zstatistic`
+        # for some slices but not others. This resulted in an error because
+        # `apply_along_axis` would have to create a ragged array.
+        # Check that this is resolved.
+        rng = np.random.default_rng(235889269872456)
+        A = rng.normal(size=(51, 2))  # length along slice > exact threshold
+        A[5, 1] = np.nan
+        res = stats.wilcoxon(A)
+        ref = stats.wilcoxon(A, method='approx')
+        assert_allclose(res, ref)
+        assert hasattr(ref, 'zstatistic')
+        assert not hasattr(res, 'zstatistic')
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
@@ -1704,7 +1722,7 @@ class TestKstat:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
@@ -1743,7 +1761,7 @@ class TestKstatVar:
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
-        data[6] = xp.nan
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
         xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 

@@ -332,10 +332,9 @@ class _spbase:
     def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements in {format_name} format>"
+            f"<{format_name} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements and shape {self.shape}>"
         )
 
     def __str__(self):
@@ -344,18 +343,23 @@ class _spbase:
         A = self.tocoo()
 
         # helper function, outputs "(i,j)  v"
-        def tostr(row, col, data):
-            triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
+        def tostr(coords, data):
+            pairs = zip(zip(*(c.tolist() for c in coords)), data)
+            return '\n'.join(f'  {idx}\t{val}' for idx, val in pairs)
 
+        out = repr(self)
+        if self.nnz == 0:
+            return out
+
+        out += '\n  Coords\tValues\n'
         if self.nnz > maxprint:
             half = maxprint // 2
-            out = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out += tostr(tuple(c[:half] for c in A.coords), A.data[:half])
             out += "\n  :\t:\n"
-            half = maxprint - maxprint//2
-            out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
+            half = maxprint - half
+            out += tostr(tuple(c[-half:] for c in A.coords), A.data[-half:])
         else:
-            out = tostr(A.row, A.col, A.data)
+            out += tostr(A.coords, A.data)
 
         return out
 

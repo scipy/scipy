@@ -90,6 +90,7 @@ class TestNewToOld:
             assert_allclose(funs['cobyla'], funs['trust-constr'], rtol=1e-4)
             assert_allclose(funs['cobyqa'], funs['trust-constr'], rtol=1e-4)
 
+    @pytest.mark.fail_slow(10)
     def test_individual_constraint_objects(self):
         def fun(x):
             return (x[0] - 1) ** 2 + (x[1] - 2.5) ** 2 + (x[2] - 0.75) ** 2

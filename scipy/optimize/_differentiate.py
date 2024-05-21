@@ -363,7 +363,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
     temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
-    func, xs, fs, args, shape, dtype = temp
+    func, xs, fs, args, shape, dtype, xp = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
@@ -546,7 +546,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     preserve_shape)
+                     xp, preserve_shape)
 
 
 def _differentiate_weights(work, n):

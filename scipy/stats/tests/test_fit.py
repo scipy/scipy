@@ -24,6 +24,7 @@ mle_failing_fits = [
         'gausshyper',
         'genexpon',
         'gengamma',
+        'irwinhall',
         'kappa4',
         'ksone',
         'kstwo',
@@ -63,7 +64,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
-                   'halfcauchy', 'invgamma', 'invweibull', 'jf_skew_t',
+                   'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
@@ -228,9 +229,9 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'arcsine'}
+    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto', 
+                      'truncweibull_min', 'ksone', 'levy_stable', 
+                      'studentized_range', 'kstwo', 'arcsine'}
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',
@@ -273,6 +274,7 @@ def cases_test_fit_mle():
 def cases_test_fit_mse():
     # the first four are so slow that I'm not sure whether they would pass
     skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'irwinhall', # hangs
                       'norminvgauss',  # super slow (~1 hr) but passes
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes

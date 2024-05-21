@@ -14,6 +14,7 @@
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
+#include "special/iv_ratio.h"
 #include "special/kelvin.h"
 #include "special/lambertw.h"
 #include "special/legendre.h"
@@ -139,6 +140,7 @@ extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
 extern const char *iv_doc;
+extern const char *iv_ratio_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
@@ -412,6 +414,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "iv", iv_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
+
+    PyObject *iv_ratio = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
+        "_iv_ratio", iv_ratio_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
 
     PyObject *ive = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_ie), static_cast<func_dd_d_t>(special::cyl_bessel_ie),
