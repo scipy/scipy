@@ -611,7 +611,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
     Parameters
     ----------
     A : (M, M) sparse matrix
-        A sparse square triangular matrix. Should be in CSR format.
+        A sparse square triangular matrix. Should be in CSR or CSC format.
     b : (M,) or (M, N) array_like
         Right-hand side matrix in ``A x = b``
     lower : bool, optional

@@ -267,9 +267,9 @@ static PyObject *Py_gstrf(PyObject * self, PyObject * args,
 static PyObject *Py_gstrs(PyObject * self, PyObject * args,
                           PyObject * keywds)
 {
-    /* compressed sparse row matrix L */
+    /* compressed sparse column matrix L */
     int L_N = 0, L_nnz = 0;
-    PyArrayObject *L_nzvals = NULL, *L_colind = NULL, *L_rowptr = NULL;
+    PyArrayObject *L_nzvals = NULL, *L_rowind = NULL, *L_colptr = NULL;
     /* compressed sparse column matrix U */
     int U_N = 0, U_nnz = 0;
     PyArrayObject *U_nzvals = NULL, *U_rowind = NULL, *U_colptr = NULL;
@@ -282,7 +282,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
 
     static char* kwlist[] = {
         "trans",
-        "L_N", "L_nnz", "L_nzvals", "L_colind", "L_rowptr",
+        "L_N", "L_nnz", "L_nzvals", "L_rowind", "L_colptr",
         "U_N", "U_nnz", "U_nzvals", "U_rowind", "U_colptr",
         "B", NULL
     };
@@ -291,7 +291,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
 
     int res = PyArg_ParseTupleAndKeywords(args, keywds, "CiiO!O!O!iiO!O!O!O", kwlist,
         &itrans,
-        &L_N, &L_nnz, &PyArray_Type, &L_nzvals, &PyArray_Type, &L_colind, &PyArray_Type, &L_rowptr,
+        &L_N, &L_nnz, &PyArray_Type, &L_nzvals, &PyArray_Type, &L_rowind, &PyArray_Type, &L_colptr,
         &U_N, &U_nnz, &PyArray_Type, &U_nzvals, &PyArray_Type, &U_rowind, &PyArray_Type, &U_colptr,
         &X_py );
     if(!res)
@@ -314,9 +314,9 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
         return NULL;
     }
 
-    if (!_CHECK_INTEGER(L_colind) || !_CHECK_INTEGER(L_rowptr) ||
+    if (!_CHECK_INTEGER(L_rowind) || !_CHECK_INTEGER(L_colptr) ||
         !_CHECK_INTEGER(U_rowind) || !_CHECK_INTEGER(U_colptr) ) {
-        PyErr_SetString(PyExc_TypeError, "row/column indices/pointers must be of type cint");
+        PyErr_SetString(PyExc_TypeError, "row indices and column pointers must be of type cint");
         return NULL;
     }
 
@@ -342,7 +342,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     L_col_to_sup[L_N] = L_N-1;
     SuperMatrix L_super = {0}, U_super={0};
     int L_conv_err = SparseFormat_from_spMatrix(&L_super, L_N, L_N, L_nnz, -1,
-        (PyArrayObject*)L_nzvals, (PyArrayObject*)L_colind, (PyArrayObject*)L_rowptr,
+        (PyArrayObject*)L_nzvals, (PyArrayObject*)L_rowind, (PyArrayObject*)L_colptr,
         L_type, SLU_SC, SLU_TRLU, L_col_to_sup,L_sup_to_col);
     if (L_conv_err) {
         return NULL;
@@ -475,7 +475,7 @@ static char gstrs_doc[] =
     "solves the linear system A*x = b via backward and forward substitution, with\n"
     "either A=L*U, A=(L*U)^T, or A=conj(L*U)^T.\n"
     "trans says whether the matrix is transposed (\"T\"), conjugate transposed (\"H\"), or normal (\"N\").\n"
-    "L is specified in the compressed sparse column format via parameters N,nnz,nzvals,colind,rowptr.\n"
+    "L is specified in the compressed sparse column format via parameters N,nnz,nzvals,rowind,colptr.\n"
     "U is specified in the compressed sparse column format via parameters N,nnz,nzvals,rowind,colptr.\n"
     "b is specified as a dense vector.\n";
 
