@@ -1097,7 +1097,11 @@ class TestMedFilt:
                                        np.clongdouble, np.float16, np.object_,
                                        "float96", "float128"])
     def test_invalid_dtypes(self, dtype):
-        if np.finfo(np.longdouble).dtype != dtype and dtype in ["float96", "float128"]:
+        # Only want to run the test for `float96` and `float128` if the platform has
+        # them. We check what the largest dtype is and compare to see if it is the
+        # requested `float96`, `float128`, or niether.
+        if (dtype in ["float96", "float128"]
+            and np.finfo(np.longdouble).dtype != dtype):
             pytest.skip(f"Platform does not support {dtype}")
         
         in_typed = np.array(self.IN, dtype=dtype)
