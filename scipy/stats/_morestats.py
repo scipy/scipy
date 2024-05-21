@@ -327,9 +327,9 @@ def kstat(data, n=2, *, axis=None):
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
-    r"""Return an unbiased estimator of the variance of the k-statistic [1]_.
+    r"""Return an unbiased estimator of the variance of the k-statistic.
 
-    See `kstat` for more details of the k-statistic.
+    See `kstat` and [1]_ for more details about the k-statistic.
 
     Parameters
     ----------
