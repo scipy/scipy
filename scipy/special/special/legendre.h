@@ -11,7 +11,7 @@ struct legendre_p_recurrence {
     T z;
     T init[2][N + 1];
 
-    legendre_p_recurrence(T z) : z(z), init{{z, 1}, {1, 0}} {
+    legendre_p_recurrence(T z) : z(z), init{{1, 0}, {z, 1}} {
         for (size_t k = 2; k <= N; ++k) {
             init[0][k] = 0;
             init[1][k] = 0;
@@ -37,7 +37,7 @@ struct legendre_p_recurrence<T, 0> {
     T z;
     T init[2][1];
 
-    legendre_p_recurrence(T z) : z(z), init{{z}, {1}} {}
+    legendre_p_recurrence(T z) : z(z), init{{1}, {z}} {}
 
     void operator()(int n, T (&res)[2][1]) const {
         res[0][0] = T(2 * n - 1) * z / T(n);

@@ -90,7 +90,7 @@ void forward_recur(
         }
 
         for (size_t k = 0; k < N; ++k) {
-            res[0][k] = init[K - it - 1][k];
+            res[0][k] = init[it - first][k];
         }
 
         callback(it, r, res, std::forward<Args>(args)...);
