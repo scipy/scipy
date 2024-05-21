@@ -11,18 +11,18 @@ struct legendre_p_recurrence {
     T z;
     T init[2][N + 1]; // init[2][i] for i >= 2 is zero-initialized by the C++ standard
 
-    legendre_p_recurrence(T z) : z(z), init{{1, 0}, {z, 1}} {} 
+    legendre_p_recurrence(T z) : z(z), init{{1, 0}, {z, 1}} {}
 
     void operator()(int n, T (&res)[2][N + 1]) const {
-        res[0][0] = T(2 * n - 1) * z / T(n);
-        res[1][0] = -T(n - 1) / T(n);
+        res[1][0] = T(2 * n - 1) * z / T(n);
+        res[0][0] = -T(n - 1) / T(n);
 
-        res[0][1] = T(2 * n - 1) / T(n);
-        res[1][1] = 0;
+        res[1][1] = T(2 * n - 1) / T(n);
+        res[0][1] = 0;
 
         for (size_t k = 2; k <= N; ++k) {
-            res[0][k] = 0;
             res[1][k] = 0;
+            res[0][k] = 0;
         }
     }
 };
@@ -35,8 +35,8 @@ struct legendre_p_recurrence<T, 0> {
     legendre_p_recurrence(T z) : z(z), init{{1}, {z}} {}
 
     void operator()(int n, T (&res)[2][1]) const {
-        res[0][0] = T(2 * n - 1) * z / T(n);
-        res[1][0] = -T(n - 1) / T(n);
+        res[1][0] = T(2 * n - 1) * z / T(n);
+        res[0][0] = -T(n - 1) / T(n);
     }
 };
 
@@ -53,7 +53,14 @@ struct legendre_p_recurrence<T, 0> {
 template <typename T, size_t N, typename Callable, typename... Args>
 void legendre_p_recur(int n, T z, T (&res)[3][N], Callable callback, Args &&...args) {
     legendre_p_recurrence<T, N - 1> r{z};
-    forward_recur(r, r.init, res, 0, n + 1, callback, std::forward<Args>(args)...);
+
+    for (ptrdiff_t j = 0; j < 3; ++j) {
+        for (ptrdiff_t k = 0; k < N; ++k) {
+            res[j][k] = r.init[j][k];
+        }
+    }
+
+    forward_recur(r, res, 0, n + 1, callback, std::forward<Args>(args)...);
 }
 
 template <typename T, size_t N>
@@ -74,7 +81,7 @@ T legendre_p(int n, T z) {
     T p[3][1];
     legendre_p_recur(n, z, p);
 
-    return p[0][0];
+    return p[2][0];
 }
 
 /**
@@ -90,8 +97,8 @@ void legendre_p(int n, T z, T &res, T &res_jac) {
     T p[3][2];
     legendre_p_recur(n, z, p);
 
-    res = p[0][0];
-    res_jac = p[0][1];
+    res = p[2][0];
+    res_jac = p[2][1];
 }
 
 /**
@@ -108,9 +115,9 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
     T p[3][3];
     legendre_p_recur(n, z, p);
 
-    res = p[0][0];
-    res_jac = p[0][1];
-    res_hess = p[0][2];
+    res = p[2][0];
+    res_jac = p[2][1];
+    res_hess = p[2][2];
 }
 
 /**
@@ -125,7 +132,7 @@ void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
 
     T p[3][1];
-    legendre_p_recur(n, z, p, [res](int j, auto r, const T(&p)[3][1]) { res(j) = p[0][0]; });
+    legendre_p_recur(n, z, p, [res](int j, auto r, const T(&p)[3][1]) { res(j) = p[2][0]; });
 }
 
 /**
@@ -142,8 +149,8 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
 
     T p[3][2];
     legendre_p_recur(n, z, p, [res, res_jac](int j, auto r, const T(&p)[3][2]) {
-        res(j) = p[0][0];
-        res_jac(j) = p[0][1];
+        res(j) = p[2][0];
+        res_jac(j) = p[2][1];
     });
 }
 
@@ -162,9 +169,9 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 
     T p[3][3];
     legendre_p_recur(n, z, p, [res, res_jac, res_hess](int j, legendre_p_recurrence<T, 2> r, const T(&p)[3][3]) {
-        res(j) = p[0][0];
-        res_jac(j) = p[0][1];
-        res_hess(j) = p[0][2];
+        res(j) = p[2][0];
+        res_jac(j) = p[2][1];
+        res_hess(j) = p[2][2];
     });
 }
 
