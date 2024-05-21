@@ -458,8 +458,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
         if ea_str or eb_str or ec_str:
             too_small_message = "See documentation for sample size requirements."
             messages_same = ea_str == eb_str == ec_str
-            messages_ok = ((too_small_message in eb_str)
-                           and (too_small_message in ec_str))
+            messages_ok = ((too_small_message in str(eb_str))
+                           and (too_small_message in str(ec_str)))
             assert messages_same or messages_ok
 
         else:
