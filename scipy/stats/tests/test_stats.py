@@ -6221,6 +6221,145 @@ class TestDescribe:
             stats.describe(xp.asarray([]))
 
 
+@pytest.mark.skip_xp_backends(cpu_only=True,
+                              reasons=['Uses NumPy for pvalue'])
+@pytest.mark.usefixtures("skip_xp_backends")
+@array_api_compatible
+class NormalityTests:
+    def test_too_small(self, xp):
+        # 1D sample has too few observations -> warning/error
+        test_fun = getattr(stats, self.test_name)
+        x = xp.asarray(4.)
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = test_fun(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "...requires at least..."
+            with pytest.raises(ValueError, match=message):
+                test_fun(x)
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_against_R(self, alternative, xp):
+        # testa against R `dagoTest` from package `fBasics`
+        # library(fBasics)
+        # options(digits=16)
+        # x = c(-2, -1, 0, 1, 2, 3)**2
+        # x = rep(x, times=4)
+        # test_result <- dagoTest(x)
+        # test_result@test$statistic
+        # test_result@test$p.value
+        test_name = self.test_name
+        test_fun = getattr(stats, test_name)
+        ref_statistic, ref_pvalue = xp.asarray(self.case_ref)
+
+        kwargs = {}
+        if alternative in {'less', 'greater'}:
+            if test_name in {'skewtest', 'kurtosistest'}:
+                ref_pvalue = ref_pvalue/2 if alternative == "less" else 1-ref_pvalue/2
+                ref_pvalue = 1-ref_pvalue if test_name == 'skewtest' else ref_pvalue
+                kwargs['alternative'] = alternative
+            else:
+                pytest.skip('`alternative` not available for `normaltest`')
+
+        x = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
+        res = test_fun(x, **kwargs)
+        res_statistic, res_pvalue = res
+        xp_assert_close(res_statistic, ref_statistic)
+        xp_assert_close(res_pvalue, ref_pvalue)
+        check_named_results(res, ('statistic', 'pvalue'))
+
+    def test_nan(self, xp):
+        # nan in input -> nan output (default nan_policy='propagate')
+        test_fun = getattr(stats, self.test_name)
+        x = xp.arange(30.)
+        NaN = xp.asarray(xp.nan, dtype=x.dtype)
+        x = xp.where(x == 29, NaN, x)
+        with np.errstate(invalid="ignore"):
+            res = test_fun(x)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
+
+class TestSkewTest(NormalityTests):
+    test_name = 'skewtest'
+    case_ref = (1.98078826090875881, 0.04761502382843208)  # statistic, pvalue
+
+    def test_intuitive(self, xp):
+        # intuitive tests; see gh-13549. skewnorm with parameter 1 has skew > 0
+        a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
+        a1_xp = xp.asarray(a1)
+        pval = stats.skewtest(a1_xp, alternative='greater').pvalue
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
+
+    def test_skewtest_too_few_observations(self, xp):
+        # Regression test for ticket #1492.
+        # skewtest requires at least 8 observations; 7 should raise a ValueError.
+        stats.skewtest(xp.arange(8.0))
+
+        x = xp.arange(7.0)
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = stats.skewtest(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "`skewtest` requires at least 8 observations"
+            with pytest.raises(ValueError, match=message):
+                stats.skewtest(x)
+
+
+class TestKurtosisTest(NormalityTests):
+    test_name = 'kurtosistest'
+    case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
+
+    def test_intuitive(self, xp):
+        # intuitive tests; see gh-13549. excess kurtosis of laplace is 3 > 0
+        a2 = stats.laplace.rvs(size=10000, random_state=123)
+        a2_xp = xp.asarray(a2)
+        pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
+
+    def test_gh9033_regression(self, xp):
+        # regression test for issue gh-9033: x clearly non-normal but power of
+        # negative denom needs to be handled correctly to reject normality
+        counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+        x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+        x = xp.asarray(x, dtype=xp.float64)
+        assert stats.kurtosistest(x)[1] < 0.01
+
+    def test_kurtosistest_too_few_observations(self, xp):
+        # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
+        # At least 20 are needed to avoid warning
+        # Regression test for ticket #1425.
+        stats.kurtosistest(xp.arange(20.0))
+
+        message = "`kurtosistest` p-value may be inaccurate..."
+        with pytest.warns(UserWarning, match=message):
+            stats.kurtosistest(xp.arange(5.0))
+        with pytest.warns(UserWarning, match=message):
+            stats.kurtosistest(xp.arange(19.0))
+
+        x = xp.arange(4.0)
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = stats.skewtest(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "`kurtosistest` requires at least 5 observations"
+            with pytest.raises(ValueError, match=message):
+                stats.kurtosistest(x)
+
+
+class TestNormalTest(NormalityTests):
+    test_name = 'normaltest'
+    case_ref = (3.92371918158185551, 0.14059672529747502)  # statistic, pvalue
+
+
 class TestRankSums:
 
     np.random.seed(0)
@@ -6305,40 +6444,6 @@ class TestJarqueBera:
         resT = stats.jarque_bera(x.T, axis=0)
         xp_assert_close(res.statistic, resT.statistic)
         xp_assert_close(res.pvalue, resT.pvalue)
-
-
-@array_api_compatible
-def test_skewtest_too_few_samples(xp):
-    # Regression test for ticket #1492.
-    # skewtest requires at least 8 samples; 7 should raise a ValueError.
-    x = xp.arange(7.0)
-    if is_numpy(xp):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            res = stats.skewtest(x)
-            NaN = xp.asarray(xp.nan)
-            xp_assert_equal(res.statistic, NaN)
-            xp_assert_equal(res.pvalue, NaN)
-    else:
-        message = "`skewtest` requires at least 8 observations"
-        with pytest.raises(ValueError, match=message):
-            stats.skewtest(x)
-
-
-@array_api_compatible
-def test_kurtosistest_too_few_samples(xp):
-    # Regression test for ticket #1425.
-    # kurtosistest requires at least 5 samples; 4 should raise a ValueError.
-    x = xp.arange(4.0)
-    if is_numpy(xp):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            res = stats.skewtest(x)
-            NaN = xp.asarray(xp.nan)
-            xp_assert_equal(res.statistic, NaN)
-            xp_assert_equal(res.pvalue, NaN)
-    else:
-        message = "`kurtosistest` requires at least 5 observations"
-        with pytest.raises(ValueError, match=message):
-            stats.kurtosistest(x)
 
 
 class TestMannWhitneyU:

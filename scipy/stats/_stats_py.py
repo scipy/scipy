@@ -1614,7 +1614,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     n = a.shape[axis]
     if n < 8:
         message = ("`skewtest` requires at least 8 observations; "
-                   f"{n} observations were given.")
+                   f"only {n=} observations were given.")
         raise ValueError(message)
 
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
