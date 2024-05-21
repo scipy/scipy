@@ -1845,7 +1845,7 @@ class TestCompareWithStats:
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "`kurtosistest` p-value may be inaccurate")
-            sup.filter(RuntimeWarning, "kurtosistest only valid for n>=20")
+            sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:
                     x, y, xm, ym = self.generate_xy_sample(n)

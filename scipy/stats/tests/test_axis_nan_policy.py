@@ -9,6 +9,7 @@ import os
 import re
 import pickle
 import pytest
+import warnings
 
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
@@ -452,35 +453,37 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
         # behavior of reference implementation with 1d input, hypotest with 1d
         # input, and hypotest with Nd input should match, whether that means
         # that outputs are equal or they raise the same exception
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
 
-        ea_str, eb_str, ec_str = None, None, None
-        try:
-            res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
-                                   n_outputs=n_outputs,
-                                   nan_policy=nan_policy, paired=paired,
-                                   _no_deco=True, **kwds)
-        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ea:
-            ea_str = str(ea)
+            ea_str, eb_str, ec_str = None, None, None
+            try:
+                res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
+                                       n_outputs=n_outputs,
+                                       nan_policy=nan_policy, paired=paired,
+                                       _no_deco=True, **kwds)
+            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ea:
+                ea_str = str(ea)
 
-        try:
-            res1db = unpacker(hypotest(*data_raveled, *args,
-                                       nan_policy=nan_policy, **kwds))
-        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as eb:
-            eb_str = str(eb)
+            try:
+                res1db = unpacker(hypotest(*data_raveled, *args,
+                                           nan_policy=nan_policy, **kwds))
+            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as eb:
+                eb_str = str(eb)
 
-        try:
-            res1dc = unpacker(hypotest(*data, *args, axis=None,
-                                       nan_policy=nan_policy, **kwds))
-        except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ec:
-            ec_str = str(ec)
+            try:
+                res1dc = unpacker(hypotest(*data, *args, axis=None,
+                                           nan_policy=nan_policy, **kwds))
+            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ec:
+                ec_str = str(ec)
 
         if ea_str or eb_str or ec_str:
             too_small_message = "See documentation for sample size requirements."
             messages_same = ea_str == eb_str == ec_str
             messages_ok = ((too_small_message in str(eb_str))
                            and (too_small_message in str(ec_str)))
-            if not (messages_same or messages_ok):  # for debugging in CI
-                raise ValueError(f"{ea_str}, {eb_str}, {ec_str}")
+            # if not (messages_same or messages_ok):  # for debugging in CI
+            #     raise ValueError(f"{ea_str}, {eb_str}, {ec_str}")
             assert messages_same or messages_ok
 
         else:
