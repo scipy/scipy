@@ -285,7 +285,7 @@ def kstat(data, n=2, *, axis=None):
     >>> for i in range(2,8):
     ...     x = rng.normal(size=10**i)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
-    ...     print(f"{n=}: {m=.3g}, {k=.3g}, {(m-k)=.3g}")
+    ...     print(f"{i=}: {m=:.3g}, {k=:.3g}, {(m-k)=:.3g}")
     i=2: m=-0.631, k=-0.651, (m-k)=0.0194  # random
     i=3: m=0.0282, k=0.0283, (m-k)=-8.49e-05
     i=4: m=-0.0454, k=-0.0454, (m-k)=1.36e-05
