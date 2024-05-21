@@ -271,6 +271,7 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             self._validate_grid_dimensions(points, method)
         self.method = method
+        self._spline = None
         self.bounds_error = bounds_error
         self.grid, self._descending_dimensions = _check_points(points)
         self.values = self._check_values(values)

@@ -1,4 +1,5 @@
 import itertools
+import threading
 
 import pytest
 import numpy as np
@@ -687,6 +688,34 @@ class TestRegularGridInterpolator:
             RegularGridInterpolator(
                 (x, y), data, method='slinear',  solver_args={'woof': 42}
             )
+
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+        points, values = self._get_sample_4d()
+        sample = np.array([[0.1 , 0.1 , 1.  , 0.9 ],
+                           [0.2 , 0.1 , 0.45, 0.8 ],
+                           [0.5 , 0.5 , 0.5 , 0.5 ]])
+        interp = RegularGridInterpolator(points, values, method="slinear")
+
+        methods = ['slinear', 'cubic']
+        def worker_fn(interp):
+            spline = interp._spline
+            barrier.wait()
+            method = methods[threading.get_ident() % 2]
+            interp(sample, method=method)
+            assert interp._spline is spline
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(interp,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
 
 
 class MyValue:
