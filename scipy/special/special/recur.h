@@ -76,20 +76,21 @@ void forward_recur_next(Recurrence r, size_t i, T (&res)[P][N]) {
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, size_t K, size_t N, typename InputIt, typename Callback, typename... Args>
+template <
+    typename Recurrence, typename T, ptrdiff_t K, ptrdiff_t N, typename InputIt, typename Callback, typename... Args>
 void forward_recur(
     Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], InputIt first, InputIt last, Callback &&callback,
     Args &&...args
 ) {
     InputIt it = first;
     while (it - first != K && it != last) {
-        for (size_t j = it - first; j > 0; --j) {
-            for (size_t k = 0; k < N; ++k) {
+        for (ptrdiff_t j = it - first; j > 0; --j) {
+            for (ptrdiff_t k = 0; k < N; ++k) {
                 res[j][k] = res[j - 1][k];
             }
         }
 
-        for (size_t k = 0; k < N; ++k) {
+        for (ptrdiff_t k = 0; k < N; ++k) {
             res[0][k] = init[it - first][k];
         }
 
@@ -99,8 +100,8 @@ void forward_recur(
 
     if (last - first > K) {
         while (it != last) {
-            for (size_t j = K; j > 0; --j) {
-                for (size_t k = 0; k < N; ++k) {
+            for (ptrdiff_t j = K; j > 0; --j) {
+                for (ptrdiff_t k = 0; k < N; ++k) {
                     res[j][k] = res[j - 1][k];
                 }
             }
