@@ -118,7 +118,7 @@ def get_suffix_path(current_path, levels=1):
 
 def get_test_files(dir, ext="py"):
     test_files = dict()
-    underscore = {"_" if ext == "so" else ""}
+    underscore = "_" if ext == "so" else ""
     for path in glob.glob(f'{dir}/**/{underscore}test_*.{ext}', recursive=True):
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
