@@ -1612,8 +1612,9 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     b2 = skew(a, axis)
     n = a.shape[axis]
     if n < 8:
-        raise ValueError(
-            f"skewtest is not valid with less than 8 samples; {n} samples were given.")
+        message = ("`skewtest` requires at least 8 observations; "
+                   f"{n} observations were given.")
+        raise ValueError(message)
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
@@ -1803,14 +1804,15 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = a.shape[axis]
+
     if n < 5:
-        raise ValueError(
-            "kurtosistest requires at least 5 observations; %i observations"
-            " were given." % int(n))
+        message = ("`kurtosistest` requires at least 5 observations; "
+                   f"only {n=} observations were given.")
+        raise ValueError(message)
     if n < 20:
-        warnings.warn("kurtosistest only valid for n>=20 ... continuing "
-                      "anyway, n=%i" % int(n),
-                      stacklevel=2)
+        message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
+                   f"observations; only {n=} observations were given.")
+        warnings.warn(message, stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False)
 
     E = 3.0*(n-1) / (n+1)

@@ -3381,7 +3381,7 @@ class TestMoments:
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_moment_propagate_nan(self, xp):
         # Check that the shape of the result is the same for inputs
@@ -3444,7 +3444,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_skewness(self, xp):
         # Scalar test case
@@ -3505,7 +3505,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     def test_precision_loss_gh15554(self, xp):
         # gh-15554 was one of several issues that have reported problems with
@@ -3519,7 +3519,7 @@ class TestSkew(SkewKurtosisTest):
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
-    @pytest.mark.usefixtures("skip_xp_backends")    
+    @pytest.mark.usefixtures("skip_xp_backends")
     @array_api_compatible
     @pytest.mark.parametrize('axis', [-1, 0, 2, None])
     @pytest.mark.parametrize('bias', [False, True])
@@ -6188,160 +6188,113 @@ class TestDescribe:
                               reasons=['Uses NumPy for pvalue'])
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
-def test_normalitytests(xp):
-    assert_raises(ValueError, stats.skewtest, 4.)
-    assert_raises(ValueError, stats.kurtosistest, 4.)
-    assert_raises(ValueError, stats.normaltest, 4.)
+class NormalityTests:
+    def test_too_small(self, xp):
+        # 1D sample has too few observations -> error
+        test_fun = getattr(stats, self.test_name)
+        message = "...requires at least..."
+        with pytest.raises(ValueError, match=message):
+            test_fun(xp.asarray(4.))
 
-    # numbers verified with R: dagoTest in package fBasics
-    # library(fBasics)
-    # options(digits=16)
-    # x = c(-2, -1, 0, 1, 2, 3)**2
-    # x = rep(x, times=4)
-    # test_result <- dagoTest(x)
-    # test_result@test$statistic
-    # test_result@test$p.value
-    st_normal, st_skew, st_kurt = (xp.asarray(3.92371918158185551),
-                                   xp.asarray(1.98078826090875881),
-                                   xp.asarray(-0.01403734404759738))
-    pv_normal, pv_skew, pv_kurt = (xp.asarray(0.14059672529747502),
-                                   xp.asarray(0.04761502382843208),
-                                   xp.asarray(0.98880018772590561))
-    pv_skew_less, pv_kurt_less = 1 - pv_skew / 2, pv_kurt / 2
-    pv_skew_greater, pv_kurt_greater = pv_skew / 2, 1 - pv_kurt / 2
-    x = np.array((-2, -1, 0, 1, 2, 3.)*4)**2
-    x_xp = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
-    attributes = ('statistic', 'pvalue')
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_against_R(self, alternative, xp):
+        # testa against R `dagoTest` from package `fBasics`
+        # library(fBasics)
+        # options(digits=16)
+        # x = c(-2, -1, 0, 1, 2, 3)**2
+        # x = rep(x, times=4)
+        # test_result <- dagoTest(x)
+        # test_result@test$statistic
+        # test_result@test$p.value
+        test_name = self.test_name
+        test_fun = getattr(stats, test_name)
+        ref_statistic, ref_pvalue = xp.asarray(self.case_ref)
 
-    res = stats.normaltest(x_xp)
-    xp_assert_close(res.statistic, st_normal)
-    xp_assert_close(res.pvalue, pv_normal)
-    check_named_results(stats.normaltest(x), attributes)
+        kwargs = {}
+        if alternative in {'less', 'greater'}:
+            if test_name in {'skewtest', 'kurtosistest'}:
+                ref_pvalue = ref_pvalue/2 if alternative == "less" else 1-ref_pvalue/2
+                ref_pvalue = 1-ref_pvalue if test_name == 'skewtest' else ref_pvalue
+                kwargs['alternative'] = alternative
+            else:
+                pytest.skip('`alternative` not available for `normaltest`')
 
-    res = stats.skewtest(x_xp)
-    xp_assert_close(res.statistic, st_skew)
-    xp_assert_close(res.pvalue, pv_skew)
-    res = stats.skewtest(x_xp, alternative='less')
-    xp_assert_close(res.statistic, st_skew)
-    xp_assert_close(res.pvalue, pv_skew_less)
-    res = stats.skewtest(x_xp, alternative='greater')
-    xp_assert_close(res.statistic, st_skew)
-    xp_assert_close(res.pvalue, pv_skew_greater)
-    check_named_results(stats.skewtest(x), attributes)
+        x = xp.asarray((-2, -1, 0, 1, 2, 3.)*4)**2
+        res = test_fun(x, **kwargs)
+        res_statistic, res_pvalue = res
+        xp_assert_close(res_statistic, ref_statistic)
+        xp_assert_close(res_pvalue, ref_pvalue)
+        check_named_results(res, ('statistic', 'pvalue'))
 
-    res = stats.kurtosistest(x_xp)
-    xp_assert_close(res.statistic, st_kurt)
-    xp_assert_close(res.pvalue, pv_kurt)
-    res = stats.kurtosistest(x_xp, alternative='less')
-    xp_assert_close(res.statistic, st_kurt)
-    xp_assert_close(res.pvalue, pv_kurt_less)
-    res = stats.kurtosistest(x_xp, alternative='greater')
-    xp_assert_close(res.statistic, st_kurt)
-    xp_assert_close(res.pvalue, pv_kurt_greater)
-    check_named_results(stats.kurtosistest(x), attributes)
+    def test_nan(self, xp):
+        # nan in input -> nan output (default nan_policy='propagate')
+        test_fun = getattr(stats, self.test_name)
+        x = xp.arange(30.)
+        NaN = xp.asarray(xp.nan, dtype=x.dtype)
+        x = xp.where(x == 29, NaN, x)
+        with np.errstate(invalid="ignore"):
+            res = test_fun(x)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
 
-    # some more intuitive tests for kurtosistest and skewtest.
-    # see gh-13549.
-    # skew parameter is 1 > 0
-    a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
-    a1_xp = xp.asarray(a1)
-    pval = stats.skewtest(a1_xp, alternative='greater').pvalue
-    xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
+class TestSkewTest(NormalityTests):
+    test_name = 'skewtest'
+    case_ref = (1.98078826090875881, 0.04761502382843208)  # statistic, pvalue
 
-    # excess kurtosis of laplace is 3 > 0
-    a2 = stats.laplace.rvs(size=10000, random_state=123)
-    a2_xp = xp.asarray(a2)
-    pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
-    xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
+    def test_intuitive(self, xp):
+        # intuitive tests; see gh-13549. skewnorm with parameter 1 has skew > 0
+        a1 = stats.skewnorm.rvs(a=1, size=10000, random_state=123)
+        a1_xp = xp.asarray(a1)
+        pval = stats.skewtest(a1_xp, alternative='greater').pvalue
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a1_xp.dtype), atol=9e-6)
 
-    # Test axis=None (equal to axis=0 for 1-D input)
-    res = stats.normaltest(x_xp, axis=None)
-    xp_assert_close(res.statistic, st_normal)
-    xp_assert_close(res.pvalue, pv_normal)
+    def test_skewtest_too_few_observations(self, xp):
+        # Regression test for ticket #1492.
+        # skewtest requires at least 8 observations; 7 should raise a ValueError.
+        stats.skewtest(xp.arange(8.0))
+        message = '`skewtest` requires at least 8 observations...'
+        with pytest.raises(ValueError, match=message):
+            stats.skewtest(xp.arange(7.0))
 
-    res = stats.skewtest(x_xp, axis=None)
-    xp_assert_close(res.statistic, st_skew)
-    xp_assert_close(res.pvalue, pv_skew)
+class TestKurtosisTest(NormalityTests):
+    test_name = 'kurtosistest'
+    case_ref = (-0.01403734404759738, 0.98880018772590561)  # statistic, pvalue
 
-    res = stats.kurtosistest(x_xp, axis=None)
-    xp_assert_close(res.statistic, st_kurt)
-    xp_assert_close(res.pvalue, pv_kurt)
+    def test_intuitive(self, xp):
+        # intuitive tests; see gh-13549. excess kurtosis of laplace is 3 > 0
+        a2 = stats.laplace.rvs(size=10000, random_state=123)
+        a2_xp = xp.asarray(a2)
+        pval = stats.kurtosistest(a2_xp, alternative='greater').pvalue
+        xp_assert_close(pval, xp.asarray(0.0, dtype=a2_xp.dtype), atol=1e-15)
 
-    x = xp.arange(30.)
-    NaN = xp.asarray(xp.nan, dtype=x.dtype)
-    x = xp.where(x == 29, NaN, x)
-    with np.errstate(invalid="ignore"):
-        res = stats.skewtest(x)
-        xp_assert_equal(res.statistic, NaN)
-        xp_assert_equal(res.pvalue, NaN)
+    def test_gh9033_regression(self, xp):
+        # regression test for issue gh-9033: x clearly non-normal but power of
+        # negative denom needs to be handled correctly to reject normality
+        counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
+        x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
+        x = xp.asarray(x, dtype=xp.float64)
+        assert stats.kurtosistest(x)[1] < 0.01
 
-        res = stats.kurtosistest(x)
-        xp_assert_equal(res.statistic, NaN)
-        xp_assert_equal(res.pvalue, NaN)
+    def test_kurtosistest_too_few_observations(self, xp):
+        # kurtosistest requires at least 5 observations; 4 should raise a ValueError.
+        # At least 20 are needed to avoid warning
+        # Regression test for ticket #1425.
+        stats.kurtosistest(xp.arange(20.0))
 
-        res = stats.normaltest(x)
-        xp_assert_equal(res.statistic, NaN)
-        xp_assert_equal(res.pvalue, NaN)
+        message = "`kurtosistest` p-value may be inaccurate..."
+        with pytest.warns(UserWarning, match=message):
+            stats.kurtosistest(xp.arange(5.0))
+        with pytest.warns(UserWarning, match=message):
+            stats.kurtosistest(xp.arange(19.0))
 
-    # nan_policy only compatible with NumPy arrays
-    x = np.arange(10.)
-    x[9] = np.nan
-    expected = (1.0184643553962129, 0.30845733195153502)
-    assert_array_almost_equal(stats.skewtest(x, nan_policy='omit'), expected)
+        message = '`kurtosistest` requires at least 5 observations...'
+        with pytest.raises(ValueError, match=message):
+            stats.kurtosistest(xp.arange(4.0))
 
-    # test alternative with nan_policy='omit'
-    a1[10:100] = np.nan
-    z, p = stats.skewtest(a1, nan_policy='omit')
-    zl, pl = stats.skewtest(a1, nan_policy='omit', alternative='less')
-    zg, pg = stats.skewtest(a1, nan_policy='omit', alternative='greater')
-    assert_allclose(zl, z, atol=1e-15)
-    assert_allclose(zg, z, atol=1e-15)
-    assert_allclose(pl, 1 - p/2, atol=1e-15)
-    assert_allclose(pg, p/2, atol=1e-15)
 
-    with np.errstate(all='ignore'):
-        assert_raises(ValueError, stats.skewtest, x, nan_policy='raise')
-    assert_raises(ValueError, stats.skewtest, x, nan_policy='foobar')
-    assert_raises(ValueError, stats.skewtest, list(range(8)),
-                  alternative='foobar')
-
-    x = np.arange(30.)
-    x[29] = np.nan
-
-    # nan_policy only compatible with NumPy arrays
-    expected = (-2.2683547379505273, 0.023307594135872967)
-    assert_array_almost_equal(stats.kurtosistest(x, nan_policy='omit'),
-                              expected)
-
-    # test alternative with nan_policy='omit'
-    a2[10:20] = np.nan
-    z, p = stats.kurtosistest(a2[:100], nan_policy='omit')
-    zl, pl = stats.kurtosistest(a2[:100], nan_policy='omit',
-                                alternative='less')
-    zg, pg = stats.kurtosistest(a2[:100], nan_policy='omit',
-                                alternative='greater')
-    assert_allclose(zl, z, atol=1e-15)
-    assert_allclose(zg, z, atol=1e-15)
-    assert_allclose(pl, 1 - p/2, atol=1e-15)
-    assert_allclose(pg, p/2, atol=1e-15)
-
-    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='raise')
-    assert_raises(ValueError, stats.kurtosistest, x, nan_policy='foobar')
-    assert_raises(ValueError, stats.kurtosistest, list(range(20)),
-                  alternative='foobar')
-
-    expected = (6.2260409514287449, 0.04446644248650191)
-    assert_array_almost_equal(stats.normaltest(x, nan_policy='omit'), expected)
-
-    assert_raises(ValueError, stats.normaltest, x, nan_policy='raise')
-    assert_raises(ValueError, stats.normaltest, x, nan_policy='foobar')
-
-    # regression test for issue gh-9033: x clearly non-normal but power of
-    # negative denom needs to be handled correctly to reject normality
-    counts = [128, 0, 58, 7, 0, 41, 16, 0, 0, 167]
-    x = np.hstack([np.full(c, i) for i, c in enumerate(counts)])
-    x = xp.asarray(x, dtype=xp.float64)
-    assert stats.kurtosistest(x)[1] < 0.01
+class TestNormalTest(NormalityTests):
+    test_name = 'normaltest'
+    case_ref = (3.92371918158185551, 0.14059672529747502)  # statistic, pvalue
 
 
 class TestRankSums:
@@ -6421,26 +6374,6 @@ class TestJarqueBera:
         resT = stats.jarque_bera(x.T, axis=0)
         xp_assert_close(res.statistic, resT.statistic)
         xp_assert_close(res.pvalue, resT.pvalue)
-
-
-@array_api_compatible
-def test_skewtest_too_few_samples(xp):
-    # Regression test for ticket #1492.
-    # skewtest requires at least 8 samples; 7 should raise a ValueError.
-    x = xp.arange(7.0)
-    message = 'skewtest is not valid with less than 8 samples...'
-    with pytest.raises(ValueError, match=message):
-        stats.skewtest(x)
-
-
-@array_api_compatible
-def test_kurtosistest_too_few_samples(xp):
-    # Regression test for ticket #1425.
-    # kurtosistest requires at least 5 samples; 4 should raise a ValueError.
-    x = xp.arange(4.0)
-    message = 'kurtosistest requires at least 5 observations...'
-    with pytest.raises(ValueError, match=message):
-        stats.kurtosistest(x)
 
 
 class TestMannWhitneyU:
