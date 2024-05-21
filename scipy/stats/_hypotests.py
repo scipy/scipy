@@ -98,6 +98,9 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     t = np.asarray(t)
     # check if x and y are valid inputs
     nx, ny = len(x), len(y)
+    if (nx < 5) or (ny < 5):
+        raise ValueError('x and y should have at least 5 elements, but len(x) '
+                         f'= {nx} and len(y) = {ny}.')
     if not np.isfinite(x).all():
         raise ValueError('x must not contain nonfinite values.')
     if not np.isfinite(y).all():
@@ -584,6 +587,9 @@ def cramervonmises(rvs, cdf, args=()):
         cdf = getattr(distributions, cdf).cdf
 
     vals = np.sort(np.asarray(rvs))
+
+    if vals.size <= 1:
+        raise ValueError('The sample must contain at least two observations.')
 
     n = len(vals)
     cdfvals = cdf(vals, *args)
@@ -1640,6 +1646,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     xa = np.sort(np.asarray(x))
     ya = np.sort(np.asarray(y))
 
+    if xa.size <= 1 or ya.size <= 1:
+        raise ValueError('x and y must contain at least two observations.')
     if method not in ['auto', 'exact', 'asymptotic']:
         raise ValueError('method must be either auto, exact or asymptotic.')
 

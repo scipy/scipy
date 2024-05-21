@@ -397,7 +397,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     # Specify which existing behaviors the decorator must override
     temp = override or {}
     override = {'vectorization': False,
-                'nan_propagation': True}
+                'nan_propagation': True,
+                'empty': True}
     override.update(temp)
 
     if result_to_tuple is None:
@@ -565,7 +566,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     too_small_message = too_small_1d_omit
 
 
-                if is_too_small(samples, kwds):
+                if override['empty'] and is_too_small(samples, kwds):
                     warnings.warn(too_small_message, UserWarning, stacklevel=2)
                     return tuple_to_result(*np.full(n_out, NaN))
 
@@ -583,7 +584,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 empty_output is not None
                 and (is_too_small(samples, kwds) or empty_output.size == 0)
             ):
-                if is_too_small(samples, kwds):
+                if override['empty'] and is_too_small(samples, kwds):
                     warnings.warn(too_small_nd_all, UserWarning, stacklevel=2)
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
@@ -617,7 +618,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = _remove_nans(samples, paired)
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
-                    if is_too_small(samples, kwds):
+                    if override['empty'] and is_too_small(samples, kwds):
                         warnings.warn(too_small_message, UserWarning, stacklevel=4)
                         return np.full(n_out, NaN)
                     return result_to_tuple(hypotest_fun_out(*samples, **kwds))

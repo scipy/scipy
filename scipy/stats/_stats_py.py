@@ -450,7 +450,8 @@ def _mode_result(mode, count):
 
 
 @_axis_nan_policy_factory(_mode_result, override={'vectorization': True,
-                                                  'nan_propagation': False})
+                                                  'nan_propagation': False,
+                                                  'empty': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
 
@@ -1611,6 +1612,10 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     b2 = skew(a, axis)
     n = a.shape[axis]
+    if n < 8:
+        message = ("`skewtest` requires at least 8 observations; "
+                   f"{n} observations were given.")
+        raise ValueError(message)
 
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
@@ -1802,10 +1807,14 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     n = a.shape[axis]
 
+    if n < 5:
+        message = ("`kurtosistest` requires at least 5 observations; "
+                   f"only {n=} observations were given.")
+        raise ValueError(message)
     if n < 20:
-        warnings.warn("kurtosistest only valid for n>=20 ... continuing "
-                      "anyway, n=%i" % int(n),
-                      stacklevel=2)
+        message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
+                   f"observations; only {n=} observations were given.")
+        warnings.warn(message, stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False)
 
     E = 3.0*(n-1) / (n+1)
@@ -2155,6 +2164,8 @@ def jarque_bera(x, *, axis=None):
         axis = 0
 
     n = x.shape[axis]
+    if n == 0:
+        raise ValueError('At least one observation is required.')
 
     mu = xp.mean(x, axis=axis, keepdims=True)
     diffx = x - mu
@@ -3420,6 +3431,11 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     """
     x = asarray(x)
 
+    # This check prevents percentile from raising an error later. Also, it is
+    # consistent with `np.var` and `np.std`.
+    if not x.size:
+        return _get_nan(x)
+
     # An error may be raised here, so fail-fast, before doing lengthy
     # computations, even though `scale` is not used until later
     if isinstance(scale, str):
@@ -4003,8 +4019,8 @@ def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
 
 
 @_axis_nan_policy_factory(
-    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small
-)
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small,
+    override={'empty': False})
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
@@ -7490,6 +7506,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     NaN = _get_nan(a, b)
 
+    if a.size == 0 or b.size == 0:
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
+
     if permutations is not None and permutations != 0:
         if trim != 0:
             raise ValueError("Permutations are currently not supported "
@@ -8873,6 +8894,8 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     data2 = np.sort(data2)
     n1 = data1.shape[0]
     n2 = data2.shape[0]
+    if min(n1, n2) == 0:
+        raise ValueError('Data passed to ks_2samp must not be empty')
 
     data_all = np.concatenate([data1, data2])
     # using searchsorted solves equal data problem
@@ -9566,7 +9589,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-
     nx = len(x)
     ny = len(y)
 
@@ -9734,6 +9756,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
+    if pvalues.size == 0:
+        NaN = _get_nan(pvalues)
+        return SignificanceResult(NaN, NaN)
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))

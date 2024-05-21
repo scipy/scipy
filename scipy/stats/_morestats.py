@@ -1998,6 +1998,8 @@ def shapiro(x):
     x = np.ravel(x).astype(np.float64)
 
     N = len(x)
+    if N < 3:
+        raise ValueError("Data must be at least length 3.")
 
     a = zeros(N//2, dtype=np.float64)
     init = 0
@@ -2782,6 +2784,10 @@ def ansari(x, y, alternative='two-sided'):
     x, y = asarray(x), asarray(y)
     n = len(x)
     m = len(y)
+    if m < 1:
+        raise ValueError("Not enough other observations.")
+    if n < 1:
+        raise ValueError("Not enough test observations.")
 
     N = m + n
     xy = r_[x, y]  # combine
@@ -3048,17 +3054,11 @@ def bartlett(*samples, axis=0):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle 1d empty input; _axis_nan_policy takes care of N-D
-    for sample in samples:
-        if xp_size(xp.asarray(sample)) == 0:
-            NaN = _get_nan(*samples, xp=xp)  # get NaN of result_dtype of all samples
-            return BartlettResult(NaN, NaN)
-
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
     samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
-    Ni = [xp.broadcast_to(N, sample.shape[:-1]) for N in Ni]
+    Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
@@ -3605,6 +3605,12 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
+    # Handle empty input
+    for sample in samples:
+        if sample.size == 0:
+            NaN = _get_nan(*samples)
+            return FlignerResult(NaN, NaN)
+
     if center == 'median':
 
         def func(x):
@@ -3834,6 +3840,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     n = x.shape[axis]
     m = y.shape[axis]
     N = m + n
+    if N < 3:
+        raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
     # determine if any of the samples contain ties
@@ -4411,6 +4419,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
+    # Needed for non-NumPy arrays to get appropriate NaN result
+    # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
+    if xp_size(samples) == 0:
+        return xp.mean(samples, axis=axis)
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)

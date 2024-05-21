@@ -7,7 +7,7 @@ from numpy.testing import suppress_warnings
 from scipy.stats import variation
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible
-from scipy._lib._array_api import xp_assert_equal, xp_assert_close
+from scipy._lib._array_api import xp_assert_equal, xp_assert_close, is_numpy, is_torch
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, too_small_1d_not_omit,
                                           too_small_nd_omit, too_small_nd_all)
 
@@ -134,11 +134,17 @@ class TestVariation:
                              [(0, []), (1, [np.nan]*3), (None, np.nan)])
     def test_2d_size_zero_with_axis(self, axis, expected, xp):
         x = xp.empty((3, 0))
-        if axis != 0:
-            with pytest.warns(UserWarning, match="See documentation for sample size..."):
+        with suppress_warnings() as sup:
+            # torch
+            sup.filter(UserWarning, "std*")
+            if axis != 0:
+                if is_numpy(xp):
+                    with pytest.warns(UserWarning, match="See documentation for sample size..."):
+                        y = variation(x, axis=axis)
+                else:
+                    y = variation(x, axis=axis)
+            else:
                 y = variation(x, axis=axis)
-        else:
-            y = variation(x, axis=axis)
         xp_assert_equal(y, xp.asarray(expected))
 
     def test_neg_inf(self, xp):

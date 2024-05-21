@@ -7,6 +7,7 @@ import sys
 from functools import partial
 
 import numpy as np
+import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -26,7 +27,7 @@ from scipy.stats._axis_nan_policy import (
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   SCIPY_ARRAY_API, xp_assert_equal)
+                                   xp_assert_equal, is_numpy)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -193,10 +194,10 @@ class TestShapiro:
         assert_almost_equal(pw, 0.52460, decimal=3)
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
-    @pytest.mark.parametrize('x', ([], [1], [1, 2], np.array([[], [2]], dtype=object)))
-    def test_not_enough_values(self,x ):
+    @pytest.mark.parametrize('x', ([], [1], [1, 2]))
+    def test_not_enough_values(self, x):
         with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            res = stats.shapiro([x])
+            res = stats.shapiro(x)
             assert_equal(res, (np.nan, np.nan))
 
     def test_nan_input(self):
@@ -761,12 +762,20 @@ class TestBartlett:
 
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            args = [xp.asarray(arg) for arg in args]
-            res = stats.bartlett(*args)
-            NaN = xp.asarray(xp.nan)
-            xp_assert_equal(res.statistic, NaN)
-            xp_assert_equal(res.pvalue, NaN)
+        args = [xp.asarray(arg) for arg in args]
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = stats.bartlett(*args)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # torch/array_api_strict
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
+                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+                res = stats.bartlett(*args)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
 
 
 class TestLevene:
@@ -1717,8 +1726,14 @@ class TestKstat:
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
     def test_empty_input(self, xp):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            xp_assert_equal(stats.kstat(xp.asarray([])), xp.asarray(xp.nan))
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = stats.kstat(xp.asarray([]))
+        else:
+            # for array_api_strict
+            with np.errstate(invalid='ignore'):
+                res = stats.kstat(xp.asarray([]))
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1752,12 +1767,18 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
-
 @array_api_compatible
 class TestKstatVar:
     def test_empty_input(self, xp):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            xp_assert_equal(stats.kstatvar(xp.asarray([])), xp.asarray(xp.nan))
+        x = xp.asarray([])
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = stats.kstatvar(x)
+        else:
+            # for array_api_strict
+            with np.errstate(invalid='ignore'):
+                res = stats.kstatvar(x)
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -2617,8 +2638,16 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
-            xp_assert_equal(test_func(x), xp.asarray(xp.nan, dtype=dtype))
+        if is_numpy(xp):
+            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+                res = test_func(x)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # array_api_strict
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                res = test_func(x)
+        xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])

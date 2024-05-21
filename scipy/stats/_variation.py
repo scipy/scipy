@@ -1,7 +1,7 @@
 import numpy as np
 
 from scipy._lib._util import _get_nan
-from scipy._lib._array_api import array_namespace, xp_copysign
+from scipy._lib._array_api import array_namespace, xp_copysign, size as xp_size
 
 from ._axis_nan_policy import _axis_nan_policy_factory
 
@@ -105,7 +105,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
     n = a.shape[axis]
     NaN = _get_nan(a)
 
-    if ddof > n:
+    if a.size == 0 or ddof > n:
         # Handle as a special case to avoid spurious warnings.
         # The return values, if any, are all nan.
         shp = list(a.shape)
