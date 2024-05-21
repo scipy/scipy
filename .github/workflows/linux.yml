@@ -117,7 +117,7 @@ jobs:
     - name: Check usage of install tags
       run: |
         rm -r build-install
-        meson install -C build --only-changed --tags runtime,python-runtime
+        meson install -C build --only-changed --tags runtime,python-runtime,devel
         python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
 
     - name: Mypy
