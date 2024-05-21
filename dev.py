@@ -437,8 +437,8 @@ class Build(Task):
               " Takes precedence over -with-scipy-openblas (macOS only)")
     )
     tags = Option(
-        ['--tags', '-T'], default=["runtime", "python-runtime", "tests", "devel"],
-        multiple=True, show_default=True, help="Install tags to be used by meson."
+        ['--tags'], default="runtime,python-runtime,tests,devel",
+        show_default=True, help="Install tags to be used by meson."
     )
 
     @classmethod
@@ -549,7 +549,7 @@ class Build(Task):
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
         cmd = ["meson", "install", "-C", args.build_dir,
-               "--only-changed", "--tags", ",".join(args.tags)]
+               "--only-changed", "--tags", args.tags]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
