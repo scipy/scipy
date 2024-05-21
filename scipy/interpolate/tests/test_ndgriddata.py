@@ -3,6 +3,8 @@ from numpy.testing import assert_equal, assert_array_equal, assert_allclose
 import pytest
 from pytest import raises as assert_raises
 
+import threading
+
 from scipy.interpolate import (griddata, NearestNDInterpolator,
                                LinearNDInterpolator,
                                CloughTocher2DInterpolator)
@@ -233,6 +235,30 @@ class TestNearestNDInterpolator:
         NI = NearestNDInterpolator((nd[0], nd[1]), nd[2])
         with assert_raises(TypeError):
             NI([0.5, 0.5], query_options="not a dictionary")
+
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+
+        npts, nd = 50, 3
+        x = np.arange(npts*nd).reshape((npts, nd))
+        y = np.arange(npts)
+        nndi = NearestNDInterpolator(x, y)
+
+        def worker_fn(spl):
+            barrier.wait()
+            spl(x)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(nndi,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
 
 
 class TestNDInterpolators:
