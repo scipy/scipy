@@ -1,5 +1,6 @@
 import warnings
 import io
+import threading
 import numpy as np
 
 from numpy.testing import (
@@ -315,6 +316,26 @@ class TestKrogh:
         with pytest.warns(UserWarning, match="40 degrees provided,"):
             KroghInterpolator(np.arange(40), np.ones(40))
 
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+        P = KroghInterpolator(self.xs, self.ys)
+
+        def worker_fn(interp):
+            barrier.wait()
+            interp(self.xs)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(P,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
+
 
 class TestTaylor:
     def test_exponential(self):
@@ -513,6 +534,26 @@ class TestBarycentric:
         with pytest.raises(ValueError,
                            match="Interpolation points xi must be distinct."):
             BarycentricInterpolator(xis, ys)
+
+    def test_concurrency(self):
+        barrier = threading.Barrier(10)
+        P = BarycentricInterpolator(self.xs, self.ys)
+
+        def worker_fn(interp):
+            barrier.wait()
+            interp(self.xs)
+
+        workers = []
+        for _ in range(0, 10):
+            workers.append(threading.Thread(
+                target=worker_fn,
+                args=(P,)))
+
+        for worker in workers:
+            worker.start()
+
+        for worker in workers:
+            worker.join()
 
 
 class TestPCHIP:
