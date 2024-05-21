@@ -60,7 +60,19 @@ def main(install_dir, no_tests):
         raise ValueError(f"Provided install dir {INSTALLED_DIR} does not exist")
 
     scipy_test_files = get_test_files(SCIPY_DIR)
+    scipy_test_extension_modules = get_test_files(INSTALLED_DIR, "so")
     installed_test_files = get_test_files(INSTALLED_DIR)
+
+    if no_tests:
+        if len(scipy_test_extension_modules) > 0:
+            raise Exception(f"{scipy_test_extension_modules.values()} "
+                            "should not be installed but "
+                            "are found in the installation directory.")
+    else:
+        if len(scipy_test_extension_modules) == 0:
+            raise Exception(f"Test for extension modules should be "
+                            "installed but are not found in the "
+                            "installation directory.")
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
@@ -89,9 +101,11 @@ def main(install_dir, no_tests):
     # Check *.pyi files detected in repo are installed
     for pyi_file in scipy_pyi_files.keys():
         if pyi_file not in installed_pyi_files.keys():
+            if no_tests and "test" in scipy_pyi_files[pyi_file]:
+                continue
             raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
 
-    print("----------- All the .pyi files were installed --------------")
+    print("----------- All the necessary .pyi files were installed --------------")
 
 
 def get_suffix_path(current_path, levels=1):
@@ -102,9 +116,10 @@ def get_suffix_path(current_path, levels=1):
     return os.path.relpath(current_path, current_new)
 
 
-def get_test_files(dir):
+def get_test_files(dir, ext="py"):
     test_files = dict()
-    for path in glob.glob(f'{dir}/**/test_*.py', recursive=True):
+    underscore = {"_" if ext == "so" else ""}
+    for path in glob.glob(f'{dir}/**/{underscore}test_*.{ext}', recursive=True):
         suffix_path = get_suffix_path(path, 3)
         suffix_path = changed_installed_path.get(suffix_path, suffix_path)
         if "highspy" not in suffix_path:
