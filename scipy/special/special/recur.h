@@ -46,12 +46,12 @@ T forward_recurrence(Recurrence r, const T (&init)[K], int n) {
     return forward_recurrence(r, init, n, [](int j, Recurrence r, const T(&p)[K + 1]) {});
 }
 
-template <typename Recurrence, typename T, size_t P, size_t N>
-void forward_recur_next(Recurrence r, size_t i, T (&res)[P][N]) {
+template <typename Recurrence, typename InputIt, typename T, size_t P, size_t N>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[P][N]) {
     constexpr int K = P - 1;
 
     T coef[K][N];
-    r(i, coef);
+    r(it, coef);
 
     res[0][0] = 0;
     for (size_t j = K; j > 0; --j) {

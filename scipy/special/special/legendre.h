@@ -9,14 +9,9 @@ namespace special {
 template <typename T, size_t N>
 struct legendre_p_recurrence {
     T z;
-    T init[2][N + 1];
+    T init[2][N + 1]; // init[2][i] for i >= 2 is zero-initialized by the C++ standard
 
-    legendre_p_recurrence(T z) : z(z), init{{1, 0}, {z, 1}} {
-        for (size_t k = 2; k <= N; ++k) {
-            init[0][k] = 0;
-            init[1][k] = 0;
-        }
-    }
+    legendre_p_recurrence(T z) : z(z), init{{1, 0}, {z, 1}} {} 
 
     void operator()(int n, T (&res)[2][N + 1]) const {
         res[0][0] = T(2 * n - 1) * z / T(n);
