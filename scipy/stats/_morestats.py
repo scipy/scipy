@@ -219,10 +219,10 @@ def mvsdist(data):
 )
 def kstat(data, n=2, *, axis=None):
     r"""
-    Return the nth k-statistic (1<=n<=4 so far).
+    Return the `n` th k-statistic ( ``1<=n<=4`` so far).
 
-    The nth k-statistic k_n is the unique symmetric unbiased estimator of the
-    nth cumulant kappa_n.
+    The `n` th k-statistic ``k_n`` is the unique symmetric unbiased estimator of the
+    `n` th cumulant :math:`\kappa_n` [1]_ [2]_.
 
     Parameters
     ----------
@@ -239,7 +239,7 @@ def kstat(data, n=2, *, axis=None):
     Returns
     -------
     kstat : float
-        The nth k-statistic.
+        The `n` th k-statistic.
 
     See Also
     --------
@@ -268,9 +268,9 @@ def kstat(data, n=2, *, axis=None):
 
     References
     ----------
-    http://mathworld.wolfram.com/k-Statistic.html
+    .. [1] http://mathworld.wolfram.com/k-Statistic.html
 
-    http://mathworld.wolfram.com/Cumulant.html
+    .. [2] http://mathworld.wolfram.com/Cumulant.html
 
     Examples
     --------
@@ -278,20 +278,20 @@ def kstat(data, n=2, *, axis=None):
     >>> from numpy.random import default_rng
     >>> rng = default_rng()
 
-    As sample size increases, n-th moment and n-th k-statistic converge to the
+    As sample size increases, `n`-th moment and `n`-th k-statistic converge to the
     same number (although they aren't identical). In the case of the normal
     distribution, they converge to zero.
 
-    >>> for n in [2, 3, 4, 5, 6, 7]:
-    ...     x = rng.normal(size=10**n)
+    >>> for i in range(2,8):
+    ...     x = rng.normal(size=10**i)
     ...     m, k = stats.moment(x, 3), stats.kstat(x, 3)
-    ...     print("%.3g %.3g %.3g" % (m, k, m-k))
-    -0.631 -0.651 0.0194  # random
-    0.0282 0.0283 -8.49e-05
-    -0.0454 -0.0454 1.36e-05
-    7.53e-05 7.53e-05 -2.26e-09
-    0.00166 0.00166 -4.99e-09
-    -2.88e-06 -2.88e-06 8.63e-13
+    ...     print(f"{n=}: {m=.3g}, {k=.3g}, {(m-k)=.3g}")
+    i=2: m=-0.631, k=-0.651, (m-k)=0.0194  # random
+    i=3: m=0.0282, k=0.0283, (m-k)=-8.49e-05
+    i=4: m=-0.0454, k=-0.0454, (m-k)=1.36e-05
+    i=6: m=7.53e-05, k=7.53e-05, (m-k)=-2.26e-09
+    i=7: m=0.00166, k=0.00166, (m-k)=-4.99e-09
+    i=8: m=-2.88e-06 k=-2.88e-06, (m-k)=8.63e-13
     """
     xp = array_namespace(data)
     data = xp.asarray(data)
@@ -327,7 +327,7 @@ def kstat(data, n=2, *, axis=None):
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2, *, axis=None):
-    r"""Return an unbiased estimator of the variance of the k-statistic.
+    r"""Return an unbiased estimator of the variance of the k-statistic [1]_.
 
     See `kstat` for more details of the k-statistic.
 
@@ -346,7 +346,7 @@ def kstatvar(data, n=2, *, axis=None):
     Returns
     -------
     kstatvar : float
-        The nth k-statistic variance.
+        The `n` th k-statistic variance.
 
     See Also
     --------
@@ -355,12 +355,17 @@ def kstatvar(data, n=2, *, axis=None):
 
     Notes
     -----
-   Unbiased estimators of the variances of the first two k-statistics are given by
+    Unbiased estimators of the variances of the first two k-statistics are given by
 
     .. math::
 
         \mathrm{var}(k_1) &= \frac{k_2}{n}, \\
         \mathrm{var}(k_2) &= \frac{2k_2^2n + (n-1)k_4}{n(n - 1)}.
+
+    References
+    ----------
+    .. [1] http://mathworld.wolfram.com/k-Statistic.html
+
     """  # noqa: E501
     xp = array_namespace(data)
     data = xp.asarray(data)
