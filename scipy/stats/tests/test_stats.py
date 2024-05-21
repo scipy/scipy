@@ -4941,13 +4941,15 @@ def test_ttest_rel():
         tr, pr = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit')
 
     with pytest.warns(UserWarning, match=too_small_nd_omit):
-        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit', alternative='less')
+        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0,
+                               nan_policy='omit', alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     with np.errstate(invalid='ignore'):
         assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
     with pytest.warns(UserWarning, match=too_small_nd_omit):
-        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit', alternative='greater')
+        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0,
+                               nan_policy='omit', alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     with np.errstate(invalid='ignore'):
         assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
