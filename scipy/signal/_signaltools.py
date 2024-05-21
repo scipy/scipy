@@ -1496,7 +1496,8 @@ def order_filter(a, domain, rank):
                              "should have an odd number of elements.")
 
     a = np.asarray(a)
-    if a.dtype in [object, np.longdouble]:
+    if not (np.issubdtype(a.dtype, np.integer) 
+            or a.dtype in [np.float32, np.float64]):
         raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
 
     result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
