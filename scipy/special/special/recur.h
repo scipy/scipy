@@ -76,43 +76,46 @@ void forward_recur_next(Recurrence r, size_t i, T (&res)[P][N]) {
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, size_t K, size_t N, typename Callback, typename... Args>
+template <typename Recurrence, typename T, size_t K, size_t N, typename InputIt, typename Callback, typename... Args>
 void forward_recur(
-    Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t first, size_t last, Callback &&callback,
+    Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], InputIt first, InputIt last, Callback &&callback,
     Args &&...args
 ) {
-    for (size_t i = first, i_end = std::min(first + K, last); i < i_end; ++i) {
-        for (size_t j = i; j > 0; --j) {
+    InputIt it = first;
+    while (it - first != K && it != last) {
+        for (size_t j = it - first; j > 0; --j) {
             for (size_t k = 0; k < N; ++k) {
                 res[j][k] = res[j - 1][k];
             }
         }
 
         for (size_t k = 0; k < N; ++k) {
-            res[0][k] = init[K - i - 1][k];
+            res[0][k] = init[K - it - 1][k];
         }
 
-        callback(i, r, res, std::forward<Args>(args)...);
+        callback(it, r, res, std::forward<Args>(args)...);
+        ++it;
     }
 
-    for (size_t i = K; i < last; ++i) {
-        for (size_t j = K; j > 0; --j) {
-            for (size_t k = 0; k < N; ++k) {
-                res[j][k] = res[j - 1][k];
+    if (last - first > K) {
+        while (it != last) {
+            for (size_t j = K; j > 0; --j) {
+                for (size_t k = 0; k < N; ++k) {
+                    res[j][k] = res[j - 1][k];
+                }
             }
+
+            forward_recur_next(r, it, res);
+
+            callback(it, r, res, std::forward<Args>(args)...);
+            ++it;
         }
-
-        forward_recur_next(r, i, res);
-
-        callback(i, r, res, std::forward<Args>(args)...);
     }
 }
 
-template <typename Recurrence, typename T, size_t K, size_t N>
-void forward_recur(Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t first, size_t last) {
-    forward_recur(r, init, res, first, last, [](size_t i, Recurrence r, const T(&res)[K + 1][N]) {});
+template <typename Recurrence, typename T, size_t K, size_t N, typename InputIt>
+void forward_recur(Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], InputIt first, InputIt last) {
+    forward_recur(r, init, res, first, last, [](InputIt it, Recurrence r, const T(&res)[K + 1][N]) {});
 }
-
-// forward_recur_if_not
 
 } // namespace special
