@@ -1760,6 +1760,14 @@ const char *iv_doc = R"(
 
     )";
 
+const char *iv_ratio_doc = R"(
+    _iv_ratio(v, x, out=None)
+
+    Internal function, do not use.
+
+    Return `iv(v, x) / iv(v-1, x)` for `v >= 1` and `x >= 0`.
+    )";
+
 const char *ive_doc = R"(
     ive(v, z, out=None)
 
@@ -2752,6 +2760,43 @@ const char *log_expit_doc = R"(
 
     The first value is accurate to only 3 digits, and the larger inputs
     lose all precision and return 0.
+    )";
+
+const char *log_wright_bessel_doc = R"(
+    log_wright_bessel(a, b, x, out=None)
+
+    Natural logarithm of Wright's generalized Bessel function, see `wright_bessel`.
+    This function comes in handy in particular for large values of x.
+
+    Parameters
+    ----------
+    a : array_like of float
+        a >= 0
+    b : array_like of float
+        b >= 0
+    x : array_like of float
+        x >= 0
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the logarithm of Wright's generalized Bessel function
+
+    Notes
+    -----
+    Due to the complexity of the function with its three parameters, only
+    non-negative arguments are implemented.
+
+    .. versionadded:: 1.14.0
+
+    Examples
+    --------
+    >>> from scipy.special import log_wright_bessel
+    >>> a, b, x = 1.5, 1.1, 2.5
+    >>> log_wright_bessel(a, b, x)
+    1.1947654935299217
     )";
 
 const char *mathieu_a_doc = R"(
@@ -3899,6 +3944,8 @@ const char *wright_bessel_doc = R"(
     -----
     Due to the complexity of the function with its three parameters, only
     non-negative arguments are implemented.
+
+    .. versionadded:: 1.7.0
 
     References
     ----------

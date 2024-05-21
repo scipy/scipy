@@ -14,15 +14,13 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 import numpy as np
 
 from ._distn_infrastructure import (rv_discrete, get_distribution_names,
-                                    _check_shape, _ShapeInfo)
+                                    _vectorize_rvs_over_shapes,
+                                    _ShapeInfo, _isintegral)
 from ._biasedurn import (_PyFishersNCHypergeometric,
                          _PyWalleniusNCHypergeometric,
                          _PyStochasticLib3)
 import scipy.special._ufuncs as scu
 
-
-def _isintegral(x):
-    return x == np.round(x)
 
 
 class binom_gen(rv_discrete):
@@ -1313,8 +1311,9 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
+        k = k.astype(np.float64)
         # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
-        Pk = 1.0 / special.zeta(a, 1) / k**a
+        Pk = 1.0 / special.zeta(a, 1) * k**-a
         return Pk
 
     def _munp(self, n, a):
@@ -1412,7 +1411,8 @@ class zipfian_gen(rv_discrete):
         return 1, n
 
     def _pmf(self, k, a, n):
-        return 1.0 / _gen_harmonic(n, a) / k**a
+        k = k.astype(np.float64)
+        return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
@@ -1666,7 +1666,7 @@ class yulesimon_gen(rv_discrete):
                       np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                      alpha + 3 + ((11 * alpha**3 - 49 * alpha - 22) /
                                    (alpha * (alpha - 4) * (alpha - 3))),
                       np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
@@ -1674,44 +1674,6 @@ class yulesimon_gen(rv_discrete):
 
 
 yulesimon = yulesimon_gen(name='yulesimon', a=1)
-
-
-def _vectorize_rvs_over_shapes(_rvs1):
-    """Decorator that vectorizes _rvs method to work on ndarray shapes"""
-    # _rvs1 must be a _function_ that accepts _scalar_ args as positional
-    # arguments, `size` and `random_state` as keyword arguments.
-    # _rvs1 must return a random variate array with shape `size`. If `size` is
-    # None, _rvs1 must return a scalar.
-    # When applied to _rvs1, this decorator broadcasts ndarray args
-    # and loops over them, calling _rvs1 for each set of scalar args.
-    # For usage example, see _nchypergeom_gen
-    def _rvs(*args, size, random_state):
-        _rvs1_size, _rvs1_indices = _check_shape(args[0].shape, size)
-
-        size = np.array(size)
-        _rvs1_size = np.array(_rvs1_size)
-        _rvs1_indices = np.array(_rvs1_indices)
-
-        if np.all(_rvs1_indices):  # all args are scalars
-            return _rvs1(*args, size, random_state)
-
-        out = np.empty(size)
-
-        # out.shape can mix dimensions associated with arg_shape and _rvs1_size
-        # Sort them to arg_shape + _rvs1_size for easy indexing of dimensions
-        # corresponding with the different sets of scalar args
-        j0 = np.arange(out.ndim)
-        j1 = np.hstack((j0[~_rvs1_indices], j0[_rvs1_indices]))
-        out = np.moveaxis(out, j1, j0)
-
-        for i in np.ndindex(*size[~_rvs1_indices]):
-            # arg can be squeezed because singleton dimensions will be
-            # associated with _rvs1_size, not arg_shape per _check_shape
-            out[i] = _rvs1(*[np.squeeze(arg)[i] for arg in args],
-                           _rvs1_size, random_state)
-
-        return np.moveaxis(out, j0, j1)  # move axes back before returning
-    return _rvs
 
 
 class _nchypergeom_gen(rv_discrete):

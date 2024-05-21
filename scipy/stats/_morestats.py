@@ -5,13 +5,14 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
-                   arange, sort, amin, amax, sqrt, array, atleast_1d,  # noqa: F401
-                   compress, pi, exp, ravel, count_nonzero, sin, cos,  # noqa: F401
-                   arctan2, hypot)
+                   arange, sort, amin, amax, sqrt, array,
+                   pi, exp, ravel, count_nonzero)
 
 from scipy import optimize, special, interpolate, stats
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy._lib._util import _rename_parameter, _contains_nan, _get_nan
+from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
+                                   xp_moveaxis_to_end)
 
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
@@ -20,7 +21,7 @@ from ._stats_py import find_repeats, _get_pvalue, SignificanceResult  # noqa: F4
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
-from ._axis_nan_policy import _axis_nan_policy_factory
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
 
 
 __all__ = ['mvsdist',
@@ -98,7 +99,7 @@ def bayes_mvs(data, alpha=0.90):
     >>> mean
     Mean(statistic=9.0, minmax=(7.103650222612533, 10.896349777387467))
     >>> var
-    Variance(statistic=10.0, minmax=(3.176724206..., 24.45910382...))
+    Variance(statistic=10.0, minmax=(3.176724206, 24.45910382))
     >>> std
     Std_dev(statistic=2.9724954732045084,
             minmax=(1.7823367265645143, 4.945614605014631))
@@ -130,8 +131,7 @@ def bayes_mvs(data, alpha=0.90):
     """
     m, v, s = mvsdist(data)
     if alpha >= 1 or alpha <= 0:
-        raise ValueError("0 < alpha < 1 is required, but alpha=%s was given."
-                         % alpha)
+        raise ValueError(f"0 < alpha < 1 is required, but {alpha=} was given.")
 
     m_res = Mean(m.mean(), m.interval(alpha))
     v_res = Variance(v.mean(), v.interval(alpha))
@@ -218,7 +218,7 @@ def mvsdist(data):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
-def kstat(data, n=2):
+def kstat(data, n=2, *, axis=None):
     r"""
     Return the nth k-statistic (1<=n<=4 so far).
 
@@ -228,9 +228,14 @@ def kstat(data, n=2):
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2, 3, 4}, optional
         Default is equal to 2.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
@@ -283,23 +288,22 @@ def kstat(data, n=2):
     0.00166 0.00166 -4.99e-09
     -2.88e-06 -2.88e-06 8.63e-13
     """
+    xp = array_namespace(data)
+    data = xp.asarray(data)
     if n > 4 or n < 1:
         raise ValueError("k-statistics only supported for 1<=n<=4")
     n = int(n)
-    S = np.zeros(n + 1, np.float64)
-    data = ravel(data)
-    N = data.size
+    if axis is None:
+        data = xp.reshape(data, (-1,))
+        axis = 0
+
+    N = data.shape[axis]
 
     # raise ValueError on empty input
     if N == 0:
         raise ValueError("Data input must not be empty")
 
-    # on nan input, return nan without warning
-    if np.isnan(np.sum(data)):
-        return np.nan
-
-    for k in range(1, n + 1):
-        S[k] = np.sum(data**k, axis=0)
+    S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
         return S[1] * 1.0/N
     elif n == 2:
@@ -317,7 +321,7 @@ def kstat(data, n=2):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
-def kstatvar(data, n=2):
+def kstatvar(data, n=2, *, axis=None):
     r"""Return an unbiased estimator of the variance of the k-statistic.
 
     See `kstat` for more details of the k-statistic.
@@ -325,9 +329,14 @@ def kstatvar(data, n=2):
     Parameters
     ----------
     data : array_like
-        Input array. Note that n-D input gets flattened.
+        Input array.
     n : int, {1, 2}, optional
         Default is equal to 2.
+    axis : int or None, default: None
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear
+        in a corresponding element of the output. If ``None``, the input will
+        be raveled before computing the statistic.
 
     Returns
     -------
@@ -357,13 +366,18 @@ def kstatvar(data, n=2):
                      \frac{144 n \kappa_{2} \kappa^2_{3}}{(n - 1) (n - 2)} +
                      \frac{24 (n + 1) n \kappa^4_{2}}{(n - 1) (n - 2) (n - 3)}
     """  # noqa: E501
-    data = ravel(data)
-    N = len(data)
+    xp = array_namespace(data)
+    data = xp.asarray(data)
+    if axis is None:
+        data = xp.reshape(data, (-1,))
+        axis = 0
+    N = data.shape[axis]
+
     if n == 1:
-        return kstat(data, n=2) * 1.0/N
+        return kstat(data, n=2, axis=axis) * 1.0/N
     elif n == 2:
-        k2 = kstat(data, n=2)
-        k4 = kstat(data, n=4)
+        k2 = kstat(data, n=2, axis=axis)
+        k4 = kstat(data, n=4, axis=axis)
         return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
@@ -454,7 +468,7 @@ def _parse_dist_kw(dist, enforce_subclass=True):
         try:
             dist = getattr(distributions, dist)
         except AttributeError as e:
-            raise ValueError("%s is not a valid distribution name" % dist) from e
+            raise ValueError(f"{dist} is not a valid distribution name") from e
     elif enforce_subclass:
         msg = ("`dist` should be a stats.distributions instance or a string "
                "with the name of such a distribution.")
@@ -831,7 +845,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
         plot.plot(svals, ppcc, 'x')
         _add_axis_labels_title(plot, xlabel='Shape Values',
                                ylabel='Prob Plot Corr. Coef.',
-                               title='(%s) PPCC Plot' % dist)
+                               title=f'({dist}) PPCC Plot')
 
     return svals, ppcc
 
@@ -1247,7 +1261,7 @@ def boxcox_normmax(
     ...     return optimize.minimize_scalar(fun, bounds=(6, 7),
     ...                                     method="bounded", options=options)
     >>> stats.boxcox_normmax(x, optimizer=optimizer)
-    6.000...
+    6.000000000
     """
     x = np.asarray(x)
 
@@ -1323,7 +1337,7 @@ def boxcox_normmax(
                'mle': _mle,
                'all': _all}
     if method not in methods.keys():
-        raise ValueError("Method %s not recognized." % method)
+        raise ValueError(f"Method {method} not recognized.")
 
     optimfunc = methods[method]
 
@@ -2828,7 +2842,7 @@ BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(BartlettResult, n_samples=None)
-def bartlett(*samples):
+def bartlett(*samples, axis=0):
     r"""Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
@@ -3038,30 +3052,41 @@ def bartlett(*samples):
     [0.007054444444444413, 0.13073888888888888, 0.008890000000000002]
 
     """
+    xp = array_namespace(*samples)
+
     k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle empty input and input that is not 1d
+    # Handle 1d empty input; _axis_nan_policy takes care of N-D
     for sample in samples:
-        if np.asanyarray(sample).size == 0:
-            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
+        if xp_size(xp.asarray(sample)) == 0:
+            NaN = _get_nan(*samples, xp=xp)  # get NaN of result_dtype of all samples
             return BartlettResult(NaN, NaN)
 
-    Ni = np.empty(k)
-    ssq = np.empty(k, 'd')
-    for j in range(k):
-        Ni[j] = len(samples[j])
-        ssq[j] = np.var(samples[j], ddof=1)
-    Ntot = np.sum(Ni, axis=0)
-    spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
-    numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
-    denom = 1.0 + 1.0/(3*(k - 1)) * ((np.sum(1.0/(Ni - 1.0), axis=0)) -
-                                     1.0/(Ntot - k))
-    T = numer / denom
-    pval = distributions.chi2.sf(T, k - 1)  # 1 - cdf
+    samples = _broadcast_arrays(samples, axis=axis, xp=xp)
+    samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
 
-    return BartlettResult(T, pval)
+    Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
+    Ni = [xp.broadcast_to(N, sample.shape[:-1]) for N in Ni]
+    ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
+    Ni = [arr[xp.newaxis, ...] for arr in Ni]
+    ssq = [arr[xp.newaxis, ...] for arr in ssq]
+    Ni = xp.concat(Ni, axis=0)
+    ssq = xp.concat(ssq, axis=0)
+    Ntot = xp.sum(Ni, axis=0)
+    spsq = xp.sum((Ni - 1)*ssq, axis=0) / (Ntot - k)
+    numer = (Ntot - k) * xp.log(spsq) - xp.sum((Ni - 1)*xp.log(ssq), axis=0)
+    denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
+    T = numer / denom
+
+    T_np = np.asarray(T)
+    pvalue = distributions.chi2.sf(T_np, k-1)
+    pvalue = xp.asarray(pvalue, dtype=T.dtype)
+    T = T[()] if T.ndim == 0 else T
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return BartlettResult(T, pvalue)
 
 
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
@@ -4311,11 +4336,9 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     # a zero in the table of expected frequencies.
     rowsums = table.sum(axis=1)
     if rowsums[0] == 0:
-        raise ValueError("All values are below the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are below the grand median ({grand_median}).")
     if rowsums[1] == 0:
-        raise ValueError("All values are above the grand median (%r)." %
-                         grand_median)
+        raise ValueError(f"All values are above the grand median ({grand_median}).")
     if ties == "ignore":
         # We already checked that each sample has at least one value, but it
         # is possible that all those values equal the grand median.  If `ties`
@@ -4333,16 +4356,21 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low):
+def _circfuncs_common(samples, high, low, xp=None):
+    xp = array_namespace(samples) if xp is None else xp
     # Ensure samples are array-like and size is not zero
-    if samples.size == 0:
-        NaN = _get_nan(samples)
+    if xp_size(samples) == 0:
+        NaN = _get_nan(samples, xp=xp)
         return NaN, NaN, NaN
+
+    if xp.isdtype(samples.dtype, 'integral'):
+        dtype = xp.asarray(1.).dtype  # get default float type
+        samples = xp.asarray(samples, dtype=dtype)
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = sin((samples - low)*2.*pi / (high - low))
-    cos_samp = cos((samples - low)*2.*pi / (high - low))
+    sin_samp = xp.sin((samples - low)*2.*xp.pi / (high - low))
+    cos_samp = xp.cos((samples - low)*2.*xp.pi / (high - low))
 
     return samples, sin_samp, cos_samp
 
@@ -4403,16 +4431,14 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_sum = sin_samp.sum(axis)
-    cos_sum = cos_samp.sum(axis)
-    res = arctan2(sin_sum, cos_sum)
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_sum = xp.sum(sin_samp, axis=axis)
+    cos_sum = xp.sum(cos_samp, axis=axis)
+    res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
 
-    res = np.asarray(res)
-    res[res < 0] += 2*pi
-    res = res[()]
-
-    return res*(high - low)/2.0/pi + low
+    res = res[()] if res.ndim == 0 else res
+    return res*(high - low)/2.0/xp.pi + low
 
 
 @_axis_nan_policy_factory(
@@ -4482,12 +4508,14 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)
-    cos_mean = cos_samp.mean(axis)
-    # hypot can go slightly above 1 due to rounding errors
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)
+    cos_mean = xp.mean(cos_samp, axis=axis)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))
+        R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4579,16 +4607,18 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> plt.show()
 
     """
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low)
-    sin_mean = sin_samp.mean(axis)  # [1] (2.2.3)
-    cos_mean = cos_samp.mean(axis)  # [1] (2.2.3)
-    # hypot can go slightly above 1 due to rounding errors
+    xp = array_namespace(samples)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
+    cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
+    hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
+    # hypotenuse can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
+        R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
-    res = sqrt(-2*log(R))
+    res = xp.sqrt(-2*xp.log(R))
     if not normalize:
-        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+        res *= (high-low)/(2.*xp.pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
 

@@ -3,6 +3,7 @@
 __init__py = fs.copyfile('__init__.py')
 _cy_array_utils_pxd = fs.copyfile('_cythonized_array_utils.pxd')
 
+_generate_pyx = find_program('_generate_pyx.py')
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -13,7 +14,7 @@ cython_linalg = custom_target('cython_linalg',
     '_lapack_subroutines.h'
   ],
   input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@', accelerate_flag],
+  command: [_generate_pyx, '-o', '@OUTDIR@', accelerate_flag],
   depend_files: [
     'cython_blas_signatures.txt',
     'cython_lapack_signatures.txt',
@@ -30,10 +31,11 @@ cython_linalg = custom_target('cython_linalg',
 # warnings about multiple outputs. And using `depends: cython_linalg[2]` does
 # not work, because that generator depends does not accept CustomTargetIndex,
 # only CustomTarget. See https://github.com/mesonbuild/meson/issues/9837
+_echo = find_program('../_build_utils/echo.py')
 cython_blas_pxd = custom_target(
   output: '_dummy_cython_blas.pxd',
   input: cython_linalg[2],
-  command: [py3, '-c', '"@INPUT@"'],
+  command: [_echo, '@INPUT@'],
 )
 
 # pyx -> c, pyx -> cpp generators, depending on __init__.py here.
@@ -109,13 +111,6 @@ py3.extension_module('_flapack',
 
 # TODO: cblas/clapack are built *only* for ATLAS. Why? Is it still needed?
 
-# _interpolative
-interpolative_module = custom_target('interpolative_module',
-  output: '_interpolativemodule.c',
-  input: 'interpolative.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 # id_dist contains a copy of FFTPACK, which has type mismatch warnings
 # that are hard to fix. This code is terrible and noisy during the build,
 # silence it completely.
@@ -159,7 +154,7 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/idzr_rid.f',
     'src/id_dist/src/idzr_rsvd.f',
     'src/id_dist/src/prini.f',
-    interpolative_module,
+    f2py_gen.process('interpolative.pyf'),
   ],
   fortran_args: [fortran_ignore_warnings, _suppress_all_warnings],
   link_args: version_link_args,

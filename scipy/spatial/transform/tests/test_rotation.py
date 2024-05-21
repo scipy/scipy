@@ -1467,6 +1467,32 @@ def test_align_vectors_parallel():
     assert_allclose(R.apply(b[0]), a[0], atol=atol)
 
 
+def test_align_vectors_antiparallel():
+    # Test exact 180 deg rotation
+    atol = 1e-12
+    as_to_test = np.array([[[1, 0, 0], [0, 1, 0]],
+                           [[0, 1, 0], [1, 0, 0]],
+                           [[0, 0, 1], [0, 1, 0]]])
+    bs_to_test = [[-a[0], a[1]] for a in as_to_test]
+    for a, b in zip(as_to_test, bs_to_test):
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        assert_allclose(R.magnitude(), np.pi, atol=atol)
+        assert_allclose(R.apply(b[0]), a[0], atol=atol)
+
+    # Test exact rotations near 180 deg
+    Rs = Rotation.random(100, random_state=0)
+    dRs = Rotation.from_rotvec(Rs.as_rotvec()*1e-4)  # scale down to small angle
+    a = [[ 1, 0, 0], [0, 1, 0]]
+    b = [[-1, 0, 0], [0, 1, 0]]
+    as_to_test = []
+    for dR in dRs:
+        as_to_test.append([dR.apply(a[0]), a[1]])
+    for a in as_to_test:
+        R, _ = Rotation.align_vectors(a, b, weights=[np.inf, 1])
+        R2, _ = Rotation.align_vectors(a, b, weights=[1e10, 1])
+        assert_allclose(R.as_matrix(), R2.as_matrix(), atol=atol)
+
+
 def test_align_vectors_primary_only():
     atol = 1e-12
     mats_a = Rotation.random(100, random_state=0).as_matrix()

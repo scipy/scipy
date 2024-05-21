@@ -9,8 +9,6 @@ __all__ = [  # noqa: F822
     'eig', 'eigvals', 'eigh', 'eigvalsh',
     'eig_banded', 'eigvals_banded',
     'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf',
-    'array', 'isfinite', 'inexact', 'nonzero', 'iscomplexobj',
-    'flatnonzero', 'argsort', 'iscomplex', 'einsum', 'eye', 'inf',
     'LinAlgError', 'norm', 'get_lapack_funcs'
 ]
 

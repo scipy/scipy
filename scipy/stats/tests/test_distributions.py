@@ -13,7 +13,8 @@ import platform
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
-                           assert_array_less, suppress_warnings, IS_PYPY)
+                           assert_array_less, suppress_warnings,
+                           assert_array_max_ulp, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -3158,6 +3159,7 @@ class TestLogLaplace:
 
         _assert_less_or_close_loglike(stats.loglaplace, data, **kwds)
 
+
 class TestPowerlaw:
 
     # In the following data, `sf` was computed with mpmath.
@@ -3810,6 +3812,7 @@ class TestJFSkewT:
         x, pdf = data["x"], data["pdf"]
         assert_allclose(pdf, stats.jf_skew_t(a, b).pdf(x), rtol=1e-12)
 
+
 # Test data for TestSkewNorm.test_noncentral_moments()
 # The expected noncentral moments were computed by Wolfram Alpha.
 # In Wolfram Alpha, enter
@@ -4000,11 +4003,18 @@ class TestSkewNorm:
         # Compare overridden fit against stats.fit
         rng = np.random.default_rng(9842356982345693637)
         bounds = {'a': (-5, 5), 'loc': (-10, 10), 'scale': (1e-16, 10)}
+
         def optimizer(fun, bounds):
             return differential_evolution(fun, bounds, seed=rng)
 
         fit_result = stats.fit(stats.skewnorm, x, bounds, optimizer=optimizer)
         np.testing.assert_allclose(params, fit_result.params, rtol=1e-4)
+
+    def test_ppf(self):
+        # gh-20124 reported that Boost's ppf was wrong for high skewness
+        # Reference value was calculated using
+        # N[InverseCDF[SkewNormalDistribution[0, 1, 500], 1/100], 14] in Wolfram Alpha.
+        assert_allclose(stats.skewnorm.ppf(0.01, 500), 0.012533469508013, rtol=1e-13)
 
 
 class TestExpon:
@@ -4792,6 +4802,7 @@ class TestGamma:
             assert_allclose(dist.moment(2), np.mean(data**2))
         if nfree >= 3:
             assert_allclose(dist.moment(3), np.mean(data**3))
+
 
 def test_pdf_overflow_gh19616():
     # Confirm that gh19616 (intermediate over/underflows in PDF) is resolved
@@ -5840,13 +5851,14 @@ def test_args_reduce():
 
 
 class TestFitMethod:
-    skip = ['ncf', 'ksone', 'kstwo']
+    # fitting assumes continuous parameters
+    skip = ['ncf', 'ksone', 'kstwo', 'irwinhall']
 
     def setup_method(self):
         np.random.seed(1234)
 
     # skip these b/c deprecated, or only loc and scale arguments
-    fitSkipNonFinite = ['expon', 'norm', 'uniform']
+    fitSkipNonFinite = ['expon', 'norm', 'uniform', 'irwinhall']
 
     @pytest.mark.parametrize('dist,args', distcont)
     def test_fit_w_non_finite_data_values(self, dist, args):
@@ -7508,6 +7520,19 @@ class TestBurr12:
         ref = [mean, var, skew, kurtosis]
         res = stats.burr12(c, d).stats('mvsk')
         assert_allclose(res, ref, rtol=1e-14)
+
+    # Reference values were computed with mpmath using mp.dps = 80
+    # and then cast to float.
+    @pytest.mark.parametrize(
+        'p, c, d, ref',
+        [(1e-12, 20, 0.5, 15.848931924611135),
+         (1e-19, 20, 0.5, 79.43282347242815),
+         (1e-12, 0.25, 35, 2.0888618213462466),
+         (1e-80, 0.25, 35, 1360930951.7972188)]
+    )
+    def test_isf_near_zero(self, p, c, d, ref):
+        x = stats.burr12.isf(p, c, d)
+        assert_allclose(x, ref, rtol=1e-14)
 
 
 class TestStudentizedRange:
@@ -9644,6 +9669,102 @@ class TestKappa3:
         sf0 = 1 - stats.kappa3.cdf(0.5, 1e5)
         sf1 = stats.kappa3.sf(0.5, 1e5)
         assert_allclose(sf1, sf0)
+
+
+class TestIrwinHall:
+    unif = stats.uniform(0, 1)
+    ih1 = stats.irwinhall(1)
+    ih10 = stats.irwinhall(10)
+
+    def test_stats_ih10(self):
+        # from Wolfram Alpha "mean variance skew kurtosis UniformSumDistribution[10]"
+        # W|A uses Pearson's definition of kurtosis so subtract 3
+        # should be exact integer division converted to fp64, without any further ops
+        assert_array_max_ulp(self.ih10.stats('mvsk'), (5, 10/12, 0, -3/25))
+
+    def test_moments_ih10(self):
+        # from Wolfram Alpha "values moments UniformSumDistribution[10]"
+        # algo should use integer division converted to fp64, without any further ops
+        # so these should be precise to the ulpm if not exact
+        vals = [5, 155 / 6, 275 / 2, 752, 12650 / 3,
+                677465 / 28, 567325 / 4,
+                15266213 / 18, 10333565 / 2]
+        moments = [self.ih10.moment(n+1) for n in range(len(vals))]
+        assert_array_max_ulp(moments, vals)
+        # also from Wolfram Alpha "50th moment UniformSumDistribution[10]"
+        m50 = self.ih10.moment(50)
+        m50_exact = 17453002755350010529309685557285098151740985685/4862
+        assert_array_max_ulp(m50, m50_exact)
+
+    def test_pdf_ih1_unif(self):
+        # IH(1) PDF is by definition U(0,1)
+        # we should be too, but differences in floating point eval order happen
+        # it's unclear if we can get down to the single ulp for doubles unless
+        # quads are used we're within 6-10 ulps otherwise (across sf/cdf/pdf) 
+        # which is pretty good
+
+        pts = np.linspace(0, 1, 100)
+        pdf_unif = self.unif.pdf(pts)
+        pdf_ih1 = self.ih1.pdf(pts)
+        assert_array_max_ulp(pdf_ih1, pdf_unif, maxulp=10)
+
+    def test_pdf_ih2_triangle(self):
+        # IH(2) PDF is a triangle
+        ih2 = stats.irwinhall(2)
+        npts = 101
+        pts = np.linspace(0, 2, npts)
+        expected = np.linspace(0, 2, npts)
+        expected[(npts + 1) // 2:] = 2 - expected[(npts + 1) // 2:]
+        pdf_ih2 = ih2.pdf(pts)
+        assert_array_max_ulp(pdf_ih2, expected, maxulp=10)
+
+    def test_cdf_ih1_unif(self):
+        # CDF of IH(1) should be identical to uniform
+        pts = np.linspace(0, 1, 100)
+        cdf_unif = self.unif.cdf(pts)
+        cdf_ih1 = self.ih1.cdf(pts)
+
+        assert_array_max_ulp(cdf_ih1, cdf_unif, maxulp=10)
+
+    def test_cdf(self):
+        # CDF of IH is symmetric so CDF should be 0.5 at n/2
+        n = np.arange(1, 10)
+        ih = stats.irwinhall(n)
+        ih_cdf = ih.cdf(n / 2)
+        exact = np.repeat(1/2, len(n))
+        # should be identically 1/2 but fp order of eval differences happen
+        assert_array_max_ulp(ih_cdf, exact, maxulp=10)
+
+    def test_cdf_ih10_exact(self):
+        # from Wolfram Alpha "values CDF[UniformSumDistribution[10], x] x=0 to x=10"
+        # symmetric about n/2, i.e., cdf[n-x] = 1-cdf[x] = sf[x]
+        vals = [0, 1 / 3628800, 169 / 604800, 24427 / 1814400,
+                  252023 / 1814400, 1 / 2, 1562377 / 1814400,
+                  1789973 / 1814400, 604631 / 604800,
+                  3628799 / 3628800, 1]
+
+        # essentially a test of bspline evaluation
+        # this and the other ones are mostly to detect regressions
+        assert_array_max_ulp(self.ih10.cdf(np.arange(11)), vals, maxulp=10)
+
+        assert_array_max_ulp(self.ih10.cdf(1/10), 1/36288000000000000, maxulp=10)
+        ref = 36287999999999999/36288000000000000
+        assert_array_max_ulp(self.ih10.cdf(99/10), ref, maxulp=10)
+
+    def test_pdf_ih10_exact(self):
+        # from Wolfram Alpha "values PDF[UniformSumDistribution[10], x] x=0 to x=10"
+        # symmetric about n/2 = 5
+        vals = [0, 1 / 362880, 251 / 181440, 913 / 22680, 44117 / 181440]
+        vals += [15619 / 36288] + vals[::-1]
+        assert_array_max_ulp(self.ih10.pdf(np.arange(11)), vals, maxulp=10)
+
+    def test_sf_ih10_exact(self):
+        assert_allclose(self.ih10.sf(np.arange(11)), 1 - self.ih10.cdf(np.arange(11)))
+        # from Wolfram Alpha "SurvivalFunction[UniformSumDistribution[10],x] at x=1/10"
+        # and symmetry about n/2 = 5
+        # W|A returns 1 for CDF @ x=9.9
+        ref = 36287999999999999/36288000000000000
+        assert_array_max_ulp(self.ih10.sf(1/10), ref, maxulp=10)
 
 
 # Cases are (distribution name, log10 of smallest probability mass to test,

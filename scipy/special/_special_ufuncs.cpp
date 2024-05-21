@@ -14,6 +14,7 @@
 #include "special/fresnel.h"
 #include "special/gamma.h"
 #include "special/hyp2f1.h"
+#include "special/iv_ratio.h"
 #include "special/kelvin.h"
 #include "special/lambertw.h"
 #include "special/legendre.h"
@@ -139,6 +140,7 @@ extern const char *hankel2_doc;
 extern const char *hankel2e_doc;
 extern const char *hyp2f1_doc;
 extern const char *iv_doc;
+extern const char *iv_ratio_doc;
 extern const char *ive_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
@@ -153,6 +155,7 @@ extern const char *lambertw_doc;
 extern const char *logit_doc;
 extern const char *loggamma_doc;
 extern const char *log_expit_doc;
+extern const char *log_wright_bessel_doc;
 extern const char *mathieu_a_doc;
 extern const char *mathieu_b_doc;
 extern const char *mathieu_cem_doc;
@@ -412,6 +415,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "iv", iv);
 
+    PyObject *iv_ratio = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(special::iv_ratio), static_cast<func_ff_f_t>(special::iv_ratio)},
+        "_iv_ratio", iv_ratio_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_iv_ratio", iv_ratio);
+
     PyObject *ive = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_ie), static_cast<func_dd_d_t>(special::cyl_bessel_ie),
          static_cast<func_fF_F_t>(special::cyl_bessel_ie), static_cast<func_dD_D_t>(special::cyl_bessel_ie)},
@@ -479,6 +488,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "log_expit", log_expit_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "log_expit", log_expit);
+
+    PyObject *log_wright_bessel = SpecFun_NewUFunc(
+        {static_cast<func_ddd_d_t>(special::log_wright_bessel), static_cast<func_fff_f_t>(special::log_wright_bessel)},
+        "log_wright_bessel", log_wright_bessel_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "log_wright_bessel", log_wright_bessel);
 
     PyObject *logit = SpecFun_NewUFunc(
         {static_cast<func_d_d_t>(special::logit), static_cast<func_f_f_t>(special::logit),

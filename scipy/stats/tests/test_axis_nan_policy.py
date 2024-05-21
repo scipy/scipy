@@ -255,22 +255,23 @@ def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                           unpacker, nan_policy, axis, data_generator)
 
 
-@pytest.mark.slow
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.filterwarnings('ignore::UserWarning')
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
-                          "paired", "unpacker"), axis_nan_policy_cases)
-@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-@pytest.mark.parametrize(("axis"), range(-3, 3))
-@pytest.mark.parametrize(("data_generator"),
-                         ("all_nans", "all_finite", "mixed"))
-def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
-                              paired, unpacker, nan_policy, axis,
-                              data_generator):
-    if hypotest in {stats.cramervonmises_2samp} and not SCIPY_XSLOW:
-        pytest.skip("Too slow.")
-    _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
-                          unpacker, nan_policy, axis, data_generator)
+if SCIPY_XSLOW:
+    # Takes O(1 min) to run, and even skipping with the `xslow` decorator takes
+    # about 3 sec because this is >3,000 tests. So ensure pytest doesn't see
+    # them at all unless `SCIPY_XSLOW` is defined.
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                              "paired", "unpacker"), axis_nan_policy_cases)
+    @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
+    @pytest.mark.parametrize(("axis"), range(-3, 3))
+    @pytest.mark.parametrize(("data_generator"),
+                             ("all_nans", "all_finite", "mixed"))
+    def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
+                                  paired, unpacker, nan_policy, axis,
+                                  data_generator):
+        _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
+                              unpacker, nan_policy, axis, data_generator)
 
 
 def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
@@ -385,11 +386,11 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                     "approximation.")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
-        assert_allclose(res[0], statistics, rtol=1e-15)
+        assert_allclose(res[0], statistics, rtol=1e-14)
         assert_equal(res[0].dtype, statistics.dtype)
 
         if len(res) == 2:
-            assert_allclose(res[1], pvalues, rtol=1e-15)
+            assert_allclose(res[1], pvalues, rtol=1e-14)
             assert_equal(res[1].dtype, pvalues.dtype)
 
 

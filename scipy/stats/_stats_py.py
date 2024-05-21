@@ -67,14 +67,9 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
-from scipy._lib._array_api import array_namespace, is_numpy
+from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
+                                   xp_clip, xp_moveaxis_to_end, xp_sign)
 from scipy._lib.array_api_compat import size as xp_size
-
-# In __all__ but deprecated for removal in SciPy 1.13.0
-from scipy._lib._util import float_factorial  # noqa: F401
-from scipy.stats._mstats_basic import (  # noqa: F401
-    PointbiserialrResult, Ttest_1sampResult,  Ttest_relResult
-)
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -1203,8 +1198,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
     mean = xp.mean(a, axis=axis, keepdims=True)
     mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
-    m2 = _moment(a, 2, axis, mean=mean)
-    m3 = _moment(a, 3, axis, mean=mean)
+    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
+    m3 = _moment(a, 3, axis, mean=mean, xp=xp)
     with np.errstate(all='ignore'):
         eps = xp.finfo(m2.dtype).eps
         zero = m2 <= (eps * mean_reduced)**2
@@ -1223,6 +1218,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
@@ -1304,31 +1301,29 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     tail.
 
     """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.kurtosis(a, axis, fisher, bias)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     n = a.shape[axis]
-    mean = a.mean(axis, keepdims=True)
-    m2 = _moment(a, 2, axis, mean=mean)
-    m4 = _moment(a, 4, axis, mean=mean)
+    mean = xp.mean(a, axis=axis, keepdims=True)
+    mean_reduced = xp.squeeze(mean, axis=axis)  # needed later
+    m2 = _moment(a, 2, axis, mean=mean, xp=xp)
+    m4 = _moment(a, 4, axis, mean=mean, xp=xp)
     with np.errstate(all='ignore'):
-        zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, np.nan, m4 / m2**2.0)
+        zero = m2 <= (xp.finfo(m2.dtype).eps * mean_reduced)**2
+        NaN = _get_nan(m4, xp=xp)
+        vals = xp.where(zero, NaN, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
-        if can_correct.any():
-            m2 = np.extract(can_correct, m2)
-            m4 = np.extract(can_correct, m4)
+        if xp.any(can_correct):
+            m2 = m2[can_correct]
+            m4 = m4[can_correct]
             nval = 1.0/(n-2)/(n-3) * ((n**2-1.0)*m4/m2**2.0 - 3*(n-1)**2.0)
-            np.place(vals, can_correct, nval + 3.0)
+            vals[can_correct] = nval + 3.0
 
-    return vals[()] - 3 if fisher else vals[()]
+    vals = vals - 3 if fisher else vals
+    return vals[()] if vals.ndim == 0 else vals
 
 
 DescribeResult = namedtuple('DescribeResult',
@@ -1401,20 +1396,23 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
                    skewness=array([0., 0.]), kurtosis=array([-2., -2.]))
 
     """
-    a, axis = _chk_asarray(a, axis)
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
+        # only NumPy gets here; `_contains_nan` raises error for the rest
         a = ma.masked_invalid(a)
         return mstats_basic.describe(a, axis, ddof, bias)
 
-    if a.size == 0:
+    if xp_size(a) == 0:
         raise ValueError("The input must not be empty.")
+
     n = a.shape[axis]
-    mm = (np.min(a, axis=axis), np.max(a, axis=axis))
-    m = np.mean(a, axis=axis)
-    v = _var(a, axis=axis, ddof=ddof)
+    mm = (xp.min(a, axis=axis), xp.max(a, axis=axis))
+    m = xp.mean(a, axis=axis)
+    v = _var(a, axis=axis, ddof=ddof, xp=xp)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -1447,6 +1445,8 @@ SkewtestResult = namedtuple('SkewtestResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(SkewtestResult, n_samples=1, too_small=7)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     r"""Test whether the skew is different from the normal distribution.
 
@@ -1606,23 +1606,29 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     agree fairly closely, even for our small sample.
 
     """
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
+
     b2 = skew(a, axis)
     n = a.shape[axis]
     if n < 8:
         raise ValueError(
-            "skewtest is not valid with less than 8 samples; %i samples"
-            " were given." % int(n))
+            f"skewtest is not valid with less than 8 samples; {n} samples were given.")
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
     W2 = -1 + math.sqrt(2 * (beta2 - 1))
     delta = 1 / math.sqrt(0.5 * math.log(W2))
     alpha = math.sqrt(2.0 / (W2 - 1))
-    y = np.where(y == 0, 1, y)
-    Z = delta * np.log(y / alpha + np.sqrt((y / alpha)**2 + 1))
+    y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
+    Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    pvalue = _get_pvalue(Z, distributions.norm, alternative)
-    return SkewtestResult(Z[()], pvalue[()])
+    Z_np = np.asarray(Z)
+    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return SkewtestResult(Z, pvalue)
 
 
 KurtosistestResult = namedtuple('KurtosistestResult', ('statistic', 'pvalue'))
@@ -1793,6 +1799,9 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     hypothesis [4]_.
 
     """
+    xp = array_namespace(a)
+    a, axis = _chk_asarray(a, axis, xp=xp)
+
     n = a.shape[axis]
     if n < 5:
         raise ValueError(
@@ -1806,25 +1815,30 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
-    x = (b2-E) / np.sqrt(varb2)  # [1]_ Eq. 4
+    x = (b2-E) / varb2**0.5  # [1]_ Eq. 4
     # [1]_ Eq. 2:
-    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * np.sqrt((6.0*(n+3)*(n+5)) /
-                                                        (n*(n-2)*(n-3)))
+    sqrtbeta1 = 6.0*(n*n-5*n+2)/((n+7)*(n+9)) * ((6.0*(n+3)*(n+5))
+                                                 / (n*(n-2)*(n-3)))**0.5
     # [1]_ Eq. 3:
-    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + np.sqrt(1+4.0/(sqrtbeta1**2)))
+    A = 6.0 + 8.0/sqrtbeta1 * (2.0/sqrtbeta1 + (1+4.0/(sqrtbeta1**2))**0.5)
     term1 = 1 - 2/(9.0*A)
-    denom = 1 + x*np.sqrt(2/(A-4.0))
-    term2 = np.sign(denom) * np.where(denom == 0.0, np.nan,
-                                      np.power((1-2.0/A)/np.abs(denom), 1/3.0))
-    if np.any(denom == 0):
+    denom = 1 + x * (2/(A-4.0))**0.5
+    NaN = _get_nan(x, xp=xp)
+    term2 = xp_sign(denom) * xp.where(denom == 0.0, NaN,
+                                      ((1-2.0/A)/xp.abs(denom))**(1/3))
+    if xp.any(denom == 0):
         msg = ("Test statistic not defined in some cases due to division by "
                "zero. Return nan in that case...")
         warnings.warn(msg, RuntimeWarning, stacklevel=2)
 
-    Z = (term1 - term2) / np.sqrt(2/(9.0*A))  # [1]_ Eq. 5
+    Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
 
-    pvalue = _get_pvalue(Z, distributions.norm, alternative)
-    return KurtosistestResult(Z[()], pvalue[()])
+    Z_np = np.asarray(Z)
+    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
+    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    Z = Z[()] if Z.ndim == 0 else Z
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+    return KurtosistestResult(Z, pvalue)
 
 
 NormaltestResult = namedtuple('NormaltestResult', ('statistic', 'pvalue'))
@@ -1983,7 +1997,14 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     k, _ = kurtosistest(a, axis)
     k2 = s*s + k*k
 
-    return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
+    xp = array_namespace(k2)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, 2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return NormaltestResult(k2, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2131,23 +2152,29 @@ def jarque_bera(x, *, axis=None):
     hypothesis [4]_.
 
     """
-    x = np.asarray(x)
+    xp = array_namespace(x)
+    x = xp.asarray(x)
     if axis is None:
-        x = x.ravel()
+        x = xp.reshape(x, (-1,))
         axis = 0
 
     n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean(axis=axis, keepdims=True)
+    mu = xp.mean(x, axis=axis, keepdims=True)
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    statistic = n / 6 * (s**2 + k**2 / 4)
-    pvalue = distributions.chi2.sf(statistic, df=2)
+    k2 = n / 6 * (s**2 + k**2 / 4)
 
-    return SignificanceResult(statistic, pvalue)
+    k2_np = np.asarray(k2)
+    pvalue = distributions.chi2.sf(k2_np, df=2)
+    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
+    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return SignificanceResult(k2, pvalue)
 
 
 #####################################
@@ -2374,8 +2401,8 @@ def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     score = np.asarray(score)
 
     # Nan treatment
-    cna, npa = _contains_nan(a, nan_policy, use_summation=False)
-    cns, nps = _contains_nan(score, nan_policy, use_summation=False)
+    cna, npa = _contains_nan(a, nan_policy)
+    cns, nps = _contains_nan(score, nan_policy)
 
     if (cna or cns) and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -2508,7 +2535,7 @@ def _histogram(a, numbins=10, defaultlimits=None, weights=None,
     extrapoints = len([v for v in a
                        if defaultlimits[0] > v or v > defaultlimits[1]])
     if extrapoints > 0 and printextras:
-        warnings.warn("Points outside given histogram range = %s" % extrapoints,
+        warnings.warn(f"Points outside given histogram range = {extrapoints}",
                       stacklevel=3,)
 
     return HistogramResult(hist, defaultlimits[0], binsize, extrapoints)
@@ -2819,8 +2846,13 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     1.2893796958227628
 
     """
+    xp = array_namespace(a)
+    if axis is None:
+        a = xp.reshape(a, (-1,))
+        axis = 0
+    a = atleast_nd(a, ndim=1, xp=xp)
     n = a.shape[axis]
-    s = np.std(a, axis=axis, ddof=ddof) / np.sqrt(n)
+    s = xp.std(a, axis=axis, correction=ddof) / n**0.5
     return s
 
 
@@ -4525,20 +4557,6 @@ class PearsonRResult(PearsonRResultBase):
         return ci
 
 
-def _move_axis_to_end(x, source, xp):
-    axes = list(range(x.ndim))
-    temp = axes.pop(source)
-    axes = axes + [temp]
-    return xp.permute_dims(x, axes)
-
-
-def _clip(x, a, b, xp):
-    y = xp.asarray(x, copy=True)
-    y[y < a] = a
-    y[y > b] = b
-    return y
-
-
 def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
@@ -4824,13 +4842,13 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # `moveaxis` only recently added to array API, so it's not yey available in
     # array_api_strict. Replace with e.g. `xp.moveaxis(x, axis, -1)` when available.
-    x = _move_axis_to_end(x, axis, xp)
-    y = _move_axis_to_end(y, axis, xp)
+    x = xp_moveaxis_to_end(x, axis, xp=xp)
+    y = xp_moveaxis_to_end(y, axis, xp=xp)
     axis = -1
 
     dtype = xp.result_type(x.dtype, y.dtype)
     if xp.isdtype(dtype, "integral"):
-        dtype = xp.float64
+        dtype = xp.asarray(1.).dtype
 
     if xp.isdtype(dtype, "complex floating"):
         raise ValueError('This function does not support complex data')
@@ -4924,7 +4942,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     one = xp.asarray(1, dtype=dtype)
     # `clip` only recently added to array API, so it's not yet available in
     # array_api_strict. Replace with e.g. `xp.clip(r, -one, one)` when available.
-    r = xp.asarray(_clip(r, -one, one, xp))
+    r = xp.asarray(xp_clip(r, -one, one, xp=xp))
     r[const_xy] = xp.nan
 
     # As explained in the docstring, the distribution of `r` under the null
@@ -8502,7 +8520,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected value {alternative=}")
 
     N = len(x)
     x = np.sort(x)
@@ -9155,7 +9173,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     if alternative == 'two_sided':
         alternative = 'two-sided'
     if alternative not in ['two-sided', 'greater', 'less']:
-        raise ValueError("Unexpected alternative %s" % alternative)
+        raise ValueError(f"Unexpected alternative: {alternative}")
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,

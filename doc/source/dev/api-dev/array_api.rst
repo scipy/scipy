@@ -95,6 +95,7 @@ variable is set:
 
 - `scipy.cluster.hierarchy`
 - `scipy.cluster.vq`
+- `scipy.constants`
 - `scipy.fft`
 
 Support is provided in `scipy.special` for the following functions:
@@ -119,8 +120,8 @@ This package is included in the SciPy code base via a git submodule (under
 
 ``array-api-compat`` provides generic utility functions and adds aliases such
 as ``xp.concat`` (which, for numpy, maps to ``np.concatenate``). This allows
-using a uniform API across NumPy, PyTorch and CuPy (as of right now; support
-for other libraries like JAX is expected to be added in the future).
+using a uniform API across NumPy, PyTorch, CuPy and JAX (with other libraries,
+such as Dask, coming in the future).
 
 When the environment variable isn't set and hence array API standard support in
 SciPy is disabled, we still use the "augmented" version of the NumPy namespace,
