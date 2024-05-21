@@ -135,8 +135,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
                       "Window length (2) must be positive and less",
-                      "skewtest is not valid with less than",
-                      "kurtosistest requires at least 5",
+                      "`skewtest` requires at least",
+                      "`kurtosistest` requires at least",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
                       "Input sample size must be greater than one.",}
