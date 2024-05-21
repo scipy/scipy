@@ -264,7 +264,7 @@ def kstat(data, n=2, *, axis=None):
     .. math::
 
         S_r \equiv \sum_{i=1}^n X_i^r,
-        
+
     and :math:`X_i` is the :math:`i` th data point.
 
     References
@@ -372,10 +372,10 @@ def kstatvar(data, n=2, *, axis=None):
     N = data.shape[axis]
 
     if n == 1:
-        return kstat(data, n=2, axis=axis) * 1.0/N
+        return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
     elif n == 2:
-        k2 = kstat(data, n=2, axis=axis)
-        k4 = kstat(data, n=4, axis=axis)
+        k2 = kstat(data, n=2, axis=axis, _no_deco=True)
+        k4 = kstat(data, n=4, axis=axis, _no_deco=True)
         return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")

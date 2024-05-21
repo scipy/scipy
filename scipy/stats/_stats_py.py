@@ -1610,7 +1610,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    b2 = skew(a, axis)
+    b2 = skew(a, axis, _no_deco=True)
     n = a.shape[axis]
     if n < 8:
         message = ("`skewtest` requires at least 8 observations; "
@@ -1814,8 +1814,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     if n < 20:
         message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
                    f"observations; only {n=} observations were given.")
-        warnings.warn(message, stacklevel=2)
-    b2 = kurtosis(a, axis, fisher=False)
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+    b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
@@ -1998,8 +1998,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     hypothesis [5]_.
 
     """
-    s, _ = skewtest(a, axis)
-    k, _ = kurtosistest(a, axis)
+    s, _ = skewtest(a, axis, _no_deco=True)
+    k, _ = kurtosistest(a, axis, _no_deco=True)
     k2 = s*s + k*k
 
     xp = array_namespace(k2)

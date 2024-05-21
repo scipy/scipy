@@ -6337,9 +6337,9 @@ class TestKurtosisTest(NormalityTests):
         stats.kurtosistest(xp.arange(20.0))
 
         message = "`kurtosistest` p-value may be inaccurate..."
-        with pytest.warns(UserWarning, match=message):
+        with pytest.warns(RuntimeWarning, match=message):
             stats.kurtosistest(xp.arange(5.0))
-        with pytest.warns(UserWarning, match=message):
+        with pytest.warns(RuntimeWarning, match=message):
             stats.kurtosistest(xp.arange(19.0))
 
         x = xp.arange(4.0)

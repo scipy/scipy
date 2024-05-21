@@ -565,7 +565,6 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     samples = _remove_nans(samples, paired)
                     too_small_message = too_small_1d_omit
 
-
                 if override['empty'] and is_too_small(samples, kwds):
                     warnings.warn(too_small_message, UserWarning, stacklevel=2)
                     return tuple_to_result(*np.full(n_out, NaN))
@@ -584,7 +583,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 empty_output is not None
                 and (is_too_small(samples, kwds) or empty_output.size == 0)
             ):
-                if override['empty'] and is_too_small(samples, kwds):
+                if (override['empty'] and is_too_small(samples, kwds)
+                        and empty_output.size != 0):
                     warnings.warn(too_small_nd_all, UserWarning, stacklevel=2)
                 res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)

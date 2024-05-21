@@ -126,7 +126,8 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
                          "work if x - y is zero for all elements.")
 
     if 0 < d.shape[-1] < 10 and method == "approx":
-        warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
+        warnings.warn("Sample size too small for normal approximation.",
+                      RuntimeWarning, stacklevel=2)
 
     return d, zero_method, correction, alternative, method, axis, output_z
 
