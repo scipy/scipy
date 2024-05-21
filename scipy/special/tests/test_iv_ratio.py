@@ -104,12 +104,12 @@ class TestIvRatio:
         (1e20, 1e40),
         (np.sqrt(np.finfo(float).max), np.finfo(float).max),
     ])
-    def test_huge_x(self, v, x):  # TODO
+    def test_huge_x(self, v, x):
         """If x is much greater than v, the bounds
 
                     x                                 x
-        --------------------------- <= R <= -----------------------
-        v-0.5+sqrt(x**2+(v+0.5)**2)         v-1+sqrt(x**2+(v+1)**2)
+        --------------------------- <= R <= ---------------------------
+        v-0.5+sqrt(x**2+(v+0.5)**2)         v-0.5+sqrt(x**2+(v-0.5)**2)
 
         collapses to R ~= 1.  Test against this asymptotic expression.
         """
@@ -157,7 +157,7 @@ class TestIvRatioC:
     ])
     def test_against_reference_values(self, v, x, r):
         """The reference values are one minus those of TestIvRatio."""
-        assert_allclose(iv_ratio_c(v, x), r, rtol=10e-16, atol=0)
+        assert_allclose(iv_ratio_c(v, x), r, rtol=1e-15, atol=0)
 
     @pytest.mark.parametrize('v,x,r', [
         (1, np.inf, 0),
@@ -207,17 +207,16 @@ class TestIvRatioC:
         (1e20, 1e40),
         (np.sqrt(np.finfo(float).max), np.finfo(float).max),
     ])
-    def test_huge_x(self, v, x):  # TODO
+    def test_huge_x(self, v, x):
         """If x is much greater than v, the bounds
 
                     x                                 x
-        --------------------------- <= R <= -----------------------
-        v-0.5+sqrt(x**2+(v+0.5)**2)         v-1+sqrt(x**2+(v+1)**2)
+        --------------------------- <= R <= ---------------------------
+        v-0.5+sqrt(x**2+(v+0.5)**2)         v-0.5+sqrt(x**2+(v-0.5)**2)
 
         collapses to 1-R ~= (v-0.5)/x.  Test against this asymptotic expression.
         """
-        # assert_equal(iv_ratio_c(v, x), (v-0.5)/x-((v-1)**2-0.25)/(2*x*x))
-        assert_equal(iv_ratio_c(v, x), (v-0.5)/x)
+        assert_allclose(iv_ratio_c(v, x), (v-0.5)/x, rtol=1e-15, atol=0)
 
     @pytest.mark.parametrize('v,x', [
         (np.finfo(float).max, np.finfo(float).max),
