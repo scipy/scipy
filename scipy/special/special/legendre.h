@@ -54,10 +54,11 @@ template <typename T, size_t N, typename Callable, typename... Args>
 void legendre_p_recur(int n, T z, T (&res)[3][N], Callable callback, Args &&...args) {
     legendre_p_recurrence<T, N - 1> r{z};
 
-    for (size_t j = 0; j < 2; ++j) {
-        for (size_t k = 0; k < N; ++k) {
+    for (size_t k = 0; k < N; ++k) {
+        for (size_t j = 0; j < 2; ++j) {
             res[j][k] = r.init[j][k];
         }
+        res[2][k] = 0;
     }
 
     forward_recur(r, res, 0, n + 1, callback, std::forward<Args>(args)...);

@@ -46,22 +46,20 @@ T forward_recurrence(Recurrence r, const T (&init)[K], int n) {
     return forward_recurrence(r, init, n, [](int j, Recurrence r, const T(&p)[K + 1]) {});
 }
 
-template <typename Recurrence, typename InputIt, typename T, size_t P, size_t N>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[P][N]) {
-    constexpr int K = P - 1;
-
-    T coef[K][N];
+template <typename Recurrence, typename InputIt, typename T, ptrdiff_t K, ptrdiff_t N>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[K][N]) {
+    T coef[K - 1][N];
     r(it, coef);
 
-    res[K][0] = 0;
-    for (size_t j = 0; j < K; ++j) {
-        res[K][0] += coef[j][0] * res[j][0];
+    res[K - 1][0] = 0;
+    for (size_t j = 0; j < K - 1; ++j) {
+        res[K - 1][0] += coef[j][0] * res[j][0];
     }
 
     for (size_t r2 = 1; r2 < N; ++r2) {
-        res[K][r2] = 0;
+        res[K - 1][r2] = 0;
         for (size_t k = 0; k <= r2; ++k) {
-            res[K][r2] +=
+            res[K - 1][r2] +=
                 binom<remove_complex_t<T>>(r2, k) * (coef[0][r2 - k] * res[0][k] + coef[1][r2 - k] * res[1][k]);
         }
     }
