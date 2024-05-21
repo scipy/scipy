@@ -58,7 +58,7 @@ struct legendre_p_recurrence<T, 0> {
 template <typename T, size_t N, typename Callable, typename... Args>
 void legendre_p_recur(int n, T z, T (&res)[3][N], Callable callback, Args &&...args) {
     legendre_p_recurrence<T, N - 1> r{z};
-    forward_recur(r, r.init, res, n, callback, std::forward<Args>(args)...);
+    forward_recur(r, r.init, res, 0, n + 1, callback, std::forward<Args>(args)...);
 }
 
 template <typename T, size_t N>
@@ -217,6 +217,17 @@ T assoc_legendre_p_diag(int m, int type, T z) {
 
     return res;
 }
+
+template <typename T>
+struct assoc_legendre_p_recurrence {
+    T z;
+    int m;
+
+    void operator()(int n, T (&res)[2][1]) const {
+        res[0][0] = T(2 * n - 1) * z / T(n - m);
+        res[1][0] = -T(n + m - 1) / T(n - m);
+    }
+};
 
 /**
  * Compute the associated Legendre polynomial of degree n and order m.

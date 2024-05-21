@@ -67,7 +67,6 @@ void forward_recur_next(Recurrence r, size_t i, T (&res)[P][N]) {
     }
 }
 
-
 /**
  * Compute a forward recurrence that depends on K previous values.
  *
@@ -79,9 +78,10 @@ void forward_recur_next(Recurrence r, size_t i, T (&res)[P][N]) {
  */
 template <typename Recurrence, typename T, size_t K, size_t N, typename Callback, typename... Args>
 void forward_recur(
-    Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t count, Callback &&callback, Args &&...args
+    Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t first, size_t last, Callback &&callback,
+    Args &&...args
 ) {
-    for (size_t i = 0, i_end = std::min(K, count + 1); i < i_end; ++i) {
+    for (size_t i = first, i_end = std::min(first + K, last); i < i_end; ++i) {
         for (size_t j = i; j > 0; --j) {
             for (size_t k = 0; k < N; ++k) {
                 res[j][k] = res[j - 1][k];
@@ -95,7 +95,7 @@ void forward_recur(
         callback(i, r, res, std::forward<Args>(args)...);
     }
 
-    for (size_t i = K; i <= count; ++i) {
+    for (size_t i = K; i < last; ++i) {
         for (size_t j = K; j > 0; --j) {
             for (size_t k = 0; k < N; ++k) {
                 res[j][k] = res[j - 1][k];
@@ -109,8 +109,8 @@ void forward_recur(
 }
 
 template <typename Recurrence, typename T, size_t K, size_t N>
-void forward_recur(Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t count) {
-    forward_recur(r, init, res, count, [](size_t i, Recurrence r, const T(&res)[K + 1][N]) {});
+void forward_recur(Recurrence r, const T (&init)[K][N], T (&res)[K + 1][N], size_t first, size_t last) {
+    forward_recur(r, init, res, first, last, [](size_t i, Recurrence r, const T(&res)[K + 1][N]) {});
 }
 
 // forward_recur_if_not
