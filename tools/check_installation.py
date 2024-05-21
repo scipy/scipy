@@ -70,7 +70,7 @@ def main(install_dir, no_tests):
                             "are found in the installation directory.")
     else:
         if len(scipy_test_extension_modules) == 0:
-            raise Exception(f"Test for extension modules should be "
+            raise Exception("Test for extension modules should be "
                             "installed but are not found in the "
                             "installation directory.")
 
