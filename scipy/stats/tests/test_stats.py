@@ -4993,7 +4993,9 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # The results should be arrays containing nan with shape
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
-    with pytest.warns(UserWarning, match=too_small_nd_all):
+    with np.testing.suppress_warnings() as sup:
+        # first case should warn, second shouldn't?
+        sup.filter(UserWarning, too_small_nd_all)
         result = stats.ttest_rel(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
@@ -5870,7 +5872,9 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # The results should be arrays containing nan with shape
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
-    with pytest.warns(UserWarning, match=too_small_nd_all):
+    with np.testing.suppress_warnings() as sup:
+        # first case should warn, second shouldn't?
+        sup.filter(UserWarning, too_small_nd_all)
         result = stats.ttest_ind(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)

@@ -396,7 +396,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         with suppress_warnings() as sup, \
              np.errstate(divide='ignore', invalid='ignore'):
             sup.filter(RuntimeWarning, "Precision loss occurred in moment")
-            sup.filter(RuntimeWarning, "Sample size too small for normal approximation.")
+            sup.filter(RuntimeWarning, "Sample size too small for normal")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
         assert_allclose(res[0], statistics, rtol=1e-14)
@@ -479,6 +479,8 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             messages_same = ea_str == eb_str == ec_str
             messages_ok = ((too_small_message in str(eb_str))
                            and (too_small_message in str(ec_str)))
+            if not (messages_same or messages_ok):  # for debugging in CI
+                raise ValueError(f"{ea_str}, {eb_str}, {ec_str}")
             assert messages_same or messages_ok
 
         else:
@@ -759,7 +761,8 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     expected = expected[()]
 
                 if expected.size and hypotest not in too_small_special_case_funcs:
-                    message = too_small_1d_not_omit if max_axis == 1 else too_small_nd_all
+                    message = (too_small_1d_not_omit if max_axis == 1
+                               else too_small_nd_all)
                     with pytest.warns(UserWarning, match=message):
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 elif hypotest == stats.f_oneway:
