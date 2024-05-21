@@ -436,6 +436,10 @@ class Build(Task):
         help=("If set, use `Accelerate` as the BLAS/LAPACK to build against."
               " Takes precedence over -with-scipy-openblas (macOS only)")
     )
+    tags = Option(
+        ['--tags'], default="runtime,python-runtime,tests,devel",
+        show_default=True, help="Install tags to be used by meson."
+    )
 
     @classmethod
     def setup_build(cls, dirs, args):
@@ -544,7 +548,8 @@ class Build(Task):
             if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
-        cmd = ["meson", "install", "-C", args.build_dir, "--only-changed"]
+        cmd = ["meson", "install", "-C", args.build_dir,
+               "--only-changed", "--tags", args.tags]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         cmd_str = ' '.join([str(p) for p in cmd])
