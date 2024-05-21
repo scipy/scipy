@@ -116,9 +116,12 @@ jobs:
 
     - name: Check usage of install tags
       run: |
-        rm -r build-install
-        meson install -C build --only-changed --tags runtime,python-runtime,devel
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build -Truntime -Tpython-runtime -Tdevel
         python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build -Truntime -Tpython-runtime -Tdevel -Ttests
+        python tools/check_installation.py ${{ env.INSTALLDIR }}
 
     - name: Mypy
       if: matrix.python-version == '3.10'
