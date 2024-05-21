@@ -54,7 +54,7 @@ template <typename T, size_t N, typename Callable, typename... Args>
 void legendre_p_recur(int n, T z, T (&res)[3][N], Callable callback, Args &&...args) {
     legendre_p_recurrence<T, N - 1> r{z};
 
-    for (ptrdiff_t j = 0; j < 3; ++j) {
+    for (ptrdiff_t j = 0; j < 2; ++j) {
         for (ptrdiff_t k = 0; k < N; ++k) {
             res[j][k] = r.init[j][k];
         }
