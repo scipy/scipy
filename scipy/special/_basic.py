@@ -2931,7 +2931,8 @@ def _factorialx_approx_core(n, k):
     for r in np.unique(n_mod_k):
         if r == 0:
             continue
-        result[n_mod_k == r] *= corr(k, r)
+        # cast to int because uint types break on `-r`
+        result[n_mod_k == r] *= corr(k, int(r))
     return result
 
 

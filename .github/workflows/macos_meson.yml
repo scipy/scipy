@@ -110,6 +110,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+        mamba install python=${{ matrix.python-version}}
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
@@ -166,13 +167,14 @@ jobs:
         
         git submodule update --init
         # for some reason gfortran is not on the path
-        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+        GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
         # make sure we have openblas
         bash tools/wheels/cibw_before_build_macos.sh $PWD
-        export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
         export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
     
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy

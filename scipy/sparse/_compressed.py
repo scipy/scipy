@@ -7,7 +7,7 @@ import operator
 import numpy as np
 from scipy._lib._util import _prune_array, copy_if_needed
 
-from ._base import _spbase, issparse, SparseEfficiencyWarning
+from ._base import _spbase, issparse, SparseEfficiencyWarning, sparray
 from ._data import _data_matrix, _minmax_mixin
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
@@ -55,6 +55,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     coo = self._coo_container(arg1, shape=shape, dtype=dtype)
                     arrays = coo._coo_to_compressed(self._swap)
                     self.indptr, self.indices, self.data, self._shape = arrays
+                    self.sum_duplicates()
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -84,6 +85,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 msg = f"unrecognized {self.format}_matrix constructor usage"
                 raise ValueError(msg) from e
+            if isinstance(self, sparray) and arg1.ndim < 2 and self.format == "csc":
+                raise ValueError(
+                    f"CSC arrays don't support {arg1.ndim}D input. Use 2D"
+                )
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays

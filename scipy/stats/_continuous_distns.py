@@ -692,12 +692,10 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_isf(x, a, b)
+        return sc.betainccinv(a, b, x)
 
     def _ppf(self, q, a, b):
-        with np.errstate(over='ignore'):  # see gh-17432
-            return _boost._beta_ppf(q, a, b)
+        return sc.betaincinv(a, b, q)
 
     def _stats(self, a, b):
         return (

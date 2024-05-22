@@ -5,6 +5,9 @@ import pytest
 import numpy as np
 
 import scipy as sp
+from scipy.sparse import (
+        bsr_array, csc_array, dia_array, lil_array,
+    )
 from scipy.sparse._sputils import supported_dtypes, matrix
 from scipy._lib._util import ComplexWarning
 
@@ -31,6 +34,15 @@ def datsp_math_dtypes(dat1d):
     }
 
 
+# Test init with 1D dense input
+# sparrays which do not plan to support 1D
+@pytest.mark.parametrize("spcreator", [bsr_array, csc_array, dia_array, lil_array])
+def test_no_1d_support_in_init(spcreator):
+    with pytest.raises(ValueError, match="arrays don't support 1D input"):
+        spcreator([0, 1, 2, 3])
+
+
+# Main tests class
 @pytest.mark.parametrize("spcreator", spcreators)
 class TestCommon1D:
     """test common functionality shared by 1D sparse formats"""
@@ -53,6 +65,10 @@ class TestCommon1D:
     def test_neg(self, spcreator):
         A = np.array([-1, 0, 17, 0, -5, 0, 1, -4, 0, 0, 0, 0], 'd')
         assert np.array_equal(-A, (-spcreator(A)).toarray())
+
+    def test_1d_supported_init(self, spcreator):
+        A = spcreator([0, 1, 2, 3])
+        assert A.ndim == 1
 
     def test_reshape_1d_tofrom_row_or_column(self, spcreator):
         # add a dimension 1d->2d

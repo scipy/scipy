@@ -230,8 +230,8 @@ class TestEig:
         w_fin = -1j * np.real_if_close(1j*w_fin, tol=1e-10)
         wt_fin = -1j * np.real_if_close(1j*wt_fin, tol=1e-10)
 
-        perm = argsort(w_fin)
-        permt = argsort(wt_fin)
+        perm = argsort(abs(w_fin) + w_fin.imag)
+        permt = argsort(abs(wt_fin) + wt_fin.imag)
 
         assert_allclose(w_fin[perm], wt_fin[permt],
                         atol=1e-7, rtol=1e-7, err_msg=msg)
@@ -876,6 +876,17 @@ class TestEigh:
         assert_allclose(a @ v - (v * w), 0.,
                         atol=1000*np.finfo(dtype_).eps,
                         rtol=0.)
+
+    @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
+    def test_1x1_lwork(self, driver):
+        w, v = eigh([[1]], driver=driver)
+        assert_allclose(w, array([1.]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
+
+        # complex case now
+        w, v = eigh([[1j]], driver=driver)
+        assert_allclose(w, array([0]), atol=1e-15)
+        assert_allclose(v, array([[1.]]), atol=1e-15)
 
     @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))

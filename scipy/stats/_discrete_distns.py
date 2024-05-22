@@ -1305,8 +1305,9 @@ class zipf_gen(rv_discrete):
         return a > 1
 
     def _pmf(self, k, a):
+        k = k.astype(np.float64)
         # zipf.pmf(k, a) = 1/(zeta(a) * k**a)
-        Pk = 1.0 / special.zeta(a, 1) / k**a
+        Pk = 1.0 / special.zeta(a, 1) * k**-a
         return Pk
 
     def _munp(self, n, a):
@@ -1404,7 +1405,8 @@ class zipfian_gen(rv_discrete):
         return 1, n
 
     def _pmf(self, k, a, n):
-        return 1.0 / _gen_harmonic(n, a) / k**a
+        k = k.astype(np.float64)
+        return 1.0 / _gen_harmonic(n, a) * k**-a
 
     def _cdf(self, k, a, n):
         return _gen_harmonic(k, a) / _gen_harmonic(n, a)
@@ -1658,7 +1660,7 @@ class yulesimon_gen(rv_discrete):
                       np.inf)
         g1 = np.where(alpha <= 2, np.nan, g1)
         g2 = np.where(alpha > 4,
-                      alpha + 3 + ((alpha**3 - 49 * alpha - 22) /
+                      alpha + 3 + ((11 * alpha**3 - 49 * alpha - 22) /
                                    (alpha * (alpha - 4) * (alpha - 3))),
                       np.inf)
         g2 = np.where(alpha <= 2, np.nan, g2)
