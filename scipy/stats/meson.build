@@ -124,6 +124,7 @@ py3.install_sources([
     '_kde.py',
     '_ksstats.py',
     '_mannwhitneyu.py',
+    '_mgc.py',
     '_morestats.py',
     '_mstats_basic.py',
     '_mstats_extras.py',
