@@ -450,8 +450,7 @@ def _mode_result(mode, count):
 
 
 @_axis_nan_policy_factory(_mode_result, override={'vectorization': True,
-                                                  'nan_propagation': False,
-                                                  'empty': False})
+                                                  'nan_propagation': False})
 def mode(a, axis=0, nan_policy='propagate', keepdims=False):
     r"""Return an array of the modal (most common) value in the passed array.
 

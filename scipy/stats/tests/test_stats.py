@@ -37,7 +37,7 @@ from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, too_small_1d_not_omit,
                                           too_small_nd_omit, too_small_nd_all,
-                                          SmallSampleWarning)
+                                          too_small_1d_omit, SmallSampleWarning)
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
@@ -2438,11 +2438,11 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
-@pytest.mark.filterwarnings('ignore::FutureWarning')
 class TestMode:
 
     def test_empty(self):
-        vals, counts = stats.mode([])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
         assert_equal(counts, np.array([]))
 
@@ -2491,7 +2491,8 @@ class TestMode:
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
         check_named_results(actual, attributes)
-        actual2 = stats.mode(data2)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            actual2 = stats.mode(data2)
         check_named_results(actual2, attributes)
 
     def test_mode_nan(self):
@@ -2617,15 +2618,18 @@ class TestMode:
         # The behavior of mode with empty slices (whether the input was empty
         # or all elements were omitted) was inconsistent. Test that this is
         # resolved: the mode of an empty slice is NaN and the count is zero.
-        res = stats.mode([])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.mode([])
         ref = (np.nan, 0)
         assert_equal(res, ref)
 
-        res = stats.mode([np.nan], nan_policy='omit')
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
+            res = stats.mode([np.nan], nan_policy='omit')
         assert_equal(res, ref)
 
         a = [[10., 20., 20.], [np.nan, np.nan, np.nan]]
-        res = stats.mode(a, axis=1, nan_policy='omit')
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+            res = stats.mode(a, axis=1, nan_policy='omit')
         ref = ([20, np.nan], [2, 0])
         assert_equal(res, ref)
 
@@ -2634,14 +2638,19 @@ class TestMode:
         assert_equal(res, ref)
 
         z = np.array([[], []])
-        res = stats.mode(z, axis=1)
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_all):
+            res = stats.mode(z, axis=1)
         ref = ([np.nan, np.nan], [0, 0])
         assert_equal(res, ref)
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
     @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])
     def test_gh17214(self, z):
-        res = stats.mode(z, axis=None, keepdims=True)
+        if z.size == 0:
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.mode(z, axis=None, keepdims=True)
+        else:
+            res = stats.mode(z, axis=None, keepdims=True)
         ref = np.mean(z, axis=None, keepdims=True)
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
