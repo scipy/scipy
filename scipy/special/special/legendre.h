@@ -16,12 +16,14 @@ struct legendre_p_recurrence {
         res[1][0] = T(2 * n - 1) * z / T(n);
         res[0][0] = -T(n - 1) / T(n);
 
-        res[1][1] = T(2 * n - 1) / T(n);
-        res[0][1] = 0;
+        if (N >= 1) {
+            res[1][1] = T(2 * n - 1) / T(n);
+            res[0][1] = 0;
 
-        for (size_t k = 2; k <= N; ++k) {
-            res[1][k] = 0;
-            res[0][k] = 0;
+            for (size_t k = 2; k <= N; ++k) {
+                res[1][k] = 0;
+                res[0][k] = 0;
+            }
         }
     }
 
@@ -29,28 +31,15 @@ struct legendre_p_recurrence {
         res[0][0] = 1;
         res[1][0] = z;
 
-        res[0][1] = 0;
-        res[1][1] = 1;
+        if (N >= 1) {
+            res[0][1] = 0;
+            res[1][1] = 1;
 
-        for (size_t k = 2; k <= N; ++k) {
-            res[1][k] = 0;
-            res[0][k] = 0;
+            for (size_t k = 2; k <= N; ++k) {
+                res[1][k] = 0;
+                res[0][k] = 0;
+            }
         }
-    }
-};
-
-template <typename T>
-struct legendre_p_recurrence<T, 0> {
-    T z;
-
-    void operator()(int n, T (&res)[2][1]) const {
-        res[1][0] = T(2 * n - 1) * z / T(n);
-        res[0][0] = -T(n - 1) / T(n);
-    }
-
-    void init(T (&res)[3][1]) {
-        res[0][0] = 1;
-        res[1][0] = z;
     }
 };
 
@@ -543,109 +532,61 @@ T assoc_legendre_p_hess_next(
     return 0;
 }
 
-template <typename T>
-struct assoc_legendre_p_recurrence<T, 0> {
+template <typename T, size_t N>
+struct assoc_legendre_p_recurrence {
     int m;
     int type;
     T z;
 
-    void operator()(int n, T (&res)[2][1]) const {
+    void operator()(int n, T (&res)[2][N + 1]) const {
         res[0][0] = -T(n + m - 1) / T(n - m);
         res[1][0] = T(2 * n - 1) * z / T(n - m);
-    }
 
-    void init(T (&res)[3][1]) const {
-        int m_abs = std::abs(m);
+        if (N >= 1) {
+            res[0][1] = 0;
+            res[1][1] = T(2 * n - 1) / T(n - m);
 
-        res[0][0] = assoc_legendre_p_diag(m, type, z);
-        res[1][0] = T(2 * (m_abs + 1) - 1) * z * res[0][0] / T(m_abs + 1 - m);
-    }
-
-    void limit(int n, T (&res)[1]) {
-        if (m == 0) {
-            res[0] = 1;
-        } else {
-            res[0] = 0;
+            if (N >= 2) {
+                res[0][2] = 0;
+                res[1][2] = 0;
+            }
         }
     }
-};
 
-template <typename T>
-struct assoc_legendre_p_recurrence<T, 1> {
-    int m;
-    int type;
-    T z;
-
-    void operator()(int n, T (&res)[2][2]) const {
-        res[0][0] = -T(n + m - 1) / T(n - m);
-        res[1][0] = T(2 * n - 1) * z / T(n - m);
-
-        res[0][1] = 0;
-        res[1][1] = T(2 * n - 1) / T(n - m);
-    }
-
-    void init(T (&res)[3][2]) const {
+    void init(T (&res)[3][N + 1]) const {
         int m_abs = std::abs(m);
 
         res[0][0] = assoc_legendre_p_diag(m, type, z);
         res[1][0] = T(2 * (m_abs + 1) - 1) * z * res[0][0] / T(m_abs + 1 - m);
 
-        res[0][1] = assoc_legendre_p_jac_next(std::abs(m), m, type, z, res[0][0], T(0), T(0), T(0));
-        res[1][1] = assoc_legendre_p_jac_next(std::abs(m) + 1, m, type, z, res[1][0], res[0][0], res[0][1], T(0));
+        if (N >= 1) {
+            res[0][1] = assoc_legendre_p_jac_next(std::abs(m), m, type, z, res[0][0], T(0), T(0), T(0));
+            res[1][1] = assoc_legendre_p_jac_next(std::abs(m) + 1, m, type, z, res[1][0], res[0][0], res[0][1], T(0));
+
+            if (N >= 2) {
+                res[0][2] =
+                    assoc_legendre_p_hess_next(std::abs(m), m, type, z, res[0][0], T(0), res[0][1], T(0), T(0), T(0));
+                res[1][2] = assoc_legendre_p_hess_next(
+                    std::abs(m) + 1, m, type, z, res[1][0], res[0][0], res[1][1], res[0][1], res[0][2], T(0)
+                );
+            }
+        }
     }
 
-    void limit(int n, T (&res)[2]) {
+    void limit(int n, T (&res)[N + 1]) {
         if (m == 0) {
             res[0] = 1;
         } else {
             res[0] = 0;
         }
 
-        res[1] = assoc_legendre_p_jac_next2(n, m, type, z);
-    }
-};
+        if (N >= 1) {
+            res[1] = assoc_legendre_p_jac_next2(n, m, type, z);
 
-template <typename T>
-struct assoc_legendre_p_recurrence<T, 2> {
-    int m;
-    int type;
-    T z;
-
-    void operator()(int n, T (&res)[2][3]) const {
-        res[0][0] = -T(n + m - 1) / T(n - m);
-        res[1][0] = T(2 * n - 1) * z / T(n - m);
-
-        res[0][1] = 0;
-        res[1][1] = T(2 * n - 1) / T(n - m);
-
-        res[0][2] = 0;
-        res[1][2] = 0;
-    }
-
-    void init(T (&res)[3][3]) const {
-        int m_abs = std::abs(m);
-
-        res[0][0] = assoc_legendre_p_diag(m, type, z);
-        res[1][0] = T(2 * (m_abs + 1) - 1) * z * res[0][0] / T(m_abs + 1 - m);
-
-        res[0][1] = assoc_legendre_p_jac_next(std::abs(m), m, type, z, res[0][0], T(0), T(0), T(0));
-        res[1][1] = assoc_legendre_p_jac_next(std::abs(m) + 1, m, type, z, res[1][0], res[0][0], res[0][1], T(0));
-
-        res[0][2] = assoc_legendre_p_hess_next(std::abs(m), m, type, z, res[0][0], T(0), res[0][1], T(0), T(0), T(0));
-        res[1][2] = assoc_legendre_p_hess_next(
-            std::abs(m) + 1, m, type, z, res[1][0], res[0][0], res[1][1], res[0][1], res[0][2], T(0)
-        );
-    }
-
-    void limit(int n, T (&res)[3]) {
-        if (m == 0) {
-            res[0] = 1;
-        } else {
-            res[0] = 0;
+            if (N == 2) {
+                res[2] = assoc_legendre_p_hess_next2(n, m, type, z);
+            }
         }
-
-        res[1] = assoc_legendre_p_jac_next2(n, m, type, z);
-        res[2] = assoc_legendre_p_hess_next2(n, m, type, z);
     }
 };
 
