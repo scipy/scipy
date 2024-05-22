@@ -19,6 +19,7 @@ cirrus_wheels_linux_aarch64_task:
     platform: linux
     cpu: 2
     memory: 4G
+    timeout_in: 72m
   matrix:
     # build in a matrix because building and testing all four wheels in a
     # single task takes longer than 60 mins (the default time limit for a
