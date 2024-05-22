@@ -571,7 +571,9 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
 
                 if is_too_small(samples, kwds):
                     warnings.warn(too_small_msg, SmallSampleWarning, stacklevel=2)
-                    return tuple_to_result(*np.full(n_out, NaN))
+                    res = np.full(n_out, NaN)
+                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    return tuple_to_result(*res)
 
                 res = hypotest_fun_out(*samples, **kwds)
                 res = result_to_tuple(res)
