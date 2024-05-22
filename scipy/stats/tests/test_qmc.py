@@ -960,8 +960,16 @@ class TestPoisson(QMCEngineTests):
 
     def test_inconsistent_bounds(self):
         radius = 0.2
-        l_bounds=[-1, -2, -1]
-        u_bounds=[3, 2]
+        l_bounds = [-1, -2, -1]
+        u_bounds = [3, 2]
+        with pytest.raises(
+            ValueError, 
+            match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
+            " the sample dimension"):
+            self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
+        
+        l_bounds = [-1, -2]
+        u_bounds = [3, 2]
         with pytest.raises(
             ValueError, 
             match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
