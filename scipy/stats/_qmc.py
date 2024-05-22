@@ -1889,6 +1889,9 @@ class PoissonDisk(QMCEngine):
         If `seed` is already a ``Generator`` instance, then the provided
         instance is used.
 
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds of target sample data.
+
     Notes
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
@@ -1969,7 +1972,9 @@ class PoissonDisk(QMCEngine):
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
         optimization: Literal["random-cd", "lloyd"] | None = None,
-        seed: SeedType = None
+        seed: SeedType = None,
+        l_bounds: npt.ArrayLike | None = None,
+        u_bounds: npt.ArrayLike | None = None
     ) -> None:
         # Used in `scipy.integrate.qmc_quad`
         self._init_quad = {'d': d, 'radius': radius,
@@ -2001,11 +2006,19 @@ class PoissonDisk(QMCEngine):
 
         # sample to generate per iteration in the hypersphere around center
         self.ncandidates = ncandidates
+        
+        if u_bounds is None:
+            u_bounds = np.ones(d)
+        if l_bounds is None:
+            l_bounds = np.zeros(d)
+        self.l_bounds, self.u_bounds = _validate_bounds(
+            l_bounds=l_bounds, u_bounds=u_bounds, d=int(d)
+        )
 
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
             self.grid_size = (
-                np.ceil(np.ones(self.d) / self.cell_size)
+                np.ceil(self.u_bounds / self.cell_size)
             ).astype(int)
 
         self._initialize_grid_pool()
@@ -2025,7 +2038,7 @@ class PoissonDisk(QMCEngine):
     def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
-        """Draw `n` in the interval ``[0, 1]``.
+        """Draw `n` in the interval ``[l_bounds, u_bounds]``.
 
         Note that it can return fewer samples if the space is full.
         See the note section of the class.
@@ -2045,7 +2058,10 @@ class PoissonDisk(QMCEngine):
             return np.empty((n, self.d))
 
         def in_limits(sample: np.ndarray) -> bool:
-            return (sample.max() <= 1.) and (sample.min() >= 0.)
+            for i in range(self.d):
+                if (sample[i] > self.u_bounds[i] or sample[i] < self.l_bounds[i]):
+                    return False
+            return True
 
         def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
@@ -2053,7 +2069,7 @@ class PoissonDisk(QMCEngine):
             `candidate` sample.
             """
             indices = (candidate / self.cell_size).astype(int)
-            ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
+            ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
@@ -2115,7 +2131,7 @@ class PoissonDisk(QMCEngine):
         return np.array(curr_sample)
 
     def fill_space(self) -> np.ndarray:
-        """Draw ``n`` samples in the interval ``[0, 1]``.
+        """Draw ``n`` samples in the interval ``[l_bounds, u_bounds]``.
 
         Unlike `random`, this method will try to add points until
         the space is full. Depending on ``candidates`` (and to a lesser extent
