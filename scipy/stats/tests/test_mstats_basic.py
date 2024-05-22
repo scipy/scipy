@@ -21,7 +21,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
 from scipy.conftest import skip_xp_invalid_arg
-from scipy.stats._axis_nan_policy import too_small_1d_not_omit, SmallSampleWarning
+from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):

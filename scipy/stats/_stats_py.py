@@ -1813,7 +1813,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     if n < 20:
         message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
                    f"observations; only {n=} observations were given.")
-        warnings.warn(message, UserWarning, stacklevel=2)
+        warnings.warn(message, stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
     E = 3.0*(n-1) / (n+1)
@@ -4044,12 +4044,12 @@ def f_oneway(*samples, axis=0):
     Warns
     -----
     `~scipy.stats.ConstantInputWarning`
-        Raised if all values within each of the input arrays are identical.
+        Emitted if all values within each of the input arrays are identical.
         In this case the F statistic is either infinite or isn't defined,
         so ``np.inf`` or ``np.nan`` is returned.
 
-    `~scipy.stats.DegenerateDataWarning`
-        Raised if the length of any input array is 0, or if all the input
+    RuntimeWarning
+        Emitted if the length of any input array is 0, or if all the input
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
 

@@ -22,8 +22,8 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
-from scipy.stats._axis_nan_policy import (
-    too_small_nd_omit, too_small_1d_omit, too_small_1d_not_omit, SmallSampleWarning)
+from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
+                                          too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,

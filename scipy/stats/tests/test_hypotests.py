@@ -17,7 +17,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
-from scipy.stats._axis_nan_policy import too_small_1d_not_omit, SmallSampleWarning
+from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
 
 class TestEppsSingleton:

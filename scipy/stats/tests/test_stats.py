@@ -35,9 +35,9 @@ from scipy.special import binom
 from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
-from scipy.stats._axis_nan_policy import (_broadcast_concatenate, too_small_1d_not_omit,
+from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
-                                          too_small_1d_omit, SmallSampleWarning)
+                                          too_small_1d_omit, too_small_1d_not_omit)
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg

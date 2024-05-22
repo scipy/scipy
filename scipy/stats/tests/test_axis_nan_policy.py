@@ -16,9 +16,9 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
+                                          SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
-                                          too_small_1d_omit, too_small_1d_not_omit,
-                                          SmallSampleWarning)
+                                          too_small_1d_omit, too_small_1d_not_omit)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 
@@ -143,10 +143,7 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "`kurtosistest` requires at least",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
-                      "Input sample size must be greater than one.",
-                      "invalid value encountered in scalar divide",
-                      "at least one input has length 0"}
-# too_small_messages = {'out of bounds for axis'}
+                      "Input sample size must be greater than one.",}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -160,7 +157,7 @@ override_propagate_funcs = {stats.mode}
 empty_special_case_funcs = {stats.entropy}
 
 # Some functions don't follow the usual "too small" warning rules
-too_small_special_case_funcs = {stats.entropy, stats.mode}
+too_small_special_case_funcs = {stats.entropy}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
