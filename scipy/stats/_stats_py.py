@@ -61,14 +61,16 @@ from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate)
+                               _broadcast_concatenate,
+                               _broadcast_shapes)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
 from scipy.optimize import root_scalar
 from scipy._lib._util import normalize_axis_index
 from scipy._lib._array_api import (array_namespace, is_numpy, atleast_nd,
-                                   xp_clip, xp_moveaxis_to_end, xp_sign)
+                                   xp_clip, xp_moveaxis_to_end, xp_sign,
+                                   xp_minimum)
 from scipy._lib.array_api_compat import size as xp_size
 
 
@@ -7901,7 +7903,7 @@ _power_div_lambda_names = {
 }
 
 
-def _count(a, axis=None):
+def _m_count(a, *, axis, xp):
     """Count the number of non-masked elements of an array.
 
     This function behaves like `np.ma.count`, but is much faster
@@ -7915,17 +7917,30 @@ def _count(a, axis=None):
             num = int(num)
     else:
         if axis is None:
-            num = a.size
+            num = xp_size(a)
         else:
             num = a.shape[axis]
     return num
 
 
-def _m_broadcast_to(a, shape):
+def _m_broadcast_to(a, shape, *, xp):
     if np.ma.isMaskedArray(a):
         return np.ma.masked_array(np.broadcast_to(a, shape),
                                   mask=np.broadcast_to(a.mask, shape))
-    return np.broadcast_to(a, shape, subok=True)
+    return xp.broadcast_to(a, shape)
+
+
+def _m_sum(a, *, axis, preserve_mask, xp):
+    if np.ma.isMaskedArray(a):
+        sum = a.sum(axis)
+        return sum if preserve_mask else np.asarray(sum)
+    return xp.sum(a, axis=axis)
+
+
+def _m_mean(a, *, axis, keepdims, xp):
+    if np.ma.isMaskedArray(a):
+        return np.asarray(a.mean(axis=axis, keepdims=keepdims))
+    return xp.mean(a, axis=axis, keepdims=keepdims)
 
 
 Power_divergenceResult = namedtuple('Power_divergenceResult',
@@ -7943,9 +7958,19 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ----------
     f_obs : array_like
         Observed frequencies in each category.
+
+        .. deprecated:: 1.14.0
+            Support for masked array input was deprecated in
+            SciPy 1.14.0 and will be removed in version 1.16.0.
+
     f_exp : array_like, optional
         Expected frequencies in each category.  By default the categories are
         assumed to be equally likely.
+
+        .. deprecated:: 1.14.0
+            Support for masked array input was deprecated in
+            SciPy 1.14.0 and will be removed in version 1.16.0.
+
     ddof : int, optional
         "Delta degrees of freedom": adjustment to the degrees of freedom
         for the p-value.  The p-value is computed using a chi-squared
@@ -7999,7 +8024,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
 
     Also, the sum of the observed and expected frequencies must be the same
     for the test to be valid; `power_divergence` raises an error if the sums
-    do not agree within a relative tolerance of ``1e-8``.
+    do not agree within a relative tolerance of ``eps**0.5``, where ``eps``
+    is the precision of the input dtype.
 
     When `lambda_` is less than zero, the formula for the statistic involves
     dividing by `f_obs`, so a warning or error may be generated if any value
@@ -8015,12 +8041,6 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     dof can be between k-1-p and k-1. However, it is also possible that
     the asymptotic distribution is not a chisquare, in which case this
     test is not appropriate.
-
-    This function handles masked arrays.  If an element of `f_obs` or `f_exp`
-    is masked, then data at that position is ignored, and does not count
-    towards the size of the data set.
-
-    .. versionadded:: 0.13.0
 
     References
     ----------
@@ -8095,6 +8115,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     (array([ 3.5 ,  9.25]), array([ 0.62338763,  0.09949846]))
 
     """
+    xp = array_namespace(f_obs)
+    default_float = xp.asarray(1.).dtype
+
     # Convert the input argument `lambda_` to a numerical value.
     if isinstance(lambda_, str):
         if lambda_ not in _power_div_lambda_names:
@@ -8105,21 +8128,39 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     elif lambda_ is None:
         lambda_ = 1
 
-    f_obs = np.asanyarray(f_obs)
-    f_obs_float = f_obs.astype(np.float64)
+    def warn_masked(arg):
+        if isinstance(arg, ma.MaskedArray):
+            message = (
+                "`power_divergence` and `chisquare` support for masked array input was "
+                "deprecated in SciPy 1.14.0 and will be removed in version 1.16.0.")
+            warnings.warn(message, DeprecationWarning, stacklevel=2)
+
+    warn_masked(f_obs)
+    f_obs = f_obs if np.ma.isMaskedArray(f_obs) else xp.asarray(f_obs)
+    dtype = default_float if xp.isdtype(f_obs.dtype, 'integral') else f_obs.dtype
+    f_obs = (f_obs.astype(dtype) if np.ma.isMaskedArray(f_obs)
+             else xp.asarray(f_obs, dtype=dtype))
+    f_obs_float = (f_obs.astype(np.float64) if hasattr(f_obs, 'mask')
+                   else xp.asarray(f_obs, dtype=xp.float64))
 
     if f_exp is not None:
-        f_exp = np.asanyarray(f_exp)
-        bshape = np.broadcast_shapes(f_obs_float.shape, f_exp.shape)
-        f_obs_float = _m_broadcast_to(f_obs_float, bshape)
-        f_exp = _m_broadcast_to(f_exp, bshape)
-        rtol = 1e-8  # to pass existing tests
+        warn_masked(f_exp)
+        f_exp = f_exp if np.ma.isMaskedArray(f_obs) else xp.asarray(f_exp)
+        dtype = default_float if xp.isdtype(f_exp.dtype, 'integral') else f_exp.dtype
+        f_exp = (f_exp.astype(dtype) if np.ma.isMaskedArray(f_exp)
+                 else xp.asarray(f_exp, dtype=dtype))
+
+        bshape = _broadcast_shapes((f_obs_float.shape, f_exp.shape))
+        f_obs_float = _m_broadcast_to(f_obs_float, bshape, xp=xp)
+        f_exp = _m_broadcast_to(f_exp, bshape, xp=xp)
+        dtype_res = xp.result_type(f_obs.dtype, f_exp.dtype)
+        rtol = xp.finfo(dtype_res).eps**0.5  # to pass existing tests
         with np.errstate(invalid='ignore'):
-            f_obs_sum = f_obs_float.sum(axis=axis)
-            f_exp_sum = f_exp.sum(axis=axis)
-            relative_diff = (np.abs(f_obs_sum - f_exp_sum) /
-                             np.minimum(f_obs_sum, f_exp_sum))
-            diff_gt_tol = (relative_diff > rtol).any()
+            f_obs_sum = _m_sum(f_obs_float, axis=axis, preserve_mask=False, xp=xp)
+            f_exp_sum = _m_sum(f_exp, axis=axis, preserve_mask=False, xp=xp)
+            relative_diff = (xp.abs(f_obs_sum - f_exp_sum) /
+                             xp_minimum(f_obs_sum, f_exp_sum))
+            diff_gt_tol = xp.any(relative_diff > rtol, axis=None)
         if diff_gt_tol:
             msg = (f"For each axis slice, the sum of the observed "
                    f"frequencies must agree with the sum of the "
@@ -8132,14 +8173,14 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         # Ignore 'invalid' errors so the edge case of a data set with length 0
         # is handled without spurious warnings.
         with np.errstate(invalid='ignore'):
-            f_exp = f_obs.mean(axis=axis, keepdims=True)
+            f_exp = _m_mean(f_obs, axis=axis, keepdims=True, xp=xp)
 
     # `terms` is the array of terms that are summed along `axis` to create
     # the test statistic.  We use some specialized code for a few special
     # cases of lambda_.
     if lambda_ == 1:
         # Pearson's chi-squared statistic
-        terms = (f_obs_float - f_exp)**2 / f_exp
+        terms = (f_obs - f_exp)**2 / f_exp
     elif lambda_ == 0:
         # Log-likelihood ratio (i.e. G-test)
         terms = 2.0 * special.xlogy(f_obs, f_obs / f_exp)
@@ -8151,13 +8192,18 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
         terms = f_obs * ((f_obs / f_exp)**lambda_ - 1)
         terms /= 0.5 * lambda_ * (lambda_ + 1)
 
-    stat = terms.sum(axis=axis)
+    stat = _m_sum(terms, axis=axis, preserve_mask=True, xp=xp)
 
-    num_obs = _count(terms, axis=axis)
-    ddof = asarray(ddof)
-    p = distributions.chi2.sf(stat, num_obs - 1 - ddof)
+    num_obs = _m_count(terms, axis=axis, xp=xp)
+    ddof = xp.asarray(ddof)
 
-    return Power_divergenceResult(stat, p)
+    stat_np = np.asarray(stat)
+    pvalue = distributions.chi2.sf(stat_np, num_obs - 1 - ddof)
+    pvalue = xp.asarray(pvalue, dtype=stat.dtype)
+    stat = stat[()] if stat.ndim == 0 else stat
+    pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
+
+    return Power_divergenceResult(stat, pvalue)
 
 
 def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
