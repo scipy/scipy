@@ -7890,7 +7890,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     # `from_dlpack` will enable the transfer from other devices, and
     # `_get_pvalue` will even be reworked to support the native backend.
     t_np = np.asarray(t)
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = _get_pvalue(t_np, distributions.t(df), alternative)
     prob = xp.asarray(prob, dtype=t.dtype)
     prob = prob[()] if prob.ndim == 0 else prob
 

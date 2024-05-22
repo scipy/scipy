@@ -4848,7 +4848,7 @@ class TestTTestRel:
         rvs2_3D = xp.dstack([rvs2_2D, rvs2_2D, rvs2_2D])
         t, p = stats.ttest_rel(rvs1_3D, rvs2_3D, axis=1)
         xp_assert_close(xp.abs(t), xp.full(t.shape, tr))
-        xp_assert_close(xp.abs(p), xp.full(p.shape, pr))
+        xp_assert_close(p, xp.full(p.shape, pr))
         assert t.shape == (2, 3)
 
         t, p = stats.ttest_rel(xp.moveaxis(rvs1_3D, 2, 0), xp.moveaxis(rvs2_3D, 2, 0),
