@@ -132,13 +132,10 @@ class TestCvm:
         assert_(_cdf_cvm(res.statistic, n) > 1.0)
         assert_equal(res.pvalue, 0)
 
-    def test_invalid_input(self):
+    @pytest.mark.parametrize('x', [(), [1.5]])
+    def test_invalid_input(self, x):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises([1.5], "norm")
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            cramervonmises((), "norm")
+            res = cramervonmises(x, "norm")
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
 
@@ -178,21 +175,21 @@ class TestMannWhitneyU:
 
     # --- Test Input Validation ---
 
+    @pytest.mark.parametrize('kwargs_update', [{'x': []}, {'y': []},
+                                               {'x': [], 'y': []}])
+    def test_empty(self, kwargs_update):
+        x = np.array([1, 2])  # generic, valid inputs
+        y = np.array([3, 4])
+        kwargs = dict(x=x, y=y)
+        kwargs.update(kwargs_update)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = mannwhitneyu(**kwargs)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
+
     def test_input_validation(self):
         x = np.array([1, 2])  # generic, valid inputs
         y = np.array([3, 4])
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = mannwhitneyu([], y)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = mannwhitneyu(x, [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = mannwhitneyu([], [])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
         with assert_raises(ValueError, match="`use_continuity` must be one"):
             mannwhitneyu(x, y, use_continuity='ekki')
         with assert_raises(ValueError, match="`alternative` must be one of"):
@@ -1327,16 +1324,16 @@ class TestBoschlooExact:
 
 
 class TestCvm_2samp:
+    @pytest.mark.parametrize('args', [([], np.arange(5)),
+                                      (np.arange(5), [1])])
+    def test_too_small_input(self, args):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = cramervonmises_2samp(*args)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
+
     def test_invalid_input(self):
         y = np.arange(5)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises_2samp([], y)
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = cramervonmises_2samp(y, [1])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
         msg = 'method must be either auto, exact or asymptotic'
         with pytest.raises(ValueError, match=msg):
             cramervonmises_2samp(y, y, 'xyz')

@@ -198,7 +198,8 @@ class TestShapiro:
     def test_not_enough_values(self, x):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.shapiro(x)
-            assert_equal(res, (np.nan, np.nan))
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_nan_input(self):
         x = np.arange(10.)
@@ -629,13 +630,10 @@ class TestAnsari:
         assert_almost_equal(W, 10.0, 11)
         assert_almost_equal(pval, 0.533333333333333333, 7)
 
-    def test_bad_arg(self):
+    @pytest.mark.parametrize('args', [([], [1]), ([1], [])])
+    def test_bad_arg(self, args):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.ansari([], [1])
-            assert_equal(res.statistic, np.nan)
-            assert_equal(res.pvalue, np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            res = stats.ansari([1], [])
+            res = stats.ansari(*args)
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
 
@@ -1733,8 +1731,7 @@ class TestKstat:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.kstat(xp.asarray([]))
         else:
-            # for array_api_strict
-            with np.errstate(invalid='ignore'):
+            with np.errstate(invalid='ignore'):  # for array_api_strict
                 res = stats.kstat(xp.asarray([]))
         xp_assert_equal(res, xp.asarray(xp.nan))
 
@@ -1778,8 +1775,7 @@ class TestKstatVar:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.kstatvar(x)
         else:
-            # for array_api_strict
-            with np.errstate(invalid='ignore'):
+            with np.errstate(invalid='ignore'):  # for array_api_strict
                 res = stats.kstatvar(x)
         xp_assert_equal(res, xp.asarray(xp.nan))
 
@@ -2646,7 +2642,7 @@ class TestCircFuncs:
                 res = test_func(x)
         else:
             with np.testing.suppress_warnings() as sup:
-                # array_api_strict
+                # for array_api_strict
                 sup.filter(RuntimeWarning, "Mean of empty slice")
                 sup.filter(RuntimeWarning, "invalid value encountered")
                 res = test_func(x)

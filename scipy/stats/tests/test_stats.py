@@ -2688,7 +2688,7 @@ class TestSEM:
             with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 y = stats.sem(scalar_testcase)
         else:
-            # other array types can emit a variety o warnings
+            # Other array types can emit a variety of warnings.
             with np.testing.suppress_warnings() as sup:
                 sup.filter(UserWarning)
                 sup.filter(RuntimeWarning)
@@ -3055,11 +3055,10 @@ class TestIQR:
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
         stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
-    def test_empty(self):
+    @pytest.mark.parametrize('x', [[], np.arange(0)])
+    def test_empty(self, x):
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.iqr([]), np.nan)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            assert_equal(stats.iqr(np.arange(0)), np.nan)
+            assert_equal(stats.iqr(x), np.nan)
 
     def test_constant(self):
         # Constant array always gives 0
@@ -3350,34 +3349,27 @@ class TestMoments:
         y = stats.moment(testcase, [1.0, 2, 3, 4.0])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
+        def test_cases():
+            y = stats.moment(xp.asarray([]))
+            xp_assert_equal(y, xp.asarray(xp.nan))
+            y = stats.moment(xp.asarray([], dtype=xp.float32))
+            xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
+            y = stats.moment(xp.zeros((1, 0)), axis=0)
+            xp_assert_equal(y, xp.empty((0,)))
+            y = stats.moment(xp.asarray([[]]), axis=1)
+            xp_assert_equal(y, xp.asarray([xp.nan]))
+            y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
+            xp_assert_equal(y, xp.empty((2, 0)))
+
         # test empty input
         if is_numpy(xp):
             with pytest.warns(SmallSampleWarning, match="See documentation for..."):
-                y = stats.moment(xp.asarray([]))
-                xp_assert_equal(y, xp.asarray(xp.nan))
-                y = stats.moment(xp.asarray([], dtype=xp.float32))
-                xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
-                y = stats.moment(xp.zeros((1, 0)), axis=0)
-                xp_assert_equal(y, xp.empty((0,)))
-                y = stats.moment(xp.asarray([[]]), axis=1)
-                xp_assert_equal(y, xp.asarray([xp.nan]))
-                y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
-                xp_assert_equal(y, xp.empty((2, 0)))
+                test_cases()
         else:
-            # needed by array_api_strict
-            with np.testing.suppress_warnings() as sup:
+            with np.testing.suppress_warnings() as sup:  # needed by array_api_strict
                 sup.filter(RuntimeWarning, "Mean of empty slice.")
                 sup.filter(RuntimeWarning, "invalid value")
-                y = stats.moment(xp.asarray([]))
-                xp_assert_equal(y, xp.asarray(xp.nan))
-                y = stats.moment(xp.asarray([], dtype=xp.float32))
-                xp_assert_equal(y, xp.asarray(xp.nan, dtype=xp.float32))
-                y = stats.moment(xp.zeros((1, 0)), axis=0)
-                xp_assert_equal(y, xp.empty((0,)))
-                y = stats.moment(xp.asarray([[]]), axis=1)
-                xp_assert_equal(y, xp.asarray([xp.nan]))
-                y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
-                xp_assert_equal(y, xp.empty((2, 0)))
+                test_cases()
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -8384,20 +8376,15 @@ class TestBrunnerMunzel:
                       distribution,
                       nan_policy)
 
-    def test_brunnermunzel_empty_imput(self):
+    @pytest.mark.parametrize("kwarg_update", [{'y': []}, {'x': []},
+                                              {'x': [], 'y': []}])
+    def test_brunnermunzel_empty_imput(self, kwarg_update):
+        kwargs = {'x': self.X, 'y': self.Y}
+        kwargs.update(kwarg_update)
         with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            u1, p1 = stats.brunnermunzel(self.X, [])
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            u2, p2 = stats.brunnermunzel([], self.Y)
-        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
-            u3, p3 = stats.brunnermunzel([], [])
-
-        assert_equal(u1, np.nan)
-        assert_equal(p1, np.nan)
-        assert_equal(u2, np.nan)
-        assert_equal(p2, np.nan)
-        assert_equal(u3, np.nan)
-        assert_equal(p3, np.nan)
+            statistic, pvalue = stats.brunnermunzel(**kwargs)
+        assert_equal(statistic, np.nan)
+        assert_equal(pvalue, np.nan)
 
     def test_brunnermunzel_nan_input_propagate(self):
         X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
