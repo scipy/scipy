@@ -11,6 +11,7 @@ from scipy.interpolate._rbfinterp import (
     RBFInterpolator
     )
 from scipy.interpolate import _rbfinterp_pythran
+from scipy._lib._testutils import IS_MUSL
 
 
 def _vandermonde(x, degree):
@@ -497,6 +498,8 @@ class TestRBFInterpolatorNeighbors20(_TestRBFInterpolator):
 
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
+    @pytest.mark.skipif(
+        IS_MUSL, reason='It segfaults in Alpine due to openblas')
     def test_concurrency(self):
         # Check that no segfaults appear with concurrent access to
         # RbfInterpolator
