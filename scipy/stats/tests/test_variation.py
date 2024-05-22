@@ -8,7 +8,7 @@ from scipy.stats import variation
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close, is_numpy
-from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_all,
+from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_not_omit,
                                           SmallSampleWarning)
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
@@ -75,7 +75,7 @@ class TestVariation:
     def test_keepdims_size0(self, axis, expected, xp):
         x = xp.zeros((5, 0))
         if axis == 1:
-            with pytest.warns(SmallSampleWarning, match=too_small_nd_all):
+            with pytest.warns(SmallSampleWarning, match=too_small_nd_not_omit):
                 y = variation(x, axis=axis, keepdims=True)
         else:
             y = variation(x, axis=axis, keepdims=True)

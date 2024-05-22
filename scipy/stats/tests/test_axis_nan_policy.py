@@ -16,7 +16,7 @@ from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
-                                          too_small_nd_omit, too_small_nd_all,
+                                          too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit,
                                           SmallSampleWarning)
 from scipy._lib._util import AxisError
@@ -778,7 +778,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
 
                 if expected.size and hypotest not in too_small_special_case_funcs:
                     message = (too_small_1d_not_omit if max_axis == 1
-                               else too_small_nd_all)
+                               else too_small_nd_not_omit)
                     with pytest.warns(SmallSampleWarning, match=message):
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 else:

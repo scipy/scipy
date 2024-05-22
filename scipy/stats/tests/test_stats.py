@@ -36,7 +36,7 @@ from scipy import optimize
 from .common_tests import check_named_results
 from scipy.spatial.distance import cdist
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, too_small_1d_not_omit,
-                                          too_small_nd_omit, too_small_nd_all,
+                                          too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, SmallSampleWarning)
 from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
 from scipy._lib._util import AxisError
@@ -2638,7 +2638,7 @@ class TestMode:
         assert_equal(res, ref)
 
         z = np.array([[], []])
-        with pytest.warns(SmallSampleWarning, match=too_small_nd_all):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_not_omit):
             res = stats.mode(z, axis=1)
         ref = ([np.nan, np.nan], [0, 0])
         assert_equal(res, ref)
@@ -5004,7 +5004,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     a = np.empty((3, 1, 0))
     with np.testing.suppress_warnings() as sup:
         # first case should warn, second shouldn't?
-        sup.filter(SmallSampleWarning, too_small_nd_all)
+        sup.filter(SmallSampleWarning, too_small_nd_not_omit)
         result = stats.ttest_rel(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
@@ -5883,7 +5883,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     a = np.empty((3, 1, 0))
     with np.testing.suppress_warnings() as sup:
         # first case should warn, second shouldn't?
-        sup.filter(SmallSampleWarning, too_small_nd_all)
+        sup.filter(SmallSampleWarning, too_small_nd_not_omit)
         result = stats.ttest_ind(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
@@ -7718,7 +7718,7 @@ class TestFOneWay:
             assert_equal(result, (np.nan, np.nan))
 
     def test_length0_2d_error(self):
-        with pytest.warns(SmallSampleWarning, match=too_small_nd_all):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_not_omit):
             ncols = 3
             a = np.ones((4, ncols))
             b = np.ones((0, ncols))
