@@ -6,61 +6,44 @@ namespace special {
 
 template <typename T>
 T binom(T n, T k) {
-    return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1));
-}
+    if (n == 1) {
+        if (k == 0) {
+            return 1;
+        }
 
-template <typename Recurrence, typename T, size_t K, typename Callback, typename... Args>
-T forward_recurrence(Recurrence r, const T (&init)[K], int n, Callback &&callback, Args &&...args) {
-    T vals[K + 1] = {0};
-    vals[0] = init[1];
-
-    callback(0, r, vals, std::forward<Args>(args)...);
-
-    if (n > 0) {
-        vals[1] = vals[0];
-        vals[0] = init[0];
-        callback(1, r, vals, std::forward<Args>(args)...);
-
-        for (int j = K; j <= n; ++j) {
-            T coef[K];
-            r(j, coef);
-
-            for (size_t i = K; i > 0; --i) {
-                vals[i] = vals[i - 1];
-            }
-
-            vals[0] = 0;
-            for (size_t i = K; i >= 1; --i) {
-                vals[0] += coef[i - 1] * vals[i];
-            }
-
-            callback(j, r, vals, std::forward<Args>(args)...);
+        if (k == 1) {
+            return 1;
         }
     }
 
-    return vals[0];
-}
+    if (n == 2) {
+        if (k == 0 || k == 2) {
+            return 1;
+        }
 
-template <typename Recurrence, typename T, size_t K>
-T forward_recurrence(Recurrence r, const T (&init)[K], int n) {
-    return forward_recurrence(r, init, n, [](int j, Recurrence r, const T(&p)[K + 1]) {});
-}
-
-template <typename Recurrence, typename InputIt, typename T, ptrdiff_t K, ptrdiff_t N>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[K][N]) {
-    T coef[K - 1][N];
-    r(it, coef);
-
-    res[K - 1][0] = 0;
-    for (size_t j = 0; j < K - 1; ++j) {
-        res[K - 1][0] += coef[j][0] * res[j][0];
+        return 2;
     }
 
-    for (size_t r2 = 1; r2 < N; ++r2) {
-        res[K - 1][r2] = 0;
-        for (size_t k = 0; k <= r2; ++k) {
-            res[K - 1][r2] +=
-                binom<remove_complex_t<T>>(r2, k) * (coef[0][r2 - k] * res[0][k] + coef[1][r2 - k] * res[1][k]);
+    return std::tgamma(n + 1) / (std::tgamma(k + 1) * std::tgamma(n - k + 1));
+}
+
+template <typename Recurrence, typename InputIt, typename T, ptrdiff_t KP1, ptrdiff_t NP1>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1][NP1]) {
+    constexpr ptrdiff_t K = KP1 - 1;
+    constexpr ptrdiff_t N = NP1 - 1;
+
+    T coef[K][NP1];
+    r(it, coef);
+
+    res[K][0] = 0;
+    for (ptrdiff_t j = 0; j < K; ++j) {
+        res[K][0] += coef[j][0] * res[j][0];
+    }
+
+    for (size_t n = 1; n <= N; ++n) {
+        res[K][n] = 0;
+        for (size_t k = 0; k <= n; ++k) {
+            res[K][n] += binom<remove_complex_t<T>>(n, k) * (coef[0][n - k] * res[0][k] + coef[1][n - k] * res[1][k]);
         }
     }
 }
