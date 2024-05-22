@@ -21,7 +21,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
 from scipy.conftest import skip_xp_invalid_arg
-from scipy.stats._axis_nan_policy import too_small_1d_not_omit
+from scipy.stats._axis_nan_policy import too_small_1d_not_omit, SmallSampleWarning
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -1101,7 +1101,7 @@ class TestNormalitytests:
         mfuncs = [mstats.normaltest, mstats.skewtest, mstats.kurtosistest]
         x = [1, 2, 3, 4]
         for func, mfunc in zip(funcs, mfuncs):
-            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = func(x)
                 assert np.isnan(res.statistic)
                 assert np.isnan(res.pvalue)
@@ -1844,7 +1844,7 @@ class TestCompareWithStats:
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "`kurtosistest` p-value may be inaccurate")
+            sup.filter(UserWarning, "`kurtosistest` p-value may be inaccurate")
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:

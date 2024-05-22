@@ -17,7 +17,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
 from scipy._lib._testutils import _TestPythranFunc
-from scipy.stats._axis_nan_policy import too_small_1d_not_omit
+from scipy.stats._axis_nan_policy import too_small_1d_not_omit, SmallSampleWarning
 
 
 class TestEppsSingleton:
@@ -58,7 +58,7 @@ class TestEppsSingleton:
     def test_epps_singleton_size(self):
         # warns if sample contains fewer than 5 elements
         x, y = (1, 2, 3, 4), np.arange(10)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = epps_singleton_2samp(x, y)
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -133,11 +133,11 @@ class TestCvm:
         assert_equal(res.pvalue, 0)
 
     def test_invalid_input(self):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = cramervonmises([1.5], "norm")
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             cramervonmises((), "norm")
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -181,15 +181,15 @@ class TestMannWhitneyU:
     def test_input_validation(self):
         x = np.array([1, 2])  # generic, valid inputs
         y = np.array([3, 4])
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = mannwhitneyu([], y)
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = mannwhitneyu(x, [])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = mannwhitneyu([], [])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -1329,11 +1329,11 @@ class TestBoschlooExact:
 class TestCvm_2samp:
     def test_invalid_input(self):
         y = np.arange(5)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = cramervonmises_2samp([], y)
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = cramervonmises_2samp(y, [1])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)

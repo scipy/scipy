@@ -60,8 +60,8 @@ from ._stats_pythran import _compute_outer_prob_inside_method
 from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
-from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate)
+from ._axis_nan_policy import (_axis_nan_policy_factory, _broadcast_concatenate,
+                               SmallSampleWarning)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -1814,7 +1814,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     if n < 20:
         message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
                    f"observations; only {n=} observations were given.")
-        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        warnings.warn(message, UserWarning, stacklevel=2)
     b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
     E = 3.0*(n-1) / (n+1)
@@ -4004,23 +4004,20 @@ def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
-        msg = 'at least one input has length 0'
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return True
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        warnings.warn(SmallSampleWarning(msg), stacklevel=2)
         return True
 
     return False
 
 
 @_axis_nan_policy_factory(
-    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small,
-    override={'empty': False})
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 

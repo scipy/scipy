@@ -23,7 +23,7 @@ from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
 from scipy.stats._axis_nan_policy import (
-    too_small_nd_omit, too_small_1d_omit, too_small_1d_not_omit)
+    too_small_nd_omit, too_small_1d_omit, too_small_1d_not_omit, SmallSampleWarning)
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
@@ -196,7 +196,7 @@ class TestShapiro:
 
     @pytest.mark.parametrize('x', ([], [1], [1, 2]))
     def test_not_enough_values(self, x):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.shapiro(x)
             assert_equal(res, (np.nan, np.nan))
 
@@ -630,11 +630,11 @@ class TestAnsari:
         assert_almost_equal(pval, 0.533333333333333333, 7)
 
     def test_bad_arg(self):
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.ansari([], [1])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.ansari([1], [])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -767,7 +767,7 @@ class TestBartlett:
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
         if is_numpy(xp):
-            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.bartlett(*args)
         else:
             with np.testing.suppress_warnings() as sup:
@@ -1156,7 +1156,7 @@ class TestFligner:
 
     def test_empty_arg(self):
         x = np.arange(5)
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.fligner(x, x**2, [])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -1328,7 +1328,7 @@ class TestMood:
 
     def test_mood_bad_arg(self):
         # Warns when the sum of the lengths of the args is less than 3
-        with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             res = stats.mood([1], [])
             assert_equal(res.statistic, np.nan)
             assert_equal(res.pvalue, np.nan)
@@ -1482,7 +1482,7 @@ class TestWilcoxon:
         x = [1, 2, 3, 4]
         y = [1, 2, 3, 5]
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="Sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             res = stats.wilcoxon(x, y, zero_method="pratt", mode="approx")
         assert_allclose(res, (0.0, 0.31731050786291415))
 
@@ -1577,26 +1577,26 @@ class TestWilcoxon:
         y = [110, 122, 125, 120, 140, 124, 123, 137, 135, 145]
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="Sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="less", mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7031847, decimal=6)
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="Sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="less", correction=True,
                                   mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.7233656, decimal=6)
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="Sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="greater", mode="approx")
         assert_equal(w, 27)
         assert_almost_equal(p, 0.2968153, decimal=6)
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, message="Sample size too small")
+            sup.filter(UserWarning, message="Sample size too small")
             w, p = stats.wilcoxon(x, y, alternative="greater", correction=True,
                                   mode="approx")
         assert_equal(w, 27)
@@ -1730,7 +1730,7 @@ class TestKstat:
 
     def test_empty_input(self, xp):
         if is_numpy(xp):
-            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.kstat(xp.asarray([]))
         else:
             # for array_api_strict
@@ -1775,7 +1775,7 @@ class TestKstatVar:
     def test_empty_input(self, xp):
         x = xp.asarray([])
         if is_numpy(xp):
-            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = stats.kstatvar(x)
         else:
             # for array_api_strict
@@ -2642,7 +2642,7 @@ class TestCircFuncs:
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
         if is_numpy(xp):
-            with pytest.warns(UserWarning, match=too_small_1d_not_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
                 res = test_func(x)
         else:
             with np.testing.suppress_warnings() as sup:
@@ -2735,7 +2735,7 @@ class TestCircFuncsNanPolicy:
                 out = test_func(x, high=360, nan_policy='omit', axis=axis)
                 assert_allclose(out, expected[axis], rtol=1e-7)
             else:
-                with pytest.warns(UserWarning, match=too_small_nd_omit):
+                with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
                     out = test_func(x, high=360, nan_policy='omit', axis=axis)
                     assert_allclose(out[:-1], expected[axis], rtol=1e-7)
                     assert_(np.isnan(out[-1]))
@@ -2753,13 +2753,13 @@ class TestCircFuncsNanPolicy:
                                            stats.circstd])
     def test_nan_omit_all(self, test_func):
         x = [np.nan, np.nan, np.nan, np.nan, np.nan]
-        with pytest.warns(UserWarning, match=too_small_1d_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
             assert_(np.isnan(test_func(x, nan_policy='omit')))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
     def test_nan_omit_all_axis(self, test_func):
-        with pytest.warns(UserWarning, match=too_small_nd_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
             x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
                           [np.nan, np.nan, np.nan, np.nan, np.nan]])
             out = test_func(x, nan_policy='omit', axis=1)

@@ -8,7 +8,8 @@ from scipy.stats import variation
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_equal, xp_assert_close, is_numpy
-from scipy.stats._axis_nan_policy import too_small_nd_omit, too_small_nd_all
+from scipy.stats._axis_nan_policy import (too_small_nd_omit, too_small_nd_all,
+                                          SmallSampleWarning)
 
 pytestmark = [array_api_compatible, pytest.mark.usefixtures("skip_xp_backends")]
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -74,7 +75,7 @@ class TestVariation:
     def test_keepdims_size0(self, axis, expected, xp):
         x = xp.zeros((5, 0))
         if axis == 1:
-            with pytest.warns(UserWarning, match=too_small_nd_all):
+            with pytest.warns(SmallSampleWarning, match=too_small_nd_all):
                 y = variation(x, axis=axis, keepdims=True)
         else:
             y = variation(x, axis=axis, keepdims=True)
@@ -138,7 +139,7 @@ class TestVariation:
             sup.filter(UserWarning, "std*")
             if axis != 0:
                 if is_numpy(xp):
-                    with pytest.warns(UserWarning, match="See documentation..."):
+                    with pytest.warns(SmallSampleWarning, match="See documentation..."):
                         y = variation(x, axis=axis)
                 else:
                     y = variation(x, axis=axis)
@@ -168,7 +169,7 @@ class TestVariation:
                       [0, -5, xp.nan, 2],
                       [0, -5, xp.nan, 3]])
         if nan_policy == 'omit':
-            with pytest.warns(UserWarning, match=too_small_nd_omit):
+            with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
                 y = variation(x, axis=0, nan_policy=nan_policy)
         else:
             y = variation(x, axis=0, nan_policy=nan_policy)
@@ -195,7 +196,7 @@ class TestVariation:
                         [nan, nan, nan, nan],
                         [3.0, 3.0, 3.0, 3.0],
                         [0.0, 0.0, 0.0, 0.0]])
-        with pytest.warns(UserWarning, match=too_small_nd_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
             v = variation(x, axis=1, ddof=ddof, nan_policy='omit')
         xp_assert_close(v, expected)
 

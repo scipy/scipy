@@ -17,7 +17,8 @@ from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
                                           too_small_nd_omit, too_small_nd_all,
-                                          too_small_1d_omit, too_small_1d_not_omit)
+                                          too_small_1d_omit, too_small_1d_not_omit,
+                                          SmallSampleWarning)
 from scipy._lib._util import AxisError
 from scipy.conftest import skip_xp_invalid_arg
 
@@ -159,7 +160,7 @@ override_propagate_funcs = {stats.mode}
 empty_special_case_funcs = {stats.entropy}
 
 # Some functions don't follow the usual "too small" warning rules
-too_small_special_case_funcs = {stats.entropy, stats.mode, stats.f_oneway}
+too_small_special_case_funcs = {stats.entropy, stats.mode}
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
                           paired=False):
@@ -249,6 +250,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 
 
 @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+@pytest.mark.filterwarnings('ignore::UserWarning')
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -268,6 +270,7 @@ if SCIPY_XSLOW:
     # about 3 sec because this is >3,000 tests. So ensure pytest doesn't see
     # them at all unless `SCIPY_XSLOW` is defined.
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
     @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -340,13 +343,13 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                 # warns for all slices
                 if (nan_policy == 'omit' and data_generator == "all_nans"
                       and hypotest not in too_small_special_case_funcs):
-                    with pytest.warns(UserWarning, match=too_small_1d_omit):
+                    with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
                         res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
                 # warning depends on slice
                 elif (nan_policy == 'omit' and data_generator == "mixed"
                       and hypotest not in too_small_special_case_funcs):
                     with np.testing.suppress_warnings() as sup:
-                        sup.filter(UserWarning, too_small_1d_omit)
+                        sup.filter(SmallSampleWarning, too_small_1d_omit)
                         res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
                 # shouldn't warn
                 else:
@@ -391,7 +394,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
     elif (nan_policy == 'omit' and data_generator in {"all_nans", "mixed"}
           and hypotest not in too_small_special_case_funcs):
-        with pytest.warns(UserWarning, match=too_small_nd_omit):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
     else:
         with suppress_warnings() as sup, \
@@ -417,7 +420,6 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                                       n_outputs, paired, unpacker, nan_policy,
                                       data_generator):
     # check for correct behavior when `axis=None`
-
     if not unpacker:
         def unpacker(res):
             return res
@@ -449,51 +451,62 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             hypotest(*data_raveled, axis=None, nan_policy=nan_policy,
                      *args, **kwds)
 
-    else:
-        # behavior of reference implementation with 1d input, hypotest with 1d
-        # input, and hypotest with Nd input should match, whether that means
-        # that outputs are equal or they raise the same exception
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
+        return
 
-            ea_str, eb_str, ec_str = None, None, None
-            try:
-                res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
-                                       n_outputs=n_outputs,
-                                       nan_policy=nan_policy, paired=paired,
-                                       _no_deco=True, **kwds)
-            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ea:
-                ea_str = str(ea)
+    # behavior of reference implementation with 1d input, public function with 1d
+    # input, and public function with Nd input and `axis=None` should be consistent.
+    # This means:
+    # - If the reference version raises an error or emits a warning, it's because
+    #   the sample is too small, so check that the public function emits an
+    #   appropriate "too small" warning
+    # - Any results returned by the three versions should be the same.
+    with warnings.catch_warnings():  # treat warnings as errors
+        warnings.simplefilter("error")
 
-            try:
-                res1db = unpacker(hypotest(*data_raveled, *args,
-                                           nan_policy=nan_policy, **kwds))
-            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as eb:
-                eb_str = str(eb)
+        ea_str, eb_str, ec_str = None, None, None
+        try:
+            res1da = nan_policy_1d(hypotest, data_raveled, unpacker, *args,
+                                   n_outputs=n_outputs, nan_policy=nan_policy,
+                                   paired=paired, _no_deco=True, **kwds)
+        except (RuntimeWarning, ValueError, ZeroDivisionError) as ea:
+            res1da = None
+            ea_str = str(ea)
 
-            try:
-                res1dc = unpacker(hypotest(*data, *args, axis=None,
-                                           nan_policy=nan_policy, **kwds))
-            except (RuntimeWarning, UserWarning, ValueError, ZeroDivisionError) as ec:
-                ec_str = str(ec)
+        try:
+            res1db = hypotest(*data_raveled, *args, nan_policy=nan_policy, **kwds)
+        except SmallSampleWarning as eb:
+            eb_str = str(eb)
 
-        if ea_str or eb_str or ec_str:
-            too_small_message = "See documentation for sample size requirements."
-            messages_same = ea_str == eb_str == ec_str
-            messages_ok = ((too_small_message in str(eb_str))
-                           and (too_small_message in str(ec_str)))
-            # if not (messages_same or messages_ok):  # for debugging in CI
-            #     raise ValueError(f"{ea_str}, {eb_str}, {ec_str}")
-            assert messages_same or messages_ok
+        try:
+            res1dc = hypotest(*data, *args, axis=None, nan_policy=nan_policy, **kwds)
+        except SmallSampleWarning as ec:
+            ec_str = str(ec)
 
-        else:
-            assert_equal(res1db, res1da)
-            assert_equal(res1dc, res1da)
-            for item in list(res1da) + list(res1db) + list(res1dc):
-                # Most functions naturally return NumPy numbers, which
-                # are drop-in replacements for the Python versions but with
-                # desirable attributes. Make sure this is consistent.
-                assert np.issubdtype(item.dtype, np.number)
+    if ea_str or eb_str or ec_str:  # *if* there is some sort of error or warning
+        # make sure the wrapped function emits the *intended* warning
+        desired_warnings = {too_small_1d_omit, too_small_1d_not_omit}
+        assert str(eb_str) in desired_warnings
+        assert str(ec_str) in desired_warnings
+
+        with warnings.catch_warnings():  # ignore warnings to get return value
+            warnings.simplefilter("ignore")
+            res1db = hypotest(*data_raveled, *args, nan_policy=nan_policy, **kwds)
+            res1dc = hypotest(*data, *args, axis=None, nan_policy=nan_policy, **kwds)
+
+    # Make sure any results returned by reference/public function are identical
+    # and all attributes are *NumPy* scalars
+    res1db, res1dc = unpacker(res1db), unpacker(res1dc)
+    assert_equal(res1dc, res1db)
+    all_results = list(res1db) + list(res1dc)
+
+    if res1da is not None:
+        assert_equal(res1db, res1da)
+        all_results += list(res1da)
+
+    for item in all_results:
+        assert np.issubdtype(item.dtype, np.number)
+        assert np.isscalar(item)
+
 
 # Test keepdims for:
 #     - single-output and multi-output functions (gmean and mannwhitneyu)
@@ -766,14 +779,13 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                 if expected.size and hypotest not in too_small_special_case_funcs:
                     message = (too_small_1d_not_omit if max_axis == 1
                                else too_small_nd_all)
-                    with pytest.warns(UserWarning, match=message):
-                        res = hypotest(*samples, *args, axis=axis, **kwds)
-                elif hypotest == stats.f_oneway:
-                    with np.testing.suppress_warnings() as sup:
-                        sup.filter(stats.DegenerateDataWarning)
+                    with pytest.warns(SmallSampleWarning, match=message):
                         res = hypotest(*samples, *args, axis=axis, **kwds)
                 else:
-                    res = hypotest(*samples, *args, axis=axis, **kwds)
+                    with np.testing.suppress_warnings() as sup:
+                        # f_oneway special case
+                        sup.filter(SmallSampleWarning, "all input arrays have length 1")
+                        res = hypotest(*samples, *args, axis=axis, **kwds)
                 res = unpacker(res)
 
                 for i in range(n_outputs):
