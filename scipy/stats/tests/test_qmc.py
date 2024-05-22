@@ -942,7 +942,9 @@ class TestPoisson(QMCEngineTests):
         radius = 0.2
         l_bounds=[-1, -2, -1]
         u_bounds=[3, 2, 1]
-        engine = self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
         sample = engine.random(30)
 
         for point in sample:
@@ -958,23 +960,18 @@ class TestPoisson(QMCEngineTests):
             match="Bounds are not consistent 'l_bounds' < 'u_bounds'"):
             self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
 
-    def test_inconsistent_bounds(self):
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [-1, -2]])
+    @pytest.mark.parametrize("l_bounds", [[3, 2]])
+    def test_inconsistent_bounds(self, u_bounds, l_bounds):
         radius = 0.2
-        l_bounds = [-1, -2, -1]
-        u_bounds = [3, 2]
         with pytest.raises(
             ValueError, 
             match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
             " the sample dimension"):
-            self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
-        
-        l_bounds = [-1, -2]
-        u_bounds = [3, 2]
-        with pytest.raises(
-            ValueError, 
-            match="'l_bounds' and 'u_bounds' must be broadcastable and respect" 
-            " the sample dimension"):
-            self.qmce(d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds)
+            self.qmce(
+                d=3, radius=radius, 
+                l_bounds=l_bounds, u_bounds=u_bounds
+            )
         
     def test_raises(self):
         message = r"'toto' is not a valid hypersphere sampling"
