@@ -4554,8 +4554,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1.), hypotenuse)
+    R = xp_minimum(xp.asarray(1.), hypotenuse)
 
     res = 1. - R
     return res
@@ -4658,8 +4657,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
     # hypotenuse can go slightly above 1 due to rounding errors
-    with np.errstate(invalid='ignore'):
-        R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
+    R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
     res = xp.sqrt(-2*xp.log(R))
     if not normalize:
