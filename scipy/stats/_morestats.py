@@ -4373,8 +4373,8 @@ def _circfuncs_common(samples, high, low, xp=None):
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = xp.sin((samples - low)*2.*xp.pi / (high - low))
-    cos_samp = xp.cos((samples - low)*2.*xp.pi / (high - low))
+    sin_samp = xp.sin((samples - low) * (2.*pi / (high - low)))
+    cos_samp = xp.cos((samples - low) * (2.*pi / (high - low)))
 
     return samples, sin_samp, cos_samp
 
@@ -4464,7 +4464,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
 
     res = res[()] if res.ndim == 0 else res
-    return res*(high - low)/2.0/xp.pi + low
+    return res * ((high-low)/(2.0*pi)) + low
 
 
 @_axis_nan_policy_factory(
@@ -4663,7 +4663,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     res = xp.sqrt(-2*xp.log(R))
     if not normalize:
-        res *= (high-low)/(2.*xp.pi)  # [1] (2.3.14) w/ (2.3.7)
+        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
 
