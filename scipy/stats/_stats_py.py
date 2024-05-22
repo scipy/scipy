@@ -113,18 +113,21 @@ def _chk_asarray(a, axis, *, xp=None):
     return a, outaxis
 
 
-def _chk2_asarray(a, b, axis):
+def _chk2_asarray(a, b, axis, *, xp=None):
+    if xp is None:
+        xp = array_namespace(a)
+
     if axis is None:
-        a = np.ravel(a)
-        b = np.ravel(b)
+        a = xp.reshape(a, (-1,))
+        b = xp.reshape(b, (-1,))
         outaxis = 0
     else:
-        a = np.asarray(a)
-        b = np.asarray(b)
+        a = xp.asarray(a)
+        b = xp.asarray(b)
         outaxis = axis
 
     if a.ndim == 0:
-        a = np.atleast_1d(a)
+        a = xp.reshape(a, (-1,))
     if b.ndim == 0:
         b = np.atleast_1d(b)
 
@@ -7757,6 +7760,8 @@ def _get_len(a, axis, msg):
 @_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
                           result_to_tuple=unpack_TtestResult, n_outputs=6,
                           paired=True)
+# nan_policy handled by `_axis_nan_policy`, but needs to be left
+# in signature to preserve use as a positional argument
 def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     """Calculate the t-test on TWO RELATED samples of scores, a and b.
 
@@ -7856,7 +7861,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
+    xp = array_namespace(a, b)
+    a, b, axis = _chk2_asarray(a, b, axis, xp=xp)
 
     na = _get_len(a, axis, "first argument")
     nb = _get_len(b, axis, "second argument")
@@ -7872,17 +7878,25 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     n = a.shape[axis]
     df = n - 1
 
-    d = (a - b).astype(np.float64)
-    v = _var(d, axis, ddof=1)
-    dm = np.mean(d, axis)
-    denom = np.sqrt(v / n)
+    d = xp.astype(a - b, xp.float64)
+    v = _var(d, axis, ddof=1, xp=xp)
+    dm = xp.mean(d, axis=axis)
+    denom = xp.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(dm, denom)[()]
+        t = xp.divide(dm, denom)
+    t = t[()] if t.ndim == 0 else t
+    # This will only work for CPU backends for now. That's OK. In time,
+    # `from_dlpack` will enable the transfer from other devices, and
+    # `_get_pvalue` will even be reworked to support the native backend.
+    t_np = np.asarray(t)
     prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = xp.asarray(prob, dtype=t.dtype)
+    prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
+    df = xp.broadcast_to(df, t.shape)
+    df = df[()] if df.ndim == 0 else df
 
     # _axis_nan_policy decorator doesn't play well with strings
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
