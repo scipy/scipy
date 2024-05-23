@@ -5587,10 +5587,9 @@ class Test_ttest_trim:
         assert_allclose(statistic, tr, atol=1e-10)
 
     def test_errors_unsupported(self):
-        # confirm that attempting to trim with NaNs or permutations raises an
-        # error
-        match = "Permutations are currently not supported with trimming."
-        with assert_raises(ValueError, match=match):
+        # confirm that attempting to trim with permutations raises an error
+        match = "Use of `permutations` is incompatible with with use of `trim`."
+        with assert_raises(NotImplementedError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])

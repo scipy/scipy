@@ -7498,23 +7498,28 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     Ttest_indResult(statistic=3.4463884028073513,
                     pvalue=0.01369338726499547)
     """
+    xp = array_namespace(a, b)
+
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    NaN = _get_nan(a, b)
-
-    if a.size == 0 or b.size == 0:
+    NaN = _get_nan(a, b, xp=xp)
+    if xp_size(a) == 0 or xp_size(b) == 0:
         # _axis_nan_policy decorator ensures this only happens with 1d input
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)
 
+    alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
+
     if permutations is not None and permutations != 0:
+
+        message = "Use of `permutations` is compatible only with NumPy arrays."
+        if not is_numpy(xp):
+            raise NotImplementedError(message)
+
+        message = "Use of `permutations` is incompatible with with use of `trim`."
         if trim != 0:
-            raise ValueError("Permutations are currently not supported "
-                             "with trimming.")
-        if permutations < 0 or (np.isfinite(permutations) and
-                                int(permutations) != permutations):
-            raise ValueError("Permutations must be a non-negative integer.")
+            raise NotImplementedError(message)
 
         t, prob = _permutation_ttest(a, b, permutations=permutations,
                                      axis=axis, equal_var=equal_var,
@@ -7523,37 +7528,38 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                      alternative=alternative)
         df, denom, estimate = NaN, NaN, NaN
 
-    else:
-        n1 = a.shape[axis]
-        n2 = b.shape[axis]
+        # _axis_nan_policy decorator doesn't play well with strings
+        return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
+                           standard_error=denom, estimate=estimate)
 
-        if trim == 0:
-            if equal_var:
-                old_errstate = np.geterr()
-                np.seterr(divide='ignore', invalid='ignore')
-            v1 = _var(a, axis, ddof=1)
-            v2 = _var(b, axis, ddof=1)
-            if equal_var:
-                np.seterr(**old_errstate)
-            m1 = np.mean(a, axis)
-            m2 = np.mean(b, axis)
-        else:
-            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+    n1 = a.shape[axis]
+    n2 = b.shape[axis]
 
+    if trim == 0:
         if equal_var:
-            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
-        else:
-            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+            old_errstate = np.geterr()
+            np.seterr(divide='ignore', invalid='ignore')
+        v1 = _var(a, axis, ddof=1)
+        v2 = _var(b, axis, ddof=1)
+        if equal_var:
+            np.seterr(**old_errstate)
+        m1 = np.mean(a, axis)
+        m2 = np.mean(b, axis)
+    else:
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
-        # when nan_policy='omit', `df` can be different for different axis-slices
-        df = np.broadcast_to(df, t.shape)[()]
-        estimate = m1-m2
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+    else:
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+    t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)[()]
+    estimate = m1-m2
+
+    return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                        standard_error=denom, estimate=estimate)
 
 
@@ -7712,6 +7718,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         The p-value.
 
     """
+    if permutations < 0 or (np.isfinite(permutations) and
+                            int(permutations) != permutations):
+        raise ValueError("Permutations must be a non-negative integer.")
+
     random_state = check_random_state(random_state)
 
     t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
