@@ -298,7 +298,7 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
 
     if quadrature == "trapz":
         msg = ("`quadrature='trapz'` is deprecated in favour of "
-               "`quadrature='trapezoid' and will raise a error from SciPy 1.16.0 "
+               "`quadrature='trapezoid' and will raise an error from SciPy 1.16.0 "
                "onwards.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
