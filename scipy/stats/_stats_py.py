@@ -4001,6 +4001,10 @@ def _first(arr, axis):
 
 
 def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+    message = f"At least two samples are required; got {len(samples)}."
+    if len(samples) < 2:
+        raise TypeError(message)
+
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
