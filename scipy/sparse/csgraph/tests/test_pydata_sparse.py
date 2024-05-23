@@ -147,3 +147,31 @@ def test_min_weight_full_bipartite_matching(graphs):
     desired = func(sp.csc_matrix(A_dense)[0:2, 1:3])
 
     assert_equal(actual, desired)
+
+
+@pytest.mark.parametrize(
+    "func",
+    [
+        spgraph.shortest_path,
+        spgraph.dijkstra,
+        spgraph.floyd_warshall,
+        spgraph.bellman_ford,
+        spgraph.johnson,
+        spgraph.minimum_spanning_tree,
+    ]
+)
+@pytest.mark.parametrize("fill_value", [0, np.inf])
+def test_fill_value(graphs, func, fill_value):
+    A_dense, A_sparse = graphs
+    sparse_cls = type(A_sparse)
+    A_sparse = sparse_cls(A_sparse, fill_value=fill_value)
+
+    actual = func(A_sparse)
+    desired = func(sp.csc_matrix(A_dense))
+
+    if func == spgraph.minimum_spanning_tree:
+        assert isinstance(actual, sparse_cls)
+        assert actual.fill_value == fill_value
+        assert_equal(actual.todense(), desired.todense())
+    else:
+        assert_equal(actual, desired)
