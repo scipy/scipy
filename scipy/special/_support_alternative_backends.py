@@ -11,8 +11,8 @@ from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
 from ._ufuncs import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e,  # noqa: F401
-    gammaln, gammainc, gammaincc, logit, expit, entr, rel_entr)  # noqa: F401
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln, # noqa: F401
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy)  # noqa: F401
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
@@ -70,7 +70,14 @@ def _rel_entr(x, y, *, xp):
     return res
 
 
-_generic_implementations = {'rel_entr': _rel_entr}
+def _xlogy(x, y, *, xp):
+    with np.errstate(divide='ignore', invalid='ignore'):
+        temp = x * xp.log(y)
+    return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+
+
+_generic_implementations = {'rel_entr': _rel_entr,
+                            'xlogy': _xlogy}
 
 
 # functools.wraps doesn't work because:
@@ -104,6 +111,7 @@ array_special_func_map = {
     'expit': 1,
     'entr': 1,
     'rel_entr': 2,
+    'xlogy': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
