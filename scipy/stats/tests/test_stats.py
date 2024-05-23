@@ -5110,6 +5110,7 @@ def test_ttest_ind(xp):
 
     # test NaNs
     NaN = xp.asarray(xp.nan)
+    rvs1 = xp.where(xp.arange(rvs1.shape[0]) == 0, NaN, rvs1)
     rvs1[0] = NaN
 
     res = stats.ttest_ind(rvs1, rvs2, axis=0)
@@ -5950,26 +5951,36 @@ def test_ttest_ind_from_stats_inputs_zero(xp):
     xp_assert_equal(res.pvalue, NaN)
 
 
-def test_ttest_uniform_pvalues():
+@array_api_compatible
+@pytest.mark.skip_xp_backends(cpu_only=True,
+                              reasons=['Uses NumPy for pvalue, CI'])
+@pytest.mark.usefixtures("skip_xp_backends")
+def test_ttest_uniform_pvalues(xp):
     # test that p-values are uniformly distributed under the null hypothesis
     rng = np.random.default_rng(246834602926842)
-    x = rng.normal(size=(10000, 2))
-    y = rng.normal(size=(10000, 1))
+    x = xp.asarray(rng.normal(size=(10000, 2)))
+    y = xp.asarray(rng.normal(size=(10000, 1)))
     q = rng.uniform(size=100)
 
     res = stats.ttest_ind(x, y, equal_var=True, axis=-1)
-    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
-    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
+    pvalue = np.asarray(res.pvalue)
+    assert stats.ks_1samp(pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.quantile(pvalue, q), q, atol=1e-2)
 
     res = stats.ttest_ind(y, x, equal_var=True, axis=-1)
-    assert stats.ks_1samp(res.pvalue, stats.uniform().cdf).pvalue > 0.1
-    assert_allclose(np.percentile(res.pvalue, q*100), q, atol=1e-2)
+    pvalue = np.asarray(res.pvalue)
+    assert stats.ks_1samp(pvalue, stats.uniform().cdf).pvalue > 0.1
+    assert_allclose(np.quantile(pvalue, q), q, atol=1e-2)
 
     # reference values from R:
     # options(digits=16)
     # t.test(c(2, 3, 5), c(1.5), var.equal=TRUE)
-    res = stats.ttest_ind([2, 3, 5], [1.5], equal_var=True)
-    assert_allclose(res, (1.0394023007754, 0.407779907736), rtol=1e-10)
+    x, y = xp.asarray([2, 3, 5]), xp.asarray([1.5])
+
+    res = stats.ttest_ind(x, y, equal_var=True)
+    rtol = 1e-6 if is_torch(xp) else 1e-10
+    xp_assert_close(res.statistic, xp.asarray(1.0394023007754), rtol=rtol)
+    xp_assert_close(res.pvalue, xp.asarray(0.407779907736), rtol=rtol)
 
 
 def _convert_pvalue_alternative(t, p, alt, xp):
