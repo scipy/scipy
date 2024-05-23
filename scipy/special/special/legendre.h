@@ -173,6 +173,24 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     });
 }
 
+template <typename T>
+struct diag_recurrence {
+    int type;
+    T z;
+
+    void operator()(int n, T (&res)[2][1]) {
+        T type_sign;
+        if (type == 3) {
+            type_sign = -1;
+        } else {
+            type_sign = 1;
+        }
+
+        res[0][0] = type_sign * T((2 * n - 1) * (2 * n - 3)) * (T(1) - z * z);
+        res[1][0] = 0;
+    }
+};
+
 /**
  * Compute the associated Legendre polynomial of degree n and order n.
  *
@@ -204,9 +222,37 @@ T assoc_legendre_p_diag(int m, int type, T z) {
         }
     }
 
-    for (int i = m_odd + 1; i <= m_abs; i += 2) { // other square roots can be avoided if each iteration increments by 2
-        res *= type_sign * T((2 * i - 1) * (2 * i + 1)) * (T(1) - z * z);
+    /*
+        T val[3][1];
+        val[0][0] = 1;
+        if (type == 3) {
+            val[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                val[1][0] = -val[1][0];
+            }
+        } else {
+            val[1][0] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+        }
+    */
+
+    // other square roots can be avoided if each iteration increments by 2
+
+    T val[3][1];
+    val[0][0] = 1;
+
+    if (type == 3) {
+        val[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
+        if (std::real(z) < 0) {
+            val[1][0] = -val[1][0];
+        }
+    } else {
+        val[1][0] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
     }
+
+    diag_recurrence<T> r{type, z};
+    forward_recur(r, val, 0, m_abs + 1);
+
+    res = val[2][0];
 
     if (m < 0) {
         res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);

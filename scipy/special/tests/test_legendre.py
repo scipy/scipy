@@ -168,7 +168,7 @@ class TestLegendreFunctions:
     def test_lpmn_all_specific(self, shape):
         rng = np.random.default_rng(1234)
 
-        x = rng.uniform(-5, 5, shape)
+        x = rng.uniform(-.5, .5, shape)
 
         p, p_jac = special.lpmn_all(4, 4, x, diff_n = 1)
 

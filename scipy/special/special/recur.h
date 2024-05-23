@@ -43,7 +43,9 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1][NP1]) {
     for (size_t n = 1; n <= N; ++n) {
         res[K][n] = 0;
         for (size_t k = 0; k <= n; ++k) {
-            res[K][n] += binom<remove_complex_t<T>>(n, k) * (coef[0][n - k] * res[0][k] + coef[1][n - k] * res[1][k]);
+            for (size_t i = 0; i < K; ++i) {
+                res[K][n] += binom<remove_complex_t<T>>(n, k) * coef[i][n - k] * res[i][k];
+            }
         }
     }
 }
