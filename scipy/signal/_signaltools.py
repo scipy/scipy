@@ -1496,15 +1496,11 @@ def order_filter(a, domain, rank):
                              "should have an odd number of elements.")
 
     a = np.asarray(a)
-    if a.dtype in [object, 'float128']:
-        mesg = (f"Using order_filter with arrays of dtype {a.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
-        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
+    if not (np.issubdtype(a.dtype, np.integer) 
+            or a.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
 
-        result = _sigtools._order_filterND(a, domain, rank)
-    else:
-        result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
-
+    result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
     return result
 
 
@@ -1551,6 +1547,10 @@ def medfilt(volume, kernel_size=None):
 
     """
     volume = np.atleast_1d(volume)
+    if not (np.issubdtype(volume.dtype, np.integer) 
+            or volume.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
+
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
     kernel_size = np.asarray(kernel_size)
@@ -1565,25 +1565,9 @@ def medfilt(volume, kernel_size=None):
                       'zero-padded.',
                       stacklevel=2)
 
-    domain = np.ones(kernel_size, dtype=volume.dtype)
-
-    numels = np.prod(kernel_size, axis=0)
-    order = numels // 2
-
-    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
-                        np.float16]:
-        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
-
-    if volume.dtype.char in ['O', 'g']:
-        mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
-        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
-
-        result = _sigtools._order_filterND(volume, domain, order)
-    else:
-        size = math.prod(kernel_size)
-        result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
-                                     mode='constant')
+    size = math.prod(kernel_size)
+    result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
+                                 mode='constant')
 
     return result
 
