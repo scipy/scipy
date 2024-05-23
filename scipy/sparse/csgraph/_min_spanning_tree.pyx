@@ -97,6 +97,7 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     is_pydata_sparse = is_pydata_spmatrix(csgraph)
     if is_pydata_sparse:
         pydata_sparse_cls = csgraph.__class__
+        pydata_sparse_fill_value = csgraph.fill_value
     csgraph = validate_graph(csgraph, True, DTYPE, dense_output=False,
                              copy_if_sparse=not overwrite)
     cdef int N = csgraph.shape[0]
@@ -120,7 +121,9 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     sp_tree.eliminate_zeros()
 
     if is_pydata_sparse:
-        sp_tree = pydata_sparse_cls.from_scipy_sparse(sp_tree)
+        sp_tree = pydata_sparse_cls.from_scipy_sparse(
+            sp_tree, fill_value=pydata_sparse_fill_value
+        )
     return sp_tree
 
 

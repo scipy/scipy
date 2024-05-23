@@ -472,6 +472,7 @@ def reconstruct_path(csgraph, predecessors, directed=True):
     is_pydata_sparse = is_pydata_spmatrix(csgraph)
     if is_pydata_sparse:
         pydata_sparse_cls = csgraph.__class__
+        pydata_sparse_fill_value = csgraph.fill_value
     csgraph = validate_graph(csgraph, directed, dense_output=False)
 
     N = csgraph.shape[0]
@@ -502,7 +503,9 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     sctree = csr_matrix((data, indices, indptr), shape=(N, N))
     if is_pydata_sparse:
-        sctree = pydata_sparse_cls.from_scipy_sparse(sctree)
+        sctree = pydata_sparse_cls.from_scipy_sparse(
+            sctree, fill_value=pydata_sparse_fill_value
+        )
     return sctree
 
 
