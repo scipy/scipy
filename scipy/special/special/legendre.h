@@ -173,12 +173,13 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     });
 }
 
-template <typename T>
+template <typename T, size_t N>
 struct diag_recurrence {
+    int m;
     int type;
     T z;
 
-    void operator()(int n, T (&res)[2][1]) {
+    void operator()(int n, T (&res)[2][N + 1]) {
         T type_sign;
         if (type == 3) {
             type_sign = -1;
@@ -186,8 +187,58 @@ struct diag_recurrence {
             type_sign = 1;
         }
 
+        // other square roots can be avoided if each iteration increments by 2
+
         res[0][0] = type_sign * T((2 * n - 1) * (2 * n - 3)) * (T(1) - z * z);
         res[1][0] = 0;
+
+        if constexpr (N >= 1) {
+            res[0][1] = type_sign * T((2 * n - 1) * (2 * n - 3)) * (-T(2) * z);
+            res[1][1] = 0;
+        }
+    }
+
+    void init(T (&res)[3][N + 1]) {
+        int m_abs = std::abs(m);
+        bool m_odd = m_abs % 2;
+
+        res[0][0] = 1;
+
+        if (type == 3) {
+            res[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res[1][0] = -res[1][0];
+            }
+        } else {
+            res[1][0] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+        }
+
+        if constexpr (N >= 1) {
+            res[0][1] = 0;
+
+            if (type == 3) {
+                res[1][1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
+                if (std::real(z) < 0) {
+                    res[1][1] = -res[1][1];
+                }
+            } else {
+                res[1][1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+            }
+        }
+
+        T fac = 1;
+        if (m < 0) {
+            fac *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+            if (m_odd && type == 3) {
+                fac *= -1;
+            }
+        }
+
+        for (size_t j = 0; j < 3; ++j) {
+            for (size_t i = 0; i <= N; ++i) {
+                res[j][i] *= fac;
+            }
+        }
     }
 };
 
@@ -198,70 +249,20 @@ struct diag_recurrence {
  * should not be modified. This is because the sign bit of a real or imaginary part,
  * even if it is equal to zero, can affect the branch cut.
  */
+template <typename T, size_t NP1>
+void assoc_legendre_p_diag(int m, int type, T z, T (&res)[3][NP1]) {
+    diag_recurrence<T, NP1 - 1> r{m, type, z};
+    r.init(res);
+
+    forward_recur(r, res, 0, std::abs(m) + 1);
+}
+
 template <typename T>
 T assoc_legendre_p_diag(int m, int type, T z) {
-    int m_abs = std::abs(m);
-    bool m_odd = m_abs % 2;
+    T res[3][1];
+    assoc_legendre_p_diag(m, type, z, res);
 
-    T type_sign;
-    if (type == 3) {
-        type_sign = -1;
-    } else {
-        type_sign = 1;
-    }
-
-    T res = 1;
-    if (m_odd) {
-        if (type == 3) {
-            res *= std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res = -res;
-            }
-        } else {
-            res *= -std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
-    }
-
-    /*
-        T val[3][1];
-        val[0][0] = 1;
-        if (type == 3) {
-            val[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                val[1][0] = -val[1][0];
-            }
-        } else {
-            val[1][0] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
-    */
-
-    // other square roots can be avoided if each iteration increments by 2
-
-    T val[3][1];
-    val[0][0] = 1;
-
-    if (type == 3) {
-        val[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
-        if (std::real(z) < 0) {
-            val[1][0] = -val[1][0];
-        }
-    } else {
-        val[1][0] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
-    }
-
-    diag_recurrence<T> r{type, z};
-    forward_recur(r, val, 0, m_abs + 1);
-
-    res = val[2][0];
-
-    if (m < 0) {
-        res *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
-        if (m_odd && type == 3) {
-            res *= -1;
-        }
-    }
-
-    return res;
+    return res[2][0];
 }
 
 template <typename T, size_t N>
@@ -308,52 +309,6 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3][NP1], Calla
 template <typename T, size_t NP1>
 void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3][NP1]) {
     assoc_legendre_p_recur(n, m, type, z, res, [](int j, auto r, const T(&res)[3][NP1]) {});
-}
-
-template <typename T>
-T assoc_legendre_p_jac_diag(int m, int type, T z) {
-    if (m == 0) {
-        return 0;
-    }
-
-    if (m == 1) {
-        if (type == 3) {
-            T res = z / std::sqrt(z * z - T(1));
-            if (std::real(z) < 0) {
-                res = -res;
-            }
-
-            return res;
-        }
-
-        return z / std::sqrt(T(1) - z * z);
-    }
-
-    if (m == -1) {
-        if (type == 3) {
-            T res = z / (T(2) * std::sqrt(z * z - T(1)));
-            if (std::real(z) < 0) {
-                res = -res;
-            }
-
-            return res;
-        }
-
-        return -z / (T(2) * std::sqrt(T(1) - z * z));
-    }
-
-    T type_sign;
-    if (type == 3) {
-        type_sign = -1;
-    } else {
-        type_sign = 1;
-    }
-
-    if (m < 0) {
-        return type_sign * z * assoc_legendre_p_diag(m + 2, type, z) / T(4 * (m + 1));
-    }
-
-    return -type_sign * T((4 * (m - 2) * m + 3) * m) * z * assoc_legendre_p_diag(m - 2, type, z);
 }
 
 template <typename T>
@@ -418,11 +373,14 @@ struct assoc_legendre_p_recurrence {
     void init(T (&res)[3][N + 1]) const {
         int m_abs = std::abs(m);
 
-        res[0][0] = assoc_legendre_p_diag(m, type, z);
+        T vals[3][2];
+        assoc_legendre_p_diag(m, type, z, vals);
+
+        res[0][0] = vals[2][0];
         res[1][0] = T(2 * (m_abs + 1) - 1) * z * res[0][0] / T(m_abs + 1 - m);
 
         if constexpr (N >= 1) {
-            res[0][1] = assoc_legendre_p_jac_diag(m, type, z);
+            res[0][1] = vals[2][1];
             res[1][1] = T(2 * (m_abs + 1) - 1) * (res[0][0] + z * res[0][1]) / T(m_abs + 1 - m);
 
             if constexpr (N >= 2) {
