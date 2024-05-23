@@ -6,7 +6,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 
-from ._stats import _local_correlations
+from ._stats import _local_correlations  # type: ignore[import-not-found]
 from . import distributions
 
 __all__ = ['multiscale_graphcorr']
