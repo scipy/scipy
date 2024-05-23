@@ -938,10 +938,23 @@ class TestPoisson(QMCEngineTests):
         # circle packing problem is np complex
         assert l2_norm(sample) >= radius
 
-    def test_sample_inside_bounds(self):
+    @pytest.mark.parametrize("l_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_lower_bounds(self, l_bounds):
         radius = 0.2
-        l_bounds=[-1, -2, -1]
-        u_bounds=[3, 2, 1]
+        u_bounds=[3, 3, 2]
+        engine = self.qmce(
+            d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
+        )
+        sample = engine.random(30)
+
+        for point in sample:
+            assert_array_less(point, u_bounds) 
+            assert_array_less(l_bounds, point) 
+
+    @pytest.mark.parametrize("u_bounds", [[-1, -2, -1], [1, 2, 1]])
+    def test_sample_inside_upper_bounds(self, u_bounds):
+        radius = 0.2
+        l_bounds=[-3, -3, -2]
         engine = self.qmce(
             d=3, radius=radius, l_bounds=l_bounds, u_bounds=u_bounds
         )
