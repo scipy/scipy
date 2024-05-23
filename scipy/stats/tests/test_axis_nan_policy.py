@@ -143,8 +143,8 @@ too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
                       "Input sample size must be greater than one.",
-                      "invalid value encountered in scalar divide",
-                      "divide by zero encountered in scalar divide",}
+                      "invalid value encountered",
+                      "divide by zero encountered",}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed

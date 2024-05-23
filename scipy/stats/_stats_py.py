@@ -6474,6 +6474,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     n = a.shape[axis]
     df = n - 1
 
+    if n == 0:
+        # This is really only needed for *testing* _axis_nan_policy decorator
+        # It won't happen when the decorator is used.
+        NaN = _get_nan(a)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
+
     mean = xp.mean(a, axis=axis)
     try:
         popmean = xp.asarray(popmean)
@@ -7328,6 +7335,12 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     nb = _get_len(b, axis, "second argument")
     if na != nb:
         raise ValueError('unequal length arrays')
+
+    if na == 0 or nb == 0:
+        # _axis_nan_policy decorator ensures this only happens with 1d input
+        NaN = _get_nan(a, b)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
 
     n = a.shape[axis]
     df = n - 1
