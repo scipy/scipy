@@ -655,8 +655,8 @@ class BenchQMCSobol(Benchmark):
 class BenchPoissonDisk(Benchmark):
     param_names = ['d', 'radius', 'ncandidates', 'n']
     params = [
-        [1, 5, 10],
-        [1, 10, 50],
+        [1, 3, 5],
+        [0.2, 0.1, 0.05],
         [30, 60, 120],
         [30, 100, 300]
     ]
