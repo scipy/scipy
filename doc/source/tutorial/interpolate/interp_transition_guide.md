@@ -1,3 +1,4 @@
+(interp-transition-guide)=
 # Interpolate transition guide
 
 This page contains three sets of demonstrations:

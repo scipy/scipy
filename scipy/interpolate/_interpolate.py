@@ -102,7 +102,7 @@ For scattered data, prefer `LinearNDInterpolator` or
 `CloughTocher2DInterpolator`.
 
 For more details see
-`https://docs.scipy.org/doc/scipy-1.13.0/notebooks/interp_transition_guide.html`
+:ref:`interp-transition-guide`.
 """
 
 class interp2d:
