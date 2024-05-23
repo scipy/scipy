@@ -61,7 +61,8 @@ from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate)
+                               _broadcast_concatenate,
+                               _broadcast_array_shapes_remove_axis)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -7112,8 +7113,8 @@ def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
     zero = xp.asarray(0.)
-    v1 = xp.where(n1 == 1, zero, v1)
-    v2 = xp.where(n2 == 1, zero, v2)
+    v1 = xp.where(xp.asarray(n1 == 1), zero, v1)
+    v2 = xp.where(xp.asarray(n2 == 1), zero, v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
@@ -7246,15 +7247,17 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
-    mean1 = np.asarray(mean1)
-    std1 = np.asarray(std1)
-    mean2 = np.asarray(mean2)
-    std2 = np.asarray(std2)
+    xp = array_namespace(mean1, std1, mean2, std2)
+
+    mean1 = xp.asarray(mean1)
+    std1 = xp.asarray(std1)
+    mean2 = xp.asarray(mean2)
+    std2 = xp.asarray(std2)
+
     if equal_var:
-        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
     else:
-        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
-                                             std2**2, nobs2)
+        df, denom = _unequal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
 
     res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
@@ -7511,12 +7514,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     """
     xp = array_namespace(a, b)
 
+    default_float = xp.asarray(1.).dtype
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, default_float)
+    if xp.isdtype(b.dtype, 'integral'):
+        b = xp.astype(b, default_float)
+
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    NaN = _get_nan(a, b, xp=xp)
+    result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
+    NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
+    NaN = NaN[()] if NaN.ndim == 0 else NaN
     if xp_size(a) == 0 or xp_size(b) == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)
 
@@ -7543,8 +7553,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                            standard_error=denom, estimate=estimate)
 
-    n1 = a.shape[axis]
-    n2 = b.shape[axis]
+    n1 = xp.asarray(a.shape[axis], dtype=a.dtype)
+    n2 = xp.asarray(b.shape[axis], dtype=b.dtype)
 
     if trim == 0:
         with np.errstate(divide='ignore', invalid='ignore'):
@@ -7562,9 +7572,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
     if equal_var:
-        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
     else:
-        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
     t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
