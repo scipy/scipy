@@ -1,0 +1,23 @@
+==========================
+SciPy 1.13.2 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.13.2 is a bug-fix release with no new features
+compared to 1.13.1.
+
+
+
+Authors
+=======
+* Name (commits)
+
+
+Issues closed for 1.13.2
+------------------------
+
+
+
+Pull requests for 1.13.2
+------------------------
