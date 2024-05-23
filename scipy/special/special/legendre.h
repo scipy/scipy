@@ -187,14 +187,21 @@ struct diag_recurrence {
             type_sign = 1;
         }
 
+        T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+
         // other square roots can be avoided if each iteration increments by 2
 
-        res[0][0] = type_sign * T((2 * n - 1) * (2 * n - 3)) * (T(1) - z * z);
+        res[0][0] = fac * (T(1) - z * z);
         res[1][0] = 0;
 
         if constexpr (N >= 1) {
-            res[0][1] = type_sign * T((2 * n - 1) * (2 * n - 3)) * (-T(2) * z);
+            res[0][1] = -T(2) * fac * z;
             res[1][1] = 0;
+
+            if constexpr (N >= 2) {
+                res[0][2] = -T(2) * fac;
+                res[1][2] = 0;
+            }
         }
     }
 
@@ -223,6 +230,19 @@ struct diag_recurrence {
                 }
             } else {
                 res[1][1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+            }
+        }
+
+        if constexpr (N >= 2) {
+            res[0][2] = 0;
+
+            if (type == 3) {
+                res[1][2] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
+                if (std::real(z) < 0) {
+                    res[1][2] = -res[1][2];
+                }
+            } else {
+                res[1][2] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
             }
         }
 
@@ -255,14 +275,6 @@ void assoc_legendre_p_diag(int m, int type, T z, T (&res)[3][NP1]) {
     r.init(res);
 
     forward_recur(r, res, 0, std::abs(m) + 1);
-}
-
-template <typename T>
-T assoc_legendre_p_diag(int m, int type, T z) {
-    T res[3][1];
-    assoc_legendre_p_diag(m, type, z, res);
-
-    return res[2][0];
 }
 
 template <typename T, size_t N>
@@ -311,44 +323,6 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3][NP1]) {
     assoc_legendre_p_recur(n, m, type, z, res, [](int j, auto r, const T(&res)[3][NP1]) {});
 }
 
-template <typename T>
-T assoc_legendre_p_hess_diag(int m, int type, T z) {
-    if (m == 0) {
-        return 0;
-    }
-
-    if (m == 1) {
-        return T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z));
-    }
-
-    if (m == -1) {
-        return -T(1) / (T(2) * std::sqrt(T(1) - z * z) * (T(1) - z * z));
-    }
-
-    if (m == 2) {
-        return -6;
-    }
-
-    if (m == -2) {
-        return -T(1) / T(4);
-    }
-
-    if (m == 3) {
-        return T(45) * (T(1) - T(2) * z * z) / std::sqrt(T(1) - z * z);
-    }
-
-    if (m == -3) {
-        return (T(2) * z * z - T(1)) / (T(16) * std::sqrt(T(1) - z * z));
-    }
-
-    if (m < 0) {
-        return (T(m + 1) * z * z + T(1)) * assoc_legendre_p_diag(m + 4, type, z) / T(16 * (m + 1) * (m + 2) * (m + 3));
-    }
-
-    return T(2 * m - 1) * T(2 * m - 3) * T(2 * m - 5) * T(2 * m - 7) * T(m) * (T(m - 1) * z * z - T(1)) *
-           assoc_legendre_p_diag(m - 4, type, z);
-}
-
 template <typename T, size_t N>
 struct assoc_legendre_p_recurrence {
     int m;
@@ -373,7 +347,7 @@ struct assoc_legendre_p_recurrence {
     void init(T (&res)[3][N + 1]) const {
         int m_abs = std::abs(m);
 
-        T vals[3][2];
+        T vals[3][3];
         assoc_legendre_p_diag(m, type, z, vals);
 
         res[0][0] = vals[2][0];
@@ -384,7 +358,7 @@ struct assoc_legendre_p_recurrence {
             res[1][1] = T(2 * (m_abs + 1) - 1) * (res[0][0] + z * res[0][1]) / T(m_abs + 1 - m);
 
             if constexpr (N >= 2) {
-                res[0][2] = assoc_legendre_p_hess_diag(m, type, z);
+                res[0][2] = vals[2][2];
                 res[1][2] = T(2 * (m_abs + 1) - 1) * (res[0][1] + res[0][1] + z * res[0][2]) / T(m_abs + 1 - m);
             }
         }
