@@ -665,7 +665,8 @@ class BenchPoissonDisk(Benchmark):
         self.rng = np.random.default_rng(168525179735951991038384544)
 
     def time_poisson_disk(self, d, radius, ncandidates, n):
-        seq = stats.qmc.PoissonDisk(d, radius=radius, ncandidates=ncandidates, seed=self.rng)
+        seq = stats.qmc.PoissonDisk(d, radius=radius, ncandidates=ncandidates,
+                                    seed=self.rng)
         seq.random(n)
 
 class DistanceFunctions(Benchmark):

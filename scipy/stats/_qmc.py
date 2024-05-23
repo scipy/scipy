@@ -2018,7 +2018,7 @@ class PoissonDisk(QMCEngine):
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
             self.grid_size = (
-                np.ceil(self.u_bounds / self.cell_size)
+                np.ceil((self.u_bounds - self.l_bounds) / self.cell_size)
             ).astype(int)
 
         self._initialize_grid_pool()
@@ -2068,7 +2068,7 @@ class PoissonDisk(QMCEngine):
             Check if there are samples closer than ``radius_squared`` to the
             `candidate` sample.
             """
-            indices = (candidate / self.cell_size).astype(int)
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
             ind_min = np.maximum(indices - n, self.l_bounds.astype(int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
@@ -2093,7 +2093,7 @@ class PoissonDisk(QMCEngine):
 
         def add_sample(candidate: np.ndarray) -> None:
             self.sample_pool.append(candidate)
-            indices = (candidate / self.cell_size).astype(int)
+            indices = ((candidate - self.l_bounds) / self.cell_size).astype(int)
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
@@ -2101,7 +2101,7 @@ class PoissonDisk(QMCEngine):
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
-            add_sample(self.rng.random(self.d))
+            add_sample(self.rng.uniform(self.l_bounds, self.u_bounds))
             num_drawn = 1
         else:
             num_drawn = 0
