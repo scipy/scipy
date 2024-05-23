@@ -490,6 +490,9 @@ class Build(Task):
             cmd += ['-Db_coverage=true']
         if args.asan:
             cmd += ['-Db_sanitize=address,undefined']
+        if not args.debug and sys.platform == 'win32':
+            # Building in debug mode on windows is much slower
+            cmd += ['-Dbuildtype=release']
         if args.setup_args:
             cmd += [str(arg) for arg in args.setup_args]
         if args.with_accelerate:
