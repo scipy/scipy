@@ -102,7 +102,7 @@ For scattered data, prefer `LinearNDInterpolator` or
 `CloughTocher2DInterpolator`.
 
 For more details see
-:ref:`interp-transition-guide`.
+https://scipy.github.io/devdocs/tutorial/interpolate/interp_transition_guide.html
 """
 
 class interp2d:
@@ -122,9 +122,7 @@ class interp2d:
         For scattered data, prefer `LinearNDInterpolator` or
         `CloughTocher2DInterpolator`.
 
-        For more details see
-        `https://docs.scipy.org/doc/scipy-1.13.0/notebooks/interp_transition_guide.html
-        <https://docs.scipy.org/doc/scipy-1.13.0/notebooks/interp_transition_guide.html>`_
+        For more details see :ref:`interp-transition-guide`.
     """
     def __init__(self, x, y, z, kind='linear', copy=True, bounds_error=False,
                  fill_value=None):
