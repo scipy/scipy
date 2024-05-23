@@ -12,7 +12,7 @@ import pytest
 import warnings
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_equal, suppress_warnings
+from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import (_masked_arrays_2_sentinel_arrays,
@@ -353,7 +353,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     data_b = [np.moveaxis(sample, axis, -1) for sample in data]
     data_b = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
               for sample in data_b]
-    res_1d = np.zeros([n_outputs,] + output_shape)
+    res_1d = np.zeros(output_shape + [n_outputs])
 
     for i, _ in np.ndenumerate(np.zeros(output_shape)):
         data1d = [sample[i] for sample in data_b]
@@ -407,7 +407,9 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         res_1db = unpacker(res)
 
         assert_equal(res_1db, res_1da)
-        res_1d[:, *i] = res_1db
+        res_1d[i] = res_1db
+
+    res_1d = np.moveaxis(res_1d, -1, 0)
 
     # Perform a vectorized call to the hypothesis test.
 
