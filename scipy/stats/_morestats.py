@@ -4659,7 +4659,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     # hypotenuse can go slightly above 1 due to rounding errors
     R = xp_minimum(xp.asarray(1.), hypotenuse)  # [1] (2.2.4)
 
-    res = xp.sqrt(-2*xp.log(R))
+    res = (-2*xp.log(R))**0.5  # do not use sqrt to avoid -0.0 if R==1
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res

@@ -2674,6 +2674,11 @@ class TestCircFuncs:
         xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
         xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
 
+    def test_circstd_zero(self, xp):
+        # circstd() of a single number should return positive zero.
+        y = stats.circstd(xp.asarray([0]))
+        xp_assert_equal(xp.signbit(y), xp.asarray(False))
+
 
 class TestCircFuncsNanPolicy:
     # `nan_policy` is implemented by the `_axis_nan_policy` decorator, which is
