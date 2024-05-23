@@ -8,38 +8,46 @@
 
 namespace special {
 
-template <typename T, size_t N>
+template <typename T>
 struct legendre_p_recurrence {
     T z;
 
-    void operator()(int n, T (&res)[2][N + 1]) const {
-        res[1][0] = T(2 * n - 1) * z / T(n);
-        res[0][0] = -T(n - 1) / T(n);
-
-        if constexpr (N >= 1) {
-            res[1][1] = T(2 * n - 1) / T(n);
-            res[0][1] = 0;
-
-            for (size_t k = 2; k <= N; ++k) {
-                res[1][k] = 0;
-                res[0][k] = 0;
-            }
-        }
+    void operator()(int n, T (&res)[2]) const {
+        res[0] = -T(n - 1) / T(n);
+        res[1] = T(2 * n - 1) * z / T(n);
     }
 
-    void init(T (&res)[3][N + 1]) {
-        res[0][0] = 1;
-        res[1][0] = z;
+    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
+        (*this)(n, res);
 
-        if constexpr (N >= 1) {
-            res[0][1] = 0;
-            res[1][1] = 1;
+        res_jac[0] = 0;
+        res_jac[1] = T(2 * n - 1) / T(n);
+    }
 
-            for (size_t k = 2; k <= N; ++k) {
-                res[1][k] = 0;
-                res[0][k] = 0;
-            }
-        }
+    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        (*this)(n, res, res_jac);
+
+        res_hess[0] = 0;
+        res_hess[1] = 0;
+    }
+
+    void init(T *res) {
+        res[0] = 1;
+        res[1] = z;
+    }
+
+    void init(T *res, T *res_jac) {
+        init(res);
+
+        res_jac[0] = 0;
+        res_jac[1] = 1;
+    }
+
+    void init(T *res, T *res_jac, T *res_hess) {
+        init(res, res_jac);
+
+        res_hess[0] = 0;
+        res_hess[1] = 0;
     }
 };
 
@@ -53,17 +61,28 @@ struct legendre_p_recurrence {
  *
  * @return value of the polynomial
  */
-template <typename T, size_t N, typename Callable, typename... Args>
-void legendre_p_recur(int n, T z, T (&res)[3][N], Callable callback, Args &&...args) {
-    legendre_p_recurrence<T, N - 1> r{z};
+template <typename T, typename Callable>
+void legendre_p_recur(int n, T z, T (&res)[3], Callable callback) {
+    legendre_p_recurrence<T> r{z};
     r.init(res);
 
-    forward_recur(r, res, 0, n + 1, callback, std::forward<Args>(args)...);
+    forward_recur(r, res, 0, n + 1, callback);
 }
 
-template <typename T, size_t N>
-void legendre_p_recur(int n, T z, T (&res)[3][N]) {
-    legendre_p_recur(n, z, res, [](int j, auto r, const T(&p)[3][N]) {});
+template <typename T, typename Callable, typename... Args>
+void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback, Args &&...args) {
+    legendre_p_recurrence<T> r{z};
+    r.init(res, res_jac);
+
+    forward_recur(r, res, res_jac, 0, n + 1, callback, std::forward<Args>(args)...);
+}
+
+template <typename T, typename Callable, typename... Args>
+void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback, Args &&...args) {
+    legendre_p_recurrence<T> r{z};
+    r.init(res, res_jac, res_hess);
+
+    forward_recur(r, res, res_jac, res_hess, 0, n + 1, callback, std::forward<Args>(args)...);
 }
 
 /**
@@ -76,10 +95,10 @@ void legendre_p_recur(int n, T z, T (&res)[3][N]) {
  */
 template <typename T>
 T legendre_p(int n, T z) {
-    T p[3][1] = {};
-    legendre_p_recur(n, z, p);
+    T p[3] = {};
+    legendre_p_recur(n, z, p, [](int j, auto r, const T(&p)[3]) {});
 
-    return p[2][0];
+    return p[2];
 }
 
 /**
@@ -92,11 +111,12 @@ T legendre_p(int n, T z) {
  */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac) {
-    T p[3][2] = {};
-    legendre_p_recur(n, z, p);
+    T p[3] = {};
+    T p_jac[3] = {};
+    legendre_p_recur(n, z, p, p_jac, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
 
-    res = p[2][0];
-    res_jac = p[2][1];
+    res = p[2];
+    res_jac = p_jac[2];
 }
 
 /**
@@ -110,12 +130,16 @@ void legendre_p(int n, T z, T &res, T &res_jac) {
  */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
-    T p[3][3] = {};
-    legendre_p_recur(n, z, p);
+    T p[3] = {};
+    T p_jac[3] = {};
+    T p_hess[3] = {};
+    legendre_p_recur(
+        n, z, p, p_jac, p_hess, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
+    );
 
-    res = p[2][0];
-    res_jac = p[2][1];
-    res_hess = p[2][2];
+    res = p[2];
+    res_jac = p_jac[2];
+    res_hess = p_hess[2];
 }
 
 /**
@@ -129,8 +153,8 @@ template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
 
-    T p[3][1] = {};
-    legendre_p_recur(n, z, p, [res](int j, auto r, const T(&p)[3][1]) { res(j) = p[2][0]; });
+    T p[3] = {};
+    legendre_p_recur(n, z, p, [res](int j, auto r, const T(&p)[3]) { res(j) = p[2]; });
 }
 
 /**
@@ -145,10 +169,11 @@ template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     int n = res.extent(0) - 1;
 
-    T p[3][2] = {};
-    legendre_p_recur(n, z, p, [res, res_jac](int j, auto r, const T(&p)[3][2]) {
-        res(j) = p[2][0];
-        res_jac(j) = p[2][1];
+    T p[3] = {};
+    T p_jac[3] = {};
+    legendre_p_recur(n, z, p, p_jac, [res, res_jac](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {
+        res(j) = p[2];
+        res_jac(j) = p_jac[2];
     });
 }
 
@@ -165,12 +190,17 @@ template <typename T, typename OutputVec1, typename OutputVec2, typename OutputV
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
     int n = res.extent(0) - 1;
 
-    T p[3][3] = {};
-    legendre_p_recur(n, z, p, [res, res_jac, res_hess](int j, legendre_p_recurrence<T, 2> r, const T(&p)[3][3]) {
-        res(j) = p[2][0];
-        res_jac(j) = p[2][1];
-        res_hess(j) = p[2][2];
-    });
+    T p[3] = {};
+    T p_jac[3] = {};
+    T p_hess[3] = {};
+    legendre_p_recur(
+        n, z, p, p_jac, p_hess,
+        [res, res_jac, res_hess](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
+            res(j) = p[2];
+            res_jac(j) = p_jac[2];
+            res_hess(j) = p_hess[2];
+        }
+    );
 }
 
 template <typename T, size_t N>
