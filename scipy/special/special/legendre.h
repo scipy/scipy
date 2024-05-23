@@ -210,7 +210,6 @@ struct diag_recurrence {
         bool m_odd = m_abs % 2;
 
         res[0][0] = 1;
-
         if (type == 3) {
             res[1][0] = std::sqrt(z * z - T(1)); // do not modify, see function comment
             if (std::real(z) < 0) {
@@ -221,28 +220,19 @@ struct diag_recurrence {
         }
 
         if constexpr (N >= 1) {
-            res[0][1] = 0;
-
+            T type_sign;
             if (type == 3) {
-                res[1][1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
-                if (std::real(z) < 0) {
-                    res[1][1] = -res[1][1];
-                }
+                type_sign = -1;
             } else {
-                res[1][1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+                type_sign = 1;
             }
-        }
 
-        if constexpr (N >= 2) {
-            res[0][2] = 0;
+            res[0][1] = 0;
+            res[1][1] = -type_sign * z / res[1][0];
 
-            if (type == 3) {
-                res[1][2] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
-                if (std::real(z) < 0) {
-                    res[1][2] = -res[1][2];
-                }
-            } else {
-                res[1][2] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
+            if constexpr (N >= 2) {
+                res[0][2] = 0;
+                res[1][2] = -type_sign * (T(1) - z * res[1][1] / res[1][0]) / res[1][0];
             }
         }
 
