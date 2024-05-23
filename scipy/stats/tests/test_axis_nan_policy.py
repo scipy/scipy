@@ -76,7 +76,7 @@ axis_nan_policy_cases = [
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.friedmanchisquare, tuple(), dict(), 3, 2, True, None),
-    (stats.brunnermunzel, tuple(), dict(), 2, 2, False, None),
+    (stats.brunnermunzel, tuple(), dict(distribution='normal'), 2, 2, False, None),
     (stats.mood, tuple(), {}, 2, 2, False, None),
     (stats.shapiro, tuple(), {}, 1, 2, False, None),
     (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
@@ -119,8 +119,7 @@ axis_nan_policy_cases = [
 
 # If the message is one of those expected, put nans in
 # appropriate places of `statistics` and `pvalues`
-too_small_messages = {"The input contains nan",  # for nan_policy="raise"
-                      "Degrees of freedom <= 0 for slice",
+too_small_messages = {"Degrees of freedom <= 0 for slice",
                       "x and y should have at least 5 elements",
                       "Data must be at least length 3",
                       "The sample must contain at least two",
@@ -143,7 +142,9 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "`kurtosistest` requires at least",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
-                      "Input sample size must be greater than one.",}
+                      "Input sample size must be greater than one.",
+                      "invalid value encountered in scalar divide",
+                      "divide by zero encountered in scalar divide",}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -246,8 +247,24 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
     return unpacker(hypotest(*data1d, *args, _no_deco=_no_deco, **kwds))
 
 
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.filterwarnings('ignore::UserWarning')
+# These three warnings are intentional
+# For `wilcoxon` when the sample size < 50
+@pytest.mark.filterwarnings('ignore:Sample size too small for normal:UserWarning')
+# `kurtosistest` and `normaltest` when sample size < 20
+@pytest.mark.filterwarnings('ignore:`kurtosistest` p-value may be:UserWarning')
+# `foneway`
+@pytest.mark.filterwarnings('ignore:all input arrays have length 1.:RuntimeWarning')
+
+# The rest of these may or may not be desirable. They need further investigation
+# to determine whether the function's decorator should define `too_small.
+# `bartlett`, `tvar`, `tstd`, `tsem`
+@pytest.mark.filterwarnings('ignore:Degrees of freedom <= 0 for slice:RuntimeWarning')
+# kstat, kstatvar, ttest_1samp, ttest_rel, ttest_ind, ttest_ci, brunnermunzel
+# mood, levene, fligner, bartlett
+@pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
+# kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
+@pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
 @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -266,8 +283,25 @@ if SCIPY_XSLOW:
     # Takes O(1 min) to run, and even skipping with the `xslow` decorator takes
     # about 3 sec because this is >3,000 tests. So ensure pytest doesn't see
     # them at all unless `SCIPY_XSLOW` is defined.
-    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
-    @pytest.mark.filterwarnings('ignore::UserWarning')
+
+    # These three warnings are intentional
+    # For `wilcoxon` when the sample size < 50
+    @pytest.mark.filterwarnings('ignore:Sample size too small for normal:UserWarning')
+    # `kurtosistest` and `normaltest` when sample size < 20
+    @pytest.mark.filterwarnings('ignore:`kurtosistest` p-value may be:UserWarning')
+    # `foneway`
+    @pytest.mark.filterwarnings('ignore:all input arrays have length 1.:RuntimeWarning')
+
+    # The rest of these may or may not be desirable. They need further investigation
+    # to determine whether the function's decorator should define `too_small.
+    # `bartlett`, `tvar`, `tstd`, `tsem`
+    @pytest.mark.filterwarnings('ignore:Degrees of freedom <= 0 for:RuntimeWarning')
+    # kstat, kstatvar, ttest_1samp, ttest_rel, ttest_ind, ttest_ci, brunnermunzel
+    # mood, levene, fligner, bartlett
+    @pytest.mark.filterwarnings('ignore:Invalid value encountered in:RuntimeWarning')
+    # kstatvar, ttest_1samp, ttest_rel, ttest_ci, brunnermunzel, levene, bartlett
+    @pytest.mark.filterwarnings('ignore:divide by zero encountered:RuntimeWarning')
+
     @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                               "paired", "unpacker"), axis_nan_policy_cases)
     @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
@@ -319,93 +353,85 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
     data_b = [np.moveaxis(sample, axis, -1) for sample in data]
     data_b = [np.broadcast_to(sample, output_shape + [sample.shape[-1]])
               for sample in data_b]
-    statistics = np.zeros(output_shape)
-    pvalues = np.zeros(output_shape)
+    res_1d = np.zeros([n_outputs,] + output_shape)
 
-    for i, _ in np.ndenumerate(statistics):
+    for i, _ in np.ndenumerate(np.zeros(output_shape)):
         data1d = [sample[i] for sample in data_b]
-        with np.errstate(divide='ignore', invalid='ignore'):
-            try:
-                res1d = nan_policy_1d(hypotest, data1d, unpacker, *args,
-                                      n_outputs=n_outputs,
-                                      nan_policy=nan_policy,
-                                      paired=paired, _no_deco=True, **kwds)
+        contains_nan = any([np.isnan(sample).any() for sample in data1d])
 
-                # Eventually we'll check the results of a single, vectorized
-                # call of `hypotest` against the arrays `statistics` and
-                # `pvalues` populated using the reference `nan_policy_1d`.
-                # But while we're at it, check the results of a 1D call to
-                # `hypotest` against the reference `nan_policy_1d`.
+        # Take care of `nan_policy='raise'`.
+        # Afterward, the 1D part of the test is over
+        message = "The input contains nan values"
+        if nan_policy == 'raise' and contains_nan:
+            with pytest.raises(ValueError, match=message):
+                nan_policy_1d(hypotest, data1d, unpacker, *args,
+                              n_outputs=n_outputs,
+                              nan_policy=nan_policy,
+                              paired=paired, _no_deco=True, **kwds)
 
-                # warns for all slices
-                if (nan_policy == 'omit' and data_generator == "all_nans"
-                      and hypotest not in too_small_special_case_funcs):
-                    with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
-                        res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
-                # warning depends on slice
-                elif (nan_policy == 'omit' and data_generator == "mixed"
-                      and hypotest not in too_small_special_case_funcs):
-                    with np.testing.suppress_warnings() as sup:
-                        sup.filter(SmallSampleWarning, too_small_1d_omit)
-                        res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
-                # shouldn't warn
-                else:
-                    res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
+            with pytest.raises(ValueError, match=message):
+                hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
 
-                res1db = unpacker(res)
-                assert_equal(res1db[0], res1d[0])
-                if len(res1db) == 2:
-                    assert_equal(res1db[1], res1d[1])
+            continue
 
-            # When there is not enough data in 1D samples, many existing
-            # hypothesis tests raise errors instead of returning nans .
-            # For vectorized calls, we put nans in the corresponding elements
-            # of the output.
-            except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
+        # Take care of `nan_policy='propagate'` and `nan_policy='omit'`
 
-                if any([str(e).startswith(message)
-                        for message in too_small_messages]):
-                    res1d = np.full(n_outputs, np.nan)
-                elif any([str(e).startswith(message)
-                          for message in inaccuracy_messages]):
-                    with suppress_warnings() as sup:
-                        sup.filter(RuntimeWarning)
-                        res1d = nan_policy_1d(hypotest, data1d, unpacker,
-                                              *args, n_outputs=n_outputs,
-                                              nan_policy=nan_policy,
-                                              paired=paired, _no_deco=True,
-                                              **kwds)
-                else:
-                    raise e
+        # Get results of simple reference implementation
+        try:
+            res_1da = nan_policy_1d(hypotest, data1d, unpacker, *args,
+                                    n_outputs=n_outputs,
+                                    nan_policy=nan_policy,
+                                    paired=paired, _no_deco=True, **kwds)
+        except (ValueError, RuntimeWarning, ZeroDivisionError) as ea:
+            ea_str = str(ea)
+            if any([str(ea_str).startswith(msg) for msg in too_small_messages]):
+                res_1da = np.full(n_outputs, np.nan)
+            else:
+                raise
 
-        statistics[i] = res1d[0]
-        if len(res1d) == 2:
-            pvalues[i] = res1d[1]
+        # Get results of public function with 1D slices
+        # Should warn for all slices
+        if (nan_policy == 'omit' and data_generator == "all_nans"
+              and hypotest not in too_small_special_case_funcs):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
+                res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
+        # warning depends on slice
+        elif (nan_policy == 'omit' and data_generator == "mixed"
+              and hypotest not in too_small_special_case_funcs):
+            with np.testing.suppress_warnings() as sup:
+                sup.filter(SmallSampleWarning, too_small_1d_omit)
+                res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
+        # shouldn't complain if there are no NaNs
+        else:
+            res = hypotest(*data1d, *args, nan_policy=nan_policy, **kwds)
+        res_1db = unpacker(res)
+
+        assert_equal(res_1db, res_1da)
+        res_1d[:, *i] = res_1db
 
     # Perform a vectorized call to the hypothesis test.
+
     # If `nan_policy == 'raise'`, check that it raises the appropriate error.
-    # If not, compare against the output against `statistics` and `pvalues`
+    # Test is done, so return
     if nan_policy == 'raise' and not data_generator == "all_finite":
         message = 'The input contains nan values'
         with pytest.raises(ValueError, match=message):
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
-    elif (nan_policy == 'omit' and data_generator in {"all_nans", "mixed"}
+        return
+
+    # If `nan_policy == 'omit', we might be left with a small sample.
+    # Check for the appropriate warning.
+    if (nan_policy == 'omit' and data_generator in {"all_nans", "mixed"}
           and hypotest not in too_small_special_case_funcs):
         with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
-            hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
-    else:
-        with suppress_warnings() as sup, \
-             np.errstate(divide='ignore', invalid='ignore'):
-            sup.filter(RuntimeWarning, "Precision loss occurred in moment")
-            sup.filter(RuntimeWarning, "Sample size too small for normal")
-            res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
-                                    *args, **kwds))
-        assert_allclose(res[0], statistics, rtol=1e-14)
-        assert_equal(res[0].dtype, statistics.dtype)
+            res = hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
+    else:  # otherwise, there should be no warning
+        res = hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
 
-        if len(res) == 2:
-            assert_allclose(res[1], pvalues, rtol=1e-14)
-            assert_equal(res[1].dtype, pvalues.dtype)
+    # Compare against the output against looping over 1D slices
+    res_nd = unpacker(res)
+
+    assert_allclose(res_nd, res_1d, rtol=1e-14)
 
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
@@ -480,6 +506,12 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
             ec_str = str(ec)
 
     if ea_str or eb_str or ec_str:  # *if* there is some sort of error or warning
+        # If the reference implemented generated an error or warning, make sure the
+        # message was one of the expected "too small" messages. Note that some
+        # functions don't complain at all without the decorator; that's OK, too.
+        ok_msg = any([str(ea_str).startswith(msg) for msg in too_small_messages])
+        assert (ea_str is None) or ok_msg
+
         # make sure the wrapped function emits the *intended* warning
         desired_warnings = {too_small_1d_omit, too_small_1d_not_omit}
         assert str(eb_str) in desired_warnings
