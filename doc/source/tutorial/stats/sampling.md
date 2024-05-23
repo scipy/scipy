@@ -11,7 +11,6 @@ kernelspec:
   name: python3
 ---
 
-
 ```{eval-rst}
 .. jupyterlite:: sampling.md
    :new_tab: True
