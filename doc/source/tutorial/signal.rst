@@ -1088,9 +1088,9 @@ it is the square root of the PSD. Furthermore, there is no canonical way for nam
 doubled spectrum.
 
 The following plot shows three different spectral representations of four sine signals
-:math:`x(t)` of Eq. :math:numref:`eq_SpectA_sine` with different amplitudes durations
-:math:`a` and durations :math:`\tau`. For less clutter, the spectra are centered at
-:math:`f_z` and being are plotted next to each other:
+:math:`x(t)` of Eq. :math:numref:`eq_SpectA_sine` with different amplitudes :math:`a`
+and durations :math:`\tau`. For less clutter, the spectra are centered at :math:`f_z`
+and being are plotted next to each other:
 
 .. plot:: tutorial/examples/signal_SpectralAnalysis_ContinuousSpectralRepresentations.py
 
@@ -1989,38 +1989,6 @@ a :exc:`TypeError`, since the utilized `~scipy.fft.rfft` function only accepts
 real-valued inputs. Consult the :ref:`tutorial_SpectralAnalysis` section above for a
 discussion on the various spectral representations which are induced by the various
 parameterizations.
-
-
-
-Detrend
--------
-.. currentmodule:: scipy.signal
-
-SciPy provides the function :func:`detrend` to remove a constant or linear
-trend in a data series in order to see effect of higher order.
-
-The example below removes the constant and linear trend of a second-order
-polynomial time series and plots the remaining signal components.
-
-.. plot::
-   :alt: "This code generates an X-Y plot with no units. A red trace corresponding to the original signal curves from the bottom left to the top right. A blue trace has the constant detrend applied and is below the red trace with zero Y offset. The last black trace has the linear detrend applied and is almost flat from left to right highlighting the curve of the original signal. This last trace has an average slope of zero and looks very different."
-
-   >>> import numpy as np
-   >>> import scipy.signal as signal
-   >>> import matplotlib.pyplot as plt
-
-   >>> t = np.linspace(-10, 10, 20)
-   >>> y = 1 + t + 0.01*t**2
-   >>> yconst = signal.detrend(y, type='constant')
-   >>> ylin = signal.detrend(y, type='linear')
-
-   >>> plt.plot(t, y, '-rx')
-   >>> plt.plot(t, yconst, '-bo')
-   >>> plt.plot(t, ylin, '-k+')
-   >>> plt.grid()
-   >>> plt.legend(['signal', 'const. detrend', 'linear detrend'])
-   >>> plt.show()
-
 
 
 

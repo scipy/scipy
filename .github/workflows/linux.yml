@@ -1,4 +1,4 @@
-name: Linux Meson tests
+name: Linux tests
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Meson build
+    name: mypy (py3.10) & dev deps (py3.12), fast, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -114,11 +114,20 @@ jobs:
         ./check_pyext_symbol_hiding.sh ../build
         popd
 
+    - name: Check usage of install tags
+      run: |
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel
+        python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel,tests
+        python tools/check_installation.py ${{ env.INSTALLDIR }}
+
     - name: Mypy
       if: matrix.python-version == '3.10'
       run: |
         # Packages that are only needed for their annotations
-        python -m pip install mypy==1.0.0 types-psutil typing_extensions
+        python -m pip install mypy==1.10.0 types-psutil typing_extensions
         python -m pip install pybind11 sphinx
 
         python -u dev.py mypy
@@ -130,7 +139,7 @@ jobs:
 
   #################################################################################
   test_venv_install:
-    name: Pip install into venv
+    name: Install into venv, cluster only, pyAny/npAny, pip+cluster.test()
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -179,7 +188,7 @@ jobs:
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
-        
+
         # Basic tests
         cd ..
         python -c "import scipy"
@@ -189,7 +198,7 @@ jobs:
   #################################################################################
   python_debug:
     # also uses the vcs->sdist->wheel route.
-    name: Python-debug & ATLAS
+    name: Python-debug & ATLAS & sdist+wheel, fast, py3.10/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -219,7 +228,7 @@ jobs:
   #################################################################################
   gcc9:
     # Purpose is to examine builds with oldest-supported gcc and test with pydata/sparse.
-    name: Build with gcc-9
+    name: Oldest GCC & pydata/sparse, fast, py3.10/npMin, pip+pytest
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -271,7 +280,7 @@ jobs:
   #################################################################################
   prerelease_deps_coverage_64bit_blas:
     # TODO: re-enable ILP64 build.
-    name: Prerelease deps, coverage and 64-bit BLAS
+    name: Prerelease deps & coverage report, full, py3.10/npMin & py3.11/npPre, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -357,7 +366,7 @@ jobs:
 
   #################################################################################
   linux_32bit:
-    name: Linux - 32 bit
+    name: 32-bit, fast, py3.10/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1
@@ -387,3 +396,48 @@ jobs:
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
         LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
+
+  #################################################################################
+  distro_multiple_pythons:
+    # Purpose is to build for a non-default Python interpreter in a Linux distro
+    # For such a build config, `python`/`python3` executables may not have
+    # build dependencies like Cython or NumPy installed.
+    name: non-default Python interpreter, fast, py3.10/npMin, pip+pytest
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          # `python3-dev` yields Python 3.10 on Ubuntu 22.04
+          sudo apt install -y python3-dev python3.11-dev ninja-build pkg-config libatlas-base-dev liblapack-dev
+
+      - name: Setup Python build deps
+        run: |
+          python3.11 -m pip install build pythran pybind11 cython numpy meson-python
+
+      - name: Build wheel and install
+        run: |
+          python3.11 -m build -wnx -Csetup-args=-Dblas=blas-atlas -Csetup-args=-Dlapack=lapack-atlas -Ccompile-args=-j2
+          python3.11 -m pip install dist/*.whl
+
+      - name: Install test dependencies
+        run: |
+          python3.11 -m pip install pytest hypothesis
+          python3.10 -m pip install meson  # ensure compile test work with this
+
+      - name: Run tests
+        run: |
+          # Just a small subset of tests; this will be fine if the build
+          # succeeds (that's the real purpose of this job)
+          pushd $RUNNER_TEMP
+          python3.11 -m pytest --pyargs scipy.cluster
+          python3.11 -m pytest --pyargs scipy.linalg
+          popd

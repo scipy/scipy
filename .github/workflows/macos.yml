@@ -1,4 +1,4 @@
-name: macOS tests (meson)
+name: macOS tests
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
     uses: ./.github/workflows/commit_message.yml
 
   test_meson:
-    name: Meson build
+    name: Conda & umfpack/scikit-sparse, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -110,6 +110,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
+        mamba install python=${{ matrix.python-version}}
 
         # optional test dependencies
         mamba install scikit-umfpack scikit-sparse
@@ -137,7 +138,7 @@ jobs:
 
 
   test_scipy_openblas:
-    name: M1 test - openblas
+    name: M1 & OpenBLAS, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -165,14 +166,14 @@ jobs:
         sudo xcode-select -s /Applications/Xcode_15.2.app
         
         git submodule update --init
-        # for some reason gfortran is not on the path
-        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran 
+        GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
-        # make sure we have openblas
+        # make sure we have openblas and gfortran dylibs
         bash tools/wheels/cibw_before_build_macos.sh $PWD
-        export DYLD_LIBRARY_PATH=/usr/local/gfortran/lib:/opt/arm64-builds/lib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib
         export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
     
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
@@ -181,8 +182,9 @@ jobs:
         pip install pooch pytest hypothesis
         python dev.py -n test 
 
+
   test_meson_accelerate:
-    name: Meson build (Accelerate)
+    name: Accelerate, fast, py3.11/npAny, dev.py
     needs: get_commit_message
     # If using act to run CI locally the github object does not exist and
     # the usual skipping should not be enforced
@@ -210,13 +212,16 @@ jobs:
         sudo xcode-select -s /Applications/Xcode_15.2.app
 
         git submodule update --init
-        # for some reason gfortran is not on the path
-        GFORTRAN_LOC=$(brew --prefix gfortran)/bin/gfortran
+        GFORTRAN_LOC=$(which gfortran-13)
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
+        # Ensure we have gfortran dylib
+        GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
+
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build -C-Dblas=accelerate
+        python dev.py build --with-accelerate
 
         pip install pooch pytest hypothesis
         python dev.py -n test

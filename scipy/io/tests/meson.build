@@ -7,7 +7,8 @@ py3.install_sources([
     'test_paths.py',
     'test_wavfile.py'
   ],
-  subdir: 'scipy/io/tests'
+  subdir: 'scipy/io/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([
@@ -97,5 +98,6 @@ py3.install_sources([
     'data/test-8000Hz-le-5ch-9S-5bit.wav',
     'data/various_compressed.sav'
   ],
-  subdir: 'scipy/io/tests/data'
+  subdir: 'scipy/io/tests/data',
+  install_tag: 'tests'
 )

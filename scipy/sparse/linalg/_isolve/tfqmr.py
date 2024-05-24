@@ -1,15 +1,13 @@
 import numpy as np
 from .iterative import _get_atol_rtol
 from .utils import make_system
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = ['tfqmr']
 
 
-@_deprecate_positional_args(version="1.14.0")
-def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
-          callback=None, atol=None, rtol=1e-5, show=False):
+def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
+          callback=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -27,12 +25,7 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
-        The default is ``rtol=1e-5``, the default for ``atol`` is ``rtol``.
-
-        .. warning::
-
-           The default value for ``atol`` will be changed to ``0.0`` in
-           SciPy 1.14.0.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -50,11 +43,6 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
         Specify ``show = True`` to show the convergence, ``show = False`` is
         to close the output of the convergence.
         Default is `False`.
-    tol : float, optional, deprecated
-
-        .. deprecated:: 1.12.0
-           `tfqmr` keyword argument ``tol`` is deprecated in favor of ``rtol``
-           and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -94,7 +82,7 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
     >>> from scipy.sparse.linalg import tfqmr
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = tfqmr(A, b)
+    >>> x, exitCode = tfqmr(A, b, atol=0.0)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)
@@ -139,8 +127,8 @@ def tfqmr(A, b, x0=None, *, tol=_NoValue, maxiter=None, M=None,
     if r0norm == 0:
         return (postprocess(x), 0)
 
-    # we call this to get the right atol and raise warnings as necessary
-    atol, _ = _get_atol_rtol('tfqmr', r0norm, tol, atol, rtol)
+    # we call this to get the right atol and raise errors as necessary
+    atol, _ = _get_atol_rtol('tfqmr', r0norm, atol, rtol)
 
     for iter in range(maxiter):
         even = iter % 2 == 0

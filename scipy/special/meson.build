@@ -92,6 +92,7 @@ py3.extension_module('_specfun',
 #       There's no good way around this currently, because py3.install_sources
 #       doesn't accept generated targets. See TODO near the end of
 #       scipy/linalg/meson.build for more details.
+_generate_pyx = find_program('_generate_pyx.py')
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
@@ -101,7 +102,7 @@ cython_special = custom_target('cython_special',
     '_ufuncs_cxx_defs.h'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  command: [_generate_pyx, '-o', '@OUTDIR@'],
   install: true,
   install_dir: py3.get_install_dir() / 'scipy/special',
   install_tag: 'devel',
@@ -230,7 +231,14 @@ py3.extension_module('_test_internal',
   dependencies: [np_dep],
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/special'
+  subdir: 'scipy/special',
+  install_tag: 'tests'
+)
+
+py3.install_sources(
+  '_test_internal.pyi',
+  subdir: 'scipy/special',
+  install_tag: 'tests'
 )
 
 # Must use `custom_target`, because `py3.install_sources` does not work with
@@ -266,7 +274,7 @@ foreach npz_file: npz_files
     ],
     install: true,
     install_dir: py3.get_install_dir() / 'scipy/special/tests/data',
-    install_tag: 'python-runtime',
+    install_tag: 'tests',
   )
 endforeach
 
@@ -339,7 +347,6 @@ python_sources = [
   '_spfun_stats.py',
   '_spherical_bessel.py',
   '_support_alternative_backends.py',
-  '_test_internal.pyi',
   '_testutils.py',
   '_ufuncs.pyi',
   'add_newdocs.py',

@@ -519,7 +519,7 @@ def cont2discrete(system, dt, method="zoh", alpha=None):
 
     elif method == 'impulse':
         if not np.allclose(d, 0):
-            raise ValueError("Impulse method is only applicable"
+            raise ValueError("Impulse method is only applicable "
                              "to strictly proper systems")
 
         ad = linalg.expm(a * dt)

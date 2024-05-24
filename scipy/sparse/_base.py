@@ -110,11 +110,15 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    def __init__(self, maxprint=MAXPRINT):
+    def __init__(self, arg1, maxprint=MAXPRINT):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
                              " to be instantiated directly.")
+        if isinstance(self, sparray) and np.isscalar(arg1):
+            raise ValueError(
+                "scipy sparse array classes do not support instantiation from a scalar"
+            )
         self.maxprint = maxprint
 
     @property
@@ -328,10 +332,9 @@ class _spbase:
     def __repr__(self):
         _, format_name = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
-        shape_str = 'x'.join(str(x) for x in self.shape)
         return (
-            f"<{shape_str} sparse {sparse_cls} of type '{self.dtype.type}'\n"
-            f"\twith {self.nnz} stored elements in {format_name} format>"
+            f"<{format_name} sparse {sparse_cls} of dtype '{self.dtype}'\n"
+            f"\twith {self.nnz} stored elements and shape {self.shape}>"
         )
 
     def __str__(self):
@@ -340,18 +343,23 @@ class _spbase:
         A = self.tocoo()
 
         # helper function, outputs "(i,j)  v"
-        def tostr(row, col, data):
-            triples = zip(list(zip(row, col)), data)
-            return '\n'.join([('  {}\t{}'.format(*t)) for t in triples])
+        def tostr(coords, data):
+            pairs = zip(zip(*(c.tolist() for c in coords)), data)
+            return '\n'.join(f'  {idx}\t{val}' for idx, val in pairs)
 
+        out = repr(self)
+        if self.nnz == 0:
+            return out
+
+        out += '\n  Coords\tValues\n'
         if self.nnz > maxprint:
             half = maxprint // 2
-            out = tostr(A.row[:half], A.col[:half], A.data[:half])
+            out += tostr(tuple(c[:half] for c in A.coords), A.data[:half])
             out += "\n  :\t:\n"
-            half = maxprint - maxprint//2
-            out += tostr(A.row[-half:], A.col[-half:], A.data[-half:])
+            half = maxprint - half
+            out += tostr(tuple(c[-half:] for c in A.coords), A.data[-half:])
         else:
-            out = tostr(A.row, A.col, A.data)
+            out += tostr(A.coords, A.data)
 
         return out
 
@@ -569,8 +577,6 @@ class _spbase:
         if issparse(other):
             if self.shape[-1] != other.shape[0]:
                 raise ValueError('dimension mismatch')
-            if other.ndim == 1:
-                raise ValueError('Cannot yet multiply a 1d sparse array')
             return self._matmul_sparse(other)
 
         # If it's a list or whatever, treat it like an array
@@ -1321,7 +1327,7 @@ class _spbase:
 
 class sparray:
     """A namespace class to separate sparray from spmatrix"""
-    pass
+
 
 sparray.__doc__ = _spbase.__doc__
 

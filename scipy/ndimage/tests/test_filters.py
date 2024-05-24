@@ -792,6 +792,32 @@ class TestNdimageFilters:
         expected = filter_func(array, *args, size_3d, **kwargs)
         assert_allclose(output, expected)
 
+    @pytest.mark.parametrize("filter_func, kwargs",
+                             [(ndimage.minimum_filter, {}),
+                              (ndimage.maximum_filter, {}),
+                              (ndimage.median_filter, {}),
+                              (ndimage.rank_filter, {"rank": 1}),
+                              (ndimage.percentile_filter, {"percentile": 30})])
+    def test_filter_weights_subset_axes_origins(self, filter_func, kwargs):
+        axes = (-2, -1)
+        origins = (0, 1)
+        array = np.arange(6 * 8 * 12, dtype=np.float64).reshape(6, 8, 12)
+        axes = np.array(axes)
+
+        # weights with ndim matching len(axes)
+        footprint = np.ones((3, 5), dtype=bool)
+        footprint[0, 1] = 0  # make non-separable
+
+        output = filter_func(
+            array, footprint=footprint, axes=axes, origin=origins, **kwargs)
+
+        output0 = filter_func(
+            array, footprint=footprint, axes=axes, origin=0, **kwargs)
+
+        # output has origin shift on last axis relative to output0, so
+        # expect shifted arrays to be equal.
+        np.testing.assert_array_equal(output[:, :, 1:], output0[:, :, :-1])
+
     @pytest.mark.parametrize(
         'filter_func, args',
         [(ndimage.gaussian_filter, (1.0,)),      # args = (sigma,)

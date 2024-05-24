@@ -6,7 +6,7 @@ Making a SciPy release
 At the highest level, this is what the release manager does to release a new
 SciPy version:
 
-#. Propose a release schedule on the scipy-dev mailing list.
+#. Propose a release schedule in the SciPy forum at https://discuss.scientific-python.org/.
 #. Create the maintenance branch for the release.
 #. Tag the release.
 #. Build all release artifacts (sources, installers, docs).
@@ -48,7 +48,8 @@ is needed, while a simple bug-fix that's backported from main doesn't require
 a new RC.
 
 To propose a schedule, send a list with estimated dates for branching and
-beta/rc/final releases to scipy-dev. In the same email, ask everyone to check
+beta/rc/final releases to the SciPy forum at
+https://discuss.scientific-python.org/. In the same message, ask everyone to check
 if there are important issues/PRs that need to be included and aren't tagged
 with the Milestone for the release or the "backport-candidate" label.
 
@@ -63,13 +64,14 @@ Maintenance branches are named ``maintenance/<major>.<minor>.x`` (e.g. 0.19.x).
 To create one, simply push a branch with the correct name to the scipy repo.
 Immediately after, push a commit where you increment the version number on the
 main branch and add release notes for that new version.  Send an email to
-scipy-dev to let people know that you've done this.
+the SciPy forum at https://discuss.scientific-python.org/ to let people know
+that you've done this.
 
 
 Updating the version switcher
 ------------------------------
 The version switcher dropdown needs to be updated with the new release
-information.
+information on the ``main`` branch only.
 
 - ``doc/source/_static/version_switcher.json``: add the new release,
   the new development version, and transfer ``"preferred": true`` from the old release
@@ -86,7 +88,6 @@ creating a maintenance branch:
 
 - ``pyproject.toml``: all build-time dependencies, as well as  supported Python
                       and NumPy versions
-- ``setup.py``: supported Python and NumPy versions
 - ``scipy/__init__.py``: for NumPy version check
 
 Each file has comments describing how to set the correct upper bounds.
@@ -228,14 +229,11 @@ not release candidates.
 
 Wrapping up
 -----------
-Send an email announcing the release to the following mailing lists:
+Send a message announcing the release to
+https://discuss.scientific-python.org/c/announcements/.
 
-- scipy-dev
-- numpy-discussion
-- python-announce (not for beta/rc releases)
-
-For beta and rc versions, ask people in the email to test (run the scipy tests
-and test against their own code) and report issues on Github or scipy-dev.
+For beta and rc versions, ask people to test (run the scipy tests
+and test against their own code) and report issues on Github or Discourse.
 
 After the final release is done, port relevant changes to release notes, build
 scripts, author name mapping in ``tools/authors.py`` and any other changes that
