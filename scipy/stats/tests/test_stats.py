@@ -6189,9 +6189,6 @@ class TestDescribe:
             stats.describe(xp.asarray([]))
 
 
-@pytest.mark.skip_xp_backends(cpu_only=True,
-                              reasons=['Uses NumPy for pvalue'])
-@pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 class NormalityTests:
     def test_too_small(self, xp):

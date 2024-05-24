@@ -17,7 +17,8 @@ from scipy._lib._array_api import (array_namespace, xp_minimum, size as xp_size,
 from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
-from ._stats_py import find_repeats, _get_pvalue, SignificanceResult  # noqa: F401
+from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
+                        _SimpleNormal)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2836,7 +2837,7 @@ def ansari(x, y, alternative='two-sided'):
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
     z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, distributions.norm, alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
     return AnsariResult(AB[()], pvalue[()])
 
 
@@ -3879,7 +3880,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         mnM = n * (N * N - 1.0) / 12
         varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
         z = (M - mnM) / sqrt(varM)
-    pval = _get_pvalue(z, distributions.norm, alternative)
+    pval = _get_pvalue(z, _SimpleNormal(), alternative)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
