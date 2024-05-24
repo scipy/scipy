@@ -1663,6 +1663,12 @@ class TestDifferentialEvolutionSolver:
         solver.solve()
         assert calls[0] > 0
 
+        # check custom strategy works with updating='deferred'
+        res = differential_evolution(
+            rosen, bounds, strategy=custom_strategy_fn, updating='deferred'
+        )
+        assert res.success
+
         def custom_strategy_fn(candidate, population, rng=None):
             return np.array([1.0, 2.0])
 
@@ -1672,3 +1678,4 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+

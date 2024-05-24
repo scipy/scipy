@@ -1681,6 +1681,7 @@ class DifferentialEvolutionSolver:
             if trial.shape != (self.parameter_count,):
                 raise RuntimeError(msg)
         else:
+            S = candidate.shape[0]
             trial = np.array(
                 [self.strategy(c, _population, rng=rng) for c in candidate],
                 dtype=float
