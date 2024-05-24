@@ -4006,8 +4006,6 @@ power_div_empty_cases = [
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestPowerDivergence:
 
     def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
@@ -4210,8 +4208,6 @@ class TestPowerDivergence:
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestChisquare:
     def test_gh_chisquare_12282(self, xp):
         # Currently `chisquare` is implemented via power_divergence
@@ -6322,8 +6318,6 @@ class TestRankSums:
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
-@pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestJarqueBera:
     def test_jarque_bera_against_R(self, xp):
@@ -6340,6 +6334,7 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, ref[1])
 
     @skip_xp_backends(np_only=True)
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_jarque_bera_array_like(self):
         # array-like only relevant for NumPy
         np.random.seed(987654321)

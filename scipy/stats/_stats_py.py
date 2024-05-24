@@ -1995,18 +1995,18 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     hypothesis [5]_.
 
     """
+    xp = array_namespace(a)
+
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    k2 = s*s + k*k
+    X2 = s*s + k*k
 
-    xp = array_namespace(k2)
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, 2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = _get_pvalue(X2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+
+    X2 = X2[()] if X2.ndim == 0 else X2
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return NormaltestResult(k2, pvalue)
+    return NormaltestResult(X2, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2168,15 +2168,14 @@ def jarque_bera(x, *, axis=None):
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    k2 = n / 6 * (s**2 + k**2 / 4)
+    X2 = n / 6 * (s**2 + k**2 / 4)
 
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, df=2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    pvalue = _get_pvalue(X2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+
+    X2 = X2[()] if X2.ndim == 0 else X2
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return SignificanceResult(k2, pvalue)
+    return SignificanceResult(X2, pvalue)
 
 
 #####################################
@@ -4386,7 +4385,8 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    p = distributions.chi2.sf(A, len(samples) - 1)
+    df = len(samples) - 1
+    p = _get_pvalue(A, _SimpleChi2(df), alternative='greater', xp=np)
     return AlexanderGovernResult(A, p)
 
 
@@ -7656,9 +7656,9 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     num_obs = _m_count(terms, axis=axis, xp=xp)
     ddof = xp.asarray(ddof)
 
-    stat_np = np.asarray(stat)
-    pvalue = distributions.chi2.sf(stat_np, num_obs - 1 - ddof)
-    pvalue = xp.asarray(pvalue, dtype=stat.dtype)
+    df = xp.asarray(num_obs - 1 - ddof)
+    pvalue = _get_pvalue(stat, _SimpleChi2(df), alternative='greater', xp=xp)
+
     stat = stat[()] if stat.ndim == 0 else stat
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -8939,7 +8939,8 @@ def kruskal(*samples, nan_policy='propagate'):
     df = num_groups - 1
     h /= ties
 
-    return KruskalResult(h, distributions.chi2.sf(h, df))
+    pvalue = _get_pvalue(h, _SimpleChi2(df), alternative='greater', xp=np)
+    return KruskalResult(h, pvalue)
 
 
 FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
@@ -9038,7 +9039,8 @@ def friedmanchisquare(*samples):
     ssbn = np.sum(data.sum(axis=0)**2)
     chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
+    pvalue = _get_pvalue(chisq, _SimpleChi2(k - 1), alternative='greater', xp=np)
+    return FriedmanchisquareResult(chisq, pvalue)
 
 
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
@@ -9298,9 +9300,12 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
-        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+        pval = _get_pvalue(statistic, _SimpleChi2(2 * len(pvalues)),
+                           alternative='greater', xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
+        # _SimpleChi2 doesn't have `cdf` yet;
+        # add it when `combine_pvalues` is converted to array API
         pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
@@ -10717,7 +10722,7 @@ def expectile(a, alpha=0.5, *, weights=None):
 
 class _SimpleNormal:
     # A very simple, array-API compatible normal distribution for use in
-    # hypothesis tests. Will be replaced by new infrastructure Normal
+    # hypothesis tests. May be replaced by new infrastructure Normal
     # distribution in due time.
 
     def cdf(self, x):
@@ -10725,3 +10730,14 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
+
+
+class _SimpleChi2:
+    # A very simple, array-API compatible chi-squared distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure chi-squared
+    # distribution in due time.
+    def __init__(self, df):
+        self.df = df
+
+    def sf(self, x):
+        return special.chdtrc(self.df, x)
