@@ -1626,7 +1626,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
     Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
 
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -1836,7 +1836,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
 
-    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
 
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -4952,7 +4952,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # This needs to be done with NumPy arrays given the existing infrastructure.
     ab = n/2 - 1
     dist = stats.beta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(np.asarray(r), dist, alternative)
+    pvalue = _get_pvalue(np.asarray(r), dist, alternative, xp=np)
     pvalue = xp.asarray(pvalue, dtype=dtype)
 
     r = r[()] if r.ndim == 0 else r
@@ -5572,7 +5572,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = _get_pvalue(t, distributions.t(dof), alternative)
+    prob = _get_pvalue(t, distributions.t(dof), alternative, xp=np)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
@@ -6018,7 +6018,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
         z = con_minus_dis / np.sqrt(var)
-        pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
+        pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
@@ -6487,7 +6487,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     # `from_dlpack` will enable the transfer from other devices, and
     # `_get_pvalue` will even be reworked to support the native backend.
     t_np = np.asarray(t)
-    prob = _get_pvalue(t_np, distributions.t(df), alternative)
+    prob = _get_pvalue(t_np, distributions.t(df), alternative, xp=np)
     prob = xp.asarray(prob, dtype=t.dtype)
     prob = prob[()] if prob.ndim == 0 else prob
 
@@ -6538,7 +6538,7 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
 
     return (t, prob)
 
@@ -7340,7 +7340,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(dm, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = np.broadcast_to(df, t.shape)[()]
@@ -8814,7 +8814,7 @@ def ranksums(x, y, alternative='two-sided'):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
     return RanksumsResult(z[()], pvalue[()])
 
@@ -9165,7 +9165,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
 
     return BrunnerMunzelResult(wbfn, p)
 
