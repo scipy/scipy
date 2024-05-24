@@ -2837,7 +2837,7 @@ def ansari(x, y, alternative='two-sided'):
     # Large values of AB indicate larger dispersion for the y sample.
     # This is opposite to the way we define the ratio of scales. see [1]_.
     z = (mnAB - AB) / sqrt(varAB)
-    pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     return AnsariResult(AB[()], pvalue[()])
 
 
@@ -3880,7 +3880,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
         mnM = n * (N * N - 1.0) / 12
         varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
         z = (M - mnM) / sqrt(varM)
-    pval = _get_pvalue(z, _SimpleNormal(), alternative)
+    pval = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
     if res_shape == ():
         # Return scalars, not 0-D arrays
