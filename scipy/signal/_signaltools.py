@@ -1,11 +1,15 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+from __future__ import annotations # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
 import timeit
 import warnings
+from typing import Literal
+
+from numpy._typing import ArrayLike
 
 from scipy.spatial import cKDTree
 from . import _sigtools
@@ -3503,9 +3507,10 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    """
-    Remove linear trend along axis from data.
+def detrend(data: np.ndarray, axis: int = -1,
+            type: Literal['linear', 'constant'] = 'linear',
+            bp: ArrayLike | int = 0, overwrite_data: bool = False) -> np.ndarray:
+    r"""Remove linear or constant trend along axis from data.
 
     Parameters
     ----------
@@ -3532,17 +3537,55 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     ret : ndarray
         The detrended input data.
 
+    Notes
+    -----
+    Detrending can be interpreted as substracting a least squares fit polyonimial:
+    Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
+    polynomial, 'linear' to a first degree polynomial. Consult the example below.
+
+    See Also
+    --------
+    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+
+
     Examples
     --------
-    >>> import numpy as np
-    >>> from scipy import signal
-    >>> rng = np.random.default_rng()
-    >>> npoints = 1000
-    >>> noise = rng.standard_normal(npoints)
-    >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max()
-    0.06  # random
+    The following example detrends the function :math:`x(t) = \sin(\pi t) + 1/4`:
 
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import detrend
+    ...
+    >>> t = np.linspace(-0.5, 0.5, 21)
+    >>> x = np.sin(np.pi*t) + 1/4
+    ...
+    >>> x_d_const = detrend(x, type='constant')
+    >>> x_d_linear = detrend(x, type='linear')
+    ...
+    >>> fig1, ax1 = plt.subplots()
+    >>> ax1.set_title(r"Detrending $x(t)=\sin(\pi t) + 1/4$")
+    >>> ax1.set(xlabel="t", ylabel="$x(t)$", xlim=(t[0], t[-1]))
+    >>> ax1.axhline(y=0, color='black', linewidth=.5)
+    >>> ax1.axvline(x=0, color='black', linewidth=.5)
+    >>> ax1.plot(t, x, 'C0.-',  label="No detrending")
+    >>> ax1.plot(t, x_d_const, 'C1x-', label="type='constant'")
+    >>> ax1.plot(t, x_d_linear, 'C2+-', label="type='linear'")
+    >>> ax1.legend()
+    >>> plt.show()
+
+    Alternatively, NumPy's `~numpy.polynomial.polynomial.Polynomial` can be used for
+    detrending as well:
+
+    >>> pp0 = np.polynomial.Polynomial.fit(t, x, deg=0)  # fit degree 0 polynomial
+    >>> np.allclose(x_d_const, x - pp0(t))  # compare with constant detrend
+    True
+    >>> pp1 = np.polynomial.Polynomial.fit(t, x, deg=1)  # fit degree 1 polynomial
+    >>> np.allclose(x_d_linear, x - pp1(t))  # compare with linear detrend
+    True
+
+    Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
+    degree polynomials. Consult its documentation on how to extract the polynomial
+    coefficients.
     """
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")
