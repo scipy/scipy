@@ -693,7 +693,8 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    p = scipy.stats._stats_py._get_pvalue(Z, distributions.norm, alternative)
+    norm = scipy.stats._stats_py._SimpleNormal()
+    p = scipy.stats._stats_py._get_pvalue(Z, norm, alternative)
 
     return d, p
 

@@ -1423,17 +1423,19 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 
 
-def _get_pvalue(statistic, distribution, alternative, symmetric=True):
+def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
     """Get p-value given the statistic, (continuous) distribution, and alternative"""
+    xp = array_namespace(statistic) if xp is None else xp
 
     if alternative == 'less':
         pvalue = distribution.cdf(statistic)
     elif alternative == 'greater':
         pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
-        pvalue = 2 * (distribution.sf(np.abs(statistic)) if symmetric
-                      else np.minimum(distribution.cdf(statistic),
-                                      distribution.sf(statistic)))
+        pvalue = 2 * (distribution.sf(xp.abs(statistic)) if symmetric
+                      else xp_minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic),
+                                      xp=xp))
     else:
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         raise ValueError(message)
@@ -1624,9 +1626,8 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
     Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    Z_np = np.asarray(Z)
-    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
-    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative)
+
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return SkewtestResult(Z, pvalue)
@@ -1835,9 +1836,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
 
-    Z_np = np.asarray(Z)
-    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
-    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative)
+
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return KurtosistestResult(Z, pvalue)
@@ -6018,7 +6018,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
         z = con_minus_dis / np.sqrt(var)
-        pvalue = _get_pvalue(z, distributions.norm, alternative)
+        pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
@@ -8814,7 +8814,7 @@ def ranksums(x, y, alternative='two-sided'):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    pvalue = _get_pvalue(z, distributions.norm, alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative)
 
     return RanksumsResult(z[()], pvalue[()])
 
@@ -9160,7 +9160,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
         distribution = distributions.t(df)
     elif distribution == "normal":
-        distribution = distributions.norm()
+        distribution = _SimpleNormal()
     else:
         raise ValueError(
             "distribution should be 't' or 'normal'")
@@ -10713,3 +10713,15 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+
+class _SimpleNormal:
+    # A very simple, array-API compatible normal distribution for use in
+    # hypothesis tests. Will be replaced by new infrastructure Normal
+    # distribution in due time.
+
+    def cdf(self, x):
+        return special.ndtr(x)
+
+    def sf(self, x):
+        return special.ndtr(-x)
