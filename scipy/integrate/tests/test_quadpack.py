@@ -342,6 +342,7 @@ class TestQuad:
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize(
         "x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, expected",
         [

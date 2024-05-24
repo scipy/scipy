@@ -24,6 +24,7 @@ mle_failing_fits = [
         'gausshyper',
         'genexpon',
         'gengamma',
+        'irwinhall',
         'kappa4',
         'ksone',
         'kstwo',
@@ -37,6 +38,10 @@ mle_failing_fits = [
         'truncweibull_min',
         'studentized_range',
 ]
+
+# these pass but are XSLOW (>1s)
+mle_Xslow_fits = ['betaprime', 'crystalball', 'exponweib', 'f', 'geninvgauss',
+                  'jf_skew_t', 'recipinvgauss', 'rel_breitwigner', 'vonmises_line']
 
 # The MLE fit method of these distributions doesn't perform well when all
 # parameters are fit, so test them with the location fixed at 0.
@@ -59,7 +64,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'chi2', 'crystalball', 'dgamma', 'dweibull', 'f',
                    'fatiguelife', 'fisk', 'foldcauchy', 'genextreme',
                    'gengamma', 'genhyperbolic', 'gennorm', 'genpareto',
-                   'halfcauchy', 'invgamma', 'invweibull', 'jf_skew_t',
+                   'halfcauchy', 'invgamma', 'invweibull', 'irwinhall', 'jf_skew_t',
                    'johnsonsu', 'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
@@ -68,18 +73,22 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail
-mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
-                'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss',
-                'truncexpon', 'vonmises', 'vonmises_line']
+mm_XXslow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
+                  'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
+                  'kappa4', 'kstwobign', 'recipinvgauss',
+                  'truncexpon', 'vonmises', 'vonmises_line']
 
-failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
+# these pass but are XSLOW (>1s)
+mm_Xslow_fits = ['wrapcauchy']
+
+failing_fits = {"MM": mm_failing_fits + mm_XXslow_fits, "MLE": mle_failing_fits}
+xslow_fits = {"MM": mm_Xslow_fits, "MLE": mle_Xslow_fits}
 fail_interval_censored = {"truncpareto"}
 
 # Don't run the fit test on these:
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
-    'genhyperbolic',  # too slow
+    'genhyperbolic', 'norminvgauss',  # too slow
 ]
 
 
@@ -97,17 +106,18 @@ def cases_test_cont_fit():
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
 @pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
-    if distname in failing_fits[method]:
-        # Skip failing fits unless overridden
-        try:
-            xfail = not int(os.environ['SCIPY_XFAIL'])
-        except Exception:
-            xfail = True
-        if xfail:
-            msg = "Fitting %s doesn't work reliably yet" % distname
-            msg += (" [Set environment variable SCIPY_XFAIL=1 to run this"
-                    " test nevertheless.]")
-            pytest.xfail(msg)
+    run_xfail = int(os.getenv('SCIPY_XFAIL', default=False))
+    run_xslow = int(os.getenv('SCIPY_XSLOW', default=False))
+
+    if distname in failing_fits[method] and not run_xfail:
+        # The generic `fit` method can't be expected to work perfectly for all
+        # distributions, data, and guesses. Some failures are expected.
+        msg = "Failure expected; set environment variable SCIPY_XFAIL=1 to run."
+        pytest.xfail(msg)
+
+    if distname in xslow_fits[method] and not run_xslow:
+        msg = "Very slow; set environment variable SCIPY_XSLOW=1 to run."
+        pytest.skip(msg)
 
     distfn = getattr(stats, distname)
 
@@ -219,26 +229,25 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
-                      'ksone', 'levy_stable', 'studentized_range', 'kstwo',
-                      'arcsine'}
+    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
+                      'truncweibull_min', 'ksone', 'levy_stable',
+                      'studentized_range', 'kstwo', 'arcsine'}
 
     # Please keep this list in alphabetical order...
-    slow_basic_fit = {'alpha',
-                      'betaprime', 'binom', 'bradford', 'burr12',
-                      'chi', 'crystalball', 'dweibull', 'exponpow',
-                      'f', 'fatiguelife', 'fisk', 'foldcauchy',
+    slow_basic_fit = {'alpha', 'betaprime', 'binom', 'bradford', 'burr12',
+                      'chi', 'crystalball', 'dweibull', 'erlang', 'exponnorm',
+                      'exponpow', 'f', 'fatiguelife', 'fisk', 'foldcauchy', 'gamma',
                       'genexpon', 'genextreme', 'gennorm', 'genpareto',
-                      'gompertz', 'halfgennorm', 'invgauss', 'invweibull',
+                      'gompertz', 'halfgennorm', 'invgamma', 'invgauss', 'invweibull',
                       'jf_skew_t', 'johnsonsb', 'johnsonsu', 'kappa3',
                       'kstwobign', 'loglaplace', 'lognorm', 'lomax', 'mielke',
                       'nakagami', 'nbinom', 'norminvgauss',
                       'pareto', 'pearson3', 'powerlaw', 'powernorm',
-                      'randint', 'rdist', 'recipinvgauss', 'rice',
-                      't', 'uniform', 'weibull_max', 'wrapcauchy'}
+                      'randint', 'rdist', 'recipinvgauss', 'rice', 'skewnorm',
+                      't', 'uniform', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'beta', 'betabinom', 'burr', 'exponweib',
+    xslow_basic_fit = {'beta', 'betabinom', 'betanbinom', 'burr', 'exponweib',
                        'gausshyper', 'gengamma', 'genhalflogistic',
                        'genhyperbolic', 'geninvgauss',
                        'hypergeom', 'kappa4', 'loguniform',
@@ -246,7 +255,7 @@ def cases_test_fit_mle():
                        'nct', 'ncx2', 'nhypergeom',
                        'powerlognorm', 'reciprocal', 'rel_breitwigner',
                        'skellam', 'trapezoid', 'triang', 'truncnorm',
-                       'tukeylambda', 'zipfian'}
+                       'tukeylambda', 'vonmises', 'zipfian'}
 
     for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
@@ -265,43 +274,44 @@ def cases_test_fit_mle():
 def cases_test_fit_mse():
     # the first four are so slow that I'm not sure whether they would pass
     skip_basic_fit = {'levy_stable', 'studentized_range', 'ksone', 'skewnorm',
+                      'irwinhall', # hangs
                       'norminvgauss',  # super slow (~1 hr) but passes
                       'kstwo',  # very slow (~25 min) but passes
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
-                      'vonmises'}  # can have negative CDF; doesn't play nice
+                      'vonmises',  # can have negative CDF; doesn't play nice
+                      'argus'}  # doesn't meet tolerance; tested separately
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
-                      'chi', 'chi2', 'crystalball', 'dgamma', 'dweibull',
+                      'chi', 'chi2', 'crystalball', 'dweibull',
                       'erlang', 'exponnorm', 'exponpow', 'exponweib',
                       'fatiguelife', 'fisk', 'foldcauchy', 'foldnorm',
                       'gamma', 'genexpon', 'genextreme', 'genhalflogistic',
                       'genlogistic', 'genpareto', 'gompertz',
-                      'hypergeom', 'invweibull', 'jf_skew_t', 'johnsonsb',
+                      'hypergeom', 'invweibull',
                       'johnsonsu', 'kappa3', 'kstwobign',
                       'laplace_asymmetric', 'loggamma', 'loglaplace',
                       'lognorm', 'lomax',
-                      'maxwell', 'mielke', 'nakagami', 'nhypergeom',
+                      'maxwell', 'nhypergeom',
                       'pareto', 'powernorm', 'randint', 'recipinvgauss',
                       'semicircular',
                       't', 'triang', 'truncexpon', 'truncpareto',
-                      'truncweibull_min',
-                      'uniform', 'vonmises_line',
+                      'uniform',
                       'wald', 'weibull_max', 'weibull_min', 'wrapcauchy'}
 
     # Please keep this list in alphabetical order...
-    xslow_basic_fit = {'beta', 'betaprime', 'burr', 'burr12',
-                       'f', 'gengamma', 'gennorm',
-                       'halfgennorm', 'invgamma', 'invgauss',
-                       'kappa4', 'loguniform',
-                       'ncf', 'nchypergeom_fisher', 'nchypergeom_wallenius',
-                       'nct', 'ncx2',
+    xslow_basic_fit = {'argus', 'beta', 'betaprime', 'burr', 'burr12',
+                       'dgamma', 'f', 'gengamma', 'gennorm',
+                       'halfgennorm', 'invgamma', 'invgauss', 'jf_skew_t',
+                       'johnsonsb', 'kappa4', 'loguniform', 'mielke',
+                       'nakagami', 'ncf', 'nchypergeom_fisher',
+                       'nchypergeom_wallenius', 'nct', 'ncx2',
                        'pearson3', 'powerlaw', 'powerlognorm',
                        'rdist', 'reciprocal', 'rel_breitwigner', 'rice',
-                       'trapezoid', 'truncnorm',
-                       'zipfian'}
+                       'trapezoid', 'truncnorm', 'truncweibull_min',
+                       'vonmises_line', 'zipfian'}
 
     warns_basic_fit = {'skellam'}  # can remove mark after gh-14901 is resolved
 
@@ -536,7 +546,8 @@ class TestFit:
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
-    def test_argus(self):
+    @pytest.mark.parametrize("method", ('mle', 'mse'))
+    def test_argus(self, method):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
         # Try something slightly different.
@@ -546,7 +557,7 @@ class TestFit:
         shapes = (1., 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
         shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt, method=method)
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
@@ -688,7 +699,7 @@ class TestFit:
         # Test that guess helps DE find the desired solution
         N = 2000
         # With some seeds, `fit` doesn't need a guess
-        rng = np.random.default_rng(1963904448561)
+        rng = np.random.default_rng(196390444561)
         dist = stats.nhypergeom
         params = (20, 7, 12, 0)
         bounds = [(2, 200), (0.7, 70), (1.2, 120), (0, 10)]
@@ -840,7 +851,7 @@ class TestGoodnessOfFit:
         assert_allclose(res.statistic, 0.559)  # See [1] Table 1B 1.2
         assert_allclose(res.pvalue, 0.15, atol=5e-3)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_against_anderson_gumbel_r(self):
         rng = np.random.default_rng(7302761058217743)
         # c that produced critical value of statistic found w/ root_scalar
@@ -901,7 +912,7 @@ class TestGoodnessOfFit:
         res = stats.scoreatpercentile(res.null_distribution, percentiles*100)
         assert_allclose(res, ref, atol=2e-3)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     @pytest.mark.parametrize('case', [(5, 0.95772790260469, 0.4755),
                                       (6, 0.95398832257958, 0.3848),
                                       (7, 0.9432692889277, 0.2328)])

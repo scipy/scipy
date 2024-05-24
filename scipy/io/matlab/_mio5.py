@@ -69,6 +69,7 @@ Henkelmann; parts of the code for simplify_cells=True adapted from
 http://blog.nephics.com/2019/08/28/better-loadmat-for-scipy/.
 '''
 
+import math
 import os
 import time
 import sys
@@ -310,11 +311,13 @@ class MatFile5Reader(MatFileReader):
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
             if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
+                msg = (
+                    f'Duplicate variable name "{name}" in stream'
+                    " - replacing previous with new\nConsider"
+                    "scipy.io.matlab._mio5.varmats_from_mat to split "
+                    "file into single variable files"
+                )
+                warnings.warn(msg, MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -728,7 +731,7 @@ class VarWriter5:
             # transpose here, because we're flattening the array, before
             # we write the bytes. The bytes have to be written in
             # Fortran order.
-            n_chars = np.prod(shape)
+            n_chars = math.prod(shape)
             st_arr = np.ndarray(shape=(),
                                 dtype=arr_dtype_number(arr, n_chars),
                                 buffer=arr.T.copy())  # Fortran order

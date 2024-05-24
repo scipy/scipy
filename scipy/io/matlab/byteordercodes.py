@@ -4,10 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'aliases', 'native_code', 'swapped_code',
-    'sys_is_le', 'to_numpy_code'
-]
+__all__: list[str] = []
 
 
 def __dir__():

@@ -4095,6 +4095,11 @@ class TestIIRFilter:
                       output='zpk')[2]
         k2 = 9.999999999999989e+47
         assert_allclose(k, k2)
+        # if fs is specified then the normalization of Wn to have 
+        # 0 <= Wn <= 1 should not cause an integer overflow
+        # the following line should not raise an exception
+        iirfilter(20, [1000000000, 1100000000], btype='bp', 
+                      analog=False, fs=6250000000)
 
     def test_invalid_wn_size(self):
         # low and high have 1 Wn, band and stop have 2 Wn
@@ -4252,9 +4257,9 @@ class TestGroupDelay:
         b = [alpha,1]
         a = [1, np.conjugate(alpha)]
         gdtest = group_delay((b,a), wref)[1]
-        # need nulp=10 for Ubuntu x86-64; added 1 for some robustness
-        # on other platforms.
-        assert_array_almost_equal_nulp(gdtest, gdref, nulp=11)
+        # need nulp=14 for macOS arm64 wheel builds; added 2 for some
+        # robustness on other platforms.
+        assert_array_almost_equal_nulp(gdtest, gdref, nulp=16)
 
     def test_fs_validation(self):
         with pytest.raises(ValueError, match="Sampling.*single scalar"):

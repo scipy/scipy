@@ -12,6 +12,7 @@ from scipy.linalg import norm, solve, inv, qr, svd, LinAlgError
 import scipy.sparse.linalg
 import scipy.sparse
 from scipy.linalg import get_blas_funcs
+from scipy._lib._util import copy_if_needed
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 from ._linesearch import scalar_search_wolfe1, scalar_search_armijo
 
@@ -701,7 +702,7 @@ class LowRankMatrix:
 
     def collapse(self):
         """Collapse the low-rank matrix to a full-rank one."""
-        self.collapsed = np.array(self)
+        self.collapsed = np.array(self, copy=copy_if_needed)
         self.cs = None
         self.ds = None
         self.alpha = None

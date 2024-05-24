@@ -75,10 +75,10 @@ def connected_components(csgraph, directed=True, connection='weak',
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	1
-      (1, 2)	1
-      (3, 4)	1
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	1
+      (np.int32(1), np.int32(2))	1
+      (np.int32(3), np.int32(4))	1
 
     >>> n_components, labels = connected_components(csgraph=graph, directed=False, return_labels=True)
     >>> n_components
@@ -332,11 +332,11 @@ cpdef breadth_first_order(csgraph, i_start,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)    1
-      (0, 2)    2
-      (1, 3)    1
-      (2, 0)    2
-      (2, 3)    3
+      (np.int32(0), np.int32(1))	1
+      (np.int32(0), np.int32(2))	2
+      (np.int32(1), np.int32(3))	1
+      (np.int32(2), np.int32(0))	2
+      (np.int32(2), np.int32(3))	3
 
     >>> breadth_first_order(graph,0)
     (array([0, 1, 2, 3], dtype=int32), array([-9999,     0,     0,     1], dtype=int32))
@@ -538,11 +538,11 @@ cpdef depth_first_order(csgraph, i_start,
     ... ]
     >>> graph = csr_matrix(graph)
     >>> print(graph)
-      (0, 1)	1
-      (0, 2)	2
-      (1, 3)	1
-      (2, 0)	2
-      (2, 3)	3
+    (np.int32(0), np.int32(1))	1
+    (np.int32(0), np.int32(2))	2
+    (np.int32(1), np.int32(3))	1
+    (np.int32(2), np.int32(0))	2
+    (np.int32(2), np.int32(3))	3
 
     >>> depth_first_order(graph,0)
     (array([0, 1, 3, 2], dtype=int32), array([-9999,     0,     0,     1], dtype=int32))

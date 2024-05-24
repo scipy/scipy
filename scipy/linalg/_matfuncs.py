@@ -17,9 +17,6 @@ from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 from ._matfuncs_expm import pick_pade_structure, pade_UV_calc
 
-# deprecated imports to be removed in SciPy 1.13.0
-from numpy import single  # noqa: F401
-
 __all__ = ['expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm', 'tanhm', 'logm',
            'funm', 'signm', 'sqrtm', 'fractional_matrix_power', 'expm_frechet',
            'expm_cond', 'khatri_rao']
@@ -855,6 +852,12 @@ def khatri_rao(a, b):
     if not a.shape[1] == b.shape[1]:
         raise ValueError("The number of columns for both arrays "
                          "should be equal.")
+
+    # accommodate empty arrays
+    if a.size == 0 or b.size == 0:
+        m = a.shape[0] * b.shape[0]
+        n = a.shape[1]
+        return np.empty_like(a, shape=(m, n))
 
     # c = np.vstack([np.kron(a[:, k], b[:, k]) for k in range(b.shape[1])]).T
     c = a[..., :, np.newaxis, :] * b[..., np.newaxis, :, :]

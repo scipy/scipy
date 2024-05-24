@@ -245,6 +245,8 @@ class DistributionsAll(Benchmark):
             if isinstance(self.dist, stats.rv_discrete):
                 raise NotImplementedError("This attribute is not a member "
                                           "of the distribution")
+            if self.dist.name in {'irwinhall'}:
+                raise NotImplementedError("Fit is unreliable.")
             # the only positional argument is the data to be fitted
             self.args = [self.dist.rvs(*dist_shapes, size=100, random_state=0, **kwds)]
         elif method == 'rvs':
