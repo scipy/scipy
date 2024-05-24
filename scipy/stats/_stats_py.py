@@ -1999,14 +1999,15 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    x2 = s*s + k*k
+    statistic = s*s + k*k
 
-    pvalue = _get_pvalue(x2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
-    x2 = x2[()] if x2.ndim == 0 else x2
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return NormaltestResult(x2, pvalue)
+    return NormaltestResult(statistic, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2168,14 +2169,15 @@ def jarque_bera(x, *, axis=None):
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    x2 = n / 6 * (s**2 + k**2 / 4)
+    statistic = n / 6 * (s**2 + k**2 / 4)
 
-    pvalue = _get_pvalue(x2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
 
-    x2 = x2[()] if x2.ndim == 0 else x2
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return SignificanceResult(x2, pvalue)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
@@ -4386,7 +4388,8 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
     df = len(samples) - 1
-    p = _get_pvalue(A, _SimpleChi2(df), alternative='greater', xp=np)
+    chi2 = _SimpleChi2(df)
+    p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=np)
     return AlexanderGovernResult(A, p)
 
 
@@ -7657,7 +7660,8 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     ddof = xp.asarray(ddof)
 
     df = xp.asarray(num_obs - 1 - ddof)
-    pvalue = _get_pvalue(stat, _SimpleChi2(df), alternative='greater', xp=xp)
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(stat, chi2 , alternative='greater', symmetric=False, xp=xp)
 
     stat = stat[()] if stat.ndim == 0 else stat
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -8939,7 +8943,8 @@ def kruskal(*samples, nan_policy='propagate'):
     df = num_groups - 1
     h /= ties
 
-    pvalue = _get_pvalue(h, _SimpleChi2(df), alternative='greater', xp=np)
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(h, chi2, alternative='greater', symmetric=False, xp=np)
     return KruskalResult(h, pvalue)
 
 
@@ -9037,10 +9042,11 @@ def friedmanchisquare(*samples):
     c = 1 - ties / (k*(k*k - 1)*n)
 
     ssbn = np.sum(data.sum(axis=0)**2)
-    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    pvalue = _get_pvalue(chisq, _SimpleChi2(k - 1), alternative='greater', xp=np)
-    return FriedmanchisquareResult(chisq, pvalue)
+    chi2 = _SimpleChi2(k - 1)
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FriedmanchisquareResult(statistic, pvalue)
 
 
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
@@ -9300,8 +9306,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
-        pval = _get_pvalue(statistic, _SimpleChi2(2 * len(pvalues)),
-                           alternative='greater', xp=np)
+        chi2 = _SimpleChi2(2 * len(pvalues))
+        pval = _get_pvalue(statistic, chi2, alternative='greater',
+                           symmetric=False, xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
         # _SimpleChi2 doesn't have `cdf` yet;

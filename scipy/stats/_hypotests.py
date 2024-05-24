@@ -142,7 +142,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         w = corr * w
 
     chi2 = _stats_py._SimpleChi2(r)
-    p = _stats_py._get_pvalue(w, chi2, alternative='greater', xp=np)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
     return Epps_Singleton_2sampResult(w, p)
 
