@@ -367,6 +367,162 @@ struct diag_recurrence {
     }
 };
 
+template <typename T>
+struct assoc_legendre_p_recurrence {
+    int m;
+    int type;
+    T z;
+
+    void operator()(int n, T (&res)[2]) const {
+        res[0] = -T(n + m - 1) / T(n - m);
+        res[1] = T(2 * n - 1) * z / T(n - m);
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
+        (*this)(n, res);
+
+        res_jac[0] = 0;
+        res_jac[1] = T(2 * n - 1) / T(n - m);
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        (*this)(n, res, res_jac);
+
+        res_hess[0] = 0;
+        res_hess[1] = 0;
+    }
+
+    void init(T (&res)[3]) const {
+        int m_abs = std::abs(m);
+
+        diag_recurrence<T> r{m, type, z};
+
+        T vals[3];
+        r.init(vals);
+
+        forward_recur(r, vals, 0, m_abs + 1);
+
+        res[0] = vals[2];
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+    }
+
+    void init(T (&res)[3], T (&res_jac)[3]) const {
+        int m_abs = std::abs(m);
+
+        diag_recurrence<T> r{m, type, z};
+
+        T vals[3];
+        T vals_jac[3];
+        r.init(vals, vals_jac);
+
+        forward_recur(r, vals, vals_jac, 0, m_abs + 1);
+
+        res[0] = vals[2];
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+
+        res_jac[0] = vals_jac[2];
+        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
+    }
+
+    void init(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) const {
+        int m_abs = std::abs(m);
+
+        diag_recurrence<T> r{m, type, z};
+
+        T vals[3];
+        T vals_jac[3];
+        T vals_hess[3];
+        r.init(vals, vals_jac, vals_hess);
+
+        forward_recur(r, vals, vals_jac, vals_hess, 0, m_abs + 1);
+
+        res[0] = vals[2];
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+
+        res_jac[0] = vals_jac[2];
+        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
+
+        res_hess[0] = vals_hess[2];
+        res_hess[1] = T(2 * (m_abs + 1) - 1) * (res_jac[0] + res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
+    }
+
+    void limit(int n, T &res) {
+        int m_abs = std::abs(m);
+        if (m_abs > n) {
+            res = 0;
+        } else {
+            if (m == 0) {
+                res = 1;
+            } else {
+                res = 0;
+            }
+        }
+    }
+
+    void limit(int n, T &res, T &res_jac) {
+        limit(n, res);
+
+        int m_abs = std::abs(m);
+        if (m_abs > n) {
+            res_jac = 0;
+        } else {
+            T type_sign;
+            if (type == 3) {
+                type_sign = -1;
+            } else {
+                type_sign = 1;
+            }
+
+            if (m == 0) {
+                res_jac = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
+            } else if (m == 1) {
+                res_jac = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == 2) {
+                res_jac = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
+            } else if (m == -2) {
+                res_jac = -type_sign * std::pow(z, T(n + 1)) / T(4);
+            } else if (m == -1) {
+                res_jac = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else {
+                res_jac = 0;
+            }
+        }
+    }
+
+    void limit(int n, T &res, T &res_jac, T &res_hess) {
+        limit(n, res, res_jac);
+
+        int m_abs = std::abs(m);
+        if (m_abs > n) {
+            res_jac = 0;
+        } else {
+
+            // need to complete these
+            if (m == 0) {
+                res_hess = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+            } else if (m == 1) {
+                res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == 2) {
+                res_hess = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+            } else if (m == 3) {
+                res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == 4) {
+                res_hess = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+            } else if (m == -4) {
+                res_hess = 0;
+            } else if (m == -3) {
+                res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else if (m == -2) {
+                res_hess = -T(1) / T(4);
+            } else if (m == -1) {
+                res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+            } else {
+                res_hess = 0;
+            }
+        }
+    }
+};
+
 /**
  * Compute the associated Legendre polynomial of degree n and order n.
  *
@@ -374,16 +530,6 @@ struct diag_recurrence {
  * should not be modified. This is because the sign bit of a real or imaginary part,
  * even if it is equal to zero, can affect the branch cut.
  */
-template <typename T>
-void assoc_legendre_p_diag(int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
-    diag_recurrence<T> r{m, type, z};
-    r.init(res, res_jac, res_hess);
-
-    forward_recur(r, res, res_jac, res_hess, 0, std::abs(m) + 1);
-}
-
-template <typename T>
-struct assoc_legendre_p_recurrence;
 
 /**
  * Compute the associated Legendre polynomial of degree n and order m.
@@ -483,150 +629,6 @@ void assoc_legendre_p_recur(
         }
     }
 }
-
-template <typename T>
-struct assoc_legendre_p_recurrence {
-    int m;
-    int type;
-    T z;
-
-    void operator()(int n, T (&res)[2]) const {
-        res[0] = -T(n + m - 1) / T(n - m);
-        res[1] = T(2 * n - 1) * z / T(n - m);
-    }
-
-    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
-        (*this)(n, res);
-
-        res_jac[0] = 0;
-        res_jac[1] = T(2 * n - 1) / T(n - m);
-    }
-
-    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
-        (*this)(n, res, res_jac);
-
-        res_hess[0] = 0;
-        res_hess[1] = 0;
-    }
-
-    void init(T (&res)[3]) const {
-        int m_abs = std::abs(m);
-
-        diag_recurrence<T> r{m, type, z};
-
-        T vals[3];
-        r.init(vals);
-
-        forward_recur(r, vals, 0, m_abs + 1);
-
-        res[0] = vals[2];
-        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
-    }
-
-    void init(T (&res)[3], T (&res_jac)[3]) const {
-        init(res);
-
-        int m_abs = std::abs(m);
-
-        T vals[3];
-        T vals_jac[3];
-        T vals_hess[3];
-        assoc_legendre_p_diag(m, type, z, vals, vals_jac, vals_hess);
-
-        res_jac[0] = vals_jac[2];
-        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
-    }
-
-    void init(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) const {
-        init(res, res_jac);
-
-        int m_abs = std::abs(m);
-
-        T vals[3];
-        T vals_jac[3];
-        T vals_hess[3];
-        assoc_legendre_p_diag(m, type, z, vals, vals_jac, vals_hess);
-
-        res_hess[0] = vals_hess[2];
-        res_hess[1] = T(2 * (m_abs + 1) - 1) * (res_jac[0] + res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
-    }
-
-    void limit(int n, T &res) {
-        int m_abs = std::abs(m);
-        if (m_abs > n) {
-            res = 0;
-        } else {
-            if (m == 0) {
-                res = 1;
-            } else {
-                res = 0;
-            }
-        }
-    }
-
-    void limit(int n, T &res, T &res_jac) {
-        limit(n, res);
-
-        int m_abs = std::abs(m);
-        if (m_abs > n) {
-            res_jac = 0;
-        } else {
-            T type_sign;
-            if (type == 3) {
-                type_sign = -1;
-            } else {
-                type_sign = 1;
-            }
-
-            if (m == 0) {
-                res_jac = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
-            } else if (m == 1) {
-                res_jac = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else if (m == 2) {
-                res_jac = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
-            } else if (m == -2) {
-                res_jac = -type_sign * std::pow(z, T(n + 1)) / T(4);
-            } else if (m == -1) {
-                res_jac = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else {
-                res_jac = 0;
-            }
-        }
-    }
-
-    void limit(int n, T &res, T &res_jac, T &res_hess) {
-        limit(n, res, res_jac);
-
-        int m_abs = std::abs(m);
-        if (m_abs > n) {
-            res_jac = 0;
-        } else {
-
-            // need to complete these
-            if (m == 0) {
-                res_hess = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
-            } else if (m == 1) {
-                res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else if (m == 2) {
-                res_hess = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
-            } else if (m == 3) {
-                res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else if (m == 4) {
-                res_hess = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
-            } else if (m == -4) {
-                res_hess = 0;
-            } else if (m == -3) {
-                res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else if (m == -2) {
-                res_hess = -T(1) / T(4);
-            } else if (m == -1) {
-                res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
-            } else {
-                res_hess = 0;
-            }
-        }
-    }
-};
 
 /**
  * Compute the associated Legendre polynomial of degree n and order m.
