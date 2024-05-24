@@ -153,7 +153,7 @@ void forward_recur(Recurrence r, T (&res)[P], InputIt first, InputIt last, Callb
     }
 }
 
-template <typename Recurrence, typename T, size_t P, size_t N, typename InputIt>
+template <typename Recurrence, typename T, size_t P, typename InputIt>
 void forward_recur(Recurrence r, T (&res)[P], InputIt first, InputIt last) {
     forward_recur(r, res, first, last, [](InputIt it, Recurrence r, const T(&res)[P]) {});
 }
@@ -313,7 +313,7 @@ void forward_recur(
 template <typename Recurrence, typename T, size_t P, typename InputIt>
 void forward_recur(Recurrence r, T (&res)[P], T (&res_jac)[P], T (&res_hess)[P], InputIt first, InputIt last) {
     forward_recur(
-        r, res, first, last,
+        r, res, res_jac, res_hess, first, last,
         [](InputIt it, Recurrence r, const T(&res)[P], const T(&res_jac)[P], const T(&res_hess)[P]) {}
     );
 }
