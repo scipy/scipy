@@ -8,7 +8,7 @@ template <typename T, size_t N>
 void forward_recur_rotate(T (&res)[N]) {
     T tmp = res[N - 1];
     res[N - 1] = res[0];
-    for (ssize_t j = 0; j < N - 1; ++j) {
+    for (size_t j = 0; j < N - 1; ++j) {
         res[j] = res[j + 1];
     }
     res[N - 2] = tmp;
@@ -16,7 +16,7 @@ void forward_recur_rotate(T (&res)[N]) {
 
 template <typename T, size_t N>
 void forward_recur_shift(T (&res)[N]) {
-    for (ssize_t j = 0; j < N - 1; ++j) {
+    for (size_t j = 0; j < N - 1; ++j) {
         res[j] = res[j + 1];
     }
 }
