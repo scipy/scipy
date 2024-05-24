@@ -1999,14 +1999,14 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    X2 = s*s + k*k
+    x2 = s*s + k*k
 
-    pvalue = _get_pvalue(X2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+    pvalue = _get_pvalue(x2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
 
-    X2 = X2[()] if X2.ndim == 0 else X2
+    x2 = x2[()] if x2.ndim == 0 else x2
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return NormaltestResult(X2, pvalue)
+    return NormaltestResult(x2, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2168,14 +2168,14 @@ def jarque_bera(x, *, axis=None):
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    X2 = n / 6 * (s**2 + k**2 / 4)
+    x2 = n / 6 * (s**2 + k**2 / 4)
 
-    pvalue = _get_pvalue(X2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
+    pvalue = _get_pvalue(x2, _SimpleChi2(xp.asarray(2.)), alternative='greater', xp=xp)
 
-    X2 = X2[()] if X2.ndim == 0 else X2
+    x2 = x2[()] if x2.ndim == 0 else x2
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return SignificanceResult(X2, pvalue)
+    return SignificanceResult(x2, pvalue)
 
 
 #####################################
