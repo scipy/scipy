@@ -1221,7 +1221,7 @@ class ShortTimeFFT:
         >>> x1, x2 = np.cos(t), np.sin(t) # orthogonal signals
         >>> sum(x1 * np.conj(x2))  # scalar product is zero (up to numerical accuracy)
         7.494005416219807e-16  # may vary
-        >>> Sx12 = SFT.spectrogram(x1, x2)  # cross-spectrum
+        >>> Sx12 = SFT_u.spectrogram(x1, x2)  # cross-spectrum
         >>> np.sum(Sx12)  # STFT scalar product is also zero (up to numerical accuracy)
         (-7.105427357601002e-15+0j)  # may vary
 
