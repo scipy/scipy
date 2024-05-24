@@ -161,6 +161,8 @@ def shortest_path(csgraph, method='auto',
     array([-9999,     0,     0,     1], dtype=int32)
 
     """
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=[0, np.inf, np.nan])
+
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
     validate_graph(csgraph, directed, DTYPE,
