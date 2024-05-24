@@ -2734,6 +2734,9 @@ def comb(N, k, *, exact=False, repetition=False):
             return _comb_int(N, k)
         # otherwise, we disregard `exact=True`; it makes no sense for
         # non-integral arguments
+        msg = ("`exact=True` is deprecated for non-integers and will raise and error "
+               "in SciPy 1.16.0")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         return comb(N, k)
     else:
         k, N = asarray(k), asarray(N)
