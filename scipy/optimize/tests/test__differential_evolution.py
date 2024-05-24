@@ -694,7 +694,14 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
         assert_(solver._updating == 'deferred')
         assert_(solver._mapwrapper._mapfunc is map)
-        solver.solve()
+        res = solver.solve()
+        assert res.success
+
+        # check that deferred updating works with an exponential crossover
+        res = differential_evolution(
+            rosen, bounds, updating='deferred', strategy='best1exp'
+        )
+        assert res.success
 
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
