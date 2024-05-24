@@ -1564,10 +1564,6 @@ class DifferentialEvolutionSolver:
                 self._ensure_constraint(trial)
 
                 # scale from [0, 1) to the actual parameter value
-                # _mutate should return an array (S, N) where S is the
-                # number of candidates that were mutated.
-                # For `immediate` S = 1. For `deferred` this will
-                # probably be the entire population, S = num_population_members
                 parameters = self._scale_parameters(trial)
 
                 # determine the energy of the objective function
