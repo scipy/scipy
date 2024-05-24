@@ -208,15 +208,17 @@ struct diag_recurrence {
     int m;
     int type;
     T z;
+    T type_sign;
 
-    void operator()(int n, T (&res)[2]) {
-        T type_sign;
+    diag_recurrence(int m, int type, T z) : m(m), type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
         } else {
             type_sign = 1;
         }
+    }
 
+    void operator()(int n, T (&res)[2]) {
         T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
 
         // other square roots can be avoided if each iteration increments by 2
@@ -228,13 +230,6 @@ struct diag_recurrence {
     void operator()(int n, T (&res)[2], T (&res_jac)[2]) {
         (*this)(n, res);
 
-        T type_sign;
-        if (type == 3) {
-            type_sign = -1;
-        } else {
-            type_sign = 1;
-        }
-
         T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
 
         res_jac[0] = -T(2) * fac * z;
@@ -244,13 +239,6 @@ struct diag_recurrence {
     void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) {
         (*this)(n, res, res_jac);
 
-        T type_sign;
-        if (type == 3) {
-            type_sign = -1;
-        } else {
-            type_sign = 1;
-        }
-
         T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
 
         res_hess[0] = -T(2) * fac;
@@ -258,9 +246,6 @@ struct diag_recurrence {
     }
 
     void init2(T (&res)[3]) {
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
-
         res[0] = 1;
         if (type == 3) {
             res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
@@ -293,9 +278,6 @@ struct diag_recurrence {
 
     void init2(T (&res)[3], T (&res_jac)[3]) {
         init2(res);
-
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
 
         T type_sign;
         if (type == 3) {
@@ -330,16 +312,6 @@ struct diag_recurrence {
 
     void init2(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
         init2(res, res_jac);
-
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
-
-        T type_sign;
-        if (type == 3) {
-            type_sign = -1;
-        } else {
-            type_sign = 1;
-        }
 
         res_hess[0] = 0;
         res_hess[1] = -type_sign * (T(1) - z * res_jac[1] / res[1]) / res[1];

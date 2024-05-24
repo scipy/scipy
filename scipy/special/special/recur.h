@@ -4,80 +4,62 @@
 
 namespace special {
 
-template <typename Recurrence, typename InputIt, typename T, ptrdiff_t KP1>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1]) {
-    constexpr ptrdiff_t K = KP1 - 1;
+template <typename T, size_t N>
+void forward_recur_rotate(T (&res)[N]) {
+    T tmp = res[N - 1];
+    res[N - 1] = res[0];
+    for (ssize_t j = 0; j < N - 1; ++j) {
+        res[j] = res[j + 1];
+    }
+    res[N - 2] = tmp;
+}
 
-    T coef[K];
+template <typename T, size_t N>
+void forward_recur_shift(T (&res)[N]) {
+    for (ssize_t j = 0; j < N - 1; ++j) {
+        res[j] = res[j + 1];
+    }
+}
+
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[N]) {
+    T coef[N - 1];
     r(it, coef);
 
-    res[K] = 0;
-    for (ptrdiff_t j = 0; j < K; ++j) {
-        res[K] += coef[j] * res[j];
+    res[N - 1] = 0;
+    for (ssize_t j = N - 2; j >= 0; --j) {
+        res[N - 1] += coef[j] * res[j];
     }
 }
 
-/**
- * Compute a forward recurrence that depends on K previous values.
- *
- * @param r recurrence
- * @param init initial value and its derivatives
- * @param res value and its derivatives
- * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
- * @param args arguments to forward to the callback
- */
-template <typename Recurrence, typename T, ptrdiff_t P, typename InputIt, typename Callback, typename... Args>
-void forward_recur(Recurrence r, T (&res)[P], InputIt first, InputIt last, Callback &&callback, Args &&...args) {
-    constexpr ptrdiff_t K = P - 1;
-
-    InputIt it = first;
-    while (it - first != K && it != last) {
-        T tmp = res[K];
-        res[K] = res[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res[j] = res[j + 1];
-        }
-        res[K - 1] = tmp;
-
-        callback(it, r, res, std::forward<Args>(args)...);
-        ++it;
-    }
-
-    if (last - first > K) {
-        while (it != last) {
-            for (ptrdiff_t j = 0; j < K; ++j) {
-                res[j] = res[j + 1];
-            }
-
-            forward_recur_next(r, it, res);
-
-            callback(it, r, res, std::forward<Args>(args)...);
-            ++it;
-        }
-    }
-}
-
-template <typename Recurrence, typename T, size_t P, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[P], InputIt first, InputIt last) {
-    forward_recur(r, res, first, last, [](InputIt it, Recurrence r, const T(&res)[P]) {});
-}
-
-template <typename Recurrence, typename InputIt, typename T, ptrdiff_t KP1>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1], T (&res_jac)[KP1]) {
-    constexpr ptrdiff_t K = KP1 - 1;
-
-    T coef[K];
-    T coef_jac[K];
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N]) {
+    T coef[N - 1];
+    T coef_jac[N - 1];
     r(it, coef, coef_jac);
 
-    res[K] = 0;
-    for (ptrdiff_t j = 0; j < K; ++j) {
-        res[K] += coef[j] * res[j];
+    res[N - 1] = 0;
+    res_jac[N - 1] = 0;
+    for (ssize_t j = N - 2; j >= 0; --j) {
+        res[N - 1] += coef[j] * res[j];
+        res_jac[N - 1] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
     }
+}
 
-    res_jac[K] = 0;
-    for (ptrdiff_t j = 0; j < K; ++j) {
-        res_jac[K] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N]) {
+    T coef[N - 1];
+    T coef_jac[N - 1];
+    T coef_hess[N - 1];
+    r(it, coef, coef_jac, coef_hess);
+
+    res[N - 1] = 0;
+    res_jac[N - 1] = 0;
+    res_hess[N - 1] = 0;
+    for (ssize_t j = N - 2; j >= 0; --j) {
+        res[N - 1] += coef[j] * res[j];
+        res_jac[N - 1] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+        res_hess[N - 1] += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
     }
 }
 
@@ -90,72 +72,74 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1], T (&res_jac)[KP
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, ptrdiff_t P, typename InputIt, typename Callback, typename... Args>
-void forward_recur(
-    Recurrence r, T (&res)[P], T (&res_jac)[P], InputIt first, InputIt last, Callback &&callback, Args &&...args
-) {
-    constexpr ptrdiff_t K = P - 1;
+template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
+void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last, Callback callback) {
+    constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
     while (it - first != K && it != last) {
-        T tmp = res[K];
-        res[K] = res[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res[j] = res[j + 1];
-        }
-        res[K - 1] = tmp;
+        forward_recur_rotate(res);
 
-        T tmp_jac = res_jac[K];
-        res_jac[K] = res_jac[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res_jac[j] = res_jac[j + 1];
-        }
-        res_jac[K - 1] = tmp_jac;
-
-        callback(it, r, res, res_jac, std::forward<Args>(args)...);
+        callback(it, r, res);
         ++it;
     }
 
     if (last - first > K) {
         while (it != last) {
-            for (ptrdiff_t j = 0; j < K; ++j) {
-                res[j] = res[j + 1];
-                res_jac[j] = res_jac[j + 1];
-            }
+            forward_recur_shift(res);
+            forward_recur_next(r, it, res);
 
-            forward_recur_next(r, it, res, res_jac);
-
-            callback(it, r, res, res_jac, std::forward<Args>(args)...);
+            callback(it, r, res);
             ++it;
         }
     }
 }
 
-template <typename Recurrence, typename T, size_t P, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[P], T (&res_jac)[P], InputIt first, InputIt last) {
-    forward_recur(r, res, res_jac, first, last, [](InputIt it, Recurrence r, const T(&res)[P], const T(&res_jac)[P]) {
+template <typename Recurrence, typename T, size_t N, typename InputIt>
+void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last) {
+    forward_recur(r, res, first, last, [](InputIt it, Recurrence r, const T(&res)[N]) {});
+}
+
+/**
+ * Compute a forward recurrence that depends on K previous values.
+ *
+ * @param r recurrence
+ * @param init initial value and its derivatives
+ * @param res value and its derivatives
+ * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
+ * @param args arguments to forward to the callback
+ */
+template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
+void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, InputIt last, Callback callback) {
+    constexpr ptrdiff_t K = N - 1;
+
+    InputIt it = first;
+    while (it - first != K && it != last) {
+        forward_recur_rotate(res);
+        forward_recur_rotate(res_jac);
+
+        callback(it, r, res, res_jac);
+        ++it;
+    }
+
+    if (last - first > K) {
+        while (it != last) {
+            forward_recur_shift(res);
+            forward_recur_shift(res_jac);
+            forward_recur_next(r, it, res, res_jac);
+
+            callback(it, r, res, res_jac);
+            ++it;
+        }
+    }
+}
+
+template <typename Recurrence, typename T, size_t N, typename InputIt>
+void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, InputIt last) {
+    forward_recur(r, res, res_jac, first, last, [](InputIt it, Recurrence r, const T(&res)[N], const T(&res_jac)[N]) {
     });
 }
 
-template <typename Recurrence, typename InputIt, typename T, ptrdiff_t KP1>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1], T (&res_jac)[KP1], T (&res_hess)[KP1]) {
-    constexpr ptrdiff_t K = KP1 - 1;
-
-    T coef[K];
-    T coef_jac[K];
-    T coef_hess[K];
-    r(it, coef, coef_jac, coef_hess);
-
-    res[K] = 0;
-    res_jac[K] = 0;
-    res_hess[K] = 0;
-    for (ptrdiff_t j = 0; j < K; ++j) {
-        res[K] += coef[j] * res[j];
-        res_jac[K] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
-        res_hess[K] += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
-    }
-}
-
 /**
  * Compute a forward recurrence that depends on K previous values.
  *
@@ -163,63 +147,41 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[KP1], T (&res_jac)[KP
  * @param init initial value and its derivatives
  * @param res value and its derivatives
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
- * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, ptrdiff_t P, typename InputIt, typename Callback, typename... Args>
+template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
 void forward_recur(
-    Recurrence r, T (&res)[P], T (&res_jac)[P], T (&res_hess)[P], InputIt first, InputIt last, Callback &&callback,
-    Args &&...args
+    Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], InputIt first, InputIt last, Callback callback
 ) {
-    constexpr ptrdiff_t K = P - 1;
+    constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
     while (it - first != K && it != last) {
-        T tmp = res[K];
-        res[K] = res[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res[j] = res[j + 1];
-        }
-        res[K - 1] = tmp;
+        forward_recur_rotate(res);
+        forward_recur_rotate(res_jac);
+        forward_recur_rotate(res_hess);
 
-        T tmp_jac = res_jac[K];
-        res_jac[K] = res_jac[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res_jac[j] = res_jac[j + 1];
-        }
-        res_jac[K - 1] = tmp_jac;
-
-        T tmp_hess = res_hess[K];
-        res_hess[K] = res_hess[0];
-        for (ptrdiff_t j = 0; j < K - 1; ++j) {
-            res_hess[j] = res_hess[j + 1];
-        }
-        res_hess[K - 1] = tmp_hess;
-
-        callback(it, r, res, res_jac, res_hess, std::forward<Args>(args)...);
+        callback(it, r, res, res_jac, res_hess);
         ++it;
     }
 
     if (last - first > K) {
         while (it != last) {
-            for (ptrdiff_t j = 0; j < K; ++j) {
-                res[j] = res[j + 1];
-                res_jac[j] = res_jac[j + 1];
-                res_hess[j] = res_hess[j + 1];
-            }
-
+            forward_recur_shift(res);
+            forward_recur_shift(res_jac);
+            forward_recur_shift(res_hess);
             forward_recur_next(r, it, res, res_jac, res_hess);
 
-            callback(it, r, res, res_jac, res_hess, std::forward<Args>(args)...);
+            callback(it, r, res, res_jac, res_hess);
             ++it;
         }
     }
 }
 
-template <typename Recurrence, typename T, size_t P, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[P], T (&res_jac)[P], T (&res_hess)[P], InputIt first, InputIt last) {
+template <typename Recurrence, typename T, size_t N, typename InputIt>
+void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], InputIt first, InputIt last) {
     forward_recur(
         r, res, res_jac, res_hess, first, last,
-        [](InputIt it, Recurrence r, const T(&res)[P], const T(&res_jac)[P], const T(&res_hess)[P]) {}
+        [](InputIt it, Recurrence r, const T(&res)[N], const T(&res_jac)[N], const T(&res_hess)[N]) {}
     );
 }
 
