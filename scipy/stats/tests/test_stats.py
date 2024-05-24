@@ -4204,7 +4204,7 @@ class TestPowerDivergence:
             lambda_, expected_stat = table5[i, 0], table5[i, 1]
             stat, p = stats.power_divergence(table4[:,0], table4[:,1],
                                              lambda_=lambda_)
-            assert_allclose(stat, expected_stat, rtol=5e-3)
+            xp_assert_close(stat, expected_stat, rtol=5e-3)
 
 
 @array_api_compatible
