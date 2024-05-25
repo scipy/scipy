@@ -118,7 +118,6 @@ from scipy._lib._util import _asarray_validated
 from . import _distance_wrap
 from . import _hausdorff
 from ..linalg import norm
-from ..special import rel_entr
 from ..special._ufuncs import _js_div
 
 from . import _distance_pybind

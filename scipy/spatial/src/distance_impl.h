@@ -342,6 +342,24 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
 
 
 static inline double
+_jensenshannon_kernel(double a, double b)
+{
+    const double c = (a + b) / 2.0;
+    if (a == 0.0 || b == 0.0)
+    {
+        return c * log(2.0);
+    }
+    else
+    {
+        const double t = (b - a) / (b + a);
+        if (fabs(t) <= 0.5)
+            return c*( t*atanh(t) + 0.5*log1p(-t*t) );
+        else
+            return 0.5*( a*log(a/c) + b*log(b/c) );
+    }
+}
+
+static inline double
 jensenshannon_distance_double(const double *p, const double *q, const npy_intp n)
 {
     npy_intp i;
@@ -362,14 +380,10 @@ jensenshannon_distance_double(const double *p, const double *q, const npy_intp n
     for (i = 0; i < n; ++i) {
         const double p_i = p[i] / p_sum;
         const double q_i = q[i] / q_sum;
-        const double m_i = (p_i + q_i) / 2.0;
-        if (p_i > 0.0)
-            s += p_i * log(p_i / m_i);
-        if (q_i > 0.0)
-            s += q_i * log(q_i / m_i);
+        s += _jensenshannon_kernel(p_i, q_i);
     }
 
-    return sqrt(s / 2.0);
+    return sqrt(s);
 }
 
 
