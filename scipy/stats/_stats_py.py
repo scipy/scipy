@@ -3193,14 +3193,12 @@ def gstd(a, axis=0, ddof=1):
 
     .. math::
 
-        s_G = \exp(s_y), s_y = \sqrt{ \frac{1}{n - 1} \sum_{i=1}^n (y_i - \bar y)^2 }
+        s_G = \exp(s), \quad s = \sqrt{\frac{1}{n - d} \sum_{i=1}^n (y_i - \bar y)^2}
 
-    where :math:`n` is the number of observations and :math:`\bar y` denotes the
-    mean of the natural logarithms of the observations.
-
-    Note that the default ``ddof=1``, which corresponds with the :math:`n - 1` term
-    above, is different from the default value used by similar functions, such as
-    `numpy.std` and `numpy.var`.
+    where :math:`n` is the number of observations, :math:`d` is the adjustment `ddof`
+    to the degrees of freedom, and :math:`\bar y` denotes the mean of the natural
+    logarithms of the observations. Note that the default ``ddof=1`` is different from
+    the default value used by similar functions, such as `numpy.std` and `numpy.var`.
 
     When an observation is infinite, the geometric standard deviation is
     NaN (undefined). Non-positive observations will also produce NaNs in the
