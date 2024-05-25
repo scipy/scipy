@@ -759,6 +759,7 @@ class TestBartlett:
     @pytest.mark.skip_xp_backends(
         "jax.numpy", cpu_only=True,
         reasons=['`var` incorrect when `correction > n` (google/jax#21330)'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
@@ -1785,7 +1786,8 @@ class TestKstatVar:
 
     @skip_xp_backends(np_only=True,
                       reasons=['input validation of `n` does not depend on backend'])
-    def test_bad_arg(self, xp):
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_bad_arg(self):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10
