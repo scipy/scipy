@@ -11,8 +11,10 @@ from . import _ufuncs
 # These don't really need to be imported, but otherwise IDEs might not realize
 # that these are defined in this file / report an error in __init__.py
 from ._ufuncs import (
-    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln, # noqa: F401
-    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy)  # noqa: F401
+    log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
+    gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
+    chdtrc  # noqa: F401
+)
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 array_api_compat_prefix = "scipy._lib.array_api_compat"
@@ -33,19 +35,18 @@ def get_array_special_func(f_name, xp, n_array_args):
 
     # if generic array-API implementation is available, use that;
     # otherwise, fall back to NumPy/SciPy
-    # Use of ` _f=_f, _xp=xp` is to avoid late-binding gotcha
     if f_name in _generic_implementations:
-        _f = _generic_implementations[f_name]
-        def f(*args, _f=_f, _xp=xp, **kwargs):
-            return _f(*args, xp=_xp, **kwargs)
-    else:
-        _f = getattr(_ufuncs, f_name, None)
-        def f(*args, _f=_f, _xp=xp, **kwargs):
-            array_args = args[:n_array_args]
-            other_args = args[n_array_args:]
-            array_args = [np.asarray(arg) for arg in array_args]
-            out = _f(*array_args, *other_args, **kwargs)
-            return _xp.asarray(out)
+        _f = _generic_implementations[f_name](xp=xp, spx=spx)
+        if _f is not None:
+            return _f
+
+    _f = getattr(_ufuncs, f_name, None)
+    def f(*args, _f=_f, _xp=xp, **kwargs):
+        array_args = args[:n_array_args]
+        other_args = args[n_array_args:]
+        array_args = [np.asarray(arg) for arg in array_args]
+        out = _f(*array_args, *other_args, **kwargs)
+        return _xp.asarray(out)
 
     return f
 
@@ -60,24 +61,48 @@ def _get_shape_dtype(*args, xp):
     return args, shape, dtype
 
 
-def _rel_entr(x, y, *, xp):
-    args, shape, dtype = _get_shape_dtype(x, y, xp=xp)
-    x, y = args
-    res = xp.full(x.shape, xp.inf, dtype=dtype)
-    res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=dtype)
-    i = (x > 0) & (y > 0)
-    res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
-    return res
+def _rel_entr(xp, spx):
+    def __rel_entr(x, y, *, xp=xp):
+        args, shape, dtype = _get_shape_dtype(x, y, xp=xp)
+        x, y = args
+        res = xp.full(x.shape, xp.inf, dtype=dtype)
+        res[(x == 0) & (y >= 0)] = xp.asarray(0, dtype=dtype)
+        i = (x > 0) & (y > 0)
+        res[i] = x[i] * (xp.log(x[i]) - xp.log(y[i]))
+        return res
+    return __rel_entr
 
 
-def _xlogy(x, y, *, xp):
-    with np.errstate(divide='ignore', invalid='ignore'):
-        temp = x * xp.log(y)
-    return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+def _xlogy(xp, spx):
+    def __xlogy(x, y, *, xp=xp):
+        with np.errstate(divide='ignore', invalid='ignore'):
+            temp = x * xp.log(y)
+        return xp.where(x == 0., xp.asarray(0., dtype=temp.dtype), temp)
+    return __xlogy
+
+
+def _chdtrc(xp, spx):
+    # The difference between this and just using `gammaincc`
+    # defined by `get_array_special_func` is that if `gammaincc`
+    # isn't found, we don't want to use the SciPy version; we'll
+    # return None here and use the SciPy version of `chdtrc`..
+    gammaincc = getattr(spx, 'gammaincc', None)  # noqa: F811
+    if gammaincc is None and hasattr(xp, 'special'):
+        gammaincc = getattr(xp.special, 'gammaincc', None)
+    if gammaincc is None:
+        return None
+
+    def __chdtrc(v, x):
+        res = xp.where(x >= 0, gammaincc(v/2, x/2), 1)
+        i_nan = ((x == 0) & (v == 0)) | xp.isnan(x) | xp.isnan(v)
+        res = xp.where(i_nan, xp.nan, res)
+        return res
+    return __chdtrc
 
 
 _generic_implementations = {'rel_entr': _rel_entr,
-                            'xlogy': _xlogy}
+                            'xlogy': _xlogy,
+                            'chdtrc': _chdtrc}
 
 
 # functools.wraps doesn't work because:
@@ -112,6 +137,7 @@ array_special_func_map = {
     'entr': 1,
     'rel_entr': 2,
     'xlogy': 2,
+    'chdtrc': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
