@@ -511,10 +511,6 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], Callable c
 
     int m_abs = std::abs(m);
 
-    for (int j = 0; j < m_abs; ++j) {
-        callback(j, r, res);
-    }
-
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
         for (int j = m_abs; j <= n; ++j) {
             r.limit(j, res[2]);
@@ -526,21 +522,11 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], Callable c
     }
 }
 
-template <typename T>
-void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3]) {
-    assoc_legendre_p_recur(n, m, type, z, res, [](int j, auto r, const T(&res)[3]) {});
-}
-
 template <typename T, typename Callable>
 void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
-
-    for (int j = 0; j < m_abs; ++j) {
-        callback(j, r, res, res_jac);
-    }
-
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
         for (int j = m_abs; j <= n; ++j) {
             r.limit(j, res[2], res_jac[2]);
@@ -559,11 +545,6 @@ void assoc_legendre_p_recur(
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
-
-    for (int j = 0; j < m_abs; ++j) {
-        callback(j, r, res, res_jac, res_hess);
-    }
-
     if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
         for (int j = m_abs; j <= n; ++j) {
             r.limit(j, res[2], res_jac[2], res_hess[2]);
@@ -671,8 +652,14 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = i; j < -n; ++j) {
-            int i_offset = res.extent(0);
+        for (int j = 0; j < std::abs(m); ++j) {
+            int i_offset;
+            if (i < 0) {
+                i_offset = res.extent(0);
+            } else {
+                i_offset = 0;
+            }
+
             res(i + i_offset, j) = 0;
         }
 
@@ -689,10 +676,6 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
 
             res(r.m + i_offset, j) = p[2];
         });
-
-        for (int j = n + 1; j <= i; ++j) {
-            res(i, j) = 0;
-        }
     }
 }
 
@@ -702,8 +685,14 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = i; j < -n; ++j) {
-            int i_offset = res.extent(0);
+        for (int j = 0; j < std::abs(m); ++j) {
+            int i_offset;
+            if (i < 0) {
+                i_offset = res.extent(0);
+            } else {
+                i_offset = 0;
+            }
+
             res(i + i_offset, j) = 0;
             res_jac(i + i_offset, j) = 0;
         }
@@ -726,11 +715,6 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
                 res_jac(r.m + i_offset, j) = p_jac[2];
             }
         );
-
-        for (int j = n + 1; j <= i; ++j) {
-            res(i, j) = 0;
-            res_jac(i, j) = 0;
-        }
     }
 }
 
@@ -740,8 +724,14 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = i; j < -n; ++j) {
-            int i_offset = res.extent(0);
+        for (int j = 0; j < std::abs(m); ++j) {
+            int i_offset;
+            if (i < 0) {
+                i_offset = res.extent(0);
+            } else {
+                i_offset = 0;
+            }
+
             res(i + i_offset, j) = 0;
             res_jac(i + i_offset, j) = 0;
             res_hess(i + i_offset, j) = 0;
@@ -767,12 +757,6 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
                 res_hess(r.m + i_offset, j) = p_hess[2];
             }
         );
-
-        for (int j = n + 1; j <= i; ++j) {
-            res(i, j) = 0;
-            res_jac(i, j) = 0;
-            res_hess(i, j) = 0;
-        }
     }
 }
 
