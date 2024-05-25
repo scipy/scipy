@@ -9311,9 +9311,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
                            symmetric=False, xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
-        # _SimpleChi2 doesn't have `cdf` yet;
-        # add it when `combine_pvalues` is converted to array API
-        pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
+        chi2 = _SimpleChi2(2 * len(pvalues))
+        pval = _get_pvalue(-statistic, chi2, alternative='less',
+                           symmetric=False, xp=np)
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
@@ -10745,6 +10745,9 @@ class _SimpleChi2:
     # distribution in due time.
     def __init__(self, df):
         self.df = df
+
+    def cdf(self, x):
+        return special.chdtr(self.df, x)
 
     def sf(self, x):
         return special.chdtrc(self.df, x)
