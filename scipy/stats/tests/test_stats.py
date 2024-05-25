@@ -5111,7 +5111,6 @@ def test_ttest_ind(xp):
     # test NaNs
     NaN = xp.asarray(xp.nan)
     rvs1 = xp.where(xp.arange(rvs1.shape[0]) == 0, NaN, rvs1)
-    rvs1[0] = NaN
 
     res = stats.ttest_ind(rvs1, rvs2, axis=0)
     xp_assert_equal(res.statistic, NaN)
