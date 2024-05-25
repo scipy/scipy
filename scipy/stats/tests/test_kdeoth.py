@@ -70,7 +70,7 @@ def test_kde_1d_weighted():
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_kde_2d():
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
@@ -91,7 +91,8 @@ def test_kde_2d():
     kdepdf = gkde.evaluate(grid_coords)
     kdepdf = kdepdf.reshape(500, 500)
 
-    normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]), mean=mean, cov=covariance)
+    normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]),
+                                            mean=mean, cov=covariance)
     intervall = y.ravel()[1] - y.ravel()[0]
 
     assert_(np.sum((kdepdf - normpdf)**2) * (intervall**2) < 0.01)
@@ -109,7 +110,7 @@ def test_kde_2d():
                         (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_kde_2d_weighted():
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
@@ -131,7 +132,8 @@ def test_kde_2d_weighted():
     kdepdf = gkde.evaluate(grid_coords)
     kdepdf = kdepdf.reshape(500, 500)
 
-    normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]), mean=mean, cov=covariance)
+    normpdf = stats.multivariate_normal.pdf(np.dstack([x, y]),
+                                            mean=mean, cov=covariance)
     intervall = y.ravel()[1] - y.ravel()[0]
 
     assert_(np.sum((kdepdf - normpdf)**2) * (intervall**2) < 0.01)

@@ -1,0 +1,102 @@
+==========================
+SciPy 1.13.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.13.1 is a bug-fix release with no new features
+compared to 1.13.0. The version of OpenBLAS shipped with
+the PyPI binaries has been increased to 0.3.27.
+
+
+
+Authors
+=======
+* Name (commits)
+* h-vetinari (1)
+* Jake Bowhay (2)
+* Evgeni Burovski (6)
+* Sean Cheah (2)
+* Lucas Colley (2)
+* DWesl (2)
+* Ralf Gommers (7)
+* Ben Greiner (1) +
+* Matt Haberland (2)
+* Gregory R. Lee (1)
+* Philip Loche (1) +
+* Sijo Valayakkad Manikandan (1) +
+* Matti Picus (1)
+* Tyler Reddy (62)
+* Atsushi Sakai (1)
+* Daniel Schmitz (2)
+* Dan Schult (3)
+* Scott Shambaugh (2)
+* Edgar Andrés Margffoy Tuay (1)
+
+A total of 19 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.13.1
+------------------------
+
+* `#19423 <https://github.com/scipy/scipy/issues/19423>`__: BUG: \`scipy.ndimage.value_indices\` returns empty dict for \`intc\`/\`uintc\` dtype on Windows
+* `#20264 <https://github.com/scipy/scipy/issues/20264>`__: DOC, MAINT: .jupyterlite.doit.db shows up untracked
+* `#20392 <https://github.com/scipy/scipy/issues/20392>`__: DOC: optimize.root(method='lm') option
+* `#20415 <https://github.com/scipy/scipy/issues/20415>`__: BUG: csr_array can no longer be initialized with 1D array
+* `#20471 <https://github.com/scipy/scipy/issues/20471>`__: BUG: \`TestEig.test_falker\` fails on windows + MKL as well as...
+* `#20491 <https://github.com/scipy/scipy/issues/20491>`__: BUG: Cannot find \`OpenBLAS\` on Cygwin
+* `#20506 <https://github.com/scipy/scipy/issues/20506>`__: BUG: special.spherical_in: derivative at \`z=0, n=1\` incorrect
+* `#20512 <https://github.com/scipy/scipy/issues/20512>`__: BUG: \`eigh\` fails for size 1 array with driver=evd
+* `#20531 <https://github.com/scipy/scipy/issues/20531>`__: BUG: warning from \`optimize.least_squares\` for astropy with...
+* `#20555 <https://github.com/scipy/scipy/issues/20555>`__: BUG: spatial: error in \`Rotation.align_vectors()\` with an infinite...
+* `#20576 <https://github.com/scipy/scipy/issues/20576>`__: MAINT, TST: two types of failures observed on maintenance/1.13.x...
+* `#20580 <https://github.com/scipy/scipy/issues/20580>`__: BUG: scipy.special.factorial2 doesn't handle \`uint32\` dtypes
+* `#20591 <https://github.com/scipy/scipy/issues/20591>`__: BUG: scipy.stats.wilcoxon in 1.13 fails on 2D array with nan...
+* `#20623 <https://github.com/scipy/scipy/issues/20623>`__: BUG: scipy.spatial.Delaunay, scipy.interpolate.LinearNDInterpolator...
+* `#20648 <https://github.com/scipy/scipy/issues/20648>`__: BUG: stats.yulesimon: incorrect kurtosis values
+* `#20652 <https://github.com/scipy/scipy/issues/20652>`__: BUG: incorrect origin tuple handling in ndimage \`minimum_filter\`...
+* `#20660 <https://github.com/scipy/scipy/issues/20660>`__: BUG: spatial: \`Rotation.align_vectors()\` incorrect for anti-parallel...
+* `#20670 <https://github.com/scipy/scipy/issues/20670>`__: BUG: sparse matrix creation in 1.13 with indices not summing...
+* `#20692 <https://github.com/scipy/scipy/issues/20692>`__: BUG: stats.zipf: incorrect pmf values
+* `#20714 <https://github.com/scipy/scipy/issues/20714>`__: CI: scipy installation failing in umfpack tests
+
+
+Pull requests for 1.13.1
+------------------------
+
+* `#20280 <https://github.com/scipy/scipy/pull/20280>`__: MAINT: added doc/source/.jupyterlite.doit.db to .gitignore See...
+* `#20322 <https://github.com/scipy/scipy/pull/20322>`__: BUG: sparse: align dok_array.pop() to dict.pop() for case with...
+* `#20333 <https://github.com/scipy/scipy/pull/20333>`__: BUG: sync pocketfft again
+* `#20381 <https://github.com/scipy/scipy/pull/20381>`__: REL, MAINT: prep for 1.13.1
+* `#20401 <https://github.com/scipy/scipy/pull/20401>`__: DOC: optimize: fix wrong optional argument name in \`root(method="lm")\`.
+* `#20435 <https://github.com/scipy/scipy/pull/20435>`__: DOC: add missing deprecations from 1.13.0 release notes
+* `#20437 <https://github.com/scipy/scipy/pull/20437>`__: MAINT/DOC: fix syntax in 1.13.0 release notes
+* `#20444 <https://github.com/scipy/scipy/pull/20444>`__: BUG: sparse: Clean up 1D input handling to sparse array/matrix...
+* `#20449 <https://github.com/scipy/scipy/pull/20449>`__: DOC: remove spurious backtick from release notes
+* `#20473 <https://github.com/scipy/scipy/pull/20473>`__: BUG: linalg: fix ordering of complex conj gen eigenvalues
+* `#20474 <https://github.com/scipy/scipy/pull/20474>`__: TST: tolerance bumps for the conda-forge builds
+* `#20484 <https://github.com/scipy/scipy/pull/20484>`__: TST: compare absolute values of U and VT in pydata-sparse SVD...
+* `#20505 <https://github.com/scipy/scipy/pull/20505>`__: BUG: Include Python.h before system headers.
+* `#20516 <https://github.com/scipy/scipy/pull/20516>`__: BUG: linalg: fix eigh(1x1 array, driver='evd') f2py check
+* `#20527 <https://github.com/scipy/scipy/pull/20527>`__: BUG: \`spherical_in\` for \`n=0\` and \`z=0\`
+* `#20530 <https://github.com/scipy/scipy/pull/20530>`__: BLD: Fix error message for f2py generation fail
+* `#20533 <https://github.com/scipy/scipy/pull/20533>`__: TST: Adapt to \`__array__(copy=True)\`
+* `#20537 <https://github.com/scipy/scipy/pull/20537>`__: BLD: Move Python-including files to start of source.
+* `#20567 <https://github.com/scipy/scipy/pull/20567>`__: REV: 1.13.x: revert changes to f2py and tempita handling in meson.build...
+* `#20569 <https://github.com/scipy/scipy/pull/20569>`__: update openblas to 0.3.27
+* `#20573 <https://github.com/scipy/scipy/pull/20573>`__: BUG: Fix error with 180 degree rotation in Rotation.align_vectors()...
+* `#20586 <https://github.com/scipy/scipy/pull/20586>`__: MAINT: optimize.linprog: fix bug when integrality is a list of...
+* `#20592 <https://github.com/scipy/scipy/pull/20592>`__: MAINT: stats.wilcoxon: fix failure with multidimensional \`x\`...
+* `#20601 <https://github.com/scipy/scipy/pull/20601>`__: MAINT: lint: temporarily disable UP031
+* `#20607 <https://github.com/scipy/scipy/pull/20607>`__: BUG: handle uint arrays in factorial{,2,k}
+* `#20611 <https://github.com/scipy/scipy/pull/20611>`__: BUG: prevent QHull message stream being closed twice
+* `#20629 <https://github.com/scipy/scipy/pull/20629>`__: MAINT/DEV: lint: disable UP032
+* `#20633 <https://github.com/scipy/scipy/pull/20633>`__: BUG: fix Vor/Delaunay segfaults
+* `#20644 <https://github.com/scipy/scipy/pull/20644>`__: BUG: ndimage.value_indices: deal with unfixed types
+* `#20653 <https://github.com/scipy/scipy/pull/20653>`__: BUG: ndimage: fix origin handling for \`{minimum, maximum}_filter\`
+* `#20654 <https://github.com/scipy/scipy/pull/20654>`__: MAINT: stats.yulesimon: fix kurtosis
+* `#20687 <https://github.com/scipy/scipy/pull/20687>`__: BUG: sparse: Fix summing duplicates for CSR/CSC creation from...
+* `#20702 <https://github.com/scipy/scipy/pull/20702>`__: BUG: stats: Fix \`zipf.pmf\` and \`zipfian.pmf\` for int32 \`k\`
+* `#20727 <https://github.com/scipy/scipy/pull/20727>`__: CI: pin Python for MacOS conda

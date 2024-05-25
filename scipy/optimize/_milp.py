@@ -1,7 +1,8 @@
 import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack, issparse
-from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
+from scipy._lib._util import VisibleDeprecationWarning
+from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import-not-found,import-untyped]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 from ._linprog_highs import _highs_to_scipy_status_message
@@ -43,7 +44,7 @@ def _constraints_to_components(constraints):
             # argument could be a single tuple representing a LinearConstraint
             try:
                 constraints = [LinearConstraint(*constraints)]
-            except (TypeError, ValueError, np.VisibleDeprecationWarning):
+            except (TypeError, ValueError, VisibleDeprecationWarning):
                 # argument was not a tuple representing a LinearConstraint
                 pass
 
@@ -57,8 +58,8 @@ def _constraints_to_components(constraints):
             except TypeError as exc:
                 raise ValueError(message) from exc
         As.append(csc_array(constraint.A))
-        b_ls.append(np.atleast_1d(constraint.lb).astype(np.double))
-        b_us.append(np.atleast_1d(constraint.ub).astype(np.double))
+        b_ls.append(np.atleast_1d(constraint.lb).astype(np.float64))
+        b_us.append(np.atleast_1d(constraint.ub).astype(np.float64))
 
     if len(As) > 1:
         A = vstack(As, format="csc")
@@ -76,7 +77,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     # objective IV
     if issparse(c):
         raise ValueError("`c` must be a dense array.")
-    c = np.atleast_1d(c).astype(np.double)
+    c = np.atleast_1d(c).astype(np.float64)
     if c.ndim != 1 or c.size == 0 or not np.all(np.isfinite(c)):
         message = ("`c` must be a one-dimensional array of finite numbers "
                    "with at least one element.")
@@ -108,8 +109,8 @@ def _milp_iv(c, integrality, bounds, constraints, options):
             raise ValueError(message) from exc
 
     try:
-        lb = np.broadcast_to(bounds.lb, c.shape).astype(np.double)
-        ub = np.broadcast_to(bounds.ub, c.shape).astype(np.double)
+        lb = np.broadcast_to(bounds.lb, c.shape).astype(np.float64)
+        ub = np.broadcast_to(bounds.ub, c.shape).astype(np.float64)
     except (ValueError, TypeError) as exc:
         message = ("`bounds.lb` and `bounds.ub` must contain reals and "
                    "be broadcastable to `c.shape`.")
@@ -130,7 +131,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     if A.shape != (b_l.size, c.size):
         message = "The shape of `A` must be (len(b_l), len(c))."
         raise ValueError(message)
-    indptr, indices, data = A.indptr, A.indices, A.data.astype(np.double)
+    indptr, indices, data = A.indptr, A.indices, A.data.astype(np.float64)
 
     # options IV
     options = options or {}
@@ -321,7 +322,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     >>> A = np.array([[-1, 1], [3, 2], [2, 3]])
     >>> b_u = np.array([1, 12, 12])
-    >>> b_l = np.full_like(b_u, -np.inf)
+    >>> b_l = np.full_like(b_u, -np.inf, dtype=float)
 
     Because there is no lower limit on these constraints, we have defined a
     variable ``b_l`` full of values representing negative infinity. This may
@@ -349,7 +350,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
-    [1.0, 2.0]
+    [2.0, 2.0]
 
     Note that had we solved the relaxed problem (without integrality
     constraints):

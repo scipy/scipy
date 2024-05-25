@@ -7,23 +7,8 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 __all__ = [  # noqa: F822
     'OptimizeResult',
-    'append',
-    'approx_derivative',
-    'approx_jacobian',
-    'array',
-    'asfarray',
-    'atleast_1d',
-    'concatenate',
-    'exp',
-    'finfo',
     'fmin_slsqp',
-    'inf',
-    'isfinite',
-    'linalg',
-    'old_bound_to_new',
     'slsqp',
-    'sqrt',
-    'vstack',
     'zeros',
 ]
 
@@ -34,5 +19,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="slsqp",
-                                   private_module="_slsqp_py", all=__all__,
+                                   private_modules=["_slsqp_py"], all=__all__,
                                    attribute=name)

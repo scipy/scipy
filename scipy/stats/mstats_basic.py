@@ -28,15 +28,7 @@ __all__ = [  # noqa: F822
     'ttest_ind','ttest_rel','tvar',
     'variation',
     'winsorize',
-    'brunnermunzel', 'ma', 'masked', 'nomask', 'namedtuple',
-    'distributions', 'stats_linregress', 'stats_LinregressResult',
-    'stats_theilslopes', 'stats_siegelslopes', 'ModeResult',
-    'PointbiserialrResult',
-    'Ttest_1sampResult', 'Ttest_indResult', 'Ttest_relResult',
-    'MannwhitneyuResult', 'KruskalResult', 'trimdoc', 'trim1',
-    'DescribeResult', 'stde_median', 'SkewtestResult', 'KurtosistestResult',
-    'NormaltestResult', 'F_onewayResult', 'FriedmanchisquareResult',
-    'BrunnerMunzelResult'
+    'brunnermunzel',
 ]
 
 
@@ -46,5 +38,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="stats", module="mstats_basic",
-                                   private_module="_mstats_basic", all=__all__,
+                                   private_modules=["_mstats_basic"], all=__all__,
                                    attribute=name, correct_module="mstats")

@@ -71,7 +71,7 @@ C             then the same strategy as in QAGS is applied.
 C
 C    - QAWO : Is a routine for the integration of COS(OMEGA*X)*F(X)
 C             or SIN(OMEGA*X)*F(X) over a finite interval (A,B).
-C             OMEGA is is specified by the user
+C             OMEGA is specified by the user
 C             The rule evaluation component is based on the
 C             modified Clenshaw-Curtis technique.
 C             An adaptive subdivision scheme is used connected with

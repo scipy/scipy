@@ -3,6 +3,7 @@
 import numpy as np
 
 from scipy.sparse import csr_matrix, issparse
+from scipy.sparse._sputils import convert_pydata_sparse_to_scipy, is_pydata_spmatrix
 
 cimport numpy as np
 
@@ -224,6 +225,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     modifying the capacities of the new graph appropriately.
 
     """
+    is_pydata_sparse = is_pydata_spmatrix(csgraph)
+    if is_pydata_sparse:
+        pydata_sparse_cls = csgraph.__class__
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, target_format="csr")
     if not (issparse(csgraph) and csgraph.format == "csr"):
         raise TypeError("graph must be in CSR format")
     if not issubclass(csgraph.dtype.type, np.integer):
@@ -263,6 +268,8 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     flow_array = np.asarray(flow)
     flow_matrix = csr_matrix((flow_array, m.indices, m.indptr),
                              shape=m.shape)
+    if is_pydata_sparse:
+        flow_matrix = pydata_sparse_cls.from_scipy_sparse(flow_matrix)
     source_flow = flow_array[m.indptr[source]:m.indptr[source + 1]]
     return MaximumFlowResult(source_flow.sum(), flow_matrix)
 

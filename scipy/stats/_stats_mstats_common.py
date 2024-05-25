@@ -1,9 +1,9 @@
 import warnings
 import numpy as np
-import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
+from scipy.stats import _stats_py
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -26,11 +26,11 @@ def linregress(x, y=None, alternative='two-sided'):
     Parameters
     ----------
     x, y : array_like
-        Two sets of measurements.  Both arrays should have the same length.  If
+        Two sets of measurements.  Both arrays should have the same length N.  If
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
         are then found by splitting the array along the length-2 dimension. In
-        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
+        the case where ``y=None`` and `x` is a 2xN array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
@@ -75,9 +75,6 @@ def linregress(x, y=None, alternative='two-sided'):
 
     Notes
     -----
-    Missing values are considered pair-wise: if a value is missing in `x`,
-    the corresponding value in `y` is masked.
-
     For compatibility with older versions of SciPy, the return value acts
     like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
     ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
@@ -194,7 +191,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
+        prob = _stats_py._get_pvalue(t, distributions.t(df), alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
@@ -319,16 +316,15 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     """
     if method not in ['joint', 'separate']:
         raise ValueError("method must be either 'joint' or 'separate'."
-                         "'{}' is invalid.".format(method))
+                         f"'{method}' is invalid.")
     # We copy both x and y so we can use _find_repeats.
-    y = np.array(y).flatten()
+    y = np.array(y, dtype=float, copy=True).ravel()
     if x is None:
         x = np.arange(len(y), dtype=float)
     else:
-        x = np.array(x, dtype=float).flatten()
+        x = np.array(x, dtype=float, copy=True).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" %
-                             (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
 
     # Compute sorted slopes only when deltax > 0
     deltax = x[:, np.newaxis] - x
@@ -493,8 +489,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         x = np.asarray(x, dtype=float).ravel()
         if len(x) != len(y):
-            raise ValueError("Incompatible lengths ! (%s<>%s)" %
-                             (len(y), len(x)))
+            raise ValueError(f"Incompatible lengths ! ({len(y)}<>{len(x)})")
     dtype = np.result_type(x, y, np.float32)  # use at least float32
     y, x = y.astype(dtype), x.astype(dtype)
     medslope, medinter = siegelslopes_pythran(y, x, method)

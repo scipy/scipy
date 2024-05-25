@@ -5,19 +5,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'LineSearchWarning',
-    'line_search',
-    'line_search_BFGS',
-    'line_search_armijo',
-    'line_search_wolfe1',
-    'line_search_wolfe2',
-    'minpack2',
-    'scalar_search_armijo',
-    'scalar_search_wolfe1',
-    'scalar_search_wolfe2',
-    'warn',
-]
+__all__ = ["line_search"]  # noqa: F822
 
 
 def __dir__():
@@ -26,5 +14,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="linesearch",
-                                   private_module="_linesearch", all=__all__,
+                                   private_modules=["_linesearch"], all=__all__,
                                    attribute=name)

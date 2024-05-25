@@ -5,7 +5,7 @@ import itertools
 import decimal
 from functools import cache
 
-import numpy
+import numpy as np
 
 from ._vertex import (VertexCacheField, VertexCacheIndex)
 
@@ -111,7 +111,7 @@ class Complex:
 
     workers : int  optional
         Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
-         functions in parrallel.
+         functions in parallel.
     """
     def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
                  symmetry=None, constraints=None, workers=1):
@@ -120,7 +120,7 @@ class Complex:
         # Domains
         self.domain = domain
         if domain is None:
-            self.bounds = [(float(0), float(1.0)), ] * dim
+            self.bounds = [(0.0, 1.0), ] * dim
         else:
             self.bounds = domain
         self.symmetry = symmetry
@@ -137,8 +137,7 @@ class Complex:
             self.min_cons = constraints
             self.g_cons = []
             self.g_args = []
-            if (type(constraints) is not tuple) and (type(constraints)
-                                                     is not list):
+            if not isinstance(constraints, (tuple, list)):
                 constraints = (constraints,)
 
             for cons in constraints:
@@ -396,7 +395,7 @@ class Complex:
         for example moving from the lower bound in C2 (dimension 2) to the
         higher bound in C2. During this operation connection all the vertices.
         Now repeat the N connections. Note that these elements can be connected
-        in parrallel.
+        in parallel.
         """
         # Inherit class arguments
         if symmetry is None:
@@ -1109,8 +1108,8 @@ class Complex:
         for v in star:
             S_rows.append(v.x)
 
-        S_rows = numpy.array(S_rows)
-        A = numpy.array(S_rows) - numpy.array(v_x)
+        S_rows = np.array(S_rows)
+        A = np.array(S_rows) - np.array(v_x)
         # Iterate through all the possible simplices of S_rows
         for s_i in itertools.combinations(range(S_rows.shape[0]),
                                           r=self.dim + 1):
@@ -1167,15 +1166,15 @@ class Complex:
         res : boolean
             True if `v_x` is in `S`
         """
-        A_11 = numpy.delete(S, 0, 0) - S[0]
+        A_11 = np.delete(S, 0, 0) - S[0]
 
-        sign_det_A_11 = numpy.sign(numpy.linalg.det(A_11))
+        sign_det_A_11 = np.sign(np.linalg.det(A_11))
         if sign_det_A_11 == 0:
             # NOTE: We keep the variable A_11, but we loop through A_jj
             # ind=
             # while sign_det_A_11 == 0:
-            #    A_11 = numpy.delete(S, ind, 0) - S[ind]
-            #    sign_det_A_11 = numpy.sign(numpy.linalg.det(A_11))
+            #    A_11 = np.delete(S, ind, 0) - S[ind]
+            #    sign_det_A_11 = np.sign(np.linalg.det(A_11))
 
             sign_det_A_11 = -1  # TODO: Choose another det of j instead?
             # TODO: Unlikely to work in many cases
@@ -1187,7 +1186,7 @@ class Complex:
             det_A_jj = (-1)**d * sign_det_A_11
             # TODO: Note that scipy might be faster to add as an optional
             #       dependency
-            sign_det_A_j0 = numpy.sign(numpy.linalg.det(numpy.delete(A_j0, d,
+            sign_det_A_j0 = np.sign(np.linalg.det(np.delete(A_j0, d,
                                                                      0)))
             # TODO: Note if sign_det_A_j0 == then the point is coplanar to the
             #       current simplex facet, so perhaps return True and attach?
@@ -1220,7 +1219,7 @@ class Complex:
         #       dimensions higher than 2?
         # TODO: Literature seems to suggest using proj.T, but why is this
         #       needed?
-        if numpy.linalg.det(proj) == 0.0:  # TODO: Repalace with tolerance?
+        if np.linalg.det(proj) == 0.0:  # TODO: Repalace with tolerance?
             return True  # Simplex is degenerate
         else:
             return False  # Simplex is not degenerate

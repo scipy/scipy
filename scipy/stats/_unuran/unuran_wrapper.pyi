@@ -1,12 +1,12 @@
+from __future__ import annotations
 import numpy as np
-from typing import (Union, overload, Callable, NamedTuple,
-                    Protocol)
+from typing import (overload, Callable, NamedTuple, Protocol)
 import numpy.typing as npt
 from scipy._lib._util import SeedType
 import scipy.stats as stats
 
 
-ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
+ArrayLike0D = bool | int | float | complex | str | bytes | np.generic
 
 
 __all__: list[str]
@@ -18,7 +18,7 @@ class UNURANError(RuntimeError):
 
 class Method:
     @overload
-    def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[misc]
+    def rvs(self, size: None = ...) -> float | int: ...  # type: ignore[overload-overlap]
     @overload
     def rvs(self, size: int | tuple[int, ...] = ...) -> np.ndarray: ...
     def set_random_state(self, random_state: SeedType) -> None: ...
@@ -50,7 +50,7 @@ class TransformedDensityRejection(Method):
     @property
     def squeeze_area(self) -> float: ...
     @overload
-    def ppf_hat(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    def ppf_hat(self, u: ArrayLike0D) -> float: ...  # type: ignore[overload-overlap]
     @overload
     def ppf_hat(self, u: npt.ArrayLike) -> np.ndarray: ...
 
@@ -99,11 +99,11 @@ class NumericalInversePolynomial(Method):
     @property
     def intervals(self) -> int: ...
     @overload
-    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[overload-overlap]
     @overload
     def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
     @overload
-    def cdf(self, x: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    def cdf(self, x: ArrayLike0D) -> float: ...  # type: ignore[overload-overlap]
     @overload
     def cdf(self, x: npt.ArrayLike) -> np.ndarray: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
@@ -135,7 +135,7 @@ class NumericalInverseHermite(Method):
     @property
     def intervals(self) -> int: ...
     @overload
-    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[overload-overlap]
     @overload
     def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
     def qrvs(self,
@@ -174,6 +174,6 @@ class DiscreteGuideTable(Method):
                  guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @overload
-    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[overload-overlap]
     @overload
     def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...

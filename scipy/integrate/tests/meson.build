@@ -6,7 +6,9 @@ py3.install_sources([
     'test_integrate.py',
     'test_odeint_jac.py',
     'test_quadpack.py',
-    'test_quadrature.py'
+    'test_quadrature.py',
+    'test_tanhsinh.py'
   ],
-  subdir: 'scipy/integrate/tests'
+  subdir: 'scipy/integrate/tests',
+  install_tag: 'tests'
 )

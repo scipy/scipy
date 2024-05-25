@@ -6,21 +6,11 @@ from scipy._lib.deprecation import _sub_module_deprecation
 
 
 __all__ = [  # noqa: F822
-    'CONVERGED',
-    'CONVERR',
-    'INPROGRESS',
     'RootResults',
-    'SIGNERR',
-    'TOMS748Solver',
-    'VALUEERR',
     'bisect',
     'brenth',
     'brentq',
-    'flag_map',
-    'namedtuple',
     'newton',
-    'operator',
-    'results_c',
     'ridder',
     'toms748',
 ]
@@ -32,5 +22,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="zeros",
-                                   private_module="_zeros_py", all=__all__,
+                                   private_modules=["_zeros_py"], all=__all__,
                                    attribute=name)

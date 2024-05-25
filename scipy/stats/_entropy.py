@@ -8,10 +8,21 @@ from __future__ import annotations
 import math
 import numpy as np
 from scipy import special
+from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from scipy._lib._array_api import array_namespace
 
 __all__ = ['entropy', 'differential_entropy']
 
 
+@_axis_nan_policy_factory(
+    lambda x: x,
+    n_samples=lambda kwgs: (
+        2 if ("qk" in kwgs and kwgs["qk"] is not None)
+        else 1
+    ),
+    n_outputs=1, result_to_tuple=lambda x: (x,), paired=True,
+    too_small=-1  # entropy doesn't have too small inputs
+)
 def entropy(pk: np.typing.ArrayLike,
             qk: np.typing.ArrayLike | None = None,
             base: float | None = None,
@@ -129,21 +140,39 @@ def entropy(pk: np.typing.ArrayLike,
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    pk = np.asarray(pk)
-    pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+    xp = array_namespace(pk) if qk is None else array_namespace(pk, qk)
+
+    pk = xp.asarray(pk)
+    with np.errstate(invalid='ignore'):
+        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
     if qk is None:
         vec = special.entr(pk)
     else:
-        qk = np.asarray(qk)
-        pk, qk = np.broadcast_arrays(pk, qk)
-        qk = 1.0*qk / np.sum(qk, axis=axis, keepdims=True)
+        qk = xp.asarray(qk)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None, xp=xp)  # don't ignore any axes
+        sum_kwargs = dict(axis=axis, keepdims=True)
+        qk = 1.0*qk / xp.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
-    S = np.sum(vec, axis=axis)
+    S = xp.sum(vec, axis=axis)
     if base is not None:
-        S /= np.log(base)
+        S /= math.log(base)
     return S
 
 
+def _differential_entropy_is_too_small(samples, kwargs, axis=-1):
+    values = samples[0]
+    n = values.shape[axis]
+    window_length = kwargs.get("window_length",
+                               math.floor(math.sqrt(n) + 0.5))
+    if not 2 <= 2 * window_length < n:
+        return True
+    return False
+
+
+@_axis_nan_policy_factory(
+    lambda x: x, n_outputs=1, result_to_tuple=lambda x: (x,),
+    too_small=_differential_entropy_is_too_small
+)
 def differential_entropy(
     values: np.typing.ArrayLike,
     *,

@@ -12,7 +12,7 @@ from scipy.interpolate import RectBivariateSpline
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate._dfitpack import regrid_smth
 from scipy.interpolate._fitpack2 import dfitpack_int
 
 
@@ -204,7 +204,7 @@ class TestSplev:
         z = splev(t, tck)
         z0 = splev(t[0], tck)
         z1 = splev(t[1], tck)
-        assert_equal(z, np.row_stack((z0, z1)))
+        assert_equal(z, np.vstack((z0, z1)))
 
     def test_extrapolation_modes(self):
         # test extrapolation modes
@@ -357,7 +357,8 @@ class TestBisplrep:
 
     def test_regression_1310(self):
         # Regression test for gh-1310
-        data = np.load(data_file('bug-1310.npz'))['data']
+        with np.load(data_file('bug-1310.npz')) as loaded_data:
+            data = loaded_data['data']
 
         # Shouldn't crash -- the input data triggers work array sizes
         # that caused previously some data to not be aligned on
@@ -482,3 +483,21 @@ def test_spalde_scalar_input():
     res = spalde(np.float64(1), tck)
     des = np.array([1., 3., 6., 6.])
     assert_almost_equal(res, des)
+
+
+def test_spalde_nc():
+    # regression test for https://github.com/scipy/scipy/issues/19002
+    # here len(t) = 29 and len(c) = 25 (== len(t) - k - 1) 
+    x = np.asarray([-10., -9., -8., -7., -6., -5., -4., -3., -2.5, -2., -1.5,
+                    -1., -0.5, 0., 0.5, 1., 1.5, 2., 2.5, 3., 4., 5., 6.],
+                    dtype="float")
+    t = [-10.0, -10.0, -10.0, -10.0, -9.0, -8.0, -7.0, -6.0, -5.0, -4.0, -3.0,
+         -2.5, -2.0, -1.5, -1.0, -0.5, 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 4.0,
+         5.0, 6.0, 6.0, 6.0, 6.0]
+    c = np.asarray([1., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.,
+                    0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])
+    k = 3
+
+    res = spalde(x, (t, c, k))
+    res_splev = np.asarray([splev(x, (t, c, k), nu) for nu in range(4)])
+    assert_allclose(res, res_splev.T, atol=1e-15)

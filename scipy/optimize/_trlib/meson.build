@@ -1,4 +1,4 @@
-_trlib = py3.extension_module('_trlib',
+py3.extension_module('_trlib',
   [
     lib_cython_gen.process('_trlib.pyx'),
     'trlib_krylov.c',
@@ -12,7 +12,7 @@ _trlib = py3.extension_module('_trlib',
     '../../_lib',
     '../../_build_utils/src'
   ],
-  dependencies: [lapack, blas, np_dep],
+  dependencies: [lapack_dep, blas_dep, np_dep],
   link_args: version_link_args,
   install: true,
   subdir: 'scipy/optimize/_trlib'

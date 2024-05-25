@@ -83,7 +83,9 @@ tests, benchmarks, and correct code style.
 
 4. Code style
     Uniform code style makes it easier for others to read your code.
-    SciPy follows the standard Python style guideline, `PEP8`_.
+    SciPy follows the standard Python style guideline, `PEP8`_,
+    with the exception that the recommended maximum line length is 88 characters,
+    rather than PEP8's 79 characters.
 
     We provide a git pre-commit hook that can check each of your commits
     for proper style. Install it (once) by running the following from
@@ -156,7 +158,7 @@ If you're unsure, please ask on the scipy-dev `mailing list <mailing lists>`_.
 *Why is SciPy under the BSD license and not, say, the GPL?*
 
 Like Python, SciPy uses a "permissive" open source license, which allows
-proprietary re-use. While this allows companies to use and modify the software
+proprietary reuse. While this allows companies to use and modify the software
 without giving anything back, it is felt that the larger user base results in
 more contributions overall, and companies often publish their modifications
 anyway, without being required to.  See John Hunter's `BSD pitch`_.

@@ -1,9 +1,10 @@
 # cython: language_level=3
 # cython: cdivision=True
+import importlib.resources
+
 cimport cython
 cimport numpy as cnp
 
-import os
 import numpy as np
 
 cnp.import_array()
@@ -140,8 +141,11 @@ def _initialize_direction_numbers(poly, vinit, dtype):
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    dns = np.load(os.path.join(os.path.dirname(__file__),
-                  "_sobol_direction_numbers.npz"))
+    _curdir = importlib.resources.files("scipy.stats")
+    _npzfile = _curdir.joinpath("_sobol_direction_numbers.npz")
+    with importlib.resources.as_file(_npzfile) as f:
+        dns = np.load(f)
+
     dns_poly = dns["poly"].astype(dtype)
     dns_vinit = dns["vinit"].astype(dtype)
     poly[...] = dns_poly
@@ -406,7 +410,7 @@ cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
 @cython.wraparound(False)
 cpdef void _categorize(cnp.float_t[::1] draws,
                        cnp.float_t[::1] p_cumulative,
-                       cnp.int_t[::1] result) noexcept nogil:
+                       cnp.intp_t[::1] result) noexcept nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):

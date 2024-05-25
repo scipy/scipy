@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING, Callable, Any, cast
 import numpy as np
+import numpy.typing as npt
 import math
 import warnings
 from collections import namedtuple
@@ -8,13 +9,13 @@ from collections import namedtuple
 from scipy.special import roots_legendre
 from scipy.special import gammaln, logsumexp
 from scipy._lib._util import _rng_spawn
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
+from scipy._lib.deprecation import _deprecated
 
 
 __all__ = ['fixed_quad', 'quadrature', 'romberg', 'romb',
-           'trapezoid', 'trapz', 'simps', 'simpson',
-           'cumulative_trapezoid', 'cumtrapz', 'newton_cotes',
-           'qmc_quad', 'AccuracyWarning']
+           'trapezoid', 'simpson',
+           'cumulative_trapezoid', 'newton_cotes',
+           'qmc_quad', 'AccuracyWarning', 'cumulative_simpson']
 
 
 def trapezoid(y, x=None, dx=1.0, axis=-1):
@@ -119,26 +120,32 @@ def trapezoid(y, x=None, dx=1.0, axis=-1):
     >>> integrate.trapezoid(a, axis=1)
     array([2.,  8.])
     """
-    # Future-proofing, in case NumPy moves from trapz to trapezoid for the same
-    # reasons as SciPy
-    if hasattr(np, 'trapezoid'):
-        return np.trapezoid(y, x=x, dx=dx, axis=axis)
+    y = np.asanyarray(y)
+    if x is None:
+        d = dx
     else:
-        return np.trapz(y, x=x, dx=dx, axis=axis)
-
-
-# Note: alias kept for backwards compatibility. Rename was done
-# because trapz is a slur in colloquial English (see gh-12924).
-def trapz(y, x=None, dx=1.0, axis=-1):
-    """An alias of `trapezoid`.
-
-    `trapz` is kept for backwards compatibility. For new code, prefer
-    `trapezoid` instead.
-    """
-    msg = ("'scipy.integrate.trapz' is deprecated in favour of "
-           "'scipy.integrate.trapezoid' and will be removed in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return trapezoid(y, x=x, dx=dx, axis=axis)
+        x = np.asanyarray(x)
+        if x.ndim == 1:
+            d = np.diff(x)
+            # reshape to correct shape
+            shape = [1]*y.ndim
+            shape[axis] = d.shape[0]
+            d = d.reshape(shape)
+        else:
+            d = np.diff(x, axis=axis)
+    nd = y.ndim
+    slice1 = [slice(None)]*nd
+    slice2 = [slice(None)]*nd
+    slice1[axis] = slice(1, None)
+    slice2[axis] = slice(None, -1)
+    try:
+        ret = (d * (y[tuple(slice1)] + y[tuple(slice2)]) / 2.0).sum(axis)
+    except ValueError:
+        # Operations didn't work, cast to ndarray
+        d = np.asarray(d)
+        y = np.asarray(y)
+        ret = np.add.reduce(d * (y[tuple(slice1)]+y[tuple(slice2)])/2.0, axis)
+    return ret
 
 
 class AccuracyWarning(Warning):
@@ -210,13 +217,9 @@ def fixed_quad(func, a, b, args=(), n=5):
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
     tplquad : triple integrals
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     romb : integrators for sampled data
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
 
     Examples
     --------
@@ -292,10 +295,18 @@ def vectorize1(func, args=(), vec_func=False):
     return vfunc
 
 
+@_deprecated("`scipy.integrate.quadrature` is deprecated as of SciPy 1.12.0"
+             "and will be removed in SciPy 1.15.0. Please use"
+             "`scipy.integrate.quad` instead.")
 def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
                vec_func=True, miniter=1):
     """
     Compute a definite integral using fixed-tolerance Gaussian quadrature.
+
+    .. deprecated:: 1.12.0
+
+          This function is deprecated as of SciPy 1.12.0 and will be removed
+          in SciPy 1.15.0. Please use `scipy.integrate.quad` instead.
 
     Integrate `func` from `a` to `b` using Gaussian quadrature
     with absolute tolerance `tol`.
@@ -330,7 +341,6 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
 
     See Also
     --------
-    romberg : adaptive Romberg quadrature
     fixed_quad : fixed-order Gaussian quadrature
     quad : adaptive quadrature using QUADPACK
     dblquad : double integrals
@@ -338,8 +348,6 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     romb : integrator for sampled data
     simpson : integrator for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrator
-    odeint : ODE integrator
 
     Examples
     --------
@@ -373,7 +381,8 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     else:
         warnings.warn(
             "maxiter (%d) exceeded. Latest difference = %e" % (maxiter, err),
-            AccuracyWarning)
+            AccuracyWarning, stacklevel=2
+        )
     return val, err
 
 
@@ -381,21 +390,6 @@ def tupleset(t, i, value):
     l = list(t)
     l[i] = value
     return tuple(l)
-
-
-# Note: alias kept for backwards compatibility. Rename was done
-# because cumtrapz is a slur in colloquial English (see gh-12924).
-def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """An alias of `cumulative_trapezoid`.
-
-    `cumtrapz` is kept for backwards compatibility. For new code, prefer
-    `cumulative_trapezoid` instead.
-    """
-    msg = ("'scipy.integrate.cumtrapz' is deprecated in favour of "
-           "'scipy.integrate.cumulative_trapezoid' and will be removed "
-           "in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    return cumulative_trapezoid(y, x=x, dx=dx, axis=axis, initial=initial)
 
 
 def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
@@ -420,7 +414,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
         .. deprecated:: 1.12.0
             The option for non-zero inputs for `initial` will be deprecated in
-            SciPy 1.14.0. After this time, a ValueError will be raised if
+            SciPy 1.15.0. After this time, a ValueError will be raised if
             `initial` is not None or 0.
 
     Returns
@@ -434,15 +428,12 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     romb : integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -458,6 +449,8 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     """
     y = np.asarray(y)
+    if y.shape[axis] == 0:
+        raise ValueError("At least one point is required along `axis`.")
     if x is None:
         d = dx
     else:
@@ -488,7 +481,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
             warnings.warn(
                 "The option for values for `initial` other than None or 0 is "
                 "deprecated as of SciPy 1.12.0 and will raise a value error in"
-                " SciPy 1.14.0.",
+                " SciPy 1.15.0.",
                 DeprecationWarning, stacklevel=2
             )
         if not np.isscalar(initial):
@@ -521,8 +514,8 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = np.float64(h[sl0])
-        h1 = np.float64(h[sl1])
+        h0 = h[sl0].astype(float, copy=False)
+        h1 = h[sl1].astype(float, copy=False)
         hsum = h0 + h1
         hprod = h0 * h1
         h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1 != 0)
@@ -539,23 +532,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
     return result
 
 
-# Note: alias kept for backwards compatibility. simps was renamed to simpson
-# because the former is a slur in colloquial English (see gh-12924).
-def simps(y, x=None, dx=1.0, axis=-1, even=_NoValue):
-    """An alias of `simpson`.
-
-    `simps` is kept for backwards compatibility. For new code, prefer
-    `simpson` instead.
-    """
-    msg = ("'scipy.integrate.simps' is deprecated in favour of "
-           "'scipy.integrate.simpson' and will be removed in SciPy 1.14.0")
-    warnings.warn(msg, DeprecationWarning, stacklevel=2)
-    # we don't deprecate positional use as the wrapper is going away completely
-    return simpson(y, x=x, dx=dx, axis=axis, even=even)
-
-
-@_deprecate_positional_args(version="1.14")
-def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
+def simpson(y, *, x=None, dx=1.0, axis=-1):
     """
     Integrate y(x) using samples along the given axis and the composite
     Simpson's rule. If x is None, spacing of dx is assumed.
@@ -575,37 +552,6 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
         `x` is None. Default is 1.
     axis : int, optional
         Axis along which to integrate. Default is the last axis.
-    even : {None, 'simpson', 'avg', 'first', 'last'}, optional
-        'avg' : Average two results:
-            1) use the first N-2 intervals with
-               a trapezoidal rule on the last interval and
-            2) use the last
-               N-2 intervals with a trapezoidal rule on the first interval.
-
-        'first' : Use Simpson's rule for the first N-2 intervals with
-                a trapezoidal rule on the last interval.
-
-        'last' : Use Simpson's rule for the last N-2 intervals with a
-               trapezoidal rule on the first interval.
-
-        None : equivalent to 'simpson' (default)
-
-        'simpson' : Use Simpson's rule for the first N-2 intervals with the
-                  addition of a 3-point parabolic segment for the last
-                  interval using equations outlined by Cartwright [1]_.
-                  If the axis to be integrated over only has two points then
-                  the integration falls back to a trapezoidal integration.
-
-                  .. versionadded:: 1.11.0
-
-        .. versionchanged:: 1.11.0
-            The newly added 'simpson' option is now the default as it is more
-            accurate in most situations.
-
-        .. deprecated:: 1.11.0
-            Parameter `even` is deprecated and will be removed in SciPy
-            1.14.0. After this time the behaviour for an even number of
-            points will follow that of `even='simpson'`.
 
     Returns
     -------
@@ -615,15 +561,12 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     romb : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
+    cumulative_simpson : cumulative integration using Simpson's 1/3 rule
 
     Notes
     -----
@@ -645,24 +588,20 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
     >>> x = np.arange(0, 10)
     >>> y = np.arange(0, 10)
 
-    >>> integrate.simpson(y, x)
+    >>> integrate.simpson(y, x=x)
     40.5
 
     >>> y = np.power(x, 3)
-    >>> integrate.simpson(y, x)
+    >>> integrate.simpson(y, x=x)
     1640.5
     >>> integrate.quad(lambda x: x**3, 0, 9)[0]
     1640.25
-
-    >>> integrate.simpson(y, x, even='first')
-    1644.5
 
     """
     y = np.asarray(y)
     nd = len(y.shape)
     N = y.shape[axis]
     last_dx = dx
-    first_dx = dx
     returnshape = 0
     if x is not None:
         x = np.asarray(x)
@@ -679,27 +618,10 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
             raise ValueError("If given, length of x along axis must be the "
                              "same as y.")
 
-    # even keyword parameter is deprecated
-    if even is not _NoValue:
-        warnings.warn(
-            "The 'even' keyword is deprecated as of SciPy 1.11.0 and will be "
-            "removed in SciPy 1.14.0",
-            DeprecationWarning, stacklevel=2
-        )
-
     if N % 2 == 0:
         val = 0.0
         result = 0.0
         slice_all = (slice(None),) * nd
-
-        # default is 'simpson'
-        even = even if even not in (_NoValue, None) else "simpson"
-
-        if even not in ['avg', 'last', 'first', 'simpson']:
-            raise ValueError(
-                "Parameter 'even' must be 'simpson', "
-                "'avg', 'last', or 'first'."
-            )
 
         if N == 2:
             # need at least 3 points in integration axis to form parabolic
@@ -710,12 +632,7 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
             if x is not None:
                 last_dx = x[slice1] - x[slice2]
             val += 0.5 * last_dx * (y[slice1] + y[slice2])
-
-            # calculation is finished. Set `even` to None to skip other
-            # scenarios
-            even = None
-
-        if even == 'simpson':
+        else:
             # use Simpson's rule on first intervals
             result = _basic_simpson(y, 0, N-3, x, dx, axis)
 
@@ -723,7 +640,7 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
             slice2 = tupleset(slice_all, axis, -2)
             slice3 = tupleset(slice_all, axis, -3)
 
-            h = np.asfarray([dx, dx])
+            h = np.asarray([dx, dx], dtype=np.float64)
             if x is not None:
                 # grab the last two spacings from the appropriate axis
                 hm2 = tupleset(slice_all, axis, slice(-2, -1, 1))
@@ -772,34 +689,266 @@ def simpson(y, *, x=None, dx=1.0, axis=-1, even=_NoValue):
 
             result += alpha*y[slice1] + beta*y[slice2] - eta*y[slice3]
 
-        # The following code (down to result=result+val) can be removed
-        # once the 'even' keyword is removed.
-
-        # Compute using Simpson's rule on first intervals
-        if even in ['avg', 'first']:
-            slice1 = tupleset(slice_all, axis, -1)
-            slice2 = tupleset(slice_all, axis, -2)
-            if x is not None:
-                last_dx = x[slice1] - x[slice2]
-            val += 0.5*last_dx*(y[slice1]+y[slice2])
-            result = _basic_simpson(y, 0, N-3, x, dx, axis)
-        # Compute using Simpson's rule on last set of intervals
-        if even in ['avg', 'last']:
-            slice1 = tupleset(slice_all, axis, 0)
-            slice2 = tupleset(slice_all, axis, 1)
-            if x is not None:
-                first_dx = x[tuple(slice2)] - x[tuple(slice1)]
-            val += 0.5*first_dx*(y[slice2]+y[slice1])
-            result += _basic_simpson(y, 1, N-2, x, dx, axis)
-        if even == 'avg':
-            val /= 2.0
-            result /= 2.0
-        result = result + val
+        result += val
     else:
         result = _basic_simpson(y, 0, N-2, x, dx, axis)
     if returnshape:
         x = x.reshape(saveshape)
     return result
+
+
+def _cumulatively_sum_simpson_integrals(
+    y: np.ndarray, 
+    dx: np.ndarray, 
+    integration_func: Callable[[np.ndarray, np.ndarray], np.ndarray],
+) -> np.ndarray:
+    """Calculate cumulative sum of Simpson integrals.
+    Takes as input the integration function to be used. 
+    The integration_func is assumed to return the cumulative sum using
+    composite Simpson's rule. Assumes the axis of summation is -1.
+    """
+    sub_integrals_h1 = integration_func(y, dx)
+    sub_integrals_h2 = integration_func(y[..., ::-1], dx[..., ::-1])[..., ::-1]
+    
+    shape = list(sub_integrals_h1.shape)
+    shape[-1] += 1
+    sub_integrals = np.empty(shape)
+    sub_integrals[..., :-1:2] = sub_integrals_h1[..., ::2]
+    sub_integrals[..., 1::2] = sub_integrals_h2[..., ::2]
+    # Integral over last subinterval can only be calculated from 
+    # formula for h2
+    sub_integrals[..., -1] = sub_integrals_h2[..., -1]
+    res = np.cumsum(sub_integrals, axis=-1)
+    return res
+
+
+def _cumulative_simpson_equal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
+    """Calculate the Simpson integrals for all h1 intervals assuming equal interval
+    widths. The function can also be used to calculate the integral for all
+    h2 intervals by reversing the inputs, `y` and `dx`.
+    """
+    d = dx[..., :-1]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
+
+    # Calculate integral over the subintervals (eqn (10) of Reference [2])
+    return d / 3 * (5 * f1 / 4 + 2 * f2 - f3 / 4)
+
+
+def _cumulative_simpson_unequal_intervals(y: np.ndarray, dx: np.ndarray) -> np.ndarray:
+    """Calculate the Simpson integrals for all h1 intervals assuming unequal interval
+    widths. The function can also be used to calculate the integral for all
+    h2 intervals by reversing the inputs, `y` and `dx`.
+    """
+    x21 = dx[..., :-1]
+    x32 = dx[..., 1:]
+    f1 = y[..., :-2]
+    f2 = y[..., 1:-1]
+    f3 = y[..., 2:]
+
+    x31 = x21 + x32
+    x21_x31 = x21/x31
+    x21_x32 = x21/x32
+    x21x21_x31x32 = x21_x31 * x21_x32
+
+    # Calculate integral over the subintervals (eqn (8) of Reference [2])
+    coeff1 = 3 - x21_x31
+    coeff2 = 3 + x21x21_x31x32 + x21_x31
+    coeff3 = -x21x21_x31x32
+
+    return x21/6 * (coeff1*f1 + coeff2*f2 + coeff3*f3)
+
+
+def _ensure_float_array(arr: npt.ArrayLike) -> np.ndarray:
+    arr = np.asarray(arr)
+    if np.issubdtype(arr.dtype, np.integer):
+        arr = arr.astype(float, copy=False)
+    return arr
+
+
+def cumulative_simpson(y, *, x=None, dx=1.0, axis=-1, initial=None):
+    r"""
+    Cumulatively integrate y(x) using the composite Simpson's 1/3 rule.
+    The integral of the samples at every point is calculated by assuming a 
+    quadratic relationship between each point and the two adjacent points.
+
+    Parameters
+    ----------
+    y : array_like
+        Values to integrate. Requires at least one point along `axis`. If two or fewer
+        points are provided along `axis`, Simpson's integration is not possible and the
+        result is calculated with `cumulative_trapezoid`.
+    x : array_like, optional
+        The coordinate to integrate along. Must have the same shape as `y` or
+        must be 1D with the same length as `y` along `axis`. `x` must also be
+        strictly increasing along `axis`.
+        If `x` is None (default), integration is performed using spacing `dx`
+        between consecutive elements in `y`.
+    dx : scalar or array_like, optional
+        Spacing between elements of `y`. Only used if `x` is None. Can either 
+        be a float, or an array with the same shape as `y`, but of length one along
+        `axis`. Default is 1.0.
+    axis : int, optional
+        Specifies the axis to integrate along. Default is -1 (last axis).
+    initial : scalar or array_like, optional
+        If given, insert this value at the beginning of the returned result,
+        and add it to the rest of the result. Default is None, which means no
+        value at ``x[0]`` is returned and `res` has one element less than `y`
+        along the axis of integration. Can either be a float, or an array with
+        the same shape as `y`, but of length one along `axis`.
+
+    Returns
+    -------
+    res : ndarray
+        The result of cumulative integration of `y` along `axis`.
+        If `initial` is None, the shape is such that the axis of integration
+        has one less value than `y`. If `initial` is given, the shape is equal
+        to that of `y`.
+
+    See Also
+    --------
+    numpy.cumsum
+    cumulative_trapezoid : cumulative integration using the composite 
+        trapezoidal rule
+    simpson : integrator for sampled data using the Composite Simpson's Rule
+
+    Notes
+    -----
+
+    .. versionadded:: 1.12.0
+
+    The composite Simpson's 1/3 method can be used to approximate the definite 
+    integral of a sampled input function :math:`y(x)` [1]_. The method assumes 
+    a quadratic relationship over the interval containing any three consecutive
+    sampled points.
+
+    Consider three consecutive points: 
+    :math:`(x_1, y_1), (x_2, y_2), (x_3, y_3)`.
+
+    Assuming a quadratic relationship over the three points, the integral over
+    the subinterval between :math:`x_1` and :math:`x_2` is given by formula
+    (8) of [2]_:
+    
+    .. math::
+        \int_{x_1}^{x_2} y(x) dx\ &= \frac{x_2-x_1}{6}\left[\
+        \left\{3-\frac{x_2-x_1}{x_3-x_1}\right\} y_1 + \
+        \left\{3 + \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} + \
+        \frac{x_2-x_1}{x_3-x_1}\right\} y_2\\
+        - \frac{(x_2-x_1)^2}{(x_3-x_2)(x_3-x_1)} y_3\right]
+
+    The integral between :math:`x_2` and :math:`x_3` is given by swapping
+    appearances of :math:`x_1` and :math:`x_3`. The integral is estimated
+    separately for each subinterval and then cumulatively summed to obtain
+    the final result.
+    
+    For samples that are equally spaced, the result is exact if the function
+    is a polynomial of order three or less [1]_ and the number of subintervals
+    is even. Otherwise, the integral is exact for polynomials of order two or
+    less. 
+
+    References
+    ----------
+    .. [1] Wikipedia page: https://en.wikipedia.org/wiki/Simpson's_rule
+    .. [2] Cartwright, Kenneth V. Simpson's Rule Cumulative Integration with
+            MS Excel and Irregularly-spaced Data. Journal of Mathematical
+            Sciences and Mathematics Education. 12 (2): 1-9
+
+    Examples
+    --------
+    >>> from scipy import integrate
+    >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
+    >>> x = np.linspace(-2, 2, num=20)
+    >>> y = x**2
+    >>> y_int = integrate.cumulative_simpson(y, x=x, initial=0)
+    >>> fig, ax = plt.subplots()
+    >>> ax.plot(x, y_int, 'ro', x, x**3/3 - (x[0])**3/3, 'b-')
+    >>> ax.grid()
+    >>> plt.show()
+
+    The output of `cumulative_simpson` is similar to that of iteratively
+    calling `simpson` with successively higher upper limits of integration, but
+    not identical.
+
+    >>> def cumulative_simpson_reference(y, x):
+    ...     return np.asarray([integrate.simpson(y[:i], x=x[:i])
+    ...                        for i in range(2, len(y) + 1)])
+    >>>
+    >>> rng = np.random.default_rng(354673834679465)
+    >>> x, y = rng.random(size=(2, 10))
+    >>> x.sort()
+    >>>
+    >>> res = integrate.cumulative_simpson(y, x=x)
+    >>> ref = cumulative_simpson_reference(y, x)
+    >>> equal = np.abs(res - ref) < 1e-15
+    >>> equal  # not equal when `simpson` has even number of subintervals
+    array([False,  True, False,  True, False,  True, False,  True,  True])
+
+    This is expected: because `cumulative_simpson` has access to more
+    information than `simpson`, it can typically produce more accurate
+    estimates of the underlying integral over subintervals.
+
+    """
+    y = _ensure_float_array(y)
+
+    # validate `axis` and standardize to work along the last axis
+    original_y = y
+    original_shape = y.shape
+    try:
+        y = np.swapaxes(y, axis, -1)
+    except IndexError as e:
+        message = f"`axis={axis}` is not valid for `y` with `y.ndim={y.ndim}`."
+        raise ValueError(message) from e
+    if y.shape[-1] < 3:
+        res = cumulative_trapezoid(original_y, x, dx=dx, axis=axis, initial=None)
+        res = np.swapaxes(res, axis, -1)
+
+    elif x is not None:
+        x = _ensure_float_array(x)
+        message = ("If given, shape of `x` must be the same as `y` or 1-D with "
+                   "the same length as `y` along `axis`.")
+        if not (x.shape == original_shape
+                or (x.ndim == 1 and len(x) == original_shape[axis])):
+            raise ValueError(message)
+
+        x = np.broadcast_to(x, y.shape) if x.ndim == 1 else np.swapaxes(x, axis, -1)
+        dx = np.diff(x, axis=-1)
+        if np.any(dx <= 0):
+            raise ValueError("Input x must be strictly increasing.")
+        res = _cumulatively_sum_simpson_integrals(
+            y, dx, _cumulative_simpson_unequal_intervals
+        )
+
+    else:
+        dx = _ensure_float_array(dx)
+        final_dx_shape = tupleset(original_shape, axis, original_shape[axis] - 1)
+        alt_input_dx_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `dx` must either be a scalar or have the same "
+                   "shape as `y` but with only 1 point along `axis`.")
+        if not (dx.ndim == 0 or dx.shape == alt_input_dx_shape):
+            raise ValueError(message)
+        dx = np.broadcast_to(dx, final_dx_shape)
+        dx = np.swapaxes(dx, axis, -1)
+        res = _cumulatively_sum_simpson_integrals(
+            y, dx, _cumulative_simpson_equal_intervals
+        )
+
+    if initial is not None:
+        initial = _ensure_float_array(initial)
+        alt_initial_input_shape = tupleset(original_shape, axis, 1)
+        message = ("If provided, `initial` must either be a scalar or have the "
+                   "same shape as `y` but with only 1 point along `axis`.")
+        if not (initial.ndim == 0 or initial.shape == alt_initial_input_shape):
+            raise ValueError(message)
+        initial = np.broadcast_to(initial, alt_initial_input_shape)
+        initial = np.swapaxes(initial, axis, -1)
+
+        res += initial
+        res = np.concatenate((initial, res), axis=-1)
+
+    res = np.swapaxes(res, -1, axis)
+    return res
 
 
 def romb(y, dx=1.0, axis=-1, show=False):
@@ -827,15 +976,11 @@ def romb(y, dx=1.0, axis=-1, show=False):
     See Also
     --------
     quad : adaptive quadrature using QUADPACK
-    romberg : adaptive Romberg quadrature
-    quadrature : adaptive Gaussian quadrature
     fixed_quad : fixed-order Gaussian quadrature
     dblquad : double integrals
     tplquad : triple integrals
     simpson : integrators for sampled data
     cumulative_trapezoid : cumulative integration for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
 
     Examples
     --------
@@ -983,10 +1128,18 @@ def _printresmat(function, interval, resmat):
     print('after', 2**(len(resmat)-1)+1, 'function evaluations.')
 
 
+@_deprecated("`scipy.integrate.romberg` is deprecated as of SciPy 1.12.0"
+             "and will be removed in SciPy 1.15.0. Please use"
+             "`scipy.integrate.quad` instead.")
 def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
             divmax=10, vec_func=False):
     """
     Romberg integration of a callable function or method.
+
+    .. deprecated:: 1.12.0
+
+          This function is deprecated as of SciPy 1.12.0 and will be removed
+          in SciPy 1.15.0. Please use `scipy.integrate.quad` instead.
 
     Returns the integral of `function` (a function of one variable)
     over the interval (`a`, `b`).
@@ -1034,8 +1187,6 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     romb : Integrators for sampled data.
     simpson : Integrators for sampled data.
     cumulative_trapezoid : Cumulative integration for sampled data.
-    ode : ODE integrator.
-    odeint : ODE integrator.
 
     References
     ----------
@@ -1097,7 +1248,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
     else:
         warnings.warn(
             "divmax (%d) exceeded. Latest difference = %e" % (divmax, err),
-            AccuracyWarning)
+            AccuracyWarning, stacklevel=2)
 
     if show:
         _printresmat(vfunc, interval, resmat)
@@ -1115,7 +1266,8 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
 # You can use maxima to find these rational coefficients
 #  for equally spaced data using the commands
-#  a(i,N) := integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N) / ((N-i)! * i!) * (-1)^(N-i);
+#  a(i,N) := (integrate(product(r-j,j,0,i-1) * product(r-j,j,i+1,N),r,0,N)
+#             / ((N-i)! * i!) * (-1)^(N-i));
 #  Be(N) := N^(N+2)/(N+2)! * (N/(N+3) - sum((i/N)^(N+2)*a(i,N),i,0,N));
 #  Bo(N) := N^(N+1)/(N+1)! * (N/(N+2) - sum((i/N)^(N+1)*a(i,N),i,0,N));
 #  B(N) := (if (mod(N,2)=0) then Be(N) else Bo(N));

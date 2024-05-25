@@ -51,7 +51,7 @@ def _sqrtm_triu(T, blocksize=64):
 
     """
     T_diag = np.diag(T)
-    keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+    keep_it_real = np.isrealobj(T) and np.min(T_diag, initial=0.) >= 0
 
     # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
@@ -100,7 +100,7 @@ def _sqrtm_triu(T, blocksize=64):
                                                             jstart:jstop])
 
             # Invoke LAPACK.
-            # For more details, see the solve_sylvester implemention
+            # For more details, see the solve_sylvester implementation
             # and the fortran dtrsyl and ztrsyl docs.
             Rii = R[istart:istop, istart:istop]
             Rjj = R[jstart:jstop, jstart:jstop]
@@ -172,7 +172,11 @@ def sqrtm(A, disp=True, blocksize=64):
     keep_it_real = np.isrealobj(A)
     if keep_it_real:
         T, Z = schur(A)
-        if not np.array_equal(T, np.triu(T)):
+        d0 = np.diagonal(T)
+        d1 = np.diagonal(T, -1)
+        eps = np.finfo(T.dtype).eps
+        needs_conversion = abs(d1) > eps * (abs(d0[1:]) + abs(d0[:-1]))
+        if needs_conversion.any():
             T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')

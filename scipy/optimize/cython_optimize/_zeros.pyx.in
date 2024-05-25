@@ -117,7 +117,7 @@ def loop_example(method, a0, args, xa, xb, xtol, rtol, mitr):
     return map(lambda a: method(a, xa, xb, xtol, rtol, mitr), args)
 
 
-# brentq example with full ouptut
+# brentq example with full output
 cdef zeros_full_output brentq_full_output_example(
         tuple args, float xa, float xb, float xtol, float rtol, int mitr) noexcept:
     cdef zeros_full_output full_output

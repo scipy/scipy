@@ -21,6 +21,7 @@ from scipy.sparse.linalg._dsolve import (spsolve, use_solver, splu, spilu,
 import scipy.sparse
 
 from scipy._lib._testutils import check_free_memory
+from scipy._lib._util import ComplexWarning
 
 
 sup_sparse_efficiency = suppress_warnings()
@@ -154,7 +155,7 @@ class TestFactorized:
         solve = factorized(self.A)
         b = random.rand(4)
         for t in [np.complex64, np.complex128]:
-            assert_warns(np.ComplexWarning, solve, b.astype(t))
+            assert_warns(ComplexWarning, solve, b.astype(t))
 
     @pytest.mark.skipif(not has_umfpack, reason="umfpack not available")
     def test_assume_sorted_indices_flag(self):
@@ -326,8 +327,10 @@ class TestLinsolve:
                     # interprets also these as "vectors"
                     x = x.ravel()
 
-                assert_array_almost_equal(toarray(x1), x, err_msg=repr((b, spmattype, 1)))
-                assert_array_almost_equal(toarray(x2), x, err_msg=repr((b, spmattype, 2)))
+                assert_array_almost_equal(toarray(x1), x,
+                                          err_msg=repr((b, spmattype, 1)))
+                assert_array_almost_equal(toarray(x2), x,
+                                          err_msg=repr((b, spmattype, 2)))
 
                 # dense vs. sparse output  ("vectors" are always dense)
                 if issparse(b) and x.ndim > 1:
@@ -408,7 +411,7 @@ class TestLinsolve:
         assert_equal(ident.nnz, 3)
         assert_equal(b.nnz, 2)
         assert_equal(x.nnz, 2)
-        assert_allclose(x.A, b.A, atol=1e-12, rtol=1e-12)
+        assert_allclose(x.toarray(), b.toarray(), atol=1e-12, rtol=1e-12)
 
     def test_dtype_cast(self):
         A_real = scipy.sparse.csr_matrix([[1, 2, 0],
@@ -658,7 +661,7 @@ class TestSplu:
         A = A.astype(np.float32)
         spilu(A)
         A = A + 1j*A
-        B = A.A
+        B = A.toarray()
         assert_(not np.isnan(B).any())
 
     @sup_sparse_efficiency
@@ -673,7 +676,7 @@ class TestSplu:
             n = A.shape[0]
             lu = splu(A)
 
-            # Check that the decomposition is as advertized
+            # Check that the decomposition is as advertised
 
             Pc = np.zeros((n, n))
             Pc[np.arange(n), lu.perm_c] = 1
@@ -748,7 +751,8 @@ class TestSpsolveTriangular:
         A = csr_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
-            assert_raises(scipy.linalg.LinAlgError, spsolve_triangular, A, b, lower=lower)
+            assert_raises(scipy.linalg.LinAlgError,
+                          spsolve_triangular, A, b, lower=lower)
 
     @sup_sparse_efficiency
     def test_bad_shape(self):

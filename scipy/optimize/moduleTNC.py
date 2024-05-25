@@ -6,7 +6,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = []  # noqa: F822
+__all__ = []
 
 
 def __dir__():
@@ -15,5 +15,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="optimize", module="moduleTNC",
-                                   private_module="_moduleTNC", all=__all__,
+                                   private_modules=["_moduleTNC"], all=__all__,
                                    attribute=name)

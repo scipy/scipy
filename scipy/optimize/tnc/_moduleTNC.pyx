@@ -82,7 +82,7 @@ cdef int function(double x[], double *f, double g[], void *state) except 1:
 
     f[0] = <double> fx
 
-    gx = np.asfarray(gx)
+    gx = np.asarray(gx, dtype=np.float64)
     if gx.size != n:
         raise ValueError("tnc: gradient must have shape (len(x0),)")
 

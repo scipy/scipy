@@ -97,6 +97,8 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   irwinhall         -- Irwin-Hall
+   jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
    kappa4            -- Kappa 4 parameter
@@ -206,6 +208,7 @@ Discrete distributions
 
    bernoulli                -- Bernoulli
    betabinom                -- Beta-Binomial
+   betanbinom               -- Beta-Negative Binomial
    binom                    -- Binomial
    boltzmann                -- Boltzmann (Truncated Discrete Exponential)
    dlaplace                 -- Discrete Laplacian
@@ -283,6 +286,8 @@ Frequency statistics
    binned_statistic_2d  -- Compute a 2-D binned statistic for a set of data.
    binned_statistic_dd  -- Compute a d-D binned statistic for a set of data.
 
+.. _hypotests:
+
 Hypothesis Tests and related functions
 ======================================
 SciPy has many functions for performing hypothesis tests that return a
@@ -306,6 +311,7 @@ drawn from a specified distribution or a distribution with specified properties
 
    ttest_1samp
    binomtest
+   quantile_test
    skewtest
    kurtosistest
    normaltest
@@ -421,6 +427,7 @@ at the cost of greater computational requirements and stochastic results.
    monte_carlo_test
    permutation_test
    bootstrap
+   power
 
 Instances of the following object can be passed into some hypothesis test
 functions to perform a resampling or Monte Carlo version of the hypothesis
@@ -503,6 +510,7 @@ Statistical distances
    :toctree: generated/
 
    wasserstein_distance
+   wasserstein_distance_nd
    energy_distance
 
 Sampling
@@ -595,7 +603,7 @@ Result classes used in :mod:`scipy.stats`
 
    stats._result_classes
 
-"""
+"""  # noqa: E501
 
 from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
                                DegenerateDataWarning, FitError)
@@ -612,8 +620,8 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._censored_data import CensoredData  # noqa
-from ._resampling import (bootstrap, monte_carlo_test, permutation_test,
+from ._censored_data import CensoredData
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test, power,
                           MonteCarloMethod, PermutationMethod, BootstrapMethod)
 from ._entropy import *
 from ._hypotests import *
@@ -625,6 +633,8 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._mgc import multiscale_graphcorr
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

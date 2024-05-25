@@ -35,7 +35,11 @@ def main(ctx):
     # this configuration runs a single linux_aarch64 + macosx_arm64 run.
     # there's no need to do this during a wheel run as they automatically build
     # and test over a wider range of Pythons.
-    if "[skip cirrus]" in dct["message"] or "[skip ci]" in dct["message"]:
+    PR = int(env.get("CIRRUS_PR", -1))
+    if PR < 0:
+        return []
+
+    if "[skip cirrus]" in dct["message"] or "[skip ci]" in dct["message"] or "[lint only]" in dct["message"] or "[docs only]" in dct["message"]:
         return []
 
     return fs.read("ci/cirrus_general_ci.yml")

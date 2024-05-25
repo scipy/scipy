@@ -5,12 +5,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'gaussian_kde', 'linalg', 'logsumexp', 'check_random_state',
-    'atleast_2d', 'reshape', 'newaxis', 'exp', 'ravel', 'power',
-    'atleast_1d', 'squeeze', 'sum', 'transpose', 'cov',
-    'gaussian_kernel_estimate'
-]
+__all__ = ["gaussian_kde"]  # noqa: F822
 
 
 def __dir__():
@@ -19,5 +14,5 @@ def __dir__():
 
 def __getattr__(name):
     return _sub_module_deprecation(sub_package="stats", module="kde",
-                                   private_module="_kde", all=__all__,
+                                   private_modules=["_kde"], all=__all__,
                                    attribute=name)
