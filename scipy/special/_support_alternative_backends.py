@@ -13,7 +13,7 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc  # noqa: F401
+    chdtr, chdtrc, betainc  # noqa: F401
 )
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
@@ -159,6 +159,7 @@ array_special_func_map = {
     'xlogy': 2,
     'chdtr': 2,
     'chdtrc': 2,
+    'betainc': 3,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
