@@ -69,20 +69,20 @@ void legendre_p_recur(int n, T z, T (&res)[3], Callable callback) {
     forward_recur(r, res, 0, n + 1, callback);
 }
 
-template <typename T, typename Callable, typename... Args>
-void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback, Args &&...args) {
+template <typename T, typename Callable>
+void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     legendre_p_recurrence<T> r{z};
     r.init(res, res_jac);
 
-    forward_recur(r, res, res_jac, 0, n + 1, callback, std::forward<Args>(args)...);
+    forward_recur(r, res, res_jac, 0, n + 1, callback);
 }
 
-template <typename T, typename Callable, typename... Args>
-void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback, Args &&...args) {
+template <typename T, typename Callable>
+void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback) {
     legendre_p_recurrence<T> r{z};
     r.init(res, res_jac, res_hess);
 
-    forward_recur(r, res, res_jac, res_hess, 0, n + 1, callback, std::forward<Args>(args)...);
+    forward_recur(r, res, res_jac, res_hess, 0, n + 1, callback);
 }
 
 /**
@@ -653,13 +653,6 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        int i_offset;
-        if (i < 0) {
-            i_offset = res.extent(0);
-        } else {
-            i_offset = 0;
-        }
-
         T p[3] = {};
         assoc_legendre_p_recur(n, i, type, z, p, [res](int j, auto r, const T(&p)[3]) {
             int i_offset;
@@ -680,18 +673,18 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        int i_offset;
-        if (i < 0) {
-            i_offset = res.extent(0);
-        } else {
-            i_offset = 0;
-        }
-
         T p[3] = {};
         T p_jac[3] = {};
         assoc_legendre_p_recur(
             n, i, type, z, p, p_jac,
-            [res, res_jac, i_offset](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {
+            [res, res_jac](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {
+                int i_offset;
+                if (r.m < 0) {
+                    i_offset = res.extent(0);
+                } else {
+                    i_offset = 0;
+                }
+
                 res(r.m + i_offset, j) = p[2];
                 res_jac(r.m + i_offset, j) = p_jac[2];
             }
@@ -705,19 +698,19 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        int i_offset;
-        if (i < 0) {
-            i_offset = res.extent(0);
-        } else {
-            i_offset = 0;
-        }
-
         T p[3] = {};
         T p_jac[3] = {};
         T p_hess[3] = {};
         assoc_legendre_p_recur(
             n, i, type, z, p, p_jac, p_hess,
-            [res, res_jac, res_hess, i_offset](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
+            [res, res_jac, res_hess](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
+                int i_offset;
+                if (r.m < 0) {
+                    i_offset = res.extent(0);
+                } else {
+                    i_offset = 0;
+                }
+
                 res(r.m + i_offset, j) = p[2];
                 res_jac(r.m + i_offset, j) = p_jac[2];
                 res_hess(r.m + i_offset, j) = p_hess[2];
