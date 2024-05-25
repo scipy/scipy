@@ -13,7 +13,7 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc  # noqa: F401
+    chdtr, chdtrc, betainc, betaincc  # noqa: F401
 )
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
@@ -119,10 +119,25 @@ def _chdtrc(xp, spx):
     return __chdtrc
 
 
+def _betaincc(xp, spx):
+    betainc = getattr(spx, 'betainc', None)  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+    if betainc is None:
+        return None
+
+    def __betaincc(a, b, x):
+        # not perfect; might want to just rely on SciPy
+        return betainc(b, a, 1-x)
+    return __betaincc
+
+
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
                             'chdtr,': _chdtr,
-                            'chdtrc': _chdtrc}
+                            'chdtrc': _chdtrc,
+                            'betaincc': _betaincc,
+                            }
 
 
 # functools.wraps doesn't work because:
@@ -160,6 +175,7 @@ array_special_func_map = {
     'chdtr': 2,
     'chdtrc': 2,
     'betainc': 3,
+    'betaincc': 3,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
