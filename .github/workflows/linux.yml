@@ -114,6 +114,15 @@ jobs:
         ./check_pyext_symbol_hiding.sh ../build
         popd
 
+    - name: Check usage of install tags
+      run: |
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel
+        python tools/check_installation.py ${{ env.INSTALLDIR }} --no-tests
+        rm -r ${{ env.INSTALLDIR }}
+        python dev.py build --tags=runtime,python-runtime,devel,tests
+        python tools/check_installation.py ${{ env.INSTALLDIR }}
+
     - name: Mypy
       if: matrix.python-version == '3.10'
       run: |
@@ -179,7 +188,7 @@ jobs:
         # Non-isolated build, so we use dependencies installed inside the source tree
         python -m pip install -U pip  # need pip >=23 for `--config-settings`
         python -m pip install . --no-build-isolation --config-settings=compile-args=-j2
-        
+
         # Basic tests
         cd ..
         python -c "import scipy"

@@ -963,6 +963,9 @@ class DifferentialEvolutionSolver:
         self.constraint_violation = np.zeros((self.num_population_members, 1))
         self.feasible = np.ones(self.num_population_members, bool)
 
+        # an array to shuffle when selecting candidates. Create it here
+        # rather than repeatedly creating it in _select_samples.
+        self._random_population_index = np.arange(self.num_population_members)
         self.disp = disp
 
     def init_population_lhs(self):
@@ -1647,7 +1650,7 @@ class DifferentialEvolutionSolver:
         # trial either has shape (N, ) or (L, N), where L is the number of
         # solutions being scaled
         scaled = self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
-        if np.any(self.integrality):
+        if np.count_nonzero(self.integrality):
             i = np.broadcast_to(self.integrality, scaled.shape)
             scaled[i] = np.round(scaled[i])
         return scaled
@@ -1658,8 +1661,9 @@ class DifferentialEvolutionSolver:
 
     def _ensure_constraint(self, trial):
         """Make sure the parameters lie between the limits."""
-        mask = np.where((trial > 1) | (trial < 0))
-        trial[mask] = self.random_number_generator.uniform(size=mask[0].shape)
+        mask = np.bitwise_or(trial > 1, trial < 0)
+        if oob := np.count_nonzero(mask):
+            trial[mask] = self.random_number_generator.uniform(size=oob)
 
     def _mutate(self, candidate):
         """Create a trial vector based on a mutation strategy."""
@@ -1762,17 +1766,9 @@ class DifferentialEvolutionSolver:
         obtain random integers from range(self.num_population_members),
         without replacement. You can't have the original candidate either.
         """
-        pool = np.arange(self.num_population_members)
-        self.random_number_generator.shuffle(pool)
-
-        idxs = []
-        while len(idxs) < number_samples and len(pool) > 0:
-            idx = pool[0]
-            pool = pool[1:]
-            if idx != candidate:
-                idxs.append(idx)
-        
-        return idxs
+        self.random_number_generator.shuffle(self._random_population_index)
+        idxs = self._random_population_index[:number_samples + 1]
+        return idxs[idxs != candidate][:number_samples]
 
 
 class _ConstraintWrapper:

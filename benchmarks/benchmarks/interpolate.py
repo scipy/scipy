@@ -8,6 +8,8 @@ with safe_import():
 with safe_import():
     import scipy.interpolate as interpolate
 
+with safe_import():
+    from scipy.sparse import csr_matrix
 
 class Leaks(Benchmark):
     unit = "relative increase with repeats"
@@ -83,7 +85,34 @@ class GridData(Benchmark):
     def time_evaluation(self, n_grids, method):
         interpolate.griddata(self.points, self.values, (self.grid_x, self.grid_y),
                              method=method)
+        
+class GridDataPeakMem(Benchmark):
+    """
+    Benchmark based on https://github.com/scipy/scipy/issues/20357
+    """
+    def setup(self):
+        shape = (7395, 6408)
+        num_nonzero = 488686
 
+        rng = np.random.default_rng(1234)
+
+        random_rows = rng.integers(0, shape[0], num_nonzero)
+        random_cols = rng.integers(0, shape[1], num_nonzero)
+
+        random_values = rng.random(num_nonzero, dtype=np.float32)
+
+        sparse_matrix = csr_matrix((random_values, (random_rows, random_cols)), 
+                                   shape=shape, dtype=np.float32)
+        sparse_matrix = sparse_matrix.toarray()
+
+        self.coords = np.column_stack(np.nonzero(sparse_matrix))
+        self.values = sparse_matrix[self.coords[:, 0], self.coords[:, 1]]
+        self.grid_x, self.grid_y = np.mgrid[0:sparse_matrix.shape[0], 
+                                            0:sparse_matrix.shape[1]]
+
+    def peakmem_griddata(self):
+        interpolate.griddata(self.coords, self.values, (self.grid_x, self.grid_y), 
+                             method='cubic')
 
 class Interpolate1d(Benchmark):
     param_names = ['n_samples', 'method']
@@ -120,9 +149,6 @@ class Interpolate2d(Benchmark):
         self.y = np.arange(-r_samples, r_samples, 0.25)
         self.xx, self.yy = np.meshgrid(self.x, self.y)
         self.z = np.sin(self.xx**2+self.yy**2)
-
-    def time_interpolate(self, n_samples, method):
-        interpolate.interp2d(self.x, self.y, self.z, kind=method)
 
 
 class Rbf(Benchmark):
@@ -424,9 +450,6 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
                                                         tol=tol, maxiter=maxiter)
         self.xi = None
         self._preprocess_xi(*xi)
-        self.simplices, self.c = (
-            interpolate.CloughTocher2DInterpolator._find_simplicies(self, self.xi)
-        )
 
     def _preprocess_xi(self, *args):
         if self.xi is None:
@@ -435,9 +458,6 @@ class CloughTocherInterpolatorValues(interpolate.CloughTocher2DInterpolator):
             )
         return self.xi, self.interpolation_points_shape
     
-    def _find_simplicies(self, xi):
-        return self.simplices, self.c
-
     def __call__(self, values):
         self._set_values(values)
         return super().__call__(self.xi)

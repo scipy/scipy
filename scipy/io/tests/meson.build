@@ -7,7 +7,8 @@ py3.install_sources([
     'test_paths.py',
     'test_wavfile.py'
   ],
-  subdir: 'scipy/io/tests'
+  subdir: 'scipy/io/tests',
+  install_tag: 'tests'
 )
 
 py3.install_sources([
@@ -81,6 +82,7 @@ py3.install_sources([
     'data/test-44100Hz-le-1ch-4bytes-early-eof-no-data.wav',
     'data/test-44100Hz-le-1ch-4bytes-early-eof.wav',
     'data/test-44100Hz-le-1ch-4bytes-incomplete-chunk.wav',
+    'data/test-44100Hz-le-1ch-4bytes-rf64.wav',
     'data/test-44100Hz-le-1ch-4bytes.wav',
     'data/test-48000Hz-2ch-64bit-float-le-wavex.wav',
     'data/test-8000Hz-be-3ch-5S-24bit.wav',
@@ -88,6 +90,7 @@ py3.install_sources([
     'data/test-8000Hz-le-1ch-1byte-ulaw.wav',
     'data/test-8000Hz-le-2ch-1byteu.wav',
     'data/test-8000Hz-le-3ch-5S-24bit-inconsistent.wav',
+    'data/test-8000Hz-le-3ch-5S-24bit-rf64.wav',
     'data/test-8000Hz-le-3ch-5S-24bit.wav',
     'data/test-8000Hz-le-3ch-5S-36bit.wav',
     'data/test-8000Hz-le-3ch-5S-45bit.wav',
@@ -97,5 +100,6 @@ py3.install_sources([
     'data/test-8000Hz-le-5ch-9S-5bit.wav',
     'data/various_compressed.sav'
   ],
-  subdir: 'scipy/io/tests/data'
+  subdir: 'scipy/io/tests/data',
+  install_tag: 'tests'
 )

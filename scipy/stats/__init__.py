@@ -97,6 +97,7 @@ Continuous distributions
    invgamma          -- Inverse Gamma
    invgauss          -- Inverse Gaussian
    invweibull        -- Inverse Weibull
+   irwinhall         -- Irwin-Hall
    jf_skew_t         -- Jones and Faddy Skew-T
    johnsonsb         -- Johnson SB
    johnsonsu         -- Johnson SU
@@ -632,6 +633,8 @@ from ._fit import fit, goodness_of_fit
 from ._covariance import Covariance
 from ._sensitivity_analysis import *
 from ._survival import *
+from ._mgc import multiscale_graphcorr
+
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
