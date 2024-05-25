@@ -10,7 +10,7 @@ MODULE_NAME = 'signal'
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 
-def dispatch_cupy(dispatcher, module_name):
+def dispatch_xp(dispatcher, module_name):
     def inner(func):
         @functools.wraps(func)
         def wrapper(*args, **kwds):
