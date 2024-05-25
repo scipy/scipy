@@ -1998,6 +1998,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     hypothesis [5]_.
 
     """
+    xp = array_namespace(a)
+
     s, _ = skewtest(a, axis, _no_deco=True)
     k, _ = kurtosistest(a, axis, _no_deco=True)
     statistic = s*s + k*k
