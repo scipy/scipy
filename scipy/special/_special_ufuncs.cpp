@@ -10,6 +10,7 @@
 #include "special/bessel.h"
 #include "special/binom.h"
 #include "special/digamma.h"
+#include "special/distance.h"
 #include "special/expint.h"
 #include "special/fresnel.h"
 #include "special/gamma.h"
@@ -142,6 +143,7 @@ extern const char *hyp2f1_doc;
 extern const char *iv_doc;
 extern const char *iv_ratio_doc;
 extern const char *ive_doc;
+extern const char *js_div_doc;
 extern const char *jv_doc;
 extern const char *jve_doc;
 extern const char *kei_doc;
@@ -427,6 +429,12 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
         "ive", ive_doc
     );
     PyModule_AddObjectRef(_special_ufuncs, "ive", ive);
+
+    PyObject *js_div = SpecFun_NewUFunc(
+        {static_cast<func_dd_d_t>(special::js_div), static_cast<func_ff_f_t>(special::js_div)},
+        "_js_div", js_div_doc
+    );
+    PyModule_AddObjectRef(_special_ufuncs, "_js_div", js_div);
 
     PyObject *jv = SpecFun_NewUFunc(
         {static_cast<func_ff_f_t>(special::cyl_bessel_j), static_cast<func_dd_d_t>(special::cyl_bessel_j),

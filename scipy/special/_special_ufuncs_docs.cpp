@@ -1877,6 +1877,13 @@ const char *ive_doc = R"(
     >>> plt.show()
     )";
 
+const char *js_div_doc = R"(
+    _js_div(x, y, out=None)
+
+    Internal function.  Compute the Jensen Shannon divergence.
+
+    )";
+
 const char *jv_doc = R"(
     jv(v, z, out=None)
 

@@ -2248,6 +2248,18 @@ def test_jensenshannon():
                         [0.1402339, 0.0399106, 0.0201815])
 
 
+def test_gh_20083():
+    c1 = np.array([0.027501475, 0.055202297], dtype='float32')
+    c2 = np.array([0.027537677, 0.055334348], dtype='float32')
+    assert np.all(jensenshannon(c1, c2) >= 0)
+
+
+def test_gh_19436():
+    p = [0, 1]
+    q = [5e-324, 1]
+    assert_equal(jensenshannon(p, q), 0.0)
+
+
 def test_gh_17703():
     arr_1 = np.array([1, 0, 0])
     arr_2 = np.array([2, 0, 0])
