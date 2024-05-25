@@ -116,12 +116,12 @@ class TestDualAnnealing:
         assert_allclose(ret.fun, 0., atol=1e-12)
         assert ret.success
 
-    @pytest.mark.fail_slow(5)
     def test_low_dim_no_ls(self):
         ret = dual_annealing(self.func, self.ld_bounds,
                              no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
+    @pytest.mark.fail_slow(5)
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
                              no_local_search=True, seed=self.seed)
