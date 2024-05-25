@@ -6845,7 +6845,7 @@ class TestGeometricStandardDeviation:
 
     def test_ddof_equal_to_number_of_observations(self):
         with pytest.warns(RuntimeWarning, match='Degrees of freedom <= 0'):
-            stats.gstd(self.array_1d, ddof=self.array_1d.size)
+            assert_equal(stats.gstd(self.array_1d, ddof=self.array_1d.size), np.inf)
 
     def test_3d_array(self):
         gstd_actual = stats.gstd(self.array_3d, axis=None)
