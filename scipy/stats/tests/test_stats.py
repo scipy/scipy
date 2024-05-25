@@ -37,7 +37,8 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
+from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
+                                   LinregressResult)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
@@ -2048,7 +2049,7 @@ class TestRegression:
         y += np.sin(np.linspace(0, 20, 100))
 
         result = stats.linregress(x, y)
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
@@ -2166,7 +2167,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Result is of a correct class
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
 
         # LinregressResult elements have correct names
@@ -2244,7 +2245,7 @@ class TestRegression:
             result = stats.linregress(x, x)
 
         # Make sure the result still comes back as `LinregressResult`
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)

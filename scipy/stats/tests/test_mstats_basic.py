@@ -19,7 +19,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_array_almost_equal_nulp, assert_,
                                 assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-from scipy.stats import _mstats_basic
+from scipy.stats import _mstats_basic, _stats_py
 from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats._axis_nan_policy import SmallSampleWarning, too_small_1d_not_omit
 
@@ -917,7 +917,7 @@ def test_regress_simple():
     result = mstats.linregress(x, y)
 
     # Result is of a correct class and with correct fields
-    lr = stats._stats_mstats_common.LinregressResult
+    lr = _stats_py.LinregressResult
     assert_(isinstance(result, lr))
     attributes = ('slope', 'intercept', 'rvalue', 'pvalue', 'stderr')
     check_named_results(result, attributes, ma=True)
