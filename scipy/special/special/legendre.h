@@ -383,7 +383,7 @@ struct assoc_legendre_p_recurrence {
         T vals[3];
         r.init(vals);
 
-        forward_recur(r, vals, 0, m_abs + 1);
+        forward_recur(r, vals, 0, m_abs + 1, [](auto, auto, auto) {});
 
         res[0] = vals[2];
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
@@ -398,7 +398,7 @@ struct assoc_legendre_p_recurrence {
         T vals_jac[3];
         r.init(vals, vals_jac);
 
-        forward_recur(r, vals, vals_jac, 0, m_abs + 1);
+        forward_recur(r, vals, vals_jac, 0, m_abs + 1, [](auto, auto, auto, auto) {});
 
         res[0] = vals[2];
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
@@ -417,7 +417,7 @@ struct assoc_legendre_p_recurrence {
         T vals_hess[3];
         r.init(vals, vals_jac, vals_hess);
 
-        forward_recur(r, vals, vals_jac, vals_hess, 0, m_abs + 1);
+        forward_recur(r, vals, vals_jac, vals_hess, 0, m_abs + 1, [](auto, auto, auto, auto, auto) {});
 
         res[0] = vals[2];
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
@@ -609,7 +609,7 @@ void assoc_legendre_p_recur(
 template <typename T>
 T assoc_legendre_p(int n, int m, int type, T z) {
     T p[3] = {};
-    assoc_legendre_p_recur(n, m, type, z, p, [](int j, auto r, const T(&p)[3]) {});
+    assoc_legendre_p_recur(n, m, type, z, p, [](int j, const auto &r, const T(&p)[3]) {});
 
     return p[2];
 }
@@ -618,7 +618,7 @@ template <typename T>
 void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    assoc_legendre_p_recur(n, m, type, z, p, p_jac, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
+    assoc_legendre_p_recur(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
     res_jac = p_jac[2];
@@ -630,7 +630,8 @@ void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac, T &res_he
     T p_jac[3] = {};
     T p_hess[3] = {};
     assoc_legendre_p_recur(
-        n, m, type, z, p, p_jac, p_hess, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
+        n, m, type, z, p, p_jac, p_hess,
+        [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
     );
 
     res = p[2];

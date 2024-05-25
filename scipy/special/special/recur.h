@@ -95,11 +95,6 @@ void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last, Callb
     }
 }
 
-template <typename Recurrence, typename T, size_t N, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last) {
-    forward_recur(r, res, first, last, [](InputIt it, Recurrence r, const T(&res)[N]) {});
-}
-
 /**
  * Compute a forward recurrence that depends on K previous values.
  *
@@ -132,12 +127,6 @@ void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, In
             ++it;
         }
     }
-}
-
-template <typename Recurrence, typename T, size_t N, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, InputIt last) {
-    forward_recur(r, res, res_jac, first, last, [](InputIt it, Recurrence r, const T(&res)[N], const T(&res_jac)[N]) {
-    });
 }
 
 /**
@@ -175,14 +164,6 @@ void forward_recur(
             ++it;
         }
     }
-}
-
-template <typename Recurrence, typename T, size_t N, typename InputIt>
-void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], InputIt first, InputIt last) {
-    forward_recur(
-        r, res, res_jac, res_hess, first, last,
-        [](InputIt it, Recurrence r, const T(&res)[N], const T(&res_jac)[N], const T(&res_hess)[N]) {}
-    );
 }
 
 } // namespace special
