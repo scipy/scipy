@@ -749,7 +749,7 @@ def gaussian_gradient_magnitude(input, sigma, output=None,
 
 
 def _correlate_or_convolve(input, weights, output, mode, cval, origin,
-                           convolution):
+                           convolution, axes):
     input = np.asarray(input)
     weights = np.asarray(weights)
     complex_input = input.dtype.kind == 'c'
@@ -759,18 +759,34 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
             # As for np.correlate, conjugate weights rather than input.
             weights = weights.conj()
         kwargs = dict(
-            mode=mode, origin=origin, convolution=convolution
+            mode=mode, origin=origin, convolution=convolution, axes=axes
         )
         output = _ni_support._get_output(output, input, complex_output=True)
 
         return _complex_via_real_components(_correlate_or_convolve, input,
                                             weights, output, cval, **kwargs)
 
-    origins = _ni_support._normalize_sequence(origin, input.ndim)
+    axes = _ni_support._check_axes(axes, input.ndim)
+    num_axes = len(axes)
+    origins = _ni_support._normalize_sequence(origin, num_axes)
     weights = np.asarray(weights, dtype=np.float64)
+    if num_axes < input.ndim:
+        origins_temp = [0,] * input.ndim
+        for o, ax in zip(origins, axes):
+            origins_temp[ax] = o
+        origins = origins_temp
+        if weights.ndim != num_axes:
+            raise RuntimeError(f"weights.ndim ({weights.ndim}) must match "
+                               f"len(axes) ({len(axes)})")
+        weights = np.expand_dims(
+            weights,
+            tuple(ax for ax in range(input.ndim) if ax not in axes)
+        )
+
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
-        raise RuntimeError('filter weights array has incorrect shape.')
+        raise RuntimeError(f"weights.ndim ({len(wshape)}) must match "
+                           f"len(axes) ({len(axes)})")
     if convolution:
         weights = weights[tuple([slice(None, None, -1)] * weights.ndim)]
         for ii in range(len(origins)):
@@ -803,7 +819,7 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
 
 @_ni_docstrings.docfiller
 def correlate(input, weights, output=None, mode='reflect', cval=0.0,
-              origin=0):
+              origin=0, *, axes=None):
     """
     Multidimensional correlation.
 
@@ -818,6 +834,12 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     %(mode_reflect)s
     %(cval)s
     %(origin_multiple)s
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `mode` or `origin` must match the length
+        of `axes`. The ith entry in any of these tuples corresponds to the ith
+        entry in `axes`.
 
     Returns
     -------
@@ -862,12 +884,12 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
-                                  origin, False)
+                                  origin, False, axes)
 
 
 @_ni_docstrings.docfiller
 def convolve(input, weights, output=None, mode='reflect', cval=0.0,
-             origin=0):
+             origin=0, *, axes=None):
     """
     Multidimensional convolution.
 
@@ -890,6 +912,12 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
         to the left. By passing a sequence of origins with length equal to
         the number of dimensions of the input array, different shifts can
         be specified along each axis.
+    axes : tuple of int or None, optional
+        If None, `input` is filtered along all axes. Otherwise,
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `mode` or `origin` must match the length
+        of `axes`. The ith entry in any of these tuples corresponds to the ith
+        entry in `axes`.
 
     Returns
     -------
@@ -975,7 +1003,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
 
     """
     return _correlate_or_convolve(input, weights, output, mode, cval,
-                                  origin, True)
+                                  origin, True, axes)
 
 
 @_ni_docstrings.docfiller
