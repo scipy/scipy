@@ -10694,6 +10694,11 @@ def linregress(x, y=None, alternative='two-sided'):
         are then found by splitting the array along the length-2 dimension. In
         the case where ``y=None`` and `x` is a 2xN array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
+
+        .. deprecated:: 1.14.0
+            Inference of the two sets of measurements from a single argument `x`
+            is deprecated will result in an error in SciPy 1.16.0; the sets
+            must be specified separately as `x` and `y`.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -10796,6 +10801,11 @@ def linregress(x, y=None, alternative='two-sided'):
     """
     TINY = 1.0e-20
     if y is None:  # x is a (2, N) or (N, 2) shaped array_like
+        message = ('Inference of the two sets of measurements from a single "'
+                   'argument `x` is deprecated will result in an error in "'
+                   'SciPy 1.16.0; the sets must be specified separately as "'
+                   '`x` and `y`.')
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
         x = np.asarray(x)
         if x.shape[0] == 2:
             x, y = x
