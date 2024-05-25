@@ -1424,17 +1424,19 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
 #####################################
 
 
-def _get_pvalue(statistic, distribution, alternative, symmetric=True):
+def _get_pvalue(statistic, distribution, alternative, symmetric=True, xp=None):
     """Get p-value given the statistic, (continuous) distribution, and alternative"""
+    xp = array_namespace(statistic) if xp is None else xp
 
     if alternative == 'less':
         pvalue = distribution.cdf(statistic)
     elif alternative == 'greater':
         pvalue = distribution.sf(statistic)
     elif alternative == 'two-sided':
-        pvalue = 2 * (distribution.sf(np.abs(statistic)) if symmetric
-                      else np.minimum(distribution.cdf(statistic),
-                                      distribution.sf(statistic)))
+        pvalue = 2 * (distribution.sf(xp.abs(statistic)) if symmetric
+                      else xp_minimum(distribution.cdf(statistic),
+                                      distribution.sf(statistic),
+                                      xp=xp))
     else:
         message = "`alternative` must be 'less', 'greater', or 'two-sided'."
         raise ValueError(message)
@@ -1626,9 +1628,8 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     y = xp.where(y == 0, xp.asarray(1, dtype=y.dtype), y)
     Z = delta * xp.log(y / alpha + xp.sqrt((y / alpha)**2 + 1))
 
-    Z_np = np.asarray(Z)
-    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
-    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
+
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return SkewtestResult(Z, pvalue)
@@ -1837,9 +1838,8 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
 
     Z = (term1 - term2) / (2/(9.0*A))**0.5  # [1]_ Eq. 5
 
-    Z_np = np.asarray(Z)
-    pvalue = _get_pvalue(Z_np, distributions.norm, alternative)
-    pvalue = xp.asarray(pvalue, dtype=Z.dtype)
+    pvalue = _get_pvalue(Z, _SimpleNormal(), alternative, xp=xp)
+
     Z = Z[()] if Z.ndim == 0 else Z
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
     return KurtosistestResult(Z, pvalue)
@@ -2000,16 +2000,15 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     """
     s, _ = skewtest(a, axis, _no_deco=True)
     k, _ = kurtosistest(a, axis, _no_deco=True)
-    k2 = s*s + k*k
+    statistic = s*s + k*k
 
-    xp = array_namespace(k2)
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, 2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
+
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return NormaltestResult(k2, pvalue)
+    return NormaltestResult(statistic, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2171,15 +2170,15 @@ def jarque_bera(x, *, axis=None):
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    k2 = n / 6 * (s**2 + k**2 / 4)
+    statistic = n / 6 * (s**2 + k**2 / 4)
 
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, df=2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
+
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return SignificanceResult(k2, pvalue)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
@@ -4390,7 +4389,9 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    p = distributions.chi2.sf(A, len(samples) - 1)
+    df = len(samples) - 1
+    chi2 = _SimpleChi2(df)
+    p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=np)
     return AlexanderGovernResult(A, p)
 
 
@@ -4956,7 +4957,7 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
     # This needs to be done with NumPy arrays given the existing infrastructure.
     ab = n/2 - 1
     dist = stats.beta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(np.asarray(r), dist, alternative)
+    pvalue = _get_pvalue(np.asarray(r), dist, alternative, xp=np)
     pvalue = xp.asarray(pvalue, dtype=dtype)
 
     r = r[()] if r.ndim == 0 else r
@@ -5576,7 +5577,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = _get_pvalue(t, distributions.t(dof), alternative)
+    prob = _get_pvalue(t, distributions.t(dof), alternative, xp=np)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
@@ -6022,7 +6023,7 @@ def kendalltau(x, y, *, nan_policy='propagate',
         var = ((m * (2*size + 5) - x1 - y1) / 18 +
                (2 * xtie * ytie) / m + x0 * y0 / (9 * m * (size - 2)))
         z = con_minus_dis / np.sqrt(var)
-        pvalue = _get_pvalue(z, distributions.norm, alternative)
+        pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     else:
         raise ValueError(f"Unknown method {method} specified.  Use 'auto', "
                          "'exact' or 'asymptotic'.")
@@ -6498,7 +6499,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     # `from_dlpack` will enable the transfer from other devices, and
     # `_get_pvalue` will even be reworked to support the native backend.
     t_np = np.asarray(t)
-    prob = _get_pvalue(t_np, distributions.t(df), alternative)
+    prob = _get_pvalue(t_np, distributions.t(df), alternative, xp=np)
     prob = xp.asarray(prob, dtype=t.dtype)
     prob = prob[()] if prob.ndim == 0 else prob
 
@@ -6550,7 +6551,7 @@ def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
 
     return (t, prob)
 
@@ -7352,7 +7353,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
 
     with np.errstate(divide='ignore', invalid='ignore'):
         t = np.divide(dm, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative)
+    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
 
     # when nan_policy='omit', `df` can be different for different axis-slices
     df = np.broadcast_to(df, t.shape)[()]
@@ -7668,9 +7669,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     num_obs = _m_count(terms, axis=axis, xp=xp)
     ddof = xp.asarray(ddof)
 
-    stat_np = np.asarray(stat)
-    pvalue = distributions.chi2.sf(stat_np, num_obs - 1 - ddof)
-    pvalue = xp.asarray(pvalue, dtype=stat.dtype)
+    df = xp.asarray(num_obs - 1 - ddof)
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(stat, chi2 , alternative='greater', symmetric=False, xp=xp)
+
     stat = stat[()] if stat.ndim == 0 else stat
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -8826,7 +8828,7 @@ def ranksums(x, y, alternative='two-sided'):
     s = np.sum(x, axis=0)
     expected = n1 * (n1+n2+1) / 2.0
     z = (s - expected) / np.sqrt(n1*n2*(n1+n2+1)/12.0)
-    pvalue = _get_pvalue(z, distributions.norm, alternative)
+    pvalue = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
 
     return RanksumsResult(z[()], pvalue[()])
 
@@ -8926,7 +8928,9 @@ def kruskal(*samples, nan_policy='propagate'):
     df = num_groups - 1
     h /= ties
 
-    return KruskalResult(h, distributions.chi2.sf(h, df))
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(h, chi2, alternative='greater', symmetric=False, xp=np)
+    return KruskalResult(h, pvalue)
 
 
 FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
@@ -9023,9 +9027,11 @@ def friedmanchisquare(*samples):
     c = 1 - ties / (k*(k*k - 1)*n)
 
     ssbn = np.sum(data.sum(axis=0)**2)
-    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
+    chi2 = _SimpleChi2(k - 1)
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FriedmanchisquareResult(statistic, pvalue)
 
 
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
@@ -9144,12 +9150,12 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
         distribution = distributions.t(df)
     elif distribution == "normal":
-        distribution = distributions.norm()
+        distribution = _SimpleNormal()
     else:
         raise ValueError(
             "distribution should be 't' or 'normal'")
 
-    p = _get_pvalue(-wbfn, distribution, alternative)
+    p = _get_pvalue(-wbfn, distribution, alternative, xp=np)
 
     return BrunnerMunzelResult(wbfn, p)
 
@@ -9282,9 +9288,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
-        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+        chi2 = _SimpleChi2(2 * len(pvalues))
+        pval = _get_pvalue(statistic, chi2, alternative='greater',
+                           symmetric=False, xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
+        # _SimpleChi2 doesn't have `cdf` yet;
+        # add it when `combine_pvalues` is converted to array API
         pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
@@ -10697,3 +10707,26 @@ def expectile(a, alpha=0.5, *, weights=None):
     # finding a wrong root.
     res = root_scalar(first_order, x0=x0, x1=x1)
     return res.root
+
+
+class _SimpleNormal:
+    # A very simple, array-API compatible normal distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure Normal
+    # distribution in due time.
+
+    def cdf(self, x):
+        return special.ndtr(x)
+
+    def sf(self, x):
+        return special.ndtr(-x)
+
+
+class _SimpleChi2:
+    # A very simple, array-API compatible chi-squared distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure chi-squared
+    # distribution in due time.
+    def __init__(self, df):
+        self.df = df
+
+    def sf(self, x):
+        return special.chdtrc(self.df, x)
