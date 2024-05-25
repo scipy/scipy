@@ -8,7 +8,7 @@ import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
-from ._continuous_distns import chi2, norm
+from ._continuous_distns import norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -141,7 +141,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
         w = corr * w
 
-    p = chi2.sf(w, r)
+    chi2 = _stats_py._SimpleChi2(r)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
     return Epps_Singleton_2sampResult(w, p)
 
@@ -693,8 +694,8 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    norm = scipy.stats._stats_py._SimpleNormal()
-    p = scipy.stats._stats_py._get_pvalue(Z, norm, alternative, xp=np)
+    norm = _stats_py._SimpleNormal()
+    p = _stats_py._get_pvalue(Z, norm, alternative, xp=np)
 
     return d, p
 

@@ -736,8 +736,6 @@ class TestAnsari:
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestBartlett:
     def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm

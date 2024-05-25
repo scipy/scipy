@@ -1085,6 +1085,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
+@skip_xp_invalid_arg
 class TestNormalitytests:
 
     def test_vs_nonmasked(self):

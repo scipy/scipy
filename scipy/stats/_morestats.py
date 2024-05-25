@@ -18,7 +18,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal)
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -265,7 +265,7 @@ def kstat(data, n=2, *, axis=None):
     .. math::
 
         S_r \equiv \sum_{i=1}^n X_i^r,
-        
+
     and :math:`X_i` is the :math:`i` th data point.
 
     References
@@ -3083,9 +3083,9 @@ def bartlett(*samples, axis=0):
     denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
     T = numer / denom
 
-    T_np = np.asarray(T)
-    pvalue = distributions.chi2.sf(T_np, k-1)
-    pvalue = xp.asarray(pvalue, dtype=T.dtype)
+    chi2 = _SimpleChi2(xp.asarray(k-1))
+    pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
+
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -3659,9 +3659,10 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Aibar = _apply_func(sample, g, np.sum) / Ni
     anbar = np.mean(sample, axis=0)
     varsq = np.var(sample, axis=0, ddof=1)
-    Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
-    pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
-    return FlignerResult(Xsq, pval)
+    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    chi2 = _SimpleChi2(k-1)
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FlignerResult(statistic, pval)
 
 
 @_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
