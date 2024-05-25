@@ -354,6 +354,8 @@ struct assoc_legendre_p_recurrence {
         }
     }
 
+    bool is_pm1() const { return std::abs(std::real(z)) == 1 && std::imag(z) == 0; }
+
     void operator()(int n, T (&res)[2]) const {
         res[0] = -T(n + m - 1) / T(n - m);
         res[1] = T(2 * n - 1) * z / T(n - m);
@@ -427,7 +429,7 @@ struct assoc_legendre_p_recurrence {
         res_hess[1] = T(2 * (m_abs + 1) - 1) * (res_jac[0] + res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
     }
 
-    void limit(int n, T &res) {
+    void at_pm1(int n, T &res) {
         if (m == 0) {
             res = 1;
         } else {
@@ -435,8 +437,8 @@ struct assoc_legendre_p_recurrence {
         }
     }
 
-    void limit(int n, T &res, T &res_jac) {
-        limit(n, res);
+    void at_pm1(int n, T &res, T &res_jac) {
+        at_pm1(n, res);
 
         if (std::abs(m) > n) {
             res_jac = 0;
@@ -455,8 +457,8 @@ struct assoc_legendre_p_recurrence {
         }
     }
 
-    void limit(int n, T &res, T &res_jac, T &res_hess) {
-        limit(n, res, res_jac);
+    void at_pm1(int n, T &res, T &res_jac, T &res_hess) {
+        at_pm1(n, res, res_jac);
 
         // need to complete these
         if (std::abs(m) > n) {
@@ -510,15 +512,26 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], Callable c
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
-
-    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-        for (int j = m_abs; j <= n; ++j) {
-            r.limit(j, res[2]);
+    if (m_abs > n) {
+        for (int j = 0; j <= n; ++j) {
             callback(j, r, res);
         }
     } else {
-        r.init(res);
-        forward_recur(r, res, m_abs, n + 1, callback);
+        for (int j = 0; j < m_abs; ++j) {
+            callback(j, r, res);
+        }
+
+        if (r.is_pm1()) {
+            for (int j = m_abs; j <= n; ++j) {
+                forward_recur_shift(res);
+
+                r.at_pm1(j, res[2]);
+                callback(j, r, res);
+            }
+        } else {
+            r.init(res);
+            forward_recur(r, res, m_abs, n + 1, callback);
+        }
     }
 }
 
@@ -527,14 +540,27 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], T (&res_ja
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
-    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-        for (int j = m_abs; j <= n; ++j) {
-            r.limit(j, res[2], res_jac[2]);
+    if (m_abs > n) {
+        for (int j = 0; j <= n; ++j) {
             callback(j, r, res, res_jac);
         }
     } else {
-        r.init(res, res_jac);
-        forward_recur(r, res, res_jac, m_abs, n + 1, callback);
+        for (int j = 0; j < m_abs; ++j) {
+            callback(j, r, res, res_jac);
+        }
+
+        if (r.is_pm1()) {
+            for (int j = m_abs; j <= n; ++j) {
+                forward_recur_shift(res);
+                forward_recur_shift(res_jac);
+
+                r.at_pm1(j, res[2], res_jac[2]);
+                callback(j, r, res, res_jac);
+            }
+        } else {
+            r.init(res, res_jac);
+            forward_recur(r, res, res_jac, m_abs, n + 1, callback);
+        }
     }
 }
 
@@ -545,14 +571,28 @@ void assoc_legendre_p_recur(
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
-    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-        for (int j = m_abs; j <= n; ++j) {
-            r.limit(j, res[2], res_jac[2], res_hess[2]);
+    if (m_abs > n) {
+        for (int j = 0; j <= n; ++j) {
             callback(j, r, res, res_jac, res_hess);
         }
     } else {
-        r.init(res, res_jac, res_hess);
-        forward_recur(r, res, res_jac, res_hess, m_abs, n + 1, callback);
+        for (int j = 0; j < m_abs; ++j) {
+            callback(j, r, res, res_jac, res_hess);
+        }
+
+        if (r.is_pm1()) {
+            for (int j = m_abs; j <= n; ++j) {
+                forward_recur_shift(res);
+                forward_recur_shift(res_jac);
+                forward_recur_shift(res_hess);
+
+                r.at_pm1(j, res[2], res_jac[2], res_hess[2]);
+                callback(j, r, res, res_jac, res_hess);
+            }
+        } else {
+            r.init(res, res_jac, res_hess);
+            forward_recur(r, res, res_jac, res_hess, m_abs, n + 1, callback);
+        }
     }
 }
 
@@ -568,73 +608,34 @@ void assoc_legendre_p_recur(
  */
 template <typename T>
 T assoc_legendre_p(int n, int m, int type, T z) {
-    int m_abs = std::abs(m);
-    if (m_abs > n) {
-        return 0;
-    }
-
-    assoc_legendre_p_recurrence<T> r{m, type, z};
-    if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-        T res;
-        r.limit(n, res);
-        return res;
-    }
-
     T p[3] = {};
-    r.init(p);
-
-    forward_recur(r, p, std::abs(m), n + 1);
+    assoc_legendre_p_recur(n, m, type, z, p, [](int j, auto r, const T(&p)[3]) {});
 
     return p[2];
 }
 
 template <typename T>
 void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
-    int m_abs = std::abs(m);
-    if (m_abs > n) {
-        res = 0;
-        res_jac = 0;
-    } else {
-        assoc_legendre_p_recurrence<T> r{m, type, z};
-        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-            r.limit(n, res, res_jac);
-        } else {
-            T p[3] = {};
-            T p_jac[3] = {};
-            r.init(p, p_jac);
+    T p[3] = {};
+    T p_jac[3] = {};
+    assoc_legendre_p_recur(n, m, type, z, p, p_jac, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
 
-            forward_recur(r, p, p_jac, std::abs(m), n + 1);
-
-            res = p[2];
-            res_jac = p_jac[2];
-        }
-    }
+    res = p[2];
+    res_jac = p_jac[2];
 }
 
 template <typename T>
 void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
-    int m_abs = std::abs(m);
-    if (m_abs > n) {
-        res = 0;
-        res_jac = 0;
-        res_hess = 0;
-    } else {
-        assoc_legendre_p_recurrence<T> r{m, type, z};
-        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
-            r.limit(n, res, res_jac, res_hess);
-        } else {
-            T p[3] = {};
-            T p_jac[3] = {};
-            T p_hess[3] = {};
-            r.init(p, p_jac, p_hess);
+    T p[3] = {};
+    T p_jac[3] = {};
+    T p_hess[3] = {};
+    assoc_legendre_p_recur(
+        n, m, type, z, p, p_jac, p_hess, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
+    );
 
-            forward_recur(r, p, p_jac, p_hess, std::abs(m), n + 1);
-
-            res = p[2];
-            res_jac = p_jac[2];
-            res_hess = p_hess[2];
-        }
-    }
+    res = p[2];
+    res_jac = p_jac[2];
+    res_hess = p_hess[2];
 }
 
 /**
@@ -652,18 +653,12 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = 0; j < std::abs(m); ++j) {
-            int i_offset;
-            if (i < 0) {
-                i_offset = res.extent(0);
-            } else {
-                i_offset = 0;
-            }
-
-            res(i + i_offset, j) = 0;
+        int i_offset;
+        if (i < 0) {
+            i_offset = res.extent(0);
+        } else {
+            i_offset = 0;
         }
-
-        assoc_legendre_p_recurrence<T> r{i, type, z};
 
         T p[3] = {};
         assoc_legendre_p_recur(n, i, type, z, p, [res](int j, auto r, const T(&p)[3]) {
@@ -685,32 +680,18 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = 0; j < std::abs(m); ++j) {
-            int i_offset;
-            if (i < 0) {
-                i_offset = res.extent(0);
-            } else {
-                i_offset = 0;
-            }
-
-            res(i + i_offset, j) = 0;
-            res_jac(i + i_offset, j) = 0;
+        int i_offset;
+        if (i < 0) {
+            i_offset = res.extent(0);
+        } else {
+            i_offset = 0;
         }
-
-        assoc_legendre_p_recurrence<T> r{i, type, z};
 
         T p[3] = {};
         T p_jac[3] = {};
         assoc_legendre_p_recur(
             n, i, type, z, p, p_jac,
-            [res, res_jac](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {
-                int i_offset;
-                if (r.m < 0) {
-                    i_offset = res.extent(0);
-                } else {
-                    i_offset = 0;
-                }
-
+            [res, res_jac, i_offset](int j, auto r, const T(&p)[3], const T(&p_jac)[3]) {
                 res(r.m + i_offset, j) = p[2];
                 res_jac(r.m + i_offset, j) = p_jac[2];
             }
@@ -724,34 +705,19 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
     int n = res.extent(1) - 1;
 
     for (int i = -m; i <= m; ++i) {
-        for (int j = 0; j < std::abs(m); ++j) {
-            int i_offset;
-            if (i < 0) {
-                i_offset = res.extent(0);
-            } else {
-                i_offset = 0;
-            }
-
-            res(i + i_offset, j) = 0;
-            res_jac(i + i_offset, j) = 0;
-            res_hess(i + i_offset, j) = 0;
+        int i_offset;
+        if (i < 0) {
+            i_offset = res.extent(0);
+        } else {
+            i_offset = 0;
         }
-
-        assoc_legendre_p_recurrence<T> r{i, type, z};
 
         T p[3] = {};
         T p_jac[3] = {};
         T p_hess[3] = {};
         assoc_legendre_p_recur(
             n, i, type, z, p, p_jac, p_hess,
-            [res, res_jac, res_hess](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
-                int i_offset;
-                if (r.m < 0) {
-                    i_offset = res.extent(0);
-                } else {
-                    i_offset = 0;
-                }
-
+            [res, res_jac, res_hess, i_offset](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
                 res(r.m + i_offset, j) = p[2];
                 res_jac(r.m + i_offset, j) = p_jac[2];
                 res_hess(r.m + i_offset, j) = p_hess[2];
