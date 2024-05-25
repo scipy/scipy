@@ -243,7 +243,7 @@ void _rank_filter(T *in_arr, int rank, int arr_len, int win_len, T *out_arr,
 // Python wrapper for rank_filter
 static PyObject *rank_filter(PyObject *self, PyObject *args) {
   PyObject *in_arr_obj, *out_arr_obj, *cval_obj;
-  int32_t rank, arr_len, win_len, mode, origin, type;
+  int rank, arr_len, win_len, mode, origin, type;
   if (!PyArg_ParseTuple(args, "OiiOiOi", &in_arr_obj, &rank, &win_len,
                         &out_arr_obj, &mode, &cval_obj, &origin)) {
     return NULL;
