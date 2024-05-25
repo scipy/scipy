@@ -10727,7 +10727,7 @@ def expectile(a, alpha=0.5, *, weights=None):
     return res.root
 
 
-  def lmoments_iv(sample, order, axis, sorted, standardize):
+def lmoments_iv(sample, order, axis, sorted, standardize):
 
     sample = np.asarray(sample)
     message = "`sample` must be an array of real numbers."
