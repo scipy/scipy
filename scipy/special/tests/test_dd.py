@@ -1,8 +1,13 @@
-# Tests for a few of the "double-double" C functions defined in cephes/dd_*.
+# Tests for a few of the "double-double" C++ functions defined in
+# special/cephes/dd_real.h. Prior to gh-20390 which translated these
+# functions from C to C++, there were test cases for _dd_expm1. It
+# was determined that this function is not used anywhere internally
+# in SciPy, so this function was not translated.
+
 
 import pytest
 from numpy.testing import assert_allclose
-from scipy.special._test_internal import _dd_exp, _dd_log, _dd_expm1
+from scipy.special._test_internal import _dd_exp, _dd_log
 
 
 # Each tuple in test_data contains:
@@ -25,15 +30,6 @@ test_data = [
     (_dd_exp, 10.0, 0.0, 22026.465794806718, -1.3780134700517372e-12),
     (_dd_log, 0.03125, 0.0, -3.4657359027997265, -4.930038229799327e-18),
     (_dd_log, 10.0, 0.0, 2.302585092994046, -2.1707562233822494e-16),
-    (_dd_expm1, -1.25, 0.0, -0.7134952031398099, -4.7031321153650186e-17),
-    (_dd_expm1, -0.484375, 0.0, -0.3839178722093218, 7.609376052156984e-18),
-    (_dd_expm1, -0.25, 0.0, -0.22119921692859512, -1.0231869534531498e-17),
-    (_dd_expm1, -0.0625, 0.0, -0.06058693718652421, -7.077887227488846e-19),
-    (_dd_expm1, 0.0, 0.0, 0.0, 0.0),
-    (_dd_expm1, 0.0625, 3.5e-18, 0.06449445891785943, 1.4323095758164254e-18),
-    (_dd_expm1, 0.25, 0.0, 0.2840254166877415, -2.133257464457841e-17),
-    (_dd_expm1, 0.498046875, 0.0, 0.645504254608231, -9.198435524984236e-18),
-    (_dd_expm1, 1.25, 0.0, 2.4903429574618414, -4.604261945372796e-17)
 ]
 
 

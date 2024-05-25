@@ -47,6 +47,8 @@ from numpy.testing import (verbose, assert_,
                            break_cycles, IS_PYPY)
 import pytest
 
+import scipy.spatial.distance
+
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
     _validate_vector, _METRICS_NAMES)
@@ -1625,6 +1627,11 @@ class TestSomeDistanceFunctions:
             dist = wcosine(x, y)
             assert_almost_equal(dist, 1.0 - 18.0 / (np.sqrt(14) * np.sqrt(27)))
 
+    def test_cosine_output_dtype(self):
+        # Regression test for gh-19541
+        assert isinstance(wcorrelation([1, 1], [1, 1], centered=False), float)
+        assert isinstance(wcosine([1, 1], [1, 1]), float)
+
     def test_correlation(self):
         xm = np.array([-1.0, 0, 1.0])
         ym = np.array([-4.0 / 3, -4.0 / 3, 5.0 - 7.0 / 3])
@@ -2250,3 +2257,11 @@ def test_gh_17703():
     actual = cdist(np.atleast_2d(arr_1),
                    np.atleast_2d(arr_2), metric='dice')
     assert_allclose(actual, expected)
+
+
+def test_immutable_input(metric):
+    if metric in ("jensenshannon", "mahalanobis", "seuclidean"):
+        pytest.skip("not applicable")
+    x = np.arange(10, dtype=np.float64)
+    x.setflags(write=False)
+    getattr(scipy.spatial.distance, metric)(x, x, w=x)

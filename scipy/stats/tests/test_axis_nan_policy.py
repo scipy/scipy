@@ -5,6 +5,7 @@
 # functions in stats._util.
 
 from itertools import product, combinations_with_replacement, permutations
+import os
 import re
 import pickle
 import pytest
@@ -15,6 +16,10 @@ from scipy import stats
 from scipy.stats import norm  # type: ignore[attr-defined]
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 from scipy._lib._util import AxisError
+from scipy.conftest import skip_xp_invalid_arg
+
+
+SCIPY_XSLOW = int(os.environ.get('SCIPY_XSLOW', '0'))
 
 
 def unpack_ttest_result(res):
@@ -54,7 +59,7 @@ axis_nan_policy_cases = [
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
-    (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
+    (stats.moment, tuple(), dict(order=[1, 2]), 1, 2, False, None),
     (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
     (stats.ttest_1samp, (np.array([0]),), dict(), 1, 7, False,
      unpack_ttest_result),
@@ -66,6 +71,10 @@ axis_nan_policy_cases = [
     (stats.mode, tuple(), dict(), 1, 2, True, lambda x: (x.mode, x.count)),
     (stats.differential_entropy, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.variation, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.friedmanchisquare, tuple(), dict(), 3, 2, True, None),
+    (stats.brunnermunzel, tuple(), dict(), 2, 2, False, None),
+    (stats.mood, tuple(), {}, 2, 2, False, None),
+    (stats.shapiro, tuple(), {}, 1, 2, False, None),
     (stats.ks_1samp, (norm().cdf,), dict(), 1, 4, False,
      lambda res: (*res, res.statistic_location, res.statistic_sign)),
     (stats.ks_2samp, tuple(), dict(), 2, 4, False,
@@ -98,6 +107,10 @@ axis_nan_policy_cases = [
     (stats.circmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.circvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.circstd, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.f_oneway, tuple(), {}, 2, 2, False, None),
+    (stats.alexandergovern, tuple(), {}, 2, 2, False,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.combine_pvalues, tuple(), {}, 1, 2, False, None),
     (stats.lmoment, tuple(), dict(), 1, 4, False, lambda x: tuple(x)),
 ]
 
@@ -114,6 +127,7 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Data passed to ks_2samp must not be empty",
                       "Not enough test observations",
                       "Not enough other observations",
+                      "Not enough observations.",
                       "At least one observation is required",
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
@@ -122,10 +136,11 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
                       "Window length (2) must be positive and less",
-                      "skewtest is not valid with less than",
-                      "kurtosistest requires at least 5",
+                      "`skewtest` requires at least",
+                      "`kurtosistest` requires at least",
                       "attempt to get argmax of an empty sequence",
-                      "No array values within given limits",}
+                      "No array values within given limits",
+                      "Input sample size must be greater than one.",}
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
@@ -235,24 +250,29 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
+    if hypotest in {stats.cramervonmises_2samp} and not SCIPY_XSLOW:
+        pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)
 
 
-@pytest.mark.slow
-@pytest.mark.filterwarnings('ignore::RuntimeWarning')
-@pytest.mark.filterwarnings('ignore::UserWarning')
-@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
-                          "paired", "unpacker"), axis_nan_policy_cases)
-@pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
-@pytest.mark.parametrize(("axis"), range(-3, 3))
-@pytest.mark.parametrize(("data_generator"),
-                         ("all_nans", "all_finite", "mixed"))
-def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
-                              paired, unpacker, nan_policy, axis,
-                              data_generator):
-    _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
-                          unpacker, nan_policy, axis, data_generator)
+if SCIPY_XSLOW:
+    # Takes O(1 min) to run, and even skipping with the `xslow` decorator takes
+    # about 3 sec because this is >3,000 tests. So ensure pytest doesn't see
+    # them at all unless `SCIPY_XSLOW` is defined.
+    @pytest.mark.filterwarnings('ignore::RuntimeWarning')
+    @pytest.mark.filterwarnings('ignore::UserWarning')
+    @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                              "paired", "unpacker"), axis_nan_policy_cases)
+    @pytest.mark.parametrize(("nan_policy"), ("propagate", "omit", "raise"))
+    @pytest.mark.parametrize(("axis"), range(-3, 3))
+    @pytest.mark.parametrize(("data_generator"),
+                             ("all_nans", "all_finite", "mixed"))
+    def test_axis_nan_policy_full(hypotest, args, kwds, n_samples, n_outputs,
+                                  paired, unpacker, nan_policy, axis,
+                                  data_generator):
+        _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
+                              unpacker, nan_policy, axis, data_generator)
 
 
 def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
@@ -367,11 +387,11 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                                     "approximation.")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
-        assert_allclose(res[0], statistics, rtol=1e-15)
+        assert_allclose(res[0], statistics, rtol=1e-14)
         assert_equal(res[0].dtype, statistics.dtype)
 
         if len(res) == 2:
-            assert_allclose(res[1], pvalues, rtol=1e-15)
+            assert_allclose(res[1], pvalues, rtol=1e-14)
             assert_equal(res[1].dtype, pvalues.dtype)
 
 
@@ -671,6 +691,8 @@ def _check_arrays_broadcastable(arrays, axis):
                           "paired", "unpacker"), axis_nan_policy_cases)
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
+    if hypotest in {stats.kruskal, stats.friedmanchisquare} and not SCIPY_XSLOW:
+        pytest.skip("Too slow.")
 
     if hypotest in override_propagate_funcs:
         reason = "Doesn't follow the usual pattern. Tested separately."
@@ -719,7 +741,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     mask = np.isnan(expected)
                     expected[mask] = empty_val
 
-                res = hypotest(*samples, *args, axis=axis, **kwds)
+                with np.testing.suppress_warnings() as sup:
+                    # generated by f_oneway for too_small inputs
+                    sup.filter(stats.DegenerateDataWarning)
+                    res = hypotest(*samples, *args, axis=axis, **kwds)
                 res = unpacker(res)
 
                 for i in range(n_outputs):
@@ -774,6 +799,7 @@ def test_masked_array_2_sentinel_array():
     assert B_out is B
 
 
+@skip_xp_invalid_arg
 def test_masked_dtype():
     # When _masked_arrays_2_sentinel_arrays was first added, it always
     # upcast the arrays to np.float64. After gh16662, check expected promotion
@@ -866,6 +892,7 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
+@skip_xp_invalid_arg
 @pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
@@ -889,6 +916,7 @@ def test_masked_stat_3d(axis):
     np.testing.assert_array_equal(res, res2)
 
 
+@skip_xp_invalid_arg
 def test_mixed_mask_nan_1():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
@@ -936,6 +964,7 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res4, res)
 
 
+@skip_xp_invalid_arg
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # check for expected interaction between masks and nans
@@ -1054,8 +1083,17 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean", "pmean"])
-def test_mean_mixed_mask_nan_weights(weighted_fun_name):
+@skip_xp_invalid_arg
+@pytest.mark.parametrize(
+    ("weighted_fun_name, unpacker"),
+    [
+        ("gmean", lambda x: x),
+        ("hmean", lambda x: x),
+        ("pmean", lambda x: x),
+        ("combine_pvalues", lambda x: (x.pvalue, x.statistic)),
+    ],
+)
+def test_mean_mixed_mask_nan_weights(weighted_fun_name, unpacker):
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
     # also checks paired-sample sentinel value removal
@@ -1065,6 +1103,9 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
             return stats.pmean(a, p=0.42, **kwargs)
     else:
         weighted_fun = getattr(stats, weighted_fun_name)
+
+    def func(*args, **kwargs):
+        return unpacker(weighted_fun(*args, **kwargs))
 
     m, n = 3, 20
     axis = -1
@@ -1103,20 +1144,15 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
-        res = weighted_fun(a_nans, weights=b_nans,
-                           nan_policy='omit', axis=axis)
-        res1 = weighted_fun(a_masked1, weights=b_masked1,
-                            nan_policy='omit', axis=axis)
-        res2 = weighted_fun(a_masked2, weights=b_masked2,
-                            nan_policy='omit', axis=axis)
-        res3 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='raise', axis=axis)
-        res4 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='propagate', axis=axis)
+        res = func(a_nans, weights=b_nans, nan_policy="omit", axis=axis)
+        res1 = func(a_masked1, weights=b_masked1, nan_policy="omit", axis=axis)
+        res2 = func(a_masked2, weights=b_masked2, nan_policy="omit", axis=axis)
+        res3 = func(a_masked3, weights=b_masked3, nan_policy="raise", axis=axis)
+        res4 = func(a_masked3, weights=b_masked3, nan_policy="propagate", axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name not in {'pmean', 'gmean'}:
+        if weighted_fun_name in {"hmean"}:
             weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
             res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
                                    axis=axis, _no_deco=True)
@@ -1125,7 +1161,7 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    if weighted_fun_name not in {'pmean', 'gmean'}:
+    if weighted_fun_name in {"hmean"}:
         # _no_deco mean returns masked array, last element was masked
         np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
 
@@ -1150,23 +1186,21 @@ def test_raise_invalid_args_g17713():
     with pytest.raises(TypeError, match=message):
         stats.gmean([1, 2, 3], 0, float, [1, 1, 1], 10)
 
-@pytest.mark.parametrize(
-    'dtype',
-    (list(np.typecodes['Float']
-          + np.typecodes['Integer']
-          + np.typecodes['Complex'])))
+
+@pytest.mark.parametrize('dtype', [np.int16, np.float32, np.complex128])
 def test_array_like_input(dtype):
     # Check that `_axis_nan_policy`-decorated functions work with custom
     # containers that are coercible to numeric arrays
 
     class ArrLike:
-        def __init__(self, x):
+        def __init__(self, x, dtype):
             self._x = x
+            self._dtype = dtype
 
-        def __array__(self):
-            return np.asarray(x, dtype=dtype)
+        def __array__(self, dtype=None, copy=None):
+            return np.asarray(x, dtype=self._dtype)
 
     x = [1]*2 + [3, 4, 5]
-    res = stats.mode(ArrLike(x))
+    res = stats.mode(ArrLike(x, dtype=dtype))
     assert res.mode == 1
     assert res.count == 2

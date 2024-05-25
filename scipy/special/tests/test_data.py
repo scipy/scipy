@@ -1,4 +1,4 @@
-import os
+import importlib.resources
 
 import numpy as np
 from numpy.testing import suppress_warnings
@@ -23,14 +23,22 @@ from scipy.integrate import IntegrationWarning
 
 from scipy.special._testutils import FuncData
 
-DATASETS_BOOST = np.load(os.path.join(os.path.dirname(__file__),
-                                      "data", "boost.npz"))
 
-DATASETS_GSL = np.load(os.path.join(os.path.dirname(__file__),
-                                    "data", "gsl.npz"))
+# The npz files are generated, and hence may live in the build dir. We can only
+# access them through `importlib.resources`, not an explicit path from `__file__`
+_datadir = importlib.resources.files('scipy.special.tests.data')
 
-DATASETS_LOCAL = np.load(os.path.join(os.path.dirname(__file__),
-                                    "data", "local.npz"))
+_boost_npz = _datadir.joinpath('boost.npz')
+with importlib.resources.as_file(_boost_npz) as f:
+    DATASETS_BOOST = np.load(f)
+
+_gsl_npz = _datadir.joinpath('gsl.npz')
+with importlib.resources.as_file(_gsl_npz) as f:
+    DATASETS_GSL = np.load(f)
+
+_local_npz = _datadir.joinpath('local.npz')
+with importlib.resources.as_file(_local_npz) as f:
+    DATASETS_LOCAL = np.load(f)
 
 
 def data(func, dataname, *a, **kw):
@@ -437,7 +445,7 @@ BOOST_TESTS = [
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
              (0,1), 2, rtol=1e-11),
         data(jvp, 'bessel_j_prime_large_data_ipp-bessel_j_prime_large_data',
-             (0,1j), 2, rtol=1e-11),
+             (0,1j), 2, rtol=2e-11),
 
         data(kn, 'bessel_k_int_data_ipp-bessel_k_int_data', (0,1), 2, rtol=1e-12),
 

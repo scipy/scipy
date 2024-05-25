@@ -100,12 +100,12 @@ class TestExpM:
         assert_allclose(expm([[1]]), A)
         assert_allclose(expm(matrix([[1]])), A)
         assert_allclose(expm(np.array([[1]])), A)
-        assert_allclose(expm(csc_matrix([[1]])).A, A)
+        assert_allclose(expm(csc_matrix([[1]])).toarray(), A)
         B = expm(np.array([[1j]]))
         assert_allclose(expm(((1j,),)), B)
         assert_allclose(expm([[1j]]), B)
         assert_allclose(expm(matrix([[1j]])), B)
-        assert_allclose(expm(csc_matrix([[1j]])).A, B)
+        assert_allclose(expm(csc_matrix([[1j]])).toarray(), B)
 
     def test_bidiagonal_sparse(self):
         A = csc_matrix([
@@ -144,10 +144,7 @@ class TestExpM:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale, dtype=dtype) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
-                sup.filter(
-                    SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a csc_matrix is expensive."
-                )
+                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
                 exact_onenorm = _expm(a, use_exact_onenorm=True).toarray()
                 inexact_onenorm = _expm(a, use_exact_onenorm=False).toarray()
             assert_array_almost_equal_nulp(exact_onenorm, e, nulp=100)
@@ -160,10 +157,7 @@ class TestExpM:
             a = scale * speye(3, 3, dtype=dtype, format='csc')
             e = exp(scale) * eye(3, dtype=dtype)
             with suppress_warnings() as sup:
-                sup.filter(
-                    SparseEfficiencyWarning,
-                    "Changing the sparsity structure of a csc_matrix is expensive."
-                )
+                sup.filter(SparseEfficiencyWarning, "Changing the sparsity structure")
                 assert_array_almost_equal_nulp(expm(a).toarray(), e, nulp=100)
 
     def test_logm_consistency(self):
@@ -194,7 +188,7 @@ class TestExpM:
         assert_allclose(expm(Q), expm(1.0 * Q))
 
         Q = csc_matrix(Q)
-        assert_allclose(expm(Q).A, expm(1.0 * Q).A)
+        assert_allclose(expm(Q).toarray(), expm(1.0 * Q).toarray())
 
     def test_triangularity_perturbation(self):
         # Experiment (1) of

@@ -414,3 +414,13 @@ def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
         # in PyPy; since the filename gets reused in this test, clean this up
         break_cycles()
         break_cycles()
+
+
+@pytest.mark.parametrize("dtype", [np.float16])
+def test_wavfile_dtype_unsupported(tmpdir, dtype):
+    tmpfile = str(tmpdir.join('temp.wav'))
+    rng = np.random.default_rng(1234)
+    data = rng.random((100, 5)).astype(dtype)
+    rate = 8000
+    with pytest.raises(ValueError, match="Unsupported"):
+        wavfile.write(tmpfile, rate, data)

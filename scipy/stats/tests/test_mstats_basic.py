@@ -20,7 +20,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
                                 assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
 from scipy.stats import _mstats_basic
-
+from scipy.conftest import skip_xp_invalid_arg
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -56,6 +56,7 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
     assert_equal(x.dtype, dtype)
 
 
+@skip_xp_invalid_arg
 class TestGeoMean:
     def test_1d(self):
         a = [1, 2, 3, 4]
@@ -116,6 +117,7 @@ class TestGeoMean:
         check_equal_gmean(np.ma.array(a), desired)
 
 
+@skip_xp_invalid_arg
 class TestHarMean:
     def test_1d(self):
         a = ma.array([1, 2, 3, 4], mask=[0, 0, 0, 1])
@@ -486,6 +488,7 @@ class TestCorr:
         check_named_results(res, attributes, ma=True)
 
 
+@skip_xp_invalid_arg
 class TestTrimming:
 
     def test_trim(self):
@@ -606,6 +609,7 @@ class TestTrimming:
                      ma.array([np.nan, np.nan, 2, 2, 2]))
 
 
+@skip_xp_invalid_arg
 class TestMoments:
     # Comparison numbers are found using R v.1.5.1
     # note that length(testcase) = 4
@@ -821,6 +825,7 @@ class TestPercentile:
         assert_equal(mstats.scoreatpercentile(x, 50), [1, 1, 1])
 
 
+@skip_xp_invalid_arg
 class TestVariability:
     """  Comparison numbers are found using R v.1.5.1
          note that length(testcase) = 4
@@ -853,6 +858,7 @@ class TestVariability:
         assert_almost_equal(desired, y, decimal=12)
 
 
+@skip_xp_invalid_arg
 class TestMisc:
 
     def test_obrientransform(self):
@@ -973,7 +979,8 @@ class TestTheilslopes:
 
     def test_theilslopes_warnings(self):
         # Test `theilslopes` with degenerate input; see gh-15943
-        with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+        msg = "All `x` coordinates.*|Mean of empty slice.|invalid value encountered.*"
+        with pytest.warns(RuntimeWarning, match=msg):
             res = mstats.theilslopes([0, 1], [0, 0])
             assert np.all(np.isnan(res))
         with suppress_warnings() as sup:
@@ -1078,6 +1085,7 @@ def test_plotting_positions():
     assert_array_almost_equal(pos.data, np.array([0.25, 0.5, 0.75]))
 
 
+@skip_xp_invalid_arg
 class TestNormalitytests:
 
     def test_vs_nonmasked(self):
@@ -1164,7 +1172,7 @@ class TestNormalitytests:
 
     def test_bad_alternative(self):
         x = stats.norm.rvs(size=20, random_state=123)
-        msg = r"alternative must be 'less', 'greater' or 'two-sided'"
+        msg = r"`alternative` must be..."
 
         with pytest.raises(ValueError, match=msg):
             mstats.skewtest(x, alternative='error')
@@ -1520,6 +1528,7 @@ class TestDescribe:
         assert_allclose(result.kurtosis, [-1.3, -2.0])
 
 
+@skip_xp_invalid_arg
 class TestCompareWithStats:
     """
     Class to compare mstats results with stats results.
@@ -1832,6 +1841,7 @@ class TestCompareWithStats:
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
+            sup.filter(UserWarning, "`kurtosistest` p-value may be inaccurate")
             sup.filter(UserWarning, "kurtosistest only valid for n>=20")
             for n in self.get_n():
                 if n > 8:

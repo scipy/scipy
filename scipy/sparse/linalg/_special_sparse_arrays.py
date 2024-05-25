@@ -92,8 +92,8 @@ of_the_second_derivative
     the default dtype for storing matrix representations.
 
     >>> lap.tosparse()
-    <6x6 sparse array of type '<class 'numpy.int8'>'
-        with 16 stored elements (3 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'int8'
+        with 16 stored elements (3 diagonals) and shape (6, 6)>
     >>> lap.toarray()
     array([[-1,  1,  0,  0,  0,  0],
            [ 1, -2,  1,  0,  0,  0],
@@ -165,8 +165,8 @@ of_the_second_derivative
 
     >>> lap = LaplacianNd(grid_shape, boundary_conditions='dirichlet')
     >>> lap.tosparse()
-    <6x6 sparse array of type '<class 'numpy.int8'>'
-        with 20 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse array of dtype 'int8'
+        with 20 stored elements and shape (6, 6)>
     >>> lap.toarray()
     array([[-4,  1,  0,  1,  0,  0],
            [ 1, -4,  1,  0,  1,  0],
@@ -192,8 +192,8 @@ of_the_second_derivative
 
     >>> lap = LaplacianNd(grid_shape, boundary_conditions='periodic')
     >>> lap.tosparse()
-    <6x6 sparse array of type '<class 'numpy.int8'>'
-        with 24 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse array of dtype 'int8'
+        with 24 stored elements and shape (6, 6)>
     >>> lap.toarray()
         array([[-4,  1,  1,  2,  0,  0],
                [ 1, -4,  1,  0,  2,  0],
@@ -218,8 +218,8 @@ of_the_second_derivative
 
     >>> lap = LaplacianNd(grid_shape, boundary_conditions='neumann')
     >>> lap.tosparse()
-    <6x6 sparse array of type '<class 'numpy.int8'>'
-        with 20 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse array of dtype 'int8'
+        with 20 stored elements and shape (6, 6)>
     >>> lap.toarray()
     array([[-2,  1,  0,  1,  0,  0],
            [ 1, -3,  1,  0,  1,  0],
@@ -589,8 +589,8 @@ class Sakurai(LinearOperator):
            [-4, -4, -4, -4, -4, -4],
            [ 5,  6,  6,  6,  6,  5]], dtype=int8)
     >>> sak.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.int8'>'
-        with 24 stored elements (5 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'int8'
+        with 24 stored elements (5 diagonals) and shape (6, 6)>
     >>> np.array_equal(sak.dot(np.eye(n)), sak.tosparse().toarray())
     True
     >>> sak.eigenvalues()
@@ -843,7 +843,7 @@ class MikotaPair:
     the system length such that vibration frequencies are subsequent
     integers 1, 2, ..., `n` where `n` is the number of the masses. Thus,
     eigenvalues of the generalized eigenvalue problem for
-    the matrix pair `K` and `M` where `K` is he system stiffness matrix
+    the matrix pair `K` and `M` where `K` is the system stiffness matrix
     and `M` is the system mass matrix are the squares of the integers,
     i.e., 1, 4, 9, ..., ``n * n``.
 
@@ -906,11 +906,11 @@ class MikotaPair:
     array([1.        , 0.5       , 0.33333333, 0.25      , 0.2       ,
         0.16666667])
     >>> mik_k.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.float64'>'
-        with 16 stored elements (3 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'float64'
+        with 20 stored elements (3 diagonals) and shape (6, 6)>
     >>> mik_m.tosparse()
-    <6x6 sparse matrix of type '<class 'numpy.float64'>'
-        with 6 stored elements (1 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'float64'
+        with 6 stored elements (1 diagonals) and shape (6, 6)>
     >>> np.array_equal(mik_k(np.eye(n)), mik_k.toarray())
     True
     >>> np.array_equal(mik_m(np.eye(n)), mik_m.toarray())

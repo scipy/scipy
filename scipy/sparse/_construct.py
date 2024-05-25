@@ -312,11 +312,11 @@ def identity(n, dtype='d', format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sp.sparse.identity(3, dtype='int8', format='dia')
-    <3x3 sparse matrix of type '<class 'numpy.int8'>'
-            with 3 stored elements (1 diagonals) in DIAgonal format>
+    <DIAgonal sparse matrix of dtype 'int8'
+        with 3 stored elements (1 diagonals) and shape (3, 3)>
     >>> sp.sparse.eye_array(3, dtype='int8', format='dia')
-    <3x3 sparse array of type '<class 'numpy.int8'>'
-            with 3 stored elements (1 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'int8'
+        with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
     return eye(n, n, dtype=dtype, format=format)
@@ -351,8 +351,8 @@ def eye_array(m, n=None, *, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sp.sparse.eye_array(3, dtype=np.int8)
-    <3x3 sparse array of type '<class 'numpy.int8'>'
-            with 3 stored elements (1 diagonals) in DIAgonal format>
+    <DIAgonal sparse array of dtype 'int8'
+        with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
     # TODO: delete next 15 lines [combine with _eye()] once spmatrix removed
@@ -430,8 +430,8 @@ def eye(m, n=None, k=0, dtype=float, format=None):
            [ 0.,  1.,  0.],
            [ 0.,  0.,  1.]])
     >>> sp.sparse.eye(3, dtype=np.int8)
-    <3x3 sparse matrix of type '<class 'numpy.int8'>'
-        with 3 stored elements (1 diagonals) in DIAgonal format>
+    <DIAgonal sparse matrix of dtype 'int8'
+        with 3 stored elements (1 diagonals) and shape (3, 3)>
 
     """
     return _eye(m, n, k, dtype, format, False)
@@ -1043,14 +1043,15 @@ def block_diag(mats, format=None, dtype=None):
     c_idx = 0
     for a in mats:
         if isinstance(a, (list, numbers.Number)):
-            a = coo_array(a)
-        nrows, ncols = a.shape
+            a = coo_array(np.atleast_2d(a))
         if issparse(a):
             a = a.tocoo()
+            nrows, ncols = a._shape_as_2d
             row.append(a.row + r_idx)
             col.append(a.col + c_idx)
             data.append(a.data)
         else:
+            nrows, ncols = a.shape
             a_row, a_col = np.divmod(np.arange(nrows*ncols), ncols)
             row.append(a_row + r_idx)
             col.append(a_col + c_idx)
@@ -1207,7 +1208,7 @@ def _random(shape, density=0.01, format=None, dtype=None,
     # rng.choice uses int64 if first arg is an int
     if tot_prod < np.iinfo(np.int64).max:
         raveled_ind = rng.choice(tot_prod, size=size, replace=False)
-        ind = np.unravel_index(raveled_ind, shape=shape)
+        ind = np.unravel_index(raveled_ind, shape=shape, order='F')
     else:
         # for ravel indices bigger than dtype max, use sets to remove duplicates
         ndim = len(shape)
@@ -1389,8 +1390,8 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
     >>> from scipy.sparse import rand
     >>> matrix = rand(3, 4, density=0.25, format="csr", random_state=42)
     >>> matrix
-    <3x4 sparse matrix of type '<class 'numpy.float64'>'
-       with 3 stored elements in Compressed Sparse Row format>
+    <Compressed Sparse Row sparse matrix of dtype 'float64'
+        with 3 stored elements and shape (3, 4)>
     >>> matrix.toarray()
     array([[0.05641158, 0.        , 0.        , 0.65088847],  # random
            [0.        , 0.        , 0.        , 0.14286682],

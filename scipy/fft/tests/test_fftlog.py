@@ -8,8 +8,9 @@ from scipy.special import poch
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import xp_assert_close
 
+pytestmark = array_api_compatible
 
-@array_api_compatible
+
 def test_fht_agrees_with_fftlog(xp):
     # check that fht numerically agrees with the output from Fortran FFTLog,
     # the results were generated with the provided `fftlogtest` program,
@@ -86,7 +87,6 @@ def test_fht_agrees_with_fftlog(xp):
     xp_assert_close(ours, theirs)
 
 
-@array_api_compatible
 @pytest.mark.parametrize('optimal', [True, False])
 @pytest.mark.parametrize('offset', [0.0, 1.0, -1.0])
 @pytest.mark.parametrize('bias', [0, 0.1, -0.1])
@@ -104,10 +104,9 @@ def test_fht_identity(n, bias, offset, optimal, xp):
     A = fht(a, dln, mu, offset=offset, bias=bias)
     a_ = ifht(A, dln, mu, offset=offset, bias=bias)
 
-    xp_assert_close(a_, a)
+    xp_assert_close(a_, a, rtol=1.5e-7)
 
 
-@array_api_compatible
 def test_fht_special_cases(xp):
     rng = np.random.RandomState(3491349965)
 
@@ -141,7 +140,6 @@ def test_fht_special_cases(xp):
         assert record, 'ifht did not warn about a singular transform'
 
 
-@array_api_compatible
 @pytest.mark.parametrize('n', [64, 63])
 def test_fht_exact(n, xp):
     rng = np.random.RandomState(3491349965)

@@ -280,9 +280,8 @@ def solve_discrete_lyapunov(a, q, method=None):
 
     References
     ----------
-    .. [1] Hamilton, James D. Time Series Analysis, Princeton: Princeton
-       University Press, 1994.  265.  Print.
-       http://doc1.lbfl.li/aca/FLMF037168.pdf
+    .. [1] "Lyapunov equation", Wikipedia,
+       https://en.wikipedia.org/wiki/Lyapunov_equation#Discrete_time
     .. [2] Gajic, Z., and M.T.J. Qureshi. 2008.
        Lyapunov Matrix Equation in System Stability and Control.
        Dover Books on Engineering Series. Dover Publications.
@@ -467,7 +466,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):
@@ -673,7 +672,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
         # xGEBAL does not remove the diagonals before scaling. Also
         # to avoid destroying the Symplectic structure, we follow Ref.3
         M = np.abs(H) + np.abs(J)
-        M[np.diag_indices_from(M)] = 0.
+        np.fill_diagonal(M, 0.)
         _, (sca, _) = matrix_balance(M, separate=1, permute=0)
         # do we need to bother?
         if not np.allclose(sca, np.ones_like(sca)):

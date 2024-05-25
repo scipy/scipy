@@ -1,7 +1,7 @@
-#include <tuple>
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h>
 #include <numpy/arrayobject.h>
+#include <tuple>
 
 namespace py = pybind11;
 
