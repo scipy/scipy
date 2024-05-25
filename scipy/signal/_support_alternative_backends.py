@@ -57,7 +57,7 @@ _FUNC_MAP = {
 
 # ### decorate ###
 for func in _FUNC_MAP:
-    f = (dispatch_cupy(_FUNC_MAP[func], MODULE_NAME)(func)
+    f = (dispatch_xp(_FUNC_MAP[func], MODULE_NAME)(func)
          if _SCIPY_ARRAY_API
          else func)
     sys.modules[__name__].__dict__[func.__name__] = f
