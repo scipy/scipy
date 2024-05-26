@@ -81,13 +81,14 @@ class TestConvolve:
 
     @array_api_compatible
     def test_broadcastable(self, xp):
-        a = xp.arange(27).reshape(3, 3, 3)
+        a = xp.reshape(xp.arange(27), (3, 3, 3))
         b = xp.arange(3)
         for i in range(3):
             b_shape = [1]*3
             b_shape[i] = 3
-            x = convolve(a, b.reshape(b_shape), method='direct')
-            y = convolve(a, b.reshape(b_shape), method='fft')
+
+            x = convolve(a, xp.reshape(b, b_shape), method='direct')
+            y = convolve(a, xp.reshape(b, b_shape), method='fft')
             xp_assert_close(x, y, atol=1e-14)
 
     @array_api_compatible
@@ -111,9 +112,9 @@ class TestConvolve:
     @skip_xp_backends("cupy")
     @array_api_compatible
     def test_input_swapping(self, xp):
-        small = xp.arange(8).reshape(2, 2, 2)
-        big = 1j * xp.arange(27).reshape(3, 3, 3)
-        big += xp.arange(27)[::-1].reshape(3, 3, 3)
+        small = xp.reshape(xp.arange(8), (2, 2, 2))
+        big = 1j * xp.reshape(xp.arange(27, dtype=xp.complex128), (3, 3, 3))
+        big += xp.reshape(xp.arange(27, dtype=xp.complex128)[::-1], (3, 3, 3))
 
         out_array = xp.asarray(
             [[[0 + 0j, 26 + 0j, 25 + 1j, 24 + 2j],
@@ -198,8 +199,8 @@ class TestConvolve:
         # least as large as the corresponding
         # dimensions of the other array. This
         # setup should throw a ValueError.
-        a = xp.arange(1, 7).reshape((2, 3))
-        b = xp.arange(-6, 0).reshape((3, 2))
+        a = xp.reshape(xp.arange(1, 7), (2, 3))
+        b = xp.reshape(xp.arange(-6, 0), (3, 2))
 
         assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
@@ -222,7 +223,11 @@ class TestConvolve:
         array_types = {'i': xp.asarray(np.random.choice([0, 1], size=n)),
                        'f': xp.asarray(np.random.randn(n))}
         array_types['b'] = array_types['u'] = array_types['i']
-        array_types['c'] = array_types['f'] + 0.5j*array_types['f']
+
+        breakpoint()
+
+        val = xp.asarray(0.5j)
+        array_types['c'] = array_types['f'] + val*array_types['f']
 
         for t1, t2, mode in args:
             if is_cupy(xp) and t2 == 'float16':
