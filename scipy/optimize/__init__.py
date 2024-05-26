@@ -116,7 +116,7 @@ Global optimization
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
    direct - DIRECT (Dividing Rectangles) optimizer.
-
+   
 Least-squares and curve fitting
 ===============================
 
@@ -240,6 +240,14 @@ The `root` function supports the following methods:
    optimize.root-excitingmixing
    optimize.root-krylov
    optimize.root-dfsane
+   
+Elementwise Minimization and Rootfinding
+========================================
+
+.. toctree::
+   :maxdepth: 4
+
+   optimize.elementwise
 
 Linear programming / MILP
 =========================
