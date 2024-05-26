@@ -42,13 +42,13 @@ def _wrapper_grad(grad, fun=None, args=(), finite_diff_options=None):
         return wrapped, ncalls
 
     elif grad in FD_METHODS:
-        def wrapped(x, f0=None):
+        def wrapped1(x, f0=None):
             ncalls[0] += 1
             return approx_derivative(
                 fun, x, f0=f0, **finite_diff_options
             )
 
-        return wrapped, ncalls
+        return wrapped1, ncalls
 
 
 def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
@@ -79,12 +79,12 @@ def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
     elif hess in FD_METHODS:
         ncalls = [0]
 
-        def wrapped(x, f0=None):
+        def wrapped1(x, f0=None):
             return approx_derivative(
                 grad, x, f0=f0, **finite_diff_options
             )
 
-        return wrapped, ncalls, None
+        return wrapped1, ncalls, None
 
 
 class ScalarFunction:
@@ -315,8 +315,7 @@ class ScalarFunction:
                 self._update_grad()
                 self.H.update(self.x - self.x_prev, self.g - self.g_prev)
             else:       # should be callable(hess)
-                # send f0 if hess is callable or FD, it's ignored for callable
-                self.H = self._wrapped_hess(self.x, f0=self.g)
+                self.H = self._wrapped_hess(self.x)
 
             self.H_updated = True
 
