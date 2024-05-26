@@ -2960,105 +2960,107 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
-
+@array_api_compatible
 class TestDirectionalStats:
     # Reference implementations are not available
-    def test_directional_stats_correctness(self):
+    def test_directional_stats_correctness(self, xp):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-
-        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
-                                     5.7, 50.4, 357.6, 44.]))
-        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
-                                     73., 69.3, 58.8, 51.4]))
-        data = np.stack((np.cos(incl) * np.cos(decl),
-                         np.cos(incl) * np.sin(decl),
-                         np.sin(incl)),
+        # angles were converted to radians
+        decl = xp.array([-5.98996999, -1.08210414, -0.64402649, -0.4712389,
+                         -6.26573201, -0.09948377, -0.87964594, -6.24129741,
+                         -0.76794487])
+        incl = xp.array([-1.15366264, -1.1990412 , -1.22347581, -1.43291532,
+                         -1.38753676, -1.27409035, -1.20951317, -1.0262536,
+                         -0.89709924])
+        data = xp.stack((xp.cos(incl) * xp.cos(decl),
+                         xp.cos(incl) * xp.sin(decl),
+                         xp.sin(incl)),
                         axis=1)
 
         dirstats = stats.directional_stats(data)
         directional_mean = dirstats.mean_direction
-        mean_rounded = np.round(directional_mean, 4)
 
-        reference_mean = np.array([0.2984, -0.1346, -0.9449])
-        assert_allclose(mean_rounded, reference_mean)
+        reference_mean = xp.array([0.2984, -0.1346, -0.9449])
+        xp_assert_close(directional_mean, reference_mean, atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize('angles, ref', [
         ([-np.pi/2, np.pi/2], 1.),
-        ([0, 2*np.pi], 0.)
+        ([0, 2 * np.pi], 0.)
     ])
-    def test_directional_stats_2d_special_cases(self, angles, ref):
+    def test_directional_stats_2d_special_cases(self, angles, ref, xp):
         if callable(ref):
             ref = ref(angles)
-        data = np.stack([np.cos(angles), np.sin(angles)], axis=1)
+        angles = xp.asarray(angles)
+        data = xp.stack([xp.cos(angles), xp.sin(angles)], axis=1)
         res = 1 - stats.directional_stats(data).mean_resultant_length
-        assert_allclose(res, ref)
+        xp_assert_close(res, ref)
 
-    def test_directional_stats_2d(self):
+    def test_directional_stats_2d(self, xp):
         # Test that for circular data directional_stats
         # yields the same result as circmean/circvar
         rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
-        testdata = 2 * np.pi * rng.random((1000, ))
-        testdata_vector = np.stack((np.cos(testdata),
-                                    np.sin(testdata)),
+        testdata = xp.asarray(2 * xp.pi * rng.random((1000, )))
+        testdata_vector = xp.stack((xp.cos(testdata),
+                                    xp.sin(testdata)),
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
-        directional_mean_angle = np.arctan2(directional_mean[1],
+        directional_mean_angle = xp.atan2(directional_mean[1],
                                             directional_mean[0])
-        directional_mean_angle = directional_mean_angle % (2*np.pi)
+        directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
-        assert_allclose(circmean, directional_mean_angle)
+        xp_assert_close(circmean, directional_mean_angle)
 
-        directional_var = 1 - dirstats.mean_resultant_length
+        directional_var = 1. - dirstats.mean_resultant_length
         circular_var = stats.circvar(testdata)
-        assert_allclose(directional_var, circular_var)
+        xp_assert_close(directional_var, circular_var)
 
-    def test_directional_mean_higher_dim(self):
+    def test_directional_mean_higher_dim(self, xp):
         # test that directional_stats works for higher dimensions
         # here a 4D array is reduced over axis = 2
         data = np.array([[0.8660254, 0.5, 0.],
                          [0.8660254, -0.5, 0.]])
-        full_array = np.tile(data, (2, 2, 2, 1))
-        expected = np.array([[[1., 0., 0.],
+        full_array = xp.asarray(np.tile(data, (2, 2, 2, 1)))
+        expected = xp.array([[[1., 0., 0.],
                               [1., 0., 0.]],
                              [[1., 0., 0.],
                               [1., 0., 0.]]])
         dirstats = stats.directional_stats(full_array, axis=2)
-        assert_allclose(expected, dirstats.mean_direction)
+        xp_assert_close(expected, dirstats.mean_direction)
 
-    def test_directional_stats_list_ndarray_input(self):
+    def test_directional_stats_list_ndarray_input(self, xp):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
-        data_array = np.asarray(data)
+        data_array = xp.asarray(data)
         res = stats.directional_stats(data)
         ref = stats.directional_stats(data_array)
-        assert_allclose(res.mean_direction, ref.mean_direction)
-        assert_allclose(res.mean_resultant_length,
+        xp_assert_close(res.mean_direction, ref.mean_direction)
+        xp_assert_close(res.mean_resultant_length,
                         res.mean_resultant_length)
 
-    def test_directional_stats_1d_error(self):
+    def test_directional_stats_1d_error(self, xp):
         # test that one-dimensional data raises ValueError
-        data = np.ones((5, ))
+        data = xp.ones((5, ))
         message = (r"samples must at least be two-dimensional. "
                    r"Instead samples has shape: (5,)")
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directional_stats(data)
 
-    def test_directional_stats_normalize(self):
+    def test_directional_stats_normalize(self, xp):
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
-        data = np.array([[0.8660254, 0.5, 0.],
+        data = xp.array([[0.8660254, 0.5, 0.],
                          [1.7320508, -1., 0.]])
         res = stats.directional_stats(data, normalize=True)
-        normalized_data = data / np.linalg.norm(data, axis=-1,
-                                                keepdims=True)
+        normalized_data = data / xp.linalg.vector_norm(data, axis=-1,
+                                                       keepdims=True)
         ref = stats.directional_stats(normalized_data,
                                       normalize=False)
-        assert_allclose(res.mean_direction, ref.mean_direction)
-        assert_allclose(res.mean_resultant_length,
-                        ref.mean_resultant_length)
+        xp_assert_close(res.mean_direction, ref.mean_direction)
+        xp_assert_close(res.mean_resultant_length,
+                           ref.mean_resultant_length)
 
 
 class TestFDRControl:

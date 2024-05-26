@@ -4785,16 +4785,18 @@ def directional_stats(samples, *, axis=0, normalize=True):
     >>> 1 - dirstats.mean_resultant_length
     0.13397459716167093
     """
-    samples = np.asarray(samples)
+    xp = array_namespace(samples)
+    samples = xp.asarray(samples)
+    
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
-    samples = np.moveaxis(samples, axis, 0)
+    samples = xp.moveaxis(samples, axis, 0)
     if normalize:
-        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        vectornorms = xp.linalg.vector_norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
-    mean = np.mean(samples, axis=0)
-    mean_resultant_length = np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean = xp.mean(samples, axis=0)
+    mean_resultant_length = xp.linalg.vector_norm(mean, axis=-1, keepdims=True)
     mean_direction = mean / mean_resultant_length
     return DirectionalStats(mean_direction,
                             mean_resultant_length.squeeze(-1)[()])
