@@ -269,7 +269,7 @@ struct diag_recurrence {
         res_hess[1] = 0;
     }
 
-    void init2(T (&res)[3]) {
+    void init(T (&res)[3]) {
         res[0] = 1;
         if (type == 3) {
             res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
@@ -279,101 +279,57 @@ struct diag_recurrence {
         } else {
             res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
         }
-    }
 
-    void init(T (&res)[3]) {
-        init2(res);
-
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
-
-        T fac = 1;
         if (m < 0) {
-            fac *= std::pow(-1, m_abs);
-            if (m_odd && type == 3) {
-                fac *= -1;
+            res[1] /= 2;
+
+            if (type != 3) {
+                res[1] *= -1;
             }
         }
-
-        for (size_t j = 0; j < 3; ++j) {
-            res[j] *= fac;
-        }
-
-        if (m < 0) {
-            res[1] *= 0.5;
-        }
-    }
-
-    void init2(T (&res)[3], T (&res_jac)[3]) {
-        init2(res);
-
-        T type_sign;
-        if (type == 3) {
-            type_sign = -1;
-        } else {
-            type_sign = 1;
-        }
-
-        res_jac[0] = 0;
-        res_jac[1] = -type_sign * z / res[1];
     }
 
     void init(T (&res)[3], T (&res_jac)[3]) {
-        init2(res, res_jac);
+        init(res);
 
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
+        res_jac[0] = 0;
+        if (type == 3) {
+            res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res_jac[1] = -res_jac[1];
+            }
+        } else {
+            res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+        }
 
-        T fac = 1;
         if (m < 0) {
-            fac *= std::pow(-1, m_abs);
-            if (m_odd && type == 3) {
-                fac *= -1;
+            res_jac[1] /= 2;
+
+            if (type != 3) {
+                res_jac[1] *= -1;
             }
         }
-
-        for (size_t j = 0; j < 3; ++j) {
-            res[j] *= fac;
-            res_jac[j] *= fac;
-        }
-
-        if (m < 0) {
-            res[1] *= 0.5;
-            res_jac[1] *= 0.5;
-        }
-    }
-
-    void init2(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
-        init2(res, res_jac);
-
-        res_hess[0] = 0;
-        res_hess[1] = -type_sign * (T(1) - z * res_jac[1] / res[1]) / res[1];
     }
 
     void init(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
-        init2(res, res_jac, res_hess);
+        init(res, res_jac);
 
-        int m_abs = std::abs(m);
-        bool m_odd = m_abs % 2;
-
-        T fac = 1;
-        if (m < 0) {
-            fac *= std::pow(-1, m_abs);
-            if (m_odd && type == 3) {
-                fac *= -1;
+        res_hess[0] = 0;
+        if (type == 3) {
+            res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res_hess[1] = -res_hess[1];
             }
-        }
-
-        for (size_t j = 0; j < 3; ++j) {
-            res[j] *= fac;
-            res_jac[j] *= fac;
-            res_hess[j] *= fac;
+        } else {
+            res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
         }
 
         if (m < 0) {
-            res[1] *= 0.5;
-            res_jac[1] *= 0.5;
-            res_hess[1] *= 0.5;
+            res_hess[1] /= 2;
+
+            if (type != 3) {
+                res_hess[1] *= -1;
+            }
         }
     }
 };
