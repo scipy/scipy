@@ -210,10 +210,16 @@ class TestConvolve:
     def test_convolve_method(self, xp, n=100):
         # this types data structure was manually encoded instead of
         # using custom filters on the soon-to-be-removed np.sctypes
-        types = {'uint16', 'uint64', 'int64', 'int32',
-                 'complex128', 'float64', 'float16',
-                 'complex64', 'float32', 'int16',
-                 'uint8', 'uint32', 'int8', 'bool'}
+        types = {xp.uint16, xp.uint64, xp.int64, xp.int32,
+                 xp.complex128, xp.float64,
+                 xp.complex64, xp.float32, xp.int16,
+                 xp.uint8, xp.uint32, xp.int8}
+        if xp == np or is_cupy(xp):
+            types.add(np.bool_)     # xp.bool in the API standard, np.bool_ in NumPy 1.x
+            types.add(np.float16)   # backwards compat
+        else:
+            types.add(xp.bool)
+
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
@@ -223,31 +229,36 @@ class TestConvolve:
         array_types = {'i': xp.asarray(np.random.choice([0, 1], size=n)),
                        'f': xp.asarray(np.random.randn(n))}
         array_types['b'] = array_types['u'] = array_types['i']
-
-        breakpoint()
-
         val = xp.asarray(0.5j)
         array_types['c'] = array_types['f'] + val*array_types['f']
 
+        for dt in types:
+            if xp.isdtype(dt, ('integral', 'bool')):
+                array_types[dt] = xp.astype(array_types['i'], dt)
+            elif xp.isdtype(dt, 'real floating'):
+                array_types[dt] = xp.astype(array_types['f'], dt)
+            elif xp.isdtype(dt, 'complex floating'):
+                array_types[dt] = xp.astype(array_types['c'], dt)
+
         for t1, t2, mode in args:
-            if is_cupy(xp) and t2 == 'float16':
+            if is_cupy(xp) and t2 == xp.float16:
                 pytest.skip(reason="Cupy 13.x fails to jitify.")
 
-            x1 = array_types[xp.dtype(t1).kind].astype(t1)
-            x2 = array_types[xp.dtype(t2).kind].astype(t2)
+            x1 = array_types[t1]
+            x2 = array_types[t2]
 
             results = {key: convolve(x1, x2, method=key, mode=mode)
                        for key in ['fft', 'direct']}
 
             assert results['fft'].dtype == results['direct'].dtype
 
-            if 'bool' in t1 and 'bool' in t2:
+            if t1 == xp.bool and  t2 == xp.bool:
                 assert choose_conv_method(x1, x2) == 'direct'
                 continue
 
             # Found by experiment. Found approx smallest value for (rtol, atol)
             # threshold to have tests pass.
-            if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
+            if any([t in {np.complex64, np.float32} for t in [t1, t2]]):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
