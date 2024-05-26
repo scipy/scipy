@@ -3006,8 +3006,8 @@ class TestDirectionalStats:
                                    axis=1)
         dirstats = stats.directional_stats(testdata_vector)
         directional_mean = dirstats.mean_direction
-        directional_mean_angle = xp.atan2(directional_mean[1],
-                                          directional_mean[0])
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
         directional_mean_angle = directional_mean_angle % (2 * xp.pi)
         circmean = stats.circmean(testdata)
         xp_assert_close(circmean, directional_mean_angle)
