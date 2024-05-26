@@ -228,7 +228,12 @@ struct diag_recurrence {
     }
 
     void operator()(int n, T (&res)[2]) {
-        T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        T fac;
+        if (m < 0) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
 
         // other square roots can be avoided if each iteration increments by 2
 
@@ -239,7 +244,12 @@ struct diag_recurrence {
     void operator()(int n, T (&res)[2], T (&res_jac)[2]) {
         (*this)(n, res);
 
-        T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        T fac;
+        if (m < 0) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
 
         res_jac[0] = -T(2) * fac * z;
         res_jac[1] = 0;
@@ -248,7 +258,12 @@ struct diag_recurrence {
     void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) {
         (*this)(n, res, res_jac);
 
-        T fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        T fac;
+        if (m < 0) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
 
         res_hess[0] = -T(2) * fac;
         res_hess[1] = 0;
@@ -274,7 +289,7 @@ struct diag_recurrence {
 
         T fac = 1;
         if (m < 0) {
-            fac *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+            fac *= std::pow(-1, m_abs);
             if (m_odd && type == 3) {
                 fac *= -1;
             }
@@ -282,6 +297,10 @@ struct diag_recurrence {
 
         for (size_t j = 0; j < 3; ++j) {
             res[j] *= fac;
+        }
+
+        if (m < 0) {
+            res[1] *= 0.5;
         }
     }
 
@@ -307,7 +326,7 @@ struct diag_recurrence {
 
         T fac = 1;
         if (m < 0) {
-            fac *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+            fac *= std::pow(-1, m_abs);
             if (m_odd && type == 3) {
                 fac *= -1;
             }
@@ -316,6 +335,11 @@ struct diag_recurrence {
         for (size_t j = 0; j < 3; ++j) {
             res[j] *= fac;
             res_jac[j] *= fac;
+        }
+
+        if (m < 0) {
+            res[1] *= 0.5;
+            res_jac[1] *= 0.5;
         }
     }
 
@@ -334,7 +358,7 @@ struct diag_recurrence {
 
         T fac = 1;
         if (m < 0) {
-            fac *= std::pow(-1, m_abs) / std::tgamma(2 * m_abs + 1);
+            fac *= std::pow(-1, m_abs);
             if (m_odd && type == 3) {
                 fac *= -1;
             }
@@ -344,6 +368,12 @@ struct diag_recurrence {
             res[j] *= fac;
             res_jac[j] *= fac;
             res_hess[j] *= fac;
+        }
+
+        if (m < 0) {
+            res[1] *= 0.5;
+            res_jac[1] *= 0.5;
+            res_hess[1] *= 0.5;
         }
     }
 };
@@ -464,7 +494,6 @@ void assoc_legendre_p_init(int n, int m, int type, T z, T (&res)[3]) {
     }
 
     res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
-
     res[2] = 0;
 }
 
