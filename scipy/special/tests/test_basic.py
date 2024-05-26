@@ -4160,6 +4160,7 @@ def test_rel_entr():
 @pytest.mark.parametrize("a,b,expected", [
     (0.0, 1.0, 0.34657359027997264),
     (-0.0, -0.0, 0.0),
+    (3.0, 0.5, 0.4953040089751885),
 ])
 def test_js_div(a, b, expected):
     actual = cephes._js_div(a, b)

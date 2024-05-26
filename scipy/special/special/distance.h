@@ -3,8 +3,6 @@
 #pragma once
 
 #include "config.h"
-//#include "tools.h"
-//#include "error.h"
 
 namespace special {
 
@@ -16,7 +14,7 @@ SPECFUN_HOST_DEVICE inline double js_div(double a, double b) {
     if (std::isnan(b)) {
         return b;
     }
-    if (!(a >= 0 && a <= 1 && b >= 0 && b <= 1)) {
+    if (!(a >= 0 && std::isfinite(a) && b >= 0 && std::isfinite(b))) {
         return std::numeric_limits<double>::infinity();
     }
 
