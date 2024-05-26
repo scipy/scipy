@@ -409,6 +409,7 @@ Others are generalized to multiple samples.
    fligner
    levene
    bartlett
+   f_equality_test
    median_test
    friedmanchisquare
    anderson_ksamp

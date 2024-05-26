@@ -2870,6 +2870,8 @@ def bartlett(*samples, axis=0):
     --------
     fligner : A non-parametric test for the equality of k variances
     levene : A robust parametric test for equality of k variances
+    f_equality_test : A parametric test for equality of variances in
+                      two normal samples
 
     Notes
     -----
@@ -3128,6 +3130,8 @@ def levene(*samples, center='median', proportiontocut=0.05):
     --------
     fligner : A non-parametric test for the equality of k variances
     bartlett : A parametric test for equality of k variances in normal samples
+    f_equality_test : A parametric test for equality of variances in
+                      two normal samples
 
     Notes
     -----
@@ -3373,6 +3377,178 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+FResult = namedtuple('FResult', ('statistic', 'pvalue'))
+
+
+@_axis_nan_policy_factory(FResult, n_samples=None)
+def f_equality_test(*samples, alternative='two-sided'):
+    r"""Perform F's test for equal variances.
+
+    F's test tests the null hypothesis that two normal input samples
+    have equal variances. Due to the F-Test being sensitive to the
+    non-normality of distributions, Levene's and Bartlett's tests can
+    be used as an alternative.
+
+    Parameters
+    ----------
+    sample1, sample2: array_like
+        Arrays of sample data.  Only 1d arrays are accepted, they may have
+        different lengths.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+            
+        * 'two-sided': the alternative hypothesis contains the '!=' sign.
+        * 'less': the alternative hypothesis contains the '<' sign.
+        * 'greater': the alternative hypothesis contains the '>' sign.
+  
+    Returns
+    -------
+    statistic : float
+        The test statistic.
+    pvalue : float
+        The p-value of the test.
+
+    See Also
+    --------
+    bartlett : A parametric test for equality of k variances in normal samples
+    fligner : A non-parametric test for the equality of k variances
+    levene : A robust parametric test for equality of k variances
+
+    Notes
+    -----
+    This F-test is not robust (a statistic is called “robust” if it still
+    performs reasonably well even when the necessary conditions are not met).
+    In particular, this F-test demands that both populations be normally
+    distributed even for larger sample sizes. This F-test yields unreliable
+    results when this condition is not met. [1]
+
+    References
+    ----------
+    .. [1]  Webb, R. L. (2021). Mostly harmless statistics (2nd ed.)
+            Portland State University Library.
+    .. [2]  Snedecor, George W. and Cochran, William G. (1989), Statistical
+            Methods, Eighth Edition, Iowa State University Press.
+    .. [3]  Kiernan, D. (2014). Natural Resources Biometrics.
+            Open Suny Textbooks.
+
+    Examples
+    --------
+    In [1]_, the New York Choral Society divides male singers up into four
+    categories from highest voices to lowest: Tenor1, Tenor2, Bass1, Bass2.
+    One suspects that taller men will have lower voices, and that the variance
+    of height may go up with the lower voices as well. Do we have good
+    evidence that the variance of the heights of singers in each of these
+    two groups (Tenor1 and Bass2) are different?
+
+    The ``Tenor1`` and ``Bass2`` arrays below record the voice pitch of these
+    categories.
+
+    >>> import numpy as np
+    >>> tenor1 = np.array([
+    ...     69, 72, 71, 66, 76, 74, 71, 66, 68, 67, 70,
+    ...     65, 72, 70, 68, 64, 73, 66, 68, 67, 64
+    ... ])
+    >>> bass2 = np.array([
+    ...     72, 75, 67, 75, 74, 72, 72, 74, 72, 72, 74, 70, 66,
+    ...     68, 75, 68, 70, 72, 67, 70, 70, 69, 72, 71, 74, 75
+    ... ])
+
+    >>> from scipy.stats._morestats import f_equality_test
+    >>> args = [tenor1, bass2]
+    >>> res = f_equality_test(*args)
+    >>> res.statistic
+    1.4894234553325463
+    >>> res.pvalue
+    0.3430228457832443
+
+    If we assume alpha is 0.05, then we cannot reject the null hypothesis.
+    We have no good evidence from the data that the heights of Tenor1 and
+    Bass2 singers have different variances (despite there being a significant
+    difference in mean heights of about 2.5 inches.)
+
+    In [3]_, A forester wants to compare two different mist blowers for
+    consistent application. She wants to use the mist blower with the
+    smaller variance, which means more consistent application.
+    She wants to test that the variance of Type A (0.087 gal.2) is
+    significantly greater than the variance of Type B (0.073 gal.2)
+    using a level of significance of 0.05.
+
+    Type A has a sample of 16 mist blowers with a variance of 0.079.
+    Type B has a sample of 21 mist blowers with a variance of 0.060.
+
+    >>> import numpy as np
+    >>> typeA = np.array([
+    ...     11.2, 11, 11.3, 11.5, 11, 11, 11.5, 11.3, 10.9,
+    ...     11.2, 10.9, 10.9, 11.1, 10.5, 10.6, 10.9
+    ... ])
+    >>> typeB = np.array([
+    ...     10.8, 11.2, 10.9, 10.7, 11.5, 11, 11.1, 10.7, 11, 11.1, 10.8,
+    ...     11.2, 10.9, 11, 10.9, 11.6, 11.1, 10.8, 11.3, 10.8, 11.2
+    ... ])
+
+    >>> from scipy.stats._morestats import f_equality_test
+    >>> args = [typeA, typeB]
+    >>> res = f_equality_test(*args, alternative='greater')
+    >>> res.statistic
+    1.3079968329374523
+    >>> res.pvalue
+    0.7169386351928994
+
+    The test statistic is not larger than the critical value (it does not
+    fall in the rejection zone) so we fail to reject the null hypothesis.
+    While the variance of Type B is mathematically smaller than the variance
+    of Type A, it is not statistically smaller. There is not enough statistical
+    evidence to support the claim that the variance of Type A is significantly
+    greater than the variance of Type B. Both mist blowers will deliver the
+    chemical with equal consistency.
+
+    """
+    k = len(samples)
+    if k != 2:
+        raise ValueError("Must enter two input sample vectors.")
+    
+    if alternative not in {'two-sided', 'greater', 'less'}:
+        raise ValueError("'alternative' must be 'two-sided',"
+                         " 'greater', or 'less'.")
+    
+    # Handle empty input and input that is not 1d
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
+            NaN = _get_nan(*samples)  # get NaN of result_dtype of all samples
+            return FResult(NaN, NaN)
+
+    Ni = np.empty(k)
+    ssq = np.empty(k, 'd')
+    for j in range(k):
+        Ni[j] = len(samples[j])
+        ssq[j] = np.var(samples[j], ddof=1)
+
+    if ssq[0] > ssq[1]:
+        larger_variance = ssq[0]
+        smaller_variance = ssq[1]
+        df1 = Ni[0] - 1
+        df2 = Ni[1] - 1
+    else:
+        larger_variance = ssq[1]
+        smaller_variance = ssq[0]
+        df1 = Ni[1] - 1
+        df2 = Ni[0] - 1
+         
+    # Calculate the F-statistic
+    f_statistic = larger_variance / smaller_variance
+
+    # Calculate the p-value using the F-distribution
+    if alternative == 'two-sided':
+        p_value = 2.0 * distributions.f.sf(f_statistic, df1, df2)
+    elif alternative == 'greater':
+        p_value = stats.f.cdf(f_statistic, df1, df2)
+    else: 
+        p_value = distributions.f.sf(f_statistic, df1, df2)
+
+    return FResult(f_statistic, p_value)
+
+
 def _apply_func(x, g, func):
     # g is list of indices into x
     #  separating x into different groups
@@ -3417,6 +3593,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     --------
     bartlett : A parametric test for equality of k variances in normal samples
     levene : A robust parametric test for equality of k variances
+    f_equality_test : A parametric test for equality of variances in
+                      two normal samples
 
     Notes
     -----

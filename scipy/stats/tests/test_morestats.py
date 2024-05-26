@@ -16,7 +16,7 @@ import pytest
 from pytest import raises as assert_raises
 import re
 from scipy import optimize, stats, special
-from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull
+from scipy.stats._morestats import _abw_state, _get_As_weibull, _Avals_weibull, f_equality_test
 from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
@@ -54,6 +54,10 @@ g7 = [0.990, 1.004, 0.996, 1.001, 0.998, 1.000, 1.018, 1.010, 0.996, 1.002]
 g8 = [0.998, 1.000, 1.006, 1.000, 1.002, 0.996, 0.998, 0.996, 1.002, 1.006]
 g9 = [1.002, 0.998, 0.996, 0.995, 0.996, 1.004, 1.004, 0.998, 0.999, 0.991]
 g10 = [0.991, 0.995, 0.984, 0.994, 0.997, 0.997, 0.991, 0.998, 1.004, 0.997]
+
+# test data from Webb, R. L. (2021). Mostly harmless statistics (2nd ed.) for F-test
+f1 = [474, 414, 692, 467, 443, 605, 419, 277, 670, 696, 783, 577, 813, 694, 565, 663, 884]
+f2 = [783, 587, 527, 546, 442, 107, 728, 662, 371, 427, 277, 474, 605, 293, 320, 555]
 
 
 # The loggamma RVS stream is changing due to gh-13349; this version
@@ -833,6 +837,56 @@ class TestLevene:
     def test_1d_input(self):
         x = np.array([[1, 2], [3, 4]])
         assert_raises(ValueError, stats.levene, g1, x)
+
+
+class TestFEqualityTest:
+
+    def test_data1(self):
+        args = [f1, f2]
+        T, pval = f_equality_test(*args, alternative='two-sided')
+        assert_almost_equal(T, 1.207788039, 7)
+        assert_almost_equal(pval, 0.7105517535985708, 7)
+
+    def test_data2(self):
+        args = [f1, f2]
+        T, pval = f_equality_test(*args, alternative='greater')
+        assert_almost_equal(T, 1.207788039, 7)
+        assert_almost_equal(pval, 0.6447241232007151, 7)
+
+    def test_data3(self):
+        args = [f1, f2]
+        T, pval = f_equality_test(*args, alternative='less')
+        assert_almost_equal(T, 1.207788039, 7)
+        assert_almost_equal(pval, 0.3552758767992854, 7)
+
+    def test_data4(self):
+        args = [f1, f2]
+        T, pval = f_equality_test(*args)
+        assert_almost_equal(T, 1.207788039, 7)
+        assert_almost_equal(pval, 0.7105517535985708, 7)
+
+    def test_bad_arg(self):
+        args = [f1, f2]
+        # Too few args raises ValueError.
+        assert_raises(ValueError, f_equality_test, [1])
+        # Alternative not valid raises ValueError.
+        assert_raises(ValueError, f_equality_test, *args, 'twosided')
+        assert_raises(ValueError, f_equality_test, *args, 'lower')
+
+    def test_result_attributes(self):
+        args = [f1, f2]
+        res = f_equality_test(*args)
+        attributes = ('statistic', 'pvalue')
+        check_named_results(res, attributes)
+
+    def test_empty_arg(self):
+        args = (f1, [])
+        assert_equal((np.nan, np.nan), f_equality_test(*args))
+
+    # temporary fix for issue #9252: only accept 1d input
+    def test_1d_input(self):
+        x = np.array([[1, 2], [3, 4]])
+        assert_raises(ValueError, f_equality_test, f1, x)
 
 
 class TestBinomTest:
