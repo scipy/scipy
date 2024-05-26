@@ -82,6 +82,45 @@ def _complex_via_real_components(func, input, weights, output, cval, **kwargs):
     return output
 
 
+def _expand_origin(ndim_image, axes, origin):
+    num_axes = len(axes)
+    origins = _ni_support._normalize_sequence(origin, num_axes)
+    if num_axes < ndim_image:
+        # set origin = 0 for any axes not being filtered
+        origins_temp = [0,] * ndim_image
+        for o, ax in zip(origins, axes):
+            origins_temp[ax] = o
+        origins = origins_temp
+    return origins
+
+
+def _expand_footprint(ndim_image, axes, footprint,
+                      footprint_name="footprint"):
+    num_axes = len(axes)
+    if num_axes < ndim_image:
+        if footprint.ndim != num_axes:
+            raise RuntimeError(f"{footprint_name}.ndim ({footprint.ndim}) "
+                               f"must match len(axes) ({num_axes})")
+
+        footprint = np.expand_dims(
+            footprint,
+            tuple(ax for ax in range(ndim_image) if ax not in axes)
+        )
+    return footprint
+
+
+def _expand_mode(ndim_image, axes, mode):
+    num_axes = len(axes)
+    if not isinstance(mode, str) and isinstance(mode, Iterable):
+        # set mode = 'constant' for any axes not being filtered
+        modes = _ni_support._normalize_sequence(mode, num_axes)
+        modes_temp = ['constant'] * ndim_image
+        for m, ax in zip(modes, axes):
+            modes_temp[ax] = m
+        mode = modes_temp
+    return mode
+
+
 @_ni_docstrings.docfiller
 def correlate1d(input, weights, axis=-1, output=None, mode="reflect",
                 cval=0.0, origin=0):
@@ -768,20 +807,11 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
 
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
-    origins = _ni_support._normalize_sequence(origin, num_axes)
     weights = np.asarray(weights, dtype=np.float64)
-    if num_axes < input.ndim:
-        origins_temp = [0,] * input.ndim
-        for o, ax in zip(origins, axes):
-            origins_temp[ax] = o
-        origins = origins_temp
-        if weights.ndim != num_axes:
-            raise RuntimeError(f"weights.ndim ({weights.ndim}) must match "
-                               f"len(axes) ({len(axes)})")
-        weights = np.expand_dims(
-            weights,
-            tuple(ax for ax in range(input.ndim) if ax not in axes)
-        )
+
+    # expand weights and origins if num_axes < input.ndim
+    weights = _expand_footprint(input.ndim, axes, weights, "weights")
+    origins = _expand_origin(input.ndim, axes, origin)
 
     wshape = [ii for ii in weights.shape if ii > 0]
     if len(wshape) != input.ndim:
@@ -1296,23 +1326,14 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
-        origins = _ni_support._normalize_sequence(origin, num_axes)
-        if num_axes < input.ndim:
-            if footprint.ndim != num_axes:
-                raise RuntimeError("footprint array has incorrect shape")
-            footprint = np.expand_dims(
-                footprint,
-                tuple(ax for ax in range(input.ndim) if ax not in axes)
-            )
-            # set origin = 0 for any axes not being filtered
-            origins_temp = [0,] * input.ndim
-            for o, ax in zip(origins, axes):
-                origins_temp[ax] = o
-            origins = origins_temp
+        # expand origins and footprint if num_axes < input.ndim
+        footprint = _expand_footprint(input.ndim, axes, footprint)
+        origins = _expand_origin(input.ndim, axes, origin)
 
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
-            raise RuntimeError('footprint array has incorrect shape.')
+            raise RuntimeError(f"footprint.ndim ({footprint.ndim}) must match "
+                               f"len(axes) ({len(axes)})")
         for origin, lenf in zip(origins, fshape):
             if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
                 raise ValueError("invalid origin")
@@ -1449,7 +1470,6 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         raise TypeError('Complex type not supported')
     axes = _ni_support._check_axes(axes, input.ndim)
     num_axes = len(axes)
-    origins = _ni_support._normalize_sequence(origin, num_axes)
     if footprint is None:
         if size is None:
             raise RuntimeError("no footprint or filter size provided")
@@ -1457,31 +1477,15 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
         footprint = np.ones(sizes, dtype=bool)
     else:
         footprint = np.asarray(footprint, dtype=bool)
-    if num_axes < input.ndim:
-        # set origin = 0 for any axes not being filtered
-        origins_temp = [0,] * input.ndim
-        for o, ax in zip(origins, axes):
-            origins_temp[ax] = o
-        origins = origins_temp
+    # expand origins, footprint and modes if num_axes < input.ndim
+    footprint = _expand_footprint(input.ndim, axes, footprint)
+    origins = _expand_origin(input.ndim, axes, origin)
+    mode = _expand_mode(input.ndim, axes, mode)
 
-        if not isinstance(mode, str) and isinstance(mode, Iterable):
-            # set mode = 'constant' for any axes not being filtered
-            modes = _ni_support._normalize_sequence(mode, num_axes)
-            modes_temp = ['constant'] * input.ndim
-            for m, ax in zip(modes, axes):
-                modes_temp[ax] = m
-            mode = modes_temp
-
-        # insert singleton dimension along any non-filtered axes
-        if footprint.ndim != num_axes:
-            raise RuntimeError("footprint array has incorrect shape")
-        footprint = np.expand_dims(
-            footprint,
-            tuple(ax for ax in range(input.ndim) if ax not in axes)
-        )
     fshape = [ii for ii in footprint.shape if ii > 0]
     if len(fshape) != input.ndim:
-        raise RuntimeError('footprint array has incorrect shape.')
+        raise RuntimeError(f"footprint.ndim ({footprint.ndim}) must match "
+                           f"len(axes) ({len(axes)})")
     for origin, lenf in zip(origins, fshape):
         if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
             raise ValueError('invalid origin')
