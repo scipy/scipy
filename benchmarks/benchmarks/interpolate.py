@@ -150,9 +150,6 @@ class Interpolate2d(Benchmark):
         self.xx, self.yy = np.meshgrid(self.x, self.y)
         self.z = np.sin(self.xx**2+self.yy**2)
 
-    def time_interpolate(self, n_samples, method):
-        interpolate.interp2d(self.x, self.y, self.z, kind=method)
-
 
 class Rbf(Benchmark):
     param_names = ['n_samples', 'function']

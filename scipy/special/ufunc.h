@@ -17,10 +17,8 @@
 #include "sf_error.h"
 #include "special/mdspan.h"
 
-// Initializes Python and NumPy.
+// Initializes NumPy.
 inline bool SpecFun_Initialize() {
-    Py_Initialize();
-
     import_array();
     if (PyErr_Occurred() != nullptr) {
         return false; // import array failed

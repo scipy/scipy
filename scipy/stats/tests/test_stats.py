@@ -4006,8 +4006,6 @@ power_div_empty_cases = [
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestPowerDivergence:
 
     def check_power_divergence(self, f_obs, f_exp, ddof, axis, lambda_,
@@ -4206,12 +4204,10 @@ class TestPowerDivergence:
             lambda_, expected_stat = table5[i, 0], table5[i, 1]
             stat, p = stats.power_divergence(table4[:,0], table4[:,1],
                                              lambda_=lambda_)
-            assert_allclose(stat, expected_stat, rtol=5e-3)
+            xp_assert_close(stat, expected_stat, rtol=5e-3)
 
 
 @array_api_compatible
-@pytest.mark.usefixtures("skip_xp_backends")
-@pytest.mark.skip_xp_backends(cpu_only=True, reasons=['Uses NumPy for pvalue'])
 class TestChisquare:
     def test_gh_chisquare_12282(self, xp):
         # Currently `chisquare` is implemented via power_divergence
@@ -6322,8 +6318,6 @@ class TestRankSums:
             stats.ranksums(self.x, self.y, alternative='foobar')
 
 
-@pytest.mark.usefixtures("skip_xp_backends")
-@skip_xp_backends(cpu_only=True)
 @array_api_compatible
 class TestJarqueBera:
     def test_jarque_bera_against_R(self, xp):
@@ -6340,6 +6334,7 @@ class TestJarqueBera:
         xp_assert_close(res.pvalue, ref[1])
 
     @skip_xp_backends(np_only=True)
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_jarque_bera_array_like(self):
         # array-like only relevant for NumPy
         np.random.seed(987654321)
@@ -6910,21 +6905,15 @@ class TestGeometricStandardDeviation:
         gstd_actual = stats.gstd(tuple(self.array_1d))
         assert_allclose(gstd_actual, self.gstd_array_1d)
 
-    def test_raises_value_error_non_array_like_input(self):
-        with pytest.raises(ValueError, match='Invalid array input'):
-            stats.gstd('This should fail as it can not be cast to an array.')
+    def test_raises_value_error_non_numeric_input(self):
+        # this is raised by NumPy, but it's quite interpretable
+        with pytest.raises(TypeError, match="ufunc 'log' not supported"):
+            stats.gstd('You cannot take the logarithm of a string.')
 
-    def test_raises_value_error_zero_entry(self):
-        with pytest.raises(ValueError, match='Non positive value'):
-            stats.gstd(np.append(self.array_1d, [0]))
-
-    def test_raises_value_error_negative_entry(self):
-        with pytest.raises(ValueError, match='Non positive value'):
-            stats.gstd(np.append(self.array_1d, [-1]))
-
-    def test_raises_value_error_inf_entry(self):
-        with pytest.raises(ValueError, match='Infinite value'):
-            stats.gstd(np.append(self.array_1d, [np.inf]))
+    @pytest.mark.parametrize('bad_value', (0, -1, np.inf))
+    def test_returns_nan_invalid_value(self, bad_value):
+        x = np.append(self.array_1d, [bad_value])
+        assert_equal(stats.gstd(x), np.nan)
 
     def test_propagates_nan_values(self):
         a = array([[1, 1, 1, 16], [np.nan, 1, 2, 3]])
@@ -6932,8 +6921,8 @@ class TestGeometricStandardDeviation:
         assert_allclose(gstd_actual, np.array([4, np.nan]))
 
     def test_ddof_equal_to_number_of_observations(self):
-        with pytest.raises(ValueError, match='Degrees of freedom <= 0'):
-            stats.gstd(self.array_1d, ddof=self.array_1d.size)
+        with pytest.warns(RuntimeWarning, match='Degrees of freedom <= 0'):
+            assert_equal(stats.gstd(self.array_1d, ddof=self.array_1d.size), np.inf)
 
     def test_3d_array(self):
         gstd_actual = stats.gstd(self.array_3d, axis=None)
@@ -6970,7 +6959,9 @@ class TestGeometricStandardDeviation:
 
     def test_masked_3d_array(self):
         ma = np.ma.masked_where(self.array_3d > 16, self.array_3d)
-        gstd_actual = stats.gstd(ma, axis=2)
+        message = "`gstd` support for masked array input was deprecated in..."
+        with pytest.warns(DeprecationWarning, match=message):
+            gstd_actual = stats.gstd(ma, axis=2)
         gstd_desired = stats.gstd(self.array_3d, axis=2)
         mask = [[0, 0, 0], [0, 1, 1]]
         assert_allclose(gstd_actual, gstd_desired)

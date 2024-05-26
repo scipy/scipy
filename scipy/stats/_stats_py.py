@@ -1995,18 +1995,19 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     hypothesis [5]_.
 
     """
+    xp = array_namespace(a)
+
     s, _ = skewtest(a, axis)
     k, _ = kurtosistest(a, axis)
-    k2 = s*s + k*k
+    statistic = s*s + k*k
 
-    xp = array_namespace(k2)
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, 2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
+
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return NormaltestResult(k2, pvalue)
+    return NormaltestResult(statistic, pvalue)
 
 
 @_axis_nan_policy_factory(SignificanceResult, default_axis=None)
@@ -2168,15 +2169,15 @@ def jarque_bera(x, *, axis=None):
     diffx = x - mu
     s = skew(diffx, axis=axis, _no_deco=True)
     k = kurtosis(diffx, axis=axis, _no_deco=True)
-    k2 = n / 6 * (s**2 + k**2 / 4)
+    statistic = n / 6 * (s**2 + k**2 / 4)
 
-    k2_np = np.asarray(k2)
-    pvalue = distributions.chi2.sf(k2_np, df=2)
-    pvalue = xp.asarray(pvalue, dtype=k2.dtype)
-    k2 = k2[()] if k2.ndim == 0 else k2
+    chi2 = _SimpleChi2(xp.asarray(2.))
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=xp)
+
+    statistic = statistic[()] if statistic.ndim == 0 else statistic
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
-    return SignificanceResult(k2, pvalue)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
@@ -3167,25 +3168,25 @@ def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
 
 
 def gstd(a, axis=0, ddof=1):
-    """
+    r"""
     Calculate the geometric standard deviation of an array.
 
     The geometric standard deviation describes the spread of a set of numbers
     where the geometric mean is preferred. It is a multiplicative factor, and
     so a dimensionless quantity.
 
-    It is defined as the exponent of the standard deviation of ``log(a)``.
-    Mathematically the population geometric standard deviation can be
-    evaluated as::
-
-        gstd = exp(std(log(a)))
-
-    .. versionadded:: 1.3.0
+    It is defined as the exponential of the standard deviation of the
+    natural logarithms of the observations.
 
     Parameters
     ----------
     a : array_like
-        An array like object containing the sample data.
+        An array containing finite, strictly positive, real numbers.
+
+        .. deprecated:: 1.14.0
+            Support for masked array input was deprecated in
+            SciPy 1.14.0 and will be removed in version 1.16.0.
+
     axis : int, tuple or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
@@ -3207,14 +3208,26 @@ def gstd(a, axis=0, ddof=1):
 
     Notes
     -----
-    As the calculation requires the use of logarithms the geometric standard
-    deviation only supports strictly positive values. Any non-positive or
-    infinite values will raise a `ValueError`.
-    The geometric standard deviation is sometimes confused with the exponent of
-    the standard deviation, ``exp(std(a))``. Instead the geometric standard
+    Mathematically, the sample geometric standard deviation :math:`s_G` can be
+    defined in terms of the natural logarithms of the observations
+    :math:`y_i = \log(x_i)`:
+
+    .. math::
+
+        s_G = \exp(s), \quad s = \sqrt{\frac{1}{n - d} \sum_{i=1}^n (y_i - \bar y)^2}
+
+    where :math:`n` is the number of observations, :math:`d` is the adjustment `ddof`
+    to the degrees of freedom, and :math:`\bar y` denotes the mean of the natural
+    logarithms of the observations. Note that the default ``ddof=1`` is different from
+    the default value used by similar functions, such as `numpy.std` and `numpy.var`.
+
+    When an observation is infinite, the geometric standard deviation is
+    NaN (undefined). Non-positive observations will also produce NaNs in the
+    output because the *natural* logarithm (as opposed to the *complex*
+    logarithm) is defined only for positive reals.
+    The geometric standard deviation is sometimes confused with the exponential
+    of the standard deviation, ``exp(std(a))``. Instead, the geometric standard
     deviation is ``exp(std(log(a)))``.
-    The default value for `ddof` is different to the default value (0) used
-    by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
 
     References
     ----------
@@ -3226,7 +3239,7 @@ def gstd(a, axis=0, ddof=1):
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
-    Note that the standard deviation of the distribution is one, on a
+    Note that the standard deviation of the distribution is one; on a
     log scale this evaluates to approximately ``exp(1)``.
 
     >>> import numpy as np
@@ -3248,66 +3261,18 @@ def gstd(a, axis=0, ddof=1):
     >>> gstd(a, axis=(1,2))
     array([2.12939215, 1.22120169])
 
-    The geometric standard deviation further handles masked arrays.
-
-    >>> a = np.arange(1, 25).reshape(2, 3, 4)
-    >>> ma = np.ma.masked_where(a > 16, a)
-    >>> ma
-    masked_array(
-      data=[[[1, 2, 3, 4],
-             [5, 6, 7, 8],
-             [9, 10, 11, 12]],
-            [[13, 14, 15, 16],
-             [--, --, --, --],
-             [--, --, --, --]]],
-      mask=[[[False, False, False, False],
-             [False, False, False, False],
-             [False, False, False, False]],
-            [[False, False, False, False],
-             [ True,  True,  True,  True],
-             [ True,  True,  True,  True]]],
-      fill_value=999999)
-    >>> gstd(ma, axis=2)
-    masked_array(
-      data=[[1.8242475707663655, 1.2243686572447428, 1.1318311657788478],
-            [1.0934830582350938, --, --]],
-      mask=[[False, False, False],
-            [False,  True,  True]],
-      fill_value=999999)
-
     """
     a = np.asanyarray(a)
-    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+    if isinstance(a, ma.MaskedArray):
+        message = ("`gstd` support for masked array input was deprecated in "
+                   "SciPy 1.14.0 and will be removed in version 1.16.0.")
+        warnings.warn(message, DeprecationWarning, stacklevel=2)
+        log = ma.log
+    else:
+        log = np.log
 
-    try:
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", RuntimeWarning)
-            return np.exp(np.std(log(a), axis=axis, ddof=ddof))
-    except RuntimeWarning as w:
-        if np.isinf(a).any():
-            raise ValueError(
-                'Infinite value encountered. The geometric standard deviation '
-                'is defined for strictly positive values only.'
-            ) from w
-        a_nan = np.isnan(a)
-        a_nan_any = a_nan.any()
-        # exclude NaN's from negativity check, but
-        # avoid expensive masking for arrays with no NaN
-        if ((a_nan_any and np.less_equal(np.nanmin(a), 0)) or
-                (not a_nan_any and np.less_equal(a, 0).any())):
-            raise ValueError(
-                'Non positive value encountered. The geometric standard '
-                'deviation is defined for strictly positive values only.'
-            ) from w
-        elif 'Degrees of freedom <= 0 for slice' == str(w):
-            raise ValueError(w) from w
-        else:
-            #  Remaining warnings don't need to be exceptions.
-            return np.exp(np.std(log(a, where=~a_nan), axis=axis, ddof=ddof))
-    except TypeError as e:
-        raise ValueError(
-            'Invalid array input. The inputs could not be '
-            'safely coerced to any supported types') from e
+    with np.errstate(invalid='ignore', divide='ignore'):
+        return np.exp(np.std(log(a), axis=axis, ddof=ddof))
 
 
 # Private dictionary initialized only once at module level
@@ -4386,7 +4351,9 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    p = distributions.chi2.sf(A, len(samples) - 1)
+    df = len(samples) - 1
+    chi2 = _SimpleChi2(df)
+    p = _get_pvalue(A, chi2, alternative='greater', symmetric=False, xp=np)
     return AlexanderGovernResult(A, p)
 
 
@@ -7656,9 +7623,10 @@ def power_divergence(f_obs, f_exp=None, ddof=0, axis=0, lambda_=None):
     num_obs = _m_count(terms, axis=axis, xp=xp)
     ddof = xp.asarray(ddof)
 
-    stat_np = np.asarray(stat)
-    pvalue = distributions.chi2.sf(stat_np, num_obs - 1 - ddof)
-    pvalue = xp.asarray(pvalue, dtype=stat.dtype)
+    df = xp.asarray(num_obs - 1 - ddof)
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(stat, chi2 , alternative='greater', symmetric=False, xp=xp)
+
     stat = stat[()] if stat.ndim == 0 else stat
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -8939,7 +8907,9 @@ def kruskal(*samples, nan_policy='propagate'):
     df = num_groups - 1
     h /= ties
 
-    return KruskalResult(h, distributions.chi2.sf(h, df))
+    chi2 = _SimpleChi2(df)
+    pvalue = _get_pvalue(h, chi2, alternative='greater', symmetric=False, xp=np)
+    return KruskalResult(h, pvalue)
 
 
 FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
@@ -9036,9 +9006,11 @@ def friedmanchisquare(*samples):
     c = 1 - ties / (k*(k*k - 1)*n)
 
     ssbn = np.sum(data.sum(axis=0)**2)
-    chisq = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
+    statistic = (12.0 / (k*n*(k+1)) * ssbn - 3*n*(k+1)) / c
 
-    return FriedmanchisquareResult(chisq, distributions.chi2.sf(chisq, k - 1))
+    chi2 = _SimpleChi2(k - 1)
+    pvalue = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FriedmanchisquareResult(statistic, pvalue)
 
 
 BrunnerMunzelResult = namedtuple('BrunnerMunzelResult',
@@ -9298,9 +9270,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     if method == 'fisher':
         statistic = -2 * np.sum(np.log(pvalues))
-        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+        chi2 = _SimpleChi2(2 * len(pvalues))
+        pval = _get_pvalue(statistic, chi2, alternative='greater',
+                           symmetric=False, xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
+        # _SimpleChi2 doesn't have `cdf` yet;
+        # add it when `combine_pvalues` is converted to array API
         pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
@@ -10717,7 +10693,7 @@ def expectile(a, alpha=0.5, *, weights=None):
 
 class _SimpleNormal:
     # A very simple, array-API compatible normal distribution for use in
-    # hypothesis tests. Will be replaced by new infrastructure Normal
+    # hypothesis tests. May be replaced by new infrastructure Normal
     # distribution in due time.
 
     def cdf(self, x):
@@ -10725,3 +10701,14 @@ class _SimpleNormal:
 
     def sf(self, x):
         return special.ndtr(-x)
+
+
+class _SimpleChi2:
+    # A very simple, array-API compatible chi-squared distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure chi-squared
+    # distribution in due time.
+    def __init__(self, df):
+        self.df = df
+
+    def sf(self, x):
+        return special.chdtrc(self.df, x)

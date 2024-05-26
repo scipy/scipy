@@ -308,7 +308,8 @@ def validate_rst_syntax(text, name, dots=True):
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
-        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
+        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv',
+        'versionremoved',
     ])
 
     # Run through docutils
