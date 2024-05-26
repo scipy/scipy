@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 ```{eval-rst}
-.. jupyterlite:: sampling.md
+.. jupyterlite:: sampling.ipynb
    :new_tab: True
 ```
 
