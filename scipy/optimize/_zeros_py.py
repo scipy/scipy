@@ -513,11 +513,11 @@ def bisect(f, a, b, args=(),
         The other end of the bracketing interval [a,b].
     xtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter must be positive.
     rtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter cannot be smaller than its
         default value of ``4*np.finfo(float).eps``.
     maxiter : int, optional
@@ -595,11 +595,11 @@ def ridder(f, a, b, args=(),
         The other end of the bracketing interval [a,b].
     xtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter must be positive.
     rtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter cannot be smaller than its
         default value of ``4*np.finfo(float).eps``.
     maxiter : int, optional
@@ -710,13 +710,13 @@ def brentq(f, a, b, args=(),
         The other end of the bracketing interval :math:`[a, b]`.
     xtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter must be positive. For nice
         functions, Brent's method will often satisfy the above condition with
         ``xtol/2`` and ``rtol/2``. [Brent1973]_
     rtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter cannot be smaller than its
         default value of ``4*np.finfo(float).eps``. For nice functions, Brent's
         method will often satisfy the above condition with ``xtol/2`` and
@@ -836,13 +836,13 @@ def brenth(f, a, b, args=(),
         The other end of the bracketing interval [a,b].
     xtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter must be positive. As with
         `brentq`, for nice functions the method will often satisfy the above
         condition with ``xtol/2`` and ``rtol/2``.
     rtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter cannot be smaller than its
         default value of ``4*np.finfo(float).eps``. As with `brentq`, for nice
         functions the method will often satisfy the above condition with
@@ -1300,11 +1300,11 @@ def toms748(f, a, b, args=(), k=1,
         iteration. ``k>=1``.
     xtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root. The parameter must be positive.
     rtol : number, optional
         The computed root ``x0`` will satisfy
-        ``absolute(x - x0) <= (xtol + rtol * absolute(x0))``,
+        ``|x - x0| <= xtol + rtol * |x0|``,
         where ``x`` is the exact root.
     maxiter : int, optional
         If convergence is not achieved in `maxiter` iterations, an error is
