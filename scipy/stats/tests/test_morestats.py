@@ -1682,6 +1682,19 @@ class TestWilcoxon:
         assert hasattr(ref, 'zstatistic')
         assert not hasattr(res, 'zstatistic')
 
+    @pytest.mark.parametrize('method', ['exact', 'approx'])
+    def test_symmetry_gh19872_gh20752(self, method):
+        # Check that one-sided exact tests obey required symmetry. Bug reported
+        # in gh-19872 and again in gh-20752; example from gh-19872 is more concise:
+        var1 = [62, 66, 61, 68, 74, 62, 68, 62, 55, 59]
+        var2 = [71, 71, 69, 61, 75, 71, 77, 72, 62, 65]
+        ref = stats.wilcoxon(var1, var2, alternative='less', method=method)
+        res = stats.wilcoxon(var2, var1, alternative='greater', method=method)
+        max_statistic = len(var1) * (len(var1) + 1) / 2
+        assert int(res.statistic) != res.statistic
+        assert_allclose(max_statistic - res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-15)
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
