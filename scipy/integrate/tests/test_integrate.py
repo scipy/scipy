@@ -778,6 +778,31 @@ def test_odeint_errors():
                   Dfun=sys2d_bad_jac)
 
 
+def test_odeint_array_passed_to_user_func_is_readonly():
+
+    def try_to_overwrite_input_array(y, t):
+        y[0] = 1.0
+        y[1] = 0.0
+        return y
+
+    with assert_raises(ValueError, match='is read-only'):
+        odeint(try_to_overwrite_input_array, [1.0, -1.0], [0, 1, 2])
+
+
+def test_odeint_array_passed_to_user_jac_is_readonly():
+
+    def func(y, t):
+        return -1000*y
+
+    def jac(y, t):
+        y[0] = 1.0
+        y[1] = -1.0
+        return np.array([[-1000, 0], [0, -1000]])
+
+    with assert_raises(ValueError, match='is read-only'):
+        odeint(func, [1.0, -1.0], [0, 1, 2], Dfun=jac)
+
+
 def test_odeint_bad_shapes():
     # Tests of some errors that can occur with odeint.
 

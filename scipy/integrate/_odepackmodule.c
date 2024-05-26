@@ -94,6 +94,12 @@ PyObject *call_odeint_user_function(PyObject *func, npy_intp n, double *x,
         goto fail;
     }
 
+    /*
+     * Make the array read-only, so users can't overwrite it in their
+     * Python functions.
+     */
+    PyArray_CLEARFLAGS(sequence, NPY_ARRAY_WRITEABLE);
+
     tfloat = PyFloat_FromDouble(t);
     if (tfloat == NULL) {
         goto fail;
