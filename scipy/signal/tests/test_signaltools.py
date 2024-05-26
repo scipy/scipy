@@ -330,7 +330,7 @@ class TestConvolve2d:
     @array_api_compatible
     def test_valid_mode_complx(self, xp):
         e = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
-        f = xp.asarray([[1, 2, 3], [3, 4, 5]], dtype=complex) + 1j
+        f = xp.asarray([[1, 2, 3], [3, 4, 5]], dtype=xp.complex128) + 1j
         h = xp.asarray([[62.+24.j, 80.+30.j, 98.+36.j, 116.+42.j, 134.+48.j]])
 
         g = convolve2d(e, f, 'valid')
@@ -453,8 +453,8 @@ class TestConvolve2d:
         # least as large as the corresponding
         # dimensions of the other array. This
         # setup should throw a ValueError.
-        a = xp.arange(1, 7).reshape((2, 3))
-        b = xp.arange(-6, 0).reshape((3, 2))
+        a = xp.reshape(xp.arange(1, 7), (2, 3))
+        b = xp.reshape(xp.arange(-6, 0), (3, 2))
 
         assert_raises(ValueError, convolve2d, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve2d, *(b, a), **{'mode': 'valid'})
@@ -465,7 +465,7 @@ class TestConvolve2d:
         e = xp.asarray([[1, 2, 3], [3, 4, 5]])
         f = xp.asarray([[2, 3, 4, 5, 6, 7, 8], [4, 5, 6, 7, 8, 9, 10]])
         g = convolve2d(e, f, 'same')
-        h = xp.array([[22, 28, 34],
+        h = xp.asarray([[22, 28, 34],
                    [80, 98, 116]])
         xp_assert_equal(g, h)
 
@@ -498,12 +498,12 @@ class TestConvolve2d:
     def test_consistency_convolve_funcs(self, xp):
         # Compare np.convolve, signal.convolve, signal.convolve2d
         a = xp.arange(5)
-        b = xp.array([3.2, 1.4, 3])
+        b = xp.asarray([3.2, 1.4, 3])
         for mode in ['full', 'valid', 'same']:
-            xp_assert_close(xp.convolve(a, b, mode=mode),
+            xp_assert_close(xp.asarray(np.convolve(a, b, mode=mode)),
                             signal.convolve(a, b, mode=mode))
             xp_assert_close(xp.squeeze(
-                signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode)),
+                signal.convolve2d(xp.asarray([a]), xp.asarray([b]), mode=mode), axis=None),
                 signal.convolve(a, b, mode=mode))
 
     @array_api_compatible

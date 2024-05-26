@@ -1760,6 +1760,10 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     >>> fig.show()
 
     """
+    xp = array_namespace(in1, in2)
+
+    # NB: do work in NumPy, only convert the output
+
     in1 = np.asarray(in1)
     in2 = np.asarray(in2)
 
@@ -1772,7 +1776,7 @@ def convolve2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
     val = _valfrommode(mode)
     bval = _bvalfromboundary(boundary)
     out = _sigtools._convolve2d(in1, in2, 1, val, bval, fillvalue)
-    return out
+    return xp.asarray(out)
 
 
 def correlate2d(in1, in2, mode='full', boundary='fill', fillvalue=0):
