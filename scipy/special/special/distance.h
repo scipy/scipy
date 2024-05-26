@@ -20,11 +20,20 @@ SPECFUN_HOST_DEVICE inline double js_div(double a, double b) {
         return std::numeric_limits<double>::infinity();
     }
 
-    const double c = (a+b)/2;
-    if (a == 0 || b == 0) {
-        return c*std::log(2.0);  // could be -0.0
+    // Handle the case where at least one input is zero.
+    const double HALF_LN2 = 0.34657359027997264; // 0.5*log(2)
+    if (a == 0 && b == 0) {
+        return 0.0;
+    }
+    if (a == 0) {
+        return b * HALF_LN2;
+    }
+    if (b == 0) {
+        return a * HALF_LN2;
     }
 
+    // Now both inputs are positive.
+    const double c = (a+b)/2;
     const double t = (b-a)/(b+a);
     if (std::abs(t) <= 0.5) {
         return c*( t*std::atanh(t) + 0.5*std::log1p(-t*t) );  // fma?

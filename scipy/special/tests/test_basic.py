@@ -4145,6 +4145,30 @@ def test_rel_entr():
     assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
 
 
+# The reference values are computed by mpmath:
+#
+# from mpmath import mp
+# mp.dps = 100
+#
+# def js_div_mp(a, b):
+#     a = mp.mpf(a)
+#     b = mp.mpf(b)
+#     c = (a+b)/2
+#     def f(x):
+#         return 0 if x == 0 else x*mp.log(x)
+#     return 0.5*(f(a)+f(b)) - f(c)
+@pytest.mark.parametrize("a,b,expected", [
+    (0.0, 1.0, 0.34657359027997264),
+    (-0.0, -0.0, 0.0),
+])
+def test_js_div(a, b, expected):
+    actual = cephes._js_div(a, b)
+    if expected == 0:
+        assert_equal(actual, expected)
+    else:
+        assert_allclose(actual, expected, rtol=1e-15)
+
+
 def test_huber():
     assert_equal(special.huber(-1, 1.5), np.inf)
     assert_allclose(special.huber(2, 1.5), 0.5 * np.square(1.5))
