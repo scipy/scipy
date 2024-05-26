@@ -1552,7 +1552,10 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1594,7 +1597,10 @@ def median_filter(input, size=None, footprint=None, output=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
@@ -1648,7 +1654,10 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     %(origin_multiple)s
     axes : tuple of int or None, optional
         If None, `input` is filtered along all axes. Otherwise,
-        `input` is filtered along the specified axes.
+        `input` is filtered along the specified axes. When `axes` is
+        specified, any tuples used for `size`, `origin`, and/or `mode`
+        must match the length of `axes`. The ith entry in any of these tuples
+        corresponds to the ith entry in `axes`.
 
     Returns
     -------
