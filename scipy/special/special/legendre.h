@@ -213,13 +213,80 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
 }
 
 template <typename T>
-struct diag_recurrence {
+void assoc_legendre_p_diag_init(bool m_signbit, int type, T z, T (&res)[3]) {
+    res[0] = 1;
+    if (type == 3) {
+        res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
+        if (std::real(z) < 0) {
+            res[1] = -res[1];
+        }
+    } else {
+        res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+    }
+
+    if (m_signbit) {
+        res[1] /= 2;
+
+        if (type != 3) {
+            res[1] *= -1;
+        }
+    }
+}
+
+template <typename T>
+void assoc_legendre_p_diag_init(bool m_signbit, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+    assoc_legendre_p_diag_init(m_signbit, type, z, res);
+
+    res_jac[0] = 0;
+    if (type == 3) {
+        res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
+        if (std::real(z) < 0) {
+            res_jac[1] = -res_jac[1];
+        }
+    } else {
+        res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+    }
+
+    if (m_signbit) {
+        res_jac[1] /= 2;
+
+        if (type != 3) {
+            res_jac[1] *= -1;
+        }
+    }
+}
+
+template <typename T>
+void assoc_legendre_p_diag_init(bool m_signbit, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
+    assoc_legendre_p_diag_init(m_signbit, type, z, res, res_jac);
+
+    res_hess[0] = 0;
+    if (type == 3) {
+        res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
+        if (std::real(z) < 0) {
+            res_hess[1] = -res_hess[1];
+        }
+    } else {
+        res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
+    }
+
+    if (m_signbit) {
+        res_hess[1] /= 2;
+
+        if (type != 3) {
+            res_hess[1] *= -1;
+        }
+    }
+}
+
+template <typename T>
+struct assoc_legendre_p_diag_recurrence {
     int m;
     int type;
     T z;
     T type_sign;
 
-    diag_recurrence(int m, int type, T z) : m(m), type(type), z(z) {
+    assoc_legendre_p_diag_recurrence(int m, int type, T z) : m(m), type(type), z(z) {
         if (type == 3) {
             type_sign = -1;
         } else {
@@ -268,71 +335,34 @@ struct diag_recurrence {
         res_hess[0] = -T(2) * fac;
         res_hess[1] = 0;
     }
-
-    void init(T (&res)[3]) {
-        res[0] = 1;
-        if (type == 3) {
-            res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res[1] = -res[1];
-            }
-        } else {
-            res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
-
-        if (m < 0) {
-            res[1] /= 2;
-
-            if (type != 3) {
-                res[1] *= -1;
-            }
-        }
-    }
-
-    void init(T (&res)[3], T (&res_jac)[3]) {
-        init(res);
-
-        res_jac[0] = 0;
-        if (type == 3) {
-            res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_jac[1] = -res_jac[1];
-            }
-        } else {
-            res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
-
-        if (m < 0) {
-            res_jac[1] /= 2;
-
-            if (type != 3) {
-                res_jac[1] *= -1;
-            }
-        }
-    }
-
-    void init(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
-        init(res, res_jac);
-
-        res_hess[0] = 0;
-        if (type == 3) {
-            res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_hess[1] = -res_hess[1];
-            }
-        } else {
-            res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
-        }
-
-        if (m < 0) {
-            res_hess[1] /= 2;
-
-            if (type != 3) {
-                res_hess[1] *= -1;
-            }
-        }
-    }
 };
+
+template <typename T>
+void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3]) {
+    int m_abs = std::abs(m);
+
+    assoc_legendre_p_diag_recurrence<T> r{m, type, z};
+    forward_recur(r, res, 0, m_abs + 1, [](int n, auto r, const T(&p)[3]) {});
+}
+
+template <typename T>
+void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+    int m_abs = std::abs(m);
+
+    assoc_legendre_p_diag_recurrence<T> r{m, type, z};
+    forward_recur(r, res, res_jac, 0, m_abs + 1, [](int n, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
+}
+
+template <typename T>
+void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
+    int m_abs = std::abs(m);
+
+    assoc_legendre_p_diag_recurrence<T> r{m, type, z};
+    forward_recur(
+        r, res, res_jac, res_hess, 0, m_abs + 1,
+        [](int n, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
+    );
+}
 
 template <typename T>
 struct assoc_legendre_p_recurrence {
@@ -441,10 +471,8 @@ void assoc_legendre_p_init(int n, int m, int type, T z, T (&res)[3]) {
     int m_abs = std::abs(m);
 
     if (true) {
-        diag_recurrence<T> r{m, type, z};
-        r.init(res);
-
-        forward_recur(r, res, 0, m_abs + 1, [](auto, auto, auto) {});
+        assoc_legendre_p_diag_init(std::signbit(m), type, z, res);
+        assoc_legendre_p_diag_recur(m, type, z, res);
 
         res[0] = res[2];
     }
@@ -454,14 +482,12 @@ void assoc_legendre_p_init(int n, int m, int type, T z, T (&res)[3]) {
 }
 
 template <typename T>
-void assoc_legendre_p_init(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+void assoc_legendre_p_init(int n, int m, int type, T z, bool diag, T (&res)[3], T (&res_jac)[3]) {
     int m_abs = std::abs(m);
 
-    if (true) {
-        diag_recurrence<T> r{m, type, z};
-        r.init(res, res_jac);
-
-        forward_recur(r, res, res_jac, 0, m_abs + 1, [](auto, auto, auto, auto) {});
+    if (diag) {
+        assoc_legendre_p_diag_init(std::signbit(m), type, z, res, res_jac);
+        assoc_legendre_p_diag_recur(m, type, z, res, res_jac);
 
         res[0] = res[2];
         res_jac[0] = res_jac[2];
@@ -479,10 +505,8 @@ void assoc_legendre_p_init(int n, int m, int type, T z, T (&res)[3], T (&res_jac
     int m_abs = std::abs(m);
 
     if (true) {
-        diag_recurrence<T> r{m, type, z};
-        r.init(res, res_jac, res_hess);
-
-        forward_recur(r, res, res_jac, res_hess, 0, m_abs + 1, [](auto, auto, auto, auto, auto) {});
+        assoc_legendre_p_diag_init(std::signbit(m), type, z, res, res_jac, res_hess);
+        assoc_legendre_p_diag_recur(m, type, z, res, res_jac, res_hess);
 
         res[0] = res[2];
         res_jac[0] = res_jac[2];
@@ -620,7 +644,7 @@ template <typename T>
 void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    assoc_legendre_p_init(n, m, type, z, p, p_jac);
+    assoc_legendre_p_init(n, m, type, z, true, p, p_jac);
 
     assoc_legendre_p_recur(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
 
@@ -683,7 +707,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     for (int i = -m; i <= m; ++i) {
         T p[3] = {};
         T p_jac[3] = {};
-        assoc_legendre_p_init(n, i, type, z, p, p_jac);
+        assoc_legendre_p_init(n, i, type, z, true, p, p_jac);
 
         assoc_legendre_p_recur(
             n, i, type, z, p, p_jac,
