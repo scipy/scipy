@@ -2967,12 +2967,12 @@ class TestDirectionalStats:
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
         # angles were converted to radians
-        decl = xp.array([-5.98996999, -1.08210414, -0.64402649, -0.4712389,
-                         -6.26573201, -0.09948377, -0.87964594, -6.24129741,
-                         -0.76794487])
-        incl = xp.array([-1.15366264, -1.1990412 , -1.22347581, -1.43291532,
-                         -1.38753676, -1.27409035, -1.20951317, -1.0262536,
-                         -0.89709924])
+        decl = xp.asarray([-5.98996999, -1.08210414, -0.64402649, -0.4712389,
+                           -6.26573201, -0.09948377, -0.87964594, -6.24129741,
+                           -0.76794487])
+        incl = xp.asarray([-1.15366264, -1.1990412 , -1.22347581, -1.43291532,
+                           -1.38753676, -1.27409035, -1.20951317, -1.0262536,
+                           -0.89709924])
         data = xp.stack((xp.cos(incl) * xp.cos(decl),
                          xp.cos(incl) * xp.sin(decl),
                          xp.sin(incl)),
@@ -2981,7 +2981,7 @@ class TestDirectionalStats:
         dirstats = stats.directional_stats(data)
         directional_mean = dirstats.mean_direction
 
-        reference_mean = xp.array([0.2984, -0.1346, -0.9449])
+        reference_mean = xp.asarray([0.2984, -0.1346, -0.9449])
         xp_assert_close(directional_mean, reference_mean, atol=1e-4, rtol=1e-4)
 
     @pytest.mark.parametrize('angles, ref', [
@@ -3022,10 +3022,10 @@ class TestDirectionalStats:
         data = np.array([[0.8660254, 0.5, 0.],
                          [0.8660254, -0.5, 0.]])
         full_array = xp.asarray(np.tile(data, (2, 2, 2, 1)))
-        expected = xp.array([[[1., 0., 0.],
-                              [1., 0., 0.]],
-                             [[1., 0., 0.],
-                              [1., 0., 0.]]])
+        expected = xp.asarray([[[1., 0., 0.],
+                                [1., 0., 0.]],
+                               [[1., 0., 0.],
+                                [1., 0., 0.]]])
         dirstats = stats.directional_stats(full_array, axis=2)
         xp_assert_close(expected, dirstats.mean_direction)
 
@@ -3051,8 +3051,8 @@ class TestDirectionalStats:
         # test that directional stats calculations yield same results
         # for unnormalized input with normalize=True and normalized
         # input with normalize=False
-        data = xp.array([[0.8660254, 0.5, 0.],
-                         [1.7320508, -1., 0.]])
+        data = xp.asarray([[0.8660254, 0.5, 0.],
+                           [1.7320508, -1., 0.]])
         res = stats.directional_stats(data, normalize=True)
         normalized_data = data / xp.linalg.vector_norm(data, axis=-1,
                                                        keepdims=True)
