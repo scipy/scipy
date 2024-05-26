@@ -212,6 +212,14 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     );
 }
 
+struct assoc_legendre_unnorm_policy {};
+
+struct assoc_legendre_norm_policy {};
+
+constexpr assoc_legendre_unnorm_policy assoc_legendre_unnorm;
+
+constexpr assoc_legendre_norm_policy assoc_legendre_norm;
+
 template <typename T>
 void assoc_legendre_p_diag_init(bool m_signbit, int type, T z, T (&res)[3]) {
     res[0] = 1;
@@ -279,8 +287,11 @@ void assoc_legendre_p_diag_init(bool m_signbit, int type, T z, T (&res)[3], T (&
     }
 }
 
+template <typename T, typename NormPolicy = assoc_legendre_unnorm_policy>
+struct assoc_legendre_p_diag_recurrence;
+
 template <typename T>
-struct assoc_legendre_p_diag_recurrence {
+struct assoc_legendre_p_diag_recurrence<T, assoc_legendre_unnorm_policy> {
     int m;
     int type;
     T z;
