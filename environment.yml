@@ -27,7 +27,6 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   - pytest-timeout
-  - pytest-fail-slow
   - asv >=0.6
   - hypothesis
   - array-api-strict

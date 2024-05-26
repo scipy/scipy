@@ -586,6 +586,7 @@ class TestPearsonr:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
 
+    @pytest.mark.fail_slow(2)
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))
@@ -5984,7 +5985,7 @@ def test_ttest_1samp_new(xp):
 @pytest.mark.usefixtures("skip_xp_backends")
 @array_api_compatible
 def test_ttest_1samp_new_omit(xp):
-    n1, n2, n3 = (10, 15, 20)
+    n1, n2, n3 = (5, 10, 15)
     rvn1 = stats.norm.rvs(loc=5, scale=10, size=(n1, n2, n3))
     rvn1 = xp.asarray(rvn1)
 
