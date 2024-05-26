@@ -470,6 +470,7 @@ class TestShgoSimplicialTestFunctions:
                  options=options, iters=1,
                  sampling_method='simplicial')
 
+    @pytest.mark.fail_slow(5)
     def test_f5_3_cons_symmetry(self):
         """Assymmetrically constrained test function"""
         options = {'symmetry': [0, 0, 0, 3],
@@ -777,6 +778,7 @@ class TestShgoArguments:
         np.testing.assert_allclose(res_new_bounds.x, x_opt)
         np.testing.assert_allclose(res_new_bounds.x, res_old_bounds.x)
 
+    @pytest.mark.fail_slow(5)
     def test_19_parallelization(self):
         """Test the functionality to add custom sampling methods to shgo"""
 

@@ -165,7 +165,8 @@ py3.extension_module('_test_multivariate',
   [quadpack_test_src],
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/integrate'
+  subdir: 'scipy/integrate',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_odeint_banded',
@@ -176,7 +177,8 @@ py3.extension_module('_test_odeint_banded',
   dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/integrate'
+  subdir: 'scipy/integrate',
+  install_tag: 'tests'
 )
 
 subdir('_ivp')

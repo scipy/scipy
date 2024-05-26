@@ -135,8 +135,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "Window length (0) must be positive and less",
                       "Window length (1) must be positive and less",
                       "Window length (2) must be positive and less",
-                      "skewtest is not valid with less than",
-                      "kurtosistest requires at least 5",
+                      "`skewtest` requires at least",
+                      "`kurtosistest` requires at least",
                       "attempt to get argmax of an empty sequence",
                       "No array values within given limits",
                       "Input sample size must be greater than one.",}
@@ -249,7 +249,7 @@ def nan_policy_1d(hypotest, data1d, unpacker, *args, n_outputs=2,
 def test_axis_nan_policy_fast(hypotest, args, kwds, n_samples, n_outputs,
                               paired, unpacker, nan_policy, axis,
                               data_generator):
-    if hypotest in {stats.cramervonmises_2samp} and not SCIPY_XSLOW:
+    if hypotest in {stats.cramervonmises_2samp, stats.kruskal} and not SCIPY_XSLOW:
         pytest.skip("Too slow.")
     _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           unpacker, nan_policy, axis, data_generator)

@@ -21,8 +21,8 @@ jobs:
     name: Get commit message
     uses: ./.github/workflows/commit_message.yml
 
-  test:
-    name: fast, py3.12/npAny, dev.py
+  fast_dev_py_fail_slow:
+    name: fail slow, fast, py3.12/npAny, dev.py
     needs: get_commit_message
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
@@ -49,7 +49,7 @@ jobs:
 
       - name: pip-packages
         run: |
-          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
+          pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis "scipy-openblas32<=0.3.23.293.2"
 
       - name: Build
         run: |
@@ -57,12 +57,12 @@ jobs:
 
       - name: Test
         run: |
-          python dev.py test -j2
+          python dev.py test -j2 -- --durations=0 --durations-min=0.25 --fail-slow=1.0
 
 
   #############################################################################
-  full_dev_py_min_numpy:
-    name: full, py3.10/npMin, dev.py
+  full_dev_py_min_numpy_fail_slow:
+    name: fail slow, full, py3.10/npMin, dev.py
     needs: get_commit_message
     if: >
       needs.get_commit_message.outputs.message == 1

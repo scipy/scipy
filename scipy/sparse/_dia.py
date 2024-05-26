@@ -64,7 +64,7 @@ class _dia_base(_data_matrix):
                     self.offsets = np.atleast_1d(offsets)
                     self._shape = check_shape(shape)
         else:
-            #must be dense, convert to COO first, then to DIA
+            # must be dense, convert to COO first, then to DIA
             try:
                 arg1 = np.asarray(arg1)
             except Exception as e:
@@ -80,7 +80,7 @@ class _dia_base(_data_matrix):
         if dtype is not None:
             self.data = self.data.astype(dtype)
 
-        #check format
+        # check format
         if self.offsets.ndim != 1:
             raise ValueError('offsets array must have rank 1')
 
@@ -176,30 +176,41 @@ class _dia_base(_data_matrix):
     sum.__doc__ = _spbase.sum.__doc__
 
     def _add_sparse(self, other):
+        # If other is not DIA format, let them handle us instead.
+        if not isinstance(other, _dia_base):
+            return other._add_sparse(self)
 
-        # Check if other is also of type dia_array
-        if not isinstance(other, type(self)):
-            # If other is not of type dia_array, default to
-            # converting to csr_matrix, as is done in the _add_sparse
-            # method of parent class _spbase
-            return self.tocsr()._add_sparse(other)
+        # Fast path for exact equality of the sparsity structure.
+        if np.array_equal(self.offsets, other.offsets):
+            return self._with_data(self.data + other.data)
 
-        # The task is to compute m = self + other
-        # Start by making a copy of self, of the datatype
-        # that should result from adding self and other
-        dtype = np.promote_types(self.dtype, other.dtype)
-        m = self.astype(dtype, copy=True)
+        # Find the union of the offsets (which will be sorted and unique).
+        new_offsets = np.union1d(self.offsets, other.offsets)
+        self_idx = np.searchsorted(new_offsets, self.offsets)
+        other_idx = np.searchsorted(new_offsets, other.offsets)
 
-        # Then, add all the stored diagonals of other.
-        for d in other.offsets:
-            # Check if the diagonal has already been added.
-            if d in m.offsets:
-                # If the diagonal is already there, we need to take
-                # the sum of the existing and the new
-                m.setdiag(m.diagonal(d) + other.diagonal(d), d)
-            else:
-                m.setdiag(other.diagonal(d), d)
-        return m
+        self_d = self.data.shape[1]
+        other_d = other.data.shape[1]
+        # Fast path for a sparsity structure where the final offsets are a
+        # permutation of the existing offsets and the diagonal lengths match.
+        if self_d == other_d and len(new_offsets) == len(self.offsets):
+            new_data = self.data[_invert_index(self_idx)]
+            new_data[other_idx, :] += other.data
+        elif self_d == other_d and len(new_offsets) == len(other.offsets):
+            new_data = other.data[_invert_index(other_idx)]
+            new_data[self_idx, :] += self.data
+        else:
+            # Maximum diagonal length of the result.
+            d = min(self.shape[0] + new_offsets[-1], self.shape[1])
+
+            # Add all diagonals to a freshly-allocated data array.
+            new_data = np.zeros(
+                (len(new_offsets), d),
+                dtype=np.result_type(self.data, other.data),
+            )
+            new_data[self_idx, :self_d] += self.data[:, :d]
+            new_data[other_idx, :other_d] += other.data[:, :d]
+        return self._dia_container((new_data, new_offsets), shape=self.shape)
 
     def _mul_scalar(self, other):
         return self._with_data(self.data * other)
@@ -388,6 +399,13 @@ class _dia_base(_data_matrix):
         self._shape = shape
 
     resize.__doc__ = _spbase.resize.__doc__
+
+
+def _invert_index(idx):
+    """Helper function to invert an index array."""
+    inv = np.zeros_like(idx)
+    inv[idx] = np.arange(len(idx))
+    return inv
 
 
 def isspmatrix_dia(x):

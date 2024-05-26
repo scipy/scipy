@@ -101,9 +101,6 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.special\..*_roots',  # old aliases for scipy.special.*_roots
     r'scipy\.special\.jn',  # alias for jv
     r'scipy\.ndimage\.sum',   # alias for sum_labels
-    r'scipy\.integrate\.simps',   # alias for simpson
-    r'scipy\.integrate\.trapz',   # alias for trapezoid
-    r'scipy\.integrate\.cumtrapz',   # alias for cumulative_trapezoid
     r'scipy\.linalg\.solve_lyapunov',  # deprecated name
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
@@ -311,7 +308,8 @@ def validate_rst_syntax(text, name, dots=True):
         'mod', 'currentmodule', 'autosummary', 'data', 'legacy',
         'obj', 'versionadded', 'versionchanged', 'module', 'class', 'meth',
         'ref', 'func', 'toctree', 'moduleauthor', 'deprecated',
-        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv'
+        'sectionauthor', 'codeauthor', 'eq', 'doi', 'DOI', 'arXiv', 'arxiv',
+        'versionremoved',
     ])
 
     # Run through docutils
