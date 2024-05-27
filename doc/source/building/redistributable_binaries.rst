@@ -1,7 +1,7 @@
 Building redistributable binaries
 =================================
 
-*This intended audience for this section is anyone who wants to build SciPy and
+*The intended audience for this section is anyone who wants to build SciPy and
 deploy it anywhere else than their own machine - from distro packagers to users
 who want to build wheels to deploy to their production environment*
 
@@ -75,7 +75,7 @@ functionality. It is a one-liner::
    --skip-dependency-check``. It assumes that the packager has already set up
    the build environment, which is usually the case for distro packaging. The
    install tags feature works equally well with isolated builds (e.g. ``pip
-   install numpy --no-binary -Cinstall-args=--tags=runtime,python-runtime,devel``).
+   install scipy --no-binary -Cinstall-args=--tags=runtime,python-runtime,devel``).
 
 If you want to produce a separate package for the tests themselves, say under
 the name ``scipy-tests``, then edit ``pyproject.toml`` to change the project
