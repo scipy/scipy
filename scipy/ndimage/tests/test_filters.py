@@ -1349,8 +1349,13 @@ class TestNdimageFilters:
         output = ndimage.median_filter(array, 2)
         assert_array_almost_equal(array, output)
 
-    def test_rank02(self):
-        array = np.array([1, 2, 3, 4, 5])
+    @pytest.mark.parametrize(
+        'dtype',
+        [np.int8, np.int16, np.int32, np.int64, np.uint8, np.uint16, np.uint32,
+         np.uint64, bool, np.float16, np.float32, np.float64],
+    )
+    def test_rank02(self, dtype):
+        array = np.array([1, 2, 3, 4, 5], dtype=dtype)
         output = ndimage.rank_filter(array, 1, size=[3])
         assert_array_almost_equal(array, output)
         output = ndimage.percentile_filter(array, 50, size=3)
