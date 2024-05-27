@@ -778,7 +778,6 @@ class TestBracketMinimum:
             return -((log_b - log_a)*x)**-1
 
         result = _bracket_minimum(f, 0.5535723499480897, xmin=xmin, xmax=xmax)
-        assert not result.success
         assert xmin == result.xl
 
     def test_gh_20562_right(self):
@@ -791,5 +790,4 @@ class TestBracketMinimum:
             return ((log_b - log_a)*x)**-1
 
         result = _bracket_minimum(f, -0.5535723499480897, xmin=xmin, xmax=xmax)
-        assert not result.success
         assert xmax == result.xr

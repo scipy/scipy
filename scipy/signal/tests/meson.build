@@ -23,5 +23,6 @@ py3.install_sources([
     'test_wavelets.py',
     'test_windows.py'
   ],
-  subdir: 'scipy/signal/tests'
+  subdir: 'scipy/signal/tests',
+  install_tag: 'tests'
 )
