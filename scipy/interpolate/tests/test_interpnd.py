@@ -176,10 +176,10 @@ class TestLinearNDInterpolation:
     def test_threading(self):
         # This test was taken from issue 8856
         # https://github.com/scipy/scipy/issues/8856
-        check_free_memory(30000)
+        check_free_memory(10000)
 
-        r_ticks = np.arange(0, 500, 10)
-        phi_ticks = np.arange(0, 500, 10)
+        r_ticks = np.arange(0, 4200, 10)
+        phi_ticks = np.arange(0, 4200, 10)
         r_grid, phi_grid = np.meshgrid(r_ticks, phi_ticks)
 
         def do_interp(interpolator, slice_rows, slice_cols):
@@ -193,16 +193,16 @@ class TestLinearNDInterpolation:
 
         worker_thread_1 = threading.Thread(
             target=do_interp,
-            args=(interpolator, slice(0, 250), slice(0, 250)))
+            args=(interpolator, slice(0, 2100), slice(0, 2100)))
         worker_thread_2 = threading.Thread(
             target=do_interp,
-            args=(interpolator, slice(250, 500), slice(0, 250)))
+            args=(interpolator, slice(2100, 4200), slice(0, 2100)))
         worker_thread_3 = threading.Thread(
             target=do_interp,
-            args=(interpolator, slice(0, 250), slice(250, 500)))
+            args=(interpolator, slice(0, 2100), slice(2100, 4200)))
         worker_thread_4 = threading.Thread(
             target=do_interp,
-            args=(interpolator, slice(250, 500), slice(250, 500)))
+            args=(interpolator, slice(2100, 4200), slice(2100, 4200)))
 
         worker_thread_1.start()
         worker_thread_2.start()
