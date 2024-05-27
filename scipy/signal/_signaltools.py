@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_torch, copy, np_compat, size as xp_size,
+    array_namespace, is_torch, copy, size as xp_size,
     is_complex, is_integer, is_integer_dtype
 )
 
@@ -1475,7 +1475,7 @@ def convolve(in1, in2, mode='full', method='auto'):
             # convert to numpy and back
             a_volume = np.asarray(volume)
             a_kernel = np.asarray(kernel)
-            out = np.convolve(volume, kernel, mode)
+            out = np.convolve(a_volume, a_kernel, mode)
             return xp.asarray(out)
 
         return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
