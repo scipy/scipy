@@ -806,7 +806,6 @@ def _correlate_or_convolve(input, weights, output, mode, cval, origin,
                                             weights, output, cval, **kwargs)
 
     axes = _ni_support._check_axes(axes, input.ndim)
-    num_axes = len(axes)
     weights = np.asarray(weights, dtype=np.float64)
 
     # expand weights and origins if num_axes < input.ndim
