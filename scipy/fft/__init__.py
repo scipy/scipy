@@ -66,7 +66,7 @@ Helper functions
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
    fhtoffset - Compute an optimal offset for the Fast Hankel Transform
    next_fast_len - Find the optimal length to zero-pad an FFT for speed
-   prev_fast_len - Find the maximum length to extract for fast FFT
+   prev_fast_len - Find the maximum slice length that results in a fast FFT
    set_workers - Context manager to set default number of workers
    get_workers - Get the current default number of workers
 
