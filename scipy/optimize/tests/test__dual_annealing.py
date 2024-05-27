@@ -110,6 +110,7 @@ class TestDualAnnealing:
         assert_allclose(ret.fun, 0., atol=1e-12)
         assert ret.success
 
+    @pytest.mark.fail_slow(5)
     def test_high_dim(self):
         ret = dual_annealing(self.func, self.hd_bounds, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-12)
@@ -120,6 +121,7 @@ class TestDualAnnealing:
                              no_local_search=True, seed=self.seed)
         assert_allclose(ret.fun, 0., atol=1e-4)
 
+    @pytest.mark.fail_slow(5)
     def test_high_dim_no_ls(self):
         ret = dual_annealing(self.func, self.hd_bounds,
                              no_local_search=True, seed=self.seed)
@@ -138,6 +140,7 @@ class TestDualAnnealing:
         assert_raises(ValueError, dual_annealing, self.weirdfunc,
                       self.ld_bounds)
 
+    @pytest.mark.fail_slow(5)
     def test_reproduce(self):
         res1 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
         res2 = dual_annealing(self.func, self.ld_bounds, seed=self.seed)
@@ -279,6 +282,7 @@ class TestDualAnnealing:
                              seed=self.seed)
         assert ret.njev == self.ngev
 
+    @pytest.mark.fail_slow(5)
     def test_from_docstring(self):
         def func(x):
             return np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
@@ -334,6 +338,7 @@ class TestDualAnnealing:
 
         assert_allclose(rate, accept_rate)
 
+    @pytest.mark.fail_slow(5)
     def test_bounds_class(self):
         # test that result does not depend on the bounds type
         def func(x):

@@ -311,6 +311,7 @@ class TestCloughTocher2DInterpolator:
         yi_rescale = interpnd.CloughTocher2DInterpolator(tri.points, y, rescale=True)(x)
         assert_almost_equal(yi, yi_rescale)
 
+    @pytest.mark.fail_slow(2)
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [

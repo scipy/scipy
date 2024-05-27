@@ -126,11 +126,11 @@ class TestDifferentialEvolutionSolver:
     def test__mutate1(self):
         # strategies */1/*, i.e. rand/1/bin, best/1/exp, etc.
         result = np.array([0.05])
-        trial = self.dummy_solver2._best1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._best1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
         result = np.array([0.25])
-        trial = self.dummy_solver2._rand1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._rand1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__mutate2(self):
@@ -138,23 +138,26 @@ class TestDifferentialEvolutionSolver:
         # [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7]
 
         result = np.array([-0.1])
-        trial = self.dummy_solver2._best2((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._best2(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
         result = np.array([0.1])
-        trial = self.dummy_solver2._rand2((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._rand2(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__randtobest1(self):
         # strategies randtobest/1/*
         result = np.array([0.15])
-        trial = self.dummy_solver2._randtobest1((2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._randtobest1(np.array([2, 3, 4, 5, 6]))
         assert_allclose(trial, result)
 
     def test__currenttobest1(self):
         # strategies currenttobest/1/*
         result = np.array([0.1])
-        trial = self.dummy_solver2._currenttobest1(1, (2, 3, 4, 5, 6))
+        trial = self.dummy_solver2._currenttobest1(
+            1,
+            np.array([2, 3, 4, 5, 6])
+        )
         assert_allclose(trial, result)
 
     def test_can_init_with_dithering(self):
@@ -691,7 +694,14 @@ class TestDifferentialEvolutionSolver:
         solver = DifferentialEvolutionSolver(rosen, bounds, updating='deferred')
         assert_(solver._updating == 'deferred')
         assert_(solver._mapwrapper._mapfunc is map)
-        solver.solve()
+        res = solver.solve()
+        assert res.success
+
+        # check that deferred updating works with an exponential crossover
+        res = differential_evolution(
+            rosen, bounds, updating='deferred', strategy='best1exp'
+        )
+        assert res.success
 
     def test_immediate_updating(self):
         # check setting of immediate updating, with default workers
@@ -712,6 +722,7 @@ class TestDifferentialEvolutionSolver:
                     pass
             assert s._updating == 'deferred'
 
+    @pytest.mark.fail_slow(5)
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -853,6 +864,7 @@ class TestDifferentialEvolutionSolver:
         assert constr_f(res.x) <= 1.9
         assert res.success
 
+    @pytest.mark.fail_slow(5)
     def test_impossible_constraint(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -1009,7 +1021,7 @@ class TestDifferentialEvolutionSolver:
         xtrial = np.arange(4 * 5).reshape(4, 5)
         assert cw.violation(xtrial).shape == (2, 5)
 
-
+    @pytest.mark.fail_slow(10)
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 
@@ -1104,6 +1116,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L2(self):
         # Lampinen ([5]) test problem 2
 
@@ -1143,6 +1156,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L3(self):
         # Lampinen ([5]) test problem 3
 
@@ -1193,6 +1207,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L4(self):
         # Lampinen ([5]) test problem 4
         def f(x):
@@ -1245,6 +1260,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L5(self):
         # Lampinen ([5]) test problem 5
 
@@ -1275,6 +1291,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L6(self):
         # Lampinen ([5]) test problem 6
         def f(x):
@@ -1433,6 +1450,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_integrality(self):
         # test fitting discrete distribution to data
         rng = np.random.default_rng(6519843218105)
@@ -1522,6 +1540,7 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
+    @pytest.mark.fail_slow(5)
     def test_vectorized(self):
         def quadratic(x):
             return np.sum(x**2)
@@ -1660,6 +1679,12 @@ class TestDifferentialEvolutionSolver:
         solver.solve()
         assert calls[0] > 0
 
+        # check custom strategy works with updating='deferred'
+        res = differential_evolution(
+            rosen, bounds, strategy=custom_strategy_fn, updating='deferred'
+        )
+        assert res.success
+
         def custom_strategy_fn(candidate, population, rng=None):
             return np.array([1.0, 2.0])
 
@@ -1669,3 +1694,4 @@ class TestDifferentialEvolutionSolver:
                 bounds,
                 strategy=custom_strategy_fn
             )
+

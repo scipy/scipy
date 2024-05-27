@@ -369,9 +369,11 @@ Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 
 # C++ warning flags
+_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
+_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
+_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
