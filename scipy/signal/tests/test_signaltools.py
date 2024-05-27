@@ -525,6 +525,7 @@ class TestConvolve2d:
 class TestFFTConvolve:
 
     @array_api_compatible
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     def test_real(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -540,6 +541,7 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1.5e-6)
 
     @array_api_compatible
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, [1], -1, [-1]])
     def test_real_axes(self, axes, xp):
         a = xp.asarray([1, 2, 3])
@@ -690,6 +692,7 @@ class TestFFTConvolve:
         out = fftconvolve(a, a, axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     @array_api_compatible
     def test_real_same_mode(self, axes, xp):
@@ -714,6 +717,7 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, -1, [1], [-1]])
     @array_api_compatible
     def test_real_same_mode_axes(self, axes, xp):
@@ -736,6 +740,7 @@ class TestFFTConvolve:
         out = fftconvolve(b, a, 'same', axes=axes)
         xp_assert_close(out, expected_2, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', ['', None, 0, [0], -1, [-1]])
     @array_api_compatible
     def test_valid_mode_real(self, axes, xp):
@@ -760,6 +765,7 @@ class TestFFTConvolve:
             out = fftconvolve(b, a, 'valid', axes=axes)
         xp_assert_close(out, expected, atol=1.5e-6)
 
+    @skip_xp_backends("torch", reasons=["dtyped do not match"])
     @pytest.mark.parametrize('axes', [1, [1]])
     @array_api_compatible
     def test_valid_mode_real_axes(self, axes, xp):
@@ -822,7 +828,8 @@ class TestFFTConvolve:
         xp_assert_close(out, expected, atol=1.5e-6)
 
     @array_api_compatible
-    @skip_xp_backends("jax.numpy", reasons=["mapped axes must have same shape"])
+    @skip_xp_backends("jax.numpy", "torch",
+        reasons=["mapped axes must have same shape", "dtypes do not match"])
     def test_valid_mode_ignore_nonaxes(self, xp):
         # See gh-5897
         a = xp.asarray([3, 2, 1])
