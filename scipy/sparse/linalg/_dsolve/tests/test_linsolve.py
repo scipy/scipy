@@ -768,12 +768,13 @@ class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
-    def test_zero_diagonal(self):
+    @pytest.mark.parametrize("fmt",["csr","csc"])
+    def test_zero_diagonal(self,fmt):
         n = 5
         rng = np.random.default_rng(43876432987)
         A = rng.standard_normal((n, n))
         b = np.arange(n)
-        A = scipy.sparse.tril(A, k=0, format='csc')
+        A = scipy.sparse.tril(A, k=0, format=fmt)
 
         x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
 
@@ -787,9 +788,13 @@ class TestSpsolveTriangular:
             sup.filter(SparseEfficiencyWarning, "CSC or CSR matrix format is")
             spsolve_triangular(A, b, unit_diagonal=True)
 
-    def test_singular(self):
+    @pytest.mark.parametrize("fmt",["csr","csc"])
+    def test_singular(self,fmt):
         n = 5
-        A = csc_matrix((n, n))
+        if fmt == "csr":
+            A = csr_matrix((n, n))
+        else:
+            A = csc_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError,
