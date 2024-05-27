@@ -383,12 +383,12 @@ void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3]) {
     forward_recur(0, m_abs + 1, r, res, [](int n, auto r, const T(&p)[3]) {});
 }
 
-template <typename T>
-void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+template <typename T, typename Callable>
+void assoc_legendre_p_diag_recur(int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     int m_abs = std::abs(m);
 
     assoc_legendre_p_diag_recurrence<T> r{m, type, z};
-    forward_recur(0, m_abs + 1, r, res, res_jac, [](int n, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
+    forward_recur(0, m_abs + 1, r, res, res_jac, callback);
 }
 
 template <typename T>
@@ -520,12 +520,12 @@ void assoc_legendre_p_init(int m, int type, T z, T (&res)[3]) {
 }
 
 template <typename T>
-void assoc_legendre_p_init(int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+void assoc_legendre_p_init(int m, int type, T z, bool diag, T (&res)[3], T (&res_jac)[3]) {
     int m_abs = std::abs(m);
 
-    if (true) {
+    if (diag) {
         assoc_legendre_p_diag_init(std::signbit(m), type, z, res, res_jac);
-        assoc_legendre_p_diag_recur(m, type, z, res, res_jac);
+        assoc_legendre_p_diag_recur(m, type, z, res, res_jac, [](int n, auto r, const T(&p)[3], const T(&p_jac)[3]) {});
 
         res[0] = res[2];
         res_jac[0] = res_jac[2];
@@ -536,6 +536,11 @@ void assoc_legendre_p_init(int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
 
     res[2] = 0;
     res_jac[2] = 0;
+}
+
+template <typename T>
+void assoc_legendre_p_init(int m, int type, T z, T (&res)[3], T (&res_jac)[3]) {
+    assoc_legendre_p_init(m, type, z, true, res, res_jac);
 }
 
 template <typename T>
@@ -740,6 +745,43 @@ template <typename T, typename OutputMat1, typename OutputMat2>
 void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
+
+    T p_diag[3] = {};
+    T p_diag_jac[3] = {};
+    assoc_legendre_p_diag_init(false, type, z, p_diag, p_diag_jac);
+
+    assoc_legendre_p_diag_recur(
+        m, type, z, p_diag, p_diag_jac,
+        [res, res_jac, n](int i, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+            T p[3] = {p_diag[2], 0, 0};
+            T p_jac[3] = {p_diag_jac[2], 0, 0};
+            assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
+
+            assoc_legendre_p_recur(
+                n, i, re.type, re.z, p, p_jac,
+                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
+                    res(re.m, j) = p[2];
+                    res_jac(re.m, j) = p_jac[2];
+                }
+            );
+        }
+    );
+
+    /*
+        for (int i = 0; i <= m; ++i) {
+            T p[3] = {};
+            T p_jac[3] = {};
+            assoc_legendre_p_init(i, type, z, p, p_jac);
+
+            assoc_legendre_p_recur(
+                n, i, type, z, p, p_jac,
+                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
+                    res(re.m, j) = p[2];
+                    res_jac(re.m, j) = p_jac[2];
+                }
+            );
+        }
+    */
 
     for (int i = 0; i <= m; ++i) {
         T p[3] = {};
