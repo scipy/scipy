@@ -56,10 +56,12 @@ int NRFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
 int NCFormat_from_spMatrix(SuperMatrix *, int, int, int, PyArrayObject *,
 			   PyArrayObject *, PyArrayObject *, int);
-int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr /* 1=csr 0=csc */,
-                           PyArrayObject * nzvals, PyArrayObject * indices,
-                           PyArrayObject * pointers, int typenum, Stype_t stype, Mtype_t mtype,
-                           int* identity_col_to_sup, int* identity_sup_to_col);
+int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
+               PyArrayObject * nzvals,
+               PyArrayObject * indices,
+               PyArrayObject * pointers,
+               int typenum, Stype_t stype, Mtype_t mtype,
+               int* identity_col_to_sup, int* identity_sup_to_col);
 int LU_to_csc_matrix(SuperMatrix *L, SuperMatrix *U,
                      PyObject **L_csc, PyObject **U_csc,
                      PyObject *py_csc_construct_func);

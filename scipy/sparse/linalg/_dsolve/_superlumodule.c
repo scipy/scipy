@@ -278,6 +278,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     /* whether the matrix is transposed ('T'), conjugate transposed ('H') or normal ('N') */
     volatile int itrans = 'N';
     volatile jmp_buf* jmpbuf_ptr;
+    volatile trans_t trans;
     SLU_BEGIN_THREADS_DEF;
 
     static char* kwlist[] = {
@@ -288,16 +289,14 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     };
 
     /* Parse and check input arguments. */
-
     int res = PyArg_ParseTupleAndKeywords(args, keywds, "CiiO!O!O!iiO!O!O!O", kwlist,
         &itrans,
         &L_N, &L_nnz, &PyArray_Type, &L_nzvals, &PyArray_Type, &L_rowind, &PyArray_Type, &L_colptr,
         &U_N, &U_nnz, &PyArray_Type, &U_nzvals, &PyArray_Type, &U_rowind, &PyArray_Type, &U_colptr,
         &X_py );
-    if(!res)
+    if (!res)
         return NULL;
 
-    volatile trans_t trans;
     if (itrans == 'n' || itrans == 'N') {
         trans = NOTRANS;
     } else if (itrans == 't' || itrans == 'T') {
@@ -334,28 +333,32 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     }
 
     /* Create SuperLU matrices out of L and U. */
-    int* L_col_to_sup = intMalloc(L_N+1), *L_sup_to_col = intMalloc(L_N+1);
+    int* L_col_to_sup = intMalloc(L_N+1);
+    int* L_sup_to_col = intMalloc(L_N+1);
     for(int i=0; i<=L_N; i++){
         L_col_to_sup[i] = i;
         L_sup_to_col[i] = i;
     }
-    L_col_to_sup[L_N] = L_N-1;
-    SuperMatrix L_super = {0}, U_super={0};
-    int L_conv_err = SparseFormat_from_spMatrix(&L_super, L_N, L_N, L_nnz, -1,
-        (PyArrayObject*)L_nzvals, (PyArrayObject*)L_rowind, (PyArrayObject*)L_colptr,
-        L_type, SLU_SC, SLU_TRLU, L_col_to_sup,L_sup_to_col);
+    L_col_to_sup[L_N] = L_N - 1;
+    SuperMatrix L_super = {0};
+    SuperMatrix U_super = {0};
+    int L_conv_err = SparseFormat_from_spMatrix(
+            &L_super, L_N, L_N, L_nnz, -1,
+            (PyArrayObject*)L_nzvals, (PyArrayObject*)L_rowind, (PyArrayObject*)L_colptr,
+            L_type, SLU_SC, SLU_TRLU, L_col_to_sup, L_sup_to_col);
     if (L_conv_err) {
         return NULL;
     }
-    int U_conv_err = SparseFormat_from_spMatrix(&U_super, U_N, U_N, U_nnz, 0,
-        (PyArrayObject*)U_nzvals, (PyArrayObject*)U_rowind, (PyArrayObject*)U_colptr,
-        U_type, SLU_NC, SLU_TRU, NULL,NULL);
+    int U_conv_err = SparseFormat_from_spMatrix(
+            &U_super, U_N, U_N, U_nnz, 0,
+            (PyArrayObject*)U_nzvals, (PyArrayObject*)U_rowind, (PyArrayObject*)U_colptr,
+            U_type, SLU_NC, SLU_TRU, NULL, NULL);
     if (U_conv_err) {
         Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
         return NULL;
     }
 
-    /* Read right-hand-side/solution vector. */
+    /* Read right-hand-side (i.e., solution) vector. */
     PyArrayObject* X_arr = (PyArrayObject*)PyArray_FROMANY(
         (PyObject*)X_py, L_type, 1, 2,
         NPY_ARRAY_F_CONTIGUOUS | NPY_ARRAY_ENSURECOPY);
@@ -369,7 +372,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     if (PyArray_DIM((PyArrayObject*)X_arr, 0) != L_N) {
         PyErr_SetString(PyExc_ValueError,
                         "right hand side array has invalid shape");
-        SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+        SUPERLU_FREE((void*)L_col_to_sup);
+        SUPERLU_FREE((void*)L_sup_to_col);
         Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
         Destroy_SuperMatrix_Store((SuperMatrix*)&U_super);
         Py_DECREF(X_arr);
@@ -378,7 +382,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
 
     SuperMatrix X;
     if (DenseSuper_from_Numeric((SuperMatrix*)&X, (PyObject*)X_arr)) {
-        SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+        SUPERLU_FREE((void*)L_col_to_sup);
+        SUPERLU_FREE((void*)L_sup_to_col);
         Destroy_SuperMatrix_Store((SuperMatrix*)&L_super);
         Destroy_SuperMatrix_Store((SuperMatrix*)&U_super);
         Py_DECREF(X_arr);
@@ -401,8 +406,7 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
         SLU_END_THREADS;
         goto fail;
     }
-    gstrs(L_type,
-          trans, &L_super, &U_super, perm_c, perm_r,
+    gstrs(L_type, trans, &L_super, &U_super, perm_c, perm_r,
           (SuperMatrix *)&X, (SuperLUStat_t *)&stat, (int *)&info);
     SLU_END_THREADS;
 
@@ -413,7 +417,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     }
 
     /* Deallocations and return. */
-    SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+    SUPERLU_FREE((void*)L_col_to_sup);
+    SUPERLU_FREE((void*)L_sup_to_col);
     SUPERLU_FREE((void*)perm_c);
     Destroy_SuperMatrix_Store(&L_super);
     Destroy_SuperMatrix_Store(&U_super);
@@ -422,7 +427,8 @@ static PyObject *Py_gstrs(PyObject * self, PyObject * args,
     return Py_BuildValue("Ni", X_arr, info);
 
   fail:
-    SUPERLU_FREE((void*)L_col_to_sup); SUPERLU_FREE((void*)L_sup_to_col);
+    SUPERLU_FREE((void*)L_col_to_sup);
+    SUPERLU_FREE((void*)L_sup_to_col);
     SUPERLU_FREE((void*)perm_c);
     Destroy_SuperMatrix_Store(&L_super);
     Destroy_SuperMatrix_Store(&U_super);

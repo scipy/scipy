@@ -328,21 +328,35 @@ int NRFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * colind,
                            PyArrayObject * rowptr, int typenum)
 {
-  return SparseFormat_from_spMatrix(A,m,n,nnz,1,nzvals,colind,rowptr,typenum,SLU_NR,SLU_GE,NULL,NULL);
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 1, nzvals, colind, rowptr,
+                                      typenum, SLU_NR, SLU_GE, NULL, NULL);
 }
 
 int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
                            PyArrayObject * nzvals, PyArrayObject * rowind,
                            PyArrayObject * colptr, int typenum)
 {
-  return SparseFormat_from_spMatrix(A,m,n,nnz,0,nzvals,rowind,colptr,typenum,SLU_NC,SLU_GE,NULL,NULL);
+    return SparseFormat_from_spMatrix(A, m, n, nnz, 0, nzvals, rowind, colptr,
+                                      typenum, SLU_NC, SLU_GE, NULL, NULL);
 }
 
-int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr /* 1=csr 0=csc -1=supernode csc */,
-                               PyArrayObject * nzvals, PyArrayObject * indices,
-                               PyArrayObject * pointers, int typenum, Stype_t stype, Mtype_t mtype,
-                               int* identity_col_to_sup, /* must be int array {0,1,2,...,n-2,n-1,n-1} */
-                               int* identity_sup_to_col /* must be int array {0,1,...,n} */)
+/*
+ * Create a matrix in CSR, CSC or supernode format
+ *
+ * Notes on a few of the parameters:
+ *
+ * - `csr`: selects matrix format: 1=CSR, 0=CSC, -1=supernode CSC
+ * - `identity_col_to_sup`: (for supernode only) must be int array {0,1,2,...,n-2,n-1,n-1}
+ * - `identity_sup_to_col`: (for supernode only) must be int array {0,1,...,n}
+ */
+int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
+                               PyArrayObject * nzvals,
+                               PyArrayObject * indices,
+                               PyArrayObject * pointers,
+                               int typenum,
+                               Stype_t stype, Mtype_t mtype,
+                               int* identity_col_to_sup,
+                               int* identity_sup_to_col)
 {
     volatile int ok = 0;
     volatile jmp_buf *jmpbuf_ptr;
@@ -378,22 +392,26 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr /
         if (csr == 1) {
             Create_CompRow_Matrix(PyArray_TYPE(nzvals),
                                   A, m, n, nnz, PyArray_DATA(nzvals),
-                                  (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
                                   stype,
                                   NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
                                   mtype);
         } else if (csr == 0) {
             Create_CompCol_Matrix(PyArray_TYPE(nzvals),
                                   A, m, n, nnz, PyArray_DATA(nzvals),
-                                  (int *) PyArray_DATA(indices), (int *) PyArray_DATA(pointers),
+                                  (int *) PyArray_DATA(indices),
+                                  (int *) PyArray_DATA(pointers),
                                   stype,
                                   NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
                                   mtype);
         } else if (csr == -1) {
             Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
                                     A, m, n, nnz, PyArray_DATA(nzvals),
-                                    (int *) PyArray_DATA(pointers), (int *) PyArray_DATA(indices),
-                                    (int *) PyArray_DATA(pointers), identity_col_to_sup, identity_sup_to_col,
+                                    (int *) PyArray_DATA(pointers),
+                                    (int *) PyArray_DATA(indices),
+                                    (int *) PyArray_DATA(pointers),
+                                    identity_col_to_sup, identity_sup_to_col,
                                     stype,
                                     NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
                                     mtype);
