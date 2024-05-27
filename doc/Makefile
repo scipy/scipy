@@ -114,8 +114,8 @@ html-build:
 	$(SPHINXBUILD) -WT --keep-going $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html $(FILES)
 
 convert-notebooks:
-	do $file in source/tutorial/stats/*.md; \
-		$(PYTHON) -m jupytext --to ipynb $file; \
+	for file in source/tutorial/stats/*.md; do \
+		$(PYTHON) -m jupytext --to ipynb $$file; \
 	done
 
 coverage: build version-check
