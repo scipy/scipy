@@ -7,36 +7,20 @@
 namespace special {
 
 SPECFUN_HOST_DEVICE inline double js_div(double a, double b) {
-
-    if (std::isnan(a)) {
-        return a;
-    }
-    if (std::isnan(b)) {
-        return b;
-    }
-    if (!(a >= 0 && std::isfinite(a) && b >= 0 && std::isfinite(b))) {
-        return std::numeric_limits<double>::infinity();
-    }
-
-    // Handle the case where at least one input is zero.
-    const double HALF_LN2 = 0.34657359027997264; // 0.5*log(2)
-    if (a == 0 && b == 0) {
-        return 0.0;
-    }
-    if (a == 0) {
-        return b * HALF_LN2;
-    }
-    if (b == 0) {
-        return a * HALF_LN2;
-    }
-
-    // Now both inputs are positive.
-    const double c = (a+b)/2;
-    const double t = (b-a)/(b+a);
-    if (std::abs(t) <= 0.5) {
-        return c*( t*std::atanh(t) + 0.5*std::log1p(-t*t) );  // fma?
+    if (std::isnan(a) || std::isnan(b)) {
+        return std::numeric_limits<double>::quiet_NaN();
+    } else if (!(a >= 0 && a < INFINITY && b >= 0 && b < INFINITY)) {
+        return INFINITY;
+    } else if (a == 0 || b == 0) {
+        return (a + b) * (0.5 * std::log(2.0)) + 0.0; // avoid -0.0
     } else {
-        return 0.5*( a*std::log(a/c) + b*std::log(b/c) );
+        const double c = (a + b == INFINITY) ? 0.5*a+0.5*b : 0.5*(a+b);
+        const double t = (a + b == INFINITY) ? 0.5*(a-b)/c : (a-b)/(a+b);
+        if (std::abs(t) <= 0.5) {
+            return c * (t * std::atanh(t) + 0.5 * std::log1p(-t * t));
+        } else {
+            return 0.5 * (a * std::log(a / c) + b * std::log(b / c));
+        }
     }
 }
 

@@ -1884,8 +1884,8 @@ const char *js_div_doc = R"(
 
     Compute the Jensen Shannon Divergence of `x` and `y`.
 
-    The Jensen Shannon Divergence of non-negative real numbers `x` and `y`
-    is defined as
+    Given non-negative real numbers `x` and `y`, their Jensen Shannon
+    Divergence is defined as
 
     .. math::
 
@@ -1909,17 +1909,19 @@ const char *js_div_doc = R"(
 
         If `x` and/or `y` is `nan`, return `nan`.
 
-        If `x` and `y` are not `nan` but at least one of them is negative or
-        infinite, return `+inf`.
+        If `x` and `y` are not `nan` but at least one of them is negative
+        or infinite, return `+inf`.  This "extended-value extension" makes
+        the function convenient for use in convex optimization
+        ([1], Section 3.1.2).
 
     See Also
     --------
     entr, rel_entr, kl_div
 
-    Notes
-    -----
-    Premature overflow is possible if `x+y` is close to the largest
-    representable floating number.
+    Reference
+    ---------
+    .. [1] Boyd, S. and Vandenberghe, L. (2009). "Convex Optimization."
+           Cambridge University Press.
 
     )";
 

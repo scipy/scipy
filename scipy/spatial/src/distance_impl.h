@@ -344,18 +344,18 @@ jaccard_distance_char(const char *u, const char *v, const npy_intp n)
 static inline double
 _jensenshannon_kernel(double a, double b)
 {
-    const double c = (a + b) / 2.0;
     if (a == 0.0 || b == 0.0)
     {
-        return c * log(2.0);
+        return (a + b) * (0.5 * log(2.0));
     }
     else
     {
-        const double t = (b - a) / (b + a);
+        const double c = (a + b) * 0.5;
+        const double t = (a - b) / (a + b);
         if (fabs(t) <= 0.5)
-            return c*( t*atanh(t) + 0.5*log1p(-t*t) );
+            return c * (t * atanh(t) + 0.5 * log1p(-t * t));
         else
-            return 0.5*( a*log(a/c) + b*log(b/c) );
+            return 0.5 * (a * log(a / c) + b * log(b / c));
     }
 }
 
