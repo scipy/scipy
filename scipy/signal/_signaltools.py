@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, copy, size as xp_size, xp_astype,
+    array_namespace, is_torch, is_numpy, copy, size as xp_size, xp_astype,
     is_complex, is_integer, is_integer_dtype
 )
 
@@ -1040,7 +1040,7 @@ def _numeric_arrays(arrays, kinds='buifc', xp=None):
     """
     if xp is None:
         xp = array_namespace(*arrays)
-    if xp != np:
+    if not is_numpy(xp):
         return True
 
     if type(arrays) == np.ndarray:
