@@ -7703,6 +7703,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     scipy.stats.fisher_exact : Fisher exact test on a 2x2 contingency table.
     scipy.stats.barnard_exact : An unconditional exact test. An alternative
         to chi-squared test for small sample sizes.
+    :ref:`hypothesis_chisquare`
 
     Notes
     -----
@@ -7742,52 +7743,14 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
 
     Examples
     --------
-    In [4]_, bird foraging behavior was investigated in an old-growth forest
-    of Oregon.
-    In the forest, 44% of the canopy volume was Douglas fir,
-    24% was ponderosa pine, 29% was grand fir, and 3% was western larch.
-    The authors observed the behavior of several species of birds, one of
-    which was the red-breasted nuthatch. They made 189 observations of this
-    species foraging, recording 43 ("23%") of observations in Douglas fir,
-    52 ("28%") in ponderosa pine, 54 ("29%") in grand fir, and 40 ("21%") in
-    western larch.
-
-    Using a chi-square test, we can test the null hypothesis that the
-    proportions of foraging events are equal to the proportions of canopy
-    volume. The authors of the paper considered a p-value less than 1% to be
-    significant.
-
-    Using the above proportions of canopy volume and observed events, we can
-    infer expected frequencies.
-
-    >>> import numpy as np
-    >>> f_exp = np.array([44, 24, 29, 3]) / 100 * 189
-
-    The observed frequencies of foraging were:
-
-    >>> f_obs = np.array([43, 52, 54, 40])
-
-    We can now compare the observed frequencies with the expected frequencies.
-
-    >>> from scipy.stats import chisquare
-    >>> chisquare(f_obs=f_obs, f_exp=f_exp)
-    Power_divergenceResult(statistic=228.23515947653874, pvalue=3.3295585338846486e-49)
-
-    The p-value is well below the chosen significance level. Hence, the
-    authors considered the difference to be significant and concluded
-    that the relative proportions of foraging events were not the same
-    as the relative proportions of tree canopy volume.
-
-    Following are other generic examples to demonstrate how the other
-    parameters can be used.
-
-    When just `f_obs` is given, it is assumed that the expected frequencies
-    are uniform and given by the mean of the observed frequencies.
+    When only the mandatory `f_obs` argument is given, it is assumed that the
+    expected frequencies are uniform and given by the mean of the observed
+    frequencies:
 
     >>> chisquare([16, 18, 16, 14, 12, 12])
     Power_divergenceResult(statistic=2.0, pvalue=0.84914503608460956)
 
-    With `f_exp` the expected frequencies can be given.
+    The optional `f_exp` argument gives the expected frequencies.
 
     >>> chisquare([16, 18, 16, 14, 12, 12], f_exp=[16, 16, 16, 16, 16, 8])
     Power_divergenceResult(statistic=3.5, pvalue=0.62338762774958223)
@@ -7816,7 +7779,7 @@ def chisquare(f_obs, f_exp=None, ddof=0, axis=0):
     The calculation of the p-values is done by broadcasting the
     chi-squared statistic with `ddof`.
 
-    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0,1,2])
+    >>> chisquare([16, 18, 16, 14, 12, 12], ddof=[0, 1, 2])
     Power_divergenceResult(statistic=2.0, pvalue=array([0.84914504, 0.73575888, 0.5724067 ]))
 
     `f_obs` and `f_exp` are also broadcast.  In the following, `f_obs` has
