@@ -72,8 +72,8 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N], 
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
-void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last, Callback callback) {
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callback callback) {
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
@@ -104,8 +104,8 @@ void forward_recur(Recurrence r, T (&res)[N], InputIt first, InputIt last, Callb
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  * @param args arguments to forward to the callback
  */
-template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
-void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, InputIt last, Callback callback) {
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Callback callback) {
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
@@ -137,9 +137,9 @@ void forward_recur(Recurrence r, T (&res)[N], T (&res_jac)[N], InputIt first, In
  * @param res value and its derivatives
  * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
  */
-template <typename Recurrence, typename T, size_t N, typename InputIt, typename Callback>
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
 void forward_recur(
-    Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], InputIt first, InputIt last, Callback callback
+    InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], Callback callback
 ) {
     constexpr ptrdiff_t K = N - 1;
 
