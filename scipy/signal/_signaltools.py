@@ -264,7 +264,7 @@ def correlate(in1, in2, mode='full', method='auto'):
         # and then undo the effect afterward if mode == 'full'.  Also, it fails
         # with 'valid' mode if in2 is larger than in1, so swap those, too.
         # Don't swap inputs for 'same' mode, since shape of in1 matters.
-        swapped_inputs = ((mode == 'full') and (in2.size > in1.size) or
+        swapped_inputs = ((mode == 'full') and (xp_size(in2) > xp_size(in1)) or
                           _inputs_swap_needed(mode, in1.shape, in2.shape))
 
         if swapped_inputs:
@@ -683,7 +683,7 @@ def fftconvolve(in1, in2, mode="full", axes=None):
         return in1 * in2
     elif in1.ndim != in2.ndim:
         raise ValueError("in1 and in2 should have the same dimensionality")
-    elif in1.size == 0 or in2.size == 0:  # empty arrays
+    elif xp_size(in1) == 0 or xp_size(in2) == 0:  # empty arrays
         return xp.array([])
 
     in1, in2, axes = _init_freq_conv_axes(in1, in2, mode, axes,
@@ -1139,7 +1139,7 @@ def _reverse_and_conj(x, xp):
         x_rev = x[reverse]
     else:
         # NB: is a copy, not a view
-        x_rev = xp.flip(x, list(range(x.ndim)))
+        x_rev = xp.flip(x)
 
     if is_complex(x, xp):
         return xp.conj(x_rev)
@@ -1326,7 +1326,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     # integer as float can lose precision in fftconvolve if larger than 2**52)
     if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
         max_value = int(xp.max(xp.abs(volume))) * int(xp.max(xp.abs(kernel)))
-        max_value *= int(min(volume.size, kernel.size))
+        max_value *= int(min(xp_size(volume), xp_size(kernel)))
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
