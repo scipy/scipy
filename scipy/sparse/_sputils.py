@@ -399,7 +399,10 @@ def convert_pydata_sparse_to_scipy(
     pass through anything else.
     """
     if is_pydata_spmatrix(arg):
-        arg = arg.to_scipy_sparse(accept_fv=accept_fv)
+        try:
+            arg = arg.to_scipy_sparse(accept_fv=accept_fv)
+        except TypeError:
+            arg = arg.to_scipy_sparse()
         if target_format is not None:
             arg = arg.asformat(target_format)
         elif arg.format not in ("csc", "csr"):
