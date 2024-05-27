@@ -503,9 +503,12 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     sctree = csr_matrix((data, indices, indptr), shape=(N, N))
     if is_pydata_sparse:
-        sctree = pydata_sparse_cls.from_scipy_sparse(
-            sctree, fill_value=pydata_sparse_fill_value
-        )
+        try:
+            sctree = pydata_sparse_cls.from_scipy_sparse(
+                sctree, fill_value=pydata_sparse_fill_value
+            )
+        except TypeError:
+            sctree = pydata_sparse_cls.from_scipy_sparse(sctree)
     return sctree
 
 

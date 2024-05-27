@@ -121,9 +121,12 @@ def minimum_spanning_tree(csgraph, overwrite=False):
     sp_tree.eliminate_zeros()
 
     if is_pydata_sparse:
-        sp_tree = pydata_sparse_cls.from_scipy_sparse(
-            sp_tree, fill_value=pydata_sparse_fill_value
-        )
+        try:
+            sp_tree = pydata_sparse_cls.from_scipy_sparse(
+                sp_tree, fill_value=pydata_sparse_fill_value
+            )
+        except TypeError:
+            sp_tree = pydata_sparse_cls.from_scipy_sparse(sp_tree)
     return sp_tree
 
 
