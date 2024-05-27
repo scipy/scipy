@@ -162,7 +162,7 @@ def test_min_weight_full_bipartite_matching(graphs):
 )
 @pytest.mark.parametrize(
     "fill_value, comp_func",
-    [(np.inf, np.isinf), (np.nan, np.isnan)],
+    [(np.inf, np.isposinf), (np.nan, np.isnan)],
 )
 def test_nonzero_fill_value(graphs, func, fill_value, comp_func):
     A_dense, A_sparse = graphs
