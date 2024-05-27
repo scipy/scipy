@@ -1503,6 +1503,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
             elif np.result_type(input, np.int64) == np.int64:
                 x = input.astype('int64')
                 x_out = np.empty(x.shape, dtype='int64')
+            elif input.dtype.kind in 'biu':
+                # cast any other boolean, integer or unsigned type to int64
+                x = input.astype('int64')
+                x_out = np.empty(x.shape, dtype='int64')
             else:
                 raise RuntimeError('Unsupported array type')
             cval = x.dtype.type(cval)
