@@ -2674,6 +2674,10 @@ class TestCircFuncs:
         xp_assert_close(stats.circvar(x, high=180), xp.asarray(0.2339555554617))
         xp_assert_close(stats.circstd(x, high=180), xp.asarray(20.91551378))
 
+    @skip_xp_backends("array_api_strict", "torch", reasons=[
+        "array_api_strict does not yet support xp.signbit",
+        "pytorch's pow is non-compliant and may return -0",
+    ])
     def test_circstd_zero(self, xp):
         # circstd() of a single number should return positive zero.
         y = stats.circstd(xp.asarray([0]))
