@@ -1240,7 +1240,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
             footprint = np.asarray(footprint, dtype=bool)
     input = np.asarray(input)
     if np.iscomplexobj(input):
-        raise TypeError('Complex type not supported')
+        raise TypeError("Complex type not supported")
     output = _ni_support._get_output(output, input)
     temp_needed = np.may_share_memory(input, output)
     if temp_needed:
@@ -1266,7 +1266,7 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
         else:
             output[...] = input[...]
     else:
-        origins = _ni_support._normalize_sequence(origin, input.ndim)
+        origins = _ni_support._normalize_sequence(origin, num_axes)
         if num_axes < input.ndim:
             if footprint.ndim != num_axes:
                 raise RuntimeError("footprint array has incorrect shape")
@@ -1274,17 +1274,23 @@ def _min_or_max_filter(input, size, footprint, structure, output, mode,
                 footprint,
                 tuple(ax for ax in range(input.ndim) if ax not in axes)
             )
+            # set origin = 0 for any axes not being filtered
+            origins_temp = [0,] * input.ndim
+            for o, ax in zip(origins, axes):
+                origins_temp[ax] = o
+            origins = origins_temp
+
         fshape = [ii for ii in footprint.shape if ii > 0]
         if len(fshape) != input.ndim:
             raise RuntimeError('footprint array has incorrect shape.')
         for origin, lenf in zip(origins, fshape):
             if (lenf // 2 + origin < 0) or (lenf // 2 + origin >= lenf):
-                raise ValueError('invalid origin')
+                raise ValueError("invalid origin")
         if not footprint.flags.contiguous:
             footprint = footprint.copy()
         if structure is not None:
             if len(structure.shape) != input.ndim:
-                raise RuntimeError('structure array has incorrect shape')
+                raise RuntimeError("structure array has incorrect shape")
             if num_axes != structure.ndim:
                 structure = np.expand_dims(
                     structure,
@@ -1786,14 +1792,14 @@ def generic_filter(input, function, size=None, footprint=None,
 
     >>> import numpy as np
     >>> from scipy import datasets
-    >>> from scipy.ndimage import generic_filter
+    >>> from scipy.ndimage import zoom, generic_filter
     >>> import matplotlib.pyplot as plt
-    >>> ascent = datasets.ascent()
+    >>> ascent = zoom(datasets.ascent(), 0.5)
 
-    Compute a maximum filter with kernel size 10 by passing a simple NumPy
+    Compute a maximum filter with kernel size 5 by passing a simple NumPy
     aggregation function as argument to `function`.
 
-    >>> maximum_filter_result = generic_filter(ascent, np.amax, [10, 10])
+    >>> maximum_filter_result = generic_filter(ascent, np.amax, [5, 5])
 
     While a maximmum filter could also directly be obtained using
     `maximum_filter`, `generic_filter` allows generic Python function or
@@ -1807,7 +1813,7 @@ def generic_filter(input, function, size=None, footprint=None,
 
     Plot the original and filtered images.
 
-    >>> fig, axes = plt.subplots(3, 1, figsize=(4, 12))
+    >>> fig, axes = plt.subplots(3, 1, figsize=(3, 9))
     >>> plt.gray()  # show the filtered result in grayscale
     >>> top, middle, bottom = axes
     >>> for ax in axes:
@@ -1815,7 +1821,7 @@ def generic_filter(input, function, size=None, footprint=None,
     >>> top.imshow(ascent)
     >>> top.set_title("Original image")
     >>> middle.imshow(maximum_filter_result)
-    >>> middle.set_title("Maximum filter, Kernel: 10x10")
+    >>> middle.set_title("Maximum filter, Kernel: 5x5")
     >>> bottom.imshow(custom_filter_result)
     >>> bottom.set_title("Custom filter, Kernel: 5x5")
     >>> fig.tight_layout()

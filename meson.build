@@ -10,7 +10,7 @@ project(
   default_options: [
     'buildtype=debugoptimized',
     'b_ndebug=if-release',
-    'c_std=c99',
+    'c_std=c17',
     'cpp_std=c++17',
     'fortran_std=legacy',
     'blas=openblas',
@@ -20,6 +20,8 @@ project(
 
 py3 = import('python').find_installation(pure: false)
 py3_dep = py3.dependency()
+
+min_numpy_version = '1.23.5'  # keep in sync with pyproject.toml
 
 # Emit a warning for 32-bit Python installs on Windows; users are getting
 # unexpected from-source builds there because we no longer provide wheels.
@@ -39,8 +41,12 @@ cython = find_program(cy.cmd_array()[0])
 
 # Check compiler is recent enough (see "Toolchain Roadmap" for details)
 if cc.get_id() == 'gcc'
-  if not cc.version().version_compare('>=8.0')
-    error('SciPy requires GCC >= 8.0')
+  if not cc.version().version_compare('>=9.1')
+    error('SciPy requires GCC >= 9.1')
+  endif
+elif cc.get_id() == 'clang' or cc.get_id() == 'clang-cl'
+  if not cc.version().version_compare('>=12.0')
+    error('SciPy requires clang >= 12.0')
   endif
 elif cc.get_id() == 'msvc'
   if not cc.version().version_compare('>=19.20')
@@ -81,9 +87,15 @@ if ff.has_argument('-Wno-conversion')
   add_project_arguments('-Wno-conversion', language: 'fortran')
 endif
 
-if host_machine.system() == 'darwin' and cc.has_link_argument('-Wl,-ld_classic')
-  # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
-  add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
+if host_machine.system() == 'darwin'
+  if cc.has_link_argument('-Wl,-ld_classic')
+    # New linker introduced in macOS 14 not working yet, see gh-19357 and gh-19387
+    add_project_link_arguments('-Wl,-ld_classic', language : ['c', 'cpp', 'fortran'])
+  endif
+  if cc.has_link_argument('-Wl,-dead_strip')
+    # Allow linker to strip unused symbols
+    add_project_link_arguments('-Wl,-dead_strip', language : ['c', 'cpp', 'fortran'])
+  endif
 endif
 
 # Intel compilers default to fast-math, so disable it if we detect Intel

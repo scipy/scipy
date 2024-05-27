@@ -10,13 +10,17 @@ longer guaranteed.
 
 import numpy as np
 import pytest
-import scipy.special as special
-from scipy.special._ufuncs import __all__ as all_ufuncs
+import scipy.special._ufuncs
+import scipy.special._gufuncs
 
-_ufuncs = [getattr(special, funcname) for funcname in all_ufuncs]
-# Not all members of scipy.special._ufuncs are actually ufuncs.
+_ufuncs = []
+for funcname in dir(scipy.special._ufuncs):
+    _ufuncs.append(getattr(scipy.special._ufuncs, funcname))
+for funcname in dir(scipy.special._gufuncs):
+    _ufuncs.append(getattr(scipy.special._gufuncs, funcname))
+
+# Not all module members are actually ufuncs
 _ufuncs = [func for func in _ufuncs if isinstance(func, np.ufunc)]
-
 
 @pytest.mark.parametrize("ufunc", _ufuncs)
 def test_ufunc_signatures(ufunc):

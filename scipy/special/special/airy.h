@@ -1,6 +1,23 @@
 #pragma once
 
+#include "amos.h"
 #include "config.h"
+#include "error.h"
+#include "cephes/airy.h"
+
+inline int cephes_airy(float xf, float *aif, float *aipf, float *bif, float *bipf) {
+    double ai;
+    double aip;
+    double bi;
+    double bip;
+    int res = special::cephes::airy(xf, &ai, &aip, &bi, &bip);
+
+    *aif = ai;
+    *aipf = aip;
+    *bif = bi;
+    *bipf = bip;
+    return res;
+}
 
 namespace special {
 namespace detail {
@@ -29,11 +46,12 @@ namespace detail {
         const T q1 = 2.0 / 3.0;
         const T q2 = 1.4142135623730951;
         const T eps = 1e-5;
-        static const T a[16] = {
-            0.569444444444444,     0.891300154320988,     0.226624344493027e+01, 0.798950124766861e+01,
-            0.360688546785343e+02, 0.198670292131169e+03, 0.129223456582211e+04, 0.969483869669600e+04,
-            0.824184704952483e+05, 0.783031092490225e+06, 0.822210493622814e+07, 0.945557399360556e+08,
-            0.118195595640730e+10, 0.159564653040121e+11, 0.231369166433050e+12, 0.358622522796969e+13};
+        static const T a[16] = {0.569444444444444,     0.891300154320988,     0.226624344493027e+01,
+                                0.798950124766861e+01, 0.360688546785343e+02, 0.198670292131169e+03,
+                                0.129223456582211e+04, 0.969483869669600e+04, 0.824184704952483e+05,
+                                0.783031092490225e+06, 0.822210493622814e+07, 0.945557399360556e+08,
+                                0.118195595640730e+10, 0.159564653040121e+11, 0.231369166433050e+12,
+                                0.358622522796969e+13};
 
         if (x == 0.0) {
             apt = 0.0;
@@ -422,21 +440,127 @@ inline void airyzo(int nt, int kf, double *xa, double *xb, double *xc, double *x
 }
 
 template <typename T>
-void itairy(T x, T *apt, T *bpt, T *ant, T *bnt) {
+void airy(std::complex<T> z, std::complex<T> &ai, std::complex<T> &aip, std::complex<T> &bi, std::complex<T> &bip) {
+    int id = 0;
+    int ierr = 0;
+    int kode = 1;
+    int nz;
+
+    ai = amos::airy(z, id, kode, &nz, &ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), ai);
+
+    nz = 0;
+    bi = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), bi);
+
+    id = 1;
+    aip = amos::airy(z, id, kode, &nz, &ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), aip);
+
+    nz = 0;
+    bip = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airy:", ierr_to_sferr(nz, ierr), bip);
+}
+
+template <typename T>
+void airye(std::complex<T> z, std::complex<T> &ai, std::complex<T> &aip, std::complex<T> &bi, std::complex<T> &bip) {
+    int id = 0;
+    int kode = 2; /* Exponential scaling */
+    int nz, ierr;
+
+    ai = amos::airy(z, id, kode, &nz, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), ai);
+
+    nz = 0;
+    bi = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), bi);
+
+    id = 1;
+    aip = amos::airy(z, id, kode, &nz, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), aip);
+
+    nz = 0;
+    bip = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), bip);
+}
+
+template <typename T>
+void airye(T z, T &ai, T &aip, T &bi, T &bip) {
+    int id = 0;
+    int kode = 2; /* Exponential scaling */
+    int nz, ierr;
+    std::complex<T> cai, caip, cbi, cbip;
+
+    cai.real(NAN);
+    cai.imag(NAN);
+    cbi.real(NAN);
+    cbi.imag(NAN);
+    caip.real(NAN);
+    caip.imag(NAN);
+    cbip.real(NAN);
+    cbip.real(NAN);
+
+    if (z < 0) {
+        ai = NAN;
+    } else {
+        cai = amos::airy(z, id, kode, &nz, &ierr);
+        set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cai);
+        ai = std::real(cai);
+    }
+
+    nz = 0;
+    cbi = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cbi);
+    bi = std::real(cbi);
+
+    id = 1;
+    if (z < 0) {
+        aip = NAN;
+    } else {
+        caip = amos::airy(z, id, kode, &nz, &ierr);
+        set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), caip);
+        aip = std::real(caip);
+    }
+
+    nz = 0;
+    cbip = amos::biry(z, id, kode, &ierr);
+    set_error_and_nan("airye:", ierr_to_sferr(nz, ierr), cbip);
+    bip = std::real(cbip);
+}
+
+template <typename T>
+void airy(T x, T &ai, T &aip, T &bi, T &bip) {
+    /* For small arguments, use Cephes as it's slightly faster.
+     * For large arguments, use AMOS as it's more accurate.
+     */
+    if (x < -10 || x > 10) {
+        std::complex<T> zai, zaip, zbi, zbip;
+        airy(std::complex(x), zai, zaip, zbi, zbip);
+        ai = std::real(zai);
+        aip = std::real(zaip);
+        bi = std::real(zbi);
+        bip = std::real(zbip);
+    } else {
+        cephes::airy(x, &ai, &aip, &bi, &bip);
+    }
+}
+
+template <typename T>
+void itairy(T x, T &apt, T &bpt, T &ant, T &bnt) {
     bool x_signbit = std::signbit(x);
     if (x_signbit) {
         x = -x;
     }
 
-    detail::itairy(x, *apt, *bpt, *ant, *bnt);
+    detail::itairy(x, apt, bpt, ant, bnt);
     if (x_signbit) { /* negative limit -- switch signs and roles */
-        T tmp = *apt;
-        *apt = -*ant;
-        *ant = -tmp;
+        T tmp = apt;
+        apt = -ant;
+        ant = -tmp;
 
-        tmp = *bpt;
-        *bpt = -*bnt;
-        *bnt = -tmp;
+        tmp = bpt;
+        bpt = -bnt;
+        bnt = -tmp;
     }
 }
 

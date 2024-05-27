@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 
 from scipy import stats
-from ._stats_py import _get_pvalue, _rankdata
+from ._stats_py import _get_pvalue, _rankdata, _SimpleNormal
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
@@ -102,6 +102,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
                    "an instance of `stats.PermutationMethod`.")
         if method not in methods:
             raise ValueError(message)
+    output_z = True if method == 'approx' else False
 
     # logic unchanged here for backward compatibility
     n_zero = np.sum(d == 0, axis=-1)
@@ -127,7 +128,7 @@ def _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis):
     if 0 < d.shape[-1] < 10 and method == "approx":
         warnings.warn("Sample size too small for normal approximation.", stacklevel=2)
 
-    return d, zero_method, correction, alternative, method, axis
+    return d, zero_method, correction, alternative, method, axis, output_z
 
 
 def _wilcoxon_statistic(d, zero_method='wilcox'):
@@ -196,7 +197,7 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
                  alternative='two-sided', method='auto', axis=0):
 
     temp = _wilcoxon_iv(x, y, zero_method, correction, alternative, method, axis)
-    d, zero_method, correction, alternative, method, axis = temp
+    d, zero_method, correction, alternative, method, axis, output_z = temp
 
     if d.size == 0:
         NaN = _get_nan(d)
@@ -211,15 +212,23 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
         if correction:
             sign = _correction_sign(z, alternative)
             z -= sign * 0.5 / se
-        p = _get_pvalue(z, stats.norm, alternative)
+        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     elif method == 'exact':
         dist = WilcoxonDistribution(count)
+        # The null distribution in `dist` is exact only if there are no ties
+        # or zeros. If there are ties or zeros, the statistic can be non-
+        # integral, but the null distribution is only defined for integral
+        # values of the statistic. Therefore, we're conservative: round
+        # non-integral statistic up before computing CDF and down before
+        # computing SF. This preserves symmetry w.r.t. alternatives and
+        # order of the input arguments. See gh-19872.
         if alternative == 'less':
-            p = dist.cdf(r_plus)
+            p = dist.cdf(np.ceil(r_plus))
         elif alternative == 'greater':
-            p = dist.sf(r_plus)
+            p = dist.sf(np.floor(r_plus))
         else:
-            p = 2 * np.minimum(dist.sf(r_plus), dist.cdf(r_plus))
+            p = 2 * np.minimum(dist.sf(np.floor(r_plus)),
+                               dist.cdf(np.ceil(r_plus)))
             p = np.clip(p, 0, 1)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
@@ -232,6 +241,6 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
     z = -np.abs(z) if (alternative == 'two-sided' and method == 'approx') else z
 
     res = _morestats.WilcoxonResult(statistic=statistic, pvalue=p[()])
-    if method == 'approx':
+    if output_z:
         res.zstatistic = z[()]
     return res

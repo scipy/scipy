@@ -11,6 +11,7 @@ Comparing means
 
 Test with sample with identical means:
 
+    >>> import scipy.stats as stats
     >>> rvs1 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> rvs2 = stats.norm.rvs(loc=5, scale=10, size=500)
     >>> stats.ttest_ind(rvs1, rvs2)

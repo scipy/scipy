@@ -6,6 +6,11 @@ from scipy.special import logsumexp, softmax
 
 
 def test_logsumexp():
+    # Test with zero-size array
+    a = []
+    desired = -np.inf
+    assert_equal(logsumexp(a), desired)
+
     # Test whether logsumexp() function correctly handles large inputs.
     a = np.arange(200)
     desired = np.log(np.sum(np.exp(a)))

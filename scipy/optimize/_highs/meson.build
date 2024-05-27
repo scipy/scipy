@@ -55,7 +55,10 @@ basiclu_lib = static_library('basiclu',
 )
 
 highs_flags = [
+  _cpp_Wno_bitwise_instead_of_logical,
   _cpp_Wno_class_memaccess,
+  _cpp_Wno_deprecated_builtins,
+  _cpp_Wno_deprecated_declarations,
   _cpp_Wno_format_truncation,
   _cpp_Wno_non_virtual_dtor,
   _cpp_Wno_sign_compare,

@@ -179,6 +179,20 @@ jobs:
             export PYTHONPATH=$PWD/build-install/lib/python3.11/site-packages
             python dev.py --no-build refguide-check
 
+      - run:
+          name: smoke-docs
+          no_output_timeout: 35m
+          command: |
+            pip install matplotlib hypothesis
+            pip install scipy-doctest
+            python dev.py smoke-docs
+
+      - run:
+          name: smoke-tutorials
+          no_output_timeout: 10m
+          command: |
+            python dev.py smoke-tutorials
+
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
 # The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/

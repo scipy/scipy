@@ -74,6 +74,7 @@ class TestSobolIndices:
         AB = sample_AB(A=A, B=B)
         assert_allclose(AB, ref)
 
+    @pytest.mark.xslow
     @pytest.mark.xfail_on_32bit("Can't create large array for test")
     @pytest.mark.parametrize(
         'func',

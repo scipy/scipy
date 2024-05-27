@@ -107,6 +107,7 @@ def _lorenzian(x):
     return 1 / (1 + x**2)
 
 
+@pytest.mark.fail_slow(5)
 def test_quad_vec_pool():
     f = _lorenzian
     res, err = quad_vec(f, -np.inf, np.inf, norm='max', epsabs=1e-4, workers=4)
@@ -123,6 +124,7 @@ def _func_with_args(x, a):
     return x * (x + a) * np.arange(3)
 
 
+@pytest.mark.fail_slow(5)
 @pytest.mark.parametrize('extra_args', [2, (2,)])
 @pytest.mark.parametrize('workers', [1, 10])
 def test_quad_vec_pool_args(extra_args, workers):
@@ -207,3 +209,7 @@ def test_points(a, b):
     for p in interval_sets:
         j = np.searchsorted(sorted(points), tuple(p))
         assert np.all(j == j[0])
+
+def test_trapz_deprecation():
+    with pytest.deprecated_call(match="`quadrature='trapz'`"):
+        quad_vec(lambda x: x, 0, 1, quadrature="trapz")

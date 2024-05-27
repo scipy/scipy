@@ -70,7 +70,7 @@ def test_kde_1d_weighted():
                         (kdepdf*normpdf).sum()*intervall, decimal=2)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_kde_2d():
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)
@@ -110,7 +110,7 @@ def test_kde_2d():
                         (kdepdf*normpdf).sum()*(intervall**2), decimal=2)
 
 
-@pytest.mark.slow
+@pytest.mark.xslow
 def test_kde_2d_weighted():
     #some basic tests comparing to normal distribution
     np.random.seed(8765678)

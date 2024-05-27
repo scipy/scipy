@@ -5,11 +5,10 @@ Process f2py template files (`filename.pyf.src` -> `filename.pyf`)
 Usage: python generate_pyf.py filename.pyf.src -o filename.pyf
 """
 
+import argparse
 import os
-import sys
 import re
 import subprocess
-import argparse
 
 
 # START OF CODE VENDORED FROM `numpy.distutils.from_template`
@@ -284,15 +283,15 @@ def main():
 
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
-        p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
+        p = subprocess.Popen(['f2py', fname_pyf,
                             '--build-dir', outdir_abs], #'--quiet'],
                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                             cwd=os.getcwd())
         out, err = p.communicate()
         if not (p.returncode == 0):
-            raise RuntimeError(f"Writing {args.outfile} with f2py failed!\n"
-                            f"{out}\n"
-                            r"{err}")
+            raise RuntimeError(f"Processing {fname_pyf} with f2py failed!\n"
+                               f"{out.decode()}\n"
+                               f"{err.decode()}")
 
 
 if __name__ == "__main__":

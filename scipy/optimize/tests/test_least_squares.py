@@ -4,6 +4,7 @@ import numpy as np
 from numpy.linalg import norm
 from numpy.testing import (assert_, assert_allclose,
                            assert_equal, suppress_warnings)
+import pytest
 from pytest import raises as assert_raises
 from scipy.sparse import issparse, lil_matrix
 from scipy.sparse.linalg import aslinearoperator
@@ -467,6 +468,7 @@ class BoundsMixin:
                             bounds=Bounds(lb=[0.1, 0.1]))
         assert_allclose(res.x, [0.1, 0.1], atol=1e-5)
 
+    @pytest.mark.fail_slow(5)
     def test_rosenbrock_bounds(self):
         x0_1 = np.array([-2.0, 1.0])
         x0_2 = np.array([2.0, 2.0])
@@ -552,6 +554,7 @@ class SparseMixin:
             assert_allclose(res_dense.cost, 0, atol=1e-20)
             assert_allclose(res_sparse.cost, 0, atol=1e-20)
 
+    @pytest.mark.fail_slow(5)
     def test_with_bounds(self):
         p = BroydenTridiagonal()
         for jac, jac_sparsity in product(

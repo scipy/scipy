@@ -361,7 +361,8 @@ cdef class _Qhull:
                     "qhull: did not free %d bytes (%d pieces)" %
                     (totlong, curlong))
 
-        self._messages.close()
+        if self._messages is not None:
+            self._messages.close()
 
     @cython.final
     def close(self):
@@ -387,7 +388,8 @@ cdef class _Qhull:
                     "qhull: did not free %d bytes (%d pieces)" %
                     (totlong, curlong))
 
-        self._messages.close()
+        if self._messages is not None:
+            self._messages.close()
 
     @cython.final
     def get_points(self):
@@ -1802,6 +1804,8 @@ class Delaunay(_QhullUser):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
+        if points.ndim != 2:
+            raise ValueError("Input points array must have 2 dimensions.")
 
         if qhull_options is None:
             if not incremental:
@@ -2592,6 +2596,8 @@ class Voronoi(_QhullUser):
         if np.ma.isMaskedArray(points):
             raise ValueError('Input points cannot be a masked array')
         points = np.ascontiguousarray(points, dtype=np.double)
+        if points.ndim != 2:
+            raise ValueError("Input points array must have 2 dimensions.")
 
         if qhull_options is None:
             if not incremental:

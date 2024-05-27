@@ -155,20 +155,25 @@ class TestBracketRoot:
             funcs = [lambda x: x - 1.5,
                      lambda x: x - 1000,
                      lambda x: x - 1000,
-                     lambda x: np.nan]
+                     lambda x: np.nan,
+                     lambda x: x]
 
             return [funcs[j](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(4, dtype=np.int64),)
-        res = _bracket_root(f, xl0=[-1, -1, -1, -1], xr0=[1, 1, 1, 1],
-                            xmin=[-np.inf, -1, -np.inf, -np.inf],
-                            xmax=[np.inf, 1, np.inf, np.inf],
+        args = (np.arange(5, dtype=np.int64),)
+        res = _bracket_root(f,
+                            xl0=[-1, -1, -1, -1, 4],
+                            xr0=[1, 1, 1, 1, -4],
+                            xmin=[-np.inf, -1, -np.inf, -np.inf, 6],
+                            xmax=[np.inf, 1, np.inf, np.inf, 2],
                             args=args, maxiter=3)
 
         ref_flags = np.array([eim._ECONVERGED,
                               _ELIMITS,
                               eim._ECONVERR,
-                              eim._EVALUEERR])
+                              eim._EVALUEERR,
+                              eim._EINPUTERR])
+
         assert_equal(res.status, ref_flags)
 
     @pytest.mark.parametrize("root", (0.622, [0.622, 0.623]))
@@ -212,14 +217,6 @@ class TestBracketRoot:
         message = "All elements of `factor` must be greater than 1."
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, factor=0.5)
-
-        message = '`xmin <= xl0 < xr0 <= xmax` must be True'
-        with pytest.raises(ValueError, match=message):
-            _bracket_root(lambda x: x, 4, -4)
-        with pytest.raises(ValueError, match=message):
-            _bracket_root(lambda x: x, -4, 4, xmax=np.nan)
-        with pytest.raises(ValueError, match=message):
-            _bracket_root(lambda x: x, -4, 4, xmin=10)
 
         message = "shape mismatch: objects cannot be broadcast"
         # raised by `np.broadcast, but the traceback is readable IMO
@@ -413,17 +410,23 @@ class TestBracketMinimum:
             funcs = [lambda x: (x - 1.5)**2,
                      lambda x: x,
                      lambda x: x,
-                     lambda x: np.nan]
+                     lambda x: np.nan,
+                     lambda x: x**2]
+
             return [funcs[j](x) for x, j in zip(xs, js)]
 
-        args = (np.arange(4, dtype=np.int64),)
-        xl0, xm0, xr0 = np.full(4, -1.0), np.full(4, 0.0), np.full(4, 1.0)
-        result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0,
-                                  xmin=[-np.inf, -1.0, -np.inf, -np.inf],
+        args = (np.arange(5, dtype=np.int64),)
+        xl0 = [-1.0, -1.0, -1.0, -1.0, 6.0]
+        xm0 = [0.0, 0.0, 0.0, 0.0, 4.0]
+        xr0 = [1.0, 1.0, 1.0, 1.0, 2.0]
+        xmin=[-np.inf, -1.0, -np.inf, -np.inf, 8.0]
+
+        result = _bracket_minimum(f, xm0, xl0=xl0, xr0=xr0, xmin=xmin,
                                   args=args, maxiter=3)
 
         reference_flags = np.array([eim._ECONVERGED, _ELIMITS,
-                                    eim._ECONVERR, eim._EVALUEERR])
+                                    eim._ECONVERR, eim._EVALUEERR,
+                                    eim._EINPUTERR])
         assert_equal(result.status, reference_flags)
 
     @pytest.mark.parametrize("minimum", (0.622, [0.622, 0.623]))
@@ -468,20 +471,6 @@ class TestBracketMinimum:
         message = "All elements of `factor` must be greater than 1."
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x, -4, factor=0.5)
-
-        message = '`xmin <= xl0 < xm0 < xr0 <= xmax` must be True'
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, 4, xl0=6)
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0=-6)
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xl0=-3, xr0=-2)
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xl0=-6, xr0=-5)
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xl0=-np.nan)
-        with pytest.raises(ValueError, match=message):
-            _bracket_minimum(lambda x: x**2, -4, xr0=np.nan)
 
         message = "shape mismatch: objects cannot be broadcast"
         # raised by `np.broadcast, but the traceback is readable IMO
@@ -778,3 +767,27 @@ class TestBracketMinimum:
             [result.fl, result.fm, result.fr],
             [f(xl0, *args), f(xm0, *args), f(xr0, *args)],
         )
+
+    def test_gh_20562_left(self):
+        # Regression test for https://github.com/scipy/scipy/issues/20562
+        # minimum of f in [xmin, xmax] is at xmin.
+        xmin, xmax = 0.21933608, 1.39713606
+
+        def f(x):
+            log_a, log_b = np.log([xmin, xmax])
+            return -((log_b - log_a)*x)**-1
+
+        result = _bracket_minimum(f, 0.5535723499480897, xmin=xmin, xmax=xmax)
+        assert xmin == result.xl
+
+    def test_gh_20562_right(self):
+        # Regression test for https://github.com/scipy/scipy/issues/20562
+        # minimum of f in [xmin, xmax] is at xmax.
+        xmin, xmax = -1.39713606, -0.21933608,
+
+        def f(x):
+            log_a, log_b = np.log([-xmax, -xmin])
+            return ((log_b - log_a)*x)**-1
+
+        result = _bracket_minimum(f, -0.5535723499480897, xmin=xmin, xmax=xmax)
+        assert xmax == result.xr

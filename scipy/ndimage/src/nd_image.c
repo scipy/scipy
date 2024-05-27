@@ -999,6 +999,11 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
         case NPY_UINT32: CASE_VALUEINDICES_SET_MINMAX(npy_uint32); break;
         case NPY_INT64:  CASE_VALUEINDICES_SET_MINMAX(npy_int64); break;
         case NPY_UINT64: CASE_VALUEINDICES_SET_MINMAX(npy_uint64); break;
+        default:
+            switch(arrType) {
+            case NPY_UINT: CASE_VALUEINDICES_SET_MINMAX(npy_uint); break;
+            case NPY_INT: CASE_VALUEINDICES_SET_MINMAX(npy_int); break;
+            }
         }
         NI_ITERATOR_NEXT(ndiIter, arrData);
     }
@@ -1016,6 +1021,11 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
         case NPY_UINT32: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint32); break;
         case NPY_INT64:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int64); break;
         case NPY_UINT64: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint64); break;
+        default:
+            switch(arrType) {
+            case NPY_INT:  CASE_VALUEINDICES_MAKEHISTOGRAM(npy_int); break;
+            case NPY_UINT: CASE_VALUEINDICES_MAKEHISTOGRAM(npy_uint); break;
+            }
         }
     }
 
@@ -1047,6 +1057,11 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                 case NPY_UINT32: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint32, ii); break;
                 case NPY_INT64:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int64, ii); break;
                 case NPY_UINT64: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint64, ii); break;
+                default:
+                    switch(arrType) {
+                    case NPY_INT:  CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_int, ii); break;
+                    case NPY_UINT: CASE_VALUEINDICES_MAKE_VALUEOBJ_FROMOFFSET(npy_uint, ii); break;
+                    }
                 }
                 /* Create a tuple of <ndim> index arrays */
                 t = PyTuple_New(ndim);
@@ -1093,6 +1108,11 @@ static PyObject *NI_ValueIndices(PyObject *self, PyObject *args)
                 case NPY_UINT32: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint32); break;
                 case NPY_INT64:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int64); break;
                 case NPY_UINT64: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint64); break;
+                default:
+                    switch(arrType) {
+                    case NPY_INT:  CASE_VALUEINDICES_GET_VALUEOFFSET(npy_int); break;
+                    case NPY_UINT: CASE_VALUEINDICES_GET_VALUEOFFSET(npy_uint); break;
+                    }
                 }
 
                 if (ignoreValIsNone || (!valueIsIgnore)) {

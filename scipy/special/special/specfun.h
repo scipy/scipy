@@ -89,34 +89,6 @@ inline double hyp1f1(double a, double b, double x) {
     return outy;
 }
 
-template <typename T>
-T exp1(T x) {
-    T out = specfun::e1xb(x);
-    SPECFUN_CONVINF("exp1", out);
-    return out;
-}
-
-template <typename T>
-std::complex<T> exp1(std::complex<T> z) {
-    std::complex<T> outz = specfun::e1z(z);
-    SPECFUN_ZCONVINF("exp1", outz);
-    return outz;
-}
-
-template <typename T>
-T expi(T x) {
-    T out = specfun::eix(x);
-    SPECFUN_CONVINF("expi", out);
-    return out;
-}
-
-template <typename T>
-std::complex<T> expi(std::complex<T> z) {
-    std::complex<T> outz = specfun::eixz(z);
-    SPECFUN_ZCONVINF("cexpi", outz);
-    return outz;
-}
-
 inline std::complex<double> cerf(std::complex<double> z) { return specfun::cerror(z); }
 
 inline double pmv(double m, double v, double x) {

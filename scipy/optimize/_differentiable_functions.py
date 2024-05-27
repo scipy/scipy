@@ -9,6 +9,84 @@ from scipy._lib._array_api import atleast_nd, array_namespace
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
+def _wrapper_fun(fun, args=()):
+    ncalls = [0]
+
+    def wrapped(x):
+        ncalls[0] += 1
+        # Send a copy because the user may overwrite it.
+        # Overwriting results in undefined behaviour because
+        # fun(self.x) will change self.x, with the two no longer linked.
+        fx = fun(np.copy(x), *args)
+        # Make sure the function returns a true scalar
+        if not np.isscalar(fx):
+            try:
+                fx = np.asarray(fx).item()
+            except (TypeError, ValueError) as e:
+                raise ValueError(
+                    "The user-provided objective function "
+                    "must return a scalar value."
+                ) from e
+        return fx
+    return wrapped, ncalls
+
+
+def _wrapper_grad(grad, fun=None, args=(), finite_diff_options=None):
+    ncalls = [0]
+
+    if callable(grad):
+        def wrapped(x, **kwds):
+            # kwds present to give function same signature as numdiff variant
+            ncalls[0] += 1
+            return np.atleast_1d(grad(np.copy(x), *args))
+        return wrapped, ncalls
+
+    elif grad in FD_METHODS:
+        def wrapped1(x, f0=None):
+            ncalls[0] += 1
+            return approx_derivative(
+                fun, x, f0=f0, **finite_diff_options
+            )
+
+        return wrapped1, ncalls
+
+
+def _wrapper_hess(hess, grad=None, x0=None, args=(), finite_diff_options=None):
+    if callable(hess):
+        H = hess(np.copy(x0), *args)
+        ncalls = [1]
+
+        if sps.issparse(H):
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return sps.csr_matrix(hess(np.copy(x), *args))
+
+            H = sps.csr_matrix(H)
+
+        elif isinstance(H, LinearOperator):
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return hess(np.copy(x), *args)
+
+        else:  # dense
+            def wrapped(x, **kwds):
+                ncalls[0] += 1
+                return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
+
+            H = np.atleast_2d(np.asarray(H))
+
+        return wrapped, ncalls, H
+    elif hess in FD_METHODS:
+        ncalls = [0]
+
+        def wrapped1(x, f0=None):
+            return approx_derivative(
+                grad, x, f0=f0, **finite_diff_options
+            )
+
+        return wrapped1, ncalls, None
+
+
 class ScalarFunction:
     """Scalar function and its derivatives.
 
@@ -110,13 +188,17 @@ class ScalarFunction:
         if xp.isdtype(_x.dtype, "real floating"):
             _dtype = _x.dtype
 
+        # original arguments
+        self._wrapped_fun, self._nfev = _wrapper_fun(fun, args=args)
+        self._orig_fun = fun
+        self._orig_grad = grad
+        self._orig_hess = hess
+        self._args = args
+
         # promotes to floating
         self.x = xp.astype(_x, _dtype)
         self.x_dtype = _dtype
         self.n = self.x.size
-        self.nfev = 0
-        self.ngev = 0
-        self.nhev = 0
         self.f_updated = False
         self.g_updated = False
         self.H_updated = False
@@ -136,88 +218,33 @@ class ScalarFunction:
             finite_diff_options["abs_step"] = epsilon
             finite_diff_options["as_linear_operator"] = True
 
-        # Function evaluation
-        def fun_wrapped(x):
-            self.nfev += 1
-            # Send a copy because the user may overwrite it.
-            # Overwriting results in undefined behaviour because
-            # fun(self.x) will change self.x, with the two no longer linked.
-            fx = fun(np.copy(x), *args)
-            # Make sure the function returns a true scalar
-            if not np.isscalar(fx):
-                try:
-                    fx = np.asarray(fx).item()
-                except (TypeError, ValueError) as e:
-                    raise ValueError(
-                        "The user-provided objective function "
-                        "must return a scalar value."
-                    ) from e
-
-            if fx < self._lowest_f:
-                self._lowest_x = x
-                self._lowest_f = fx
-
-            return fx
-
-        def update_fun():
-            self.f = fun_wrapped(self.x)
-
-        self._update_fun_impl = update_fun
+        # Initial function evaluation
         self._update_fun()
 
-        # Gradient evaluation
-        if callable(grad):
-            def grad_wrapped(x):
-                self.ngev += 1
-                return np.atleast_1d(grad(np.copy(x), *args))
-
-            def update_grad():
-                self.g = grad_wrapped(self.x)
-
-        elif grad in FD_METHODS:
-            def update_grad():
-                self._update_fun()
-                self.ngev += 1
-                self.g = approx_derivative(fun_wrapped, self.x, f0=self.f,
-                                           **finite_diff_options)
-
-        self._update_grad_impl = update_grad
+        # Initial gradient evaluation
+        self._wrapped_grad, self._ngev = _wrapper_grad(
+            grad,
+            fun=self._wrapped_fun,
+            args=args,
+            finite_diff_options=finite_diff_options
+        )
         self._update_grad()
 
-        # Hessian Evaluation
+        # Hessian evaluation
         if callable(hess):
-            self.H = hess(np.copy(x0), *args)
+            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
+                hess, x0=x0, args=args
+            )
             self.H_updated = True
-            self.nhev += 1
-
-            if sps.issparse(self.H):
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return sps.csr_matrix(hess(np.copy(x), *args))
-                self.H = sps.csr_matrix(self.H)
-
-            elif isinstance(self.H, LinearOperator):
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return hess(np.copy(x), *args)
-
-            else:
-                def hess_wrapped(x):
-                    self.nhev += 1
-                    return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
-                self.H = np.atleast_2d(np.asarray(self.H))
-
-            def update_hess():
-                self.H = hess_wrapped(self.x)
-
         elif hess in FD_METHODS:
-            def update_hess():
-                self._update_grad()
-                self.H = approx_derivative(grad_wrapped, self.x, f0=self.g,
-                                           **finite_diff_options)
-                return self.H
-
-            update_hess()
+            self._wrapped_hess, self._nhev, self.H = _wrapper_hess(
+                hess,
+                grad=self._wrapped_grad,
+                x0=x0,
+                finite_diff_options=finite_diff_options
+            )
+            self._update_grad()
+            self.H = self._wrapped_hess(self.x, f0=self.g)
             self.H_updated = True
         elif isinstance(hess, HessianUpdateStrategy):
             self.H = hess
@@ -225,74 +252,94 @@ class ScalarFunction:
             self.H_updated = True
             self.x_prev = None
             self.g_prev = None
+            self._nhev = [0]
 
-            def update_hess():
-                self._update_grad()
-                self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+    @property
+    def nfev(self):
+        return self._nfev[0]
 
-        self._update_hess_impl = update_hess
+    @property
+    def ngev(self):
+        return self._ngev[0]
 
-        if isinstance(hess, HessianUpdateStrategy):
-            def update_x(x):
-                self._update_grad()
-                self.x_prev = self.x
-                self.g_prev = self.g
-                # ensure that self.x is a copy of x. Don't store a reference
-                # otherwise the memoization doesn't work properly.
+    @property
+    def nhev(self):
+        return self._nhev[0]
 
-                _x = atleast_nd(x, ndim=1, xp=self.xp)
-                self.x = self.xp.astype(_x, self.x_dtype)
-                self.f_updated = False
-                self.g_updated = False
-                self.H_updated = False
-                self._update_hess()
+    def _update_x(self, x):
+        if isinstance(self._orig_hess, HessianUpdateStrategy):
+            self._update_grad()
+            self.x_prev = self.x
+            self.g_prev = self.g
+            # ensure that self.x is a copy of x. Don't store a reference
+            # otherwise the memoization doesn't work properly.
+
+            _x = atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
+            self.f_updated = False
+            self.g_updated = False
+            self.H_updated = False
+            self._update_hess()
         else:
-            def update_x(x):
-                # ensure that self.x is a copy of x. Don't store a reference
-                # otherwise the memoization doesn't work properly.
-                _x = atleast_nd(x, ndim=1, xp=self.xp)
-                self.x = self.xp.astype(_x, self.x_dtype)
-                self.f_updated = False
-                self.g_updated = False
-                self.H_updated = False
-        self._update_x_impl = update_x
+            # ensure that self.x is a copy of x. Don't store a reference
+            # otherwise the memoization doesn't work properly.
+            _x = atleast_nd(x, ndim=1, xp=self.xp)
+            self.x = self.xp.astype(_x, self.x_dtype)
+            self.f_updated = False
+            self.g_updated = False
+            self.H_updated = False
 
     def _update_fun(self):
         if not self.f_updated:
-            self._update_fun_impl()
+            fx = self._wrapped_fun(self.x)
+            if fx < self._lowest_f:
+                self._lowest_x = self.x
+                self._lowest_f = fx
+
+            self.f = fx
             self.f_updated = True
 
     def _update_grad(self):
         if not self.g_updated:
-            self._update_grad_impl()
+            if self._orig_grad in FD_METHODS:
+                self._update_fun()
+            self.g = self._wrapped_grad(self.x, f0=self.f)
             self.g_updated = True
 
     def _update_hess(self):
         if not self.H_updated:
-            self._update_hess_impl()
+            if self._orig_hess in FD_METHODS:
+                self._update_grad()
+                self.H = self._wrapped_hess(self.x, f0=self.g)
+            elif isinstance(self._orig_hess, HessianUpdateStrategy):
+                self._update_grad()
+                self.H.update(self.x - self.x_prev, self.g - self.g_prev)
+            else:       # should be callable(hess)
+                self.H = self._wrapped_hess(self.x)
+
             self.H_updated = True
 
     def fun(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_fun()
         return self.f
 
     def grad(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_grad()
         return self.g
 
     def hess(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_hess()
         return self.H
 
     def fun_and_grad(self, x):
         if not np.array_equal(x, self.x):
-            self._update_x_impl(x)
+            self._update_x(x)
         self._update_fun()
         self._update_grad()
         return self.f, self.g

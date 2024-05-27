@@ -74,7 +74,7 @@ cpdef void calculate_cluster_sizes(double[:, :] Z, double[:] cs, int n) noexcept
             cs[i] += 1
 
 
-def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
+def cluster_dist(const double[:, :] Z, int[:] T, double cutoff, int n):
     """
     Form flat clusters by distance criterion.
 
@@ -95,7 +95,7 @@ def cluster_dist(double[:, :] Z, int[:] T, double cutoff, int n):
     cluster_monocrit(Z, max_dists, T, cutoff, n)
 
 
-def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
+def cluster_in(const double[:, :] Z, const double[:, :] R, int[:] T, double cutoff, int n):
     """
     Form flat clusters by inconsistent criterion.
 
@@ -119,7 +119,7 @@ def cluster_in(double[:, :] Z, double[:, :] R, int[:] T, double cutoff, int n):
     cluster_monocrit(Z, max_inconsists, T, cutoff, n)
 
 
-def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
+def cluster_maxclust_dist(const double[:, :] Z, int[:] T, int n, int mc):
     """
     Form flat clusters by maxclust criterion.
 
@@ -141,7 +141,7 @@ def cluster_maxclust_dist(double[:, :] Z, int[:] T, int n, int mc):
     cluster_maxclust_monocrit(Z, max_dists, T, n, mc)
 
 
-cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+cpdef void cluster_maxclust_monocrit(const double[:, :] Z, const double[:] MC, int[:] T,
                                      int n, int max_nc) noexcept:
     """
     Form flat clusters by maxclust_monocrit criterion.
@@ -227,7 +227,7 @@ cpdef void cluster_maxclust_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     cluster_monocrit(Z, MC, T, MC[upper_idx], n)
 
 
-cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
+cpdef void cluster_monocrit(const double[:, :] Z, const double[:] MC, int[:] T,
                             double cutoff, int n) noexcept:
     """
     Form flat clusters by monocrit criterion.
@@ -296,7 +296,7 @@ cpdef void cluster_monocrit(double[:, :] Z, double[:] MC, int[:] T,
     PyMem_Free(visited)
 
 
-def cophenetic_distances(double[:, :] Z, double[:] d, int n):
+def cophenetic_distances(const double[:, :] Z, double[:] d, int n):
     """
     Calculate the cophenetic distances between each observation
 
@@ -367,7 +367,7 @@ def cophenetic_distances(double[:, :] Z, double[:] d, int n):
     PyMem_Free(visited)
 
 
-cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
+cpdef void get_max_Rfield_for_each_cluster(const double[:, :] Z, const double[:, :] R,
                                            double[:] max_rfs, int n, int rf) noexcept:
     """
     Get the maximum statistic for each non-singleton cluster. For the i'th
@@ -432,7 +432,7 @@ cpdef void get_max_Rfield_for_each_cluster(double[:, :] Z, double[:, :] R,
     PyMem_Free(visited)
 
 
-cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
+cpdef get_max_dist_for_each_cluster(const double[:, :] Z, double[:] MD, int n):
     """
     Get the maximum inconsistency coefficient for each non-singleton cluster.
 
@@ -491,7 +491,7 @@ cpdef get_max_dist_for_each_cluster(double[:, :] Z, double[:] MD, int n):
     PyMem_Free(visited)
 
 
-def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
+def inconsistent(const double[:, :] Z, double[:, :] R, int n, int d):
     """
     Calculate the inconsistency statistics.
 
@@ -574,7 +574,7 @@ def inconsistent(double[:, :] Z, double[:, :] R, int n, int d):
     PyMem_Free(visited)
 
 
-def leaders(double[:, :] Z, int[:] T, int[:] L, int[:] M, int nc, int n):
+def leaders(const double[:, :] Z, const int[:] T, int[:] L, int[:] M, int nc, int n):
     """
     Find the leader (root) of each flat cluster.
 
@@ -772,7 +772,7 @@ cdef Pair find_min_dist(int n, double[:] D, int[:] size, int x):
     return Pair(y, current_min)
 
 
-def fast_linkage(double[:] dists, int n, int method):
+def fast_linkage(const double[:] dists, int n, int method):
     """Perform hierarchy clustering.
 
     It implements "Generic Clustering Algorithm" from [1]. The worst case
@@ -904,7 +904,7 @@ def fast_linkage(double[:] dists, int n, int method):
     return Z.base
 
 
-def nn_chain(double[:] dists, int n, int method):
+def nn_chain(const double[:] dists, int n, int method):
     """Perform hierarchy clustering using nearest-neighbor chain algorithm.
 
     Parameters
@@ -1012,7 +1012,7 @@ def nn_chain(double[:] dists, int n, int method):
     return Z_arr
 
 
-def mst_single_linkage(double[:] dists, int n):
+def mst_single_linkage(const double[:] dists, int n):
     """Perform hierarchy clustering using MST algorithm for single linkage.
 
     Parameters
@@ -1116,7 +1116,7 @@ cdef label(double[:, :] Z, int n):
         Z[i, 3] = uf.merge(x_root, y_root)
 
 
-def prelist(double[:, :] Z, int[:] members, int n):
+def prelist(const double[:, :] Z, int[:] members, int n):
     """
     Perform a pre-order traversal on the linkage tree and get a list of ids
     of the leaves.

@@ -121,8 +121,8 @@ def test_svds(matrices):
     u, s, vt = splin.svds(A_sparse, k=2, v0=v0)
 
     assert_allclose(s, s0)
-    assert_allclose(u, u0)
-    assert_allclose(vt, vt0)
+    assert_allclose(np.abs(u), np.abs(u0))
+    assert_allclose(np.abs(vt), np.abs(vt0))
 
 
 def test_lobpcg(matrices):

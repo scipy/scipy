@@ -145,9 +145,9 @@ def crosstab(*args, levels=None, sparse=False):
 
     >>> res = crosstab(a, x, sparse=True)
     >>> res.count
-    <2x3 sparse matrix of type '<class 'numpy.int64'>'
-            with 4 stored elements in COOrdinate format>
-    >>> res.count.A
+    <COOrdinate sparse matrix of dtype 'int64'
+        with 4 stored elements and shape (2, 3)>
+    >>> res.count.toarray()
     array([[2, 3, 0],
            [1, 0, 4]])
 

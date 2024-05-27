@@ -11,5 +11,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/fft/tests'
+  subdir: 'scipy/fft/tests',
+  install_tag: 'tests'
 )

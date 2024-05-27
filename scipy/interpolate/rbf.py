@@ -5,14 +5,7 @@
 from scipy._lib.deprecation import _sub_module_deprecation
 
 
-__all__ = [  # noqa: F822
-    'Rbf',
-    'cdist',
-    'linalg',
-    'pdist',
-    'squareform',
-    'xlogy',
-]
+__all__ = ["Rbf"]  # noqa: F822
 
 
 def __dir__():

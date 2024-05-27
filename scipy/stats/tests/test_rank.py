@@ -2,6 +2,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_array_equal
 import pytest
 
+from scipy.conftest import skip_xp_invalid_arg
 from scipy.stats import rankdata, tiecorrect
 from scipy._lib._util import np_long
 
@@ -130,6 +131,7 @@ class TestRankData:
         r = rankdata(a2d)
         assert_array_equal(r, expected)
 
+    @skip_xp_invalid_arg
     def test_rankdata_object_string(self):
 
         def min_rank(a):

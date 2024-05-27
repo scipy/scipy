@@ -322,7 +322,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
         c[inf_a & inf_b] = 0  # takes care of infinite a and b
         temp = eim._initialize(f, (c,), args, complex_ok=True,
                                preserve_shape=preserve_shape)
-    f, xs, fs, args, shape, dtype = temp
+    f, xs, fs, args, shape, dtype, xp = temp
     a = np.broadcast_to(a, shape).astype(dtype).ravel()
     b = np.broadcast_to(b, shape).astype(dtype).ravel()
 
@@ -461,7 +461,7 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     with np.errstate(over='ignore', invalid='ignore', divide='ignore'):
         res = eim._loop(work, callback, shape, maxiter, f, args, dtype, pre_func_eval,
                         post_func_eval, check_termination, post_termination_check,
-                        customize_result, res_work_pairs, preserve_shape)
+                        customize_result, res_work_pairs, xp, preserve_shape)
     return res
 
 
@@ -1068,7 +1068,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     # Additional elementwise algorithm input validation / standardization
     tmp = eim._initialize(f, (a,), args, complex_ok=False)
-    f, xs, fs, args, shape, dtype = tmp
+    f, xs, fs, args, shape, dtype, xp = tmp
 
     # Finish preparing `a`, `b`, and `step` arrays
     a = xs[0]

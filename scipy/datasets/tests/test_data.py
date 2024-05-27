@@ -35,6 +35,7 @@ class TestDatasets:
 
         yield
 
+    @pytest.mark.fail_slow(5)
     def test_existence_all(self):
         assert len(os.listdir(data_dir)) >= len(registry)
 

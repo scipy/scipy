@@ -342,6 +342,7 @@ class TestQuad:
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
+    @pytest.mark.xslow
     @pytest.mark.parametrize(
         "x_lower, x_upper, y_lower, y_upper, z_lower, z_upper, expected",
         [
@@ -540,6 +541,7 @@ class TestQuad:
 
 
 class TestNQuad:
+    @pytest.mark.fail_slow(2)
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -554,6 +556,7 @@ class TestNQuad:
         assert_quad(res[:-1], 1.5267454070738635)
         assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
 
+    @pytest.mark.fail_slow(2)
     def test_variable_limits(self):
         scale = .1
 

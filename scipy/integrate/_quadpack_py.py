@@ -10,8 +10,6 @@ import numpy as np
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
-error = _quadpack.error
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.
@@ -122,9 +120,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     tplquad : triple integral
     nquad : n-dimensional integrals (uses `quad` recursively)
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
@@ -727,9 +722,6 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     tplquad : triple integral
     nquad : N-dimensional integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
-    odeint : ODE integrator
-    ode : ODE integrator
     simpson : integrator for sampled data
     romb : integrator for sampled data
     scipy.special : for coefficients and roots of orthogonal polynomials
@@ -860,14 +852,11 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     See Also
     --------
     quad : Adaptive quadrature using QUADPACK
-    quadrature : Adaptive Gaussian quadrature
     fixed_quad : Fixed-order Gaussian quadrature
     dblquad : Double integrals
     nquad : N-dimensional integrals
     romb : Integrators for sampled data
     simpson : Integrators for sampled data
-    ode : ODE integrators
-    odeint : ODE integrators
     scipy.special : For coefficients and roots of orthogonal polynomials
 
     Notes
@@ -1045,7 +1034,6 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     quad : 1-D numerical integration
     dblquad, tplquad : double and triple integrals
     fixed_quad : fixed-order Gaussian quadrature
-    quadrature : adaptive Gaussian quadrature
 
     Notes
     -----

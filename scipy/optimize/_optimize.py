@@ -86,7 +86,7 @@ class MemoizeJac:
 
 def _wrap_callback(callback, method=None):
     """Wrap a user-provided callback so that attributes can be attached."""
-    if callback is None or method in {'tnc', 'slsqp', 'cobyla'}:
+    if callback is None or method in {'tnc', 'slsqp', 'cobyla', 'cobyqa'}:
         return callback  # don't wrap
 
     sig = inspect.signature(callback)
@@ -745,8 +745,7 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         # check bounds
         if (lower_bound > upper_bound).any():
             raise ValueError("Nelder Mead - one of the lower bounds "
-                             "is greater than an upper bound.",
-                             stacklevel=3)
+                             "is greater than an upper bound.")
         if np.any(lower_bound > x0) or np.any(x0 > upper_bound):
             warnings.warn("Initial guess is not within the specified bounds",
                           OptimizeWarning, stacklevel=3)
@@ -999,7 +998,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
     >>> c0, c1 = (1, 200)
     >>> eps = np.sqrt(np.finfo(float).eps)
     >>> optimize.approx_fprime(x, func, [eps, np.sqrt(200) * eps], c0, c1)
-    array([   2.        ,  400.00004198])
+    array([   2.        ,  400.00004208])
 
     """
     xk = np.asarray(xk, float)
@@ -3909,6 +3908,7 @@ def show_options(solver=None, method=None, disp=True):
     - :ref:`L-BFGS-B    <optimize.minimize-lbfgsb>`
     - :ref:`TNC         <optimize.minimize-tnc>`
     - :ref:`COBYLA      <optimize.minimize-cobyla>`
+    - :ref:`COBYQA      <optimize.minimize-cobyqa>`
     - :ref:`SLSQP       <optimize.minimize-slsqp>`
     - :ref:`dogleg      <optimize.minimize-dogleg>`
     - :ref:`trust-ncg   <optimize.minimize-trustncg>`
@@ -3983,6 +3983,7 @@ def show_options(solver=None, method=None, disp=True):
             ('bfgs', 'scipy.optimize._optimize._minimize_bfgs'),
             ('cg', 'scipy.optimize._optimize._minimize_cg'),
             ('cobyla', 'scipy.optimize._cobyla_py._minimize_cobyla'),
+            ('cobyqa', 'scipy.optimize._cobyqa_py._minimize_cobyqa'),
             ('dogleg', 'scipy.optimize._trustregion_dogleg._minimize_dogleg'),
             ('l-bfgs-b', 'scipy.optimize._lbfgsb_py._minimize_lbfgsb'),
             ('nelder-mead', 'scipy.optimize._optimize._minimize_neldermead'),

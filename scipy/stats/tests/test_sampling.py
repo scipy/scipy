@@ -927,6 +927,7 @@ class TestNumericalInversePolynomial:
         assert_allclose(res, expected, rtol=1e-11, atol=1e-11)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist, u_resolution=1e-10)
@@ -1203,6 +1204,7 @@ class TestNumericalInverseHermite:
         assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
         assert res.shape == expected.shape
 
+    @pytest.mark.slow
     def test_u_error(self):
         dist = StandardNormal()
         rng = NumericalInverseHermite(dist, u_resolution=1e-10)

@@ -3,6 +3,7 @@ import copy
 import heapq
 import collections
 import functools
+import warnings
 
 import numpy as np
 
@@ -294,6 +295,12 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6,
                        'trapezoid': _quadrature_trapezoid}[quadrature]
     except KeyError as e:
         raise ValueError(f"unknown quadrature {quadrature!r}") from e
+
+    if quadrature == "trapz":
+        msg = ("`quadrature='trapz'` is deprecated in favour of "
+               "`quadrature='trapezoid' and will raise an error from SciPy 1.16.0 "
+               "onwards.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     # Initial interval set
     if points is None:

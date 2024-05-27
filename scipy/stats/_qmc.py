@@ -668,7 +668,7 @@ def n_primes(n: IntNumber) -> list[int]:
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
+              953, 967, 971, 977, 983, 991, 997][:n]
 
     if len(primes) < n:
         big_number = 2000
@@ -1494,7 +1494,8 @@ class LatinHypercube(QMCEngine):
         for j in range(n_col):
             perms = self.rng.permutation(p)
             oa_sample_[:, j] = perms[oa_sample[:, j]]
-
+        
+        oa_sample = oa_sample_
         # following is making a scrambled OA into an OA-LHS
         oa_lhs_sample = np.zeros(shape=(n_row, n_col))
         lhs_engine = LatinHypercube(d=1, scramble=self.scramble, strength=1,
@@ -1505,11 +1506,9 @@ class LatinHypercube(QMCEngine):
                 lhs = lhs_engine.random(p).flatten()
                 oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
 
-                lhs_engine = lhs_engine.reset()
-
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore
+        return oa_lhs_sample[:, :self.d]
 
 
 class Sobol(QMCEngine):
@@ -1768,7 +1767,7 @@ class Sobol(QMCEngine):
                 )
                 sample = np.concatenate(
                     [self._first_point, sample]
-                )[:n]  # type: ignore[misc]
+                )[:n]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
@@ -1799,12 +1798,13 @@ class Sobol(QMCEngine):
 
         total_n = self.num_generated + n
         if not (total_n & (total_n - 1) == 0):
-            raise ValueError("The balance properties of Sobol' points require "
-                             "n to be a power of 2. {0} points have been "
-                             "previously generated, then: n={0}+2**{1}={2}. "
-                             "If you still want to do this, the function "
-                             "'Sobol.random()' can be used."
-                             .format(self.num_generated, m, total_n))
+            raise ValueError('The balance properties of Sobol\' points require '
+                             f'n to be a power of 2. {self.num_generated} points '
+                             'have been previously generated, then: '
+                             f'n={self.num_generated}+2**{m}={total_n}. '
+                             'If you still want to do this, the function '
+                             '\'Sobol.random()\' can be used.'
+                             )
 
         return self.random(n)
 

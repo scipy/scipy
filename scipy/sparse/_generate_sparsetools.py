@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 python generate_sparsetools.py
 

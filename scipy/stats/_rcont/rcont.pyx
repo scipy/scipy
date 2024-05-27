@@ -3,12 +3,18 @@ import numpy as np
 
 np.import_array()
 
-from numpy.random cimport bitgen_t
 from cpython.pycapsule cimport PyCapsule_GetPointer, PyCapsule_IsValid
+from libc.stdint cimport uint32_t, uint64_t, int64_t
 
-ctypedef np.int64_t tab_t
+ctypedef int64_t tab_t
 
 cdef extern from "./_rcont.h":
+    ctypedef struct bitgen_t:
+        void *state
+        uint64_t (*next_uint64)(void *st) nogil
+        uint32_t (*next_uint32)(void *st) nogil
+        double (*next_double)(void *st) nogil
+        uint64_t (*next_raw)(void *st) nogil
 
     void rcont1_init(tab_t*, int, const tab_t*)
     void rcont1(tab_t*, int, const tab_t*, int, const tab_t*,

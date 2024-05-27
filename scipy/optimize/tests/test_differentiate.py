@@ -4,9 +4,9 @@ import numpy as np
 from numpy.testing import assert_array_less, assert_allclose, assert_equal
 
 import scipy._lib._elementwise_iterative_method as eim
-from scipy import stats
+from scipy import stats, optimize
 from scipy.optimize._differentiate import (_differentiate as differentiate,
-                                           _EERRORINCREASE)
+                                           _jacobian as jacobian, _EERRORINCREASE)
 
 class TestDifferentiate:
 
@@ -394,3 +394,119 @@ class TestDifferentiate:
         res = differentiate(*case, step_direction=[-1, 0, 1], atol=atol)
         assert np.all(res.success)
         assert_allclose(res.df, 0, atol=atol)
+
+
+class TestJacobian:
+
+    # Example functions and Jacobians from Wikipedia:
+    # https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant#Examples
+
+    def f1(z):
+        x, y = z
+        return [x ** 2 * y, 5 * x + np.sin(y)]
+
+    def df1(z):
+        x, y = z
+        return [[2 * x * y, x ** 2], [np.full_like(x, 5), np.cos(y)]]
+
+    f1.mn = 2, 2  # type: ignore[attr-defined]
+    f1.ref = df1  # type: ignore[attr-defined]
+
+    def f2(z):
+        r, phi = z
+        return [r * np.cos(phi), r * np.sin(phi)]
+
+    def df2(z):
+        r, phi = z
+        return [[np.cos(phi), -r * np.sin(phi)],
+                [np.sin(phi), r * np.cos(phi)]]
+
+    f2.mn = 2, 2  # type: ignore[attr-defined]
+    f2.ref = df2  # type: ignore[attr-defined]
+
+    def f3(z):
+        r, phi, th = z
+        return [r * np.sin(phi) * np.cos(th), r * np.sin(phi) * np.sin(th),
+                r * np.cos(phi)]
+
+    def df3(z):
+        r, phi, th = z
+        return [[np.sin(phi) * np.cos(th), r * np.cos(phi) * np.cos(th),
+                 -r * np.sin(phi) * np.sin(th)],
+                [np.sin(phi) * np.sin(th), r * np.cos(phi) * np.sin(th),
+                 r * np.sin(phi) * np.cos(th)],
+                [np.cos(phi), -r * np.sin(phi), np.zeros_like(r)]]
+
+    f3.mn = 3, 3  # type: ignore[attr-defined]
+    f3.ref = df3  # type: ignore[attr-defined]
+
+    def f4(x):
+        x1, x2, x3 = x
+        return [x1, 5 * x3, 4 * x2 ** 2 - 2 * x3, x3 * np.sin(x1)]
+
+    def df4(x):
+        x1, x2, x3 = x
+        one = np.ones_like(x1)
+        return [[one, 0 * one, 0 * one],
+                [0 * one, 0 * one, 5 * one],
+                [0 * one, 8 * x2, -2 * one],
+                [x3 * np.cos(x1), 0 * one, np.sin(x1)]]
+
+    f4.mn = 3, 4  # type: ignore[attr-defined]
+    f4.ref = df4  # type: ignore[attr-defined]
+
+    def f5(x):
+        x1, x2, x3 = x
+        return [5 * x2, 4 * x1 ** 2 - 2 * np.sin(x2 * x3), x2 * x3]
+
+    def df5(x):
+        x1, x2, x3 = x
+        one = np.ones_like(x1)
+        return [[0 * one, 5 * one, 0 * one],
+                [8 * x1, -2 * x3 * np.cos(x2 * x3), -2 * x2 * np.cos(x2 * x3)],
+                [0 * one, x3, x2]]
+
+    f5.mn = 3, 3  # type: ignore[attr-defined]
+    f5.ref = df5  # type: ignore[attr-defined]
+
+    rosen = optimize.rosen
+    rosen.mn = 5, 1  # type: ignore[attr-defined]
+    rosen.ref = optimize.rosen_der  # type: ignore[attr-defined]
+
+    @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
+    @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
+    def test_examples(self, size, func):
+        rng = np.random.default_rng(458912319542)
+        m, n = func.mn
+        x = rng.random(size=(m,) + size)
+        res = jacobian(func, x).df
+        ref = func.ref(x)
+        np.testing.assert_allclose(res, ref, atol=1e-10)
+
+    def test_iv(self):
+        # Test input validation
+        message = "Argument `x` must be at least 1-D."
+        with pytest.raises(ValueError, match=message):
+            jacobian(np.sin, 1, atol=-1)
+
+        # Confirm that other parameters are being passed to `_derivative`,
+        # which raises an appropriate error message.
+        x = np.ones(3)
+        func = optimize.rosen
+        message = 'Tolerances and step parameters must be non-negative scalars.'
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, atol=-1)
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, rtol=-1)
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, initial_step=-1)
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, step_factor=-1)
+
+        message = '`order` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, order=-1)
+
+        message = '`maxiter` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            jacobian(func, x, maxiter=-1)

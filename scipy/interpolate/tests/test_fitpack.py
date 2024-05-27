@@ -12,7 +12,7 @@ from scipy.interpolate import RectBivariateSpline
 
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
-from scipy.interpolate.dfitpack import regrid_smth
+from scipy.interpolate._dfitpack import regrid_smth
 from scipy.interpolate._fitpack2 import dfitpack_int
 
 

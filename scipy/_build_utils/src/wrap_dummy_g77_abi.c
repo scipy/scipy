@@ -22,8 +22,8 @@ passing a pointer to a variable in which to store the computed result. Unlike
 return values, struct complex arguments work without segfaulting.
 */
 
-#include "fortran_defs.h"
 #include "npy_cblas.h"
+#include "fortran_defs.h"
 
 #ifdef __cplusplus
 extern "C" {

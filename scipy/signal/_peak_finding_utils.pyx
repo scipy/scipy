@@ -227,7 +227,7 @@ def _peak_prominences(const np.float64_t[::1] x not None,
 
             if 2 <= wlen:
                 # Adjust window around the evaluated peak (within bounds);
-                # if wlen is even the resulting window length is is implicitly
+                # if wlen is even the resulting window length is implicitly
                 # rounded to next odd integer
                 i_min = max(peak - wlen // 2, i_min)
                 i_max = min(peak + wlen // 2, i_max)

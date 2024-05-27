@@ -649,6 +649,25 @@ class CheckOptimizeParameterized(CheckOptimize):
                          [-4.35700753e-07, -5.24869401e-01, 4.87527774e-01]],
                         atol=1e-6, rtol=1e-7)
 
+    def test_cobyqa(self):
+        # COBYQA method.
+        if self.use_wrapper:
+            res = optimize.minimize(
+                self.func,
+                self.startparams,
+                method='cobyqa',
+                options={'maxiter': self.maxiter, 'disp': self.disp},
+            )
+            assert_allclose(res.fun, self.func(self.solution), atol=1e-6)
+
+            # Ensure that function call counts are 'known good'; these are from
+            # SciPy 1.14.0. Don't allow them to increase. The exact evaluation
+            # count is sensitive to numerical error and floating-point
+            # computations are not bit-for-bit reproducible across machines. It
+            # takes 45 calls on my machine, but we can add the same +20 margin
+            # as is used in `test_powell`
+            assert self.funccalls <= 45 + 20, self.funccalls
+
 
 def test_maxfev_test():
     rng = np.random.default_rng(271707100830272976862395227613146332411)
@@ -1229,19 +1248,20 @@ class TestOptimizeSimple(CheckOptimize):
 
         for method in ['nelder-mead', 'powell', 'cg', 'bfgs',
                        'newton-cg', 'l-bfgs-b', 'tnc',
-                       'cobyla', 'slsqp']:
-            if method in ('nelder-mead', 'powell', 'cobyla'):
+                       'cobyla', 'cobyqa', 'slsqp']:
+            if method in ('nelder-mead', 'powell', 'cobyla', 'cobyqa'):
                 jac = None
             else:
                 jac = dfunc
 
-            sol1 = optimize.minimize(func, [1, 1], jac=jac, tol=1e-10,
+            sol1 = optimize.minimize(func, [2, 2], jac=jac, tol=1e-10,
                                      method=method)
-            sol2 = optimize.minimize(func, [1, 1], jac=jac, tol=1.0,
+            sol2 = optimize.minimize(func, [2, 2], jac=jac, tol=1.0,
                                      method=method)
             assert func(sol1.x) < func(sol2.x), \
                    f"{method}: {func(sol1.x)} vs. {func(sol2.x)}"
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.filterwarnings('ignore::UserWarning')
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # See gh-18547
     @pytest.mark.parametrize('method',
@@ -1311,7 +1331,7 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg',
                                         'bfgs', 'newton-cg', 'l-bfgs-b',
-                                        'tnc', 'cobyla', 'slsqp'])
+                                        'tnc', 'cobyla', 'cobyqa', 'slsqp'])
     def test_no_increase(self, method):
         # Check that the solver doesn't return a value worse than the
         # initial point.
@@ -1328,7 +1348,7 @@ class TestOptimizeSimple(CheckOptimize):
         f0 = func(x0)
         jac = bad_grad
         options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
-        if method in ['nelder-mead', 'powell', 'cobyla']:
+        if method in ['nelder-mead', 'powell', 'cobyla', 'cobyqa']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
                                 options=options)
@@ -1355,7 +1375,8 @@ class TestOptimizeSimple(CheckOptimize):
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell', 'CG', 'BFGS',
                                         'Newton-CG', 'L-BFGS-B', 'SLSQP',
                                         'trust-constr', 'dogleg', 'trust-ncg',
-                                        'trust-exact', 'trust-krylov'])
+                                        'trust-exact', 'trust-krylov',
+                                        'cobyqa'])
     def test_respect_maxiter(self, method):
         # Check that the number of iterations equals max_iter, assuming
         # convergence doesn't establish before
@@ -1385,6 +1406,8 @@ class TestOptimizeSimple(CheckOptimize):
         # method specific tests
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
+        elif method == 'cobyqa':
+            assert sol.status == 6  # Iteration limit reached
 
     @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
                                         'fmin', 'fmin_powell'])
@@ -1511,9 +1534,9 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'powell', 'cg', 'bfgs',
                                         'newton-cg', 'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
+                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
     def test_nan_values(self, method):
         # Check nan values result to failed exit status
         np.random.seed(1234)
@@ -1561,9 +1584,9 @@ class TestOptimizeSimple(CheckOptimize):
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
                                         'l-bfgs-b', 'tnc',
-                                        'cobyla', 'slsqp', 'trust-constr',
-                                        'dogleg', 'trust-ncg', 'trust-exact',
-                                        'trust-krylov'])
+                                        'cobyla', 'cobyqa', 'slsqp',
+                                        'trust-constr', 'dogleg', 'trust-ncg',
+                                        'trust-exact', 'trust-krylov'])
     def test_duplicate_evaluations(self, method):
         # check that there are no duplicate evaluations for any methods
         jac = hess = None
@@ -1636,11 +1659,18 @@ class TestOptimizeSimple(CheckOptimize):
         res = optimize.minimize(**kwargs, callback=callback_interface)
         if method == 'nelder-mead':
             maxiter = maxiter + 1  # nelder-mead counts differently
-        ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+        if method == 'cobyqa':
+            ref = optimize.minimize(**kwargs, options={'maxfev': maxiter})
+            assert res.nfev == ref.nfev == maxiter
+        else:
+            ref = optimize.minimize(**kwargs, options={'maxiter': maxiter})
+            assert res.nit == ref.nit == maxiter
         assert res.fun == ref.fun
         assert_equal(res.x, ref.x)
-        assert res.nit == ref.nit == maxiter
-        assert res.status == (3 if method == 'trust-constr' else 99)
+        assert res.status == (3 if method in [
+            'trust-constr',
+            'cobyqa',
+        ] else 99)
 
     def test_ndim_error(self):
         msg = "'x0' must only have one dimension."
@@ -1648,7 +1678,8 @@ class TestOptimizeSimple(CheckOptimize):
             optimize.minimize(lambda x: x, np.ones((2, 1)))
 
     @pytest.mark.parametrize('method', ('nelder-mead', 'l-bfgs-b', 'tnc',
-                                        'powell', 'cobyla', 'trust-constr'))
+                                        'powell', 'cobyla', 'cobyqa',
+                                        'trust-constr'))
     def test_minimize_invalid_bounds(self, method):
         def f(x):
             return np.sum(x**2)
@@ -1683,7 +1714,7 @@ class TestOptimizeSimple(CheckOptimize):
 
 @pytest.mark.parametrize(
     'method',
-    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead', 'cobyqa']
 )
 def test_minimize_with_scalar(method):
     # checks that minimize works with a scalar being provided to it.
@@ -2553,6 +2584,7 @@ class TestBrute:
 
         optimize.brute(f, [(-1, 1)], Ns=3, finish=None)
 
+    @pytest.mark.fail_slow(5)
     def test_workers(self):
         # check that parallel evaluation works
         resbrute = optimize.brute(brute_func, self.rranges, args=self.params,
@@ -2583,6 +2615,7 @@ class TestBrute:
         assert_allclose(resbrute, 0)
 
 
+@pytest.mark.fail_slow(10)
 def test_cobyla_threadsafe():
 
     # Verify that cobyla is threadsafe. Will segfault if it is not.
@@ -2630,6 +2663,7 @@ class TestIterationLimits:
         r, t = np.sqrt(v[0]**2+v[1]**2), np.arctan2(v[0], v[1])
         return np.sin(r*20 + t)+r*0.5
 
+    @pytest.mark.fail_slow(5)
     def test_neldermead_limit(self):
         self.check_limits("Nelder-Mead", 200)
 
@@ -2695,7 +2729,7 @@ def test_result_x_shape_when_len_x_is_one():
         return np.array([[2.]])
 
     methods = ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'L-BFGS-B', 'TNC',
-               'COBYLA', 'SLSQP']
+               'COBYLA', 'COBYQA', 'SLSQP']
     for method in methods:
         res = optimize.minimize(fun, np.array([0.1]), method=method)
         assert res.x.shape == (1,)

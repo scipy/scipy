@@ -2,7 +2,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = ['get', 'add_newdoc', 'docdict']  # noqa: F822
+__all__: list[str] = []
 
 
 def __dir__():

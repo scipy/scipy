@@ -132,12 +132,14 @@ def test_u_error(distname, args):
     assert u_error <= 1e-10
 
 
+@pytest.mark.xslow
 @pytest.mark.xfail(reason="geninvgauss CDF is not accurate")
 def test_geninvgauss_uerror():
     dist = stats.geninvgauss(3.2, 1.5)
     rng = FastGeneratorInversion(dist)
     err = rng.evaluate_error(size=10_000, random_state=67982)
     assert err[0] < 1e-10
+
 
 # TODO: add more distributions
 @pytest.mark.parametrize(("distname, args"), [("beta", (0.11, 0.11))])

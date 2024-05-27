@@ -18,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1):
+        _spbase.__init__(self, arg1)
 
     @property
     def dtype(self):

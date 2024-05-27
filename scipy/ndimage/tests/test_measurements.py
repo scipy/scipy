@@ -10,6 +10,7 @@ from numpy.testing import (
     assert_equal,
     suppress_warnings,
 )
+import pytest
 from pytest import raises as assert_raises
 
 import scipy.ndimage as ndimage
@@ -1407,3 +1408,12 @@ class TestWatershedIft:
         expected = [[1, 1],
                     [1, 1]]
         assert_allclose(out, expected)
+
+
+@pytest.mark.parametrize("dt", [np.intc, np.uintc])
+def test_gh_19423(dt):
+    rng = np.random.default_rng(123)
+    max_val = 8
+    image = rng.integers(low=0, high=max_val, size=(10, 12)).astype(dtype=dt)
+    val_idx = ndimage.value_indices(image)
+    assert len(val_idx.keys()) == max_val

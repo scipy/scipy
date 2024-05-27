@@ -405,6 +405,33 @@ PyObject * good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
     real ? util::good_size_real(n) : util::good_size_cmplx(n));
   }
 
+// Export prev_good_size in raw C-API to reduce overhead
+PyObject * prev_good_size(PyObject * /*self*/, PyObject * args, PyObject * kwargs)
+  {
+  Py_ssize_t n_ = -1;
+  int real = false;
+  static const char * keywords[] = {"target", "real", nullptr};
+  if (!PyArg_ParseTupleAndKeywords(args, kwargs, "n|p:prev_good_size",
+                                   (char **) keywords, &n_, &real))
+    return nullptr;
+
+  if (n_<0)
+    {
+    PyErr_SetString(PyExc_ValueError, "Target length must be positive");
+    return nullptr;
+    }
+  if ((n_-1) > static_cast<Py_ssize_t>(std::numeric_limits<size_t>::max() / 11))
+    {
+    PyErr_Format(PyExc_ValueError,
+                 "Target length is too large to perform an FFT: %zi", n_);
+    return nullptr;
+    }
+  const auto n = static_cast<size_t>(n_);
+  using namespace pocketfft::detail;
+  return PyLong_FromSize_t(
+    real ? util::prev_good_size_real(n) : util::prev_good_size_cmplx(n));
+  }
+
 const char *pypocketfft_DS = R"""(Fast Fourier and Hartley transforms.
 
 This module supports
@@ -710,6 +737,23 @@ out : int
 
 )""";
 
+
+const char * prev_good_size_DS = R"""(Returns the largest FFT length less than target length.
+
+Parameters
+----------
+target : int
+    Maximum transform length
+real : bool, optional
+    True if either input or output of FFT should be fully real.
+
+Returns
+-------
+out : int
+    The largest fast length <= n
+
+)""";
+
 } // unnamed namespace
 
 PYBIND11_MODULE(pypocketfft, m)
@@ -740,4 +784,9 @@ PYBIND11_MODULE(pypocketfft, m)
     {{"good_size", (PyCFunction)good_size,
       METH_VARARGS | METH_KEYWORDS, good_size_DS}, {0}};
   PyModule_AddFunctions(m.ptr(), good_size_meth);
+
+  static PyMethodDef prev_good_size_meth[] =
+    {{"prev_good_size", (PyCFunction)prev_good_size,
+      METH_VARARGS | METH_KEYWORDS, prev_good_size_DS}, {0}};
+  PyModule_AddFunctions(m.ptr(), prev_good_size_meth);
   }

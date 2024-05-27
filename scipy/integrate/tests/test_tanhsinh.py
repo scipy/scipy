@@ -1,4 +1,5 @@
 # mypy: disable-error-code="attr-defined"
+import os
 import pytest
 
 import numpy as np
@@ -215,6 +216,9 @@ class TestTanhSinh:
         if distname in {'dgamma', 'dweibull', 'laplace', 'kstwo'}:
             # should split up interval at first-derivative discontinuity
             pytest.skip('tanh-sinh is not great for non-smooth integrands')
+        if (distname in {'studentized_range', 'levy_stable'}
+                and not int(os.getenv('SCIPY_XSLOW', 0))):
+            pytest.skip('This case passes, but it is too slow.')
         dist = getattr(stats, distname)(*params)
         x = dist.interval(ref)
         res = _tanhsinh(dist.pdf, *x)

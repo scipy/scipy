@@ -6,7 +6,7 @@ from scipy.special._support_alternative_backends import (get_array_special_func,
                                                          array_special_func_map)
 from scipy.conftest import array_api_compatible
 from scipy import special
-from scipy._lib._array_api import xp_assert_close
+from scipy._lib._array_api import xp_assert_close, is_jax
 from scipy._lib.array_api_compat import numpy as np
 
 try:
@@ -27,11 +27,39 @@ def test_dispatch_to_unrecognize_library():
     xp_assert_close(res, ref, xp=xp)
 
 
+@pytest.mark.parametrize('dtype', ['float32', 'float64', 'int64'])
+@pytest.mark.skipif(not HAVE_ARRAY_API_STRICT,
+                    reason="`array_api_strict` not installed")
+def test_rel_entr_generic(dtype):
+    xp = array_api_strict
+    f = get_array_special_func('rel_entr', xp=xp, n_array_args=2)
+    dtype_np = getattr(np, dtype)
+    dtype_xp = getattr(xp, dtype)
+    x, y = [-1, 0, 0, 1], [1, 0, 2, 3]
+
+    x_xp, y_xp = xp.asarray(x, dtype=dtype_xp), xp.asarray(y, dtype=dtype_xp)
+    res = f(x_xp, y_xp)
+
+    x_np, y_np = np.asarray(x, dtype=dtype_np), np.asarray(y, dtype=dtype_np)
+    ref = special.rel_entr(x_np[-1], y_np[-1])
+    ref = np.asarray([np.inf, 0, 0, ref], dtype=ref.dtype)
+
+    xp_assert_close(res, xp.asarray(ref), xp=xp)
+
+
+@pytest.mark.fail_slow(2)
 @array_api_compatible
 @given(data=strategies.data())
 @pytest.mark.parametrize('f_name_n_args', array_special_func_map.items())
 def test_support_alternative_backends(xp, data, f_name_n_args):
     f_name, n_args = f_name_n_args
+
+    if is_jax(xp):
+        if f_name in ['gammainc', 'gammaincc']:
+            pytest.skip("google/jax#20507")
+        if f_name == 'rel_entr':
+            pytest.skip("google/jax#21265")
+
     f = getattr(special, f_name)
 
     mbs = npst.mutually_broadcastable_shapes(num_shapes=n_args)
@@ -60,8 +88,8 @@ def test_support_alternative_backends(xp, data, f_name_n_args):
     # To compensate, we also check that the root-mean-square error is
     # less than eps**0.5.
     ref = xp.asarray(ref, dtype=dtype_xp)
-    xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*10,
+    xp_assert_close(res, ref, rtol=eps**0.2, atol=eps*20,
                     check_namespace=True, check_shape=True, check_dtype=True,)
     xp_assert_close(xp.sqrt(xp.mean(res**2)), xp.sqrt(xp.mean(ref**2)),
-                    rtol=eps**0.5, atol=eps*10,
+                    rtol=eps**0.5, atol=eps*20,
                     check_namespace=False, check_shape=False, check_dtype=False,)

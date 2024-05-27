@@ -90,7 +90,6 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #pragma once
 
 #include <stdlib.h>
@@ -101,28 +100,28 @@
 namespace special {
 namespace amos {
 
-inline int acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);
-inline int acon(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double, double);
-inline int asyi(std::complex<double>, double, int, int, std::complex<double> *, double, double, double, double);
-inline int binu(std::complex<double>, double fnu, int, int, std::complex<double> *, double, double, double, double, double);
-inline int bknu(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
-inline int buni(std::complex<double>, double, int, int, std::complex<double> *, int, int *, double, double, double, double);
-inline int bunk(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-inline double gamln(double);
-inline int kscl(std::complex<double>, double, int, std::complex<double> *, std::complex<double>, double *, double, double);
-inline int mlri(std::complex<double>, double, int, int, std::complex<double> *, double);
-inline void rati(std::complex<double>, double, int, std::complex<double> *, double);
-inline int seri(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
-inline int s1s2(std::complex<double>, std::complex<double> *, std::complex<double> *, double, double, int *);
-inline int uchk(std::complex<double>, double, double);
-inline void unhj(std::complex<double>, double, int, double, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
-inline void uni1(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
-inline void uni2(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
-inline void unik(std::complex<double>, double, int, int, double, int *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
-inline int unk1(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-inline int unk2(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-inline int uoik(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
-inline int wrsk(std::complex<double>, double, int, int, std::complex<double> *, std::complex<double> *, double, double, double);
+int acai(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double);
+int acon(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double, double, double);
+int asyi(std::complex<double>, double, int, int, std::complex<double> *, double, double, double, double);
+int binu(std::complex<double>, double fnu, int, int, std::complex<double> *, double, double, double, double, double);
+int bknu(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+int buni(std::complex<double>, double, int, int, std::complex<double> *, int, int *, double, double, double, double);
+int bunk(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+double gamln(double);
+int kscl(std::complex<double>, double, int, std::complex<double> *, std::complex<double>, double *, double, double);
+int mlri(std::complex<double>, double, int, int, std::complex<double> *, double);
+void rati(std::complex<double>, double, int, std::complex<double> *, double);
+int seri(std::complex<double>, double, int, int, std::complex<double> *, double, double, double);
+int s1s2(std::complex<double>, std::complex<double> *, std::complex<double> *, double, double, int *);
+int uchk(std::complex<double>, double, double);
+void unhj(std::complex<double>, double, int, double, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+void uni1(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+void uni2(std::complex<double>, double, int, int, std::complex<double> *, int *, int *, double, double, double, double);
+void unik(std::complex<double>, double, int, int, double, int *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *, std::complex<double> *);
+int unk1(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int unk2(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int uoik(std::complex<double>, double, int, int, int, std::complex<double> *, double, double, double);
+int wrsk(std::complex<double>, double, int, int, std::complex<double> *, std::complex<double> *, double, double, double);
 
 
 constexpr double d1mach[5] = {
@@ -6233,6 +6232,5 @@ inline int wrsk(
     }
     return nz;
 }
-
 }
 }

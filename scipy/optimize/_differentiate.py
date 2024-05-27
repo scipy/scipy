@@ -68,7 +68,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
 
             func(x: ndarray, *fargs) -> ndarray
 
-         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+         where each element of ``x`` is a finite real number and ``fargs`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`. ``func`` must be an elementwise function: each element
          ``func(x)[i]`` must equal ``func(x[i])`` for all indices ``i``.
@@ -363,7 +363,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     # input validation and standardization, and everything else is designed to
     # reduce function calls, so let's keep it simple.
     temp = eim._initialize(func, (x,), args, preserve_shape=preserve_shape)
-    func, xs, fs, args, shape, dtype = temp
+    func, xs, fs, args, shape, dtype, xp = temp
     x, f = xs[0], fs[0]
     df = np.full_like(f, np.nan)
     # Ideally we'd broadcast the shape of `hdir` in `_elementwise_algo_init`, but
@@ -546,7 +546,7 @@ def _differentiate(func, x, *, args=(), atol=None, rtol=None, maxiter=10,
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
                      post_termination_check, customize_result, res_work_pairs,
-                     preserve_shape)
+                     xp, preserve_shape)
 
 
 def _differentiate_weights(work, n):
@@ -667,3 +667,190 @@ def _differentiate_weights(work, n):
 _differentiate_weights.central = []
 _differentiate_weights.right = []
 _differentiate_weights.fac = None
+
+
+def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
+              order=8, initial_step=0.5, step_factor=2.0):
+    r"""Evaluate the Jacobian of a function numerically.
+
+    Parameters
+    ----------
+    func : callable
+        The function whose Jacobian is desired. The signature must be::
+
+            func(x: ndarray) -> ndarray
+
+         where each element of ``x`` is a finite real. If the function to be
+         differentiated accepts additional, arguments wrap it (e.g. using
+         `functools.partial` or ``lambda``) and pass the wrapped callable
+         into `_jacobian`. See Notes regarding vectorization and the dimensionality
+         of the input and output.
+    x : array_like
+        Points at which to evaluate the Jacobian. Must have at least one dimension.
+        See Notes regarding the dimensionality and vectorization.
+    atol, rtol : float, optional
+        Absolute and relative tolerances for the stopping condition: iteration
+        will stop for each element of the Jacobian when
+        ``res.error < atol + rtol * abs(res.df)``. The default `atol` is the
+        smallest normal number of the appropriate dtype, and the default `rtol`
+        is the square root of the precision of the appropriate dtype.
+    order : int, default: 8
+        The (positive integer) order of the finite difference formula to be
+        used. Odd integers will be rounded up to the next even integer.
+    initial_step : float, default: 0.5
+        The (absolute) initial step size for the finite difference derivative
+        approximation.
+    step_factor : float, default: 2.0
+        The factor by which the step size is *reduced* in each iteration; i.e.
+        the step size in iteration 1 is ``initial_step/step_factor``. If
+        ``step_factor < 1``, subsequent steps will be greater than the initial
+        step; this may be useful if steps smaller than some threshold are
+        undesirable (e.g. due to subtractive cancellation error).
+    maxiter : int, default: 10
+        The maximum number of iterations of the algorithm to perform.
+
+    Returns
+    -------
+    res : _RichResult
+        An instance of `scipy._lib._util._RichResult` with the following
+        attributes.
+
+        success : bool array
+            ``True`` when the algorithm terminated successfully (status ``0``).
+        status : int array
+            An integer representing the exit status of the algorithm.
+            ``0`` : The algorithm converged to the specified tolerances.
+            ``-1`` : The error estimate increased, so iteration was terminated.
+            ``-2`` : The maximum number of iterations was reached.
+            ``-3`` : A non-finite value was encountered.
+            ``-4`` : Iteration was terminated by `callback`.
+            ``1`` : The algorithm is proceeding normally (in `callback` only).
+        df : float array
+            The Jacobian of `func` at `x`, if the algorithm terminated
+            successfully.
+        error : float array
+            An estimate of the error: the magnitude of the difference between
+            the current estimate of the derivative and the estimate in the
+            previous iteration.
+        nit : int array
+            The number of iterations performed.
+        nfev : int array
+            The number of points at which `func` was evaluated.
+        x : float array
+            The value at which the derivative of `func` was evaluated.
+
+    See Also
+    --------
+    _differentiate
+
+    Notes
+    -----
+    Suppose we wish to evaluate the Jacobian of a function
+    :math:`f: \mathbf{R^m} \rightarrow \mathbf{R^n}`, and assign to variables
+    ``m`` and ``n`` the positive integer values of :math:`m` and :math:`n`,
+    respectively. If we wish to evaluate the Jacobian at a single point,
+    then:
+
+    - argument `x` must be an array of shape ``(m,)``
+    - argument `func` must be vectorized to accept an array of shape ``(m, p)``.
+      The first axis represents the :math:`m` inputs of :math:`f`; the second
+      is for evaluating the function at multiple points in a single call.
+    - argument `func` must return an array of shape ``(n, p)``. The first
+      axis represents the :math:`n` outputs of :math:`f`; the second
+      is for the result of evaluating the function at multiple points.
+    - attribute ``df`` of the result object will be an array of shape ``(n, m)``,
+      the Jacobian.
+
+    This function is also vectorized in the sense that the Jacobian can be
+    evaluated at ``k`` points in a single call. In this case, `x` would be an
+    array of shape ``(m, k)``, `func` would accept an array of shape
+    ``(m, k, p)`` and return an array of shape ``(n, k, p)``, and the ``df``
+    attribute of the result would have shape ``(n, m, k)``.
+
+    References
+    ----------
+    .. [1] Jacobian matrix and determinant, *Wikipedia*,
+           https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant
+
+    Examples
+    --------
+    The Rosenbrock function maps from :math:`\mathbf{R}^m \righarrow \mathbf{R}`;
+    the SciPy implementation `scipy.optimize.rosen` is vectorized to accept an
+    array of shape ``(m, p)`` and return an array of shape ``m``. Suppose we wish
+    to evaluate the Jacobian (AKA the gradient because the function returns a scalar)
+    at ``[0.5, 0.5, 0.5]``.
+
+    >>> import numpy as np
+    >>> from scipy.optimize._differentiate import _jacobian as jacobian
+    >>> from scipy.optimize import rosen, rosen_der
+    >>> m = 3
+    >>> x = np.full(m, 0.5)
+    >>> res = jacobian(rosen, x)
+    >>> ref = rosen_der(x)  # reference value of the gradient
+    >>> res.df, ref
+    (array([-51.,  -1.,  50.]), array([-51.,  -1.,  50.]))
+
+    As an example of a function with multiple outputs, consider Example 4
+    from [1]_.
+
+    >>> def f(x):
+    ...     x1, x2, x3 = x    ...
+    ...     return [x1, 5*x3, 4*x2**2 - 2*x3, x3*np.sin(x1)]
+
+    The true Jacobian is given by:
+
+    >>> def df(x):
+    ...         x1, x2, x3 = x
+    ...         one = np.ones_like(x1)
+    ...         return [[one, 0*one, 0*one],
+    ...                 [0*one, 0*one, 5*one],
+    ...                 [0*one, 8*x2, -2*one],
+    ...                 [x3*np.cos(x1), 0*one, np.sin(x1)]]
+
+    Evaluate the Jacobian at an arbitrary point.
+
+    >>> rng = np.random.default_rng(389252938452)
+    >>> x = rng.random(size=3)
+    >>> res = jacobian(f, x)
+    >>> ref = df(x)
+    >>> res.df.shape == (4, 3)
+    True
+    >>> np.allclose(res.df, ref)
+    True
+
+    Evaluate the Jacobian at 10 arbitrary points in a single call.
+
+    >>> x = rng.random(size=(3, 10))
+    >>> res = jacobian(f, x)
+    >>> ref = df(x)
+    >>> res.df.shape == (4, 3, 10)
+    True
+    >>> np.allclose(res.df, ref)
+    True
+
+    """
+    x = np.asarray(x)
+    int_dtype = np.issubdtype(x.dtype, np.integer)
+    x0 = np.asarray(x, dtype=float) if int_dtype else x
+
+    if x0.ndim < 1:
+        message = "Argument `x` must be at least 1-D."
+        raise ValueError(message)
+
+    m = x0.shape[0]
+    i = np.arange(m)
+
+    def wrapped(x):
+        p = () if x.ndim == x0.ndim else (x.shape[-1],)  # number of abscissae
+        new_dims = (1,) if x.ndim == x0.ndim else (1, -1)
+        new_shape = (m, m) + x0.shape[1:] + p
+        xph = np.expand_dims(x0, new_dims)
+        xph = np.broadcast_to(xph, new_shape).copy()
+        xph[i, i] = x
+        return func(xph)
+
+    res = _differentiate(wrapped, x, atol=atol, rtol=rtol,
+                         maxiter=maxiter, order=order, initial_step=initial_step,
+                         step_factor=step_factor, preserve_shape=True)
+    del res.x  # the user knows `x`, and the way it gets broadcasted is meaningless here
+    return res

@@ -94,6 +94,8 @@ py3.install_sources([
     '_short_time_fft.py',
     '_signaltools.py',
     '_spectral_py.py',
+    '_spline.pyi',
+    '_splines.py',
     '_upfirdn.py',
     '_waveforms.py',
     '_wavelets.py',

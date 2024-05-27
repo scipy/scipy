@@ -1,6 +1,6 @@
-#include <complex>
-
 #include "_wright.h"
+
+#include <complex>
 
 using namespace std;
 

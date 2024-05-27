@@ -1,9 +1,10 @@
 from . cimport sf_error
 
 from libc.math cimport NAN, isnan, isinf, isfinite
-cdef extern from "cephes.h" nogil:
-    double ndtr(double a)
-    double ndtri(double y0)
+
+cdef extern from "special_wrappers.h" nogil:
+    double cephes_ndtr_wrap(double a)
+    double cephes_ndtri_wrap(double y0)
 
 cdef extern from "cdflib.h" nogil:
     cdef struct TupleDDI:
@@ -671,7 +672,7 @@ cdef inline double stdtr(double df, double t) noexcept nogil:
     argnames[1] = "df"
 
     if isinf(df) and df > 0:
-        return NAN if isnan(t) else ndtr(t)
+        return NAN if isnan(t) else cephes_ndtr_wrap(t)
 
     if isnan(df) or isnan(t):
       return NAN
@@ -710,7 +711,7 @@ cdef inline double stdtrit(double df, double p) noexcept nogil:
         TupleDID ret
 
     if isinf(df) and df > 0:
-        return NAN if isnan(p) else ndtri(p)
+        return NAN if isnan(p) else cephes_ndtri_wrap(p)
 
     if isnan(p) or isnan(df):
       return NAN

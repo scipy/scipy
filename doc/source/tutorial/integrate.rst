@@ -265,23 +265,12 @@ which is the same result as before.
 Gaussian quadrature
 -------------------
 
-A few functions are also provided in order to perform simple Gaussian
-quadrature over a fixed interval. The first is :obj:`fixed_quad`, which
-performs fixed-order Gaussian quadrature. The second function is
-:obj:`quadrature`, which performs Gaussian quadrature of multiple
-orders until the difference in the integral estimate is beneath some
-tolerance supplied by the user. These functions both use the module
-``scipy.special.orthogonal``, which can calculate the roots and quadrature
-weights of a large variety of orthogonal polynomials (the polynomials
-themselves are available as special functions returning instances of
-the polynomial class --- e.g., :obj:`special.legendre <scipy.special.legendre>`).
-
-
-Romberg Integration
--------------------
-
-Romberg's method [WPR]_ is another method for numerically evaluating an
-integral. See the help function for :func:`romberg` for further details.
+:obj:`fixed_quad` performs fixed-order Gaussian quadrature over a fixed interval. This
+function uses the collection of orthogonal polynomials provided by ``scipy.special``,
+which can calculate the roots and quadrature weights of a large variety of orthogonal
+polynomials (the polynomials themselves are available as special functions returning
+instances of the polynomial class --- e.g.,
+:obj:`special.legendre <scipy.special.legendre>`).
 
 
 Integrating using Samples
@@ -786,7 +775,5 @@ Let's ensure that they have computed the same result::
 
 References
 ~~~~~~~~~~
-
-.. [WPR] https://en.wikipedia.org/wiki/Romberg's_method
 
 .. [MOL] https://en.wikipedia.org/wiki/Method_of_lines

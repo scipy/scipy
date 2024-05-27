@@ -15,6 +15,7 @@ extern "C" {
     } sf_action_t;
     
     void scipy_sf_error_set_action(sf_error_t code, sf_action_t action);
+
     sf_action_t scipy_sf_error_get_action(sf_error_t code);
 
 #ifdef __cplusplus

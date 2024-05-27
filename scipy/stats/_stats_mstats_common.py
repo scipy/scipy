@@ -3,7 +3,7 @@ import numpy as np
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 from ._stats_pythran import siegelslopes as siegelslopes_pythran
-from . import _mstats_basic
+from scipy.stats import _stats_py
 
 __all__ = ['_find_repeats', 'linregress', 'theilslopes', 'siegelslopes']
 
@@ -26,11 +26,11 @@ def linregress(x, y=None, alternative='two-sided'):
     Parameters
     ----------
     x, y : array_like
-        Two sets of measurements.  Both arrays should have the same length.  If
+        Two sets of measurements.  Both arrays should have the same length N.  If
         only `x` is given (and ``y=None``), then it must be a two-dimensional
         array where one dimension has length 2.  The two sets of measurements
         are then found by splitting the array along the length-2 dimension. In
-        the case where ``y=None`` and `x` is a 2x2 array, ``linregress(x)`` is
+        the case where ``y=None`` and `x` is a 2xN array, ``linregress(x)`` is
         equivalent to ``linregress(x[0], x[1])``.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
@@ -75,9 +75,6 @@ def linregress(x, y=None, alternative='two-sided'):
 
     Notes
     -----
-    Missing values are considered pair-wise: if a value is missing in `x`,
-    the corresponding value in `y` is masked.
-
     For compatibility with older versions of SciPy, the return value acts
     like a ``namedtuple`` of length 5, with fields ``slope``, ``intercept``,
     ``rvalue``, ``pvalue`` and ``stderr``, so one can continue to write::
@@ -194,7 +191,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = _mstats_basic._ttest_finish(df, t, alternative)
+        prob = _stats_py._get_pvalue(t, distributions.t(df), alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 

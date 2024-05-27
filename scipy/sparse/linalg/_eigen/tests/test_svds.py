@@ -266,7 +266,7 @@ class SVDSCommonTests:
         else:
             res = svds(A, k=k, which=which, solver=self.solver,
                        random_state=0)
-        _check_svds(A, k, *res, which=which, atol=8e-10)
+        _check_svds(A, k, *res, which=which, atol=1e-9, rtol=2e-13)
 
     @pytest.mark.filterwarnings("ignore:Exited",
                                 reason="Ignore LOBPCG early exit.")

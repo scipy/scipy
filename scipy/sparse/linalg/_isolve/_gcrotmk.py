@@ -6,7 +6,6 @@ from numpy.linalg import LinAlgError
 from scipy.linalg import (get_blas_funcs, qr, solve, svd, qr_insert, lstsq)
 from .iterative import _get_atol_rtol
 from scipy.sparse.linalg._isolve.utils import make_system
-from scipy._lib.deprecation import _NoValue, _deprecate_positional_args
 
 
 __all__ = ['gcrotmk']
@@ -182,10 +181,8 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
-@_deprecate_positional_args(version="1.14.0")
-def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
-            m=20, k=None, CU=None, discard_C=False, truncate='oldest',
-            atol=None, rtol=1e-5):
+def gcrotmk(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=1000, M=None, callback=None,
+            m=20, k=None, CU=None, discard_C=False, truncate='oldest'):
     """
     Solve a matrix equation using flexible GCROT(m,k) algorithm.
 
@@ -203,12 +200,7 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
     rtol, atol : float, optional
         Parameters for the convergence test. For convergence,
         ``norm(b - A @ x) <= max(rtol*norm(b), atol)`` should be satisfied.
-        The default is ``rtol=1e-5``, the default for ``atol`` is ``rtol``.
-
-        .. warning::
-
-           The default value for ``atol`` will be changed to ``0.0`` in
-           SciPy 1.14.0.
+        The default is ``rtol=1e-5``, the default for ``atol`` is ``0.0``.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -243,11 +235,6 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
         smallest singular values using the scheme discussed in [1,2].
         See [2]_ for detailed comparison.
         Default: 'oldest'
-    tol : float, optional, deprecated
-
-        .. deprecated:: 1.12.0
-           `gcrotmk` keyword argument ``tol`` is deprecated in favor of
-           ``rtol`` and will be removed in SciPy 1.14.0.
 
     Returns
     -------
@@ -313,8 +300,8 @@ def gcrotmk(A, b, x0=None, *, tol=_NoValue, maxiter=1000, M=None, callback=None,
 
     b_norm = nrm2(b)
 
-    # we call this to get the right atol/rtol and raise warnings as necessary
-    atol, rtol = _get_atol_rtol('gcrotmk', b_norm, tol, atol, rtol)
+    # we call this to get the right atol/rtol and raise errors as necessary
+    atol, rtol = _get_atol_rtol('gcrotmk', b_norm, atol, rtol)
 
     if b_norm == 0:
         x = b

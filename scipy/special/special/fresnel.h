@@ -313,13 +313,13 @@ inline void cfresnl(std::complex<double> z, std::complex<double> *zfs, std::comp
 }
 
 template <typename T>
-void modified_fresnel_plus(T x, std::complex<T> *Fplus, std::complex<T> *Kplus) {
-    detail::ffk(0, x, *Fplus, *Kplus);
+void modified_fresnel_plus(T x, std::complex<T> &Fplus, std::complex<T> &Kplus) {
+    detail::ffk(0, x, Fplus, Kplus);
 }
 
 template <typename T>
-void modified_fresnel_minus(T x, std::complex<T> *Fminus, std::complex<T> *Kminus) {
-    detail::ffk(1, x, *Fminus, *Kminus);
+void modified_fresnel_minus(T x, std::complex<T> &Fminus, std::complex<T> &Kminus) {
+    detail::ffk(1, x, Fminus, Kminus);
 }
 
 inline void fcszo(int kf, int nt, std::complex<double> *zo) {
@@ -336,7 +336,7 @@ inline void fcszo(int kf, int nt, std::complex<double> *zo) {
     //      (2) CFS for computing Fresnel integral S(z)
     // ==============================================================
 
-    int it; 
+    int it;
     double psq, px, py, w, w0;
     std::complex<double> z, zp, zf, zd, zfd, zgd, zq, zw;
     const double pi = 3.141592653589793;

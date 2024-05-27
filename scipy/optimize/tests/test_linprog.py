@@ -1702,6 +1702,21 @@ class LinprogCommonTests:
                           method=self.method, options=o)
         assert_allclose(res.fun, -8589934560)
 
+    def test_bug_20584(self):
+        """
+        Test that when integrality is a list of all zeros, linprog gives the
+        same result as when it is an array of all zeros / integrality=None
+        """
+        c = [1, 1]
+        A_ub = [[-1, 0]]
+        b_ub = [-2.5]
+        res1 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=[0, 0])
+        res2 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=np.asarray([0, 0]))
+        res3 = linprog(c, A_ub=A_ub, b_ub=b_ub, integrality=None)
+        assert_equal(res1.x, res2.x)
+        assert_equal(res1.x, res3.x)
+
+
 #########################
 # Method-specific Tests #
 #########################
@@ -1787,6 +1802,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         # there should be nonzero crossover iterations for IPM (only)
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
+    @pytest.mark.fail_slow(5)
     def test_marginals(self):
         # Ensure lagrange multipliers are correct by comparing the derivative
         # w.r.t. b_ub/b_eq/ub/lb to the reported duals.
@@ -1977,6 +1993,10 @@ if has_umfpack:
 class TestLinprogIPSparse(LinprogIPTests):
     options = {"sparse": True, "cholesky": False, "sym_pos": False}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
@@ -2027,6 +2047,10 @@ class TestLinprogIPSparse(LinprogIPTests):
 class TestLinprogIPSparsePresolve(LinprogIPTests):
     options = {"sparse": True, "_sparse_presolve": True}
 
+    @pytest.mark.skipif(
+        sys.platform == 'darwin',
+        reason="Fails on macOS x86 Accelerate builds (gh-20510)"
+    )
     @pytest.mark.xfail_on_32bit("This test is sensitive to machine epsilon level "
                                 "perturbations in linear system solution in "
                                 "_linprog_ip._sym_solve.")
@@ -2225,6 +2249,7 @@ class TestLinprogHiGHSMIP:
     method = "highs"
     options = {}
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
                        platform.system() == "Linux"),
                        run=False,

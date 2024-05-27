@@ -82,8 +82,6 @@ These can be opened as Jupyter Notebooks with the help of the
 .. toctree::
    :caption: Executable tutorials
    :maxdepth: 1
-   
-   ../notebooks/interp_transition_guide
 
 .. raw:: latex
 

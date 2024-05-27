@@ -46,9 +46,6 @@ def _bracket_root_iv(func, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
 
-    if not np.all((xmin <= xl0) & (xl0 < xr0) & (xr0 <= xmax)):
-        raise ValueError('`xmin <= xl0 < xr0 <= xmax` must be True (elementwise).')
-
     return func, xl0, xr0, xmin, xmax, factor, args, maxiter
 
 
@@ -116,6 +113,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
             - ``-4`` : Iteration was terminated by `callback`.
+            - ``-5``: The initial bracket does not satisfy `xmin <= xl0 < xr0 < xmax`.
             - ``1`` : The algorithm is proceeding normally (in `callback` only).
             - ``2`` : A bracket was found in the opposite search direction (in `callback` only).
 
@@ -158,7 +156,11 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     xs = (xl0, xr0)
     temp = eim._initialize(func, xs, args)
-    func, xs, fs, args, shape, dtype = temp  # line split for PEP8
+    func, xs, fs, args, shape, dtype, xp = temp  # line split for PEP8
+    xl0, xr0 = xs
+    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
+    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    invalid_bracket = ~((xmin <= xl0) & (xl0 < xr0) & (xr0 <= xmax))
 
     # The approach is to treat the left and right searches as though they were
     # (almost) totally independent one-sided bracket searches. (The interaction
@@ -167,6 +169,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # `x` is the "moving" end of the bracket
     x = np.concatenate(xs)
     f = np.concatenate(fs)
+    invalid_bracket = np.concatenate((invalid_bracket, invalid_bracket))
     n = len(x) // 2
 
     # `x_last` is the previous location of the moving end of the bracket. If
@@ -179,9 +182,6 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     # We don't need to retain the corresponding function value, since the
     # fixed end of the bracket is only needed to compute the new value of the
     # moving end; it is never returned.
-
-    xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
-    xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
     limit = np.concatenate((xmin, xmax))
 
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=False).ravel()
@@ -206,6 +206,7 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
     d[ni] = limit[ni] - x[ni]
 
     status = np.full_like(x, eim._EINPROGRESS, dtype=int)  # in progress
+    status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 1  # one function evaluation per side performed above
 
     work = _RichResult(x=x, x0=x0, f=f, limit=limit, factor=factor,
@@ -245,12 +246,13 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
         work.f = f
 
     def check_termination(work):
-        stop = np.zeros_like(work.x, dtype=bool)
+        # Condition 0: initial bracket is invalid
+        stop = (work.status == eim._EINPUTERR)
 
         # Condition 1: a valid bracket (or the root itself) has been found
         sf = np.sign(work.f)
         sf_last = np.sign(work.f_last)
-        i = (sf_last == -sf) | (sf_last == 0) | (sf == 0)
+        i = ((sf_last == -sf) | (sf_last == 0) | (sf == 0)) & ~stop
         work.status[i] = eim._ECONVERGED
         stop[i] = True
 
@@ -379,7 +381,8 @@ def _bracket_root(func, xl0, xr0=None, *, xmin=None, xmax=None, factor=None,
 
     return eim._loop(work, callback, shape, maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval, check_termination,
-                     post_termination_check, customize_result, res_work_pairs)
+                     post_termination_check, customize_result, res_work_pairs,
+                     xp)
 
 
 def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
@@ -397,14 +400,17 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     xmin = -np.inf if xmin is None else xmin
     xmax = np.inf if xmax is None else xmax
 
+    # If xl0 (xr0) is not supplied, fill with a dummy value for the sake
+    # of broadcasting. We need to wait until xmin (xmax) has been validated
+    # to compute the default values.
     xl0_not_supplied = False
     if xl0 is None:
-        xl0 = xm0 - 0.5
+        xl0 = np.nan
         xl0_not_supplied = True
 
     xr0_not_supplied = False
     if xr0 is None:
-        xr0 = xm0 + 0.5
+        xr0 = np.nan
         xr0_not_supplied = True
 
     factor = 2.0 if factor is None else factor
@@ -429,21 +435,13 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     if not np.all(factor > 1):
         raise ValueError('All elements of `factor` must be greater than 1.')
 
-    # Default choices for xl or xr might have exceeded xmin or xmax. Adjust
-    # to make sure this doesn't happen. We replace with copies because xl, and xr
-    # are read-only views produced by broadcast_arrays.
+    # Calculate default values of xl0 and/or xr0 if they have not been supplied
+    # by the user. We need to be careful to ensure xl0 and xr0 are not outside
+    # of (xmin, xmax).
     if xl0_not_supplied:
-        xl0 = xl0.copy()
-        cond = ~np.isinf(xmin) & (xl0 < xmin)
-        xl0[cond] = (
-            xm0[cond] - xmin[cond]
-        ) / np.array(16, dtype=xl0.dtype)
+        xl0 = xm0 - np.minimum((xm0 - xmin)/16, 0.5)
     if xr0_not_supplied:
-        xr0 = xr0.copy()
-        cond = ~np.isinf(xmax) & (xmax < xr0)
-        xr0[cond] = (
-            xmax[cond] - xm0[cond]
-        ) / np.array(16, dtype=xr0.dtype)
+        xr0 = xm0 + np.minimum((xmax - xm0)/16, 0.5)
 
     maxiter = np.asarray(maxiter)
     message = '`maxiter` must be a non-negative integer.'
@@ -453,11 +451,6 @@ def _bracket_minimum_iv(func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter):
     maxiter_int = int(maxiter[()])
     if not maxiter == maxiter_int or maxiter < 0:
         raise ValueError(message)
-
-    if not np.all((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax)):
-        raise ValueError(
-            '`xmin <= xl0 < xm0 < xr0 <= xmax` must be True (elementwise).'
-        )
 
     return func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter
 
@@ -529,6 +522,9 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                        minimizer.
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : ``None`` shall pass.
+            - ``-5`` : The initial bracket does not satisfy
+                       `xmin <= xl0 < xm0 < xr0 <= xmax`.
 
         success : bool
             ``True`` when the algorithm terminated successfully (status ``0``).
@@ -567,12 +563,14 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     func, xm0, xl0, xr0, xmin, xmax, factor, args, maxiter = temp
 
     xs = (xl0, xm0, xr0)
-    func, xs, fs, args, shape, dtype = eim._initialize(func, xs, args)
+    temp = eim._initialize(func, xs, args)
+    func, xs, fs, args, shape, dtype, xp = temp
 
     xl0, xm0, xr0 = xs
     fl0, fm0, fr0 = fs
     xmin = np.broadcast_to(xmin, shape).astype(dtype, copy=False).ravel()
     xmax = np.broadcast_to(xmax, shape).astype(dtype, copy=False).ravel()
+    invalid_bracket = ~((xmin <= xl0) & (xl0 < xm0) & (xm0 < xr0) & (xr0 <= xmax))
     # We will modify factor later on so make a copy. np.broadcast_to returns
     # a read-only view.
     factor = np.broadcast_to(factor, shape).astype(dtype, copy=True).ravel()
@@ -596,6 +594,7 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     factor[limited] = 1 / factor[limited]
 
     status = np.full_like(xl0, eim._EINPROGRESS, dtype=int)
+    status[invalid_bracket] = eim._EINPUTERR
     nit, nfev = 0, 3
 
     work = _RichResult(xl=xl0, xm=xm0, xr=xr0, xr0=xr0, fl=fl0, fm=fm0, fr=fr0,
@@ -627,12 +626,16 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
         work.fl, work.fm, work.fr = work.fm, work.fr, f
 
     def check_termination(work):
+        # Condition 0: Initial bracket is invalid.
+        stop = (work.status == eim._EINPUTERR)
+
         # Condition 1: A valid bracket has been found.
-        stop = (
+        i = (
             (work.fl >= work.fm) & (work.fr > work.fm)
             | (work.fl > work.fm) & (work.fr >= work.fm)
-        )
-        work.status[stop] = eim._ECONVERGED
+        ) & ~stop
+        work.status[i] = eim._ECONVERGED
+        stop[i] = True
 
         # Condition 2: Moving end of bracket reaches limit.
         i = (work.xr == work.limit) & ~stop
@@ -660,4 +663,4 @@ def _bracket_minimum(func, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
                      maxiter, func, args, dtype,
                      pre_func_eval, post_func_eval,
                      check_termination, post_termination_check,
-                     customize_result, res_work_pairs)
+                     customize_result, res_work_pairs, xp)

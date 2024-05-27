@@ -802,7 +802,7 @@ class BSpline:
         """
         from ._cubic import CubicSpline
         if not isinstance(pp, CubicSpline):
-            raise NotImplementedError("Only CubicSpline objects are accepted"
+            raise NotImplementedError("Only CubicSpline objects are accepted "
                                       "for now. Got %s instead." % type(pp))
         x = pp.x
         coef = pp.c
@@ -1452,6 +1452,12 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     deriv_r = _convert_string_aliases(deriv_r, y.shape[1:])
     deriv_r_ords, deriv_r_vals = _process_deriv_spec(deriv_r)
     nright = deriv_r_ords.shape[0]
+
+    if not all(0 <= i <= k for i in deriv_l_ords):
+        raise ValueError(f"Bad boundary conditions at {x[0]}.")
+
+    if not all(0 <= i <= k for i in deriv_r_ords):
+        raise ValueError(f"Bad boundary conditions at {x[-1]}.")
 
     # have `n` conditions for `nt` coefficients; need nt-n derivatives
     n = x.size
