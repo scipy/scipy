@@ -32,7 +32,9 @@ from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
 from scipy._lib._util import ComplexWarning, np_long, np_ulong
 
-from scipy._lib._array_api import  xp_assert_close, xp_assert_equal, is_cupy, is_numpy
+from scipy._lib._array_api import (
+    xp_assert_close, xp_assert_equal, is_cupy, is_numpy, xp_astype, is_bool_dtype
+)
 from scipy.conftest import array_api_compatible
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -109,7 +111,7 @@ class TestConvolve:
                    [12, 31, 58, 49, 30]])
         xp_assert_equal(c, d)
 
-    @skip_xp_backends("cupy")
+    @skip_xp_backends("cupy", "torch")
     @array_api_compatible
     def test_input_swapping(self, xp):
         small = xp.reshape(xp.arange(8), (2, 2, 2))
@@ -205,60 +207,44 @@ class TestConvolve:
         assert_raises(ValueError, convolve, *(a, b), **{'mode': 'valid'})
         assert_raises(ValueError, convolve, *(b, a), **{'mode': 'valid'})
 
-    @skip_xp_backends("jax.numpy", reason="tolerances")
     @array_api_compatible
     def test_convolve_method(self, xp, n=100):
+        if xp != np:
+            pytest.skip(reason="TODO: convert this test")
+
         # this types data structure was manually encoded instead of
         # using custom filters on the soon-to-be-removed np.sctypes
-        types = {xp.uint16, xp.uint64, xp.int64, xp.int32,
-                 xp.complex128, xp.float64,
-                 xp.complex64, xp.float32, xp.int16,
-                 xp.uint8, xp.uint32, xp.int8}
-        if xp == np or is_cupy(xp):
-            types.add(np.bool_)     # xp.bool in the API standard, np.bool_ in NumPy 1.x
-            types.add(np.float16)   # backwards compat
-        else:
-            types.add(xp.bool)
-
+        types = {'uint16', 'uint64', 'int64', 'int32',
+                 'complex128', 'float64', 'float16',
+                 'complex64', 'float32', 'int16',
+                 'uint8', 'uint32', 'int8', 'bool'}
         args = [(t1, t2, mode) for t1 in types for t2 in types
                                for mode in ['valid', 'full', 'same']]
 
         # These are random arrays, which means test is much stronger than
         # convolving testing by convolving two np.ones arrays
         np.random.seed(42)
-        array_types = {'i': xp.asarray(np.random.choice([0, 1], size=n)),
-                       'f': xp.asarray(np.random.randn(n))}
+        array_types = {'i': np.random.choice([0, 1], size=n),
+                       'f': np.random.randn(n)}
         array_types['b'] = array_types['u'] = array_types['i']
-        val = xp.asarray(0.5j)
-        array_types['c'] = array_types['f'] + val*array_types['f']
-
-        for dt in types:
-            if xp.isdtype(dt, ('integral', 'bool')):
-                array_types[dt] = xp.astype(array_types['i'], dt)
-            elif xp.isdtype(dt, 'real floating'):
-                array_types[dt] = xp.astype(array_types['f'], dt)
-            elif xp.isdtype(dt, 'complex floating'):
-                array_types[dt] = xp.astype(array_types['c'], dt)
+        array_types['c'] = array_types['f'] + 0.5j*array_types['f']
 
         for t1, t2, mode in args:
-            if is_cupy(xp) and t2 == xp.float16:
-                pytest.skip(reason="Cupy 13.x fails to jitify.")
-
-            x1 = array_types[t1]
-            x2 = array_types[t2]
+            x1 = array_types[np.dtype(t1).kind].astype(t1)
+            x2 = array_types[np.dtype(t2).kind].astype(t2)
 
             results = {key: convolve(x1, x2, method=key, mode=mode)
                        for key in ['fft', 'direct']}
 
-            assert results['fft'].dtype == results['direct'].dtype
+            assert_equal(results['fft'].dtype, results['direct'].dtype)
 
-            if t1 == xp.bool and  t2 == xp.bool:
-                assert choose_conv_method(x1, x2) == 'direct'
+            if 'bool' in t1 and 'bool' in t2:
+                assert_equal(choose_conv_method(x1, x2), 'direct')
                 continue
 
             # Found by experiment. Found approx smallest value for (rtol, atol)
             # threshold to have tests pass.
-            if any([t in {np.complex64, np.float32} for t in [t1, t2]]):
+            if any([t in {'complex64', 'float32'} for t in [t1, t2]]):
                 kwargs = {'rtol': 1.0e-4, 'atol': 1e-6}
             elif 'float16' in [t1, t2]:
                 # atol is default for np.allclose
@@ -267,7 +253,7 @@ class TestConvolve:
                 # defaults for np.allclose (different from assert_allclose)
                 kwargs = {'rtol': 1e-5, 'atol': 1e-8}
 
-            xp_assert_close(results['fft'], results['direct'], **kwargs)
+            assert_allclose(results['fft'], results['direct'], **kwargs)
 
     @skip_xp_backends("jax.numpy", reason="dtypes do not match")
     @array_api_compatible

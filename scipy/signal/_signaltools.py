@@ -27,7 +27,8 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, scipy_namespace_for, is_numpy, is_torch, copy, np_compat
+    array_namespace, scipy_namespace_for, is_numpy, is_torch, copy, np_compat, size as xp_size,
+    is_complex, is_integer, is_integer_dtype
 )
 
 __all__ = ['correlate', 'correlation_lags', 'correlate2d',
@@ -249,14 +250,14 @@ def correlate(in1, in2, mode='full', method='auto'):
 
     # this either calls fftconvolve or this function with method=='direct'
     if method in ('fft', 'auto'):
-        return convolve(in1, _reverse_and_conj(in2), mode, method)
+        return convolve(in1, _reverse_and_conj(in2, xp), mode, method)
 
     elif method == 'direct':
         # fastpath to faster numpy.correlate for 1d inputs when possible
-        if _np_conv_ok(in1, in2, mode):
+        if _np_conv_ok(in1, in2, mode, xp):
             a_in1 = np.asarray(in1)
             a_in2 = np.asarray(in2)
-            out = np.correlate(in1, in2, mode)
+            out = np.correlate(a_in1, a_in2, mode)
             return xp.asarray(out)
 
         # _correlateND is far slower when in2.size > in1.size, so swap them
@@ -298,7 +299,7 @@ def correlate(in1, in2, mode='full', method='auto'):
 
         if swapped_inputs:
             # Reverse and conjugate to undo the effect of swapping inputs
-            z = _reverse_and_conj(z)
+            z = _reverse_and_conj(z, xp)
 
         return z
 
@@ -509,8 +510,7 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False, xp=None):
     if not len(axes):
         return in1 * in2
 
-    complex_result = (xp.isdtype(in1.dtype, 'complex floating') or
-                      xp.isdtype(in2.dtype, 'complex floating'))
+    complex_result = is_complex(in1, xp) or is_complex(in2, xp)
 
     if calc_fast_len:
         # Speed up FFT by padding to optimal size.
@@ -524,10 +524,10 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False, xp=None):
     else:
         fft, ifft = sp_fft.fftn, sp_fft.ifftn
 
-    if xp.isdtype(in1.dtype, 'integral'):
+    if is_integer(in1, xp):
         # XXX: xp-dependent default fp dtype?
         in1 = xp.astype(in1, xp.float64)
-    if xp.isdtype(in2.dtype, 'integral'):
+    if is_integer(in2, xp):
         in2 = xp.astype(in2, xp.float64)
 
     sp1 = fft(in1, fshape, axes=axes)
@@ -1019,7 +1019,7 @@ def oaconvolve(in1, in2, mode="full", axes=None):
     return _apply_conv_mode(ret, s1, s2, mode, axes)
 
 
-def _numeric_arrays(arrays, kinds='buifc'):
+def _numeric_arrays(arrays, kinds='buifc', xp=None):
     """
     See if a list of arrays are all numeric.
 
@@ -1032,6 +1032,11 @@ def _numeric_arrays(arrays, kinds='buifc'):
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
     """
+    if xp is None:
+        xp = array_namespace(*arrays)
+    if xp != np:
+        return True
+
     if type(arrays) == np.ndarray:
         return arrays.dtype.kind in kinds
     for array_ in arrays:
@@ -1125,20 +1130,24 @@ def _fftconv_faster(x, h, mode):
     return O_fft * fft_ops < O_direct * direct_ops + O_offset
 
 
-def _reverse_and_conj(x):
+def _reverse_and_conj(x, xp):
     """
     Reverse array `x` in all dimensions and perform the complex conjugate
     """
-    xp = array_namespace(x)
-    reverse = (slice(None, None, -1),) * x.ndim
-
-    if xp.isdtype(x.dtype, 'complex floating'):
-        return xp.conj(x[reverse])
+    if not is_torch(xp):
+        reverse = (slice(None, None, -1),) * x.ndim
+        x_rev = x[reverse]
     else:
-        return x[reverse]
+        # NB: is a copy, not a view
+        x_rev = xp.flip(x, list(range(x.ndim)))
+
+    if is_complex(x, xp):
+        return xp.conj(x_rev)
+    else:
+        return x_rev
 
 
-def _np_conv_ok(volume, kernel, mode):
+def _np_conv_ok(volume, kernel, mode, xp):
     """
     See if numpy supports convolution of `volume` and `kernel` (i.e. both are
     1D ndarrays and of the appropriate shape).  NumPy's 'same' mode uses the
@@ -1150,7 +1159,7 @@ def _np_conv_ok(volume, kernel, mode):
         if mode in ('full', 'valid'):
             return True
         elif mode == 'same':
-            return volume.size >= kernel.size
+            return xp_size(volume) >= xp_size(kernel)
     else:
         return False
 
@@ -1298,8 +1307,10 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    volume = np.asarray(in1)
-    kernel = np.asarray(in2)
+    xp = array_namespace(in1, in2)
+
+    volume = xp.asarray(in1)
+    kernel = xp.asarray(in2)
 
     if measure:
         times = {}
@@ -1314,15 +1325,15 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     # catch when more precision required than float provides (representing an
     # integer as float can lose precision in fftconvolve if larger than 2**52)
     if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
-        max_value = int(np.abs(volume).max()) * int(np.abs(kernel).max())
+        max_value = int(xp.max(xp.abs(volume))) * int(xp.max(xp.abs(kernel)))
         max_value *= int(min(volume.size, kernel.size))
         if max_value > 2**np.finfo('float').nmant - 1:
             return 'direct'
 
-    if _numeric_arrays([volume, kernel], kinds='b'):
+    if _numeric_arrays([volume, kernel], kinds='b', xp=xp):
         return 'direct'
 
-    if _numeric_arrays([volume, kernel]):
+    if _numeric_arrays([volume, kernel], xp=xp):
         if _fftconv_faster(volume, kernel, mode):
             return 'fft'
 
@@ -1448,7 +1459,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     if method == 'fft':
         out = fftconvolve(volume, kernel, mode=mode)
         result_type = xp.result_type(volume, kernel)
-        if xp.isdtype(result_type, 'integral'):
+        if is_integer_dtype(result_type, xp):
             out = xp.round(out)
 
         if xp.isnan(xp.reshape(out, (-1,))[0]) or xp.isinf(xp.reshape(out, (-1,))[0]):
@@ -1460,14 +1471,14 @@ def convolve(in1, in2, mode='full', method='auto'):
         return xp.astype(out, result_type)
     elif method == 'direct':
         # fastpath to faster numpy.convolve for 1d inputs when possible
-        if _np_conv_ok(volume, kernel, mode):
+        if _np_conv_ok(volume, kernel, mode, xp):
             # convert to numpy and back
             a_volume = np.asarray(volume)
             a_kernel = np.asarray(kernel)
             out = np.convolve(volume, kernel, mode)
             return xp.asarray(out)
 
-        return correlate(volume, _reverse_and_conj(kernel), mode, 'direct')
+        return correlate(volume, _reverse_and_conj(kernel, xp), mode, 'direct')
     else:
         raise ValueError("Acceptable method flags are 'auto',"
                          " 'direct', or 'fft'.")
