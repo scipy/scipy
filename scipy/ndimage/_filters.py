@@ -1499,10 +1499,10 @@ def _rank_filter(input, rank, size=None, footprint=None, output=None,
                 x_out = output
             elif input.dtype == np.float16:
                 x = input.astype('float32')
-                x_out = np.empty(x, dtype='float32')
+                x_out = np.empty(x.shape, dtype='float32')
             elif np.result_type(input, np.int64) == np.int64:
                 x = input.astype('int64')
-                x_out = np.empty(x, dtype='int64')
+                x_out = np.empty(x.shape, dtype='int64')
             else:
                 raise RuntimeError('Unsupported array type')
             cval = x.dtype.type(cval)
