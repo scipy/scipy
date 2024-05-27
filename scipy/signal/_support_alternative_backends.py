@@ -1,13 +1,13 @@
 import sys
 import os
 import functools
-from scipy._lib._array_api import array_namespace, is_cupy, is_jax, scipy_namespace_for
-
+from scipy._lib._array_api import (
+    array_namespace, is_cupy, is_jax, scipy_namespace_for, SCIPY_ARRAY_API
+)
 from ._signaltools import convolve, fftconvolve, convolve2d
 
 
 MODULE_NAME = 'signal'
-_SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
 
 
 def dispatch_xp(dispatcher, module_name):
@@ -64,7 +64,7 @@ _FUNC_MAP = {
 # ### decorate ###
 for func in _FUNC_MAP:
     f = (dispatch_xp(_FUNC_MAP[func], MODULE_NAME)(func)
-         if _SCIPY_ARRAY_API
+         if SCIPY_ARRAY_API
          else func)
     sys.modules[__name__].__dict__[func.__name__] = f
 
