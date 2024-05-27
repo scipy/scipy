@@ -900,7 +900,6 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=axes)
         xp_assert_close(out, expected, rtol=1e-10)
 
-    @pytest.mark.xfail(reason="XXX: moveaxis new in 2023.12 standard")
     @pytest.mark.parametrize('axes', [[1, 4],
                                       [4, 1],
                                       [1, -1],
@@ -911,6 +910,9 @@ class TestFFTConvolve:
                                       [-1, -4]])
     @array_api_compatible
     def test_random_data_multidim_axes(self, axes, xp):
+        if xp != np:
+            pytest.xfail("XXX: moveaxis new in 2023.12 standard")
+
         a_shape, b_shape = (123, 22), (132, 11)
         np.random.seed(1234)
         a = xp.asarray(np.random.rand(*a_shape) + 1j * np.random.rand(*a_shape))

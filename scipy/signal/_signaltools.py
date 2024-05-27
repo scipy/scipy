@@ -27,7 +27,7 @@ from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 
 from scipy._lib._array_api import (
-    array_namespace, is_torch, copy, size as xp_size,
+    array_namespace, is_torch, copy, size as xp_size, xp_astype,
     is_complex, is_integer, is_integer_dtype
 )
 
@@ -507,6 +507,9 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False, xp=None):
         `in1` with `in2`.
 
     """
+    if xp is None:
+        xp = np
+
     if not len(axes):
         return in1 * in2
 
@@ -526,9 +529,9 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False, xp=None):
 
     if is_integer(in1, xp):
         # XXX: xp-dependent default fp dtype?
-        in1 = xp.astype(in1, xp.float64)
+        in1 = xp_astype(in1, xp.float64, xp)
     if is_integer(in2, xp):
-        in2 = xp.astype(in2, xp.float64)
+        in2 = xp_astype(in2, xp.float64, xp)
 
     sp1 = fft(in1, fshape, axes=axes)
     sp2 = fft(in2, fshape, axes=axes)
@@ -542,7 +545,7 @@ def _freq_domain_conv(in1, in2, axes, shape, calc_fast_len=False, xp=None):
     return ret
 
 
-def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
+def _apply_conv_mode(ret, s1, s2, mode, axes, xp=None):
     """Calculate the convolution result shape based on the `mode` argument.
 
     Returns the result sliced to the correct size for the given mode.
@@ -567,6 +570,9 @@ def _apply_conv_mode(ret, s1, s2, mode, axes, xp):
         A copy of `res`, sliced to the correct size for the given `mode`.
 
     """
+    if xp is None:
+        xp = np
+
     if mode == "full":
         return copy(ret, xp=xp)
     elif mode == "same":

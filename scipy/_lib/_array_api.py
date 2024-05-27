@@ -408,9 +408,10 @@ def is_integer_dtype(dtyp, xp: ModuleType) -> bool:
     try:
         return xp.isdtype(dtyp, 'integral')
     except AttributeError:
-        return (dtyp in (xp.uint8, xp.int8, xp.int16, xp.int32, xp.int32) or
-                not (is_torch(xp) and dtyp in (xp.uint16, xp.uint32, xp.uint64))
-        )
+        result = dtyp in (xp.uint8, xp.int8, xp.int16, xp.int32, xp.int32)
+        if not is_torch(xp):
+            result = result or dtyp in (xp.uint16, xp.uint32, xp.uint64)
+        return result
 
 
 def is_bool_dtype(dtyp, xp: ModuleType) -> bool:
