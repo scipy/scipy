@@ -212,13 +212,15 @@ static PyModuleDef _special_ufuncs_def = {
 };
 
 PyMODINIT_FUNC PyInit__special_ufuncs() {
-    if (!SpecFun_Initialize()) {
-        return nullptr;
+    import_array();
+    import_umath();
+    if (PyErr_Occurred()) {
+        return NULL;
     }
 
     PyObject *_special_ufuncs = PyModule_Create(&_special_ufuncs_def);
     if (_special_ufuncs == nullptr) {
-        return nullptr;
+        return NULL;
     }
 
     PyObject *_cospi = SpecFun_NewUFunc(
