@@ -140,7 +140,7 @@ class TestHyp1f1:
              marks=pytest.mark.xfail,
          ),
          pytest.param(
-             0.1, 1, 7-24j, -3.712349651834209+4.554636556672913,
+             0.1, 1, 7-24j, -3.712349651834209+4.554636556672913j,
              marks=pytest.mark.xfail,
          )
          ],
