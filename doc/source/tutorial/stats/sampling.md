@@ -11,12 +11,15 @@ kernelspec:
   name: python3
 ---
 
++++ { "jupyter": { "source_hidden": true } }
 ```{eval-rst}
 .. jupyterlite:: sampling.ipynb
    :new_tab: False
 ```
-
++++ { "jupyter": { "source_hidden": true } }
 (non-uniform-random-number-sampling)=
++++
+
 # Universal Non-Uniform Random Number Sampling in SciPy
 
 SciPy provides an interface to many universal non-uniform random number
@@ -27,7 +30,6 @@ for speed and performance. Please look at [UNU.RAN's
 documentation](http://statmath.wu.ac.at/software/unuran/doc/unuran.html)
 for an in-depth explanation of these methods. It is heavily referred to
 for writing this tutorial and the documentation of all the generators.
-
 
 ## Introduction
 
