@@ -170,14 +170,13 @@ jobs:
         ln -s $GFORTRAN_LOC gfortran
         export PATH=$PWD:$PATH
 
-        # make sure we have openblas and gfortran dylibs
-        bash tools/wheels/cibw_before_build_macos.sh $PWD
+        # Ensure we have gfortran dylib
         GFORTRAN_LIB=$(dirname `gfortran --print-file-name libgfortran.dylib`)
-        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB:/opt/arm64-builds/lib
-        export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+        export DYLD_LIBRARY_PATH=$GFORTRAN_LIB
     
         pip install click doit pydevtool rich_click meson cython pythran pybind11 ninja numpy
-        python dev.py build
+        pip install -r requirements/openblas.txt
+        python dev.py build --with-scipy-openblas
 
         pip install pooch pytest hypothesis
         python dev.py -n test 

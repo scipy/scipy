@@ -321,10 +321,8 @@ jobs:
         # (it can be put back after matplotlib has made a 2.0-compatible
         # release on PyPI.
         python -m pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
-        # TODO: once the scipy_ symbol prefix issue is fixed, install
-        # scipy-openblas32 from the pre-releases bucket again (see gh-19640)
-        python -m pip install "scipy-openblas32<=0.3.23.293.2"
-        # Install numpy last, to ensure we get 2.0.0-dev (avoid possible <2.0 constraints).
+        python -m pip install -r requirements/openblas.txt
+        # Install numpy last, to ensure we get nightly (avoid possible <2.0 constraints).
         python -m pip install --pre --upgrade --timeout=60 -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
 
     - name:  Prepare compiler cache
@@ -382,20 +380,27 @@ jobs:
 
     - name: build + test
       run: |
-        set -euo pipefail
+        set -exuo pipefail
         docker pull quay.io/pypa/manylinux2014_i686
         docker run -v $(pwd):/scipy --platform=linux/i386 quay.io/pypa/manylinux2014_i686 /bin/bash -c "cd /scipy && \
         uname -a && \
-        basedir=\$(python3.10 tools/openblas_support.py) && \
-        cp -r \$basedir/lib/* /usr/local/lib && \
-        cp \$basedir/include/* /usr/local/include && \
-        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig && \
         python3.10 -m venv test && \
         source test/bin/activate && \
         python -m pip install doit click rich_click pydevtool meson ninja && \
+        python -m pip install -r requirements/openblas.txt && \
+        # Ensure that scipy-openblas is picked up by the numpy<1.26 build
+        cat > \$HOME/.numpy-site.cfg <<EOL
+        [openblas]
+        libraries = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_library())')
+        library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
+        include_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_include_dir())')
+        runtime_library_dirs = \$(python -c 'import scipy_openblas32; print(scipy_openblas32.get_lib_dir())')
+        symbol_prefix = scipy_
+        EOL
         python -m pip install numpy==1.23.5 cython pybind11 pytest pytest-timeout pytest-xdist pytest-env 'Pillow<10.0.0' mpmath pythran pooch meson hypothesis && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py build && \
-        LD_LIBRARY_PATH=/usr/local/lib python dev.py test"
+        python -c 'import numpy as np; np.show_config()' && \
+        python dev.py build --with-scipy-openblas && \
+        python dev.py --no-build test"
 
   #################################################################################
   distro_multiple_pythons:
