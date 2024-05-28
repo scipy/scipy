@@ -89,22 +89,27 @@ void legendre_p_init(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3])
  * @return value of the polynomial
  */
 template <typename T, typename Callable>
-void legendre_p_recur(int n, T z, T (&res)[3], Callable callback) {
-    legendre_p_recurrence<T> re{z};
+void legendre_p_for_each(int n, T z, T (&res)[3], Callable callback) {
+    legendre_p_init(n, z, res);
 
+    legendre_p_recurrence<T> re{z};
     forward_recur(0, n + 1, re, res, callback);
 }
 
 // legendre_p_initializer<T> init{z};
 
 template <typename T, typename Callable>
-void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
+void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
+    legendre_p_init(n, z, res, res_jac);
+
     legendre_p_recurrence<T> r{z};
     forward_recur(0, n + 1, r, res, res_jac, callback);
 }
 
 template <typename T, typename Callable>
-void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback) {
+void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback) {
+    legendre_p_init(n, z, res, res_jac, res_hess);
+
     legendre_p_recurrence<T> r{z};
     forward_recur(0, n + 1, r, res, res_jac, res_hess, callback);
 }
@@ -120,9 +125,7 @@ void legendre_p_recur(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]
 template <typename T>
 T legendre_p(int n, T z) {
     T p[3] = {};
-    legendre_p_init(n, z, p);
-
-    legendre_p_recur(n, z, p, [](int j, const auto &r, const T(&p)[3]) {});
+    legendre_p_for_each(n, z, p, [](int j, const auto &r, const T(&p)[3]) {});
 
     return p[2];
 }
@@ -139,9 +142,7 @@ template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    legendre_p_init(n, z, p, p_jac);
-
-    legendre_p_recur(n, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
+    legendre_p_for_each(n, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
     res_jac = p_jac[2];
@@ -161,9 +162,7 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
     T p[3] = {};
     T p_jac[3] = {};
     T p_hess[3] = {};
-    legendre_p_init(n, z, p, p_jac, p_hess);
-
-    legendre_p_recur(
+    legendre_p_for_each(
         n, z, p, p_jac, p_hess, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
     );
 
@@ -184,9 +183,7 @@ void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
 
     T p[3] = {};
-    legendre_p_init(n, z, p);
-
-    legendre_p_recur(n, z, p, [res](int j, const auto &r, const T(&p)[3]) { res(j) = p[2]; });
+    legendre_p_for_each(n, z, p, [res](int j, const auto &r, const T(&p)[3]) { res(j) = p[2]; });
 }
 
 /**
@@ -203,9 +200,7 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
 
     T p[3] = {};
     T p_jac[3] = {};
-    legendre_p_init(n, z, p, p_jac);
-
-    legendre_p_recur(n, z, p, p_jac, [res, res_jac](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {
+    legendre_p_for_each(n, z, p, p_jac, [res, res_jac](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {
         res(j) = p[2];
         res_jac(j) = p_jac[2];
     });
@@ -227,9 +222,7 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     T p[3] = {};
     T p_jac[3] = {};
     T p_hess[3] = {};
-    legendre_p_init(n, z, p, p_jac, p_hess);
-
-    legendre_p_recur(
+    legendre_p_for_each(
         n, z, p, p_jac, p_hess,
         [res, res_jac, res_hess](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
             res(j) = p[2];
@@ -605,7 +598,7 @@ void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], Callable c
 }
 
 template <typename T, typename Callable>
-void assoc_legendre_p_recur(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
+void assoc_legendre_p_for_each(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     assoc_legendre_p_recurrence<T> r{m, type, z};
 
     int m_abs = std::abs(m);
@@ -663,6 +656,45 @@ void assoc_legendre_p_recur(
     }
 }
 
+template <typename T, typename Callback>
+void assoc_legendre_p_for_each_2(int n, int m, int type, T z, Callback callable) {
+    T p_diag[3] = {};
+    T p_diag_jac[3] = {};
+    assoc_legendre_p_diag_init(false, type, z, p_diag, p_diag_jac);
+
+    assoc_legendre_p_diag_recur(
+        m, type, z, p_diag, p_diag_jac,
+        [callable, n](int i, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+            T p[3] = {p_diag[2], 0, 0};
+            T p_jac[3] = {p_diag_jac[2], 0, 0};
+            assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
+
+            assoc_legendre_p_for_each(
+                n, i, re.type, re.z, p, p_jac,
+                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
+            );
+        }
+    );
+
+    assoc_legendre_p_diag_init(true, type, z, p_diag, p_diag_jac);
+
+    assoc_legendre_p_diag_recur(
+        -m, type, z, p_diag, p_diag_jac,
+        [callable, n](int i_abs, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+            int i = -i_abs;
+
+            T p[3] = {p_diag[2], 0, 0};
+            T p_jac[3] = {p_diag_jac[2], 0, 0};
+            assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
+
+            assoc_legendre_p_for_each(
+                n, i, re.type, re.z, p, p_jac,
+                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
+            );
+        }
+    );
+}
+
 /**
  * Compute the associated Legendre polynomial of degree n and order m.
  *
@@ -689,7 +721,7 @@ void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
     T p_jac[3] = {};
     assoc_legendre_p_init(m, type, z, p, p_jac);
 
-    assoc_legendre_p_recur(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
+    assoc_legendre_p_for_each(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
     res_jac = p_jac[2];
@@ -741,51 +773,12 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
     }
 }
 
-template <typename T, typename Callback>
-void assoc_legendre_p_all_recur(int n, int m, int type, T z, Callback callable) {
-    T p_diag[3] = {};
-    T p_diag_jac[3] = {};
-    assoc_legendre_p_diag_init(false, type, z, p_diag, p_diag_jac);
-
-    assoc_legendre_p_diag_recur(
-        m, type, z, p_diag, p_diag_jac,
-        [callable, n](int i, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
-            T p[3] = {p_diag[2], 0, 0};
-            T p_jac[3] = {p_diag_jac[2], 0, 0};
-            assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
-
-            assoc_legendre_p_recur(
-                n, i, re.type, re.z, p, p_jac,
-                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
-            );
-        }
-    );
-
-    assoc_legendre_p_diag_init(true, type, z, p_diag, p_diag_jac);
-
-    assoc_legendre_p_diag_recur(
-        -m, type, z, p_diag, p_diag_jac,
-        [callable, n](int i_abs, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
-            int i = -i_abs;
-
-            T p[3] = {p_diag[2], 0, 0};
-            T p_jac[3] = {p_diag_jac[2], 0, 0};
-            assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
-
-            assoc_legendre_p_recur(
-                n, i, re.type, re.z, p, p_jac,
-                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
-            );
-        }
-    );
-}
-
 template <typename T, typename OutputMat1, typename OutputMat2>
 void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
-    assoc_legendre_p_all_recur(n, m, type, z, [res, res_jac](int j, int i, const T(&p)[3], const T(&p_jac)[3]) {
+    assoc_legendre_p_for_each_2(n, m, type, z, [res, res_jac](int j, int i, const T(&p)[3], const T(&p_jac)[3]) {
         if (i < 0) {
             res(i + res.extent(0), j) = p[2];
             res_jac(i + res_jac.extent(0), j) = p_jac[2];
