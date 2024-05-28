@@ -121,17 +121,13 @@ def isotonic_regression(
     input y of length 1000, the minimizer takes about 4 seconds, while
     ``isotonic_regression`` takes about 200 microseconds.
     """
-    yarr = np.asarray(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
-    if yarr.ndim == 0:
-        yarr = yarr.reshape(1)
+    yarr = np.atleast_1d(y)  # Check yarr.ndim == 1 is implicit (pybind11) in pava.
     order = slice(None) if increasing else slice(None, None, -1)
     x = np.array(yarr[order], order="C", dtype=np.float64, copy=True)
     if weights is None:
         wx = np.ones_like(yarr, dtype=np.float64)
     else:
-        warr = np.asarray(weights)
-        if warr.ndim == 0:
-            warr = warr.reshape(1)
+        warr = np.atleast_1d(weights)
 
         if not (yarr.ndim == warr.ndim == 1 and yarr.shape[0] == warr.shape[0]):
             raise ValueError(
