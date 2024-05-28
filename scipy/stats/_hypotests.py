@@ -8,7 +8,7 @@ import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
-from ._continuous_distns import chi2, norm
+from ._continuous_distns import norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._stats_pythran import _a_ij_Aij_Dij2
@@ -37,7 +37,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     ----------
     x, y : array-like
         The two samples of observations to be tested. Input must not have more
-        than one dimension. Samples can have different lengths.
+        than one dimension. Samples can have different lengths, but both
+        must have at least five observations.
     t : array-like, optional
         The points (t1, ..., tn) where the empirical characteristic function is
         to be evaluated. It should be positive distinct numbers. The default
@@ -141,7 +142,8 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
         w = corr * w
 
-    p = chi2.sf(w, r)
+    chi2 = _stats_py._SimpleChi2(r)
+    p = _stats_py._get_pvalue(w, chi2, alternative='greater', symmetric=False, xp=np)
 
     return Epps_Singleton_2sampResult(w, p)
 
@@ -500,6 +502,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     rvs : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        The sample must contain at least two observations.
     cdf : str or callable
         The cumulative distribution function :math:`F` to test the
         observations against. If a string, it should be the name of a
@@ -693,8 +696,8 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    norm = scipy.stats._stats_py._SimpleNormal()
-    p = scipy.stats._stats_py._get_pvalue(Z, norm, alternative, xp=np)
+    norm = _stats_py._SimpleNormal()
+    p = _stats_py._get_pvalue(Z, norm, alternative, xp=np)
 
     return d, p
 
@@ -1555,8 +1558,10 @@ def cramervonmises_2samp(x, y, method='auto'):
     ----------
     x : array_like
         A 1-D array of observed values of the random variables :math:`X_i`.
+        Must contain at least two observations.
     y : array_like
         A 1-D array of observed values of the random variables :math:`Y_i`.
+        Must contain at least two observations.
     method : {'auto', 'asymptotic', 'exact'}, optional
         The method used to compute the p-value, see Notes for details.
         The default is 'auto'.

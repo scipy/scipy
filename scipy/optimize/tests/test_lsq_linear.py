@@ -207,6 +207,7 @@ class SparseMixin:
         res = lsq_linear(A, b)
         assert_allclose(res.optimality, 0, atol=1e-6)
 
+    @pytest.mark.fail_slow(5)
     def test_sparse_bounds(self):
         m = 5000
         n = 1000

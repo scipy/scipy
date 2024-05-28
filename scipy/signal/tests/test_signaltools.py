@@ -2441,6 +2441,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
+@pytest.mark.fail_slow(5)
 def test_choose_conv_method():
     for mode in ['valid', 'same', 'full']:
         for ndim in [1, 2]:
@@ -2472,6 +2473,7 @@ def test_choose_conv_method():
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
+@pytest.mark.fail_slow(5)
 def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')

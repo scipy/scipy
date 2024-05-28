@@ -509,7 +509,7 @@ cdef double _geninvgauss_logpdf_kernel(double x, double p, double b) noexcept no
     return c + (p - 1)*math.log(x) - b*(x + 1/x)/2
 
 
-cdef double _geninvgauss_pdf(double x, void *user_data) except * nogil:
+cdef double _geninvgauss_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, b
 
@@ -645,7 +645,7 @@ cpdef double genhyperbolic_pdf(double x, double p, double a, double b) noexcept 
     return math.exp(_genhyperbolic_logpdf_kernel(x, p, a, b))
 
 
-cdef double _genhyperbolic_pdf(double x, void *user_data) except * nogil:
+cdef double _genhyperbolic_pdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 
@@ -662,7 +662,8 @@ cpdef double genhyperbolic_logpdf(
     return _genhyperbolic_logpdf_kernel(x, p, a, b)
 
 
-cdef double _genhyperbolic_logpdf(double x, void *user_data) except * nogil:
+# logpdf is always negative, so use positive exception value
+cdef double _genhyperbolic_logpdf(double x, void *user_data) noexcept nogil:
     # destined to be used in a LowLevelCallable
     cdef double p, a, b
 

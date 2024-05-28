@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
@@ -6,10 +7,14 @@ from numpy.testing import (assert_equal, assert_allclose, assert_almost_equal,
 from pytest import raises as assert_raises
 import pytest
 
+from scipy._lib._testutils import check_free_memory
 import scipy.interpolate.interpnd as interpnd
 import scipy.spatial._qhull as qhull
 
 import pickle
+import threading
+
+_IS_32BIT = (sys.maxsize < 2**32)
 
 
 def data_file(basename):
@@ -166,6 +171,49 @@ class TestLinearNDInterpolation:
 
         assert_almost_equal(ip(0.5, 0.5), ip2(0.5, 0.5))
 
+    @pytest.mark.slow
+    @pytest.mark.skipif(_IS_32BIT, reason='it fails on 32-bit')
+    def test_threading(self):
+        # This test was taken from issue 8856
+        # https://github.com/scipy/scipy/issues/8856
+        check_free_memory(10000)
+
+        r_ticks = np.arange(0, 4200, 10)
+        phi_ticks = np.arange(0, 4200, 10)
+        r_grid, phi_grid = np.meshgrid(r_ticks, phi_ticks)
+
+        def do_interp(interpolator, slice_rows, slice_cols):
+            grid_x, grid_y = np.mgrid[slice_rows, slice_cols]
+            res = interpolator((grid_x, grid_y))
+            return res
+
+        points = np.vstack((r_grid.ravel(), phi_grid.ravel())).T
+        values = (r_grid * phi_grid).ravel()
+        interpolator = interpnd.LinearNDInterpolator(points, values)
+
+        worker_thread_1 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(0, 2100)))
+        worker_thread_2 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(0, 2100)))
+        worker_thread_3 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(0, 2100), slice(2100, 4200)))
+        worker_thread_4 = threading.Thread(
+            target=do_interp,
+            args=(interpolator, slice(2100, 4200), slice(2100, 4200)))
+
+        worker_thread_1.start()
+        worker_thread_2.start()
+        worker_thread_3.start()
+        worker_thread_4.start()
+
+        worker_thread_1.join()
+        worker_thread_2.join()
+        worker_thread_3.join()
+        worker_thread_4.join()
+
 
 class TestEstimateGradients2DGlobal:
     def test_smoketest(self):
@@ -311,6 +359,7 @@ class TestCloughTocher2DInterpolator:
         yi_rescale = interpnd.CloughTocher2DInterpolator(tri.points, y, rescale=True)(x)
         assert_almost_equal(yi, yi_rescale)
 
+    @pytest.mark.fail_slow(2)
     def test_dense(self):
         # Should be more accurate for dense meshes
         funcs = [

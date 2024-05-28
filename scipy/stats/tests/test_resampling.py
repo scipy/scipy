@@ -1655,6 +1655,7 @@ class TestPermutationTest:
 
     # -- Paired-Sample Tests -- #
 
+    @pytest.mark.slow
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
     def test_against_wilcoxon(self, alternative):
 

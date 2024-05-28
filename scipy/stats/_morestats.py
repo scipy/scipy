@@ -18,7 +18,7 @@ from ._ansari_swilk_statistics import gscale, swilk
 from . import _stats_py, _wilcoxon
 from ._fit import FitResult
 from ._stats_py import (find_repeats, _get_pvalue, SignificanceResult,  # noqa:F401
-                        _SimpleNormal)
+                        _SimpleNormal, _SimpleChi2)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -265,7 +265,7 @@ def kstat(data, n=2, *, axis=None):
     .. math::
 
         S_r \equiv \sum_{i=1}^n X_i^r,
-        
+
     and :math:`X_i` is the :math:`i` th data point.
 
     References
@@ -305,10 +305,6 @@ def kstat(data, n=2, *, axis=None):
         axis = 0
 
     N = data.shape[axis]
-
-    # raise ValueError on empty input
-    if N == 0:
-        raise ValueError("Data input must not be empty")
 
     S = [None] + [xp.sum(data**k, axis=axis) for k in range(1, n + 1)]
     if n == 1:
@@ -377,10 +373,10 @@ def kstatvar(data, n=2, *, axis=None):
     N = data.shape[axis]
 
     if n == 1:
-        return kstat(data, n=2, axis=axis) * 1.0/N
+        return kstat(data, n=2, axis=axis, _no_deco=True) * 1.0/N
     elif n == 2:
-        k2 = kstat(data, n=2, axis=axis)
-        k4 = kstat(data, n=4, axis=axis)
+        k2 = kstat(data, n=2, axis=axis, _no_deco=True)
+        k4 = kstat(data, n=4, axis=axis, _no_deco=True)
         return (2*N*k2**2 + (N-1)*k4) / (N*(N+1))
     else:
         raise ValueError("Only n=1 or n=2 supported.")
@@ -1883,7 +1879,7 @@ def shapiro(x):
     Parameters
     ----------
     x : array_like
-        Array of sample data.
+        Array of sample data. Must contain at least three observations.
 
     Returns
     -------
@@ -3061,17 +3057,11 @@ def bartlett(*samples, axis=0):
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
-    # Handle 1d empty input; _axis_nan_policy takes care of N-D
-    for sample in samples:
-        if xp_size(xp.asarray(sample)) == 0:
-            NaN = _get_nan(*samples, xp=xp)  # get NaN of result_dtype of all samples
-            return BartlettResult(NaN, NaN)
-
     samples = _broadcast_arrays(samples, axis=axis, xp=xp)
     samples = [xp_moveaxis_to_end(sample, axis, xp=xp) for sample in samples]
 
     Ni = [xp.asarray(sample.shape[-1], dtype=sample.dtype) for sample in samples]
-    Ni = [xp.broadcast_to(N, sample.shape[:-1]) for N in Ni]
+    Ni = [xp.broadcast_to(N, samples[0].shape[:-1]) for N in Ni]
     ssq = [xp.var(sample, correction=1, axis=-1) for sample in samples]
     Ni = [arr[xp.newaxis, ...] for arr in Ni]
     ssq = [arr[xp.newaxis, ...] for arr in ssq]
@@ -3083,9 +3073,9 @@ def bartlett(*samples, axis=0):
     denom = 1 + 1/(3*(k - 1)) * ((xp.sum(1/(Ni - 1), axis=0)) - 1/(Ntot - k))
     T = numer / denom
 
-    T_np = np.asarray(T)
-    pvalue = distributions.chi2.sf(T_np, k-1)
-    pvalue = xp.asarray(pvalue, dtype=T.dtype)
+    chi2 = _SimpleChi2(xp.asarray(k-1))
+    pvalue = _get_pvalue(T, chi2, alternative='greater', symmetric=False, xp=xp)
+
     T = T[()] if T.ndim == 0 else T
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
 
@@ -3659,9 +3649,10 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Aibar = _apply_func(sample, g, np.sum) / Ni
     anbar = np.mean(sample, axis=0)
     varsq = np.var(sample, axis=0, ddof=1)
-    Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
-    pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
-    return FlignerResult(Xsq, pval)
+    statistic = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
+    chi2 = _SimpleChi2(k-1)
+    pval = _get_pvalue(statistic, chi2, alternative='greater', symmetric=False, xp=np)
+    return FlignerResult(statistic, pval)
 
 
 @_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
@@ -3757,7 +3748,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     Parameters
     ----------
     x, y : array_like
-        Arrays of sample data.
+        Arrays of sample data. There must be at least three observations
+        total.
     axis : int, optional
         The axis along which the samples are tested.  `x` and `y` can be of
         different length along `axis`.
@@ -4361,10 +4353,6 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
 def _circfuncs_common(samples, high, low, xp=None):
     xp = array_namespace(samples) if xp is None else xp
-    # Ensure samples are array-like and size is not zero
-    if xp_size(samples) == 0:
-        NaN = _get_nan(samples, xp=xp)
-        return NaN, NaN, NaN
 
     if xp.isdtype(samples.dtype, 'integral'):
         dtype = xp.asarray(1.).dtype  # get default float type
@@ -4457,6 +4445,10 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
+    # Needed for non-NumPy arrays to get appropriate NaN result
+    # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
+    if xp_size(samples) == 0:
+        return xp.mean(samples, axis=axis)
     samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
