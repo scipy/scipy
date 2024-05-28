@@ -34,14 +34,16 @@ from scipy.special._testutils import FuncData
 from scipy.special import binom
 from scipy import optimize
 from .common_tests import check_named_results
-from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
+from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
+                                          too_small_nd_omit, too_small_nd_not_omit,
+                                          too_small_1d_omit, too_small_1d_not_omit)
+from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
+                                   LinregressResult)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
                                    copy, is_numpy, is_torch, SCIPY_ARRAY_API,
                                    size as xp_size)
-
 
 skip_xp_backends = pytest.mark.skip_xp_backends
 
@@ -2000,6 +2002,13 @@ class TestFindRepeats:
 
 class TestRegression:
 
+    def test_one_arg_deprecation(self):
+        x = np.arange(20).reshape((2, 10))
+        message = "Inference of the two sets..."
+        with pytest.deprecated_call(match=message):
+            stats.linregress(x)
+        stats.linregress(x[0], x[1])
+
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
         result = stats.linregress(X, BIG)
@@ -2047,7 +2056,7 @@ class TestRegression:
         y += np.sin(np.linspace(0, 20, 100))
 
         result = stats.linregress(x, y)
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
@@ -2091,6 +2100,9 @@ class TestRegression:
         assert_allclose(res.stderr, 0.0519051424731)
         assert_allclose(res.intercept_stderr, 8.0490133029927)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise,
         # with a single input of shape (2, N)
@@ -2103,6 +2115,9 @@ class TestRegression:
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_simple_onearg_cols(self):
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
@@ -2113,6 +2128,9 @@ class TestRegression:
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_shape_error(self):
         # Check that a single input argument to linregress with wrong shape
         # results in a ValueError.
@@ -2165,7 +2183,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Result is of a correct class
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
 
         # LinregressResult elements have correct names
@@ -2243,7 +2261,7 @@ class TestRegression:
             result = stats.linregress(x, x)
 
         # Make sure the result still comes back as `LinregressResult`
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)
@@ -2438,11 +2456,11 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
-@pytest.mark.filterwarnings('ignore::FutureWarning')
 class TestMode:
 
     def test_empty(self):
-        vals, counts = stats.mode([])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
         assert_equal(counts, np.array([]))
 
@@ -2491,7 +2509,8 @@ class TestMode:
         actual = stats.mode(data1)
         attributes = ('mode', 'count')
         check_named_results(actual, attributes)
-        actual2 = stats.mode(data2)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            actual2 = stats.mode(data2)
         check_named_results(actual2, attributes)
 
     def test_mode_nan(self):
@@ -2617,15 +2636,18 @@ class TestMode:
         # The behavior of mode with empty slices (whether the input was empty
         # or all elements were omitted) was inconsistent. Test that this is
         # resolved: the mode of an empty slice is NaN and the count is zero.
-        res = stats.mode([])
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.mode([])
         ref = (np.nan, 0)
         assert_equal(res, ref)
 
-        res = stats.mode([np.nan], nan_policy='omit')
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
+            res = stats.mode([np.nan], nan_policy='omit')
         assert_equal(res, ref)
 
         a = [[10., 20., 20.], [np.nan, np.nan, np.nan]]
-        res = stats.mode(a, axis=1, nan_policy='omit')
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+            res = stats.mode(a, axis=1, nan_policy='omit')
         ref = ([20, np.nan], [2, 0])
         assert_equal(res, ref)
 
@@ -2634,14 +2656,19 @@ class TestMode:
         assert_equal(res, ref)
 
         z = np.array([[], []])
-        res = stats.mode(z, axis=1)
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_not_omit):
+            res = stats.mode(z, axis=1)
         ref = ([np.nan, np.nan], [0, 0])
         assert_equal(res, ref)
 
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # np.mean warns
     @pytest.mark.parametrize('z', [np.empty((0, 1, 2)), np.empty((1, 1, 2))])
     def test_gh17214(self, z):
-        res = stats.mode(z, axis=None, keepdims=True)
+        if z.size == 0:
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.mode(z, axis=None, keepdims=True)
+        else:
+            res = stats.mode(z, axis=None, keepdims=True)
         ref = np.mean(z, axis=None, keepdims=True)
         assert res[0].shape == res[1].shape == ref.shape == (1, 1, 1)
 
@@ -2668,21 +2695,25 @@ class TestSEM:
     testcase = [1., 2., 3., 4.]
     scalar_testcase = 4.
 
-    def test_sem(self, xp):
+    def test_sem_scalar(self, xp):
         # This is not in R, so used:
         #     sqrt(var(testcase)*3/4)/sqrt(3)
 
         # y = stats.sem(self.shoes[0])
         # assert_approx_equal(y,0.775177399)
         scalar_testcase = xp.asarray(self.scalar_testcase)[()]
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
-            # numpy
-            sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
-            # torch
-            sup.filter(UserWarning, "std*")
-            y = stats.sem(scalar_testcase)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                y = stats.sem(scalar_testcase)
+        else:
+            # Other array types can emit a variety of warnings.
+            with np.testing.suppress_warnings() as sup:
+                sup.filter(UserWarning)
+                sup.filter(RuntimeWarning)
+                y = stats.sem(scalar_testcase)
         assert xp.isnan(y)
 
+    def test_sem(self, xp):
         testcase = xp.asarray(self.testcase)
         y = stats.sem(testcase)
         xp_assert_close(y, xp.asarray(0.6454972244))
@@ -3042,9 +3073,10 @@ class TestIQR:
         stats.iqr(d, None, (50, 50), 'normal', 'raise', 'linear')
         stats.iqr(d, None, (25, 75), -0.4, 'omit', 'lower', True)
 
-    def test_empty(self):
-        assert_equal(stats.iqr([]), np.nan)
-        assert_equal(stats.iqr(np.arange(0)), np.nan)
+    @pytest.mark.parametrize('x', [[], np.arange(0)])
+    def test_empty(self, x):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            assert_equal(stats.iqr(x), np.nan)
 
     def test_constant(self):
         # Constant array always gives 0
@@ -3335,10 +3367,7 @@ class TestMoments:
         y = stats.moment(testcase, [1.0, 2, 3, 4.0])
         xp_assert_close(y, xp.asarray([0, 1.25, 0, 2.5625]))
 
-        # test empty input
-        message = r"Mean of empty slice\.|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=message):
-            np.mean([])  # lazy way of ignoring warnings
+        def test_cases():
             y = stats.moment(xp.asarray([]))
             xp_assert_equal(y, xp.asarray(xp.nan))
             y = stats.moment(xp.asarray([], dtype=xp.float32))
@@ -3349,6 +3378,16 @@ class TestMoments:
             xp_assert_equal(y, xp.asarray([xp.nan]))
             y = stats.moment(xp.asarray([[]]), order=[0, 1], axis=0)
             xp_assert_equal(y, xp.empty((2, 0)))
+
+        # test empty input
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match="See documentation for..."):
+                test_cases()
+        else:
+            with np.testing.suppress_warnings() as sup:  # needed by array_api_strict
+                sup.filter(RuntimeWarning, "Mean of empty slice.")
+                sup.filter(RuntimeWarning, "invalid value")
+                test_cases()
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -3435,13 +3474,20 @@ class SkewKurtosisTest:
 
 
 class TestSkew(SkewKurtosisTest):
-    def test_empty_1d(self):
-        # This is not essential behavior to maintain w/ array API
-        message = r"Mean of empty slice\.|invalid value encountered.*"
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.skew([])
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.kurtosis([])
+    @array_api_compatible
+    @pytest.mark.parametrize('stat_fun', [stats.skew, stats.kurtosis])
+    def test_empty_1d(self, stat_fun, xp):
+        x = xp.asarray([])
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stat_fun(x)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # array_api_strict produces these
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                res = stat_fun(x)
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])
@@ -4760,11 +4806,13 @@ class TestKSTwoSamples:
             assert_raises(FloatingPointError, _count_paths_outside_method,
                           2000, 1000, 1, 1)
 
-    def test_argument_checking(self):
-        # Check that an empty array causes a ValueError
-        assert_raises(ValueError, stats.ks_2samp, [], [1])
-        assert_raises(ValueError, stats.ks_2samp, [1], [])
-        assert_raises(ValueError, stats.ks_2samp, [], [])
+    @pytest.mark.parametrize('case', (([], [1]), ([1], []), ([], [])))
+    def test_argument_checking(self, case):
+        # Check that an empty array warns
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.ks_2samp(*case)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     @pytest.mark.xslow
     def test_gh12218(self):
@@ -4909,16 +4957,19 @@ def test_ttest_rel():
     rvs1_2D[:, 20:30] = np.nan
     rvs2_2D[:, 15:25] = np.nan
 
-    tr, pr = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit')
+    with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+        tr, pr = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit')
 
-    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
-                           alternative='less')
+    with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0,
+                               nan_policy='omit', alternative='less')
     assert_allclose(t, tr, rtol=1e-14)
     with np.errstate(invalid='ignore'):
         assert_allclose(p, converter(tr, pr, 'less'), rtol=1e-14)
 
-    t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0, nan_policy='omit',
-                           alternative='greater')
+    with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+        t, p = stats.ttest_rel(rvs1_2D, rvs2_2D, 0,
+                               nan_policy='omit', alternative='greater')
     assert_allclose(t, tr, rtol=1e-14)
     with np.errstate(invalid='ignore'):
         assert_allclose(p, converter(tr, pr, 'greater'), rtol=1e-14)
@@ -4948,7 +4999,8 @@ def test_ttest_rel_nan_2nd_arg():
 def test_ttest_rel_empty_1d_returns_nan():
     # Two empty inputs should return a TtestResult containing nan
     # for both values.
-    result = stats.ttest_rel([], [])
+    with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        result = stats.ttest_rel([], [])
     assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
@@ -4961,7 +5013,10 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # The results should be arrays containing nan with shape
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
-    result = stats.ttest_rel(a, b, axis=-1)
+    with np.testing.suppress_warnings() as sup:
+        # first case should warn, second shouldn't?
+        sup.filter(SmallSampleWarning, too_small_nd_not_omit)
+        result = stats.ttest_rel(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
@@ -5823,7 +5878,8 @@ def test_ttest_ind_nan_2nd_arg():
 def test_ttest_ind_empty_1d_returns_nan():
     # Two empty inputs should return a TtestResult containing nan
     # for both values.
-    result = stats.ttest_ind([], [])
+    with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+        result = stats.ttest_ind([], [])
     assert isinstance(result, stats._stats_py.TtestResult)
     assert_equal(result, (np.nan, np.nan))
 
@@ -5836,7 +5892,10 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # The results should be arrays containing nan with shape
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
-    result = stats.ttest_ind(a, b, axis=-1)
+    with np.testing.suppress_warnings() as sup:
+        # first case should warn, second shouldn't?
+        sup.filter(SmallSampleWarning, too_small_nd_not_omit)
+        result = stats.ttest_ind(a, b, axis=-1)
     assert isinstance(result, stats._stats_py.TtestResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
@@ -6189,11 +6248,19 @@ class TestDescribe:
 @array_api_compatible
 class NormalityTests:
     def test_too_small(self, xp):
-        # 1D sample has too few observations -> error
+        # 1D sample has too few observations -> warning/error
         test_fun = getattr(stats, self.test_name)
-        message = "...requires at least..."
-        with pytest.raises(ValueError, match=message):
-            test_fun(xp.asarray(4.))
+        x = xp.asarray(4.)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = test_fun(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "...requires at least..."
+            with pytest.raises(ValueError, match=message):
+                test_fun(x)
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_against_R(self, alternative, xp):
@@ -6251,9 +6318,19 @@ class TestSkewTest(NormalityTests):
         # Regression test for ticket #1492.
         # skewtest requires at least 8 observations; 7 should raise a ValueError.
         stats.skewtest(xp.arange(8.0))
-        message = '`skewtest` requires at least 8 observations...'
-        with pytest.raises(ValueError, match=message):
-            stats.skewtest(xp.arange(7.0))
+
+        x = xp.arange(7.0)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.skewtest(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "`skewtest` requires at least 8 observations"
+            with pytest.raises(ValueError, match=message):
+                stats.skewtest(x)
+
 
 class TestKurtosisTest(NormalityTests):
     test_name = 'kurtosistest'
@@ -6286,9 +6363,17 @@ class TestKurtosisTest(NormalityTests):
         with pytest.warns(UserWarning, match=message):
             stats.kurtosistest(xp.arange(19.0))
 
-        message = '`kurtosistest` requires at least 5 observations...'
-        with pytest.raises(ValueError, match=message):
-            stats.kurtosistest(xp.arange(4.0))
+        x = xp.arange(4.0)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.skewtest(x)
+                NaN = xp.asarray(xp.nan)
+                xp_assert_equal(res.statistic, NaN)
+                xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "`kurtosistest` requires at least 5 observations"
+            with pytest.raises(ValueError, match=message):
+                stats.kurtosistest(x)
 
 
 class TestNormalTest(NormalityTests):
@@ -6350,9 +6435,16 @@ class TestJarqueBera:
 
     def test_jarque_bera_size(self, xp):
         x = xp.asarray([])
-        message = "At least one observation is required."
-        with pytest.raises(ValueError, match=message):
-            stats.jarque_bera(x)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.jarque_bera(x)
+            NaN = xp.asarray(xp.nan)
+            xp_assert_equal(res.statistic, NaN)
+            xp_assert_equal(res.pvalue, NaN)
+        else:
+            message = "At least one observation is required."
+            with pytest.raises(ValueError, match=message):
+                res = stats.jarque_bera(x)
 
     def test_axis(self, xp):
         rng = np.random.RandomState(seed=122398129)
@@ -7265,19 +7357,15 @@ class TestAlexanderGovern:
         assert (res_int16.statistic == res_int32.statistic ==
                 res_unit8.statistic == res_float64.statistic)
 
+    @pytest.mark.parametrize('case',[([1, 2], []), ([1, 2], 2), ([1, 2], [2])])
+    def test_too_small_inputs(self, case):
+        # input array is of size zero or too small
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.alexandergovern(*case)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
+
     def test_bad_inputs(self):
-        # input array is of size zero
-        with assert_raises(ValueError, match="Input sample size must be"
-                                             " greater than one."):
-            stats.alexandergovern([1, 2], [])
-        # input is a singular non list element
-        with assert_raises(ValueError, match="Input sample size must be"
-                                             " greater than one."):
-            stats.alexandergovern([1, 2], 2)
-        # input list is of size 1
-        with assert_raises(ValueError, match="Input sample size must be"
-                                             " greater than one."):
-            stats.alexandergovern([1, 2], [2])
         # inputs are not finite (infinity)
         with assert_raises(ValueError, match="Input samples must be finite."):
             stats.alexandergovern([1, 2], [np.inf, np.inf])
@@ -7628,14 +7716,12 @@ class TestFOneWay:
 
     def test_length0_1d_error(self):
         # Require at least one value in each group.
-        msg = 'at least one input has length 0'
-        with pytest.warns(stats.DegenerateDataWarning, match=msg):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
             result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
             assert_equal(result, (np.nan, np.nan))
 
     def test_length0_2d_error(self):
-        msg = 'at least one input has length 0'
-        with pytest.warns(stats.DegenerateDataWarning, match=msg):
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_not_omit):
             ncols = 3
             a = np.ones((4, ncols))
             b = np.ones((0, ncols))
@@ -7646,14 +7732,14 @@ class TestFOneWay:
             assert_equal(p, nans)
 
     def test_all_length_one(self):
-        msg = 'all input arrays have length 1.'
-        with pytest.warns(stats.DegenerateDataWarning, match=msg):
+        with pytest.warns(SmallSampleWarning):
             result = stats.f_oneway([10], [11], [12], [13])
             assert_equal(result, (np.nan, np.nan))
 
     @pytest.mark.parametrize('args', [(), ([1, 2, 3],)])
     def test_too_few_inputs(self, args):
-        with assert_raises(TypeError):
+        message = "At least two samples are required..."
+        with assert_raises(TypeError, match=message):
             stats.f_oneway(*args)
 
     def test_axis_error(self):
@@ -7727,7 +7813,8 @@ class TestKruskal:
         x = [1, 1, 1]
         y = [2, 2, 2]
         z = []
-        assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            assert_equal(stats.kruskal(x, y, z), (np.nan, np.nan))
 
     def test_kruskal_result_attributes(self):
         x = [1, 3, 5, 7, 9]
@@ -8301,17 +8388,15 @@ class TestBrunnerMunzel:
                       distribution,
                       nan_policy)
 
-    def test_brunnermunzel_empty_imput(self):
-        u1, p1 = stats.brunnermunzel(self.X, [])
-        u2, p2 = stats.brunnermunzel([], self.Y)
-        u3, p3 = stats.brunnermunzel([], [])
-
-        assert_equal(u1, np.nan)
-        assert_equal(p1, np.nan)
-        assert_equal(u2, np.nan)
-        assert_equal(p2, np.nan)
-        assert_equal(u3, np.nan)
-        assert_equal(p3, np.nan)
+    @pytest.mark.parametrize("kwarg_update", [{'y': []}, {'x': []},
+                                              {'x': [], 'y': []}])
+    def test_brunnermunzel_empty_imput(self, kwarg_update):
+        kwargs = {'x': self.X, 'y': self.Y}
+        kwargs.update(kwarg_update)
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            statistic, pvalue = stats.brunnermunzel(**kwargs)
+        assert_equal(statistic, np.nan)
+        assert_equal(pvalue, np.nan)
 
     def test_brunnermunzel_nan_input_propagate(self):
         X = [1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 2, 4, 1, 1, np.nan]
