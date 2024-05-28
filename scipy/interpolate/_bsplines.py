@@ -1631,8 +1631,13 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, bc_type:Non
 
     if bc_type is not None:
         bc_type = np.asarray_chkfinite(bc_type)
-        c1 = bc_type[0]      #constant 1
-        c2 = bc_type[-1]     #constant 2
+
+    deriv1 = bc_type[0]
+    deriv2 = bc_type[-1]
+
+    t[0] = deriv1
+    t[-1] = deriv2
+        
 
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
@@ -1649,8 +1654,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, bc_type:Non
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
     
-    x[0] = c1
-    x[-1] = c2
+    
 
 
     # number of coefficients
