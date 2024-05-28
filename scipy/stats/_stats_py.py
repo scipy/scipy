@@ -7160,8 +7160,7 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     else:
         _, denom = _equal_var_ttest_denom(var_a, na, var_b, nb)
 
-    res = (avg_a-avg_b)/denom
-    return res
+    return (avg_a-avg_b)/denom
 
 
 def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
