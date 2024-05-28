@@ -467,6 +467,10 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+    # TODO: remove pip pre-release install after Python 3.13 release
+    - name: Install pre-release pip
+      run: |
+        pip install -U --pre pip
     # TODO: remove cython nightly install when cython does a release
     - name: Install nightly Cython
       run: |
@@ -478,10 +482,8 @@ jobs:
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran
         pip install ninja meson-python pybind11 click rich_click pydevtool
-        pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
+        pip install --pre --upgrade pytest pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
-    - name: Setup tmate session
-      uses: mxschmitt/action-tmate@v3
     - name: Build and run tests
       env:
         PYTHON_GIL: 0
