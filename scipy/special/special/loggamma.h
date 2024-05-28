@@ -143,17 +143,8 @@ SPECFUN_HOST_DEVICE inline std::complex<float> loggamma(std::complex<float> z) {
     return static_cast<std::complex<float>>(loggamma(static_cast<std::complex<double>>(z)));
 }
 
-SPECFUN_HOST_DEVICE inline std::complex<double> gamma_complex(std::complex<double> z) {
-    // Compute Gamma(z) using loggamma.
-    if (z.real() <= 0 && z == std::floor(z.real())) {
-        // Poles
-        set_error("gamma_complex", SF_ERROR_SINGULAR, NULL);
-        return {std::numeric_limits<double>::quiet_NaN(), std::numeric_limits<double>::quiet_NaN()};
-    }
-    return std::exp(loggamma(z));
-}
-
-SPECFUN_HOST_DEVICE inline std::complex<float> gamma_complex(std::complex<float> z) {
+template <typename T>
+SPECFUN_HOST_DEVICE inline std::complex<T> gamma_complex(std::complex<T> z) {
     // Compute Gamma(z) using loggamma.
     if (z.real() <= 0 && z == std::floor(z.real())) {
         // Poles
