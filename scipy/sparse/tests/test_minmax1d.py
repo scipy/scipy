@@ -93,13 +93,15 @@ class Test_ShapeMinMax2DWithAxis:
             (datsp.max, np.max),
             (datsp.nanmin, np.nanmin),
             (datsp.nanmax, np.nanmax),
-            (datsp.argmin, np.argmin),
-            (datsp.argmax, np.argmax),
         ]:
-            assert_equal(toarray(spminmax(axis=0)), npminmax(dat, axis=0))
-            assert_equal(toarray(spminmax(axis=1)), npminmax(dat, axis=1))
-            assert_equal(spminmax(axis=0).shape, (4,))
-            assert_equal(spminmax(axis=1).shape, (3,))
+            for ax, result_shape in [(0, (4,)), (1, (3,))]:
+                assert_equal(toarray(spminmax(axis=ax)), npminmax(dat, axis=ax))
+                assert_equal(spminmax(axis=ax).shape, result_shape)
+                assert spminmax(axis=ax).format == "coo"
+
+        for spminmax in [datsp.argmin, datsp.argmax]:
+            for ax in [0, 1]:
+                assert isinstance(spminmax(axis=ax), np.ndarray)
 
         # verify spmatrix behavior
         spmat_form = {
@@ -110,28 +112,17 @@ class Test_ShapeMinMax2DWithAxis:
         }
         datspm = spmat_form[datsp.format](dat)
 
-        for (spminax, npminax) in [
+        for spm, npm in [
             (datspm.min, np.min),
             (datspm.max, np.max),
             (datspm.nanmin, np.nanmin),
             (datspm.nanmax, np.nanmax),
-            (datspm.argmin, np.argmin),
-            (datspm.argmax, np.argmax),
         ]:
-            assert_equal(toarray(spminax(axis=0)), npminax(dat, axis=0, keepdims=True))
-            assert_equal(toarray(spminax(axis=1)), npminax(dat, axis=1, keepdims=True))
-            assert_equal(spminax(axis=0).shape, (1, 4))
-            assert_equal(spminax(axis=1).shape, (3, 1))
+            for ax, result_shape in [(0, (1, 4)), (1, (3, 1))]:
+                assert_equal(toarray(spm(axis=ax)), npm(dat, axis=ax, keepdims=True))
+                assert_equal(spm(axis=ax).shape, result_shape)
+                assert spm(axis=ax).format == "coo"
 
-        assert datspm.min(axis=0).format == "coo"
-        assert datspm.min(axis=1).format == "coo"
-        assert datspm.max(axis=0).format == "coo"
-        assert datspm.max(axis=1).format == "coo"
-        assert datspm.nanmin(axis=0).format == "coo"
-        assert datspm.nanmin(axis=1).format == "coo"
-        assert datspm.nanmax(axis=0).format == "coo"
-        assert datspm.nanmax(axis=1).format == "coo"
-        assert isinstance(datspm.argmin(axis=0), np.ndarray)
-        assert isinstance(datspm.argmin(axis=1), np.ndarray)
-        assert isinstance(datspm.argmax(axis=0), np.ndarray)
-        assert isinstance(datspm.argmax(axis=1), np.ndarray)
+        for spminmax in [datspm.argmin, datspm.argmax]:
+            for ax in [0, 1]:
+                assert isinstance(spminmax(axis=ax), np.ndarray)
