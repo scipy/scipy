@@ -487,6 +487,12 @@ jobs:
     - name: Build and run tests
       env:
         PYTHON_GIL: 0
+      # TODO: For some reason the Meson installation path points to
+      # python3/site-packages as opposed to python3.13/site-packages,
+      # then the dev.py scripts do not work as expected.
       run: |
-        python dev.py build --with-scipy-openblas
-        python dev.py --no-build test -j2 --mode full
+        # python dev.py build --with-scipy-openblas
+        # python dev.py --no-build test -j2 --mode full
+        pip install . -vv --no-build-isolation
+        pushd $RUNNER_TEMP
+        python -m pytest --pyargs scipy -n2 --durations=10
