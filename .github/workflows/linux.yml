@@ -480,6 +480,8 @@ jobs:
         pip install ninja meson-python pybind11 click rich_click pydevtool
         pip install --pre --upgrade pytest pytest-cov pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
     - name: Build and run tests
       env:
         PYTHON_GIL: 0
