@@ -262,6 +262,9 @@ class TestBracketRoot:
             _bracket_root(lambda x: x, -4, 4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
             _bracket_root(lambda x: x, -4, 4, maxiter=-1)
+        with pytest.raises(ValueError, match=message):
+            _bracket_root(lambda x: x, -4, 4, maxiter="shrubbery")
+
 
     def test_special_cases(self):
         # Test edge cases and other special cases
@@ -493,6 +496,8 @@ class TestBracketMinimum:
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xl0='hello')
         with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr0='farcical aquatic ceremony')
+        with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xmin=np)
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xmax=object())
@@ -513,6 +518,8 @@ class TestBracketMinimum:
             _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=1.5)
         with pytest.raises(ValueError, match=message):
             _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter=-1)
+        with pytest.raises(ValueError, match=message):
+            _bracket_minimum(lambda x: x**2, -4, xr0=4, maxiter="ekki")
 
     @pytest.mark.parametrize("xl0", [0.0, None])
     @pytest.mark.parametrize("xm0", (0.05, 0.1, 0.15))
