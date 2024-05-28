@@ -11,15 +11,11 @@ kernelspec:
   name: python3
 ---
 
-+++ { "jupyter": { "source_hidden": true } }
 ```{eval-rst}
 .. jupyterlite:: sampling.ipynb
    :new_tab: False
 ```
-+++ { "jupyter": { "source_hidden": true } }
 (non-uniform-random-number-sampling)=
-+++
-
 # Universal Non-Uniform Random Number Sampling in SciPy
 
 SciPy provides an interface to many universal non-uniform random number
