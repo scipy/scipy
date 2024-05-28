@@ -1509,7 +1509,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     return BSpline.construct_fast(t, c, k, axis=axis)
 
 
-def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
+def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True, bc_type:None):
     r"""Compute the (coefficients of) an LSQ (Least SQuared) based
     fitting B-spline.
 
@@ -1629,6 +1629,11 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
+    if bc_type is not None:
+        bc_type = np.asarray_chkfinite(bc_type)
+        c1 = bc_type[0]      #constant 1
+        c2 = bc_type[-1]     #constant 2
+
     if x.ndim != 1 or np.any(x[1:] - x[:-1] <= 0):
         raise ValueError("Expect x to be a 1-D sorted array_like.")
     if x.shape[0] < k+1:
@@ -1643,6 +1648,10 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
         raise ValueError('Out of bounds w/ x = %s.' % x)
     if x.size != w.size:
         raise ValueError(f'Shapes of x {x.shape} and w {w.shape} are incompatible')
+    
+    x[0] = c1
+    x[-1] = c2
+
 
     # number of coefficients
     n = t.size - k - 1
