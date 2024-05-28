@@ -741,28 +741,22 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
     }
 }
 
-template <typename T, typename OutputMat1, typename OutputMat2>
-void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
-    int m = (res.extent(0) - 1) / 2;
-    int n = res.extent(1) - 1;
-
+template <typename T, typename Callback>
+void assoc_legendre_p_all_recur(int n, int m, int type, T z, Callback callable) {
     T p_diag[3] = {};
     T p_diag_jac[3] = {};
     assoc_legendre_p_diag_init(false, type, z, p_diag, p_diag_jac);
 
     assoc_legendre_p_diag_recur(
         m, type, z, p_diag, p_diag_jac,
-        [res, res_jac, n](int i, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+        [callable, n](int i, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
             T p[3] = {p_diag[2], 0, 0};
             T p_jac[3] = {p_diag_jac[2], 0, 0};
             assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
 
             assoc_legendre_p_recur(
                 n, i, re.type, re.z, p, p_jac,
-                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
-                    res(re.m, j) = p[2];
-                    res_jac(re.m, j) = p_jac[2];
-                }
+                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
             );
         }
     );
@@ -771,7 +765,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
 
     assoc_legendre_p_diag_recur(
         -m, type, z, p_diag, p_diag_jac,
-        [res, res_jac, n](int i_abs, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+        [callable, n](int i_abs, auto re, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
             int i = -i_abs;
 
             T p[3] = {p_diag[2], 0, 0};
@@ -780,60 +774,26 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
 
             assoc_legendre_p_recur(
                 n, i, re.type, re.z, p, p_jac,
-                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
-                    if (re.m != 0) {
-                        res(re.m + int(res.extent(0)), j) = p[2];
-                        res_jac(re.m + int(res.extent(0)), j) = p_jac[2];
-                    }
-                }
+                [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
             );
         }
     );
+}
 
-    /*
-        for (int i = 0; i <= m; ++i) {
-            T p[3] = {};
-            T p_jac[3] = {};
-            assoc_legendre_p_init(i, type, z, p, p_jac);
+template <typename T, typename OutputMat1, typename OutputMat2>
+void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
+    int m = (res.extent(0) - 1) / 2;
+    int n = res.extent(1) - 1;
 
-            assoc_legendre_p_recur(
-                n, i, type, z, p, p_jac,
-                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
-                    res(re.m, j) = p[2];
-                    res_jac(re.m, j) = p_jac[2];
-                }
-            );
+    assoc_legendre_p_all_recur(n, m, type, z, [res, res_jac](int j, int i, const T(&p)[3], const T(&p_jac)[3]) {
+        if (i < 0) {
+            res(i + res.extent(0), j) = p[2];
+            res_jac(i + res_jac.extent(0), j) = p_jac[2];
+        } else {
+            res(i, j) = p[2];
+            res_jac(i, j) = p_jac[2];
         }
-    */
-
-    /*
-        for (int i = 0; i <= m; ++i) {
-            T p[3] = {};
-            T p_jac[3] = {};
-            assoc_legendre_p_init(i, type, z, p, p_jac);
-
-            assoc_legendre_p_recur(
-                n, i, type, z, p, p_jac,
-                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
-                    res(re.m, j) = p[2];
-                    res_jac(re.m, j) = p_jac[2];
-                }
-            );
-        }
-        for (int i = -m; i < 0; ++i) {
-            T p[3] = {};
-            T p_jac[3] = {};
-            assoc_legendre_p_init(i, type, z, p, p_jac);
-
-            assoc_legendre_p_recur(
-                n, i, type, z, p, p_jac,
-                [res, res_jac](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) {
-                    res(re.m + res.extent(0), j) = p[2];
-                    res_jac(re.m + res_jac.extent(0), j) = p_jac[2];
-                }
-            );
-        }
-    */
+    });
 }
 
 template <typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
