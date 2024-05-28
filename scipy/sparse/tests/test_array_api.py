@@ -256,13 +256,18 @@ def test_spsolve(B):
     )
 
 
-def test_spsolve_triangular():
-    X = scipy.sparse.csr_array([
+@pytest.mark.parametrize("fmt",["csr","csc"])
+def test_spsolve_triangular(fmt):
+    arr = [
         [1, 0, 0, 0],
         [2, 1, 0, 0],
         [3, 2, 1, 0],
         [4, 3, 2, 1],
-    ])
+    ]
+    if fmt == "csr":
+      X = scipy.sparse.csr_array(arr)
+    else:
+      X = scipy.sparse.csc_array(arr)
     spla.spsolve_triangular(X, [1, 2, 3, 4])
 
 
