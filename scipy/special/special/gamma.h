@@ -17,7 +17,7 @@ SPECFUN_HOST_DEVICE T gammaln(T x) {
 
 template <typename T>
 SPECFUN_HOST_DEVICE inline std::complex<T> gamma(std::complex<T> z) {
-    return gamma(z);
+    return gamma_complex(z);
 }
 
 } // namespace special
