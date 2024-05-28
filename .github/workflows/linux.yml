@@ -482,7 +482,7 @@ jobs:
       run: |
         pip install git+https://github.com/serge-sans-paille/pythran
         pip install ninja meson-python pybind11 click rich_click pydevtool
-        pip install --pre --upgrade pytest pytest-xdist mpmath gmpy2 threadpoolctl pooch hypothesis
+        pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
         pip install -r requirements/openblas.txt
     - name: Build and run tests
       env:
@@ -493,6 +493,7 @@ jobs:
       run: |
         # python dev.py build --with-scipy-openblas
         # python dev.py --no-build test -j2 --mode full
-        pip install . -vv --no-build-isolation
+        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
+        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
-        python -m pytest --pyargs scipy -n2 --durations=10
+        PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
