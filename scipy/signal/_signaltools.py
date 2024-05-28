@@ -41,6 +41,20 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'filtfilt', 'decimate', 'vectorstrength']
 
 
+def _array_namespace_or_object(*args):
+    """Fall back to numpy for object arrays."""
+    try:
+        xp = array_namespace(*args)
+    except TypeError:
+        np_args = [np.asarray(a) for a in args]
+        if any(a.dtype.kind == 'O' for a in np_args):
+            xp = np
+        else:
+            # no idea what happened, just propagate the error
+            raise
+    return xp
+
+
 _modedict = {'valid': 0, 'same': 1, 'full': 2}
 
 _boundarydict = {'fill': 0, 'pad': 0, 'wrap': 2, 'circular': 2, 'symm': 1,
@@ -231,7 +245,7 @@ def correlate(in1, in2, mode='full', method='auto'):
     >>> plt.show()
 
     """
-    xp = array_namespace(in1, in2)
+    xp = _array_namespace_or_object(in1, in2)
 
     in1 = xp.asarray(in1)
     in2 = xp.asarray(in2)
@@ -1313,7 +1327,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     `convolve`.
 
     """
-    xp = array_namespace(in1, in2)
+    xp = _array_namespace_or_object(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
@@ -1330,7 +1344,7 @@ def choose_conv_method(in1, in2, mode='full', measure=False):
     # for integer input,
     # catch when more precision required than float provides (representing an
     # integer as float can lose precision in fftconvolve if larger than 2**52)
-    if any([_numeric_arrays([x], kinds='ui') for x in [volume, kernel]]):
+    if any([_numeric_arrays([x], kinds='ui', xp=xp) for x in [volume, kernel]]):
         max_value = int(xp.max(xp.abs(volume))) * int(xp.max(xp.abs(kernel)))
         max_value *= int(min(xp_size(volume), xp_size(kernel)))
         if max_value > 2**np.finfo('float').nmant - 1:
@@ -1444,7 +1458,7 @@ def convolve(in1, in2, mode='full', method='auto'):
     >>> fig.show()
 
     """
-    xp = array_namespace(in1, in2)
+    xp = _array_namespace_or_object(in1, in2)
 
     volume = xp.asarray(in1)
     kernel = xp.asarray(in2)
