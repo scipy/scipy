@@ -67,7 +67,7 @@ struct legendre_p_recurrence {
  * @return value of the polynomial
  */
 template <typename T, typename Callable>
-void legendre_p_for_each(int n, T z, T (&res)[3], Callable callback) {
+void legendre_p_for_each_n(int n, T z, T (&res)[3], Callable callback) {
     legendre_p_initializer<T> init{z};
     init(res);
 
@@ -76,7 +76,7 @@ void legendre_p_for_each(int n, T z, T (&res)[3], Callable callback) {
 }
 
 template <typename T, typename Callable>
-void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
+void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     legendre_p_initializer<T> init{z};
     init(res, res_jac);
 
@@ -85,7 +85,7 @@ void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], Callable call
 }
 
 template <typename T, typename Callable>
-void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback) {
+void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback) {
     legendre_p_initializer<T> init{z};
     init(res, res_jac, res_hess);
 
@@ -104,7 +104,7 @@ void legendre_p_for_each(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)
 template <typename T>
 T legendre_p(int n, T z) {
     T p[3] = {};
-    legendre_p_for_each(n, z, p, [](int j, const auto &r, const T(&p)[3]) {});
+    legendre_p_for_each_n(n, z, p, [](int j, const auto &r, const T(&p)[3]) {});
 
     return p[2];
 }
@@ -121,7 +121,7 @@ template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    legendre_p_for_each(n, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
+    legendre_p_for_each_n(n, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
     res_jac = p_jac[2];
@@ -141,7 +141,7 @@ void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
     T p[3] = {};
     T p_jac[3] = {};
     T p_hess[3] = {};
-    legendre_p_for_each(
+    legendre_p_for_each_n(
         n, z, p, p_jac, p_hess, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
     );
 
@@ -162,7 +162,7 @@ void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
 
     T p[3] = {};
-    legendre_p_for_each(n, z, p, [res](int j, const auto &r, const T(&p)[3]) { res(j) = p[2]; });
+    legendre_p_for_each_n(n, z, p, [res](int j, const auto &r, const T(&p)[3]) { res(j) = p[2]; });
 }
 
 /**
@@ -179,7 +179,7 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
 
     T p[3] = {};
     T p_jac[3] = {};
-    legendre_p_for_each(n, z, p, p_jac, [res, res_jac](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {
+    legendre_p_for_each_n(n, z, p, p_jac, [res, res_jac](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {
         res(j) = p[2];
         res_jac(j) = p_jac[2];
     });
@@ -201,7 +201,7 @@ void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess
     T p[3] = {};
     T p_jac[3] = {};
     T p_hess[3] = {};
-    legendre_p_for_each(
+    legendre_p_for_each_n(
         n, z, p, p_jac, p_hess,
         [res, res_jac, res_hess](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
             res(j) = p[2];
@@ -557,7 +557,7 @@ void assoc_legendre_p_init(int m, int type, T z, T (&res)[3], T (&res_jac)[3], T
  * @return value of the polynomial
  */
 template <typename T, typename Callable>
-void assoc_legendre_p_for_each(int n, int m, int type, T z, T (&res)[3], Callable callback) {
+void assoc_legendre_p_for_each_n(int n, int m, int type, T z, T (&res)[3], Callable callback) {
     int m_abs = std::abs(m);
 
     assoc_legendre_p_init(m, type, z, res);
@@ -586,7 +586,7 @@ void assoc_legendre_p_for_each(int n, int m, int type, T z, T (&res)[3], Callabl
 }
 
 template <typename T, typename Callable>
-void assoc_legendre_p_for_each(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
+void assoc_legendre_p_for_each_n(int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback) {
     assoc_legendre_p_init(m, type, z, res, res_jac);
 
     assoc_legendre_p_recurrence<T> r{m, type, z};
@@ -616,7 +616,7 @@ void assoc_legendre_p_for_each(int n, int m, int type, T z, T (&res)[3], T (&res
 }
 
 template <typename T, typename Callable>
-void assoc_legendre_p_for_each(
+void assoc_legendre_p_for_each_n(
     int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callable callback
 ) {
     int m_abs = std::abs(m);
@@ -649,7 +649,7 @@ void assoc_legendre_p_for_each(
 }
 
 template <typename T, typename Callback>
-void assoc_legendre_p_for_each_2(int n, int m, int type, T z, Callback callable) {
+void assoc_legendre_p_for_each_n_m(int n, int m, int type, T z, Callback callable) {
     T p_diag[3] = {};
     T p_diag_jac[3] = {};
 
@@ -660,7 +660,7 @@ void assoc_legendre_p_for_each_2(int n, int m, int type, T z, Callback callable)
             T p_jac[3] = {p_diag_jac[2], 0, 0};
             assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
 
-            assoc_legendre_p_for_each(
+            assoc_legendre_p_for_each_n(
                 n, i, re.type, re.z, p, p_jac,
                 [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
             );
@@ -676,7 +676,7 @@ void assoc_legendre_p_for_each_2(int n, int m, int type, T z, Callback callable)
             T p_jac[3] = {p_diag_jac[2], 0, 0};
             assoc_legendre_p_init(i, re.type, re.z, false, p, p_jac);
 
-            assoc_legendre_p_for_each(
+            assoc_legendre_p_for_each_n(
                 n, i, re.type, re.z, p, p_jac,
                 [callable, i](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
             );
@@ -697,7 +697,7 @@ void assoc_legendre_p_for_each_2(int n, int m, int type, T z, Callback callable)
 template <typename T>
 T assoc_legendre_p(int n, int m, int type, T z) {
     T p[3] = {};
-    assoc_legendre_p_for_each(n, m, type, z, p, [](int j, const auto &r, const T(&p)[3]) {});
+    assoc_legendre_p_for_each_n(n, m, type, z, p, [](int j, const auto &r, const T(&p)[3]) {});
 
     return p[2];
 }
@@ -706,7 +706,8 @@ template <typename T>
 void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    assoc_legendre_p_for_each(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {});
+    assoc_legendre_p_for_each_n(n, m, type, z, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {
+    });
 
     res = p[2];
     res_jac = p_jac[2];
@@ -717,7 +718,7 @@ void assoc_legendre_p(int n, int m, int type, T z, T &res, T &res_jac, T &res_he
     T p[3] = {};
     T p_jac[3] = {};
     T p_hess[3] = {};
-    assoc_legendre_p_for_each(
+    assoc_legendre_p_for_each_n(
         n, m, type, z, p, p_jac, p_hess, [](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
     );
 
@@ -744,7 +745,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
         T p[3] = {};
         assoc_legendre_p_init(i, type, z, p);
 
-        assoc_legendre_p_for_each(n, i, type, z, p, [res](int j, const auto &re, const T(&p)[3]) {
+        assoc_legendre_p_for_each_n(n, i, type, z, p, [res](int j, const auto &re, const T(&p)[3]) {
             res(re.m, j) = p[2];
         });
     }
@@ -752,7 +753,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat res) {
         T p[3] = {};
         assoc_legendre_p_init(i, type, z, p);
 
-        assoc_legendre_p_for_each(n, i, type, z, p, [res](int j, auto r, const T(&p)[3]) {
+        assoc_legendre_p_for_each_n(n, i, type, z, p, [res](int j, auto r, const T(&p)[3]) {
             res(r.m + res.extent(0), j) = p[2];
         });
     }
@@ -763,7 +764,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
-    assoc_legendre_p_for_each_2(n, m, type, z, [res, res_jac](int j, int i, const T(&p)[3], const T(&p_jac)[3]) {
+    assoc_legendre_p_for_each_n_m(n, m, type, z, [res, res_jac](int j, int i, const T(&p)[3], const T(&p_jac)[3]) {
         if (i < 0) {
             res(i + res.extent(0), j) = p[2];
             res_jac(i + res_jac.extent(0), j) = p_jac[2];
@@ -785,7 +786,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
         T p_hess[3] = {};
         assoc_legendre_p_init(i, type, z, p, p_jac, p_hess);
 
-        assoc_legendre_p_for_each(
+        assoc_legendre_p_for_each_n(
             n, i, type, z, p, p_jac, p_hess,
             [res, res_jac, res_hess](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
                 res(re.m, j) = p[2];
@@ -800,7 +801,7 @@ void assoc_legendre_p_all(int type, T z, OutputMat1 res, OutputMat2 res_jac, Out
         T p_hess[3] = {};
         assoc_legendre_p_init(i, type, z, p, p_jac, p_hess);
 
-        assoc_legendre_p_for_each(
+        assoc_legendre_p_for_each_n(
             n, i, type, z, p, p_jac, p_hess,
             [res, res_jac, res_hess](int j, const auto &re, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
                 res(re.m + res.extent(0), j) = p[2];
