@@ -116,7 +116,7 @@ Global optimization
    shgo - Simplicial homology global optimizer.
    dual_annealing - Dual annealing stochastic optimizer.
    direct - DIRECT (Dividing Rectangles) optimizer.
-   
+
 Least-squares and curve fitting
 ===============================
 
