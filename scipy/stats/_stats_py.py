@@ -60,7 +60,8 @@ from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate,
-                               _broadcast_shapes)
+                               _broadcast_shapes,
+                               SmallSampleWarning)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -443,7 +444,7 @@ def _mode_result(mode, count):
     # but `count` should not be NaN; it should be zero.
     i = np.isnan(count)
     if i.shape == ():
-        count = count.dtype(0) if i else count
+        count = np.asarray(0, dtype=count.dtype)[()] if i else count
     else:
         count[i] = 0
     return ModeResult(mode, count)
@@ -1459,7 +1460,7 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     Parameters
     ----------
     a : array
-        The data to be tested.
+        The data to be tested. Must contain at least eight observations.
     axis : int or None, optional
        Axis along which statistics are calculated. Default is 0.
        If None, compute over the whole array `a`.
@@ -1611,12 +1612,13 @@ def skewtest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     xp = array_namespace(a)
     a, axis = _chk_asarray(a, axis, xp=xp)
 
-    b2 = skew(a, axis)
+    b2 = skew(a, axis, _no_deco=True)
     n = a.shape[axis]
     if n < 8:
         message = ("`skewtest` requires at least 8 observations; "
-                   f"{n} observations were given.")
+                   f"only {n=} observations were given.")
         raise ValueError(message)
+
     y = b2 * math.sqrt(((n + 1) * (n + 3)) / (6.0 * (n - 2)))
     beta2 = (3.0 * (n**2 + 27*n - 70) * (n+1) * (n+3) /
              ((n-2.0) * (n+5) * (n+7) * (n+9)))
@@ -1647,7 +1649,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
     Parameters
     ----------
     a : array
-        Array of the sample data.
+        Array of the sample data. Must contain at least five observations.
     axis : int or None, optional
        Axis along which to compute test. Default is 0. If None,
        compute over the whole array `a`.
@@ -1814,7 +1816,7 @@ def kurtosistest(a, axis=0, nan_policy='propagate', alternative='two-sided'):
         message = ("`kurtosistest` p-value may be inaccurate with fewer than 20 "
                    f"observations; only {n=} observations were given.")
         warnings.warn(message, stacklevel=2)
-    b2 = kurtosis(a, axis, fisher=False)
+    b2 = kurtosis(a, axis, fisher=False, _no_deco=True)
 
     E = 3.0*(n-1) / (n+1)
     varb2 = 24.0*n*(n-2)*(n-3) / ((n+1)*(n+1.)*(n+3)*(n+5))  # [1]_ Eq. 1
@@ -1858,7 +1860,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     a : array_like
-        The array containing the sample to be tested.
+        The array containing the sample to be tested. Must contain
+        at least eight observations.
     axis : int or None, optional
         Axis along which to compute test. Default is 0. If None,
         compute over the whole array `a`.
@@ -1997,8 +2000,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     """
     xp = array_namespace(a)
 
-    s, _ = skewtest(a, axis)
-    k, _ = kurtosistest(a, axis)
+    s, _ = skewtest(a, axis, _no_deco=True)
+    k, _ = kurtosistest(a, axis, _no_deco=True)
     statistic = s*s + k*k
 
     chi2 = _SimpleChi2(xp.asarray(2.))
@@ -2807,7 +2810,7 @@ def sem(a, axis=0, ddof=1, nan_policy='propagate'):
     ----------
     a : array_like
         An array containing the values for which the standard error is
-        returned.
+        returned. Must contain at least two observations.
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
@@ -3963,26 +3966,27 @@ def _first(arr, axis):
 
 
 def _f_oneway_is_too_small(samples, kwargs={}, axis=-1):
+    message = f"At least two samples are required; got {len(samples)}."
+    if len(samples) < 2:
+        raise TypeError(message)
+
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
-        msg = 'at least one input has length 0'
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
         return True
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
-        warnings.warn(stats.DegenerateDataWarning(msg), stacklevel=2)
+        warnings.warn(SmallSampleWarning(msg), stacklevel=2)
         return True
 
     return False
 
 
 @_axis_nan_policy_factory(
-    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small
-)
+    F_onewayResult, n_samples=None, too_small=_f_oneway_is_too_small)
 def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
@@ -4010,12 +4014,12 @@ def f_oneway(*samples, axis=0):
     Warns
     -----
     `~scipy.stats.ConstantInputWarning`
-        Raised if all values within each of the input arrays are identical.
+        Emitted if all values within each of the input arrays are identical.
         In this case the F statistic is either infinite or isn't defined,
         so ``np.inf`` or ``np.nan`` is returned.
 
-    `~scipy.stats.DegenerateDataWarning`
-        Raised if the length of any input array is 0, or if all the input
+    RuntimeWarning
+        Emitted if the length of any input array is 0, or if all the input
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
 
@@ -4228,7 +4232,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
     ----------
     sample1, sample2, ... : array_like
         The sample measurements for each group.  There must be at least
-        two samples.
+        two samples, and each sample must contain at least two observations.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -6437,6 +6441,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     n = a.shape[axis]
     df = n - 1
 
+    if n == 0:
+        # This is really only needed for *testing* _axis_nan_policy decorator
+        # It won't happen when the decorator is used.
+        NaN = _get_nan(a)
+        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
+                           standard_error=NaN, estimate=NaN)
+
     mean = xp.mean(a, axis=axis)
     try:
         popmean = xp.asarray(popmean)
@@ -6499,6 +6510,7 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     high = xp.asarray(high, dtype=dtype)
     high = high[()] if high.ndim == 0 else high
     return low, high
+
 
 def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
 
@@ -8863,32 +8875,7 @@ def kruskal(*samples, nan_policy='propagate'):
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    for sample in samples:
-        if sample.size == 0:
-            NaN = _get_nan(*samples)
-            return KruskalResult(NaN, NaN)
-        elif sample.ndim != 1:
-            raise ValueError("Samples must be one-dimensional.")
-
     n = np.asarray(list(map(len, samples)))
-
-    if nan_policy not in ('propagate', 'raise', 'omit'):
-        raise ValueError("nan_policy must be 'propagate', 'raise' or 'omit'")
-
-    contains_nan = False
-    for sample in samples:
-        cn = _contains_nan(sample, nan_policy)
-        if cn[0]:
-            contains_nan = True
-            break
-
-    if contains_nan and nan_policy == 'omit':
-        for sample in samples:
-            sample = ma.masked_invalid(sample)
-        return mstats_basic.kruskal(*samples)
-
-    if contains_nan and nan_policy == 'propagate':
-        return KruskalResult(np.nan, np.nan)
 
     alldata = np.concatenate(samples)
     ranked = rankdata(alldata)
@@ -9094,12 +9081,9 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     0.0057862086661515377
 
     """
-
     nx = len(x)
     ny = len(y)
-    if nx == 0 or ny == 0:
-        NaN = _get_nan(x, y)
-        return BrunnerMunzelResult(NaN, NaN)
+
     rankc = rankdata(np.concatenate((x, y)))
     rankcx = rankc[0:nx]
     rankcy = rankc[nx:nx+ny]
