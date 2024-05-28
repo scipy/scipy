@@ -6,6 +6,8 @@ from typing import (
     Literal,
 )
 
+import numpy as np
+
 from ._ufuncs import psi
 from numpy import sinc as sinc
 
