@@ -1632,6 +1632,7 @@ class TestDifferentialEvolutionSolver:
         # "MAXCV = 0.".
         assert "MAXCV = 0.4" in result.message
 
+    @pytest.mark.fail_slow(10)  # fail-slow exception by request - see gh-20806
     def test_strategy_fn(self):
         # examines ability to customize strategy by mimicking one of the
         # in-built strategies
