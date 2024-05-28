@@ -20,7 +20,7 @@ Rootfinding
 .. autosummary::
    :toctree: generated/
 
-   rootfind
+   find_root
    bracket_root
 
 Rootfinding
@@ -29,10 +29,10 @@ Rootfinding
 .. autosummary::
    :toctree: generated/
 
-   minimize
+   find_minimum
    bracket_minimum
 
 """
-from ._elementwise import rootfind, bracket_root, minimize, bracket_minimum  # noqa: F401, E501
+from ._elementwise import find_root, find_minimum, bracket_root, bracket_minimum  # noqa: F401, E501
 
-__all__ = ["rootfind", "bracket_root", "minimize", "bracket_minimum"]
+__all__ = ["find_root", "find_minimum", "bracket_root", "bracket_minimum"]

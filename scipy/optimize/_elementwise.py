@@ -3,16 +3,16 @@ from scipy.optimize._chandrupatla import _chandrupatla, _chandrupatla_minimize
 from scipy._lib._util import _RichResult
 
 
-def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=None):
+def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=None):
     """Find the root of a monotonic, real-valued function of a real variable.
 
-    For each element of the output of `f`, `rootfind` seeks the scalar
+    For each element of the output of `f`, `find_root` seeks the scalar
     root that makes the element 0. This function currently uses Chandrupatla's
     bracketing algorithm [1]_ and therefore requires argument ``init`` to
     provide a bracket around the root: the function values at the two endpoints
     must have opposite signs.
 
-    Provided a valid bracket, `rootfind` is guaranteed to converge to a solution that
+    Provided a valid bracket, `find_root` is guaranteed to converge to a solution that
     satisfies the provided `tolerances` under mild requirements (e.g. the function
     is defined and the root exists within the bracket).
 
@@ -30,7 +30,7 @@ def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=Non
          with `x`.
 
          ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``. `rootfind` seeks an
+         must equal ``f(x[i])`` for all indices ``i``. `find_root` seeks an
          array ``x`` such that ``f(x)`` is an array of zeros.
     init : 2-tuple of real number arrays
         The lower and upper endpoints of a bracket surrounding the desired root.
@@ -61,10 +61,10 @@ def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=Non
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `rootfind` (but containing the current
+        similar to that returned by `find_root` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `rootfind` will return a result.
+        `find_root` will return a result.
 
     Returns
     -------
@@ -158,7 +158,7 @@ def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=Non
     >>> res_bracket = elementwise.bracket_root(f, 0)
     >>> res_bracket.bracket
     (2.0, 4.0)
-    >>> res_root = elementwise.rootfind(f, res_bracket.bracket)
+    >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
@@ -166,7 +166,7 @@ def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=Non
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
-    >>> res_root = elementwise.rootfind(f, res_bracket.bracket, args=(c,))
+    >>> res_root = elementwise.find_root(f, res_bracket.bracket, args=(c,))
     >>> res_root.x
     array([1.8932892 , 2.        , 2.09455148])
 
@@ -202,15 +202,15 @@ def rootfind(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=Non
     return reformat_result(res)
 
 
-def minimize(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
+def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None):
     """Find the minimizer of an unimodal, real-valued function of a real variable.
 
-    For each element of the output of `f`, `minimize` seeks the scalar minimizer
+    For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
     that minimizes the element. This function currently uses Chandrupatla's
     bracketing minimization algorithm [1]_ and therefore requires argument ``init``
     to provide a three-point minimization bracket:
 
-    Provided a valid bracket, `minimize` is guaranteed to converge to a local
+    Provided a valid bracket, `find_minimum` is guaranteed to converge to a local
     minimizer that satisfies the provided `tolerances` under mild requirements
     (e.g. the function is defined and minimum exists within the bracket).
 
@@ -228,7 +228,7 @@ def minimize(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None
          with `x`.
 
          ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``. `minimize` seeks an
+         must equal ``f(x[i])`` for all indices ``i``. `find_minimum` seeks an
          array ``x`` such that ``f(x)`` is an array of local minima.
     init : 3-tuple of real number arrays
         The abscissae of a standard scalar minimization bracket. A bracket is
@@ -257,10 +257,10 @@ def minimize(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None
         An optional user-supplied function to be called before the first
         iteration and after each iteration.
         Called as ``callback(res)``, where ``res`` is a ``_RichResult``
-        similar to that returned by `minimize` (but containing the current
+        similar to that returned by `find_minimum` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `rootfind` will return a result.
+        `find_root` will return a result.
 
     Returns
     -------
@@ -337,7 +337,7 @@ def minimize(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.minimize(f, res_bracket.bracket)
+    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
     >>> res_minimize.x
     1.0
 
@@ -345,7 +345,7 @@ def minimize(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=None
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.minimize(f, res_bracket.bracket, args=(c,))
+    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
     >>> res_minimize.x
     array([1. , 1.5, 2. ])
     """
@@ -483,7 +483,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     
     See Also
     --------
-    rootfind
+    find_root
 
     Examples
     --------
@@ -493,7 +493,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     >>> res_bracket = elementwise.bracket_root(f, 0)
     >>> res_bracket.bracket
     (2.0, 4.0)
-    >>> res_root = elementwise.rootfind(f, res_bracket.bracket)
+    >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
@@ -501,7 +501,7 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
-    >>> res_root = elementwise.rootfind(f, res_bracket.bracket, args=(c,))
+    >>> res_root = elementwise.find_root(f, res_bracket.bracket, args=(c,))
     >>> res_root.x
     array([1.8932892 , 2.        , 2.09455148])
 
@@ -625,7 +625,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     See Also
     --------
     scipy.optimize.bracket
-    scipy.optimize.elementwise.minimize
+    scipy.optimize.elementwise.find_minimum
 
     Examples
     --------
@@ -635,7 +635,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.minimize(f, res_bracket.bracket)
+    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
     >>> res_minimize.x
     1.0
 
@@ -643,7 +643,7 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.minimize(f, res_bracket.bracket, args=(c,))
+    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
     >>> res_minimize.x
     array([1. , 1.5, 2. ])
 
