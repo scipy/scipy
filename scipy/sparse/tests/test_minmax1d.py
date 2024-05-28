@@ -17,11 +17,11 @@ def toarray(a):
     return a.toarray()
 
 
-formats_for_minmax_1d = [coo_array, csr_array]
-formats_for_minmax_not1d = [csc_array, bsr_array]
+formats_for_minmax = [bsr_array, coo_array, csc_array, csr_array]
+formats_for_minmax_supporting_1d = [coo_array, csr_array]
 
 
-@pytest.mark.parametrize("spcreator", formats_for_minmax_1d)
+@pytest.mark.parametrize("spcreator", formats_for_minmax_supporting_1d)
 class Test_MinMaxMixin1D:
     def test_minmax(self, spcreator):
         D = np.arange(5)
@@ -82,7 +82,7 @@ class Test_MinMaxMixin1D:
                 mat.argmax(axis=axis)
 
 
-@pytest.mark.parametrize("spcreator", formats_for_minmax_1d + formats_for_minmax_not1d)
+@pytest.mark.parametrize("spcreator", formats_for_minmax)
 class Test_ShapeMinMax2DWithAxis:
     def test_minmax(self, spcreator):
         dat = np.array([[-1, 5, 0, 3], [0, 0, -1, -2], [0, 0, 1, 2]])
