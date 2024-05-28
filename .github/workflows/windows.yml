@@ -50,6 +50,7 @@ jobs:
       - name: pip-packages
         run: |
           pip install numpy cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout pytest-fail-slow pooch rich_click click doit pydevtool hypothesis
+          python -m pip install -r requirements/openblas.txt
 
       - name: Build
         run: |
@@ -57,7 +58,7 @@ jobs:
 
       - name: Test
         run: |
-          # test runner parallel clashes with OpenBLAS multithreding
+          # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           python dev.py test -j2 -- --durations=0 --durations-min=0.25 --fail-slow=1.0
 
@@ -100,7 +101,7 @@ jobs:
 
       - name: Test
         run: |
-          # test runner parallel clashes with OpenBLAS multithreding
+          # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           python dev.py test -j2 --mode full -- --durations=0 --durations-min=1.0 --timeout=60 --fail-slow=5.0
 
@@ -163,6 +164,6 @@ jobs:
         run: |
           cd $RUNNER_TEMP
           # run full test suite
-          # test runner parallel clashes with OpenBLAS multithreding
+          # test runner parallel clashes with OpenBLAS multithreading
           $env:OPENBLAS_NUM_THREADS=1
           pytest --pyargs scipy

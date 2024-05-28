@@ -145,15 +145,13 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 PKG_CONFIG_PATH="/project/"
 
 [tool.cibuildwheel.macos]
-before-build = "pip install ninja; bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
 
 [tool.cibuildwheel.macos.environment]
-# On macos-arm64, use Accelerate instead of setting this
-# CIBW_CONFIG_SETTINGS=\"setup-args=-Dblas=accelerate
 PKG_CONFIG_PATH="{project}"
 
 [tool.cibuildwheel.windows]
-before-build = "pip install ninja && bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
 [tool.cibuildwheel.windows.environment]
