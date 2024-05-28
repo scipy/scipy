@@ -245,7 +245,7 @@ Elementwise Minimization and Rootfinding
 ========================================
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    optimize.elementwise
 
