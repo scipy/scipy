@@ -5231,7 +5231,7 @@ def test_ttest_ind_nan_policy():
 
 
 def test_ttest_ind_scalar():
-    # # test scalars
+    # test scalars
     with suppress_warnings() as sup, np.errstate(invalid="ignore"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
@@ -5485,6 +5485,19 @@ class Test_ttest_ind_permutations:
         print(0.0 not in p_values)
         assert 0.0 not in p_values
 
+    @array_api_compatible
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  reasons=['Uses NumPy for pvalue, CI'])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_permutation_not_implement_for_xp(self, xp):
+        message = "Use of `permutations` is compatible only with NumPy arrays."
+        a2, b2 = xp.asarray(self.a2), xp.asarray(self.b2)
+        if is_numpy(xp):  # no error
+            stats.ttest_ind(a2, b2, permutations=10)
+        else:  # NotImplementedError
+            with pytest.raises(NotImplementedError, match=message):
+                stats.ttest_ind(a2, b2, permutations=10)
+
 
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
@@ -5681,6 +5694,19 @@ class Test_ttest_trim:
         match = "Use of `permutations` is incompatible with with use of `trim`."
         with assert_raises(NotImplementedError, match=match):
             stats.ttest_ind([1, 2], [2, 3], trim=.2, permutations=2)
+
+    @array_api_compatible
+    @pytest.mark.skip_xp_backends(cpu_only=True,
+                                  reasons=['Uses NumPy for pvalue, CI'])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_permutation_not_implement_for_xp(self, xp):
+        message = "Use of `trim` is compatible only with NumPy arrays."
+        a, b = xp.arange(10), xp.arange(10)+1
+        if is_numpy(xp):  # no error
+            stats.ttest_ind(a, b, trim=0.1)
+        else:  # NotImplementedError
+            with pytest.raises(NotImplementedError, match=message):
+                stats.ttest_ind(a, b, trim=0.1)
 
     @pytest.mark.parametrize("trim", [-.2, .5, 1])
     def test_trim_bounds_error(self, trim):
