@@ -37,7 +37,8 @@ from .common_tests import check_named_results
 from scipy.stats._axis_nan_policy import (_broadcast_concatenate, SmallSampleWarning,
                                           too_small_nd_omit, too_small_nd_not_omit,
                                           too_small_1d_omit, too_small_1d_not_omit)
-from scipy.stats._stats_py import _permutation_distribution_t, _chk_asarray, _moment
+from scipy.stats._stats_py import (_permutation_distribution_t, _chk_asarray, _moment,
+                                   LinregressResult)
 from scipy._lib._util import AxisError
 from scipy.conftest import array_api_compatible, skip_xp_invalid_arg
 from scipy._lib._array_api import (xp_assert_close, xp_assert_equal, array_namespace,
@@ -2001,6 +2002,13 @@ class TestFindRepeats:
 
 class TestRegression:
 
+    def test_one_arg_deprecation(self):
+        x = np.arange(20).reshape((2, 10))
+        message = "Inference of the two sets..."
+        with pytest.deprecated_call(match=message):
+            stats.linregress(x)
+        stats.linregress(x[0], x[1])
+
     def test_linregressBIGX(self):
         # W.II.F.  Regress BIG on X.
         result = stats.linregress(X, BIG)
@@ -2048,7 +2056,7 @@ class TestRegression:
         y += np.sin(np.linspace(0, 20, 100))
 
         result = stats.linregress(x, y)
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
 
@@ -2092,6 +2100,9 @@ class TestRegression:
         assert_allclose(res.stderr, 0.0519051424731)
         assert_allclose(res.intercept_stderr, 8.0490133029927)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_simple_onearg_rows(self):
         # Regress a line w sinusoidal noise,
         # with a single input of shape (2, N)
@@ -2104,6 +2115,9 @@ class TestRegression:
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_simple_onearg_cols(self):
         x = np.linspace(0, 100, 100)
         y = 0.2 * np.linspace(0, 100, 100) + 10
@@ -2114,6 +2128,9 @@ class TestRegression:
         assert_almost_equal(result.stderr, 2.3957814497838803e-3)
         assert_almost_equal(result.intercept_stderr, 1.3866936078570702e-1)
 
+    # TODO: remove this test once single-arg support is dropped;
+    # deprecation warning tested in `test_one_arg_deprecation`
+    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
     def test_regress_shape_error(self):
         # Check that a single input argument to linregress with wrong shape
         # results in a ValueError.
@@ -2166,7 +2183,7 @@ class TestRegression:
         result = stats.linregress(x, y)
 
         # Result is of a correct class
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
 
         # LinregressResult elements have correct names
@@ -2244,7 +2261,7 @@ class TestRegression:
             result = stats.linregress(x, x)
 
         # Make sure the result still comes back as `LinregressResult`
-        lr = stats._stats_mstats_common.LinregressResult
+        lr = LinregressResult
         assert_(isinstance(result, lr))
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)
