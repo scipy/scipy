@@ -97,11 +97,6 @@ class _data_matrix(_spbase):
 
     copy.__doc__ = _spbase.copy.__doc__
 
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
-
     def power(self, n, dtype=None):
         """
         This function performs element-wise power.

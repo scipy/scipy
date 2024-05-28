@@ -263,7 +263,7 @@ class _spbase:
         """Maximum number of elements to display when printed."""
         return self.maxprint
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
         """Number of non-zero entries, equivalent to
 
         np.count_nonzero(a.toarray())
@@ -271,18 +271,26 @@ class _spbase:
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
+
+        Duplicate entries are summed before counting.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Count nonzeros for the whole array, or along a specified axis.
+
+            .. versionadded:: 1.15.0
         """
-        raise NotImplementedError("count_nonzero not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"count_nonzero not implemented for {clsname}.")
 
     def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
         Parameters
         ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole array, in
-            each column, or in each row.
+        axis : {-2, -1, 0, 1, None} optional
+            Report stored values for the whole array, or along a specified axis.
 
         See also
         --------

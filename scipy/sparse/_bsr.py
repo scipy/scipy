@@ -219,6 +219,15 @@ class _bsr_base(_cs_matrix, _minmax_mixin):
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
 
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over axis is not implemented for BSR format."
+            )
+        return np.count_nonzero(self._deduped_data())
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
+
     def __repr__(self):
         _, fmt = _formats[self.format]
         sparse_cls = 'array' if isinstance(self, sparray) else 'matrix'
