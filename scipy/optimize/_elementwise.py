@@ -25,13 +25,13 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
             f(x: array, *args) -> array
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`.
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`.
 
-         ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``. `find_root` seeks an
-         array ``x`` such that ``f(x)`` is an array of zeros.
+        ``f`` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. `find_root` seeks an
+        array ``x`` such that ``f(x)`` is an array of zeros.
     init : 2-tuple of real number arrays
         The lower and upper endpoints of a bracket surrounding the desired root.
         A bracket is valid if arrays ``xl, xr = init`` satisfy ``xl < xr`` and
@@ -69,9 +69,9 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.
 
         success : bool array
@@ -122,18 +122,9 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     - ``fun(xmin) <= fatol + abs(fmin0) * frtol``.
 
     This is equivalent to the termination condition described in [1]_ with
-
-    - ``xrtol = 4e-10``,
-    - ``xatol = 1e-5``, and
-    - ``fatol = frtol = 0``.
-
+    ``xrtol = 4e-10``, ``xatol = 1e-5``, and ``fatol = frtol = 0``.
     However, the default values of the `tolerances` dictionary are
-
-    - ``xatol = 4*tiny``,
-    - ``xrtol = 4*eps``,
-    - ``frtol = 0``, and
-    - ``fatol = tiny``,
-
+    ``xatol = 4*tiny``, ``xrtol = 4*eps``, ``frtol = 0``, and ``fatol = tiny``,
     where ``eps`` and ``tiny`` are the precision and smallest normal number
     of the result ``dtype`` of function inputs and outputs.
 
@@ -224,13 +215,13 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
             f(x: array, *args) -> array
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`.
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`.
 
-         ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``. `find_minimum` seeks an
-         array ``x`` such that ``f(x)`` is an array of local minima.
+        ``f`` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. `find_minimum` seeks an
+        array ``x`` such that ``f(x)`` is an array of local minima.
     init : 3-tuple of real number arrays
         The abscissae of a standard scalar minimization bracket. A bracket is
         valid if arrays ``x1, x2, x3 = init`` satisfy ``x1 < x2 < x3`` and
@@ -266,9 +257,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.
 
         success : bool array
@@ -400,12 +391,12 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
 
             f(x: array, *args) -> array
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`.
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`.
 
-         ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``.
+        ``f`` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``.
     xl0, xr0: float array
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
@@ -426,9 +417,9 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.
 
         success : bool array
@@ -537,12 +528,12 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
             f(x: array, *args) -> array
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`.
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`.
 
-         ``f`` must be an elementwise function: each element ``f(x)[i]``
-         must equal ``f(x[i])`` for all indices ``i``.
+        ``f`` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``.
     xm0: float array_like
         Starting guess for middle point of bracket.
     xl0, xr0: float array_like, optional
@@ -564,9 +555,9 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     Returns
     -------
     res : _RichResult
-        An instance of `scipy._lib._util._RichResult` with the following
-        attributes. The descriptions are written as though the values will be
-        scalars; however, if `f` returns an array, the outputs will be
+        An object similar to an instance of `scipy.optimize.OptimizeResult` with the
+        following attributes. The descriptions are written as though the values will
+        be scalars; however, if `f` returns an array, the outputs will be
         arrays of the same shape.
 
         success : bool array
