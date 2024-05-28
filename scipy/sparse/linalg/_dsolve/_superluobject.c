@@ -341,13 +341,13 @@ int NCFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz,
 }
 
 /*
- * Create a matrix in CSR, CSC or supernode format
+ * Create a matrix in CSR, CSC or supernodal CSC format
  *
  * Notes on a few of the parameters:
  *
- * - `csr`: selects matrix format: 1=CSR, 0=CSC, -1=supernode CSC
- * - `identity_col_to_sup`: (for supernode only) must be int array {0,1,2,...,n-2,n-1,n-1}
- * - `identity_sup_to_col`: (for supernode only) must be int array {0,1,...,n}
+ * - `csr`: selects matrix format: 1=CSR, 0=CSC, -1=supernodal CSC
+ * - `identity_col_to_sup`: (for supernodal CSC only) must be int array {0,1,2,...,n-2,n-1,n-1}
+ * - `identity_sup_to_col`: (for supernodal CSC only) must be int array {0,1,...,n}
  */
 int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
                                PyArrayObject * nzvals,
@@ -406,6 +406,8 @@ int SparseFormat_from_spMatrix(SuperMatrix * A, int m, int n, int nnz, int csr,
                                   NPY_TYPECODE_TO_SLU(PyArray_TYPE(nzvals)),
                                   mtype);
         } else if (csr == -1) {
+            /* We do not know if/which columns have the same sparsity structure, therefore
+             * nzval_colptr and rowind_colptr are both initialized from the pointers argument. */
             Create_SuperNode_Matrix(PyArray_TYPE(nzvals),
                                     A, m, n, nnz, PyArray_DATA(nzvals),
                                     (int *) PyArray_DATA(pointers),
