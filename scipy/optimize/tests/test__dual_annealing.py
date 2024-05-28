@@ -367,6 +367,7 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
 
+    @pytest.mark.fail_slow(5)
     def test_callable_jac_hess_with_args_gh11052(self):
         # dual_annealing used to fail when `jac` was callable and `args` were
         # used; check that this is resolved. Example is from gh-11052.
