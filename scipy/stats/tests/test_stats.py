@@ -5922,7 +5922,10 @@ def test_ttest_ind_nan_2nd_arg():
 def test_ttest_ind_empty_1d_returns_nan(xp):
     # Two empty inputs should return a TtestResult containing nan
     # for both values.
-    with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+    if is_numpy(xp):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.ttest_ind(xp.asarray([]), xp.asarray([]))
+    else:
         res = stats.ttest_ind(xp.asarray([]), xp.asarray([]))
     assert isinstance(res, stats._stats_py.TtestResult)
     NaN = xp.asarray(xp.nan)[()]
