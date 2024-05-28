@@ -181,7 +181,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         res_out.nfev = res_in.nfev
         res_out.nit = res_in.nit
         res_out.bracket = (res_in.xl, res_in.xr)
-        res_out.f_bracket = (res_in.fl, res_in.fl)
+        res_out.f_bracket = (res_in.fl, res_in.fr)
         res_out._order_keys = ['success', 'status', 'x', 'f_x',
                                'nfev', 'nit', 'bracket', 'f_bracket']
         return res_out
@@ -189,7 +189,8 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     xl, xr = init
     default_tolerances = dict(xatol=None, xrtol=None, fatol=None, frtol=0)
     tolerances = {} if tolerances is None else tolerances
-    tolerances.update(default_tolerances)
+    default_tolerances.update(tolerances)
+    tolerances = default_tolerances
 
     if callable(callback):
         def _callback(res):
@@ -367,7 +368,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     xl, xm, xr = init
     default_tolerances = dict(xatol=None, xrtol=None, fatol=None, frtol=None)
     tolerances = {} if tolerances is None else tolerances
-    tolerances.update(default_tolerances)
+    default_tolerances.update(tolerances)
+    tolerances = default_tolerances
 
     if callable(callback):
         def _callback(res):
