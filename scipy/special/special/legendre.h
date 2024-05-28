@@ -720,7 +720,7 @@ void assoc_legendre_p_for_each_n_m(
             res_jac[0] = p_diag_jac[2];
             res_hess[0] = p_diag_hess[2];
             assoc_legendre_p_init(i, re_diag.type, re_diag.z, false, res, res_jac, res_hess);
-
+ 
             assoc_legendre_p_for_each_n(
                 n, i, re_diag.type, re_diag.z, res, res_jac, res_hess,
                 [i, re_diag,
