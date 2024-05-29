@@ -4351,7 +4351,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     return MedianTestResult(stat, p, grand_median, table)
 
 
-def _circfuncs_common(samples, high, low, xp=None):
+def _circfuncs_common(samples, scale, xp=None):
     xp = array_namespace(samples) if xp is None else xp
 
     if xp.isdtype(samples.dtype, 'integral'):
@@ -4360,8 +4360,9 @@ def _circfuncs_common(samples, high, low, xp=None):
 
     # Recast samples as radians that range between 0 and 2 pi and calculate
     # the sine and cosine
-    sin_samp = xp.sin((samples - low) * (2.*pi / (high - low)))
-    cos_samp = xp.cos((samples - low) * (2.*pi / (high - low)))
+    scaled_samples = samples * scale
+    sin_samp = xp.sin(scaled_samples)
+    cos_samp = xp.cos(scaled_samples)
 
     return samples, sin_samp, cos_samp
 
@@ -4449,13 +4450,14 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     # Apparently atan2(0, 0) is 0, even though it is mathematically undefined
     if xp_size(samples) == 0:
         return xp.mean(samples, axis=axis)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    scale = (2.0 * pi) / (high - low)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, scale, xp=xp)
     sin_sum = xp.sum(sin_samp, axis=axis)
     cos_sum = xp.sum(cos_samp, axis=axis)
-    res = xp.atan2(sin_sum, cos_sum) % (2*xp.pi)
+    res = xp.atan2(sin_sum, cos_sum)
 
     res = res[()] if res.ndim == 0 else res
-    return res * ((high-low)/(2.0*pi)) + low
+    return (res/scale-low) % (high-low) + low
 
 
 @_axis_nan_policy_factory(
@@ -4540,7 +4542,8 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     """
     xp = array_namespace(samples)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    scale = (2.0 * pi) / (high - low)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, scale, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)
     cos_mean = xp.mean(cos_samp, axis=axis)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
@@ -4643,7 +4646,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     """
     xp = array_namespace(samples)
-    samples, sin_samp, cos_samp = _circfuncs_common(samples, high, low, xp=xp)
+    scale = (2.0 * pi) / (high - low)
+    samples, sin_samp, cos_samp = _circfuncs_common(samples, scale, xp=xp)
     sin_mean = xp.mean(sin_samp, axis=axis)  # [1] (2.2.3)
     cos_mean = xp.mean(cos_samp, axis=axis)  # [1] (2.2.3)
     hypotenuse = (sin_mean**2. + cos_mean**2.)**0.5
