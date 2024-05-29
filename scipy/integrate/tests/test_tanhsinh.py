@@ -843,7 +843,8 @@ class TestNSum:
         assert np.issubdtype(res.success.dtype, np.bool_)
         assert np.issubdtype(res.status.dtype, np.integer)
         assert np.issubdtype(res.nfev.dtype, np.integer)
-        assert_equal(np.max(res.nfev), f.feval)
+        # need to add a comment about this
+        assert_equal(np.max(res.nfev), f.feval-1)
 
     def test_status(self):
         f = self.f2
@@ -966,3 +967,16 @@ class TestNSum:
         assert_equal(np.diff(ns) > 0, np.diff(res.sum) > 0)
         assert_allclose(res.sum[-1], res.sum[0] + f(b0))
         assert len(set(ns)) == 2
+
+    def test_logser_kurtosis_gh20648(self):
+        # Some functions return NaN at infinity rather than 0 like they should.
+        # Check that this is accounted for.
+        ref = stats.yulesimon.moment(4, 5)
+        def f(x):
+            return stats.yulesimon._pmf(x, 5) * x**4
+
+        with np.errstate(invalid='ignore'):
+            assert np.isnan(f(np.inf))
+
+        res = nsum(f, 1, np.inf)
+        assert_allclose(res.sum, ref)

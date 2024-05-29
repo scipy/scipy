@@ -1246,8 +1246,14 @@ def _integral_bound(f, a, b, step, args, constants):
 
     # Calculate the full estimate and error from the pieces
     fk = fks[np.arange(len(fks)), nt]
-    fb = f(b, *args)
-    nfev += 1
+
+    # fb = f(b, *args), but some functions return NaN at infinity.
+    # instead of 0 like they must (for the sum to be convergent).
+    fb = np.full_like(fk, -np.inf) if log else np.zeros_like(fk)
+    i = np.isfinite(b)
+    fb[i] = f(b[i], *[arg[i] for arg in args])
+    nfev = nfev + np.asarray(i, dtype=left_nfev.dtype)
+
     if log:
         log_step = np.log(step)
         S_terms = (left, right.integral - log_step, fk - log2, fb - log2)
