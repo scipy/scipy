@@ -2611,6 +2611,29 @@ def kelvin_zeros(nt):
     Returned in a length-8 tuple of arrays of length nt.  The tuple contains
     the arrays of zeros of (ber, bei, ker, kei, ber', bei', ker', kei').
 
+    Parameters
+    ----------
+    nt : int
+        Number of zeros to compute. Must be positive.
+
+    Returns
+    -------
+    ber : ndarray
+        First `nt` zeros of the Kelvin function ber.
+    bei : ndarray
+        First `nt` zeros of the Kelvin function bei.
+    ker : ndarray
+        First `nt` zeros of the Kelvin function ker.
+    kei : ndarray
+        First `nt` zeros of the Kelvin function kei.
+    ber' : ndarray
+        First `nt` zeros of the derivative of the Kelvin function ber.
+    bei' : ndarray
+        First `nt` zeros of the derivative of the Kelvin function bei.
+    ker' : ndarray
+        First `nt` zeros of the derivative of the Kelvin function ker.
+    kei' : ndarray
+        First `nt` zeros of the derivative of the Kelvin function kei.
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -2637,6 +2660,20 @@ def pro_cv_seq(m, n, c):
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
 
+    Parameters
+    ----------
+    m : int
+        Mode parameter.
+    n : int
+        Mode parameter.
+    c : float
+        Spheroidal parameter.
+
+    Returns
+    -------
+    eg : ndarray
+        Characteristic value for mode m and n'
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
@@ -2660,6 +2697,20 @@ def obl_cv_seq(m, n, c):
     Compute a sequence of characteristic values for the oblate
     spheroidal wave functions for mode m and n'=m..n and spheroidal
     parameter c.
+
+    Parameters
+    ----------
+    m : int
+        Mode parameter.
+    n : int
+        Mode parameter.
+    c : float
+        Spheroidal parameter.
+
+    Returns
+    -------
+    eg : ndarray
+        Characteristic value for mode m and n'
 
     References
     ----------
