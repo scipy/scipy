@@ -722,8 +722,8 @@ void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z,
 
 template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Func f) {
-    T p_m_m_abs[3] = {};
-    T p_m_m_abs_jac[3] = {};
+    T p_m_m_abs[3];
+    T p_m_m_abs_jac[3];
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_m_m_abs, p_m_m_abs_jac,
