@@ -246,8 +246,6 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
                 res[1] *= -1;
             }
         }
-
-        res[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3]) const {
@@ -270,8 +268,6 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
                 res_jac[1] *= -1;
             }
         }
-
-        res_jac[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
@@ -374,10 +370,13 @@ template <typename NormPolicy, typename T, typename Callable>
 void assoc_legendre_p_for_each_m_m_abs(
     NormPolicy norm, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback
 ) {
+    res[2] = 0;
+    res_jac[2] = 0;
+
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
-    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init{std::signbit(m), type, z};
+    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init{m_signbit, type, z};
     init(res, res_jac);
 
     assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re{m_signbit, type, z};
