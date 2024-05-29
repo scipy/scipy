@@ -945,3 +945,24 @@ class TestNSum:
         rtol = 1e-12 if dtype == np.float64 else 1e-6
         ref = _gen_harmonic_gt1(b, 2)
         assert_allclose(res.sum, ref, rtol=rtol)
+
+    @pytest.mark.parametrize('case', [(10, 100), (100, 10)])
+    def test_nondivisible_interval(self, case):
+        # When the limits of the sum are such that (b - a)/step
+        # is not exactly integral, check that only floor((b - a)/step)
+        # terms are included.
+        n, maxterms = case
+
+        def f(k):
+            return 1 / k ** 2
+
+        a = np.e
+        step = 1 / 3
+        b0 = a + n * step
+        i = np.arange(-2, 3)
+        b = b0 + i * np.spacing(b0)
+        res = nsum(f, a, b, step=step, maxterms=maxterms)
+        ns = np.floor((b - a) / step)
+        assert_equal(np.diff(ns) > 0, np.diff(res.sum) > 0)
+        assert_allclose(res.sum[-1], res.sum[0] + f(b0))
+        assert len(set(ns)) == 2

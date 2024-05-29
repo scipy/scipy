@@ -945,7 +945,8 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
          
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
-        array ``x`` or the arrays in ``args``. 
+        array ``x`` or the arrays in ``args``, and it must return NaN where
+        the argument is NaN.
         
         `f` must represent a smooth, positive, and monotone decreasing
         function of `x` defined at *all reals* between `a` and `b`.          
@@ -957,7 +958,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         element in `b`, but elements of `b` may be infinite.
     step : real number array
         Finite, positive, real step between summed terms. Must be broadcastable
-        with `a` and `b`.
+        with `a` and `b`. Note that the number of terms included in the sum will
+        be ``floor((b - a) / step)`` + 1; adjust `b` accordingly to ensure
+        that ``f(b)`` is included if intended.
     args : tuple of real number arrays, optional
         Additional positional arguments to be passed to `f`. Must be arrays
         broadcastable with `a`, `b`, and `step`. If the callable to be summed
@@ -1081,8 +1084,6 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     
     """ # noqa: E501
     # Potential future work:
-    # - more careful testing of when `b` is slightly less than `a` plus an
-    #   integer multiple of step (needed before this is public)
     # - improve error estimate of `_direct` sum
     # - add other methods for convergence acceleration (Richardson, epsilon)
     # - support infinite lower limit?
