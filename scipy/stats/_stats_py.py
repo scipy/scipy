@@ -5541,7 +5541,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    dist = _SimpleStudentT(dof, xp=np)
+    dist = _SimpleStudentT(dof)
     prob = _get_pvalue(t, dist, alternative, xp=np)
 
     # For backwards compatibility, return scalars when comparing 2 columns
@@ -6461,7 +6461,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t = xp.divide(d, denom)
         t = t[()] if t.ndim == 0 else t
 
-    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype), xp=xp)
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype))
     prob = _get_pvalue(t, dist, alternative, xp=xp)
     prob = prob[()] if prob.ndim == 0 else prob
 
@@ -9110,7 +9110,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                        "(0/0). Try using `distribution='normal'")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        distribution = _SimpleStudentT(df, xp=np)
+        distribution = _SimpleStudentT(df)
     elif distribution == "normal":
         distribution = _SimpleNormal()
     else:
@@ -10862,7 +10862,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
 
-        dist = _SimpleStudentT(df, xp=np)
+        dist = _SimpleStudentT(df)
         prob = _get_pvalue(t, dist, alternative, xp=np)
         prob = prob[()] if prob.ndim == 0 else prob
 
@@ -10935,17 +10935,11 @@ class _SimpleStudentT:
     # A very simple, array-API compatible t distribution for use in
     # hypothesis tests. May be replaced by new infrastructure t
     # distribution in due time.
-    def __init__(self, df, *, xp):
+    def __init__(self, df):
         self.df = df
-        self.xp = xp
-
-    def _prob(self, t, i):
-        x = self.df / (t ** 2 + self.df)
-        tail = special.betainc(self.df / 2, self.xp.asarray(0.5), x) / 2
-        return self.xp.where(i, tail, 1 - tail)
 
     def cdf(self, t):
-        return self._prob(t, t < 0)
+        return special.stdtr(self.df, t)
 
     def sf(self, t):
-        return self._prob(t, t > 0)
+        return special.stdtr(self.df, -t)
