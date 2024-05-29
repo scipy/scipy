@@ -503,6 +503,8 @@ def reconstruct_path(csgraph, predecessors, directed=True):
 
     sctree = csr_matrix((data, indices, indptr), shape=(N, N))
     if is_pydata_sparse:
+        # The `fill_value` keyword is new in PyData Sparse 0.15.4 (May 2024),
+        # remove the `except` once the minimum supported version is >=0.15.4
         try:
             sctree = pydata_sparse_cls.from_scipy_sparse(
                 sctree, fill_value=pydata_sparse_fill_value
