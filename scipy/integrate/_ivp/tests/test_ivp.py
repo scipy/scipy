@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA
 from scipy.integrate import OdeSolution
-from scipy.integrate._ivp.common import num_jac,select_initial_step
+from scipy.integrate._ivp.common import num_jac, select_initial_step
 from scipy.integrate._ivp.base import ConstantDenseOutput
 from scipy.sparse import coo_matrix, csc_matrix
 
@@ -555,7 +555,7 @@ def test_max_step():
                 solver = method(fun_rational, t_span[0], y0, t_span[1],
                                 rtol=rtol, atol=atol, max_step=1e-20)
                 message = solver.step()
-                message = solver.step() # First step succeeds but second step fails.
+                message = solver.step()  # First step succeeds but second step fails.
                 assert_equal(solver.status, 'failed')
                 assert_("step size is less" in message)
                 assert_raises(RuntimeError, solver.step)
@@ -1101,9 +1101,9 @@ def test_zero_interval(method):
     # f[y(t)] = 2y(t)
     def f(t, y):
         return 2 * y
-    res = solve_ivp(f, (0.0, 0.0), np.array([1.0]), method = method)
+    res = solve_ivp(f, (0.0, 0.0), np.array([1.0]), method=method)
     assert res.success
-    assert_allclose(res.y[0,-1], 1.0)
+    assert_allclose(res.y[0, -1], 1.0)
     
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
