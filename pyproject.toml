@@ -33,7 +33,7 @@ requires = [
 
 [project]
 name = "scipy"
-version = "1.14.0.dev0"
+version = "1.15.0.dev0"
 # TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
 #       at that point, no longer include them in `py3.install_sources()`
 license = { file = "LICENSE.txt" }
@@ -122,7 +122,6 @@ dodoFile = "dev.py"
 
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* cp38-* pp* *_ppc64le *_i686 *_s390x"
-build-verbosity = "3"
 # gmpy2 and scikit-umfpack are usually added for testing. However, there are
 # currently wheels missing that make the test script fail.
 test-requires = [
@@ -141,22 +140,22 @@ manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 
+[tool.cibuildwheel.linux.environment]
+# /project will be the $PWD equivalent inside the docker used to build the wheel
+PKG_CONFIG_PATH="/project/"
+
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
+
+[tool.cibuildwheel.macos.environment]
+PKG_CONFIG_PATH="{project}"
 
 [tool.cibuildwheel.windows]
 before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
 repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
-[[tool.cibuildwheel.overrides]]
-select = "*-win32"
-
-[[tool.cibuildwheel.overrides]]
-select = "*-win_amd64"
-# can use pkg-config detection for win_amd64 because the installed rtools
-# provide a working pkg-config.
-# An alternative is to set CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32"
-# Don't use double backslash for path separators, they don't get passed
-# to the build correctly
-# environment = { CMAKE_PREFIX_PATH="c:/opt/64" }
-environment = { PKG_CONFIG_PATH = "c:/opt/64/lib/pkgconfig" }
+[tool.cibuildwheel.windows.environment]
+# This does not work because pkg-config does not like backslashes,
+PKG_CONFIG_PATH="{project}"
+# do this instead (which will override this setting)
+# set CIBW_ENVIRONMENT_WINDOWS=PKG_CONFIG_PATH=PWD.replace('\\', '/')

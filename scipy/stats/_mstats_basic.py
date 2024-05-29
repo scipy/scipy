@@ -45,11 +45,10 @@ from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
+import scipy.stats._stats_py as _stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
-        linregress as stats_linregress,
-        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -1174,15 +1173,15 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            result = stats_linregress(x.data[~m], y.data[~m])
+            result = _stats_py.linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            result = stats_LinregressResult(slope=None, intercept=None,
-                                            rvalue=None, pvalue=None,
-                                            stderr=None,
-                                            intercept_stderr=None)
+            result = _stats_py.LinregressResult(slope=None, intercept=None,
+                                                rvalue=None, pvalue=None,
+                                                stderr=None,
+                                                intercept_stderr=None)
     else:
-        result = stats_linregress(x.data, y.data)
+        result = _stats_py.linregress(x.data, y.data)
 
     return result
 
