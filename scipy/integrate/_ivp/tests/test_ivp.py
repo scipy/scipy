@@ -1097,12 +1097,13 @@ def test_initial_state_finiteness(f0_fill):
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
 def test_zero_interval(method):
     # Case where upper and lower limits of integration are the same
+    # Result of integration should match initial state.
     # f[y(t)] = 2y(t)
     def f(t, y):
         return 2 * y
-    res = solve_ivp(f, (0., 0.), np.array([1]), method = method)
-    assert_(res.success)
-    assert_equal(res.y, 0.)
+    res = solve_ivp(f, (0., 0.), np.array([1.]), method = method)
+    assert res.success
+    assert_allclose(res.y, np.array([1.]))
     
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
@@ -1117,7 +1118,7 @@ def test_tbound_respected_small_interval(method):
             raise ValueError("Function was evaluated outside interval")
         return 2 * y
     res = solve_ivp(f, (0., SMALL), np.array([1]), method=method)
-    assert_(res.success)
+    assert res.success
 
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
@@ -1144,7 +1145,7 @@ def test_tbound_respected_larger_interval(method):
                        t_eval = None,
                        atol = 1e-8, 
                        rtol = 1e-5)
-    assert_(result.success)
+    assert result.success
 
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
@@ -1169,7 +1170,7 @@ def test_tbound_respected_oscillator(method):
                          dense_output = True, 
                          max_step = t1 - t0)
     result = run_sim2(1000, 100, 100)
-    assert_(result.success)
+    assert result.success
 
 
 def test_inital_maxstep():
