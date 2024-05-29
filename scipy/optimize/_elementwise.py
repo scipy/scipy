@@ -12,11 +12,12 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     provide a bracket around the root: the function values at the two endpoints
     must have opposite signs.
 
-    Provided a valid bracket, `find_root` is guaranteed to converge to a solution that
-    satisfies the provided `tolerances` under mild requirements (e.g. the function
-    is defined and the root exists within the bracket).
+    Provided a valid bracket, `find_root` is guaranteed to converge to a solution
+    that satisfies the provided `tolerances` if the function is continuous within
+    the bracket.
 
-    This function works elementwise when `init` and `args` contain broadcastable arrays.
+    This function works elementwise when `init` and `args` contain (broadcastable)
+    arrays.
 
     Parameters
     ----------
@@ -146,17 +147,50 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to find the root of the following function.
+
     >>> def f(x, c=5):
     ...     return x**3 - 2*x - c
+
+    First, we must find a valid bracket. The function is not monotonic,
+    but `bracket_root` may be able to provide a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_root(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (2.0, 4.0)
+
+    Indeed, the values of the function at the bracket endpoints have
+    opposite signs.
+
+    >>> res_bracket.f_bracket
+    (-1.0, 51.0)
+
+    Once we have a valid bracket, `find_root` can be used to provide
+    a precise root.
+
     >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
-    >>> c = [3, 4, 5]
+    The final bracket is only a few ULPs wide, so the error between
+    this value and the true root cannot be much smaller within values
+    that are representable in double precision arithmetic.
+
+    >>> import numpy as np
+    >>> xl, xr = res_root.bracket
+    >>> (xr - xl) / np.spacing(xl)
+    2.0
+    >>> res_root.f_bracket
+    (-8.881784197001252e-16, 9.769962616701378e-15)
+
+    `bracket_root` and `find_root` accept arrays for most arguments.
+    For instance, to find the root for a few values of the parameter ``c``
+    at once:
+
+    >>> c = np.asarray([3, 4, 5])
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
@@ -203,13 +237,15 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
     that minimizes the element. This function currently uses Chandrupatla's
     bracketing minimization algorithm [1]_ and therefore requires argument `init`
-    to provide a three-point minimization bracket:
+    to provide a three-point minimization bracket: ``x1 < x2 < x3`` such that
+    ``func(x1) >= func(x2) <= func(x3)``, where one of the inequalities is strict.
 
     Provided a valid bracket, `find_minimum` is guaranteed to converge to a local
-    minimizer that satisfies the provided `tolerances` under mild requirements
-    (e.g. the function is defined and minimum exists within the bracket).
+    minimum that satisfies the provided `tolerances` if the function is continuous
+    within the bracket.
 
-    This function works elementwise when `init` and `args` contain broadcastable arrays.
+    This function works elementwise when `init` and `args` contain (broadcastable)
+    arrays.
 
     Parameters
     ----------
@@ -231,8 +267,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     init : 3-tuple of real number arrays
         The abscissae of a standard scalar minimization bracket. A bracket is
         valid if arrays ``x1, x2, x3 = init`` satisfy ``x1 < x2 < x3`` and
-        ``func(x1) > func(x2) <= func(x3)``. Arrays must be broadcastable with
-        one another and the arrays of `args`.
+        ``func(x1) >= func(x2) <= func(x3)``, where one of the inequalities
+        is strict. Arrays must be broadcastable with one another and the arrays
+        of `args`.
     args : tuple of real number arrays, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
@@ -301,9 +338,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     -----
     Implemented based on Chandrupatla's original paper [1]_.
 
-    If ``xl < xm < xr`` are the points of the bracket and ``fl > fm <= fr``
-    are the values of `f` evaluated at those points, then the algorithm is
-    considered to have converged when:
+    If ``xl < xm < xr`` are the points of the bracket and ``fl >= fm <= fr``
+    (where one of the inequalities is strict) are the values of `f` evaluated
+    at those points, then the algorithm is considered to have converged when:
 
     - ``xr - xl <= abs(xm)*xrtol + xatol`` or
     - ``(fl - 2*fm + fr)/2 <= abs(fm)*frtol + fatol``.
@@ -311,7 +348,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     Note that first of these differs from the termination conditions described
     in [1]_.
 
-    The default values of `xrtol` is the square root of the precision of the
+    The default value of `xrtol` is the square root of the precision of the
     appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
     number of the appropriate dtype.
 
@@ -330,23 +367,65 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to minimize the following function.
+
     >>> def f(x, c=1):
-    ...     return (x - c)**2
+    ...     return (x - c)**2 + 2
+
+    First, we must find a valid bracket. The function is unimodal,
+    so `bracket_minium` will easily find a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
-    >>> res_minimize.x
-    1.0
 
-    >>> c = [1, 1.5, 2]
+    Indeed, the bracket points are ordered and the function value
+    at the middle bracket point is less than at the surrounding
+    points.
+
+    >>> xl, xm, xr = res_bracket.bracket
+    >>> fl, fm, fr = res_bracket.f_bracket
+    >>> (xl < xm < xr) and (fl > fm <= fr)
+    True
+
+    Once we have a valid bracket, `find_minimum` can be used to provide
+    an estimate of the minimizer.
+
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket)
+    >>> res_minimum.x
+    1.0000000149011612
+
+    The function value changes by only a few ULPs within the bracket, so
+    the minimizer cannot be determined much more precisely by evaluating
+    the function alone (i.e. we would need its derivative to do better).
+
+    >>> import numpy as np
+    >>> fl, fm, fr = res_minimum.f_bracket
+    >>> (fl - fm) / np.spacing(fm), (fr - fm) / np.spacing(fm)
+    (0.0, 2.0)
+
+    Therefore, a precise minimum of the function is given by:
+
+    >>> res_minimum.f_x
+    2.0
+
+    `bracket_minimum` and `find_minimum` accept arrays for most arguments.
+    For instance, to find the minimizers and minima for a few values of the
+    parameter ``c`` at once:
+
+    >>> c = np.asarray([1, 1.5, 2])
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
-    >>> res_minimize.x
-    array([1. , 1.5, 2. ])
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
+    >>> res_minimum.x
+    array([1.00000001, 1.5       , 2.        ])
+    >>> res_minimum.f_x
+    array([2., 2., 2.])
+
     """
 
     def reformat_result(res_in):
@@ -388,8 +467,11 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     bracket endpoints ``xl`` and ``xr`` such that ``sign(f(xl)) == -sign(f(xr))``
     elementwise.
 
+    The function is guaranteed to find a valid bracket if the function is monotonic,
+    but it may find a bracket under other conditions.
+
     This function works elementwise when `xl0`, `xr0`, `xmin`, `xmax`, `factor`, and
-    the elements of `args` are mutually broadcastable arrays.
+    the elements of `args` are (mutually broadcastable) arrays.
 
     Parameters
     ----------
@@ -460,8 +542,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     -----
     This function generalizes an algorithm found in pieces throughout the
     `scipy.stats` codebase. The strategy is to iteratively grow the bracket `(l, r)`
-     until ``f(l) < 0 < f(r)`` or ``f(r) < 0 < f(l)``. The bracket grows to the left
-     as follows.
+    until ``f(l) < 0 < f(r)`` or ``f(r) < 0 < f(l)``. The bracket grows to the left
+    as follows.
 
     - If `xmin` is not provided, the distance between `xl0` and `l` is iteratively
       increased by `factor`.
@@ -488,17 +570,40 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to find the root of the following function.
+
     >>> def f(x, c=5):
     ...     return x**3 - 2*x - c
+
+    First, we must find a valid bracket. The function is not monotonic,
+    but `bracket_root` may be able to provide a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_root(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (2.0, 4.0)
+
+    Indeed, the values of the function at the bracket endpoints have
+    opposite signs.
+
+    >>> res_bracket.f_bracket
+    (-1.0, 51.0)
+
+    Once we have a valid bracket, `find_root` can be used to provide
+    a precise root.
+
     >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
-    >>> c = [3, 4, 5]
+    `bracket_root` and `find_root` accept arrays for most arguments.
+    For instance, to find the root for a few values of the parameter ``c``
+    at once:
+
+    >>> import numpy as np
+    >>> c = np.asarray([3, 4, 5])
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
@@ -524,10 +629,14 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     """Bracket the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_minimum` seeks the scalar
-    bracket points ``xl < xm < xr`` such that ``fl > fm <= fr``.
+    bracket points ``xl < xm < xr`` such that ``fl >= fm <= fr`` where one of the
+    inequalities is strict.
+
+    The function is guaranteed to find a valid bracket if the function is
+    strongly unimodal, but it may find a bracket under other conditions.
 
     This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`, `factor`,
-    and the elements of `args` are mutually broadcastable arrays.
+    and the elements of `args` are (mutually broadcastable) arrays.
 
     Parameters
     ----------
@@ -631,23 +740,51 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to minimize the following function.
+
     >>> def f(x, c=1):
-    ...     return (x - c)**2
+    ...     return (x - c)**2 + 2
+
+    First, we must find a valid bracket. The function is unimodal,
+    so `bracket_minium` will easily find a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
-    >>> res_minimize.x
-    1.0
 
-    >>> c = [1, 1.5, 2]
+    Indeed, the bracket points are ordered and the function value
+    at the middle bracket point is less than at the surrounding
+    points.
+
+    >>> xl, xm, xr = res_bracket.bracket
+    >>> fl, fm, fr = res_bracket.f_bracket
+    >>> (xl < xm < xr) and (fl > fm <= fr)
+    True
+
+    Once we have a valid bracket, `find_minimum` can be used to provide
+    an estimate of the minimizer.
+
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket)
+    >>> res_minimum.x
+    1.0000000149011612
+
+    `bracket_minimum` and `find_minimum` accept arrays for most arguments.
+    For instance, to find the minimizers and minima for a few values of the
+    parameter ``c`` at once:
+
+    >>> import numpy as np
+    >>> c = np.asarray([1, 1.5, 2])
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
-    >>> res_minimize.x
-    array([1. , 1.5, 2. ])
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
+    >>> res_minimum.x
+    array([1.00000001, 1.5       , 2.        ])
+    >>> res_minimum.f_x
+    array([2., 2., 2.])
 
     """  # noqa: E501
 

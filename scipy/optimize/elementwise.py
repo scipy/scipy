@@ -5,7 +5,7 @@ Elementwise Scalar Optimization (:mod:`scipy.optimize.elementwise`)
 
 .. currentmodule:: scipy.optimize.elementwise
 
-This module provides a collection of functions for rootfinding and
+This module provides a collection of functions for root finding and
 minimization of scalar, real-valued functions of one variable. Unlike their
 counterparts in the base :mod:`scipy.optimize` namespace, these functions work
 elementwise, enabling the solution of many related problems in an efficient,
@@ -14,8 +14,8 @@ these functions can accept non-NumPy, array API standard compatible arrays and
 perform all calculations using the corresponding array library (e.g. PyTorch,
 JAX, CuPy).
 
-Rootfinding
-===========
+Root finding
+============
 
 .. autosummary::
    :toctree: generated/
@@ -23,8 +23,8 @@ Rootfinding
    find_root
    bracket_root
 
-Rootfinding
-===========
+Minimization
+============
 
 .. autosummary::
    :toctree: generated/
