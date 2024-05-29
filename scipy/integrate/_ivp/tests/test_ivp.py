@@ -1167,8 +1167,8 @@ def test_tbound_respected_oscillator(method):
         return solve_ivp(reactions_func,
                          (t0, t1),
                          init_state.copy(), 
-                         dense_output = True, 
-                         max_step = t1 - t0)
+                         dense_output=True, 
+                         max_step=t1 - t0)
     result = run_sim2(1000, 100, 100)
     assert result.success
 
