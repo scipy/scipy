@@ -2715,7 +2715,7 @@ class TestCircFuncs:
         y = stats.circstd(xp.asarray([0]))
         assert math.copysign(1.0, y) == 1.0
 
-    def test_circmean_accuracy(self, xp):
+    def test_circmean_accuracy_tiny_input(self, xp):
         # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
         # circmean(x) should return x because atan2(sin(x), cos(x)) == x.
         # This test verifies this.
@@ -2735,6 +2735,15 @@ class TestCircFuncs:
 
         y = stats.circmean(x[:, xp.newaxis], axis=1)
         assert xp.all(y == x)
+
+    def test_circmean_accuracy_huge_input(self, xp):
+        # White-box test that circmean() does not introduce undue loss of
+        # numerical accuracy by eagerly rotating the input.  This is detected
+        # by supplying a huge input x such that (x - low) == x numerically.
+        x = 1e17
+        expected = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
+        actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
+        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
 
 
 class TestCircFuncsNanPolicy:
