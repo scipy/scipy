@@ -159,8 +159,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
         Constraints definition. Only for COBYLA, COBYQA, SLSQP and trust-constr.
 
-        Constraints for 'trust-constr' are defined as a single object or a
-        list of objects specifying constraints to the optimization problem.
+        Constraints for 'trust-constr' and 'cobyqa' are defined as a single object
+        or a list of objects specifying constraints to the optimization problem.
         Available constraints are:
 
             - `LinearConstraint`
@@ -182,7 +182,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         be zero whereas inequality means that it is to be non-negative.
         Note that COBYLA only supports inequality constraints.
 
-        Constraints for COBYQA are defined as any of the above.
     tol : float, optional
         Tolerance for termination. When `tol` is specified, the selected
         minimization algorithm sets some relevant solver-specific tolerance(s)
@@ -1060,7 +1059,7 @@ def standardize_constraints(constraints, x0, meth):
     else:
         constraints = list(constraints)  # ensure it's a mutable sequence
 
-    if meth in ['trust-constr', 'new']:
+    if meth in ['trust-constr', 'cobyqa', 'new']:
         for i, con in enumerate(constraints):
             if not isinstance(con, new_constraint_types):
                 constraints[i] = old_constraint_to_new(i, con)

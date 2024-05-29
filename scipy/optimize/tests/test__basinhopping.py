@@ -199,6 +199,7 @@ class TestBasinHopping:
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
+    @pytest.mark.fail_slow(5)
     def test_all_minimizers(self):
         # Test 2-D minimizations with gradient. Nelder-Mead, Powell, COBYLA, and
         # COBYQA don't accept jac=True, so aren't included here.

@@ -556,7 +556,7 @@ inline std::complex<double> cchg(double a, double b, std::complex<double> z) {
 
     int i, j, k, la, m, n, nl, ns;
     double a0, a1, phi, x0, x, y;
-    std::complex<double> cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,\
+    std::complex<double> cfac, cg1, cg2, cg3, chg, chg1, chg2, chw, cr, cr1, cr2, cs1,
                    cs2, crg, cy0, cy1, z0;
     const double pi = 3.141592653589793;
     const std::complex<double> ci(0.0, 1.0);
@@ -602,6 +602,7 @@ inline std::complex<double> cchg(double a, double b, std::complex<double> z) {
                 crg = 1.0;
                 for (j = 1; j < 501; j++) {
                     crg = crg * (a+j-1.0)/(j*(b+j-1.0))*z;
+                    chg += crg;
                     if (std::abs((chg-chw)/chg) < 1e-15) { break; }
                     chw = chg;
                 }

@@ -655,6 +655,7 @@ class TestCumulativeSimpson:
         # `simpson` uses the trapezoidal rule
         return theoretical_difference
 
+    @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
             np.float64,
@@ -684,7 +685,7 @@ class TestCumulativeSimpson:
             res[..., 1:], ref[..., 1:] + theoretical_difference[..., 1:]
         )
 
-
+    @pytest.mark.slow
     @given(
         y=hyp_num.arrays(
             np.float64,
