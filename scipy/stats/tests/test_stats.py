@@ -9008,8 +9008,13 @@ class TestLMoment:
 
     not_integers = [1.5, [1, 2, 3.5], np.nan, np.inf, 'a duck']
 
-    @pytest.mark.parametrize('dtype', ['object', np.complex128])
-    def test_dtype_iv(self, dtype):
+    def test_dtype_iv(self):
+        message = '`sample` must be an array of real numbers.'
+        with pytest.raises(ValueError, match=message):
+            stats.lmoment(np.array(self.data, dtype=np.complex128))
+
+    @skip_xp_invalid_arg
+    def test_dtype_iv_non_numeric(self, dtype):
         message = '`sample` must be an array of real numbers.'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(np.array(self.data, dtype=dtype))
