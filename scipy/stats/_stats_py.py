@@ -10781,6 +10781,9 @@ def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=Tru
     .. [1] D. Bilkova. "L-Moments and TL-Moments as an Alternative Tool of
            Statistical Data Analysis". Journal of Applied Mathematics and
            Physics. 2014. :doi:`10.4236/jamp.2014.210104`
+
+    Examples
+    --------
     >>> from scipy import stats
     >>> rng = np.random.default_rng(328458568356392)
     >>> sample = rng.exponential(size=100000)

@@ -9014,7 +9014,7 @@ class TestLMoment:
             stats.lmoment(np.array(self.data, dtype=np.complex128))
 
     @skip_xp_invalid_arg
-    def test_dtype_iv_non_numeric(self, dtype):
+    def test_dtype_iv_non_numeric(self):
         message = '`sample` must be an array of real numbers.'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(np.array(self.data, dtype=dtype))
