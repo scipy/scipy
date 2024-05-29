@@ -359,11 +359,11 @@ void assoc_legendre_p_for_each_m_m_abs(NormPolicy norm, int m, int type, T z, T 
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
-    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init{std::signbit(m), type, z};
-    init(res);
+    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init_m_m_abs{m_signbit, type, z};
+    init_m_m_abs(res);
 
-    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re{m_signbit, type, z};
-    forward_recur(0, m_abs + 1, re, res, callback);
+    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, callback);
 }
 
 template <typename NormPolicy, typename T, typename Callable>
@@ -373,11 +373,11 @@ void assoc_legendre_p_for_each_m_m_abs(
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
-    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init{m_signbit, type, z};
-    init(res, res_jac);
+    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init_m_m_abs{m_signbit, type, z};
+    init_m_m_abs(res, res_jac);
 
-    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re{m_signbit, type, z};
-    forward_recur(0, m_abs + 1, re, res, res_jac, callback);
+    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, res_jac, callback);
 }
 
 template <typename NormPolicy, typename T, typename Callable>
@@ -387,11 +387,11 @@ void assoc_legendre_p_for_each_m_m_abs(
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
-    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init{std::signbit(m), type, z};
-    init(res, res_jac, res_hess);
+    assoc_legendre_p_initializer_m_m_abs<T, NormPolicy> init_m_m_abs{m_signbit, type, z};
+    init_m_m_abs(res, res_jac, res_hess);
 
-    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re{m_signbit, type, z};
-    forward_recur(0, m_abs + 1, re, res, res_jac, res_hess, callback);
+    assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, res_jac, res_hess, callback);
 }
 
 template <typename T, typename NormPolicy>
@@ -695,7 +695,7 @@ void assoc_legendre_p_for_each_n(
 
 template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z, T (&res)[3], Func f) {
-    T p_m_m_abs[3] = {};
+    T p_m_m_abs[3];
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_m_m_abs,
@@ -756,9 +756,9 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n_m(
     NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Func f
 ) {
-    T p_m_m_abs[3] = {};
-    T p_m_m_abs_jac[3] = {};
-    T p_m_m_abs_hess[3] = {};
+    T p_m_m_abs[3];
+    T p_m_m_abs_jac[3];
+    T p_m_m_abs_hess[3];
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_m_m_abs, p_m_m_abs_jac, p_m_m_abs_hess,
