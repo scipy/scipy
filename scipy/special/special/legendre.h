@@ -412,8 +412,6 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
         }
     }
 
-    bool is_pm1() const { return std::abs(std::real(z)) == 1 && std::imag(z) == 0; }
-
     void operator()(int n, T (&res)[2]) const {
         res[0] = -T(n + m - 1) / T(n - m);
         res[1] = T(2 * n - 1) * z / T(n - m);
@@ -599,7 +597,7 @@ void assoc_legendre_p_for_each_n(
             callback(j, r, res);
         }
 
-        if (r.is_pm1()) {
+        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift(res);
 
@@ -631,7 +629,7 @@ void assoc_legendre_p_for_each_n(
             callback(j, r, res, res_jac);
         }
 
-        if (r.is_pm1()) {
+        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift(res);
                 forward_recur_shift(res_jac);
@@ -665,7 +663,7 @@ void assoc_legendre_p_for_each_n(
             callback(j, r, res, res_jac, res_hess);
         }
 
-        if (r.is_pm1()) {
+        if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift(res);
                 forward_recur_shift(res_jac);
