@@ -17,10 +17,17 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.15.0",
-    "Cython>=3.0.8",        # when updating version, also update check in meson.build
-    "pybind11>=2.12.0",     # when updating version, also update check in scipy/meson.build
-    "pythran>=0.14.0",
+    # The upper bound on meson-python is pre-emptive only (looser
+    # on purpose, since chance of breakage in 0.17/0.18 is low with
+    # 0.16 working at time or writing)
+    "meson-python>=0.15.0,<0.19.0",
+    # The upper bound on Cython is pre-emptive only
+    "Cython>=3.0.8,<3.1.0",        # when updating version, also update check in meson.build
+    # The upper bound on pybind11 is pre-emptive only
+    "pybind11>=2.12.0,<2.13.0",     # when updating version, also update check in scipy/meson.build
+    # The upper bound on pythran is pre-emptive only; 0.16.1
+    # is released/working at time of writing.
+    "pythran>=0.14.0,<0.17.0",
 
     # numpy requirement for wheel builds for distribution on PyPI - building
     # against 2.x yields wheels that are also compatible with numpy 1.x at
@@ -28,7 +35,7 @@ requires = [
     # Note that building against numpy 1.x works fine too - users and
     # redistributors can do this by installing the numpy version they like and
     # disabling build isolation.
-    "numpy>=2.0.0rc1",
+    "numpy>=2.0.0rc1,<2.3",
 ]
 
 [project]
@@ -45,7 +52,7 @@ maintainers = [
 # release branches, see:
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.10"
-dependencies = ["numpy>=1.23.5"]  # keep in sync with `min_numpy_version` in meson.build
+dependencies = ["numpy>=1.23.5,<2.3"]  # keep in sync with `min_numpy_version` in meson.build
 readme = "README.rst"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
