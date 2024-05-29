@@ -12,11 +12,12 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
     provide a bracket around the root: the function values at the two endpoints
     must have opposite signs.
 
-    Provided a valid bracket, `find_root` is guaranteed to converge to a solution that
-    satisfies the provided `tolerances` under mild requirements (e.g. the function
-    is defined and the root exists within the bracket).
+    Provided a valid bracket, `find_root` is guaranteed to converge to a solution
+    that satisfies the provided `tolerances` if the function is continuous within
+    the bracket.
 
-    This function works elementwise when `init` and `args` contain broadcastable arrays.
+    This function works elementwise when `init` and `args` contain (broadcastable)
+    arrays.
 
     Parameters
     ----------
@@ -200,13 +201,15 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
     that minimizes the element. This function currently uses Chandrupatla's
     bracketing minimization algorithm [1]_ and therefore requires argument ``init``
-    to provide a three-point minimization bracket:
+    to provide a three-point minimization bracket: ``x1 < x2 < x3`` such that
+    ``func(x1) >= func(x2) <= func(x3)``, where one of the inequalities is strict.
 
     Provided a valid bracket, `find_minimum` is guaranteed to converge to a local
-    minimizer that satisfies the provided `tolerances` under mild requirements
-    (e.g. the function is defined and minimum exists within the bracket).
+    minimum that satisfies the provided `tolerances` if the function is continuous
+    within the bracket.
 
-    This function works elementwise when `init` and `args` contain broadcastable arrays.
+    This function works elementwise when `init` and `args` contain (broadcastable)
+    arrays.
 
     Parameters
     ----------
@@ -225,8 +228,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     init : 3-tuple of real number arrays
         The abscissae of a standard scalar minimization bracket. A bracket is
         valid if arrays ``x1, x2, x3 = init`` satisfy ``x1 < x2 < x3`` and
-        ``func(x1) > func(x2) <= func(x3)``. Arrays must be broadcastable with
-        one another and the arrays of `args`.
+        ``func(x1) >= func(x2) <= func(x3)``, where one of the inequalities
+        is strict. Arrays must be broadcastable with one another and the arrays
+        of `args`.
     args : tuple of real number arrays, optional
         Additional positional array arguments to be passed to `f`. Arrays
         must be broadcastable with one another and the arrays of `init`.
@@ -294,9 +298,9 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     -----
     Implemented based on Chandrupatla's original paper [1]_.
 
-    If ``xl < xm < xr`` are the points of the bracket and ``fl > fm <= fr``
-    are the values of ``f`` evaluated at those points, then the algorithm is
-    considered to have converged when:
+    If ``xl < xm < xr`` are the points of the bracket and ``fl >= fm <= fr``
+    (where one of the inequalities is strict) are the values of ``f`` evaluated
+    at those points, then the algorithm is considered to have converged when:
 
     - ``xr - xl <= abs(xm)*xrtol + xatol`` or
     - ``(fl - 2*fm + fr)/2 <= abs(fm)*frtol + fatol``.
@@ -304,7 +308,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     Note that first of these differs from the termination conditions described
     in [1]_.
 
-    The default values of `xrtol` is the square root of the precision of the
+    The default value of `xrtol` is the square root of the precision of the
     appropriate dtype, and ``xatol = fatol = frtol`` is the smallest normal
     number of the appropriate dtype.
 
@@ -381,8 +385,11 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     bracket endpoints ``xl`` and ``xr`` such that ``sign(f(xl)) == -sign(f(xr))``
     elementwise.
 
+    The function is guaranteed to find a valid bracket if the function is monotonic,
+    but it may find a bracket under other conditions.
+
     This function works elementwise when `xl0`, `xr0`, `xmin`, `xmax`, `factor`, and
-    the elements of `args` are mutually broadcastable arrays.
+    the elements of `args` are (mutually broadcastable) arrays.
 
     Parameters
     ----------
@@ -516,10 +523,14 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
     """Bracket the minimum of a unimodal, real-valued function of a real variable.
 
     For each element of the output of `f`, `bracket_minimum` seeks the scalar
-    bracket points ``xl < xm < xr`` such that ``fl > fm <= fr``.
+    bracket points ``xl < xm < xr`` such that ``fl >= fm <= fr`` where one of the
+    inequalities is strict.
+
+    The function is guaranteed to find a valid bracket if the function is
+    strongly unimodal, but it may find a bracket under other conditions.
 
     This function works elementwise when `xm0`, `xl0`, `xr0`, `xmin`, `xmax`, `factor`,
-    and the elements of `args` are mutually broadcastable arrays.
+    and the elements of `args` are (mutually broadcastable) arrays.
 
     Parameters
     ----------
