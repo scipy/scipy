@@ -510,17 +510,17 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
 };
 
 template <typename NormPolicy, typename T>
-void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, T &res) {
+T assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z) {
     if (m == 0) {
-        res = 1;
-    } else {
-        res = 0;
+        return 1;
     }
+
+    return 0;
 }
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
-    assoc_legendre_p_pm1(norm, n, m, type, z, res);
+    res = assoc_legendre_p_pm1(norm, n, m, type, z);
 
     T type_sign;
     if (type == 3) {
@@ -609,7 +609,7 @@ void assoc_legendre_p_for_each_n(
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift(res);
 
-                assoc_legendre_p_pm1(norm, j, m, type, z, res[2]);
+                res[2] = assoc_legendre_p_pm1(norm, j, m, type, z);
                 f(j, res);
             }
         } else {
@@ -868,17 +868,17 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
-    T p[3] = {};
-    T p_jac[3] = {};
+    T p_n_m[3];
+    T p_n_m_jac[3];
     assoc_legendre_p_for_each_n_m(
-        norm, n, m, type, z, p, p_jac,
-        [res, res_jac](int n, int m, const T(&p)[3], const T(&p_jac)[3]) {
+        norm, n, m, type, z, p_n_m, p_n_m_jac,
+        [res, res_jac](int n, int m, const T(&p_n_m)[3], const T(&p_n_m_jac)[3]) {
             if (m >= 0) {
-                res(m, n) = p[2];
-                res_jac(m, n) = p_jac[2];
+                res(m, n) = p_n_m[2];
+                res_jac(m, n) = p_n_m_jac[2];
             } else {
-                res(m + res.extent(0), n) = p[2];
-                res_jac(m + res_jac.extent(0), n) = p_jac[2];
+                res(m + res.extent(0), n) = p_n_m[2];
+                res_jac(m + res_jac.extent(0), n) = p_n_m_jac[2];
             }
         }
     );
