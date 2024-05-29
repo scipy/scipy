@@ -107,6 +107,10 @@ def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rt
     if y0.size == 0:
         return np.inf
 
+    interval_length = abs(t_bound - t0)
+    if interval_length == 0.:
+        return 0.
+    
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)
     d1 = norm(f0 / scale)
@@ -115,9 +119,7 @@ def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rt
     else:
         h0 = 0.01 * d0 / d1
     # Check t0+h0*direction doesn't take us beyond t_bound
-    h0 = min(h0, (t_bound-t0)/direction)
-    # Case where t0 = t_bound
-    if h0 == 0: return 0.
+    h0 = min(h0, interval_length)
     y1 = y0 + h0 * direction * f0
     f1 = fun(t0 + h0 * direction, y1)
     d2 = norm((f1 - f0) / scale) / h0
@@ -127,9 +129,7 @@ def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rt
     else:
         h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
-    h = min(100 * h0, h1)
-    h = min(h, (t_bound-t0)/direction)
-    h = min(h, max_step)
+    h = min(100 * h0, h1, interval_length, max_step)
     return h
 
 
