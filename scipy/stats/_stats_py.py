@@ -5541,7 +5541,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # errors before taking the square root
         t = rs * np.sqrt((dof/((rs+1.0)*(1.0-rs))).clip(0))
 
-    prob = _get_pvalue(t, distributions.t(dof), alternative, xp=np)
+    dist = _SimpleStudentT(dof, xp=np)
+    prob = _get_pvalue(t, dist, alternative, xp=np)
 
     # For backwards compatibility, return scalars when comparing 2 columns
     if rs.shape == (2, 2):
@@ -6459,12 +6460,9 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     with np.errstate(divide='ignore', invalid='ignore'):
         t = xp.divide(d, denom)
         t = t[()] if t.ndim == 0 else t
-    # This will only work for CPU backends for now. That's OK. In time,
-    # `from_dlpack` will enable the transfer from other devices, and
-    # `_get_pvalue` will even be reworked to support the native backend.
-    t_np = np.asarray(t)
-    prob = _get_pvalue(t_np, distributions.t(df), alternative, xp=np)
-    prob = xp.asarray(prob, dtype=t.dtype)
+
+    dist = _SimpleStudentT(xp.asarray(df, dtype=t.dtype), xp=xp)
+    prob = _get_pvalue(t, dist, alternative, xp=xp)
     prob = prob[()] if prob.ndim == 0 else prob
 
     # when nan_policy='omit', `df` can be different for different axis-slices
@@ -6474,7 +6472,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
     return TtestResult(t, prob, df=df, alternative=alternative_num,
                        standard_error=denom, estimate=mean,
-                       statistic_np=t_np, xp=xp)
+                       statistic_np=xp.asarray(t), xp=xp)
 
 
 def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=None):
@@ -9112,7 +9110,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
                        "(0/0). Try using `distribution='normal'")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
-        distribution = distributions.t(df)
+        distribution = _SimpleStudentT(df, xp=np)
     elif distribution == "normal":
         distribution = _SimpleNormal()
     else:
@@ -10863,7 +10861,10 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        prob = _get_pvalue(t, distributions.t(df), alternative)
+
+        dist = _SimpleStudentT(df, xp=np)
+        prob = _get_pvalue(t, dist, alternative, xp=np)
+        prob = prob[()] if prob.ndim == 0 else prob
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
@@ -10940,7 +10941,7 @@ class _SimpleStudentT:
 
     def _prob(self, t, i):
         x = self.df / (t ** 2 + self.df)
-        tail = special.betainc(self.df / 2, 0.5, x) / 2
+        tail = special.betainc(self.df / 2, self.xp.asarray(0.5), x) / 2
         return self.xp.where(i, tail, 1 - tail)
 
     def cdf(self, t):
