@@ -816,8 +816,8 @@ T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
-    T p[3] = {};
-    T p_jac[3] = {};
+    T p[3];
+    T p_jac[3];
     assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, p_jac, [](int n, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
