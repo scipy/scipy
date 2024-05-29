@@ -246,6 +246,8 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
                 res[1] *= -1;
             }
         }
+
+        res[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3]) const {
@@ -268,6 +270,8 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
                 res_jac[1] *= -1;
             }
         }
+
+        res_jac[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
