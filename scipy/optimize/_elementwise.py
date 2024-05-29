@@ -144,17 +144,50 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to find the root of the following function.
+
     >>> def f(x, c=5):
     ...     return x**3 - 2*x - c
+
+    First, we must find a valid bracket. The function is not monotonic,
+    but `bracket_root` may be able to provide a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_root(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (2.0, 4.0)
+
+    Indeed, the values of the function at the bracket endpoints have
+    opposite signs.
+
+    >>> res_bracket.f_bracket
+    (-1.0, 51.0)
+
+    Once we have a valid bracket, `find_root` can be used to provide
+    a precise root.
+
     >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
-    >>> c = [3, 4, 5]
+    The final bracket is only a few ULPs wide, so the error between
+    this value and the true root cannot be much smaller within values
+    that are representable in double precision arithmetic.
+
+    >>> import numpy as np
+    >>> xl, xr = res_root.bracket
+    >>> (xr - xl) / np.spacing(xl)
+    2.0
+    >>> res_root.f_bracket
+    (-8.881784197001252e-16, 9.769962616701378e-15)
+
+    `bracket_root` and `find_root` accept arrays for most arguments.
+    For instance, to find the root for a few values of the parameter ``c``
+    at once:
+
+    >>> c = np.asarray([3, 4, 5])
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
@@ -327,23 +360,65 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to minimize the following function.
+
     >>> def f(x, c=1):
-    ...     return (x - c)**2
+    ...     return (x - c)**2 + 2
+
+    First, we must find a valid bracket. The function is unimodal,
+    so `bracket_minium` will easily find a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
-    >>> res_minimize.x
-    1.0
 
-    >>> c = [1, 1.5, 2]
+    Indeed, the bracket points are ordered and the function value
+    at the middle bracket point is less than at the surrounding
+    points.
+
+    >>> xl, xm, xr = res_bracket.bracket
+    >>> fl, fm, fr = res_bracket.f_bracket
+    >>> (xl < xm < xr) and (fl > fm <= fr)
+    True
+
+    Once we have a valid bracket, `find_minimum` can be used to provide
+    an estimate of the minimizer.
+
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket)
+    >>> res_minimum.x
+    1.0000000149011612
+
+    The function value changes by only a few ULPs within the bracket, so
+    the minimizer cannot be determined much more precisely by evaluating
+    the function alone (i.e. we would need its derivative to do better).
+
+    >>> import numpy as np
+    >>> fl, fm, fr = res_minimum.f_bracket
+    >>> (fl - fm) / np.spacing(fm), (fr - fm) / np.spacing(fm)
+    (0.0, 2.0)
+
+    Therefore, a precise minimum of the function is given by:
+
+    >>> res_minimum.f_x
+    2.0
+
+    `bracket_minimum` and `find_minimum` accept arrays for most arguments.
+    For instance, to find the minimizers and minima for a few values of the
+    parameter ``c`` at once:
+
+    >>> c = np.asarray([1, 1.5, 2])
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
-    >>> res_minimize.x
-    array([1. , 1.5, 2. ])
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
+    >>> res_minimum.x
+    array([1.00000001, 1.5       , 2.        ])
+    >>> res_minimum.f_x
+    array([2., 2., 2.])
+
     """
 
     def reformat_result(res_in):
@@ -487,17 +562,40 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to find the root of the following function.
+
     >>> def f(x, c=5):
     ...     return x**3 - 2*x - c
+
+    First, we must find a valid bracket. The function is not monotonic,
+    but `bracket_root` may be able to provide a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_root(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (2.0, 4.0)
+
+    Indeed, the values of the function at the bracket endpoints have
+    opposite signs.
+
+    >>> res_bracket.f_bracket
+    (-1.0, 51.0)
+
+    Once we have a valid bracket, `find_root` can be used to provide
+    a precise root.
+
     >>> res_root = elementwise.find_root(f, res_bracket.bracket)
     >>> res_root.x
     2.0945514815423265
 
-    >>> c = [3, 4, 5]
+    `bracket_root` and `find_root` accept arrays for most arguments.
+    For instance, to find the root for a few values of the parameter ``c``
+    at once:
+
+    >>> import numpy as np
+    >>> c = np.asarray([3, 4, 5])
     >>> res_bracket = elementwise.bracket_root(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([1., 1., 2.]), array([2., 2., 4.]))
@@ -633,23 +731,51 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
     Examples
     --------
-    >>> from scipy.optimize import elementwise
+    Suppose we wish to minimize the following function.
+
     >>> def f(x, c=1):
-    ...     return (x - c)**2
+    ...     return (x - c)**2 + 2
+
+    First, we must find a valid bracket. The function is unimodal,
+    so `bracket_minium` will easily find a bracket.
+
+    >>> from scipy.optimize import elementwise
     >>> res_bracket = elementwise.bracket_minimum(f, 0)
+    >>> res_bracket.success
+    True
     >>> res_bracket.bracket
     (0.0, 0.5, 1.5)
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket)
-    >>> res_minimize.x
-    1.0
 
-    >>> c = [1, 1.5, 2]
+    Indeed, the bracket points are ordered and the function value
+    at the middle bracket point is less than at the surrounding
+    points.
+
+    >>> xl, xm, xr = res_bracket.bracket
+    >>> fl, fm, fr = res_bracket.f_bracket
+    >>> (xl < xm < xr) and (fl > fm <= fr)
+    True
+
+    Once we have a valid bracket, `find_minimum` can be used to provide
+    an estimate of the minimizer.
+
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket)
+    >>> res_minimum.x
+    1.0000000149011612
+
+    `bracket_minimum` and `find_minimum` accept arrays for most arguments.
+    For instance, to find the minimizers and minima for a few values of the
+    parameter ``c`` at once:
+
+    >>> import numpy as np
+    >>> c = np.asarray([1, 1.5, 2])
     >>> res_bracket = elementwise.bracket_minimum(f, 0, args=(c,))
     >>> res_bracket.bracket
     (array([0. , 0.5, 0.5]), array([0.5, 1.5, 1.5]), array([1.5, 2.5, 2.5]))
-    >>> res_minimize = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
-    >>> res_minimize.x
-    array([1. , 1.5, 2. ])
+    >>> res_minimum = elementwise.find_minimum(f, res_bracket.bracket, args=(c,))
+    >>> res_minimum.x
+    array([1.00000001, 1.5       , 2.        ])
+    >>> res_minimum.f_x
+    array([2., 2., 2.])
 
     """  # noqa: E501
 
