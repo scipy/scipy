@@ -2802,10 +2802,6 @@ class TestHilbert2:
 
 class TestEnvelope:
     """Unit tests for function ._signaltools.envelope()`. """
-    @classmethod
-    def raiseValErr(cls, match):
-        """Little helper to raise ValueError for mor concise code layout. """
-        return pytest.raises(ValueError, match=match)
 
     @classmethod
     def assert_close(cls, actual, desired, msg):
@@ -2814,26 +2810,31 @@ class TestEnvelope:
 
 # noinspection PyTypeChecker
     def test_envelope_invalid_parameters(self):
-        """For `envelope()` Raise all exceptions which are used to verify function
+        """For `envelope()` Raise all exceptions that are used to verify function
         parameters. """
-        with self.raiseValErr(r"Invalid parameter axis=2 for z.shape=.*"):
+        with pytest.raises(ValueError,
+                           match=r"Invalid parameter axis=2 for z.shape=.*"):
             envelope(np.ones(3), axis=2)
-        with self.raiseValErr(r"z.shape\[axis\] not > 0 for z.shape=.*"):
+        with pytest.raises(ValueError,
+                           match=r"z.shape\[axis\] not > 0 for z.shape=.*"):
             envelope(np.ones((3, 0)), axis=1)
         for bp_in in [(0, 1, 2), (0, 2.), (None, 2.)]:
             ts = ', '.join(map(str, bp_in))
-            with self.raiseValErr(rf"bp_in=\({ts}\) isn't a 2-tuple of.*"):
+            with pytest.raises(ValueError,
+                               match=rf"bp_in=\({ts}\) isn't a 2-tuple of.*"):
                 envelope(np.ones(4), bp_in=bp_in)
-        with self.raiseValErr("n_out=10.0 is not a positive integer or.*"):
+        with pytest.raises(ValueError,
+                           match="n_out=10.0 is not a positive integer or.*"):
             envelope(np.ones(4), n_out=10.)
         for bp_in in [(-1, 3), (1, 1), (0, 10)]:
-            with self.raiseValErr(r"`-n//2 <= bp_in\[0\] < bp_in\[1\] <= \(n\+1\).*"):
+            with pytest.raises(ValueError,
+                               match=r"`-n//2 <= bp_in\[0\] < bp_in\[1\] <=.*"):
                 envelope(np.ones(4), bp_in=bp_in)
-        with self.raiseValErr("residual='undefined' not in .*"):
+        with pytest.raises(ValueError, match="residual='undefined' not in .*"):
             envelope(np.ones(4), residual='undefined')
 
     def test_envelope_verify_parameters(self):
-        """Ensure that the various parametrization produce compatible results. """
+        """Ensure that the various parametrizations produce compatible results. """
         Z, Zr_a = [4, 2, 2, 3, 0], [4, 0, 0, 6, 0, 0, 0, 0]
         z = sp_fft.irfft(Z)
         n = len(z)
