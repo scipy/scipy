@@ -2715,6 +2715,27 @@ class TestCircFuncs:
         y = stats.circstd(xp.asarray([0]))
         assert math.copysign(1.0, y) == 1.0
 
+    def test_circmean_accuracy(self, xp):
+        # For tiny x such that sin(x) == x and cos(x) == 1.0 numerically,
+        # circmean(x) should return x because atan2(sin(x), cos(x)) == x.
+        # This test verifies this.
+        #
+        # The purpose of this test is not to show that circmean() is
+        # accurate in the last digit for certain input, because this is
+        # neither guaranteed not particularly useful.  Rather, it is a
+        # "white-box" sanity check that no undue loss of precision is
+        # introduced by conversion between (high - low) and (2 * pi).
+
+        x = xp.linspace(1e-9, 1e-8, 100)
+        assert xp.all(xp.sin(x) == x) and xp.all(xp.cos(x) == 1.0)
+
+        m = (x * (2 * xp.pi) / (2 * xp.pi)) != x
+        assert xp.any(m)
+        x = x[m]
+
+        y = stats.circmean(x[:, xp.newaxis], axis=1)
+        assert xp.all(y == x)
+
 
 class TestCircFuncsNanPolicy:
     # `nan_policy` is implemented by the `_axis_nan_policy` decorator, which is
