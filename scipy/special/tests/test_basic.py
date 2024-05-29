@@ -4189,7 +4189,7 @@ def test_rel_entr_gh_20710_overflow():
     ]
     x = inputs[:, 0]
     y = inputs[:, 1]
-    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=1e-13)
+    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=0)
 
 
 def test_huber():
