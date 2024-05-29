@@ -72,29 +72,29 @@ void legendre_p_for_each_n(int n, T z, T (&res)[3], Func f) {
     init_n(res);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, [f](int n, auto re_n, const T(&res)[3]) { f(n, res); });
+    forward_recur(0, n + 1, re_n, res, [&f](int n, const auto &re_n, const T(&res)[3]) { f(n, res); });
 }
 
 template <typename T, typename Func>
 void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], Func f) {
-    legendre_p_initializer_n<T> init{z};
-    init(res, res_jac);
+    legendre_p_initializer_n<T> init_n{z};
+    init_n(res, res_jac);
 
-    legendre_p_recurrence_n<T> re{z};
-    forward_recur(0, n + 1, re, res, res_jac, [f](int n, auto, const T(&res)[3], const T(&res_jac)[3]) {
+    legendre_p_recurrence_n<T> re_n{z};
+    forward_recur(0, n + 1, re_n, res, res_jac, [&f](int n, const auto &re_n, const T(&res)[3], const T(&res_jac)[3]) {
         f(n, res, res_jac);
     });
 }
 
 template <typename T, typename Func>
 void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Func f) {
-    legendre_p_initializer_n<T> init{z};
-    init(res, res_jac, res_hess);
+    legendre_p_initializer_n<T> init_n{z};
+    init_n(res, res_jac, res_hess);
 
-    legendre_p_recurrence_n<T> re{z};
+    legendre_p_recurrence_n<T> re_n{z};
     forward_recur(
-        0, n + 1, re, res, res_jac, res_hess,
-        [f](int n, auto, const T(&res)[3], const T(&res_jac)[3], const T(&res_hess)[3]) {
+        0, n + 1, re_n, res, res_jac, res_hess,
+        [&f](int n, const auto &re_n, const T(&res)[3], const T(&res_jac)[3], const T(&res_hess)[3]) {
             f(n, res, res_jac, res_hess);
         }
     );
