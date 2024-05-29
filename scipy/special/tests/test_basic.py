@@ -1459,6 +1459,11 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
+    
+    def test_comb_exact_non_int_dep(self):
+        msg = "`exact=True`"
+        with pytest.deprecated_call(match=msg):
+            special.comb(3.4, 4, exact=True)
 
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
