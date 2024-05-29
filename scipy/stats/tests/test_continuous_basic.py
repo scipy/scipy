@@ -51,9 +51,12 @@ slow_test_cont_basic = {'crystalball', 'powerlognorm', 'pearson3'}
 xslow_test_moments = {'studentized_range', 'ksone', 'vonmises', 'vonmises_line',
                       'recipinvgauss', 'kstwo', 'kappa4'}
 
+slow_fit_mle = {'exponweib', 'genexpon', 'genhyperbolic', 'johnsonsb',
+                'kappa4', 'powerlognorm', 'tukeylambda'}
 xslow_fit_mle = {'gausshyper', 'ncf', 'ncx2', 'recipinvgauss', 'vonmises_line'}
 xfail_fit_mle = {'ksone', 'kstwo', 'trapezoid', 'truncpareto', 'irwinhall'}
 skip_fit_mle = {'levy_stable', 'studentized_range'}  # far too slow (>10min)
+slow_fit_mm = {'chi2', 'expon', 'lognorm', 'loguniform', 'powerlaw', 'reciprocal'}
 xslow_fit_mm = {'argus', 'beta', 'exponpow', 'gausshyper', 'gengamma',
                 'genhalflogistic', 'geninvgauss', 'gompertz', 'halfgennorm',
                 'johnsonsb', 'kstwobign', 'ncx2', 'norminvgauss', 'truncnorm',
@@ -85,6 +88,9 @@ fails_cmplx = {'argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                'tukeylambda', 'vonmises', 'vonmises_line',
                'rv_histogram_instance', 'truncnorm', 'studentized_range',
                'johnsonsb', 'halflogistic', 'rel_breitwigner'}
+
+# Slow test_method_with_lists
+slow_with_lists = {'studentized_range'}
 
 
 # rv_histogram instances, with uniform and non-uniform bins;
@@ -200,6 +206,7 @@ def test_cont_basic(distname, arg, sn):
 
 
 def cases_test_cont_basic_fit():
+    slow = pytest.mark.slow
     xslow = pytest.mark.xslow
     fail = pytest.mark.skip(reason="Test fails and may be slow.")
     skip = pytest.mark.skip(reason="Test too slow to run to completion (>10m).")
@@ -207,6 +214,9 @@ def cases_test_cont_basic_fit():
     for distname, arg in distcont[:] + histogram_test_instances:
         for method in ["MLE", "MM"]:
             for fix_args in [True, False]:
+                if method == 'MLE' and distname in slow_fit_mle:
+                    yield pytest.param(distname, arg, method, fix_args, marks=slow)
+                    continue
                 if method == 'MLE' and distname in xslow_fit_mle:
                     yield pytest.param(distname, arg, method, fix_args, marks=xslow)
                     continue
@@ -215,6 +225,9 @@ def cases_test_cont_basic_fit():
                     continue
                 if method == 'MLE' and distname in skip_fit_mle:
                     yield pytest.param(distname, arg, method, fix_args, marks=skip)
+                    continue
+                if method == 'MM' and distname in slow_fit_mm:
+                    yield pytest.param(distname, arg, method, fix_args, marks=slow)
                     continue
                 if method == 'MM' and distname in xslow_fit_mm:
                     yield pytest.param(distname, arg, method, fix_args, marks=xslow)
@@ -788,9 +801,17 @@ def check_fit_args_fix(distfn, arg, rvs, method):
             npt.assert_(vals5[2] == arg[2])
 
 
+def cases_test_methods_with_lists():
+    for distname, arg in distcont:
+        if distname in slow_with_lists:
+            yield pytest.param(distname, arg, marks=pytest.mark.slow)
+        else:
+            yield distname, arg
+
+
 @pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
                                     'sf', 'logsf', 'ppf', 'isf'])
-@pytest.mark.parametrize('distname, args', distcont)
+@pytest.mark.parametrize('distname, args', cases_test_methods_with_lists())
 def test_methods_with_lists(method, distname, args):
     # Test that the continuous distributions can accept Python lists
     # as arguments.

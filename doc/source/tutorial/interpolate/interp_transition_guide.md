@@ -83,6 +83,22 @@ interpolation function.](plots/output_12_0.png)
 >>> assert_allclose(znew_i, znew_r, atol=1e-14)
 ```
 
+#### Interpolation order: linear, cubic etc
+
+
+`interp2d` defaults to `kind="linear"`, which is linear in both directions, `x-` and `y-`.
+`RectBivariateSpline`, on the other hand, defaults to cubic interpolation,
+`kx=3, ky=3`.
+
+Here is the exact equivalence:
+
+| interp2d | RectBivariateSpline |
+|----------|--------------------|
+| no kwargs   | kx = 1, ky = 1 |
+| kind='linear' | kx = 1, ky = 1 |
+| kind='cubic' | kx = 3, ky = 3 |
+
+
 ### 1.2. `interp2d` with full coordinates of points (scattered interpolation)
 
 Here, we flatten the meshgrid from the previous exercise to illustrate the functionality.
@@ -130,6 +146,22 @@ interpolation function.](plots/output_20_0.png)
 ```
 >>> assert_allclose(znew_i, znew_b, atol=1e-15)
 ```
+
+#### Interpolation order: linear, cubic etc
+
+
+`interp2d` defaults to `kind="linear"`, which is linear in both directions, `x-` and `y-`.
+`bisplrep`, on the other hand, defaults to cubic interpolation,
+`kx=3, ky=3`.
+
+Here is the exact equivalence:
+
+| `interp2d` | `bisplrep` |
+|----------|--------------------|
+| no kwargs   | kx = 1, ky = 1 |
+| kind='linear' | kx = 1, ky = 1 |
+| kind='cubic' | kx = 3, ky = 3 |
+
 
 ## 2. Alternative to `interp2d`: regular grid
 

@@ -16,6 +16,9 @@ import platform
 import itertools
 import sys
 
+import pytest
+from pytest import raises as assert_raises
+
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
@@ -24,8 +27,7 @@ from numpy import (arange, zeros, array, dot, asarray,
 import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
-        assert_allclose,suppress_warnings)
-from pytest import raises as assert_raises
+        assert_allclose, suppress_warnings)
 
 import scipy.linalg
 
@@ -40,8 +42,6 @@ from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
 from scipy._lib._util import ComplexWarning
-
-import pytest
 
 
 IS_COLAB = ('google.colab' in sys.modules)
@@ -3383,6 +3383,7 @@ class _TestArithmetic:
         self.__Asp = self.spcreator(self.__A)
         self.__Bsp = self.spcreator(self.__B)
 
+    @pytest.mark.fail_slow(5)
     def test_add_sub(self):
         self.__arith_init()
 

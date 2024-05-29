@@ -94,6 +94,47 @@ relevant docs checks (skip Cirrus and GitHub Actions' workflows)::
 
     [docs only]
 
+Failures due to test duration
+=============================
+
+Some CI jobs install |pytest-fail-slow|_ and report failures when the test
+execution time exceeds a threshold duration.
+
+- By default, all tests are subject to a 5 second limit; i.e., the option
+  ``--fail-slow=5.0`` is used in a "full" test job.
+- All tests not marked ``slow`` (``@pytest.mark.slow``) are subject to a
+  1 second limit; i.e. the option ``--fail-slow=1.0`` is used in a "fast"
+  test job.
+- Exceptions are made using the ``pytest.mark.fail_slow`` decorator; e.g.
+  a test can be marked ``@pytest.mark.fail_slow(10)`` to give it a ten
+  second limit regardless of whether it is part of the "fast" or "full"
+  test suite.
+
+If a test fails by exceeding the time limit at any point during the
+development of a PR, please adjust the test to ensure that it does
+not fail in the future. Even if new tests do not fail, please check
+the details of workflows that include "fail slow" in their name
+before PRs merge. These include lists of tests that are approaching
+(or have exceeded) their time limit. Due to variation in execution
+times, tests with execution times near the threshold should be adjusted
+to avoid failure even if their execution time were to increase by 50%;
+typical tests should have much greater margin (at least 400%).
+Adjustment options include:
+
+- Making the test faster.
+- Marking the test as ``slow``, if it is acceptable to run the test
+  on a reduced set of platforms.
+- Marking the test as ``xslow``, if it is acceptable to run the test
+  only occasionally.
+- Breaking up the test or parameterizing it, and possible marking
+  parts of it as slow. Note that this does not reduce the total
+  test duration, so other options are preferred.
+- For truly critical tests that are unavoidably slow, add an exception
+  using ``pytest.mark.fail_slow``.
+
+See :ref:`devpy-test` for more information about working with slow tests
+locally.
+
 Wheel builds
 ============
 
@@ -119,3 +160,6 @@ It is not advised to use cibuildwheel to build scipy wheels on your own system
 as it will automatically install gfortran compilers and various other
 dependencies. Instead, one could use an isolated Docker container to build
 Linux wheels.
+
+.. |pytest-fail-slow| replace:: ``pytest-fail-slow``
+.. _pytest-fail-slow: https://github.com/jwodder/pytest-fail-slow
