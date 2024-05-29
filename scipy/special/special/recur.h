@@ -106,6 +106,9 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callb
  */
 template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
 void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Callback callback) {
+    res[N - 1] = 0;
+    res_jac[N - 1] = 0;
+
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;

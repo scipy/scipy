@@ -370,9 +370,6 @@ template <typename NormPolicy, typename T, typename Callable>
 void assoc_legendre_p_for_each_m_m_abs(
     NormPolicy norm, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callable callback
 ) {
-    res[2] = 0;
-    res_jac[2] = 0;
-
     int m_abs = std::abs(m);
     bool m_signbit = std::signbit(m);
 
