@@ -10928,3 +10928,23 @@ class _SimpleBeta:
             scale = 1 if self.scale is None else self.scale
             return special.betaincc(self.a, self.b, (x - loc)/scale)
         return special.betaincc(self.a, self.b, x)
+
+
+class _SimpleStudentT:
+    # A very simple, array-API compatible t distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure t
+    # distribution in due time.
+    def __init__(self, df, *, xp):
+        self.df = df
+        self.xp = xp
+
+    def _prob(self, t, i):
+        x = self.df / (t ** 2 + self.df)
+        tail = special.betainc(self.df / 2, 0.5, x) / 2
+        return self.xp.where(i, tail, 1 - tail)
+
+    def cdf(self, t):
+        return self._prob(t, t < 0)
+
+    def sf(self, t):
+        return self._prob(t, t > 0)
