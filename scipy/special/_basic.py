@@ -2634,6 +2634,7 @@ def kelvin_zeros(nt):
         First `nt` zeros of the derivative of the Kelvin function ker.
     kei' : ndarray
         First `nt` zeros of the derivative of the Kelvin function kei.
+
     References
     ----------
     .. [1] Zhang, Shanjie and Jin, Jianming. "Computation of Special
