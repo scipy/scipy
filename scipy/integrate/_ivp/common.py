@@ -109,8 +109,8 @@ def select_initial_step(fun, t0, y0, t_bound,
         return np.inf
 
     interval_length = abs(t_bound - t0)
-    if interval_length == 0.:
-        return 0.
+    if interval_length == 0.0:
+        return 0.0
     
     scale = atol + np.abs(y0) * rtol
     d0 = norm(y0 / scale)

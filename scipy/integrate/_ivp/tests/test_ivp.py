@@ -1101,9 +1101,9 @@ def test_zero_interval(method):
     # f[y(t)] = 2y(t)
     def f(t, y):
         return 2 * y
-    res = solve_ivp(f, (0., 0.), np.array([1.]), method = method)
+    res = solve_ivp(f, (0.0, 0.0), np.array([1.0]), method = method)
     assert res.success
-    assert_allclose(res.y[0,-1], 1.)
+    assert_allclose(res.y[0,-1], 1.0)
     
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
@@ -1117,7 +1117,7 @@ def test_tbound_respected_small_interval(method):
         if t > SMALL:
             raise ValueError("Function was evaluated outside interval")
         return 2 * y
-    res = solve_ivp(f, (0., SMALL), np.array([1]), method=method)
+    res = solve_ivp(f, (0.0, SMALL), np.array([1]), method=method)
     assert res.success
 
 
@@ -1139,12 +1139,12 @@ def test_tbound_respected_larger_interval(method):
 
     result = solve_ivp(func, 
                        (-17, 2),
-                       y0 = np.array([1, -11]),
-                       max_step = 0.03,
-                       vectorized = False,
-                       t_eval = None,
-                       atol = 1e-8, 
-                       rtol = 1e-5)
+                       y0=np.array([1, -11]),
+                       max_step=0.03,
+                       vectorized=False,
+                       t_eval=None,
+                       atol=1e-8, 
+                       rtol=1e-5)
     assert result.success
 
 
