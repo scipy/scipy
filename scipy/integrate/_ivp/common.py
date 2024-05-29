@@ -94,7 +94,6 @@ def select_initial_step(fun, t0, y0, t_bound,
     atol : float
         Desired absolute tolerance.
 
-
     Returns
     -------
     h_abs : float
@@ -130,8 +129,7 @@ def select_initial_step(fun, t0, y0, t_bound,
     else:
         h1 = (0.01 / max(d1, d2)) ** (1 / (order + 1))
 
-    h = min(100 * h0, h1, interval_length, max_step)
-    return h
+    return min(100 * h0, h1, interval_length, max_step)
 
 
 class OdeSolution:
