@@ -63,7 +63,8 @@ def norm(x):
     return np.linalg.norm(x) / x.size ** 0.5
 
 
-def select_initial_step(fun, t0, y0, t_bound, max_step, f0, direction, order, rtol, atol):
+def select_initial_step(fun, t0, y0, t_bound, 
+                        max_step, f0, direction, order, rtol, atol):
     """Empirically select a good initial step.
 
     The algorithm is described in [1]_.

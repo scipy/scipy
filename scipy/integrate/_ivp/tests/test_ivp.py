@@ -1153,7 +1153,10 @@ def test_tbound_respected_oscillator(method):
     def reactions_func(t, y):
         if (t > 205): 
             raise ValueError("Called outside interval")
-        yprime = np.array([1.73307544e-02, 6.49376470e-06, 0.00000000e+00, 0.00000000e+00])
+        yprime = np.array([1.73307544e-02, 
+                           6.49376470e-06, 
+                           0.00000000e+00, 
+                           0.00000000e+00])
         return yprime
 
     def run_sim2(t_end, n_timepoints=10, shortest_delay_line=10000000):
