@@ -808,7 +808,7 @@ void assoc_legendre_p_for_each_n_m(
  */
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
-    T p[3] = {};
+    T p[3];
     assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, [](int n, const T(&p)[3]) {});
 
     return p[2];
@@ -826,9 +826,9 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &r
 
 template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
-    T p[3] = {};
-    T p_jac[3] = {};
-    T p_hess[3] = {};
+    T p[3];
+    T p_jac[3];
+    T p_hess[3];
     assoc_legendre_p_for_each_n(
         norm, n, m, type, z, true, p, p_jac, p_hess,
         [](int n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
