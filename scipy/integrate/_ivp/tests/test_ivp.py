@@ -1103,7 +1103,7 @@ def test_zero_interval(method):
         return 2 * y
     res = solve_ivp(f, (0., 0.), np.array([1.]), method = method)
     assert res.success
-    assert_allclose(res.y, np.array([1.]))
+    assert_allclose(res.y[0,-1], 1.)
     
 
 @pytest.mark.parametrize('method', ['RK23', 'RK45', 'DOP853', 'Radau', 'BDF'])
