@@ -4,6 +4,10 @@ from scipy import special
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
 
+
+__all__ = ['nsum']
+
+
 # todo:
 #  figure out warning situation
 #  address https://github.com/scipy/scipy/pull/18650#discussion_r1233032521
@@ -915,7 +919,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
 
 
-def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
+def nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
           rtol=None):
     r"""Evaluate a convergent sum.
 
@@ -937,7 +941,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
          where each element of ``x`` is a finite real and ``args`` is a tuple,
          which may contain an arbitrary number of arrays that are broadcastable
          with `x`. `f` must represent a smooth, positive, and monotone decreasing
-         function of `x`; `_nsum` performs no checks to verify that these conditions
+         function of `x`; `nsum` performs no checks to verify that these conditions
          are met and may return erroneous results if they are violated.
     a, b : array_like
         Real lower and upper limits of summed terms. Must be broadcastable.
@@ -1031,8 +1035,8 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     Compute the infinite sum of the reciprocals of squared integers.
     
     >>> import numpy as np
-    >>> from scipy.integrate._tanhsinh import _nsum
-    >>> res = _nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
+    >>> from scipy.integrate import nsum
+    >>> res = nsum(lambda k: 1/k**2, 1, np.inf, maxterms=1e3)
     >>> ref = np.pi**2/6  # true value
     >>> res.error  # estimated error
     4.990014980029223e-07
@@ -1045,7 +1049,7 @@ def _nsum(f, a, b, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     
     >>> from scipy import special
     >>> p = np.arange(2, 10)
-    >>> res = _nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
+    >>> res = nsum(lambda k, p: 1/k**p, 1, np.inf, maxterms=1e3, args=(p,))
     >>> ref = special.zeta(p, 1)
     >>> np.allclose(res.sum, ref)
     True
