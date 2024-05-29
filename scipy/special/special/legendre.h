@@ -853,7 +853,7 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
-    T p[3] = {};
+    T p[3];
     assoc_legendre_p_for_each_n_m(norm, n, m, type, z, p, [res](int n, int m, const T(&p)[3]) {
         if (m >= 0) {
             res(m, n) = p[2];
@@ -889,9 +889,9 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
     int m = (res.extent(0) - 1) / 2;
     int n = res.extent(1) - 1;
 
-    T p[3] = {};
-    T p_jac[3] = {};
-    T p_hess[3] = {};
+    T p[3];
+    T p_jac[3];
+    T p_hess[3];
     assoc_legendre_p_for_each_n_m(
         norm, n, m, type, z, p, p_jac, p_hess,
         [res, res_jac, res_hess](int n, int m, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
