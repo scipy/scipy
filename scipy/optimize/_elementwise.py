@@ -452,8 +452,8 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
     -----
     This function generalizes an algorithm found in pieces throughout the
     `scipy.stats` codebase. The strategy is to iteratively grow the bracket `(l, r)`
-     until ``f(l) < 0 < f(r)`` or ``f(r) < 0 < f(l)``. The bracket grows to the left
-     as follows.
+    until ``f(l) < 0 < f(r)`` or ``f(r) < 0 < f(l)``. The bracket grows to the left
+    as follows.
 
     - If `xmin` is not provided, the distance between `xl0` and `l` is iteratively
       increased by `factor`.
