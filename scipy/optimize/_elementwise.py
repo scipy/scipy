@@ -8,7 +8,7 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
     For each element of the output of `f`, `find_root` seeks the scalar
     root that makes the element 0. This function currently uses Chandrupatla's
-    bracketing algorithm [1]_ and therefore requires argument ``init`` to
+    bracketing algorithm [1]_ and therefore requires argument `init` to
     provide a bracket around the root: the function values at the two endpoints
     must have opposite signs.
 
@@ -27,11 +27,13 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
 
         where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`.
+        with ``x``.
 
-        ``f`` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. `find_root` seeks an
-        array ``x`` such that ``f(x)`` is an array of zeros.
+        `f` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
+        array ``x`` or the arrays in ``args``.
+
+        `find_root` seeks an array ``x`` such that ``f(x)`` is an array of zeros.
     init : 2-tuple of real number arrays
         The lower and upper endpoints of a bracket surrounding the desired root.
         A bracket is valid if arrays ``xl, xr = init`` satisfy ``xl < xr`` and
@@ -64,7 +66,8 @@ def find_root(f, init, /, *, args=(), tolerances=None, maxiter=None, callback=No
         similar to that returned by `find_root` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `find_root` will return a result.
+        `find_root` will return a result. `callback` must not mutate
+        `res` or its attributes.
 
     Returns
     -------
@@ -199,7 +202,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
     For each element of the output of `f`, `find_minimum` seeks the scalar minimizer
     that minimizes the element. This function currently uses Chandrupatla's
-    bracketing minimization algorithm [1]_ and therefore requires argument ``init``
+    bracketing minimization algorithm [1]_ and therefore requires argument `init`
     to provide a three-point minimization bracket:
 
     Provided a valid bracket, `find_minimum` is guaranteed to converge to a local
@@ -217,11 +220,14 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
 
         where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`.
+        with ``x``.
 
-        ``f`` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``. `find_minimum` seeks an
-        array ``x`` such that ``f(x)`` is an array of local minima.
+        `f` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
+        array ``x`` or the arrays in ``args``.
+
+        `find_minimum` seeks an array ``x`` such that ``f(x)`` is an array of
+        local minima.
     init : 3-tuple of real number arrays
         The abscissae of a standard scalar minimization bracket. A bracket is
         valid if arrays ``x1, x2, x3 = init`` satisfy ``x1 < x2 < x3`` and
@@ -252,7 +258,8 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
         similar to that returned by `find_minimum` (but containing the current
         iterate's values of all variables). If `callback` raises a
         ``StopIteration``, the algorithm will terminate immediately and
-        `find_root` will return a result.
+        `find_root` will return a result. `callback` must not mutate
+        `res` or its attributes.
 
     Returns
     -------
@@ -295,7 +302,7 @@ def find_minimum(f, init, /, *, args=(), tolerances=None, maxiter=100, callback=
     Implemented based on Chandrupatla's original paper [1]_.
 
     If ``xl < xm < xr`` are the points of the bracket and ``fl > fm <= fr``
-    are the values of ``f`` evaluated at those points, then the algorithm is
+    are the values of `f` evaluated at those points, then the algorithm is
     considered to have converged when:
 
     - ``xr - xl <= abs(xm)*xrtol + xatol`` or
@@ -393,10 +400,11 @@ def bracket_root(f, xl0, xr0=None, *, xmin=None, xmax=None, factor=None, args=()
 
         where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`.
+        with ``x``.
 
-        ``f`` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``.
+        `f` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
+        array ``x`` or the arrays in ``args``.
     xl0, xr0: float array
         Starting guess of bracket, which need not contain a root. If `xr0` is
         not provided, ``xr0 = xl0 + 1``. Must be broadcastable with all other
@@ -530,10 +538,11 @@ def bracket_minimum(f, xm0, *, xl0=None, xr0=None, xmin=None, xmax=None,
 
         where each element of ``x`` is a finite real and ``args`` is a tuple,
         which may contain an arbitrary number of arrays that are broadcastable
-        with `x`.
+        with ``x``.
 
-        ``f`` must be an elementwise function: each element ``f(x)[i]``
-        must equal ``f(x[i])`` for all indices ``i``.
+        `f` must be an elementwise function: each element ``f(x)[i]``
+        must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
+        array ``x`` or the arrays in ``args``.
     xm0: float array_like
         Starting guess for middle point of bracket.
     xl0, xr0: float array_like, optional
