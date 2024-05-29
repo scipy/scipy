@@ -241,8 +241,8 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
    
-Elementwise Minimization and Rootfinding
-========================================
+Elementwise Minimization and Root Finding
+=========================================
 
 .. toctree::
    :maxdepth: 3
