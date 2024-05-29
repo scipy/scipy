@@ -430,63 +430,6 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
         res_hess[0] = 0;
         res_hess[1] = 0;
     }
-
-    void at_pm1(int n, T &res) {
-        if (m == 0) {
-            res = 1;
-        } else {
-            res = 0;
-        }
-    }
-
-    void at_pm1(int n, T &res, T &res_jac) {
-        at_pm1(n, res);
-
-        if (std::abs(m) > n) {
-            res_jac = 0;
-        } else if (m == 0) {
-            res_jac = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
-        } else if (m == 1) {
-            res_jac = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else if (m == 2) {
-            res_jac = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
-        } else if (m == -2) {
-            res_jac = -type_sign * std::pow(z, T(n + 1)) / T(4);
-        } else if (m == -1) {
-            res_jac = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else {
-            res_jac = 0;
-        }
-    }
-
-    void at_pm1(int n, T &res, T &res_jac, T &res_hess) {
-        at_pm1(n, res, res_jac);
-
-        // need to complete these
-        if (std::abs(m) > n) {
-            res_hess = 0;
-        } else if (m == 0) {
-            res_hess = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
-        } else if (m == 1) {
-            res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else if (m == 2) {
-            res_hess = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
-        } else if (m == 3) {
-            res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else if (m == 4) {
-            res_hess = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
-        } else if (m == -4) {
-            res_hess = 0;
-        } else if (m == -3) {
-            res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else if (m == -2) {
-            res_hess = -T(1) / T(4);
-        } else if (m == -1) {
-            res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
-        } else {
-            res_hess = 0;
-        }
-    }
 };
 
 /**
@@ -566,6 +509,73 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
     }
 };
 
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, T &res) {
+    if (m == 0) {
+        res = 1;
+    } else {
+        res = 0;
+    }
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, res);
+
+    T type_sign;
+    if (type == 3) {
+        type_sign = -1;
+    } else {
+        type_sign = 1;
+    }
+
+    if (std::abs(m) > n) {
+        res_jac = 0;
+    } else if (m == 0) {
+        res_jac = T(n) * T(n + 1) * std::pow(z, T(n + 1)) / T(2);
+    } else if (m == 1) {
+        res_jac = std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 2) {
+        res_jac = -type_sign * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * std::pow(z, T(n + 1)) / T(4);
+    } else if (m == -2) {
+        res_jac = -type_sign * std::pow(z, T(n + 1)) / T(4);
+    } else if (m == -1) {
+        res_jac = -std::pow(z, T(n)) * std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else {
+        res_jac = 0;
+    }
+}
+
+template <typename NormPolicy, typename T>
+void assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac, T &res_hess) {
+    assoc_legendre_p_pm1(norm, n, m, type, z, res, res_jac);
+
+    // need to complete these
+    if (std::abs(m) > n) {
+        res_hess = 0;
+    } else if (m == 0) {
+        res_hess = T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(8);
+    } else if (m == 1) {
+        res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 2) {
+        res_hess = -T((n + 1) * n - 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) / T(12);
+    } else if (m == 3) {
+        res_hess = std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == 4) {
+        res_hess = T(n + 4) * T(n + 3) * T(n + 2) * T(n + 1) * T(n) * T(n - 1) * T(n - 2) * T(n - 3) / T(48);
+    } else if (m == -4) {
+        res_hess = 0;
+    } else if (m == -3) {
+        res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else if (m == -2) {
+        res_hess = -T(1) / T(4);
+    } else if (m == -1) {
+        res_hess = -std::numeric_limits<remove_complex_t<T>>::infinity();
+    } else {
+        res_hess = 0;
+    }
+}
+
 /**
  * Compute the associated Legendre polynomial of degree n and order m.
  *
@@ -578,55 +588,52 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
  *
  * @return value of the polynomial
  */
-template <typename NormPolicy, typename T, typename Callable>
+template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
-    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], Callable callback
+    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], Func f
 ) {
-    int m_abs = std::abs(m);
-
     assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
     init_n(res);
 
-    assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
+    int m_abs = std::abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
-            callback(j, r, res);
+            f(j, res);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            callback(j, r, res);
+            f(j, res);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
                 forward_recur_shift(res);
 
-                r.at_pm1(j, res[2]);
-                callback(j, r, res);
+                assoc_legendre_p_pm1(norm, j, m, type, z, res[2]);
+                f(j, res);
             }
         } else {
-            forward_recur(m_abs, n + 1, r, res, callback);
+            assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
+            forward_recur(m_abs, n + 1, r, res, [f](int n, const auto &re_n, const T(&p)[3]) { f(n, p); });
         }
     }
 }
 
-template <typename NormPolicy, typename T, typename Callable>
+template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
-    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], Callable callback
+    NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], Func f
 ) {
     assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
     init_n(res, res_jac);
 
-    assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
-
     int m_abs = std::abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
-            callback(j, r, res, res_jac);
+            f(j, res, res_jac);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            callback(j, r, res, res_jac);
+            f(j, res, res_jac);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -634,33 +641,35 @@ void assoc_legendre_p_for_each_n(
                 forward_recur_shift(res);
                 forward_recur_shift(res_jac);
 
-                r.at_pm1(j, res[2], res_jac[2]);
-                callback(j, r, res, res_jac);
+                assoc_legendre_p_pm1(norm, j, m, type, z, res[2], res_jac[2]);
+                f(j, res, res_jac);
             }
         } else {
-            forward_recur(m_abs, n + 1, r, res, res_jac, callback);
+            assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
+            forward_recur(
+                m_abs, n + 1, re_n, res, res_jac,
+                [f](int n, const auto &re_n, const T(&p)[3], const T(&p_jac)[3]) { f(n, p, p_jac); }
+            );
         }
     }
 }
 
-template <typename NormPolicy, typename T, typename Callable>
+template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3],
-    Callable callback
+    Func f
 ) {
-    int m_abs = std::abs(m);
-
     assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
     init_n(res, res_jac, res_hess);
 
-    assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
+    int m_abs = std::abs(m);
     if (m_abs > n) {
         for (int j = 0; j <= n; ++j) {
-            callback(j, r, res, res_jac, res_hess);
+            f(j, res, res_jac, res_hess);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            callback(j, r, res, res_jac, res_hess);
+            f(j, res, res_jac, res_hess);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -669,81 +678,83 @@ void assoc_legendre_p_for_each_n(
                 forward_recur_shift(res_jac);
                 forward_recur_shift(res_hess);
 
-                r.at_pm1(j, res[2], res_jac[2], res_hess[2]);
-                callback(j, r, res, res_jac, res_hess);
+                assoc_legendre_p_pm1(norm, j, m, type, z, res[2], res_jac[2], res_hess[2]);
+                f(j, res, res_jac, res_hess);
             }
         } else {
-            forward_recur(m_abs, n + 1, r, res, res_jac, res_hess, callback);
+            assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
+            forward_recur(
+                m_abs, n + 1, re_n, res, res_jac, res_hess,
+                [f](int n, const auto &re_n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
+                    f(n, p, p_jac, p_hess);
+                }
+            );
         }
     }
 }
 
-template <typename NormPolicy, typename T, typename Callback>
-void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z, T (&res)[3], Callback callable) {
+template <typename NormPolicy, typename T, typename Func>
+void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z, T (&res)[3], Func f) {
     T p_diag[3] = {};
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_diag,
-        [norm, callable, n, &res](int i, auto re_m_m_abs, const T(&p_diag)[3]) {
+        [norm, f, n, &res](int i, auto re_m_m_abs, const T(&p_diag)[3]) {
             res[0] = p_diag[2];
             assoc_legendre_p_for_each_n(
-                norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res,
-                [callable, i](int j, const auto &re_n, const T(&p)[3]) { callable(j, i, p); }
+                norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, [f, i](int j, const T(&p)[3]) { f(j, i, p); }
             );
         }
     );
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, p_diag,
-        [norm, callable, n, &res](int i_abs, auto re_m_m_abs, const T(&p_diag)[3]) {
+        [norm, f, n, &res](int i_abs, auto re_m_m_abs, const T(&p_diag)[3]) {
             int i = -i_abs;
 
             res[0] = p_diag[2];
             assoc_legendre_p_for_each_n(
-                norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res,
-                [callable, i](int j, const auto &re_n, const T(&p)[3]) { callable(j, i, p); }
+                norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, [f, i](int j, const T(&p)[3]) { f(j, i, p); }
             );
         }
     );
 }
 
-template <typename NormPolicy, typename T, typename Callback>
-void assoc_legendre_p_for_each_n_m(
-    NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Callback callable
-) {
+template <typename NormPolicy, typename T, typename Func>
+void assoc_legendre_p_for_each_n_m(NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], Func f) {
     T p_diag[3] = {};
     T p_diag_jac[3] = {};
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_diag, p_diag_jac,
-        [norm, callable, n, &res, &res_jac](int i, auto re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+        [norm, f, n, &res, &res_jac](int i, auto re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
             res[0] = p_diag[2];
             res_jac[0] = p_diag_jac[2];
             assoc_legendre_p_for_each_n(
                 norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, res_jac,
-                [callable, i](int j, const auto &re_n, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
+                [f, i](int j, const T(&p)[3], const T(&p_jac)[3]) { f(j, i, p, p_jac); }
             );
         }
     );
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, p_diag, p_diag_jac,
-        [norm, callable, n, &res, &res_jac](int i_abs, auto re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
+        [norm, f, n, &res, &res_jac](int i_abs, auto re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3]) {
             int i = -i_abs;
 
             res[0] = p_diag[2];
             res_jac[0] = p_diag_jac[2];
             assoc_legendre_p_for_each_n(
                 norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, res_jac,
-                [callable, i](int j, const auto &re_n, const T(&p)[3], const T(&p_jac)[3]) { callable(j, i, p, p_jac); }
+                [f, i](int j, const T(&p)[3], const T(&p_jac)[3]) { f(j, i, p, p_jac); }
             );
         }
     );
 }
 
-template <typename NormPolicy, typename T, typename Callback>
+template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n_m(
-    NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Callback callable
+    NormPolicy norm, int n, int m, int type, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Func f
 ) {
     T p_diag[3] = {};
     T p_diag_jac[3] = {};
@@ -751,23 +762,21 @@ void assoc_legendre_p_for_each_n_m(
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, m, type, z, p_diag, p_diag_jac, p_diag_hess,
-        [norm, callable, n, &res, &res_jac,
+        [norm, f, n, &res, &res_jac,
          &res_hess](int i, auto re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3], const T(&p_diag_hess)[3]) {
             res[0] = p_diag[2];
             res_jac[0] = p_diag_jac[2];
             res_hess[0] = p_diag_hess[2];
             assoc_legendre_p_for_each_n(
                 norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, res_jac, res_hess,
-                [i, callable](int j, const auto &re_n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
-                    callable(j, i, p, p_jac, p_hess);
-                }
+                [f, i](int j, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) { f(j, i, p, p_jac, p_hess); }
             );
         }
     );
 
     assoc_legendre_p_for_each_m_m_abs(
         norm, -m, type, z, p_diag, p_diag_jac, p_diag_hess,
-        [norm, callable, n, &res, &res_jac, &res_hess](
+        [norm, f, n, &res, &res_jac, &res_hess](
             int i_abs, const auto &re_m_m_abs, const T(&p_diag)[3], const T(&p_diag_jac)[3], const T(&p_diag_hess)[3]
         ) {
             int i = -i_abs;
@@ -777,9 +786,7 @@ void assoc_legendre_p_for_each_n_m(
             res_hess[0] = p_diag_hess[2];
             assoc_legendre_p_for_each_n(
                 norm, n, i, re_m_m_abs.type, re_m_m_abs.z, false, res, res_jac, res_hess,
-                [callable, i](int j, const auto &re_n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
-                    callable(j, i, p, p_jac, p_hess);
-                }
+                [f, i](int j, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) { f(j, i, p, p_jac, p_hess); }
             );
         }
     );
@@ -798,7 +805,7 @@ void assoc_legendre_p_for_each_n_m(
 template <typename NormPolicy, typename T>
 T assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z) {
     T p[3] = {};
-    assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, [](int j, const auto &r, const T(&p)[3]) {});
+    assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, [](int n, const T(&p)[3]) {});
 
     return p[2];
 }
@@ -807,9 +814,7 @@ template <typename NormPolicy, typename T>
 void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &res_jac) {
     T p[3] = {};
     T p_jac[3] = {};
-    assoc_legendre_p_for_each_n(
-        norm, n, m, type, z, true, p, p_jac, [](int j, const auto &r, const T(&p)[3], const T(&p_jac)[3]) {}
-    );
+    assoc_legendre_p_for_each_n(norm, n, m, type, z, true, p, p_jac, [](int n, const T(&p)[3], const T(&p_jac)[3]) {});
 
     res = p[2];
     res_jac = p_jac[2];
@@ -822,7 +827,7 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &r
     T p_hess[3] = {};
     assoc_legendre_p_for_each_n(
         norm, n, m, type, z, true, p, p_jac, p_hess,
-        [](int j, auto r, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
+        [](int n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {}
     );
 
     res = p[2];
