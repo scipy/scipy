@@ -1,4 +1,5 @@
 from libc.math cimport log, fabs, expm1, log1p, isnan, NAN, INFINITY
+from libc.float cimport DBL_MIN
 import cython
 
 cdef inline double entr(double x) noexcept nogil:
@@ -24,8 +25,6 @@ cdef inline double kl_div(double x, double y) noexcept nogil:
 @cython.cdivision(True)
 cdef inline double rel_entr(double x, double y) noexcept nogil:
     cdef double ratio
-    # Smallest non-subnormal number, aka np.finfo(np.float64).tiny
-    cdef double tiny = 2.2250738585072014e-308
     if isnan(x) or isnan(y):
         return NAN
     elif x > 0 and y > 0:
@@ -33,7 +32,7 @@ cdef inline double rel_entr(double x, double y) noexcept nogil:
         if 0.5 < ratio < 2:
             # When x and y are close, this is more accurate
             return x * log1p((x - y) / y)
-        if tiny < ratio < INFINITY:
+        if DBL_MIN < ratio < INFINITY:
             # There are no underflow/overflow issues
             return x * log(ratio)
         else:
