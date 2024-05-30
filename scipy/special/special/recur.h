@@ -5,6 +5,14 @@
 namespace special {
 
 template <typename T, size_t N>
+void forward_recur_rotate_first(T (&res)[N]) {
+    res[N - 1] = res[0];
+    for (size_t j = 0; j < N - 1; ++j) {
+        res[j] = res[j + 1];
+    }
+}
+
+template <typename T, size_t N>
 void forward_recur_rotate(T (&res)[N]) {
     T tmp = res[N - 1];
     res[N - 1] = res[0];
@@ -82,7 +90,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callb
     while (it - first != K && it != last) {
         forward_recur_rotate(res);
 
-        callback(it, r, res);
+        callback(it, res);
         ++it;
     }
 
@@ -91,7 +99,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callb
             forward_recur_shift(res);
             forward_recur_next(r, it, res);
 
-            callback(it, r, res);
+            callback(it, res);
             ++it;
         }
     }
@@ -108,17 +116,23 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callb
  */
 template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
 void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Callback callback) {
-    res[N - 1] = 0;
-    res_jac[N - 1] = 0;
-
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
+    if (it - first != K && it != last) {
+        forward_recur_rotate_first(res);
+        forward_recur_rotate_first(res_jac);
+
+        callback(it, res, res_jac);
+        ++it;
+    }
+
+
     while (it - first != K && it != last) {
         forward_recur_rotate(res);
         forward_recur_rotate(res_jac);
 
-        callback(it, r, res, res_jac);
+        callback(it, res, res_jac);
         ++it;
     }
 
@@ -128,7 +142,7 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
             forward_recur_shift(res_jac);
             forward_recur_next(r, it, res, res_jac);
 
-            callback(it, r, res, res_jac);
+            callback(it, res, res_jac);
             ++it;
         }
     }
@@ -158,7 +172,7 @@ void forward_recur(
         forward_recur_rotate(res_jac);
         forward_recur_rotate(res_hess);
 
-        callback(it, r, res, res_jac, res_hess);
+        callback(it, res, res_jac, res_hess);
         ++it;
     }
 
@@ -169,7 +183,7 @@ void forward_recur(
             forward_recur_shift(res_hess);
             forward_recur_next(r, it, res, res_jac, res_hess);
 
-            callback(it, r, res, res_jac, res_hess);
+            callback(it, res, res_jac, res_hess);
             ++it;
         }
     }
