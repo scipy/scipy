@@ -243,7 +243,7 @@ Enable interactive examples with
 `jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
 by editing the runtime configuration file ``try_examples.json`` in the root
 folder of the uploaded documentation on the release server. The initial version
-of this file on a fresh documentation build is:
+of this file on a clean documentation build is
 
 ```
 {
@@ -252,7 +252,5 @@ of this file on a fresh documentation build is:
 }
 ```
 
-The buttons that turn docstring examples into embedded notebooks are hidden
-for all url paths matching the JavaScript Regex patterns in the list of
-``ignore_patterns``. Replace ``[".*"]`` with the empty list ``[]`` to unhide
+Replace ``[".*"]`` with the empty list ``[]`` to unhide
 these buttons and enable interactive examples.
