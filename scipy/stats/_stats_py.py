@@ -6276,14 +6276,8 @@ def unpack_TtestResult(res):
             res._standard_error, res._estimate)
 
 
-@_axis_nan_policy_factory(
-    pack_TtestResult,
-    default_axis=0,
-    n_samples=2,
-    result_to_tuple=unpack_TtestResult,
-    too_small=lambda samples, *args, axis=-1, **kwds: samples[0].shape[axis] <= 1,
-    n_outputs=6,
-)
+@_axis_nan_policy_factory(pack_TtestResult, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
 def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sided"):
