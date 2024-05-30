@@ -238,3 +238,21 @@ and test against their own code) and report issues on Github or Discourse.
 After the final release is done, port relevant changes to release notes, build
 scripts, author name mapping in ``tools/authors.py`` and any other changes that
 were only made on the maintenance branch to main.
+
+Enable interactive examples with
+`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
+by editing the runtime configuration file ``try_examples.json`` in the root
+folder of the uploaded documentation on the release server. The initial version
+of this file on a fresh documentation build is:
+
+```
+{
+    "min_height": "400px",
+    "ignore_patterns": [".*"]
+}
+```
+
+The buttons that turn docstring examples into embedded notebooks are hidden
+for all url paths matching the JavaScript Regex patterns in the list of
+``ignore_patterns``. Replace ``[".*"]`` with the empty list ``[]`` to unhide
+these buttons and enable interactive examples.
