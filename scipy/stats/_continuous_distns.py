@@ -9727,7 +9727,7 @@ class _DeprecationWrapper:
 
 
 for m in _method_names:
-    setattr(trapz, m, _deprecation_wrapper(m))
+    setattr(trapz, m, _DeprecationWrapper(m))
 
 
 class triang_gen(rv_continuous):
