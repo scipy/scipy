@@ -187,7 +187,7 @@ def _chandrupatla(func, a, b, *, args=(), xatol=None, xrtol=None,
         # If the bracket is no longer valid, report failure (unless a function
         # tolerance is met, as detected above).
         i = (xp_sign(work.f1) == xp_sign(work.f2)) & ~stop
-        NaN = xp.asarray(xp.nan)
+        NaN = xp.asarray(xp.nan, dtype=work.xmin.dtype)
         work.xmin[i], work.fmin[i], work.status[i] = NaN, NaN, eim._ESIGNERR
         stop[i] = True
 

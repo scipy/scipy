@@ -9,7 +9,8 @@ py3.extension_module('_test_fortran',
   dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/io'
+  subdir: 'scipy/io',
+  install_tag: 'tests'
 )
 
 py3.install_sources([

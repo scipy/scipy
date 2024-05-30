@@ -161,6 +161,8 @@ def shortest_path(csgraph, method='auto',
     array([-9999,     0,     0,     1], dtype=int32)
 
     """
+    csgraph = convert_pydata_sparse_to_scipy(csgraph, accept_fv=[0, np.inf, np.nan])
+
     # validate here to catch errors early but don't store the result;
     # we'll validate again later
     validate_graph(csgraph, directed, DTYPE,
@@ -437,6 +439,8 @@ def dijkstra(csgraph, directed=True, indices=None,
         If False, then find the shortest path on an undirected graph: the
         algorithm can progress from point i to j or j to i along either
         csgraph[i, j] or csgraph[j, i].
+
+        .. warning:: Refer the notes below while using with ``directed=False``.
     indices : array_like or int, optional
         if specified, only compute the paths from the points at the given
         indices.
