@@ -35,19 +35,6 @@ from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
 import scipy.stats as stats
 
-if np.lib.NumpyVersion(np.__version__) >= "2.0.0":
-    # deprecated, but we want it because it can wrap entire functions
-    try:
-        from numpy.lib._utils_impl import deprecate
-    except ImportError:
-        # since we're ignoring numpy's DeprecationWarning below, we risk breaking
-        # before the usual 2.{N+3} that we have as an upper bound; fall back to
-        # empty decorator otherwise
-        def deprecate(*args, **kwargs):
-            return args[0]
-else:
-    from numpy import deprecate
-
 
 def _remove_optimizer_parameters(kwds):
     """
@@ -9725,16 +9712,22 @@ _method_names = [
     "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
     "std", "var"
 ]
+
+
+class _DeprecationWrapper:
+    def __init__(self, method):
+        self.msg = (f"`trapz.{method}` is deprecated in favour of trapezoid.{method}. "
+                     "Please replace all uses of the distribution class "
+                     "`trapz` with `trapezoid`. `trapz` will be removed in SciPy 1.16.")
+        self.method = getattr(trapezoid, method)
+    
+    def __call__(self, *args, **kwargs):
+        warnings.warn(self.msg, DeprecationWarning, stacklevel=2)
+        return self.method(*args, **kwargs)
+
+
 for m in _method_names:
-    with warnings.catch_warnings():
-        # oh the irony...
-        warnings.filterwarnings("ignore", message="`deprecate` is deprecated",
-                                category=DeprecationWarning)
-        wrapper = deprecate(getattr(trapz, m), f"trapz.{m}", f"trapezoid.{m}",
-                            "Please replace all uses of the distribution class "
-                            "`trapz` with `trapezoid`. "
-                            "`trapz` will be removed in SciPy 1.16.")
-    setattr(trapz, m, wrapper)
+    setattr(trapz, m, _deprecation_wrapper(m))
 
 
 class triang_gen(rv_continuous):

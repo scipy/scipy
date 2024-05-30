@@ -7347,9 +7347,8 @@ class TestTrapezoid:
     def test_trapz_deprecation(self, method):
         c, d = 0.2, 0.8
         expected = getattr(stats.trapezoid, method)(1, c, d)
-        with pytest.warns(
-            DeprecationWarning,
-            match=rf"\s*`trapz\.{method}` is deprecated,.*",
+        with pytest.deprecated_call(
+            match=f"`trapz.{method}` is deprecated",
         ):
             result = getattr(stats.trapz, method)(1, c, d)
         assert result == expected
