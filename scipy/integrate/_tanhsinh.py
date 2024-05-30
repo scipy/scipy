@@ -1052,6 +1052,11 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     `step` and finite `b` that is too large for direct evaluation of the sum,
     i.e. ``b - a + 1 > maxterms``.
 
+    Although the callable `f` must be non-negative and monotonically decreasing,
+    `nsum` can be used to evaluate more general forms of series. For instance, to
+    evaluate an alternating series, pass a callable that returns the difference
+    between pairs of adjacent terms, and adjust `step` accordingly. See Examples.
+
     References
     ----------
     [1] Wikipedia. "Integral test for convergence."
@@ -1070,7 +1075,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     >>> (res.sum - ref)/ref  # true error
     -1.0104163408712734e-10
     >>> res.nfev  # number of points at which callable was evaluated
-    1210
+    1209
     
     Compute the infinite sums of the reciprocals of integers raised to powers ``p``,
     where ``p`` is an array.
@@ -1081,6 +1086,12 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     >>> ref = special.zeta(p, 1)
     >>> np.allclose(res.sum, ref)
     True
+
+    Evaluate the alternating harmonic series.
+
+    >>> res = nsum(lambda x: 1/x - 1/(x+1), 1, np.inf, step=2)
+    >>> res.sum, res.sum - np.log(2)  # result, difference vs analytical sum
+    (0.6931471805598692, -7.605027718682322e-14)
     
     """ # noqa: E501
     # Potential future work:
@@ -1251,7 +1262,8 @@ def _integral_bound(f, a, b, step, args, constants):
     # instead of 0 like they must (for the sum to be convergent).
     fb = np.full_like(fk, -np.inf) if log else np.zeros_like(fk)
     i = np.isfinite(b)
-    fb[i] = f(b[i], *[arg[i] for arg in args])
+    if np.any(i):  # better not call `f` with empty arrays
+        fb[i] = f(b[i], *[arg[i] for arg in args])
     nfev = nfev + np.asarray(i, dtype=left_nfev.dtype)
 
     if log:

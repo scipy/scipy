@@ -843,8 +843,7 @@ class TestNSum:
         assert np.issubdtype(res.success.dtype, np.bool_)
         assert np.issubdtype(res.status.dtype, np.integer)
         assert np.issubdtype(res.nfev.dtype, np.integer)
-        # need to add a comment about this
-        assert_equal(np.max(res.nfev), f.feval-1)
+        assert_equal(np.max(res.nfev), f.feval)
 
     def test_status(self):
         f = self.f2
