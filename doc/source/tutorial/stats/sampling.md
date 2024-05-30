@@ -13,7 +13,7 @@ kernelspec:
 
 ```{eval-rst}
 .. jupyterlite:: sampling.ipynb
-   :new_tab: False
+   :new_tab: True
 ```
 (non-uniform-random-number-sampling)=
 # Universal Non-Uniform Random Number Sampling in SciPy
