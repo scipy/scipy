@@ -2733,14 +2733,14 @@ class TestCircFuncs:
         assert xp.any(m)
         x = x[m]
 
-        y = stats.circmean(x[:, xp.newaxis], axis=1)
+        y = stats.circmean(x[:, None], axis=1)
         assert xp.all(y == x)
 
     def test_circmean_accuracy_huge_input(self, xp):
         # White-box test that circmean() does not introduce undue loss of
         # numerical accuracy by eagerly rotating the input.  This is detected
         # by supplying a huge input x such that (x - low) == x numerically.
-        x = 1e17
+        x = xp.asarray(1e17)
         expected = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
         actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
         xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
