@@ -2741,9 +2741,10 @@ class TestCircFuncs:
         # numerical accuracy by eagerly rotating the input.  This is detected
         # by supplying a huge input x such that (x - low) == x numerically.
         x = xp.asarray(1e17, dtype=xp.float64)
-        expected = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
+        y = math.atan2(xp.sin(x), xp.cos(x))  # -2.6584887370946806
+        expected = xp.asarray(y, dtype=xp.float64)
         actual = stats.circmean(x, high=xp.pi, low=-xp.pi)
-        xp_assert_close(actual, xp.asarray(expected), rtol=1e-15, atol=0.0)
+        xp_assert_close(actual, expected, rtol=1e-15, atol=0.0)
 
 
 class TestCircFuncsNanPolicy:
