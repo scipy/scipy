@@ -704,9 +704,9 @@ class TestNSum:
         with pytest.raises(ValueError, match=message):
             nsum(f, f.a, f.b, step=object())
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, atol='ekki')
+            nsum(f, f.a, f.b, tolerances=dict(atol='ekki'))
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, rtol=pytest)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=pytest))
 
         with np.errstate(all='ignore'):
             res = nsum(f, [np.nan, -np.inf, np.inf], 1)
@@ -721,15 +721,15 @@ class TestNSum:
 
         message = '...must be non-negative and finite.'
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, rtol=-1)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=-1))
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, atol=np.inf)
+            nsum(f, f.a, f.b, tolerances=dict(atol=np.inf))
 
         message = '...may not be positive infinity.'
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, rtol=np.inf, log=True)
+            nsum(f, f.a, f.b, tolerances=dict(rtol=np.inf), log=True)
         with pytest.raises(ValueError, match=message):
-            nsum(f, f.a, f.b, atol=np.inf, log=True)
+            nsum(f, f.a, f.b, tolerances=dict(atol=np.inf), log=True)
 
         message = '...must be a non-negative integer.'
         with pytest.raises(ValueError, match=message):
@@ -789,8 +789,10 @@ class TestNSum:
                 ref_sum[i] = direct
                 ref_err[i] = direct * np.finfo(direct).eps
 
+
         rtol = 1e-12
-        res = nsum(f, a, b_original, step=step, maxterms=maxterms, rtol=rtol)
+        res = nsum(f, a, b_original, step=step, maxterms=maxterms,
+                   tolerances=dict(rtol=rtol))
         assert_allclose(res.sum, ref_sum, rtol=10*rtol)
         assert_allclose(res.error, ref_err, rtol=100*rtol)
         assert_equal(res.status, 0)
@@ -801,7 +803,7 @@ class TestNSum:
         assert_allclose(res.error[i], ref_err[i], rtol=1e-15)
 
         logres = nsum(logf, a, b_original, step=step, log=True,
-                       rtol=np.log(rtol), maxterms=maxterms)
+                      tolerances=dict(rtol=np.log(rtol)), maxterms=maxterms)
         assert_allclose(np.exp(logres.sum), res.sum)
         assert_allclose(np.exp(logres.error), res.error)
         assert_equal(logres.status, 0)
@@ -870,13 +872,14 @@ class TestNSum:
         assert_equal(res.nfev, f.nfev)
 
         f.nfev = 0
-        res = nsum(f, 1, np.inf, atol=1e-6)
+        res = nsum(f, 1, np.inf, tolerances=dict(atol=1e-6))
         assert_equal(res.nfev, f.nfev)
 
     def test_inclusive(self):
         # There was an edge case off-by one bug when `_direct` was called with
         # `inclusive=True`. Check that this is resolved.
-        res = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf, maxterms=500, atol=0.1)
+        res = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf,
+                   maxterms=500, tolerances=dict(atol=0.1))
         ref = nsum(lambda k: 1 / k ** 2, [1, 4], np.inf)
         assert np.all(res.sum > (ref.sum - res.error))
         assert np.all(res.sum < (ref.sum + res.error))

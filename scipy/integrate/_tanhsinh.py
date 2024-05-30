@@ -865,7 +865,7 @@ def _logsumexp(x, axis=0):
         return special.logsumexp(x, axis=axis)
 
 
-def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
+def _nsum_iv(f, a, b, step, args, log, maxterms, tolerances):
     # Input validation and standardization
 
     message = '`f` must be callable.'
@@ -887,9 +887,13 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     if log not in {True, False}:
         raise ValueError(message)
 
+    tolerances = {} if tolerances is None else tolerances
+
+    atol = tolerances.get('atol', None)
     if atol is None:
         atol = -np.inf if log else 0
 
+    rtol = tolerances.get('rtol', None)
     rtol_temp = rtol if rtol is not None else 0.
 
     params = np.asarray([atol, rtol_temp, 0.])
@@ -919,8 +923,7 @@ def _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol):
     return f, a, b, step, valid_abstep, args, log, maxterms_int, atol, rtol
 
 
-def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
-         rtol=None):
+def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances=None):
     r"""Evaluate a convergent, monotonically decreasing finite or infinite series.
 
     For finite `b`, this evaluates::
@@ -1104,7 +1107,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
     # - check for violations of monotonicity?
 
     # Function-specific input validation / standardization
-    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, atol, rtol)
+    tmp = _nsum_iv(f, a, b, step, args, log, maxterms, tolerances)
     f, a, b, step, valid_abstep, args, log, maxterms, atol, rtol = tmp
 
     # Additional elementwise algorithm input validation / standardization
