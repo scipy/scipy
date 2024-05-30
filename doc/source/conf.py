@@ -280,6 +280,7 @@ intersphinx_mapping = {
     'matplotlib': ('https://matplotlib.org/stable', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
     'statsmodels': ('https://www.statsmodels.org/stable', None),
+    'mpmath': ('https://mpmath.org/doc/current', None),
 }
 
 

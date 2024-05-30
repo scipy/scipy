@@ -973,7 +973,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
         and relative errors. In this case, the result object will contain the
         log of the sum and error. This is useful for summands for which
         numerical underflow or overflow would lead to inaccuracies.
-    maxterms : int, default: 2**32
+    maxterms : int, default: 2**20
         The maximum number of terms to evaluate for direct summation. 
         Additional function evaluations may be performed for input
         validation and integral evaluation. 
@@ -1015,7 +1015,7 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), atol=None,
 
     See Also
     --------
-    tanhsinh
+    mpmath.nsum
 
     Notes
     -----
