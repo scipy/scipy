@@ -69,6 +69,26 @@ To render the documentation on your own machine:
    with ``index.html`` and browse, or you can jump straight to the file you’re
    interested in.
 
+Examples within docstrings can be made interactive using
+`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
+but the buttons for converting examples sections into embedded interactive
+notebooks are hidden by default on clean docs builds. To enable interactive
+examples locally, you can edit the ``ignore_patterns` list in the runtime
+configuration file ``scipy/doc/build/html/try_examples.json``. The initial
+version of this file on a clean documentation build is
+
+```
+{
+    "min_height": "400px",
+    "ignore_patterns": [".*"]
+}
+```
+
+The buttons that turn docstring examples into embedded notebooks are hidden
+for all url paths matching the JavaScript Regex patterns in the
+``ignore_patterns` list. Replacing ``[".*"]`` with the empty list ``[]``
+will enable interactive examples by unhiding all buttons.
+
 .. note::
 
    - Changes to certain documents do not take effect when Sphinx documentation
