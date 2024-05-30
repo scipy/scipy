@@ -789,14 +789,11 @@ class TestNSum:
                 ref_sum[i] = direct
                 ref_err[i] = direct * np.finfo(direct).eps
 
-
         rtol = 1e-12
         res = nsum(f, a, b_original, step=step, maxterms=maxterms,
                    tolerances=dict(rtol=rtol))
         assert_allclose(res.sum, ref_sum, rtol=10*rtol)
         assert_allclose(res.error, ref_err, rtol=100*rtol)
-        assert_equal(res.status, 0)
-        assert_equal(res.success, True)
 
         i = ((b_original - a)/step + 1 <= maxterms)
         assert_allclose(res.sum[i], ref_sum[i], rtol=1e-15)
@@ -806,8 +803,6 @@ class TestNSum:
                       tolerances=dict(rtol=np.log(rtol)), maxterms=maxterms)
         assert_allclose(np.exp(logres.sum), res.sum)
         assert_allclose(np.exp(logres.error), res.error)
-        assert_equal(logres.status, 0)
-        assert_equal(logres.success, True)
 
     @pytest.mark.parametrize('shape', [tuple(), (12,), (3, 4), (3, 2, 2)])
     def test_vectorization(self, shape):
@@ -850,16 +845,16 @@ class TestNSum:
     def test_status(self):
         f = self.f2
 
-        p = [2, 2, 0.9, 1.1]
-        a = [0, 0, 1, 1]
-        b = [10, np.inf, np.inf, np.inf]
+        p = [2, 2, 0.9, 1.1, 2, 2]
+        a = [0, 0, 1, 1, 1, np.nan]
+        b = [10, np.inf, np.inf, np.inf, np.inf, np.inf]
         ref = special.zeta(p, 1)
 
         with np.errstate(divide='ignore'):  # intentionally dividing by zero
             res = nsum(f, a, b, args=(p,))
 
-        assert_equal(res.success, [False, False, False, True])
-        assert_equal(res.status, [-3, -3, -2, 0])
+        assert_equal(res.success, [False, False, False, False, True, False])
+        assert_equal(res.status, [-3, -3, -2, -4, 0, -1])
         assert_allclose(res.sum[res.success], ref[res.success])
 
     def test_nfev(self):

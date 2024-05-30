@@ -43,14 +43,16 @@ def _tanhsinh(f, a, b, *, args=(), log=False, maxfun=None, maxlevel=None,
     ----------
     f : callable
         The function to be integrated. The signature must be::
+
             func(x: ndarray, *fargs) -> ndarray
-         where each element of ``x`` is a finite real and ``fargs`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with `x`. ``func`` must be an elementwise-scalar function; see
-         documentation of parameter `preserve_shape` for details.
-         If ``func`` returns a value with complex dtype when evaluated at
-         either endpoint, subsequent arguments ``x`` will have complex dtype
-         (but zero imaginary part).
+
+        where each element of ``x`` is a finite real and ``fargs`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with `x`. ``func`` must be an elementwise-scalar function; see
+        documentation of parameter `preserve_shape` for details.
+        If ``func`` returns a value with complex dtype when evaluated at
+        either endpoint, subsequent arguments ``x`` will have complex dtype
+        (but zero imaginary part).
     a, b : array_like
         Real lower and upper limits of integration. Must be broadcastable.
         Elements may be infinite.
@@ -942,9 +944,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
 
             f(x: ndarray, *args) -> ndarray
 
-         where each element of ``x`` is a finite real and ``args`` is a tuple,
-         which may contain an arbitrary number of arrays that are broadcastable
-         with ``x``. 
+        where each element of ``x`` is a finite real and ``args`` is a tuple,
+        which may contain an arbitrary number of arrays that are broadcastable
+        with ``x``.
          
         `f` must be an elementwise function: each element ``f(x)[i]``
         must equal ``f(x[i])`` for all indices ``i``. It must not mutate the
@@ -1006,6 +1008,9 @@ def nsum(f, a, b, *, step=1, args=(), log=False, maxterms=int(2**20), tolerances
             - ``-2`` : Numerical integration reached its iteration limit; 
               the sum may be divergent.
             - ``-3`` : A non-finite value was encountered.
+            - ``-4`` : The magnitude of the last term of the partial sum exceeds
+              the tolerances, so the error estimate exceeds the tolerances.
+              Consider increasing `maxterms` or loosening `tolerances`.
 
         sum : float array
             An estimate of the sum.
@@ -1238,8 +1243,14 @@ def _integral_bound(f, a, b, step, args, constants):
     nfev = len(n_steps)
     ks = a2 + n_steps * step2
     fks = f(ks, *args2)
-    nt = np.minimum(np.sum(fks > tol[:, np.newaxis], axis=-1),  n_steps.shape[-1]-1)
+    n_fk_insufficient = np.sum(fks > tol[:, np.newaxis], axis=-1)
+    nt = np.minimum(n_fk_insufficient, n_steps.shape[-1]-1)
     n_steps = n_steps[nt]
+
+    # If `maxterms` is insufficient (i.e. the magnitude of the last term of the
+    # partial sum exceeds the tolerance), we can finish the calculation and report
+    # valid sum and error estimates, but we'll have nonzero status.
+    i_fk_insufficient = (n_fk_insufficient == nfev)
 
     # Directly evaluate the sum up to this term
     k = a + n_steps * step
@@ -1279,4 +1290,6 @@ def _integral_bound(f, a, b, step, args, constants):
         S = left + right.integral/step + fk/2 + fb/2
         E = left_error + right.error/step + fk/2 - fb/2
     status[~i_skip] = right.status[~i_skip]
+
+    status[(status == 0) & i_fk_insufficient] = -4
     return S, E, status, left_nfev + right.nfev + nfev + lb.nfev
