@@ -69,25 +69,29 @@ To render the documentation on your own machine:
    with ``index.html`` and browse, or you can jump straight to the file you’re
    interested in.
 
+**Interactive Examples**
+
 Examples within docstrings can be made interactive using
-`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
-but the buttons for converting examples sections into embedded interactive
+`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_.
+The buttons for converting examples sections into embedded interactive
 notebooks are hidden by default on clean docs builds. To enable interactive
-examples locally, you can edit the ``ignore_patterns` list in the runtime
-configuration file ``scipy/doc/build/html/try_examples.json``. The initial
-version of this file on a clean documentation build is
+examples after building the documentation locally, edit the
+``ignore_patterns`` list in the runtime configuration file ``try_examples.json``
+within ``scipy/doc/build/html/``. The initial version of this file in a clean
+documentation build is
 
-```
-{
-    "min_height": "400px",
-    "ignore_patterns": [".*"]
-}
-```
+.. code-block:: json
 
-The buttons that turn docstring examples into embedded notebooks are hidden
+   {
+       "min_height": "400px",
+       "ignore_patterns": [".*"]
+   }
+
+The buttons that turn docstring examples into embedded notebooks will be hidden
 for all url paths matching the JavaScript Regex patterns in the
-``ignore_patterns` list. Replacing ``[".*"]`` with the empty list ``[]``
-will enable interactive examples by unhiding all buttons.
+``ignore_patterns`` list. ``[".*"]`` includes a pattern which matches all url
+paths. Removing this pattern from the list will enable interactivity for all
+examples.
 
 .. note::
 
