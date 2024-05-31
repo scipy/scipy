@@ -397,7 +397,40 @@ class TestDifferentiate:
         assert_allclose(res.df, 0, atol=atol)
 
 
-class TestJacobianHessian:
+class JacobianHessianTest:
+    def test_iv(self):
+        jh_func = self.jh_func.__func__
+
+        # Test input validation
+        message = "Argument `x` must be at least 1-D."
+        with pytest.raises(ValueError, match=message):
+            jh_func(np.sin, 1, atol=-1)
+
+        # Confirm that other parameters are being passed to `_derivative`,
+        # which raises an appropriate error message.
+        x = np.ones(3)
+        func = optimize.rosen
+        message = 'Tolerances and step parameters must be non-negative scalars.'
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, atol=-1)
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, rtol=-1)
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, initial_step=-1)
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, step_factor=-1)
+
+        message = '`order` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, order=-1)
+
+        message = '`maxiter` must be a positive integer.'
+        with pytest.raises(ValueError, match=message):
+            jh_func(func, x, maxiter=-1)
+
+
+class TestJacobian(JacobianHessianTest):
+    jh_func = jacobian
 
     # Example functions and Jacobians from Wikipedia:
     # https://en.wikipedia.org/wiki/Jacobian_matrix_and_determinant#Examples
@@ -476,16 +509,51 @@ class TestJacobianHessian:
 
     @pytest.mark.parametrize('size', [(), (6,), (2, 3)])
     @pytest.mark.parametrize('func', [f1, f2, f3, f4, f5, rosen])
-    def test_examples_jacobian(self, size, func):
+    def test_examples(self, size, func):
         rng = np.random.default_rng(458912319542)
         m, n = func.mn
         x = rng.random(size=(m,) + size)
-        res = jacobian(func, x).df
+        res = jacobian(func, x)
         ref = func.ref(x)
-        np.testing.assert_allclose(res, ref, atol=1e-10)
+        np.testing.assert_allclose(res.df, ref, atol=1e-10)
+
+    def test_attrs(self):
+        # Test attributes of result object
+
+        z = np.asarray([0.5, 0.25])
+
+        # case in which some elements of the Jacobian are harder
+        # to calculate than others
+        def df1(z):
+            x, y = z
+            return [np.cos(0.5*x) * np.cos(y), np.sin(2*x) * y**2]
+
+        def df1_0xy(x, y):
+            return np.cos(0.5*x) * np.cos(y)
+
+        def df1_1xy(x, y):
+            return np.sin(2*x) * y**2
+
+        res = jacobian(df1, z, initial_step=10)
+        assert len(np.unique(res.nit)) == 4
+        assert len(np.unique(res.nfev)) == 4
+
+        res00 = jacobian(lambda x: df1_0xy(x, z[1]), z[0:1], initial_step=10)
+        res01 = jacobian(lambda y: df1_0xy(z[0], y), z[1:2], initial_step=10)
+        res10 = jacobian(lambda x: df1_1xy(x, z[1]), z[0:1], initial_step=10)
+        res11 = jacobian(lambda y: df1_1xy(z[0], y), z[1:2], initial_step=10)
+        ref = optimize.OptimizeResult()
+        for attr in ['success', 'status', 'df', 'nit', 'nfev']:
+            ref[attr] = np.squeeze([[getattr(res00, attr), getattr(res01, attr)],
+                                    [getattr(res10, attr), getattr(res11, attr)]])
+            np.testing.assert_allclose(res[attr], ref[attr], rtol=1e-14)
+
+
+class TestHessian(JacobianHessianTest):
+    jh_func = hessian
 
     @pytest.mark.parametrize('shape', [(), (4,), (2, 4)])
-    def test_examples_hessian(self, shape):
+    def test_examples(self, shape):
         rng = np.random.default_rng(458912319542)
         m = 3
         x = rng.random((m,) + shape)
@@ -499,31 +567,23 @@ class TestJacobianHessian:
             ref = optimize.rosen_hess(x)
         assert_allclose(res.ddf, ref, atol=1e-8)
 
-    @pytest.mark.parametrize('jh_func', [jacobian, hessian])
-    def test_iv(self, jh_func):
-        # Test input validation
-        message = "Argument `x` must be at least 1-D."
-        with pytest.raises(ValueError, match=message):
-            jh_func(np.sin, 1, atol=-1)
+    def test_nfev(self):
+        def f1(z):
+            x, y = np.broadcast_arrays(*z)
+            f1.nfev = f1.nfev + (np.prod(x.shape[2:]) if x.ndim > 2 else 1)
+            return np.sin(x) * y ** 3
+        f1.nfev = 0
 
-        # Confirm that other parameters are being passed to `_derivative`,
-        # which raises an appropriate error message.
-        x = np.ones(3)
-        func = optimize.rosen
-        message = 'Tolerances and step parameters must be non-negative scalars.'
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, atol=-1)
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, rtol=-1)
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, initial_step=-1)
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, step_factor=-1)
+        z = np.asarray([0.5, 0.25])
+        res = hessian(f1, z, initial_step=10)
+        f1.nfev = 0
+        res00 = hessian(lambda x: f1([x[0], z[1]]), z[0:1], initial_step=10)
+        assert res.nfev[0, 0] == f1.nfev == res00.nfev[0, 0]
 
-        message = '`order` must be a positive integer.'
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, order=-1)
+        f1.nfev = 0
+        res11 = hessian(lambda y: f1([z[0], y[0]]), z[1:2], initial_step=10)
+        assert res.nfev[1, 1] == f1.nfev == res11.nfev[0, 0]
 
-        message = '`maxiter` must be a positive integer.'
-        with pytest.raises(ValueError, match=message):
-            jh_func(func, x, maxiter=-1)
+        # it's hard to check off-diagonals, but symmetric is a good sign
+        assert_equal(res.nfev, res.nfev.T)
+        assert np.unique(res.nfev).size == 3

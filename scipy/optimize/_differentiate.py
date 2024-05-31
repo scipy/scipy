@@ -729,8 +729,6 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
             - ``-1`` : The error estimate increased, so iteration was terminated.
             - ``-2`` : The maximum number of iterations was reached.
             - ``-3`` : A non-finite value was encountered.
-            - ``-4`` : Iteration was terminated by `callback`.
-            - ``1`` : The algorithm is proceeding normally (in `callback` only).
 
         df : float array
             The Jacobian of `func` at `x`, if the algorithm terminated
@@ -1008,14 +1006,15 @@ def _hessian(f, x, **kwargs):
     """
     def df(x):
         temp = _jacobian(f, x, **kwargs)
-        if df.res is None:
-            df.res = temp
-        else:
-            df.res.nfev += temp.nfev.sum(axis=-1)
+        nfev.append(temp.nfev if len(nfev)==0 else temp.nfev.sum(axis=-1))
         return temp.df
-    df.res = None
-    temp = _jacobian(df, x, **kwargs)
-    temp.nfev = df.res.nfev
-    temp.ddf = temp.df
-    del temp.df
-    return temp
+
+    nfev = []  # track inner function evaluations
+    res = _jacobian(df, x, **kwargs)  # jacobian of jacobian
+
+    nfev = np.cumsum(nfev, axis=0)
+    res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
+    res.ddf = res.df
+    del res.df  # this is renamed to ddf
+    del res.nit  # this is only the outer-jacobian nit
+    return res
