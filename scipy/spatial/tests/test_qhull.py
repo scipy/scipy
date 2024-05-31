@@ -327,6 +327,7 @@ class TestUtilities:
             ok = (j != -1) | at_boundary
             assert_(ok.all(), f"{err_msg} {np.nonzero(~ok)}")
 
+    @pytest.mark.fail_slow(5)
     def test_degenerate_barycentric_transforms(self):
         # The triangulation should not produce invalid barycentric
         # transforms that stump the simplex finding
@@ -961,6 +962,7 @@ class TestVoronoi:
         vor = Voronoi(points,furthest_site=True)
         assert_equal(vor.furthest_site,True)
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.parametrize("name", sorted(INCREMENTAL_DATASETS))
     def test_incremental(self, name):
         # Test incremental construction of the triangulation

@@ -8,7 +8,6 @@ import numpy as np
 from scipy import special, interpolate, stats
 from scipy.stats._censored_data import CensoredData
 from scipy.stats._common import ConfidenceInterval
-from scipy.stats import norm  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
     from typing import Literal
@@ -629,9 +628,9 @@ def logrank(
 
     >>> res = stats.logrank(x=x, y=y)
     >>> res.statistic
-    -2.73799...
+    -2.73799
     >>> res.pvalue
-    0.00618...
+    0.00618
 
     The p-value is less than 1%, so we can consider the data to be evidence
     against the null hypothesis in favor of the alternative that there is a
@@ -681,6 +680,7 @@ def logrank(
     statistic = (n_died_x - sum_exp_deaths_x)/np.sqrt(sum_var)
 
     # Equivalent to chi2(df=1).sf(statistic**2) when alternative='two-sided'
-    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative)
+    norm = stats._stats_py._SimpleNormal()
+    pvalue = stats._stats_py._get_pvalue(statistic, norm, alternative, xp=np)
 
     return LogRankResult(statistic=statistic[()], pvalue=pvalue[()])

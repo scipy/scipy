@@ -45,11 +45,10 @@ from scipy._lib._util import _rename_parameter, _contains_nan
 from scipy._lib._bunch import _make_tuple_bunch
 import scipy.special as special
 import scipy.stats._stats_py
+import scipy.stats._stats_py as _stats_py
 
 from ._stats_mstats_common import (
         _find_repeats,
-        linregress as stats_linregress,
-        LinregressResult as stats_LinregressResult,
         theilslopes as stats_theilslopes,
         siegelslopes as stats_siegelslopes
         )
@@ -1174,15 +1173,15 @@ def linregress(x, y=None):
         x = ma.array(x, mask=m)
         y = ma.array(y, mask=m)
         if np.any(~m):
-            result = stats_linregress(x.data[~m], y.data[~m])
+            result = _stats_py.linregress(x.data[~m], y.data[~m])
         else:
             # All data is masked
-            result = stats_LinregressResult(slope=None, intercept=None,
-                                            rvalue=None, pvalue=None,
-                                            stderr=None,
-                                            intercept_stderr=None)
+            result = _stats_py.LinregressResult(slope=None, intercept=None,
+                                                rvalue=None, pvalue=None,
+                                                stderr=None,
+                                                intercept_stderr=None)
     else:
-        result = stats_linregress(x.data, y.data)
+        result = _stats_py.linregress(x.data, y.data)
 
     return result
 
@@ -2971,13 +2970,14 @@ def describe(a, axis=0, ddof=0, bias=True):
     >>> from scipy.stats.mstats import describe
     >>> ma = np.ma.array(range(6), mask=[0, 0, 0, 1, 1, 1])
     >>> describe(ma)
-    DescribeResult(nobs=3, minmax=(masked_array(data=0,
+    DescribeResult(nobs=np.int64(3), minmax=(masked_array(data=0,
                  mask=False,
            fill_value=999999), masked_array(data=2,
                  mask=False,
-           fill_value=999999)), mean=1.0, variance=0.6666666666666666,
+           fill_value=999999)), mean=np.float64(1.0),
+           variance=np.float64(0.6666666666666666),
            skewness=masked_array(data=0., mask=False, fill_value=1e+20),
-            kurtosis=-1.5)
+            kurtosis=np.float64(-1.5))
 
     """
     a, axis = _chk_asarray(a, axis)

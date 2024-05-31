@@ -237,17 +237,15 @@ namespace cephes {
                 /* nan */
                 acanc = 1.0;
 
-            if (std::isinf(asum)) {
+            if (std::isinf(asum))
                 /* infinity */
                 acanc = 0;
 
-                acanc *= 30.0; /* fudge factor, since error of asymptotic formula
-                                * often seems this much larger than advertised */
-
-            adone:
-                *err = acanc;
-                return (asum);
-            }
+            acanc *= 30.0; /* fudge factor, since error of asymptotic formula
+                            * often seems this much larger than advertised */
+        adone:
+            *err = acanc;
+            return (asum);
         }
 
         /* Power series summation for confluent hypergeometric function */

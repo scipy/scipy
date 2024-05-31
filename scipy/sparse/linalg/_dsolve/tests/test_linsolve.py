@@ -722,17 +722,59 @@ class TestSplu:
 
         assert_equal(len(oks), 20)
 
+class TestGstrsErrors:
+    def setup_method(self):
+      self.A = array([[1.0,2.0,3.0],[4.0,5.0,6.0],[7.0,8.0,9.0]], dtype=np.float64)
+      self.b = np.array([[1.0],[2.0],[3.0]], dtype=np.float64)
+
+    def test_trans(self):
+        L = scipy.sparse.tril(self.A, format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(ValueError, match="trans must be N, T, or H"):
+            _superlu.gstrs('X', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_shape_LU(self):
+        L = scipy.sparse.tril(self.A[0:2,0:2], format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(ValueError, match="L and U must have the same dimension"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_shape_b(self):
+        L = scipy.sparse.tril(self.A, format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(ValueError, match="right hand side array has invalid shape"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                self.b[0:2])
+
+    def test_types_differ(self):
+        L = scipy.sparse.tril(self.A.astype(np.float32), format='csc')
+        U = scipy.sparse.triu(self.A, k=1, format='csc')
+        with assert_raises(TypeError, match="nzvals types of L and U differ"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, self.b)
+
+    def test_types_unsupported(self):
+        L = scipy.sparse.tril(self.A.astype(np.uint8), format='csc')
+        U = scipy.sparse.triu(self.A.astype(np.uint8), k=1, format='csc')
+        with assert_raises(TypeError, match="nzvals is not of a type supported"):
+            _superlu.gstrs('N', L.shape[0], L.nnz, L.data, L.indices, L.indptr,
+                                U.shape[0], U.nnz, U.data, U.indices, U.indptr, 
+                                self.b.astype(np.uint8))
 
 class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
-    def test_zero_diagonal(self):
+    @pytest.mark.parametrize("fmt",["csr","csc"])
+    def test_zero_diagonal(self,fmt):
         n = 5
         rng = np.random.default_rng(43876432987)
         A = rng.standard_normal((n, n))
         b = np.arange(n)
-        A = scipy.sparse.tril(A, k=0, format='csr')
+        A = scipy.sparse.tril(A, k=0, format=fmt)
 
         x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
 
@@ -743,12 +785,16 @@ class TestSpsolveTriangular:
         A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
         b = np.array([1., 2., 3.])
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "CSR matrix format is")
+            sup.filter(SparseEfficiencyWarning, "CSC or CSR matrix format is")
             spsolve_triangular(A, b, unit_diagonal=True)
 
-    def test_singular(self):
+    @pytest.mark.parametrize("fmt",["csr","csc"])
+    def test_singular(self,fmt):
         n = 5
-        A = csr_matrix((n, n))
+        if fmt == "csr":
+            A = csr_matrix((n, n))
+        else:
+            A = csc_matrix((n, n))
         b = np.arange(n)
         for lower in (True, False):
             assert_raises(scipy.linalg.LinAlgError,
@@ -774,32 +820,53 @@ class TestSpsolveTriangular:
             assert_array_almost_equal(A.dot(x), b)
 
     @pytest.mark.slow
-    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
-    def test_random(self):
-        def random_triangle_matrix(n, lower=True):
-            A = scipy.sparse.random(n, n, density=0.1, format='coo')
-            if lower:
-                A = scipy.sparse.tril(A)
+    @pytest.mark.parametrize("n", [10, 10**2, 10**3])
+    @pytest.mark.parametrize("m", [1, 10])
+    @pytest.mark.parametrize("lower", [True, False])
+    @pytest.mark.parametrize("format", ["csr", "csc"])
+    @pytest.mark.parametrize("unit_diagonal", [False, True])
+    @pytest.mark.parametrize("choice_of_A", ["real", "complex"])
+    @pytest.mark.parametrize("choice_of_b", ["floats", "ints", "complexints"])
+    def test_random(self, n, m, lower, format, unit_diagonal, choice_of_A, choice_of_b):
+        def random_triangle_matrix(n, lower=True, format="csr", choice_of_A="real"):
+            if choice_of_A == "real":
+                dtype = np.float64
+            elif choice_of_A == "complex":
+                dtype = np.complex128
             else:
-                A = scipy.sparse.triu(A)
-            A = A.tocsr(copy=False)
+                raise ValueError("choice_of_A must be 'real' or 'complex'.")
+            rng = np.random.default_rng(789002319)
+            rvs = rng.random
+            A = scipy.sparse.random(n, n, density=0.1, format='lil', dtype=dtype,
+                    random_state=rng, data_rvs=rvs)
+            if lower:
+                A = scipy.sparse.tril(A, format="lil")
+            else:
+                A = scipy.sparse.triu(A, format="lil")
             for i in range(n):
                 A[i, i] = np.random.rand() + 1
+            if format == "csc":
+                A = A.tocsc(copy=False)
+            else:
+                A = A.tocsr(copy=False)
             return A
 
         np.random.seed(1234)
-        for lower in (True, False):
-            for n in (10, 10**2, 10**3):
-                A = random_triangle_matrix(n, lower=lower)
-                for m in (1, 10):
-                    for b in (np.random.rand(n, m),
-                              np.random.randint(-9, 9, (n, m)),
-                              np.random.randint(-9, 9, (n, m)) +
-                              np.random.randint(-9, 9, (n, m)) * 1j):
-                        x = spsolve_triangular(A, b, lower=lower)
-                        assert_array_almost_equal(A.dot(x), b)
-                        x = spsolve_triangular(A, b, lower=lower,
-                                               unit_diagonal=True)
-                        A.setdiag(1)
-                        assert_array_almost_equal(A.dot(x), b)
+        A = random_triangle_matrix(n, lower=lower)
+        if choice_of_b == "floats":
+            b = np.random.rand(n, m)
+        elif choice_of_b == "ints":
+            b = np.random.randint(-9, 9, (n, m))
+        elif choice_of_b == "complexints":
+            b = np.random.randint(-9, 9, (n, m)) + np.random.randint(-9, 9, (n, m)) * 1j
+        else:
+            raise ValueError(
+                "choice_of_b must be 'floats', 'ints', or 'complexints'.")
+        x = spsolve_triangular(A, b, lower=lower, unit_diagonal=unit_diagonal)
+        if unit_diagonal:
+            A.setdiag(1)
+        assert_allclose(A.dot(x), b, atol=1.5e-6)
+
+
+
