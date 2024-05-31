@@ -6280,8 +6280,7 @@ def unpack_TtestResult(res):
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
-                alternative="two-sided"):
+def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
     This is a test for the null hypothesis that the expected value
