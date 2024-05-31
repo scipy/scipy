@@ -82,7 +82,7 @@ documentation build is
 .. code-block:: json
 
    {
-       "min_height": "400px",
+       "global_min_height": "400px",
        "ignore_patterns": [".*"]
    }
 
