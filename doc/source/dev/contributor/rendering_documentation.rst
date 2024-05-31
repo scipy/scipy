@@ -71,8 +71,7 @@ To render the documentation on your own machine:
 
 **Interactive Examples**
 
-Examples within docstrings can be made interactive using
-`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_.
+Examples within docstrings can be made interactive using ``jupyterlite-sphinx``.
 The buttons for converting examples sections into embedded interactive
 notebooks are hidden by default on clean docs builds. To enable interactive
 examples after building the documentation locally, edit the
@@ -91,7 +90,9 @@ The buttons that turn docstring examples into embedded notebooks will be hidden
 for all url paths matching the JavaScript Regex patterns in the
 ``ignore_patterns`` list. ``[".*"]`` includes a pattern which matches all url
 paths. Removing this pattern from the list will enable interactivity for all
-examples.
+examples. See the documentation for the ``jupyterlite-sphinx``
+`TryExamples directive <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
+for more information.
 
 .. note::
 
