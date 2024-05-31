@@ -243,3 +243,9 @@ Enable interactive examples by editing the runtime configuration file,
 ``try_examples.json``, in the root folder of the uploaded documentation on the
 release server. One must remove the regular expression pattern ``".*"`` from
 the ``ignore_patterns`` list.
+
+.. code-block:: console
+
+  $ ssh your-username@docs.scipy.org
+  $ cd /srv/docs_scipy_org/doc/scipy-1.13.1
+  $ vim try_examples.json  # edit the ignore list to remove: ".*"
