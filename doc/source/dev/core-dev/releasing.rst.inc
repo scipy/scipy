@@ -241,5 +241,5 @@ were only made on the maintenance branch to main.
 
 Enable interactive examples by editing the runtime configuration file,
 ``try_examples.json``, in the root folder of the uploaded documentation on the
-on the release server. One must remove the regular expression pattern ``".*"``
-from the ``ignore_patterns`` list.
+release server. One must remove the regular expression pattern ``".*"`` from
+the ``ignore_patterns`` list.
