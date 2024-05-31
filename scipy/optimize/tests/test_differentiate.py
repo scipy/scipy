@@ -584,6 +584,10 @@ class TestHessian(JacobianHessianTest):
         res11 = hessian(lambda y: f1([z[0], y[0]]), z[1:2], initial_step=10)
         assert res.nfev[1, 1] == f1.nfev == res11.nfev[0, 0]
 
-        # it's hard to check off-diagonals, but symmetric is a good sign
-        assert_equal(res.nfev, res.nfev.T)
-        assert np.unique(res.nfev).size == 3
+        # it's hard to check off-diagonals. Would probably be symmetric, but
+        # having inner `rtol` tighter than outer seems to break symmetry.
+
+    def test_small_rtol_warning(self):
+        message = 'The specified `rtol=1e-15`, but...'
+        with pytest.warns(RuntimeWarning, match=message):
+            hessian(np.sin, [1.], rtol=1e-15)

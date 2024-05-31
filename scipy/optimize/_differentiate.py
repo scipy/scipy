@@ -1,4 +1,5 @@
 # mypy: disable-error-code="attr-defined"
+import warnings
 import numpy as np
 import scipy._lib._elementwise_iterative_method as eim
 from scipy._lib._util import _RichResult
@@ -932,8 +933,6 @@ def _hessian(f, x, **kwargs):
         error : float array
             An estimate of the error: the magnitude of the difference between
             the current estimate and the estimate in the previous iteration.
-        nit : int array
-            The number of iterations performed.
         nfev : int array
             The number of points at which `func` was evaluated.
 
@@ -970,6 +969,14 @@ def _hessian(f, x, **kwargs):
     axis associated with the ``k`` points is included within the axes
     denoted by ``(...)``.
 
+    Currently, `_hessian` is implemented by nesting calls to `jacobian`.
+    All options passed to `_hessian` are used for both the inner and outer
+    calls with one exception: the `rtol` used in the inner `jacobian` call
+    is tightened by a factor of 100 with the expectation that the inner
+    error can be ignored. A consequence is that `rtol` should not be set
+    less than 100 times the precision of the dtype of `x`; a warning is
+    emitted otherwise.
+
     References
     ----------
     .. [1] Hessian matrix, *Wikipedia*,
@@ -1004,13 +1011,26 @@ def _hessian(f, x, **kwargs):
     True
 
     """
+    x = np.asarray(x)
+    dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
+    finfo = np.finfo(dtype)
+    rtol = kwargs.pop('rtol', finfo.eps ** 0.5)
+
+    # tighten the inner tolerance to make the inner error negligible
+    rtol_min = finfo.eps * 100
+    message = (f"The specified `{rtol=}`, but error estimates are likely to be "
+               f"unreliable when `rtol < {rtol_min}`.")
+    if 0 < rtol < rtol_min:  # rtol <= 0 is an error
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
+        rtol = rtol_min
+
     def df(x):
-        temp = _jacobian(f, x, **kwargs)
+        temp = _jacobian(f, x, rtol=rtol/100, **kwargs)
         nfev.append(temp.nfev if len(nfev)==0 else temp.nfev.sum(axis=-1))
         return temp.df
 
     nfev = []  # track inner function evaluations
-    res = _jacobian(df, x, **kwargs)  # jacobian of jacobian
+    res = _jacobian(df, x, rtol=rtol, **kwargs)  # jacobian of jacobian
 
     nfev = np.cumsum(nfev, axis=0)
     res.nfev = np.take_along_axis(nfev, res.nit[np.newaxis, ...], axis=0)[0]
