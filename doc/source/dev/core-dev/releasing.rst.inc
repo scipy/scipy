@@ -239,18 +239,7 @@ After the final release is done, port relevant changes to release notes, build
 scripts, author name mapping in ``tools/authors.py`` and any other changes that
 were only made on the maintenance branch to main.
 
-Enable interactive examples with
-`jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/en/latest/directives/try_examples.html#>`_
-by editing the runtime configuration file ``try_examples.json`` in the root
-folder of the uploaded documentation on the release server. The initial version
-of this file on a clean documentation build is
-
-```
-{
-    "min_height": "400px",
-    "ignore_patterns": [".*"]
-}
-```
-
-Replace ``[".*"]`` with the empty list ``[]`` to unhide
-these buttons and enable interactive examples.
+Enable interactive examples by editing the runtime configuration file,
+``try_examples.json``, in the root folder of the uploaded documentation on the
+on the release server. One must remove the regular expression pattern ``".*"``
+from the ``ignore_patterns`` list.
