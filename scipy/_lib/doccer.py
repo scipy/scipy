@@ -1,7 +1,8 @@
 """Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings"""
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from typing import Any, ParamSpec, TypeAlias, TypeVar
 import sys
 
 __all__ = [
@@ -15,6 +16,11 @@ __all__ = [
     "replace_notes_in_docstring",
     "doc_replace",
 ]
+
+P = ParamSpec("P")
+R = TypeVar("R")
+
+Decorator: TypeAlias = Callable[[Callable[P, R]], Callable[P, R]]
 
 
 def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
@@ -76,7 +82,9 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
     return docstring % indented
 
 
-def inherit_docstring_from(cls):
+def inherit_docstring_from(
+    cls: type[Any],
+) -> Decorator[P, R]:
     """
     This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
