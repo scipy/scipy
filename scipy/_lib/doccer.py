@@ -83,7 +83,7 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
 
 
 def inherit_docstring_from(
-    cls: type[Any],
+    cls: type[Any] | Any,
 ) -> Decorator[P, R]:
     """
     This decorator modifies the decorated function's docstring by
@@ -95,14 +95,14 @@ def inherit_docstring_from(
 
     Parameters
     ----------
-    cls : Python class or instance
+    cls : type[Any] | Any, Python class or instance
         A class with a method with the same name as the decorated method.
         The docstring of the method in this class replaces '%(super)s' in the
         docstring of the decorated method.
 
     Returns
     -------
-    f : function
+    f : Decorator[P, R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
 
@@ -130,7 +130,7 @@ def inherit_docstring_from(
 
     """
 
-    def _doc(func):
+    def _doc(func: Callable[P, R]) -> Callable[P, R]:
         cls_docstring = getattr(cls, func.__name__).__doc__
         func_docstring = func.__doc__
         if func_docstring is None:
