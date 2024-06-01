@@ -553,7 +553,7 @@ class TestHessian(JacobianHessianTest):
     jh_func = hessian
 
     @pytest.mark.parametrize('shape', [(), (4,), (2, 4)])
-    def test_examples(self, shape):
+    def test_example(self, shape):
         rng = np.random.default_rng(458912319542)
         m = 3
         x = rng.random((m,) + shape)
@@ -566,6 +566,11 @@ class TestHessian(JacobianHessianTest):
         else:
             ref = optimize.rosen_hess(x)
         assert_allclose(res.ddf, ref, atol=1e-8)
+
+        # check symmetry
+        for key in ['ddf', 'error', 'nfev', 'success', 'status']:
+            assert_equal(res[key], np.swapaxes(res[key], 0, 1))
+
 
     def test_nfev(self):
         def f1(z):
@@ -584,8 +589,8 @@ class TestHessian(JacobianHessianTest):
         res11 = hessian(lambda y: f1([z[0], y[0]]), z[1:2], initial_step=10)
         assert res.nfev[1, 1] == f1.nfev == res11.nfev[0, 0]
 
-        # it's hard to check off-diagonals. Would probably be symmetric, but
-        # having inner `rtol` tighter than outer seems to break symmetry.
+        assert_equal(res.nfev, res.nfev.T)  # check symmetry
+        assert np.unique(res.nfev).size == 3
 
     def test_small_rtol_warning(self):
         message = 'The specified `rtol=1e-15`, but...'

@@ -1037,4 +1037,11 @@ def _hessian(f, x, **kwargs):
     res.ddf = res.df
     del res.df  # this is renamed to ddf
     del res.nit  # this is only the outer-jacobian nit
+
+    i = res.error <= np.swapaxes(res.error, 0, 1)
+    for key in res.keys():
+        if key.startswith('_'):
+            continue
+
+        res[key] = np.where(i, res[key], np.swapaxes(res[key], 0, 1))
     return res
