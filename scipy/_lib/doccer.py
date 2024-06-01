@@ -1,5 +1,5 @@
 """Utilities to allow inserting docstring fragments for common
-parameters into function and method docstrings"""
+parameters into function and method docstrings."""
 
 from collections.abc import Callable, Iterable
 from typing import Any, ParamSpec, TypeAlias, TypeVar
@@ -24,16 +24,16 @@ Decorator: TypeAlias = Callable[[Callable[P, R]], Callable[P, R]]
 
 
 def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
-    """Fill a function docstring from variables in dictionary
+    """Fill a function docstring from variables in dictionary.
 
     Adapt the indent of the inserted docs
 
     Parameters
     ----------
     docstring : str
-        docstring from function, possibly with dict formatting strings
+        A docstring from a function, possibly with dict formatting strings.
     docdict : dict[str, str], optional
-        dictionary with keys that match the dict formatting strings
+        A dictionary with keys that match the dict formatting strings
         and values that are docstring fragments to be inserted. The
         indentation of the inserted docstrings is set to match the
         minimum indentation of the ``docstring`` by adding this
@@ -43,7 +43,7 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
     Returns
     -------
     outstring : str
-        string with requested ``docdict`` strings inserted
+        string with requested ``docdict`` strings inserted.
 
     Examples
     --------
@@ -85,8 +85,7 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
 def inherit_docstring_from(
     cls: type[Any] | Any,
 ) -> Decorator[P, R]:
-    """
-    This decorator modifies the decorated function's docstring by
+    """This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
     method of the same name from the class `cls`.
 
@@ -127,7 +126,6 @@ def inherit_docstring_from(
     >>> b = Bar()
     >>> b.func.__doc__
     'Do something useful.\n        Do it fast.\n        '
-
     """
 
     def _doc(func: Callable[P, R]) -> Callable[P, R]:
@@ -144,8 +142,7 @@ def inherit_docstring_from(
 
 
 def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, R]:
-    """
-    This decorator replaces the decorated function's docstring
+    """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It extends the 'Notes' section of that docstring to include
     the given `notes`.
@@ -186,8 +183,7 @@ def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, 
 
 
 def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, R]:
-    """
-    This decorator replaces the decorated function's docstring
+    """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It replaces the 'Notes' section of that docstring with
     the given `notes`.
@@ -284,7 +280,6 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
     -------
     f : Decorator[P, R]
         The decorator function that applies dictionary to its argument's __doc__ attribute.
-
     """
     if unindent_params:
         docdict = unindent_dict(docdict)
@@ -347,7 +342,7 @@ def unindent_string(docstring: str) -> str:
 def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[P, R]:
     """Decorator to take the docstring from obj, with oldval replaced by newval
 
-      Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
+    Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
 
     Parameters
     ----------
