@@ -194,6 +194,30 @@ namespace detail {
         return sum;
     }
 
+    template <typename Generator, typename T = generator_result_t<Generator>>
+    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval_two_way(
+        Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
+
+        auto [result, num_terms] = series_eval(g, tol, max_terms, init_val);
+        if (num_terms > 0) { // converged
+            result = series_eval_backward_fixed_length(g, num_terms, init_val);
+        }
+        return {result, num_terms};
+    }
+
+    template <typename Generator, typename T = generator_result_t<Generator>>
+    SPECFUN_HOST_DEVICE T series_eval_two_way(
+        Generator &&g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
+        const char *func_name) {
+
+        auto [result, num_terms] = series_eval_two_way(g, tol, max_terms, init_val);
+        if (num_terms == 0) { // not converging
+            set_error(func_name, SF_ERROR_NO_RESULT, NULL);
+            return maybe_complex_NaN<T>();
+        }
+        return result;
+    }
+
     /* Performs one step of Kahan summation. */
     template <typename T>
     SPECFUN_HOST_DEVICE void kahan_step(T& sum, T& comp, T x) {

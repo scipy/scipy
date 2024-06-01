@@ -630,8 +630,8 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
             return std::pow(1.0 - z, c - a - b) * result;
         }
         auto series_generator = detail::HypergeometricSeriesGenerator(a, b, c, z);
-        return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
-                                   detail::hyp2f1_MAXITER, "hyp2f1");
+        return detail::series_eval_two_way(series_generator, std::complex<double>{0.0, 0.0},
+                                           detail::hyp2f1_EPS, detail::hyp2f1_MAXITER, "hyp2f1");
     }
     /* Points near exp(iπ/3), exp(-iπ/3) not handled by any of the standard
      * transformations. Use series of López and Temme [5]. These regions
