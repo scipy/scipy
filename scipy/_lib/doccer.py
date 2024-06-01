@@ -290,7 +290,9 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
         docdict = unindent_dict(docdict)
 
     def decorate(func: Callable[P, R]) -> Callable[P, R]:
-        func.__doc__ = docformat(func.__doc__, docdict)
+        # __doc__ may be None for optimized Python (-OO)
+        doc = func.__doc__ or ""
+        func.__doc__ = docformat(doc, docdict)
         return func
 
     return decorate
