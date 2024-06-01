@@ -864,14 +864,8 @@ def _jacobian(func, x, *, atol=None, rtol=None, maxiter=10,
     return res
 
 
-# todo:
-# - figure out *args; user really can't work with them right now
-# - what to report for status? iterations?
-# - error estimate stack
-# - add tests of attributes for both _hessian and _jacobian. I'm not sure if
-#   nfev is really working.
-
-def _hessian(f, x, **kwargs):
+def _hessian(f, x, *, atol=None, rtol=None, maxiter=10,
+             order=8, initial_step=0.5, step_factor=2.0):
     r"""Evaluate the Hessian of a function numerically.
 
     Parameters
@@ -1011,10 +1005,17 @@ def _hessian(f, x, **kwargs):
     True
 
     """
+    # todo:
+    # - add ability to vectorize over additional parameters (*args?)
+    # - error estimate stack with inner jacobian (or use legit 2D stencil)
+
+    kwargs = dict(atol=atol, maxiter=maxiter, order=order,
+                  initial_step=initial_step, step_factor=step_factor)
+
     x = np.asarray(x)
     dtype = x.dtype if np.issubdtype(x.dtype, np.inexact) else np.float64
     finfo = np.finfo(dtype)
-    rtol = kwargs.pop('rtol', finfo.eps ** 0.5)
+    rtol = finfo.eps**0.5 if rtol is None else rtol
 
     # tighten the inner tolerance to make the inner error negligible
     rtol_min = finfo.eps * 100
