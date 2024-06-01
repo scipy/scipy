@@ -143,15 +143,30 @@ def inherit_docstring_from(
     return _doc
 
 
-def extend_notes_in_docstring(cls, notes):
+def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, R]:
     """
     This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It extends the 'Notes' section of that docstring to include
     the given `notes`.
+
+    Parameters
+    ----------
+    cls : type[Any] | Any
+        A class with a method with the same name as the decorated method.
+        The docstring of the method in this class replaces the docstring of the
+        decorated method.
+    notes : str
+        Additional notes to append to the 'Notes' section of the docstring.
+
+    Returns
+    -------
+    f : Decorator[P, R]
+        The decorator function that modifies the __doc__ attribute
+        of its argument.
     """
 
-    def _doc(func):
+    def _doc(func: Callable[P, R]) -> Callable[P, R]:
         cls_docstring = getattr(cls, func.__name__).__doc__
         # If python is called with -OO option,
         # there is no docstring
