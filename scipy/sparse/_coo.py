@@ -193,7 +193,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
             raise ValueError('axis out of bounds')
         mask = self.data != 0
         coord = self.coords[1 - axis][mask]
-        return np.bincount(coord, minlength=self.shape[1 - axis])
+        return np.bincount(downcast_intp_index(coord), minlength=self.shape[1 - axis])
 
     count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
