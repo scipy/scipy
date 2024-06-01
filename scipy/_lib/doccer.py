@@ -311,7 +311,7 @@ def unindent_dict(docdict: dict[str, str]) -> dict[str, str]:
     dict[str, str]
         The `docdict` dictionary but each of its string values are unindented.
     """
-    can_dict = {}
+    can_dict: dict[str, str] = {}
     for name, dstr in docdict.items():
         can_dict[name] = unindent_string(dstr)
     return can_dict
