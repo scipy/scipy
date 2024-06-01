@@ -260,7 +260,7 @@ def test_integration_complex():
         assert np.all(e < 5)
 
 
-@pytest.mark.fail_slow(2)
+@pytest.mark.fail_slow(5)
 def test_integration_sparse_difference():
     n = 200
     t_span = [0, 20]

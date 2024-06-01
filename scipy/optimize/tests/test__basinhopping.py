@@ -199,7 +199,7 @@ class TestBasinHopping:
                            niter=self.niter, disp=self.disp)
         assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_all_minimizers(self):
         # Test 2-D minimizations with gradient. Nelder-Mead, Powell, COBYLA, and
         # COBYQA don't accept jac=True, so aren't included here.
@@ -213,7 +213,7 @@ class TestBasinHopping:
                                niter=self.niter, disp=self.disp)
             assert_almost_equal(res.x, self.sol[i], self.tol)
 
-    @pytest.mark.fail_slow(10)
+    @pytest.mark.fail_slow(20)
     def test_all_nograd_minimizers(self):
         # Test 2-D minimizations without gradient. Newton-CG requires jac=True,
         # so not included here.

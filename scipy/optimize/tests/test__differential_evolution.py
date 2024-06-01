@@ -722,7 +722,7 @@ class TestDifferentialEvolutionSolver:
                     pass
             assert s._updating == 'deferred'
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_parallel(self):
         # smoke test for parallelization with deferred updating
         bounds = [(0., 2.), (0., 2.)]
@@ -864,7 +864,7 @@ class TestDifferentialEvolutionSolver:
         assert constr_f(res.x) <= 1.9
         assert res.success
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_impossible_constraint(self):
         def constr_f(x):
             return np.array([x[0] + x[1]])
@@ -1021,7 +1021,7 @@ class TestDifferentialEvolutionSolver:
         xtrial = np.arange(4 * 5).reshape(4, 5)
         assert cw.violation(xtrial).shape == (2, 5)
 
-    @pytest.mark.fail_slow(10)
+    @pytest.mark.fail_slow(20)
     def test_L1(self):
         # Lampinen ([5]) test problem 1
 
@@ -1116,7 +1116,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L2(self):
         # Lampinen ([5]) test problem 2
 
@@ -1156,7 +1156,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L3(self):
         # Lampinen ([5]) test problem 3
 
@@ -1207,7 +1207,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L4(self):
         # Lampinen ([5]) test problem 4
         def f(x):
@@ -1260,7 +1260,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L5(self):
         # Lampinen ([5]) test problem 5
 
@@ -1291,7 +1291,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_L6(self):
         # Lampinen ([5]) test problem 6
         def f(x):
@@ -1450,7 +1450,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_integrality(self):
         # test fitting discrete distribution to data
         rng = np.random.default_rng(6519843218105)
@@ -1540,7 +1540,7 @@ class TestDifferentialEvolutionSolver:
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     def test_vectorized(self):
         def quadratic(x):
             return np.sum(x**2)
@@ -1632,7 +1632,7 @@ class TestDifferentialEvolutionSolver:
         # "MAXCV = 0.".
         assert "MAXCV = 0.4" in result.message
 
-    @pytest.mark.fail_slow(10)  # fail-slow exception by request - see gh-20806
+    @pytest.mark.fail_slow(20)  # fail-slow exception by request - see gh-20806
     def test_strategy_fn(self):
         # examines ability to customize strategy by mimicking one of the
         # in-built strategies

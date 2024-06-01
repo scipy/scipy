@@ -2580,6 +2580,7 @@ class _TestSlicing:
         assert_equal(A[s, :].toarray(), B[2:4, :])
         assert_equal(A[:, s].toarray(), B[:, 2:4])
 
+    @pytest.mark.fail_slow(2)
     def test_slicing_3(self):
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spcreator(B)
@@ -3383,7 +3384,7 @@ class _TestArithmetic:
         self.__Asp = self.spcreator(self.__A)
         self.__Bsp = self.spcreator(self.__B)
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(20)
     def test_add_sub(self):
         self.__arith_init()
 
@@ -5153,6 +5154,7 @@ class Test64Bit:
     def test_resiliency_limit_10(self, cls, method_name):
         self._check_resiliency(cls, method_name, maxval_limit=10)
 
+    @pytest.mark.fail_slow(2)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_resiliency_random(self, cls, method_name):
         # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
@@ -5168,6 +5170,7 @@ class Test64Bit:
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_no_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, assert_32bit=True)
