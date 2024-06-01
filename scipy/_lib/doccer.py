@@ -16,16 +16,16 @@ __all__ = [
 ]
 
 
-def docformat(docstring, docdict=None):
+def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
     """Fill a function docstring from variables in dictionary
 
     Adapt the indent of the inserted docs
 
     Parameters
     ----------
-    docstring : string
+    docstring : str
         docstring from function, possibly with dict formatting strings
-    docdict : dict, optional
+    docdict : dict[str, str], optional
         dictionary with keys that match the dict formatting strings
         and values that are docstring fragments to be inserted. The
         indentation of the inserted docstrings is set to match the
@@ -35,7 +35,7 @@ def docformat(docstring, docdict=None):
 
     Returns
     -------
-    outstring : string
+    outstring : str
         string with requested ``docdict`` strings inserted
 
     Examples
