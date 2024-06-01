@@ -239,6 +239,12 @@ namespace detail {
             return output;
         }
 
+        SPECFUN_HOST_DEVICE std::complex<double> operator()(backward_tag) {
+            --k_;
+            term_ /= (a_ + k_) * (b_ + k_) / ((k_ + 1) * (c_ + k_)) * z_;
+            return term_;
+        }
+
       private:
         double a_, b_, c_;
         std::complex<double> z_, term_;
@@ -614,11 +620,14 @@ SPECFUN_HOST_DEVICE inline std::complex<double> hyp2f1(double a, double b, doubl
      * stands, this hurts precision in some cases. */
     if (z_abs < 0.9 && z.real() >= 0) {
         if (c - a < a && c - b < b) {
-            result = std::pow(1.0 - z, c - a - b);
             auto series_generator = detail::HypergeometricSeriesGenerator(c - a, c - b, c, z);
-            result *= detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,
-                                          detail::hyp2f1_MAXITER, "hyp2f1");
-            return result;
+            auto [_, num_terms] = detail::series_eval(series_generator, detail::hyp2f1_EPS, detail::hyp2f1_MAXITER);
+            if (num_terms == 0) { // convergence failed
+                set_error("hyp2f1", SF_ERROR_NO_RESULT, NULL);
+                return detail::maybe_complex_NaN<std::complex<double>>();
+            }
+            result = series_eval_backward_fixed_length(series_generator, num_terms);
+            return std::pow(1.0 - z, c - a - b) * result;
         }
         auto series_generator = detail::HypergeometricSeriesGenerator(a, b, c, z);
         return detail::series_eval(series_generator, std::complex<double>{0.0, 0.0}, detail::hyp2f1_EPS,

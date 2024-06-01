@@ -14,6 +14,9 @@ namespace detail {
     template <typename Generator>
     using generator_result_t = std::decay_t<std::invoke_result_t<Generator>>;
 
+    /* Tag to select backward generation. */
+    struct backward_tag {};
+
     /* Used to deduce the type of the numerator/denominator of a fraction. */
     template <typename Pair>
     struct pair_traits;
@@ -148,6 +151,47 @@ namespace detail {
             result += g();
         }
         return result;
+    }
+
+    /* Sums a fixed number of terms from a series backward.
+     *
+     * Denote the series by
+     *
+     *   S = a[0] + a[1] + a[2] + ...
+     *
+     * Suppose the backward generator currently points right after a[n].
+     * This function computes S[n] = a[n] + a[n-1] + ... + a[1] + a[0],
+     * in that order.
+     *
+     * Parameters
+     * ----------
+     *   g
+     *       Reference to backward generator that yields the terms
+     *       a[n], a[n-1], ..., a[1].  `g` is called with one argument of
+     *       type `backward_tag`.  It is called exactly `num_terms` times.
+     *
+     *   num_terms
+     *       n, the number of terms from the series to sum.
+     *
+     *   init_val
+     *       a[0].  Default is zero.  The type of this parameter (T) is used
+     *       for intermediary computations as well as the result.
+     *
+     * Return Value
+     * ------------
+     * The sum (a[n] + a[n-1] + ... + a[1] + a[0]), evaluated in that order.
+     */
+    template <typename Generator, typename T = generator_result_t<Generator>>
+    SPECFUN_HOST_DEVICE T series_eval_backward_fixed_length(
+        Generator &&g, std::uint64_t num_terms, T init_val = T(0)) {
+
+        T sum = T(0);
+        for (; num_terms > 0; --num_terms) {
+            T term = g(backward_tag{});
+            sum += term;
+        }
+        sum += init_val;
+        return sum;
     }
 
     /* Performs one step of Kahan summation. */
