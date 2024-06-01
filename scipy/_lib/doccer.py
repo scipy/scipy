@@ -42,7 +42,7 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
 
     Returns
     -------
-    outstring : str
+    str
         string with requested ``docdict`` strings inserted.
 
     Examples
@@ -101,7 +101,7 @@ def inherit_docstring_from(
 
     Returns
     -------
-    f : Decorator[P, R]
+    Decorator[P, R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
 
@@ -158,7 +158,7 @@ def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, 
 
     Returns
     -------
-    f : Decorator[P, R]
+    Decorator[P, R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
     """
@@ -199,7 +199,7 @@ def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P,
 
     Returns
     -------
-    f : Decorator[P, R]
+    Decorator[P, R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
     """
@@ -237,7 +237,7 @@ def indentcount_lines(lines: Iterable[str]) -> int:
 
     Returns
     -------
-    indentno : int
+    int
         The minimum indent.
 
 
@@ -278,7 +278,7 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
 
     Returns
     -------
-    f : Decorator[P, R]
+    Decorator[P, R]
         The decorator function that applies dictionary to its argument's __doc__ attribute.
     """
     if unindent_params:
@@ -356,7 +356,7 @@ def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[P, 
 
     Returns
     -------
-    f : Decorator[P, R]
+    Decorator[P, R]
         A decorator function that replaces occurrences of `oldval` with `newval`
         in the docstring of the decorated function.
     """
