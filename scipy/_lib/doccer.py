@@ -269,29 +269,29 @@ def indentcount_lines(lines: Iterable[str]) -> int:
     return indentno
 
 
-def filldoc(docdict, unindent_params=True):
-    """Return docstring decorator using docdict variable dictionary
+def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[P, R]:
+    """Return docstring decorator using docdict variable dictionary.
 
     Parameters
     ----------
-    docdict : dictionary
-        dictionary containing name, docstring fragment pairs
-    unindent_params : {False, True}, boolean, optional
-        If True, strip common indentation from all parameters in
-        docdict
+    docdict : dict[str, str]
+        A dictionary containing name, docstring fragment pairs.
+    unindent_params : bool, optional
+        If True, strip common indentation from all parameters in docdict.
+        Default is False.
 
     Returns
     -------
-    decfunc : function
-        decorator that applies dictionary to input function docstring
+    f : Decorator[P, R]
+        The decorator function that applies dictionary to its argument's __doc__ attribute.
 
     """
     if unindent_params:
         docdict = unindent_dict(docdict)
 
-    def decorate(f):
-        f.__doc__ = docformat(f.__doc__, docdict)
-        return f
+    def decorate(func: Callable[P, R]) -> Callable[P, R]:
+        func.__doc__ = docformat(func.__doc__, docdict)
+        return func
 
     return decorate
 
