@@ -1,6 +1,7 @@
 """Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings"""
 
+from collections.abc import Iterable
 import sys
 
 __all__ = [
@@ -192,9 +193,22 @@ def replace_notes_in_docstring(cls, notes):
     return _doc
 
 
-def indentcount_lines(lines):
+def indentcount_lines(lines: Iterable[str]) -> int:
     """Minimum indent for all lines in line list
 
+    Parameters
+    ----------
+    lines : Iterable[str]
+        The lines to find the minimum indent of.
+
+    Returns
+    -------
+    indentno : int
+        The minimum indent.
+
+
+    Examples
+    --------
     >>> lines = [' one', '  two', '   three']
     >>> indentcount_lines(lines)
     1
