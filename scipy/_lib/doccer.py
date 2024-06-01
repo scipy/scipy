@@ -1,17 +1,23 @@
-''' Utilities to allow inserting docstring fragments for common
-parameters into function and method docstrings'''
+"""Utilities to allow inserting docstring fragments for common
+parameters into function and method docstrings"""
 
 import sys
 
 __all__ = [
-    'docformat', 'inherit_docstring_from', 'indentcount_lines',
-    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
-    'replace_notes_in_docstring', 'doc_replace'
+    "docformat",
+    "inherit_docstring_from",
+    "indentcount_lines",
+    "filldoc",
+    "unindent_dict",
+    "unindent_string",
+    "extend_notes_in_docstring",
+    "replace_notes_in_docstring",
+    "doc_replace",
 ]
 
 
 def docformat(docstring, docdict=None):
-    ''' Fill a function docstring from variables in dictionary
+    """Fill a function docstring from variables in dictionary
 
     Adapt the indent of the inserted docs
 
@@ -41,7 +47,7 @@ def docformat(docstring, docdict=None):
     >>> docdict = {'value': inserted_string}
     >>> docformat(docstring, docdict)
     'First line\\n    Second line\\n    indented\\n    string'
-    '''
+    """
     if not docstring:
         return docstring
     if docdict is None:
@@ -54,7 +60,7 @@ def docformat(docstring, docdict=None):
         icount = 0
     else:
         icount = indentcount_lines(lines[1:])
-    indent = ' ' * icount
+    indent = " " * icount
     # Insert this indent to dictionary docstrings
     indented = {}
     for name, dstr in docdict.items():
@@ -62,8 +68,8 @@ def docformat(docstring, docdict=None):
         try:
             newlines = [lines[0]]
             for line in lines[1:]:
-                newlines.append(indent+line)
-            indented[name] = '\n'.join(newlines)
+                newlines.append(indent + line)
+            indented[name] = "\n".join(newlines)
         except IndexError:
             indented[name] = dstr
     return docstring % indented
@@ -114,6 +120,7 @@ def inherit_docstring_from(cls):
     'Do something useful.\n        Do it fast.\n        '
 
     """
+
     def _doc(func):
         cls_docstring = getattr(cls, func.__name__).__doc__
         func_docstring = func.__doc__
@@ -123,6 +130,7 @@ def inherit_docstring_from(cls):
             new_docstring = func_docstring % dict(super=cls_docstring)
             func.__doc__ = new_docstring
         return func
+
     return _doc
 
 
@@ -133,20 +141,23 @@ def extend_notes_in_docstring(cls, notes):
     It extends the 'Notes' section of that docstring to include
     the given `notes`.
     """
+
     def _doc(func):
         cls_docstring = getattr(cls, func.__name__).__doc__
         # If python is called with -OO option,
         # there is no docstring
         if cls_docstring is None:
             return func
-        end_of_notes = cls_docstring.find('        References\n')
+        end_of_notes = cls_docstring.find("        References\n")
         if end_of_notes == -1:
-            end_of_notes = cls_docstring.find('        Examples\n')
+            end_of_notes = cls_docstring.find("        Examples\n")
             if end_of_notes == -1:
                 end_of_notes = len(cls_docstring)
-        func.__doc__ = (cls_docstring[:end_of_notes] + notes +
-                        cls_docstring[end_of_notes:])
+        func.__doc__ = (
+            cls_docstring[:end_of_notes] + notes + cls_docstring[end_of_notes:]
+        )
         return func
+
     return _doc
 
 
@@ -157,28 +168,32 @@ def replace_notes_in_docstring(cls, notes):
     It replaces the 'Notes' section of that docstring with
     the given `notes`.
     """
+
     def _doc(func):
         cls_docstring = getattr(cls, func.__name__).__doc__
-        notes_header = '        Notes\n        -----\n'
+        notes_header = "        Notes\n        -----\n"
         # If python is called with -OO option,
         # there is no docstring
         if cls_docstring is None:
             return func
         start_of_notes = cls_docstring.find(notes_header)
-        end_of_notes = cls_docstring.find('        References\n')
+        end_of_notes = cls_docstring.find("        References\n")
         if end_of_notes == -1:
-            end_of_notes = cls_docstring.find('        Examples\n')
+            end_of_notes = cls_docstring.find("        Examples\n")
             if end_of_notes == -1:
                 end_of_notes = len(cls_docstring)
-        func.__doc__ = (cls_docstring[:start_of_notes + len(notes_header)] +
-                        notes +
-                        cls_docstring[end_of_notes:])
+        func.__doc__ = (
+            cls_docstring[: start_of_notes + len(notes_header)]
+            + notes
+            + cls_docstring[end_of_notes:]
+        )
         return func
+
     return _doc
 
 
 def indentcount_lines(lines):
-    ''' Minimum indent for all lines in line list
+    """Minimum indent for all lines in line list
 
     >>> lines = [' one', '  two', '   three']
     >>> indentcount_lines(lines)
@@ -191,7 +206,7 @@ def indentcount_lines(lines):
     1
     >>> indentcount_lines(['    '])
     0
-    '''
+    """
     indentno = sys.maxsize
     for line in lines:
         stripped = line.lstrip()
@@ -203,7 +218,7 @@ def indentcount_lines(lines):
 
 
 def filldoc(docdict, unindent_params=True):
-    ''' Return docstring decorator using docdict variable dictionary
+    """Return docstring decorator using docdict variable dictionary
 
     Parameters
     ----------
@@ -218,18 +233,19 @@ def filldoc(docdict, unindent_params=True):
     decfunc : function
         decorator that applies dictionary to input function docstring
 
-    '''
+    """
     if unindent_params:
         docdict = unindent_dict(docdict)
 
     def decorate(f):
         f.__doc__ = docformat(f.__doc__, docdict)
         return f
+
     return decorate
 
 
 def unindent_dict(docdict):
-    ''' Unindent all strings in a docdict '''
+    """Unindent all strings in a docdict"""
     can_dict = {}
     for name, dstr in docdict.items():
         can_dict[name] = unindent_string(dstr)
@@ -237,18 +253,18 @@ def unindent_dict(docdict):
 
 
 def unindent_string(docstring):
-    ''' Set docstring to minimum indent for all lines, including first
+    """Set docstring to minimum indent for all lines, including first
 
     >>> unindent_string(' two')
     'two'
     >>> unindent_string('  two\\n   three')
     'two\\n three'
-    '''
+    """
     lines = docstring.expandtabs().splitlines()
     icount = indentcount_lines(lines)
     if icount == 0:
         return docstring
-    return '\n'.join([line[icount:] for line in lines])
+    return "\n".join([line[icount:] for line in lines])
 
 
 def doc_replace(obj, oldval, newval):
@@ -266,7 +282,7 @@ def doc_replace(obj, oldval, newval):
         The string to replace ``oldval`` with.
     """
     # __doc__ may be None for optimized Python (-OO)
-    doc = (obj.__doc__ or '').replace(oldval, newval)
+    doc = (obj.__doc__ or "").replace(oldval, newval)
 
     def inner(func):
         func.__doc__ = doc
