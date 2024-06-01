@@ -52,7 +52,58 @@ namespace detail {
         return {std::numeric_limits<V>::quiet_NaN(), std::numeric_limits<V>::quiet_NaN()};
     }
 
-    // Series evaluators.
+    /* Evaluates an infinite series by its partial sum.
+     *
+     * Denote the series by
+     *
+     *   S = a[0] + a[1] + a[2] + ...
+     *
+     * And for n = 0, 1, 2, ..., denote its n-th partial sum by
+     *
+     *   S[n] = a[0] + a[1] + ... + a[n]
+     *
+     * This function computes S[0], S[1], ... until a[n] is sufficiently
+     * small or the maximum number of terms have been evaluated.
+     *
+     * Parameters
+     * ----------
+     *   g
+     *       Reference to generator that yields the sequence of values a[1],
+     *       a[2], a[3], ...
+     *
+     *   tol
+     *       Relative tolerance of the termination condition.  Specifically,
+     *       stop iteration as soon as `abs(a[n]) < tol * abs(S[n])` for
+     *       some `n >= 1`.
+     *
+     *   max_terms
+     *       Maximum number of terms after a[0] to evaluate.
+     *
+     *   init_val
+     *       a[0].  Default is zero.  The type of this parameter (T) is used
+     *       for intermediary computations as well as the result.
+     *
+     * Return Value
+     * ------------
+     * If the termination condition is satisfied for some `n <= max_terms`,
+     * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
+     */
+    template <typename Generator, typename T = generator_result_t<Generator>>
+    SPECFUN_HOST_DEVICE std::pair<T, std::uint64_t> series_eval(
+        Generator &&g, real_type_t<T> tol, std::uint64_t max_terms, T init_val = T(0)) {
+
+        T result = init_val;
+        for (std::uint64_t i = 0; i < max_terms; ++i) {
+            T term = g();
+            result += term;
+            if (std::abs(term) < std::abs(result) * tol) {
+                return {result, i+1};
+            }
+        }
+        // Exceeded max terms without converging.
+        return {result, 0};
+    }
+
     template <typename Generator, typename T = generator_result_t<Generator>>
     SPECFUN_HOST_DEVICE T series_eval(Generator &g, T init_val, real_type_t<T> tol, std::uint64_t max_terms,
                                       const char *func_name) {
@@ -72,18 +123,12 @@ namespace detail {
          *     will ultimately be used. This is needed to pass to set_error in case
          *     of non-convergence.
          */
-        T result = init_val;
-        T term;
-        for (std::uint64_t i = 0; i < max_terms; ++i) {
-            term = g();
-            result += term;
-            if (std::abs(term) < std::abs(result) * tol) {
-                return result;
-            }
+        auto [result, num_terms] = series_eval(g, tol, max_terms, init_val);
+        if (num_terms == 0) { // not converging within max_terms terms
+            set_error(func_name, SF_ERROR_NO_RESULT, NULL);
+            return maybe_complex_NaN<T>();
         }
-        // Exceeded max terms without converging. Return NaN.
-        set_error(func_name, SF_ERROR_NO_RESULT, NULL);
-        return maybe_complex_NaN<T>();
+        return result;
     }
 
     template <typename Generator, typename T = generator_result_t<Generator>>
@@ -134,14 +179,12 @@ namespace detail {
      *       a[2], a[3], ...
      *
      *   tol
-     *       Relative tolerance for convergence.  Specifically, stop iteration
-     *       as soon as `abs(a[n]) <= tol * abs(S[n])` for some n >= 1.
+     *       Relative tolerance of the termination condition.  Specifically,
+     *       stop iteration as soon as `abs(a[n]) <= tol * abs(S[n])` for
+     *       some `n >= 1`.
      *
      *   max_terms
-     *       Maximum number of terms after a[0] to evaluate.  It should be set
-     *       large enough such that the convergence criterion is guaranteed
-     *       to have been satisfied within that many terms if there is no
-     *       rounding error.
+     *       Maximum number of terms after a[0] to evaluate.
      *
      *   init_val
      *       a[0].  Default is zero.  The type of this parameter (T) is used
@@ -149,7 +192,7 @@ namespace detail {
      *
      * Return Value
      * ------------
-     * If the convergence criterion is satisfied by some `n <= max_terms`,
+     * If the termination condition is satisfied for some `n <= max_terms`,
      * returns `(S[n], n)`.  Otherwise, returns `(S[max_terms], 0)`.
      */
     template <typename Generator, typename T = generator_result_t<Generator>>
