@@ -124,7 +124,7 @@ def entropy(pk: np.typing.ArrayLike,
     >>> D = entropy(pk, qk, base=base)
     >>> D
     0.7369655941662062
-    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    >>> np.isclose(D, np.sum(pk * np.log(pk/qk)) / np.log(base), rtol=4e-16, atol=0)
     True
 
     The cross entropy can be calculated as the sum of the entropy and

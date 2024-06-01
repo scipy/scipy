@@ -460,10 +460,8 @@ def xp_minimum(x1: Array, x2: Array, /) -> Array:
     if hasattr(xp, 'minimum'):
         return xp.minimum(x1, x2)
     x1, x2 = xp.broadcast_arrays(x1, x2)
-    dtype = xp.result_type(x1.dtype, x2.dtype)
-    res = xp.asarray(x1, copy=True, dtype=dtype)
     i = (x2 < x1) | xp.isnan(x2)
-    res[i] = x2[i]
+    res = xp.where(i, x2, x1)
     return res[()] if res.ndim == 0 else res
 
 

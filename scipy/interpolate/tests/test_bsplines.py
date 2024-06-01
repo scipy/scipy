@@ -390,6 +390,14 @@ class TestBSpline:
             assert_allclose(b.integrate(x0, x1),
                             p.integrate(x0, x1))
 
+    def test_integrate_0D_always(self):
+        # make sure the result is always a 0D array (not a python scalar)
+        b = BSpline.basis_element([0, 1, 2])
+        for extrapolate in (True, False):
+            res = b.integrate(0, 1, extrapolate=extrapolate)
+            assert type(res) == np.ndarray
+            assert res.ndim == 0
+
     def test_subclassing(self):
         # classmethods should not decay to the base class
         class B(BSpline):

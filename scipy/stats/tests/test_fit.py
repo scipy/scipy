@@ -229,8 +229,8 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit_mle():
     # These fail default test or hang
-    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto', 
-                      'truncweibull_min', 'ksone', 'levy_stable', 
+    skip_basic_fit = {'argus', 'irwinhall', 'foldnorm', 'truncpareto',
+                      'truncweibull_min', 'ksone', 'levy_stable',
                       'studentized_range', 'kstwo', 'arcsine'}
 
     # Please keep this list in alphabetical order...
@@ -280,7 +280,8 @@ def cases_test_fit_mse():
                       'geninvgauss',  # quite slow (~4 minutes) but passes
                       'gausshyper', 'genhyperbolic',  # integration warnings
                       'tukeylambda',  # close, but doesn't meet tolerance
-                      'vonmises'}  # can have negative CDF; doesn't play nice
+                      'vonmises',  # can have negative CDF; doesn't play nice
+                      'argus'}  # doesn't meet tolerance; tested separately
 
     # Please keep this list in alphabetical order...
     slow_basic_fit = {'alpha', 'anglit', 'arcsine', 'betabinom', 'bradford',
@@ -545,7 +546,8 @@ class TestFit:
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
-    def test_argus(self):
+    @pytest.mark.parametrize("method", ('mle', 'mse'))
+    def test_argus(self, method):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.
         # Try something slightly different.
@@ -555,7 +557,7 @@ class TestFit:
         shapes = (1., 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
         shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt, method=method)
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
@@ -697,7 +699,7 @@ class TestFit:
         # Test that guess helps DE find the desired solution
         N = 2000
         # With some seeds, `fit` doesn't need a guess
-        rng = np.random.default_rng(1963904448561)
+        rng = np.random.default_rng(196390444561)
         dist = stats.nhypergeom
         params = (20, 7, 12, 0)
         bounds = [(2, 200), (0.7, 70), (1.2, 120), (0, 10)]

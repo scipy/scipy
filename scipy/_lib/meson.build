@@ -45,7 +45,8 @@ py3.extension_module('_test_ccallback',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_fpumode',
@@ -62,7 +63,8 @@ py3.extension_module('_test_deprecation_call',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_deprecation_def',
@@ -71,7 +73,8 @@ py3.extension_module('_test_deprecation_def',
   include_directories: 'src',
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/_lib'
+  subdir: 'scipy/_lib',
+  install_tag: 'tests'
 )
 
 # May be easier as a compile flag, but use a config header file to stay

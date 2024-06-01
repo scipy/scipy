@@ -2,7 +2,7 @@ import warnings
 import numpy as np
 
 from scipy import stats
-from ._stats_py import _get_pvalue, _rankdata
+from ._stats_py import _get_pvalue, _rankdata, _SimpleNormal
 from . import _morestats
 from ._axis_nan_policy import _broadcast_arrays
 from ._hypotests import _get_wilcoxon_distr
@@ -212,15 +212,23 @@ def _wilcoxon_nd(x, y=None, zero_method='wilcox', correction=True,
         if correction:
             sign = _correction_sign(z, alternative)
             z -= sign * 0.5 / se
-        p = _get_pvalue(z, stats.norm, alternative)
+        p = _get_pvalue(z, _SimpleNormal(), alternative, xp=np)
     elif method == 'exact':
         dist = WilcoxonDistribution(count)
+        # The null distribution in `dist` is exact only if there are no ties
+        # or zeros. If there are ties or zeros, the statistic can be non-
+        # integral, but the null distribution is only defined for integral
+        # values of the statistic. Therefore, we're conservative: round
+        # non-integral statistic up before computing CDF and down before
+        # computing SF. This preserves symmetry w.r.t. alternatives and
+        # order of the input arguments. See gh-19872.
         if alternative == 'less':
-            p = dist.cdf(r_plus)
+            p = dist.cdf(np.ceil(r_plus))
         elif alternative == 'greater':
-            p = dist.sf(r_plus)
+            p = dist.sf(np.floor(r_plus))
         else:
-            p = 2 * np.minimum(dist.sf(r_plus), dist.cdf(r_plus))
+            p = 2 * np.minimum(dist.sf(np.floor(r_plus)),
+                               dist.cdf(np.ceil(r_plus)))
             p = np.clip(p, 0, 1)
     else:  # `PermutationMethod` instance (already validated)
         p = stats.permutation_test(
