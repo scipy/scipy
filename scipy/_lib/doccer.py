@@ -304,9 +304,21 @@ def unindent_dict(docdict):
     return can_dict
 
 
-def unindent_string(docstring):
-    """Set docstring to minimum indent for all lines, including first
+def unindent_string(docstring: str) -> str:
+    """Set docstring to minimum indent for all lines, including first.
 
+    Parameters
+    ----------
+    docstring : str
+        The input docstring to unindent.
+
+    Returns
+    -------
+    str
+        The unindented docstring.
+
+    Examples
+    --------
     >>> unindent_string(' two')
     'two'
     >>> unindent_string('  two\\n   three')
