@@ -279,7 +279,8 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
     Returns
     -------
     Decorator[P, R]
-        The decorator function that applies dictionary to its argument's __doc__ attribute.
+        The decorator function that applies dictionary to its
+        argument's __doc__ attribute.
     """
     if unindent_params:
         docdict = unindent_dict(docdict)
