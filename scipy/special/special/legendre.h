@@ -614,8 +614,12 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], T (&res_jac)[2], Func f
 ) {
-    T tmp = res[0];
-    T tmp_jac = res_jac[0];
+    T tmp;
+    T tmp_jac;
+    if (!recur_m_m_abs) {
+        tmp = res[0];
+        tmp_jac = res_jac[0];
+    }
 
     res[0] = 0;
     res[1] = 0;
@@ -642,8 +646,10 @@ void assoc_legendre_p_for_each_n(
                 f(j, res, res_jac);
             }
         } else {
-            res[0] = tmp;
-            res_jac[0] = tmp_jac;
+            if (!recur_m_m_abs) {
+                res[0] = tmp;
+                res_jac[0] = tmp_jac;
+            }
 
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
             init_n(res, res_jac);
