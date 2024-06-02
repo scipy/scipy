@@ -72,7 +72,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
     init_n(res);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur2(0, n + 1, re_n, res, f);
+    forward_recur(0, n + 1, re_n, res, f);
 }
 
 template <typename T, typename Func>
@@ -81,7 +81,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], Func f) {
     init_n(res, res_jac);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur2(0, n + 1, re_n, res, res_jac, f);
+    forward_recur(0, n + 1, re_n, res, res_jac, f);
 }
 
 template <typename T, typename Func>
@@ -90,7 +90,7 @@ void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], T (&res_hes
     init_n(res, res_jac, res_hess);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur2(0, n + 1, re_n, res, res_jac, res_hess, f);
+    forward_recur(0, n + 1, re_n, res, res_jac, res_hess, f);
 }
 
 /**
@@ -362,7 +362,7 @@ void assoc_legendre_p_for_each_m_m_abs(NormPolicy norm, int m, int type, T z, T 
     init_m_m_abs(res);
 
     assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
-    forward_recur2(0, m_abs + 1, re_m_m_abs, res, callback);
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, callback);
 }
 
 template <typename NormPolicy, typename T, typename Callable>
@@ -376,7 +376,7 @@ void assoc_legendre_p_for_each_m_m_abs(
     init_m_m_abs(res, res_jac);
 
     assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
-    forward_recur2(0, m_abs + 1, re_m_m_abs, res, res_jac, callback);
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, res_jac, callback);
 }
 
 template <typename NormPolicy, typename T, typename Callable>
@@ -390,7 +390,7 @@ void assoc_legendre_p_for_each_m_m_abs(
     init_m_m_abs(res, res_jac, res_hess);
 
     assoc_legendre_p_recurrence_m_m_abs<T, NormPolicy> re_m_m_abs{m_signbit, type, z};
-    forward_recur2(0, m_abs + 1, re_m_m_abs, res, res_jac, res_hess, callback);
+    forward_recur(0, m_abs + 1, re_m_m_abs, res, res_jac, res_hess, callback);
 }
 
 template <typename T, typename NormPolicy>
@@ -607,7 +607,7 @@ void assoc_legendre_p_for_each_n(
             init_n(res);
 
             assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
-            forward_recur2(m_abs, n + 1, r, res, f);
+            forward_recur(m_abs, n + 1, r, res, f);
         }
     }
 }
@@ -647,7 +647,7 @@ void assoc_legendre_p_for_each_n(
             init_n(res, res_jac);
 
             assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
-            forward_recur2(m_abs, n + 1, re_n, res, res_jac, f);
+            forward_recur(m_abs, n + 1, re_n, res, res_jac, f);
         }
     }
 }
@@ -692,7 +692,7 @@ void assoc_legendre_p_for_each_n(
             init_n(res, res_jac, res_hess);
 
             assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
-            forward_recur2(m_abs, n + 1, re_n, res, res_jac, res_hess, f);
+            forward_recur(m_abs, n + 1, re_n, res, res_jac, res_hess, f);
         }
     }
 }
