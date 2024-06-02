@@ -2,7 +2,7 @@
 parameters into function and method docstrings."""
 
 from collections.abc import Callable, Iterable
-from typing import Any, TypeAlias, TypeVar
+from typing import Any, ParamSpec, TypeAlias, TypeVar
 import sys
 
 __all__ = [
@@ -17,6 +17,7 @@ __all__ = [
     "doc_replace",
 ]
 
+P = ParamSpec("P")
 R = TypeVar("R")
 
 Decorator: TypeAlias = Callable[[Callable[..., R]], Callable[..., R]]
