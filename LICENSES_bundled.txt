@@ -286,3 +286,8 @@ Name: Tempita
 Files: scipy/_build_utils/tempita/*
 License: MIT
   For details, see scipy/_build_utils/tempita/LICENCE.txt
+
+Name: mdspan
+Files: scipy/special/special/third_party/kokkos/mdspan.hpp
+License: Apache License v2.0 with LLVM Exceptions
+  For details, see scipy/special/special/third_party/kokkos/mdspan.hpp
