@@ -459,7 +459,6 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
         }
 
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
-        res[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3]) {
@@ -476,9 +475,6 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
 
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
         res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
-
-        res[2] = 0;
-        res_jac[2] = 0;
     }
 
     void operator()(T (&res)[3], T (&res_jac)[3], T (&res_hess)[3]) {
@@ -498,10 +494,6 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
         res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
         res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
         res_hess[1] = T(2 * (m_abs + 1) - 1) * (T(2) * res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
-
-        res[2] = 0;
-        res_jac[2] = 0;
-        res_hess[2] = 0;
     }
 };
 
@@ -588,8 +580,7 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], Func f
 ) {
-    assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
-    init_n(res);
+    res[2] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -609,6 +600,9 @@ void assoc_legendre_p_for_each_n(
                 f(j, res);
             }
         } else {
+            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
+            init_n(res);
+
             assoc_legendre_p_recurrence_n<T, NormPolicy> r{m, type, z};
             forward_recur(m_abs, n + 1, r, res, f);
         }
@@ -619,8 +613,8 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], Func f
 ) {
-    assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
-    init_n(res, res_jac);
+    res[2] = 0;
+    res_jac[2] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -641,6 +635,9 @@ void assoc_legendre_p_for_each_n(
                 f(j, res, res_jac);
             }
         } else {
+            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
+            init_n(res, res_jac);
+
             assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
             forward_recur(m_abs, n + 1, re_n, res, res_jac, f);
         }
@@ -652,8 +649,9 @@ void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3],
     Func f
 ) {
-    assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
-    init_n(res, res_jac, res_hess);
+    res[2] = 0;
+    res_jac[2] = 0;
+    res_hess[2] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
@@ -675,6 +673,9 @@ void assoc_legendre_p_for_each_n(
                 f(j, res, res_jac, res_hess);
             }
         } else {
+            assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
+            init_n(res, res_jac, res_hess);
+
             assoc_legendre_p_recurrence_n<T, NormPolicy> re_n{m, type, z};
             forward_recur(m_abs, n + 1, re_n, res, res_jac, res_hess, f);
         }
