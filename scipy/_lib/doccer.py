@@ -2,7 +2,7 @@
 parameters into function and method docstrings."""
 
 from collections.abc import Callable, Iterable
-from typing import Any, ParamSpec, TypeAlias, TypeVar
+from typing import Any, TypeAlias, TypeVar
 import sys
 
 __all__ = [
@@ -17,10 +17,9 @@ __all__ = [
     "doc_replace",
 ]
 
-P = ParamSpec("P")
 R = TypeVar("R")
 
-Decorator: TypeAlias = Callable[[Callable[P, R]], Callable[P, R]]
+Decorator: TypeAlias = Callable[[Callable[..., R]], Callable[..., R]]
 
 
 def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
@@ -84,7 +83,7 @@ def docformat(docstring: str, docdict: dict[str, str] | None = None) -> str:
 
 def inherit_docstring_from(
     cls: type[Any] | Any,
-) -> Decorator[P, R]:
+) -> Decorator[R]:
     """This decorator modifies the decorated function's docstring by
     replacing occurrences of '%(super)s' with the docstring of the
     method of the same name from the class `cls`.
@@ -101,7 +100,7 @@ def inherit_docstring_from(
 
     Returns
     -------
-    Decorator[P, R]
+    Decorator[R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
 
@@ -141,7 +140,7 @@ def inherit_docstring_from(
     return _doc
 
 
-def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, R]:
+def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[R]:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It extends the 'Notes' section of that docstring to include
@@ -158,7 +157,7 @@ def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, 
 
     Returns
     -------
-    Decorator[P, R]
+    Decorator[R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
     """
@@ -182,7 +181,7 @@ def extend_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, 
     return _doc
 
 
-def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P, R]:
+def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[R]:
     """This decorator replaces the decorated function's docstring
     with the docstring from corresponding method in `cls`.
     It replaces the 'Notes' section of that docstring with
@@ -199,7 +198,7 @@ def replace_notes_in_docstring(cls: type[Any] | Any, notes: str) -> Decorator[P,
 
     Returns
     -------
-    Decorator[P, R]
+    Decorator[R]
         The decorator function that modifies the __doc__ attribute
         of its argument.
     """
@@ -265,7 +264,7 @@ def indentcount_lines(lines: Iterable[str]) -> int:
     return indentno
 
 
-def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[P, R]:
+def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[R]:
     """Return docstring decorator using docdict variable dictionary.
 
     Parameters
@@ -278,7 +277,7 @@ def filldoc(docdict: dict[str, str], unindent_params: bool = True) -> Decorator[
 
     Returns
     -------
-    Decorator[P, R]
+    Decorator[R]
         The decorator function that applies dictionary to its
         argument's __doc__ attribute.
     """
@@ -340,7 +339,7 @@ def unindent_string(docstring: str) -> str:
     return "\n".join([line[icount:] for line in lines])
 
 
-def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[P, R]:
+def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[R]:
     """Decorator to take the docstring from obj, with oldval replaced by newval
 
     Equivalent to ``func.__doc__ = obj.__doc__.replace(oldval, newval)``
@@ -357,7 +356,7 @@ def doc_replace(obj: type[Any] | Any, oldval: str, newval: str) -> Decorator[P, 
 
     Returns
     -------
-    Decorator[P, R]
+    Decorator[R]
         A decorator function that replaces occurrences of `oldval` with `newval`
         in the docstring of the decorated function.
     """
