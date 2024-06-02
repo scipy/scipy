@@ -125,7 +125,6 @@ Lower-level filter design functions:
    buttap         -- Return (z,p,k) for analog prototype of Butterworth filter.
    cheb1ap        -- Return (z,p,k) for type I Chebyshev filter.
    cheb2ap        -- Return (z,p,k) for type II Chebyshev filter.
-   cmplx_sort     -- Sort roots based on magnitude.
    ellipap        -- Return (z,p,k) for analog prototype of elliptic filter.
    lp2bp          -- Transform a lowpass filter prototype to a bandpass filter.
    lp2bp_zpk      -- Transform a lowpass filter prototype to a bandpass filter.
