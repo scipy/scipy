@@ -1,6 +1,6 @@
 import numpy as np
 
-class multiufunc:
+class MultiUFunc:
     def __init__(self, ufuncs, resolve_ufunc = None, resolve_out_shapes = None,
                  force_out_complex = False):
         self.ufuncs = ufuncs

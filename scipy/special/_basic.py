@@ -20,7 +20,7 @@ from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
-from ._multiufunc import multiufunc
+from ._multiufunc import MultiUFunc
 
 __all__ = [
     'ai_zeros',
@@ -1718,13 +1718,13 @@ def mathieu_odd_coef(m, q):
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
-_lpmn = multiufunc(_lpmn)
+_lpmn = MultiUFunc(_lpmn)
 
 @_lpmn.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
-lpmn_all = multiufunc(lpmn_all)
+lpmn_all = MultiUFunc(lpmn_all)
 
 @lpmn_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
@@ -1815,7 +1815,7 @@ def lpmn(m, n, z, *, diff_n = None, legacy = True):
 
     return _lpmn(m, n, z, diff_n = diff_n)
 
-clpmn_all = multiufunc(clpmn_all, force_out_complex = True)
+clpmn_all = MultiUFunc(clpmn_all, force_out_complex = True)
 
 @clpmn_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
@@ -2075,13 +2075,13 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = multiufunc(_lpn)
+_lpn = MultiUFunc(_lpn)
 
 @_lpn.resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-lpn_all = multiufunc(lpn_all)
+lpn_all = MultiUFunc(lpn_all)
 
 @lpn_all.resolve_ufunc
 def _(ufuncs, diff_n = 0):
