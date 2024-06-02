@@ -8468,24 +8468,6 @@ class TestBrunnerMunzel:
         assert_equal(p, 0)
 
 
-class TestRatioUniforms:
-    """ Tests for rvs_ratio_uniforms are in test_sampling.py,
-    as rvs_ratio_uniforms is deprecated and moved to stats.sampling """
-    def test_consistency(self):
-        f = stats.norm.pdf
-        v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
-        umax = np.sqrt(f(0))
-        gen = stats.sampling.RatioUniforms(f, umax=umax, vmin=-v, vmax=v,
-                                           random_state=12345)
-        r1 = gen.rvs(10)
-        deprecation_msg = ("Please use `RatioUniforms` from the "
-                           "`scipy.stats.sampling` namespace.")
-        with pytest.warns(DeprecationWarning, match=deprecation_msg):
-            r2 = stats.rvs_ratio_uniforms(f, umax, -v, v, size=10,
-                                          random_state=12345)
-        assert_equal(r1, r2)
-
-
 class TestQuantileTest:
     r""" Test the non-parametric quantile test,
     including the computation of confidence intervals
