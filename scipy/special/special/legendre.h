@@ -619,8 +619,11 @@ void assoc_legendre_p_for_each_n(
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
-        memset(res, 0, 2 * sizeof(T));
-        memset(res_jac, 0, 2 * sizeof(T));
+        res[0] = 0;
+        res[1] = 0;
+
+        res_jac[0] = 0;
+        res_jac[1] = 0;
 
         for (int j = 0; j <= n; ++j) {
             f(j, res, res_jac);
