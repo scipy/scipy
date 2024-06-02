@@ -578,19 +578,22 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], Func f
 ) {
-    T zero[2] = {};
+    T tmp;
+    if (!recur_m_m_abs) {
+        tmp = res[0];
+    }
+
+    res[0] = 0;
+    res[1] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
-        res[0] = 0;
-        res[1] = 0;
-
         for (int j = 0; j <= n; ++j) {
             f(j, res);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            f(j, zero);
+            f(j, res);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -601,6 +604,10 @@ void assoc_legendre_p_for_each_n(
                 f(j, res);
             }
         } else {
+            if (!recur_m_m_abs) {
+                res[0] = tmp;
+            }
+
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
             init_n(res);
 
@@ -665,25 +672,32 @@ void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2],
     Func f
 ) {
-    T zero[2] = {};
+    T tmp;
+    T tmp_jac;
+    T tmp_hess;
+    if (!recur_m_m_abs) {
+        tmp = res[0];
+        tmp_jac = res_jac[0];
+        tmp_hess = res_hess[0];
+    }
+
+    res[0] = 0;
+    res[1] = 0;
+
+    res_jac[0] = 0;
+    res_jac[1] = 0;
+
+    res_hess[0] = 0;
+    res_hess[1] = 0;
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
-        res[0] = 0;
-        res[1] = 0;
-
-        res_jac[0] = 0;
-        res_jac[1] = 0;
-
-        res_hess[0] = 0;
-        res_hess[1] = 0;
-
         for (int j = 0; j <= n; ++j) {
             f(j, res, res_jac, res_hess);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            f(j, zero, zero, zero);
+            f(j, res, res_jac, res_hess);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -696,6 +710,12 @@ void assoc_legendre_p_for_each_n(
                 f(j, res, res_jac, res_hess);
             }
         } else {
+            if (!recur_m_m_abs) {
+                res[0] = tmp;
+                res_jac[0] = tmp_jac;
+                res_hess[0] = tmp_hess;
+            }
+
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
             init_n(res, res_jac, res_hess);
 
