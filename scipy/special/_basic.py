@@ -2512,6 +2512,20 @@ def berp_zeros(nt):
            Functions", John Wiley and Sons, 1996.
            https://people.sc.fsu.edu/~jburkardt/f77_src/special_functions/special_functions.html
 
+    Example
+    -------
+    Understanding the behavior of special functions and their derivatives is
+    crucial in various fields of science and engineering. For instance, if
+    you're working on problems related to heat conduction, wave propagation,
+    or certain types of differential equations, you may come across the Kelvin
+    function. Here's how you can compute the first 5 zeros of its derivative:
+
+    import numpy as np
+
+    Compute the first 5 zeros of the derivative of the Kelvin function ber
+    zeros = berp_zeros(5)
+    print("First 5 zeros of the derivative of ber:", zeros)
+
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
