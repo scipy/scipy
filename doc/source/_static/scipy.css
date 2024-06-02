@@ -78,3 +78,8 @@ div.admonition>.admonition-title {
     gap: 10px;
     margin-bottom: 20px;
 }
+
+/* Wrap long titles in pages */
+h1 {
+  word-wrap: break-word;
+}

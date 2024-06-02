@@ -446,3 +446,54 @@ jobs:
           python3.11 -m pytest --pyargs scipy.cluster
           python3.11 -m pytest --pyargs scipy.linalg
           popd
+
+  free-threaded:
+    needs: get_commit_message
+    runs-on: ubuntu-latest
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    steps:
+    - uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4.1.1
+      with:
+        submodules: recursive
+        fetch-tags: true
+    # TODO: replace with setup-python when there is support
+    - uses: deadsnakes/action@6c8b9b82fe0b4344f4b98f2775fcc395df45e494 # v3.1.0
+      with:
+          python-version: '3.13-dev'
+          nogil: true
+    - name: Install Ubuntu dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libgmp-dev libmpfr-dev libmpc-dev ccache gfortran
+    # TODO: remove pip pre-release install after Python 3.13 release
+    - name: Install pre-release pip
+      run: |
+        pip install -U --pre pip
+    # TODO: remove cython nightly install when cython does a release
+    - name: Install nightly Cython
+      run: |
+        pip install git+https://github.com/cython/cython
+    - name: Install nightly NumPy
+      run: |
+        pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple numpy
+    - name: Install Python dependencies
+      run: |
+        pip install git+https://github.com/serge-sans-paille/pythran
+        pip install ninja meson-python pybind11 click rich_click pydevtool
+        pip install --pre --upgrade pytest pytest-xdist gmpy2 threadpoolctl pooch hypothesis
+        pip install -r requirements/openblas.txt
+    - name: Build and run tests
+      env:
+        PYTHON_GIL: 0
+      # TODO: For some reason the Meson installation path points to
+      # python3/site-packages as opposed to python3.13/site-packages,
+      # then the dev.py scripts do not work as expected.
+      run: |
+        # python dev.py build --with-scipy-openblas
+        # python dev.py --no-build test -j2 --mode full
+        python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > scipy-openblas.pc
+        PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
+        pushd $RUNNER_TEMP
+        PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10

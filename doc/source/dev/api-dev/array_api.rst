@@ -1,3 +1,5 @@
+.. _dev-arrayapi:
+
 Support for the array API standard
 ==================================
 
