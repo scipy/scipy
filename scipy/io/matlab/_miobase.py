@@ -79,7 +79,7 @@ matlab_compatible : bool, optional
          '''unicode_strings : bool, optional
    If True, write strings as Unicode, else MATLAB usual encoding.'''}
 
-docfiller = doccer.filldoc(doc_dict)
+docfiller: doccer.Decorator = doccer.filldoc(doc_dict)
 
 '''
 

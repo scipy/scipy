@@ -205,4 +205,4 @@ docdict = {
     'prefilter': _prefilter_doc
     }
 
-docfiller = doccer.filldoc(docdict)
+docfiller: doccer.Decorator = doccer.filldoc(docdict)
