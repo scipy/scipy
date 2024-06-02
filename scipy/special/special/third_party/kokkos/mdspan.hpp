@@ -26,7 +26,7 @@
 #endif
 
 #ifndef MDSPAN_IMPL_PROPOSED_NAMESPACE
-  #define MDSPAN_IMPL_PROPOSED_NAMESPACE Experimental
+  #define MDSPAN_IMPL_PROPOSED_NAMESPACE experimental
 #endif
 
 //BEGIN_FILE_INCLUDE: mdspan/include/experimental/__p0009_bits/default_accessor.hpp
