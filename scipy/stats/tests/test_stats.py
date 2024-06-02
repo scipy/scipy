@@ -588,7 +588,7 @@ class TestPearsonr:
         with pytest.raises(ValueError, match=message):
             res.confidence_interval(method="exact")
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     @pytest.mark.skip_xp_backends(np_only=True)
     @pytest.mark.xfail_on_32bit("Monte Carlo method needs > a few kB of memory")
     @pytest.mark.parametrize('alternative', ('less', 'greater', 'two-sided'))

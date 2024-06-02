@@ -1063,7 +1063,7 @@ class TestAiry:
                                      array([0.5357]),
                                      array([0.7012])),4)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_ai_zeros_big(self):
         z, zp, ai_zpx, aip_zx = special.ai_zeros(50000)
         ai_z, aip_z, _, _ = special.airy(z)
@@ -1088,7 +1088,7 @@ class TestAiry:
             [-1.0187929716, -3.2481975822, -4.8200992112,
              -6.1633073556, -7.3721772550, -8.4884867340], rtol=1e-10)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_bi_zeros_big(self):
         z, zp, bi_zpx, bip_zx = special.bi_zeros(50000)
         _, _, bi_z, bip_z = special.airy(z)

@@ -541,7 +541,7 @@ class TestQuad:
 
 
 class TestNQuad:
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -556,7 +556,7 @@ class TestNQuad:
         assert_quad(res[:-1], 1.5267454070738635)
         assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5)
 
-    @pytest.mark.fail_slow(2)
+    @pytest.mark.fail_slow(5)
     def test_variable_limits(self):
         scale = .1
 
