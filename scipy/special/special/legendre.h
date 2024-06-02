@@ -580,16 +580,18 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], Func f
 ) {
-    res[2] = 0;
+    T zero[3] = {};
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
+        memset(res, 0, 3 * sizeof(T));
+
         for (int j = 0; j <= n; ++j) {
             f(j, res);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            f(j, res);
+            f(j, zero);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -613,17 +615,19 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], Func f
 ) {
-    res[2] = 0;
-    res_jac[2] = 0;
+    T zero[3] = {};
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
+        memset(res, 0, 3 * sizeof(T));
+        memset(res_jac, 0, 3 * sizeof(T));
+
         for (int j = 0; j <= n; ++j) {
             f(j, res, res_jac);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            f(j, res, res_jac);
+            f(j, zero, zero);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
@@ -649,18 +653,20 @@ void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3],
     Func f
 ) {
-    res[2] = 0;
-    res_jac[2] = 0;
-    res_hess[2] = 0;
+    T zero[3] = {};
 
     int m_abs = std::abs(m);
     if (m_abs > n) {
+        memset(res, 0, 3 * sizeof(T));
+        memset(res_jac, 0, 3 * sizeof(T));
+        memset(res_hess, 0, 3 * sizeof(T));
+
         for (int j = 0; j <= n; ++j) {
             f(j, res, res_jac, res_hess);
         }
     } else {
         for (int j = 0; j < m_abs; ++j) {
-            f(j, res, res_jac, res_hess);
+            f(j, zero, zero, zero);
         }
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
