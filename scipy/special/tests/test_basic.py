@@ -1459,6 +1459,11 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
+    
+    def test_comb_exact_non_int_dep(self):
+        msg = "`exact=True`"
+        with pytest.deprecated_call(match=msg):
+            special.comb(3.4, 4, exact=True)
 
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
@@ -4145,6 +4150,46 @@ def test_rel_entr():
     z = np.array(arr, dtype=float)
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_rel_entr_gh_20710_near_zero():
+    # Check accuracy of inputs which are very close
+    inputs = np.array([
+        # x, y
+        (0.9456657713430001, 0.9456657713430094),
+        (0.48066098564791515, 0.48066098564794774),
+        (0.786048657854401, 0.7860486578542367),
+    ])
+    # Known values produced using `x * mpmath.log(x / y)` with dps=30
+    expected = [
+        -9.325873406851269e-15,
+        -3.258504577274724e-14,
+        1.6431300764454033e-13,
+    ]
+    x = inputs[:, 0]
+    y = inputs[:, 1]
+    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=0)
+
+
+def test_rel_entr_gh_20710_overflow():
+    inputs = np.array([
+        # x, y
+        # Overflow
+        (4, 2.22e-308),
+        # Underflow
+        (1e-200, 1e+200),
+        # Subnormal
+        (2.22e-308, 1e15),
+    ])
+    # Known values produced using `x * mpmath.log(x / y)` with dps=30
+    expected = [
+        2839.139983229607,
+        -9.210340371976183e-198,
+        -1.6493212008074475e-305,
+    ]
+    x = inputs[:, 0]
+    y = inputs[:, 1]
+    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=0)
 
 
 def test_huber():

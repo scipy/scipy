@@ -7,6 +7,7 @@ import sys
 from functools import partial
 
 import numpy as np
+import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -21,10 +22,12 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
+from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
+                                          too_small_1d_omit, too_small_1d_not_omit)
 
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   SCIPY_ARRAY_API, xp_assert_equal)
+                                   xp_assert_equal, is_numpy)
 
 
 skip_xp_backends = pytest.mark.skip_xp_backends
@@ -191,19 +194,12 @@ class TestShapiro:
         assert_almost_equal(pw, 0.52460, decimal=3)
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
-    def test_empty_input(self):
-        assert_raises(ValueError, stats.shapiro, [])
-        assert_raises(ValueError, stats.shapiro, [[], [], []])
-
-    def test_not_enough_values(self):
-        assert_raises(ValueError, stats.shapiro, [1, 2])
-        error_type = TypeError if SCIPY_ARRAY_API else ValueError
-        assert_raises(error_type, stats.shapiro, np.array([[], [2]], dtype=object))
-
-    def test_bad_arg(self):
-        # Length of x is less than 3.
-        x = [1]
-        assert_raises(ValueError, stats.shapiro, x)
+    @pytest.mark.parametrize('x', ([], [1], [1, 2]))
+    def test_not_enough_values(self, x):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.shapiro(x)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_nan_input(self):
         x = np.arange(10.)
@@ -634,9 +630,12 @@ class TestAnsari:
         assert_almost_equal(W, 10.0, 11)
         assert_almost_equal(pval, 0.533333333333333333, 7)
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, stats.ansari, [], [1])
-        assert_raises(ValueError, stats.ansari, [1], [])
+    @pytest.mark.parametrize('args', [([], [1]), ([1], [])])
+    def test_bad_arg(self, args):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.ansari(*args)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
@@ -757,10 +756,23 @@ class TestBartlett:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    @pytest.mark.skip_xp_backends(
+        "jax.numpy", cpu_only=True,
+        reasons=['`var` incorrect when `correction > n` (google/jax#21330)'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
         args = [xp.asarray(arg) for arg in args]
-        res = stats.bartlett(*args)
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.bartlett(*args)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # torch/array_api_strict
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
+                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+                res = stats.bartlett(*args)
         NaN = xp.asarray(xp.nan)
         xp_assert_equal(res.statistic, NaN)
         xp_assert_equal(res.pvalue, NaN)
@@ -1141,7 +1153,10 @@ class TestFligner:
 
     def test_empty_arg(self):
         x = np.arange(5)
-        assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.fligner(x, x**2, [])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
 
 def mood_cases_with_ties():
@@ -1309,9 +1324,11 @@ class TestMood:
                                               stats.mood(slice1, slice2))
 
     def test_mood_bad_arg(self):
-        # Raise ValueError when the sum of the lengths of the args is
-        # less than 3
-        assert_raises(ValueError, stats.mood, [1], [])
+        # Warns when the sum of the lengths of the args is less than 3
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.mood([1], [])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_mood_alternative(self):
 
@@ -1722,9 +1739,13 @@ class TestKstat:
         xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
     def test_empty_input(self, xp):
-        message = 'Data input must not be empty'
-        with pytest.raises(ValueError, match=message):
-            stats.kstat(xp.asarray([]))
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.kstat(xp.asarray([]))
+        else:
+            with np.errstate(invalid='ignore'):  # for array_api_strict
+                res = stats.kstat(xp.asarray([]))
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1758,13 +1779,17 @@ class TestKstat:
         xp_assert_close(res, xp.asarray(ref))
 
 
-
 @array_api_compatible
 class TestKstatVar:
     def test_empty_input(self, xp):
-        message = 'Data input must not be empty'
-        with pytest.raises(ValueError, match=message):
-            stats.kstatvar(xp.asarray([]))
+        x = xp.asarray([])
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.kstatvar(x)
+        else:
+            with np.errstate(invalid='ignore'):  # for array_api_strict
+                res = stats.kstatvar(x)
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
     def test_nan_input(self, xp):
         data = xp.arange(10.)
@@ -1774,7 +1799,8 @@ class TestKstatVar:
 
     @skip_xp_backends(np_only=True,
                       reasons=['input validation of `n` does not depend on backend'])
-    def test_bad_arg(self, xp):
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_bad_arg(self):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
         n = 10
@@ -2624,7 +2650,16 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        xp_assert_equal(test_func(x), xp.asarray(xp.nan, dtype=dtype))
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = test_func(x)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # for array_api_strict
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                res = test_func(x)
+        xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
@@ -2705,12 +2740,14 @@ class TestCircFuncsNanPolicy:
                       [351, 7, 4, 352, 9, 349, np.nan],
                       [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
         for axis in expected.keys():
-            out = test_func(x, high=360, nan_policy='omit', axis=axis)
             if axis is None:
+                out = test_func(x, high=360, nan_policy='omit', axis=axis)
                 assert_allclose(out, expected[axis], rtol=1e-7)
             else:
-                assert_allclose(out[:-1], expected[axis], rtol=1e-7)
-                assert_(np.isnan(out[-1]))
+                with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+                    out = test_func(x, high=360, nan_policy='omit', axis=axis)
+                    assert_allclose(out[:-1], expected[axis], rtol=1e-7)
+                    assert_(np.isnan(out[-1]))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -2725,16 +2762,18 @@ class TestCircFuncsNanPolicy:
                                            stats.circstd])
     def test_nan_omit_all(self, test_func):
         x = [np.nan, np.nan, np.nan, np.nan, np.nan]
-        assert_(np.isnan(test_func(x, nan_policy='omit')))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
+            assert_(np.isnan(test_func(x, nan_policy='omit')))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
     def test_nan_omit_all_axis(self, test_func):
-        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
-                      [np.nan, np.nan, np.nan, np.nan, np.nan]])
-        out = test_func(x, nan_policy='omit', axis=1)
-        assert_(np.isnan(out).all())
-        assert_(len(out) == 2)
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+            x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
+                          [np.nan, np.nan, np.nan, np.nan, np.nan]])
+            out = test_func(x, nan_policy='omit', axis=1)
+            assert_(np.isnan(out).all())
+            assert_(len(out) == 2)
 
     @pytest.mark.parametrize("x",
                              [[355, 5, 2, 359, 10, 350, np.nan],
