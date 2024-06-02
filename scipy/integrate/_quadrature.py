@@ -478,12 +478,7 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
 
     if initial is not None:
         if initial != 0:
-            warnings.warn(
-                "The option for values for `initial` other than None or 0 is "
-                "deprecated as of SciPy 1.12.0 and will raise a value error in"
-                " SciPy 1.15.0.",
-                DeprecationWarning, stacklevel=2
-            )
+            raise ValueError("`initial` must be None or 0.")
         if not np.isscalar(initial):
             raise ValueError("`initial` parameter should be a scalar.")
 
