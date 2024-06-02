@@ -12,19 +12,19 @@ template <typename T>
 struct legendre_p_initializer_n {
     T z;
 
-    void operator()(T *res) const {
+    void operator()(T (&res)[2]) const {
         res[0] = 1;
         res[1] = z;
     }
 
-    void operator()(T *res, T *res_jac) const {
+    void operator()(T (&res)[2], T (&res_jac)[2]) const {
         operator()(res);
 
         res_jac[0] = 0;
         res_jac[1] = 1;
     }
 
-    void operator()(T *res, T *res_jac, T *res_hess) const {
+    void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
         operator()(res, res_jac);
 
         res_hess[0] = 0;
@@ -36,19 +36,19 @@ template <typename T>
 struct legendre_p_recurrence_n {
     T z;
 
-    void operator()(int n, T *res) const {
+    void operator()(int n, T (&res)[2]) const {
         res[0] = -T(n - 1) / T(n);
         res[1] = T(2 * n - 1) * z / T(n);
     }
 
-    void operator()(int n, T *res, T *res_jac) const {
+    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
         operator()(n, res);
 
         res_jac[0] = 0;
         res_jac[1] = T(2 * n - 1) / T(n);
     }
 
-    void operator()(int n, T *res, T *res_jac, T *res_hess) const {
+    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
         operator()(n, res, res_jac);
 
         res_hess[0] = 0;
@@ -67,30 +67,30 @@ struct legendre_p_recurrence_n {
  * @return value of the polynomial
  */
 template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[3], Func f) {
+void legendre_p_for_each_n(int n, T z, T (&res)[2], Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, f);
+    forward_recur2(0, n + 1, re_n, res, f);
 }
 
 template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], Func f) {
+void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res, res_jac);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, res_jac, f);
+    forward_recur2(0, n + 1, re_n, res, res_jac, f);
 }
 
 template <typename T, typename Func>
-void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hess)[3], Func f) {
+void legendre_p_for_each_n(int n, T z, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2], Func f) {
     legendre_p_initializer_n<T> init_n{z};
     init_n(res, res_jac, res_hess);
 
     legendre_p_recurrence_n<T> re_n{z};
-    forward_recur(0, n + 1, re_n, res, res_jac, res_hess, f);
+    forward_recur2(0, n + 1, re_n, res, res_jac, res_hess, f);
 }
 
 /**
@@ -103,10 +103,10 @@ void legendre_p_for_each_n(int n, T z, T (&res)[3], T (&res_jac)[3], T (&res_hes
  */
 template <typename T>
 T legendre_p(int n, T z) {
-    T p[3];
-    legendre_p_for_each_n(n, z, p, [](int n, const T(&p)[3]) {});
+    T p[2];
+    legendre_p_for_each_n(n, z, p, [](int n, const T(&p)[2]) {});
 
-    return p[2];
+    return p[1];
 }
 
 /**
@@ -119,12 +119,12 @@ T legendre_p(int n, T z) {
  */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac) {
-    T p[3];
-    T p_jac[3];
-    legendre_p_for_each_n(n, z, p, p_jac, [](int n, const T(&p)[3], const T(&p_jac)[3]) {});
+    T p[2];
+    T p_jac[2];
+    legendre_p_for_each_n(n, z, p, p_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {});
 
-    res = p[2];
-    res_jac = p_jac[2];
+    res = p[1];
+    res_jac = p_jac[1];
 }
 
 /**
@@ -138,15 +138,15 @@ void legendre_p(int n, T z, T &res, T &res_jac) {
  */
 template <typename T>
 void legendre_p(int n, T z, T &res, T &res_jac, T &res_hess) {
-    T p[3];
-    T p_jac[3];
-    T p_hess[3];
-    legendre_p_for_each_n(n, z, p, p_jac, p_hess, [](int n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
+    T p[2];
+    T p_jac[2];
+    T p_hess[2];
+    legendre_p_for_each_n(n, z, p, p_jac, p_hess, [](int n, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {
     });
 
-    res = p[2];
-    res_jac = p_jac[2];
-    res_hess = p_hess[2];
+    res = p[1];
+    res_jac = p_jac[1];
+    res_hess = p_hess[1];
 }
 
 /**
@@ -160,8 +160,8 @@ template <typename T, typename OutputVec>
 void legendre_p_all(T z, OutputVec res) {
     int n = res.extent(0) - 1;
 
-    T p[3];
-    legendre_p_for_each_n(n, z, p, [res](int n, const T(&p)[3]) { res(n) = p[2]; });
+    T p[2];
+    legendre_p_for_each_n(n, z, p, [res](int n, const T(&p)[2]) { res(n) = p[1]; });
 }
 
 /**
@@ -176,11 +176,11 @@ template <typename T, typename OutputVec1, typename OutputVec2>
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac) {
     int n = res.extent(0) - 1;
 
-    T p[3];
-    T p_jac[3];
-    legendre_p_for_each_n(n, z, p, p_jac, [res, res_jac](int n, const T(&p)[3], const T(&p_jac)[3]) {
-        res(n) = p[2];
-        res_jac(n) = p_jac[2];
+    T p[2];
+    T p_jac[2];
+    legendre_p_for_each_n(n, z, p, p_jac, [res, res_jac](int n, const T(&p)[2], const T(&p_jac)[2]) {
+        res(n) = p[1];
+        res_jac(n) = p_jac[1];
     });
 }
 
@@ -197,15 +197,15 @@ template <typename T, typename OutputVec1, typename OutputVec2, typename OutputV
 void legendre_p_all(T z, OutputVec1 res, OutputVec2 res_jac, OutputVec3 res_hess) {
     int n = res.extent(0) - 1;
 
-    T p[3];
-    T p_jac[3];
-    T p_hess[3];
+    T p[2];
+    T p_jac[2];
+    T p_hess[2];
     legendre_p_for_each_n(
         n, z, p, p_jac, p_hess,
-        [res, res_jac, res_hess](int n, const T(&p)[3], const T(&p_jac)[3], const T(&p_hess)[3]) {
-            res(n) = p[2];
-            res_jac(n) = p_jac[2];
-            res_hess(n) = p_hess[2];
+        [res, res_jac, res_hess](int n, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {
+            res(n) = p[1];
+            res_jac(n) = p_jac[1];
+            res_hess(n) = p_hess[1];
         }
     );
 }

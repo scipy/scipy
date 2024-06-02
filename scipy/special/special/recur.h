@@ -5,14 +5,6 @@
 namespace special {
 
 template <typename T, size_t N>
-void forward_recur_rotate_first(T (&res)[N]) {
-    res[N - 1] = res[0];
-    for (size_t j = 0; j < N - 1; ++j) {
-        res[j] = res[j + 1];
-    }
-}
-
-template <typename T, size_t N>
 void forward_recur_rotate(T (&res)[N]) {
     T tmp = res[N - 1];
     res[N - 1] = res[0];
@@ -34,10 +26,29 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[N]) {
     T coef[N - 1];
     r(it, coef);
 
-    res[N - 1] = 0;
+    forward_recur_shift(res);
+
+    T tmp = 0;
     for (ssize_t j = N - 2; j >= 0; --j) {
-        res[N - 1] += coef[j] * res[j];
+        tmp += coef[j] * res[j];
     }
+
+    res[N - 1] = tmp;
+}
+
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next2(Recurrence r, InputIt it, T (&res)[N]) {
+    T coef[N];
+    r(it, coef);
+
+    T tmp = 0;
+    for (ssize_t j = N - 1; j >= 0; --j) {
+        tmp += coef[j] * res[j];
+    }
+
+    forward_recur_shift(res);
+
+    res[N - 1] = tmp;
 }
 
 template <typename Recurrence, typename InputIt, typename T, size_t N>
@@ -46,12 +57,38 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N]) 
     T coef_jac[N - 1];
     r(it, coef, coef_jac);
 
-    res[N - 1] = 0;
-    res_jac[N - 1] = 0;
+    forward_recur_shift(res);
+    forward_recur_shift(res_jac);
+
+    T tmp = 0;
+    T tmp_jac = 0;
     for (ssize_t j = N - 2; j >= 0; --j) {
-        res[N - 1] += coef[j] * res[j];
-        res_jac[N - 1] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+        tmp += coef[j] * res[j];
+        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
     }
+
+    res[N - 1] = tmp;
+    res_jac[N - 1] = tmp_jac;
+}
+
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next2(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N]) {
+    T coef[N];
+    T coef_jac[N];
+    r(it, coef, coef_jac);
+
+    T tmp = 0;
+    T tmp_jac = 0;
+    for (ssize_t j = N - 1; j >= 0; --j) {
+        tmp += coef[j] * res[j];
+        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+    }
+
+    forward_recur_shift(res);
+    forward_recur_shift(res_jac);
+
+    res[N - 1] = tmp;
+    res_jac[N - 1] = tmp_jac;
 }
 
 template <typename Recurrence, typename InputIt, typename T, size_t N>
@@ -61,14 +98,47 @@ void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N], 
     T coef_hess[N - 1];
     r(it, coef, coef_jac, coef_hess);
 
-    res[N - 1] = 0;
-    res_jac[N - 1] = 0;
-    res_hess[N - 1] = 0;
+    forward_recur_shift(res);
+    forward_recur_shift(res_jac);
+    forward_recur_shift(res_hess);
+
+    T tmp = 0;
+    T tmp_jac = 0;
+    T tmp_hess = 0;
     for (ssize_t j = N - 2; j >= 0; --j) {
-        res[N - 1] += coef[j] * res[j];
-        res_jac[N - 1] += coef[j] * res_jac[j] + coef_jac[j] * res[j];
-        res_hess[N - 1] += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
+        tmp += coef[j] * res[j];
+        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+        tmp_hess += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
     }
+
+    res[N - 1] = tmp;
+    res_jac[N - 1] = tmp_jac;
+    res_hess[N - 1] = tmp_hess;
+}
+
+template <typename Recurrence, typename InputIt, typename T, size_t N>
+void forward_recur_next2(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N]) {
+    T coef[N];
+    T coef_jac[N];
+    T coef_hess[N];
+    r(it, coef, coef_jac, coef_hess);
+
+    T tmp = 0;
+    T tmp_jac = 0;
+    T tmp_hess = 0;
+    for (ssize_t j = N - 1; j >= 0; --j) {
+        tmp += coef[j] * res[j];
+        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
+        tmp_hess += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
+    }
+
+    forward_recur_shift(res);
+    forward_recur_shift(res_jac);
+    forward_recur_shift(res_hess);
+
+    res[N - 1] = tmp;
+    res_jac[N - 1] = tmp_jac;
+    res_hess[N - 1] = tmp_hess;
 }
 
 /**
@@ -96,8 +166,27 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callb
 
     if (last - first > K) {
         while (it != last) {
-            forward_recur_shift(res);
             forward_recur_next(r, it, res);
+
+            callback(it, res);
+            ++it;
+        }
+    }
+}
+
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
+void forward_recur2(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callback callback) {
+    InputIt it = first;
+    while (it - first != N && it != last) {
+        forward_recur_rotate(res);
+
+        callback(it, res);
+        ++it;
+    }
+
+    if (last - first > N) {
+        while (it != last) {
+            forward_recur_next2(r, it, res);
 
             callback(it, res);
             ++it;
@@ -119,15 +208,6 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
-    if (it - first != K && it != last) {
-        forward_recur_rotate_first(res);
-        forward_recur_rotate_first(res_jac);
-
-        callback(it, res, res_jac);
-        ++it;
-    }
-
-
     while (it - first != K && it != last) {
         forward_recur_rotate(res);
         forward_recur_rotate(res_jac);
@@ -138,9 +218,28 @@ void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&r
 
     if (last - first > K) {
         while (it != last) {
-            forward_recur_shift(res);
-            forward_recur_shift(res_jac);
             forward_recur_next(r, it, res, res_jac);
+
+            callback(it, res, res_jac);
+            ++it;
+        }
+    }
+}
+
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
+void forward_recur2(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Callback callback) {
+    InputIt it = first;
+    while (it - first != N && it != last) {
+        forward_recur_rotate(res);
+        forward_recur_rotate(res_jac);
+
+        callback(it, res, res_jac);
+        ++it;
+    }
+
+    if (last - first > N) {
+        while (it != last) {
+            forward_recur_next2(r, it, res, res_jac);
 
             callback(it, res, res_jac);
             ++it;
@@ -160,10 +259,6 @@ template <typename InputIt, typename Recurrence, typename T, size_t N, typename 
 void forward_recur(
     InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], Callback callback
 ) {
-    res[N - 1] = 0;
-    res_jac[N - 1] = 0;
-    res_hess[N - 1] = 0;
-
     constexpr ptrdiff_t K = N - 1;
 
     InputIt it = first;
@@ -178,10 +273,31 @@ void forward_recur(
 
     if (last - first > K) {
         while (it != last) {
-            forward_recur_shift(res);
-            forward_recur_shift(res_jac);
-            forward_recur_shift(res_hess);
             forward_recur_next(r, it, res, res_jac, res_hess);
+
+            callback(it, res, res_jac, res_hess);
+            ++it;
+        }
+    }
+}
+
+template <typename InputIt, typename Recurrence, typename T, size_t N, typename Callback>
+void forward_recur2(
+    InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], Callback callback
+) {
+    InputIt it = first;
+    while (it - first != N && it != last) {
+        forward_recur_rotate(res);
+        forward_recur_rotate(res_jac);
+        forward_recur_rotate(res_hess);
+
+        callback(it, res, res_jac, res_hess);
+        ++it;
+    }
+
+    if (last - first > N) {
+        while (it != last) {
+            forward_recur_next2(r, it, res, res_jac, res_hess);
 
             callback(it, res, res_jac, res_hess);
             ++it;
