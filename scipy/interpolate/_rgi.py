@@ -1,7 +1,6 @@
 __all__ = ['RegularGridInterpolator', 'interpn']
 
 import itertools
-import warnings
 
 import numpy as np
 
@@ -286,12 +285,10 @@ class RegularGridInterpolator:
         if self._descending_dimensions:
             self.values = np.flip(values, axis=self._descending_dimensions)
         if self.method == "pchip" and np.iscomplexobj(self.values):
-            msg = ("`PchipInterpolator` only works with real values. Passing "
-                   "complex-dtyped `values` with `method='pchip'` is deprecated "
-                   "and will raise an error in SciPy 1.15.0. If you are trying to "
-                   "use the real components of the passed array, use `np.real` on "
+            msg = ("`PchipInterpolator` only works with real values. If you are trying "
+                   "to use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+            raise TypeError(msg)
         if method in self._SPLINE_METHODS_ndbspl:
             if solver_args is None:
                 solver_args = {}
