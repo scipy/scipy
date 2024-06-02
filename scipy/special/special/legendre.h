@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "error.h"
-#include "gamma.h"
 #include "recur.h"
 
 namespace special {
