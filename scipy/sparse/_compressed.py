@@ -2,7 +2,6 @@
 __all__ = []
 
 from warnings import warn
-import itertools
 import operator
 
 import numpy as np
@@ -153,9 +152,12 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif axis == 1:
             if self.data.all():
                 return np.diff(self.indptr)
-            x, y = itertools.tee(self.indptr)
-            next(y)
-            return np.array([np.count_nonzero(self.data[i:j]) for i, j in zip(x, y)])
+            # Todo: use itertools.pairwise after Python 3.9 support is dropped
+            # pairs = itertools.pairwise(self.indptr)
+            # return np.array([np.count_nonzero(self.data[i:j]) for i, j in pairs])
+            idx = iter(self.indptr)
+            i = next(idx, None)
+            return np.array([np.count_nonzero(self.data[i:(i:=j)]) for j in idx])
         else:
             raise ValueError('axis out of bounds')
 

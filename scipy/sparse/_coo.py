@@ -189,7 +189,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
 
         if axis < 0:
             axis += self.ndim
-        if axis >= self.ndim:
+        if axis < 0 or axis >= self.ndim:
             raise ValueError('axis out of bounds')
         mask = self.data != 0
         coord = self.coords[1 - axis][mask]
