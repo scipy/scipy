@@ -282,7 +282,7 @@ class RegularGridInterpolator:
             msg = ("`PchipInterpolator` only works with real values. If you are trying "
                    "to use the real components of the passed array, use `np.real` on "
                    "the array before passing to `RegularGridInterpolator`.")
-            raise TypeError(msg)
+            raise ValueError(msg)
         if method in self._SPLINE_METHODS_ndbspl:
             if solver_args is None:
                 solver_args = {}
