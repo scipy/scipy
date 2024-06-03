@@ -779,9 +779,9 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], Func f
 ) {
-    T tmp;
+    T res_m_m_abs;
     if (!recur_m_m_abs) {
-        tmp = res[0];
+        res_m_m_abs = res[0];
     }
 
     res[0] = 0;
@@ -806,7 +806,7 @@ void assoc_legendre_p_for_each_n(
             }
         } else {
             if (!recur_m_m_abs) {
-                res[0] = tmp;
+                res[0] = res_m_m_abs;
             }
 
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
@@ -822,11 +822,11 @@ template <typename NormPolicy, typename T, typename Func>
 void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], T (&res_jac)[2], Func f
 ) {
-    T tmp;
-    T tmp_jac;
+    T res_m_m_abs;
+    T res_m_m_abs_jac;
     if (!recur_m_m_abs) {
-        tmp = res[0];
-        tmp_jac = res_jac[0];
+        res_m_m_abs = res[0];
+        res_m_m_abs_jac = res_jac[0];
     }
 
     res[0] = 0;
@@ -855,8 +855,8 @@ void assoc_legendre_p_for_each_n(
             }
         } else {
             if (!recur_m_m_abs) {
-                res[0] = tmp;
-                res_jac[0] = tmp_jac;
+                res[0] = res_m_m_abs;
+                res_jac[0] = res_m_m_abs_jac;
             }
 
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
@@ -873,13 +873,13 @@ void assoc_legendre_p_for_each_n(
     NormPolicy norm, int n, int m, int type, T z, bool recur_m_m_abs, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2],
     Func f
 ) {
-    T tmp;
-    T tmp_jac;
-    T tmp_hess;
+    T res_m_m_abs;
+    T res_m_m_abs_jac;
+    T res_m_m_abs_hess;
     if (!recur_m_m_abs) {
-        tmp = res[0];
-        tmp_jac = res_jac[0];
-        tmp_hess = res_hess[0];
+        res_m_m_abs = res[0];
+        res_m_m_abs_jac = res_jac[0];
+        res_m_m_abs_hess = res_hess[0];
     }
 
     res[0] = 0;
@@ -912,9 +912,9 @@ void assoc_legendre_p_for_each_n(
             }
         } else {
             if (!recur_m_m_abs) {
-                res[0] = tmp;
-                res_jac[0] = tmp_jac;
-                res_hess[0] = tmp_hess;
+                res[0] = res_m_m_abs;
+                res_jac[0] = res_m_m_abs_jac;
+                res_hess[0] = res_m_m_abs_hess;
             }
 
             assoc_legendre_p_initializer_n<T, NormPolicy> init_n{m, type, z, recur_m_m_abs};
