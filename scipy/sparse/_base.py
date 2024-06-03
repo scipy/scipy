@@ -266,7 +266,7 @@ class _spbase:
     def count_nonzero(self, axis=None):
         """Number of non-zero entries, equivalent to
 
-        np.count_nonzero(a.toarray())
+        np.count_nonzero(a.toarray(), axis=axis)
 
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
