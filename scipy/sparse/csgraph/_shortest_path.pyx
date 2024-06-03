@@ -76,14 +76,14 @@ def shortest_path(csgraph, method='auto',
            'BF'   -- Bellman-Ford algorithm.
                      This algorithm can be used when weights are negative.
                      If a negative cycle is encountered, an error will be raised.
-                     Computational cost is approximately ``O[N(N^2 k)]``, where 
-                     ``k`` is the average number of connected edges per node. 
+                     Computational cost is approximately ``O[N(N^2 k)]``, where
+                     ``k`` is the average number of connected edges per node.
                      The input csgraph will be converted to a csr representation.
 
            'J'    -- Johnson's algorithm.
-                     Like the Bellman-Ford algorithm, Johnson's algorithm is 
-                     designed for use when the weights are negative. It combines 
-                     the Bellman-Ford algorithm with Dijkstra's algorithm for 
+                     Like the Bellman-Ford algorithm, Johnson's algorithm is
+                     designed for use when the weights are negative. It combines
+                     the Bellman-Ford algorithm with Dijkstra's algorithm for
                      faster computation.
 
     directed : bool, optional
@@ -886,13 +886,13 @@ cdef int _dijkstra_undirected(
 
 @cython.boundscheck(False)
 cdef int _dijkstra_undirected_multi(
-            int[:] source_indices,
-            double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
-            double[:] csrT_weights,
-            int[:] csrT_indices,
-            int[:] csrT_indptr,
+            const int[:] source_indices,
+            const double[:] csr_weights,
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            const double[:] csrT_weights,
+            const int[:] csrT_indices,
+            const int[:] csrT_indptr,
             double[:] dist_matrix,
             int[:] pred,
             int[:] sources,
@@ -1348,9 +1348,9 @@ def johnson(csgraph, directed=True, indices=None,
 
 cdef void _johnson_add_weights(
             double[:] csr_weights,
-            int[:] csr_indices,
-            int[:] csr_indptr,
-            double[:] dist_array) noexcept:
+            const int[:] csr_indices,
+            const int[:] csr_indptr,
+            const double[:] dist_array) noexcept:
     # let w(u, v) = w(u, v) + h(u) - h(v)
     cdef unsigned int j, k, N = dist_array.shape[0]
 
@@ -1497,7 +1497,7 @@ cdef void add_sibling(FibonacciNode* node, FibonacciNode* new_sibling) noexcept:
     # Assumptions: - node is a valid pointer
     #              - new_sibling is a valid pointer
     #              - new_sibling is not the child or sibling of another node
-    
+
     # Insert new_sibling between node and node.right_sibling
     if node.right_sibling:
         node.right_sibling.left_sibling = new_sibling
@@ -1549,7 +1549,7 @@ cdef void insert_node(FibonacciHeap* heap,
     #              - node is not the child or sibling of another node
     if heap.min_node:
         if node.val < heap.min_node.val:
-            # Replace heap.min_node with node, which is always 
+            # Replace heap.min_node with node, which is always
             # at the leftmost end of the roots' linked-list.
             node.left_sibling = NULL
             node.right_sibling = heap.min_node
@@ -1574,7 +1574,7 @@ cdef void decrease_val(FibonacciHeap* heap,
         remove(node)
         insert_node(heap, node)
     elif heap.min_node.val > node.val:
-        # Replace heap.min_node with node, which is always 
+        # Replace heap.min_node with node, which is always
         # at the leftmost end of the roots' linked-list.
         remove(node)
         node.right_sibling = heap.min_node
@@ -1628,7 +1628,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
     temp = heap.min_node.right_sibling
     remove(heap.min_node)
     heap.min_node = temp
-    
+
     if temp == NULL:
         # There is a unique root in the tree, hence a unique node
         # which is the minimum that we return here.
@@ -1644,7 +1644,7 @@ cdef FibonacciNode* remove_min(FibonacciHeap* heap) noexcept:
         temp_right = temp.right_sibling
         link(heap, temp)
         temp = temp_right
-    
+
     # move heap.min_node to the leftmost end of the linked-list of roots
     temp = leftmost_sibling(heap.min_node)
     if heap.min_node != temp:
@@ -2024,7 +2024,7 @@ cdef void _yen(
             if (
                 total_distance != INFINITY
                 and _yen_is_path_in_candidates(candidate_predecessors,
-                                               shortest_paths_predecessors[k-1], 
+                                               shortest_paths_predecessors[k-1],
                                                predecessor_matrix[0],
                                                spur_node, sink) == 0
             ):
