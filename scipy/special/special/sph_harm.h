@@ -1,6 +1,10 @@
 #pragma once
 
 #include "legendre.h"
+#include "specfun.h"
+#include "third_party/kokkos/mdspan.hpp"
+
+#include "cephes/poch.h"
 
 namespace special {
 
