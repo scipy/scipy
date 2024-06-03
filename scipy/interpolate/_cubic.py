@@ -243,7 +243,7 @@ class PchipInterpolator(CubicHermiteSpline):
             msg = ("`PchipInterpolator` only works with real values for `y`. "
                    "If you are trying to use the real components of the passed array, "
                    "use `np.real` on the array before passing to `PchipInterpolator`.")
-            raise TypeError(msg)
+            raise ValueError(msg)
         xp = x.reshape((x.shape[0],) + (1,)*(y.ndim-1))
         dk = self._find_derivatives(xp, y)
         super().__init__(x, y, dk, axis=0, extrapolate=extrapolate)
@@ -507,7 +507,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
                    "If you are trying to use the real components of the passed array, "
                    "use `np.real` on the array before passing to "
                    "`Akima1DInterpolator`.")
-            raise TypeError(msg)
+            raise ValueError(msg)
 
         # Akima extrapolation historically False; parent class defaults to True.
         extrapolate = False if extrapolate is None else extrapolate

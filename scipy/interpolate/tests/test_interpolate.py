@@ -955,7 +955,7 @@ def test_complex(method):
     y = np.array([0., 2., 1., 3., 2., 6., 5.5, 5.5, 2.7, 5.1, 3.])
     y = y - 2j*y
     msg = "real values"
-    with pytest.raises(TypeError, match=msg):
+    with pytest.raises(ValueError, match=msg):
         method(x, y)
 
 
