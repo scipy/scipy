@@ -186,7 +186,7 @@ responsible for:
   the :ref:`scipy-roadmap`) bi-yearly, around mid-April and mid-October.
 - At the same times of the year, summarizing any relevant
   organizational updates and issues in the preceding period, and asking for
-  feedback/suggestions on the mailing list.
+  feedback/suggestions on the forum.
 - Ensuring the composition of the Steering Council stays current.
 - Ensuring matters discussed in private by the Steering Council get
   summarized on the forum to keep the Community informed.
