@@ -412,11 +412,6 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
         0 or None are the only values accepted. Default is None, which means
         `res` has one element less than `y` along the axis of integration.
 
-        .. deprecated:: 1.12.0
-            The option for non-zero inputs for `initial` will be deprecated in
-            SciPy 1.15.0. After this time, a ValueError will be raised if
-            `initial` is not None or 0.
-
     Returns
     -------
     res : ndarray
