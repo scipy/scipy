@@ -2202,7 +2202,7 @@ class TestFactorialFunctions:
         def _check(n, expected):
             assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
-            # using floats with exact=True raises and error for scalars and arrays
+            # using floats with `exact=True` raises an error for scalars and arrays
             with pytest.raises(ValueError, match="Non-integer values.*"):
                 assert_allclose(special.factorial(n, exact=True), expected)
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
