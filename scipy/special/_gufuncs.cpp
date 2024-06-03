@@ -109,79 +109,112 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyModule_AddObjectRef(_gufuncs, "lpn_all", lpn_all);
 
     PyObject *lpmn_all = Py_BuildValue(
-        "{O:N}", Py_False,
-        Py_BuildValue(
-            "(N,N,N)",
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); },
-                 [](float z, float_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); }},
-                1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res, double_2d res_jac) {
-                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
-                 },
-                 [](float z, float_2d res, float_2d res_jac) {
-                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
-                 }},
-                2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
-                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
-                 },
-                 [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
-                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
-                 }},
-                3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
-            )
+        "{O:(N,N,N)}", Py_False,
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); },
+             [](float z, float_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); }},
+            1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res, double_2d res_jac) {
+                 ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
+             },
+             [](float z, float_2d res, float_2d res_jac) {
+                 ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
+             }},
+            2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
+                 ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
+             },
+             [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
+                 ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
+             }},
+            3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
         ),
         Py_True,
-        Py_BuildValue(
-            "(N,N,N)",
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res) { ::lpmn_all(special::assoc_legendre_norm, z, res); },
-                 [](float z, float_2d res) { ::lpmn_all(special::assoc_legendre_norm, z, res); }},
-                1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res, double_2d res_jac) {
-                     ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac);
-                 },
-                 [](float z, float_2d res, float_2d res_jac) {
-                     ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac);
-                 }},
-                2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
-                     ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac, res_hess);
-                 },
-                 [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
-                     ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac, res_hess);
-                 }},
-                3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
-            )
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res) { ::lpmn_all(special::assoc_legendre_norm, z, res); },
+             [](float z, float_2d res) { ::lpmn_all(special::assoc_legendre_norm, z, res); }},
+            1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res, double_2d res_jac) {
+                 ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac);
+             },
+             [](float z, float_2d res, float_2d res_jac) { ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac); }
+            },
+            2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
+                 ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac, res_hess);
+             },
+             [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
+                 ::lpmn_all(special::assoc_legendre_norm, z, res, res_jac, res_hess);
+             }},
+            3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "lpmn_all", lpmn_all);
 
     PyObject *clpmn_all = Py_BuildValue(
-        "{O:N}", Py_False,
-        Py_BuildValue(
-            "(N,N,N)",
-            SpecFun_NewGUFunc(
-                {static_cast<func_qD_D2_t>(::clpmn_all), static_cast<func_qF_F2_t>(::clpmn_all)}, 1, "clpmn_all",
-                clpmn_doc, "(),()->(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {static_cast<func_qD_D2D2_t>(::clpmn_all), static_cast<func_qF_F2F2_t>(::clpmn_all)}, 2, "clpmn_all",
-                clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1)"
-            ),
-            SpecFun_NewGUFunc(
-                {static_cast<func_qD_D2D2D2_t>(::clpmn_all), static_cast<func_qF_F2F2F2_t>(::clpmn_all)}, 3,
-                "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
-            )
+        "{O:(N,N,N)}", Py_False,
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res);
+             },
+             [](long long int type, cfloat z, cfloat_2d res) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res);
+             }},
+            1, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res, res_jac);
+             },
+             [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res, res_jac);
+             }},
+            2, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
+             },
+             [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
+                 ::clpmn_all(special::assoc_legendre_unnorm, type, z, res, res_jac, res_hess);
+             }},
+            3, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
+        ),
+        Py_True,
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res);
+             },
+             [](long long int type, cfloat z, cfloat_2d res) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res);
+             }},
+            1, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res, res_jac);
+             },
+             [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res, res_jac);
+             }},
+            2, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1)"
+        ),
+        SpecFun_NewGUFunc(
+            {[](long long int type, cdouble z, cdouble_2d res, cdouble_2d res_jac, cdouble_2d res_hess) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res, res_jac, res_hess);
+             },
+             [](long long int type, cfloat z, cfloat_2d res, cfloat_2d res_jac, cfloat_2d res_hess) {
+                 ::clpmn_all(special::assoc_legendre_norm, type, z, res, res_jac, res_hess);
+             }},
+            3, "clpmn_all", clpmn_doc, "(),()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
         )
     );
     PyModule_AddObjectRef(_gufuncs, "clpmn_all", clpmn_all);
