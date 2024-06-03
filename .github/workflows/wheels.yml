@@ -159,10 +159,15 @@ jobs:
             # which should be exactly the same as the ones from gfortran
             # This will exclude the duplicates from gfortran in /opt/gfortran*
             EXCLUDE="-e /gfortran"
+
+            # remove libgfortran from location used for linking, to check wheel has
+            # bundled things correctly
+            POSTFIX=" && sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
+              sudo rm -rf /usr/local/gfortran/lib"
           fi
           CIBW="$PREFIX delocate-listdeps {wheel} &&\
             $PREFIX delocate-wheel $EXCLUDE --require-archs \
-            {delocate_archs} -w {dest_dir} {wheel}"
+            {delocate_archs} -w {dest_dir} {wheel} $POSTFIX"
           # Rename x86 Accelerate wheel to test on macOS 13 runner
           if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
             CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
