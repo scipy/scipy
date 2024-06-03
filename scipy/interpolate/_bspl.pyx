@@ -264,7 +264,7 @@ def insert(double xval,
         if (interval + 1 <= 2*k) and (interval + 1 >= t.shape[0] - 2*k):
             # in case of a periodic spline (iopt.ne.0) there must be
             # either at least k interior knots t(j) satisfying t(k+1)<t(j)<=x
-            # or at least k interior knots t(j) satisfying x<=t(j)<t(n-k)            
+            # or at least k interior knots t(j) satisfying x<=t(j)<t(n-k)
             raise ValueError("Not enough internal knots.")
 
     # knots
@@ -623,7 +623,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
         N-dimensional vector ``x = (x1, x2, ..., xN)``, iterate over the
         dimensions, form linear combinations of products,
         B(x1) * B(x2) * ... B(xN) of (k+1)**N b-splines which are non-zero
-        at ``x``. 
+        at ``x``.
 
         Since b-splines are localized, the sum has (k+1)**N non-zero elements.
 
@@ -724,9 +724,9 @@ def evaluate_ndbspline(const double[:, ::1] xi,
                 # iterate over the direct products of non-zero b-splines
                 for iflat in range(volume):
                     idx_b = indices_k1d[iflat, :]
-                    # The line above is equivalent to 
+                    # The line above is equivalent to
                     # idx_b = np.unravel_index(iflat, (k+1,)*ndim)
-                    
+
                     # From the indices in ``idx_b``, we prepare to index into
                     # c1.ravel() : for each dimension d, need to shift the index
                     # by ``i[d] - k[d]`` (see the docstring above).
@@ -754,7 +754,7 @@ def evaluate_ndbspline(const double[:, ::1] xi,
 @cython.wraparound(False)
 @cython.nonecheck(False)
 @cython.boundscheck(False)
-def _colloc_nd(double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
+def _colloc_nd(const double[:, ::1] xvals, tuple t not None, const npy_int32[::1] k):
     """Construct the N-D tensor product collocation matrix as a CSR array.
 
     In the dense representation, each row of the collocation matrix corresponds
