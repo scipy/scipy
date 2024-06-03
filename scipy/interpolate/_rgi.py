@@ -69,12 +69,6 @@ class RegularGridInterpolator:
         The data on the regular grid in n dimensions. Complex data is
         accepted.
 
-        .. deprecated:: 1.13.0
-            Complex data is deprecated with ``method="pchip"`` and will raise an
-            error in SciPy 1.15.0. This is because ``PchipInterpolator`` only
-            works with real values. If you are trying to use the real components of
-            the passed array, use ``np.real`` on ``values``.
-
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
         "nearest", "slinear", "cubic", "quintic" and "pchip". This
