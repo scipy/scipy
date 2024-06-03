@@ -8,6 +8,7 @@ from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
@@ -273,15 +274,9 @@ mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/devdocs', None),
-    'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org/stable', None),
-    'asv': ('https://asv.readthedocs.io/en/stable/', None),
-    'statsmodels': ('https://www.statsmodels.org/stable', None),
-}
-
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "numpy", "neps", "matplotlib", "asv", "statsmodels", "mpmath"}
+)
 
 # -----------------------------------------------------------------------------
 # Numpy extensions
