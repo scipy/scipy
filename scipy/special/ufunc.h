@@ -17,7 +17,6 @@
 #include "sf_error.h"
 #include "special/mdspan.h"
 
-
 // This is std::accumulate, but that is not constexpr until C++20
 template <typename InputIt, typename T>
 constexpr T initializer_accumulate(InputIt first, InputIt last, T init) {
@@ -37,6 +36,11 @@ struct arity_of<Res (*)(Args...)> {
     static constexpr size_t value = sizeof...(Args);
 };
 
+template <typename Res, typename... Args>
+struct arity_of<Res(Args...)> {
+    static constexpr size_t value = sizeof...(Args);
+};
+
 template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
@@ -50,6 +54,16 @@ struct has_return<Res (*)(Args...)> {
 
 template <typename... Args>
 struct has_return<void (*)(Args...)> {
+    static constexpr bool value = false;
+};
+
+template <typename Res, typename... Args>
+struct has_return<Res(Args...)> {
+    static constexpr bool value = true;
+};
+
+template <typename... Args>
+struct has_return<void(Args...)> {
     static constexpr bool value = false;
 };
 
@@ -275,6 +289,29 @@ struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
 template <typename T>
 inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
+template <typename Func>
+struct signature_of {
+    using type = typename signature_of<decltype(&Func::operator())>::type;
+};
+
+template <typename Res, typename... Args>
+struct signature_of<Res (*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...) const> {
+    using type = Res(Args...);
+};
+
+template <typename Func>
+using signature_of_t = typename signature_of<Func>::type;
+
 template <typename T>
 struct npy_traits {
     static T get(char *src, const npy_intp *dimensions, const npy_intp *steps) { return *reinterpret_cast<T *>(src); }
@@ -341,11 +378,13 @@ struct ufunc_data : base_ufunc_data {
     Func func;
 };
 
-template <typename Func, typename Indices = std::make_index_sequence<arity_of_v<Func>>>
+template <
+    typename Func, typename Signature = signature_of_t<Func>,
+    typename Indices = std::make_index_sequence<arity_of_v<Signature>>>
 struct ufunc_traits;
 
-template <typename Res, typename... Args, size_t... I>
-struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
+template <typename Func, typename Res, typename... Args, size_t... I>
+struct ufunc_traits<Func, Res(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args) + 1] = {npy_typenum_v<Args>..., npy_typenum_v<Res>};
 
     static constexpr size_t ranks[sizeof...(Args) + 1] = {rank_of_v<Args>..., rank_of_v<Res>};
@@ -356,7 +395,7 @@ struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
     };
 
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        Res (*func)(Args...) = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->func;
+        Func func = static_cast<ufunc_data<Func> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             Res res = func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
             npy_traits<Res>::set(args[sizeof...(Args)], res); // assign to the output pointer
@@ -366,13 +405,13 @@ struct ufunc_traits<Res (*)(Args...), std::index_sequence<I...>> {
             }
         }
 
-        const char *name = static_cast<ufunc_data<Res (*)(Args...)> *>(data)->name;
+        const char *name = static_cast<ufunc_data<Func> *>(data)->name;
         sf_error_check_fpe(name);
     }
 };
 
-template <typename... Args, size_t... I>
-struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
+template <typename Func, typename... Args, size_t... I>
+struct ufunc_traits<Func, void(Args...), std::index_sequence<I...>> {
     static constexpr char types[sizeof...(Args)] = {npy_typenum_v<Args>...};
 
     static constexpr size_t ranks[sizeof...(Args)] = {rank_of_v<Args>...};
@@ -382,7 +421,7 @@ struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
     };
 
     static void loop(char **args, const npy_intp *dimensions, const npy_intp *steps, void *data) {
-        void (*func)(Args...) = static_cast<ufunc_data<void (*)(Args...)> *>(data)->func;
+        Func func = static_cast<ufunc_data<Func> *>(data)->func;
         for (npy_intp i = 0; i < dimensions[0]; ++i) {
             func(npy_traits<Args>::get(args[I], dimensions + 1, steps + steps_offsets[I])...);
 
@@ -391,7 +430,7 @@ struct ufunc_traits<void (*)(Args...), std::index_sequence<I...>> {
             }
         }
 
-        const char *name = static_cast<ufunc_data<void (*)(Args...)> *>(data)->name;
+        const char *name = static_cast<ufunc_data<Func> *>(data)->name;
         sf_error_check_fpe(name);
     }
 };
@@ -413,8 +452,9 @@ class SpecFun_UFunc {
 
         template <typename Func>
         SpecFun_Func(Func func)
-            : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
-              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
+            : has_return(has_return_v<signature_of_t<Func>>),
+              nin_and_nout(arity_of_v<signature_of_t<Func>> + has_return), func(ufunc_traits<Func>::loop),
+              data(new ufunc_data<Func>{{nullptr}, func}),
               data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
               types(ufunc_traits<Func>::types) {}
     };

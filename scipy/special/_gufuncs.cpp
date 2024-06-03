@@ -113,16 +113,27 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         Py_BuildValue(
             "(N,N,N)",
             SpecFun_NewGUFunc(
-                {static_cast<func_d_d2_t>(::lpmn_all), static_cast<func_f_f2_t>(::lpmn_all)}, 1, "lpmn_all", lpmn_doc,
-                "()->(mpmp1,np1)"
+                {[](double z, double_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); },
+                 [](float z, float_2d res) { ::lpmn_all(special::assoc_legendre_unnorm, z, res); }},
+                1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
-                {static_cast<func_d_d2d2_t>(::lpmn_all), static_cast<func_f_f2f2_t>(::lpmn_all)}, 2, "lpmn_all",
-                lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
+                {[](double z, double_2d res, double_2d res_jac) {
+                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
+                 },
+                 [](float z, float_2d res, float_2d res_jac) {
+                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac);
+                 }},
+                2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
             ),
             SpecFun_NewGUFunc(
-                {static_cast<func_d_d2d2d2_t>(::lpmn_all), static_cast<func_f_f2f2f2_t>(::lpmn_all)}, 3, "lpmn_all",
-                lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
+                {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
+                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
+                 },
+                 [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
+                     ::lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
+                 }},
+                3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
             )
         )
     );
