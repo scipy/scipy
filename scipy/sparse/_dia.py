@@ -19,8 +19,8 @@ from ._sparsetools import dia_matvec
 class _dia_base(_data_matrix):
     _format = 'dia'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
 
         if issparse(arg1):
             if arg1.format == "dia":

@@ -20,8 +20,8 @@ from . import _csparsetools
 class _lil_base(_spbase, IndexMixin):
     _format = 'lil'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
         self.dtype = getdtype(dtype, arg1, default=float)
 
         # First get the shape

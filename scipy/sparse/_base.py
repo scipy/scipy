@@ -110,7 +110,7 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    def __init__(self, arg1, maxprint=MAXPRINT):
+    def __init__(self, arg1, *, maxprint=None):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
@@ -119,7 +119,7 @@ class _spbase:
             raise ValueError(
                 "scipy sparse array classes do not support instantiation from a scalar"
             )
-        self.maxprint = maxprint
+        self.maxprint = MAXPRINT if maxprint is None else maxprint
 
     @property
     def shape(self):

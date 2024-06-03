@@ -24,8 +24,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     base array/matrix class for compressed row- and column-oriented arrays/matrices
     """
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
 
         if issparse(arg1):
