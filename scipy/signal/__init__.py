@@ -235,20 +235,6 @@ obtain these windows by name:
 
    get_window -- Return a window of a given length and type.
 
-Wavelets
-========
-
-.. autosummary::
-   :toctree: generated/
-
-   cascade      -- Compute scaling function and wavelet from coefficients.
-   daub         -- Return low-pass.
-   morlet       -- Complex Morlet wavelet.
-   qmf          -- Return quadrature mirror filter from low-pass.
-   ricker       -- Return ricker wavelet.
-   morlet2      -- Return Morlet wavelet, compatible with cwt.
-   cwt          -- Perform continuous wavelet transform.
-
 Peak finding
 ============
 
@@ -322,7 +308,6 @@ from ._signaltools import *
 from ._savitzky_golay import savgol_coeffs, savgol_filter
 from ._spectral_py import *
 from ._short_time_fft import *
-from ._wavelets import *
 from ._peak_finding import *
 from ._czt import *
 from .windows import get_window  # keep this one in signal namespace
