@@ -49,9 +49,6 @@ Some methods to do that are:
   drawn between 0 to the value of the upper bound at Y. If this number
   is less than the PDF at Y, return the sample otherwise reject it. See
   :class:`~TransformedDensityRejection`.
-* The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
-  method which is uses minimal bounding rectangles to construct the hat
-  function. See `scipy.stats.rvs_ratio_uniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that :math:`F` is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
