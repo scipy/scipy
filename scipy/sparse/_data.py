@@ -9,7 +9,7 @@
 import math
 import numpy as np
 
-from ._base import _spbase, _ufuncs_with_fixed_point_at_zero
+from ._base import _spbase, sparray, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis
 
 __all__ = []
@@ -18,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self):
-        _spbase.__init__(self)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
     @property
     def dtype(self):
@@ -195,6 +195,11 @@ class _minmax_mixin:
         major_index = np.compress(mask, major_index)
         value = np.compress(mask, value)
 
+        if isinstance(self, sparray):
+            coords = (major_index,)
+            shape = (M,)
+            return self._coo_container((value, coords), shape=shape, dtype=self.dtype)
+
         if axis == 0:
             return self._coo_container(
                 (value, (np.zeros(len(value), dtype=idx_dtype), major_index)),
@@ -266,6 +271,9 @@ class _minmax_mixin:
                     ret[i] = min(extreme_index, zero_ind)
                 else:
                     ret[i] = zero_ind
+
+        if isinstance(self, sparray):
+            return ret
 
         if axis == 1:
             ret = ret.reshape(-1, 1)

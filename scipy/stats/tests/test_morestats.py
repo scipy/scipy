@@ -7,6 +7,7 @@ import sys
 from functools import partial
 
 import numpy as np
+import numpy.testing
 from numpy.random import RandomState
 from numpy.testing import (assert_array_equal, assert_almost_equal,
                            assert_array_less, assert_array_almost_equal,
@@ -21,9 +22,15 @@ from .common_tests import check_named_results
 from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 from scipy.stats._distr_params import distcont
+from scipy.stats._axis_nan_policy import (SmallSampleWarning, too_small_nd_omit,
+                                          too_small_1d_omit, too_small_1d_not_omit)
+
 from scipy.conftest import array_api_compatible
 from scipy._lib._array_api import (array_namespace, xp_assert_close, xp_assert_less,
-                                   SCIPY_ARRAY_API, xp_assert_equal)
+                                   xp_assert_equal, is_numpy)
+
+
+skip_xp_backends = pytest.mark.skip_xp_backends
 
 distcont = dict(distcont)  # type: ignore
 
@@ -187,19 +194,12 @@ class TestShapiro:
         assert_almost_equal(pw, 0.52460, decimal=3)
         assert_almost_equal(shapiro_test.pvalue, 0.52460, decimal=3)
 
-    def test_empty_input(self):
-        assert_raises(ValueError, stats.shapiro, [])
-        assert_raises(ValueError, stats.shapiro, [[], [], []])
-
-    def test_not_enough_values(self):
-        assert_raises(ValueError, stats.shapiro, [1, 2])
-        error_type = TypeError if SCIPY_ARRAY_API else ValueError
-        assert_raises(error_type, stats.shapiro, np.array([[], [2]], dtype=object))
-
-    def test_bad_arg(self):
-        # Length of x is less than 3.
-        x = [1]
-        assert_raises(ValueError, stats.shapiro, x)
+    @pytest.mark.parametrize('x', ([], [1], [1, 2]))
+    def test_not_enough_values(self, x):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.shapiro(x)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_nan_input(self):
         x = np.arange(10.)
@@ -630,9 +630,12 @@ class TestAnsari:
         assert_almost_equal(W, 10.0, 11)
         assert_almost_equal(pval, 0.533333333333333333, 7)
 
-    def test_bad_arg(self):
-        assert_raises(ValueError, stats.ansari, [], [1])
-        assert_raises(ValueError, stats.ansari, [1], [])
+    @pytest.mark.parametrize('args', [([], [1]), ([1], [])])
+    def test_bad_arg(self, args):
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.ansari(*args)
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_result_attributes(self):
         x = [1, 2, 3, 3, 4]
@@ -731,33 +734,48 @@ class TestAnsari:
         assert_allclose(pval_l, 1-pval/2, atol=1e-12)
 
 
+@array_api_compatible
 class TestBartlett:
-
-    def test_data(self):
+    def test_data(self, xp):
         # https://www.itl.nist.gov/div898/handbook/eda/section3/eda357.htm
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         T, pval = stats.bartlett(*args)
-        assert_almost_equal(T, 20.78587342806484, 7)
-        assert_almost_equal(pval, 0.0136358632781, 7)
+        xp_assert_close(T, xp.asarray(20.78587342806484))
+        xp_assert_close(pval, xp.asarray(0.0136358632781))
 
-    def test_bad_arg(self):
-        # Too few args raises ValueError.
-        assert_raises(ValueError, stats.bartlett, [1])
+    def test_too_few_args(self, xp):
+        message = "Must enter at least two input sample vectors."
+        with pytest.raises(ValueError, match=message):
+            stats.bartlett(xp.asarray([1.]))
 
-    def test_result_attributes(self):
+    def test_result_attributes(self, xp):
         args = [g1, g2, g3, g4, g5, g6, g7, g8, g9, g10]
+        args = [xp.asarray(arg) for arg in args]
         res = stats.bartlett(*args)
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
-    def test_empty_arg(self):
+    @pytest.mark.skip_xp_backends(
+        "jax.numpy", cpu_only=True,
+        reasons=['`var` incorrect when `correction > n` (google/jax#21330)'])
+    @pytest.mark.usefixtures("skip_xp_backends")
+    def test_empty_arg(self, xp):
         args = (g1, g2, g3, g4, g5, g6, g7, g8, g9, g10, [])
-        assert_equal((np.nan, np.nan), stats.bartlett(*args))
-
-    # temporary fix for issue #9252: only accept 1d input
-    def test_1d_input(self):
-        x = np.array([[1, 2], [3, 4]])
-        assert_raises(ValueError, stats.bartlett, g1, x)
+        args = [xp.asarray(arg) for arg in args]
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.bartlett(*args)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # torch/array_api_strict
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                sup.filter(UserWarning, r"var\(\): degrees of freedom is <= 0.")
+                sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
+                res = stats.bartlett(*args)
+        NaN = xp.asarray(xp.nan)
+        xp_assert_equal(res.statistic, NaN)
+        xp_assert_equal(res.pvalue, NaN)
 
 
 class TestLevene:
@@ -1135,7 +1153,10 @@ class TestFligner:
 
     def test_empty_arg(self):
         x = np.arange(5)
-        assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.fligner(x, x**2, [])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
 
 def mood_cases_with_ties():
@@ -1303,9 +1324,11 @@ class TestMood:
                                               stats.mood(slice1, slice2))
 
     def test_mood_bad_arg(self):
-        # Raise ValueError when the sum of the lengths of the args is
-        # less than 3
-        assert_raises(ValueError, stats.mood, [1], [])
+        # Warns when the sum of the lengths of the args is less than 3
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+            res = stats.mood([1], [])
+            assert_equal(res.statistic, np.nan)
+            assert_equal(res.pvalue, np.nan)
 
     def test_mood_alternative(self):
 
@@ -1660,6 +1683,35 @@ class TestWilcoxon:
         assert_equal(np.round(res.pvalue, 2), res.pvalue)  # n_resamples used
         assert_equal(res.pvalue, ref.pvalue)  # random_state used
 
+    def test_method_auto_nan_propagate_ND_length_gt_50_gh20591(self):
+        # When method!='approx', nan_policy='propagate', and a slice of
+        # a >1 dimensional array input contained NaN, the result object of
+        # `wilcoxon` could (under yet other conditions) return `zstatistic`
+        # for some slices but not others. This resulted in an error because
+        # `apply_along_axis` would have to create a ragged array.
+        # Check that this is resolved.
+        rng = np.random.default_rng(235889269872456)
+        A = rng.normal(size=(51, 2))  # length along slice > exact threshold
+        A[5, 1] = np.nan
+        res = stats.wilcoxon(A)
+        ref = stats.wilcoxon(A, method='approx')
+        assert_allclose(res, ref)
+        assert hasattr(ref, 'zstatistic')
+        assert not hasattr(res, 'zstatistic')
+
+    @pytest.mark.parametrize('method', ['exact', 'approx'])
+    def test_symmetry_gh19872_gh20752(self, method):
+        # Check that one-sided exact tests obey required symmetry. Bug reported
+        # in gh-19872 and again in gh-20752; example from gh-19872 is more concise:
+        var1 = [62, 66, 61, 68, 74, 62, 68, 62, 55, 59]
+        var2 = [71, 71, 69, 61, 75, 71, 77, 72, 62, 65]
+        ref = stats.wilcoxon(var1, var2, alternative='less', method=method)
+        res = stats.wilcoxon(var2, var1, alternative='greater', method=method)
+        max_statistic = len(var1) * (len(var1) + 1) / 2
+        assert int(res.statistic) != res.statistic
+        assert_allclose(max_statistic - res.statistic, ref.statistic, rtol=1e-15)
+        assert_allclose(res.pvalue, ref.pvalue, rtol=1e-15)
+
 
 # data for k-statistics tests from
 # https://cran.r-project.org/web/packages/kStatistics/kStatistics.pdf
@@ -1669,36 +1721,42 @@ x_kstat = [16.34, 10.76, 11.84, 13.55, 15.85, 18.20, 7.51, 10.22, 12.52, 14.68,
            12.10, 15.02, 16.83, 16.98, 19.92, 9.47, 11.68, 13.41, 15.35, 19.11]
 
 
+@array_api_compatible
 class TestKstat:
-    def test_moments_normal_distribution(self):
+    def test_moments_normal_distribution(self, xp):
         np.random.seed(32149)
-        data = np.random.randn(12345)
-        moments = [stats.kstat(data, n) for n in [1, 2, 3, 4]]
+        data = xp.asarray(np.random.randn(12345), dtype=xp.float64)
+        moments = xp.asarray([stats.kstat(data, n) for n in [1, 2, 3, 4]])
 
-        expected = [0.011315, 1.017931, 0.05811052, 0.0754134]
-        assert_allclose(moments, expected, rtol=1e-4)
+        expected = xp.asarray([0.011315, 1.017931, 0.05811052, 0.0754134],
+                              dtype=data.dtype)
+        xp_assert_close(moments, expected, rtol=1e-4)
 
         # test equivalence with `stats.moment`
         m1 = stats.moment(data, order=1)
         m2 = stats.moment(data, order=2)
         m3 = stats.moment(data, order=3)
-        assert_allclose((m1, m2, m3), expected[:-1], atol=0.02, rtol=1e-2)
+        xp_assert_close(xp.asarray((m1, m2, m3)), expected[:-1], atol=0.02, rtol=1e-2)
 
-    def test_empty_input(self):
-        message = 'Data input must not be empty'
-        with pytest.raises(ValueError, match=message):
-            stats.kstat([])
+    def test_empty_input(self, xp):
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.kstat(xp.asarray([]))
+        else:
+            with np.errstate(invalid='ignore'):  # for array_api_strict
+                res = stats.kstat(xp.asarray([]))
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
-    def test_nan_input(self):
-        data = np.arange(10.)
-        data[6] = np.nan
+    def test_nan_input(self, xp):
+        data = xp.arange(10.)
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
-        assert_equal(stats.kstat(data), np.nan)
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
     @pytest.mark.parametrize('n', [0, 4.001])
-    def test_kstat_bad_arg(self, n):
+    def test_kstat_bad_arg(self, n, xp):
         # Raise ValueError if n > 4 or n < 1.
-        data = np.arange(10)
+        data = xp.arange(10)
         message = 'k-statistics only supported for 1<=n<=4'
         with pytest.raises(ValueError, match=message):
             stats.kstat(data, n=n)
@@ -1707,7 +1765,7 @@ class TestKstat:
                                       (2, 12.65006954022974),
                                       (3, -1.447059503280798),
                                       (4, -141.6682291883626)])
-    def test_against_R(self, case):
+    def test_against_R(self, case, xp):
         # Test against reference values computed with R kStatistics, e.g.
         # options(digits=16)
         # library(kStatistics)
@@ -1717,23 +1775,31 @@ class TestKstat:
         #           19.92, 9.47, 11.68, 13.41, 15.35, 19.11)
         # nKS(4, data)
         n, ref = case
-        res = stats.kstat(x_kstat, n)
-        assert_allclose(res, ref)
+        res = stats.kstat(xp.asarray(x_kstat), n)
+        xp_assert_close(res, xp.asarray(ref))
 
 
-
+@array_api_compatible
 class TestKstatVar:
-    def test_empty_input(self):
-        message = 'Data input must not be empty'
-        with pytest.raises(ValueError, match=message):
-            stats.kstatvar([])
+    def test_empty_input(self, xp):
+        x = xp.asarray([])
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = stats.kstatvar(x)
+        else:
+            with np.errstate(invalid='ignore'):  # for array_api_strict
+                res = stats.kstatvar(x)
+        xp_assert_equal(res, xp.asarray(xp.nan))
 
-    def test_nan_input(self):
-        data = np.arange(10.)
-        data[6] = np.nan
+    def test_nan_input(self, xp):
+        data = xp.arange(10.)
+        data = xp.where(data == 6, xp.asarray(xp.nan), data)
 
-        assert_equal(stats.kstat(data), np.nan)
+        xp_assert_equal(stats.kstat(data), xp.asarray(xp.nan))
 
+    @skip_xp_backends(np_only=True,
+                      reasons=['input validation of `n` does not depend on backend'])
+    @pytest.mark.usefixtures("skip_xp_backends")
     def test_bad_arg(self):
         # Raise ValueError is n is not 1 or 2.
         data = [1]
@@ -1742,7 +1808,7 @@ class TestKstatVar:
         with pytest.raises(ValueError, match=message):
             stats.kstatvar(data, n=n)
 
-    def test_against_R_mathworld(self):
+    def test_against_R_mathworld(self, xp):
         # Test against reference values computed using formulas exactly as
         # they appear at https://mathworld.wolfram.com/k-Statistic.html
         # This is *really* similar to how they appear in the implementation,
@@ -1751,14 +1817,14 @@ class TestKstatVar:
         k2 = 12.65006954022974  # see source code in TestKstat
         k4 = -141.6682291883626
 
-        res = stats.kstatvar(x_kstat, 1)
+        res = stats.kstatvar(xp.asarray(x_kstat), 1)
         ref = k2 / n
-        assert_allclose(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
-        res = stats.kstatvar(x_kstat, 2)
+        res = stats.kstatvar(xp.asarray(x_kstat), 2)
         # *unbiased estimator* for var(k2)
         ref = (2*k2**2*n + (n-1)*k4) / (n * (n+1))
-        assert_allclose(res, ref)
+        xp_assert_close(res, xp.asarray(ref))
 
 
 class TestPpccPlot:
@@ -2584,7 +2650,16 @@ class TestCircFuncs:
     def test_empty(self, test_func, xp):
         dtype = xp.float64
         x = xp.asarray([], dtype=dtype)
-        xp_assert_equal(test_func(x), xp.asarray(xp.nan, dtype=dtype))
+        if is_numpy(xp):
+            with pytest.warns(SmallSampleWarning, match=too_small_1d_not_omit):
+                res = test_func(x)
+        else:
+            with np.testing.suppress_warnings() as sup:
+                # for array_api_strict
+                sup.filter(RuntimeWarning, "Mean of empty slice")
+                sup.filter(RuntimeWarning, "invalid value encountered")
+                res = test_func(x)
+        xp_assert_equal(res, xp.asarray(xp.nan, dtype=dtype))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
@@ -2665,12 +2740,14 @@ class TestCircFuncsNanPolicy:
                       [351, 7, 4, 352, 9, 349, np.nan],
                       [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan]])
         for axis in expected.keys():
-            out = test_func(x, high=360, nan_policy='omit', axis=axis)
             if axis is None:
+                out = test_func(x, high=360, nan_policy='omit', axis=axis)
                 assert_allclose(out, expected[axis], rtol=1e-7)
             else:
-                assert_allclose(out[:-1], expected[axis], rtol=1e-7)
-                assert_(np.isnan(out[-1]))
+                with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+                    out = test_func(x, high=360, nan_policy='omit', axis=axis)
+                    assert_allclose(out[:-1], expected[axis], rtol=1e-7)
+                    assert_(np.isnan(out[-1]))
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
@@ -2685,16 +2762,18 @@ class TestCircFuncsNanPolicy:
                                            stats.circstd])
     def test_nan_omit_all(self, test_func):
         x = [np.nan, np.nan, np.nan, np.nan, np.nan]
-        assert_(np.isnan(test_func(x, nan_policy='omit')))
+        with pytest.warns(SmallSampleWarning, match=too_small_1d_omit):
+            assert_(np.isnan(test_func(x, nan_policy='omit')))
 
     @pytest.mark.parametrize("test_func", [stats.circmean, stats.circvar,
                                            stats.circstd])
     def test_nan_omit_all_axis(self, test_func):
-        x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
-                      [np.nan, np.nan, np.nan, np.nan, np.nan]])
-        out = test_func(x, nan_policy='omit', axis=1)
-        assert_(np.isnan(out).all())
-        assert_(len(out) == 2)
+        with pytest.warns(SmallSampleWarning, match=too_small_nd_omit):
+            x = np.array([[np.nan, np.nan, np.nan, np.nan, np.nan],
+                          [np.nan, np.nan, np.nan, np.nan, np.nan]])
+            out = test_func(x, nan_policy='omit', axis=1)
+            assert_(np.isnan(out).all())
+            assert_(len(out) == 2)
 
     @pytest.mark.parametrize("x",
                              [[355, 5, 2, 359, 10, 350, np.nan],
@@ -3011,29 +3090,31 @@ class TestFDRControl:
         assert_array_equal(stats.false_discovery_control([]), [])
 
 
+@array_api_compatible
 class TestCommonAxis:
     # More thorough testing of `axis` in `test_axis_nan_policy`,
-    # but those testa aren't run with array API yet. This class
+    # but those tests aren't run with array API yet. This class
     # is in `test_morestats` instead of `test_axis_nan_policy`
     # because there is no reason to run `test_axis_nan_policy`
     # with the array API CI job right now.
 
     @pytest.mark.parametrize('case', [(stats.sem, {}),
                                       (stats.kstat, {'n': 4}),
-                                      (stats.kstat, {'n': 2})])
-    def test_axis(self, case):
+                                      (stats.kstat, {'n': 2}),
+                                      (stats.variation, {})])
+    def test_axis(self, case, xp):
         fun, kwargs = case
         rng = np.random.default_rng(24598245982345)
-        x = rng.random((6, 7))
+        x = xp.asarray(rng.random((6, 7)))
 
         res = fun(x, **kwargs, axis=0)
-        ref = [fun(x[:, i], **kwargs) for i in range(x.shape[1])]
-        assert_allclose(res, ref)
+        ref = xp.asarray([fun(x[:, i], **kwargs) for i in range(x.shape[1])])
+        xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=1)
-        ref = [fun(x[i, :], **kwargs) for i in range(x.shape[0])]
-        assert_allclose(res, ref)
+        ref = xp.asarray([fun(x[i, :], **kwargs) for i in range(x.shape[0])])
+        xp_assert_close(res, ref)
 
         res = fun(x, **kwargs, axis=None)
-        ref = fun(x.ravel(), **kwargs)
-        assert_allclose(res, ref)
+        ref = fun(xp.reshape(x, (-1,)), **kwargs)
+        xp_assert_close(res, ref)

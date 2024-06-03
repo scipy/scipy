@@ -10,8 +10,6 @@ import numpy as np
 __all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
-error = _quadpack.error
-
 class IntegrationWarning(UserWarning):
     """
     Warning on issues during integration.

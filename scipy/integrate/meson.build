@@ -128,14 +128,8 @@ py3.extension_module('_odepack',
   subdir: 'scipy/integrate'
 )
 
-vode_module = custom_target('vode_module',
-  output: ['_vode-f2pywrappers.f', '_vodemodule.c'],
-  input: 'vode.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_vode',
-  vode_module,
+  f2py_gen.process('vode.pyf'),
   link_with: [vode_lib],
   c_args: [Wno_unused_variable],
   link_args: version_link_args,
@@ -145,14 +139,8 @@ py3.extension_module('_vode',
   subdir: 'scipy/integrate'
 )
 
-lsoda_module = custom_target('lsoda_module',
-  output: ['_lsoda-f2pywrappers.f', '_lsodamodule.c'],
-  input: 'lsoda.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_lsoda',
-  lsoda_module,
+  f2py_gen.process('lsoda.pyf'),
   link_with: [lsoda_lib, mach_lib],
   c_args: [Wno_unused_variable],
   dependencies: [lapack_dep, fortranobject_dep],
@@ -162,14 +150,8 @@ py3.extension_module('_lsoda',
   subdir: 'scipy/integrate'
 )
 
-_dop_module = custom_target('_dop_module',
-  output: ['_dop-f2pywrappers.f', '_dopmodule.c'],
-  input: 'dop.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
-)
-
 py3.extension_module('_dop',
-  _dop_module,
+  f2py_gen.process('dop.pyf'),
   link_with: [dop_lib],
   c_args: [Wno_unused_variable],
   dependencies: [fortranobject_dep],
@@ -183,24 +165,20 @@ py3.extension_module('_test_multivariate',
   [quadpack_test_src],
   link_args: version_link_args,
   install: true,
-  subdir: 'scipy/integrate'
-)
-
-_test_odeint_banded_module = custom_target('_test_odeint_banded_module',
-  output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
-  input: 'tests/banded5x5.pyf',
-  command: [generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
+  subdir: 'scipy/integrate',
+  install_tag: 'tests'
 )
 
 py3.extension_module('_test_odeint_banded',
-  ['tests/banded5x5.f', _test_odeint_banded_module],
+  ['tests/banded5x5.f', f2py_gen.process('tests/test_odeint_banded.pyf')],
   link_with: [lsoda_lib, mach_lib],
   fortran_args: _fflag_Wno_unused_dummy_argument,
   link_args: version_link_args,
   dependencies: [lapack_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/integrate'
+  subdir: 'scipy/integrate',
+  install_tag: 'tests'
 )
 
 subdir('_ivp')

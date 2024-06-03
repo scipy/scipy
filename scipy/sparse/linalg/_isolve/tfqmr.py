@@ -82,7 +82,7 @@ def tfqmr(A, b, x0=None, *, rtol=1e-5, atol=0., maxiter=None, M=None,
     >>> from scipy.sparse.linalg import tfqmr
     >>> A = csc_matrix([[3, 2, 0], [1, -1, 0], [0, 5, 1]], dtype=float)
     >>> b = np.array([2, 4, -1], dtype=float)
-    >>> x, exitCode = tfqmr(A, b)
+    >>> x, exitCode = tfqmr(A, b, atol=0.0)
     >>> print(exitCode)            # 0 indicates successful convergence
     0
     >>> np.allclose(A.dot(x), b)

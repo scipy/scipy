@@ -10,7 +10,8 @@ from scipy.optimize import (NonlinearConstraint,
                             Bounds,
                             minimize,
                             BFGS,
-                            SR1)
+                            SR1,
+                            rosen)
 
 
 class Maratos:
@@ -745,6 +746,22 @@ def test_gh11649():
     ref = minimize(fun=obj, x0=x0, method='slsqp',
                    bounds=bnds, constraints=nlcs)
     assert_allclose(res.fun, ref.fun)
+
+
+def test_gh20665_too_many_constraints():
+    # gh-20665 reports a confusing error message when there are more equality
+    # constraints than variables. Check that the error message is improved.
+    message = "...more equality constraints than independent variables..."
+    with pytest.raises(ValueError, match=message):
+        x0 = np.ones((2,))
+        A_eq, b_eq = np.arange(6).reshape((3, 2)), np.ones((3,))
+        g = NonlinearConstraint(lambda x:  A_eq @ x, lb=b_eq, ub=b_eq)
+        minimize(rosen, x0, method='trust-constr', constraints=[g])
+    # no error with `SVDFactorization`
+    with np.testing.suppress_warnings() as sup:
+        sup.filter(UserWarning)
+        minimize(rosen, x0, method='trust-constr', constraints=[g],
+                 options={'factorization_method': 'SVDFactorization'})
 
 
 class TestBoundedNelderMead:

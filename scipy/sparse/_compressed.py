@@ -24,8 +24,8 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
     base array/matrix class for compressed row- and column-oriented arrays/matrices
     """
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
 
         if issparse(arg1):
@@ -55,6 +55,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                     coo = self._coo_container(arg1, shape=shape, dtype=dtype)
                     arrays = coo._coo_to_compressed(self._swap)
                     self.indptr, self.indices, self.data, self._shape = arrays
+                    self.sum_duplicates()
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
                     (data, indices, indptr) = arg1
@@ -84,6 +85,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError(f"unrecognized {self.__class__.__name__} "
                                  f"constructor input: {arg1}") from e
+            if isinstance(self, sparray) and arg1.ndim < 2 and self.format == "csc":
+                raise ValueError(
+                    f"CSC arrays don't support {arg1.ndim}D input. Use 2D"
+                )
             coo = self._coo_container(arg1, dtype=dtype)
             arrays = coo._coo_to_compressed(self._swap)
             self.indptr, self.indices, self.data, self._shape = arrays

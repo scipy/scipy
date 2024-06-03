@@ -24,8 +24,8 @@ import operator
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
@@ -79,7 +79,7 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 if not is_array:
                     M = np.atleast_2d(M)
                     if M.ndim != 2:
-                        raise TypeError('expected dimension <= 2 array or matrix')
+                        raise TypeError(f'expected 2D array or matrix, not {M.ndim}D')
 
                 self._shape = check_shape(M.shape, allow_1d=is_array)
                 if shape is not None:

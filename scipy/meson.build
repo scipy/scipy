@@ -144,6 +144,30 @@ fortranobject_dep = declare_dependency(
   compile_args: _f2py_c_args,
 )
 
+f2py = find_program('f2py')
+# It should be quite rare for the `f2py` executable to not be the one from
+# `numpy` installed in the Python env we are building for (unless we are
+# cross-compiling). If it is from a different env, that is still fine as long
+# as it's not too old. We are only using f2py as a code generator, and the
+# output is not dependent on platform or Python version (see gh-20612 for more
+# details).
+# This should be robust enough. If not, we can make this more complex, using
+# a fallback to `python -m f2py` rather than erroring out.
+f2py_version = run_command([f2py, '-v'], check: true).stdout().strip()
+if f2py_version.version_compare('<'+min_numpy_version)
+  error(f'Found f2py executable is too old: @f2py_version@')
+endif
+
+# Note: this generato cannot handle:
+# 1. `.pyf.src` files, because `@BASENAME@` will still include .pyf
+# 2. targets with #include's (due to no `depend_files` - see feature request
+#    at meson#8295)
+f2py_gen = generator(generate_f2pymod,
+  arguments : ['@INPUT@', '-o', '@BUILD_DIR@'],
+  output : ['_@BASENAME@module.c', '_@BASENAME@-f2pywrappers.f'],
+)
+
+
 # TODO: 64-bit BLAS and LAPACK
 #
 # Note that this works as long as BLAS and LAPACK are detected properly via
@@ -182,6 +206,7 @@ if blas_name == 'openblas' or blas_name == 'auto'
   blas = dependency('scipy-openblas', method: 'pkg-config', required: false)
   if blas.found()
     blas_name = 'scipy-openblas'
+    generate_blas_wrappers = true
   endif
 endif
 
@@ -252,6 +277,7 @@ endif
 
 scipy_dir = py3.get_install_dir() / 'scipy'
 
+version_utils = find_program('../tools/version_utils.py')
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -259,7 +285,7 @@ generate_version = custom_target(
   build_by_default: true,
   output: 'version.py',
   input: '../tools/version_utils.py',
-  command: [py3, '@INPUT@', '--source-root', '@SOURCE_ROOT@'],
+  command: [version_utils, '--source-root', '@SOURCE_ROOT@'],
   install_dir: scipy_dir,
   install_tag: 'python-runtime',
 )
@@ -273,7 +299,8 @@ python_sources = [
   'special.pxd',
 ]
 
-if blas_name == 'scipy-openblas'
+fs = import('fs')
+if fs.exists('_distributor_init_local.py')
   python_sources += ['_distributor_init_local.py']
 endif
 
@@ -284,7 +311,6 @@ py3.install_sources(
 
 # Copy the main __init__.py and pxd files to the build dir.
 # Needed to trick Cython, it won't do a relative import outside a package
-fs = import('fs')
 #_cython_tree = declare_dependency(sources: [
 _cython_tree = [
   fs.copyfile('__init__.py'),
@@ -344,9 +370,11 @@ Wno_unused_result = cc.get_supported_arguments('-Wno-unused-result')
 Wno_unused_variable = cc.get_supported_arguments('-Wno-unused-variable')
 
 # C++ warning flags
+_cpp_Wno_bitwise_instead_of_logical = cpp.get_supported_arguments('-Wno-bitwise-instead-of-logical')
 _cpp_Wno_cpp = cpp.get_supported_arguments('-Wno-cpp')
-_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
 _cpp_Wno_class_memaccess = cpp.get_supported_arguments('-Wno-class-memaccess')
+_cpp_Wno_deprecated_declarations = cpp.get_supported_arguments('-Wno-deprecated-declarations')
+_cpp_Wno_deprecated_builtins = cpp.get_supported_arguments('-Wno-deprecated-builtins')
 _cpp_Wno_format_truncation = cpp.get_supported_arguments('-Wno-format-truncation')
 _cpp_Wno_non_virtual_dtor = cpp.get_supported_arguments('-Wno-non-virtual-dtor')
 _cpp_Wno_sign_compare = cpp.get_supported_arguments('-Wno-sign-compare')
@@ -538,6 +566,7 @@ lapack_dep = declare_dependency(
   dependencies: lapack_dep,
   link_with: [g77_abi_wrappers, blas_lapack_wrapper_lib]
 )
+
 subdir('_lib')
 subdir('special')
 subdir('linalg')

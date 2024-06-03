@@ -15,24 +15,8 @@
 #include <numpy/ufuncobject.h>
 
 #include "sf_error.h"
-#include "special/mdspan.h"
+#include "special/third_party/kokkos/mdspan.hpp"
 
-// Initializes Python and NumPy.
-inline bool SpecFun_Initialize() {
-    Py_Initialize();
-
-    import_array();
-    if (PyErr_Occurred() != nullptr) {
-        return false; // import array failed
-    }
-
-    import_umath();
-    if (PyErr_Occurred() != nullptr) {
-        return false; // import umath failed
-    }
-
-    return true;
-}
 
 // This is std::accumulate, but that is not constexpr until C++20
 template <typename InputIt, typename T>

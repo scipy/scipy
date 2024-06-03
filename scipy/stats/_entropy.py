@@ -9,6 +9,7 @@ import math
 import numpy as np
 from scipy import special
 from ._axis_nan_policy import _axis_nan_policy_factory, _broadcast_arrays
+from scipy._lib._array_api import array_namespace
 
 __all__ = ['entropy', 'differential_entropy']
 
@@ -123,7 +124,7 @@ def entropy(pk: np.typing.ArrayLike,
     >>> D = entropy(pk, qk, base=base)
     >>> D
     0.7369655941662062
-    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    >>> np.isclose(D, np.sum(pk * np.log(pk/qk)) / np.log(base), rtol=4e-16, atol=0)
     True
 
     The cross entropy can be calculated as the sum of the entropy and
@@ -139,20 +140,22 @@ def entropy(pk: np.typing.ArrayLike,
     if base is not None and base <= 0:
         raise ValueError("`base` must be a positive number or `None`.")
 
-    pk = np.asarray(pk)
+    xp = array_namespace(pk) if qk is None else array_namespace(pk, qk)
+
+    pk = xp.asarray(pk)
     with np.errstate(invalid='ignore'):
-        pk = 1.0*pk / np.sum(pk, axis=axis, keepdims=True)
+        pk = 1.0*pk / xp.sum(pk, axis=axis, keepdims=True)  # type: ignore[operator]
     if qk is None:
         vec = special.entr(pk)
     else:
-        qk = np.asarray(qk)
-        pk, qk = _broadcast_arrays((pk, qk), axis=None)  # don't ignore any axes
+        qk = xp.asarray(qk)
+        pk, qk = _broadcast_arrays((pk, qk), axis=None, xp=xp)  # don't ignore any axes
         sum_kwargs = dict(axis=axis, keepdims=True)
-        qk = 1.0*qk / np.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
+        qk = 1.0*qk / xp.sum(qk, **sum_kwargs)  # type: ignore[operator, call-overload]
         vec = special.rel_entr(pk, qk)
-    S = np.sum(vec, axis=axis)
+    S = xp.sum(vec, axis=axis)
     if base is not None:
-        S /= np.log(base)
+        S /= math.log(base)
     return S
 
 

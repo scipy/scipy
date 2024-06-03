@@ -21,7 +21,8 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/sparse/tests'
+  subdir: 'scipy/sparse/tests',
+  install_tag: 'tests'
 )
 
 data_sources = [
@@ -31,5 +32,6 @@ data_sources = [
 
 py3.install_sources(
   data_sources,
-  subdir: 'scipy/sparse/tests/data'
+  subdir: 'scipy/sparse/tests/data',
+  install_tag: 'tests'
 )

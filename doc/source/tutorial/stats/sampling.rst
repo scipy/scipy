@@ -49,9 +49,6 @@ Some methods to do that are:
   drawn between 0 to the value of the upper bound at Y. If this number
   is less than the PDF at Y, return the sample otherwise reject it. See
   :class:`~TransformedDensityRejection`.
-* The Ratio-of-Uniforms Method: This is a type of acceptance-rejection
-  method which is uses minimal bounding rectangles to construct the hat
-  function. See `scipy.stats.rvs_ratio_uniforms`.
 * Inversion for Discrete Distributions: The difference compared to the
   continuous case is that :math:`F` is now a step-function. To realize
   this in a computer, a search algorithm is used, the simplest of which
@@ -147,7 +144,8 @@ An example of this interface is shown below:
     ...         return -x * exp(-0.5 * x*x)
     ... 
     >>> dist = StandardNormal()
-    >>> 
+    >>>
+    >>> import numpy as np
     >>> urng = np.random.default_rng()
     >>> rng = TransformedDensityRejection(dist, random_state=urng)
 
@@ -238,7 +236,8 @@ by visualizing the histogram of the samples:
           :class:`~TransformedDensityRejection` would not be the same even for
           the same ``random_state``:
 
-          >>> from scipy.stats.sampling import norm, TransformedDensityRejection
+          >>> from scipy.stats import norm
+          >>> from scipy.stats.sampling import TransformedDensityRejection
           >>> from copy import copy
           >>> dist = StandardNormal()
           >>> urng1 = np.random.default_rng()
@@ -253,7 +252,7 @@ We can pass a ``domain`` parameter to truncate the distribution:
 
     >>> rng = TransformedDensityRejection(dist, domain=(-1, 1), random_state=urng)
     >>> rng.rvs((5, 3))
-    array([[-0.99865691,  0.38104014,  0.31633526],
+    array([[-0.99865691,  0.38104014,  0.31633526],    # may vary
            [ 0.88433909, -0.45181849,  0.78574461],
            [ 0.3337244 ,  0.12924307,  0.40499404],
            [-0.51865761,  0.43252222, -0.6514866 ],

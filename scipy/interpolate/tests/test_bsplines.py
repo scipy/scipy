@@ -24,7 +24,7 @@ from scipy._lib._util import AxisError
 # XXX: move to the interpolate namespace
 from scipy.interpolate._ndbspline import make_ndbspl
 
-from scipy.interpolate import dfitpack
+from scipy.interpolate import _dfitpack as dfitpack
 from scipy.interpolate import _bsplines as _b
 
 
@@ -389,6 +389,14 @@ class TestBSpline:
         for x0, x1 in [(-5, 0.5), (0.5, 5), (-4, 13)]:
             assert_allclose(b.integrate(x0, x1),
                             p.integrate(x0, x1))
+
+    def test_integrate_0D_always(self):
+        # make sure the result is always a 0D array (not a python scalar)
+        b = BSpline.basis_element([0, 1, 2])
+        for extrapolate in (True, False):
+            res = b.integrate(0, 1, extrapolate=extrapolate)
+            assert type(res) == np.ndarray
+            assert res.ndim == 0
 
     def test_subclassing(self):
         # classmethods should not decay to the base class
@@ -1346,6 +1354,19 @@ class TestInterp:
         with assert_raises(ValueError):
             make_interp_spline(x, y, bc_type=(l, r))
 
+    def test_deriv_order_too_large(self):
+        x = np.arange(7)
+        y = x**2
+        l, r = [(6, 0)], [(1, 0)]    # 6th derivative = 0 at x[0] for k=3
+        with assert_raises(ValueError, match="Bad boundary conditions at 0."):
+            # cannot fix 6th derivative at x[0]: does not segfault
+            make_interp_spline(x, y, bc_type=(l, r))
+
+        l, r = [(1, 0)], [(-6, 0)]    # derivative order < 0 at x[-1]
+        with assert_raises(ValueError, match="Bad boundary conditions at 6."):
+            # does not segfault
+            make_interp_spline(x, y, bc_type=(l, r))
+
     def test_complex(self):
         k = 3
         xx = self.xx
@@ -1774,6 +1795,7 @@ class TestSmoothingSpline:
                         spline_interp(grid),
                         atol=1e-15)
 
+    @pytest.mark.fail_slow(2)
     def test_weighted_smoothing_spline(self):
         # create data sample
         np.random.seed(1234)

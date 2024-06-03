@@ -2493,6 +2493,7 @@ class TestBessel:
         assert_raises(ValueError, _bessel_poly, -3)
         assert_raises(ValueError, _bessel_poly, 3.3)
 
+    @pytest.mark.fail_slow(10)
     def test_fs_param(self):
         for norm in ('phase', 'mag', 'delay'):
             for fs in (900, 900.1, 1234.567):

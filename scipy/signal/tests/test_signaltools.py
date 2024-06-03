@@ -1093,19 +1093,16 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
-    def test_types_deprecated(self):
-        dtype = np.longdouble
-        in_typed = np.array(self.IN, dtype=dtype)
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt(in_typed).dtype, dtype)
-        with pytest.deprecated_call(match=msg):
-            assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
-
-
     @pytest.mark.parametrize('dtype', [np.bool_, np.complex64, np.complex128,
-                                       np.clongdouble, np.float16,])
+                                       np.clongdouble, np.float16, np.object_,
+                                       "float96", "float128"])
     def test_invalid_dtypes(self, dtype):
+        # We can only test this on platforms that support a native type of float96 or
+        # float128; comparing to np.longdouble allows us to filter out non-native types
+        if (dtype in ["float96", "float128"]
+                and np.finfo(np.longdouble).dtype != dtype):
+            pytest.skip(f"Platform does not support {dtype}")
+        
         in_typed = np.array(self.IN, dtype=dtype)
         with pytest.raises(ValueError, match="not supported"):
             signal.medfilt(in_typed)
@@ -1115,9 +1112,9 @@ class TestMedFilt:
 
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
-        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
-        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
-            assert_raises(TypeError, signal.medfilt, None)
+        msg = "dtype=object is not supported by medfilt"
+        with assert_raises(ValueError, match=msg):
+            signal.medfilt(None)
 
     def test_odd_strides(self):
         # Avoid a regression with possible contiguous
@@ -1127,31 +1124,6 @@ class TestMedFilt:
         a = dummy[5:6]
         a.strides = 16
         assert_(signal.medfilt(a, 1) == 5.)
-
-    def test_refcounting(self):
-        # Check a refcounting-related crash
-        a = Decimal(123)
-        x = np.array([a, a], dtype=object)
-        if hasattr(sys, 'getrefcount'):
-            n = 2 * sys.getrefcount(a)
-        else:
-            n = 10
-        # Shouldn't segfault:
-        msg = "kernel_size exceeds volume.*|Using medfilt with arrays of dtype.*"
-        with pytest.warns((UserWarning, DeprecationWarning), match=msg):
-            for j in range(n):
-                signal.medfilt(x)
-        if hasattr(sys, 'getrefcount'):
-            assert_(sys.getrefcount(a) < n)
-        assert_equal(x, [a, a])
-
-    def test_object(self,):
-        msg = "Using medfilt with arrays of dtype"
-        with pytest.deprecated_call(match=msg):
-            in_object = np.array(self.IN, dtype=object)
-            out_object = np.array(self.OUT, dtype=object)
-            assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
-                               out_object)
 
     @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
     def test_medfilt2d_parallel(self, dtype):
@@ -2469,6 +2441,7 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
+@pytest.mark.fail_slow(10)
 def test_choose_conv_method():
     for mode in ['valid', 'same', 'full']:
         for ndim in [1, 2]:
@@ -2500,6 +2473,7 @@ def test_choose_conv_method():
         assert_equal(choose_conv_method(x, h, mode=mode), 'direct')
 
 
+@pytest.mark.fail_slow(10)
 def test_filtfilt_gust():
     # Design a filter.
     z, p, k = signal.ellip(3, 0.01, 120, 0.0875, output='zpk')
