@@ -142,7 +142,7 @@ before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}
 
 [tool.cibuildwheel.linux.environment]
 # /project will be the $PWD equivalent inside the docker used to build the wheel
-PKG_CONFIG_PATH="/project"
+PKG_CONFIG_PATH="/project/"
 
 [tool.cibuildwheel.macos]
 before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"

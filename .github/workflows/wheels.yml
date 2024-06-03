@@ -156,10 +156,14 @@ jobs:
             PREFIX=DYLD_LIBRARY_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
           else
             # Use libgfortran and friends from the scipy-openblas wheel,
-            # which should be exactly the same as the ones from gfortran
+            # which should be exactly the same as the ones from gfortran.
+            # Setting DYLD_LIBRARY_PATH ensures that delocate knows about those
+            $ friends, otherwise all the SO aren't fixed properly.
+            PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32; ldir=scipy_openblas32.get_lib_dir(); ldir+='/../.dylibs';print(ldir)\")\""            
+
             # This will exclude the duplicates from gfortran in /opt/gfortran*
             EXCLUDE="-e /gfortran"
-
+            
             # remove libgfortran from location used for linking, to check wheel has
             # bundled things correctly
             POSTFIX=" && sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
