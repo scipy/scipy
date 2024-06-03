@@ -5,168 +5,152 @@
 namespace special {
 
 template <typename T, size_t N>
-void forward_recur_rotate(T (&res)[N]) {
-    T tmp = res[N - 1];
-    res[N - 1] = res[0];
-    for (size_t j = 0; j < N - 1; ++j) {
-        res[j] = res[j + 1];
+void forward_recur_shift_left(T (&res)[N]) {
+    for (size_t n = 1; n < N; ++n) {
+        res[n - 1] = res[n];
     }
-    res[N - 2] = tmp;
 }
 
 template <typename T, size_t N>
-void forward_recur_shift(T (&res)[N]) {
-    for (size_t j = 0; j < N - 1; ++j) {
-        res[j] = res[j + 1];
-    }
-}
-
-template <typename Recurrence, typename InputIt, typename T, size_t N>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[N]) {
-    T coef[N];
-    r(it, coef);
-
-    T tmp = 0;
-    for (size_t j = 0; j < N; ++j) {
-        tmp += coef[j] * res[j];
-    }
-
-    forward_recur_shift(res);
-
+void forward_recur_rotate_left(T (&res)[N]) {
+    T tmp = res[0];
+    forward_recur_shift_left(res);
     res[N - 1] = tmp;
-}
-
-template <typename Recurrence, typename InputIt, typename T, size_t N>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N]) {
-    T coef[N];
-    T coef_jac[N];
-    r(it, coef, coef_jac);
-
-    T tmp = 0;
-    T tmp_jac = 0;
-    for (size_t j = 0; j < N; ++j) {
-        tmp += coef[j] * res[j];
-        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
-    }
-
-    forward_recur_shift(res);
-    forward_recur_shift(res_jac);
-
-    res[N - 1] = tmp;
-    res_jac[N - 1] = tmp_jac;
-}
-
-template <typename Recurrence, typename InputIt, typename T, size_t N>
-void forward_recur_next(Recurrence r, InputIt it, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N]) {
-    T coef[N];
-    T coef_jac[N];
-    T coef_hess[N];
-    r(it, coef, coef_jac, coef_hess);
-
-    T tmp = 0;
-    T tmp_jac = 0;
-    T tmp_hess = 0;
-    for (size_t j = 0; j < N; ++j) {
-        tmp += coef[j] * res[j];
-        tmp_jac += coef[j] * res_jac[j] + coef_jac[j] * res[j];
-        tmp_hess += coef[j] * res_hess[j] + T(2) * coef_jac[j] * res_jac[j] + coef_hess[j] * res[j];
-    }
-
-    forward_recur_shift(res);
-    forward_recur_shift(res_jac);
-    forward_recur_shift(res_hess);
-
-    res[N - 1] = tmp;
-    res_jac[N - 1] = tmp_jac;
-    res_hess[N - 1] = tmp_hess;
 }
 
 /**
- * Compute a forward recurrence that depends on K previous values.
+ * Compute a forward recurrence that depends on N previous values.
  *
+ * @param first begin iterator
+ * @param last end iterator
  * @param r recurrence
- * @param init initial value and its derivatives
- * @param res value and its derivatives
- * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
- * @param args arguments to forward to the callback
+ * @param res values, initialised to the leading N values
+ * @param f a function to be called as f(it, res)
  */
-template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Callback>
-void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Callback callback) {
+template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Func>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], Func f) {
     InputIt it = first;
     while (it - first != N && it != last) {
-        forward_recur_rotate(res);
+        forward_recur_rotate_left(res);
 
-        callback(it, res);
+        f(it, res);
         ++it;
     }
 
     if (last - first > N) {
         while (it != last) {
-            forward_recur_next(r, it, res);
+            T coef[N];
+            r(it, coef);
 
-            callback(it, res);
+            T res_next = 0;
+            for (ssize_t n = 0; n < N; ++n) {
+                res_next += coef[n] * res[n];
+            }
+
+            forward_recur_shift_left(res);
+            res[N - 1] = res_next;
+
+            f(it, res);
             ++it;
         }
     }
 }
 
 /**
- * Compute a forward recurrence that depends on K previous values.
+ * Compute a forward recurrence that depends on N previous values.
  *
+ * @param first begin iterator
+ * @param last end iterator
  * @param r recurrence
- * @param init initial value and its derivatives
- * @param res value and its derivatives
- * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
- * @param args arguments to forward to the callback
+ * @param res values, initialised to the leading N values
+ * @param res_jac first derivatives, initialised to the leading N first derivatives
+ * @param f a function to be called as f(it, res, res_jac)
  */
-template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Callback>
-void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Callback callback) {
+template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Func>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], Func f) {
     InputIt it = first;
     while (it - first != N && it != last) {
-        forward_recur_rotate(res);
-        forward_recur_rotate(res_jac);
+        forward_recur_rotate_left(res);
+        forward_recur_rotate_left(res_jac);
 
-        callback(it, res, res_jac);
+        f(it, res, res_jac);
         ++it;
     }
 
     if (last - first > N) {
         while (it != last) {
-            forward_recur_next(r, it, res, res_jac);
+            T coef[N];
+            T coef_jac[N];
+            r(it, coef, coef_jac);
 
-            callback(it, res, res_jac);
+            T res_next = 0;
+            T res_next_jac = 0;
+            for (ssize_t n = 0; n < N; ++n) {
+                res_next += coef[n] * res[n];
+                res_next_jac += coef[n] * res_jac[n] + coef_jac[n] * res[n];
+            }
+
+            forward_recur_shift_left(res);
+            res[N - 1] = res_next;
+
+            forward_recur_shift_left(res_jac);
+            res_jac[N - 1] = res_next_jac;
+
+            f(it, res, res_jac);
             ++it;
         }
     }
 }
 
 /**
- * Compute a forward recurrence that depends on K previous values.
+ * Compute a forward recurrence that depends on N previous values.
  *
+ * @param first begin iterator
+ * @param last end iterator
  * @param r recurrence
- * @param init initial value and its derivatives
- * @param res value and its derivatives
- * @param callback a function to be called as callback(i, r, args...) for 0 <= i <= n
+ * @param res values, initialised to the leading N values
+ * @param res_jac first derivatives, initialised to the leading N first derivatives
+ * @param res_hess second derivatives, initialised to the leading N second derivative
+ * @param f a function to be called as f(it, res, res_jac, res_hess)
  */
-template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Callback>
-void forward_recur(
-    InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], Callback callback
-) {
+template <typename InputIt, typename Recurrence, typename T, ssize_t N, typename Func>
+void forward_recur(InputIt first, InputIt last, Recurrence r, T (&res)[N], T (&res_jac)[N], T (&res_hess)[N], Func f) {
     InputIt it = first;
     while (it - first != N && it != last) {
-        forward_recur_rotate(res);
-        forward_recur_rotate(res_jac);
-        forward_recur_rotate(res_hess);
+        forward_recur_rotate_left(res);
+        forward_recur_rotate_left(res_jac);
+        forward_recur_rotate_left(res_hess);
 
-        callback(it, res, res_jac, res_hess);
+        f(it, res, res_jac, res_hess);
         ++it;
     }
 
     if (last - first > N) {
         while (it != last) {
-            forward_recur_next(r, it, res, res_jac, res_hess);
+            T coef[N];
+            T coef_jac[N];
+            T coef_hess[N];
+            r(it, coef, coef_jac, coef_hess);
 
-            callback(it, res, res_jac, res_hess);
+            T res_next = 0;
+            T res_next_jac = 0;
+            T res_next_hess = 0;
+            for (ssize_t n = 0; n < N; ++n) {
+                res_next += coef[n] * res[n];
+                res_next_jac += coef[n] * res_jac[n] + coef_jac[n] * res[n];
+                res_next_hess += coef[n] * res_hess[n] + T(2) * coef_jac[n] * res_jac[n] + coef_hess[n] * res[n];
+            }
+
+            forward_recur_shift_left(res);
+            res[N - 1] = res_next;
+
+            forward_recur_shift_left(res_jac);
+            res_jac[N - 1] = res_next_jac;
+
+            forward_recur_shift_left(res_hess);
+            res_hess[N - 1] = res_next_hess;
+
+            f(it, res, res_jac, res_hess);
             ++it;
         }
     }

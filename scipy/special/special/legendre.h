@@ -225,24 +225,33 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
     bool m_signbit;
     int type;
     T z;
+    T type_sign;
+    T w;
+
+    assoc_legendre_p_initializer_m_m_abs(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+        if (type == 3) {
+            type_sign = -1;
+
+            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                w = -w;
+            }
+        } else {
+            type_sign = 1;
+
+            w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+            if (m_signbit) {
+                w = -w;
+            }
+        }
+    }
 
     void operator()(T (&res)[2]) const {
         res[0] = 1;
-        if (type == 3) {
-            res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res[1] = -res[1];
-            }
-        } else {
-            res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
+        res[1] = w;
 
         if (m_signbit) {
             res[1] /= 2;
-
-            if (type != 3) {
-                res[1] *= -1;
-            }
         }
     }
 
@@ -250,21 +259,10 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
         operator()(res);
 
         res_jac[0] = 0;
-        if (type == 3) {
-            res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_jac[1] = -res_jac[1];
-            }
-        } else {
-            res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
+        res_jac[1] = -type_sign * z / w;
 
         if (m_signbit) {
             res_jac[1] /= 2;
-
-            if (type != 3) {
-                res_jac[1] *= -1;
-            }
         }
     }
 
@@ -272,21 +270,10 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
         operator()(res, res_jac);
 
         res_hess[0] = 0;
-        if (type == 3) {
-            res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_hess[1] = -res_hess[1];
-            }
-        } else {
-            res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
-        }
+        res_hess[1] = T(1) / ((z * z - T(1)) * w);
 
         if (m_signbit) {
             res_hess[1] /= 2;
-
-            if (type != 3) {
-                res_hess[1] *= -1;
-            }
         }
     }
 };
@@ -296,24 +283,33 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
     bool m_signbit;
     int type;
     T z;
+    T type_sign;
+    T w;
+
+    assoc_legendre_p_initializer_m_m_abs(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+        if (type == 3) {
+            type_sign = -1;
+
+            w = std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                w = -w;
+            }
+        } else {
+            type_sign = 1;
+
+            w = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+            if (m_signbit) {
+                w = -w;
+            }
+        }
+    }
 
     void operator()(T (&res)[2]) const {
         res[0] = 1;
-        if (type == 3) {
-            res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res[1] = -res[1];
-            }
-        } else {
-            res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
+        res[1] = w;
 
         if (m_signbit) {
             res[1] /= 2;
-
-            if (type != 3) {
-                res[1] *= -1;
-            }
         }
     }
 
@@ -321,21 +317,10 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
         operator()(res);
 
         res_jac[0] = 0;
-        if (type == 3) {
-            res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_jac[1] = -res_jac[1];
-            }
-        } else {
-            res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
-        }
+        res_jac[1] = -type_sign * z / w;
 
         if (m_signbit) {
             res_jac[1] /= 2;
-
-            if (type != 3) {
-                res_jac[1] *= -1;
-            }
         }
     }
 
@@ -343,21 +328,10 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
         operator()(res, res_jac);
 
         res_hess[0] = 0;
-        if (type == 3) {
-            res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
-            if (std::real(z) < 0) {
-                res_hess[1] = -res_hess[1];
-            }
-        } else {
-            res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
-        }
+        res_hess[1] = T(1) / ((z * z - T(1)) * w);
 
         if (m_signbit) {
             res_hess[1] /= 2;
-
-            if (type != 3) {
-                res_hess[1] *= -1;
-            }
         }
     }
 };
@@ -713,8 +687,17 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     }
 };
 
-template <typename NormPolicy, typename T>
-T assoc_legendre_p_pm1(NormPolicy norm, int n, int m, int type, T z) {
+template <typename T>
+T assoc_legendre_p_pm1(assoc_legendre_unnorm_policy norm, int n, int m, int type, T z) {
+    if (m == 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+template <typename T>
+T assoc_legendre_p_pm1(assoc_legendre_norm_policy norm, int n, int m, int type, T z) {
     if (m == 0) {
         return 1;
     }
@@ -816,7 +799,7 @@ void assoc_legendre_p_for_each_n(
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
-                forward_recur_shift(res);
+                forward_recur_shift_left(res);
 
                 res[1] = assoc_legendre_p_pm1(norm, j, m, type, z);
                 f(j, res);
@@ -864,8 +847,8 @@ void assoc_legendre_p_for_each_n(
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
-                forward_recur_shift(res);
-                forward_recur_shift(res_jac);
+                forward_recur_shift_left(res);
+                forward_recur_shift_left(res_jac);
 
                 assoc_legendre_p_pm1(norm, j, m, type, z, res[1], res_jac[1]);
                 f(j, res, res_jac);
@@ -920,9 +903,9 @@ void assoc_legendre_p_for_each_n(
 
         if (std::abs(std::real(z)) == 1 && std::imag(z) == 0) {
             for (int j = m_abs; j <= n; ++j) {
-                forward_recur_shift(res);
-                forward_recur_shift(res_jac);
-                forward_recur_shift(res_hess);
+                forward_recur_shift_left(res);
+                forward_recur_shift_left(res_jac);
+                forward_recur_shift_left(res_hess);
 
                 assoc_legendre_p_pm1(norm, j, m, type, z, res[1], res_jac[1], res_hess[1]);
                 f(j, res, res_jac, res_hess);
