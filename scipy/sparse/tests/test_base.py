@@ -2268,32 +2268,46 @@ class _TestInplaceArithmetic:
         y -= b
         assert_array_equal(x, y)
 
-        x = a.copy()
-        y = a.copy()
         if isinstance(b, sparray):
-            # Elementwise multiply
-            assert_raises(ValueError, operator.imul, x, b.T)
-            x = x * a
-            y *= b
-            # Now matrix product, from __rmatmul__
-            assert_raises(ValueError, operator.imatmul, x, b.T)
+            # Elementwise multiply from __rmul__
             x = a.copy()
             y = a.copy()
-            x = x.dot(a.T)
-            y @= b.T
-        else:
-            # Elementwise multiply
-            assert_raises(ValueError, operator.imul, x, b)
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x *= b.T
             x = x * a
-            y *= b.T
+            y *= b
+            assert_array_equal(x, y)
+
             # Now matrix product, from __rmatmul__
-            assert_raises(ValueError, operator.imatmul, x, b)
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x @= b
             x = x.dot(a.T)
             y @= b.T
-        assert_array_equal(x, y)
+            assert_array_equal(x, y)
+        else:
+            # Matrix Product from __rmul__
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x *= b
+            x = x.dot(a.T)
+            y *= b.T
+            assert_array_equal(x, y)
+
+            # Now matrix product, from __rmatmul__
+            x = a.copy()
+            y = a.copy()
+            with assert_raises(ValueError, match="dimension mismatch"):
+                x @= b
+            x = x.dot(a.T)
+            y @= b.T
+            assert_array_equal(x, y)
 
         # Matrix (non-elementwise) floor division is not defined
-        assert_raises(TypeError, operator.ifloordiv, x, b)
+        with assert_raises(TypeError, match="unsupported operand"):
+            x //= b
 
     def test_imul_scalar(self):
         def check(dtype):
@@ -2367,7 +2381,8 @@ class _TestInplaceArithmetic:
         bp = bp - a
         assert_allclose(b.toarray(), bp.toarray())
 
-        assert_raises(TypeError, operator.ifloordiv, a, b)
+        with assert_raises(TypeError, match="unsupported operand"):
+            a //= b
 
 
 class _TestGetSet:
