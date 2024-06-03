@@ -291,11 +291,140 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_unnorm_policy> {
     }
 };
 
+template <typename T>
+struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
+    bool m_signbit;
+    int type;
+    T z;
+
+    void operator()(T (&res)[2]) const {
+        res[0] = 1;
+        if (type == 3) {
+            res[1] = std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res[1] = -res[1];
+            }
+        } else {
+            res[1] = -std::sqrt(T(1) - z * z); // do not modify, see function comment
+        }
+
+        if (m_signbit) {
+            res[1] /= 2;
+
+            if (type != 3) {
+                res[1] *= -1;
+            }
+        }
+    }
+
+    void operator()(T (&res)[2], T (&res_jac)[2]) const {
+        operator()(res);
+
+        res_jac[0] = 0;
+        if (type == 3) {
+            res_jac[1] = z / std::sqrt(z * z - T(1)); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res_jac[1] = -res_jac[1];
+            }
+        } else {
+            res_jac[1] = z / std::sqrt(T(1) - z * z); // do not modify, see function comment
+        }
+
+        if (m_signbit) {
+            res_jac[1] /= 2;
+
+            if (type != 3) {
+                res_jac[1] *= -1;
+            }
+        }
+    }
+
+    void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        operator()(res, res_jac);
+
+        res_hess[0] = 0;
+        if (type == 3) {
+            res_hess[1] = T(1) / (std::sqrt(z * z - T(1)) * (z * z - T(1))); // do not modify, see function comment
+            if (std::real(z) < 0) {
+                res_hess[1] = -res_hess[1];
+            }
+        } else {
+            res_hess[1] = T(1) / (std::sqrt(T(1) - z * z) * (T(1) - z * z)); // do not modify, see function comment
+        }
+
+        if (m_signbit) {
+            res_hess[1] /= 2;
+
+            if (type != 3) {
+                res_hess[1] *= -1;
+            }
+        }
+    }
+};
+
 template <typename T, typename NormPolicy>
 struct assoc_legendre_p_recurrence_m_m_abs;
 
 template <typename T>
 struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_unnorm_policy> {
+    bool m_signbit;
+    int type;
+    T z;
+    T type_sign;
+
+    assoc_legendre_p_recurrence_m_m_abs(bool m_signbit, int type, T z) : m_signbit(m_signbit), type(type), z(z) {
+        if (type == 3) {
+            type_sign = -1;
+        } else {
+            type_sign = 1;
+        }
+    }
+
+    void operator()(int n, T (&res)[2]) const {
+        T fac;
+        if (m_signbit) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
+
+        // other square roots can be avoided if each iteration increments by 2
+
+        res[0] = fac * (T(1) - z * z);
+        res[1] = 0;
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
+        operator()(n, res);
+
+        T fac;
+        if (m_signbit) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
+
+        res_jac[0] = -T(2) * fac * z;
+        res_jac[1] = 0;
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        operator()(n, res, res_jac);
+
+        T fac;
+        if (m_signbit) {
+            fac = type_sign / T((2 * n) * (2 * n - 2));
+        } else {
+            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
+        }
+
+        res_hess[0] = -T(2) * fac;
+        res_hess[1] = 0;
+    }
+};
+
+template <typename T>
+struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
     bool m_signbit;
     int type;
     T z;
@@ -428,6 +557,41 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_unnorm_policy> {
     }
 };
 
+template <typename T>
+struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
+    int m;
+    int type;
+    T z;
+    T type_sign;
+
+    assoc_legendre_p_recurrence_n(int m, int type, T z) : m(m), type(type), z(z) {
+        if (type == 3) {
+            type_sign = -1;
+        } else {
+            type_sign = 1;
+        }
+    }
+
+    void operator()(int n, T (&res)[2]) const {
+        res[0] = -T(n + m - 1) / T(n - m);
+        res[1] = T(2 * n - 1) * z / T(n - m);
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
+        operator()(n, res);
+
+        res_jac[0] = 0;
+        res_jac[1] = T(2 * n - 1) / T(n - m);
+    }
+
+    void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        operator()(n, res, res_jac);
+
+        res_hess[0] = 0;
+        res_hess[1] = 0;
+    }
+};
+
 /**
  * Compute the associated Legendre polynomial of degree n and order n.
  *
@@ -441,6 +605,61 @@ struct assoc_legendre_p_initializer_n;
 
 template <typename T>
 struct assoc_legendre_p_initializer_n<T, assoc_legendre_unnorm_policy> {
+    int m;
+    int type;
+    T z;
+    bool diag;
+
+    void operator()(T (&res)[2]) const {
+        int m_abs = std::abs(m);
+
+        if (diag) {
+            assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, const T(&p)[2]) {});
+
+            res[0] = res[1];
+        }
+
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+    }
+
+    void operator()(T (&res)[2], T (&res_jac)[2]) const {
+        int m_abs = std::abs(m);
+
+        if (diag) {
+            assoc_legendre_p_for_each_m_m_abs(
+                assoc_legendre_unnorm, m, type, z, res, res_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {}
+            );
+
+            res[0] = res[1];
+            res_jac[0] = res_jac[1];
+        }
+
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
+    }
+
+    void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
+        int m_abs = std::abs(m);
+
+        if (diag) {
+            assoc_legendre_p_for_each_m_m_abs(
+                assoc_legendre_unnorm, m, type, z, res, res_jac, res_hess,
+                [](int n, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {}
+            );
+
+            res[0] = res[1];
+            res_jac[0] = res_jac[1];
+            res_hess[0] = res_hess[1];
+        }
+
+        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
+        res_hess[1] = T(2 * (m_abs + 1) - 1) * (T(2) * res_jac[0] + z * res_hess[0]) / T(m_abs + 1 - m);
+    }
+};
+
+template <typename T>
+struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
     int m;
     int type;
     T z;

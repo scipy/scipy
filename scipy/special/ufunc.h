@@ -27,13 +27,38 @@ constexpr T initializer_accumulate(InputIt first, InputIt last, T init) {
     return init;
 }
 
-// Deduces the number of arguments of a callable F.
 template <typename Func>
-struct arity_of;
+struct signature_of {
+    using type = typename signature_of<decltype(&Func::operator())>::type;
+};
 
 template <typename Res, typename... Args>
-struct arity_of<Res (*)(Args...)> {
-    static constexpr size_t value = sizeof...(Args);
+struct signature_of<Res(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename Res, typename... Args>
+struct signature_of<Res (*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...)> {
+    using type = Res(Args...);
+};
+
+template <typename T, typename Res, typename... Args>
+struct signature_of<Res (T::*)(Args...) const> {
+    using type = Res(Args...);
+};
+
+template <typename Func>
+using signature_of_t = typename signature_of<Func>::type;
+
+// Deduces the number of arguments of a callable F.
+template <typename Func>
+struct arity_of {
+    static constexpr size_t value = arity_of<signature_of_t<Func>>::value;
 };
 
 template <typename Res, typename... Args>
@@ -45,16 +70,8 @@ template <typename Func>
 constexpr size_t arity_of_v = arity_of<Func>::value;
 
 template <typename Func>
-struct has_return;
-
-template <typename Res, typename... Args>
-struct has_return<Res (*)(Args...)> {
-    static constexpr bool value = true;
-};
-
-template <typename... Args>
-struct has_return<void (*)(Args...)> {
-    static constexpr bool value = false;
+struct has_return {
+    static constexpr bool value = has_return<signature_of_t<Func>>::value;
 };
 
 template <typename Res, typename... Args>
@@ -289,29 +306,6 @@ struct npy_typenum<std::mdspan<T, Extents, LayoutPolicy, AccessorPolicy>> {
 template <typename T>
 inline constexpr NPY_TYPES npy_typenum_v = npy_typenum<T>::value;
 
-template <typename Func>
-struct signature_of {
-    using type = typename signature_of<decltype(&Func::operator())>::type;
-};
-
-template <typename Res, typename... Args>
-struct signature_of<Res (*)(Args...)> {
-    using type = Res(Args...);
-};
-
-template <typename T, typename Res, typename... Args>
-struct signature_of<Res (T::*)(Args...)> {
-    using type = Res(Args...);
-};
-
-template <typename T, typename Res, typename... Args>
-struct signature_of<Res (T::*)(Args...) const> {
-    using type = Res(Args...);
-};
-
-template <typename Func>
-using signature_of_t = typename signature_of<Func>::type;
-
 template <typename T>
 struct npy_traits {
     static T get(char *src, const npy_intp *dimensions, const npy_intp *steps) { return *reinterpret_cast<T *>(src); }
@@ -452,9 +446,8 @@ class SpecFun_UFunc {
 
         template <typename Func>
         SpecFun_Func(Func func)
-            : has_return(has_return_v<signature_of_t<Func>>),
-              nin_and_nout(arity_of_v<signature_of_t<Func>> + has_return), func(ufunc_traits<Func>::loop),
-              data(new ufunc_data<Func>{{nullptr}, func}),
+            : has_return(has_return_v<Func>), nin_and_nout(arity_of_v<Func> + has_return),
+              func(ufunc_traits<Func>::loop), data(new ufunc_data<Func>{{nullptr}, func}),
               data_deleter([](void *ptr) { delete static_cast<ufunc_data<Func> *>(ptr); }),
               types(ufunc_traits<Func>::types) {}
     };
