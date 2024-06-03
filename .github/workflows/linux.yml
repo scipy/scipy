@@ -497,3 +497,40 @@ jobs:
         PKG_CONFIG_PATH="$PWD" pip install . -vv --no-build-isolation
         pushd $RUNNER_TEMP
         PYTHON_GIL=0 python -m pytest --pyargs scipy -n2 --durations=10
+  #################################################################################
+  clang-17-build-only:
+    # Purpose is to check for warnings in builds with latest clang.
+    # We do not run the test suite here.
+    name: Clang-17 build-only (-Werror)
+    needs: get_commit_message
+    if: >
+      needs.get_commit_message.outputs.message == 1
+      && (github.repository == 'scipy/scipy' || github.repository == '')
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4.1.1
+        with:
+          submodules: recursive
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Setup system dependencies
+        run: |
+          sudo apt-get -y update
+          wget https://apt.llvm.org/llvm.sh
+          chmod u+x llvm.sh
+          sudo ./llvm.sh 17
+          sudo apt install -y libopenblas-dev liblapack-dev
+
+      - name: Setup Python build deps
+        run: |
+          pip install -r requirements/build.txt
+          pip install build
+
+      - name: Build wheel, check for compiler warnings
+        run: |
+          # specify which compilers to use using environment variables
+          CC=clang-17 CXX=clang++-17 FC=gfortran python -m build -wnx -Csetup-args=--werror
