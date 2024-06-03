@@ -66,8 +66,9 @@ Writing code isn’t the only way to contribute to SciPy. You can also:
 - write grant proposals and help with other fundraising efforts
 
 If you’re unsure where to start or how your skills fit in, reach out! You can
-ask on the mailing list or here, on GitHub, by leaving a
-comment on a relevant issue that is already open.
+ask on the `forum <https://discuss.scientific-python.org/c/contributor/scipy>`__
+or here, on GitHub, by leaving a comment on a relevant issue that is already
+open.
 
 If you are new to contributing to open source, `this
 guide <https://opensource.guide/how-to-contribute/>`__ helps explain why, what,

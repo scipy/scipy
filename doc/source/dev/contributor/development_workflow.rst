@@ -259,7 +259,7 @@ has a nice help page that outlines the process for `filing pull requests`_.
 
 If your changes involve modifications to the API or addition/modification of a
 function, you should initiate a code review. This involves sending an email to
-the `SciPy mailing list`_ with a link to your PR along with a description of
+the `SciPy forum`_ with a link to your PR along with a description of
 and a motivation for your changes.
 
 .. _pr-checklist:

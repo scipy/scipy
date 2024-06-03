@@ -77,7 +77,7 @@ classifiers in ``setup.py``, and mentioned in the release notes for each
 release.  All newly released Python versions will be supported as soon as
 possible.  For the general policy on dropping support for a Python or NumPy
 version, see :ref:`NEP 29 <NEP29>`.  The final decision on dropping support is
-always taken on the scipy-dev mailing list.
+always taken on the scipy-dev forum.
 
 The lowest supported Numpy_ version for a SciPy version is mentioned in the
 release notes and is encoded in ``pyproject.toml``, ``scipy/__init__.py`` and the
@@ -90,7 +90,7 @@ Supported versions of optional dependencies and compilers is documented in
 :ref:`toolchain-roadmap`. Note that not all versions of optional dependencies
 that are supported are tested well or at all by SciPy's Continuous
 Integration setup.  Issues regarding this are dealt with as they come up in the
-issue tracker or mailing list.
+issue tracker or forum.
 
 
 Building binary installers
