@@ -2202,10 +2202,9 @@ class TestFactorialFunctions:
         def _check(n, expected):
             assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
-            # using floats with exact=True is deprecated for scalars...
-            with pytest.deprecated_call(match="Non-integer values.*"):
+            # using floats with `exact=True` raises an error for scalars and arrays
+            with pytest.raises(ValueError, match="Non-integer values.*"):
                 assert_allclose(special.factorial(n, exact=True), expected)
-            # ... and already an error for arrays
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
                 special.factorial([n], exact=True)
 
@@ -2270,15 +2269,14 @@ class TestFactorialFunctions:
     def test_factorial_scalar_corner_cases(self, n, exact):
         if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
                 or np.issubdtype(type(n), np.floating)):
-            # no error
             if (np.issubdtype(type(n), np.floating) and exact
                     and n is not np.nan):
-                with pytest.deprecated_call(match="Non-integer values.*"):
-                    result = special.factorial(n, exact=exact)
+                with pytest.raises(ValueError, match="Non-integer values.*"):
+                    special.factorial(n, exact=exact)
             else:
                 result = special.factorial(n, exact=exact)
-            exp = np.nan if n is np.nan or n is None else special.factorial(n)
-            assert_equal(result, exp)
+                exp = np.nan if n is np.nan or n is None else special.factorial(n)
+                assert_equal(result, exp)
         else:
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)
