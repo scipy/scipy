@@ -178,12 +178,6 @@ class PchipInterpolator(CubicHermiteSpline):
         A N-D array of real values. ``y``'s length along the interpolation
         axis must be equal to the length of ``x``. Use the ``axis``
         parameter to select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
@@ -405,12 +399,6 @@ class Akima1DInterpolator(CubicHermiteSpline):
         N-D array of real values. The length of ``y`` along the interpolation axis
         must be equal to the length of ``x``. Use the ``axis`` parameter to
         select the interpolation axis.
-
-        .. deprecated:: 1.13.0
-            Complex data is deprecated and will raise an error in SciPy 1.15.0.
-            If you are trying to use the real components of the passed array,
-            use ``np.real`` on ``y``.
-
     axis : int, optional
         Axis in the ``y`` array corresponding to the x-coordinate values. Defaults
         to ``axis=0``.
