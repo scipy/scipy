@@ -85,8 +85,8 @@ class IndexMixin:
             elif isinstance(col, slice):
                 res = self._get_arrayXslice(row, col)
             # arrayXarray preprocess
-            elif row.ndim == 2 and row.shape[1] == 1\
-                and (col.ndim == 1 or col.shape[0] == 1):
+            elif (row.ndim == 2 and row.shape[1] == 1
+                and (col.ndim == 1 or col.shape[0] == 1)):
                 # outer indexing
                 res = self._get_columnXarray(row[:, 0], col.ravel())
             else:
@@ -100,12 +100,11 @@ class IndexMixin:
                     res = self._get_arrayXarray(row, col)
 
         # package the result and return
-        if isinstance(self, sparray):
+        if isinstance(self, sparray) and res.shape != new_shape:
             # handle formats that support indexing but not 1D (lil for now)
             if self.format == "lil" and len(new_shape) != 2:
                 return res.tocoo().reshape(new_shape)
-            if res.shape != new_shape:
-                return res.reshape(new_shape)
+            return res.reshape(new_shape)
         return res
 
     def __setitem__(self, key, x):
@@ -117,7 +116,8 @@ class IndexMixin:
 
             if issparse(x):
                 x = x.toarray()
-            x = np.asarray(x, dtype=self.dtype)
+            else:
+                x = np.asarray(x, dtype=self.dtype)
 
             if isinstance(idx, INT_TYPES):
                 if x.size != 1:
@@ -138,9 +138,8 @@ class IndexMixin:
             # broadcast scalar to full 1d
             if x.squeeze().shape != idx_shape:
                 x = np.broadcast_to(x, idx.shape)
-            if x.size == 0:
-                return
-            self._set_array(idx, x)
+            if x.size != 0:
+                self._set_array(idx, x)
             return
 
         # 2D array
@@ -195,7 +194,7 @@ class IndexMixin:
             self._set_arrayXarray(i, j, x)
 
     def _validate_indices(self, key):
-        """Returns index tuple of intended result"""
+        """Returns two tuples: (index tuple, requested shape tuple)"""
         # single ellipsis
         if key is Ellipsis:
             return (slice(None),) * self.ndim, self.shape
@@ -270,8 +269,7 @@ class IndexMixin:
 
         if array_indices:
             idx_shape = list(index[array_indices[0]].shape) + idx_shape
-        if len(idx_shape) > 2:
-            ndim = len(idx_shape)
+        if (ndim := len(idx_shape)) > 2:
             raise IndexError(f'Only 1D or 2D arrays allowed. Index makes {ndim}D')
         return tuple(index), tuple(idx_shape)
 

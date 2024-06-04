@@ -13,10 +13,9 @@ formats_for_index1d = [csr_array, dok_array]
 @contextlib.contextmanager
 def check_remains_sorted(X):
     """Checks that sorted indices property is retained through an operation"""
-    if not hasattr(X, 'has_sorted_indices') or not X.has_sorted_indices:
-        yield
-        return
     yield
+    if not hasattr(X, 'has_sorted_indices') or not X.has_sorted_indices:
+        return
     indices = X.indices.copy()
     X.has_sorted_indices = False
     X.sort_indices()

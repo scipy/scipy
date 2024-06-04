@@ -273,8 +273,8 @@ class _spbase:
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
         """
-        raise NotImplementedError("count_nonzero not implemented for "
-                                  f"{self.__class__.__name__}.")
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"count_nonzero not implemented for {clsname}.")
 
     def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
@@ -289,8 +289,8 @@ class _spbase:
         --------
         count_nonzero : Number of non-zero entries
         """
-        raise NotImplementedError("getnnz not implemented for "
-                                  f"{self.__class__.__name__}.")
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"getnnz not implemented for {clsname}.")
 
     @property
     def nnz(self) -> int:
