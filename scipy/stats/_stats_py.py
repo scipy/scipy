@@ -7326,7 +7326,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    return ttest_1samp(a-b, popmean=0, axis=axis, alternative=alternative,
+    return ttest_1samp(a - b, popmean=0, axis=axis, alternative=alternative,
                        _no_deco=True)
 
 
