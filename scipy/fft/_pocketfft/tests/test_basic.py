@@ -3,7 +3,7 @@
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less,
                            assert_allclose)
-import pytest
+import pytest 
 from pytest import raises as assert_raises
 from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
                                   rfft, irfft, rfftn, irfftn,

@@ -110,10 +110,9 @@ def to_native(A):
 
 def getdtype(dtype, a=None, default=None):
     """Function used to simplify argument processing. If 'dtype' is not
-    specified (is None), returns a.dtype; otherwise returns a np.dtype
-    object created from the specified dtype argument. If 'dtype' and 'a'
-    are both None, construct a data type out of the 'default' parameter.
-    Furthermore, 'dtype' must be in 'allowed' set.
+    specified (is None), returns a.dtype. If 'dtype' and 'a'
+    are both None, return a numpy data type using the 'default' parameter.
+    Furthermore, 'dtype' must not be a np object and must be in supported_dtypes.
     """
     # TODO is this really what we want?
     if dtype is None:
@@ -130,6 +129,9 @@ def getdtype(dtype, a=None, default=None):
             raise ValueError(
                 "object dtype is not supported by sparse matrices"
             )
+    if newdtype not in supported_dtypes:
+        raise ValueError("given datatype is not supported")
+
 
     return newdtype
 
