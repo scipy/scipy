@@ -3434,8 +3434,8 @@ class TestMoments:
     @array_api_compatible
     def test_moment_empty_order(self, xp):
         # tests moment with empty `order` list
-        with pytest.raises(ValueError, match=r"'order' must be a scalar or a"
-                                             r" non-empty 1D list/array."):
+        with pytest.raises(ValueError, match=r"`order` must be a scalar or a"
+                                             r" non-empty 1D array."):
             stats.moment(xp.asarray([1, 2, 3, 4]), order=[])
 
     @array_api_compatible
@@ -9017,17 +9017,11 @@ class TestLMoment:
     def test_dtype_iv_non_numeric(self):
         message = '`sample` must be an array of real numbers.'
         with pytest.raises(ValueError, match=message):
-            stats.lmoment(np.array(self.data, dtype=dtype))
+            stats.lmoment(np.array(self.data, dtype=object))
 
-    @pytest.mark.parametrize('order', not_integers + [0, -1])
+    @pytest.mark.parametrize('order', not_integers + [0, -1, [], [[1, 2, 3]]])
     def test_order_iv(self, order):
-        message = '`order` must be an array of positive integers.'
-        with pytest.raises(ValueError, match=message):
-            stats.lmoment(self.data, order=order)
-
-    @pytest.mark.parametrize('order', [[], [[1, 2, 3]]])
-    def test_order_iv2(self, order):
-        message = '`order` must be a scalar or a non-empty 1D array.'
+        message = '`order` must be a scalar or a non-empty...'
         with pytest.raises(ValueError, match=message):
             stats.lmoment(self.data, order=order)
 

@@ -888,11 +888,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
-def _moment_outputs(kwds):
-    order = np.atleast_1d(kwds.get('order', 1))
-    if order.size == 0:
-        raise ValueError("'order' must be a scalar or a non-empty 1D "
-                         "list/array.")
+def _moment_outputs(kwds, default_order=1):
+    order = np.atleast_1d(kwds.get('order', default_order))
+    message = "`order` must be a scalar or a non-empty 1D array."
+    if order.size == 0 or order.ndim > 1:
+        raise ValueError(message)
     return len(order)
 
 
@@ -1012,7 +1012,7 @@ def moment(a, order=1, axis=0, nan_policy='propagate', *, center=None):
         # decorator. Currently, the `_axis_nan_policy` decorator is skipped when `a`
         # is a non-NumPy array, so we need to check again. When the decorator is
         # updated for array API compatibility, we can remove this second check.
-        raise ValueError("'order' must be a scalar or a non-empty 1D list/array.")
+        raise ValueError("`order` must be a scalar or a non-empty 1D array.")
     if xp.any(order != xp.round(order)):
         raise ValueError("All elements of `order` must be integral.")
     order = order[()] if order.ndim == 0 else order
@@ -10675,8 +10675,8 @@ def expectile(a, alpha=0.5, *, weights=None):
     return res.root
 
 
-def lmoments_iv(sample, order, axis, sorted, standardize):
-
+def lmoment_iv(sample, order, axis, sorted, standardize):
+    # input validation/standardization for `lmoment`
     sample = np.asarray(sample)
     message = "`sample` must be an array of real numbers."
     if np.issubdtype(sample.dtype, np.integer):
@@ -10684,9 +10684,9 @@ def lmoments_iv(sample, order, axis, sorted, standardize):
     if not np.issubdtype(sample.dtype, np.floating):
         raise ValueError(message)
 
-    message = "`order` must be an array of positive integers."
+    message = "`order` must be a scalar or a non-empty array of positive integers."
     order = np.asarray(order)
-    if (not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0)):
+    if not np.issubdtype(order.dtype, np.integer) or np.any(order <= 0):
         raise ValueError(message)
 
     axis = np.asarray(axis)[()]
@@ -10725,22 +10725,12 @@ def _prk(r, k):
     return (-1)**(r-k)*special.binom(r, k)*special.binom(r+k, k)
 
 
-def _lmoment_outputs(kwds):
-    # should share this with `moment`, but to do that we need
-    # to change argument `moment` to `order`
-    order = np.atleast_1d(kwds.get('order', [1, 2, 3, 4]))
-    message = "`order` must be a scalar or a non-empty 1D array."
-    if order.size == 0 or order.ndim > 1:
-        raise ValueError(message)
-    return len(order)
-
-
 @_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
-    n_outputs=_lmoment_outputs
+    n_outputs=lambda kwds: _moment_outputs(kwds, [1, 2, 3, 4])
 )
 def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=True):
-    r"""Compute sample L-moments.
+    r"""Compute L-moments of a sample from a continuous distribution
 
     The L-moments of a probability distribution are summary statistics with
     uses similar to those of conventional moments, but they are defined in
@@ -10795,11 +10785,8 @@ def lmoment(sample, order=[1, 2, 3, 4], *, axis=0, sorted=False, standardize=Tru
     provide reasonable estimates.
 
     """
-    args = lmoments_iv(sample, order, axis, sorted, standardize)
+    args = lmoment_iv(sample, order, axis, sorted, standardize)
     sample, order, axis, sorted, standardize = args
-
-    if order.size == 0:  # defer degenerate case to NumPy
-        return np.mean(sample, axis=axis)
 
     n_moments = np.max(order)
     k = np.arange(n_moments, dtype=sample.dtype)
