@@ -12,7 +12,7 @@ kernelspec:
 ---
 
 ```{eval-rst}
-.. jupyterlite:: sampling.ipynb
+.. jupyterlite:: ../../_contents/sampling.ipynb
    :new_tab: True
 ```
 (non-uniform-random-number-sampling)=
