@@ -194,13 +194,15 @@ class TestXP_Mean:
             xp_assert_equal(res, ref)
 
     def test_empty(self, xp):
-        message = 'At least one slice along `axis` has...'
-
+        # it's really a `SmallSampleWarning`, but not sure
+        # where it will be imported from yet
+        message = 'One or more sample arguments is too small...'
         with pytest.warns(RuntimeWarning, match=message):
             res = xp_mean(xp.asarray([]))
             ref = xp.asarray(xp.nan)
             xp_assert_equal(res, ref)
 
+        message = "All axis-slices of one or more sample arguments..."
         with pytest.warns(RuntimeWarning, match=message):
             res = xp_mean(xp.asarray([[]]), axis=1)
             ref = xp.asarray([xp.nan])
