@@ -196,8 +196,8 @@ namespace detail {
     SPECFUN_HOST_DEVICE inline double four_gammas(double u, double v, double w, double x) {
         double result;
 
-        // Without loss of generality, assume |u| >= |v| and |w| >= |x|.
-        if (std::abs(u) > std::abs(v)) {
+        // Without loss of generality, ensure |u| >= |v| and |w| >= |x|.
+        if (std::abs(v) > std::abs(u)) {
             std::swap(u, v);
         }
         if (std::abs(x) > std::abs(w)) {

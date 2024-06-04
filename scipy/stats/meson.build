@@ -137,7 +137,6 @@ py3.install_sources([
     '_relative_risk.py',
     '_resampling.py',
     '_result_classes.py',
-    '_rvs_sampling.py',
     '_sampling.py',
     '_sensitivity_analysis.py',
     '_stats_mstats_common.py',

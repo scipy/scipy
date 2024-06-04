@@ -110,7 +110,7 @@ class _spbase:
         from ._lil import lil_array
         return lil_array
 
-    def __init__(self, arg1, maxprint=MAXPRINT):
+    def __init__(self, arg1, *, maxprint=None):
         self._shape = None
         if self.__class__.__name__ == '_spbase':
             raise ValueError("This class is not intended"
@@ -119,7 +119,7 @@ class _spbase:
             raise ValueError(
                 "scipy sparse array classes do not support instantiation from a scalar"
             )
-        self.maxprint = maxprint
+        self.maxprint = MAXPRINT if maxprint is None else maxprint
 
     @property
     def shape(self):
@@ -263,26 +263,71 @@ class _spbase:
         """Maximum number of elements to display when printed."""
         return self.maxprint
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
         """Number of non-zero entries, equivalent to
 
-        np.count_nonzero(a.toarray())
+        np.count_nonzero(a.toarray(), axis=axis)
 
         Unlike the nnz property, which return the number of stored
         entries (the length of the data attribute), this method counts the
         actual number of non-zero entries in data.
+
+        Duplicate entries are summed before counting.
+
+        Parameters
+        ----------
+        axis : {-2, -1, 0, 1, None} optional
+            Count nonzeros for the whole array, or along a specified axis.
+
+            .. versionadded:: 1.15.0
+
+        Returns
+        -------
+        numpy array
+            A reduced array (no axis `axis`) holding the number of nonzero values
+            for each of the indices of the nonaxis dimensions.
+
+        Notes
+        -----
+        If you want to count nonzero and explicit zero stored values (e.g. nnz)
+        along an axis, two fast idioms are provided by `numpy` functions for the
+        common CSR, CSC, COO formats.
+
+        For the major axis in CSR (rows) and CSC (cols) use `np.diff`:
+
+            >>> import numpy as np
+            >>> import scipy as sp
+            >>> A = sp.sparse.csr_array([[4, 5, 0], [7, 0, 0]])
+            >>> major_axis_stored_values = np.diff(A.indptr)  # -> np.array([2, 1])
+
+        For the minor axis in CSR (cols) and CSC (rows) use `numpy.bincount` with
+        minlength ``A.shape[1]`` for CSR and ``A.shape[0]`` for CSC:
+
+            >>> csr_minor_stored_values = np.bincount(A.indices, minlength=A.shape[1])
+
+        For COO, use the minor axis approach for either `axis`:
+
+            >>> A = A.tocoo()
+            >>> coo_axis0_stored_values = np.bincount(A.coords[0], minlength=A.shape[1])
+            >>> coo_axis1_stored_values = np.bincount(A.coords[1], minlength=A.shape[0])
+
+        Examples
+        --------
+
+            >>> A = sp.sparse.csr_array([[4, 5, 0], [7, 0, 0]])
+            >>> A.count_nonzero(axis=0)
+            array([2, 1, 0])
         """
-        raise NotImplementedError("count_nonzero not implemented for %s." %
-                                  self.__class__.__name__)
+        clsname = self.__class__.__name__
+        raise NotImplementedError(f"count_nonzero not implemented for {clsname}.")
 
     def _getnnz(self, axis=None):
         """Number of stored values, including explicit zeros.
 
         Parameters
         ----------
-        axis : None, 0, or 1
-            Select between the number of values across the whole array, in
-            each column, or in each row.
+        axis : {-2, -1, 0, 1, None} optional
+            Report stored values for the whole array, or along a specified axis.
 
         See also
         --------

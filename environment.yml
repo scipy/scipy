@@ -36,6 +36,7 @@ dependencies:
   - types-psutil
   # For building docs
   - sphinx
+  - intersphinx-registry
   - numpydoc
   - ipython
   - setuptools<67.3  # avoid pkg_resources deprecation warnings from MPL/scikit-umfpack

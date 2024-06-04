@@ -87,6 +87,7 @@ test = [
 ]
 doc = [
     "sphinx>=5.0.0",
+    "intersphinx_registry",
     "pydata-sphinx-theme>=0.15.2",
     "sphinx-design>=0.4.0",
     "matplotlib>=3.5",

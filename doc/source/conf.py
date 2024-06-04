@@ -8,6 +8,7 @@ from datetime import date
 from docutils import nodes
 from docutils.parsers.rst import Directive
 
+from intersphinx_registry import get_intersphinx_mapping
 import matplotlib
 import matplotlib.pyplot as plt
 from numpydoc.docscrape_sphinx import SphinxDocString
@@ -273,15 +274,9 @@ mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
-intersphinx_mapping = {
-    'python': ('https://docs.python.org/3', None),
-    'numpy': ('https://numpy.org/devdocs', None),
-    'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org/stable', None),
-    'asv': ('https://asv.readthedocs.io/en/stable/', None),
-    'statsmodels': ('https://www.statsmodels.org/stable', None),
-}
-
+intersphinx_mapping = get_intersphinx_mapping(
+    packages={"python", "numpy", "neps", "matplotlib", "asv", "statsmodels", "mpmath"}
+)
 
 # -----------------------------------------------------------------------------
 # Numpy extensions
@@ -351,13 +346,6 @@ for key in (
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
         '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
-        'scipy.signal.daub is deprecated',
-        'scipy.signal.qmf is deprecated',
-        'scipy.signal.cascade is deprecated',
-        'scipy.signal.morlet is deprecated',
-        'scipy.signal.morlet2 is deprecated',
-        'scipy.signal.ricker is deprecated',
-        'scipy.signal.cwt is deprecated',
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

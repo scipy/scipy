@@ -4,10 +4,7 @@
 
 from scipy._lib.deprecation import _sub_module_deprecation
 
-__all__ = [  # noqa: F822
-    'daub', 'qmf', 'cascade', 'morlet', 'ricker', 'morlet2', 'cwt',
-    'convolve'
-]
+__all__: list[str] = []
 
 
 def __dir__():

@@ -3020,8 +3020,8 @@ def factorial(n, exact=False):
             return math.factorial(n)
         elif exact:
             msg = ("Non-integer values of `n` together with `exact=True` are "
-                   "deprecated. Either ensure integer `n` or use `exact=False`.")
-            warnings.warn(msg, DeprecationWarning, stacklevel=2)
+                   "not supported. Either ensure integer `n` or use `exact=False`.")
+            raise ValueError(msg)
         return _factorialx_approx_core(n, k=1)
 
     # arrays & array-likes

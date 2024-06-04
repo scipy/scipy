@@ -589,6 +589,7 @@ class TestFit:
 
         assert_nlff_less_or_close(dist, data, res.params, shapes, **self.tols)
 
+    @pytest.mark.fail_slow(5)
     def test_truncweibull_min(self):
         # Can't guarantee that all distributions will fit all data with
         # arbitrary bounds. This distribution just happens to fail above.

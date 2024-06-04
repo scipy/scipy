@@ -47,7 +47,7 @@ def test_rel_entr_generic(dtype):
     xp_assert_close(res, xp.asarray(ref), xp=xp)
 
 
-@pytest.mark.fail_slow(2)
+@pytest.mark.fail_slow(5)
 @array_api_compatible
 @given(data=strategies.data())
 # `reversed` is for developer convenience: test new function first = less waiting

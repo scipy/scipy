@@ -395,7 +395,7 @@ class TestLazywhere:
     p = strategies.floats(min_value=0, max_value=1)
     data = strategies.data()
 
-    @pytest.mark.fail_slow(5)
+    @pytest.mark.fail_slow(10)
     @pytest.mark.filterwarnings('ignore::RuntimeWarning')  # overflows, etc.
     @skip_xp_backends('jax.numpy',
                       reasons=["JAX arrays do not support item assignment"])

@@ -18,8 +18,8 @@ from ._sputils import (isdense, getdtype, isshape, isintlike, isscalarlike,
 class _dok_base(_spbase, IndexMixin, dict):
     _format = 'dok'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _spbase.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
         is_array = isinstance(self, sparray)
         if isinstance(arg1, tuple) and isshape(arg1, allow_1d=is_array):
@@ -69,7 +69,11 @@ class _dok_base(_spbase, IndexMixin, dict):
             )
         return len(self._dict)
 
-    def count_nonzero(self):
+    def count_nonzero(self, axis=None):
+        if axis is not None:
+            raise NotImplementedError(
+                "count_nonzero over an axis is not implemented for DOK format."
+            )
         return sum(x != 0 for x in self.values())
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
