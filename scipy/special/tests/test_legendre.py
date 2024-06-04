@@ -113,7 +113,7 @@ class TestLegendreFunctions:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-0.99, 0.99, shape)
-        p_all, p_all_jac, p_all_hess = special.lpmn_all(m_max, n_max, x, diff_n = 2)
+        p_all, p_all_jac, p_all_hess = special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
@@ -122,7 +122,7 @@ class TestLegendreFunctions:
         m = np.expand_dims(m, axis = tuple(range(1, x.ndim + 2)))
 
         x = np.expand_dims(x, axis = (0, 1))
-        p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
+        p, p_jac, p_hess = special.assoc_legendre_p(m, n, x, diff_n = 2)
 
         np.testing.assert_allclose(p, p_all)
         np.testing.assert_allclose(p_jac, p_all_jac)
@@ -136,7 +136,7 @@ class TestLegendreFunctions:
         m = rng.integers(-10, 10, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.lpmn(m, n, x, diff_n = 2, legacy = False)
+        p, p_jac, p_hess = special.assoc_legendre_p(m, n, x, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
@@ -155,7 +155,7 @@ class TestLegendreFunctions:
 
         x = rng.uniform(-0.99, 0.99, shape)
 
-        p, p_jac, p_hess = special.lpmn_all(m_max, n_max, x, diff_n = 2)
+        p, p_jac, p_hess = special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 2)
 
         m = np.concatenate([np.arange(m_max + 1), np.arange(-m_max, 0)])
         n = np.arange(n_max + 1)
@@ -174,7 +174,7 @@ class TestLegendreFunctions:
         x = rng.uniform(-5, 5, shape)
         type = np.where(np.abs(x) <= 1, 2, 3)
 
-        p, p_jac = special.lpmn_all(4, 4, x, norm = norm, diff_n = 1)
+        p, p_jac = special.assoc_legendre_p_all(4, 4, x, norm = norm, diff_n = 1)
 
         np.testing.assert_allclose(p[0, 0], assoc_legendre_p_0_0(type, x, norm = norm))
         np.testing.assert_allclose(p[1, 0], 0)
@@ -279,7 +279,7 @@ class TestLegendreFunctions:
     @pytest.mark.parametrize("n_max", [10])
     @pytest.mark.parametrize("x", [1, -1])
     def test_lpmn_all_limits(self, m_max, n_max, x):
-        p, p_jac = special.lpmn_all(m_max, n_max, x, diff_n = 1)
+        p, p_jac = special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 1)
 
         n = np.arange(n_max + 1)
 
@@ -298,7 +298,7 @@ class TestLegendreFunctions:
     @pytest.mark.parametrize("n_max", [10])
     def test_lpmn_legacy(self, m_max, n_max):
         x = 0.5
-        p, p_jac = special.lpmn_all(m_max, n_max, x, diff_n = 1)
+        p, p_jac = special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 1)
 
         p_legacy, p_jac_legacy = special.lpmn(m_max, n_max, x)
         for m in range(m_max + 1):
@@ -454,7 +454,7 @@ class TestLegendreFunctions:
         n = rng.integers(0, 100, shape)
         x = rng.uniform(-1, 1, shape)
 
-        p, p_jac, p_hess = special.lpn(n, x, diff_n = 2, legacy = False)
+        p, p_jac, p_hess = special.legendre_p(n, x, diff_n = 2)
 
         assert p.shape == shape
         assert p_jac.shape == p.shape
@@ -469,7 +469,7 @@ class TestLegendreFunctions:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-1, 1, x_shape)
-        p, p_jac, p_hess = special.lpn_all(n_max, x, diff_n = 2)
+        p, p_jac, p_hess = special.legendre_p_all(n_max, x, diff_n = 2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = tuple(range(1, x.ndim + 1)))

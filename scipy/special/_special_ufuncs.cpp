@@ -557,19 +557,20 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "loggamma", loggamma);
 
-    PyObject *lpn = Py_BuildValue(
-        "(N,N,N)", SpecFun_NewUFunc({static_cast<func_qd_d_t>(::lpn), static_cast<func_qf_f_t>(::lpn)}, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qd_dd_t>(::lpn), static_cast<func_qf_ff_t>(::lpn)}, 2, "lpn", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qd_ddd_t>(::lpn), static_cast<func_qf_fff_t>(::lpn)}, 3, "lpn", nullptr)
+    PyObject *legendre_p = Py_BuildValue(
+        "(N,N,N)",
+        SpecFun_NewUFunc({static_cast<func_qd_d_t>(lpn), static_cast<func_qf_f_t>(lpn)}, "legendre_p", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_dd_t>(lpn), static_cast<func_qf_ff_t>(lpn)}, 2, "legendre_p", nullptr),
+        SpecFun_NewUFunc({static_cast<func_qd_ddd_t>(lpn), static_cast<func_qf_fff_t>(lpn)}, 3, "legendre_p", nullptr)
     );
-    PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
+    PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 
     PyObject *assoc_legendre_p = Py_BuildValue(
         "{O:(N,N,N),O:(N,N,N)}", Py_True,
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z) { return lpmn(special::assoc_legendre_norm, m, n, z); },
              [](long long int m, long long int n, float z) { return lpmn(special::assoc_legendre_norm, m, n, z); }},
-            "lpmn", nullptr
+            "assoc_legendre_p", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac) {
@@ -578,7 +579,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int m, long long int n, float z, float &res, float &res_jac) {
                  lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac);
              }},
-            2, "lpmn", nullptr
+            2, "assoc_legendre_p", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac, double &res_hess) {
@@ -587,13 +588,13 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int m, long long int n, float z, float &res, float &res_jac, float &res_hess) {
                  lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac, res_hess);
              }},
-            3, "lpmn", nullptr
+            3, "assoc_legendre_p", nullptr
         ),
         Py_False,
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z) { return lpmn(special::assoc_legendre_unnorm, m, n, z); },
              [](long long int m, long long int n, float z) { return lpmn(special::assoc_legendre_unnorm, m, n, z); }},
-            "lpmn", nullptr
+            "assoc_legendre_p", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac) {
@@ -602,7 +603,7 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int m, long long int n, float z, float &res, float &res_jac) {
                  lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac);
              }},
-            2, "lpmn", nullptr
+            2, "assoc_legendre_p", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac, double &res_hess) {
@@ -611,10 +612,10 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
              [](long long int m, long long int n, float z, float &res, float &res_jac, float &res_hess) {
                  lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac, res_hess);
              }},
-            3, "lpmn", nullptr
+            3, "assoc_legendre_p", nullptr
         )
     );
-    PyModule_AddObjectRef(_special_ufuncs, "lpmn", assoc_legendre_p);
+    PyModule_AddObjectRef(_special_ufuncs, "assoc_legendre_p", assoc_legendre_p);
 
     PyObject *clpmn = Py_BuildValue(
         "{O:(N,N,N),O:(N,N,N)}", Py_True,

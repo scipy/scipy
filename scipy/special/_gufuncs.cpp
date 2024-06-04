@@ -93,34 +93,34 @@ PyMODINIT_FUNC PyInit__gufuncs() {
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1_t>(lpn_all), static_cast<func_f_f1_t>(lpn_all), static_cast<func_D_D1_t>(lpn_all),
              static_cast<func_F_F1_t>(lpn_all)},
-            1, "lpn_all", lpn_all_doc, "()->(np1)"
+            1, "legendre_p_all", nullptr, "()->(np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1d1_t>(lpn_all), static_cast<func_f_f1f1_t>(lpn_all),
              static_cast<func_D_D1D1_t>(lpn_all), static_cast<func_F_F1F1_t>(lpn_all)},
-            2, "lpn_all", lpn_all_doc, "()->(np1),(np1)"
+            2, "legendre_p_all", nullptr, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
             {static_cast<func_d_d1d1d1_t>(lpn_all), static_cast<func_f_f1f1f1_t>(lpn_all),
              static_cast<func_D_D1D1D1_t>(lpn_all), static_cast<func_F_F1F1F1_t>(lpn_all)},
-            3, "lpn_all", lpn_all_doc, "()->(np1),(np1),(np1)"
+            3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)"
         )
     );
-    PyModule_AddObjectRef(_gufuncs, "lpn_all", legendre_p_all);
+    PyModule_AddObjectRef(_gufuncs, "legendre_p_all", legendre_p_all);
 
     PyObject *assoc_legendre_p_all = Py_BuildValue(
         "{O:(N,N,N),O:(N,N,N)}", Py_True,
         SpecFun_NewGUFunc(
             {[](double z, double_2d res) { lpmn_all(special::assoc_legendre_norm, z, res); },
              [](float z, float_2d res) { lpmn_all(special::assoc_legendre_norm, z, res); }},
-            1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
+            1, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac) {
                  lpmn_all(special::assoc_legendre_norm, z, res, res_jac);
              },
              [](float z, float_2d res, float_2d res_jac) { lpmn_all(special::assoc_legendre_norm, z, res, res_jac); }},
-            2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
+            2, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1),(mpmp1,np1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
@@ -129,13 +129,13 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
                  lpmn_all(special::assoc_legendre_norm, z, res, res_jac, res_hess);
              }},
-            3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
+            3, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
         ),
         Py_False,
         SpecFun_NewGUFunc(
             {[](double z, double_2d res) { lpmn_all(special::assoc_legendre_unnorm, z, res); },
              [](float z, float_2d res) { lpmn_all(special::assoc_legendre_unnorm, z, res); }},
-            1, "lpmn_all", lpmn_doc, "()->(mpmp1,np1)"
+            1, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac) {
@@ -143,7 +143,7 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              },
              [](float z, float_2d res, float_2d res_jac) { lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac); }
             },
-            2, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1)"
+            2, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1),(mpmp1,np1)"
         ),
         SpecFun_NewGUFunc(
             {[](double z, double_2d res, double_2d res_jac, double_2d res_hess) {
@@ -152,10 +152,10 @@ PyMODINIT_FUNC PyInit__gufuncs() {
              [](float z, float_2d res, float_2d res_jac, double_2d res_hess) {
                  lpmn_all(special::assoc_legendre_unnorm, z, res, res_jac, res_hess);
              }},
-            3, "lpmn_all", lpmn_doc, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
+            3, "assoc_legendre_p_all", nullptr, "()->(mpmp1,np1),(mpmp1,np1),(mpmp1,np1)"
         )
     );
-    PyModule_AddObjectRef(_gufuncs, "lpmn_all", assoc_legendre_p_all);
+    PyModule_AddObjectRef(_gufuncs, "assoc_legendre_p_all", assoc_legendre_p_all);
 
     PyObject *clpmn_all = Py_BuildValue(
         "{O:(N,N,N),O:(N,N,N)}", Py_True,

@@ -15,8 +15,8 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import lpn as _lpn, lpmn as _lpmn, clpmn as _clpmn
-from ._gufuncs import (lpn_all, lpmn_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
+from ._special_ufuncs import legendre_p, assoc_legendre_p, clpmn as _clpmn
+from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
@@ -60,9 +60,11 @@ __all__ = [
     'kvp',
     'lmbda',
     'lpmn',
-    'lpmn_all',
+    'legendre_p',
+    'legendre_p_all',
+    'assoc_legendre_p',
+    'assoc_legendre_p_all',
     'lpn',
-    'lpn_all',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
@@ -1718,20 +1720,20 @@ def mathieu_odd_coef(m, q):
     fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
-_lpmn = MultiUFunc(_lpmn)
+assoc_legendre_p = MultiUFunc(assoc_legendre_p)
 
-@_lpmn.resolve_ufunc
+@assoc_legendre_p.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
-lpmn_all = MultiUFunc(lpmn_all)
+assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
-@lpmn_all.resolve_ufunc
+@assoc_legendre_p_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     print(ufuncs)
     return ufuncs[norm][diff_n]
 
-@lpmn_all.resolve_out_shapes
+@assoc_legendre_p_all.resolve_out_shapes
 def _(m, n, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
@@ -1741,7 +1743,7 @@ def _(m, n, z_shape, nout):
 
     return nout * ((2 * abs(m) + 1, n + 1,) + z_shape,)
 
-def lpmn(m, n, z, *, diff_n = None, legacy = True):
+def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
 
     Computes the associated Legendre function of the first kind of order m and
@@ -1790,31 +1792,22 @@ def lpmn(m, n, z, *, diff_n = None, legacy = True):
 
     """
 
-    if legacy:
-        if (diff_n is not None):
-            raise ValueError('diff_n must be None if legacy is True')
+    n = _nonneg_int_or_fail(n, 'n', strict=False)
 
-        n = _nonneg_int_or_fail(n, 'n', strict=False)
+    if np.iscomplexobj(z):
+        raise ValueError("Argument must be real. Use clpmn instead.")
 
-        if np.iscomplexobj(z):
-            raise ValueError("Argument must be real. Use clpmn instead.")
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-        m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+    p, pd = assoc_legendre_p_all(abs(m), n, z, diff_n = 1)
+    if (m >= 0):
+        p = p[:(m + 1)]
+        pd = pd[:(m + 1)]
+    else:
+        p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
+        pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
 
-        p, pd = lpmn_all(abs(m), n, z, diff_n = 1)
-        if (m >= 0):
-            p = p[:(m + 1)]
-            pd = pd[:(m + 1)]
-        else:
-            p = np.insert(p[:(m - 1):-1], 0, p[0], axis = 0)
-            pd = np.insert(pd[:(m - 1):-1], 0, pd[0], axis = 0)
-
-        return p, pd
-
-    if (diff_n is None):
-        diff_n = 0
-
-    return _lpmn(m, n, z, diff_n = diff_n)
+    return p, pd
 
 clpmn_all = MultiUFunc(clpmn_all, force_out_complex = True)
 
@@ -2076,35 +2069,26 @@ def euler(n):
         n1 = n
     return _specfun.eulerb(n1)[:(n+1)]
 
-_lpn = MultiUFunc(_lpn)
+legendre_p = MultiUFunc(legendre_p)
 
-@_lpn.resolve_ufunc
+@legendre_p.resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-lpn_all = MultiUFunc(lpn_all)
+legendre_p_all = MultiUFunc(legendre_p_all)
 
-@lpn_all.resolve_ufunc
+@legendre_p_all.resolve_ufunc
 def _(ufuncs, diff_n = 0):
     return ufuncs[diff_n]
 
-@lpn_all.resolve_out_shapes
+@legendre_p_all.resolve_out_shapes
 def _(n, z_shape, nout):
     n = _nonneg_int_or_fail(n, 'n', strict=False)
 
     return nout * ((n + 1,) + z_shape,)
 
-def lpn(n, z, *, diff_n = None, legacy = True):
-    if legacy:
-        if (diff_n is not None):
-            raise ValueError('diff_n must be None if legacy is True')
-
-        return lpn_all(n, z, diff_n = 1)
-
-    if (diff_n is None):
-        diff_n = 0
-
-    return _lpn(n, z, diff_n = diff_n)
+def lpn(n, z):
+    return legendre_p_all(n, z, diff_n = 1)
 
 def lqn(n, z):
     """Legendre function of the second kind.
