@@ -1420,6 +1420,7 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
 
+    @pytest.mark.fail_slow(5)
     def test_L9(self):
         # Lampinen ([5]) test problem 9
 
