@@ -4,7 +4,6 @@
 import sys
 from typing import Any, Literal, Optional, Union
 import operator
-from warnings import warn
 import numpy as np
 from math import prod
 import scipy.sparse as sp
@@ -127,12 +126,11 @@ def getdtype(dtype, a=None, default=None):
                 raise TypeError("could not interpret data type") from e
     else:
         newdtype = np.dtype(dtype)
-        if newdtype == np.object_:
-            raise ValueError(
-                "object dtype is not supported by sparse matrices"
-            )
+
     if newdtype not in supported_dtypes:
-        warn(f"scipy.sparse does not support dtype {newdtype}", stacklevel=3)
+        supported_dtypes_fmt = ", ".join([t.__name__ for t in supported_dtypes])
+        raise ValueError(f"scipy.sparse does not support dtype {newdtype.name}. "
+                         f"The only supported types are: {supported_dtypes_fmt}.")
     
     return newdtype
 
