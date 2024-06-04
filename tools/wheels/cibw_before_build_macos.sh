@@ -69,4 +69,7 @@ lib_loc=$(python -c"import scipy_openblas32; print(scipy_openblas32.get_lib_dir(
 # since delocate gets confused if there is more than one
 # https://github.com/scipy/scipy/issues/20852
 install_name_tool -change @loader_path/../.dylibs/libgfortran.5.dylib @rpath/libgfortran.5.dylib $lib_loc/libsci*
+install_name_tool -change @loader_path/../.dylibs/libgcc_s.1.1.dylib @rpath/libgcc_s.1.1.dylib $lib_loc/libsci*
+install_name_tool -change @loader_path/../.dylibs/libquadmath.0.dylib @rpath/libquadmath.0.dylib $lib_loc/libsci*
+
 codesign -s - -f $lib_loc/libsci*
