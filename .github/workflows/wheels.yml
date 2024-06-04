@@ -163,12 +163,15 @@ jobs:
             PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32 as sob; ldir=sob.get_lib_dir();print(f'{ldir}/../.dylibs':{ldir})\")\""            
             # remove libgfortran from location used for linking, to check wheel has
             # bundled things correctly
-            POSTFIX=" && sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
+            POSTFIX=" sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
                      sudo rm -rf /usr/local/gfortran/lib"
           fi
           CIBW="$PREFIX delocate-listdeps {wheel} &&\
             $PREFIX delocate-wheel $EXCLUDE --require-archs \
-            {delocate_archs} -w {dest_dir} {wheel} $POSTFIX"
+            {delocate_archs} -w {dest_dir} {wheel} &&\
+            delocate-listdeps -d {dest_dir}/*.whl &&\
+            $POSTFIX"
+          
           # Rename x86 Accelerate wheel to test on macOS 13 runner
           if [[ ${{ matrix.buildplat[0] }} == 'macos-13' && ${{ matrix.buildplat[4] }} == '14.0' ]]; then
             CIBW+=" && mv {dest_dir}/\$(basename {wheel}) \
