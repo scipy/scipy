@@ -216,7 +216,7 @@ class _csr_base(_cs_matrix):
         col = np.asarray(idx, dtype=idx_dtype)
         val = np.empty(row.size, dtype=self.dtype)
         csr_sample_values(M, N, self.indptr, self.indices, self.data,
-                          row.size, row.ravel(), col.ravel(), val)
+                          row.size, row, col, val)
 
         new_shape = col.shape if col.shape[0] > 1 else (col.shape[0],)
         return self.__class__(val.reshape(new_shape))
@@ -275,8 +275,7 @@ class _csr_base(_cs_matrix):
         return self._major_index_fancy(row)._get_submatrix(minor=col)
 
     def _set_int(self, idx, x):
-        major, minor = self._swap((0, idx))
-        self._set_many(major, minor, x)
+        self._set_many(0, idx, x)
 
     def _set_array(self, idx, x):
         x = np.broadcast_to(x, idx.shape)

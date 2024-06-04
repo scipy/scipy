@@ -150,7 +150,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
     def _get_array(self, idx):
         idx = np.asarray(idx)
-        if len(idx.shape) == 0:
+        if idx.ndim == 0:
             val = self._dict.get(int(idx), self.dtype.type(0))
             return np.array(val, stype=self.dtype)
         new_dok = self._dok_container(idx.shape, dtype=self.dtype)
@@ -163,8 +163,7 @@ class _dok_base(_spbase, IndexMixin, dict):
             else:
                 new_idx = np.unravel_index(np.arange(len(dok_vals)), idx.shape)
                 new_idx = new_idx[0] if len(new_idx) == 1 else zip(*new_idx)
-                # zip could use 'strict=True' With Python 3.10+
-                for i, v in zip(new_idx, dok_vals):  # , strict=True):
+                for i, v in zip(new_idx, dok_vals, strict=True):
                     if v:
                         new_dok._dict[i] = v
         return new_dok
@@ -252,7 +251,7 @@ class _dok_base(_spbase, IndexMixin, dict):
         x_set = x.ravel()
         if len(idx_set) != len(x_set):
             if len(x_set) == 1:
-                x_set = np.array([x_set[0]] * len(idx_set), dtype=self.dtype)
+                x_set = np.full(len(idx_set), x_set[0], dtype=self.dtype)
             else:
               raise ValueError("Need len(index)==len(data) or len(data)==1")
         for i, v in zip(idx_set, x_set):
