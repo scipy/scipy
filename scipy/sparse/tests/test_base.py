@@ -2277,15 +2277,6 @@ class _TestInplaceArithmetic:
             x = x * a
             y *= b
             assert_array_equal(x, y)
-
-            # Now matrix product, from __rmatmul__
-            x = a.copy()
-            y = a.copy()
-            with assert_raises(ValueError, match="dimension mismatch"):
-                x @= b
-            x = x.dot(a.T)
-            y @= b.T
-            assert_array_equal(x, y)
         else:
             # Matrix Product from __rmul__
             x = a.copy()
@@ -2296,7 +2287,15 @@ class _TestInplaceArithmetic:
             y *= b.T
             assert_array_equal(x, y)
 
-            # Now matrix product, from __rmatmul__
+        # Now matrix product, from __rmatmul__
+        y = a.copy()
+        # skip this test if numpy doesn't support __imatmul__ yet.
+        # move out of the try/except once numpy 1.24 is no longer supported.
+        try:
+            y @= b.T
+        except TypeError:
+            pass
+        else:
             x = a.copy()
             y = a.copy()
             with assert_raises(ValueError, match="dimension mismatch"):
