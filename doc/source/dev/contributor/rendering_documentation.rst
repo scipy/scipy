@@ -109,6 +109,15 @@ for more information.
      This indicates that you're likely picking up the wrong SciPy install,
      check with ``python -c "import scipy; print(scipy.__file__)"``.
 
+   - The interactive examples are not available in CI builds. To see the
+     interactive examples locally in a JupyterLab environment, you can use
+
+     .. code-block:: bash
+
+        python -m http.server --directory doc/build/html
+
+     The documentation pages should then be available at `http://localhost:8000/`.
+
 .. _rendering-documentation-cloud:
 
 Checking Documentation on the Cloud
