@@ -13,7 +13,7 @@ from . import _ufuncs
 from ._ufuncs import (
     log_ndtr, ndtr, ndtri, erf, erfc, i0, i0e, i1, i1e, gammaln,  # noqa: F401
     gammainc, gammaincc, logit, expit, entr, rel_entr, xlogy,  # noqa: F401
-    chdtr, chdtrc, betainc, betaincc  # noqa: F401
+    chdtr, chdtrc, betainc, betaincc, stdtr  # noqa: F401
 )
 
 _SCIPY_ARRAY_API = os.environ.get("SCIPY_ARRAY_API", False)
@@ -132,11 +132,27 @@ def _betaincc(xp, spx):
     return __betaincc
 
 
+def _stdtr(xp, spx):
+    betainc = getattr(spx, 'betainc', None)  # noqa: F811
+    if betainc is None and hasattr(xp, 'special'):
+        betainc = getattr(xp.special, 'betainc', None)
+    if betainc is None:
+        return None
+
+    def __stdtr(df, t):
+        x = df / (t ** 2 + df)
+        tail = betainc(df / 2, xp.asarray(0.5), x) / 2
+        return xp.where(x < 0, tail, 1 - tail)
+
+    return __stdtr
+
+
 _generic_implementations = {'rel_entr': _rel_entr,
                             'xlogy': _xlogy,
                             'chdtr,': _chdtr,
                             'chdtrc': _chdtrc,
                             'betaincc': _betaincc,
+                            'stdtr': _stdtr,
                             }
 
 
@@ -176,6 +192,7 @@ array_special_func_map = {
     'chdtrc': 2,
     'betainc': 3,
     'betaincc': 3,
+    'stdtr': 2,
 }
 
 for f_name, n_array_args in array_special_func_map.items():
