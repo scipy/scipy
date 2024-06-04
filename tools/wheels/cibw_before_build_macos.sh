@@ -43,6 +43,7 @@ if [[ $PLATFORM == "x86_64" ]]; then
   export SDKROOT=${SDKROOT:-$(xcrun --show-sdk-path)}
 fi
 
+
 if [[ $PLATFORM == "arm64" ]]; then
   curl -L https://github.com/fxcoudert/gfortran-for-macOS/releases/download/12.1-monterey/gfortran-ARM-12.1-Monterey.dmg -o gfortran.dmg
   GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
@@ -63,10 +64,9 @@ fi
 python -m pip install -r requirements/openblas.txt
 python -c "import scipy_openblas32; print(scipy_openblas32.get_pkg_config())" > $PROJECT_DIR/scipy-openblas.pc
 
-lib_loc=python -c"import scipy_openblas32; print(scipy_openblas32.get_lib_dir())"
+lib_loc=$(python -c"import scipy_openblas32; print(scipy_openblas32.get_lib_dir())")
 # Use the libgfortran from gfortran rather than the one in the wheel
 # since delocate gets confused if there is more than one
 # https://github.com/scipy/scipy/issues/20852
 install_name_tool -change @loader_path/../.dylibs/libgfortran.5.dylib @rpath/libgfortran.5.dylib $lib_loc/libsci*
 codesign -s - -f $lib_loc/libsci*
-
