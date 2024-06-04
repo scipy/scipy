@@ -160,7 +160,7 @@ jobs:
             # This will exclude the duplicates from gfortran in /opt/gfortran*
             EXCLUDE="-e /gfortran"
             
-            PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32; ldir=scipy_openblas32.get_lib_dir(); ldir+='/../.dylibs';print(ldir)\")\""            
+            PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32 as sob; ldir=sob.get_lib_dir();print(f'{ldir}/../.dylibs':{ldir})\")\""            
             # remove libgfortran from location used for linking, to check wheel has
             # bundled things correctly
             POSTFIX=" && sudo rm -rf /opt/gfortran-darwin-x86_64-native &&\
