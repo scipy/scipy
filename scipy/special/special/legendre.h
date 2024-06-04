@@ -305,23 +305,15 @@ struct assoc_legendre_p_initializer_m_m_abs<T, assoc_legendre_norm_policy> {
     }
 
     void operator()(T (&res)[2]) const {
-        res[0] = 1;
-        res[1] = w;
-
-        if (m_signbit) {
-            res[1] /= 2;
-        }
+        res[0] = 1 / std::sqrt(2);
+        res[1] = std::sqrt(T(3)) * w / T(2);
     }
 
     void operator()(T (&res)[2], T (&res_jac)[2]) const {
         operator()(res);
 
         res_jac[0] = 0;
-        res_jac[1] = -type_sign * z / w;
-
-        if (m_signbit) {
-            res_jac[1] /= 2;
-        }
+        res_jac[1] = -type_sign * std::sqrt(T(3)) * z / (T(2) * w);
     }
 
     void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
@@ -413,14 +405,7 @@ struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
     }
 
     void operator()(int n, T (&res)[2]) const {
-        T fac;
-        if (m_signbit) {
-            fac = type_sign / T((2 * n) * (2 * n - 2));
-        } else {
-            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
-        }
-
-        // other square roots can be avoided if each iteration increments by 2
+        T fac = type_sign * std::sqrt(T((2 * n + 1) * (2 * n - 1)) / T(4 * n * (n - 1)));
 
         res[0] = fac * (T(1) - z * z);
         res[1] = 0;
@@ -429,12 +414,7 @@ struct assoc_legendre_p_recurrence_m_m_abs<T, assoc_legendre_norm_policy> {
     void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
         operator()(n, res);
 
-        T fac;
-        if (m_signbit) {
-            fac = type_sign / T((2 * n) * (2 * n - 2));
-        } else {
-            fac = type_sign * T((2 * n - 1) * (2 * n - 3));
-        }
+        T fac = type_sign * std::sqrt(T((2 * n + 1) * (2 * n - 1)) / T(4 * n * (n - 1)));
 
         res_jac[0] = -T(2) * fac * z;
         res_jac[1] = 0;
@@ -547,15 +527,15 @@ struct assoc_legendre_p_recurrence_n<T, assoc_legendre_norm_policy> {
     }
 
     void operator()(int n, T (&res)[2]) const {
-        res[0] = -T(n + m - 1) / T(n - m);
-        res[1] = T(2 * n - 1) * z / T(n - m);
+        res[0] = -std::sqrt(T((2 * n + 1) * ((n - 1) * (n - 1) - m * m)) / T((2 * n - 3) * (n * n - m * m)));
+        res[1] = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m))) * z;
     }
 
     void operator()(int n, T (&res)[2], T (&res_jac)[2]) const {
         operator()(n, res);
 
         res_jac[0] = 0;
-        res_jac[1] = T(2 * n - 1) / T(n - m);
+        res_jac[1] = std::sqrt(T((2 * n + 1) * (4 * (n - 1) * (n - 1) - 1)) / T((2 * n - 3) * (n * n - m * m)));
     }
 
     void operator()(int n, T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {
@@ -643,12 +623,12 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
         int m_abs = std::abs(m);
 
         if (diag) {
-            assoc_legendre_p_for_each_m_m_abs(assoc_legendre_unnorm, m, type, z, res, [](int n, const T(&p)[2]) {});
+            assoc_legendre_p_for_each_m_m_abs(assoc_legendre_norm, m, type, z, res, [](int n, const T(&p)[2]) {});
 
             res[0] = res[1];
         }
 
-        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
+        res[1] = std::sqrt(T(2 * m_abs + 3)) * z * res[0];
     }
 
     void operator()(T (&res)[2], T (&res_jac)[2]) const {
@@ -656,15 +636,15 @@ struct assoc_legendre_p_initializer_n<T, assoc_legendre_norm_policy> {
 
         if (diag) {
             assoc_legendre_p_for_each_m_m_abs(
-                assoc_legendre_unnorm, m, type, z, res, res_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {}
+                assoc_legendre_norm, m, type, z, res, res_jac, [](int n, const T(&p)[2], const T(&p_jac)[2]) {}
             );
 
             res[0] = res[1];
             res_jac[0] = res_jac[1];
         }
 
-        res[1] = T(2 * (m_abs + 1) - 1) * z * res[0] / T(m_abs + 1 - m);
-        res_jac[1] = T(2 * (m_abs + 1) - 1) * (res[0] + z * res_jac[0]) / T(m_abs + 1 - m);
+        res[1] = std::sqrt(T(2 * m_abs + 3)) * z * res[0];
+        res_jac[1] = std::sqrt(T(2 * m_abs + 3)) * (res[0] + z * res_jac[0]);
     }
 
     void operator()(T (&res)[2], T (&res_jac)[2], T (&res_hess)[2]) const {

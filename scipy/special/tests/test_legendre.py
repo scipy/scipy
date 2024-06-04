@@ -167,7 +167,7 @@ class TestLegendreFunctions:
             rtol = 1e-05, atol = 1e-08)
 
     @pytest.mark.parametrize("shape", [(10,), (4, 9), (3, 5, 7)])
-    @pytest.mark.parametrize("norm", [False])
+    @pytest.mark.parametrize("norm", [True, False])
     def test_lpmn_all_specific(self, shape, norm):
         rng = np.random.default_rng(1234)
 
@@ -696,6 +696,11 @@ def clpmn_jac_desired(m, n, type, z, *, norm = False):
     type_sign = np.where(type == 3, -1, 1)
     branch_sign = np.where(type == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
 
+    if norm:
+        fac = math.sqrt((2 * n + 1) * math.factorial(n - m) / (2 * math.factorial(n + m)))
+    else:
+        fac = 1
+
     out11_div_z = -branch_sign / np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
 
     if (n == 0):
@@ -704,79 +709,79 @@ def clpmn_jac_desired(m, n, type, z, *, norm = False):
 
     if (n == 1):
         if (m == 0):
-            return np.ones_like(z)
+            return fac * np.ones_like(z)
 
         if (m == 1):
-            return z * out11_div_z
+            return fac * z * out11_div_z
 
         if (m == -1):
-            return -type_sign * z * out11_div_z / 2
+            return -type_sign * fac * z * out11_div_z / 2
 
     if (n == 2):
         if (m == 0):
-            return 3 * z
+            return 3 * fac * z
 
         if (m == 1):
-            return 3 * (2 * z * z - 1) * out11_div_z
+            return 3 * fac * (2 * z * z - 1) * out11_div_z
 
         if (m == 2):
-            return -6 * type_sign * z
+            return -6 * type_sign * fac * z
 
         if (m == -2):
-            return -type_sign * z / 4
+            return -type_sign * fac * z / 4
 
         if (m == -1):
-            return type_sign * (1 - 2 * z * z) * out11_div_z / 2
+            return type_sign * fac * (1 - 2 * z * z) * out11_div_z / 2
 
     if (n == 3):
         if (m == 0):
-            return 3 * (5 * z * z - 1) / 2
+            return 3 * fac * (5 * z * z - 1) / 2
 
         if (m == 1):
-            return 3 * (15 * z * z - 11) * z * out11_div_z / 2
+            return 3 * fac * (15 * z * z - 11) * z * out11_div_z / 2
 
         if (m == 2):
-            return 15 * type_sign * (1 - 3 * z * z)
+            return 15 * type_sign * fac * (1 - 3 * z * z)
 
         if (m == 3):
-            return 45 * type_sign * (1 - z * z) * z * out11_div_z
+            return 45 * type_sign * fac * (1 - z * z) * z * out11_div_z
 
         if (m == -3):
-            return (z * z - 1) * z * out11_div_z / 16
+            return fac * (z * z - 1) * z * out11_div_z / 16
 
         if (m == -2):
-            return type_sign * (1 - 3 * z * z) / 8
+            return type_sign * fac * (1 - 3 * z * z) / 8
 
         if (m == -1):
-            return type_sign * (11 - 15 * z * z) * z * out11_div_z / 8
+            return type_sign * fac * (11 - 15 * z * z) * z * out11_div_z / 8
 
     if (n == 4):
         if (m == 0):
-            return 5 * (7 * z * z - 3) * z / 2
+            return 5 * fac * (7 * z * z - 3) * z / 2
 
         if (m == 1):
-            return 5 * ((28 * z * z - 27) * z * z + 3) * out11_div_z / 2
+            return 5 * fac * ((28 * z * z - 27) * z * z + 3) * out11_div_z / 2
 
         if (m == 2):
-            return 30 * type_sign * (4 - 7 * z * z) * z
+            return 30 * type_sign * fac * (4 - 7 * z * z) * z
 
         if (m == 3):
-            return 105 * type_sign * ((5 - 4 * z * z) * z * z - 1) * out11_div_z
+            return 105 * type_sign * fac * ((5 - 4 * z * z) * z * z - 1) * out11_div_z
 
         if (m == 4):
-            return 420 * (z * z - 1) * z
+            return 420 * fac * (z * z - 1) * z
 
         if (m == -4):
-            return (z * z - 1) * z / 96
+            return fac * (z * z - 1) * z / 96
 
         if (m == -3):
-            return ((4 * z * z - 5) * z * z + 1) * out11_div_z / 48
+            return fac * ((4 * z * z - 5) * z * z + 1) * out11_div_z / 48
 
         if (m == -2):
-            return type_sign * (4 - 7 * z * z) * z / 12
+            return type_sign * fac * (4 - 7 * z * z) * z / 12
 
         if (m == -1):
-            return type_sign * ((27 - 28 * z * z) * z * z - 3) * out11_div_z / 8
+            return type_sign * fac * ((27 - 28 * z * z) * z * z - 3) * out11_div_z / 8
 
     raise NotImplementedError
 
