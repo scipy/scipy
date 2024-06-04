@@ -6,7 +6,7 @@ from scipy import special as sc
 from ._qmc import (check_random_state as check_random_state_qmc,
                    Halton, QMCEngine)
 from ._unuran.unuran_wrapper import NumericalInversePolynomial
-from scipy._lib._util import check_random_state
+from scipy._lib._util import _prepare_rng
 
 
 __all__ = ['FastGeneratorInversion', 'RatioUniforms']
@@ -1140,15 +1140,11 @@ class RatioUniforms:
         The upper bound of the bounding rectangle in the v-direction.
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+    rng : {None, int, `numpy.random.Generator`}, optional
+        If `rng` is an int or None, a new `numpy.random.Generator` is
+        created using ``np.random.default_rng(rng)``.
+        If `rng` is already a ``Generator`` instance, then the provided
+        instance is used.
 
     Methods
     -------
@@ -1227,7 +1223,7 @@ class RatioUniforms:
     >>> f = lambda x: np.exp(-x**2 / 2)
     >>> v = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> umax = np.sqrt(f(0))
-    >>> gen = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, random_state=rng)
+    >>> gen = RatioUniforms(f, umax=umax, vmin=-v, vmax=v, rng=rng)
     >>> r = gen.rvs(size=2500)
 
     The K-S test confirms that the random variates are indeed normally
@@ -1240,14 +1236,14 @@ class RatioUniforms:
     rectangle can be determined explicitly.
 
     >>> gen = RatioUniforms(lambda x: np.exp(-x), umax=1, vmin=0,
-    ...                     vmax=2*np.exp(-1), random_state=rng)
+    ...                     vmax=2*np.exp(-1), rng=rng)
     >>> r = gen.rvs(1000)
     >>> stats.kstest(r, 'expon')[1]
     0.21121052054580314
 
     """
-    
-    def __init__(self, pdf, *, umax, vmin, vmax, c=0, random_state=None):
+    @_prepare_rng("random_state")
+    def __init__(self, pdf, *, umax, vmin, vmax, c=0, rng):
         if vmin >= vmax:
             raise ValueError("vmin must be smaller than vmax.")
 
@@ -1259,7 +1255,7 @@ class RatioUniforms:
         self._vmin = vmin
         self._vmax = vmax
         self._c = c
-        self._rng = check_random_state(random_state)
+        self._rng = rng
 
     def rvs(self, size=1):
         """Sampling of random variates

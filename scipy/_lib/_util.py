@@ -16,6 +16,7 @@ from typing import (
 
 import numpy as np
 from scipy._lib._array_api import array_namespace, is_numpy, size as xp_size
+from scipy._lib.deprecation import _NoValue
 
 
 AxisError: type[Exception]
@@ -242,11 +243,12 @@ def float_factorial(n: int) -> float:
 
 # copy-pasted from scikit-learn utils/validation.py
 # change this to scipy.stats._qmc.check_random_state once numpy 1.16 is dropped
-def check_random_state(seed):
+def check_random_state(seed=_NoValue, rng=_NoValue):
     """Turn `seed` into a `np.random.RandomState` instance.
 
     Parameters
     ----------
+    rng : {None, int, `numpy.random.Generator`, `numpy.random.SeedSequence`}, optional
     seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -261,6 +263,27 @@ def check_random_state(seed):
         Random number generator.
 
     """
+    if rng is not _NoValue and seed is not _NoValue:
+        raise TypeError("cannot pass both `rng=` and `random_state=` at the same time.")
+    if rng is not _NoValue:
+        return np.random.default_rng(rng)
+
+    if seed is _NoValue:
+        # If the user passed nothing, we have to reach into NumPy here:
+        # 1. If np.random.seed(None) was called (or never called), then we can
+        #    just use the default_rng (the result is random anyway).
+        # 2. If it was called, we must return the global random state object
+        #    and warn about future ignoring of seed!
+        if np.random.mtrand._rand._bit_generator._seed_seq is not None:
+            # The user did not seed, so no need to warn.
+            return np.random.default_rng()
+        warnings.warn(
+            "The NumPy global rng was seeded in call to np.random.seed() "
+            "in the future this function will ignore this seed and return "
+            "random values as if a new `np.random.default_rng()` was created.\n"
+            "To silence this warning, either pass `rng` explicitly.",
+            FutureWarning, stacklevel=5)
+        return np.random.mtrand._rand
     if seed is None or seed is np.random:
         return np.random.mtrand._rand
     if isinstance(seed, (numbers.Integral, np.integer)):
@@ -270,6 +293,36 @@ def check_random_state(seed):
 
     raise ValueError(f"'{seed}' cannot be used to seed a numpy.random.RandomState"
                      " instance")
+
+
+def _prepare_rng(old_name, dep_version=None):
+    new_name = "rng"
+
+    def decorator(fun):
+        @functools.wraps(fun)
+        def wrapper(*args, **kwargs):
+            if old_name in kwargs:
+                if dep_version:
+                    end_version = dep_version.split('.')
+                    end_version[1] = str(int(end_version[1]) + 2)
+                    end_version = '.'.join(end_version)
+                    message = (f"Use of keyword argument `{old_name}` is "
+                               f"deprecated and replaced by `{new_name}`.  "
+                               f"Support for `{old_name}` will be removed "
+                               f"in SciPy {end_version}.")
+                    warnings.warn(message, DeprecationWarning, stacklevel=2)
+                if new_name in kwargs:
+                    message = (f"{fun.__name__}() got multiple values for "
+                               f"argument now known as `{new_name}`")
+                    raise TypeError(message)
+
+            kwargs[new_name] = check_random_state(
+                kwargs.pop(old_name, _NoValue),
+                rng=kwargs.pop(new_name, _NoValue)
+            )
+            return fun(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
 def _asarray_validated(a, check_finite=True,
