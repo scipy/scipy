@@ -525,22 +525,7 @@ def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     return sign
 
 
-def xp_add_reduced_axes(res, axis, initial_shape, *, xp=None):
-    xp = array_namespace(res) if xp is None else xp
-
-    if axis is None:
-        final_shape = (1,) * len(initial_shape)
-    else:
-        # axis can be a scalar or sequence
-        axes = (axis,) if not isinstance(axis, Sequence) else axis
-        final_shape = list(initial_shape)
-        for i in axes:
-            final_shape[i] = 1
-
-    return xp.reshape(res, final_shape)
-
-
-def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
+def xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propagate',
             dtype=None, xp=None):
     r"""Compute the arithmetic mean along the specified axis.
 
@@ -679,5 +664,17 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         res = wsum/norm
 
     # Respect `keepdims` and convert NumPy 0-D arrays to scalars
-    res = xp_add_reduced_axes(res, axis, x.shape, xp=xp) if keepdims else res
+    if keepdims:
+
+        if axis is None:
+            final_shape = (1,) * len(x.shape)
+        else:
+            # axis can be a scalar or sequence
+            axes = (axis,) if not isinstance(axis, Sequence) else axis
+            final_shape = list(x.shape)
+            for i in axes:
+                final_shape[i] = 1
+
+        res = xp.reshape(res, final_shape)
+
     return res[()] if res.ndim == 0 else res
