@@ -7326,38 +7326,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    na = _get_len(a, axis, "first argument")
-    nb = _get_len(b, axis, "second argument")
-    if na != nb:
-        raise ValueError('unequal length arrays')
-
-    if na == 0 or nb == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
-        NaN = _get_nan(a, b)
-        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
-                           standard_error=NaN, estimate=NaN)
-
-    n = a.shape[axis]
-    df = n - 1
-
-    d = (a - b).astype(np.float64)
-    v = _var(d, axis, ddof=1)
-    dm = np.mean(d, axis)
-    denom = np.sqrt(v / n)
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(dm, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
-
-    # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
-
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
-                       standard_error=denom, estimate=dm)
+    return ttest_1samp(a-b, popmean=0, axis=axis, alternative=alternative,
+                       _no_deco=True)
 
 
 # Map from names to lambda_ values used in power_divergence().
