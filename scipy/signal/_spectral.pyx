@@ -20,9 +20,9 @@ cdef extern from "math.h":
     double atan2(double, double)
 
 @cython.boundscheck(False)
-def _lombscargle(const np.ndarray[np.float64_t, ndim=1] x,
-                const np.ndarray[np.float64_t, ndim=1] y,
-                const np.ndarray[np.float64_t, ndim=1] freqs):
+def _lombscargle(np.ndarray[np.float64_t, ndim=1] x,
+                np.ndarray[np.float64_t, ndim=1] y,
+                np.ndarray[np.float64_t, ndim=1] freqs):
     """
     _lombscargle(x, y, freqs)
 

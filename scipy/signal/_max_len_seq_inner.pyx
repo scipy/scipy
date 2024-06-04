@@ -12,9 +12,9 @@ np.import_array()
 @cython.boundscheck(False)  # designed to stay within bounds
 @cython.wraparound(False)  # we don't use negative indexing
 def _max_len_seq_inner(const Py_ssize_t[::1] taps,
-                       const np.int8_t[::1] state,
+                       np.int8_t[::1] state,
                        Py_ssize_t nbits, Py_ssize_t length,
-                       const np.int8_t[::1] seq):
+                       np.int8_t[::1] seq):
     # Here we compute MLS using a shift register, indexed using a ring buffer
     # technique (faster than using something like np.roll to shift)
     cdef Py_ssize_t n_taps = taps.shape[0]
