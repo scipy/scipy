@@ -204,7 +204,8 @@ class BDF(OdeSolver):
         self.rtol, self.atol = validate_tol(rtol, atol, self.n)
         f = self.fun(self.t, self.y)
         if first_step is None:
-            self.h_abs = select_initial_step(self.fun, self.t, self.y, f,
+            self.h_abs = select_initial_step(self.fun, self.t, self.y, 
+                                             t_bound, max_step, f,
                                              self.direction, 1,
                                              self.rtol, self.atol)
         else:

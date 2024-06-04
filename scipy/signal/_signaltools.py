@@ -1,11 +1,15 @@
 # Author: Travis Oliphant
 # 1999 -- 2002
 
+from __future__ import annotations # Provides typing union operator `|` in Python 3.9
 import operator
 import math
 from math import prod as _prod
 import timeit
 import warnings
+from typing import Literal
+
+from numpy._typing import ArrayLike
 
 from scipy.spatial import cKDTree
 from . import _sigtools
@@ -27,7 +31,7 @@ __all__ = ['correlate', 'correlation_lags', 'correlate2d',
            'convolve', 'convolve2d', 'fftconvolve', 'oaconvolve',
            'order_filter', 'medfilt', 'medfilt2d', 'wiener', 'lfilter',
            'lfiltic', 'sosfilt', 'deconvolve', 'hilbert', 'hilbert2',
-           'cmplx_sort', 'unique_roots', 'invres', 'invresz', 'residue',
+           'unique_roots', 'invres', 'invresz', 'residue',
            'residuez', 'resample', 'resample_poly', 'detrend',
            'lfilter_zi', 'sosfilt_zi', 'sosfiltfilt', 'choose_conv_method',
            'filtfilt', 'decimate', 'vectorstrength']
@@ -1496,15 +1500,11 @@ def order_filter(a, domain, rank):
                              "should have an odd number of elements.")
 
     a = np.asarray(a)
-    if a.dtype in [object, 'float128']:
-        mesg = (f"Using order_filter with arrays of dtype {a.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
-        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
+    if not (np.issubdtype(a.dtype, np.integer) 
+            or a.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={a.dtype} is not supported by order_filter")
 
-        result = _sigtools._order_filterND(a, domain, rank)
-    else:
-        result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
-
+    result = ndimage.rank_filter(a, rank, footprint=domain, mode='constant')
     return result
 
 
@@ -1551,6 +1551,10 @@ def medfilt(volume, kernel_size=None):
 
     """
     volume = np.atleast_1d(volume)
+    if not (np.issubdtype(volume.dtype, np.integer) 
+            or volume.dtype in [np.float32, np.float64]):
+        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
+
     if kernel_size is None:
         kernel_size = [3] * volume.ndim
     kernel_size = np.asarray(kernel_size)
@@ -1565,25 +1569,9 @@ def medfilt(volume, kernel_size=None):
                       'zero-padded.',
                       stacklevel=2)
 
-    domain = np.ones(kernel_size, dtype=volume.dtype)
-
-    numels = np.prod(kernel_size, axis=0)
-    order = numels // 2
-
-    if volume.dtype in [np.bool_, np.complex64, np.complex128, np.clongdouble,
-                        np.float16]:
-        raise ValueError(f"dtype={volume.dtype} is not supported by medfilt")
-
-    if volume.dtype.char in ['O', 'g']:
-        mesg = (f"Using medfilt with arrays of dtype {volume.dtype} is "
-                f"deprecated in SciPy 1.11 and will be removed in SciPy 1.14")
-        warnings.warn(mesg, DeprecationWarning, stacklevel=2)
-
-        result = _sigtools._order_filterND(volume, domain, order)
-    else:
-        size = math.prod(kernel_size)
-        result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
-                                     mode='constant')
+    size = math.prod(kernel_size)
+    result = ndimage.rank_filter(volume, size // 2, size=kernel_size,
+                                 mode='constant')
 
     return result
 
@@ -2462,18 +2450,6 @@ def hilbert2(x, N=None):
         k -= 1
     x = sp_fft.ifft2(Xf * h, axes=(0, 1))
     return x
-
-
-_msg_cplx_sort="""cmplx_sort was deprecated in SciPy 1.12 and will be removed
-in SciPy 1.15. The exact equivalent for a numpy array argument is
->>> def cmplx_sort(p):
-...    idx = np.argsort(abs(p))
-...    return np.take(p, idx, 0), idx
-"""
-
-def cmplx_sort(p):
-    warnings.warn(_msg_cplx_sort, DeprecationWarning, stacklevel=2)
-    return _cmplx_sort(p)
 
 
 def _cmplx_sort(p):
@@ -3519,9 +3495,10 @@ def vectorstrength(events, period):
     return strength, phase
 
 
-def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
-    """
-    Remove linear trend along axis from data.
+def detrend(data: np.ndarray, axis: int = -1,
+            type: Literal['linear', 'constant'] = 'linear',
+            bp: ArrayLike | int = 0, overwrite_data: bool = False) -> np.ndarray:
+    r"""Remove linear or constant trend along axis from data.
 
     Parameters
     ----------
@@ -3548,17 +3525,55 @@ def detrend(data, axis=-1, type='linear', bp=0, overwrite_data=False):
     ret : ndarray
         The detrended input data.
 
+    Notes
+    -----
+    Detrending can be interpreted as substracting a least squares fit polyonimial:
+    Setting the parameter `type` to 'constant' corresponds to fitting a zeroth degree
+    polynomial, 'linear' to a first degree polynomial. Consult the example below.
+
+    See Also
+    --------
+    numpy.polynomial.polynomial.Polynomial.fit: Create least squares fit polynomial.
+
+
     Examples
     --------
-    >>> import numpy as np
-    >>> from scipy import signal
-    >>> rng = np.random.default_rng()
-    >>> npoints = 1000
-    >>> noise = rng.standard_normal(npoints)
-    >>> x = 3 + 2*np.linspace(0, 1, npoints) + noise
-    >>> (signal.detrend(x) - noise).max()
-    0.06  # random
+    The following example detrends the function :math:`x(t) = \sin(\pi t) + 1/4`:
 
+    >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
+    >>> from scipy.signal import detrend
+    ...
+    >>> t = np.linspace(-0.5, 0.5, 21)
+    >>> x = np.sin(np.pi*t) + 1/4
+    ...
+    >>> x_d_const = detrend(x, type='constant')
+    >>> x_d_linear = detrend(x, type='linear')
+    ...
+    >>> fig1, ax1 = plt.subplots()
+    >>> ax1.set_title(r"Detrending $x(t)=\sin(\pi t) + 1/4$")
+    >>> ax1.set(xlabel="t", ylabel="$x(t)$", xlim=(t[0], t[-1]))
+    >>> ax1.axhline(y=0, color='black', linewidth=.5)
+    >>> ax1.axvline(x=0, color='black', linewidth=.5)
+    >>> ax1.plot(t, x, 'C0.-',  label="No detrending")
+    >>> ax1.plot(t, x_d_const, 'C1x-', label="type='constant'")
+    >>> ax1.plot(t, x_d_linear, 'C2+-', label="type='linear'")
+    >>> ax1.legend()
+    >>> plt.show()
+
+    Alternatively, NumPy's `~numpy.polynomial.polynomial.Polynomial` can be used for
+    detrending as well:
+
+    >>> pp0 = np.polynomial.Polynomial.fit(t, x, deg=0)  # fit degree 0 polynomial
+    >>> np.allclose(x_d_const, x - pp0(t))  # compare with constant detrend
+    True
+    >>> pp1 = np.polynomial.Polynomial.fit(t, x, deg=1)  # fit degree 1 polynomial
+    >>> np.allclose(x_d_linear, x - pp1(t))  # compare with linear detrend
+    True
+
+    Note that `~numpy.polynomial.polynomial.Polynomial` also allows fitting higher
+    degree polynomials. Consult its documentation on how to extract the polynomial
+    coefficients.
     """
     if type not in ['linear', 'l', 'constant', 'c']:
         raise ValueError("Trend type must be 'linear' or 'constant'.")

@@ -59,13 +59,15 @@ static PyModuleDef _gufuncs_def = {
 };
 
 PyMODINIT_FUNC PyInit__gufuncs() {
-    if (!SpecFun_Initialize()) {
-        return nullptr;
+    import_array();
+    import_umath();
+    if (PyErr_Occurred()) {
+        return NULL;
     }
 
     PyObject *_gufuncs = PyModule_Create(&_gufuncs_def);
     if (_gufuncs == nullptr) {
-        return nullptr;
+        return NULL;
     }
 
     PyObject *_lpn = SpecFun_NewGUFunc(

@@ -16,6 +16,9 @@ import platform
 import itertools
 import sys
 
+import pytest
+from pytest import raises as assert_raises
+
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
                    vstack, ndarray, transpose, diag, kron, inf, conjugate,
@@ -24,8 +27,7 @@ from numpy import (arange, zeros, array, dot, asarray,
 import random
 from numpy.testing import (assert_equal, assert_array_equal,
         assert_array_almost_equal, assert_almost_equal, assert_,
-        assert_allclose,suppress_warnings)
-from pytest import raises as assert_raises
+        assert_allclose, suppress_warnings)
 
 import scipy.linalg
 
@@ -40,8 +42,6 @@ from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
 from scipy._lib._util import ComplexWarning
-
-import pytest
 
 
 IS_COLAB = ('google.colab' in sys.modules)
@@ -633,11 +633,21 @@ class _TestCommon:
         assert_equal(self.spcreator((3, 3)).toarray(), zeros((3, 3)))
         assert_equal(self.spcreator((3, 3)).nnz, 0)
         assert_equal(self.spcreator((3, 3)).count_nonzero(), 0)
+        if self.datsp.format in ["coo", "csr", "csc", "lil"]:
+            assert_equal(self.spcreator((3, 3)).count_nonzero(axis=0), array([0, 0, 0]))
 
     def test_count_nonzero(self):
-        expected = np.count_nonzero(self.datsp.toarray())
-        assert_equal(self.datsp.count_nonzero(), expected)
-        assert_equal(self.datsp.T.count_nonzero(), expected)
+        axis_support = self.datsp.format in ["coo", "csr", "csc", "lil"]
+        axes = [None, 0, 1, -1, -2] if axis_support else [None]
+
+        for A in (self.datsp, self.datsp.T):
+            for ax in axes:
+                expected = np.count_nonzero(A.toarray(), axis=ax)
+                assert_equal(A.count_nonzero(axis=ax), expected)
+
+        if not axis_support:
+            with assert_raises(NotImplementedError, match="not implemented .* format"):
+                self.datsp.count_nonzero(axis=0)
 
     def test_invalid_shapes(self):
         assert_raises(ValueError, self.spcreator, (-1,3))
@@ -657,6 +667,26 @@ class _TestCommon:
             f"\twith {datsp.nnz} stored elements {extra}and shape {datsp.shape}>"
         )
         assert repr(datsp) == expected
+
+    def test_str_maxprint(self):
+        datsp = self.spcreator(np.arange(75).reshape(5, 15))
+        assert datsp.maxprint == 50
+        assert len(str(datsp).split('\n')) == 51 + 3
+
+        dat = np.arange(15).reshape(5,3)
+        datsp = self.spcreator(dat)
+        # format dia reports nnz=15, but we want 14
+        nnz_small = 14 if datsp.format == 'dia' else datsp.nnz
+        datsp_mp6 = self.spcreator(dat, maxprint=6)
+
+        assert len(str(datsp).split('\n')) == nnz_small + 3
+        assert len(str(datsp_mp6).split('\n')) == 6 + 4
+
+        # Check parameter `maxprint` is keyword only
+        datsp = self.spcreator(dat, shape=(5, 3), dtype='i', copy=False, maxprint=4)
+        datsp = self.spcreator(dat, (5, 3), 'i', False, maxprint=4)
+        with pytest.raises(TypeError, match="positional argument|unpack non-iterable"):
+            self.spcreator(dat, (5, 3), 'i', False, 4)
 
     def test_str(self):
         datsp = self.spcreator([[1, 0, 0], [0, 0, 0], [0, 0, -2]])
@@ -2580,6 +2610,7 @@ class _TestSlicing:
         assert_equal(A[s, :].toarray(), B[2:4, :])
         assert_equal(A[:, s].toarray(), B[:, 2:4])
 
+    @pytest.mark.fail_slow(2)
     def test_slicing_3(self):
         B = asmatrix(arange(50).reshape(5,10))
         A = self.spcreator(B)
@@ -3383,6 +3414,7 @@ class _TestArithmetic:
         self.__Asp = self.spcreator(self.__A)
         self.__Bsp = self.spcreator(self.__B)
 
+    @pytest.mark.fail_slow(20)
     def test_add_sub(self):
         self.__arith_init()
 
@@ -4888,11 +4920,11 @@ def _same_sum_duplicate(data, *inds, **kwargs):
 
 
 class _NonCanonicalMixin:
-    def spcreator(self, D, sorted_indices=False, **kwargs):
+    def spcreator(self, D, *args, sorted_indices=False, **kwargs):
         """Replace D with a non-canonical equivalent: containing
         duplicate elements and explicit zeros"""
         construct = super().spcreator
-        M = construct(D, **kwargs)
+        M = construct(D, *args, **kwargs)
 
         zero_pos = (M.toarray() == 0).nonzero()
         has_zeros = (zero_pos[0].size > 0)
@@ -5152,6 +5184,7 @@ class Test64Bit:
     def test_resiliency_limit_10(self, cls, method_name):
         self._check_resiliency(cls, method_name, maxval_limit=10)
 
+    @pytest.mark.fail_slow(2)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_resiliency_random(self, cls, method_name):
         # bsr_matrix.eliminate_zeros relies on csr_matrix constructor
@@ -5167,6 +5200,7 @@ class Test64Bit:
     def test_resiliency_all_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, fixed_dtype=np.int64)
 
+    @pytest.mark.fail_slow(5)
     @pytest.mark.parametrize('cls,method_name', cases_64bit())
     def test_no_64(self, cls, method_name):
         self._check_resiliency(cls, method_name, assert_32bit=True)

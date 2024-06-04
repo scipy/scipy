@@ -5,7 +5,7 @@ import argparse
 
 
 MAJOR = 1
-MINOR = 14
+MINOR = 15
 MICRO = 0
 ISRELEASED = False
 IS_RELEASE_BRANCH = False

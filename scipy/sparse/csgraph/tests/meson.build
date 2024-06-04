@@ -15,5 +15,6 @@ python_sources = [
 
 py3.install_sources(
   python_sources,
-  subdir: 'scipy/sparse/csgraph/tests'
+  subdir: 'scipy/sparse/csgraph/tests',
+  install_tag: 'tests'
 )

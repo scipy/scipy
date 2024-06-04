@@ -350,14 +350,7 @@ import warnings
 for key in (
         'interp2d` is deprecated',  # Deprecation of scipy.interpolate.interp2d
         'scipy.misc',  # scipy.misc deprecated in v1.10.0; use scipy.datasets
-        'kurtosistest only valid',  # intentionally "bad" excample in docstring
-        'scipy.signal.daub is deprecated',
-        'scipy.signal.qmf is deprecated',
-        'scipy.signal.cascade is deprecated',
-        'scipy.signal.morlet is deprecated',
-        'scipy.signal.morlet2 is deprecated',
-        'scipy.signal.ricker is deprecated',
-        'scipy.signal.cwt is deprecated',
+        '`kurtosistest` p-value may be',  # intentionally "bad" example in docstring
         ):
     warnings.filterwarnings(action='ignore', message='.*' + key + '.*')
 

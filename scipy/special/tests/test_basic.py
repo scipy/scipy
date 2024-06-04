@@ -1063,6 +1063,7 @@ class TestAiry:
                                      array([0.5357]),
                                      array([0.7012])),4)
 
+    @pytest.mark.fail_slow(5)
     def test_ai_zeros_big(self):
         z, zp, ai_zpx, aip_zx = special.ai_zeros(50000)
         ai_z, aip_z, _, _ = special.airy(z)
@@ -1087,6 +1088,7 @@ class TestAiry:
             [-1.0187929716, -3.2481975822, -4.8200992112,
              -6.1633073556, -7.3721772550, -8.4884867340], rtol=1e-10)
 
+    @pytest.mark.fail_slow(5)
     def test_bi_zeros_big(self):
         z, zp, bi_zpx, bip_zx = special.bi_zeros(50000)
         _, _, bi_z, bip_z = special.airy(z)
@@ -1457,6 +1459,11 @@ class TestCombinatorics:
         assert_equal(special.comb(2, -1, exact=True), 0)
         assert_equal(special.comb(2, -1, exact=False), 0)
         assert_allclose(special.comb([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 120.])
+    
+    def test_comb_exact_non_int_dep(self):
+        msg = "`exact=True`"
+        with pytest.deprecated_call(match=msg):
+            special.comb(3.4, 4, exact=True)
 
     def test_perm(self):
         assert_allclose(special.perm([10, 10], [3, 4]), [720., 5040.])
@@ -1469,7 +1476,7 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=True), 0)
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
-    
+
 
 class TestTrigonometric:
     def test_cbrt(self):
@@ -2195,10 +2202,9 @@ class TestFactorialFunctions:
         def _check(n, expected):
             assert_allclose(special.factorial(n), expected)
             assert_allclose(special.factorial([n])[0], expected)
-            # using floats with exact=True is deprecated for scalars...
-            with pytest.deprecated_call(match="Non-integer values.*"):
+            # using floats with `exact=True` raises an error for scalars and arrays
+            with pytest.raises(ValueError, match="Non-integer values.*"):
                 assert_allclose(special.factorial(n, exact=True), expected)
-            # ... and already an error for arrays
             with pytest.raises(ValueError, match="factorial with `exact=Tr.*"):
                 special.factorial([n], exact=True)
 
@@ -2263,15 +2269,14 @@ class TestFactorialFunctions:
     def test_factorial_scalar_corner_cases(self, n, exact):
         if (n is None or n is np.nan or np.issubdtype(type(n), np.integer)
                 or np.issubdtype(type(n), np.floating)):
-            # no error
             if (np.issubdtype(type(n), np.floating) and exact
                     and n is not np.nan):
-                with pytest.deprecated_call(match="Non-integer values.*"):
-                    result = special.factorial(n, exact=exact)
+                with pytest.raises(ValueError, match="Non-integer values.*"):
+                    special.factorial(n, exact=exact)
             else:
                 result = special.factorial(n, exact=exact)
-            exp = np.nan if n is np.nan or n is None else special.factorial(n)
-            assert_equal(result, exp)
+                exp = np.nan if n is np.nan or n is None else special.factorial(n)
+                assert_equal(result, exp)
         else:
             with pytest.raises(ValueError, match="Unsupported datatype*"):
                 special.factorial(n, exact=exact)
@@ -4143,6 +4148,46 @@ def test_rel_entr():
     z = np.array(arr, dtype=float)
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.rel_entr, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_rel_entr_gh_20710_near_zero():
+    # Check accuracy of inputs which are very close
+    inputs = np.array([
+        # x, y
+        (0.9456657713430001, 0.9456657713430094),
+        (0.48066098564791515, 0.48066098564794774),
+        (0.786048657854401, 0.7860486578542367),
+    ])
+    # Known values produced using `x * mpmath.log(x / y)` with dps=30
+    expected = [
+        -9.325873406851269e-15,
+        -3.258504577274724e-14,
+        1.6431300764454033e-13,
+    ]
+    x = inputs[:, 0]
+    y = inputs[:, 1]
+    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=0)
+
+
+def test_rel_entr_gh_20710_overflow():
+    inputs = np.array([
+        # x, y
+        # Overflow
+        (4, 2.22e-308),
+        # Underflow
+        (1e-200, 1e+200),
+        # Subnormal
+        (2.22e-308, 1e15),
+    ])
+    # Known values produced using `x * mpmath.log(x / y)` with dps=30
+    expected = [
+        2839.139983229607,
+        -9.210340371976183e-198,
+        -1.6493212008074475e-305,
+    ]
+    x = inputs[:, 0]
+    y = inputs[:, 1]
+    assert_allclose(special.rel_entr(x, y), expected, rtol=1e-13, atol=0)
 
 
 def test_huber():

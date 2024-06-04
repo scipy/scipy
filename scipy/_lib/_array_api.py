@@ -23,9 +23,10 @@ from scipy._lib.array_api_compat import (
     is_array_api_obj,
     size,
     numpy as np_compat,
+    device
 )
 
-__all__ = ['array_namespace', '_asarray', 'size']
+__all__ = ['array_namespace', '_asarray', 'size', 'device']
 
 
 # To enable array API and strict array-like input validation
@@ -394,7 +395,44 @@ def xp_unsupported_param_msg(param: Any) -> str:
 def is_complex(x: Array, xp: ModuleType) -> bool:
     return xp.isdtype(x.dtype, 'complex floating')
 
-def scipy_namespace_for(xp):
+
+def get_xp_devices(xp: ModuleType) -> list[str] | list[None]:
+    """Returns a list of available devices for the given namespace."""
+    devices: list[str] = []
+    if is_torch(xp):
+        devices += ['cpu']
+        import torch # type: ignore[import]
+        num_cuda = torch.cuda.device_count()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        if torch.backends.mps.is_available():
+            devices += ['mps']
+        return devices
+    elif is_cupy(xp):
+        import cupy # type: ignore[import]
+        num_cuda = cupy.cuda.runtime.getDeviceCount()
+        for i in range(0, num_cuda):
+            devices += [f'cuda:{i}']
+        return devices
+    elif is_jax(xp):
+        import jax # type: ignore[import]
+        num_cpu = jax.device_count(backend='cpu')
+        for i in range(0, num_cpu):
+            devices += [f'cpu:{i}']
+        num_gpu = jax.device_count(backend='gpu')
+        for i in range(0, num_gpu):
+            devices += [f'gpu:{i}']
+        num_tpu = jax.device_count(backend='tpu')
+        for i in range(0, num_tpu):
+            devices += [f'tpu:{i}']
+        return devices
+
+    # given namespace is not known to have a list of available devices;
+    # return `[None]` so that one can use this in tests for `device=None`.
+    return [None] 
+
+
+def scipy_namespace_for(xp: ModuleType) -> ModuleType:
     """
     Return the `scipy` namespace for alternative backends, where it exists,
     such as `cupyx.scipy` and `jax.scipy`. Useful for ad hoc dispatching.
@@ -404,7 +442,7 @@ def scipy_namespace_for(xp):
 
 
     if is_cupy(xp):
-        import cupyx  # type: ignore[import-not-found]
+        import cupyx  # type: ignore[import-not-found,import-untyped]
         return cupyx.scipy
 
     if is_jax(xp):
@@ -414,26 +452,31 @@ def scipy_namespace_for(xp):
     import scipy
     return scipy
 
+
 # temporary substitute for xp.minimum, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_minimum(x1, x2):
+def xp_minimum(x1: Array, x2: Array, /) -> Array:
     # xp won't be passed in because it doesn't need to be passed in to xp.minimum
     xp = array_namespace(x1, x2)
     if hasattr(xp, 'minimum'):
         return xp.minimum(x1, x2)
     x1, x2 = xp.broadcast_arrays(x1, x2)
-    dtype = xp.result_type(x1.dtype, x2.dtype)
-    res = xp.asarray(x1, copy=True, dtype=dtype)
     i = (x2 < x1) | xp.isnan(x2)
-    res[i] = x2[i]
+    res = xp.where(i, x2, x1)
     return res[()] if res.ndim == 0 else res
 
 
 # temporary substitute for xp.clip, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_clip(x, a, b, xp=None):
+def xp_clip(
+        x: Array,
+        /,
+        min: int | float | Array | None = None,
+        max: int | float | Array | None = None,
+        *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
-    a, b = xp.asarray(a, dtype=x.dtype), xp.asarray(b, dtype=x.dtype)
+    a, b = xp.asarray(min, dtype=x.dtype), xp.asarray(max, dtype=x.dtype)
     if hasattr(xp, 'clip'):
         return xp.clip(x, a, b)
     x, a, b = xp.broadcast_arrays(x, a, b)
@@ -447,7 +490,11 @@ def xp_clip(x, a, b, xp=None):
 
 # temporary substitute for xp.moveaxis, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_moveaxis_to_end(x, source, xp=None):
+def xp_moveaxis_to_end(
+        x: Array,
+        source: int,
+        /, *,
+        xp: ModuleType | None = None) -> Array:
     xp = array_namespace(xp) if xp is None else xp
     axes = list(range(x.ndim))
     temp = axes.pop(source)
@@ -457,7 +504,7 @@ def xp_moveaxis_to_end(x, source, xp=None):
 
 # temporary substitute for xp.copysign, which is not yet in all backends
 # or covered by array_api_compat.
-def xp_copysign(x1, x2, xp=None):
+def xp_copysign(x1: Array, x2: Array, /, *, xp: ModuleType | None = None) -> Array:
     # no attempt to account for special cases
     xp = array_namespace(x1, x2) if xp is None else xp
     abs_x1 = xp.abs(x1)
@@ -466,7 +513,7 @@ def xp_copysign(x1, x2, xp=None):
 
 # partial substitute for xp.sign, which does not cover the NaN special case
 # that I need. (https://github.com/data-apis/array-api-compat/issues/136)
-def xp_sign(x, xp=None):
+def xp_sign(x: Array, /, *, xp: ModuleType | None = None) -> Array:
     xp = array_namespace(x) if xp is None else xp
     if is_numpy(xp):  # only NumPy implements the special cases correctly
         return xp.sign(x)
@@ -565,6 +612,12 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
     latter case, the NaNs are excluded entirely.
 
     """
+    # don't merge like this - we're not supposed to import from a public module here
+    from scipy.stats._axis_nan_policy import (
+        SmallSampleWarning, too_small_1d_not_omit, too_small_1d_omit,
+        too_small_nd_not_omit, too_small_nd_omit
+    )
+
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
     xp = array_namespace(x) if xp is None else xp
     x = xp.asarray(x, dtype=dtype)
@@ -586,14 +639,14 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
         weights = xp.asarray(weights, dtype=dtype)
 
     # handle the special case of zero-sized arrays
-    message = ('At least one slice along `axis` has zero length; '
-               'corresponding slices of the output will be NaN.')
+    message = (too_small_1d_not_omit if (x.ndim == 1 or axis is None)
+               else too_small_nd_not_omit)
     if size(x) == 0:
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             res = xp.mean(x, axis=axis, keepdims=keepdims)
         if size(res) != 0:
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            warnings.warn(message, SmallSampleWarning, stacklevel=2)
         return res
 
     # avoid circular import
@@ -605,13 +658,13 @@ def xp_mean(x, *, axis=None, weights=None, keepdims=False, nan_policy='propagate
 
     # Handle `nan_policy='omit'` by giving zero weight to NaNs, whether they
     # appear in `x` or `weights`. Emit warning if there is an all-NaN slice.
-    message = ('After omitting NaNs, at least one slice along `axis` has zero '
-               'length; corresponding slices of the output will be NaN.')
+    message = (too_small_1d_omit if (x.ndim == 1 or axis is None)
+               else too_small_nd_omit)
     if contains_nan and nan_policy == 'omit':
         i = xp.isnan(x)
         i = (i | xp.isnan(weights)) if weights is not None else i
         if xp.any(xp.all(i, axis=axis)):
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            warnings.warn(message, SmallSampleWarning, stacklevel=2)
         weights = xp.ones_like(x) if weights is None else weights
         x = xp.where(i, xp.asarray(0, dtype=x.dtype), x)
         weights = xp.where(i, xp.asarray(0, dtype=x.dtype), weights)
