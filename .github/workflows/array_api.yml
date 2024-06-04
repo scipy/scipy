@@ -78,7 +78,7 @@ jobs:
         echo "timestamp=${NOW}" >> $GITHUB_OUTPUT
 
     - name: Setup compiler cache
-      uses:  actions/cache@v3
+      uses:  actions/cache@v4
       id:    cache-ccache
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
