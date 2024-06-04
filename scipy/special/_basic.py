@@ -1730,7 +1730,6 @@ assoc_legendre_p_all = MultiUFunc(assoc_legendre_p_all)
 
 @assoc_legendre_p_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
-    print(ufuncs)
     return ufuncs[norm][diff_n]
 
 @assoc_legendre_p_all.resolve_out_shapes
