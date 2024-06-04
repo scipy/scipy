@@ -159,7 +159,7 @@ jobs:
             # which should be exactly the same as the ones from gfortran.
             # Setting DYLD_LIBRARY_PATH ensures that delocate knows about those
             $ friends, otherwise all the SO aren't fixed properly.
-            PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32; ldir=scipy_openblas32.get_lib_dir(); ldir+='/../.dylibs';print(ldir)\")\""            
+            PREFIX="DYLD_LIBRARY_PATH=\"\$(python -c \"import scipy_openblas32; ldir=scipy_openblas32.get_lib_dir(); ldir+=\'/../.dylibs\';print(ldir)\")\""            
 
             # This will exclude the duplicates from gfortran in /opt/gfortran*
             EXCLUDE="-e /gfortran"
