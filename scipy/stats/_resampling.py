@@ -333,12 +333,13 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
          underlying distribution. Elements of `data` must be broadcastable to the
          same shape (with the possible exception of the dimension specified by `axis`).
 
-         .. warning:: Beginning in SciPy 1.14.0, `bootstrap` will emit a `FutureWarning`
-                      if the shapes of the elements of `data` are not the same (with the
-                      exception of the dimension specified by `axis`).
-                      Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast
-                      the elements to the same shape (except along `axis) before
-                      performing the calculation.
+         .. versionchanged:: 1.14.0
+             `bootstrap` will now emit a ``FutureWarning`` if the shapes of the
+             elements of `data` are not the same (with the exception of the dimension
+             specified by `axis`).
+             Beginning in SciPy 1.16.0, `bootstrap` will explicitly broadcast the
+             elements to the same shape (except along `axis`) before performing
+             the calculation.
 
     statistic : callable
         Statistic for which the confidence interval is to be calculated.
