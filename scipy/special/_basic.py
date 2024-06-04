@@ -1728,6 +1728,7 @@ lpmn_all = MultiUFunc(lpmn_all)
 
 @lpmn_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
+    print(ufuncs)
     return ufuncs[norm][diff_n]
 
 @lpmn_all.resolve_out_shapes
