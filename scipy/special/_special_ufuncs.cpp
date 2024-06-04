@@ -564,57 +564,57 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
     );
     PyModule_AddObjectRef(_special_ufuncs, "lpn", lpn);
 
-    PyObject *lpmn = Py_BuildValue(
+    PyObject *assoc_legendre_p = Py_BuildValue(
         "{O:(N,N,N)}", Py_False,
         SpecFun_NewUFunc(
-            {[](long long int m, long long int n, double z) { return ::lpmn(special::assoc_legendre_unnorm, m, n, z); },
-             [](long long int m, long long int n, float z) { return ::lpmn(special::assoc_legendre_unnorm, m, n, z); }},
+            {[](long long int m, long long int n, double z) { return lpmn(special::assoc_legendre_unnorm, m, n, z); },
+             [](long long int m, long long int n, float z) { return lpmn(special::assoc_legendre_unnorm, m, n, z); }},
             "lpmn", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac) {
-                 ::lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac);
+                 lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac);
              },
              [](long long int m, long long int n, float z, float &res, float &res_jac) {
-                 ::lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac);
+                 lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac);
              }},
             2, "lpmn", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac, double &res_hess) {
-                 ::lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac, res_hess);
+                 lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac, res_hess);
              },
              [](long long int m, long long int n, float z, float &res, float &res_jac, float &res_hess) {
-                 ::lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac, res_hess);
+                 lpmn(special::assoc_legendre_unnorm, m, n, z, res, res_jac, res_hess);
              }},
             3, "lpmn", nullptr
         ),
         Py_True,
         SpecFun_NewUFunc(
-            {[](long long int m, long long int n, double z) { return ::lpmn(special::assoc_legendre_norm, m, n, z); },
-             [](long long int m, long long int n, float z) { return ::lpmn(special::assoc_legendre_norm, m, n, z); }},
+            {[](long long int m, long long int n, double z) { return lpmn(special::assoc_legendre_norm, m, n, z); },
+             [](long long int m, long long int n, float z) { return lpmn(special::assoc_legendre_norm, m, n, z); }},
             "lpmn", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac) {
-                 ::lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac);
+                 lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac);
              },
              [](long long int m, long long int n, float z, float &res, float &res_jac) {
-                 ::lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac);
+                 lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac);
              }},
             2, "lpmn", nullptr
         ),
         SpecFun_NewUFunc(
             {[](long long int m, long long int n, double z, double &res, double &res_jac, double &res_hess) {
-                 ::lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac, res_hess);
+                 lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac, res_hess);
              },
              [](long long int m, long long int n, float z, float &res, float &res_jac, float &res_hess) {
-                 ::lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac, res_hess);
+                 lpmn(special::assoc_legendre_norm, m, n, z, res, res_jac, res_hess);
              }},
             3, "lpmn", nullptr
         )
     );
-    PyModule_AddObjectRef(_special_ufuncs, "lpmn", lpmn);
+    PyModule_AddObjectRef(_special_ufuncs, "lpmn", assoc_legendre_p);
 
     PyObject *clpmn = Py_BuildValue(
         "{O:(N,N,N)}", Py_False,
