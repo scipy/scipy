@@ -18,8 +18,8 @@ __all__ = []
 # TODO implement all relevant operations
 # use .data.__methods__() instead of /=, *=, etc.
 class _data_matrix(_spbase):
-    def __init__(self, arg1):
-        _spbase.__init__(self, arg1)
+    def __init__(self, arg1, *, maxprint=None):
+        _spbase.__init__(self, arg1, maxprint=maxprint)
 
     @property
     def dtype(self):
@@ -96,11 +96,6 @@ class _data_matrix(_spbase):
         return self._with_data(self.data.copy(), copy=True)
 
     copy.__doc__ = _spbase.copy.__doc__
-
-    def count_nonzero(self):
-        return np.count_nonzero(self._deduped_data())
-
-    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def power(self, n, dtype=None):
         """

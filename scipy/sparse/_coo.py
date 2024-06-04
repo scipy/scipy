@@ -24,8 +24,8 @@ import operator
 class _coo_base(_data_matrix, _minmax_mixin):
     _format = 'coo'
 
-    def __init__(self, arg1, shape=None, dtype=None, copy=False):
-        _data_matrix.__init__(self, arg1)
+    def __init__(self, arg1, shape=None, dtype=None, copy=False, *, maxprint=None):
+        _data_matrix.__init__(self, arg1, maxprint=maxprint)
         is_array = isinstance(self, sparray)
         if not copy:
             copy = copy_if_needed
@@ -181,6 +181,21 @@ class _coo_base(_data_matrix, _minmax_mixin):
                            minlength=self.shape[1 - axis])
 
     _getnnz.__doc__ = _spbase._getnnz.__doc__
+
+    def count_nonzero(self, axis=None):
+        self.sum_duplicates()
+        if axis is None:
+            return np.count_nonzero(self.data)
+
+        if axis < 0:
+            axis += self.ndim
+        if axis < 0 or axis >= self.ndim:
+            raise ValueError('axis out of bounds')
+        mask = self.data != 0
+        coord = self.coords[1 - axis][mask]
+        return np.bincount(downcast_intp_index(coord), minlength=self.shape[1 - axis])
+
+    count_nonzero.__doc__ = _spbase.count_nonzero.__doc__
 
     def _check(self):
         """ Checks data structure for consistency """

@@ -15,7 +15,7 @@
 #include <numpy/ufuncobject.h>
 
 #include "sf_error.h"
-#include "special/mdspan.h"
+#include "special/third_party/kokkos/mdspan.hpp"
 
 
 // This is std::accumulate, but that is not constexpr until C++20

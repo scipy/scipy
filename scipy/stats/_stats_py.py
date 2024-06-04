@@ -59,9 +59,8 @@ from ._resampling import (MonteCarloMethod, PermutationMethod, BootstrapMethod,
                           monte_carlo_test, permutation_test, bootstrap,
                           _batch_generator)
 from ._axis_nan_policy import (_axis_nan_policy_factory,
-                               _broadcast_concatenate,
-                               _broadcast_shapes,
-                               SmallSampleWarning)
+                               _broadcast_concatenate, _broadcast_shapes,
+                               _broadcast_array_shapes_remove_axis, SmallSampleWarning)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 from scipy import stats
@@ -4920,11 +4919,9 @@ def pearsonr(x, y, *, alternative='two-sided', method=None, axis=0):
 
     # As explained in the docstring, the distribution of `r` under the null
     # hypothesis is the beta distribution on (-1, 1) with a = b = n/2 - 1.
-    # This needs to be done with NumPy arrays given the existing infrastructure.
-    ab = n/2 - 1
-    dist = stats.beta(ab, ab, loc=-1, scale=2)
-    pvalue = _get_pvalue(np.asarray(r), dist, alternative, xp=np)
-    pvalue = xp.asarray(pvalue, dtype=dtype)
+    ab = xp.asarray(n/2 - 1)
+    dist = _SimpleBeta(ab, ab, loc=-1, scale=2)
+    pvalue = _get_pvalue(r, dist, alternative, xp=xp)
 
     r = r[()] if r.ndim == 0 else r
     pvalue = pvalue[()] if pvalue.ndim == 0 else pvalue
@@ -6280,8 +6277,7 @@ def unpack_TtestResult(res):
                           result_to_tuple=unpack_TtestResult, n_outputs=6)
 # nan_policy handled by `_axis_nan_policy`, but needs to be left
 # in signature to preserve use as a positional argument
-def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
-                alternative="two-sided"):
+def ttest_1samp(a, popmean, axis=0, nan_policy="propagate", alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
 
     This is a test for the null hypothesis that the expected value
@@ -6512,17 +6508,25 @@ def _t_confidence_interval(df, t, confidence_level, alternative, dtype=None, xp=
     return low, high
 
 
-def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative):
+def _ttest_ind_from_stats(mean1, mean2, denom, df, alternative, xp=None):
+    xp = array_namespace(mean1, mean2, denom) if xp is None else xp
 
     d = mean1 - mean2
     with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(d, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
+        t = xp.divide(d, denom)
 
-    return (t, prob)
+    t_np = np.asarray(t)
+    df_np = np.asarray(df)
+    prob = _get_pvalue(t_np, distributions.t(df_np), alternative, xp=np)
+    prob = xp.asarray(prob, dtype=t.dtype)
+
+    t = t[()] if t.ndim == 0 else t
+    prob = prob[()] if prob.ndim == 0 else prob
+    return t, prob
 
 
-def _unequal_var_ttest_denom(v1, n1, v2, n2):
+def _unequal_var_ttest_denom(v1, n1, v2, n2, xp=None):
+    xp = array_namespace(v1, v2) if xp is None else xp
     vn1 = v1 / n1
     vn2 = v2 / n2
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -6530,23 +6534,26 @@ def _unequal_var_ttest_denom(v1, n1, v2, n2):
 
     # If df is undefined, variances are zero (assumes n1 > 0 & n2 > 0).
     # Hence it doesn't matter what df is as long as it's not NaN.
-    df = np.where(np.isnan(df), 1, df)
-    denom = np.sqrt(vn1 + vn2)
+    df = xp.where(xp.isnan(df), xp.asarray(1.), df)
+    denom = xp.sqrt(vn1 + vn2)
     return df, denom
 
 
-def _equal_var_ttest_denom(v1, n1, v2, n2):
+def _equal_var_ttest_denom(v1, n1, v2, n2, xp=None):
+    xp = array_namespace(v1, v2) if xp is None else xp
+
     # If there is a single observation in one sample, this formula for pooled
     # variance breaks down because the variance of that sample is undefined.
     # The pooled variance is still defined, though, because the (n-1) in the
     # numerator should cancel with the (n-1) in the denominator, leaving only
     # the sum of squared differences from the mean: zero.
-    v1 = np.where(n1 == 1, 0, v1)[()]
-    v2 = np.where(n2 == 1, 0, v2)[()]
+    zero = xp.asarray(0.)
+    v1 = xp.where(xp.asarray(n1 == 1), zero, v1)
+    v2 = xp.where(xp.asarray(n2 == 1), zero, v2)
 
     df = n1 + n2 - 2.0
     svar = ((n1 - 1) * v1 + (n2 - 1) * v2) / df
-    denom = np.sqrt(svar * (1.0 / n1 + 1.0 / n2))
+    denom = xp.sqrt(svar * (1.0 / n1 + 1.0 / n2))
     return df, denom
 
 
@@ -6675,15 +6682,17 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Ttest_indResult(statistic=-0.5627179589855622, pvalue=0.573989277115258)
 
     """
-    mean1 = np.asarray(mean1)
-    std1 = np.asarray(std1)
-    mean2 = np.asarray(mean2)
-    std2 = np.asarray(std2)
+    xp = array_namespace(mean1, std1, mean2, std2)
+
+    mean1 = xp.asarray(mean1)
+    std1 = xp.asarray(std1)
+    mean2 = xp.asarray(mean2)
+    std2 = xp.asarray(std2)
+
     if equal_var:
-        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2)
+        df, denom = _equal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
     else:
-        df, denom = _unequal_var_ttest_denom(std1**2, nobs1,
-                                             std2**2, nobs2)
+        df, denom = _unequal_var_ttest_denom(std1**2, nobs1, std2**2, nobs2, xp=xp)
 
     res = _ttest_ind_from_stats(mean1, mean2, denom, df, alternative)
     return Ttest_indResult(*res)
@@ -6938,23 +6947,35 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     Ttest_indResult(statistic=3.4463884028073513,
                     pvalue=0.01369338726499547)
     """
+    xp = array_namespace(a, b)
+
+    default_float = xp.asarray(1.).dtype
+    if xp.isdtype(a.dtype, 'integral'):
+        a = xp.astype(a, default_float)
+    if xp.isdtype(b.dtype, 'integral'):
+        b = xp.astype(b, default_float)
+
     if not (0 <= trim < .5):
         raise ValueError("Trimming percentage should be 0 <= `trim` < .5.")
 
-    NaN = _get_nan(a, b)
-
-    if a.size == 0 or b.size == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
+    result_shape = _broadcast_array_shapes_remove_axis((a, b), axis=axis)
+    NaN = xp.full(result_shape, _get_nan(a, b, xp=xp))
+    NaN = NaN[()] if NaN.ndim == 0 else NaN
+    if xp_size(a) == 0 or xp_size(b) == 0:
         return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
                            standard_error=NaN, estimate=NaN)
 
+    alternative_nums = {"less": -1, "two-sided": 0, "greater": 1}
+
+    # This probably should be deprecated and replaced with a `method` argument
     if permutations is not None and permutations != 0:
+        message = "Use of `permutations` is compatible only with NumPy arrays."
+        if not is_numpy(xp):
+            raise NotImplementedError(message)
+
+        message = "Use of `permutations` is incompatible with with use of `trim`."
         if trim != 0:
-            raise ValueError("Permutations are currently not supported "
-                             "with trimming.")
-        if permutations < 0 or (np.isfinite(permutations) and
-                                int(permutations) != permutations):
-            raise ValueError("Permutations must be a non-negative integer.")
+            raise NotImplementedError(message)
 
         t, prob = _permutation_ttest(a, b, permutations=permutations,
                                      axis=axis, equal_var=equal_var,
@@ -6963,37 +6984,40 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
                                      alternative=alternative)
         df, denom, estimate = NaN, NaN, NaN
 
+        # _axis_nan_policy decorator doesn't play well with strings
+        return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
+                           standard_error=denom, estimate=estimate)
+
+    n1 = xp.asarray(a.shape[axis], dtype=a.dtype)
+    n2 = xp.asarray(b.shape[axis], dtype=b.dtype)
+
+    if trim == 0:
+        with np.errstate(divide='ignore', invalid='ignore'):
+            v1 = _var(a, axis, ddof=1, xp=xp)
+            v2 = _var(b, axis, ddof=1, xp=xp)
+
+        m1 = xp.mean(a, axis=axis)
+        m2 = xp.mean(b, axis=axis)
     else:
-        n1 = a.shape[axis]
-        n2 = b.shape[axis]
+        message = "Use of `trim` is compatible only with NumPy arrays."
+        if not is_numpy(xp):
+            raise NotImplementedError(message)
 
-        if trim == 0:
-            if equal_var:
-                old_errstate = np.geterr()
-                np.seterr(divide='ignore', invalid='ignore')
-            v1 = _var(a, axis, ddof=1)
-            v2 = _var(b, axis, ddof=1)
-            if equal_var:
-                np.seterr(**old_errstate)
-            m1 = np.mean(a, axis)
-            m2 = np.mean(b, axis)
-        else:
-            v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
-            v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
+        v1, m1, n1 = _ttest_trim_var_mean_len(a, trim, axis)
+        v2, m2, n2 = _ttest_trim_var_mean_len(b, trim, axis)
 
-        if equal_var:
-            df, denom = _equal_var_ttest_denom(v1, n1, v2, n2)
-        else:
-            df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2)
-        t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
+    if equal_var:
+        df, denom = _equal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
+    else:
+        df, denom = _unequal_var_ttest_denom(v1, n1, v2, n2, xp=xp)
+    t, prob = _ttest_ind_from_stats(m1, m2, denom, df, alternative)
 
-        # when nan_policy='omit', `df` can be different for different axis-slices
-        df = np.broadcast_to(df, t.shape)[()]
-        estimate = m1-m2
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = xp.broadcast_to(df, t.shape)
+    df = df[()] if df.ndim ==0 else df
+    estimate = m1 - m2
 
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
+    return TtestResult(t, prob, df=df, alternative=alternative_nums[alternative],
                        standard_error=denom, estimate=estimate)
 
 
@@ -7104,9 +7128,9 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     var_b = _var(b, axis=axis, ddof=1)
 
     if not equal_var:
-        denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
+        _, denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)
     else:
-        denom = _equal_var_ttest_denom(var_a, na, var_b, nb)[1]
+        _, denom = _equal_var_ttest_denom(var_a, na, var_b, nb)
 
     return (avg_a-avg_b)/denom
 
@@ -7152,6 +7176,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         The p-value.
 
     """
+    if permutations < 0 or (np.isfinite(permutations) and
+                            int(permutations) != permutations):
+        raise ValueError("Permutations must be a non-negative integer.")
+
     random_state = check_random_state(random_state)
 
     t_stat_observed = _calc_t_stat(a, b, equal_var, axis=axis)
@@ -7296,38 +7324,8 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     TtestResult(statistic=-5.879467544540889, pvalue=7.540777129099917e-09, df=499)
 
     """
-    a, b, axis = _chk2_asarray(a, b, axis)
-
-    na = _get_len(a, axis, "first argument")
-    nb = _get_len(b, axis, "second argument")
-    if na != nb:
-        raise ValueError('unequal length arrays')
-
-    if na == 0 or nb == 0:
-        # _axis_nan_policy decorator ensures this only happens with 1d input
-        NaN = _get_nan(a, b)
-        return TtestResult(NaN, NaN, df=NaN, alternative=NaN,
-                           standard_error=NaN, estimate=NaN)
-
-    n = a.shape[axis]
-    df = n - 1
-
-    d = (a - b).astype(np.float64)
-    v = _var(d, axis, ddof=1)
-    dm = np.mean(d, axis)
-    denom = np.sqrt(v / n)
-
-    with np.errstate(divide='ignore', invalid='ignore'):
-        t = np.divide(dm, denom)[()]
-    prob = _get_pvalue(t, distributions.t(df), alternative, xp=np)
-
-    # when nan_policy='omit', `df` can be different for different axis-slices
-    df = np.broadcast_to(df, t.shape)[()]
-
-    # _axis_nan_policy decorator doesn't play well with strings
-    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
-    return TtestResult(t, prob, df=df, alternative=alternative_num,
-                       standard_error=denom, estimate=dm)
+    return ttest_1samp(a - b, popmean=0, axis=axis, alternative=alternative,
+                       _no_deco=True)
 
 
 # Map from names to lambda_ values used in power_divergence().
@@ -9259,9 +9257,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
                            symmetric=False, xp=np)
     elif method == 'pearson':
         statistic = 2 * np.sum(np.log1p(-pvalues))
-        # _SimpleChi2 doesn't have `cdf` yet;
-        # add it when `combine_pvalues` is converted to array API
-        pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
+        chi2 = _SimpleChi2(2 * len(pvalues))
+        pval = _get_pvalue(-statistic, chi2, alternative='less',
+                           symmetric=False, xp=np)
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
@@ -9271,7 +9269,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
                                   * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
-        pval = distributions.beta.cdf(statistic, 1, len(pvalues))
+        beta = _SimpleBeta(1, len(pvalues))
+        pval = _get_pvalue(statistic, beta, alternative='less',
+                           symmetric=False, xp=np)
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -10898,5 +10898,33 @@ class _SimpleChi2:
     def __init__(self, df):
         self.df = df
 
+    def cdf(self, x):
+        return special.chdtr(self.df, x)
+
     def sf(self, x):
         return special.chdtrc(self.df, x)
+
+
+class _SimpleBeta:
+    # A very simple, array-API compatible beta distribution for use in
+    # hypothesis tests. May be replaced by new infrastructure beta
+    # distribution in due time.
+    def __init__(self, a, b, *, loc=None, scale=None):
+        self.a = a
+        self.b = b
+        self.loc = loc
+        self.scale = scale
+
+    def cdf(self, x):
+        if self.loc is not None or self.scale is not None:
+            loc = 0 if self.loc is None else self.loc
+            scale = 1 if self.scale is None else self.scale
+            return special.betainc(self.a, self.b, (x - loc)/scale)
+        return special.betainc(self.a, self.b, x)
+
+    def sf(self, x):
+        if self.loc is not None or self.scale is not None:
+            loc = 0 if self.loc is None else self.loc
+            scale = 1 if self.scale is None else self.scale
+            return special.betaincc(self.a, self.b, (x - loc)/scale)
+        return special.betaincc(self.a, self.b, x)

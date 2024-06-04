@@ -2,8 +2,8 @@
 
 #include "error.h"
 #include "legendre.h"
-#include "mdspan.h"
 #include "specfun.h"
+#include "third_party/kokkos/mdspan.hpp"
 
 #include "cephes/poch.h"
 

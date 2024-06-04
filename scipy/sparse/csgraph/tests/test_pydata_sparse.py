@@ -3,6 +3,7 @@ import pytest
 import numpy as np
 import scipy.sparse as sp
 import scipy.sparse.csgraph as spgraph
+from scipy._lib import _pep440
 
 from numpy.testing import assert_equal
 
@@ -20,6 +21,15 @@ msg = "pydata/sparse (0.15.1) does not implement necessary operations"
 
 sparse_params = (pytest.param("COO"),
                  pytest.param("DOK", marks=[pytest.mark.xfail(reason=msg)]))
+
+
+def check_sparse_version(min_ver):
+    if sparse is None:
+        return pytest.mark.skip(reason="sparse is not installed")
+    return pytest.mark.skipif(
+        _pep440.parse(sparse.__version__) < _pep440.Version(min_ver),
+        reason=f"sparse version >= {min_ver} required"
+    )
 
 
 @pytest.fixture(params=sparse_params)
@@ -149,6 +159,7 @@ def test_min_weight_full_bipartite_matching(graphs):
     assert_equal(actual, desired)
 
 
+@check_sparse_version("0.15.4")
 @pytest.mark.parametrize(
     "func",
     [

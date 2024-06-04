@@ -1097,6 +1097,7 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, ref.statistic)
         assert_allclose(res.pvalue, ref.pvalue, atol=1e-2)
 
+    @pytest.mark.fail_slow(2)
     @pytest.mark.xfail_on_32bit("Statistic may not depend on sample order on 32-bit")
     def test_finite_precision_statistic(self):
         # Some statistics return numerically distinct values when the values
@@ -1924,6 +1925,7 @@ class TestPermutationTest:
         got = list(_resampling._batch_generator(iterable, batch))
         assert got == expected
 
+    @pytest.mark.fail_slow(2)
     def test_finite_precision_statistic(self):
         # Some statistics return numerically distinct values when the values
         # should be equal in theory. Test that `permutation_test` accounts

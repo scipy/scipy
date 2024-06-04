@@ -662,7 +662,7 @@ class BSpline:
                 # Fast path: use FITPACK's routine
                 # (cf _fitpack_impl.splint).
                 integral = _fitpack_impl.splint(a, b, self.tck)
-                return integral * sign
+                return np.asarray(integral * sign)
 
         out = np.empty((2, prod(self.c.shape[1:])), dtype=self.c.dtype)
 

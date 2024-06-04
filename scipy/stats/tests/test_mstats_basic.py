@@ -475,6 +475,10 @@ class TestCorr:
             res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
+    @skip_xp_invalid_arg
+    # mstats.pointbiserialr returns a NumPy float for the statistic, but converts
+    # it to a masked array with no masked elements before calling `special.betainc`,
+    # which won't accept masked arrays when `SCIPY_ARRAY_API=1`.
     def test_pointbiserial(self):
         x = [1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
              0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, -1]
