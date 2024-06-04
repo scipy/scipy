@@ -37,7 +37,7 @@ class _dok_base(_spbase, IndexMixin, dict):
 
             self._dict = arg1._dict
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
-            self.dtype = arg1.dtype
+            self.dtype = getdtype(arg1.dtype)
         else:  # Dense ctor
             try:
                 arg1 = np.asarray(arg1)
@@ -51,11 +51,11 @@ class _dok_base(_spbase, IndexMixin, dict):
                 if dtype is not None:
                     arg1 = arg1.astype(dtype)
                 self._dict = {i: v for i, v in enumerate(arg1) if v != 0}
-                self.dtype = arg1.dtype
+                self.dtype = getdtype(arg1.dtype)
             else:
                 d = self._coo_container(arg1, dtype=dtype).todok()
                 self._dict = d._dict
-                self.dtype = d.dtype
+                self.dtype = getdtype(d.dtype)
             self._shape = check_shape(arg1.shape, allow_1d=is_array)
 
     def update(self, val):

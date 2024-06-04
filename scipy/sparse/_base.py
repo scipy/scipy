@@ -4,7 +4,7 @@ import numpy as np
 
 from ._sputils import (asmatrix, check_reshape_kwargs, check_shape,
                        get_sum_dtype, isdense, isscalarlike,
-                       matrix, validateaxis,)
+                       matrix, validateaxis, getdtype)
 
 from ._matrix import spmatrix
 
@@ -217,7 +217,7 @@ class _spbase:
             this array/matrix do not share any memory.
         """
 
-        dtype = np.dtype(dtype)
+        dtype = getdtype(dtype)
         if self.dtype != dtype:
             return self.tocsr().astype(
                 dtype, casting=casting, copy=copy).asformat(self.format)

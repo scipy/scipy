@@ -94,7 +94,8 @@ class _coo_base(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype, copy=False)
 
         self._check()
 

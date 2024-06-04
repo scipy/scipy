@@ -78,7 +78,8 @@ class _dia_base(_data_matrix):
             self._shape = check_shape(A.shape)
 
         if dtype is not None:
-            self.data = self.data.astype(dtype)
+            newdtype = getdtype(dtype)
+            self.data = self.data.astype(newdtype)
 
         # check format
         if self.offsets.ndim != 1:
