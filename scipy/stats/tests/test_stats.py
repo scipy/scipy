@@ -5235,8 +5235,8 @@ def test_ttest_ind_scalar():
     with suppress_warnings() as sup, np.errstate(invalid="ignore"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
-    assert_(np.isnan(t))
-    assert_(np.isnan(p))
+    assert np.isnan(t)
+    assert np.isnan(p)
 
 
 class Test_ttest_ind_permutations:
