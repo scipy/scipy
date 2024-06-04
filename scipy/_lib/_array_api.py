@@ -600,7 +600,7 @@ def xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propag
     # don't merge like this - we're not supposed to import from a public module here
     from scipy.stats._axis_nan_policy import (
         SmallSampleWarning, too_small_1d_not_omit, too_small_1d_omit,
-        too_small_nd_not_omit, too_small_nd_omit
+        too_small_nd_not_omit, too_small_nd_omit, _broadcast_arrays
     )
 
     # ensure that `x` and `weights` are array-API compatible arrays of identical shape
@@ -610,7 +610,7 @@ def xp_mean(x, /, *, axis=None, weights=None, keepdims=False, nan_policy='propag
 
     if weights is not None and x.shape != weights.shape:
         try:
-            x, weights = xp.broadcast_arrays(x, weights)
+            x, weights = _broadcast_arrays((x, weights), xp=xp)
         except (ValueError, RuntimeError) as e:
             message = "Array shapes are incompatible for broadcasting."
             raise ValueError(message) from e
