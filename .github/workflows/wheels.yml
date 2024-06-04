@@ -152,7 +152,8 @@ jobs:
           echo "CIBW_ENVIRONMENT_MACOS=$CIBW" >> "$GITHUB_ENV"
 
           echo "REPAIR_PATH=$LIB_PATH" >> "$GITHUB_ENV"
-          PREFIX=DYLD_LIBRARY_PATH=$(dirname $(gfortran --print-file-name libgfortran.dylib))
+          
+          PREFIX=DYLD_LIBRARY_PATH="\$(dirname \$(gfortran --print-file-name libgfortran.dylib))"
           # remove libgfortran from location used for linking (if any), to
           # check wheel has bundled things correctly and all tests pass without
           # needing installed gfortran
