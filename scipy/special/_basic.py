@@ -16,7 +16,7 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import legendre_p, assoc_legendre_p, multi_assoc_legendre_p
-from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, clpmn_all,
+from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, multi_assoc_legendre_p_all,
                         _lqn, _lqmn, _rctj, _rcty,
                         _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
@@ -33,7 +33,6 @@ __all__ = [
     'berp_zeros',
     'bi_zeros',
     'clpmn',
-    'clpmn_all',
     'comb',
     'digamma',
     'diric',
@@ -66,6 +65,7 @@ __all__ = [
     'assoc_legendre_p',
     'assoc_legendre_p_all',
     'multi_assoc_legendre_p',
+    'multi_assoc_legendre_p_all',
     'lpn',
     'lqmn',
     'lqn',
@@ -1810,13 +1810,13 @@ def lpmn(m, n, z):
 
     return p, pd
 
-clpmn_all = MultiUFunc(clpmn_all, force_out_complex = True)
+multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all, force_out_complex = True)
 
-@clpmn_all.resolve_ufunc
+@multi_assoc_legendre_p_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
-@clpmn_all.resolve_out_shapes
+@multi_assoc_legendre_p_all.resolve_out_shapes
 def _(m, n, type_shape, z_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
@@ -1888,7 +1888,7 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out, out_jac = clpmn_all(abs(m), n, type, z, diff_n = 1)
+    out, out_jac = multi_assoc_legendre_p_all(abs(m), n, type, z, diff_n = 1)
     if (m >= 0):
         out = out[:(m + 1)]
         out_jac = out_jac[:(m + 1)]

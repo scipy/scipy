@@ -79,7 +79,7 @@ void assoc_legendre_p(NormPolicy norm, long long int n, long long int m, T z, T 
 }
 
 template <typename NormPolicy, typename T, typename OutputMat>
-void lpmn_all(NormPolicy norm, T z, OutputMat res) {
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat res) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -91,7 +91,7 @@ void lpmn_all(NormPolicy norm, T z, OutputMat res) {
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void lpmn_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac) {
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -103,7 +103,7 @@ void lpmn_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac) {
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void lpmn_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
+void assoc_legendre_p_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
     int type;
     if (std::abs(z) <= 1) {
         type = 2;
@@ -137,17 +137,19 @@ void multi_assoc_legendre_p(
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1>
-void clpmn_all(NormPolicy norm, long long int type, std::complex<T> z, OutputMat1 res) {
+void multi_assoc_legendre_p_all(NormPolicy norm, long long int type, std::complex<T> z, OutputMat1 res) {
     special::assoc_legendre_p_all(norm, type, z, res);
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
-void clpmn_all(NormPolicy norm, long long int type, std::complex<T> z, OutputMat1 res, OutputMat2 res_jac) {
+void multi_assoc_legendre_p_all(
+    NormPolicy norm, long long int type, std::complex<T> z, OutputMat1 res, OutputMat2 res_jac
+) {
     special::assoc_legendre_p_all(norm, type, z, res, res_jac);
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
-void clpmn_all(
+void multi_assoc_legendre_p_all(
     NormPolicy norm, long long int type, std::complex<T> z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess
 ) {
     special::assoc_legendre_p_all(norm, type, z, res, res_jac, res_hess);
