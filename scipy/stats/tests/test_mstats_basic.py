@@ -1258,6 +1258,7 @@ class TestKruskal:
 
 
 # TODO: for all ttest functions, add tests with masked array inputs
+@skip_xp_invalid_arg
 class TestTtest_rel:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
@@ -1350,6 +1351,7 @@ class TestTtest_rel:
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
+@skip_xp_invalid_arg
 class TestTtest_ind:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
@@ -1445,6 +1447,7 @@ class TestTtest_ind:
         assert_allclose(p, p_ex, rtol=1e-14)
 
 
+@skip_xp_invalid_arg
 class TestTtest_1samp:
     def test_vs_nonmasked(self):
         np.random.seed(1234567)
