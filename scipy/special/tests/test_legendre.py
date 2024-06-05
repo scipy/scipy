@@ -255,15 +255,15 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 2], assoc_legendre_p_m2_2_jac(typ, x, norm = norm))
         np.testing.assert_allclose(p_jac[-1, 2], assoc_legendre_p_m1_2_jac(typ, x, norm = norm))
 
-        np.testing.assert_allclose(p_jac[0, 3], lpmn_jac_desired(0, 3, x, norm = norm))
-        np.testing.assert_allclose(p_jac[1, 3], lpmn_jac_desired(1, 3, x, norm = norm))
-        np.testing.assert_allclose(p_jac[2, 3], lpmn_jac_desired(2, 3, x, norm = norm))
-        np.testing.assert_allclose(p_jac[3, 3], lpmn_jac_desired(3, 3, x, norm = norm))
+        np.testing.assert_allclose(p_jac[0, 3], assoc_legendre_p_0_3_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[1, 3], assoc_legendre_p_1_3_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[2, 3], assoc_legendre_p_2_3_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[3, 3], assoc_legendre_p_3_3_jac(typ, x, norm = norm))
         np.testing.assert_allclose(p_jac[4, 3], 0)
         np.testing.assert_allclose(p_jac[-4, 3], 0)
-        np.testing.assert_allclose(p_jac[-3, 3], lpmn_jac_desired(-3, 3, x, norm = norm))
-        np.testing.assert_allclose(p_jac[-2, 3], lpmn_jac_desired(-2, 3, x, norm = norm))
-        np.testing.assert_allclose(p_jac[-1, 3], lpmn_jac_desired(-1, 3, x, norm = norm))
+        np.testing.assert_allclose(p_jac[-3, 3], assoc_legendre_p_m3_3_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[-2, 3], assoc_legendre_p_m2_3_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[-1, 3], assoc_legendre_p_m1_3_jac(typ, x, norm = norm))
 
         np.testing.assert_allclose(p_jac[0, 4], lpmn_jac_desired(0, 4, x, norm = norm))
         np.testing.assert_allclose(p_jac[1, 4], lpmn_jac_desired(1, 4, x, norm = norm))
@@ -401,15 +401,15 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 2], assoc_legendre_p_m2_2_jac(typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[-1, 2], assoc_legendre_p_m1_2_jac(typ, z, norm = norm))
 
-        np.testing.assert_allclose(p_jac[0, 3], clpmn_jac_desired(0, 3, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[1, 3], clpmn_jac_desired(1, 3, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[2, 3], clpmn_jac_desired(2, 3, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[3, 3], clpmn_jac_desired(3, 3, typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[0, 3], assoc_legendre_p_0_3_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[1, 3], assoc_legendre_p_1_3_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[2, 3], assoc_legendre_p_2_3_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[3, 3], assoc_legendre_p_3_3_jac(typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[4, 3], 0)
         np.testing.assert_allclose(p_jac[-4, 3], 0)
-        np.testing.assert_allclose(p_jac[-3, 3], clpmn_jac_desired(-3, 3, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[-2, 3], clpmn_jac_desired(-2, 3, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[-1, 3], clpmn_jac_desired(-1, 3, typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[-3, 3], assoc_legendre_p_m3_3_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[-2, 3], assoc_legendre_p_m2_3_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[-1, 3], assoc_legendre_p_m1_3_jac(typ, z, norm = norm))
 
         np.testing.assert_allclose(p_jac[0, 4], clpmn_jac_desired(0, 4, typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[1, 4], clpmn_jac_desired(1, 4, typ, z, norm = norm))
@@ -797,6 +797,45 @@ def assoc_legendre_p_m2_2_jac(typ, z, *, norm = False):
 
     return -typ_sign * fac * z / 4
 
+def assoc_legendre_p_0_3_jac(typ, z, *, norm = False):
+    fac = assoc_legendre_factor(0, 3, norm)
+
+    return 3 * fac * (5 * z * z - 1) / 2
+
+def assoc_legendre_p_1_3_jac(typ, z, *, norm = False):
+    fac = assoc_legendre_factor(1, 3, norm)
+
+    return 3 * fac * (15 * z * z - 11) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+
+def assoc_legendre_p_2_3_jac(typ, z, *, norm = False):
+    typ_sign = np.where(typ == 3, -1, 1)
+    fac = assoc_legendre_factor(2, 3, norm)
+
+    return 15 * typ_sign * fac * (1 - 3 * z * z)
+
+def assoc_legendre_p_3_3_jac(typ, z, *, norm = False):
+    typ_sign = np.where(typ == 3, -1, 1)
+    fac = assoc_legendre_factor(3, 3, norm)
+
+    return 45 * typ_sign * fac * (1 - z * z) * z * assoc_legendre_p_1_1_jac_div_z(typ, z)
+
+def assoc_legendre_p_m3_3_jac(typ, z, *, norm = False):
+    fac = assoc_legendre_factor(-3, 3, norm)
+
+    return fac * (z * z - 1) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 16
+
+def assoc_legendre_p_m2_3_jac(typ, z, *, norm = False):
+    typ_sign = np.where(typ == 3, -1, 1)
+    fac = assoc_legendre_factor(-2, 3, norm)
+
+    return typ_sign * fac * (1 - 3 * z * z) / 8
+
+def assoc_legendre_p_m1_3_jac(typ, z, *, norm = False):
+    typ_sign = np.where(typ == 3, -1, 1)
+    fac = assoc_legendre_factor(-1, 3, norm)
+
+    return typ_sign * fac * (11 - 15 * z * z) * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 8
+
 def clpmn_jac_desired(m, n, type, z, *, norm = False):
     type_sign = np.where(type == 3, -1, 1)
     branch_sign = np.where(type == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
@@ -807,28 +846,6 @@ def clpmn_jac_desired(m, n, type, z, *, norm = False):
         fac = 1
 
     out11_div_z = -branch_sign / np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
-
-    if (n == 3):
-        if (m == 0):
-            return 3 * fac * (5 * z * z - 1) / 2
-
-        if (m == 1):
-            return 3 * fac * (15 * z * z - 11) * z * out11_div_z / 2
-
-        if (m == 2):
-            return 15 * type_sign * fac * (1 - 3 * z * z)
-
-        if (m == 3):
-            return 45 * type_sign * fac * (1 - z * z) * z * out11_div_z
-
-        if (m == -3):
-            return fac * (z * z - 1) * z * out11_div_z / 16
-
-        if (m == -2):
-            return type_sign * fac * (1 - 3 * z * z) / 8
-
-        if (m == -1):
-            return type_sign * fac * (11 - 15 * z * z) * z * out11_div_z / 8
 
     if (n == 4):
         if (m == 0):
