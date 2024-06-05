@@ -1062,23 +1062,23 @@ void assoc_legendre_p(NormPolicy norm, int n, int m, int type, T z, T &res, T &r
  */
 template <typename NormPolicy, typename T, typename OutputMat1>
 void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res) {
-    int m = (res.extent(0) - 1) / 2;
-    int n = res.extent(1) - 1;
+    int n = res.extent(0) - 1;
+    int m = (res.extent(1) - 1) / 2;
 
     T p[2];
     assoc_legendre_p_for_each_n_m(norm, n, m, type, z, p, [res](int n, int m, const T(&p)[2]) {
         if (m >= 0) {
-            res(m, n) = p[1];
+            res(n, m) = p[1];
         } else {
-            res(m + res.extent(0), n) = p[1];
+            res(n, m + res.extent(1)) = p[1];
         }
     });
 }
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2>
 void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac) {
-    int m = (res.extent(0) - 1) / 2;
-    int n = res.extent(1) - 1;
+    int n = res.extent(0) - 1;
+    int m = (res.extent(1) - 1) / 2;
 
     T p_n_m[2];
     T p_n_m_jac[2];
@@ -1086,11 +1086,11 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
         norm, n, m, type, z, p_n_m, p_n_m_jac,
         [res, res_jac](int n, int m, const T(&p_n_m)[2], const T(&p_n_m_jac)[2]) {
             if (m >= 0) {
-                res(m, n) = p_n_m[1];
-                res_jac(m, n) = p_n_m_jac[1];
+                res(n, m) = p_n_m[1];
+                res_jac(n, m) = p_n_m_jac[1];
             } else {
-                res(m + res.extent(0), n) = p_n_m[1];
-                res_jac(m + res_jac.extent(0), n) = p_n_m_jac[1];
+                res(n, m + res.extent(1)) = p_n_m[1];
+                res_jac(n, m + res_jac.extent(1)) = p_n_m_jac[1];
             }
         }
     );
@@ -1098,8 +1098,8 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
 
 template <typename NormPolicy, typename T, typename OutputMat1, typename OutputMat2, typename OutputMat3>
 void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, OutputMat2 res_jac, OutputMat3 res_hess) {
-    int m = (res.extent(0) - 1) / 2;
-    int n = res.extent(1) - 1;
+    int n = res.extent(0) - 1;
+    int m = (res.extent(1) - 1) / 2;
 
     T p[2];
     T p_jac[2];
@@ -1108,13 +1108,13 @@ void assoc_legendre_p_all(NormPolicy norm, int type, T z, OutputMat1 res, Output
         norm, n, m, type, z, p, p_jac, p_hess,
         [res, res_jac, res_hess](int n, int m, const T(&p)[2], const T(&p_jac)[2], const T(&p_hess)[2]) {
             if (m >= 0) {
-                res(m, n) = p[1];
-                res_jac(m, n) = p_jac[1];
-                res_hess(m, n) = p_hess[1];
+                res(n, m) = p[1];
+                res_jac(n, m) = p_jac[1];
+                res_hess(n, m) = p_hess[1];
             } else {
-                res(m + res.extent(0), n) = p[1];
-                res_jac(m + res_jac.extent(0), n) = p_jac[1];
-                res_hess(m + res_hess.extent(0), n) = p_hess[1];
+                res(n, m + res.extent(1)) = p[1];
+                res_jac(n, m + res_jac.extent(1)) = p_jac[1];
+                res_hess(n, m + res_hess.extent(1)) = p_hess[1];
             }
         }
     );

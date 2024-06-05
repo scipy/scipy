@@ -26,6 +26,8 @@ from ._multiufunc import MultiUFunc
 __all__ = [
     'ai_zeros',
     'assoc_laguerre',
+    'assoc_legendre_p',
+    'assoc_legendre_p_all',
     'bei_zeros',
     'beip_zeros',
     'ber_zeros',
@@ -58,19 +60,17 @@ __all__ = [
     'ker_zeros',
     'kerp_zeros',
     'kvp',
-    'lmbda',
-    'lpmn',
     'legendre_p',
     'legendre_p_all',
-    'assoc_legendre_p',
-    'assoc_legendre_p_all',
-    'multi_assoc_legendre_p',
-    'multi_assoc_legendre_p_all',
+    'lmbda',
+    'lpmn',
     'lpn',
     'lqmn',
     'lqn',
     'mathieu_even_coef',
     'mathieu_odd_coef',
+    'multi_assoc_legendre_p',
+    'multi_assoc_legendre_p_all',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -1735,14 +1735,14 @@ def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
 @assoc_legendre_p_all.resolve_out_shapes
-def _(m, n, z_shape, nout):
+def _(n, m, z_shape, nout):
     if ((not np.isscalar(m)) or (abs(m) > n)):
         raise ValueError("m must be <= n.")
 
     if ((not np.isscalar(n)) or (n < 0)):
         raise ValueError("n must be a non-negative integer.")
 
-    return nout * ((2 * abs(m) + 1, n + 1,) + z_shape,)
+    return nout * ((n + 1, 2 * abs(m) + 1) + z_shape,)
 
 def lpmn(m, n, z):
     """Sequence of associated Legendre functions of the first kind.
@@ -1800,7 +1800,10 @@ def lpmn(m, n, z):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    p, pd = assoc_legendre_p_all(abs(m), n, z, diff_n = 1)
+    p, pd = assoc_legendre_p_all(n, abs(m), z, diff_n = 1)
+    p = np.swapaxes(p, 0, 1)
+    pd = np.swapaxes(pd, 0, 1)
+
     if (m >= 0):
         p = p[:(m + 1)]
         pd = pd[:(m + 1)]
@@ -1817,15 +1820,13 @@ def _(ufuncs, norm = False, diff_n = 0):
     return ufuncs[norm][diff_n]
 
 @multi_assoc_legendre_p_all.resolve_out_shapes
-def _(m, n, type_shape, z_shape, nout):
+def _(n, m, type_shape, z_shape, nout):
     if not isinstance(m, numbers.Integral) or (abs(m) > n):
         raise ValueError("m must be <= n.")
     if not isinstance(n, numbers.Integral) or (n < 0):
         raise ValueError("n must be a non-negative integer.")
 
-    m_abs = abs(m)
-
-    return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(type_shape, z_shape),)
+    return nout * ((n + 1, 2 * abs(m) + 1) + np.broadcast_shapes(type_shape, z_shape),)
 
 def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
@@ -1888,7 +1889,10 @@ def clpmn(m, n, z, type = 3):
 
     m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-    out, out_jac = multi_assoc_legendre_p_all(abs(m), n, type, z, diff_n = 1)
+    out, out_jac = multi_assoc_legendre_p_all(n, abs(m), type, z, diff_n = 1)
+    out = np.swapaxes(out, 0, 1)
+    out_jac = np.swapaxes(out_jac, 0, 1)
+
     if (m >= 0):
         out = out[:(m + 1)]
         out_jac = out_jac[:(m + 1)]
