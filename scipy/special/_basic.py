@@ -15,9 +15,10 @@ from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
-from ._special_ufuncs import legendre_p, assoc_legendre_p, clpmn as _clpmn
+from ._special_ufuncs import legendre_p, assoc_legendre_p, multi_assoc_legendre_p
 from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, clpmn_all,
-                        _lqn, _lqmn, _rctj, _rcty, _sph_harm_all as _sph_harm_all_gufunc)
+                        _lqn, _lqmn, _rctj, _rcty,
+                        _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
 from ._multiufunc import MultiUFunc
@@ -64,6 +65,7 @@ __all__ = [
     'legendre_p_all',
     'assoc_legendre_p',
     'assoc_legendre_p_all',
+    'multi_assoc_legendre_p',
     'lpn',
     'lqmn',
     'lqn',
@@ -1825,7 +1827,7 @@ def _(m, n, type_shape, z_shape, nout):
 
     return nout * ((2 * m_abs + 1, n + 1,) + np.broadcast_shapes(type_shape, z_shape),)
 
-def clpmn(m, n, z, type = 3, *, diff_n = None, legacy = True):
+def clpmn(m, n, z, type = 3):
     """Associated Legendre function of the first kind for complex arguments.
 
     Computes the associated Legendre function of the first kind of order m and
@@ -1884,26 +1886,17 @@ def clpmn(m, n, z, type = 3, *, diff_n = None, legacy = True):
     if not (type == 2 or type == 3):
         raise ValueError("type must be either 2 or 3.")
 
-    if legacy:
-        if (diff_n is not None):
-            raise ValueError('diff_n must be None if legacy is True')
+    m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
 
-        m, n = int(m), int(n)  # Convert to int to maintain backwards compatibility.
+    out, out_jac = clpmn_all(abs(m), n, type, z, diff_n = 1)
+    if (m >= 0):
+        out = out[:(m + 1)]
+        out_jac = out_jac[:(m + 1)]
+    else:
+        out = np.insert(out[:(m - 1):-1], 0, out[0], axis = 0)
+        out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis = 0)
 
-        out, out_jac = clpmn_all(abs(m), n, type, z, diff_n = 1)
-        if (m >= 0):
-            out = out[:(m + 1)]
-            out_jac = out_jac[:(m + 1)]
-        else:
-            out = np.insert(out[:(m - 1):-1], 0, out[0], axis = 0)
-            out_jac = np.insert(out_jac[:(m - 1):-1], 0, out_jac[0], axis = 0)
-
-        return out, out_jac
-
-    if (diff_n is None):
-        diff_n = 0
-
-    return _clpmn(m, n, type, z, diff_n = diff_n)
+    return out, out_jac
 
 def lqmn(m, n, z):
     """Sequence of associated Legendre functions of the second kind.

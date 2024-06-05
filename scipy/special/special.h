@@ -115,21 +115,22 @@ void lpmn_all(NormPolicy norm, T z, OutputMat1 res, OutputMat2 res_jac, OutputMa
 }
 
 template <typename NormPolicy, typename T>
-std::complex<T> clpmn(NormPolicy norm, long long int m, long long int n, long long int type, std::complex<T> z) {
+std::complex<T>
+multi_assoc_legendre_p(NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z) {
     return special::assoc_legendre_p(norm, n, m, type, z);
 }
 
 template <typename NormPolicy, typename T>
-void clpmn(
-    NormPolicy norm, long long int m, long long int n, long long int type, std::complex<T> z, std::complex<T> &res,
+void multi_assoc_legendre_p(
+    NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
     std::complex<T> &res_jac
 ) {
     special::assoc_legendre_p(norm, n, m, type, z, res, res_jac);
 }
 
 template <typename NormPolicy, typename T>
-void clpmn(
-    NormPolicy norm, long long int m, long long int n, long long int type, std::complex<T> z, std::complex<T> &res,
+void multi_assoc_legendre_p(
+    NormPolicy norm, long long int n, long long int m, long long int type, std::complex<T> z, std::complex<T> &res,
     std::complex<T> &res_jac, std::complex<T> &res_hess
 ) {
     special::assoc_legendre_p(norm, n, m, type, z, res, res_jac, res_hess);
