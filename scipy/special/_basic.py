@@ -2765,9 +2765,9 @@ def perm(N, k, exact=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
-
+        If True, calculate the answer exactly using long integer arithmetic and
+        `N` and `k` must be scalar integers. If False, result is approximated in
+        floating point rapidly using `poch`. Default is False.
     Returns
     -------
     val : int, ndarray
@@ -2791,6 +2791,12 @@ def perm(N, k, exact=False):
 
     """
     if exact:
+        if not (isscalar(N) and isscalar(k)):
+            raise ValueError("`N` and `k` must scalar integers be with `exact=True`.")
+        if not floor(N) == N and floor(k) == k:
+            msg = ("Non-integer `N` and `k` with `exact=True` is deprecated and will "
+                   "raise an error in SciPy 1.17.0.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         if (k > N) or (N < 0) or (k < 0):
             return 0
         val = 1

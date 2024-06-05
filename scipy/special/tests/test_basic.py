@@ -1477,6 +1477,12 @@ class TestCombinatorics:
         assert_equal(special.perm(2, -1, exact=False), 0)
         assert_allclose(special.perm([2, -1, 2, 10], [3, 3, -1, 3]), [0., 0., 0., 720.])
 
+    def test_perm_invalid_inputs(self):
+        with pytest.raises(ValueError, match="scalar integers"):
+            special.perm([1, 2], [4, 5], exact=True)
+        with pytest.deprecated_call(match="Non-integer"):
+            special.perm(4.6, 6, exact=True)
+
 
 class TestTrigonometric:
     def test_cbrt(self):
