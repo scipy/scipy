@@ -1299,6 +1299,8 @@ class TestOptimizeSimple(CheckOptimize):
 
             if method == 'tnc':
                 kwargs['options'] = dict(maxfun=100)
+            elif method == 'cobyla':
+                kwargs['options'] = dict(maxiter=15)
             else:
                 kwargs['options'] = dict(maxiter=5)
 

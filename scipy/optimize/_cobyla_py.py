@@ -22,11 +22,13 @@ try:
 except ImportError:
     izip = zip
 
+from ._prima._prima import minimize as _prima_minimize
+
 __all__ = ['fmin_cobyla']
 
-# Workaround as _cobyla.minimize is not threadsafe
-# due to an unknown f2py bug and can segfault,
-# see gh-9658.
+# Workaround as _prima_minimize is not threadsafe since it
+# uses static variables to hold the objective, constraint,
+# and callback functions, among other things.
 _module_lock = RLock()
 def synchronized(func):
     @functools.wraps(func)
@@ -189,8 +191,8 @@ def fmin_cobyla(func, x0, cons, args=(), consargs=None, rhobeg=1.0,
 @synchronized
 def _minimize_cobyla(fun, x0, args=(), constraints=(),
                      rhobeg=1.0, tol=1e-4, maxiter=1000,
-                     disp=False, catol=2e-4, callback=None, bounds=None,
-                     **unknown_options):
+                     disp=False, catol=None, callback=None,
+                     bounds=None, **unknown_options):
     """
     Minimize a scalar function of one or more variables using the
     Constrained Optimization BY Linear Approximation (COBYLA) algorithm.
@@ -219,21 +221,6 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
     # check constraints
     if isinstance(constraints, dict):
         constraints = (constraints, )
-
-    if bounds:
-        i_lb = np.isfinite(bounds.lb)
-        if np.any(i_lb):
-            def lb_constraint(x, *args, **kwargs):
-                return x[i_lb] - bounds.lb[i_lb]
-
-            constraints.append({'type': 'ineq', 'fun': lb_constraint})
-
-        i_ub = np.isfinite(bounds.ub)
-        if np.any(i_ub):
-            def ub_constraint(x):
-                return bounds.ub[i_ub] - x[i_ub]
-
-            constraints.append({'type': 'ineq', 'fun': ub_constraint})
 
     for ic, con in enumerate(constraints):
         # check type
@@ -277,40 +264,50 @@ def _minimize_cobyla(fun, x0, args=(), constraints=(),
 
     sf = _prepare_scalar_function(fun, x0, args=args, jac=_jac)
 
-    def calcfc(x, con):
-        f = sf.fun(x)
+    def nonlinear_constraint_function(x):
         i = 0
+        con = np.zeros(m)
         for size, c in izip(cons_lengths, constraints):
             con[i: i + size] = c['fun'](x, *c['args'])
             i += size
-        return f
+        # We return the negative of the constraints because PRIMA COBYLA
+        # expects the constraint function to be of the form
+        # constraint(x) <= 0
+        return -con
 
     def wrapped_callback(x):
         if callback is not None:
             callback(np.copy(x))
 
-    info = np.zeros(4, np.float64)
-    xopt, info = cobyla.minimize(calcfc, m=m, x=np.copy(x0), rhobeg=rhobeg,
-                                  rhoend=rhoend, iprint=iprint, maxfun=maxfun,
-                                  dinfo=info, callback=wrapped_callback)
+    options = {
+        'rhobeg': rhobeg,
+        'rhoend': rhoend,
+        'iprint': iprint,
+        'maxfev': maxfun,
+        'm_nlcon': m,
+        'ctol': catol if catol is not None else np.sqrt(np.finfo(float).eps),
+    }
 
-    if info[3] > catol:
-        # Check constraint violation
-        info[0] = 4
+    result = _prima_minimize(
+        sf.fun,
+        x0,
+        args=(),  # _prepare_scalar_function handles args for us
+        method='cobyla',
+        lb=bounds.lb if bounds else None,
+        ub=bounds.ub if bounds else None,
+        A_eq=None,  # To be implemented in a future commit
+        b_eq=None,  # To be implemented in a future commit
+        A_ineq=None,  # To be implemented in a future commit
+        b_ineq=None,  # To be implemented in a future commit
+        nonlinear_constraint_function=nonlinear_constraint_function,
+        callback=lambda x, *args: wrapped_callback(x),  # TODO: Like COBYQA, we'd like to be able to accept the new callback syntax with IntermediateResult
+        options=options
+    )
 
-    return OptimizeResult(x=xopt,
-                          status=int(info[0]),
-                          success=info[0] == 1,
-                          message={1: 'Optimization terminated successfully.',
-                                   2: 'Maximum number of function evaluations '
-                                      'has been exceeded.',
-                                   3: 'Rounding errors are becoming damaging '
-                                      'in COBYLA subroutine.',
-                                   4: 'Did not converge to a solution '
-                                      'satisfying the constraints. See '
-                                      '`maxcv` for magnitude of violation.',
-                                   5: 'NaN result encountered.'
-                                   }.get(info[0], 'Unknown exit status.'),
-                          nfev=int(info[1]),
-                          fun=info[2],
-                          maxcv=info[3])
+    return OptimizeResult(x=result.x,
+                          status=result.status,
+                          success=result.success,
+                          message=result.message,
+                          nfev=result.nfev,
+                          fun=result.fun,
+                          maxcv=result.maxcv)

@@ -17,6 +17,10 @@ endif
 if not fs.exists('cobyqa/README.rst')
   error('Missing the `cobyqa` submodule! Run `git submodule update --init` to fix this.')
 endif
+if not fs.exists('prima/README.md')
+  error('Missing the `prima` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 
 _lib_pxd = [
   fs.copyfile('__init__.py'),

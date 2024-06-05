@@ -1,8 +1,7 @@
 import math
 
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_array_equal
-import pytest
+from numpy.testing import assert_allclose, assert_, assert_array_almost_equal
 
 from scipy.optimize import fmin_cobyla, minimize, Bounds
 
@@ -23,8 +22,7 @@ class TestCobyla:
     def con2(self, x):
         return -self.con1(x)
 
-    @pytest.mark.xslow(True, reason='not slow, but noisy so only run rarely')
-    def test_simple(self, capfd):
+    def test_simple(self):
         # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
                         rhoend=1e-5, maxfun=100, disp=True)
@@ -52,41 +50,28 @@ class TestCobyla:
         assert_(sol.maxcv < 1e-5, sol)
         assert_(sol.nfev < 70, sol)
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
-        assert_(sol.nfev == callback.n_calls,
-                "Callback is not called exactly once for every function eval.")
-        assert_array_equal(
+        assert_(sol.nfev >= callback.n_calls,
+                "Callback is called more than once for every function eval.")
+        assert_array_almost_equal(
             sol.x,
             callback.last_x,
+            decimal=5,
+            err_msg=
             "Last design vector sent to the callback is not equal to returned value.",
         )
 
     def test_minimize_constraint_violation(self):
-        np.random.seed(1234)
-        pb = np.random.rand(10, 10)
-        spread = np.random.rand(10)
-
-        def p(w):
-            return pb.dot(w)
-
-        def f(w):
-            return -(w * spread).sum()
-
-        def c1(w):
-            return 500 - abs(p(w)).sum()
-
-        def c2(w):
-            return 5 - abs(p(w).sum())
-
-        def c3(w):
-            return 5 - abs(p(w)).max()
-
-        cons = ({'type': 'ineq', 'fun': c1},
-                {'type': 'ineq', 'fun': c2},
-                {'type': 'ineq', 'fun': c3})
-        w0 = np.zeros((10,))
-        sol = minimize(f, w0, method='cobyla', constraints=cons,
-                       options={'catol': 1e-6})
-        assert_(sol.maxcv > 1e-6)
+        # We set up conflicting constraints so that the algorithm will be
+        # guaranteed to end up with maxcv > 0.
+        cons = ({'type': 'ineq', 'fun': lambda x: 4 - x},
+                {'type': 'ineq', 'fun': lambda x: x - 5})
+        sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
+                       options={'catol': 0.6})
+        assert_(sol.maxcv > 0.1)
+        assert_(sol.success)
+        sol = minimize(lambda x: x, [0], method='cobyla', constraints=cons,
+                       options={'catol': 0.4})
+        assert_(sol.maxcv > 0.1)
         assert_(not sol.success)
 
 
