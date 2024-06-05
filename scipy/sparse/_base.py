@@ -928,7 +928,7 @@ class _spbase:
 
     def todense(self, order=None, out=None):
         """
-        Return a dense representation of this sparse array/matrix.
+        Return a dense representation of this sparse array.
 
         Parameters
         ----------
@@ -940,17 +940,16 @@ class _spbase:
             argument.
 
         out : ndarray, 2-D, optional
-            If specified, uses this array (or `numpy.matrix`) as the
-            output buffer instead of allocating a new array to
-            return. The provided array must have the same shape and
-            dtype as the sparse array/matrix on which you are calling the
-            method.
+            If specified, uses this array as the output buffer
+            instead of allocating a new array to return. The
+            provided array must have the same shape and dtype as
+            the sparse array on which you are calling the method.
 
         Returns
         -------
         arr : ndarray, 2-D
             An array with the same shape and containing the same
-            data represented by the sparse array/matrix, with the requested
+            data represented by the sparse array, with the requested
             memory order. If `out` was passed, the same object is
             returned after being modified in-place to contain the
             appropriate values.
