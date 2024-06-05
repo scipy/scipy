@@ -172,6 +172,7 @@ subdir('_trustregion_constr')
 subdir('cython_optimize')
 subdir('_shgo_lib')
 subdir('_highspy')
+subdir('_prima')
 subdir('tests')
 
 
