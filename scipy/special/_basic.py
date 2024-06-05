@@ -1813,7 +1813,8 @@ def lpmn(m, n, z):
 
     return p, pd
 
-multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all, force_out_complex = True)
+multi_assoc_legendre_p_all = MultiUFunc(multi_assoc_legendre_p_all,
+    force_out_complex = True)
 
 @multi_assoc_legendre_p_all.resolve_ufunc
 def _(ufuncs, norm = False, diff_n = 0):
