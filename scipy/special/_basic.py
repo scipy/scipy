@@ -16,8 +16,8 @@ from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
                       psi, hankel1, hankel2, yv, kv, poch, binom,
                       _stirling2_inexact)
 from ._special_ufuncs import legendre_p, assoc_legendre_p, clpmn as _clpmn
-from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, clpmn_all, _lqn, _lqmn, _rctj, _rcty,
-                       _sph_harm_all as _sph_harm_all_gufunc)
+from ._gufuncs import (legendre_p_all, assoc_legendre_p_all, clpmn_all,
+                        _lqn, _lqmn, _rctj, _rcty, _sph_harm_all as _sph_harm_all_gufunc)
 from . import _specfun
 from ._comb import _comb_int
 from ._multiufunc import MultiUFunc

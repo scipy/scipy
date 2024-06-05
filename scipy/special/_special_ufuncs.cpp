@@ -559,9 +559,16 @@ PyMODINIT_FUNC PyInit__special_ufuncs() {
 
     PyObject *legendre_p = Py_BuildValue(
         "(N,N,N)",
-        SpecFun_NewUFunc({static_cast<func_qd_d_t>(lpn), static_cast<func_qf_f_t>(lpn)}, "legendre_p", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qd_dd_t>(lpn), static_cast<func_qf_ff_t>(lpn)}, 2, "legendre_p", nullptr),
-        SpecFun_NewUFunc({static_cast<func_qd_ddd_t>(lpn), static_cast<func_qf_fff_t>(lpn)}, 3, "legendre_p", nullptr)
+        SpecFun_NewUFunc(
+            {static_cast<func_qd_d_t>(::legendre_p), static_cast<func_qf_f_t>(::legendre_p)}, "legendre_p", nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qd_dd_t>(::legendre_p), static_cast<func_qf_ff_t>(::legendre_p)}, 2, "legendre_p", nullptr
+        ),
+        SpecFun_NewUFunc(
+            {static_cast<func_qd_ddd_t>(::legendre_p), static_cast<func_qf_fff_t>(::legendre_p)}, 3, "legendre_p",
+            nullptr
+        )
     );
     PyModule_AddObjectRef(_special_ufuncs, "legendre_p", legendre_p);
 

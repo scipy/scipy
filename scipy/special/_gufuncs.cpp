@@ -91,18 +91,18 @@ PyMODINIT_FUNC PyInit__gufuncs() {
     PyObject *legendre_p_all = Py_BuildValue(
         "(N,N,N)",
         SpecFun_NewGUFunc(
-            {static_cast<func_d_d1_t>(lpn_all), static_cast<func_f_f1_t>(lpn_all), static_cast<func_D_D1_t>(lpn_all),
-             static_cast<func_F_F1_t>(lpn_all)},
+            {static_cast<func_d_d1_t>(::legendre_p_all), static_cast<func_f_f1_t>(::legendre_p_all),
+             static_cast<func_D_D1_t>(::legendre_p_all), static_cast<func_F_F1_t>(::legendre_p_all)},
             1, "legendre_p_all", nullptr, "()->(np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_d_d1d1_t>(lpn_all), static_cast<func_f_f1f1_t>(lpn_all),
-             static_cast<func_D_D1D1_t>(lpn_all), static_cast<func_F_F1F1_t>(lpn_all)},
+            {static_cast<func_d_d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1_t>(::legendre_p_all),
+             static_cast<func_D_D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1_t>(::legendre_p_all)},
             2, "legendre_p_all", nullptr, "()->(np1),(np1)"
         ),
         SpecFun_NewGUFunc(
-            {static_cast<func_d_d1d1d1_t>(lpn_all), static_cast<func_f_f1f1f1_t>(lpn_all),
-             static_cast<func_D_D1D1D1_t>(lpn_all), static_cast<func_F_F1F1F1_t>(lpn_all)},
+            {static_cast<func_d_d1d1d1_t>(::legendre_p_all), static_cast<func_f_f1f1f1_t>(::legendre_p_all),
+             static_cast<func_D_D1D1D1_t>(::legendre_p_all), static_cast<func_F_F1F1F1_t>(::legendre_p_all)},
             3, "legendre_p_all", nullptr, "()->(np1),(np1),(np1)"
         )
     );

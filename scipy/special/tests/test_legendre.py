@@ -113,7 +113,8 @@ class TestLegendreFunctions:
         rng = np.random.default_rng(1234)
 
         x = rng.uniform(-0.99, 0.99, shape)
-        p_all, p_all_jac, p_all_hess = special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 2)
+        p_all, p_all_jac, p_all_hess = \
+            special.assoc_legendre_p_all(m_max, n_max, x, diff_n = 2)
 
         n = np.arange(n_max + 1)
         n = np.expand_dims(n, axis = (0,) + tuple(range(2, x.ndim + 2)))
