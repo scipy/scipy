@@ -225,7 +225,7 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[-2, 4], assoc_legendre_p_m2_4(typ, x, norm = norm))
         np.testing.assert_allclose(p[-1, 4], assoc_legendre_p_m1_4(typ, x, norm = norm))
 
-        np.testing.assert_allclose(p_jac[0, 0], lpmn_jac_desired(0, 0, x, norm = norm))        
+        np.testing.assert_allclose(p_jac[0, 0], assoc_legendre_p_0_0_jac(typ, x, norm = norm))
         np.testing.assert_allclose(p_jac[1, 0], 0)
         np.testing.assert_allclose(p_jac[2, 0], 0)
         np.testing.assert_allclose(p_jac[3, 0], 0)
@@ -235,15 +235,15 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 0], 0)
         np.testing.assert_allclose(p_jac[-1, 0], 0)
 
-        np.testing.assert_allclose(p_jac[0, 1], lpmn_jac_desired(0, 1, x, norm = norm))
-        np.testing.assert_allclose(p_jac[1, 1], lpmn_jac_desired(1, 1, x, norm = norm))
+        np.testing.assert_allclose(p_jac[0, 1], assoc_legendre_p_0_1_jac(typ, x, norm = norm))
+        np.testing.assert_allclose(p_jac[1, 1], assoc_legendre_p_1_1_jac(typ, x, norm = norm))
         np.testing.assert_allclose(p_jac[2, 1], 0)
         np.testing.assert_allclose(p_jac[3, 1], 0)
         np.testing.assert_allclose(p_jac[4, 1], 0)
         np.testing.assert_allclose(p_jac[-4, 1], 0)
         np.testing.assert_allclose(p_jac[-3, 1], 0)
         np.testing.assert_allclose(p_jac[-2, 1], 0)
-        np.testing.assert_allclose(p_jac[-1, 1], lpmn_jac_desired(-1, 1, x, norm = norm))
+        np.testing.assert_allclose(p_jac[-1, 1], assoc_legendre_p_m1_1_jac(typ, x, norm = norm))
 
         np.testing.assert_allclose(p_jac[0, 2], lpmn_jac_desired(0, 2, x, norm = norm))
         np.testing.assert_allclose(p_jac[1, 2], lpmn_jac_desired(1, 2, x, norm = norm))
@@ -371,7 +371,7 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p[-2, 4], assoc_legendre_p_m2_4(typ, z, norm = norm))
         np.testing.assert_allclose(p[-1, 4], assoc_legendre_p_m1_4(typ, z, norm = norm))
 
-        np.testing.assert_allclose(p_jac[0, 0], clpmn_jac_desired(0, 0, typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[0, 0], assoc_legendre_p_0_0_jac(typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[1, 0], 0)
         np.testing.assert_allclose(p_jac[2, 0], 0)
         np.testing.assert_allclose(p_jac[3, 0], 0)
@@ -381,15 +381,15 @@ class TestLegendreFunctions:
         np.testing.assert_allclose(p_jac[-2, 0], 0)
         np.testing.assert_allclose(p_jac[-1, 0], 0)
 
-        np.testing.assert_allclose(p_jac[0, 1], clpmn_jac_desired(0, 1, typ, z, norm = norm))
-        np.testing.assert_allclose(p_jac[1, 1], clpmn_jac_desired(1, 1, typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[0, 1], assoc_legendre_p_0_1_jac(typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[1, 1], assoc_legendre_p_1_1_jac(typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[2, 1], 0)
         np.testing.assert_allclose(p_jac[3, 1], 0)
         np.testing.assert_allclose(p_jac[4, 1], 0)
         np.testing.assert_allclose(p_jac[-4, 1], 0)
         np.testing.assert_allclose(p_jac[-3, 1], 0)
         np.testing.assert_allclose(p_jac[-2, 1], 0)
-        np.testing.assert_allclose(p_jac[-1, 1], clpmn_jac_desired(-1, 1, typ, z, norm = norm))
+        np.testing.assert_allclose(p_jac[-1, 1], assoc_legendre_p_m1_1_jac(typ, z, norm = norm))
 
         np.testing.assert_allclose(p_jac[0, 2], clpmn_jac_desired(0, 2, typ, z, norm = norm))
         np.testing.assert_allclose(p_jac[1, 2], clpmn_jac_desired(1, 2, typ, z, norm = norm))
@@ -743,6 +743,32 @@ def assoc_legendre_p_m1_4(typ, z, *, norm = False):
 
     return typ_sign * fac * (3 - 7 * z * z) * z * assoc_legendre_p_1_1(typ, z) / 8
 
+def assoc_legendre_p_1_1_jac_div_z(typ, z):
+    branch_sign = np.where(typ == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
+
+    out11_div_z = -branch_sign / np.sqrt(np.where(typ == 3, z * z - 1, 1 - z * z))
+
+    return out11_div_z
+
+def assoc_legendre_p_0_0_jac(typ, z, *, norm = False):
+    return np.zeros_like(z)
+
+def assoc_legendre_p_0_1_jac(typ, z, *, norm = False):
+    fac = assoc_legendre_factor(0, 1, norm)
+
+    return np.full_like(z, fac)
+
+def assoc_legendre_p_1_1_jac(typ, z, *, norm = False):
+    fac = assoc_legendre_factor(1, 1, norm)
+
+    return fac * z * assoc_legendre_p_1_1_jac_div_z(typ, z)
+
+def assoc_legendre_p_m1_1_jac(typ, z, *, norm = False):
+    typ_sign = np.where(typ == 3, -1, 1)
+    fac = assoc_legendre_factor(-1, 1, norm)
+
+    return -typ_sign * fac * z * assoc_legendre_p_1_1_jac_div_z(typ, z) / 2
+
 def clpmn_jac_desired(m, n, type, z, *, norm = False):
     type_sign = np.where(type == 3, -1, 1)
     branch_sign = np.where(type == 3, np.where(np.signbit(np.real(z)), 1, -1), -1)
@@ -753,20 +779,6 @@ def clpmn_jac_desired(m, n, type, z, *, norm = False):
         fac = 1
 
     out11_div_z = -branch_sign / np.sqrt(np.where(type == 3, z * z - 1, 1 - z * z))
-
-    if (n == 0):
-        if (m == 0):
-            return np.zeros_like(z)
-
-    if (n == 1):
-        if (m == 0):
-            return fac * np.ones_like(z)
-
-        if (m == 1):
-            return fac * z * out11_div_z
-
-        if (m == -1):
-            return -type_sign * fac * z * out11_div_z / 2
 
     if (n == 2):
         if (m == 0):
